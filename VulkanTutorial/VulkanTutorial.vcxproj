@@ -149,10 +149,12 @@
   <ItemGroup>
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Renderer\VulkanWrapper.cpp" />
     <ClCompile Include="VkWindow.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h" />
+    <ClInclude Include="Renderer\VulkanWrapper.h" />
     <ClInclude Include="VkWindow.h" />
   </ItemGroup>
   <ItemGroup>

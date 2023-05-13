@@ -1,6 +1,7 @@
 #pragma once
 
 #include "VkWindow.h"
+#include "Renderer/VulkanWrapper.h"
 
 // std lib
 #include <memory>
@@ -17,12 +18,13 @@ namespace VkEngine
 
 	private:
 		void InitWindow(int inWidth, int inHeight, std::string inName);
+		void InitVulkan();
 		void MainLoop();
 		void Cleanup();
 
 	private:
 		std::unique_ptr<VkWindow> mWindow;
-
+		std::unique_ptr<Renderer::VulkanWrapper> mVulkanWrapper;
 	};
 }
 

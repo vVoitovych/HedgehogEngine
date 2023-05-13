@@ -22,6 +22,9 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{aad38ca2-38fb-4b0d-a2cd-e0c35efca88b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Renderer">
+      <UniqueIdentifier>{7fe03785-4c97-4d89-a802-ec58b9105fa6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -33,6 +36,9 @@
     <ClCompile Include="Application.cpp">
       <Filter>Application</Filter>
     </ClCompile>
+    <ClCompile Include="Renderer\VulkanWrapper.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="VkWindow.h">
@@ -40,6 +46,9 @@
     </ClInclude>
     <ClInclude Include="Application.h">
       <Filter>Application</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\VulkanWrapper.h">
+      <Filter>Renderer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

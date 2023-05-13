@@ -69,3 +69,6 @@
 /x64/Debug/VulkanTutorial.pdb
 /x64/Release/VulkanTutorial.exe
 /x64/Release/VulkanTutorial.pdb
+/.vs/VulkanTutorial/v16/ipch/AutoPCH/44f06f209a40411b/*.ipch
+/.vs/VulkanTutorial/v16/ipch/AutoPCH/d0d5baa5457c223d/*.ipch
+/.vs/VulkanTutorial/v16/ipch/AutoPCH/dc5dc24f5f0fc7ae/*.ipch
