@@ -23,7 +23,7 @@ namespace VkEngine
 		void Cleanup();
 
 	private:
-		std::unique_ptr<VkWindow> mWindow;
+		std::shared_ptr<VkWindow> mWindow;
 		std::unique_ptr<Renderer::VulkanWrapper> mVulkanWrapper;
 	};
 }

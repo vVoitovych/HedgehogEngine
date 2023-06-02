@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <unordered_set>
+#include <set>
 
 namespace Renderer
 {
@@ -46,7 +47,8 @@ namespace Renderer
 		}
 	}
 
-	VulkanWrapper::VulkanWrapper()
+	VulkanWrapper::VulkanWrapper(std::shared_ptr<VkEngine::VkWindow> window)
+		:mWindow(window)
 	{
 		InitVulkan();
 	}
@@ -61,6 +63,7 @@ namespace Renderer
 	{
 		CreateInstance();
 		SetupDebugMessenger();
+		CreateSurface();
 		PickPhysicalDevice();
 		CreateLogicalDevice();
 	}
@@ -73,6 +76,7 @@ namespace Renderer
 			DestroyDebugUtilsMessengerEXT(mInstance, mDebugMessenger, nullptr);
 		}
 
+		vkDestroySurfaceKHR(mInstance, mSurface, nullptr);
 		vkDestroyInstance(mInstance, nullptr);
 	}
 
@@ -175,23 +179,30 @@ namespace Renderer
 	void VulkanWrapper::CreateLogicalDevice()
 	{
 		std::cout << "Start creating logical device" << std::endl;
+
 		QueueFamilyIndices indices = FindQueueFamilies(mPhysicalDevice);
 
-		VkDeviceQueueCreateInfo queueCreateInfo{};
-		queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-		queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
-		queueCreateInfo.queueCount = 1;
+		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+		std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
 		float queuePriority = 1.0f;
-		queueCreateInfo.pQueuePriorities = &queuePriority;
+		for (uint32_t queueFamily : uniqueQueueFamilies)
+		{
+			VkDeviceQueueCreateInfo queueCreateInfo{};
+			queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+			queueCreateInfo.queueFamilyIndex = queueFamily;
+			queueCreateInfo.queueCount = 1;
+			queueCreateInfo.pQueuePriorities = &queuePriority;
+			queueCreateInfos.push_back(queueCreateInfo);
+		}
 
 		VkPhysicalDeviceFeatures deviceFeatures{};
 
 		VkDeviceCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
-		createInfo.pQueueCreateInfos = &queueCreateInfo;
-		createInfo.queueCreateInfoCount = 1;
+		createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+		createInfo.pQueueCreateInfos = queueCreateInfos.data();
 
 		createInfo.pEnabledFeatures = &deviceFeatures;
 
@@ -213,7 +224,23 @@ namespace Renderer
 		}
 
 		vkGetDeviceQueue(mDevice, indices.graphicsFamily.value(), 0, &mGraphicsQueue);
+		vkGetDeviceQueue(mDevice, indices.presentFamily.value(), 0, &mPresentQueue);
+
 		std::cout << "End creating logical device" << std::endl;
+	}
+
+	void VulkanWrapper::CreateSurface()
+	{
+		std::cout << "Start creating window surface" << std::endl;
+		if (auto window = mWindow.lock())
+		{
+			window->CreateWindowSurface(mInstance, &mSurface);
+		}
+		else
+		{
+			throw std::runtime_error("Window doesn't exist!");
+		}
+		std::cout << "End creating window surface" << std::endl;
 	}
 
 	bool VulkanWrapper::CheckValidationLayerSupport() const
@@ -294,6 +321,14 @@ namespace Renderer
 			{
 				indices.graphicsFamily = i;
 			}
+			VkBool32 presentSupport = false;
+			vkGetPhysicalDeviceSurfaceSupportKHR(device, i, mSurface, &presentSupport);
+
+			if (presentSupport)
+			{
+				indices.presentFamily = i;
+			}
+
 			if (indices.IsComplete()) 
 			{
 				break;
