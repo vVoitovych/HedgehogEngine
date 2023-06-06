@@ -49,6 +49,7 @@ namespace Renderer
 		void CreateSurface();
 		void CreateSwapChain();
 		void CreateImageViews();
+		void CreateRenderPass();
 		void CreatePipeline();
 
 	private:
@@ -93,7 +94,7 @@ namespace Renderer
 
 		VkQueue mGraphicsQueue;
 		VkQueue mPresentQueue;
-
+		VkRenderPass mRenderPass;
 		VkPipelineLayout mPipelineLayout;
 	};
 }
