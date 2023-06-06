@@ -18,6 +18,7 @@ namespace VkEngine
 		bool shouldClose();
 
 		void CreateWindowSurface(VkInstance instance, VkSurfaceKHR* surface);
+		GLFWwindow* GetlfwWindow();
 	private:
 		void InitWindow();
 

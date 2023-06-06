@@ -46,5 +46,10 @@ namespace VkEngine
 
 	}
 
+	GLFWwindow* VkWindow::GetlfwWindow()
+	{
+		return mWindow;
+	}
+
 
 }
