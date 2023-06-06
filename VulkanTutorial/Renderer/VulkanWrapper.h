@@ -51,6 +51,7 @@ namespace Renderer
 		void CreateImageViews();
 		void CreateRenderPass();
 		void CreatePipeline();
+		void CreateFrameBuffers();
 
 	private:
 		bool CheckDeviceExtensionSupport(VkPhysicalDevice device) const;
@@ -98,6 +99,7 @@ namespace Renderer
 		VkPipelineLayout mGraphycsPipelineLayout;
 		VkPipeline mPipeline;
 
+		std::vector<VkFramebuffer> mFrameBuffers;
 	};
 }
 

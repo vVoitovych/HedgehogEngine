@@ -73,10 +73,15 @@ namespace Renderer
 		CreateImageViews();
 		CreateRenderPass();
 		CreatePipeline();
+		CreateFrameBuffers();
 	}
 
 	void VulkanWrapper::Cleanup()
 	{
+		for (auto frameBuffer : mFrameBuffers)
+		{
+			vkDestroyFramebuffer(mDevice, frameBuffer, nullptr);
+		}
 		vkDestroyPipeline(mDevice, mPipeline, nullptr);
 		vkDestroyPipelineLayout(mDevice, mGraphycsPipelineLayout, nullptr);
 		vkDestroyRenderPass(mDevice, mRenderPass, nullptr);
@@ -518,6 +523,31 @@ namespace Renderer
 		vkDestroyShaderModule(mDevice, fragShaderModule, nullptr);
 
 		std::cout << "Pipeline created" << std::endl;
+	}
+
+	void VulkanWrapper::CreateFrameBuffers()
+	{
+		mFrameBuffers.resize(mSwapChainImages.size());
+
+		for (size_t i = 0; i < mSwapChainImages.size(); ++i)
+		{
+			VkImageView attachments[] = {mSwapChainImageViews[i]};
+
+			VkFramebufferCreateInfo createInfo{};
+			createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+			createInfo.renderPass = mRenderPass;
+			createInfo.attachmentCount = 1;
+			createInfo.pAttachments = attachments;
+			createInfo.width = mSwapChainExtent.width;
+			createInfo.height = mSwapChainExtent.height;
+			createInfo.layers = 1;
+
+			if (vkCreateFramebuffer(mDevice, &createInfo, nullptr, &mFrameBuffers[i]) != VK_SUCCESS)
+			{
+				throw std::runtime_error("failed to create frame buffer!");
+			}
+		}
+		std::cout << "Frame buffers created" << std::endl;
 	}
 
 	bool VulkanWrapper::CheckDeviceExtensionSupport(VkPhysicalDevice device) const
