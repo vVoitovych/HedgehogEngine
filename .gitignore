@@ -73,3 +73,7 @@
 /.vs/VulkanTutorial/v16/ipch/AutoPCH/d0d5baa5457c223d/*.ipch
 /.vs/VulkanTutorial/v16/ipch/AutoPCH/dc5dc24f5f0fc7ae/*.ipch
 /VulkanTutorial/x64/Release/*.obj
+/.vs/VulkanTutorial/v16/ipch/AutoPCH/2459fc0c080afde9/*.ipch
+/x64/Release/CompiledShaders/*.spv
+/.vs/VulkanTutorial/v16/ipch/AutoPCH/64a2f1f877e74bc/*.ipch
+/.vs/VulkanTutorial/v16/ipch/AutoPCH/4745f12ef3a947b5/*.ipch

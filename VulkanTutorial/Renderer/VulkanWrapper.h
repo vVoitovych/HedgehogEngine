@@ -49,6 +49,7 @@ namespace Renderer
 		void CreateSurface();
 		void CreateSwapChain();
 		void CreateImageViews();
+		void CreatePipeline();
 
 	private:
 		bool CheckDeviceExtensionSupport(VkPhysicalDevice device) const;
@@ -62,6 +63,9 @@ namespace Renderer
 		VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) const;
 		VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) const;
 		VkExtent2D ChooseSwapExtend(const VkSurfaceCapabilitiesKHR& capabilities) const;
+		VkShaderModule CreateShaderModule(std::vector<char>& code) const;
+		std::vector<char> ReadFile(const std::string& filename) const;
+
 	private:
 #ifdef DEBUG
 		const bool enableValidationLayers = true;
@@ -89,6 +93,8 @@ namespace Renderer
 
 		VkQueue mGraphicsQueue;
 		VkQueue mPresentQueue;
+
+		VkPipelineLayout mPipelineLayout;
 	};
 }
 
