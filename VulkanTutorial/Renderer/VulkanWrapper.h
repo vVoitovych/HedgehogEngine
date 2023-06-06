@@ -48,6 +48,8 @@ namespace Renderer
 		void CreateLogicalDevice();
 		void CreateSurface();
 		void CreateSwapChain();
+		void CreateImageViews();
+
 	private:
 		bool CheckDeviceExtensionSupport(VkPhysicalDevice device) const;
 		bool CheckValidationLayerSupport() const;
@@ -79,9 +81,11 @@ namespace Renderer
 		VkSurfaceKHR mSurface;
 		VkSwapchainKHR mSwapChain;
 
-		std::vector<VkImage> mSwapChainImage;
+		std::vector<VkImage> mSwapChainImages;
 		VkFormat mSwapChainImageFormat;
 		VkExtent2D mSwapChainExtent;
+
+		std::vector<VkImageView> mSwapChainImageViews;
 
 		VkQueue mGraphicsQueue;
 		VkQueue mPresentQueue;
