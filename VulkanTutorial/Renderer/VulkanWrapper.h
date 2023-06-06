@@ -95,7 +95,9 @@ namespace Renderer
 		VkQueue mGraphicsQueue;
 		VkQueue mPresentQueue;
 		VkRenderPass mRenderPass;
-		VkPipelineLayout mPipelineLayout;
+		VkPipelineLayout mGraphycsPipelineLayout;
+		VkPipeline mPipeline;
+
 	};
 }
 

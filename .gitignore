@@ -77,3 +77,4 @@
 /x64/Release/CompiledShaders/*.spv
 /.vs/VulkanTutorial/v16/ipch/AutoPCH/64a2f1f877e74bc/*.ipch
 /.vs/VulkanTutorial/v16/ipch/AutoPCH/4745f12ef3a947b5/*.ipch
+/.vs/VulkanTutorial/v16/ipch/AutoPCH/68737bfaa48485a0/*.ipch

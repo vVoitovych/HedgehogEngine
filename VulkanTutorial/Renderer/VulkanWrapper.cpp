@@ -77,7 +77,8 @@ namespace Renderer
 
 	void VulkanWrapper::Cleanup()
 	{
-		vkDestroyPipelineLayout(mDevice, mPipelineLayout, nullptr);
+		vkDestroyPipeline(mDevice, mPipeline, nullptr);
+		vkDestroyPipelineLayout(mDevice, mGraphycsPipelineLayout, nullptr);
 		vkDestroyRenderPass(mDevice, mRenderPass, nullptr);
 		for (auto imageView : mSwapChainImageViews)
 		{
@@ -409,6 +410,11 @@ namespace Renderer
 		vertexInputInfo.vertexAttributeDescriptionCount = 0;
 		vertexInputInfo.pVertexAttributeDescriptions = nullptr;
 
+		VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
+		inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+		inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		inputAssembly.primitiveRestartEnable = VK_FALSE;
+
 		VkViewport viewport{};
 		viewport.x = 0.0f;
 		viewport.y = 0.0f;
@@ -446,6 +452,11 @@ namespace Renderer
 		rasterizerInfo.depthBiasConstantFactor = 0.0f;
 		rasterizerInfo.depthBiasClamp = 0.0f;
 		rasterizerInfo.depthBiasSlopeFactor = 0.0f;
+
+		VkPipelineMultisampleStateCreateInfo multisampling{};
+		multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+		multisampling.sampleShadingEnable = VK_FALSE;
+		multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 		
 		VkPipelineColorBlendAttachmentState colorBlendAttachmentState{};
 		colorBlendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
@@ -475,15 +486,38 @@ namespace Renderer
 		layoutCreateInfo.pushConstantRangeCount = 0;
 		layoutCreateInfo.pPushConstantRanges = nullptr;
 
-		if (vkCreatePipelineLayout(mDevice, &layoutCreateInfo, nullptr, &mPipelineLayout) != VK_SUCCESS)
+		if (vkCreatePipelineLayout(mDevice, &layoutCreateInfo, nullptr, &mGraphycsPipelineLayout) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create pipeline layout!");
+		}
+
+		VkGraphicsPipelineCreateInfo pipelineInfo{};
+		pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+		pipelineInfo.stageCount = 2;
+		pipelineInfo.pStages = shaderStages;
+		pipelineInfo.pVertexInputState = &vertexInputInfo;
+		pipelineInfo.pInputAssemblyState = &inputAssembly;
+		pipelineInfo.pViewportState = &viewportState;
+		pipelineInfo.pRasterizationState = &rasterizerInfo;
+		pipelineInfo.pMultisampleState = &multisampling;
+		pipelineInfo.pDepthStencilState = nullptr;
+		pipelineInfo.pColorBlendState = &colorBlending;
+		pipelineInfo.pDynamicState = &dynamicStateInfo;
+		pipelineInfo.layout = mGraphycsPipelineLayout;
+		pipelineInfo.renderPass = mRenderPass;
+		pipelineInfo.subpass = 0;
+		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+		pipelineInfo.basePipelineIndex = -1;
+
+		if (vkCreateGraphicsPipelines(mDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &mPipeline) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create pipeline");
 		}
 
 		vkDestroyShaderModule(mDevice, vertShaderModule, nullptr);
 		vkDestroyShaderModule(mDevice, fragShaderModule, nullptr);
 
-		std::cout << "Pipeline layout created" << std::endl;
+		std::cout << "Pipeline created" << std::endl;
 	}
 
 	bool VulkanWrapper::CheckDeviceExtensionSupport(VkPhysicalDevice device) const
