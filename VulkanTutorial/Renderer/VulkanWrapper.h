@@ -52,7 +52,11 @@ namespace Renderer
 		void CreateRenderPass();
 		void CreatePipeline();
 		void CreateFrameBuffers();
+		void CreateCommandPool();
+		void CreateCommandBuffer();
 
+
+		void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 	private:
 		bool CheckDeviceExtensionSupport(VkPhysicalDevice device) const;
 		bool CheckValidationLayerSupport() const;
@@ -100,6 +104,10 @@ namespace Renderer
 		VkPipeline mPipeline;
 
 		std::vector<VkFramebuffer> mFrameBuffers;
+
+		VkCommandPool mCommandPool;
+		VkCommandBuffer mCommandBuffer;
+
 	};
 }
 
