@@ -29,6 +29,7 @@ namespace VkEngine
 		while (!mWindow->shouldClose())
 		{
 			glfwPollEvents();
+			mVulkanWrapper->DrawFrame();
 		}
 	}
 

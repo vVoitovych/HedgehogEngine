@@ -38,6 +38,8 @@ namespace Renderer
 
 		VulkanWrapper(const VulkanWrapper&) = delete;
 		VulkanWrapper& operator=(const VulkanWrapper&) = delete;
+
+		void DrawFrame();
 	private:
 		void InitVulkan();
 		void Cleanup();
@@ -54,7 +56,7 @@ namespace Renderer
 		void CreateFrameBuffers();
 		void CreateCommandPool();
 		void CreateCommandBuffer();
-
+		void CreateSyncObjects();
 
 		void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 	private:
@@ -108,6 +110,9 @@ namespace Renderer
 		VkCommandPool mCommandPool;
 		VkCommandBuffer mCommandBuffer;
 
+		VkSemaphore mImageAvailableSemaphore;
+		VkSemaphore mRendeerFinishedSemaphore;
+		VkFence mInFlightFence;
 	};
 }
 
