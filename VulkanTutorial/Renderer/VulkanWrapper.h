@@ -12,6 +12,8 @@
 
 namespace Renderer
 {
+	const int MAX_FRAMES_IN_FLIGHT = 2;
+
 	struct QueueFamilyIndices 
 	{
 		std::optional<uint32_t> graphicsFamily;
@@ -108,11 +110,13 @@ namespace Renderer
 		std::vector<VkFramebuffer> mFrameBuffers;
 
 		VkCommandPool mCommandPool;
-		VkCommandBuffer mCommandBuffer;
+		std::vector<VkCommandBuffer> mCommandBuffers;
 
-		VkSemaphore mImageAvailableSemaphore;
-		VkSemaphore mRendeerFinishedSemaphore;
-		VkFence mInFlightFence;
+		std::vector<VkSemaphore> mImageAvailableSemaphores;
+		std::vector<VkSemaphore> mRendeerFinishedSemaphores;
+		std::vector<VkFence> mInFlightFences;
+
+		uint32_t currentFrame = 0;
 	};
 }
 
