@@ -22,6 +22,7 @@ namespace Renderer
 		VkFence GetInFlightFence(size_t index);
 
 		void WaitforInFlightFence(Device& device, size_t index);
+		void ResetInFlightFence(Device& device, size_t index);
 	private:
 		std::vector<VkSemaphore> mImageAvailableSemaphores;
 		std::vector<VkSemaphore> mRendeerFinishedSemaphores;

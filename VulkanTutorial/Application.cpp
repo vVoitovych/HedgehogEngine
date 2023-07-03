@@ -28,7 +28,7 @@ namespace VkEngine
 		while (!mWindowManager.ShouldClose())
 		{
 			glfwPollEvents();
-			mRenderer.DrawFrame();
+			mRenderer.DrawFrame(mWindowManager);
 		}
 
 		Cleanup();

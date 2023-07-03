@@ -80,6 +80,10 @@ namespace Renderer
 	void SyncObjects::WaitforInFlightFence(Device& device, size_t index)
 	{
 		vkWaitForFences(device.GetDevice(), 1, &mInFlightFences[index], VK_TRUE, UINT64_MAX);
+	}
+
+	void SyncObjects::ResetInFlightFence(Device& device, size_t index)
+	{
 		vkResetFences(device.GetDevice(), 1, &mInFlightFences[index]);
 	}
 

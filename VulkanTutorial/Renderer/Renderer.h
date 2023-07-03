@@ -29,8 +29,16 @@ namespace Renderer
 		void Initialize(WindowManager& windowManager);
 		void Cleanup();
 
-		void DrawFrame();
+		void DrawFrame(WindowManager& windowManager);
+		void RecreateSwapChain(WindowManager& windowManager);
+
 	private:
+		void CleanupSwapChain();
+		void CreateSwapShain(WindowManager& windowManager);
+		void CreateFrameBuffers();
+
+	private:
+
 		uint32_t currentFrame = 0;
 
 		Instance mInstance;

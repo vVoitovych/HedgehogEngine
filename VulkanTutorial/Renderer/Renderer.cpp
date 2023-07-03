@@ -40,12 +40,23 @@ namespace Renderer
 		mInstance.Cleanup();
 	}
 
-	void Renderer::DrawFrame()
+	void Renderer::DrawFrame(WindowManager& windowManager)
 	{
 		mSyncObjects.WaitforInFlightFence(mDevice, currentFrame);
 
 		uint32_t imageIndex;
-		vkAcquireNextImageKHR(mDevice.GetDevice(), mSwapChain.GetSwapChain(), UINT64_MAX, mSyncObjects.GetImageAvailableSemaphore(currentFrame), VK_NULL_HANDLE, &imageIndex);
+		VkResult result = vkAcquireNextImageKHR(mDevice.GetDevice(), mSwapChain.GetSwapChain(), UINT64_MAX, mSyncObjects.GetImageAvailableSemaphore(currentFrame), VK_NULL_HANDLE, &imageIndex);
+		if (result == VK_ERROR_OUT_OF_DATE_KHR)
+		{
+			RecreateSwapChain(windowManager);
+			return;
+		}
+		else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+		{
+			throw std::runtime_error("failed to acquire swap chain image!");
+		}
+		mSyncObjects.ResetInFlightFence(mDevice, currentFrame);
+
 		vkResetCommandBuffer(mCommandBuffers.GetCommandBuffers()[currentFrame], 0);
 		CommandBuffers::RecordCommandBuffer(mCommandBuffers.GetCommandBuffers()[currentFrame], mFrameBuffers.GetFrameBuffer(imageIndex), mSwapChain, mRenderPass, mPipeline);
 
@@ -78,10 +89,46 @@ namespace Renderer
 		presentInfo.pImageIndices = &imageIndex;
 		presentInfo.pResults = nullptr;
 
-		vkQueuePresentKHR(mDevice.GetPresentQueue(), &presentInfo);
-
+		result = vkQueuePresentKHR(mDevice.GetPresentQueue(), &presentInfo);
+		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || windowManager.IsWindowResized())
+		{
+			windowManager.ResetResizedState();
+			RecreateSwapChain(windowManager);
+		}
+		else if (result != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to present swap chain image!");
+		}
 		currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 	}
+
+	void Renderer::RecreateSwapChain(WindowManager& windowManager)
+	{
+		vkDeviceWaitIdle(mDevice.GetDevice());
+
+		CleanupSwapChain();
+
+		CreateSwapShain(windowManager);
+		CreateFrameBuffers();
+	}
+
+
+	void Renderer::CleanupSwapChain()
+	{
+		mFrameBuffers.Cleanup(mDevice);
+		mSwapChain.Cleanup(mDevice);
+	}
+
+	void Renderer::CreateSwapShain(WindowManager& windowManager)
+	{
+		mSwapChain.Initialize(mDevice, mSurface, windowManager);
+	}
+
+	void Renderer::CreateFrameBuffers()
+	{
+		mFrameBuffers.Initialize(mDevice, mSwapChain, mRenderPass);
+	}
+
 }
 
 

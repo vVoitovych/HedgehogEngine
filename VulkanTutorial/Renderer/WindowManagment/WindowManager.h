@@ -26,6 +26,11 @@ namespace Renderer
 		void CreateWindowSurface(VkInstance instance, VkSurfaceKHR* surface);
 		GLFWwindow* GetGlfwWindow();
 
+		bool IsWindowResized() const;
+		void ResetResizedState();
+
+		static void ResizeCallback(GLFWwindow* window, int width, int height);
+
 	private:
 		void InitializeThread();
 		void InitializeWindow(WindowState windowState);
@@ -33,6 +38,8 @@ namespace Renderer
 	private:
 		WindowState mWindowState;
 		GLFWwindow* mWindow;
+
+		bool mWindowResized = false;
 
 		std::thread mWindowThread;
 	};

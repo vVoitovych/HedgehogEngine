@@ -46,6 +46,22 @@ namespace Renderer
 		return mWindow;
 	}
 
+	bool WindowManager::IsWindowResized() const
+	{
+		return mWindowResized;
+	}
+
+	void WindowManager::ResetResizedState()
+	{
+		mWindowResized = false;
+	}
+
+	void WindowManager::ResizeCallback(GLFWwindow* window, int width, int height)
+	{
+		auto app = reinterpret_cast<WindowManager*>(glfwGetWindowUserPointer(window));
+		app->mWindowResized = true;
+	}
+
 	void WindowManager::InitializeThread()
 	{
 		
@@ -58,9 +74,11 @@ namespace Renderer
 		glfwInit();
 
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-		glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+		
 		mWindow = glfwCreateWindow(windowState.mWidth, windowState.mHeight, windowState.mWindowName.c_str(), nullptr, nullptr);
 		glfwSetWindowPos(mWindow, windowState.mX, windowState.mY);
+		glfwSetWindowUserPointer(mWindow, this);
+		glfwSetFramebufferSizeCallback(mWindow, ResizeCallback);
 	}
 
 	void WindowManager::MessageLoop()
