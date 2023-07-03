@@ -13,9 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Window">
-      <UniqueIdentifier>{a0d5c2e1-c776-41bc-b03d-0faced747062}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Application">
       <UniqueIdentifier>{41185aa6-836b-45f2-b8bf-841afc4fba49}</UniqueIdentifier>
     </Filter>
@@ -25,30 +22,123 @@
     <Filter Include="Renderer">
       <UniqueIdentifier>{7fe03785-4c97-4d89-a802-ec58b9105fa6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Renderer\WindowManagment">
+      <UniqueIdentifier>{cfad6786-74b0-41c6-9f2f-4059bd7f0a21}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\VulkanApiWrappers">
+      <UniqueIdentifier>{e4d9fe4e-741c-4589-85b6-27747c1a7e49}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Common">
+      <UniqueIdentifier>{34c500f1-5e6b-4e2d-9ad3-ab0d5222fde7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="VkWindow.cpp">
-      <Filter>Window</Filter>
-    </ClCompile>
     <ClCompile Include="Application.cpp">
       <Filter>Application</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\VulkanWrapper.cpp">
+    <ClCompile Include="Renderer\WindowManagment\WindowState.cpp">
+      <Filter>Renderer\WindowManagment</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\WindowManagment\WindowManager.cpp">
+      <Filter>Renderer\WindowManagment</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Common\pch.cpp">
+      <Filter>Renderer\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\VulkanAPIWrappers\Device.cpp">
+      <Filter>Renderer\VulkanApiWrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\VulkanAPIWrappers\Instance.cpp">
+      <Filter>Renderer\VulkanApiWrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\VulkanAPIWrappers\DebugMessenger.cpp">
+      <Filter>Renderer\VulkanApiWrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\VulkanAPIWrappers\Surface.cpp">
+      <Filter>Renderer\VulkanApiWrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\VulkanAPIWrappers\SwapChain.cpp">
+      <Filter>Renderer\VulkanApiWrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\VulkanAPIWrappers\RenderPass.cpp">
+      <Filter>Renderer\VulkanApiWrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\VulkanAPIWrappers\Pipeline.cpp">
+      <Filter>Renderer\VulkanApiWrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\VulkanAPIWrappers\CommandPool.cpp">
+      <Filter>Renderer\VulkanApiWrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\VulkanAPIWrappers\SyncObjects.cpp">
+      <Filter>Renderer\VulkanApiWrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\VulkanAPIWrappers\CommandBuffers.cpp">
+      <Filter>Renderer\VulkanApiWrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\VulkanAPIWrappers\FrameBuffers.cpp">
+      <Filter>Renderer\VulkanApiWrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Renderer.cpp">
       <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\VulkanAPIWrappers\CommonApiData.cpp">
+      <Filter>Renderer\VulkanApiWrappers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="VkWindow.h">
-      <Filter>Window</Filter>
-    </ClInclude>
     <ClInclude Include="Application.h">
       <Filter>Application</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\VulkanWrapper.h">
+    <ClInclude Include="Renderer\WindowManagment\WindowState.h">
+      <Filter>Renderer\WindowManagment</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\WindowManagment\WindowManager.h">
+      <Filter>Renderer\WindowManagment</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Common\pch.h">
+      <Filter>Renderer\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\VulkanAPIWrappers\Device.h">
+      <Filter>Renderer\VulkanApiWrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\VulkanAPIWrappers\Instance.h">
+      <Filter>Renderer\VulkanApiWrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\VulkanAPIWrappers\DebugMessenger.h">
+      <Filter>Renderer\VulkanApiWrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\VulkanAPIWrappers\Surface.h">
+      <Filter>Renderer\VulkanApiWrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\VulkanAPIWrappers\SwapChain.h">
+      <Filter>Renderer\VulkanApiWrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\VulkanAPIWrappers\RenderPass.h">
+      <Filter>Renderer\VulkanApiWrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\VulkanAPIWrappers\Pipeline.h">
+      <Filter>Renderer\VulkanApiWrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\VulkanAPIWrappers\CommandPool.h">
+      <Filter>Renderer\VulkanApiWrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\VulkanAPIWrappers\SyncObjects.h">
+      <Filter>Renderer\VulkanApiWrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\VulkanAPIWrappers\CommandBuffers.h">
+      <Filter>Renderer\VulkanApiWrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\VulkanAPIWrappers\FrameBuffers.h">
+      <Filter>Renderer\VulkanApiWrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Renderer.h">
       <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\VulkanAPIWrappers\CommonApiData.h">
+      <Filter>Renderer\VulkanApiWrappers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

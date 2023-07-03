@@ -1,7 +1,7 @@
 #pragma once
 
-#include "VkWindow.h"
-#include "Renderer/VulkanWrapper.h"
+#include "Renderer/WindowManagment/WindowManager.h"
+#include "Renderer/Renderer.h"
 
 // std lib
 #include <memory>
@@ -23,8 +23,8 @@ namespace VkEngine
 		void Cleanup();
 
 	private:
-		std::shared_ptr<VkWindow> mWindow;
-		std::unique_ptr<Renderer::VulkanWrapper> mVulkanWrapper;
+		Renderer::WindowManager mWindowManager;
+		Renderer::Renderer mRenderer;
 	};
 }
 

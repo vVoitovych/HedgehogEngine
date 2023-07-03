@@ -9,32 +9,35 @@ namespace VkEngine
 		InitWindow(sWindowWidth, sWindowHeight, "Vulkan App");
 		InitVulkan();
 		MainLoop();
-		Cleanup();
 	}
 
 	void VkApplication::InitWindow(int inWidth, int inHeight, std::string inName)
 	{
-		mWindow = std::make_shared<VkWindow>(inWidth, inHeight, inName);
+		mWindowManager.Initialize(Renderer::WindowState::GetDefaultState());
 		std::cout << "Window initialized" << std::endl;
 	}
 
 	void VkApplication::InitVulkan()
 	{
-		mVulkanWrapper = std::make_unique<Renderer::VulkanWrapper>(mWindow);
+		mRenderer.Initialize(mWindowManager);
 		std::cout << "Vulkan initialized" << std::endl;
 	}
 
 	void VkApplication::MainLoop()
 	{
-		while (!mWindow->shouldClose())
+		while (!mWindowManager.ShouldClose())
 		{
 			glfwPollEvents();
-			mVulkanWrapper->DrawFrame();
+			mRenderer.DrawFrame();
 		}
+
+		Cleanup();
 	}
 
 	void VkApplication::Cleanup()
 	{
+		mRenderer.Cleanup();
+		mWindowManager.Cleanup();
 	}
 }
 
