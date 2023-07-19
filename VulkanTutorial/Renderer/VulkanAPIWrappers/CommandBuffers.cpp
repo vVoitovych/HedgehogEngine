@@ -12,14 +12,13 @@ namespace Renderer
 
 	void CommandBuffers::Initialize(Device& device, CommandPool& commandPool)
 	{
-		mCommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 		VkCommandBufferAllocateInfo allocateInfo{};
 		allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 		allocateInfo.commandPool = commandPool.GetCommandPool();
 		allocateInfo.commandBufferCount = MAX_FRAMES_IN_FLIGHT;
 		allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
-		if (vkAllocateCommandBuffers(device.GetDevice(), &allocateInfo, mCommandBuffers.data()) != VK_SUCCESS)
+		if (vkAllocateCommandBuffers(device.GetDevice(), &allocateInfo, mCommandBuffers) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to allocate command buffer!");
 		}
@@ -28,12 +27,11 @@ namespace Renderer
 
 	void CommandBuffers::Cleanup(Device& device)
 	{
-		mCommandBuffers.clear();
 	}
 
-	std::vector<VkCommandBuffer> CommandBuffers::GetCommandBuffers()
+	VkCommandBuffer& CommandBuffers::GetCommandBuffer(size_t index)
 	{
-		return mCommandBuffers;
+		return mCommandBuffers[index];
 	}
 
 	void CommandBuffers::RecordCommandBuffer(VkCommandBuffer commandBuffer, VkFramebuffer frameBuffer, SwapChain& swapChain, RenderPass& renderPass, Pipeline& pipeline)

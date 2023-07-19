@@ -57,8 +57,8 @@ namespace Renderer
 		}
 		mSyncObjects.ResetInFlightFence(mDevice, currentFrame);
 
-		vkResetCommandBuffer(mCommandBuffers.GetCommandBuffers()[currentFrame], 0);
-		CommandBuffers::RecordCommandBuffer(mCommandBuffers.GetCommandBuffers()[currentFrame], mFrameBuffers.GetFrameBuffer(imageIndex), mSwapChain, mRenderPass, mPipeline);
+		vkResetCommandBuffer(mCommandBuffers.GetCommandBuffer(currentFrame), 0);
+		CommandBuffers::RecordCommandBuffer(mCommandBuffers.GetCommandBuffer(currentFrame), mFrameBuffers.GetFrameBuffer(imageIndex), mSwapChain, mRenderPass, mPipeline);
 
 		VkSubmitInfo submitInfo{};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -69,14 +69,14 @@ namespace Renderer
 		submitInfo.pWaitSemaphores = waitSemaphores;
 		submitInfo.pWaitDstStageMask = waitStages;
 		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &mCommandBuffers.GetCommandBuffers()[currentFrame];
+		submitInfo.pCommandBuffers = &mCommandBuffers.GetCommandBuffer(currentFrame);
 		VkSemaphore signalSemaphores[] = { mSyncObjects.GetRenderFinishedSemaphore(currentFrame) };
 		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pSignalSemaphores = signalSemaphores;
 
 		if (vkQueueSubmit(mDevice.GetGraphicsQueue(), 1, &submitInfo, mSyncObjects.GetInFlightFence(currentFrame)) != VK_SUCCESS)
 		{
-			throw std::runtime_error("fsailed to submit draw command buffer!");
+			throw std::runtime_error("failed to submit draw command buffer!");
 		}
 
 		VkPresentInfoKHR presentInfo{};

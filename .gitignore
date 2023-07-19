@@ -113,3 +113,9 @@
 /.vs/VulkanTutorial/v16/ipch/AutoPCH/f982cfd2bbf2183/*.ipch
 /.vs/VulkanTutorial/v16/ipch/AutoPCH/fcf9551ec4a8c688/*.ipch
 /.vs/VulkanTutorial/v16/ipch/AutoPCH/fe31801c3d5dd46c/*.ipch
+/.vs/VulkanTutorial/v16/ipch/AutoPCH/12355baff552f67c/*.ipch
+/.vs/VulkanTutorial/v16/ipch/AutoPCH/7c581c5ac61c17db/*.ipch
+/.vs/VulkanTutorial/v16/ipch/AutoPCH/8c164296115bccae/*.ipch
+/.vs/VulkanTutorial/v16/ipch/AutoPCH/b02fdc4ebb58f00e/*.ipch
+/VulkanTutorial/CompiledShaders/*.spv
+/VulkanTutorial/x64/Debug/*.obj

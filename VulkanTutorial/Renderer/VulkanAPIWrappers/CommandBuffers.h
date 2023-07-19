@@ -21,11 +21,11 @@ namespace Renderer
 		void Initialize(Device& device, CommandPool& commandPool);
 		void Cleanup(Device& device);
 
-		std::vector<VkCommandBuffer> GetCommandBuffers();
+		VkCommandBuffer& GetCommandBuffer(size_t index);
 
 		static void RecordCommandBuffer(VkCommandBuffer commandBuffer, VkFramebuffer frameBuffer, SwapChain& swapChain, RenderPass& renderPass, Pipeline& pipeline);
 	private:
-		std::vector<VkCommandBuffer> mCommandBuffers;
+		VkCommandBuffer mCommandBuffers[MAX_FRAMES_IN_FLIGHT];
 	};
 }
 
