@@ -119,3 +119,5 @@
 /.vs/VulkanTutorial/v16/ipch/AutoPCH/b02fdc4ebb58f00e/*.ipch
 /VulkanTutorial/CompiledShaders/*.spv
 /VulkanTutorial/x64/Debug/*.obj
+/x64/Debug/CompiledShaders/Shaders/*.spv
+/x64/Release/CompiledShaders/Shaders/*.spv

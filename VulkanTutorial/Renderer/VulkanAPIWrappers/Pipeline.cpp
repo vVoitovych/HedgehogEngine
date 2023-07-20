@@ -1,4 +1,5 @@
 #include "Pipeline.h"
+#include <Windows.h>
 
 namespace Renderer
 {
@@ -20,9 +21,21 @@ namespace Renderer
 		}
 	}
 
+	std::string GetCurrentDirectory()
+	{
+		char buffer[MAX_PATH];
+		GetModuleFileNameA(NULL, buffer, MAX_PATH);
+		std::string::size_type pos = std::string(buffer).find_last_of("\\/");
+
+		return std::string(buffer).substr(0, pos);
+	}
+
 	std::vector<char> ReadFile(const std::string& filename)
 	{
-		std::ifstream file(filename, std::ios::ate | std::ios::binary);
+		std::string fullName = GetCurrentDirectory() + "\\" + filename;
+		std::cout << fullName << std::endl;
+
+		std::ifstream file(fullName, std::ios::ate | std::ios::binary);
 		if (!file.is_open())
 		{
 			throw std::runtime_error("failed to open file!");
@@ -56,8 +69,8 @@ namespace Renderer
 
 	void Pipeline::Initialize(Device& device, SwapChain& swapChain, RenderPass& renderPass)
 	{
-		auto vertexShaderCode = ReadFile("CompiledShaders/SimpleShader.vert.spv");
-		auto fragmentShaderCode = ReadFile("CompiledShaders/SimpleShader.frag.spv");
+		auto vertexShaderCode = ReadFile("CompiledShaders\\Shaders\\SimpleShader.vert.spv");
+		auto fragmentShaderCode = ReadFile("CompiledShaders\\Shaders\\SimpleShader.frag.spv");
 
 		VkShaderModule vertShaderModule = CreateShaderModule(device, vertexShaderCode);
 		VkShaderModule fragShaderModule = CreateShaderModule(device, fragmentShaderCode);
