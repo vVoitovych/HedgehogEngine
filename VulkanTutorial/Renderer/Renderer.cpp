@@ -22,12 +22,18 @@ namespace Renderer
 		mPipeline.Initialize(mDevice, mSwapChain, mRenderPass);
 		mFrameBuffers.Initialize(mDevice, mSwapChain, mRenderPass);
 		mCommandPool.Initialize(mDevice);
-		mCommandBuffers.Initialize(mDevice, mCommandPool);
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+		{
+			mCommandBuffers[i].Initialize(mDevice, mCommandPool);
+		}
 	}
 
 	void Renderer::Cleanup()
 	{
-		mCommandBuffers.Cleanup(mDevice);
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+		{
+			mCommandBuffers[i].Cleanup(mDevice);
+		}
 		mCommandPool.Cleanup(mDevice);
 		mFrameBuffers.Cleanup(mDevice);
 		mPipeline.Cleanup(mDevice);
@@ -57,8 +63,19 @@ namespace Renderer
 		}
 		mSyncObjects.ResetInFlightFence(mDevice, currentFrame);
 
-		vkResetCommandBuffer(mCommandBuffers.GetCommandBuffer(currentFrame), 0);
-		CommandBuffers::RecordCommandBuffer(mCommandBuffers.GetCommandBuffer(currentFrame), mFrameBuffers.GetFrameBuffer(imageIndex), mSwapChain, mRenderPass, mPipeline);
+		auto& commandBuffer = mCommandBuffers[currentFrame];
+		auto frameBuffer = mFrameBuffers.GetFrameBuffer(imageIndex);
+		vkResetCommandBuffer(commandBuffer.GetCommandBuffer(), 0);
+
+		auto extend = mSwapChain.GetSwapChainExtend();
+		commandBuffer.BeginCommandBuffer(0);
+		commandBuffer.BeginRenderPass(extend, mRenderPass, frameBuffer);
+		commandBuffer.BindPipeline(mPipeline, VK_PIPELINE_BIND_POINT_GRAPHICS);
+		commandBuffer.SetViewport(0.0f, 0.0f, extend.width, extend.height, 0.0f, 0.0f);
+		commandBuffer.SetScissor({ 0, 0 }, extend);
+		commandBuffer.Draw(3, 1, 0, 0);
+		commandBuffer.EndRenderPass();
+		commandBuffer.EndCommandBuffer();
 
 		VkSubmitInfo submitInfo{};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -69,7 +86,7 @@ namespace Renderer
 		submitInfo.pWaitSemaphores = waitSemaphores;
 		submitInfo.pWaitDstStageMask = waitStages;
 		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &mCommandBuffers.GetCommandBuffer(currentFrame);
+		submitInfo.pCommandBuffers = &commandBuffer.GetCommandBuffer();
 		VkSemaphore signalSemaphores[] = { mSyncObjects.GetRenderFinishedSemaphore(currentFrame) };
 		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pSignalSemaphores = signalSemaphores;

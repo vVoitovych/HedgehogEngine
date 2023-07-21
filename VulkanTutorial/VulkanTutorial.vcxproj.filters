@@ -75,7 +75,7 @@
     <ClCompile Include="Renderer\VulkanAPIWrappers\SyncObjects.cpp">
       <Filter>Renderer\VulkanApiWrappers</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\VulkanAPIWrappers\CommandBuffers.cpp">
+    <ClCompile Include="Renderer\VulkanAPIWrappers\CommandBuffer.cpp">
       <Filter>Renderer\VulkanApiWrappers</Filter>
     </ClCompile>
     <ClCompile Include="Renderer\VulkanAPIWrappers\FrameBuffers.cpp">
@@ -128,7 +128,7 @@
     <ClInclude Include="Renderer\VulkanAPIWrappers\SyncObjects.h">
       <Filter>Renderer\VulkanApiWrappers</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\VulkanAPIWrappers\CommandBuffers.h">
+    <ClInclude Include="Renderer\VulkanAPIWrappers\CommandBuffer.h">
       <Filter>Renderer\VulkanApiWrappers</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\VulkanAPIWrappers\FrameBuffers.h">

@@ -151,7 +151,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Renderer\Common\pch.cpp" />
     <ClCompile Include="Renderer\Renderer.cpp" />
-    <ClCompile Include="Renderer\VulkanAPIWrappers\CommandBuffers.cpp" />
+    <ClCompile Include="Renderer\VulkanAPIWrappers\CommandBuffer.cpp" />
     <ClCompile Include="Renderer\VulkanAPIWrappers\CommandPool.cpp" />
     <ClCompile Include="Renderer\VulkanAPIWrappers\DebugMessenger.cpp" />
     <ClCompile Include="Renderer\VulkanAPIWrappers\Device.cpp" />
@@ -170,7 +170,7 @@
     <ClInclude Include="Application.h" />
     <ClInclude Include="Renderer\Common\pch.h" />
     <ClInclude Include="Renderer\Renderer.h" />
-    <ClInclude Include="Renderer\VulkanAPIWrappers\CommandBuffers.h" />
+    <ClInclude Include="Renderer\VulkanAPIWrappers\CommandBuffer.h" />
     <ClInclude Include="Renderer\VulkanAPIWrappers\CommandPool.h" />
     <ClInclude Include="Renderer\VulkanAPIWrappers\CommonApiData.h" />
     <ClInclude Include="Renderer\VulkanAPIWrappers\DebugMessenger.h" />

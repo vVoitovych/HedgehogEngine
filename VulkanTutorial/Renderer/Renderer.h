@@ -11,7 +11,7 @@
 #include "VulkanAPIWrappers/Pipeline.h"
 #include "VulkanAPIWrappers/FrameBuffers.h"
 #include "VulkanAPIWrappers/CommandPool.h"
-#include "VulkanAPIWrappers/CommandBuffers.h"
+#include "VulkanAPIWrappers/CommandBuffer.h"
 
 #include "WindowManagment/WindowManager.h"
 
@@ -51,7 +51,7 @@ namespace Renderer
 		Pipeline mPipeline;
 		FrameBuffers mFrameBuffers;
 		CommandPool mCommandPool;
-		CommandBuffers mCommandBuffers;
+		CommandBuffer mCommandBuffers[MAX_FRAMES_IN_FLIGHT];
 
 
 	};
