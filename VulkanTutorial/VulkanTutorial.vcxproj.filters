@@ -31,6 +31,9 @@
     <Filter Include="Renderer\Common">
       <UniqueIdentifier>{34c500f1-5e6b-4e2d-9ad3-ab0d5222fde7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Renderer\Mesh">
+      <UniqueIdentifier>{0bfaaa43-e61d-4367-a7ad-201ef83c79b4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -87,6 +90,12 @@
     <ClCompile Include="Renderer\VulkanAPIWrappers\CommonApiData.cpp">
       <Filter>Renderer\VulkanApiWrappers</Filter>
     </ClCompile>
+    <ClCompile Include="Renderer\Mesh\Vertex.cpp">
+      <Filter>Renderer\Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Mesh\Mesh.cpp">
+      <Filter>Renderer\Mesh</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h">
@@ -139,6 +148,12 @@
     </ClInclude>
     <ClInclude Include="Renderer\VulkanAPIWrappers\CommonApiData.h">
       <Filter>Renderer\VulkanApiWrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Mesh\Vertex.h">
+      <Filter>Renderer\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Mesh\Mesh.h">
+      <Filter>Renderer\Mesh</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

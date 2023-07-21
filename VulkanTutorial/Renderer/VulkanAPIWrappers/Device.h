@@ -41,6 +41,9 @@ namespace Renderer
 		VkDevice GetDevice() const;
 		VkPhysicalDevice GetPhysicalDevice() const;
 		QueueFamilyIndices GetIndicies() const;
+
+		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const;
+
 	private:
 		void PickPhysicalDevice(Instance& instance, Surface& surface);
 		void CreateLogicalDevice(Instance& instance, Surface& surface);

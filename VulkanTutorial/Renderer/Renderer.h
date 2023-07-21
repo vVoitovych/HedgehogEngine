@@ -14,6 +14,7 @@
 #include "VulkanAPIWrappers/CommandBuffer.h"
 
 #include "WindowManagment/WindowManager.h"
+#include "Mesh/Mesh.h"
 
 namespace Renderer
 {
@@ -53,7 +54,7 @@ namespace Renderer
 		CommandPool mCommandPool;
 		CommandBuffer mCommandBuffers[MAX_FRAMES_IN_FLIGHT];
 
-
+		Mesh mMesh;
 	};
 }
 

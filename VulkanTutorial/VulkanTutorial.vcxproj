@@ -150,6 +150,8 @@
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Renderer\Common\pch.cpp" />
+    <ClCompile Include="Renderer\Mesh\Mesh.cpp" />
+    <ClCompile Include="Renderer\Mesh\Vertex.cpp" />
     <ClCompile Include="Renderer\Renderer.cpp" />
     <ClCompile Include="Renderer\VulkanAPIWrappers\CommandBuffer.cpp" />
     <ClCompile Include="Renderer\VulkanAPIWrappers\CommandPool.cpp" />
@@ -169,6 +171,8 @@
   <ItemGroup>
     <ClInclude Include="Application.h" />
     <ClInclude Include="Renderer\Common\pch.h" />
+    <ClInclude Include="Renderer\Mesh\Mesh.h" />
+    <ClInclude Include="Renderer\Mesh\Vertex.h" />
     <ClInclude Include="Renderer\Renderer.h" />
     <ClInclude Include="Renderer\VulkanAPIWrappers\CommandBuffer.h" />
     <ClInclude Include="Renderer\VulkanAPIWrappers\CommandPool.h" />

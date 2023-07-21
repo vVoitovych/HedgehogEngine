@@ -26,10 +26,14 @@ namespace Renderer
 		{
 			mCommandBuffers[i].Initialize(mDevice, mCommandPool);
 		}
+
+		mMesh.CreateVertexBuffer(mDevice);
 	}
 
 	void Renderer::Cleanup()
 	{
+		mMesh.Cleanup(mDevice);
+
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
 			mCommandBuffers[i].Cleanup(mDevice);
@@ -73,6 +77,9 @@ namespace Renderer
 		commandBuffer.BindPipeline(mPipeline, VK_PIPELINE_BIND_POINT_GRAPHICS);
 		commandBuffer.SetViewport(0.0f, 0.0f, extend.width, extend.height, 0.0f, 0.0f);
 		commandBuffer.SetScissor({ 0, 0 }, extend);
+		VkBuffer vertexBuffers[] = { mMesh.GetVertexBuffer() };
+		VkDeviceSize offsets[] = { 0 };
+		commandBuffer.BindVertexBuffers(0, 1, vertexBuffers, offsets);
 		commandBuffer.Draw(3, 1, 0, 0);
 		commandBuffer.EndRenderPass();
 		commandBuffer.EndCommandBuffer();

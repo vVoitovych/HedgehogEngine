@@ -54,6 +54,20 @@ namespace Renderer
 		return mIndices;
 	}
 
+	uint32_t Device::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const
+	{
+		VkPhysicalDeviceMemoryProperties memProperties;
+		vkGetPhysicalDeviceMemoryProperties(mPhysicalDevice, &memProperties);
+
+		for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
+		{
+			if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
+			{
+				return i;
+			}
+		}
+	}
+
 	void Device::PickPhysicalDevice(Instance& instance, Surface& surface)
 	{
 		uint32_t deviceCount = 0;
