@@ -27,7 +27,7 @@ namespace Renderer
 			mCommandBuffers[i].Initialize(mDevice, mCommandPool);
 		}
 
-		mMesh.CreateVertexBuffer(mDevice);
+		mMesh.Initialize(mDevice, mCommandPool);
 	}
 
 	void Renderer::Cleanup()
@@ -80,7 +80,9 @@ namespace Renderer
 		VkBuffer vertexBuffers[] = { mMesh.GetVertexBuffer() };
 		VkDeviceSize offsets[] = { 0 };
 		commandBuffer.BindVertexBuffers(0, 1, vertexBuffers, offsets);
-		commandBuffer.Draw(3, 1, 0, 0);
+		commandBuffer.BindIndexBuffer(mMesh.GetIndexBuffer(), 0, VK_INDEX_TYPE_UINT16);
+
+		commandBuffer.DrawIndexed(mMesh.GetIndiciesCount(), 1, 0, 0, 0);
 		commandBuffer.EndRenderPass();
 		commandBuffer.EndCommandBuffer();
 

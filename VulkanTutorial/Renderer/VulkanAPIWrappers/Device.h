@@ -6,6 +6,8 @@
 
 namespace Renderer
 {
+	class CommandPool;
+
 	struct QueueFamilyIndices
 	{
 		std::optional<uint32_t> mGraphicsFamily;
@@ -43,6 +45,9 @@ namespace Renderer
 		QueueFamilyIndices GetIndicies() const;
 
 		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const;
+
+		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, CommandPool& commandPool);
 
 	private:
 		void PickPhysicalDevice(Instance& instance, Surface& surface);

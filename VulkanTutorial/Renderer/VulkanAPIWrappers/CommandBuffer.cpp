@@ -105,9 +105,19 @@ namespace Renderer
 		vkCmdBindVertexBuffers(mCommandBuffer, firstBinding, bindingsCount, buffers, offsets);
 	}
 
+	void CommandBuffer::BindIndexBuffer(VkBuffer indexBuffer, VkDeviceSize offset, VkIndexType indexType)
+	{
+		vkCmdBindIndexBuffer(mCommandBuffer, indexBuffer, offset, indexType);
+	}
+
 	void CommandBuffer::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
 	{
 		vkCmdDraw(mCommandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
+	}
+
+	void CommandBuffer::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
+	{
+		vkCmdDrawIndexed(mCommandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 	}
 
 

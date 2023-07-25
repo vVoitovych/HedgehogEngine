@@ -13,6 +13,8 @@ namespace Renderer
 		static std::array<VkVertexInputAttributeDescription, 2>  GetAttributeDescription();
 
 		static std::vector<Vertex> GetSimpleTriangle();
+		static std::vector<Vertex> GetQuad();
+		static std::vector<uint16_t> GetQuadIndecies();
 
 	};
 
