@@ -1,4 +1,6 @@
 #include "Device.h"
+#include "Instance.h"
+#include "..\WindowManagment\WindowManager.h"
 #include "CommonApiData.h"
 #include "CommandPool.h"
 
@@ -18,15 +20,17 @@ namespace Renderer
 		}
 	}
 
-	void Device::Initialize(Instance& instance, Surface& surface)
+	void Device::Initialize(Instance& instance, WindowManager& windowManager)
 	{
-		PickPhysicalDevice(instance, surface);
-		CreateLogicalDevice(instance, surface);
+		windowManager.CreateWindowSurface(instance.GetInstance(), &mSurface);
+		PickPhysicalDevice(instance);
+		CreateLogicalDevice(instance);
 	}
 
 	void Device::Cleanup()
 	{
 		vkDestroyDevice(mDevice, nullptr);
+		//vkDestroySurfaceKHR(instance.GetInstance(), mSurface, nullptr);
 		mDevice = nullptr;
 	}
 
@@ -38,6 +42,11 @@ namespace Renderer
 	VkQueue Device::GetPresentQueue() const
 	{
 		return mPresentQueue;
+	}
+
+	VkSurfaceKHR Device::GetSurface()
+	{
+		return mSurface;
 	}
 
 	VkDevice Device::GetDevice() const
@@ -132,7 +141,7 @@ namespace Renderer
 		vkFreeCommandBuffers(mDevice, commandPool.GetCommandPool(), 1, &commandBuffer);
 	}
 
-	void Device::PickPhysicalDevice(Instance& instance, Surface& surface)
+	void Device::PickPhysicalDevice(Instance& instance)
 	{
 		uint32_t deviceCount = 0;
 		vkEnumeratePhysicalDevices(instance.GetInstance(), &deviceCount, nullptr);
@@ -147,7 +156,7 @@ namespace Renderer
 
 		for (const auto& device : devices)
 		{
-			if (IsDeviceSuitable(device, instance, surface))
+			if (IsDeviceSuitable(device, instance))
 			{
 				mPhysicalDevice = device;
 				break;
@@ -166,9 +175,9 @@ namespace Renderer
 		std::cout << "Physical device picked" << std::endl;
 	}
 
-	void Device::CreateLogicalDevice(Instance& instance, Surface& surface)
+	void Device::CreateLogicalDevice(Instance& instance)
 	{
-		mIndices = FindQueueFamilies(mPhysicalDevice, instance, surface);
+		mIndices = FindQueueFamilies(mPhysicalDevice, instance);
 
 		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 		std::set<uint32_t> uniqueQueueFamilies = { mIndices.mGraphicsFamily.value(), mIndices.mPresentFamily.value() };
@@ -237,20 +246,20 @@ namespace Renderer
 		return requiredExtensins.empty();
 	}
 
-	bool Device::IsDeviceSuitable(VkPhysicalDevice device, Instance& instance, Surface& surface) const
+	bool Device::IsDeviceSuitable(VkPhysicalDevice device, Instance& instance) const
 	{
-		QueueFamilyIndices indices = FindQueueFamilies(device, instance, surface);
+		QueueFamilyIndices indices = FindQueueFamilies(device, instance);
 		bool extensionsSupported = CheckDeviceExtensionSupport(device, instance);
 		bool swapChainAdequate = false;
 		if (extensionsSupported)
 		{
-			auto swapChainSupport = QuerySwapChainSupport(device, surface);
+			auto swapChainSupport = QuerySwapChainSupport(device);
 			swapChainAdequate = !swapChainSupport.mFormats.empty() && !swapChainSupport.mPrecentModes.empty();
 		}
 		return indices.IsComplete() && extensionsSupported && swapChainAdequate;
 	}
 
-	QueueFamilyIndices Device::FindQueueFamilies(VkPhysicalDevice device, Instance& instance, Surface& surface) const
+	QueueFamilyIndices Device::FindQueueFamilies(VkPhysicalDevice device, Instance& instance) const
 	{
 		QueueFamilyIndices indices;
 
@@ -268,7 +277,7 @@ namespace Renderer
 				indices.mGraphicsFamily = i;
 			}
 			VkBool32 presentSupport = false;
-			vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface.GetSurface(), &presentSupport);
+			vkGetPhysicalDeviceSurfaceSupportKHR(device, i, mSurface, &presentSupport);
 
 			if (presentSupport)
 			{
@@ -284,26 +293,26 @@ namespace Renderer
 		return indices;
 	}
 
-	SwapChainSupportDetails Device::QuerySwapChainSupport(VkPhysicalDevice device, Surface& surface) const
+	SwapChainSupportDetails Device::QuerySwapChainSupport(VkPhysicalDevice device) const
 	{
 		SwapChainSupportDetails details;
 
-		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface.GetSurface(), &details.mCapabilities);
+		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, mSurface, &details.mCapabilities);
 
 		uint32_t formatCount;
-		vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface.GetSurface(), &formatCount, nullptr);
+		vkGetPhysicalDeviceSurfaceFormatsKHR(device, mSurface, &formatCount, nullptr);
 		if (formatCount != 0)
 		{
 			details.mFormats.resize(formatCount);
-			vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface.GetSurface(), &formatCount, details.mFormats.data());
+			vkGetPhysicalDeviceSurfaceFormatsKHR(device, mSurface, &formatCount, details.mFormats.data());
 		}
 
 		uint32_t presentModeCount;
-		vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface.GetSurface(), &presentModeCount, nullptr);
+		vkGetPhysicalDeviceSurfacePresentModesKHR(device, mSurface, &presentModeCount, nullptr);
 		if (presentModeCount != 0)
 		{
 			details.mPrecentModes.resize(presentModeCount);
-			vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface.GetSurface(), &presentModeCount, details.mPrecentModes.data());
+			vkGetPhysicalDeviceSurfacePresentModesKHR(device, mSurface, &presentModeCount, details.mPrecentModes.data());
 		}
 		return details;
 	}

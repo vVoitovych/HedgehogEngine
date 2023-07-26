@@ -4,7 +4,6 @@
 #include "VulkanAPIWrappers/Instance.h"
 #include "VulkanAPIWrappers/Device.h"
 #include "VulkanAPIWrappers/DebugMessenger.h"
-#include "VulkanAPIWrappers/Surface.h"
 #include "VulkanAPIWrappers/SwapChain.h"
 #include "VulkanAPIWrappers/SyncObjects.h"
 #include "VulkanAPIWrappers/RenderPass.h"
@@ -27,23 +26,25 @@ namespace Renderer
 		Renderer(const Renderer&) = delete;
 		Renderer& operator=(const Renderer&) = delete;
 
-		void Initialize(WindowManager& windowManager);
+		void Initialize();
 		void Cleanup();
 
-		void DrawFrame(WindowManager& windowManager);
-		void RecreateSwapChain(WindowManager& windowManager);
+		void DrawFrame();
+		void RecreateSwapChain();
 
+		bool ShouldClose();
 	private:
 		void CleanupSwapChain();
-		void CreateSwapShain(WindowManager& windowManager);
+		void CreateSwapShain();
 		void CreateFrameBuffers();
 
 	private:
 
 		uint32_t currentFrame = 0;
+		bool mShouldClose = false;
 
+		WindowManager mWindowManager;
 		Instance mInstance;
-		Surface mSurface;
 		Device mDevice;
 		DebugMessenger mDebugMessenger;
 		SwapChain mSwapChain;
