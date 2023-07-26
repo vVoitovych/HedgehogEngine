@@ -1,9 +1,7 @@
 #pragma once
 
 #include "Common/pch.h"
-#include "VulkanAPIWrappers/Instance.h"
 #include "VulkanAPIWrappers/Device.h"
-#include "VulkanAPIWrappers/DebugMessenger.h"
 #include "VulkanAPIWrappers/SwapChain.h"
 #include "VulkanAPIWrappers/SyncObjects.h"
 #include "VulkanAPIWrappers/RenderPass.h"
@@ -44,9 +42,7 @@ namespace Renderer
 		bool mShouldClose = false;
 
 		WindowManager mWindowManager;
-		Instance mInstance;
 		Device mDevice;
-		DebugMessenger mDebugMessenger;
 		SwapChain mSwapChain;
 		SyncObjects mSyncObjects;
 		RenderPass mRenderPass;

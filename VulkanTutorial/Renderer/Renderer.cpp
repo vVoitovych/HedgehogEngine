@@ -13,9 +13,7 @@ namespace Renderer
 	void Renderer::Initialize()
 	{
 		mWindowManager.Initialize(WindowState::GetDefaultState());
-		mInstance.Initialize();
-		mDebugMessenger.Initialize(mInstance);
-		mDevice.Initialize(mInstance, mWindowManager);
+		mDevice.Initialize(mWindowManager);
 		mSwapChain.Initialize(mDevice, mWindowManager);
 		mSyncObjects.Initialize(mDevice);
 		mRenderPass.Initialize(mDevice, mSwapChain.GetFormat());
@@ -45,8 +43,6 @@ namespace Renderer
 		mSyncObjects.Cleanup(mDevice);
 		mSwapChain.Cleanup(mDevice);
 		mDevice.Cleanup();
-		mDebugMessenger.Cleanup(mInstance);
-		mInstance.Cleanup();
 		mWindowManager.Cleanup();
 	}
 

@@ -4,7 +4,6 @@
 
 namespace Renderer
 {
-	class Instance;
 	class WindowManager;
 	class CommandPool;
 
@@ -35,7 +34,7 @@ namespace Renderer
 		Device(const Device&) = delete;
 		Device& operator=(const Device&) = delete;
 
-		void Initialize(Instance& instance, WindowManager& windowManager);
+		void Initialize(WindowManager& windowManager);
 		void Cleanup();
 
 		VkQueue GetGraphicsQueue() const;
@@ -51,15 +50,34 @@ namespace Renderer
 		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, CommandPool& commandPool);
 
 	private:
-		void PickPhysicalDevice(Instance& instance);
-		void CreateLogicalDevice(Instance& instance);
+		void InitializeInstance();
+		void CleanupInstance();
+		void InitializeDebugMessanger();
+		void CleanupDebugMessanger();
+		void PickPhysicalDevice();
+		void CreateLogicalDevice();
 
-		bool CheckDeviceExtensionSupport(VkPhysicalDevice device, Instance& instance) const;
-		bool IsDeviceSuitable(VkPhysicalDevice device, Instance& instance) const;
-		QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device, Instance& instance) const;
+		bool IsEnableValidationLayers() const;
+		void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) const;
+		bool CheckValidationLayerSupport() const;
+		std::vector<const char*> GetRequiredExtensions() const;
+		void HasGflwRequiredInstanceExtensions() const;
+
+
+
+		bool CheckDeviceExtensionSupport(VkPhysicalDevice device) const;
+		bool IsDeviceSuitable(VkPhysicalDevice device) const;
+		QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device) const;
 		SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device) const;
 
 	private:
+#ifdef DEBUG
+		const bool enableValidationLayers = true;
+#else
+		const bool enableValidationLayers = false;
+#endif
+		VkInstance mInstance;
+		VkDebugUtilsMessengerEXT mDebugMessenger;
 		VkSurfaceKHR mSurface;
 		VkPhysicalDevice mPhysicalDevice;
 		VkDevice mDevice;

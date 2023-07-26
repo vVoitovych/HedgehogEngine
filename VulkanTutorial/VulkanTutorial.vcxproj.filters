@@ -54,12 +54,6 @@
     <ClCompile Include="Renderer\VulkanAPIWrappers\Device.cpp">
       <Filter>Renderer\VulkanApiWrappers</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\VulkanAPIWrappers\Instance.cpp">
-      <Filter>Renderer\VulkanApiWrappers</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\VulkanAPIWrappers\DebugMessenger.cpp">
-      <Filter>Renderer\VulkanApiWrappers</Filter>
-    </ClCompile>
     <ClCompile Include="Renderer\VulkanAPIWrappers\SwapChain.cpp">
       <Filter>Renderer\VulkanApiWrappers</Filter>
     </ClCompile>
@@ -84,9 +78,6 @@
     <ClCompile Include="Renderer\Renderer.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\VulkanAPIWrappers\CommonApiData.cpp">
-      <Filter>Renderer\VulkanApiWrappers</Filter>
-    </ClCompile>
     <ClCompile Include="Renderer\Mesh\Vertex.cpp">
       <Filter>Renderer\Mesh</Filter>
     </ClCompile>
@@ -108,12 +99,6 @@
       <Filter>Renderer\Common</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\VulkanAPIWrappers\Device.h">
-      <Filter>Renderer\VulkanApiWrappers</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\VulkanAPIWrappers\Instance.h">
-      <Filter>Renderer\VulkanApiWrappers</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\VulkanAPIWrappers\DebugMessenger.h">
       <Filter>Renderer\VulkanApiWrappers</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\VulkanAPIWrappers\SwapChain.h">
@@ -139,9 +124,6 @@
     </ClInclude>
     <ClInclude Include="Renderer\Renderer.h">
       <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\VulkanAPIWrappers\CommonApiData.h">
-      <Filter>Renderer\VulkanApiWrappers</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\Mesh\Vertex.h">
       <Filter>Renderer\Mesh</Filter>

@@ -155,13 +155,10 @@
     <ClCompile Include="Renderer\Renderer.cpp" />
     <ClCompile Include="Renderer\VulkanAPIWrappers\CommandBuffer.cpp" />
     <ClCompile Include="Renderer\VulkanAPIWrappers\CommandPool.cpp" />
-    <ClCompile Include="Renderer\VulkanAPIWrappers\DebugMessenger.cpp" />
     <ClCompile Include="Renderer\VulkanAPIWrappers\Device.cpp" />
     <ClCompile Include="Renderer\VulkanAPIWrappers\FrameBuffers.cpp" />
-    <ClCompile Include="Renderer\VulkanAPIWrappers\Instance.cpp" />
     <ClCompile Include="Renderer\VulkanAPIWrappers\Pipeline.cpp" />
     <ClCompile Include="Renderer\VulkanAPIWrappers\RenderPass.cpp" />
-    <ClCompile Include="Renderer\VulkanAPIWrappers\CommonApiData.cpp" />
     <ClCompile Include="Renderer\VulkanAPIWrappers\SwapChain.cpp" />
     <ClCompile Include="Renderer\VulkanAPIWrappers\SyncObjects.cpp" />
     <ClCompile Include="Renderer\WindowManagment\WindowManager.cpp" />
@@ -175,11 +172,8 @@
     <ClInclude Include="Renderer\Renderer.h" />
     <ClInclude Include="Renderer\VulkanAPIWrappers\CommandBuffer.h" />
     <ClInclude Include="Renderer\VulkanAPIWrappers\CommandPool.h" />
-    <ClInclude Include="Renderer\VulkanAPIWrappers\CommonApiData.h" />
-    <ClInclude Include="Renderer\VulkanAPIWrappers\DebugMessenger.h" />
     <ClInclude Include="Renderer\VulkanAPIWrappers\Device.h" />
     <ClInclude Include="Renderer\VulkanAPIWrappers\FrameBuffers.h" />
-    <ClInclude Include="Renderer\VulkanAPIWrappers\Instance.h" />
     <ClInclude Include="Renderer\VulkanAPIWrappers\Pipeline.h" />
     <ClInclude Include="Renderer\VulkanAPIWrappers\RenderPass.h" />
     <ClInclude Include="Renderer\VulkanAPIWrappers\SwapChain.h" />
