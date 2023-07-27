@@ -10,13 +10,11 @@ namespace Renderer
 	{
 	}
 
-	void Renderer::Initialize(WindowManager& windowManager)
+	void Renderer::Initialize()
 	{
-		mInstance.Initialize();
-		mSurface.Initialize(mInstance, windowManager);
-		mDebugMessenger.Initialize(mInstance);
-		mDevice.Initialize(mInstance, mSurface);
-		mSwapChain.Initialize(mDevice, mSurface, windowManager);
+		mWindowManager.Initialize(WindowState::GetDefaultState());
+		mDevice.Initialize(mWindowManager);
+		mSwapChain.Initialize(mDevice, mWindowManager);
 		mSyncObjects.Initialize(mDevice);
 		mRenderPass.Initialize(mDevice, mSwapChain.GetFormat());
 		mPipeline.Initialize(mDevice, mSwapChain, mRenderPass);
@@ -45,12 +43,10 @@ namespace Renderer
 		mSyncObjects.Cleanup(mDevice);
 		mSwapChain.Cleanup(mDevice);
 		mDevice.Cleanup();
-		mDebugMessenger.Cleanup(mInstance);
-		mSurface.Cleanup(mInstance);
-		mInstance.Cleanup();
+		mWindowManager.Cleanup();
 	}
 
-	void Renderer::DrawFrame(WindowManager& windowManager)
+	void Renderer::DrawFrame()
 	{
 		mSyncObjects.WaitforInFlightFence(mDevice, currentFrame);
 
@@ -58,7 +54,7 @@ namespace Renderer
 		VkResult result = vkAcquireNextImageKHR(mDevice.GetDevice(), mSwapChain.GetSwapChain(), UINT64_MAX, mSyncObjects.GetImageAvailableSemaphore(currentFrame), VK_NULL_HANDLE, &imageIndex);
 		if (result == VK_ERROR_OUT_OF_DATE_KHR)
 		{
-			RecreateSwapChain(windowManager);
+			RecreateSwapChain();
 			return;
 		}
 		else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
@@ -75,7 +71,7 @@ namespace Renderer
 		commandBuffer.BeginCommandBuffer(0);
 		commandBuffer.BeginRenderPass(extend, mRenderPass, frameBuffer);
 		commandBuffer.BindPipeline(mPipeline, VK_PIPELINE_BIND_POINT_GRAPHICS);
-		commandBuffer.SetViewport(0.0f, 0.0f, extend.width, extend.height, 0.0f, 0.0f);
+		commandBuffer.SetViewport(0.0f, 0.0f, (float)extend.width, (float)extend.height, 0.0f, 0.0f);
 		commandBuffer.SetScissor({ 0, 0 }, extend);
 		VkBuffer vertexBuffers[] = { mMesh.GetVertexBuffer() };
 		VkDeviceSize offsets[] = { 0 };
@@ -116,10 +112,10 @@ namespace Renderer
 		presentInfo.pResults = nullptr;
 
 		result = vkQueuePresentKHR(mDevice.GetPresentQueue(), &presentInfo);
-		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || windowManager.IsWindowResized())
+		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || mWindowManager.IsWindowResized())
 		{
-			windowManager.ResetResizedState();
-			RecreateSwapChain(windowManager);
+			mWindowManager.ResetResizedState();
+			RecreateSwapChain();
 		}
 		else if (result != VK_SUCCESS)
 		{
@@ -128,16 +124,21 @@ namespace Renderer
 		currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 	}
 
-	void Renderer::RecreateSwapChain(WindowManager& windowManager)
+	void Renderer::RecreateSwapChain()
 	{
 		vkDeviceWaitIdle(mDevice.GetDevice());
 
 		CleanupSwapChain();
 
-		CreateSwapShain(windowManager);
+		CreateSwapShain();
 		CreateFrameBuffers();
 	}
 
+
+	bool Renderer::ShouldClose()
+	{
+		return mWindowManager.ShouldClose();
+	}
 
 	void Renderer::CleanupSwapChain()
 	{
@@ -145,9 +146,9 @@ namespace Renderer
 		mSwapChain.Cleanup(mDevice);
 	}
 
-	void Renderer::CreateSwapShain(WindowManager& windowManager)
+	void Renderer::CreateSwapShain()
 	{
-		mSwapChain.Initialize(mDevice, mSurface, windowManager);
+		mSwapChain.Initialize(mDevice, mWindowManager);
 	}
 
 	void Renderer::CreateFrameBuffers()

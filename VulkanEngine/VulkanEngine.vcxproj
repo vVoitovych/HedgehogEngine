@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{2fd9c3d8-8e43-4db0-88ca-e48a8bad9dd8}</ProjectGuid>
-    <RootNamespace>VulkanTutorial</RootNamespace>
+    <ProjectGuid>{8e967722-644a-4284-89bc-6b4d7b9dc40d}</ProjectGuid>
+    <RootNamespace>VulkanEngine</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -116,7 +116,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\VulkanSDK\1.3.231.1\Include;D:\Vulkan\glfw-3.3.8.bin.WIN64\include;D:\Vulkan\glm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\VulkanSDK\1.3.231.1\Include;D:\Vulkan\glm;D:\Vulkan\glfw-3.3.8.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -134,7 +134,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\VulkanSDK\1.3.231.1\Include;D:\Vulkan\glfw-3.3.8.bin.WIN64\include;D:\Vulkan\glm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\VulkanSDK\1.3.231.1\Include;D:\Vulkan\glm;D:\Vulkan\glfw-3.3.8.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -155,18 +155,19 @@
     <ClCompile Include="Renderer\Renderer.cpp" />
     <ClCompile Include="Renderer\VulkanAPIWrappers\CommandBuffer.cpp" />
     <ClCompile Include="Renderer\VulkanAPIWrappers\CommandPool.cpp" />
-    <ClCompile Include="Renderer\VulkanAPIWrappers\DebugMessenger.cpp" />
     <ClCompile Include="Renderer\VulkanAPIWrappers\Device.cpp" />
     <ClCompile Include="Renderer\VulkanAPIWrappers\FrameBuffers.cpp" />
-    <ClCompile Include="Renderer\VulkanAPIWrappers\Instance.cpp" />
     <ClCompile Include="Renderer\VulkanAPIWrappers\Pipeline.cpp" />
     <ClCompile Include="Renderer\VulkanAPIWrappers\RenderPass.cpp" />
-    <ClCompile Include="Renderer\VulkanAPIWrappers\CommonApiData.cpp" />
-    <ClCompile Include="Renderer\VulkanAPIWrappers\Surface.cpp" />
     <ClCompile Include="Renderer\VulkanAPIWrappers\SwapChain.cpp" />
     <ClCompile Include="Renderer\VulkanAPIWrappers\SyncObjects.cpp" />
     <ClCompile Include="Renderer\WindowManagment\WindowManager.cpp" />
     <ClCompile Include="Renderer\WindowManagment\WindowState.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ShadersCompiler.bat" />
+    <None Include="Shaders\SimpleShader.frag" />
+    <None Include="Shaders\SimpleShader.vert" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h" />
@@ -176,23 +177,14 @@
     <ClInclude Include="Renderer\Renderer.h" />
     <ClInclude Include="Renderer\VulkanAPIWrappers\CommandBuffer.h" />
     <ClInclude Include="Renderer\VulkanAPIWrappers\CommandPool.h" />
-    <ClInclude Include="Renderer\VulkanAPIWrappers\CommonApiData.h" />
-    <ClInclude Include="Renderer\VulkanAPIWrappers\DebugMessenger.h" />
     <ClInclude Include="Renderer\VulkanAPIWrappers\Device.h" />
     <ClInclude Include="Renderer\VulkanAPIWrappers\FrameBuffers.h" />
-    <ClInclude Include="Renderer\VulkanAPIWrappers\Instance.h" />
     <ClInclude Include="Renderer\VulkanAPIWrappers\Pipeline.h" />
     <ClInclude Include="Renderer\VulkanAPIWrappers\RenderPass.h" />
-    <ClInclude Include="Renderer\VulkanAPIWrappers\Surface.h" />
     <ClInclude Include="Renderer\VulkanAPIWrappers\SwapChain.h" />
     <ClInclude Include="Renderer\VulkanAPIWrappers\SyncObjects.h" />
     <ClInclude Include="Renderer\WindowManagment\WindowManager.h" />
     <ClInclude Include="Renderer\WindowManagment\WindowState.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="ShadersCompiler.bat" />
-    <None Include="Shaders\SimpleShader.frag" />
-    <None Include="Shaders\SimpleShader.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

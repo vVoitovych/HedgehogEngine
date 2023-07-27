@@ -1,11 +1,10 @@
 #pragma once
 
 #include "../Common/pch.h"
-#include "Instance.h"
-#include "Surface.h"
 
 namespace Renderer
 {
+	class WindowManager;
 	class CommandPool;
 
 	struct QueueFamilyIndices
@@ -35,11 +34,12 @@ namespace Renderer
 		Device(const Device&) = delete;
 		Device& operator=(const Device&) = delete;
 
-		void Initialize(Instance& instance, Surface& surface);
+		void Initialize(WindowManager& windowManager);
 		void Cleanup();
 
 		VkQueue GetGraphicsQueue() const;
 		VkQueue GetPresentQueue() const;
+		VkSurfaceKHR GetSurface();
 		VkDevice GetDevice() const;
 		VkPhysicalDevice GetPhysicalDevice() const;
 		QueueFamilyIndices GetIndicies() const;
@@ -50,15 +50,35 @@ namespace Renderer
 		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, CommandPool& commandPool);
 
 	private:
-		void PickPhysicalDevice(Instance& instance, Surface& surface);
-		void CreateLogicalDevice(Instance& instance, Surface& surface);
+		void InitializeInstance();
+		void CleanupInstance();
+		void InitializeDebugMessanger();
+		void CleanupDebugMessanger();
+		void PickPhysicalDevice();
+		void CreateLogicalDevice();
 
-		bool CheckDeviceExtensionSupport(VkPhysicalDevice device, Instance& instance) const;
-		bool IsDeviceSuitable(VkPhysicalDevice device, Instance& instance, Surface& surface) const;
-		QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device, Instance& instance, Surface& surface) const;
-		SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device, Surface& surface) const;
+		bool IsEnableValidationLayers() const;
+		void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) const;
+		bool CheckValidationLayerSupport() const;
+		std::vector<const char*> GetRequiredExtensions() const;
+		void HasGflwRequiredInstanceExtensions() const;
+
+
+
+		bool CheckDeviceExtensionSupport(VkPhysicalDevice device) const;
+		bool IsDeviceSuitable(VkPhysicalDevice device) const;
+		QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device) const;
+		SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device) const;
 
 	private:
+#ifdef DEBUG
+		const bool enableValidationLayers = true;
+#else
+		const bool enableValidationLayers = false;
+#endif
+		VkInstance mInstance;
+		VkDebugUtilsMessengerEXT mDebugMessenger;
+		VkSurfaceKHR mSurface;
 		VkPhysicalDevice mPhysicalDevice;
 		VkDevice mDevice;
 

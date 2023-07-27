@@ -15,9 +15,9 @@ namespace Renderer
 		}
 	}
 
-	void SwapChain::Initialize(Device& device, Surface& surface, WindowManager& windowManager)
+	void SwapChain::Initialize(Device& device, WindowManager& windowManager)
 	{
-		CreateSwapChain(device, surface, windowManager);
+		CreateSwapChain(device, windowManager);
 		CreateImageViews(device);
 	}
 
@@ -57,9 +57,9 @@ namespace Renderer
 		return mSwapChainImageViews[index];
 	}
 
-	void SwapChain::CreateSwapChain(Device& device, Surface& surface, WindowManager& windowManager)
+	void SwapChain::CreateSwapChain(Device& device, WindowManager& windowManager)
 	{
-		SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(device, surface);
+		SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(device);
 
 		VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.mFormats);
 		VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapChainSupport.mPrecentModes);
@@ -73,7 +73,7 @@ namespace Renderer
 
 		VkSwapchainCreateInfoKHR createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-		createInfo.surface = surface.GetSurface();
+		createInfo.surface = device.GetSurface();
 		createInfo.minImageCount = imageCount;
 		createInfo.imageFormat = surfaceFormat.format;
 		createInfo.imageColorSpace = surfaceFormat.colorSpace;
@@ -117,26 +117,26 @@ namespace Renderer
 		std::cout << "Swap chain created with " << imageCount << " back buffers" << std::endl;
 	}
 
-	SwapChainSupportDetails SwapChain::QuerySwapChainSupport(Device& device, Surface& surface) const
+	SwapChainSupportDetails SwapChain::QuerySwapChainSupport(Device& device) const
 	{
 		SwapChainSupportDetails details;
 
-		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device.GetPhysicalDevice(), surface.GetSurface(), &details.mCapabilities);
+		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device.GetPhysicalDevice(), device.GetSurface(), &details.mCapabilities);
 
 		uint32_t formatCount;
-		vkGetPhysicalDeviceSurfaceFormatsKHR(device.GetPhysicalDevice(), surface.GetSurface(), &formatCount, nullptr);
+		vkGetPhysicalDeviceSurfaceFormatsKHR(device.GetPhysicalDevice(), device.GetSurface(), &formatCount, nullptr);
 		if (formatCount != 0)
 		{
 			details.mFormats.resize(formatCount);
-			vkGetPhysicalDeviceSurfaceFormatsKHR(device.GetPhysicalDevice(), surface.GetSurface(), &formatCount, details.mFormats.data());
+			vkGetPhysicalDeviceSurfaceFormatsKHR(device.GetPhysicalDevice(), device.GetSurface(), &formatCount, details.mFormats.data());
 		}
 
 		uint32_t presentModeCount;
-		vkGetPhysicalDeviceSurfacePresentModesKHR(device.GetPhysicalDevice(), surface.GetSurface(), &presentModeCount, nullptr);
+		vkGetPhysicalDeviceSurfacePresentModesKHR(device.GetPhysicalDevice(), device.GetSurface(), &presentModeCount, nullptr);
 		if (presentModeCount != 0)
 		{
 			details.mPrecentModes.resize(presentModeCount);
-			vkGetPhysicalDeviceSurfacePresentModesKHR(device.GetPhysicalDevice(), surface.GetSurface(), &presentModeCount, details.mPrecentModes.data());
+			vkGetPhysicalDeviceSurfacePresentModesKHR(device.GetPhysicalDevice(), device.GetSurface(), &presentModeCount, details.mPrecentModes.data());
 		}
 		return details;
 	}
