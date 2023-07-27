@@ -1,0 +1,146 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Shadeers">
+      <UniqueIdentifier>{9cfae4a0-c90a-412b-bd57-28d48b5e8e29}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Application">
+      <UniqueIdentifier>{46f628af-4225-49f4-bd2a-bfa2c7701bf4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer">
+      <UniqueIdentifier>{0c6dd188-e649-4c0f-9c80-7f5a5bafe75a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Common">
+      <UniqueIdentifier>{b7a780cf-3ca0-4e87-9147-d77c9bdd2352}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Mesh">
+      <UniqueIdentifier>{17dc806e-d04a-4119-bb47-9fa6a73cbdd7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\VulkanAPIWrappers">
+      <UniqueIdentifier>{fcfe3fa3-13a0-4f28-a832-0311fb034098}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\WindowManagment">
+      <UniqueIdentifier>{e4a00687-4956-4fc2-800a-b31f8577c64b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Application.cpp">
+      <Filter>Application</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Renderer.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Common\pch.cpp">
+      <Filter>Renderer\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Mesh\Mesh.cpp">
+      <Filter>Renderer\Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Mesh\Vertex.cpp">
+      <Filter>Renderer\Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\WindowManagment\WindowManager.cpp">
+      <Filter>Renderer\WindowManagment</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\WindowManagment\WindowState.cpp">
+      <Filter>Renderer\WindowManagment</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\VulkanAPIWrappers\CommandBuffer.cpp">
+      <Filter>Renderer\VulkanAPIWrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\VulkanAPIWrappers\CommandPool.cpp">
+      <Filter>Renderer\VulkanAPIWrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\VulkanAPIWrappers\Device.cpp">
+      <Filter>Renderer\VulkanAPIWrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\VulkanAPIWrappers\FrameBuffers.cpp">
+      <Filter>Renderer\VulkanAPIWrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\VulkanAPIWrappers\Pipeline.cpp">
+      <Filter>Renderer\VulkanAPIWrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\VulkanAPIWrappers\RenderPass.cpp">
+      <Filter>Renderer\VulkanAPIWrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\VulkanAPIWrappers\SwapChain.cpp">
+      <Filter>Renderer\VulkanAPIWrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\VulkanAPIWrappers\SyncObjects.cpp">
+      <Filter>Renderer\VulkanAPIWrappers</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ShadersCompiler.bat">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Shaders\SimpleShader.frag">
+      <Filter>Shadeers</Filter>
+    </None>
+    <None Include="Shaders\SimpleShader.vert">
+      <Filter>Shadeers</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Application.h">
+      <Filter>Application</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Renderer.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Common\pch.h">
+      <Filter>Renderer\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Mesh\Mesh.h">
+      <Filter>Renderer\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Mesh\Vertex.h">
+      <Filter>Renderer\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\WindowManagment\WindowManager.h">
+      <Filter>Renderer\WindowManagment</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\WindowManagment\WindowState.h">
+      <Filter>Renderer\WindowManagment</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\VulkanAPIWrappers\CommandBuffer.h">
+      <Filter>Renderer\VulkanAPIWrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\VulkanAPIWrappers\CommandPool.h">
+      <Filter>Renderer\VulkanAPIWrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\VulkanAPIWrappers\Device.h">
+      <Filter>Renderer\VulkanAPIWrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\VulkanAPIWrappers\FrameBuffers.h">
+      <Filter>Renderer\VulkanAPIWrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\VulkanAPIWrappers\Pipeline.h">
+      <Filter>Renderer\VulkanAPIWrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\VulkanAPIWrappers\RenderPass.h">
+      <Filter>Renderer\VulkanAPIWrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\VulkanAPIWrappers\SwapChain.h">
+      <Filter>Renderer\VulkanAPIWrappers</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\VulkanAPIWrappers\SyncObjects.h">
+      <Filter>Renderer\VulkanAPIWrappers</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
