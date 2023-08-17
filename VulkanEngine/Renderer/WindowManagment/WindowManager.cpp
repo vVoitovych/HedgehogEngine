@@ -26,6 +26,7 @@ namespace Renderer
 		mWindow = nullptr;
 		mWindowThread.join();
 		glfwTerminate();
+		std::cout << "Window manager cleaned" << std::endl;
 	}
 
 	bool WindowManager::ShouldClose()

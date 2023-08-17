@@ -1,10 +1,11 @@
 #pragma once
 
-#include "../Common/pch.h"
-#include "Device.h"
+#include "VulkanEngine/Renderer/Common/pch.h"
 
 namespace Renderer
 {
+	class Device;
+
 	class SyncObjects
 	{
 	public:
@@ -15,15 +16,17 @@ namespace Renderer
 		SyncObjects& operator=(const SyncObjects&) = delete;
 
 		void Initialize(Device& device);
-		void Cleanup(Device& device);
+		void Cleanup();
 
 		VkSemaphore GetImageAvailableSemaphore(size_t index);
 		VkSemaphore GetRenderFinishedSemaphore(size_t index);
 		VkFence GetInFlightFence(size_t index);
 
-		void WaitforInFlightFence(Device& device, size_t index);
-		void ResetInFlightFence(Device& device, size_t index);
+		void WaitforInFlightFence(size_t index);
+		void ResetInFlightFence(size_t index);
 	private:
+		VkDevice mDevice;
+
 		std::vector<VkSemaphore> mImageAvailableSemaphores;
 		std::vector<VkSemaphore> mRendeerFinishedSemaphores;
 		std::vector<VkFence> mInFlightFences;

@@ -1,9 +1,11 @@
 #include "CommandPool.h"
+#include "VulkanEngine/Renderer/Device/Device.h"
 
 namespace Renderer
 {
 	CommandPool::CommandPool()
-		: mCommandPool(VK_NULL_HANDLE)
+		: mCommandPool(nullptr)
+		, mDevice(nullptr)
 	{
 	}
 
@@ -17,6 +19,7 @@ namespace Renderer
 
 	void CommandPool::Initialize(Device& device)
 	{
+		mDevice = device.GetNativeDevice();
 		QueueFamilyIndices indicies = device.GetIndicies();
 
 		VkCommandPoolCreateInfo createInfo{};
@@ -24,7 +27,7 @@ namespace Renderer
 		createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 		createInfo.queueFamilyIndex = indicies.mGraphicsFamily.value();
 
-		if (vkCreateCommandPool(device.GetDevice(), &createInfo, nullptr, &mCommandPool) != VK_SUCCESS)
+		if (vkCreateCommandPool(mDevice, &createInfo, nullptr, &mCommandPool) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create command pool!");
 		}
@@ -32,13 +35,14 @@ namespace Renderer
 		std::cout << "Command pool created" << std::endl;
 	}
 
-	void CommandPool::Cleanup(Device& device)
+	void CommandPool::Cleanup()
 	{
-		vkDestroyCommandPool(device.GetDevice(), mCommandPool, nullptr);
+		vkDestroyCommandPool(mDevice, mCommandPool, nullptr);
 		mCommandPool = nullptr;
+		std::cout << "Command pool cleaned" << std::endl;
 	}
 
-	VkCommandPool CommandPool::GetCommandPool()
+	VkCommandPool CommandPool::GetNativeCommandPool()
 	{
 		return mCommandPool;
 	}

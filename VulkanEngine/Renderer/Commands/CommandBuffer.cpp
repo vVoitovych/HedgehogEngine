@@ -1,4 +1,9 @@
 #include "CommandBuffer.h"
+#include "VulkanEngine/Renderer/Device/Device.h"
+#include "VulkanEngine/Renderer/SwapChain/SwapChain.h"
+#include "VulkanEngine/Renderer/RenderPass/RenderPass.h"
+#include "VulkanEngine/Renderer/Pipeline/Pipeline.h"
+#include "CommandPool.h"
 
 namespace Renderer
 {
@@ -12,24 +17,30 @@ namespace Renderer
 
 	void CommandBuffer::Initialize(Device& device, CommandPool& commandPool)
 	{
+		mDevice = device.GetNativeDevice();
+		mCommandPool = commandPool.GetNativeCommandPool();
+
 		VkCommandBufferAllocateInfo allocateInfo{};
 		allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		allocateInfo.commandPool = commandPool.GetCommandPool();
+		allocateInfo.commandPool = mCommandPool;
 		allocateInfo.commandBufferCount = 1;
 		allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
-		if (vkAllocateCommandBuffers(device.GetDevice(), &allocateInfo, &mCommandBuffer) != VK_SUCCESS)
+		if (vkAllocateCommandBuffers(mDevice, &allocateInfo, &mCommandBuffer) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to allocate command buffer!");
 		}
 		std::cout << "Command buffer created" << std::endl;
 	}
 
-	void CommandBuffer::Cleanup(Device& device)
+	void CommandBuffer::Cleanup()
 	{
+		vkFreeCommandBuffers(mDevice, mCommandPool, 1, &mCommandBuffer);
+		mCommandBuffer = nullptr;
+		std::cout << "Command  buffer cleaned" << std::endl;
 	}
 
-	VkCommandBuffer& CommandBuffer::GetCommandBuffer()
+	VkCommandBuffer& CommandBuffer::GetNativeCommandBuffer() 
 	{
 		return mCommandBuffer;
 	}
@@ -59,7 +70,7 @@ namespace Renderer
 	{
 		VkRenderPassBeginInfo renderPassInfo{};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		renderPassInfo.renderPass = renderPass.GetRenderPass();
+		renderPassInfo.renderPass = renderPass.GetNativeRenderPass();
 		renderPassInfo.framebuffer = frameBuffer;
 		renderPassInfo.renderArea.offset = { 0, 0 };
 		renderPassInfo.renderArea.extent = extend;
@@ -77,7 +88,7 @@ namespace Renderer
 
 	void CommandBuffer::BindPipeline(Pipeline& pipeline, VkPipelineBindPoint bindPoint)
 	{
-		vkCmdBindPipeline(mCommandBuffer, bindPoint, pipeline.GetPipeline());
+		vkCmdBindPipeline(mCommandBuffer, bindPoint, pipeline.GetNativePipeline());
 	}
 
 	void CommandBuffer::SetViewport(float x, float y, float width, float height, float minDepth, float maxDepth)

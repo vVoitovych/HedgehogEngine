@@ -5,7 +5,6 @@
 namespace Renderer
 {
 	class WindowManager;
-	class CommandPool;
 
 	struct QueueFamilyIndices
 	{
@@ -37,21 +36,15 @@ namespace Renderer
 		void Initialize(WindowManager& windowManager);
 		void Cleanup();
 
-		VkQueue GetGraphicsQueue() const;
-		VkQueue GetPresentQueue() const;
-		VkSurfaceKHR GetSurface();
-		VkDevice GetDevice() const;
-		VkPhysicalDevice GetPhysicalDevice() const;
+		VkQueue GetNativeGraphicsQueue() const;
+		VkQueue GetNativePresentQueue() const;
+		VkSurfaceKHR GetNativeSurface();
+		VkDevice GetNativeDevice() const;
+		VkPhysicalDevice GetNativePhysicalDevice() const;
 		QueueFamilyIndices GetIndicies() const;
-
-		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const;
-
-		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
-		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, CommandPool& commandPool);
 
 	private:
 		void InitializeInstance();
-		void CleanupInstance();
 		void InitializeDebugMessanger();
 		void CleanupDebugMessanger();
 		void PickPhysicalDevice();
@@ -62,8 +55,6 @@ namespace Renderer
 		bool CheckValidationLayerSupport() const;
 		std::vector<const char*> GetRequiredExtensions() const;
 		void HasGflwRequiredInstanceExtensions() const;
-
-
 
 		bool CheckDeviceExtensionSupport(VkPhysicalDevice device) const;
 		bool IsDeviceSuitable(VkPhysicalDevice device) const;

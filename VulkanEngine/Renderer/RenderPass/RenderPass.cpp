@@ -1,4 +1,5 @@
 #include "RenderPass.h"
+#include "VulkanEngine/Renderer/Device/Device.h"
 
 namespace Renderer
 {
@@ -18,6 +19,7 @@ namespace Renderer
 
 	void RenderPass::Initialize(Device& device, VkFormat format)
 	{
+		mDevice = device.GetNativeDevice();
 		VkAttachmentDescription colorAttachment{};
 		colorAttachment.format = format;
 		colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -54,7 +56,7 @@ namespace Renderer
 		renderPassInfo.dependencyCount = 1;
 		renderPassInfo.pDependencies = &dependency;
 
-		if (vkCreateRenderPass(device.GetDevice(), &renderPassInfo, nullptr, &mRenderPass) != VK_SUCCESS)
+		if (vkCreateRenderPass(mDevice, &renderPassInfo, nullptr, &mRenderPass) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create render pass");
 		}
@@ -62,13 +64,14 @@ namespace Renderer
 		std::cout << "Render pass created" << std::endl;
 	}
 
-	void RenderPass::Cleanup(Device& device)
+	void RenderPass::Cleanup()
 	{
-		vkDestroyRenderPass(device.GetDevice(), mRenderPass, nullptr);
+		vkDestroyRenderPass(mDevice, mRenderPass, nullptr);
 		mRenderPass = nullptr;
+		std::cout << "Render pass cleaned" << std::endl;
 	}
 
-	VkRenderPass RenderPass::GetRenderPass()
+	VkRenderPass RenderPass::GetNativeRenderPass() const
 	{
 		return mRenderPass;
 	}

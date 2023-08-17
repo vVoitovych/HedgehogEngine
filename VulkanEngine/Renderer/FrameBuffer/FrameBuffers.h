@@ -1,12 +1,13 @@
 #pragma once
 
-#include "../Common/pch.h"
-#include "Device.h"
-#include "SwapChain.h"
-#include "RenderPass.h"
+#include "VulkanEngine/Renderer/Common/pch.h"
 
 namespace Renderer
 {
+	class Device;
+	class SwapChain;
+	class RenderPass;
+
 	class FrameBuffers
 	{
 	public:
@@ -17,11 +18,12 @@ namespace Renderer
 		FrameBuffers& operator=(const FrameBuffers&) = delete;
 
 		void Initialize(Device& device, SwapChain& swapChain, RenderPass& renderPass);
-		void Cleanup(Device& device);
+		void Cleanup();
 
-		VkFramebuffer GetFrameBuffer(size_t index) const;
+		VkFramebuffer GetNativeFrameBuffer(size_t index) const;
 
 	private:
+		VkDevice mDevice;
 		std::vector<VkFramebuffer> mFrameBuffers;
 	};
 }
