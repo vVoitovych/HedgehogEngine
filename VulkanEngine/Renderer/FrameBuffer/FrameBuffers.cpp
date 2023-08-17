@@ -1,8 +1,12 @@
 #include "FrameBuffers.h"
+#include "VulkanEngine/Renderer/Device/Device.h"
+#include "VulkanEngine/Renderer/SwapChain/SwapChain.h"
+#include "VulkanEngine/Renderer/RenderPass/RenderPass.h"
 
 namespace Renderer
 {
 	FrameBuffers::FrameBuffers()
+		: mDevice(nullptr)
 	{
 	}
 
@@ -16,16 +20,18 @@ namespace Renderer
 
 	void FrameBuffers::Initialize(Device& device, SwapChain& swapChain, RenderPass& renderPass)
 	{
+		mDevice = device.GetNativeDevice();
+
 		size_t swapChainImagesSize = swapChain.GetSwapChainImagesSize();
 		mFrameBuffers.resize(swapChainImagesSize);
 
 		for (size_t i = 0; i < swapChainImagesSize; ++i)
 		{
-			VkImageView attachments[] = { swapChain.GetSwapChainImageView(i) };
+			VkImageView attachments[] = { swapChain.GetNativeSwapChainImageView(i) };
 
 			VkFramebufferCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-			createInfo.renderPass = renderPass.GetRenderPass();
+			createInfo.renderPass = renderPass.GetNativeRenderPass();
 			createInfo.attachmentCount = 1;
 			createInfo.pAttachments = attachments;
 			auto swapChainExtend = swapChain.GetSwapChainExtend();
@@ -33,24 +39,25 @@ namespace Renderer
 			createInfo.height = swapChainExtend.height;
 			createInfo.layers = 1;
 
-			if (vkCreateFramebuffer(device.GetDevice(), &createInfo, nullptr, &mFrameBuffers[i]) != VK_SUCCESS)
+			if (vkCreateFramebuffer(mDevice, &createInfo, nullptr, &mFrameBuffers[i]) != VK_SUCCESS)
 			{
 				throw std::runtime_error("failed to create frame buffer!");
 			}
 		}
-		std::cout << "Frame buffers created" << std::endl;
+		std::cout << "Frame buffer created" << std::endl;
 	}
 
-	void FrameBuffers::Cleanup(Device& device)
+	void FrameBuffers::Cleanup()
 	{
-		for (auto frameBuffer : mFrameBuffers)
+		for (auto& frameBuffer : mFrameBuffers)
 		{
-			vkDestroyFramebuffer(device.GetDevice(), frameBuffer, nullptr);
+			vkDestroyFramebuffer(mDevice, frameBuffer, nullptr);
 		}
 		mFrameBuffers.clear();
+		std::cout << "Frame buffers cleaned" << std::endl;
 	}
 
-	VkFramebuffer FrameBuffers::GetFrameBuffer(size_t index) const
+	VkFramebuffer FrameBuffers::GetNativeFrameBuffer(size_t index) const
 	{
 		return mFrameBuffers[index];
 	}

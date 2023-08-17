@@ -1,11 +1,11 @@
 #pragma once
 
-#include "../Common/pch.h"
-
-#include "Device.h"
+#include "VulkanEngine/Renderer/Common/pch.h"
 
 namespace Renderer
 {
+	class Device;
+
 	class CommandPool
 	{
 	public:
@@ -16,10 +16,11 @@ namespace Renderer
 		CommandPool& operator=(const CommandPool&) = delete;
 
 		void Initialize(Device& device);
-		void Cleanup(Device& device);
+		void Cleanup();
 
-		VkCommandPool GetCommandPool();
+		VkCommandPool GetNativeCommandPool();
 	private:
+		VkDevice mDevice;
 		VkCommandPool mCommandPool;
 	};
 }

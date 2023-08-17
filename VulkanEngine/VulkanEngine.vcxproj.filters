@@ -13,9 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Shadeers">
-      <UniqueIdentifier>{9cfae4a0-c90a-412b-bd57-28d48b5e8e29}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Application">
       <UniqueIdentifier>{46f628af-4225-49f4-bd2a-bfa2c7701bf4}</UniqueIdentifier>
     </Filter>
@@ -28,11 +25,32 @@
     <Filter Include="Renderer\Mesh">
       <UniqueIdentifier>{17dc806e-d04a-4119-bb47-9fa6a73cbdd7}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Renderer\VulkanAPIWrappers">
-      <UniqueIdentifier>{fcfe3fa3-13a0-4f28-a832-0311fb034098}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Renderer\WindowManagment">
       <UniqueIdentifier>{e4a00687-4956-4fc2-800a-b31f8577c64b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Device">
+      <UniqueIdentifier>{924ef0e9-cf6a-436b-91c5-bcc1c943beb6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Commands">
+      <UniqueIdentifier>{95a64f4a-0578-467f-b542-f1b5804d99b2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\SwapChain">
+      <UniqueIdentifier>{eaf113aa-7e79-4091-aa2a-99b240d2ece2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\RenderPass">
+      <UniqueIdentifier>{cac81018-33bc-4ace-96cc-ed1b56d31dbd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\FrameBuffer">
+      <UniqueIdentifier>{25a68b33-fcb9-4ac3-acb8-f49cad064dad}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Pipeline">
+      <UniqueIdentifier>{6cb41257-5169-48dd-8420-9877c066d36b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\SyncOnjects">
+      <UniqueIdentifier>{869b05cf-fb1b-4393-b7c9-9b7dfa3d0599}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{9cfae4a0-c90a-412b-bd57-28d48b5e8e29}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -60,29 +78,29 @@
     <ClCompile Include="Renderer\WindowManagment\WindowState.cpp">
       <Filter>Renderer\WindowManagment</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\VulkanAPIWrappers\CommandBuffer.cpp">
-      <Filter>Renderer\VulkanAPIWrappers</Filter>
+    <ClCompile Include="Renderer\Device\Device.cpp">
+      <Filter>Renderer\Device</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\VulkanAPIWrappers\CommandPool.cpp">
-      <Filter>Renderer\VulkanAPIWrappers</Filter>
+    <ClCompile Include="Renderer\Commands\CommandBuffer.cpp">
+      <Filter>Renderer\Commands</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\VulkanAPIWrappers\Device.cpp">
-      <Filter>Renderer\VulkanAPIWrappers</Filter>
+    <ClCompile Include="Renderer\Commands\CommandPool.cpp">
+      <Filter>Renderer\Commands</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\VulkanAPIWrappers\FrameBuffers.cpp">
-      <Filter>Renderer\VulkanAPIWrappers</Filter>
+    <ClCompile Include="Renderer\SwapChain\SwapChain.cpp">
+      <Filter>Renderer\SwapChain</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\VulkanAPIWrappers\Pipeline.cpp">
-      <Filter>Renderer\VulkanAPIWrappers</Filter>
+    <ClCompile Include="Renderer\RenderPass\RenderPass.cpp">
+      <Filter>Renderer\RenderPass</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\VulkanAPIWrappers\RenderPass.cpp">
-      <Filter>Renderer\VulkanAPIWrappers</Filter>
+    <ClCompile Include="Renderer\FrameBuffer\FrameBuffers.cpp">
+      <Filter>Renderer\FrameBuffer</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\VulkanAPIWrappers\SwapChain.cpp">
-      <Filter>Renderer\VulkanAPIWrappers</Filter>
+    <ClCompile Include="Renderer\Pipeline\Pipeline.cpp">
+      <Filter>Renderer\Pipeline</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\VulkanAPIWrappers\SyncObjects.cpp">
-      <Filter>Renderer\VulkanAPIWrappers</Filter>
+    <ClCompile Include="Renderer\SyncObjects\SyncObjects.cpp">
+      <Filter>Renderer\SyncOnjects</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -90,10 +108,10 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="Shaders\SimpleShader.frag">
-      <Filter>Shadeers</Filter>
+      <Filter>Shaders</Filter>
     </None>
     <None Include="Shaders\SimpleShader.vert">
-      <Filter>Shadeers</Filter>
+      <Filter>Shaders</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -118,29 +136,29 @@
     <ClInclude Include="Renderer\WindowManagment\WindowState.h">
       <Filter>Renderer\WindowManagment</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\VulkanAPIWrappers\CommandBuffer.h">
-      <Filter>Renderer\VulkanAPIWrappers</Filter>
+    <ClInclude Include="Renderer\Device\Device.h">
+      <Filter>Renderer\Device</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\VulkanAPIWrappers\CommandPool.h">
-      <Filter>Renderer\VulkanAPIWrappers</Filter>
+    <ClInclude Include="Renderer\Commands\CommandBuffer.h">
+      <Filter>Renderer\Commands</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\VulkanAPIWrappers\Device.h">
-      <Filter>Renderer\VulkanAPIWrappers</Filter>
+    <ClInclude Include="Renderer\Commands\CommandPool.h">
+      <Filter>Renderer\Commands</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\VulkanAPIWrappers\FrameBuffers.h">
-      <Filter>Renderer\VulkanAPIWrappers</Filter>
+    <ClInclude Include="Renderer\SwapChain\SwapChain.h">
+      <Filter>Renderer\SwapChain</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\VulkanAPIWrappers\Pipeline.h">
-      <Filter>Renderer\VulkanAPIWrappers</Filter>
+    <ClInclude Include="Renderer\RenderPass\RenderPass.h">
+      <Filter>Renderer\RenderPass</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\VulkanAPIWrappers\RenderPass.h">
-      <Filter>Renderer\VulkanAPIWrappers</Filter>
+    <ClInclude Include="Renderer\FrameBuffer\FrameBuffers.h">
+      <Filter>Renderer\FrameBuffer</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\VulkanAPIWrappers\SwapChain.h">
-      <Filter>Renderer\VulkanAPIWrappers</Filter>
+    <ClInclude Include="Renderer\Pipeline\Pipeline.h">
+      <Filter>Renderer\Pipeline</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\VulkanAPIWrappers\SyncObjects.h">
-      <Filter>Renderer\VulkanAPIWrappers</Filter>
+    <ClInclude Include="Renderer\SyncObjects\SyncObjects.h">
+      <Filter>Renderer\SyncOnjects</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -1,10 +1,11 @@
 #pragma once
 
-#include "../Common/pch.h"
-#include "Device.h"
+#include "VulkanEngine/Renderer/Common/pch.h"
 
 namespace Renderer
 {
+	class Device;
+
 	class RenderPass
 	{
 	public:
@@ -15,10 +16,11 @@ namespace Renderer
 		RenderPass& operator=(const RenderPass&) = delete;
 
 		void Initialize(Device& device, VkFormat format);
-		void Cleanup(Device& device);
+		void Cleanup();
 
-		VkRenderPass GetRenderPass();
+		VkRenderPass GetNativeRenderPass() const;
 	private:
+		VkDevice mDevice;
 		VkRenderPass mRenderPass;
 
 	};

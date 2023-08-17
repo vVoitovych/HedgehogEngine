@@ -18,40 +18,40 @@ namespace Renderer
 		mSyncObjects.Initialize(mDevice);
 		mRenderPass.Initialize(mDevice, mSwapChain.GetFormat());
 		mPipeline.Initialize(mDevice, mSwapChain, mRenderPass);
-		mFrameBuffers.Initialize(mDevice, mSwapChain, mRenderPass);
 		mCommandPool.Initialize(mDevice);
+
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
 			mCommandBuffers[i].Initialize(mDevice, mCommandPool);
 		}
+		mFrameBuffers.Initialize(mDevice, mSwapChain, mRenderPass);
 
 		mMesh.Initialize(mDevice, mCommandPool);
 	}
 
 	void Renderer::Cleanup()
 	{
-		mMesh.Cleanup(mDevice);
-
+		mMesh.Cleanup();
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
-			mCommandBuffers[i].Cleanup(mDevice);
+			mCommandBuffers[i].Cleanup();
 		}
-		mCommandPool.Cleanup(mDevice);
-		mFrameBuffers.Cleanup(mDevice);
-		mPipeline.Cleanup(mDevice);
-		mRenderPass.Cleanup(mDevice);
-		mSyncObjects.Cleanup(mDevice);
-		mSwapChain.Cleanup(mDevice);
+		mFrameBuffers.Cleanup();
+		mCommandPool.Cleanup();
+		mPipeline.Cleanup();
+		mRenderPass.Cleanup();
+		mSyncObjects.Cleanup();
+		mSwapChain.Cleanup();
 		mDevice.Cleanup();
 		mWindowManager.Cleanup();
 	}
 
 	void Renderer::DrawFrame()
 	{
-		mSyncObjects.WaitforInFlightFence(mDevice, currentFrame);
+		mSyncObjects.WaitforInFlightFence(currentFrame);
 
 		uint32_t imageIndex;
-		VkResult result = vkAcquireNextImageKHR(mDevice.GetDevice(), mSwapChain.GetSwapChain(), UINT64_MAX, mSyncObjects.GetImageAvailableSemaphore(currentFrame), VK_NULL_HANDLE, &imageIndex);
+		VkResult result = vkAcquireNextImageKHR(mDevice.GetNativeDevice(), mSwapChain.GetNativeSwapChain(), UINT64_MAX, mSyncObjects.GetImageAvailableSemaphore(currentFrame), VK_NULL_HANDLE, &imageIndex);
 		if (result == VK_ERROR_OUT_OF_DATE_KHR)
 		{
 			RecreateSwapChain();
@@ -61,11 +61,11 @@ namespace Renderer
 		{
 			throw std::runtime_error("failed to acquire swap chain image!");
 		}
-		mSyncObjects.ResetInFlightFence(mDevice, currentFrame);
+		mSyncObjects.ResetInFlightFence(currentFrame);
 
 		auto& commandBuffer = mCommandBuffers[currentFrame];
-		auto frameBuffer = mFrameBuffers.GetFrameBuffer(imageIndex);
-		vkResetCommandBuffer(commandBuffer.GetCommandBuffer(), 0);
+		auto frameBuffer = mFrameBuffers.GetNativeFrameBuffer(imageIndex);
+		vkResetCommandBuffer(commandBuffer.GetNativeCommandBuffer(), 0);
 
 		auto extend = mSwapChain.GetSwapChainExtend();
 		commandBuffer.BeginCommandBuffer(0);
@@ -91,12 +91,12 @@ namespace Renderer
 		submitInfo.pWaitSemaphores = waitSemaphores;
 		submitInfo.pWaitDstStageMask = waitStages;
 		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &commandBuffer.GetCommandBuffer();
+		submitInfo.pCommandBuffers = &commandBuffer.GetNativeCommandBuffer();
 		VkSemaphore signalSemaphores[] = { mSyncObjects.GetRenderFinishedSemaphore(currentFrame) };
 		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pSignalSemaphores = signalSemaphores;
 
-		if (vkQueueSubmit(mDevice.GetGraphicsQueue(), 1, &submitInfo, mSyncObjects.GetInFlightFence(currentFrame)) != VK_SUCCESS)
+		if (vkQueueSubmit(mDevice.GetNativeGraphicsQueue(), 1, &submitInfo, mSyncObjects.GetInFlightFence(currentFrame)) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to submit draw command buffer!");
 		}
@@ -105,13 +105,13 @@ namespace Renderer
 		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 		presentInfo.waitSemaphoreCount = 1;
 		presentInfo.pWaitSemaphores = signalSemaphores;
-		VkSwapchainKHR swapChains[] = { mSwapChain.GetSwapChain() };
+		VkSwapchainKHR swapChains[] = { mSwapChain.GetNativeSwapChain() };
 		presentInfo.swapchainCount = 1;
 		presentInfo.pSwapchains = swapChains;
 		presentInfo.pImageIndices = &imageIndex;
 		presentInfo.pResults = nullptr;
 
-		result = vkQueuePresentKHR(mDevice.GetPresentQueue(), &presentInfo);
+		result = vkQueuePresentKHR(mDevice.GetNativePresentQueue(), &presentInfo);
 		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || mWindowManager.IsWindowResized())
 		{
 			mWindowManager.ResetResizedState();
@@ -126,7 +126,7 @@ namespace Renderer
 
 	void Renderer::RecreateSwapChain()
 	{
-		vkDeviceWaitIdle(mDevice.GetDevice());
+		vkDeviceWaitIdle(mDevice.GetNativeDevice());
 
 		CleanupSwapChain();
 
@@ -142,8 +142,8 @@ namespace Renderer
 
 	void Renderer::CleanupSwapChain()
 	{
-		mFrameBuffers.Cleanup(mDevice);
-		mSwapChain.Cleanup(mDevice);
+		mFrameBuffers.Cleanup();
+		mSwapChain.Cleanup();
 	}
 
 	void Renderer::CreateSwapShain()

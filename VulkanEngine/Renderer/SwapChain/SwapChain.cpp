@@ -1,9 +1,14 @@
 #include "SwapChain.h"
+#include "VulkanEngine/Renderer/WindowManagment/WindowManager.h"
 
 namespace Renderer
 {
 	SwapChain::SwapChain()
-		: mSwapChain(VK_NULL_HANDLE)
+		: mSwapChain(nullptr)
+		, mDevice(nullptr)
+		, mSurface(nullptr)
+		, mPhysicalDevice(nullptr)
+		, mWindow(nullptr)
 	{
 	}
 
@@ -17,22 +22,29 @@ namespace Renderer
 
 	void SwapChain::Initialize(Device& device, WindowManager& windowManager)
 	{
-		CreateSwapChain(device, windowManager);
-		CreateImageViews(device);
+		mDevice = device.GetNativeDevice();
+		mSurface = device.GetNativeSurface();
+		mPhysicalDevice = device.GetNativePhysicalDevice();
+		mIndicies = device.GetIndicies();
+		mWindow = windowManager.GetGlfwWindow();
+
+		CreateSwapChain();
+		CreateImageViews();
 	}
 
-	void SwapChain::Cleanup(Device& device)
+	void SwapChain::Cleanup()
 	{
 		for (auto imageView : mSwapChainImageViews)
 		{
-			vkDestroyImageView(device.GetDevice(), imageView, nullptr);
+			vkDestroyImageView(mDevice, imageView, nullptr);
 		}
 		mSwapChainImageViews.clear();
-		vkDestroySwapchainKHR(device.GetDevice(), mSwapChain, nullptr);
+		vkDestroySwapchainKHR(mDevice, mSwapChain, nullptr);
 		mSwapChain = nullptr;
+		std::cout << "Swap chain cleaned" << std::endl;
 	}
 
-	VkSwapchainKHR SwapChain::GetSwapChain()
+	VkSwapchainKHR SwapChain::GetNativeSwapChain() const
 	{
 		return mSwapChain;
 	}
@@ -52,18 +64,18 @@ namespace Renderer
 		return mSwapChainImages.size();
 	}
 
-	VkImageView SwapChain::GetSwapChainImageView(size_t index) const
+	VkImageView SwapChain::GetNativeSwapChainImageView(size_t index) const
 	{
 		return mSwapChainImageViews[index];
 	}
 
-	void SwapChain::CreateSwapChain(Device& device, WindowManager& windowManager)
+	void SwapChain::CreateSwapChain()
 	{
-		SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(device);
+		SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport();
 
 		VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.mFormats);
 		VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapChainSupport.mPrecentModes);
-		VkExtent2D extent = ChooseSwapExtend(swapChainSupport.mCapabilities, windowManager);
+		VkExtent2D extent = ChooseSwapExtend(swapChainSupport.mCapabilities);
 
 		uint32_t imageCount = swapChainSupport.mCapabilities.minImageCount + 1;
 		if (swapChainSupport.mCapabilities.maxImageCount > 0 && imageCount > swapChainSupport.mCapabilities.maxImageCount)
@@ -73,7 +85,7 @@ namespace Renderer
 
 		VkSwapchainCreateInfoKHR createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-		createInfo.surface = device.GetSurface();
+		createInfo.surface = mSurface;
 		createInfo.minImageCount = imageCount;
 		createInfo.imageFormat = surfaceFormat.format;
 		createInfo.imageColorSpace = surfaceFormat.colorSpace;
@@ -81,7 +93,7 @@ namespace Renderer
 		createInfo.imageArrayLayers = 1;
 		createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-		QueueFamilyIndices indices = device.GetIndicies();
+		QueueFamilyIndices indices = mIndicies;
 		uint32_t queueFamilyIndices[] = { indices.mGraphicsFamily.value(), indices.mPresentFamily.value() };
 		if (indices.mGraphicsFamily != indices.mPresentFamily)
 		{
@@ -100,16 +112,16 @@ namespace Renderer
 		createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 		createInfo.presentMode = presentMode;
 		createInfo.clipped = VK_TRUE;
-		createInfo.oldSwapchain = VK_NULL_HANDLE;
+		createInfo.oldSwapchain = nullptr;
 
-		if (vkCreateSwapchainKHR(device.GetDevice(), &createInfo, nullptr, &mSwapChain) != VK_SUCCESS)
+		if (vkCreateSwapchainKHR(mDevice, &createInfo, nullptr, &mSwapChain) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Failed to create swap chain!");
 		}
 
-		vkGetSwapchainImagesKHR(device.GetDevice(), mSwapChain, &imageCount, nullptr);
+		vkGetSwapchainImagesKHR(mDevice, mSwapChain, &imageCount, nullptr);
 		mSwapChainImages.resize(imageCount);
-		vkGetSwapchainImagesKHR(device.GetDevice(), mSwapChain, &imageCount, mSwapChainImages.data());
+		vkGetSwapchainImagesKHR(mDevice, mSwapChain, &imageCount, mSwapChainImages.data());
 
 		mSwapChainImageFormat = surfaceFormat.format;
 		mSwapChainExtent = extent;
@@ -117,26 +129,26 @@ namespace Renderer
 		std::cout << "Swap chain created with " << imageCount << " back buffers" << std::endl;
 	}
 
-	SwapChainSupportDetails SwapChain::QuerySwapChainSupport(Device& device) const
+	SwapChainSupportDetails SwapChain::QuerySwapChainSupport() const
 	{
 		SwapChainSupportDetails details;
 
-		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device.GetPhysicalDevice(), device.GetSurface(), &details.mCapabilities);
+		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(mPhysicalDevice, mSurface, &details.mCapabilities);
 
 		uint32_t formatCount;
-		vkGetPhysicalDeviceSurfaceFormatsKHR(device.GetPhysicalDevice(), device.GetSurface(), &formatCount, nullptr);
+		vkGetPhysicalDeviceSurfaceFormatsKHR(mPhysicalDevice, mSurface, &formatCount, nullptr);
 		if (formatCount != 0)
 		{
 			details.mFormats.resize(formatCount);
-			vkGetPhysicalDeviceSurfaceFormatsKHR(device.GetPhysicalDevice(), device.GetSurface(), &formatCount, details.mFormats.data());
+			vkGetPhysicalDeviceSurfaceFormatsKHR(mPhysicalDevice, mSurface, &formatCount, details.mFormats.data());
 		}
 
 		uint32_t presentModeCount;
-		vkGetPhysicalDeviceSurfacePresentModesKHR(device.GetPhysicalDevice(), device.GetSurface(), &presentModeCount, nullptr);
+		vkGetPhysicalDeviceSurfacePresentModesKHR(mPhysicalDevice, mSurface, &presentModeCount, nullptr);
 		if (presentModeCount != 0)
 		{
 			details.mPrecentModes.resize(presentModeCount);
-			vkGetPhysicalDeviceSurfacePresentModesKHR(device.GetPhysicalDevice(), device.GetSurface(), &presentModeCount, details.mPrecentModes.data());
+			vkGetPhysicalDeviceSurfacePresentModesKHR(mPhysicalDevice, mSurface, &presentModeCount, details.mPrecentModes.data());
 		}
 		return details;
 	}
@@ -163,7 +175,7 @@ namespace Renderer
 		return VK_PRESENT_MODE_FIFO_KHR;
 	}
 
-	VkExtent2D SwapChain::ChooseSwapExtend(const VkSurfaceCapabilitiesKHR& capabilities, WindowManager& windowManager) const
+	VkExtent2D SwapChain::ChooseSwapExtend(const VkSurfaceCapabilitiesKHR& capabilities) const
 	{
 		if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
 		{
@@ -174,7 +186,7 @@ namespace Renderer
 			int width;
 			int height;
 
-				glfwGetFramebufferSize(windowManager.GetGlfwWindow(), &width, &height);
+				glfwGetFramebufferSize(mWindow, &width, &height);
 
 			VkExtent2D actualExtend = { static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
 			actualExtend.width = std::clamp(actualExtend.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
@@ -184,7 +196,7 @@ namespace Renderer
 		}
 	}
 
-	void SwapChain::CreateImageViews(Device& device)
+	void SwapChain::CreateImageViews()
 	{
 		mSwapChainImageViews.resize(mSwapChainImages.size());
 		for (size_t i = 0; i < mSwapChainImages.size(); ++i)
@@ -204,7 +216,7 @@ namespace Renderer
 			createInfo.subresourceRange.baseArrayLayer = 0;
 			createInfo.subresourceRange.layerCount = 1;
 
-			if (vkCreateImageView(device.GetDevice(), &createInfo, nullptr, &mSwapChainImageViews[i]) != VK_SUCCESS)
+			if (vkCreateImageView(mDevice, &createInfo, nullptr, &mSwapChainImageViews[i]) != VK_SUCCESS)
 			{
 				throw std::runtime_error("failed to create image view!");
 			}

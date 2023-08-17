@@ -1,6 +1,11 @@
 #include "Pipeline.h"
 #include <Windows.h>
-#include "..\Mesh\Vertex.h"
+
+#include "VulkanEngine/Renderer/Device/Device.h"
+#include "VulkanEngine/Renderer/SwapChain/SwapChain.h"
+#include "VulkanEngine/Renderer/RenderPass/RenderPass.h"
+
+#include "VulkanEngine/Renderer/Mesh/Vertex.h"
 
 namespace Renderer
 {
@@ -53,7 +58,7 @@ namespace Renderer
 		return buffer;
 	}
 
-	VkShaderModule CreateShaderModule(Device& device, std::vector<char>& code)
+	VkShaderModule CreateShaderModule(VkDevice device, std::vector<char>& code)
 	{
 		VkShaderModuleCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -61,7 +66,7 @@ namespace Renderer
 		createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
 		VkShaderModule shaderModule;
-		if (vkCreateShaderModule(device.GetDevice(), &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
+		if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Failed to create shadeer module!");
 		}
@@ -70,11 +75,13 @@ namespace Renderer
 
 	void Pipeline::Initialize(Device& device, SwapChain& swapChain, RenderPass& renderPass)
 	{
+		mDevice = device.GetNativeDevice();
+
 		auto vertexShaderCode = ReadFile("CompiledShaders\\Shaders\\SimpleShader.vert.spv");
 		auto fragmentShaderCode = ReadFile("CompiledShaders\\Shaders\\SimpleShader.frag.spv");
 
-		VkShaderModule vertShaderModule = CreateShaderModule(device, vertexShaderCode);
-		VkShaderModule fragShaderModule = CreateShaderModule(device, fragmentShaderCode);
+		VkShaderModule vertShaderModule = CreateShaderModule(mDevice, vertexShaderCode);
+		VkShaderModule fragShaderModule = CreateShaderModule(mDevice, fragmentShaderCode);
 
 		VkPipelineShaderStageCreateInfo vertShadereStageCreateInfo{};
 		vertShadereStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -105,6 +112,12 @@ namespace Renderer
 		inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 		inputAssembly.primitiveRestartEnable = VK_FALSE;
 
+		std::vector<VkDynamicState> dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT ,VK_DYNAMIC_STATE_SCISSOR };
+		VkPipelineDynamicStateCreateInfo dynamicStateInfo{};
+		dynamicStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+		dynamicStateInfo.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
+		dynamicStateInfo.pDynamicStates = dynamicStates.data();
+
 		VkViewport viewport{};
 		viewport.x = 0.0f;
 		viewport.y = 0.0f;
@@ -116,12 +129,6 @@ namespace Renderer
 		VkRect2D scissor{};
 		scissor.offset = { 0, 0 };
 		scissor.extent = swapChain.GetSwapChainExtend();
-
-		std::vector<VkDynamicState> dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT ,VK_DYNAMIC_STATE_SCISSOR };
-		VkPipelineDynamicStateCreateInfo dynamicStateInfo{};
-		dynamicStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-		dynamicStateInfo.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
-		dynamicStateInfo.pDynamicStates = dynamicStates.data();
 
 		VkPipelineViewportStateCreateInfo viewportState{};
 		viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -169,6 +176,7 @@ namespace Renderer
 		colorBlending.blendConstants[2] = 0.0f;
 		colorBlending.blendConstants[3] = 0.0f;
 
+
 		VkPipelineLayoutCreateInfo layoutCreateInfo{};
 		layoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 		layoutCreateInfo.setLayoutCount = 0;
@@ -176,7 +184,7 @@ namespace Renderer
 		layoutCreateInfo.pushConstantRangeCount = 0;
 		layoutCreateInfo.pPushConstantRanges = nullptr;
 
-		if (vkCreatePipelineLayout(device.GetDevice(), &layoutCreateInfo, nullptr, &mGraphycsPipelineLayout) != VK_SUCCESS)
+		if (vkCreatePipelineLayout(mDevice, &layoutCreateInfo, nullptr, &mGraphycsPipelineLayout) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create pipeline layout!");
 		}
@@ -194,32 +202,33 @@ namespace Renderer
 		pipelineInfo.pColorBlendState = &colorBlending;
 		pipelineInfo.pDynamicState = &dynamicStateInfo;
 		pipelineInfo.layout = mGraphycsPipelineLayout;
-		pipelineInfo.renderPass = renderPass.GetRenderPass();
+		pipelineInfo.renderPass = renderPass.GetNativeRenderPass();
 		pipelineInfo.subpass = 0;
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 		pipelineInfo.basePipelineIndex = -1;
 
-		if (vkCreateGraphicsPipelines(device.GetDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &mPipeline) != VK_SUCCESS)
+		if (vkCreateGraphicsPipelines(mDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &mPipeline) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create pipeline");
 		}
 
-		vkDestroyShaderModule(device.GetDevice(), vertShaderModule, nullptr);
-		vkDestroyShaderModule(device.GetDevice(), fragShaderModule, nullptr);
+		vkDestroyShaderModule(mDevice, vertShaderModule, nullptr);
+		vkDestroyShaderModule(mDevice, fragShaderModule, nullptr);
 
 		std::cout << "Pipeline created" << std::endl;
 	}
 
-	void Pipeline::Cleanup(Device& device)
+	void Pipeline::Cleanup()
 	{
-		vkDestroyPipeline(device.GetDevice(), mPipeline, nullptr);
-		vkDestroyPipelineLayout(device.GetDevice(), mGraphycsPipelineLayout, nullptr);
+		vkDestroyPipeline(mDevice, mPipeline, nullptr);
+		vkDestroyPipelineLayout(mDevice, mGraphycsPipelineLayout, nullptr);
 
 		mPipeline = nullptr;
 		mGraphycsPipelineLayout = nullptr;
+		std::cout << "Pipeline cleaned" << std::endl;
 	}
 
-	VkPipeline Pipeline::GetPipeline() const
+	VkPipeline Pipeline::GetNativePipeline() const
 	{
 		return mPipeline;
 	}

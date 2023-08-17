@@ -1,4 +1,5 @@
 #include "SyncObjects.h"
+#include "VulkanEngine/Renderer/Device/Device.h"
 
 namespace Renderer
 {
@@ -24,6 +25,8 @@ namespace Renderer
 
 	void SyncObjects::Initialize(Device& device)
 	{
+		mDevice = device.GetNativeDevice();
+
 		mImageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
 		mRendeerFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
 		mInFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
@@ -37,29 +40,30 @@ namespace Renderer
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
-			if (vkCreateSemaphore(device.GetDevice(), &semaphoreInfo, nullptr, &mImageAvailableSemaphores[i]) != VK_SUCCESS ||
-				vkCreateSemaphore(device.GetDevice(), &semaphoreInfo, nullptr, &mRendeerFinishedSemaphores[i]) != VK_SUCCESS ||
-				vkCreateFence(device.GetDevice(), &fenceInfo, nullptr, &mInFlightFences[i]) != VK_SUCCESS)
+			if (vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &mImageAvailableSemaphores[i]) != VK_SUCCESS ||
+				vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &mRendeerFinishedSemaphores[i]) != VK_SUCCESS ||
+				vkCreateFence(mDevice, &fenceInfo, nullptr, &mInFlightFences[i]) != VK_SUCCESS)
 			{
 				throw std::runtime_error("failed to create sync objects!");
 			}
 		}
 	}
 
-	void SyncObjects::Cleanup(Device& device)
+	void SyncObjects::Cleanup()
 	{
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
-			vkDestroySemaphore(device.GetDevice(), mImageAvailableSemaphores[i], nullptr);
+			vkDestroySemaphore(mDevice, mImageAvailableSemaphores[i], nullptr);
 			mImageAvailableSemaphores[i] = nullptr;
-			vkDestroySemaphore(device.GetDevice(), mRendeerFinishedSemaphores[i], nullptr);
+			vkDestroySemaphore(mDevice, mRendeerFinishedSemaphores[i], nullptr);
 			mRendeerFinishedSemaphores[i] = nullptr;
-			vkDestroyFence(device.GetDevice(), mInFlightFences[i], nullptr);
+			vkDestroyFence(mDevice, mInFlightFences[i], nullptr);
 			mInFlightFences[i] = nullptr;
 		}
 		mImageAvailableSemaphores.clear();
 		mRendeerFinishedSemaphores.clear();
 		mInFlightFences.clear();
+		std::cout << "Sync objects cleaned" << std::endl;
 	}
 
 	VkSemaphore SyncObjects::GetImageAvailableSemaphore(size_t index) 
@@ -77,14 +81,14 @@ namespace Renderer
 		return mInFlightFences[index];
 	}
 
-	void SyncObjects::WaitforInFlightFence(Device& device, size_t index)
+	void SyncObjects::WaitforInFlightFence(size_t index)
 	{
-		vkWaitForFences(device.GetDevice(), 1, &mInFlightFences[index], VK_TRUE, UINT64_MAX);
+		vkWaitForFences(mDevice, 1, &mInFlightFences[index], VK_TRUE, UINT64_MAX);
 	}
 
-	void SyncObjects::ResetInFlightFence(Device& device, size_t index)
+	void SyncObjects::ResetInFlightFence(size_t index)
 	{
-		vkResetFences(device.GetDevice(), 1, &mInFlightFences[index]);
+		vkResetFences(mDevice, 1, &mInFlightFences[index]);
 	}
 
 }

@@ -1,11 +1,11 @@
 #pragma once
 
-#include "../Common/pch.h"
-#include "Device.h"
-#include "../WindowManagment/WindowManager.h"
+#include "VulkanEngine/Renderer/Common/pch.h"
+#include "VulkanEngine/Renderer/Device/Device.h"
 
 namespace Renderer
 {
+	class WindowsManager;
 
 	class SwapChain
 	{
@@ -17,26 +17,32 @@ namespace Renderer
 		SwapChain& operator=(const SwapChain&) = delete;
 
 		void Initialize(Device& device, WindowManager& windowManager);
-		void Cleanup(Device& device);
+		void Cleanup();
 
-		VkSwapchainKHR GetSwapChain();
+		VkSwapchainKHR GetNativeSwapChain() const;
 
 		VkFormat GetFormat();
 		VkExtent2D GetSwapChainExtend();
 		size_t GetSwapChainImagesSize() const;
 
-		VkImageView GetSwapChainImageView(size_t index) const;
+		VkImageView GetNativeSwapChainImageView(size_t index) const;
 
 	private:
-		void CreateSwapChain(Device& device, WindowManager& windowManager);
-		void CreateImageViews(Device& device);
+		void CreateSwapChain();
+		void CreateImageViews();
 
-		SwapChainSupportDetails QuerySwapChainSupport(Device& device) const;
+		SwapChainSupportDetails QuerySwapChainSupport() const;
 		VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) const;
 		VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) const;
-		VkExtent2D ChooseSwapExtend(const VkSurfaceCapabilitiesKHR& capabilities, WindowManager& windowManager) const;
+		VkExtent2D ChooseSwapExtend(const VkSurfaceCapabilitiesKHR& capabilities) const;
 
 	private:
+		VkDevice mDevice;
+		VkSurfaceKHR mSurface;
+		VkPhysicalDevice mPhysicalDevice;
+		QueueFamilyIndices mIndicies;
+		GLFWwindow* mWindow;
+
 		VkSwapchainKHR mSwapChain;
 
 		std::vector<VkImage> mSwapChainImages;

@@ -1,12 +1,13 @@
 #pragma once
 
-#include "../Common/pch.h"
-#include "Device.h"
-#include"SwapChain.h"
-#include "RenderPass.h"
+#include "VulkanEngine/Renderer/Common/pch.h"
 
 namespace Renderer
 {
+	class Device;
+	class SwapChain;
+	class RenderPass;
+
 	class Pipeline
 	{
 	public:
@@ -17,10 +18,11 @@ namespace Renderer
 		Pipeline& operator=(const Pipeline&) = delete;
 
 		void Initialize(Device& device, SwapChain& swapChain, RenderPass& renderPass);
-		void Cleanup(Device& device);
+		void Cleanup();
 
-		VkPipeline GetPipeline() const;
+		VkPipeline GetNativePipeline() const;
 	private:
+		VkDevice mDevice;
 		VkPipeline mPipeline;
 		VkPipelineLayout mGraphycsPipelineLayout;
 

@@ -1,14 +1,14 @@
 #pragma once
 
 #include "Common/pch.h"
-#include "VulkanAPIWrappers/Device.h"
-#include "VulkanAPIWrappers/SwapChain.h"
-#include "VulkanAPIWrappers/SyncObjects.h"
-#include "VulkanAPIWrappers/RenderPass.h"
-#include "VulkanAPIWrappers/Pipeline.h"
-#include "VulkanAPIWrappers/FrameBuffers.h"
-#include "VulkanAPIWrappers/CommandPool.h"
-#include "VulkanAPIWrappers/CommandBuffer.h"
+#include "Device/Device.h"
+#include "SwapChain/SwapChain.h"
+#include "SyncObjects/SyncObjects.h"
+#include "RenderPass/RenderPass.h"
+#include "Pipeline/Pipeline.h"
+#include "FrameBuffer/FrameBuffers.h"
+#include "Commands/CommandPool.h"
+#include "Commands/CommandBuffer.h"
 
 #include "WindowManagment/WindowManager.h"
 #include "Mesh/Mesh.h"

@@ -1,14 +1,15 @@
 #pragma once
 
-#include "../Common/pch.h"
-#include "Device.h"
-#include "CommandPool.h"
-#include "SwapChain.h"
-#include "RenderPass.h"
-#include "Pipeline.h"
+#include "VulkanEngine/Renderer/Common/pch.h"
 
 namespace Renderer
 {
+	class Device;
+	class CommandPool;
+	class SwapChain;
+	class RenderPass;
+	class Pipeline;
+
 	class CommandBuffer
 	{
 	public:
@@ -19,9 +20,9 @@ namespace Renderer
 		CommandBuffer& operator=(const CommandBuffer&) = delete;
 
 		void Initialize(Device& device, CommandPool& commandPool);
-		void Cleanup(Device& device);
+		void Cleanup();
 
-		VkCommandBuffer& GetCommandBuffer();
+		VkCommandBuffer& GetNativeCommandBuffer();
 
 		void BeginCommandBuffer(VkCommandBufferUsageFlags flags);
 		void EndCommandBuffer();
@@ -37,6 +38,8 @@ namespace Renderer
 		void DrawIndexed(uint32_t IndexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance);
 
 	private:
+		VkDevice mDevice;
+		VkCommandPool mCommandPool;
 		VkCommandBuffer mCommandBuffer;
 	};
 }
