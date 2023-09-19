@@ -1,5 +1,6 @@
 #include "CommandPool.h"
 #include "VulkanEngine/Renderer/Device/Device.h"
+#include "VulkanEngine/Logger/Logger.h"
 
 namespace Renderer
 {
@@ -32,14 +33,14 @@ namespace Renderer
 			throw std::runtime_error("failed to create command pool!");
 		}
 
-		std::cout << "Command pool created" << std::endl;
+		LOGINFO("Command pool created");
 	}
 
 	void CommandPool::Cleanup()
 	{
 		vkDestroyCommandPool(mDevice, mCommandPool, nullptr);
 		mCommandPool = nullptr;
-		std::cout << "Command pool cleaned" << std::endl;
+		LOGINFO("Command pool cleaned");
 	}
 
 	VkCommandPool CommandPool::GetNativeCommandPool()

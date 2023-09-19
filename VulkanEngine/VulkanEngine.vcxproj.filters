@@ -52,6 +52,9 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{9cfae4a0-c90a-412b-bd57-28d48b5e8e29}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Logger">
+      <UniqueIdentifier>{9de29dcf-5baf-4d7b-938f-58358e40b0b1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -159,6 +162,9 @@
     </ClInclude>
     <ClInclude Include="Renderer\SyncObjects\SyncObjects.h">
       <Filter>Renderer\SyncOnjects</Filter>
+    </ClInclude>
+    <ClInclude Include="Logger\Logger.h">
+      <Filter>Logger</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

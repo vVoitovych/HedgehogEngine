@@ -3,8 +3,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-#include "../Common/pch.h"
-
+#include "VulkanEngine/Renderer/Common/pch.h"
 #include "WindowState.h"
 
 namespace Renderer

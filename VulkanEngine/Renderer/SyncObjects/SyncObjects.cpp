@@ -1,5 +1,6 @@
 #include "SyncObjects.h"
 #include "VulkanEngine/Renderer/Device/Device.h"
+#include "VulkanEngine/Logger/Logger.h"
 
 namespace Renderer
 {
@@ -47,6 +48,7 @@ namespace Renderer
 				throw std::runtime_error("failed to create sync objects!");
 			}
 		}
+		LOGINFO("Sync objects created");
 	}
 
 	void SyncObjects::Cleanup()
@@ -63,7 +65,7 @@ namespace Renderer
 		mImageAvailableSemaphores.clear();
 		mRendeerFinishedSemaphores.clear();
 		mInFlightFences.clear();
-		std::cout << "Sync objects cleaned" << std::endl;
+		LOGINFO("Sync objects cleaned");
 	}
 
 	VkSemaphore SyncObjects::GetImageAvailableSemaphore(size_t index) 

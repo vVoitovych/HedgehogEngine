@@ -6,7 +6,7 @@ namespace Renderer
 	WindowState WindowState::GetDefaultState()
 	{
 		WindowState result{};
-		result.mWindowName = "Vulkan Tutorial";
+		result.mWindowName = "Vulkan Engine";
 		result.mX = 100;
 		result.mY = 100;
 		result.mWidth = 800;

@@ -1,6 +1,6 @@
 #include "Application.h"
 
-#include <iostream>
+#include "VulkanEngine/Logger/Logger.h"
 
 namespace VkEngine
 {
@@ -13,7 +13,7 @@ namespace VkEngine
 	void VkApplication::InitVulkan()
 	{
 		mRenderer.Initialize();
-		std::cout << "Vulkan initialized" << std::endl;
+		LOGINFO("Vulkan initialized");
 	}
 
 	void VkApplication::MainLoop()

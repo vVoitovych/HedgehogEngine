@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Common/pch.h"
+#include "VulkanEngine/Renderer/Common/pch.h"
 
 namespace Renderer
 {

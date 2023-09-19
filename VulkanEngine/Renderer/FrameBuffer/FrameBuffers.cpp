@@ -3,6 +3,8 @@
 #include "VulkanEngine/Renderer/SwapChain/SwapChain.h"
 #include "VulkanEngine/Renderer/RenderPass/RenderPass.h"
 
+#include "VulkanEngine/Logger/Logger.h"
+
 namespace Renderer
 {
 	FrameBuffers::FrameBuffers()
@@ -44,7 +46,7 @@ namespace Renderer
 				throw std::runtime_error("failed to create frame buffer!");
 			}
 		}
-		std::cout << "Frame buffer created" << std::endl;
+		LOGINFO("Frame buffer created");
 	}
 
 	void FrameBuffers::Cleanup()
@@ -54,7 +56,7 @@ namespace Renderer
 			vkDestroyFramebuffer(mDevice, frameBuffer, nullptr);
 		}
 		mFrameBuffers.clear();
-		std::cout << "Frame buffers cleaned" << std::endl;
+		LOGINFO("Frame buffers cleaned");
 	}
 
 	VkFramebuffer FrameBuffers::GetNativeFrameBuffer(size_t index) const

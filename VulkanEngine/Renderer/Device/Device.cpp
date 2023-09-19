@@ -1,5 +1,6 @@
 #include "Device.h"
-#include "..\WindowManagment\WindowManager.h"
+#include "VulkanEngine/Renderer/WindowManagment/WindowManager.h"
+#include "VulkanEngine/Logger/Logger.h"
 
 namespace Renderer
 {
@@ -11,7 +12,23 @@ namespace Renderer
 		VkDebugUtilsMessageTypeFlagsEXT messageType,
 		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
 	{
-		std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+		switch (messageSeverity)
+		{
+		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
+			LOGVERBOSE("validation layer: ", pCallbackData->pMessage);
+			break;
+		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
+			LOGINFO("validation layer: ", pCallbackData->pMessage);
+			break;
+		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
+			LOGWARNING("validation layer: ", pCallbackData->pMessage);
+			break;
+		case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+			LOGERROR("validation layer: ", pCallbackData->pMessage);
+			break;
+		default:
+			break;
+		}
 
 		return VK_FALSE;
 	}
@@ -94,7 +111,7 @@ namespace Renderer
 
 		VkApplicationInfo appInfo{};
 		appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-		appInfo.pApplicationName = "Hello Triangle";
+		appInfo.pApplicationName = "Vulkan Engine";
 		appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 		appInfo.pEngineName = "No Engine";
 		appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
@@ -129,7 +146,7 @@ namespace Renderer
 
 		HasGflwRequiredInstanceExtensions();
 
-		std::cout << "Vulkan instance created" << std::endl;
+		LOGINFO("Vulkan instance created");
 	}
 
 	void Device::InitializeDebugMessanger()
@@ -143,14 +160,14 @@ namespace Renderer
 		{
 			throw std::runtime_error("failed to set up debug messenger!");
 		}
-		std::cout << "Debug messenger created" << std::endl;
+		LOGINFO("Debug messenger created");
 	}
 
 	void Device::PickPhysicalDevice()
 	{
 		uint32_t deviceCount = 0;
 		vkEnumeratePhysicalDevices(mInstance, &deviceCount, nullptr);
-		std::cout << "Devices count: " << deviceCount << std::endl;
+		LOGINFO("Devices count: ", deviceCount);
 		if (deviceCount == 0)
 		{
 			throw std::runtime_error("failed to find GPUs with Vulkan support!");
@@ -175,9 +192,9 @@ namespace Renderer
 
 		VkPhysicalDeviceProperties properties;
 		vkGetPhysicalDeviceProperties(mPhysicalDevice, &properties);
-		std::cout << "Physical device: " << properties.deviceName << std::endl;
+		LOGINFO("Physical device: ", properties.deviceName);
 
-		std::cout << "Physical device picked" << std::endl;
+		LOGINFO("Physical device picked");
 	}
 
 	void Device::CreateLogicalDevice()
@@ -229,7 +246,7 @@ namespace Renderer
 		vkGetDeviceQueue(mDevice, mIndices.mGraphicsFamily.value(), 0, &mGraphicsQueue);
 		vkGetDeviceQueue(mDevice, mIndices.mPresentFamily.value(), 0, &mPresentQueue);
 
-		std::cout << "Logical device created" << std::endl;
+		LOGINFO("Logical device created");
 	}
 
 	void Device::Cleanup()
@@ -243,7 +260,7 @@ namespace Renderer
 		mDebugMessenger = nullptr;
 		mPhysicalDevice = nullptr;
 		mDevice = nullptr;
-		std::cout << "Device cleaned" << std::endl;
+		LOGINFO("Device cleaned");
 	}
 
 	void Device::CleanupDebugMessanger()
@@ -353,19 +370,19 @@ namespace Renderer
 		std::vector<VkExtensionProperties> extensions(extensionCount);
 		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
 
-		std::cout << "available extensions:" << std::endl;
+		LOGINFO("available extensions:");
 		std::unordered_set<std::string> available;
 		for (const auto& extension : extensions)
 		{
-			std::cout << "\t" << extension.extensionName << std::endl;
+			LOGINFO("\t", extension.extensionName);
 			available.insert(extension.extensionName);
 		}
 
-		std::cout << "required extensions:" << std::endl;
+		LOGINFO("required extensions:");
 		auto requiredExtensions = GetRequiredExtensions();
 		for (const auto& required : requiredExtensions)
 		{
-			std::cout << "\t" << required << std::endl;
+			LOGINFO("\t", required);
 			if (available.find(required) == available.end())
 			{
 				throw std::runtime_error("Missing required glfw extension");

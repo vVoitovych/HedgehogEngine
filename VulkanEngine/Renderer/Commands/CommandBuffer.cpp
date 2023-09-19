@@ -4,6 +4,7 @@
 #include "VulkanEngine/Renderer/RenderPass/RenderPass.h"
 #include "VulkanEngine/Renderer/Pipeline/Pipeline.h"
 #include "CommandPool.h"
+#include "VulkanEngine/Logger/Logger.h"
 
 namespace Renderer
 {
@@ -30,14 +31,14 @@ namespace Renderer
 		{
 			throw std::runtime_error("failed to allocate command buffer!");
 		}
-		std::cout << "Command buffer created" << std::endl;
+		LOGINFO("Command buffer created");
 	}
 
 	void CommandBuffer::Cleanup()
 	{
 		vkFreeCommandBuffers(mDevice, mCommandPool, 1, &mCommandBuffer);
 		mCommandBuffer = nullptr;
-		std::cout << "Command  buffer cleaned" << std::endl;
+		LOGINFO("Command  buffer cleaned");
 	}
 
 	VkCommandBuffer& CommandBuffer::GetNativeCommandBuffer() 

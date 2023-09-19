@@ -3,6 +3,8 @@
 #include "VulkanEngine/Renderer/Device/Device.h"
 #include "VulkanEngine/Renderer/Commands/CommandPool.h"
 
+#include "VulkanEngine/Logger/Logger.h"
+
 namespace Renderer
 {
 	Mesh::Mesh()
@@ -32,13 +34,13 @@ namespace Renderer
 		vkFreeMemory(mDevice, mVertexBufferMemory, nullptr);
 		mVertexBuffer = nullptr;
 		mVertexBufferMemory = nullptr;
-		std::cout << "Vertex buffer cleaned" << std::endl;
+		LOGINFO("Vertex buffer cleaned");
 
 		vkDestroyBuffer(mDevice, mIndexBuffer, nullptr);
 		vkFreeMemory(mDevice, mIndexBufferMemory, nullptr);
 		mIndexBuffer = nullptr;
 		mIndexBufferMemory = nullptr;
-		std::cout << "Index buffer cleaned" << std::endl;
+		LOGINFO("Index buffer cleaned");
 	}
 
 	VkBuffer Mesh::GetVertexBuffer()
@@ -76,7 +78,7 @@ namespace Renderer
 
 		vkDestroyBuffer(mDevice, staginBuffer, nullptr);
 		vkFreeMemory(mDevice, staginBufferMemory, nullptr);
-		std::cout << "Vertex buffer created" << std::endl;
+		LOGINFO("Vertex buffer created");
 	}
 
 	void Mesh::CreateIndexBuffer()
@@ -99,7 +101,7 @@ namespace Renderer
 
 		vkDestroyBuffer(mDevice, staginBuffer, nullptr);
 		vkFreeMemory(mDevice, staginBufferMemory, nullptr);
-		std::cout << "Index buffer created" << std::endl;
+		LOGINFO("Index buffer created");
 	}
 
 	void Mesh::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)

@@ -6,6 +6,7 @@
 #include "VulkanEngine/Renderer/RenderPass/RenderPass.h"
 
 #include "VulkanEngine/Renderer/Mesh/Vertex.h"
+#include "VulkanEngine/Logger/Logger.h"
 
 namespace Renderer
 {
@@ -39,7 +40,7 @@ namespace Renderer
 	std::vector<char> ReadFile(const std::string& filename)
 	{
 		std::string fullName = GetCurrentDirectory() + "\\" + filename;
-		std::cout << fullName << std::endl;
+		LOGINFO(fullName);
 
 		std::ifstream file(fullName, std::ios::ate | std::ios::binary);
 		if (!file.is_open())
@@ -215,7 +216,7 @@ namespace Renderer
 		vkDestroyShaderModule(mDevice, vertShaderModule, nullptr);
 		vkDestroyShaderModule(mDevice, fragShaderModule, nullptr);
 
-		std::cout << "Pipeline created" << std::endl;
+		LOGINFO("Pipeline created");
 	}
 
 	void Pipeline::Cleanup()
@@ -225,7 +226,7 @@ namespace Renderer
 
 		mPipeline = nullptr;
 		mGraphycsPipelineLayout = nullptr;
-		std::cout << "Pipeline cleaned" << std::endl;
+		LOGINFO("Pipeline cleaned");
 	}
 
 	VkPipeline Pipeline::GetNativePipeline() const

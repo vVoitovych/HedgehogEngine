@@ -1,5 +1,7 @@
 #include "SwapChain.h"
 #include "VulkanEngine/Renderer/WindowManagment/WindowManager.h"
+#include "VulkanEngine/Logger/Logger.h"
+#include <limits>
 
 namespace Renderer
 {
@@ -41,7 +43,7 @@ namespace Renderer
 		mSwapChainImageViews.clear();
 		vkDestroySwapchainKHR(mDevice, mSwapChain, nullptr);
 		mSwapChain = nullptr;
-		std::cout << "Swap chain cleaned" << std::endl;
+		LOGINFO("Swap chain cleaned");
 	}
 
 	VkSwapchainKHR SwapChain::GetNativeSwapChain() const
@@ -126,7 +128,7 @@ namespace Renderer
 		mSwapChainImageFormat = surfaceFormat.format;
 		mSwapChainExtent = extent;
 
-		std::cout << "Swap chain created with " << imageCount << " back buffers" << std::endl;
+		LOGINFO("Swap chain created with ", imageCount, " back buffers");
 	}
 
 	SwapChainSupportDetails SwapChain::QuerySwapChainSupport() const
@@ -222,7 +224,7 @@ namespace Renderer
 			}
 		}
 
-		std::cout << "Swap chain image views created" << std::endl;
+		LOGINFO("Swap chain image views created");
 
 	}
 

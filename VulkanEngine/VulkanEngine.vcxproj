@@ -171,6 +171,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h" />
+    <ClInclude Include="Logger\Logger.h" />
     <ClInclude Include="Renderer\Commands\CommandBuffer.h" />
     <ClInclude Include="Renderer\Commands\CommandPool.h" />
     <ClInclude Include="Renderer\Common\pch.h" />

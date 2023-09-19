@@ -1,4 +1,5 @@
 #include "WindowManager.h"
+#include "VulkanEngine/Logger/Logger.h"
 
 namespace Renderer
 {
@@ -26,7 +27,7 @@ namespace Renderer
 		mWindow = nullptr;
 		mWindowThread.join();
 		glfwTerminate();
-		std::cout << "Window manager cleaned" << std::endl;
+		LOGINFO("Window manager cleaned");
 	}
 
 	bool WindowManager::ShouldClose()

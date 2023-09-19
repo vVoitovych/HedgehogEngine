@@ -1,5 +1,6 @@
 #include "RenderPass.h"
 #include "VulkanEngine/Renderer/Device/Device.h"
+#include "VulkanEngine/Logger/Logger.h"
 
 namespace Renderer
 {
@@ -61,14 +62,14 @@ namespace Renderer
 			throw std::runtime_error("failed to create render pass");
 		}
 
-		std::cout << "Render pass created" << std::endl;
+		LOGINFO("Render pass created");
 	}
 
 	void RenderPass::Cleanup()
 	{
 		vkDestroyRenderPass(mDevice, mRenderPass, nullptr);
 		mRenderPass = nullptr;
-		std::cout << "Render pass cleaned" << std::endl;
+		LOGINFO("Render pass cleaned");
 	}
 
 	VkRenderPass RenderPass::GetNativeRenderPass() const
