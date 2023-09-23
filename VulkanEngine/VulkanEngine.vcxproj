@@ -148,6 +148,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Application.cpp" />
+    <ClCompile Include="Logger\LogColorized.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Renderer\Commands\CommandBuffer.cpp" />
     <ClCompile Include="Renderer\Commands\CommandPool.cpp" />
@@ -171,6 +172,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h" />
+    <ClInclude Include="Logger\LogColorized.h" />
     <ClInclude Include="Logger\Logger.h" />
     <ClInclude Include="Renderer\Commands\CommandBuffer.h" />
     <ClInclude Include="Renderer\Commands\CommandPool.h" />

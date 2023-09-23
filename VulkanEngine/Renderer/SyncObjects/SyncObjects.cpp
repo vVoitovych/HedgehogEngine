@@ -5,6 +5,7 @@
 namespace Renderer
 {
 	SyncObjects::SyncObjects()
+		: mDevice(nullptr)
 	{
 	}
 
@@ -12,15 +13,18 @@ namespace Renderer
 	{
 		if (!mImageAvailableSemaphores.empty())
 		{
-			throw std::runtime_error("Vulkan image available semaphores should be cleanedup before destruction!");
+			LOGERROR("Vulkan image available semaphores should be cleanedup before destruction!");
+			ENGINE_DEBUG_BREAK();
 		}
 		if (!mRendeerFinishedSemaphores.empty())
 		{
-			throw std::runtime_error("Vulkan render finished semaphores should be cleanedup before destruction!");
+			LOGERROR("Vulkan render finished semaphores should be cleanedup before destruction!");
+			ENGINE_DEBUG_BREAK();
 		}
 		if (!mInFlightFences.empty())
 		{
-			throw std::runtime_error("Vulkan in flight fences should be cleanedup before destruction!");
+			LOGERROR("Vulkan in flight fences should be cleanedup before destruction!");
+			ENGINE_DEBUG_BREAK();
 		}
 	}
 

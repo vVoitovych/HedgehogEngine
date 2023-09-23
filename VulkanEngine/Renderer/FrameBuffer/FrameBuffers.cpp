@@ -16,7 +16,8 @@ namespace Renderer
 	{
 		if (!mFrameBuffers.empty())
 		{
-			throw std::runtime_error("Vulkan frame buffers should be cleanedup before destruction!");
+			LOGERROR("Vulkan frame buffers should be cleanedup before destruction!");
+			ENGINE_DEBUG_BREAK();
 		}
 	}
 

@@ -9,11 +9,19 @@
 namespace Renderer
 {
 	CommandBuffer::CommandBuffer()
+		:mCommandBuffer(nullptr)
+		, mCommandPool(nullptr)
+		, mDevice(nullptr)
 	{
 	}
 
 	CommandBuffer::~CommandBuffer()
 	{
+		if (mCommandBuffer != nullptr)
+		{
+			LOGERROR("Vulkan command buffer should be cleanedup before destruction!");
+			ENGINE_DEBUG_BREAK();
+		}
 	}
 
 	void CommandBuffer::Initialize(Device& device, CommandPool& commandPool)
@@ -29,7 +37,8 @@ namespace Renderer
 
 		if (vkAllocateCommandBuffers(mDevice, &allocateInfo, &mCommandBuffer) != VK_SUCCESS)
 		{
-			throw std::runtime_error("failed to allocate command buffer!");
+			LOGERROR("failed to allocate command buffer!");
+			ENGINE_DEBUG_BREAK();
 		}
 		LOGINFO("Command buffer created");
 	}

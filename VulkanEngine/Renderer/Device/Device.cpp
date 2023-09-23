@@ -77,19 +77,23 @@ namespace Renderer
 	{
 		if (mInstance != nullptr)
 		{
-			throw std::runtime_error("Vulkan instance should be cleanedup before destruction!");
+			LOGERROR("Vulkan instance should be cleanedup before destruction!");
+			ENGINE_DEBUG_BREAK();
 		}
 		if (mDebugMessenger != nullptr)
 		{
-			throw std::runtime_error("Vulkan debug messenger should be cleanedup before destruction!");
+			LOGERROR("Vulkan debug messenger should be cleanedup before destruction!");
+			ENGINE_DEBUG_BREAK();
 		}
 		if (mPhysicalDevice != nullptr)
 		{
-			throw std::runtime_error("Vulkan physical device should be cleanedup before destruction!");
+			LOGERROR("Vulkan physical device should be cleanedup before destruction!");
+			ENGINE_DEBUG_BREAK();
 		}
 		if (mDevice != nullptr)
 		{
-			throw std::runtime_error("Vulkan device should be cleanedup before destruction!");
+			LOGERROR("Vulkan device should be cleanedup before destruction!");
+			ENGINE_DEBUG_BREAK();
 		}
 	}
 

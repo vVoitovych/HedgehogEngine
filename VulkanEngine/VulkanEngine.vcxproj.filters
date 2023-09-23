@@ -105,6 +105,9 @@
     <ClCompile Include="Renderer\SyncObjects\SyncObjects.cpp">
       <Filter>Renderer\SyncOnjects</Filter>
     </ClCompile>
+    <ClCompile Include="Logger\LogColorized.cpp">
+      <Filter>Logger</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="ShadersCompiler.bat">
@@ -164,6 +167,9 @@
       <Filter>Renderer\SyncOnjects</Filter>
     </ClInclude>
     <ClInclude Include="Logger\Logger.h">
+      <Filter>Logger</Filter>
+    </ClInclude>
+    <ClInclude Include="Logger\LogColorized.h">
       <Filter>Logger</Filter>
     </ClInclude>
   </ItemGroup>

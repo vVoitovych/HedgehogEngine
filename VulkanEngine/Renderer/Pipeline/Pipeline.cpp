@@ -11,8 +11,9 @@
 namespace Renderer
 {
 	Pipeline::Pipeline()
-		: mPipeline(VK_NULL_HANDLE)
-		, mGraphycsPipelineLayout(VK_NULL_HANDLE)
+		: mPipeline(nullptr)
+		, mGraphycsPipelineLayout(nullptr)
+		, mDevice(nullptr)
 	{
 	}
 
@@ -20,11 +21,13 @@ namespace Renderer
 	{
 		if (mPipeline != nullptr)
 		{
-			throw std::runtime_error("Vulkan pipeline should be cleanedup before destruction!");
+			LOGERROR("Vulkan pipeline should be cleanedup before destruction!");
+			ENGINE_DEBUG_BREAK();
 		}
 		if (mGraphycsPipelineLayout != nullptr)
 		{
-			throw std::runtime_error("Vulkan pipeline layout should be cleanedup before destruction!");
+			LOGERROR("Vulkan pipeline layout should be cleanedup before destruction!");
+			ENGINE_DEBUG_BREAK();
 		}
 	}
 
