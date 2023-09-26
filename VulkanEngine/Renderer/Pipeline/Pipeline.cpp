@@ -4,7 +4,7 @@
 #include "VulkanEngine/Renderer/Device/Device.h"
 #include "VulkanEngine/Renderer/SwapChain/SwapChain.h"
 #include "VulkanEngine/Renderer/RenderPass/RenderPass.h"
-
+#include "VulkanEngine/Renderer/Descriptors/DescriptorSetLayout.h"
 #include "VulkanEngine/Renderer/Mesh/Vertex.h"
 #include "VulkanEngine/Logger/Logger.h"
 
@@ -77,7 +77,7 @@ namespace Renderer
 		return shaderModule;
 	}
 
-	void Pipeline::Initialize(Device& device, SwapChain& swapChain, RenderPass& renderPass)
+	void Pipeline::Initialize(Device& device, SwapChain& swapChain, RenderPass& renderPass, DescriptorSetLayout& layout)
 	{
 		mDevice = device.GetNativeDevice();
 
@@ -183,8 +183,8 @@ namespace Renderer
 
 		VkPipelineLayoutCreateInfo layoutCreateInfo{};
 		layoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-		layoutCreateInfo.setLayoutCount = 0;
-		layoutCreateInfo.pSetLayouts = nullptr;
+		layoutCreateInfo.setLayoutCount = 1;
+		layoutCreateInfo.pSetLayouts = layout.GetNativeLayout();
 		layoutCreateInfo.pushConstantRangeCount = 0;
 		layoutCreateInfo.pPushConstantRanges = nullptr;
 
@@ -235,6 +235,11 @@ namespace Renderer
 	VkPipeline Pipeline::GetNativePipeline() const
 	{
 		return mPipeline;
+	}
+
+	VkPipelineLayout Pipeline::GetNativePipelineLayout()
+	{
+		return mGraphycsPipelineLayout;
 	}
 
 

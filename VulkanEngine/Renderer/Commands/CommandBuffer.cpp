@@ -131,6 +131,12 @@ namespace Renderer
 		vkCmdBindIndexBuffer(mCommandBuffer, indexBuffer, offset, indexType);
 	}
 
+	void CommandBuffer::BindDescriptorSers(VkPipelineBindPoint bindPoint, Pipeline& pipeline, uint32_t firstSet, uint32_t setsCount, 
+		VkDescriptorSet* descriptorSets, uint32_t dynamicOffsetCount, uint32_t* pDynamicOffsets)
+	{
+		vkCmdBindDescriptorSets(mCommandBuffer, bindPoint, pipeline.GetNativePipelineLayout(), firstSet, setsCount, descriptorSets, dynamicOffsetCount, pDynamicOffsets);
+	}
+
 	void CommandBuffer::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
 	{
 		vkCmdDraw(mCommandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);

@@ -3,6 +3,7 @@
 #define NOMINMAX
 
 #include <iostream>
+#include <ctime>
 #include "LogColorized.h"
 
 namespace EngineLogger
@@ -19,7 +20,7 @@ namespace EngineLogger
     private:
         Logger()
         {
-            
+
         }
         Logger(const Logger&) = delete;
         Logger& operator=(const Logger&) = delete;

@@ -7,6 +7,7 @@ namespace Renderer
 	class Device;
 	class SwapChain;
 	class RenderPass;
+	class DescriptorSetLayout;
 
 	class Pipeline
 	{
@@ -17,10 +18,12 @@ namespace Renderer
 		Pipeline(const Pipeline&) = delete;
 		Pipeline& operator=(const Pipeline&) = delete;
 
-		void Initialize(Device& device, SwapChain& swapChain, RenderPass& renderPass);
+		void Initialize(Device& device, SwapChain& swapChain, RenderPass& renderPass, DescriptorSetLayout& layout);
 		void Cleanup();
 
 		VkPipeline GetNativePipeline() const;
+		VkPipelineLayout GetNativePipelineLayout();
+
 	private:
 		VkDevice mDevice;
 		VkPipeline mPipeline;

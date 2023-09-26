@@ -1,4 +1,5 @@
 #include "Renderer.h"
+#include "VulkanEngine/Logger/Logger.h"
 
 namespace Renderer
 {
@@ -17,25 +18,32 @@ namespace Renderer
 		mSwapChain.Initialize(mDevice, mWindowManager);
 		mSyncObjects.Initialize(mDevice);
 		mRenderPass.Initialize(mDevice, mSwapChain.GetFormat());
-		mPipeline.Initialize(mDevice, mSwapChain, mRenderPass);
 		mCommandPool.Initialize(mDevice);
+		mDescriptorPool.Initialize(mDevice);
+		mDescriptorSetLayout.Initialize(mDevice);
+		mPipeline.Initialize(mDevice, mSwapChain, mRenderPass, mDescriptorSetLayout);
+		mFrameBuffers.Initialize(mDevice, mSwapChain, mRenderPass);
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
 			mCommandBuffers[i].Initialize(mDevice, mCommandPool);
+			mUniformBuffers[i].Initialize(mDevice);
+			mDescriptorSets[i].Initialize(mDevice, mDescriptorPool, mDescriptorSetLayout, mUniformBuffers[i]);
 		}
-		mFrameBuffers.Initialize(mDevice, mSwapChain, mRenderPass);
-
 		mMesh.Initialize(mDevice, mCommandPool);
 	}
-
+	 
 	void Renderer::Cleanup()
 	{
 		mMesh.Cleanup();
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
+			mDescriptorSets[i].Cleanup();
+			mUniformBuffers[i].Cleanup();
 			mCommandBuffers[i].Cleanup();
 		}
+		mDescriptorSetLayout.Cleanup();
+		mDescriptorPool.Cleanup();
 		mFrameBuffers.Cleanup();
 		mCommandPool.Cleanup();
 		mPipeline.Cleanup();
@@ -44,6 +52,16 @@ namespace Renderer
 		mSwapChain.Cleanup();
 		mDevice.Cleanup();
 		mWindowManager.Cleanup();
+	}
+
+	void Renderer::UpdateUniformBuffer()
+	{
+		static auto startTime = std::chrono::high_resolution_clock::now();
+
+		auto currentTime = std::chrono::high_resolution_clock::now();
+		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+		auto extend = mSwapChain.GetSwapChainExtend();
+		mUniformBuffers[currentFrame].UpdateUniformBuffer(time, extend.width / (float)extend.height);
 	}
 
 	void Renderer::DrawFrame()
@@ -61,6 +79,7 @@ namespace Renderer
 		{
 			throw std::runtime_error("failed to acquire swap chain image!");
 		}
+
 		mSyncObjects.ResetInFlightFence(currentFrame);
 
 		auto& commandBuffer = mCommandBuffers[currentFrame];
@@ -77,6 +96,7 @@ namespace Renderer
 		VkDeviceSize offsets[] = { 0 };
 		commandBuffer.BindVertexBuffers(0, 1, vertexBuffers, offsets);
 		commandBuffer.BindIndexBuffer(mMesh.GetIndexBuffer(), 0, VK_INDEX_TYPE_UINT16);
+		commandBuffer.BindDescriptorSers(VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeline, 0, 1, mDescriptorSets[currentFrame].GetNativeSet(), 0, nullptr);
 
 		commandBuffer.DrawIndexed(mMesh.GetIndiciesCount(), 1, 0, 0, 0);
 		commandBuffer.EndRenderPass();

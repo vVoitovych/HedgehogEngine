@@ -169,3 +169,13 @@
 /.vs/VulkanEngine/v16/ipch/AutoPCH/e9141cfc0d8cf915/PIPELINE.ipch
 /.vs/VulkanEngine/v16/ipch/AutoPCH/eef7270fe711d6d4/FRAMEBUFFERS.ipch
 /VulkanEngine/x64/Debug/VulkanEngine.vcxproj.FileListAbsolute.txt
+/.vs/VulkanEngine/v16/ipch/AutoPCH/1533b20e6c77c78c/DESCRIPTORPOOL.ipch
+/.vs/VulkanEngine/v16/ipch/AutoPCH/4dea4fbde9f479ea/COMMONFUNCTIONS.ipch
+/.vs/VulkanEngine/v16/ipch/AutoPCH/8dd400d5b4088c8c/DESCRIPTORSET.ipch
+/.vs/VulkanEngine/v16/ipch/AutoPCH/93668b44cb89dfe6/COMONFUNCTIONS.ipch
+/.vs/VulkanEngine/v16/ipch/AutoPCH/cd36f17adc8f3c03/APPLICATION.ipch
+/.vs/VulkanEngine/v16/ipch/AutoPCH/ce448ad90c11f8e/UBOINFO.ipch
+/.vs/VulkanEngine/v16/ipch/AutoPCH/e458360b967193ef/UBO.ipch
+/.vs/VulkanEngine/v16/ipch/AutoPCH/eda3bfa877257a52/DESCRIPTORSETLAYOUT.ipch
+/.vs/VulkanEngine/v16/ipch/AutoPCH/eef4b278c3dccb4f/COMMONFUNCTIONS.ipch
+/.vs/VulkanEngine/v16/ipch/AutoPCH/f45f43ba5549b6d2/UBO.ipch
