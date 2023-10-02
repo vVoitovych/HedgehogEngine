@@ -1,5 +1,5 @@
 
-set VULKAN_SDK_PATH=C:\VulkanSDK\1.3.243.0\Bin
+set VULKAN_SDK_PATH=C:\VulkanSDK\1.3.231.1\Bin
 set SHADER_SOURCE_DIR=Shaders
 
 set DEBUG_SHADER_OUTPUT_DIR=..\x64\Debug\CompiledShaders
