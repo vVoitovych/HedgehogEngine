@@ -7,6 +7,9 @@
 #include "VulkanEngine/Renderer/Descriptors/DescriptorSetLayout.h"
 #include "VulkanEngine/Renderer/Mesh/Vertex.h"
 #include "VulkanEngine/Logger/Logger.h"
+#include "VulkanEngine/Renderer/Common/EngineDebugBreak.h"
+
+#include <fstream>
 
 namespace Renderer
 {

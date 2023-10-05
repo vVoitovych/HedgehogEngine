@@ -1,6 +1,8 @@
 #include "SyncObjects.h"
 #include "VulkanEngine/Renderer/Device/Device.h"
 #include "VulkanEngine/Logger/Logger.h"
+#include "VulkanEngine/Renderer/Common/EngineDebugBreak.h"
+#include "VulkanEngine/Renderer/Common/RendererSettings.h"
 
 namespace Renderer
 {

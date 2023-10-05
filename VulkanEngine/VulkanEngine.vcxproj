@@ -154,7 +154,6 @@
     <ClCompile Include="Renderer\Commands\CommandPool.cpp" />
     <ClCompile Include="Renderer\Common\CommonFunctions.cpp" />
     <ClCompile Include="Renderer\Common\ComonFunctions.cpp" />
-    <ClCompile Include="Renderer\Common\pch.cpp" />
     <ClCompile Include="Renderer\Descriptors\DescriptorPool.cpp" />
     <ClCompile Include="Renderer\Descriptors\DescriptorSet.cpp" />
     <ClCompile Include="Renderer\Descriptors\DescriptorSetLayout.cpp" />
@@ -183,7 +182,8 @@
     <ClInclude Include="Renderer\Commands\CommandBuffer.h" />
     <ClInclude Include="Renderer\Commands\CommandPool.h" />
     <ClInclude Include="Renderer\Common\CommonFunctions.h" />
-    <ClInclude Include="Renderer\Common\pch.h" />
+    <ClInclude Include="Renderer\Common\EngineDebugBreak.h" />
+    <ClInclude Include="Renderer\Common\RendererSettings.h" />
     <ClInclude Include="Renderer\Descriptors\DescriptorPool.h" />
     <ClInclude Include="Renderer\Descriptors\DescriptorSet.h" />
     <ClInclude Include="Renderer\Descriptors\DescriptorSetLayout.h" />

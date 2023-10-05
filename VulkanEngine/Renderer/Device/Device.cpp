@@ -1,6 +1,11 @@
 #include "Device.h"
 #include "VulkanEngine/Renderer/WindowManagment/WindowManager.h"
 #include "VulkanEngine/Logger/Logger.h"
+#include "VulkanEngine/Renderer/Common/EngineDebugBreak.h"
+
+#include <vector>
+#include <set>
+#include <unordered_set>
 
 namespace Renderer
 {

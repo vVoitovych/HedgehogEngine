@@ -1,10 +1,10 @@
 #pragma once
 
+#include "WindowState.h"
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-
-#include "VulkanEngine/Renderer/Common/pch.h"
-#include "WindowState.h"
+#include <vulkan/vulkan.h>
+#include <thread>
 
 namespace Renderer
 {

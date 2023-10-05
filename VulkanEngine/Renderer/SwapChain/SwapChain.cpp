@@ -1,7 +1,11 @@
 #include "SwapChain.h"
+
 #include "VulkanEngine/Renderer/WindowManagment/WindowManager.h"
+#include "VulkanEngine/Renderer/Common/EngineDebugBreak.h"
 #include "VulkanEngine/Logger/Logger.h"
+
 #include <limits>
+#include <algorithm>
 
 namespace Renderer
 {

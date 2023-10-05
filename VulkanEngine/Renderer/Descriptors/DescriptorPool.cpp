@@ -1,6 +1,8 @@
 #include "DescriptorPool.h"
 #include "VulkanEngine/Renderer/Device/Device.h"
 #include "VulkanEngine/Logger/Logger.h"
+#include "VulkanEngine/Renderer/Common/RendererSettings.h"
+#include "VulkanEngine/Renderer/Common/EngineDebugBreak.h"
 
 namespace Renderer
 {
@@ -33,7 +35,8 @@ namespace Renderer
 		poolInfo.pPoolSizes = &poolSize;
 		poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
-		if (vkCreateDescriptorPool(mDevice, &poolInfo, nullptr, &mDescriptorPool) != VK_SUCCESS) {
+		if (vkCreateDescriptorPool(mDevice, &poolInfo, nullptr, &mDescriptorPool) != VK_SUCCESS) 
+		{
 			throw std::runtime_error("failed to create descriptor pool!");
 		}
 	}

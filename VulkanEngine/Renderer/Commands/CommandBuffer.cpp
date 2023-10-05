@@ -5,6 +5,7 @@
 #include "VulkanEngine/Renderer/Pipeline/Pipeline.h"
 #include "CommandPool.h"
 #include "VulkanEngine/Logger/Logger.h"
+#include "VulkanEngine/Renderer/Common/EngineDebugBreak.h"
 
 namespace Renderer
 {

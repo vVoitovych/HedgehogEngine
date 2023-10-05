@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Common/pch.h"
+#include "VulkanEngine/Renderer/Common/RendererSettings.h"
 #include "Device/Device.h"
 #include "SwapChain/SwapChain.h"
 #include "SyncObjects/SyncObjects.h"

@@ -2,7 +2,7 @@
 #include "VulkanEngine/Renderer/Device/Device.h"
 #include "VulkanEngine/Renderer/SwapChain/SwapChain.h"
 #include "VulkanEngine/Renderer/RenderPass/RenderPass.h"
-
+#include "VulkanEngine/Renderer/Common/EngineDebugBreak.h"
 #include "VulkanEngine/Logger/Logger.h"
 
 namespace Renderer
@@ -47,7 +47,7 @@ namespace Renderer
 				throw std::runtime_error("failed to create frame buffer!");
 			}
 		}
-		LOGINFO("Frame buffer created");
+		LOGINFO("Frame buffer created. Created ", swapChainImagesSize, " frame buffers.");
 	}
 
 	void FrameBuffers::Cleanup()

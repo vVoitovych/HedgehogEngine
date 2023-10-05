@@ -1,5 +1,11 @@
 #pragma once
-#include "VulkanEngine/Renderer/Common/pch.h"
+
+#include <vulkan/vulkan.h>
+#include <vector>
+#include <array>
+
+#define GLM_FORCE_RADIANS
+#include <glm/glm.hpp>
 
 namespace Renderer
 {

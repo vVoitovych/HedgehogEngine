@@ -5,6 +5,7 @@
 #include "UBOInfo.h"
 #include "UBO.h"
 #include "VulkanEngine/Logger/Logger.h"
+#include "VulkanEngine/Renderer/Common/EngineDebugBreak.h"
 
 namespace Renderer
 {
@@ -31,7 +32,7 @@ namespace Renderer
 
         VkDescriptorSetAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool = descriptorPool.GetNativePool();
+        allocInfo.descriptorPool = mDescriptorPool;
         allocInfo.descriptorSetCount = 1;
         allocInfo.pSetLayouts = descriptorSetLayout.GetNativeLayout();
 

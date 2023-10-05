@@ -1,5 +1,7 @@
 #include "CommonFunctions.h"
 
+#include <stdexcept>
+
 namespace Renderer
 {
 	void CreateBuffer(
