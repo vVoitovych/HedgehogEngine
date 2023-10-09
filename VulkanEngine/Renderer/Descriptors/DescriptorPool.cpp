@@ -34,17 +34,20 @@ namespace Renderer
 		poolInfo.poolSizeCount = 1;
 		poolInfo.pPoolSizes = &poolSize;
 		poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+		poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
 		if (vkCreateDescriptorPool(mDevice, &poolInfo, nullptr, &mDescriptorPool) != VK_SUCCESS) 
 		{
 			throw std::runtime_error("failed to create descriptor pool!");
 		}
+		LOGINFO("Descriptor pool cleaned");
 	}
 
 	void DescriptorPool::Cleanup()
 	{
 		vkDestroyDescriptorPool(mDevice, mDescriptorPool, nullptr);
 		mDescriptorPool = nullptr;
+		LOGINFO("Descriptor pool cleaned");
 	}
 
 	VkDescriptorPool DescriptorPool::GetNativePool()

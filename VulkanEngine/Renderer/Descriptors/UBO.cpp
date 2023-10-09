@@ -51,6 +51,7 @@ namespace Renderer
 		vkFreeMemory(mDevice, mUniformBufferMemory, nullptr);
 		mUniformBuffer = nullptr;
 		mUniformBufferMemory = nullptr;
+		LOGINFO("UBO cleaned");
 	}
 
 	void UBO::UpdateUniformBuffer(float time, float ratio)

@@ -45,6 +45,7 @@ namespace Renderer
 	{
 		vkDestroyDescriptorSetLayout(mDevice, mDescriptorSetLayout, nullptr);
 		mDescriptorSetLayout = nullptr;
+		LOGINFO("Descriptor set layout cleaned");
 	}
 	VkDescriptorSetLayout* DescriptorSetLayout::GetNativeLayout()
 	{

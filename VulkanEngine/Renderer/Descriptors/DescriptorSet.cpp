@@ -63,6 +63,7 @@ namespace Renderer
 	{
         vkFreeDescriptorSets(mDevice, mDescriptorPool, 1, &mDescriptorSet);
         mDescriptorSet = nullptr;
+        LOGINFO("Vulkan descriptor set cleaned");
 	}
 
     VkDescriptorSet* DescriptorSet::GetNativeSet()

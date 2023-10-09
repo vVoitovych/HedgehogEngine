@@ -35,6 +35,8 @@ namespace Renderer
 	 
 	void Renderer::Cleanup()
 	{
+		vkQueueWaitIdle(mDevice.GetNativeGraphicsQueue());
+
 		mMesh.Cleanup();
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
