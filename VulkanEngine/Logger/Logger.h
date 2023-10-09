@@ -3,15 +3,16 @@
 #define NOMINMAX
 
 #include <iostream>
-#include <sstream>
-#include <Windows.h>
+#include <ctime>
+#include "LogColorized.h"
 
 namespace EngineLogger
 {
     class Logger 
     {
     public:
-        static Logger& Instance() {
+        static Logger& Instance() 
+        {
             static Logger instance;
             return instance;
         }
@@ -19,7 +20,7 @@ namespace EngineLogger
     private:
         Logger()
         {
-            mConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+
         }
         Logger(const Logger&) = delete;
         Logger& operator=(const Logger&) = delete;
@@ -29,7 +30,7 @@ namespace EngineLogger
         template <typename... Args>
         void Info(Args... args) 
         {
-            SetConsoleTextAttribute(mConsole, 7);
+            mColoriser.SetLogColor(7);
             std::cout << "[INFO]";
             LogHelper(args...);
             std::cout << std::endl;
@@ -37,7 +38,7 @@ namespace EngineLogger
         template <typename... Args>
         void Verbose(Args... args)
         {
-            SetConsoleTextAttribute(mConsole, 10);
+            mColoriser.SetLogColor(10);
             std::cout << "[VERBOSE]";
             LogHelper(args...);
             std::cout << std::endl;
@@ -45,8 +46,7 @@ namespace EngineLogger
         template <typename... Args>
         void Warning(Args... args) 
         {
-            SetConsoleTextAttribute(mConsole, 14);
-
+            mColoriser.SetLogColor(14);
             std::cout << "[WARNING]";
             LogHelper(args...);
             std::cout << std::endl;
@@ -55,8 +55,7 @@ namespace EngineLogger
         template <typename... Args>
         void Error(Args... args) 
         {
-            SetConsoleTextAttribute(mConsole, 12);
-
+            mColoriser.SetLogColor(12);
             std::cout << "[ERROR]";
             LogHelper(args...);
             std::cout << std::endl;
@@ -74,7 +73,7 @@ namespace EngineLogger
         {
         }
     private:
-        HANDLE mConsole;
+        LogColorized mColoriser;
     };
 
 

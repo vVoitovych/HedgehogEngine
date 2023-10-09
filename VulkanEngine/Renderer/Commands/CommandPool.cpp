@@ -1,6 +1,7 @@
 #include "CommandPool.h"
 #include "VulkanEngine/Renderer/Device/Device.h"
 #include "VulkanEngine/Logger/Logger.h"
+#include "VulkanEngine/Renderer/Common/EngineDebugBreak.h"
 
 namespace Renderer
 {
@@ -14,7 +15,8 @@ namespace Renderer
 	{
 		if (mCommandPool != nullptr)
 		{
-			throw std::runtime_error("Vulkan command pool should be cleanedup before destruction!");
+			LOGERROR("Vulkan command pool should be cleanedup before destruction!");
+			ENGINE_DEBUG_BREAK();
 		}
 	}
 

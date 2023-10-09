@@ -55,6 +55,15 @@
     <Filter Include="Logger">
       <UniqueIdentifier>{9de29dcf-5baf-4d7b-938f-58358e40b0b1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Renderer\Descriptors">
+      <UniqueIdentifier>{ff38a805-59cc-4ee8-accb-c202aaf528a7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Descriptors\Types">
+      <UniqueIdentifier>{f14c8749-0440-441b-b103-82fc053b2530}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Descriptors\Types\UBO">
+      <UniqueIdentifier>{efbc33f9-84b1-4b7f-b7a4-d243cd6ae7a1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -65,9 +74,6 @@
     </ClCompile>
     <ClCompile Include="Renderer\Renderer.cpp">
       <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Common\pch.cpp">
-      <Filter>Renderer\Common</Filter>
     </ClCompile>
     <ClCompile Include="Renderer\Mesh\Mesh.cpp">
       <Filter>Renderer\Mesh</Filter>
@@ -105,6 +111,27 @@
     <ClCompile Include="Renderer\SyncObjects\SyncObjects.cpp">
       <Filter>Renderer\SyncOnjects</Filter>
     </ClCompile>
+    <ClCompile Include="Logger\LogColorized.cpp">
+      <Filter>Logger</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Descriptors\DescriptorSetLayout.cpp">
+      <Filter>Renderer\Descriptors</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Descriptors\UBO.cpp">
+      <Filter>Renderer\Descriptors\Types\UBO</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Common\ComonFunctions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Common\CommonFunctions.cpp">
+      <Filter>Renderer\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Descriptors\DescriptorPool.cpp">
+      <Filter>Renderer\Descriptors</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Descriptors\DescriptorSet.cpp">
+      <Filter>Renderer\Descriptors</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="ShadersCompiler.bat">
@@ -123,9 +150,6 @@
     </ClInclude>
     <ClInclude Include="Renderer\Renderer.h">
       <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Common\pch.h">
-      <Filter>Renderer\Common</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\Mesh\Mesh.h">
       <Filter>Renderer\Mesh</Filter>
@@ -165,6 +189,33 @@
     </ClInclude>
     <ClInclude Include="Logger\Logger.h">
       <Filter>Logger</Filter>
+    </ClInclude>
+    <ClInclude Include="Logger\LogColorized.h">
+      <Filter>Logger</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Descriptors\UBOInfo.h">
+      <Filter>Renderer\Descriptors\Types\UBO</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Descriptors\DescriptorSetLayout.h">
+      <Filter>Renderer\Descriptors</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Descriptors\UBO.h">
+      <Filter>Renderer\Descriptors\Types\UBO</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Common\CommonFunctions.h">
+      <Filter>Renderer\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Descriptors\DescriptorPool.h">
+      <Filter>Renderer\Descriptors</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Descriptors\DescriptorSet.h">
+      <Filter>Renderer\Descriptors</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Common\EngineDebugBreak.h">
+      <Filter>Renderer\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Common\RendererSettings.h">
+      <Filter>Renderer\Common</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

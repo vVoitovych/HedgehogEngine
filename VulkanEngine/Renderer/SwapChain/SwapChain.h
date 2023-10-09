@@ -1,7 +1,9 @@
 #pragma once
 
-#include "VulkanEngine/Renderer/Common/pch.h"
 #include "VulkanEngine/Renderer/Device/Device.h"
+#include <vulkan/vulkan.h>
+#include <GLFW/glfw3.h>
+#include <vector>
 
 namespace Renderer
 {

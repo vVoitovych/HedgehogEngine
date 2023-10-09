@@ -1,12 +1,14 @@
 #include "RenderPass.h"
 #include "VulkanEngine/Renderer/Device/Device.h"
 #include "VulkanEngine/Logger/Logger.h"
+#include "VulkanEngine/Renderer/Common/EngineDebugBreak.h"
 
 namespace Renderer
 {
 
 	RenderPass::RenderPass()
-		: mRenderPass(VK_NULL_HANDLE)
+		: mRenderPass(nullptr)
+		, mDevice(nullptr)
 	{
 	}
 
@@ -14,7 +16,8 @@ namespace Renderer
 	{
 		if (mRenderPass != nullptr)
 		{
-			throw std::runtime_error("Vulkan rendere pass should be cleanedup before destruction!");
+			LOGERROR("Vulkan rendere pass should be cleanedup before destruction!");
+			ENGINE_DEBUG_BREAK();
 		}
 	}
 

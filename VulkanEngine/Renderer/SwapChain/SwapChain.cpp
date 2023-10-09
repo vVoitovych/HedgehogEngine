@@ -1,7 +1,11 @@
 #include "SwapChain.h"
+
 #include "VulkanEngine/Renderer/WindowManagment/WindowManager.h"
+#include "VulkanEngine/Renderer/Common/EngineDebugBreak.h"
 #include "VulkanEngine/Logger/Logger.h"
+
 #include <limits>
+#include <algorithm>
 
 namespace Renderer
 {
@@ -18,7 +22,8 @@ namespace Renderer
 	{
 		if (mSwapChain != nullptr)
 		{
-			throw std::runtime_error("Vulkan swap chain should be cleanedup before destruction!");
+			LOGERROR("Vulkan swap chain should be cleanedup before destruction!");
+			ENGINE_DEBUG_BREAK();
 		}
 	}
 

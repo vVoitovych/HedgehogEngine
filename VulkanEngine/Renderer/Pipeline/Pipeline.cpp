@@ -4,15 +4,19 @@
 #include "VulkanEngine/Renderer/Device/Device.h"
 #include "VulkanEngine/Renderer/SwapChain/SwapChain.h"
 #include "VulkanEngine/Renderer/RenderPass/RenderPass.h"
-
+#include "VulkanEngine/Renderer/Descriptors/DescriptorSetLayout.h"
 #include "VulkanEngine/Renderer/Mesh/Vertex.h"
 #include "VulkanEngine/Logger/Logger.h"
+#include "VulkanEngine/Renderer/Common/EngineDebugBreak.h"
+
+#include <fstream>
 
 namespace Renderer
 {
 	Pipeline::Pipeline()
-		: mPipeline(VK_NULL_HANDLE)
-		, mGraphycsPipelineLayout(VK_NULL_HANDLE)
+		: mPipeline(nullptr)
+		, mGraphycsPipelineLayout(nullptr)
+		, mDevice(nullptr)
 	{
 	}
 
@@ -20,11 +24,13 @@ namespace Renderer
 	{
 		if (mPipeline != nullptr)
 		{
-			throw std::runtime_error("Vulkan pipeline should be cleanedup before destruction!");
+			LOGERROR("Vulkan pipeline should be cleanedup before destruction!");
+			ENGINE_DEBUG_BREAK();
 		}
 		if (mGraphycsPipelineLayout != nullptr)
 		{
-			throw std::runtime_error("Vulkan pipeline layout should be cleanedup before destruction!");
+			LOGERROR("Vulkan pipeline layout should be cleanedup before destruction!");
+			ENGINE_DEBUG_BREAK();
 		}
 	}
 
@@ -74,7 +80,7 @@ namespace Renderer
 		return shaderModule;
 	}
 
-	void Pipeline::Initialize(Device& device, SwapChain& swapChain, RenderPass& renderPass)
+	void Pipeline::Initialize(Device& device, SwapChain& swapChain, RenderPass& renderPass, DescriptorSetLayout& layout)
 	{
 		mDevice = device.GetNativeDevice();
 
@@ -144,7 +150,7 @@ namespace Renderer
 		rasterizerInfo.rasterizerDiscardEnable = VK_FALSE;
 		rasterizerInfo.polygonMode = VK_POLYGON_MODE_FILL;
 		rasterizerInfo.lineWidth = 1.0f;
-		rasterizerInfo.cullMode = VK_CULL_MODE_BACK_BIT;
+		rasterizerInfo.cullMode = VK_CULL_MODE_NONE;
 		rasterizerInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
 		rasterizerInfo.depthBiasEnable = VK_FALSE;
 		rasterizerInfo.depthBiasConstantFactor = 0.0f;
@@ -180,8 +186,8 @@ namespace Renderer
 
 		VkPipelineLayoutCreateInfo layoutCreateInfo{};
 		layoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-		layoutCreateInfo.setLayoutCount = 0;
-		layoutCreateInfo.pSetLayouts = nullptr;
+		layoutCreateInfo.setLayoutCount = 1;
+		layoutCreateInfo.pSetLayouts = layout.GetNativeLayout();
 		layoutCreateInfo.pushConstantRangeCount = 0;
 		layoutCreateInfo.pPushConstantRanges = nullptr;
 
@@ -232,6 +238,11 @@ namespace Renderer
 	VkPipeline Pipeline::GetNativePipeline() const
 	{
 		return mPipeline;
+	}
+
+	VkPipelineLayout Pipeline::GetNativePipelineLayout()
+	{
+		return mGraphycsPipelineLayout;
 	}
 
 

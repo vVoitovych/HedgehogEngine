@@ -21,6 +21,7 @@ namespace VkEngine
 		while (!mRenderer.ShouldClose())
 		{
 			glfwPollEvents();
+			mRenderer.UpdateUniformBuffer();
 			mRenderer.DrawFrame();
 		}
 

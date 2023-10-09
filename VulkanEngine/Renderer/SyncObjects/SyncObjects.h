@@ -1,6 +1,7 @@
 #pragma once
 
-#include "VulkanEngine/Renderer/Common/pch.h"
+#include <vulkan/vulkan.h>
+#include <vector>
 
 namespace Renderer
 {

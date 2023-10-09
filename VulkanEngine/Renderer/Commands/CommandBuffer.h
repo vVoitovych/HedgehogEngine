@@ -1,6 +1,6 @@
 #pragma once
 
-#include "VulkanEngine/Renderer/Common/pch.h"
+#include <vulkan/vulkan.h>
 
 namespace Renderer
 {
@@ -33,7 +33,8 @@ namespace Renderer
 		void SetScissor(VkOffset2D offset, VkExtent2D extend);
 		void BindVertexBuffers(uint32_t firstBinding, uint32_t bindingsCount, VkBuffer* buffers, VkDeviceSize* offsets);
 		void BindIndexBuffer(VkBuffer indexBuffer, VkDeviceSize offset, VkIndexType indexType);
-
+		void BindDescriptorSers(VkPipelineBindPoint bindPoint, Pipeline& pipeline, uint32_t firstSet, uint32_t setsCount, 
+			VkDescriptorSet* descriptorSets, uint32_t dynamicOffsetCount, uint32_t* pDynamicOffsets);
 		void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance);
 		void DrawIndexed(uint32_t IndexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance);
 
