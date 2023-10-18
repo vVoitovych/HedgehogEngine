@@ -64,6 +64,12 @@
     <Filter Include="Renderer\Descriptors\Types\UBO">
       <UniqueIdentifier>{efbc33f9-84b1-4b7f-b7a4-d243cd6ae7a1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ContentLoader">
+      <UniqueIdentifier>{2f1d6900-400d-4106-8f97-8150e80114f0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ContentLoader\stb">
+      <UniqueIdentifier>{ae1416b8-8cbe-471d-82bb-6093b20d1a86}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -131,6 +137,9 @@
     </ClCompile>
     <ClCompile Include="Renderer\Descriptors\DescriptorSet.cpp">
       <Filter>Renderer\Descriptors</Filter>
+    </ClCompile>
+    <ClCompile Include="ContentLoader\TextureLoader.cpp">
+      <Filter>ContentLoader</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -216,6 +225,12 @@
     </ClInclude>
     <ClInclude Include="Renderer\Common\RendererSettings.h">
       <Filter>Renderer\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\stb\stb_image.h">
+      <Filter>ContentLoader\stb</Filter>
+    </ClInclude>
+    <ClInclude Include="ContentLoader\TextureLoader.h">
+      <Filter>ContentLoader</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
