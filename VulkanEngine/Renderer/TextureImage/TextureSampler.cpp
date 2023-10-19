@@ -54,6 +54,11 @@ namespace Renderer
 		LOGINFO("Vulkan texture sampler cleaned");
 	}
 
+	VkSampler TextureSampler::GetNativeSampler() const
+	{
+		return mTextureSampler;
+	}
+
 }
 
 

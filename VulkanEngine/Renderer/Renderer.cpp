@@ -22,17 +22,19 @@ namespace Renderer
 		mPipeline.Initialize(mDevice, mSwapChain, mRenderPass, mDescriptorSetLayout);
 		mFrameBuffers.Initialize(mDevice, mSwapChain, mRenderPass);
 
-		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
-		{
-			mCommandBuffers[i].Initialize(mDevice);
-			mUniformBuffers[i].Initialize(mDevice);
-			mDescriptorSets[i].Initialize(mDevice, mDescriptorSetLayout, mUniformBuffers[i]);
-		}
-		mMesh.Initialize(mDevice);
 		mTextureImage.SetFileName("Textures\\texture.jpg");
 		mTextureImage.Initialize(mDevice);
 		mTextureImageView.Initialize(mDevice, mTextureImage, VK_FORMAT_R8G8B8A8_SRGB);
 		mTextureSampler.Initialize(mDevice);
+
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+		{
+			mCommandBuffers[i].Initialize(mDevice);
+			mUniformBuffers[i].Initialize(mDevice);
+			mDescriptorSets[i].Initialize(mDevice, mDescriptorSetLayout, mUniformBuffers[i], mTextureImageView, mTextureSampler);
+		}
+		mMesh.Initialize(mDevice);
+
 	}
 	 
 	void Renderer::Cleanup()

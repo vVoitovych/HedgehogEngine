@@ -18,6 +18,8 @@ namespace Renderer
 		void Initialize(const Device& device);
 		void Cleanup(const Device& device);
 
+		VkSampler GetNativeSampler() const;
+
 	private:
 		VkSampler mTextureSampler;
 	};

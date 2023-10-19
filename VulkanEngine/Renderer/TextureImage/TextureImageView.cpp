@@ -48,6 +48,10 @@ namespace Renderer
 		mTextureImageView = nullptr;
 		LOGINFO("Vulkan texture image view cleaned");
 	}
+	VkImageView TextureImageView::GetNativeImageView() const
+	{
+		return mTextureImageView;
+	}
 }
 
 

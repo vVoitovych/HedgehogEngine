@@ -13,9 +13,9 @@ namespace Renderer
 		return desc;
 	}
 
-	std::array<VkVertexInputAttributeDescription, 2> Vertex::GetAttributeDescription()
+	std::array<VkVertexInputAttributeDescription, 3> Vertex::GetAttributeDescription()
 	{
-		std::array<VkVertexInputAttributeDescription, 2> desc;
+		std::array<VkVertexInputAttributeDescription, 3> desc;
 
 		desc[0].binding = 0;
 		desc[0].location = 0;
@@ -27,6 +27,11 @@ namespace Renderer
 		desc[1].format = VK_FORMAT_R32G32B32_SFLOAT;
 		desc[1].offset = offsetof(Vertex, color);
 
+		desc[2].binding = 0;
+		desc[2].location = 2;
+		desc[2].format = VK_FORMAT_R32G32_SFLOAT;
+		desc[2].offset = offsetof(Vertex, texCoord);
+
 		return desc;
 	}
 
@@ -35,9 +40,9 @@ namespace Renderer
 	{
 		std::vector<Vertex> vertices = 
 		{
-			{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-			{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-			{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+			{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+			{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}},
+			{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}}
 		};
 
 		return vertices;
@@ -46,10 +51,10 @@ namespace Renderer
 	{
 		std::vector<Vertex> vertices = 
 		{
-			{{-0.5f, -0.5f}, {0.0f, 0.0f, 0.0f}},
-			{{0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-			{{0.5f, 0.5f}, {1.0f, 1.0f, 0.0f}},
-			{{-0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}}
+			{{-0.5f, -0.5f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+			{{0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+			{{0.5f, 0.5f}, {1.0f, 1.0f, 0.0f}, {1.0f, 1.0f}},
+			{{-0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}}
 		};
 
 		return vertices;

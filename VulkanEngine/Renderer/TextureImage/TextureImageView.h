@@ -18,6 +18,9 @@ namespace Renderer
 
 		void Initialize(const Device& device, const TextureImage& textureImage, VkFormat format);
 		void Cleanup(const Device& device);
+
+		VkImageView GetNativeImageView() const;
+
 	private:
 		VkImageView mTextureImageView;
 
