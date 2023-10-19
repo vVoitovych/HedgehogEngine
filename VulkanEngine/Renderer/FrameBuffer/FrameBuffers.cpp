@@ -8,7 +8,6 @@
 namespace Renderer
 {
 	FrameBuffers::FrameBuffers()
-		: mDevice(nullptr)
 	{
 	}
 
@@ -21,10 +20,8 @@ namespace Renderer
 		}
 	}
 
-	void FrameBuffers::Initialize(Device& device, SwapChain& swapChain, RenderPass& renderPass)
+	void FrameBuffers::Initialize(const Device& device, SwapChain& swapChain, RenderPass& renderPass)
 	{
-		mDevice = device.GetNativeDevice();
-
 		size_t swapChainImagesSize = swapChain.GetSwapChainImagesSize();
 		mFrameBuffers.resize(swapChainImagesSize);
 
@@ -42,7 +39,7 @@ namespace Renderer
 			createInfo.height = swapChainExtend.height;
 			createInfo.layers = 1;
 
-			if (vkCreateFramebuffer(mDevice, &createInfo, nullptr, &mFrameBuffers[i]) != VK_SUCCESS)
+			if (vkCreateFramebuffer(device.GetNativeDevice(), &createInfo, nullptr, &mFrameBuffers[i]) != VK_SUCCESS)
 			{
 				throw std::runtime_error("failed to create frame buffer!");
 			}
@@ -50,11 +47,11 @@ namespace Renderer
 		LOGINFO("Frame buffer created. Created ", swapChainImagesSize, " frame buffers.");
 	}
 
-	void FrameBuffers::Cleanup()
+	void FrameBuffers::Cleanup(const Device& device)
 	{
 		for (auto& frameBuffer : mFrameBuffers)
 		{
-			vkDestroyFramebuffer(mDevice, frameBuffer, nullptr);
+			vkDestroyFramebuffer(device.GetNativeDevice(), frameBuffer, nullptr);
 		}
 		mFrameBuffers.clear();
 		LOGINFO("Frame buffers cleaned");

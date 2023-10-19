@@ -5,7 +5,6 @@
 namespace Renderer
 {
 	class Device;
-	class CommandPool;
 	class SwapChain;
 	class RenderPass;
 	class Pipeline;
@@ -19,8 +18,8 @@ namespace Renderer
 		CommandBuffer(const CommandBuffer&) = delete;
 		CommandBuffer& operator=(const CommandBuffer&) = delete;
 
-		void Initialize(Device& device, CommandPool& commandPool);
-		void Cleanup();
+		void Initialize(const Device& device);
+		void Cleanup(const Device& device);
 
 		VkCommandBuffer& GetNativeCommandBuffer();
 
@@ -39,8 +38,6 @@ namespace Renderer
 		void DrawIndexed(uint32_t IndexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance);
 
 	private:
-		VkDevice mDevice;
-		VkCommandPool mCommandPool;
 		VkCommandBuffer mCommandBuffer;
 	};
 }

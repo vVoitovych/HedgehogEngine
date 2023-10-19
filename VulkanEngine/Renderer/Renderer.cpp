@@ -18,40 +18,45 @@ namespace Renderer
 		mSwapChain.Initialize(mDevice, mWindowManager);
 		mSyncObjects.Initialize(mDevice);
 		mRenderPass.Initialize(mDevice, mSwapChain.GetFormat());
-		mCommandPool.Initialize(mDevice);
-		mDescriptorPool.Initialize(mDevice);
 		mDescriptorSetLayout.Initialize(mDevice);
 		mPipeline.Initialize(mDevice, mSwapChain, mRenderPass, mDescriptorSetLayout);
 		mFrameBuffers.Initialize(mDevice, mSwapChain, mRenderPass);
 
+		mTextureImage.SetFileName("Textures\\texture.jpg");
+		mTextureImage.Initialize(mDevice);
+		mTextureImageView.Initialize(mDevice, mTextureImage, VK_FORMAT_R8G8B8A8_SRGB);
+		mTextureSampler.Initialize(mDevice);
+
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
-			mCommandBuffers[i].Initialize(mDevice, mCommandPool);
+			mCommandBuffers[i].Initialize(mDevice);
 			mUniformBuffers[i].Initialize(mDevice);
-			mDescriptorSets[i].Initialize(mDevice, mDescriptorPool, mDescriptorSetLayout, mUniformBuffers[i]);
+			mDescriptorSets[i].Initialize(mDevice, mDescriptorSetLayout, mUniformBuffers[i], mTextureImageView, mTextureSampler);
 		}
-		mMesh.Initialize(mDevice, mCommandPool);
+		mMesh.Initialize(mDevice);
+
 	}
 	 
 	void Renderer::Cleanup()
 	{
 		vkQueueWaitIdle(mDevice.GetNativeGraphicsQueue());
 
-		mMesh.Cleanup();
+		mTextureSampler.Cleanup(mDevice);
+		mTextureImageView.Cleanup(mDevice);
+		mTextureImage.Cleanup(mDevice);
+		mMesh.Cleanup(mDevice);
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
-			mDescriptorSets[i].Cleanup();
-			mUniformBuffers[i].Cleanup();
-			mCommandBuffers[i].Cleanup();
+			mDescriptorSets[i].Cleanup(mDevice);
+			mUniformBuffers[i].Cleanup(mDevice);
+			mCommandBuffers[i].Cleanup(mDevice);
 		}
-		mDescriptorSetLayout.Cleanup();
-		mDescriptorPool.Cleanup();
-		mFrameBuffers.Cleanup();
-		mCommandPool.Cleanup();
-		mPipeline.Cleanup();
-		mRenderPass.Cleanup();
-		mSyncObjects.Cleanup();
-		mSwapChain.Cleanup();
+		mDescriptorSetLayout.Cleanup(mDevice);
+		mFrameBuffers.Cleanup(mDevice);
+		mPipeline.Cleanup(mDevice);
+		mRenderPass.Cleanup(mDevice);
+		mSyncObjects.Cleanup(mDevice);
+		mSwapChain.Cleanup(mDevice);
 		mDevice.Cleanup();
 		mWindowManager.Cleanup();
 	}
@@ -68,7 +73,7 @@ namespace Renderer
 
 	void Renderer::DrawFrame()
 	{
-		mSyncObjects.WaitforInFlightFence(currentFrame);
+		mSyncObjects.WaitforInFlightFence(mDevice, currentFrame);
 
 		uint32_t imageIndex;
 		VkResult result = vkAcquireNextImageKHR(mDevice.GetNativeDevice(), mSwapChain.GetNativeSwapChain(), UINT64_MAX, mSyncObjects.GetImageAvailableSemaphore(currentFrame), VK_NULL_HANDLE, &imageIndex);
@@ -82,7 +87,7 @@ namespace Renderer
 			throw std::runtime_error("failed to acquire swap chain image!");
 		}
 
-		mSyncObjects.ResetInFlightFence(currentFrame);
+		mSyncObjects.ResetInFlightFence(mDevice, currentFrame);
 
 		auto& commandBuffer = mCommandBuffers[currentFrame];
 		auto frameBuffer = mFrameBuffers.GetNativeFrameBuffer(imageIndex);
@@ -164,8 +169,8 @@ namespace Renderer
 
 	void Renderer::CleanupSwapChain()
 	{
-		mFrameBuffers.Cleanup();
-		mSwapChain.Cleanup();
+		mFrameBuffers.Cleanup(mDevice);
+		mSwapChain.Cleanup(mDevice);
 	}
 
 	void Renderer::CreateSwapShain()

@@ -15,14 +15,12 @@ namespace Renderer
 		UBO(const UBO&) = delete;
 		UBO& operator=(const UBO&) = delete;
 
-		void Initialize(Device& device);
-		void Cleanup();
+		void Initialize(const Device& device);
+		void Cleanup(const Device& device);
 
 		void UpdateUniformBuffer(float time, float ratio);
 		VkBuffer GetNativeBuffer();
 	private:
-		VkDevice mDevice;
-
 		VkBuffer mUniformBuffer;
 		VkDeviceMemory mUniformBufferMemory;
 		void* mUniformBufferMapped;

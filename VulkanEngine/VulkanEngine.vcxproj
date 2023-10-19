@@ -116,7 +116,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)..;C:\VulkanSDK\1.3.231.1\Include;$(ProjectDir)Libraries\glm;$(ProjectDir)Libraries\glfw-3.3.8.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..;C:\VulkanSDK\1.3.231.1\Include;$(ProjectDir)Libraries\glm;$(ProjectDir)Libraries\glfw-3.3.8.bin.WIN64\include;$(ProjectDir)Libraries\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -134,7 +134,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)..;C:\VulkanSDK\1.3.231.1\Include;$(ProjectDir)Libraries\glm;$(ProjectDir)Libraries\glfw-3.3.8.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..;C:\VulkanSDK\1.3.231.1\Include;$(ProjectDir)Libraries\glm;$(ProjectDir)Libraries\glfw-3.3.8.bin.WIN64\include;$(ProjectDir)Libraries\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -148,13 +148,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Application.cpp" />
+    <ClCompile Include="ContentLoader\TextureLoader.cpp" />
     <ClCompile Include="Logger\LogColorized.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Renderer\Commands\CommandBuffer.cpp" />
-    <ClCompile Include="Renderer\Commands\CommandPool.cpp" />
-    <ClCompile Include="Renderer\Common\CommonFunctions.cpp" />
     <ClCompile Include="Renderer\Common\ComonFunctions.cpp" />
-    <ClCompile Include="Renderer\Descriptors\DescriptorPool.cpp" />
     <ClCompile Include="Renderer\Descriptors\DescriptorSet.cpp" />
     <ClCompile Include="Renderer\Descriptors\DescriptorSetLayout.cpp" />
     <ClCompile Include="Renderer\Descriptors\UBO.cpp" />
@@ -167,6 +165,9 @@
     <ClCompile Include="Renderer\RenderPass\RenderPass.cpp" />
     <ClCompile Include="Renderer\SwapChain\SwapChain.cpp" />
     <ClCompile Include="Renderer\SyncObjects\SyncObjects.cpp" />
+    <ClCompile Include="Renderer\TextureImage\TextureImage.cpp" />
+    <ClCompile Include="Renderer\TextureImage\TextureImageView.cpp" />
+    <ClCompile Include="Renderer\TextureImage\TextureSampler.cpp" />
     <ClCompile Include="Renderer\WindowManagment\WindowManager.cpp" />
     <ClCompile Include="Renderer\WindowManagment\WindowState.cpp" />
   </ItemGroup>
@@ -177,14 +178,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h" />
+    <ClInclude Include="ContentLoader\TextureLoader.h" />
+    <ClInclude Include="Libraries\stb\stb_image.h" />
     <ClInclude Include="Logger\LogColorized.h" />
     <ClInclude Include="Logger\Logger.h" />
     <ClInclude Include="Renderer\Commands\CommandBuffer.h" />
-    <ClInclude Include="Renderer\Commands\CommandPool.h" />
-    <ClInclude Include="Renderer\Common\CommonFunctions.h" />
     <ClInclude Include="Renderer\Common\EngineDebugBreak.h" />
     <ClInclude Include="Renderer\Common\RendererSettings.h" />
-    <ClInclude Include="Renderer\Descriptors\DescriptorPool.h" />
     <ClInclude Include="Renderer\Descriptors\DescriptorSet.h" />
     <ClInclude Include="Renderer\Descriptors\DescriptorSetLayout.h" />
     <ClInclude Include="Renderer\Descriptors\UBO.h" />
@@ -198,6 +198,9 @@
     <ClInclude Include="Renderer\RenderPass\RenderPass.h" />
     <ClInclude Include="Renderer\SwapChain\SwapChain.h" />
     <ClInclude Include="Renderer\SyncObjects\SyncObjects.h" />
+    <ClInclude Include="Renderer\TextureImage\TextureImage.h" />
+    <ClInclude Include="Renderer\TextureImage\TextureImageView.h" />
+    <ClInclude Include="Renderer\TextureImage\TextureSampler.h" />
     <ClInclude Include="Renderer\WindowManagment\WindowManager.h" />
     <ClInclude Include="Renderer\WindowManagment\WindowState.h" />
   </ItemGroup>

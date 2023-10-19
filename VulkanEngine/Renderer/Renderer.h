@@ -7,14 +7,15 @@
 #include "RenderPass/RenderPass.h"
 #include "Pipeline/Pipeline.h"
 #include "FrameBuffer/FrameBuffers.h"
-#include "Commands/CommandPool.h"
 #include "Commands/CommandBuffer.h"
 #include "Descriptors/UBO.h"
-#include "Descriptors/DescriptorPool.h"
 #include "Descriptors/DescriptorSetLayout.h"
 #include "Descriptors/DescriptorSet.h"
 #include "WindowManagment/WindowManager.h"
 #include "Mesh/Mesh.h"
+#include "TextureImage/TextureImage.h"
+#include "TextureImage/TextureImageView.h"
+#include "TextureImage/TextureSampler.h"
 
 namespace Renderer
 {
@@ -52,13 +53,15 @@ namespace Renderer
 		RenderPass mRenderPass;
 		Pipeline mPipeline;
 		FrameBuffers mFrameBuffers;
-		CommandPool mCommandPool;
 		CommandBuffer mCommandBuffers[MAX_FRAMES_IN_FLIGHT];
 		UBO mUniformBuffers[MAX_FRAMES_IN_FLIGHT];
-		DescriptorPool mDescriptorPool;
 		DescriptorSetLayout mDescriptorSetLayout;
 		DescriptorSet mDescriptorSets[MAX_FRAMES_IN_FLIGHT];
 		Mesh mMesh;
+		TextureImage mTextureImage;
+		TextureImageView mTextureImageView;
+		TextureSampler mTextureSampler;
+
 	};
 }
 

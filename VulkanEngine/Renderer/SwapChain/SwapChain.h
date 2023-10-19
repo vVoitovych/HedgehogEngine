@@ -7,6 +7,7 @@
 
 namespace Renderer
 {
+	class Device;
 	class WindowsManager;
 
 	class SwapChain
@@ -18,8 +19,8 @@ namespace Renderer
 		SwapChain(const SwapChain&) = delete;
 		SwapChain& operator=(const SwapChain&) = delete;
 
-		void Initialize(Device& device, WindowManager& windowManager);
-		void Cleanup();
+		void Initialize(const Device& device, WindowManager& windowManager);
+		void Cleanup(const Device& device);
 
 		VkSwapchainKHR GetNativeSwapChain() const;
 
@@ -30,19 +31,14 @@ namespace Renderer
 		VkImageView GetNativeSwapChainImageView(size_t index) const;
 
 	private:
-		void CreateSwapChain();
-		void CreateImageViews();
+		void CreateSwapChain(const Device& device);
+		void CreateImageViews(const Device& device);
 
-		SwapChainSupportDetails QuerySwapChainSupport() const;
 		VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) const;
 		VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) const;
 		VkExtent2D ChooseSwapExtend(const VkSurfaceCapabilitiesKHR& capabilities) const;
 
 	private:
-		VkDevice mDevice;
-		VkSurfaceKHR mSurface;
-		VkPhysicalDevice mPhysicalDevice;
-		QueueFamilyIndices mIndicies;
 		GLFWwindow* mWindow;
 
 		VkSwapchainKHR mSwapChain;

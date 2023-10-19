@@ -64,6 +64,15 @@
     <Filter Include="Renderer\Descriptors\Types\UBO">
       <UniqueIdentifier>{efbc33f9-84b1-4b7f-b7a4-d243cd6ae7a1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ContentLoader">
+      <UniqueIdentifier>{2f1d6900-400d-4106-8f97-8150e80114f0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ContentLoader\stb">
+      <UniqueIdentifier>{ae1416b8-8cbe-471d-82bb-6093b20d1a86}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\TextureImage">
+      <UniqueIdentifier>{a5a8dd0b-d851-47c9-a063-b3437e900ba0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -93,9 +102,6 @@
     <ClCompile Include="Renderer\Commands\CommandBuffer.cpp">
       <Filter>Renderer\Commands</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Commands\CommandPool.cpp">
-      <Filter>Renderer\Commands</Filter>
-    </ClCompile>
     <ClCompile Include="Renderer\SwapChain\SwapChain.cpp">
       <Filter>Renderer\SwapChain</Filter>
     </ClCompile>
@@ -123,14 +129,20 @@
     <ClCompile Include="Renderer\Common\ComonFunctions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Common\CommonFunctions.cpp">
-      <Filter>Renderer\Common</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Descriptors\DescriptorPool.cpp">
-      <Filter>Renderer\Descriptors</Filter>
-    </ClCompile>
     <ClCompile Include="Renderer\Descriptors\DescriptorSet.cpp">
       <Filter>Renderer\Descriptors</Filter>
+    </ClCompile>
+    <ClCompile Include="ContentLoader\TextureLoader.cpp">
+      <Filter>ContentLoader</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\TextureImage\TextureImage.cpp">
+      <Filter>Renderer\TextureImage</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\TextureImage\TextureSampler.cpp">
+      <Filter>Renderer\TextureImage</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\TextureImage\TextureImageView.cpp">
+      <Filter>Renderer\TextureImage</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -169,9 +181,6 @@
     <ClInclude Include="Renderer\Commands\CommandBuffer.h">
       <Filter>Renderer\Commands</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Commands\CommandPool.h">
-      <Filter>Renderer\Commands</Filter>
-    </ClInclude>
     <ClInclude Include="Renderer\SwapChain\SwapChain.h">
       <Filter>Renderer\SwapChain</Filter>
     </ClInclude>
@@ -202,12 +211,6 @@
     <ClInclude Include="Renderer\Descriptors\UBO.h">
       <Filter>Renderer\Descriptors\Types\UBO</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Common\CommonFunctions.h">
-      <Filter>Renderer\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Descriptors\DescriptorPool.h">
-      <Filter>Renderer\Descriptors</Filter>
-    </ClInclude>
     <ClInclude Include="Renderer\Descriptors\DescriptorSet.h">
       <Filter>Renderer\Descriptors</Filter>
     </ClInclude>
@@ -216,6 +219,21 @@
     </ClInclude>
     <ClInclude Include="Renderer\Common\RendererSettings.h">
       <Filter>Renderer\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\stb\stb_image.h">
+      <Filter>ContentLoader\stb</Filter>
+    </ClInclude>
+    <ClInclude Include="ContentLoader\TextureLoader.h">
+      <Filter>ContentLoader</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\TextureImage\TextureImage.h">
+      <Filter>Renderer\TextureImage</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\TextureImage\TextureSampler.h">
+      <Filter>Renderer\TextureImage</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\TextureImage\TextureImageView.h">
+      <Filter>Renderer\TextureImage</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

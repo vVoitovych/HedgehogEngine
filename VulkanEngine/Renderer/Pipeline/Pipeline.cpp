@@ -16,7 +16,6 @@ namespace Renderer
 	Pipeline::Pipeline()
 		: mPipeline(nullptr)
 		, mGraphycsPipelineLayout(nullptr)
-		, mDevice(nullptr)
 	{
 	}
 
@@ -80,15 +79,13 @@ namespace Renderer
 		return shaderModule;
 	}
 
-	void Pipeline::Initialize(Device& device, SwapChain& swapChain, RenderPass& renderPass, DescriptorSetLayout& layout)
+	void Pipeline::Initialize(const Device& device, SwapChain& swapChain, RenderPass& renderPass, DescriptorSetLayout& layout)
 	{
-		mDevice = device.GetNativeDevice();
-
 		auto vertexShaderCode = ReadFile("CompiledShaders\\Shaders\\SimpleShader.vert.spv");
 		auto fragmentShaderCode = ReadFile("CompiledShaders\\Shaders\\SimpleShader.frag.spv");
 
-		VkShaderModule vertShaderModule = CreateShaderModule(mDevice, vertexShaderCode);
-		VkShaderModule fragShaderModule = CreateShaderModule(mDevice, fragmentShaderCode);
+		VkShaderModule vertShaderModule = CreateShaderModule(device.GetNativeDevice(), vertexShaderCode);
+		VkShaderModule fragShaderModule = CreateShaderModule(device.GetNativeDevice(), fragmentShaderCode);
 
 		VkPipelineShaderStageCreateInfo vertShadereStageCreateInfo{};
 		vertShadereStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -191,7 +188,7 @@ namespace Renderer
 		layoutCreateInfo.pushConstantRangeCount = 0;
 		layoutCreateInfo.pPushConstantRanges = nullptr;
 
-		if (vkCreatePipelineLayout(mDevice, &layoutCreateInfo, nullptr, &mGraphycsPipelineLayout) != VK_SUCCESS)
+		if (vkCreatePipelineLayout(device.GetNativeDevice(), &layoutCreateInfo, nullptr, &mGraphycsPipelineLayout) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create pipeline layout!");
 		}
@@ -214,21 +211,21 @@ namespace Renderer
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 		pipelineInfo.basePipelineIndex = -1;
 
-		if (vkCreateGraphicsPipelines(mDevice, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &mPipeline) != VK_SUCCESS)
+		if (vkCreateGraphicsPipelines(device.GetNativeDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &mPipeline) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create pipeline");
 		}
 
-		vkDestroyShaderModule(mDevice, vertShaderModule, nullptr);
-		vkDestroyShaderModule(mDevice, fragShaderModule, nullptr);
+		vkDestroyShaderModule(device.GetNativeDevice(), vertShaderModule, nullptr);
+		vkDestroyShaderModule(device.GetNativeDevice(), fragShaderModule, nullptr);
 
 		LOGINFO("Pipeline created");
 	}
 
-	void Pipeline::Cleanup()
+	void Pipeline::Cleanup(const Device& device)
 	{
-		vkDestroyPipeline(mDevice, mPipeline, nullptr);
-		vkDestroyPipelineLayout(mDevice, mGraphycsPipelineLayout, nullptr);
+		vkDestroyPipeline(device.GetNativeDevice(), mPipeline, nullptr);
+		vkDestroyPipelineLayout(device.GetNativeDevice(), mGraphycsPipelineLayout, nullptr);
 
 		mPipeline = nullptr;
 		mGraphycsPipelineLayout = nullptr;

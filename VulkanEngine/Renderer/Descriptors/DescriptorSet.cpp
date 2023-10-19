@@ -1,18 +1,19 @@
 #include "DescriptorSet.h"
 #include "VulkanEngine/Renderer/Device/Device.h"
-#include "DescriptorPool.h"
 #include "DescriptorSetLayout.h"
 #include "UBOInfo.h"
 #include "UBO.h"
 #include "VulkanEngine/Logger/Logger.h"
 #include "VulkanEngine/Renderer/Common/EngineDebugBreak.h"
+#include "VulkanEngine/Renderer/TextureImage/TextureImageView.h"
+#include "VulkanEngine/Renderer/TextureImage/TextureSampler.h"
+
+#include <array>
 
 namespace Renderer
 {
 	DescriptorSet::DescriptorSet()
-		: mDevice(nullptr)
-        , mDescriptorPool(nullptr)
-		, mDescriptorSet(nullptr)
+		: mDescriptorSet(nullptr)
 	{
 	}
 
@@ -25,43 +26,44 @@ namespace Renderer
         }
 	}
 
-	void DescriptorSet::Initialize(Device& device, DescriptorPool& descriptorPool, DescriptorSetLayout& descriptorSetLayout, UBO& ubo)
+	void DescriptorSet::Initialize(const Device& device, DescriptorSetLayout& descriptorSetLayout, UBO& ubo, TextureImageView& view, TextureSampler& sampler)
 	{
-        mDevice = device.GetNativeDevice();
-        mDescriptorPool = descriptorPool.GetNativePool();
-
-        VkDescriptorSetAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool = mDescriptorPool;
-        allocInfo.descriptorSetCount = 1;
-        allocInfo.pSetLayouts = descriptorSetLayout.GetNativeLayout();
-
-        if (vkAllocateDescriptorSets(device.GetNativeDevice(), &allocInfo, &mDescriptorSet) != VK_SUCCESS) 
-        {
-            throw std::runtime_error("failed to allocate descriptor sets!");
-        }
+        device.AllocateDescriptorSet(descriptorSetLayout, ubo, &mDescriptorSet);
 
         VkDescriptorBufferInfo bufferInfo{};
         bufferInfo.buffer = ubo.GetNativeBuffer();
         bufferInfo.offset = 0;
         bufferInfo.range = sizeof(UniformBufferObject);
 
-        VkWriteDescriptorSet descriptorWrite{};
-        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrite.dstSet = mDescriptorSet;
-        descriptorWrite.dstBinding = 0;
-        descriptorWrite.dstArrayElement = 0;
-        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrite.descriptorCount = 1;
-        descriptorWrite.pBufferInfo = &bufferInfo;
+        VkDescriptorImageInfo imageInfo{};
+        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfo.imageView = view.GetNativeImageView();
+        imageInfo.sampler = sampler.GetNativeSampler();
 
-        vkUpdateDescriptorSets(device.GetNativeDevice(), 1, &descriptorWrite, 0, nullptr);
+        std::array< VkWriteDescriptorSet, 2> descriptorWrites{};
+        descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[0].dstSet = mDescriptorSet;
+        descriptorWrites[0].dstBinding = 0;
+        descriptorWrites[0].dstArrayElement = 0;
+        descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrites[0].descriptorCount = 1;
+        descriptorWrites[0].pBufferInfo = &bufferInfo;
+
+        descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrites[1].dstSet = mDescriptorSet;
+        descriptorWrites[1].dstBinding = 1;
+        descriptorWrites[1].dstArrayElement = 0;
+        descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrites[1].descriptorCount = 1;
+        descriptorWrites[1].pImageInfo = &imageInfo;
+
+        vkUpdateDescriptorSets(device.GetNativeDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
         LOGINFO("Vulkan descriptor set created");
 	}
 
-	void DescriptorSet::Cleanup()
+	void DescriptorSet::Cleanup(const Device& device)
 	{
-        vkFreeDescriptorSets(mDevice, mDescriptorPool, 1, &mDescriptorSet);
+        device.FreeDescriptorSet(&mDescriptorSet);
         mDescriptorSet = nullptr;
         LOGINFO("Vulkan descriptor set cleaned");
 	}

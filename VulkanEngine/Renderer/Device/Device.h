@@ -6,8 +6,6 @@
 
 namespace Renderer
 {
-	class WindowManager;
-
 	struct QueueFamilyIndices
 	{
 		std::optional<uint32_t> mGraphicsFamily;
@@ -35,15 +33,46 @@ namespace Renderer
 		Device(const Device&) = delete;
 		Device& operator=(const Device&) = delete;
 
-		void Initialize(WindowManager& windowManager);
+		void Initialize(class WindowManager& windowManager);
 		void Cleanup();
 
 		VkQueue GetNativeGraphicsQueue() const;
 		VkQueue GetNativePresentQueue() const;
-		VkSurfaceKHR GetNativeSurface();
+		VkSurfaceKHR GetNativeSurface() const ;
 		VkDevice GetNativeDevice() const;
 		VkPhysicalDevice GetNativePhysicalDevice() const;
 		QueueFamilyIndices GetIndicies() const;
+
+	public:
+		void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, 	VkDeviceMemory& bufferMemory) const;
+		void CopyBuffer(VkBuffer srcBuffer,	VkBuffer dstBuffer,	VkDeviceSize size) const;
+
+		void CopyDataToBufferMemory(VkDeviceMemory memory, const void* data, size_t size) const;
+		void MapMemory(VkDeviceMemory memory, VkDeviceSize offset, VkDeviceSize size, VkMemoryMapFlags flags, void** ppData) const;
+
+		void DestroyBuffer(VkBuffer buffer, const VkAllocationCallbacks* callBacks) const;
+		void FreeMemory(VkDeviceMemory memory, const VkAllocationCallbacks* callBacks) const;
+
+		void CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, 
+			VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) const;
+		void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) const;
+		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) const;
+
+		void DestroyImage(VkImage image, const VkAllocationCallbacks* callback) const;
+
+	public:
+		void AllocateCommandBuffer(VkCommandBuffer* pCommandBuffer) const;
+		void FreeCommandBuffer(VkCommandBuffer* pCommandBuffer) const;
+	private:
+		VkCommandBuffer BeginSingleTimeCommands() const;
+		void EndSingleTimeCommands(VkCommandBuffer commandBuffer) const;
+	public:
+		void AllocateDescriptorSet(class DescriptorSetLayout& descriptorSetLayout, const class UBO& ubo, VkDescriptorSet* pDescriptorSet) const;
+		void FreeDescriptorSet(VkDescriptorSet* pDescriptorSet) const;
+
+	public:
+		SwapChainSupportDetails QuerySwapChainSupport() const;
+		VkPhysicalDeviceProperties GetPhysicalDeviceProperties() const;
 
 	private:
 		void InitializeInstance();
@@ -51,6 +80,8 @@ namespace Renderer
 		void CleanupDebugMessanger();
 		void PickPhysicalDevice();
 		void CreateLogicalDevice();
+		void CreateCommandPool();
+		void CreateDescriptorPool();
 
 		bool IsEnableValidationLayers() const;
 		void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) const;
@@ -79,6 +110,9 @@ namespace Renderer
 		VkQueue mPresentQueue;
 
 		QueueFamilyIndices mIndices;
+
+		VkCommandPool mCommandPool;
+		VkDescriptorPool mDescriptorPool;
 	};
 }
 
