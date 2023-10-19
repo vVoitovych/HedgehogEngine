@@ -165,6 +165,9 @@
     <ClCompile Include="Renderer\RenderPass\RenderPass.cpp" />
     <ClCompile Include="Renderer\SwapChain\SwapChain.cpp" />
     <ClCompile Include="Renderer\SyncObjects\SyncObjects.cpp" />
+    <ClCompile Include="Renderer\TextureImage\TextureImage.cpp" />
+    <ClCompile Include="Renderer\TextureImage\TextureImageView.cpp" />
+    <ClCompile Include="Renderer\TextureImage\TextureSampler.cpp" />
     <ClCompile Include="Renderer\WindowManagment\WindowManager.cpp" />
     <ClCompile Include="Renderer\WindowManagment\WindowState.cpp" />
   </ItemGroup>
@@ -195,6 +198,9 @@
     <ClInclude Include="Renderer\RenderPass\RenderPass.h" />
     <ClInclude Include="Renderer\SwapChain\SwapChain.h" />
     <ClInclude Include="Renderer\SyncObjects\SyncObjects.h" />
+    <ClInclude Include="Renderer\TextureImage\TextureImage.h" />
+    <ClInclude Include="Renderer\TextureImage\TextureImageView.h" />
+    <ClInclude Include="Renderer\TextureImage\TextureSampler.h" />
     <ClInclude Include="Renderer\WindowManagment\WindowManager.h" />
     <ClInclude Include="Renderer\WindowManagment\WindowState.h" />
   </ItemGroup>

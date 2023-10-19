@@ -53,16 +53,26 @@ namespace Renderer
 		void DestroyBuffer(VkBuffer buffer, const VkAllocationCallbacks* callBacks) const;
 		void FreeMemory(VkDeviceMemory memory, const VkAllocationCallbacks* callBacks) const;
 
+		void CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, 
+			VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) const;
+		void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) const;
+		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) const;
+
+		void DestroyImage(VkImage image, const VkAllocationCallbacks* callback) const;
+
 	public:
 		void AllocateCommandBuffer(VkCommandBuffer* pCommandBuffer) const;
 		void FreeCommandBuffer(VkCommandBuffer* pCommandBuffer) const;
-
+	private:
+		VkCommandBuffer BeginSingleTimeCommands() const;
+		void EndSingleTimeCommands(VkCommandBuffer commandBuffer) const;
 	public:
 		void AllocateDescriptorSet(class DescriptorSetLayout& descriptorSetLayout, const class UBO& ubo, VkDescriptorSet* pDescriptorSet) const;
 		void FreeDescriptorSet(VkDescriptorSet* pDescriptorSet) const;
 
 	public:
 		SwapChainSupportDetails QuerySwapChainSupport() const;
+		VkPhysicalDeviceProperties GetPhysicalDeviceProperties() const;
 
 	private:
 		void InitializeInstance();

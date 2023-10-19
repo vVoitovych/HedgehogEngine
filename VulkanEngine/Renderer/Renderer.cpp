@@ -29,12 +29,19 @@ namespace Renderer
 			mDescriptorSets[i].Initialize(mDevice, mDescriptorSetLayout, mUniformBuffers[i]);
 		}
 		mMesh.Initialize(mDevice);
+		mTextureImage.SetFileName("Textures\\texture.jpg");
+		mTextureImage.Initialize(mDevice);
+		mTextureImageView.Initialize(mDevice, mTextureImage, VK_FORMAT_R8G8B8A8_SRGB);
+		mTextureSampler.Initialize(mDevice);
 	}
 	 
 	void Renderer::Cleanup()
 	{
 		vkQueueWaitIdle(mDevice.GetNativeGraphicsQueue());
 
+		mTextureSampler.Cleanup(mDevice);
+		mTextureImageView.Cleanup(mDevice);
+		mTextureImage.Cleanup(mDevice);
 		mMesh.Cleanup(mDevice);
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{

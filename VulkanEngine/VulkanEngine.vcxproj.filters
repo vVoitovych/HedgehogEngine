@@ -70,6 +70,9 @@
     <Filter Include="ContentLoader\stb">
       <UniqueIdentifier>{ae1416b8-8cbe-471d-82bb-6093b20d1a86}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Renderer\TextureImage">
+      <UniqueIdentifier>{a5a8dd0b-d851-47c9-a063-b3437e900ba0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -131,6 +134,15 @@
     </ClCompile>
     <ClCompile Include="ContentLoader\TextureLoader.cpp">
       <Filter>ContentLoader</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\TextureImage\TextureImage.cpp">
+      <Filter>Renderer\TextureImage</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\TextureImage\TextureSampler.cpp">
+      <Filter>Renderer\TextureImage</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\TextureImage\TextureImageView.cpp">
+      <Filter>Renderer\TextureImage</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -213,6 +225,15 @@
     </ClInclude>
     <ClInclude Include="ContentLoader\TextureLoader.h">
       <Filter>ContentLoader</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\TextureImage\TextureImage.h">
+      <Filter>Renderer\TextureImage</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\TextureImage\TextureSampler.h">
+      <Filter>Renderer\TextureImage</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\TextureImage\TextureImageView.h">
+      <Filter>Renderer\TextureImage</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

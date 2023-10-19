@@ -13,6 +13,9 @@
 #include "Descriptors/DescriptorSet.h"
 #include "WindowManagment/WindowManager.h"
 #include "Mesh/Mesh.h"
+#include "TextureImage/TextureImage.h"
+#include "TextureImage/TextureImageView.h"
+#include "TextureImage/TextureSampler.h"
 
 namespace Renderer
 {
@@ -55,6 +58,10 @@ namespace Renderer
 		DescriptorSetLayout mDescriptorSetLayout;
 		DescriptorSet mDescriptorSets[MAX_FRAMES_IN_FLIGHT];
 		Mesh mMesh;
+		TextureImage mTextureImage;
+		TextureImageView mTextureImageView;
+		TextureSampler mTextureSampler;
+
 	};
 }
 

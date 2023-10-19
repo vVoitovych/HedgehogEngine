@@ -20,7 +20,7 @@ namespace ContentLoader
 	std::string GetAssetsDirectory()
 	{
 		std::string result = GetCurrentDirectory();
-		result += "\\..\\..\\Assets\\";
+		result += "\\..\\..\\VulkanEngine\\Assets\\";
 		return result;
 	}
 
