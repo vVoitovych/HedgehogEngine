@@ -1,7 +1,6 @@
 #include "UBO.h"
 #include "VulkanEngine/Renderer/Device/Device.h"
 #include "UBOInfo.h"
-#include "VulkanEngine/Renderer/Common/CommonFunctions.h"
 #include "VulkanEngine/Logger/Logger.h"
 #include "VulkanEngine/Renderer/Common/EngineDebugBreak.h"
 
@@ -10,8 +9,7 @@
 namespace Renderer
 {
 	UBO::UBO()
-		: mDevice(nullptr)
-		, mUniformBuffer(nullptr)
+		: mUniformBuffer(nullptr)
 		, mUniformBufferMemory(nullptr)
 		, mUniformBufferMapped(nullptr)
 	{
@@ -30,25 +28,21 @@ namespace Renderer
 		}
 	}
 
-	void UBO::Initialize(Device& device)
+	void UBO::Initialize(const Device& device)
 	{
-		mDevice = device.GetNativeDevice();
 		VkDeviceSize bufferSize = sizeof(UniformBufferObject);
-		CreateBuffer(mDevice,
-			device.GetNativePhysicalDevice(), 
-			bufferSize, 
-			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 
+		device.CreateBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
 			mUniformBuffer, mUniformBufferMemory);
 
-		vkMapMemory(mDevice, mUniformBufferMemory, 0, bufferSize, 0, &mUniformBufferMapped);
+		device.MapMemory(mUniformBufferMemory, 0, bufferSize, 0, &mUniformBufferMapped);
 		LOGINFO("Vulkan UBO created");
 	}
 
-	void UBO::Cleanup()
+	void UBO::Cleanup(const Device& device)
 	{
-		vkDestroyBuffer(mDevice, mUniformBuffer, nullptr);
-		vkFreeMemory(mDevice, mUniformBufferMemory, nullptr);
+		device.DestroyBuffer(mUniformBuffer, nullptr);
+		device.FreeMemory(mUniformBufferMemory, nullptr);
 		mUniformBuffer = nullptr;
 		mUniformBufferMemory = nullptr;
 		LOGINFO("UBO cleaned");

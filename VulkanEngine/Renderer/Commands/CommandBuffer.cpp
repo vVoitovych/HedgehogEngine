@@ -3,7 +3,6 @@
 #include "VulkanEngine/Renderer/SwapChain/SwapChain.h"
 #include "VulkanEngine/Renderer/RenderPass/RenderPass.h"
 #include "VulkanEngine/Renderer/Pipeline/Pipeline.h"
-#include "CommandPool.h"
 #include "VulkanEngine/Logger/Logger.h"
 #include "VulkanEngine/Renderer/Common/EngineDebugBreak.h"
 
@@ -11,8 +10,6 @@ namespace Renderer
 {
 	CommandBuffer::CommandBuffer()
 		:mCommandBuffer(nullptr)
-		, mCommandPool(nullptr)
-		, mDevice(nullptr)
 	{
 	}
 
@@ -25,28 +22,15 @@ namespace Renderer
 		}
 	}
 
-	void CommandBuffer::Initialize(Device& device, CommandPool& commandPool)
+	void CommandBuffer::Initialize(const Device& device)
 	{
-		mDevice = device.GetNativeDevice();
-		mCommandPool = commandPool.GetNativeCommandPool();
-
-		VkCommandBufferAllocateInfo allocateInfo{};
-		allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		allocateInfo.commandPool = mCommandPool;
-		allocateInfo.commandBufferCount = 1;
-		allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-
-		if (vkAllocateCommandBuffers(mDevice, &allocateInfo, &mCommandBuffer) != VK_SUCCESS)
-		{
-			LOGERROR("failed to allocate command buffer!");
-			ENGINE_DEBUG_BREAK();
-		}
+		device.AllocateCommandBuffer(&mCommandBuffer);
 		LOGINFO("Command buffer created");
 	}
 
-	void CommandBuffer::Cleanup()
+	void CommandBuffer::Cleanup(const Device& device)
 	{
-		vkFreeCommandBuffers(mDevice, mCommandPool, 1, &mCommandBuffer);
+		device.FreeCommandBuffer(&mCommandBuffer);
 		mCommandBuffer = nullptr;
 		LOGINFO("Command  buffer cleaned");
 	}

@@ -8,7 +8,6 @@ namespace Renderer
 
 	RenderPass::RenderPass()
 		: mRenderPass(nullptr)
-		, mDevice(nullptr)
 	{
 	}
 
@@ -21,9 +20,8 @@ namespace Renderer
 		}
 	}
 
-	void RenderPass::Initialize(Device& device, VkFormat format)
+	void RenderPass::Initialize(const Device& device, VkFormat format)
 	{
-		mDevice = device.GetNativeDevice();
 		VkAttachmentDescription colorAttachment{};
 		colorAttachment.format = format;
 		colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -60,7 +58,7 @@ namespace Renderer
 		renderPassInfo.dependencyCount = 1;
 		renderPassInfo.pDependencies = &dependency;
 
-		if (vkCreateRenderPass(mDevice, &renderPassInfo, nullptr, &mRenderPass) != VK_SUCCESS)
+		if (vkCreateRenderPass(device.GetNativeDevice(), &renderPassInfo, nullptr, &mRenderPass) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create render pass");
 		}
@@ -68,9 +66,9 @@ namespace Renderer
 		LOGINFO("Render pass created");
 	}
 
-	void RenderPass::Cleanup()
+	void RenderPass::Cleanup(const Device& device)
 	{
-		vkDestroyRenderPass(mDevice, mRenderPass, nullptr);
+		vkDestroyRenderPass(device.GetNativeDevice(), mRenderPass, nullptr);
 		mRenderPass = nullptr;
 		LOGINFO("Render pass cleaned");
 	}

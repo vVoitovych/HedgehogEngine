@@ -15,12 +15,11 @@ namespace Renderer
 		DescriptorSetLayout(const DescriptorSetLayout&) = delete;
 		DescriptorSetLayout& operator=(const DescriptorSetLayout&) = delete;
 
-		void Initialize(Device& device);
-		void Cleanup();
+		void Initialize(const Device& device);
+		void Cleanup(const Device& device);
 
 		VkDescriptorSetLayout* GetNativeLayout();
 	private:
-		VkDevice mDevice;
 		VkDescriptorSetLayout mDescriptorSetLayout;
 	};
 }

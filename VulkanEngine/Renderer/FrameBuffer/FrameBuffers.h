@@ -18,13 +18,12 @@ namespace Renderer
 		FrameBuffers(const FrameBuffers&) = delete;
 		FrameBuffers& operator=(const FrameBuffers&) = delete;
 
-		void Initialize(Device& device, SwapChain& swapChain, RenderPass& renderPass);
-		void Cleanup();
+		void Initialize(const Device& device, SwapChain& swapChain, RenderPass& renderPass);
+		void Cleanup(const Device& device);
 
 		VkFramebuffer GetNativeFrameBuffer(size_t index) const;
 
 	private:
-		VkDevice mDevice;
 		std::vector<VkFramebuffer> mFrameBuffers;
 	};
 }

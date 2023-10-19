@@ -1,6 +1,5 @@
 #include "DescriptorSet.h"
 #include "VulkanEngine/Renderer/Device/Device.h"
-#include "DescriptorPool.h"
 #include "DescriptorSetLayout.h"
 #include "UBOInfo.h"
 #include "UBO.h"
@@ -10,9 +9,7 @@
 namespace Renderer
 {
 	DescriptorSet::DescriptorSet()
-		: mDevice(nullptr)
-        , mDescriptorPool(nullptr)
-		, mDescriptorSet(nullptr)
+		: mDescriptorSet(nullptr)
 	{
 	}
 
@@ -25,21 +22,9 @@ namespace Renderer
         }
 	}
 
-	void DescriptorSet::Initialize(Device& device, DescriptorPool& descriptorPool, DescriptorSetLayout& descriptorSetLayout, UBO& ubo)
+	void DescriptorSet::Initialize(const Device& device, DescriptorSetLayout& descriptorSetLayout, UBO& ubo)
 	{
-        mDevice = device.GetNativeDevice();
-        mDescriptorPool = descriptorPool.GetNativePool();
-
-        VkDescriptorSetAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool = mDescriptorPool;
-        allocInfo.descriptorSetCount = 1;
-        allocInfo.pSetLayouts = descriptorSetLayout.GetNativeLayout();
-
-        if (vkAllocateDescriptorSets(device.GetNativeDevice(), &allocInfo, &mDescriptorSet) != VK_SUCCESS) 
-        {
-            throw std::runtime_error("failed to allocate descriptor sets!");
-        }
+        device.AllocateDescriptorSet(descriptorSetLayout, ubo, &mDescriptorSet);
 
         VkDescriptorBufferInfo bufferInfo{};
         bufferInfo.buffer = ubo.GetNativeBuffer();
@@ -59,9 +44,9 @@ namespace Renderer
         LOGINFO("Vulkan descriptor set created");
 	}
 
-	void DescriptorSet::Cleanup()
+	void DescriptorSet::Cleanup(const Device& device)
 	{
-        vkFreeDescriptorSets(mDevice, mDescriptorPool, 1, &mDescriptorSet);
+        device.FreeDescriptorSet(&mDescriptorSet);
         mDescriptorSet = nullptr;
         LOGINFO("Vulkan descriptor set cleaned");
 	}

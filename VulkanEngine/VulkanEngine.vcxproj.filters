@@ -99,9 +99,6 @@
     <ClCompile Include="Renderer\Commands\CommandBuffer.cpp">
       <Filter>Renderer\Commands</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Commands\CommandPool.cpp">
-      <Filter>Renderer\Commands</Filter>
-    </ClCompile>
     <ClCompile Include="Renderer\SwapChain\SwapChain.cpp">
       <Filter>Renderer\SwapChain</Filter>
     </ClCompile>
@@ -128,12 +125,6 @@
     </ClCompile>
     <ClCompile Include="Renderer\Common\ComonFunctions.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Common\CommonFunctions.cpp">
-      <Filter>Renderer\Common</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Descriptors\DescriptorPool.cpp">
-      <Filter>Renderer\Descriptors</Filter>
     </ClCompile>
     <ClCompile Include="Renderer\Descriptors\DescriptorSet.cpp">
       <Filter>Renderer\Descriptors</Filter>
@@ -178,9 +169,6 @@
     <ClInclude Include="Renderer\Commands\CommandBuffer.h">
       <Filter>Renderer\Commands</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Commands\CommandPool.h">
-      <Filter>Renderer\Commands</Filter>
-    </ClInclude>
     <ClInclude Include="Renderer\SwapChain\SwapChain.h">
       <Filter>Renderer\SwapChain</Filter>
     </ClInclude>
@@ -210,12 +198,6 @@
     </ClInclude>
     <ClInclude Include="Renderer\Descriptors\UBO.h">
       <Filter>Renderer\Descriptors\Types\UBO</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Common\CommonFunctions.h">
-      <Filter>Renderer\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Descriptors\DescriptorPool.h">
-      <Filter>Renderer\Descriptors</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\Descriptors\DescriptorSet.h">
       <Filter>Renderer\Descriptors</Filter>

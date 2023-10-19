@@ -7,7 +7,6 @@
 namespace Renderer
 {
 	SyncObjects::SyncObjects()
-		: mDevice(nullptr)
 	{
 	}
 
@@ -30,10 +29,8 @@ namespace Renderer
 		}
 	}
 
-	void SyncObjects::Initialize(Device& device)
+	void SyncObjects::Initialize(const Device& device)
 	{
-		mDevice = device.GetNativeDevice();
-
 		mImageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
 		mRendeerFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
 		mInFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
@@ -47,9 +44,9 @@ namespace Renderer
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
-			if (vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &mImageAvailableSemaphores[i]) != VK_SUCCESS ||
-				vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &mRendeerFinishedSemaphores[i]) != VK_SUCCESS ||
-				vkCreateFence(mDevice, &fenceInfo, nullptr, &mInFlightFences[i]) != VK_SUCCESS)
+			if (vkCreateSemaphore(device.GetNativeDevice(), &semaphoreInfo, nullptr, &mImageAvailableSemaphores[i]) != VK_SUCCESS ||
+				vkCreateSemaphore(device.GetNativeDevice(), &semaphoreInfo, nullptr, &mRendeerFinishedSemaphores[i]) != VK_SUCCESS ||
+				vkCreateFence(device.GetNativeDevice(), &fenceInfo, nullptr, &mInFlightFences[i]) != VK_SUCCESS)
 			{
 				throw std::runtime_error("failed to create sync objects!");
 			}
@@ -57,15 +54,15 @@ namespace Renderer
 		LOGINFO("Sync objects created");
 	}
 
-	void SyncObjects::Cleanup()
+	void SyncObjects::Cleanup(const Device& device)
 	{
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
-			vkDestroySemaphore(mDevice, mImageAvailableSemaphores[i], nullptr);
+			vkDestroySemaphore(device.GetNativeDevice(), mImageAvailableSemaphores[i], nullptr);
 			mImageAvailableSemaphores[i] = nullptr;
-			vkDestroySemaphore(mDevice, mRendeerFinishedSemaphores[i], nullptr);
+			vkDestroySemaphore(device.GetNativeDevice(), mRendeerFinishedSemaphores[i], nullptr);
 			mRendeerFinishedSemaphores[i] = nullptr;
-			vkDestroyFence(mDevice, mInFlightFences[i], nullptr);
+			vkDestroyFence(device.GetNativeDevice(), mInFlightFences[i], nullptr);
 			mInFlightFences[i] = nullptr;
 		}
 		mImageAvailableSemaphores.clear();
@@ -89,14 +86,14 @@ namespace Renderer
 		return mInFlightFences[index];
 	}
 
-	void SyncObjects::WaitforInFlightFence(size_t index)
+	void SyncObjects::WaitforInFlightFence(const Device& device, size_t index)
 	{
-		vkWaitForFences(mDevice, 1, &mInFlightFences[index], VK_TRUE, UINT64_MAX);
+		vkWaitForFences(device.GetNativeDevice(), 1, &mInFlightFences[index], VK_TRUE, UINT64_MAX);
 	}
 
-	void SyncObjects::ResetInFlightFence(size_t index)
+	void SyncObjects::ResetInFlightFence(const Device& device, size_t index)
 	{
-		vkResetFences(mDevice, 1, &mInFlightFences[index]);
+		vkResetFences(device.GetNativeDevice(), 1, &mInFlightFences[index]);
 	}
 
 }

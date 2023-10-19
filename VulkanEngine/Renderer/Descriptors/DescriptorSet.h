@@ -5,7 +5,6 @@
 namespace Renderer
 {
 	class Device;
-	class DescriptorPool;
 	class DescriptorSetLayout;
 	class UBO;
 
@@ -18,13 +17,11 @@ namespace Renderer
 		DescriptorSet(const DescriptorSet&) = delete;
 		DescriptorSet& operator=(const DescriptorSet&) = delete;
 
-		void Initialize(Device& device, DescriptorPool& descriptorPool, DescriptorSetLayout& descriptorSetLayout, UBO& ubo);
-		void Cleanup();
+		void Initialize(const Device& device, DescriptorSetLayout& descriptorSetLayout, UBO& ubo);
+		void Cleanup(const Device& device);
 
 		VkDescriptorSet* GetNativeSet();
 	private:
-		VkDevice mDevice;
-		VkDescriptorPool mDescriptorPool;
 		VkDescriptorSet mDescriptorSet;
 
 	};

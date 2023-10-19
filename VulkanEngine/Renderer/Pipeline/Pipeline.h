@@ -18,14 +18,13 @@ namespace Renderer
 		Pipeline(const Pipeline&) = delete;
 		Pipeline& operator=(const Pipeline&) = delete;
 
-		void Initialize(Device& device, SwapChain& swapChain, RenderPass& renderPass, DescriptorSetLayout& layout);
-		void Cleanup();
+		void Initialize(const Device& device, SwapChain& swapChain, RenderPass& renderPass, DescriptorSetLayout& layout);
+		void Cleanup(const Device& device);
 
 		VkPipeline GetNativePipeline() const;
 		VkPipelineLayout GetNativePipelineLayout();
 
 	private:
-		VkDevice mDevice;
 		VkPipeline mPipeline;
 		VkPipelineLayout mGraphycsPipelineLayout;
 

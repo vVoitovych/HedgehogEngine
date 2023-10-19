@@ -1,8 +1,6 @@
 #include "Mesh.h"
 
 #include "VulkanEngine/Renderer/Device/Device.h"
-#include "VulkanEngine/Renderer/Commands/CommandPool.h"
-#include "VulkanEngine/Renderer/Common/CommonFunctions.h"
 #include "VulkanEngine/Logger/Logger.h"
 
 namespace Renderer
@@ -17,27 +15,22 @@ namespace Renderer
 	{
 	}
 
-	void Mesh::Initialize(Device& device, CommandPool& commandPool)
+	void Mesh::Initialize(const Device& device)
 	{
-		mDevice = device.GetNativeDevice();
-		mPhysicalDevice = device.GetNativePhysicalDevice();
-		mGraphicsQueue = device.GetNativeGraphicsQueue();
-		mCommandPool = commandPool.GetNativeCommandPool();
-
-		CreateVertexBuffer();
-		CreateIndexBuffer();
+		CreateVertexBuffer(device);
+		CreateIndexBuffer(device);
 	}
 
-	void Mesh::Cleanup()
+	void Mesh::Cleanup(const Device& device)
 	{
-		vkDestroyBuffer(mDevice, mVertexBuffer, nullptr);
-		vkFreeMemory(mDevice, mVertexBufferMemory, nullptr);
+		vkDestroyBuffer(device.GetNativeDevice(), mVertexBuffer, nullptr);
+		vkFreeMemory(device.GetNativeDevice(), mVertexBufferMemory, nullptr);
 		mVertexBuffer = nullptr;
 		mVertexBufferMemory = nullptr;
 		LOGINFO("Vertex buffer cleaned");
 
-		vkDestroyBuffer(mDevice, mIndexBuffer, nullptr);
-		vkFreeMemory(mDevice, mIndexBufferMemory, nullptr);
+		vkDestroyBuffer(device.GetNativeDevice(), mIndexBuffer, nullptr);
+		vkFreeMemory(device.GetNativeDevice(), mIndexBufferMemory, nullptr);
 		mIndexBuffer = nullptr;
 		mIndexBufferMemory = nullptr;
 		LOGINFO("Index buffer cleaned");
@@ -58,49 +51,38 @@ namespace Renderer
 		return static_cast<uint32_t>(mIndicies.size());
 	}
 
-	void Mesh::CreateVertexBuffer()
+	void Mesh::CreateVertexBuffer(const Device& device)
 	{
 		VkDeviceSize size = sizeof(mVerticies[0]) * mVerticies.size();
 
 		VkBuffer staginBuffer;
 		VkDeviceMemory staginBufferMemory;
-		CreateBuffer(mDevice, mPhysicalDevice, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-			staginBuffer, staginBufferMemory);
+		device.CreateBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,	staginBuffer, staginBufferMemory);
+		device.CopyDataToBufferMemory(staginBufferMemory, mVerticies.data(), (size_t)size);
 
-		void* data;
-		vkMapMemory(mDevice, staginBufferMemory, 0, size, 0, &data);
-		memcpy(data, mVerticies.data(), (size_t)size);
-		vkUnmapMemory(mDevice, staginBufferMemory);
+		device.CreateBuffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mVertexBuffer, mVertexBufferMemory);
+		device.CopyBuffer(staginBuffer, mVertexBuffer, size);
 
-		CreateBuffer(mDevice, mPhysicalDevice, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-			mVertexBuffer, mVertexBufferMemory);
-		CopyBuffer(mDevice, mCommandPool, mGraphicsQueue, staginBuffer, mVertexBuffer, size);
-
-		vkDestroyBuffer(mDevice, staginBuffer, nullptr);
-		vkFreeMemory(mDevice, staginBufferMemory, nullptr);
+		device.DestroyBuffer(staginBuffer, nullptr);
+		device.FreeMemory(staginBufferMemory, nullptr);
 		LOGINFO("Vertex buffer created");
 	}
 
-	void Mesh::CreateIndexBuffer()
+	void Mesh::CreateIndexBuffer(const Device& device)
 	{
 		VkDeviceSize size = sizeof(mIndicies[0]) * mIndicies.size();
 
 		VkBuffer staginBuffer;
 		VkDeviceMemory staginBufferMemory;
-		CreateBuffer(mDevice, mPhysicalDevice, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-			staginBuffer, staginBufferMemory);
+		device.CreateBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,	staginBuffer, staginBufferMemory);
+		device.CopyDataToBufferMemory(staginBufferMemory, mIndicies.data(), (size_t)size);
 
-		void* data;
-		vkMapMemory(mDevice, staginBufferMemory, 0, size, 0, &data);
-		memcpy(data, mIndicies.data(), (size_t)size);
-		vkUnmapMemory(mDevice, staginBufferMemory);
-
-		CreateBuffer(mDevice, mPhysicalDevice, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		device.CreateBuffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 			mIndexBuffer, mIndexBufferMemory);
-		CopyBuffer(mDevice, mCommandPool, mGraphicsQueue, staginBuffer, mIndexBuffer, size);
+		device.CopyBuffer(staginBuffer, mIndexBuffer, size);
 
-		vkDestroyBuffer(mDevice, staginBuffer, nullptr);
-		vkFreeMemory(mDevice, staginBufferMemory, nullptr);
+		device.DestroyBuffer(staginBuffer, nullptr);
+		device.FreeMemory(staginBufferMemory, nullptr);
 		LOGINFO("Index buffer created");
 	}
 

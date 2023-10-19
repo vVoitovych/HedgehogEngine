@@ -152,10 +152,7 @@
     <ClCompile Include="Logger\LogColorized.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Renderer\Commands\CommandBuffer.cpp" />
-    <ClCompile Include="Renderer\Commands\CommandPool.cpp" />
-    <ClCompile Include="Renderer\Common\CommonFunctions.cpp" />
     <ClCompile Include="Renderer\Common\ComonFunctions.cpp" />
-    <ClCompile Include="Renderer\Descriptors\DescriptorPool.cpp" />
     <ClCompile Include="Renderer\Descriptors\DescriptorSet.cpp" />
     <ClCompile Include="Renderer\Descriptors\DescriptorSetLayout.cpp" />
     <ClCompile Include="Renderer\Descriptors\UBO.cpp" />
@@ -183,11 +180,8 @@
     <ClInclude Include="Logger\LogColorized.h" />
     <ClInclude Include="Logger\Logger.h" />
     <ClInclude Include="Renderer\Commands\CommandBuffer.h" />
-    <ClInclude Include="Renderer\Commands\CommandPool.h" />
-    <ClInclude Include="Renderer\Common\CommonFunctions.h" />
     <ClInclude Include="Renderer\Common\EngineDebugBreak.h" />
     <ClInclude Include="Renderer\Common\RendererSettings.h" />
-    <ClInclude Include="Renderer\Descriptors\DescriptorPool.h" />
     <ClInclude Include="Renderer\Descriptors\DescriptorSet.h" />
     <ClInclude Include="Renderer\Descriptors\DescriptorSetLayout.h" />
     <ClInclude Include="Renderer\Descriptors\UBO.h" />

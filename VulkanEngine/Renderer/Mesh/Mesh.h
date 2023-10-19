@@ -8,7 +8,6 @@
 namespace Renderer
 {
 	class Device;
-	class CommandPool;
 
 	class Mesh
 	{
@@ -16,8 +15,8 @@ namespace Renderer
 		Mesh();
 		~Mesh();
 
-		void Initialize(Device& device, CommandPool& commandPool);
-		void Cleanup();
+		void Initialize(const Device& device);
+		void Cleanup(const Device& device);
 
 		VkBuffer GetVertexBuffer();
 		VkBuffer GetIndexBuffer();
@@ -25,15 +24,10 @@ namespace Renderer
 		uint32_t GetIndiciesCount();
 
 	private:
-		void CreateVertexBuffer();
-		void CreateIndexBuffer();
+		void CreateVertexBuffer(const Device& device);
+		void CreateIndexBuffer(const Device& device);
 
 	private:
-		VkDevice mDevice;
-		VkPhysicalDevice mPhysicalDevice;
-		VkQueue mGraphicsQueue;
-		VkCommandPool mCommandPool;
-
 		std::vector<Vertex> mVerticies;
 		std::vector<uint16_t>mIndicies;
 
