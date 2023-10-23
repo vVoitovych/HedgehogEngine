@@ -4,6 +4,7 @@
 #include "VulkanEngine/Logger/Logger.h"
 #include "VulkanEngine/Renderer/Common/EngineDebugBreak.h"
 
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace Renderer

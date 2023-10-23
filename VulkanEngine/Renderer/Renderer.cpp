@@ -20,18 +20,18 @@ namespace Renderer
 		mRenderPass.Initialize(mDevice, mSwapChain.GetFormat());
 		mDescriptorSetLayout.Initialize(mDevice);
 		mPipeline.Initialize(mDevice, mSwapChain, mRenderPass, mDescriptorSetLayout);
-		mFrameBuffers.Initialize(mDevice, mSwapChain, mRenderPass);
+		mDepthBuffer.Initialize(mDevice, mSwapChain.GetSwapChainExtend());
+		mFrameBuffers.Initialize(mDevice, mSwapChain, mDepthBuffer, mRenderPass);
 
 		mTextureImage.SetFileName("Textures\\texture.jpg");
-		mTextureImage.Initialize(mDevice);
-		mTextureImageView.Initialize(mDevice, mTextureImage, VK_FORMAT_R8G8B8A8_SRGB);
+		mTextureImage.Initialize(mDevice, VK_FORMAT_R8G8B8A8_SRGB);
 		mTextureSampler.Initialize(mDevice);
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
 			mCommandBuffers[i].Initialize(mDevice);
 			mUniformBuffers[i].Initialize(mDevice);
-			mDescriptorSets[i].Initialize(mDevice, mDescriptorSetLayout, mUniformBuffers[i], mTextureImageView, mTextureSampler);
+			mDescriptorSets[i].Initialize(mDevice, mDescriptorSetLayout, mUniformBuffers[i], mTextureImage, mTextureSampler);
 		}
 		mMesh.Initialize(mDevice);
 
@@ -42,7 +42,6 @@ namespace Renderer
 		vkQueueWaitIdle(mDevice.GetNativeGraphicsQueue());
 
 		mTextureSampler.Cleanup(mDevice);
-		mTextureImageView.Cleanup(mDevice);
 		mTextureImage.Cleanup(mDevice);
 		mMesh.Cleanup(mDevice);
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
@@ -51,6 +50,7 @@ namespace Renderer
 			mUniformBuffers[i].Cleanup(mDevice);
 			mCommandBuffers[i].Cleanup(mDevice);
 		}
+		mDepthBuffer.Cleanup(mDevice);
 		mDescriptorSetLayout.Cleanup(mDevice);
 		mFrameBuffers.Cleanup(mDevice);
 		mPipeline.Cleanup(mDevice);
@@ -155,32 +155,18 @@ namespace Renderer
 	{
 		vkDeviceWaitIdle(mDevice.GetNativeDevice());
 
-		CleanupSwapChain();
+		mFrameBuffers.Cleanup(mDevice);
+		mDepthBuffer.Cleanup(mDevice);
+		mSwapChain.Cleanup(mDevice);
 
-		CreateSwapShain();
-		CreateFrameBuffers();
+		mSwapChain.Initialize(mDevice, mWindowManager);
+		mDepthBuffer.Initialize(mDevice, mSwapChain.GetSwapChainExtend());
+		mFrameBuffers.Initialize(mDevice, mSwapChain, mDepthBuffer, mRenderPass);
 	}
-
 
 	bool Renderer::ShouldClose()
 	{
 		return mWindowManager.ShouldClose();
-	}
-
-	void Renderer::CleanupSwapChain()
-	{
-		mFrameBuffers.Cleanup(mDevice);
-		mSwapChain.Cleanup(mDevice);
-	}
-
-	void Renderer::CreateSwapShain()
-	{
-		mSwapChain.Initialize(mDevice, mWindowManager);
-	}
-
-	void Renderer::CreateFrameBuffers()
-	{
-		mFrameBuffers.Initialize(mDevice, mSwapChain, mRenderPass);
 	}
 
 }

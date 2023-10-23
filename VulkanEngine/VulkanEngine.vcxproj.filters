@@ -22,9 +22,6 @@
     <Filter Include="Renderer\Common">
       <UniqueIdentifier>{b7a780cf-3ca0-4e87-9147-d77c9bdd2352}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Renderer\Mesh">
-      <UniqueIdentifier>{17dc806e-d04a-4119-bb47-9fa6a73cbdd7}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Renderer\WindowManagment">
       <UniqueIdentifier>{e4a00687-4956-4fc2-800a-b31f8577c64b}</UniqueIdentifier>
     </Filter>
@@ -70,8 +67,17 @@
     <Filter Include="ContentLoader\stb">
       <UniqueIdentifier>{ae1416b8-8cbe-471d-82bb-6093b20d1a86}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Renderer\TextureImage">
+    <Filter Include="Renderer\Resources">
+      <UniqueIdentifier>{2732f31e-a1e1-41ab-b6e7-2dbd901823e9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Resources\Mesh">
+      <UniqueIdentifier>{17dc806e-d04a-4119-bb47-9fa6a73cbdd7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Resources\TextureImage">
       <UniqueIdentifier>{a5a8dd0b-d851-47c9-a063-b3437e900ba0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Resources\DepthBuffer">
+      <UniqueIdentifier>{0e46c00f-c3cc-4cb8-9e76-18534d726b54}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -83,12 +89,6 @@
     </ClCompile>
     <ClCompile Include="Renderer\Renderer.cpp">
       <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Mesh\Mesh.cpp">
-      <Filter>Renderer\Mesh</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Mesh\Vertex.cpp">
-      <Filter>Renderer\Mesh</Filter>
     </ClCompile>
     <ClCompile Include="Renderer\WindowManagment\WindowManager.cpp">
       <Filter>Renderer\WindowManagment</Filter>
@@ -135,14 +135,20 @@
     <ClCompile Include="ContentLoader\TextureLoader.cpp">
       <Filter>ContentLoader</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\TextureImage\TextureImage.cpp">
-      <Filter>Renderer\TextureImage</Filter>
+    <ClCompile Include="Renderer\Resources\TextureImage\TextureImage.cpp">
+      <Filter>Renderer\Resources\TextureImage</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\TextureImage\TextureSampler.cpp">
-      <Filter>Renderer\TextureImage</Filter>
+    <ClCompile Include="Renderer\Resources\TextureImage\TextureSampler.cpp">
+      <Filter>Renderer\Resources\TextureImage</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\TextureImage\TextureImageView.cpp">
-      <Filter>Renderer\TextureImage</Filter>
+    <ClCompile Include="Renderer\Resources\Mesh\Mesh.cpp">
+      <Filter>Renderer\Resources\Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Resources\Mesh\Vertex.cpp">
+      <Filter>Renderer\Resources\Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Resources\DepthBuffer\DepthBuffer.cpp">
+      <Filter>Renderer\Resources\DepthBuffer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -162,12 +168,6 @@
     </ClInclude>
     <ClInclude Include="Renderer\Renderer.h">
       <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Mesh\Mesh.h">
-      <Filter>Renderer\Mesh</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Mesh\Vertex.h">
-      <Filter>Renderer\Mesh</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\WindowManagment\WindowManager.h">
       <Filter>Renderer\WindowManagment</Filter>
@@ -226,14 +226,20 @@
     <ClInclude Include="ContentLoader\TextureLoader.h">
       <Filter>ContentLoader</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\TextureImage\TextureImage.h">
-      <Filter>Renderer\TextureImage</Filter>
+    <ClInclude Include="Renderer\Resources\TextureImage\TextureImage.h">
+      <Filter>Renderer\Resources\TextureImage</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\TextureImage\TextureSampler.h">
-      <Filter>Renderer\TextureImage</Filter>
+    <ClInclude Include="Renderer\Resources\TextureImage\TextureSampler.h">
+      <Filter>Renderer\Resources\TextureImage</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\TextureImage\TextureImageView.h">
-      <Filter>Renderer\TextureImage</Filter>
+    <ClInclude Include="Renderer\Resources\Mesh\Mesh.h">
+      <Filter>Renderer\Resources\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Resources\Mesh\Vertex.h">
+      <Filter>Renderer\Resources\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Resources\DepthBuffer\DepthBuffer.h">
+      <Filter>Renderer\Resources\DepthBuffer</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

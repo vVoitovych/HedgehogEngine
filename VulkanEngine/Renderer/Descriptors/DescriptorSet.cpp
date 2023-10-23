@@ -5,8 +5,8 @@
 #include "UBO.h"
 #include "VulkanEngine/Logger/Logger.h"
 #include "VulkanEngine/Renderer/Common/EngineDebugBreak.h"
-#include "VulkanEngine/Renderer/TextureImage/TextureImageView.h"
-#include "VulkanEngine/Renderer/TextureImage/TextureSampler.h"
+#include "VulkanEngine/Renderer/Resources/TextureImage/TextureSampler.h"
+#include "VulkanEngine/Renderer/Resources/TextureImage/TextureImage.h"
 
 #include <array>
 
@@ -26,7 +26,7 @@ namespace Renderer
         }
 	}
 
-	void DescriptorSet::Initialize(const Device& device, DescriptorSetLayout& descriptorSetLayout, UBO& ubo, TextureImageView& view, TextureSampler& sampler)
+	void DescriptorSet::Initialize(const Device& device, DescriptorSetLayout& descriptorSetLayout, UBO& ubo, TextureImage& image, TextureSampler& sampler)
 	{
         device.AllocateDescriptorSet(descriptorSetLayout, ubo, &mDescriptorSet);
 
@@ -37,7 +37,7 @@ namespace Renderer
 
         VkDescriptorImageInfo imageInfo{};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imageInfo.imageView = view.GetNativeImageView();
+        imageInfo.imageView = image.GetNativeImageView();
         imageInfo.sampler = sampler.GetNativeSampler();
 
         std::array< VkWriteDescriptorSet, 2> descriptorWrites{};

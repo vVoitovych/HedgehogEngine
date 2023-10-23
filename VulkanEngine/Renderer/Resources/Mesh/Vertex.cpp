@@ -19,7 +19,7 @@ namespace Renderer
 
 		desc[0].binding = 0;
 		desc[0].location = 0;
-		desc[0].format = VK_FORMAT_R32G32_SFLOAT;
+		desc[0].format = VK_FORMAT_R32G32B32_SFLOAT;
 		desc[0].offset = offsetof(Vertex, pos);
 
 		desc[1].binding = 0;
@@ -40,9 +40,9 @@ namespace Renderer
 	{
 		std::vector<Vertex> vertices = 
 		{
-			{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-			{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}},
-			{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}}
+			{{0.0f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+			{{0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}},
+			{{-0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}}
 		};
 
 		return vertices;
@@ -51,17 +51,26 @@ namespace Renderer
 	{
 		std::vector<Vertex> vertices = 
 		{
-			{{-0.5f, -0.5f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-			{{0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-			{{0.5f, 0.5f}, {1.0f, 1.0f, 0.0f}, {1.0f, 1.0f}},
-			{{-0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}}
+			{{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+			{{0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+			{{0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 0.0f}, {1.0f, 1.0f}},
+			{{-0.5f, 0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f}},
+
+			{{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
+			{{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
+			{{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
+			{{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
 		};
 
 		return vertices;
 	}
 	std::vector<uint16_t> Vertex::GetQuadIndecies()
 	{
-		std::vector<uint16_t> indices =	{ 0, 1, 2, 2, 3, 0 };
+		std::vector<uint16_t> indices =	
+		{ 
+			0, 1, 2, 2, 3, 0 ,
+			4, 5, 6, 6, 7, 4
+		};
 
 		return indices;
 	}

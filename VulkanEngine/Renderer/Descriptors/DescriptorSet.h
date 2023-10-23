@@ -7,7 +7,7 @@ namespace Renderer
 	class Device;
 	class DescriptorSetLayout;
 	class UBO;
-	class TextureImageView;
+	class TextureImage;
 	class TextureSampler;
 
 	class DescriptorSet
@@ -19,7 +19,7 @@ namespace Renderer
 		DescriptorSet(const DescriptorSet&) = delete;
 		DescriptorSet& operator=(const DescriptorSet&) = delete;
 
-		void Initialize(const Device& device, DescriptorSetLayout& descriptorSetLayout, UBO& ubo, TextureImageView& view, TextureSampler& sampler);
+		void Initialize(const Device& device, DescriptorSetLayout& descriptorSetLayout, UBO& ubo, TextureImage& image, TextureSampler& sampler);
 		void Cleanup(const Device& device);
 
 		VkDescriptorSet* GetNativeSet();

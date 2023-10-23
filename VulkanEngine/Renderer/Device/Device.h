@@ -60,6 +60,8 @@ namespace Renderer
 
 		void DestroyImage(VkImage image, const VkAllocationCallbacks* callback) const;
 
+		VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) const;
+
 	public:
 		void AllocateCommandBuffer(VkCommandBuffer* pCommandBuffer) const;
 		void FreeCommandBuffer(VkCommandBuffer* pCommandBuffer) const;
@@ -73,6 +75,7 @@ namespace Renderer
 	public:
 		SwapChainSupportDetails QuerySwapChainSupport() const;
 		VkPhysicalDeviceProperties GetPhysicalDeviceProperties() const;
+		VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const;
 
 	private:
 		void InitializeInstance();

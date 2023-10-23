@@ -1,9 +1,12 @@
 #include "FrameBuffers.h"
 #include "VulkanEngine/Renderer/Device/Device.h"
 #include "VulkanEngine/Renderer/SwapChain/SwapChain.h"
+#include "VulkanEngine/Renderer/Resources/DepthBuffer/DepthBuffer.h"
 #include "VulkanEngine/Renderer/RenderPass/RenderPass.h"
 #include "VulkanEngine/Renderer/Common/EngineDebugBreak.h"
 #include "VulkanEngine/Logger/Logger.h"
+
+#include <array>
 
 namespace Renderer
 {
@@ -20,20 +23,20 @@ namespace Renderer
 		}
 	}
 
-	void FrameBuffers::Initialize(const Device& device, SwapChain& swapChain, RenderPass& renderPass)
+	void FrameBuffers::Initialize(const Device& device, SwapChain& swapChain, const DepthBuffer& depthBuffer, RenderPass& renderPass)
 	{
 		size_t swapChainImagesSize = swapChain.GetSwapChainImagesSize();
 		mFrameBuffers.resize(swapChainImagesSize);
 
 		for (size_t i = 0; i < swapChainImagesSize; ++i)
 		{
-			VkImageView attachments[] = { swapChain.GetNativeSwapChainImageView(i) };
+			std::array<VkImageView, 2> attachments = { swapChain.GetNativeSwapChainImageView(i), depthBuffer.GetNativeView() };
 
 			VkFramebufferCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 			createInfo.renderPass = renderPass.GetNativeRenderPass();
-			createInfo.attachmentCount = 1;
-			createInfo.pAttachments = attachments;
+			createInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+			createInfo.pAttachments = attachments.data();
 			auto swapChainExtend = swapChain.GetSwapChainExtend();
 			createInfo.width = swapChainExtend.width;
 			createInfo.height = swapChainExtend.height;

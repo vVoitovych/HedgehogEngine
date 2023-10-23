@@ -12,10 +12,10 @@
 #include "Descriptors/DescriptorSetLayout.h"
 #include "Descriptors/DescriptorSet.h"
 #include "WindowManagment/WindowManager.h"
-#include "Mesh/Mesh.h"
-#include "TextureImage/TextureImage.h"
-#include "TextureImage/TextureImageView.h"
-#include "TextureImage/TextureSampler.h"
+#include "Resources/Mesh/Mesh.h"
+#include "Resources/TextureImage/TextureImage.h"
+#include "Resources/TextureImage/TextureSampler.h"
+#include "Resources/DepthBuffer/DepthBuffer.h"
 
 namespace Renderer
 {
@@ -36,10 +36,7 @@ namespace Renderer
 		void RecreateSwapChain();
 
 		bool ShouldClose();
-	private:
-		void CleanupSwapChain();
-		void CreateSwapShain();
-		void CreateFrameBuffers();
+
 
 	private:
 
@@ -50,6 +47,7 @@ namespace Renderer
 		Device mDevice;
 		SwapChain mSwapChain;
 		SyncObjects mSyncObjects;
+		DepthBuffer mDepthBuffer;
 		RenderPass mRenderPass;
 		Pipeline mPipeline;
 		FrameBuffers mFrameBuffers;
@@ -59,7 +57,6 @@ namespace Renderer
 		DescriptorSet mDescriptorSets[MAX_FRAMES_IN_FLIGHT];
 		Mesh mMesh;
 		TextureImage mTextureImage;
-		TextureImageView mTextureImageView;
 		TextureSampler mTextureSampler;
 
 	};

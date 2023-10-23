@@ -158,16 +158,16 @@
     <ClCompile Include="Renderer\Descriptors\UBO.cpp" />
     <ClCompile Include="Renderer\Device\Device.cpp" />
     <ClCompile Include="Renderer\FrameBuffer\FrameBuffers.cpp" />
-    <ClCompile Include="Renderer\Mesh\Mesh.cpp" />
-    <ClCompile Include="Renderer\Mesh\Vertex.cpp" />
     <ClCompile Include="Renderer\Pipeline\Pipeline.cpp" />
     <ClCompile Include="Renderer\Renderer.cpp" />
     <ClCompile Include="Renderer\RenderPass\RenderPass.cpp" />
+    <ClCompile Include="Renderer\Resources\DepthBuffer\DepthBuffer.cpp" />
+    <ClCompile Include="Renderer\Resources\Mesh\Mesh.cpp" />
+    <ClCompile Include="Renderer\Resources\Mesh\Vertex.cpp" />
+    <ClCompile Include="Renderer\Resources\TextureImage\TextureImage.cpp" />
+    <ClCompile Include="Renderer\Resources\TextureImage\TextureSampler.cpp" />
     <ClCompile Include="Renderer\SwapChain\SwapChain.cpp" />
     <ClCompile Include="Renderer\SyncObjects\SyncObjects.cpp" />
-    <ClCompile Include="Renderer\TextureImage\TextureImage.cpp" />
-    <ClCompile Include="Renderer\TextureImage\TextureImageView.cpp" />
-    <ClCompile Include="Renderer\TextureImage\TextureSampler.cpp" />
     <ClCompile Include="Renderer\WindowManagment\WindowManager.cpp" />
     <ClCompile Include="Renderer\WindowManagment\WindowState.cpp" />
   </ItemGroup>
@@ -191,16 +191,16 @@
     <ClInclude Include="Renderer\Descriptors\UBOInfo.h" />
     <ClInclude Include="Renderer\Device\Device.h" />
     <ClInclude Include="Renderer\FrameBuffer\FrameBuffers.h" />
-    <ClInclude Include="Renderer\Mesh\Mesh.h" />
-    <ClInclude Include="Renderer\Mesh\Vertex.h" />
     <ClInclude Include="Renderer\Pipeline\Pipeline.h" />
     <ClInclude Include="Renderer\Renderer.h" />
     <ClInclude Include="Renderer\RenderPass\RenderPass.h" />
+    <ClInclude Include="Renderer\Resources\DepthBuffer\DepthBuffer.h" />
+    <ClInclude Include="Renderer\Resources\Mesh\Mesh.h" />
+    <ClInclude Include="Renderer\Resources\Mesh\Vertex.h" />
+    <ClInclude Include="Renderer\Resources\TextureImage\TextureImage.h" />
+    <ClInclude Include="Renderer\Resources\TextureImage\TextureSampler.h" />
     <ClInclude Include="Renderer\SwapChain\SwapChain.h" />
     <ClInclude Include="Renderer\SyncObjects\SyncObjects.h" />
-    <ClInclude Include="Renderer\TextureImage\TextureImage.h" />
-    <ClInclude Include="Renderer\TextureImage\TextureImageView.h" />
-    <ClInclude Include="Renderer\TextureImage\TextureSampler.h" />
     <ClInclude Include="Renderer\WindowManagment\WindowManager.h" />
     <ClInclude Include="Renderer\WindowManagment\WindowState.h" />
   </ItemGroup>

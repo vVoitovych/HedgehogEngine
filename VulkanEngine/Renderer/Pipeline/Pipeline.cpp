@@ -5,7 +5,7 @@
 #include "VulkanEngine/Renderer/SwapChain/SwapChain.h"
 #include "VulkanEngine/Renderer/RenderPass/RenderPass.h"
 #include "VulkanEngine/Renderer/Descriptors/DescriptorSetLayout.h"
-#include "VulkanEngine/Renderer/Mesh/Vertex.h"
+#include "VulkanEngine/Renderer/Resources/Mesh/Vertex.h"
 #include "VulkanEngine/Logger/Logger.h"
 #include "VulkanEngine/Renderer/Common/EngineDebugBreak.h"
 
@@ -159,6 +159,14 @@ namespace Renderer
 		multisampling.sampleShadingEnable = VK_FALSE;
 		multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
+		VkPipelineDepthStencilStateCreateInfo depthStencil{};
+		depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+		depthStencil.depthTestEnable = VK_TRUE;
+		depthStencil.depthWriteEnable = VK_TRUE;
+		depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+		depthStencil.depthBoundsTestEnable = VK_FALSE;
+		depthStencil.stencilTestEnable = VK_FALSE;
+
 		VkPipelineColorBlendAttachmentState colorBlendAttachmentState{};
 		colorBlendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 		colorBlendAttachmentState.blendEnable = VK_FALSE;
@@ -202,7 +210,7 @@ namespace Renderer
 		pipelineInfo.pViewportState = &viewportState;
 		pipelineInfo.pRasterizationState = &rasterizerInfo;
 		pipelineInfo.pMultisampleState = &multisampling;
-		pipelineInfo.pDepthStencilState = nullptr;
+		pipelineInfo.pDepthStencilState = &depthStencil;
 		pipelineInfo.pColorBlendState = &colorBlending;
 		pipelineInfo.pDynamicState = &dynamicStateInfo;
 		pipelineInfo.layout = mGraphycsPipelineLayout;

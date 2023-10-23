@@ -9,6 +9,9 @@
 namespace Renderer
 {
 	TextureImage::TextureImage()
+		: mTextureImage(nullptr)
+		, mTextureImageMemory(nullptr)
+		, mTextureImageView(nullptr)
 	{
 	}
 
@@ -16,6 +19,7 @@ namespace Renderer
 		: mFileName(fileName)
 		, mTextureImage(nullptr)
 		, mTextureImageMemory(nullptr)
+		, mTextureImageView(nullptr)
 	{
 	}
 
@@ -31,6 +35,11 @@ namespace Renderer
 			LOGERROR("Vulkan texture image memory should be cleanedup before destruction!");
 			ENGINE_DEBUG_BREAK();
 		}
+		if (mTextureImageView != nullptr)
+		{
+			LOGERROR("Vulkan texture image view should be cleanedup before destruction!");
+			ENGINE_DEBUG_BREAK();
+		}
 	}
 
 	void TextureImage::SetFileName(const std::string fileName)
@@ -38,7 +47,7 @@ namespace Renderer
 		mFileName = fileName;
 	}
 
-	void TextureImage::Initialize(const Device& device)
+	void TextureImage::Initialize(const Device& device, VkFormat format)
 	{
 		ContentLoader::TextureLoader textureLoader;
 		textureLoader.LoadTexture(mFileName);
@@ -71,13 +80,18 @@ namespace Renderer
 		device.DestroyBuffer(stagingBuffer, nullptr);
 		device.FreeMemory(stagingBufferMemory, nullptr);
 
+		mTextureImageView = device.CreateImageView(mTextureImage, format, VK_IMAGE_ASPECT_COLOR_BIT);
+
 		LOGINFO("Vulkan texture image created");
 	}
 
 	void TextureImage::Cleanup(const Device& device)
 	{
 		device.DestroyImage(mTextureImage, nullptr);
-		device.FreeMemory(mTextureImageMemory, nullptr);
+		device.FreeMemory(mTextureImageMemory, nullptr);		
+		vkDestroyImageView(device.GetNativeDevice(), mTextureImageView, nullptr);
+		
+		mTextureImageView = nullptr;
 		mTextureImage = nullptr;
 		mTextureImageMemory = nullptr;
 
@@ -87,6 +101,11 @@ namespace Renderer
 	VkImage TextureImage::GetNativeImage() const
 	{
 		return mTextureImage;
+	}
+
+	VkImageView TextureImage::GetNativeImageView() const
+	{
+		return mTextureImageView;
 	}
 
 }

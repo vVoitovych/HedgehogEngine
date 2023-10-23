@@ -19,15 +19,19 @@ namespace Renderer
 
 		void SetFileName(const std::string fileName);
 
-		void Initialize(const Device& device);
+		void Initialize(const Device& device, VkFormat format);
 		void Cleanup(const Device& device);
 
 		VkImage GetNativeImage() const;
+		VkImageView GetNativeImageView() const;
+
 	private:
 		std::string mFileName;
 
 		VkImage mTextureImage;
 		VkDeviceMemory mTextureImageMemory;
+
+		VkImageView mTextureImageView;
 	};
 
 }
