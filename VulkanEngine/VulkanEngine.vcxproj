@@ -116,7 +116,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)..;C:\VulkanSDK\1.3.231.1\Include;$(ProjectDir)Libraries\glm;$(ProjectDir)Libraries\glfw-3.3.8.bin.WIN64\include;$(ProjectDir)Libraries\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)Libraries\TinyObjectLoader;$(ProjectDir)..;C:\VulkanSDK\1.3.231.1\Include;$(ProjectDir)Libraries\glm;$(ProjectDir)Libraries\glfw-3.3.8.bin.WIN64\include;$(ProjectDir)Libraries\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -134,7 +134,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)..;C:\VulkanSDK\1.3.231.1\Include;$(ProjectDir)Libraries\glm;$(ProjectDir)Libraries\glfw-3.3.8.bin.WIN64\include;$(ProjectDir)Libraries\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)Libraries\TinyObjectLoader;$(ProjectDir)..;C:\VulkanSDK\1.3.231.1\Include;$(ProjectDir)Libraries\glm;$(ProjectDir)Libraries\glfw-3.3.8.bin.WIN64\include;$(ProjectDir)Libraries\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -148,6 +148,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Application.cpp" />
+    <ClCompile Include="ContentLoader\CommonFunctions.cpp" />
     <ClCompile Include="ContentLoader\TextureLoader.cpp" />
     <ClCompile Include="Logger\LogColorized.cpp" />
     <ClCompile Include="main.cpp" />
@@ -178,6 +179,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h" />
+    <ClInclude Include="ContentLoader\CommonFunctions.h" />
     <ClInclude Include="ContentLoader\TextureLoader.h" />
     <ClInclude Include="Libraries\stb\stb_image.h" />
     <ClInclude Include="Logger\LogColorized.h" />

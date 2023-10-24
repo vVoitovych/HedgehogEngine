@@ -150,6 +150,9 @@
     <ClCompile Include="Renderer\Resources\DepthBuffer\DepthBuffer.cpp">
       <Filter>Renderer\Resources\DepthBuffer</Filter>
     </ClCompile>
+    <ClCompile Include="ContentLoader\CommonFunctions.cpp">
+      <Filter>ContentLoader</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="ShadersCompiler.bat">
@@ -240,6 +243,9 @@
     </ClInclude>
     <ClInclude Include="Renderer\Resources\DepthBuffer\DepthBuffer.h">
       <Filter>Renderer\Resources\DepthBuffer</Filter>
+    </ClInclude>
+    <ClInclude Include="ContentLoader\CommonFunctions.h">
+      <Filter>ContentLoader</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

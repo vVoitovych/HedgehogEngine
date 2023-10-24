@@ -2,6 +2,7 @@
 
 #include <vulkan/vulkan.h>
 #include <vector>
+#include <string>
 
 #include "Vertex.h"
 
@@ -14,6 +15,8 @@ namespace Renderer
 	public:
 		Mesh();
 		~Mesh();
+
+		void LoadModel(const std::string fileName);
 
 		void Initialize(const Device& device);
 		void Cleanup(const Device& device);
@@ -28,8 +31,8 @@ namespace Renderer
 		void CreateIndexBuffer(const Device& device);
 
 	private:
-		std::vector<Vertex> mVerticies;
-		std::vector<uint16_t>mIndicies;
+		std::vector<Vertex> mVertices;
+		std::vector<uint32_t> mIndices;
 
 		VkBuffer mVertexBuffer;
 		VkDeviceMemory mVertexBufferMemory;

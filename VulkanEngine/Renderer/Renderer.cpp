@@ -23,7 +23,7 @@ namespace Renderer
 		mDepthBuffer.Initialize(mDevice, mSwapChain.GetSwapChainExtend());
 		mFrameBuffers.Initialize(mDevice, mSwapChain, mDepthBuffer, mRenderPass);
 
-		mTextureImage.SetFileName("Textures\\texture.jpg");
+		mTextureImage.SetFileName("Textures\\viking_room.png");
 		mTextureImage.Initialize(mDevice, VK_FORMAT_R8G8B8A8_SRGB);
 		mTextureSampler.Initialize(mDevice);
 
@@ -33,6 +33,7 @@ namespace Renderer
 			mUniformBuffers[i].Initialize(mDevice);
 			mDescriptorSets[i].Initialize(mDevice, mDescriptorSetLayout, mUniformBuffers[i], mTextureImage, mTextureSampler);
 		}
+		mMesh.LoadModel("Models\\viking_room.obj");
 		mMesh.Initialize(mDevice);
 
 	}
@@ -102,7 +103,7 @@ namespace Renderer
 		VkBuffer vertexBuffers[] = { mMesh.GetVertexBuffer() };
 		VkDeviceSize offsets[] = { 0 };
 		commandBuffer.BindVertexBuffers(0, 1, vertexBuffers, offsets);
-		commandBuffer.BindIndexBuffer(mMesh.GetIndexBuffer(), 0, VK_INDEX_TYPE_UINT16);
+		commandBuffer.BindIndexBuffer(mMesh.GetIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
 		commandBuffer.BindDescriptorSers(VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeline, 0, 1, mDescriptorSets[currentFrame].GetNativeSet(), 0, nullptr);
 
 		commandBuffer.DrawIndexed(mMesh.GetIndiciesCount(), 1, 0, 0, 0);
