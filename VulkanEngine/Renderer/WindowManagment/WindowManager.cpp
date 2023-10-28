@@ -15,17 +15,23 @@ namespace Renderer
 
 	void WindowManager::Initialize(WindowState state)
 	{
-		InitializeThread();
-		InitializeWindow(state);
+        mWindowState = state;
 
-		mWindowThread = std::thread(&WindowManager::MessageLoop, this);
+        glfwInit();
+
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+
+        mWindow = glfwCreateWindow(state.mWidth, state.mHeight, state.mWindowName.c_str(), nullptr, nullptr);
+        glfwSetWindowPos(mWindow, state.mX, state.mY);
+        glfwSetWindowUserPointer(mWindow, this);
+        glfwSetFramebufferSizeCallback(mWindow, WindowManager::ResizeCallback);
+        glfwSetKeyCallback(mWindow, WindowManager::OnKey);
 	}
 
 	void WindowManager::Cleanup()
 	{
 		glfwDestroyWindow(mWindow);
 		mWindow = nullptr;
-		mWindowThread.join();
 		glfwTerminate();
 		LOGINFO("Window manager cleaned");
 	}
@@ -33,6 +39,12 @@ namespace Renderer
 	bool WindowManager::ShouldClose()
 	{
 		return glfwWindowShouldClose(mWindow);
+	}
+
+	void WindowManager::HandleInput()
+	{
+		glfwPollEvents();
+
 	}
 
 	void WindowManager::CreateWindowSurface(VkInstance instance, VkSurfaceKHR* surface)
@@ -64,32 +76,48 @@ namespace Renderer
 		app->mWindowResized = true;
 	}
 
-	void WindowManager::InitializeThread()
+	Controls& WindowManager::GetControls()
 	{
-		
+		return mControls;
 	}
 
-	void WindowManager::InitializeWindow(WindowState windowState)
+	void WindowManager::OnKey(GLFWwindow* window, int key, int scancode, int action, int mods)
 	{
-		mWindowState = windowState;
+		auto app = reinterpret_cast<WindowManager*>(glfwGetWindowUserPointer(window));
 
-		glfwInit();
+		const bool press_or_repeat = (action == GLFW_PRESS || action == GLFW_REPEAT);
 
-		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-		
-		mWindow = glfwCreateWindow(windowState.mWidth, windowState.mHeight, windowState.mWindowName.c_str(), nullptr, nullptr);
-		glfwSetWindowPos(mWindow, windowState.mX, windowState.mY);
-		glfwSetWindowUserPointer(mWindow, this);
-		glfwSetFramebufferSizeCallback(mWindow, ResizeCallback);
+		(void)mods; // Modifiers are not reliable across system
+
+		Controls& controls = app->GetControls();
+
+		controls.IsPressedControl = mods & GLFW_MOD_CONTROL;
+
+        switch (key)
+        {
+        case GLFW_KEY_W:
+            controls.IsPressedW = press_or_repeat;
+            break;
+        case GLFW_KEY_S:
+            controls.IsPressedS = press_or_repeat;
+            break;
+        case GLFW_KEY_A:
+            controls.IsPressedA = press_or_repeat;
+            break;
+        case GLFW_KEY_D:
+            controls.IsPressedD = press_or_repeat;
+            break;
+        case GLFW_KEY_Q:
+            controls.IsPressedQ = press_or_repeat;
+            break;
+        case GLFW_KEY_E:
+            controls.IsPressedE = press_or_repeat;
+            break;       
+        default:
+            break;
+        }
 	}
 
-	void WindowManager::MessageLoop()
-	{
-		while (!ShouldClose())
-		{
-			glfwPollEvents();
-		}
-	}
 
 }
 

@@ -151,6 +151,7 @@
     <ClCompile Include="ContentLoader\TextureLoader.cpp" />
     <ClCompile Include="Logger\LogColorized.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Renderer\Camera\Camera.cpp" />
     <ClCompile Include="Renderer\Commands\CommandBuffer.cpp" />
     <ClCompile Include="Renderer\Common\ComonFunctions.cpp" />
     <ClCompile Include="Renderer\Descriptors\DescriptorSet.cpp" />
@@ -182,6 +183,7 @@
     <ClInclude Include="Libraries\stb\stb_image.h" />
     <ClInclude Include="Logger\LogColorized.h" />
     <ClInclude Include="Logger\Logger.h" />
+    <ClInclude Include="Renderer\Camera\Camera.h" />
     <ClInclude Include="Renderer\Commands\CommandBuffer.h" />
     <ClInclude Include="Renderer\Common\EngineDebugBreak.h" />
     <ClInclude Include="Renderer\Common\RendererSettings.h" />
@@ -201,6 +203,7 @@
     <ClInclude Include="Renderer\Resources\TextureImage\TextureSampler.h" />
     <ClInclude Include="Renderer\SwapChain\SwapChain.h" />
     <ClInclude Include="Renderer\SyncObjects\SyncObjects.h" />
+    <ClInclude Include="Renderer\WindowManagment\Controls.h" />
     <ClInclude Include="Renderer\WindowManagment\WindowManager.h" />
     <ClInclude Include="Renderer\WindowManagment\WindowState.h" />
   </ItemGroup>

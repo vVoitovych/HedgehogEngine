@@ -4,7 +4,8 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
-#include <thread>
+
+#include "Controls.h"
 
 namespace Renderer
 {
@@ -21,26 +22,26 @@ namespace Renderer
 		WindowManager& operator=(const WindowManager& rhs) = delete;
 
 		bool ShouldClose();
+		void HandleInput();
 
 		void CreateWindowSurface(VkInstance instance, VkSurfaceKHR* surface);
 		GLFWwindow* GetGlfwWindow();
+		Controls& GetControls();
 
 		bool IsWindowResized() const;
 		void ResetResizedState();
 
+	public:
 		static void ResizeCallback(GLFWwindow* window, int width, int height);
+		static void OnKey(GLFWwindow* window, int key, int scancode, int action, int mods);
 
-	private:
-		void InitializeThread();
-		void InitializeWindow(WindowState windowState);
-		void MessageLoop();
 	private:
 		WindowState mWindowState;
 		GLFWwindow* mWindow;
 
 		bool mWindowResized = false;
 
-		std::thread mWindowThread;
+		Controls mControls;
 	};
 }
 

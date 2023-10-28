@@ -3,6 +3,7 @@
 #include "UBOInfo.h"
 #include "VulkanEngine/Logger/Logger.h"
 #include "VulkanEngine/Renderer/Common/EngineDebugBreak.h"
+#include "VulkanEngine/Renderer/Camera/Camera.h"
 
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/gtc/matrix_transform.hpp>
@@ -49,14 +50,13 @@ namespace Renderer
 		LOGINFO("UBO cleaned");
 	}
 
-	void UBO::UpdateUniformBuffer(float time, float ratio)
+	void UBO::UpdateUniformBuffer(float time, Camera& camera, float ratio)
 	{
 		UniformBufferObject ubo{};
 		ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		ubo.proj = glm::perspective(glm::radians(45.0f), ratio, 0.1f, 10.0f);
-		ubo.proj[1][1] *= -1;
-
+		ubo.view = camera.GetViewMatrix();
+		ubo.proj = camera.GetProjectionMatrix();
+	
 		memcpy(mUniformBufferMapped, &ubo, sizeof(ubo));
 	}
 	VkBuffer UBO::GetNativeBuffer()

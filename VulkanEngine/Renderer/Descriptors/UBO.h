@@ -5,6 +5,7 @@
 namespace Renderer
 {
 	class Device;
+	class Camera;
 
 	class UBO
 	{
@@ -18,7 +19,7 @@ namespace Renderer
 		void Initialize(const Device& device);
 		void Cleanup(const Device& device);
 
-		void UpdateUniformBuffer(float time, float ratio);
+		void UpdateUniformBuffer(float time, Camera& camera, float ratio);
 		VkBuffer GetNativeBuffer();
 	private:
 		VkBuffer mUniformBuffer;

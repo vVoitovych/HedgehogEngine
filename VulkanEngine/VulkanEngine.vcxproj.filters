@@ -79,6 +79,9 @@
     <Filter Include="Renderer\Resources\DepthBuffer">
       <UniqueIdentifier>{0e46c00f-c3cc-4cb8-9e76-18534d726b54}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Renderer\Camera">
+      <UniqueIdentifier>{67690b78-f4ea-4d52-8336-a8812d9556ab}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -149,6 +152,9 @@
     </ClCompile>
     <ClCompile Include="Renderer\Resources\DepthBuffer\DepthBuffer.cpp">
       <Filter>Renderer\Resources\DepthBuffer</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Camera\Camera.cpp">
+      <Filter>Renderer\Camera</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -240,6 +246,12 @@
     </ClInclude>
     <ClInclude Include="Renderer\Resources\DepthBuffer\DepthBuffer.h">
       <Filter>Renderer\Resources\DepthBuffer</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Camera\Camera.h">
+      <Filter>Renderer\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\WindowManagment\Controls.h">
+      <Filter>Renderer\WindowManagment</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
