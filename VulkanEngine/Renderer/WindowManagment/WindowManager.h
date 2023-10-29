@@ -34,6 +34,9 @@ namespace Renderer
 	public:
 		static void ResizeCallback(GLFWwindow* window, int width, int height);
 		static void OnKey(GLFWwindow* window, int key, int scancode, int action, int mods);
+		static void OnMouseButton(GLFWwindow* window, int button, int action, int mods);
+		static void OnMouseMove(GLFWwindow* window, double x, double y);
+		static void OnMouseScroll(GLFWwindow* window, double x, double y);
 
 	private:
 		WindowState mWindowState;

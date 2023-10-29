@@ -26,6 +26,10 @@ namespace Renderer
         glfwSetWindowUserPointer(mWindow, this);
         glfwSetFramebufferSizeCallback(mWindow, WindowManager::ResizeCallback);
         glfwSetKeyCallback(mWindow, WindowManager::OnKey);
+		glfwSetMouseButtonCallback(mWindow, WindowManager::OnMouseButton);
+		glfwSetCursorPosCallback(mWindow, OnMouseMove);
+		glfwSetScrollCallback(mWindow, OnMouseScroll);
+
 	}
 
 	void WindowManager::Cleanup()
@@ -87,7 +91,7 @@ namespace Renderer
 
 		const bool press_or_repeat = (action == GLFW_PRESS || action == GLFW_REPEAT);
 
-		(void)mods; // Modifiers are not reliable across system
+		(void)mods;
 
 		Controls& controls = app->GetControls();
 
@@ -116,6 +120,81 @@ namespace Renderer
         default:
             break;
         }
+	}
+
+	void WindowManager::OnMouseButton(GLFWwindow* window, int button, int action, int mods)
+	{
+		auto app = reinterpret_cast<WindowManager*>(glfwGetWindowUserPointer(window));
+
+		Controls& controls = app->GetControls();
+		if (button == GLFW_MOUSE_BUTTON_LEFT) 
+		{
+			if (action == GLFW_PRESS)
+			{
+				controls.IsLeftMouseButton = true;
+				double x, y;
+				glfwGetCursorPos(window, &x, &y);
+				controls.MousePos = glm::vec2((float)x, (float)y);
+				controls.MouseDelta = glm::vec2(0, 0);
+			}
+			else if (action == GLFW_RELEASE)
+			{
+				controls.IsLeftMouseButton = false;
+				controls.MouseDelta = glm::vec2(0, 0);
+			}
+		}
+		if (button == GLFW_MOUSE_BUTTON_RIGHT)
+		{
+			if (action == GLFW_PRESS)
+			{
+				controls.IsRightMouseButton = true;
+				double x, y;
+				glfwGetCursorPos(window, &x, &y);
+				controls.MousePos = glm::vec2((float)x, (float)y);
+				controls.MouseDelta = glm::vec2(0, 0);
+			}
+			else if (action == GLFW_RELEASE)
+			{
+				controls.IsRightMouseButton = false;
+				controls.MouseDelta = glm::vec2(0, 0);
+			}
+		}
+		if (button == GLFW_MOUSE_BUTTON_MIDDLE)
+		{
+			if (action == GLFW_PRESS)
+			{
+				controls.IsMiddleMouseButton = true;
+				double x, y;
+				glfwGetCursorPos(window, &x, &y);
+				controls.MousePos = glm::vec2((float)x, (float)y);
+				controls.MouseDelta = glm::vec2(0, 0);
+			}
+			else if (action == GLFW_RELEASE)
+			{
+				controls.IsMiddleMouseButton = false;
+				controls.MouseDelta = glm::vec2(0, 0);
+			}
+		}
+	}
+
+	void WindowManager::OnMouseMove(GLFWwindow* window, double x, double y)
+	{
+		auto app = reinterpret_cast<WindowManager*>(glfwGetWindowUserPointer(window));
+
+		Controls& controls = app->GetControls();
+		if (controls.IsLeftMouseButton || controls.IsMiddleMouseButton || controls.IsRightMouseButton)
+		{
+			controls.MouseDelta = glm::vec2((float)x, (float)y) - controls.MousePos;
+			controls.MousePos = glm::vec2((float)x, (float)y);
+		}
+	}
+
+	void WindowManager::OnMouseScroll(GLFWwindow* window, double x, double y)
+	{
+		auto app = reinterpret_cast<WindowManager*>(glfwGetWindowUserPointer(window));
+
+		Controls& controls = app->GetControls();
+		controls.ScrollDelta = glm::vec2((float)x, (float)y);
 	}
 
 

@@ -11,11 +11,11 @@ namespace Renderer
 
         if (controls.IsPressedQ)
         {
-            mPos += mUpVector * mCameraSpeed * dt;
+            mPos -= mUpVector * mCameraSpeed * dt;
         }
         if (controls.IsPressedE)
         {
-            mPos -= mUpVector * mCameraSpeed * dt;
+            mPos += mUpVector * mCameraSpeed * dt;
         }
 
         if (controls.IsPressedW)
@@ -35,6 +35,26 @@ namespace Renderer
         {
             mPos -= mRightVector * mCameraSpeed * dt;
         }
+
+        float xoffset = controls.MouseDelta.x;
+        float yoffset = controls.MouseDelta.y;
+        xoffset *= mMouseSensitivity;
+        yoffset *= mMouseSensitivity;
+
+        mYaw += xoffset;
+        mPitch += yoffset;
+
+        if (mPitch > 80.0f)
+            mPitch = 80.0f;
+        if (mPitch < -80.0f)
+            mPitch = -80.0f;
+
+        glm::vec3 direction;
+        direction.x = cos(glm::radians(mYaw)) * cos(glm::radians(mPitch));
+        direction.y = sin(glm::radians(mPitch));
+        direction.z = sin(glm::radians(mYaw)) * cos(glm::radians(mPitch));
+        mDirection = glm::normalize(direction);
+        glm::normalize(glm::cross(mDirection, mUpVector));
 
         UpdateMatricies();
     }

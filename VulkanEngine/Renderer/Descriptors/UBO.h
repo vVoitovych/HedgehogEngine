@@ -19,7 +19,7 @@ namespace Renderer
 		void Initialize(const Device& device);
 		void Cleanup(const Device& device);
 
-		void UpdateUniformBuffer(float time, Camera& camera, float ratio);
+		void UpdateUniformBuffer(float time, Camera& camera);
 		VkBuffer GetNativeBuffer();
 	private:
 		VkBuffer mUniformBuffer;

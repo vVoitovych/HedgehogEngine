@@ -50,7 +50,7 @@ namespace Renderer
 		LOGINFO("UBO cleaned");
 	}
 
-	void UBO::UpdateUniformBuffer(float time, Camera& camera, float ratio)
+	void UBO::UpdateUniformBuffer(float time, Camera& camera)
 	{
 		UniformBufferObject ubo{};
 		ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
