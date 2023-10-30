@@ -29,7 +29,7 @@ namespace Renderer
 		glfwSetMouseButtonCallback(mWindow, WindowManager::OnMouseButton);
 		glfwSetCursorPosCallback(mWindow, OnMouseMove);
 		glfwSetScrollCallback(mWindow, OnMouseScroll);
-
+		LOGINFO("Window manager initialized");
 	}
 
 	void WindowManager::Cleanup()
@@ -131,11 +131,14 @@ namespace Renderer
 		{
 			if (action == GLFW_PRESS)
 			{
+				if (!(controls.IsLeftMouseButton || controls.IsMiddleMouseButton || controls.IsRightMouseButton))
+				{
+					double x, y;
+					glfwGetCursorPos(window, &x, &y);
+					controls.MousePos = glm::vec2((float)x, (float)y);
+					controls.MouseDelta = glm::vec2(0, 0);
+				}
 				controls.IsLeftMouseButton = true;
-				double x, y;
-				glfwGetCursorPos(window, &x, &y);
-				controls.MousePos = glm::vec2((float)x, (float)y);
-				controls.MouseDelta = glm::vec2(0, 0);
 			}
 			else if (action == GLFW_RELEASE)
 			{
@@ -147,11 +150,14 @@ namespace Renderer
 		{
 			if (action == GLFW_PRESS)
 			{
+				if (!(controls.IsLeftMouseButton || controls.IsMiddleMouseButton || controls.IsRightMouseButton))
+				{
+					double x, y;
+					glfwGetCursorPos(window, &x, &y);
+					controls.MousePos = glm::vec2((float)x, (float)y);
+					controls.MouseDelta = glm::vec2(0, 0);
+				}
 				controls.IsRightMouseButton = true;
-				double x, y;
-				glfwGetCursorPos(window, &x, &y);
-				controls.MousePos = glm::vec2((float)x, (float)y);
-				controls.MouseDelta = glm::vec2(0, 0);
 			}
 			else if (action == GLFW_RELEASE)
 			{
@@ -163,11 +169,14 @@ namespace Renderer
 		{
 			if (action == GLFW_PRESS)
 			{
+				if (!(controls.IsLeftMouseButton || controls.IsMiddleMouseButton || controls.IsRightMouseButton))
+				{
+					double x, y;
+					glfwGetCursorPos(window, &x, &y);
+					controls.MousePos = glm::vec2((float)x, (float)y);
+					controls.MouseDelta = glm::vec2(0, 0);
+				}
 				controls.IsMiddleMouseButton = true;
-				double x, y;
-				glfwGetCursorPos(window, &x, &y);
-				controls.MousePos = glm::vec2((float)x, (float)y);
-				controls.MouseDelta = glm::vec2(0, 0);
 			}
 			else if (action == GLFW_RELEASE)
 			{
@@ -186,6 +195,15 @@ namespace Renderer
 		{
 			controls.MouseDelta = glm::vec2((float)x, (float)y) - controls.MousePos;
 			controls.MousePos = glm::vec2((float)x, (float)y);
+
+			if (abs(controls.MouseDelta.x) < 2)
+			{
+				controls.MouseDelta.x = 0.0f;
+			}
+			if (abs(controls.MouseDelta.y) < 2)
+			{
+				controls.MouseDelta.y = 0.0f;
+			}
 		}
 	}
 

@@ -38,11 +38,12 @@ namespace Renderer
 
         float xoffset = controls.MouseDelta.x;
         float yoffset = controls.MouseDelta.y;
+
         xoffset *= mMouseSensitivity;
         yoffset *= mMouseSensitivity;
 
-        mYaw += xoffset;
-        mPitch += yoffset;
+        mYaw += yoffset;
+        mPitch += xoffset;
 
         if (mPitch > 80.0f)
             mPitch = 80.0f;

@@ -42,18 +42,18 @@ namespace Renderer
 		float mFOV = glm::radians(45.0f);
 		float mAspect = 1.0f;
 		float mNearPlane = 0.1f;
-		float mFarPlane = 10.0f;
+		float mFarPlane = 100.0f;
 
 		float mCameraSpeed = 10.0f;
 
-		float mMouseSensitivity = 0.1f;
+		float mMouseSensitivity = 0.05f;
 		float mYaw = 0.0f;
 		float mPitch = 0.0f;
 
 		CameraType mCameraType = CameraType::PerspectiveCamera;
 
-		glm::vec3 mPos = glm::vec3(2.0f, 2.0f, 2.0f);
-		glm::vec3 mDirection = glm::vec3(-1.0f, -1.0f, -1.0f);
+		glm::vec3 mPos = glm::vec3(-10.0f, 0.0f, 0.0f);
+		glm::vec3 mDirection = glm::vec3(1.0f, 0.0f, 0.0f);
 		glm::vec3 mUpVector = glm::vec3(0.0f, 0.0f, 1.0f);
 		glm::vec3 mRightVector = glm::normalize(glm::cross(mDirection, mUpVector));
 
