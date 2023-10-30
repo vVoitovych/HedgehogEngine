@@ -2,6 +2,11 @@
 
 namespace Renderer
 {
+	bool Vertex::operator==(const Vertex& other) const
+	{
+		return pos == other.pos && color == other.color && texCoord == other.texCoord;
+	}
+
 	VkVertexInputBindingDescription Vertex::GetBindingDescription()
 	{
 		VkVertexInputBindingDescription desc{};
@@ -62,7 +67,7 @@ namespace Renderer
 
 	std::vector<uint16_t> Vertex::GetQuadIndecies()
 	{
-		std::vector<uint16_t> indices =	
+		std::vector<uint32_t> indices =	
 		{ 
 			0, 1, 2, 2, 3, 0 
 		};

@@ -153,6 +153,8 @@
     <ClCompile Include="Renderer\Resources\DepthBuffer\DepthBuffer.cpp">
       <Filter>Renderer\Resources\DepthBuffer</Filter>
     </ClCompile>
+    <ClCompile Include="ContentLoader\CommonFunctions.cpp">
+      <Filter>ContentLoader</Filter>
     <ClCompile Include="Renderer\Camera\Camera.cpp">
       <Filter>Renderer\Camera</Filter>
     </ClCompile>
@@ -247,6 +249,8 @@
     <ClInclude Include="Renderer\Resources\DepthBuffer\DepthBuffer.h">
       <Filter>Renderer\Resources\DepthBuffer</Filter>
     </ClInclude>
+    <ClInclude Include="ContentLoader\CommonFunctions.h">
+      <Filter>ContentLoader</Filter>
     <ClInclude Include="Renderer\Camera\Camera.h">
       <Filter>Renderer\Camera</Filter>
     </ClInclude>
