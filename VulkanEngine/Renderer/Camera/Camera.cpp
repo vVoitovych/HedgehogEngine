@@ -42,8 +42,8 @@ namespace Renderer
         xoffset *= mMouseSensitivity;
         yoffset *= mMouseSensitivity;
 
-        mYaw += yoffset;
-        mPitch += xoffset;
+        mYaw += xoffset;
+        mPitch += yoffset;
 
         if (mPitch > 80.0f)
             mPitch = 80.0f;
@@ -51,11 +51,12 @@ namespace Renderer
             mPitch = -80.0f;
 
         glm::vec3 direction;
-        direction.x = cos(glm::radians(mYaw)) * cos(glm::radians(mPitch));
-        direction.y = sin(glm::radians(mPitch));
-        direction.z = sin(glm::radians(mYaw)) * cos(glm::radians(mPitch));
+        direction.x = cos(glm::radians(mPitch)) * cos(glm::radians(mYaw));
+        direction.y = sin(glm::radians(mYaw));
+        direction.z = sin(glm::radians(mPitch)) * cos(glm::radians(mYaw));
         mDirection = glm::normalize(direction);
-        glm::normalize(glm::cross(mDirection, mUpVector));
+
+        mRightVector = glm::normalize(glm::cross(mDirection, mUpVector));
 
         UpdateMatricies();
     }
