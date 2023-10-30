@@ -31,8 +31,8 @@ namespace Renderer
 		void CreateIndexBuffer(const Device& device);
 
 	private:
-		std::vector<Vertex> mVertices;
-		std::vector<uint32_t> mIndices;
+		std::vector<Vertex> mVerticies;
+		std::vector<uint32_t> mIndicies;
 
 		VkBuffer mVertexBuffer;
 		VkDeviceMemory mVertexBufferMemory;

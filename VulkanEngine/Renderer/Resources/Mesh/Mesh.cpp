@@ -23,8 +23,8 @@ namespace Renderer
 
 	void Mesh::LoadModel(const std::string fileName)
 	{
-		mVertices.clear();
-		mIndices.clear();
+		mVerticies.clear();
+		mIndicies.clear();
 
 		tinyobj::attrib_t attrib;
 		std::vector<tinyobj::shape_t> shapes;
@@ -61,14 +61,14 @@ namespace Renderer
 
 				if (uniqueVertices.count(vertex) == 0) 
 				{
-					uniqueVertices[vertex] = static_cast<uint32_t>(mVertices.size());
-					mVertices.push_back(vertex);
+					uniqueVertices[vertex] = static_cast<uint32_t>(mVerticies.size());
+					mVerticies.push_back(vertex);
 				}
 
-				mIndices.push_back(uniqueVertices[vertex]);
+				mIndicies.push_back(uniqueVertices[vertex]);
 			}
 		}
-		LOGINFO("Model loaded with ", mVertices.size(), " verticies and ", mIndices.size(), " indicies!");
+		LOGINFO("Model loaded with ", mVerticies.size(), " verticies and ", mIndicies.size(), " indicies!");
 	}
 
 	void Mesh::Initialize(const Device& device)
@@ -104,17 +104,17 @@ namespace Renderer
 
 	uint32_t Mesh::GetIndiciesCount()
 	{
-		return static_cast<uint32_t>(mIndices.size());
+		return static_cast<uint32_t>(mIndicies.size());
 	}
 
 	void Mesh::CreateVertexBuffer(const Device& device)
 	{
-		VkDeviceSize size = sizeof(mVertices[0]) * mVertices.size();
+		VkDeviceSize size = sizeof(mVerticies[0]) * mVerticies.size();
 
 		VkBuffer staginBuffer;
 		VkDeviceMemory staginBufferMemory;
 		device.CreateBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,	staginBuffer, staginBufferMemory);
-		device.CopyDataToBufferMemory(staginBufferMemory, mVertices.data(), (size_t)size);
+		device.CopyDataToBufferMemory(staginBufferMemory, mVerticies.data(), (size_t)size);
 
 		device.CreateBuffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mVertexBuffer, mVertexBufferMemory);
 		device.CopyBuffer(staginBuffer, mVertexBuffer, size);
@@ -126,12 +126,12 @@ namespace Renderer
 
 	void Mesh::CreateIndexBuffer(const Device& device)
 	{
-		VkDeviceSize size = sizeof(mIndices[0]) * mIndices.size();
+		VkDeviceSize size = sizeof(mIndicies[0]) * mIndicies.size();
 
 		VkBuffer staginBuffer;
 		VkDeviceMemory staginBufferMemory;
 		device.CreateBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,	staginBuffer, staginBufferMemory);
-		device.CopyDataToBufferMemory(staginBufferMemory, mIndices.data(), (size_t)size);
+		device.CopyDataToBufferMemory(staginBufferMemory, mIndicies.data(), (size_t)size);
 
 		device.CreateBuffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 			mIndexBuffer, mIndexBufferMemory);

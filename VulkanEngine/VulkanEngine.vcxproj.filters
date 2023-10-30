@@ -1,163 +1,163 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Source Files">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
-    <Filter Include="Header Files">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
-    </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
-    <Filter Include="Application">
-      <UniqueIdentifier>{46f628af-4225-49f4-bd2a-bfa2c7701bf4}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Renderer">
-      <UniqueIdentifier>{0c6dd188-e649-4c0f-9c80-7f5a5bafe75a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Renderer\Common">
-      <UniqueIdentifier>{b7a780cf-3ca0-4e87-9147-d77c9bdd2352}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Renderer\WindowManagment">
-      <UniqueIdentifier>{e4a00687-4956-4fc2-800a-b31f8577c64b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Renderer\Device">
-      <UniqueIdentifier>{924ef0e9-cf6a-436b-91c5-bcc1c943beb6}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Renderer\Commands">
-      <UniqueIdentifier>{95a64f4a-0578-467f-b542-f1b5804d99b2}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Renderer\SwapChain">
-      <UniqueIdentifier>{eaf113aa-7e79-4091-aa2a-99b240d2ece2}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Renderer\RenderPass">
-      <UniqueIdentifier>{cac81018-33bc-4ace-96cc-ed1b56d31dbd}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Renderer\FrameBuffer">
-      <UniqueIdentifier>{25a68b33-fcb9-4ac3-acb8-f49cad064dad}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Renderer\Pipeline">
-      <UniqueIdentifier>{6cb41257-5169-48dd-8420-9877c066d36b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Renderer\SyncOnjects">
-      <UniqueIdentifier>{869b05cf-fb1b-4393-b7c9-9b7dfa3d0599}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shaders">
-      <UniqueIdentifier>{9cfae4a0-c90a-412b-bd57-28d48b5e8e29}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Logger">
-      <UniqueIdentifier>{9de29dcf-5baf-4d7b-938f-58358e40b0b1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Renderer\Descriptors">
-      <UniqueIdentifier>{ff38a805-59cc-4ee8-accb-c202aaf528a7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Renderer\Descriptors\Types">
-      <UniqueIdentifier>{f14c8749-0440-441b-b103-82fc053b2530}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Renderer\Descriptors\Types\UBO">
-      <UniqueIdentifier>{efbc33f9-84b1-4b7f-b7a4-d243cd6ae7a1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ContentLoader">
-      <UniqueIdentifier>{2f1d6900-400d-4106-8f97-8150e80114f0}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ContentLoader\stb">
-      <UniqueIdentifier>{ae1416b8-8cbe-471d-82bb-6093b20d1a86}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Renderer\Resources">
-      <UniqueIdentifier>{2732f31e-a1e1-41ab-b6e7-2dbd901823e9}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Renderer\Resources\Mesh">
-      <UniqueIdentifier>{17dc806e-d04a-4119-bb47-9fa6a73cbdd7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Renderer\Resources\TextureImage">
-      <UniqueIdentifier>{a5a8dd0b-d851-47c9-a063-b3437e900ba0}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Renderer\Resources\DepthBuffer">
-      <UniqueIdentifier>{0e46c00f-c3cc-4cb8-9e76-18534d726b54}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Renderer\Camera">
-      <UniqueIdentifier>{67690b78-f4ea-4d52-8336-a8812d9556ab}</UniqueIdentifier>
-    </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
+    <ClCompile Include="Renderer\Renderer.cpp" />
     <ClCompile Include="Application.cpp">
       <Filter>Application</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Renderer.cpp">
-      <Filter>Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\WindowManagment\WindowManager.cpp">
-      <Filter>Renderer\WindowManagment</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\WindowManagment\WindowState.cpp">
-      <Filter>Renderer\WindowManagment</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Device\Device.cpp">
-      <Filter>Renderer\Device</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Commands\CommandBuffer.cpp">
-      <Filter>Renderer\Commands</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\SwapChain\SwapChain.cpp">
-      <Filter>Renderer\SwapChain</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\RenderPass\RenderPass.cpp">
-      <Filter>Renderer\RenderPass</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\FrameBuffer\FrameBuffers.cpp">
-      <Filter>Renderer\FrameBuffer</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Pipeline\Pipeline.cpp">
-      <Filter>Renderer\Pipeline</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\SyncObjects\SyncObjects.cpp">
-      <Filter>Renderer\SyncOnjects</Filter>
-    </ClCompile>
-    <ClCompile Include="Logger\LogColorized.cpp">
-      <Filter>Logger</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Descriptors\DescriptorSetLayout.cpp">
-      <Filter>Renderer\Descriptors</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Descriptors\UBO.cpp">
-      <Filter>Renderer\Descriptors\Types\UBO</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Common\ComonFunctions.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Descriptors\DescriptorSet.cpp">
-      <Filter>Renderer\Descriptors</Filter>
     </ClCompile>
     <ClCompile Include="ContentLoader\TextureLoader.cpp">
       <Filter>ContentLoader</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Resources\TextureImage\TextureImage.cpp">
-      <Filter>Renderer\Resources\TextureImage</Filter>
+    <ClCompile Include="Logger\LogColorized.cpp">
+      <Filter>Logger</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Resources\TextureImage\TextureSampler.cpp">
-      <Filter>Renderer\Resources\TextureImage</Filter>
+    <ClCompile Include="main.cpp">
+      <Filter>SourceFiles</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Resources\Mesh\Mesh.cpp">
-      <Filter>Renderer\Resources\Mesh</Filter>
+    <ClCompile Include="Renderer\Camera\Camera.cpp">
+      <Filter>Renderer\Camera</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Resources\Mesh\Vertex.cpp">
-      <Filter>Renderer\Resources\Mesh</Filter>
+    <ClCompile Include="ContentLoader\CommonFunctions.cpp">
+      <Filter>ContentLoader</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Descriptors\UBO.cpp">
+      <Filter>Renderer\Descriptors\Types\UBO</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Descriptors\DescriptorSet.cpp">
+      <Filter>Renderer\Descriptors</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Descriptors\DescriptorSetLayout.cpp">
+      <Filter>Renderer\Descriptors</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Device\Device.cpp">
+      <Filter>Renderer\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\FrameBuffer\FrameBuffers.cpp">
+      <Filter>Renderer\FrameBuffers</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Commands\CommandBuffer.cpp">
+      <Filter>Renderer\Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Pipeline\Pipeline.cpp">
+      <Filter>Renderer\Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\RenderPass\RenderPass.cpp">
+      <Filter>Renderer\RenderPass</Filter>
     </ClCompile>
     <ClCompile Include="Renderer\Resources\DepthBuffer\DepthBuffer.cpp">
       <Filter>Renderer\Resources\DepthBuffer</Filter>
     </ClCompile>
-    <ClCompile Include="ContentLoader\CommonFunctions.cpp">
-      <Filter>ContentLoader</Filter>
-    <ClCompile Include="Renderer\Camera\Camera.cpp">
-      <Filter>Renderer\Camera</Filter>
+    <ClCompile Include="Renderer\Resources\Mesh\Vertex.cpp">
+      <Filter>Renderer\Resources\Mesh</Filter>
     </ClCompile>
+    <ClCompile Include="Renderer\Resources\Mesh\Mesh.cpp">
+      <Filter>Renderer\Resources\Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Resources\TextureImage\TextureImage.cpp">
+      <Filter>Renderer\Resources\TextureImage</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\SwapChain\SwapChain.cpp">
+      <Filter>Renderer\SwapChain</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\SyncObjects\SyncObjects.cpp">
+      <Filter>Renderer\SyncObjects</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\WindowManagment\WindowManager.cpp">
+      <Filter>Renderer\WindowManager</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\WindowManagment\WindowState.cpp">
+      <Filter>Renderer\WindowManager</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Resources\TextureImage\TextureSampler.cpp">
+      <Filter>Renderer\Resources\TextureImage</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Renderer\Renderer.h" />
+    <ClInclude Include="Application.h">
+      <Filter>Application</Filter>
+    </ClInclude>
+    <ClInclude Include="ContentLoader\TextureLoader.h">
+      <Filter>ContentLoader</Filter>
+    </ClInclude>
+    <ClInclude Include="Libraries\stb\stb_image.h">
+      <Filter>ContentLoader\stb</Filter>
+    </ClInclude>
+    <ClInclude Include="Logger\LogColorized.h">
+      <Filter>Logger</Filter>
+    </ClInclude>
+    <ClInclude Include="Logger\Logger.h">
+      <Filter>Logger</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Camera\Camera.h">
+      <Filter>Renderer\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Common\EngineDebugBreak.h">
+      <Filter>Renderer\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Common\RendererSettings.h">
+      <Filter>Renderer\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="ContentLoader\CommonFunctions.h">
+      <Filter>ContentLoader</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Descriptors\UBO.h">
+      <Filter>Renderer\Descriptors\Types\UBO</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Descriptors\UBOInfo.h">
+      <Filter>Renderer\Descriptors\Types\UBO</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Descriptors\DescriptorSet.h">
+      <Filter>Renderer\Descriptors</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Descriptors\DescriptorSetLayout.h">
+      <Filter>Renderer\Descriptors</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Device\Device.h">
+      <Filter>Renderer\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\FrameBuffer\FrameBuffers.h">
+      <Filter>Renderer\FrameBuffers</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Commands\CommandBuffer.h">
+      <Filter>Renderer\Commands</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Pipeline\Pipeline.h">
+      <Filter>Renderer\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\RenderPass\RenderPass.h">
+      <Filter>Renderer\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Resources\DepthBuffer\DepthBuffer.h">
+      <Filter>Renderer\Resources\DepthBuffer</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Resources\Mesh\Vertex.h">
+      <Filter>Renderer\Resources\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Resources\Mesh\Mesh.h">
+      <Filter>Renderer\Resources\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Resources\TextureImage\TextureImage.h">
+      <Filter>Renderer\Resources\TextureImage</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\SwapChain\SwapChain.h">
+      <Filter>Renderer\SwapChain</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\SyncObjects\SyncObjects.h">
+      <Filter>Renderer\SyncObjects</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\WindowManagment\Controls.h">
+      <Filter>Renderer\WindowManager</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\WindowManagment\WindowManager.h">
+      <Filter>Renderer\WindowManager</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\WindowManagment\WindowState.h">
+      <Filter>Renderer\WindowManager</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Resources\TextureImage\TextureSampler.h">
+      <Filter>Renderer\Resources\TextureImage</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ShadersCompiler.bat">
@@ -171,91 +171,80 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Application.h">
-      <Filter>Application</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Renderer.h">
-      <Filter>Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\WindowManagment\WindowManager.h">
-      <Filter>Renderer\WindowManagment</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\WindowManagment\WindowState.h">
-      <Filter>Renderer\WindowManagment</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Device\Device.h">
-      <Filter>Renderer\Device</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Commands\CommandBuffer.h">
-      <Filter>Renderer\Commands</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\SwapChain\SwapChain.h">
-      <Filter>Renderer\SwapChain</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\RenderPass\RenderPass.h">
-      <Filter>Renderer\RenderPass</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\FrameBuffer\FrameBuffers.h">
-      <Filter>Renderer\FrameBuffer</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Pipeline\Pipeline.h">
-      <Filter>Renderer\Pipeline</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\SyncObjects\SyncObjects.h">
-      <Filter>Renderer\SyncOnjects</Filter>
-    </ClInclude>
-    <ClInclude Include="Logger\Logger.h">
-      <Filter>Logger</Filter>
-    </ClInclude>
-    <ClInclude Include="Logger\LogColorized.h">
-      <Filter>Logger</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Descriptors\UBOInfo.h">
-      <Filter>Renderer\Descriptors\Types\UBO</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Descriptors\DescriptorSetLayout.h">
-      <Filter>Renderer\Descriptors</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Descriptors\UBO.h">
-      <Filter>Renderer\Descriptors\Types\UBO</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Descriptors\DescriptorSet.h">
-      <Filter>Renderer\Descriptors</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Common\EngineDebugBreak.h">
-      <Filter>Renderer\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Common\RendererSettings.h">
-      <Filter>Renderer\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\stb\stb_image.h">
-      <Filter>ContentLoader\stb</Filter>
-    </ClInclude>
-    <ClInclude Include="ContentLoader\TextureLoader.h">
-      <Filter>ContentLoader</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Resources\TextureImage\TextureImage.h">
-      <Filter>Renderer\Resources\TextureImage</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Resources\TextureImage\TextureSampler.h">
-      <Filter>Renderer\Resources\TextureImage</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Resources\Mesh\Mesh.h">
-      <Filter>Renderer\Resources\Mesh</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Resources\Mesh\Vertex.h">
-      <Filter>Renderer\Resources\Mesh</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Resources\DepthBuffer\DepthBuffer.h">
-      <Filter>Renderer\Resources\DepthBuffer</Filter>
-    </ClInclude>
-    <ClInclude Include="ContentLoader\CommonFunctions.h">
-      <Filter>ContentLoader</Filter>
-    <ClInclude Include="Renderer\Camera\Camera.h">
-      <Filter>Renderer\Camera</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\WindowManagment\Controls.h">
-      <Filter>Renderer\WindowManagment</Filter>
-    </ClInclude>
+    <Filter Include="Application">
+      <UniqueIdentifier>{7a7a7411-a85a-42a7-9c77-6df39233ec5e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ContentLoader">
+      <UniqueIdentifier>{1288b47a-ea47-49b5-a2f8-04772cca3ff5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ContentLoader\stb">
+      <UniqueIdentifier>{6f7a25fb-cfe0-4d19-8a6c-8b670c1cab42}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Logger">
+      <UniqueIdentifier>{6a95c0fe-9b1c-44e2-9900-721c2dc01b7f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer">
+      <UniqueIdentifier>{c6d15c2a-2efe-4c60-97bf-366c53bbc55d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{9c12a490-8a7f-4c22-85d7-9d590b6a7c2d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{add2bcb1-c1d5-41c3-8c5f-3854973917ea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SourceFiles">
+      <UniqueIdentifier>{4995a3f2-fa48-4365-aedd-c38026efe3f7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Camera">
+      <UniqueIdentifier>{8495a375-3af5-407c-bc43-f8bc6a3fff45}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Common">
+      <UniqueIdentifier>{648d1ca9-ac93-4e5a-96f5-8349c6de5c8e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Descriptors">
+      <UniqueIdentifier>{82a4b54d-1ae1-4bfc-9ec5-60ffa980bcca}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Descriptors\Types">
+      <UniqueIdentifier>{163200b3-fe60-4dcb-b5a5-cf5995b38951}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Descriptors\Types\UBO">
+      <UniqueIdentifier>{368bd7f1-5d79-4895-9cca-672ba3998b84}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Device">
+      <UniqueIdentifier>{946352cd-9681-44ad-ac9a-7acd9cc295e9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\FrameBuffers">
+      <UniqueIdentifier>{05eefc2f-092b-4268-8f19-2046a2d8f2c4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Commands">
+      <UniqueIdentifier>{a594eed2-fb1e-4ce1-8522-b26e8483d977}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Pipeline">
+      <UniqueIdentifier>{58d840e8-6003-4ba8-9539-88e59fcc2e1d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\RenderPass">
+      <UniqueIdentifier>{44157383-f8cd-45b7-be41-3810eb57d52e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Resources">
+      <UniqueIdentifier>{e7f8d361-123f-4ae0-9c84-eb7861df0e35}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Resources\DepthBuffer">
+      <UniqueIdentifier>{21b19f82-2b21-49dc-8907-352fb30c0b94}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Resources\Mesh">
+      <UniqueIdentifier>{21279cc2-a927-4c9d-80ee-08fc3b475341}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Resources\TextureImage">
+      <UniqueIdentifier>{21a98a9b-953c-4c85-8415-aa257797c4b5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\SwapChain">
+      <UniqueIdentifier>{937ebe96-2601-47ac-9eec-82fec5ec3a5a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\SyncObjects">
+      <UniqueIdentifier>{11c63417-2662-4c27-9ad9-ca54ead9c6d1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\WindowManager">
+      <UniqueIdentifier>{4eb469f1-78bd-4366-af94-eb0959030fab}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
 </Project>

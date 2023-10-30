@@ -154,7 +154,6 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Renderer\Camera\Camera.cpp" />
     <ClCompile Include="Renderer\Commands\CommandBuffer.cpp" />
-    <ClCompile Include="Renderer\Common\ComonFunctions.cpp" />
     <ClCompile Include="Renderer\Descriptors\DescriptorSet.cpp" />
     <ClCompile Include="Renderer\Descriptors\DescriptorSetLayout.cpp" />
     <ClCompile Include="Renderer\Descriptors\UBO.cpp" />

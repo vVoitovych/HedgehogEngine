@@ -65,7 +65,7 @@ namespace Renderer
 		return vertices;
 	}
 
-	std::vector<uint16_t> Vertex::GetQuadIndecies()
+	std::vector<uint32_t> Vertex::GetQuadIndecies()
 	{
 		std::vector<uint32_t> indices =	
 		{ 
@@ -93,9 +93,9 @@ namespace Renderer
 		return vertices;
 	}
 
-	std::vector<uint16_t> Vertex::GetCubeIndecies()
+	std::vector<uint32_t> Vertex::GetCubeIndecies()
 	{
-		std::vector<uint16_t> indices =
+		std::vector<uint32_t> indices =
 		{
 			 //Top
 			 2, 6, 7,
