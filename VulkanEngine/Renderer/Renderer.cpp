@@ -1,6 +1,8 @@
 #include "Renderer.h"
 #include "VulkanEngine/Logger/Logger.h"
 
+#include <chrono>
+
 namespace Renderer
 {
 	Renderer::Renderer()
@@ -62,14 +64,25 @@ namespace Renderer
 		mWindowManager.Cleanup();
 	}
 
+	void Renderer::HandleInput()
+	{
+		mWindowManager.HandleInput();
+	}
+
+	void Renderer::Update(float dt)
+	{
+		auto controls = mWindowManager.GetControls();
+		auto extend = mSwapChain.GetSwapChainExtend();
+		mCamera.UpdateCamera(dt, extend.width / (float)extend.height, controls);
+	}
+
 	void Renderer::UpdateUniformBuffer()
 	{
 		static auto startTime = std::chrono::high_resolution_clock::now();
 
 		auto currentTime = std::chrono::high_resolution_clock::now();
 		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-		auto extend = mSwapChain.GetSwapChainExtend();
-		mUniformBuffers[currentFrame].UpdateUniformBuffer(time, extend.width / (float)extend.height);
+		mUniformBuffers[currentFrame].UpdateUniformBuffer(time, mCamera);
 	}
 
 	void Renderer::DrawFrame()
@@ -168,6 +181,16 @@ namespace Renderer
 	bool Renderer::ShouldClose()
 	{
 		return mWindowManager.ShouldClose();
+	}
+
+	float Renderer::GetFrameTime()
+	{
+		static auto prevTime = std::chrono::high_resolution_clock::now();
+
+		auto currentTime = std::chrono::high_resolution_clock::now();
+		float deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - prevTime).count();
+		prevTime = currentTime;
+		return deltaTime;
 	}
 
 }

@@ -16,6 +16,7 @@
 #include "Resources/TextureImage/TextureImage.h"
 #include "Resources/TextureImage/TextureSampler.h"
 #include "Resources/DepthBuffer/DepthBuffer.h"
+#include "Camera/Camera.h"
 
 namespace Renderer
 {
@@ -31,12 +32,16 @@ namespace Renderer
 		void Initialize();
 		void Cleanup();
 
+		void HandleInput();
+		void Update(float dt);
+
 		void UpdateUniformBuffer();
 		void DrawFrame();
 		void RecreateSwapChain();
 
 		bool ShouldClose();
 
+		float GetFrameTime();
 
 	private:
 
@@ -59,6 +64,7 @@ namespace Renderer
 		TextureImage mTextureImage;
 		TextureSampler mTextureSampler;
 
+		Camera mCamera;
 	};
 }
 
