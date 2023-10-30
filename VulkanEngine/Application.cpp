@@ -18,9 +18,12 @@ namespace VkEngine
 
 	void VkApplication::MainLoop()
 	{
+
 		while (!mRenderer.ShouldClose())
 		{
-			glfwPollEvents();
+			float dt = mRenderer.GetFrameTime();
+			mRenderer.HandleInput();
+			mRenderer.Update(dt);
 			mRenderer.UpdateUniformBuffer();
 			mRenderer.DrawFrame();
 		}
@@ -32,5 +35,6 @@ namespace VkEngine
 	{
 		mRenderer.Cleanup();
 	}
+
 }
 

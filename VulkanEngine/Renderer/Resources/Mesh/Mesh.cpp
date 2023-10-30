@@ -7,8 +7,8 @@ namespace Renderer
 {
 	Mesh::Mesh()
 	{
-		mVerticies = Vertex::GetQuad();
-		mIndicies = Vertex::GetQuadIndecies();
+		mVerticies = Vertex::GetCubeVirticies();
+		mIndicies = Vertex::GetCubeIndecies();
 	}
 
 	Mesh::~Mesh()

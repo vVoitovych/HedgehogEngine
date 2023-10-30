@@ -23,6 +23,8 @@ namespace Renderer
 		static std::vector<Vertex> GetQuad();
 		static std::vector<uint16_t> GetQuadIndecies();
 
+		static std::vector<Vertex> GetCubeVirticies();
+		static std::vector<uint16_t> GetCubeIndecies();
 	};
 
 
