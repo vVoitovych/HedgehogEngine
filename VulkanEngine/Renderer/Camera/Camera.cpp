@@ -42,8 +42,8 @@ namespace Renderer
         xoffset *= mMouseSensitivity;
         yoffset *= mMouseSensitivity;
 
-        mYaw += xoffset;
-        mPitch += yoffset;
+        mYaw -= xoffset;
+        mPitch -= yoffset;
 
         if (mPitch > 80.0f)
             mPitch = 80.0f;
