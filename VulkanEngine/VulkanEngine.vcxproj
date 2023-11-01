@@ -150,6 +150,7 @@
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="ContentLoader\CommonFunctions.cpp" />
     <ClCompile Include="ContentLoader\TextureLoader.cpp" />
+    <ClCompile Include="ECS\EntityManager.cpp" />
     <ClCompile Include="Logger\LogColorized.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Renderer\Camera\Camera.cpp" />
@@ -181,6 +182,13 @@
     <ClInclude Include="Application.h" />
     <ClInclude Include="ContentLoader\CommonFunctions.h" />
     <ClInclude Include="ContentLoader\TextureLoader.h" />
+    <ClInclude Include="ECS\ComponentArray.h" />
+    <ClInclude Include="ECS\ComponentManager.h" />
+    <ClInclude Include="ECS\Coordinator.h" />
+    <ClInclude Include="ECS\Entity.h" />
+    <ClInclude Include="ECS\EntityManager.h" />
+    <ClInclude Include="ECS\System.h" />
+    <ClInclude Include="ECS\SystemManager.h" />
     <ClInclude Include="Libraries\stb\stb_image.h" />
     <ClInclude Include="Logger\LogColorized.h" />
     <ClInclude Include="Logger\Logger.h" />
