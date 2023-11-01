@@ -76,6 +76,7 @@ namespace Renderer
 		SwapChainSupportDetails QuerySwapChainSupport() const;
 		VkPhysicalDeviceProperties GetPhysicalDeviceProperties() const;
 		VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const;
+		VkFormat FindDepthFormat() const;
 
 	private:
 		void InitializeInstance();

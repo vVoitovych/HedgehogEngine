@@ -116,12 +116,6 @@ namespace Renderer
 		inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 		inputAssembly.primitiveRestartEnable = VK_FALSE;
 
-		std::vector<VkDynamicState> dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT ,VK_DYNAMIC_STATE_SCISSOR };
-		VkPipelineDynamicStateCreateInfo dynamicStateInfo{};
-		dynamicStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-		dynamicStateInfo.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
-		dynamicStateInfo.pDynamicStates = dynamicStates.data();
-
 		VkViewport viewport{};
 		viewport.x = 0.0f;
 		viewport.y = 0.0f;
@@ -150,9 +144,6 @@ namespace Renderer
 		rasterizerInfo.cullMode = VK_CULL_MODE_NONE; // VK_CULL_MODE_FRONT_BIT;
 		rasterizerInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
 		rasterizerInfo.depthBiasEnable = VK_FALSE;
-		rasterizerInfo.depthBiasConstantFactor = 0.0f;
-		rasterizerInfo.depthBiasClamp = 0.0f;
-		rasterizerInfo.depthBiasSlopeFactor = 0.0f;
 
 		VkPipelineMultisampleStateCreateInfo multisampling{};
 		multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
@@ -188,6 +179,11 @@ namespace Renderer
 		colorBlending.blendConstants[2] = 0.0f;
 		colorBlending.blendConstants[3] = 0.0f;
 
+		std::vector<VkDynamicState> dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT ,VK_DYNAMIC_STATE_SCISSOR };
+		VkPipelineDynamicStateCreateInfo dynamicStateInfo{};
+		dynamicStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+		dynamicStateInfo.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
+		dynamicStateInfo.pDynamicStates = dynamicStates.data();
 
 		VkPipelineLayoutCreateInfo layoutCreateInfo{};
 		layoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;

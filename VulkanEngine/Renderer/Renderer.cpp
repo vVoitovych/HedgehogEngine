@@ -111,7 +111,7 @@ namespace Renderer
 		commandBuffer.BeginCommandBuffer(0);
 		commandBuffer.BeginRenderPass(extend, mRenderPass, frameBuffer);
 		commandBuffer.BindPipeline(mPipeline, VK_PIPELINE_BIND_POINT_GRAPHICS);
-		commandBuffer.SetViewport(0.0f, 0.0f, (float)extend.width, (float)extend.height, 0.0f, 0.0f);
+		commandBuffer.SetViewport(0.0f, 0.0f, (float)extend.width, (float)extend.height, 0.0f, 1.0f);
 		commandBuffer.SetScissor({ 0, 0 }, extend);
 		VkBuffer vertexBuffers[] = { mMesh.GetVertexBuffer() };
 		VkDeviceSize offsets[] = { 0 };
