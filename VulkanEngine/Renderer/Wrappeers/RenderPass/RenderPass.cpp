@@ -1,7 +1,7 @@
-#include "RenderPass.h"
-#include "VulkanEngine/Renderer/Device/Device.h"
-#include "VulkanEngine/Logger/Logger.h"
-#include "VulkanEngine/Renderer/Common/EngineDebugBreak.h"
+#include "RenderPass.hpp"
+#include "VulkanEngine/Renderer/Wrappeers/Device/Device.hpp"
+#include "VulkanEngine/Logger/Logger.hpp"
+#include "VulkanEngine/Renderer/Common/EngineDebugBreak.hpp"
 
 #include <array>
 

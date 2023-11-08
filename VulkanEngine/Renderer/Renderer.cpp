@@ -1,5 +1,5 @@
-#include "Renderer.h"
-#include "VulkanEngine/Logger/Logger.h"
+#include "Renderer.hpp"
+#include "VulkanEngine/Logger/Logger.hpp"
 
 #include <chrono>
 

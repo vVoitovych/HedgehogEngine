@@ -1,6 +1,6 @@
-#include "Application.h"
+#include "Application.hpp"
 
-#include "VulkanEngine/Logger/Logger.h"
+#include "VulkanEngine/Logger/Logger.hpp"
 
 namespace VkEngine
 {

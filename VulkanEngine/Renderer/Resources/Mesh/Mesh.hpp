@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 
-#include "Vertex.h"
+#include "Vertex.hpp"
 
 namespace Renderer
 {

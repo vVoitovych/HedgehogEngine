@@ -1,5 +1,5 @@
-#include "WindowManager.h"
-#include "VulkanEngine/Logger/Logger.h"
+#include "WindowManager.hpp"
+#include "VulkanEngine/Logger/Logger.hpp"
 
 namespace Renderer
 {

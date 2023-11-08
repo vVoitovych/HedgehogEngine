@@ -4,7 +4,7 @@
 
 #include <iostream>
 #include <ctime>
-#include "LogColorized.h"
+#include "LogColorized.hpp"
 
 namespace EngineLogger
 {

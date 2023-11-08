@@ -1,4 +1,4 @@
-#include "CommonFunctions.h"
+#include "CommonFunctions.hpp"
 
 #include <Windows.h>
 #include <stdexcept>

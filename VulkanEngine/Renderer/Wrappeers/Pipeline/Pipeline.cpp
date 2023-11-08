@@ -1,13 +1,13 @@
-#include "Pipeline.h"
+#include "Pipeline.hpp"
 #include <Windows.h>
 
-#include "VulkanEngine/Renderer/Device/Device.h"
-#include "VulkanEngine/Renderer/SwapChain/SwapChain.h"
-#include "VulkanEngine/Renderer/RenderPass/RenderPass.h"
-#include "VulkanEngine/Renderer/Descriptors/DescriptorSetLayout.h"
-#include "VulkanEngine/Renderer/Resources/Mesh/Vertex.h"
-#include "VulkanEngine/Logger/Logger.h"
-#include "VulkanEngine/Renderer/Common/EngineDebugBreak.h"
+#include "VulkanEngine/Renderer/Wrappeers/Device/Device.hpp"
+#include "VulkanEngine/Renderer/Wrappeers/SwapChain/SwapChain.hpp"
+#include "VulkanEngine/Renderer/Wrappeers/RenderPass/RenderPass.hpp"
+#include "VulkanEngine/Renderer/Wrappeers/Descriptors/DescriptorSetLayout.hpp"
+#include "VulkanEngine/Renderer/Resources/Mesh/Vertex.hpp"
+#include "VulkanEngine/Logger/Logger.hpp"
+#include "VulkanEngine/Renderer/Common/EngineDebugBreak.hpp"
 
 #include <fstream>
 

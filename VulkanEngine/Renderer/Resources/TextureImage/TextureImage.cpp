@@ -1,10 +1,10 @@
-#include "TextureImage.h"
+#include "TextureImage.hpp"
 
-#include "VulkanEngine/Renderer/Device/Device.h"
+#include "VulkanEngine/Renderer/Wrappeers/Device/Device.hpp"
 
-#include "VulkanEngine/Logger/Logger.h"
-#include "VulkanEngine/Renderer/Common/EngineDebugBreak.h"
-#include "VulkanEngine/ContentLoader/TextureLoader.h"
+#include "VulkanEngine/Logger/Logger.hpp"
+#include "VulkanEngine/Renderer/Common/EngineDebugBreak.hpp"
+#include "VulkanEngine/ContentLoader/TextureLoader.hpp"
 
 namespace Renderer
 {

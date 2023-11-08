@@ -1,10 +1,10 @@
-#include "Device.h"
-#include "VulkanEngine/Renderer/WindowManagment/WindowManager.h"
-#include "VulkanEngine/Logger/Logger.h"
-#include "VulkanEngine/Renderer/Common/EngineDebugBreak.h"
-#include "VulkanEngine/Renderer/Common/RendererSettings.h"
-#include "VulkanEngine/Renderer/Descriptors/UBO.h"
-#include "VulkanEngine/Renderer/Descriptors/DescriptorSetLayout.h"
+#include "Device.hpp"
+#include "VulkanEngine/Renderer/WindowManagment/WindowManager.hpp"
+#include "VulkanEngine/Logger/Logger.hpp"
+#include "VulkanEngine/Renderer/Common/EngineDebugBreak.hpp"
+#include "VulkanEngine/Renderer/Common/RendererSettings.hpp"
+#include "VulkanEngine/Renderer/Wrappeers/Descriptors/UBO.hpp"
+#include "VulkanEngine/Renderer/Wrappeers/Descriptors/DescriptorSetLayout.hpp"
 
 #include <vector>
 #include <set>

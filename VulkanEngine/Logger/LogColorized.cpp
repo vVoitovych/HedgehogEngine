@@ -1,4 +1,4 @@
-#include "LogColorized.h"
+#include "LogColorized.hpp"
 #include <Windows.h>
 
 namespace EngineLogger

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Renderer/Renderer.h"
+#include "Renderer/Renderer.hpp"
 
 // std lib
 #include <memory>

@@ -1,8 +1,8 @@
-#include "TextureLoader.h"
-#include "CommonFunctions.h"
+#include "TextureLoader.hpp"
+#include "CommonFunctions.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "VulkanEngine/Libraries/stb/stb_image.h"
+#include "VulkanEngine/Libraries/stb/stb_image.hpp"
 
 #include <stdexcept>
 

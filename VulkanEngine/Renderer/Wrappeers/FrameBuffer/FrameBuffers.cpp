@@ -1,10 +1,10 @@
-#include "FrameBuffers.h"
-#include "VulkanEngine/Renderer/Device/Device.h"
-#include "VulkanEngine/Renderer/SwapChain/SwapChain.h"
-#include "VulkanEngine/Renderer/Resources/DepthBuffer/DepthBuffer.h"
-#include "VulkanEngine/Renderer/RenderPass/RenderPass.h"
-#include "VulkanEngine/Renderer/Common/EngineDebugBreak.h"
-#include "VulkanEngine/Logger/Logger.h"
+#include "FrameBuffers.hpp"
+#include "VulkanEngine/Renderer/Wrappeers/Device/Device.hpp"
+#include "VulkanEngine/Renderer/Wrappeers/SwapChain/SwapChain.hpp"
+#include "VulkanEngine/Renderer/Resources/DepthBuffer/DepthBuffer.hpp"
+#include "VulkanEngine/Renderer/Wrappeers/RenderPass/RenderPass.hpp"
+#include "VulkanEngine/Renderer/Common/EngineDebugBreak.hpp"
+#include "VulkanEngine/Logger/Logger.hpp"
 
 #include <array>
 

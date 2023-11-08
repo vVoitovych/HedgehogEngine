@@ -1,9 +1,9 @@
-#include "UBO.h"
-#include "VulkanEngine/Renderer/Device/Device.h"
-#include "UBOInfo.h"
-#include "VulkanEngine/Logger/Logger.h"
-#include "VulkanEngine/Renderer/Common/EngineDebugBreak.h"
-#include "VulkanEngine/Renderer/Camera/Camera.h"
+#include "UBO.hpp"
+#include "VulkanEngine/Renderer/Wrappeers/Device/Device.hpp"
+#include "UBOInfo.hpp"
+#include "VulkanEngine/Logger/Logger.hpp"
+#include "VulkanEngine/Renderer/Common/EngineDebugBreak.hpp"
+#include "VulkanEngine/Renderer/Camera/Camera.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
 
