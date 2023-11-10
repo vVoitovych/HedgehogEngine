@@ -1,7 +1,7 @@
-#include "FrameBuffers.hpp"
+#include "BackBuffers.hpp"
 #include "VulkanEngine/Renderer/Wrappeers/Device/Device.hpp"
 #include "VulkanEngine/Renderer/Wrappeers/SwapChain/SwapChain.hpp"
-#include "VulkanEngine/Renderer/Resources/DepthBuffer/DepthBuffer.hpp"
+#include "VulkanEngine/Renderer/Wrappeers/Resources/DepthBuffer/DepthBuffer.hpp"
 #include "VulkanEngine/Renderer/Wrappeers/RenderPass/RenderPass.hpp"
 #include "VulkanEngine/Renderer/Common/EngineDebugBreak.hpp"
 #include "VulkanEngine/Logger/Logger.hpp"
@@ -10,23 +10,23 @@
 
 namespace Renderer
 {
-	FrameBuffers::FrameBuffers()
+	BackBuffers::BackBuffers()
 	{
 	}
 
-	FrameBuffers::~FrameBuffers()
+	BackBuffers::~BackBuffers()
 	{
-		if (!mFrameBuffers.empty())
+		if (!mBackBuffers.empty())
 		{
 			LOGERROR("Vulkan frame buffers should be cleanedup before destruction!");
 			ENGINE_DEBUG_BREAK();
 		}
 	}
 
-	void FrameBuffers::Initialize(const Device& device, SwapChain& swapChain, const DepthBuffer& depthBuffer, RenderPass& renderPass)
+	void BackBuffers::Initialize(const Device& device, SwapChain& swapChain, const DepthBuffer& depthBuffer, RenderPass& renderPass)
 	{
 		size_t swapChainImagesSize = swapChain.GetSwapChainImagesSize();
-		mFrameBuffers.resize(swapChainImagesSize);
+		mBackBuffers.resize(swapChainImagesSize);
 
 		for (size_t i = 0; i < swapChainImagesSize; ++i)
 		{
@@ -42,7 +42,7 @@ namespace Renderer
 			createInfo.height = swapChainExtend.height;
 			createInfo.layers = 1;
 
-			if (vkCreateFramebuffer(device.GetNativeDevice(), &createInfo, nullptr, &mFrameBuffers[i]) != VK_SUCCESS)
+			if (vkCreateFramebuffer(device.GetNativeDevice(), &createInfo, nullptr, &mBackBuffers[i]) != VK_SUCCESS)
 			{
 				throw std::runtime_error("failed to create frame buffer!");
 			}
@@ -50,19 +50,19 @@ namespace Renderer
 		LOGINFO("Frame buffer created. Created ", swapChainImagesSize, " frame buffers.");
 	}
 
-	void FrameBuffers::Cleanup(const Device& device)
+	void BackBuffers::Cleanup(const Device& device)
 	{
-		for (auto& frameBuffer : mFrameBuffers)
+		for (auto& frameBuffer : mBackBuffers)
 		{
 			vkDestroyFramebuffer(device.GetNativeDevice(), frameBuffer, nullptr);
 		}
-		mFrameBuffers.clear();
+		mBackBuffers.clear();
 		LOGINFO("Frame buffers cleaned");
 	}
 
-	VkFramebuffer FrameBuffers::GetNativeFrameBuffer(size_t index) const
+	VkFramebuffer BackBuffers::GetNativeFrameBuffer(size_t index) const
 	{
-		return mFrameBuffers[index];
+		return mBackBuffers[index];
 	}
 
 }

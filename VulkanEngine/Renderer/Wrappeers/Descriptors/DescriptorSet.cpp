@@ -5,8 +5,8 @@
 #include "UBO.hpp"
 #include "VulkanEngine/Logger/Logger.hpp"
 #include "VulkanEngine/Renderer/Common/EngineDebugBreak.hpp"
-#include "VulkanEngine/Renderer/Resources/TextureImage/TextureSampler.hpp"
-#include "VulkanEngine/Renderer/Resources/TextureImage/TextureImage.hpp"
+#include "VulkanEngine/Renderer/Wrappeers/Resources/TextureImage/TextureSampler.hpp"
+#include "VulkanEngine/Renderer/Wrappeers/Resources/TextureImage/TextureImage.hpp"
 
 #include <array>
 

@@ -19,26 +19,11 @@
     <ClCompile Include="ContentLoader\CommonFunctions.cpp">
       <Filter>ContentLoader</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Resources\DepthBuffer\DepthBuffer.cpp">
-      <Filter>Renderer\Resources\DepthBuffer</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Resources\Mesh\Vertex.cpp">
-      <Filter>Renderer\Resources\Mesh</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Resources\Mesh\Mesh.cpp">
-      <Filter>Renderer\Resources\Mesh</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Resources\TextureImage\TextureImage.cpp">
-      <Filter>Renderer\Resources\TextureImage</Filter>
-    </ClCompile>
     <ClCompile Include="Renderer\WindowManagment\WindowManager.cpp">
       <Filter>Renderer\WindowManager</Filter>
     </ClCompile>
     <ClCompile Include="Renderer\WindowManagment\WindowState.cpp">
       <Filter>Renderer\WindowManager</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Resources\TextureImage\TextureSampler.cpp">
-      <Filter>Renderer\Resources\TextureImage</Filter>
     </ClCompile>
     <ClCompile Include="ECS\EntityManager.cpp">
       <Filter>ECS\Entity</Filter>
@@ -82,11 +67,38 @@
     <ClCompile Include="Renderer\Wrappeers\Pipeline\Pipeline.cpp">
       <Filter>Renderer\Wrappers\Pipeline</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Wrappeers\FrameBuffer\FrameBuffers.cpp">
+    <ClCompile Include="Renderer\Wrappeers\FrameBuffer\BackBuffers.cpp">
       <Filter>Renderer\Wrappers\FrameBuffers</Filter>
     </ClCompile>
     <ClCompile Include="Renderer\Wrappeers\Commands\CommandBuffer.cpp">
       <Filter>Renderer\Wrappers\Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\RenderSchedule\ResourceTracker.cpp">
+      <Filter>Renderer\RenderScedule</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Wrappeers\FrameBuffer\FrameBuffer.cpp">
+      <Filter>Renderer\Wrappers\FrameBuffers</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Wrappeers\Resources\DepthBuffer\DepthBuffer.cpp">
+      <Filter>Renderer\Wrappers\Resources\DepthBuffer</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Wrappeers\Resources\Mesh\Mesh.cpp">
+      <Filter>Renderer\Wrappers\Resources\Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Wrappeers\Resources\Mesh\Vertex.cpp">
+      <Filter>Renderer\Wrappers\Resources\Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Wrappeers\Resources\TextureImage\TextureImage.cpp">
+      <Filter>Renderer\Wrappers\Resources\TextureImage</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Wrappeers\Resources\TextureImage\TextureSampler.cpp">
+      <Filter>Renderer\Wrappers\Resources\TextureImage</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Wrappeers\Resources\Texture\Texture2D.cpp">
+      <Filter>Renderer\Wrappers\Resources\Texture</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Context\ResourceContainer.cpp">
+      <Filter>Renderer\Context</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -117,18 +129,6 @@
     <ClInclude Include="ContentLoader\CommonFunctions.hpp">
       <Filter>ContentLoader</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Resources\DepthBuffer\DepthBuffer.hpp">
-      <Filter>Renderer\Resources\DepthBuffer</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Resources\Mesh\Vertex.hpp">
-      <Filter>Renderer\Resources\Mesh</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Resources\Mesh\Mesh.hpp">
-      <Filter>Renderer\Resources\Mesh</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Resources\TextureImage\TextureImage.hpp">
-      <Filter>Renderer\Resources\TextureImage</Filter>
-    </ClInclude>
     <ClInclude Include="Renderer\WindowManagment\Controls.hpp">
       <Filter>Renderer\WindowManager</Filter>
     </ClInclude>
@@ -137,9 +137,6 @@
     </ClInclude>
     <ClInclude Include="Renderer\WindowManagment\WindowState.hpp">
       <Filter>Renderer\WindowManager</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Resources\TextureImage\TextureSampler.hpp">
-      <Filter>Renderer\Resources\TextureImage</Filter>
     </ClInclude>
     <ClInclude Include="ECS\Entity.h">
       <Filter>ECS\Entity</Filter>
@@ -207,11 +204,38 @@
     <ClInclude Include="Renderer\Wrappeers\Pipeline\Pipeline.hpp">
       <Filter>Renderer\Wrappers\Pipeline</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Wrappeers\FrameBuffer\FrameBuffers.hpp">
+    <ClInclude Include="Renderer\Wrappeers\FrameBuffer\BackBuffers.hpp">
       <Filter>Renderer\Wrappers\FrameBuffers</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\Wrappeers\Commands\CommandBuffer.hpp">
       <Filter>Renderer\Wrappers\Commands</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\RenderSchedule\ResourceTracker.hpp">
+      <Filter>Renderer\RenderScedule</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\FrameBuffer\FrameBuffer.hpp">
+      <Filter>Renderer\Wrappers\FrameBuffers</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\Resources\DepthBuffer\DepthBuffer.hpp">
+      <Filter>Renderer\Wrappers\Resources\DepthBuffer</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\Resources\Mesh\Mesh.hpp">
+      <Filter>Renderer\Wrappers\Resources\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\Resources\Mesh\Vertex.hpp">
+      <Filter>Renderer\Wrappers\Resources\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\Resources\TextureImage\TextureImage.hpp">
+      <Filter>Renderer\Wrappers\Resources\TextureImage</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\Resources\TextureImage\TextureSampler.hpp">
+      <Filter>Renderer\Wrappers\Resources\TextureImage</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\Resources\Texture\Texture2D.hpp">
+      <Filter>Renderer\Wrappers\Resources\Texture</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Context\ResourceContainer.hpp">
+      <Filter>Renderer\Context</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -255,18 +279,6 @@
     </Filter>
     <Filter Include="Renderer\Common">
       <UniqueIdentifier>{648d1ca9-ac93-4e5a-96f5-8349c6de5c8e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Renderer\Resources">
-      <UniqueIdentifier>{e7f8d361-123f-4ae0-9c84-eb7861df0e35}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Renderer\Resources\DepthBuffer">
-      <UniqueIdentifier>{21b19f82-2b21-49dc-8907-352fb30c0b94}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Renderer\Resources\Mesh">
-      <UniqueIdentifier>{21279cc2-a927-4c9d-80ee-08fc3b475341}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Renderer\Resources\TextureImage">
-      <UniqueIdentifier>{21a98a9b-953c-4c85-8415-aa257797c4b5}</UniqueIdentifier>
     </Filter>
     <Filter Include="Renderer\WindowManager">
       <UniqueIdentifier>{4eb469f1-78bd-4366-af94-eb0959030fab}</UniqueIdentifier>
@@ -324,6 +336,21 @@
     </Filter>
     <Filter Include="Renderer\Wrappers\SyncObjects">
       <UniqueIdentifier>{11c63417-2662-4c27-9ad9-ca54ead9c6d1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Wrappers\Resources">
+      <UniqueIdentifier>{e7f8d361-123f-4ae0-9c84-eb7861df0e35}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Wrappers\Resources\DepthBuffer">
+      <UniqueIdentifier>{21b19f82-2b21-49dc-8907-352fb30c0b94}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Wrappers\Resources\Mesh">
+      <UniqueIdentifier>{21279cc2-a927-4c9d-80ee-08fc3b475341}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Wrappers\Resources\TextureImage">
+      <UniqueIdentifier>{21a98a9b-953c-4c85-8415-aa257797c4b5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Wrappers\Resources\Texture">
+      <UniqueIdentifier>{c4c369da-26ec-4a01-865d-36fa7c34c20f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

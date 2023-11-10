@@ -6,16 +6,16 @@
 #include "Wrappeers/SyncObjects/SyncObjects.hpp"
 #include "Wrappeers/RenderPass/RenderPass.hpp"
 #include "Wrappeers/Pipeline/Pipeline.hpp"
-#include "Wrappeers/FrameBuffer/FrameBuffers.hpp"
+#include "Wrappeers/FrameBuffer/BackBuffers.hpp"
 #include "Wrappeers/Commands/CommandBuffer.hpp"
 #include "Wrappeers/Descriptors/UBO.hpp"
 #include "Wrappeers/Descriptors/DescriptorSetLayout.hpp"
 #include "Wrappeers/Descriptors/DescriptorSet.hpp"
 #include "WindowManagment/WindowManager.hpp"
-#include "Resources/Mesh/Mesh.hpp"
-#include "Resources/TextureImage/TextureImage.hpp"
-#include "Resources/TextureImage/TextureSampler.hpp"
-#include "Resources/DepthBuffer/DepthBuffer.hpp"
+#include "Wrappeers/Resources/Mesh/Mesh.hpp"
+#include "Wrappeers/Resources/TextureImage/TextureImage.hpp"
+#include "Wrappeers/Resources/TextureImage/TextureSampler.hpp"
+#include "Wrappeers/Resources/DepthBuffer/DepthBuffer.hpp"
 #include "Camera/Camera.hpp"
 
 namespace Renderer
@@ -55,7 +55,7 @@ namespace Renderer
 		DepthBuffer mDepthBuffer;
 		RenderPass mRenderPass;
 		Pipeline mPipeline;
-		FrameBuffers mFrameBuffers;
+		BackBuffers mBackBuffers;
 		CommandBuffer mCommandBuffers[MAX_FRAMES_IN_FLIGHT];
 		UBO mUniformBuffers[MAX_FRAMES_IN_FLIGHT];
 		DescriptorSetLayout mDescriptorSetLayout;

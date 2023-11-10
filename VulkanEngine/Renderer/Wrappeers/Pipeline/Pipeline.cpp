@@ -5,7 +5,7 @@
 #include "VulkanEngine/Renderer/Wrappeers/SwapChain/SwapChain.hpp"
 #include "VulkanEngine/Renderer/Wrappeers/RenderPass/RenderPass.hpp"
 #include "VulkanEngine/Renderer/Wrappeers/Descriptors/DescriptorSetLayout.hpp"
-#include "VulkanEngine/Renderer/Resources/Mesh/Vertex.hpp"
+#include "VulkanEngine/Renderer/Wrappeers/Resources/Mesh/Vertex.hpp"
 #include "VulkanEngine/Logger/Logger.hpp"
 #include "VulkanEngine/Renderer/Common/EngineDebugBreak.hpp"
 

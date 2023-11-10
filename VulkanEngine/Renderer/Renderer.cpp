@@ -23,7 +23,7 @@ namespace Renderer
 		mDescriptorSetLayout.Initialize(mDevice);
 		mPipeline.Initialize(mDevice, mSwapChain, mRenderPass, mDescriptorSetLayout);
 		mDepthBuffer.Initialize(mDevice, mSwapChain.GetSwapChainExtend());
-		mFrameBuffers.Initialize(mDevice, mSwapChain, mDepthBuffer, mRenderPass);
+		mBackBuffers.Initialize(mDevice, mSwapChain, mDepthBuffer, mRenderPass);
 
 		mTextureImage.SetFileName("Textures\\viking_room.png");
 		mTextureImage.Initialize(mDevice, VK_FORMAT_R8G8B8A8_SRGB);
@@ -55,7 +55,7 @@ namespace Renderer
 		}
 		mDepthBuffer.Cleanup(mDevice);
 		mDescriptorSetLayout.Cleanup(mDevice);
-		mFrameBuffers.Cleanup(mDevice);
+		mBackBuffers.Cleanup(mDevice);
 		mPipeline.Cleanup(mDevice);
 		mRenderPass.Cleanup(mDevice);
 		mSyncObjects.Cleanup(mDevice);
@@ -104,7 +104,7 @@ namespace Renderer
 		mSyncObjects.ResetInFlightFence(mDevice, currentFrame);
 
 		auto& commandBuffer = mCommandBuffers[currentFrame];
-		auto frameBuffer = mFrameBuffers.GetNativeFrameBuffer(imageIndex);
+		auto frameBuffer = mBackBuffers.GetNativeFrameBuffer(imageIndex);
 		vkResetCommandBuffer(commandBuffer.GetNativeCommandBuffer(), 0);
 
 		auto extend = mSwapChain.GetSwapChainExtend();
@@ -169,13 +169,13 @@ namespace Renderer
 	{
 		vkDeviceWaitIdle(mDevice.GetNativeDevice());
 
-		mFrameBuffers.Cleanup(mDevice);
+		mBackBuffers.Cleanup(mDevice);
 		mDepthBuffer.Cleanup(mDevice);
 		mSwapChain.Cleanup(mDevice);
 
 		mSwapChain.Initialize(mDevice, mWindowManager);
 		mDepthBuffer.Initialize(mDevice, mSwapChain.GetSwapChainExtend());
-		mFrameBuffers.Initialize(mDevice, mSwapChain, mDepthBuffer, mRenderPass);
+		mBackBuffers.Initialize(mDevice, mSwapChain, mDepthBuffer, mRenderPass);
 	}
 
 	bool Renderer::ShouldClose()

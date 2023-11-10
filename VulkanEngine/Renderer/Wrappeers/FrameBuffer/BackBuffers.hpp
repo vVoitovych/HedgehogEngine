@@ -10,14 +10,14 @@ namespace Renderer
 	class DepthBuffer;
 	class RenderPass;
 
-	class FrameBuffers
+	class BackBuffers
 	{
 	public:
-		FrameBuffers();
-		~FrameBuffers();
+		BackBuffers();
+		~BackBuffers();
 
-		FrameBuffers(const FrameBuffers&) = delete;
-		FrameBuffers& operator=(const FrameBuffers&) = delete;
+		BackBuffers(const BackBuffers&) = delete;
+		BackBuffers& operator=(const BackBuffers&) = delete;
 
 		void Initialize(const Device& device, SwapChain& swapChain, const DepthBuffer& depthBuffer, RenderPass& renderPass);
 		void Cleanup(const Device& device);
@@ -25,7 +25,7 @@ namespace Renderer
 		VkFramebuffer GetNativeFrameBuffer(size_t index) const;
 
 	private:
-		std::vector<VkFramebuffer> mFrameBuffers;
+		std::vector<VkFramebuffer> mBackBuffers;
 	};
 }
 
