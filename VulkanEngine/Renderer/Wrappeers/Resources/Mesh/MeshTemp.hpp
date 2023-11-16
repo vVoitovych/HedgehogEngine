@@ -9,12 +9,12 @@
 namespace Renderer
 {
 	class Device;
-
-	class Mesh
+	 // should be deleted
+	class MeshTemp
 	{
 	public:
-		Mesh();
-		~Mesh();
+		MeshTemp();
+		~MeshTemp();
 
 		void LoadModel(const std::string fileName);
 

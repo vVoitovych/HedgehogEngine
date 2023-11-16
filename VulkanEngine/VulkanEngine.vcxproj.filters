@@ -73,16 +73,13 @@
     <ClCompile Include="Renderer\Wrappeers\Commands\CommandBuffer.cpp">
       <Filter>Renderer\Wrappers\Commands</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\RenderSchedule\ResourceTracker.cpp">
-      <Filter>Renderer\RenderScedule</Filter>
-    </ClCompile>
     <ClCompile Include="Renderer\Wrappeers\FrameBuffer\FrameBuffer.cpp">
       <Filter>Renderer\Wrappers\FrameBuffers</Filter>
     </ClCompile>
     <ClCompile Include="Renderer\Wrappeers\Resources\DepthBuffer\DepthBuffer.cpp">
       <Filter>Renderer\Wrappers\Resources\DepthBuffer</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Wrappeers\Resources\Mesh\Mesh.cpp">
+    <ClCompile Include="Renderer\Wrappeers\Resources\Mesh\MeshTemp.cpp">
       <Filter>Renderer\Wrappers\Resources\Mesh</Filter>
     </ClCompile>
     <ClCompile Include="Renderer\Wrappeers\Resources\Mesh\Vertex.cpp">
@@ -97,8 +94,14 @@
     <ClCompile Include="Renderer\Wrappeers\Resources\Texture\Texture2D.cpp">
       <Filter>Renderer\Wrappers\Resources\Texture</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Context\ResourceContainer.cpp">
-      <Filter>Renderer\Context</Filter>
+    <ClCompile Include="Renderer\Containers\VertexDescription.cpp">
+      <Filter>Renderer\Containers</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Containers\Mesh.cpp">
+      <Filter>Renderer\Containers</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Containers\MeshContainer.cpp">
+      <Filter>Renderer\Containers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -210,16 +213,13 @@
     <ClInclude Include="Renderer\Wrappeers\Commands\CommandBuffer.hpp">
       <Filter>Renderer\Wrappers\Commands</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\RenderSchedule\ResourceTracker.hpp">
-      <Filter>Renderer\RenderScedule</Filter>
-    </ClInclude>
     <ClInclude Include="Renderer\Wrappeers\FrameBuffer\FrameBuffer.hpp">
       <Filter>Renderer\Wrappers\FrameBuffers</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\Wrappeers\Resources\DepthBuffer\DepthBuffer.hpp">
       <Filter>Renderer\Wrappers\Resources\DepthBuffer</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Wrappeers\Resources\Mesh\Mesh.hpp">
+    <ClInclude Include="Renderer\Wrappeers\Resources\Mesh\MeshTemp.hpp">
       <Filter>Renderer\Wrappers\Resources\Mesh</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\Wrappeers\Resources\Mesh\Vertex.hpp">
@@ -234,8 +234,14 @@
     <ClInclude Include="Renderer\Wrappeers\Resources\Texture\Texture2D.hpp">
       <Filter>Renderer\Wrappers\Resources\Texture</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Context\ResourceContainer.hpp">
-      <Filter>Renderer\Context</Filter>
+    <ClInclude Include="Renderer\Containers\VertexDescription.hpp">
+      <Filter>Renderer\Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Containers\Mesh.hpp">
+      <Filter>Renderer\Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Containers\MeshContainer.hpp">
+      <Filter>Renderer\Containers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -351,6 +357,9 @@
     </Filter>
     <Filter Include="Renderer\Wrappers\Resources\Texture">
       <UniqueIdentifier>{c4c369da-26ec-4a01-865d-36fa7c34c20f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Containers">
+      <UniqueIdentifier>{54791467-0b8e-45f5-961e-cebff47e3b89}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

@@ -12,7 +12,7 @@
 #include "Wrappeers/Descriptors/DescriptorSetLayout.hpp"
 #include "Wrappeers/Descriptors/DescriptorSet.hpp"
 #include "WindowManagment/WindowManager.hpp"
-#include "Wrappeers/Resources/Mesh/Mesh.hpp"
+#include "Wrappeers/Resources/Mesh/MeshTemp.hpp"
 #include "Wrappeers/Resources/TextureImage/TextureImage.hpp"
 #include "Wrappeers/Resources/TextureImage/TextureSampler.hpp"
 #include "Wrappeers/Resources/DepthBuffer/DepthBuffer.hpp"
@@ -60,7 +60,7 @@ namespace Renderer
 		UBO mUniformBuffers[MAX_FRAMES_IN_FLIGHT];
 		DescriptorSetLayout mDescriptorSetLayout;
 		DescriptorSet mDescriptorSets[MAX_FRAMES_IN_FLIGHT];
-		Mesh mMesh;
+		MeshTemp mMesh;
 		TextureImage mTextureImage;
 		TextureSampler mTextureSampler;
 

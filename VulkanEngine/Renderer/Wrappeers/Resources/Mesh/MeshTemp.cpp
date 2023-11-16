@@ -1,4 +1,4 @@
-#include "Mesh.hpp"
+#include "MeshTemp.hpp"
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "VulkanEngine/Libraries/TinyObjectLoader/tiny_obj_loader.h"
@@ -11,17 +11,17 @@
 
 namespace Renderer
 {
-	Mesh::Mesh()
+	MeshTemp::MeshTemp()
 	{
 		mVerticies = Vertex::GetCubeVirticies();
 		mIndicies = Vertex::GetCubeIndecies();
 	}
 
-	Mesh::~Mesh()
+	MeshTemp::~MeshTemp()
 	{
 	}
 
-	void Mesh::LoadModel(const std::string fileName)
+	void MeshTemp::LoadModel(const std::string fileName)
 	{
 		mVerticies.clear();
 		mIndicies.clear();
@@ -71,13 +71,13 @@ namespace Renderer
 		LOGINFO("Model loaded with ", mVerticies.size(), " verticies and ", mIndicies.size(), " indicies!");
 	}
 
-	void Mesh::Initialize(const Device& device)
+	void MeshTemp::Initialize(const Device& device)
 	{
 		CreateVertexBuffer(device);
 		CreateIndexBuffer(device);
 	}
 
-	void Mesh::Cleanup(const Device& device)
+	void MeshTemp::Cleanup(const Device& device)
 	{
 		vkDestroyBuffer(device.GetNativeDevice(), mVertexBuffer, nullptr);
 		vkFreeMemory(device.GetNativeDevice(), mVertexBufferMemory, nullptr);
@@ -92,22 +92,22 @@ namespace Renderer
 		LOGINFO("Index buffer cleaned");
 	}
 
-	VkBuffer Mesh::GetVertexBuffer()
+	VkBuffer MeshTemp::GetVertexBuffer()
 	{
 		return mVertexBuffer;
 	}
 
-	VkBuffer Mesh::GetIndexBuffer()
+	VkBuffer MeshTemp::GetIndexBuffer()
 	{
 		return mIndexBuffer;
 	}
 
-	uint32_t Mesh::GetIndiciesCount()
+	uint32_t MeshTemp::GetIndiciesCount()
 	{
 		return static_cast<uint32_t>(mIndicies.size());
 	}
 
-	void Mesh::CreateVertexBuffer(const Device& device)
+	void MeshTemp::CreateVertexBuffer(const Device& device)
 	{
 		VkDeviceSize size = sizeof(mVerticies[0]) * mVerticies.size();
 
@@ -124,7 +124,7 @@ namespace Renderer
 		LOGINFO("Vertex buffer created");
 	}
 
-	void Mesh::CreateIndexBuffer(const Device& device)
+	void MeshTemp::CreateIndexBuffer(const Device& device)
 	{
 		VkDeviceSize size = sizeof(mIndicies[0]) * mIndicies.size();
 

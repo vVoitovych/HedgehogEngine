@@ -34,7 +34,8 @@ namespace Renderer
 
 }
 
-namespace std {
+namespace std 
+{
 	template<> 
 	struct hash<Renderer::Vertex> 
 	{
