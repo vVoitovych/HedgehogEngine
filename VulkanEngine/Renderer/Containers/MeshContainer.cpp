@@ -3,13 +3,21 @@
 #include "VulkanEngine/Renderer/Wrappeers/Device/Device.hpp"
 #include "VulkanEngine/Logger/Logger.hpp"
 
+#include <algorithm>
+
 namespace Renderer
 {
     void MeshContainer::AddFilePath(std::string filePath)
     {
         auto it = std::find(mFilePathes.begin(), mFilePathes.end(), filePath);
-        if (it != mFilePathes.end())
+        if (it == mFilePathes.end())
+        {
             mFilePathes.push_back(filePath);
+        }
+        else
+        {
+            LOGWARNING("Mesh ", filePath, " already added");
+        }
     }
 
     void MeshContainer::ClearFileList()
@@ -20,13 +28,12 @@ namespace Renderer
     void MeshContainer::LoadMeshData()
     {
         mMeshes.clear();
-        Mesh mesh;
         for (size_t i = 0; i < mFilePathes.size(); ++i)
         {
-            mMeshes.push_back(mesh);
-            auto meshInContainer = mMeshes.back();
-            meshInContainer.LoadData(mFilePathes[i]);
+            Mesh mesh;
+            mesh.LoadData(mFilePathes[i]);
             LOGINFO("Loaded mesh data: ", mFilePathes[i]);
+            mMeshes.push_back(mesh);
 
         }
     }
@@ -37,11 +44,11 @@ namespace Renderer
         if (it == mFilePathes.end())
             return;
         mFilePathes.push_back(filePath);
-        Mesh mesh;
-        mMeshes.push_back(mesh);
-        auto meshInContainer = mMeshes.back();
-        meshInContainer.LoadData(filePath);
+
+        Mesh mesh;        
+        mesh.LoadData(filePath);
         LOGINFO("Loaded mesh data: ", filePath);
+        mMeshes.push_back(mesh);
 
     }
 
@@ -97,6 +104,11 @@ namespace Renderer
     VkBuffer MeshContainer::GetIndexBuffer()
     {
         return mIndexBuffer;
+    }
+
+    Mesh& MeshContainer::GetMesh(size_t index)
+    {
+        return mMeshes[index];
     }
 
     void MeshContainer::CreateVertexBuffer(const Device& device, const std::vector<VertexDescription> verticies)

@@ -174,8 +174,6 @@
     <ClCompile Include="Renderer\Wrappeers\Pipeline\Pipeline.cpp" />
     <ClCompile Include="Renderer\Wrappeers\RenderPass\RenderPass.cpp" />
     <ClCompile Include="Renderer\Wrappeers\Resources\DepthBuffer\DepthBuffer.cpp" />
-    <ClCompile Include="Renderer\Wrappeers\Resources\Mesh\MeshTemp.cpp" />
-    <ClCompile Include="Renderer\Wrappeers\Resources\Mesh\Vertex.cpp" />
     <ClCompile Include="Renderer\Wrappeers\Resources\TextureImage\TextureImage.cpp" />
     <ClCompile Include="Renderer\Wrappeers\Resources\TextureImage\TextureSampler.cpp" />
     <ClCompile Include="Renderer\Wrappeers\Resources\Texture\Texture2D.cpp" />
@@ -227,8 +225,6 @@
     <ClInclude Include="Renderer\Wrappeers\Pipeline\Pipeline.hpp" />
     <ClInclude Include="Renderer\Wrappeers\RenderPass\RenderPass.hpp" />
     <ClInclude Include="Renderer\Wrappeers\Resources\DepthBuffer\DepthBuffer.hpp" />
-    <ClInclude Include="Renderer\Wrappeers\Resources\Mesh\MeshTemp.hpp" />
-    <ClInclude Include="Renderer\Wrappeers\Resources\Mesh\Vertex.hpp" />
     <ClInclude Include="Renderer\Wrappeers\Resources\TextureImage\TextureImage.hpp" />
     <ClInclude Include="Renderer\Wrappeers\Resources\TextureImage\TextureSampler.hpp" />
     <ClInclude Include="Renderer\Wrappeers\Resources\Texture\Texture2D.hpp" />

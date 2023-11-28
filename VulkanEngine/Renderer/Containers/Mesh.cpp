@@ -1,9 +1,8 @@
 #include "Mesh.hpp"
 
-#ifdef REMOVETHIS
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "VulkanEngine/Libraries/TinyObjectLoader/tiny_obj_loader.h"
-#endif
+
 #include "VulkanEngine/Logger/Logger.hpp"
 #include "VulkanEngine/ContentLoader/CommonFunctions.hpp"
 
@@ -15,7 +14,6 @@ namespace Renderer
 	{
 		ClearData();
 
-#ifdef REMOVETHIS
 		tinyobj::attrib_t attrib;
 		std::vector<tinyobj::shape_t> shapes;
 		std::vector<tinyobj::material_t> materials;
@@ -50,9 +48,9 @@ namespace Renderer
 				vertex.color = { 0.0f, 0.0f, 0.0f };
 				vertex.normal =
 				{
-					attrib.normals[3 * index.vertex_index + 0],
-					attrib.normals[3 * index.vertex_index + 1],
-					attrib.normals[3 * index.vertex_index + 2]
+					attrib.normals[3 * index.normal_index + 0],
+					attrib.normals[3 * index.normal_index + 1],
+					attrib.normals[3 * index.normal_index + 2]
 				};
 
 				if (uniqueVertices.count(vertex) == 0)
@@ -65,7 +63,7 @@ namespace Renderer
 			}
 		}
 		mIndexCount = static_cast<uint32_t>(mIndiciesData.size());
-#endif
+
 		LOGINFO("Model [", fileName,"] loaded with ", mVerticiesData.size(), " verticies and ", mIndiciesData.size(), " indicies!");
 	}
 

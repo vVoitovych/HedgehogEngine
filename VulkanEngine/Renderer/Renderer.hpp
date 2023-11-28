@@ -12,11 +12,12 @@
 #include "Wrappeers/Descriptors/DescriptorSetLayout.hpp"
 #include "Wrappeers/Descriptors/DescriptorSet.hpp"
 #include "WindowManagment/WindowManager.hpp"
-#include "Wrappeers/Resources/Mesh/MeshTemp.hpp"
+//#include "Wrappeers/Resources/Mesh/MeshTemp.hpp"
 #include "Wrappeers/Resources/TextureImage/TextureImage.hpp"
 #include "Wrappeers/Resources/TextureImage/TextureSampler.hpp"
 #include "Wrappeers/Resources/DepthBuffer/DepthBuffer.hpp"
 #include "Camera/Camera.hpp"
+#include "Containers/MeshContainer.hpp"
 
 namespace Renderer
 {
@@ -60,11 +61,12 @@ namespace Renderer
 		UBO mUniformBuffers[MAX_FRAMES_IN_FLIGHT];
 		DescriptorSetLayout mDescriptorSetLayout;
 		DescriptorSet mDescriptorSets[MAX_FRAMES_IN_FLIGHT];
-		MeshTemp mMesh;
+		//MeshTemp mMesh;
 		TextureImage mTextureImage;
 		TextureSampler mTextureSampler;
 
 		Camera mCamera;
+		MeshContainer mMeshContainer;
 	};
 }
 

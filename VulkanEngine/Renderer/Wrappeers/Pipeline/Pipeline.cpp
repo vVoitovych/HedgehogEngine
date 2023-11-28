@@ -5,7 +5,7 @@
 #include "VulkanEngine/Renderer/Wrappeers/SwapChain/SwapChain.hpp"
 #include "VulkanEngine/Renderer/Wrappeers/RenderPass/RenderPass.hpp"
 #include "VulkanEngine/Renderer/Wrappeers/Descriptors/DescriptorSetLayout.hpp"
-#include "VulkanEngine/Renderer/Wrappeers/Resources/Mesh/Vertex.hpp"
+#include "VulkanEngine/Renderer/Containers/VertexDescription.hpp"
 #include "VulkanEngine/Logger/Logger.hpp"
 #include "VulkanEngine/Renderer/Common/EngineDebugBreak.hpp"
 
@@ -101,8 +101,8 @@ namespace Renderer
 
 		VkPipelineShaderStageCreateInfo shaderStages[] = { vertShadereStageCreateInfo , fragShadereStageCreateInfo };
 
-		auto bindingDesc = Vertex::GetBindingDescription();
-		auto atributeDesc = Vertex::GetAttributeDescription();
+		auto bindingDesc = VertexDescription::GetBindingDescription();
+		auto atributeDesc = VertexDescription::GetAttributeDescription();
 
 		VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;

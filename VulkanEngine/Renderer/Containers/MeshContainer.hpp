@@ -26,6 +26,8 @@ namespace Renderer
 		VkBuffer GetVertexBuffer();
 		VkBuffer GetIndexBuffer();
 
+		Mesh& GetMesh(size_t index);
+
 	private:
 		void CreateVertexBuffer(const Device& device, const std::vector<VertexDescription> verticies);
 		void CreateIndexBuffer(const Device& device, const std::vector<uint32_t> indicies);

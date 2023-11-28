@@ -40,10 +40,10 @@ namespace Renderer
 		desc[2].format = VK_FORMAT_R32G32_SFLOAT;
 		desc[2].offset = offsetof(VertexDescription, texCoord);
 
-		desc[1].binding = 0;
-		desc[1].location = 3;
-		desc[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-		desc[1].offset = offsetof(VertexDescription, normal);
+		desc[3].binding = 0;
+		desc[3].location = 3;
+		desc[3].format = VK_FORMAT_R32G32B32_SFLOAT;
+		desc[3].offset = offsetof(VertexDescription, normal);
 
 		return desc;
 	}
