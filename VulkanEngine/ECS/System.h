@@ -3,9 +3,11 @@
 
 #include <set>
 
-class System
+namespace ECS
 {
-public:
-	std::set<Entity> entities;
-};
-
+	class System
+	{
+	public:
+		std::set<Entity> entities;
+	};
+}

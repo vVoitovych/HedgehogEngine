@@ -7,73 +7,75 @@
 #include <memory>
 #include <cassert>
 
-using ComponentType = size_t;
-
-class ComponentManager
+namespace ECS
 {
-public:
-	template<typename T>
-	void RegisterComponent()
+	using ComponentType = size_t;
+
+	class ComponentManager
 	{
-		const char* typeName = typeid(T).name();
-		assert(componentTypes.find(typeName) == componentTypes.end() && "Component alredy registered!");
-
-		componentTypes.insert({ typeName, nextComponentType });
-		componentArrays.insert({ typeName, std::make_shared<ComponentArray<T>>() });
-		++nextComponentType;
-	}
-
-	template<typename T>
-	ComponentType GetComponentType()
-	{
-		const char* typeName = typeid(T).name();
-		assert(componentTypes.find(typeName) != componentTypes.end() && "Component not registered!");
-
-		return  componentTypes[typeName];
-	}
-
-	template<typename T>
-	void AddComponent(Entity entity, T component)
-	{
-		GetComponentArray<T>()->InsertData(entity, component);
-	}
-
-	template<typename T>
-	void RemoveComponent(Entity entity, T component)
-	{
-		GetComponentArray<T>()->RemoveData(entity, component);
-	}
-
-	template<typename T>
-	T& GetComponent(Entity entity)
-	{
-		return GetComponentArray<T>()->GetData(entity);
-	}
-
-	void EntityDestroyed(Entity entity)
-	{
-		for (auto const& pair : componentArrays)
+	public:
+		template<typename T>
+		void RegisterComponent()
 		{
-			auto const& component = pair.second;
-			component->EntityDestroyed(entity);
+			const char* typeName = typeid(T).name();
+			assert(componentTypes.find(typeName) == componentTypes.end() && "Component alredy registered!");
+
+			componentTypes.insert({ typeName, nextComponentType });
+			componentArrays.insert({ typeName, std::make_shared<ComponentArray<T>>() });
+			++nextComponentType;
 		}
-	}
 
-private:
-	std::unordered_map<const char*, ComponentType> componentTypes{};
-	std::unordered_map<const char*, std::shared_ptr<IComponentArray>> componentArrays{};
+		template<typename T>
+		ComponentType GetComponentType()
+		{
+			const char* typeName = typeid(T).name();
+			assert(componentTypes.find(typeName) != componentTypes.end() && "Component not registered!");
 
-	ComponentType nextComponentType{};
+			return  componentTypes[typeName];
+		}
 
-	template<typename T>
-	std::shared_ptr<ComponentArray<T>> GetComponentArray()
-	{
-		const char* typeName = typeid(T).name();
-		assert(componentArrays.find(typeName) != componentArrays.end() && "Component not registered!");
+		template<typename T>
+		void AddComponent(Entity entity, T component)
+		{
+			GetComponentArray<T>()->InsertData(entity, component);
+		}
 
-		return std::static_pointer_cast<ComponentArray<T>>(componentArrays[typeName]);
-	}
-};
+		template<typename T>
+		void RemoveComponent(Entity entity, T component)
+		{
+			GetComponentArray<T>()->RemoveData(entity, component);
+		}
 
+		template<typename T>
+		T& GetComponent(Entity entity)
+		{
+			return GetComponentArray<T>()->GetData(entity);
+		}
+
+		void EntityDestroyed(Entity entity)
+		{
+			for (auto const& pair : componentArrays)
+			{
+				auto const& component = pair.second;
+				component->EntityDestroyed(entity);
+			}
+		}
+
+	private:
+		std::unordered_map<const char*, ComponentType> componentTypes{};
+		std::unordered_map<const char*, std::shared_ptr<IComponentArray>> componentArrays{};
+
+		ComponentType nextComponentType{};
+
+		template<typename T>
+		std::shared_ptr<ComponentArray<T>> GetComponentArray()
+		{
+			const char* typeName = typeid(T).name();
+			assert(componentArrays.find(typeName) != componentArrays.end() && "Component not registered!");
+
+			return std::static_pointer_cast<ComponentArray<T>>(componentArrays[typeName]);
+		}
+	};
+}
 
 

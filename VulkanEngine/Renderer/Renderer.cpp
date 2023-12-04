@@ -35,6 +35,7 @@ namespace Renderer
 			mUniformBuffers[i].Initialize(mDevice);
 			mDescriptorSets[i].Initialize(mDevice, mDescriptorSetLayout, mUniformBuffers[i], mTextureImage, mTextureSampler);
 		}
+
 		mMeshContainer.AddFilePath("Models\\viking_room.obj");
 		mMeshContainer.LoadMeshData();
 		mMeshContainer.Initialize(mDevice);

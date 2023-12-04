@@ -179,6 +179,10 @@
     <ClCompile Include="Renderer\Wrappeers\Resources\Texture\Texture2D.cpp" />
     <ClCompile Include="Renderer\Wrappeers\SwapChain\SwapChain.cpp" />
     <ClCompile Include="Renderer\Wrappeers\SyncObjects\SyncObjects.cpp" />
+    <ClCompile Include="Scene\Scene.cpp" />
+    <ClCompile Include="Scene\SceneSystems\HierarchySystem.cpp" />
+    <ClCompile Include="Scene\SceneSystems\MeshSystem.cpp" />
+    <ClCompile Include="Scene\SceneSystems\TransformSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ShadersCompiler.bat" />
@@ -230,6 +234,13 @@
     <ClInclude Include="Renderer\Wrappeers\Resources\Texture\Texture2D.hpp" />
     <ClInclude Include="Renderer\Wrappeers\SwapChain\SwapChain.hpp" />
     <ClInclude Include="Renderer\Wrappeers\SyncObjects\SyncObjects.hpp" />
+    <ClInclude Include="Scene\Scene.hpp" />
+    <ClInclude Include="Scene\SceneComponents\HierarchyComponent.hpp" />
+    <ClInclude Include="Scene\SceneComponents\MeshComponent.hpp" />
+    <ClInclude Include="Scene\SceneComponents\TransformComponent.hpp" />
+    <ClInclude Include="Scene\SceneSystems\HierarchySystem.hpp" />
+    <ClInclude Include="Scene\SceneSystems\MeshSystem.hpp" />
+    <ClInclude Include="Scene\SceneSystems\TransformSystem.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
