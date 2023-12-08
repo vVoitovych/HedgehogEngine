@@ -52,6 +52,11 @@ namespace Scene
 		return mMeshPathes;
 	}
 
+	std::set<ECS::Entity> MeshSystem::GetEntities()
+	{
+		return entities;
+	}
+
 	void MeshSystem::CheckMeshPath(MeshComponent& meshComponent, std::string fallbackPath)
 	{
 		auto it = std::find(mMeshPathes.begin(), mMeshPathes.end(), meshComponent.mMeshPath);

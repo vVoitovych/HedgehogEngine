@@ -3,6 +3,8 @@
 #include "VulkanEngine/Renderer/Wrappeers/FrameBuffer/BackBuffers.hpp"
 #include "VulkanEngine/Renderer/Wrappeers/Commands/CommandBuffer.hpp"
 #include "VulkanEngine/Renderer/Common/RendererSettings.hpp"
+#include "VulkanEngine/Scene/Scene.hpp"
+#include "VulkanEngine/ECS/Entity.h"
 
 #include <vulkan/vulkan.h>
 
@@ -19,7 +21,7 @@ namespace Renderer
 		void Initialize(Device& device);
 		void Cleanup(Device& device);
 
-		CommandBuffer& GetCommandBuffer(size_t index);
+		//CommandBuffer& GetCommandBuffer(size_t index);
 		VkExtent2D GetExtend() const;
 		uint32_t GetCurrentFrame() const;
 
@@ -28,9 +30,11 @@ namespace Renderer
 		uint32_t mCurrentFrame;
 		VkExtent2D mExtend;
 
-		BackBuffers mBackBuffers;
-		CommandBuffer mCommandBuffers[MAX_FRAMES_IN_FLIGHT];
+		//BackBuffers mBackBuffers;
+		//CommandBuffer mCommandBuffers[MAX_FRAMES_IN_FLIGHT];
 
+		Scene::Scene mScene;
+		ECS::Entity mGameObject;
 	};
 }
 

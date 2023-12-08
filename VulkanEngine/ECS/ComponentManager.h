@@ -41,9 +41,9 @@ namespace ECS
 		}
 
 		template<typename T>
-		void RemoveComponent(Entity entity, T component)
+		void RemoveComponent(Entity entity)
 		{
-			GetComponentArray<T>()->RemoveData(entity, component);
+			GetComponentArray<T>()->RemoveData(entity);
 		}
 
 		template<typename T>

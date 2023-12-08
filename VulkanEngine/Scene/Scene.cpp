@@ -2,6 +2,7 @@
 
 #include "VulkanEngine/Scene/SceneComponents/TransformComponent.hpp"
 #include "VulkanEngine/Scene/SceneComponents/HierarchyComponent.hpp"
+#include "VulkanEngine/Scene/SceneComponents/MeshComponent.hpp"
 
 #include <sstream>
 
@@ -13,10 +14,21 @@ namespace Scene
 		//register components
 		mSceneCoordinator.RegisterComponent<TransformComponent>();
 		mSceneCoordinator.RegisterComponent<HierarchyComponent>();
+		mSceneCoordinator.RegisterComponent<MeshComponent>();
 
 		//register systems
 		mTransformSystem = mSceneCoordinator.RegisterSystem<TransformSystem>();
 		mHierarchySystem = mSceneCoordinator.RegisterSystem<HierarchySystem>();
+		mMeshSystem = mSceneCoordinator.RegisterSystem<MeshSystem>();
+
+		//bind systems and components
+		ECS::Signature signature;
+		signature.set(mSceneCoordinator.GetComponentType<TransformComponent>());
+		mSceneCoordinator.SetSystemSignature<TransformSystem>(signature);
+		signature.set(mSceneCoordinator.GetComponentType<HierarchyComponent>());
+		mSceneCoordinator.SetSystemSignature<HierarchySystem>(signature);
+		signature.set(mSceneCoordinator.GetComponentType<MeshComponent>());
+		mSceneCoordinator.SetSystemSignature<MeshSystem>(signature);
 
 		CreateSceneRoot();
 
@@ -26,6 +38,7 @@ namespace Scene
 	{
 		mTransformSystem->Update(mSceneCoordinator);
 		mHierarchySystem->Update(mSceneCoordinator);
+		mMeshSystem->Update(mSceneCoordinator);
 
 	}
 
@@ -36,7 +49,6 @@ namespace Scene
 		mSceneCoordinator.AddComponent(entity, TransformComponent{});
 		mSceneCoordinator.AddComponent(entity, HierarchyComponent{ GetNewGameObjectName(), mRoot, {} });
 		rootHierarchy.mChildren.push_back(entity);
-		mEntities.insert(entity);
 
 		return entity;
 	}
@@ -53,8 +65,38 @@ namespace Scene
 			childHierarchy.mParent = hierarchy.mParent;
 			parentHierarchy.mChildren.push_back(hierarchy.mChildren[i]);
 		}
-		mEntities.erase(entity);
 		mSceneCoordinator.DestroyEntity(entity);
+	}
+
+	void Scene::AddMeshComponent(ECS::Entity& entity)
+	{
+		mSceneCoordinator.AddComponent(entity, MeshComponent{MeshSystem::sDefaultMeshPath});
+	}
+
+	void Scene::AddMeshComponent(ECS::Entity& entity, std::string mesh)
+	{
+		mSceneCoordinator.AddComponent(entity, MeshComponent{ mesh });
+	}
+
+	void Scene::RemoveMeshComponent(ECS::Entity& entity)
+	{
+		mSceneCoordinator.RemoveComponent<MeshComponent>(entity);
+	}
+
+	void Scene::ChangeMeshComponent(ECS::Entity& entity, std::string meshPath)
+	{
+		auto& meshComponent = mSceneCoordinator.GetComponent<MeshComponent>(entity);
+		meshComponent.mMeshPath = meshPath;
+	}
+
+	std::vector<RenderObjectData> Scene::GetRenderGameObjects()
+	{
+		std::vector<RenderObjectData> result;
+		result.clear();
+
+
+
+		return result;
 	}
 
 	void Scene::CreateSceneRoot()
