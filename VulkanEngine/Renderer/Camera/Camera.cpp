@@ -1,7 +1,7 @@
-#include "Camera.h"
+#include "Camera.hpp"
 
-#include "VulkanEngine/Renderer/WindowManagment/Controls.h"
-#include "VulkanEngine/Logger/Logger.h"
+#include "VulkanEngine/Renderer/WindowManagment/Controls.hpp"
+#include "VulkanEngine/Logger/Logger.hpp"
 
 namespace Renderer
 {
@@ -81,14 +81,19 @@ namespace Renderer
         mFarPlane = farPlane;
     }
 
-    glm::mat4 Camera::GetViewMatrix()
+    glm::mat4 Camera::GetViewMatrix() const 
     {
         return mViewMatrix;
     }
 
-    glm::mat4 Camera::GetProjectionMatrix()
+    glm::mat4 Camera::GetProjectionMatrix() const 
     {
         return mProjMatrix;
+    }
+
+    glm::vec3 Camera::GetPosition() const
+    {
+        return mPos;
     }
 
     void Camera::UpdateMatricies()

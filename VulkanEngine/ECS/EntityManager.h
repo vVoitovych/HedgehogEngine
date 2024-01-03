@@ -4,22 +4,24 @@
 #include <array>
 #include "Entity.h"
 
-class EntityManager
+namespace ECS
 {
-public:
-	EntityManager();
+	class EntityManager
+	{
+	public:
+		EntityManager();
 
-	Entity CreateEntity();
-	void DestroyEntity(Entity entity);
+		Entity CreateEntity();
+		void DestroyEntity(Entity entity);
 
-	Signature GetSignature(Entity entity) const;
-	void SetSignature(Entity entity, Signature signature);
+		Signature GetSignature(Entity entity) const;
+		void SetSignature(Entity entity, Signature signature);
 
-private:
-	std::queue<Entity> entityPool;
-	std::array<Signature, MAX_ENTITIES> signatures;
+	private:
+		std::queue<Entity> entityPool;
+		std::array<Signature, MAX_ENTITIES> signatures;
 
-	size_t entityCount;
-};
-
+		size_t entityCount;
+	};
+}
 

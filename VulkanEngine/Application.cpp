@@ -1,6 +1,6 @@
-#include "Application.h"
+#include "Application.hpp"
 
-#include "VulkanEngine/Logger/Logger.h"
+#include "VulkanEngine/Logger/Logger.hpp"
 
 namespace VkEngine
 {
@@ -12,7 +12,6 @@ namespace VkEngine
 
 	void VkApplication::InitVulkan()
 	{
-		mRenderer.Initialize();
 		LOGINFO("Vulkan initialized");
 	}
 
@@ -24,7 +23,6 @@ namespace VkEngine
 			float dt = mRenderer.GetFrameTime();
 			mRenderer.HandleInput();
 			mRenderer.Update(dt);
-			mRenderer.UpdateUniformBuffer();
 			mRenderer.DrawFrame();
 		}
 

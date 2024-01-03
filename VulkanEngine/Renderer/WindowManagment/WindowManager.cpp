@@ -1,28 +1,38 @@
-#include "WindowManager.h"
-#include "VulkanEngine/Logger/Logger.h"
+#include "WindowManager.hpp"
+#include "VulkanEngine/Logger/Logger.hpp"
 
 namespace Renderer
 {
 	WindowManager::WindowManager()
-		: mWindowState{}
+		: mWindowState(WindowState::GetDefaultState())
 		, mWindow(nullptr)
 	{
+		Initialize();
+	}
+
+	WindowManager::WindowManager(const WindowState& state)
+		: mWindowState(state)
+		, mWindow(nullptr)
+	{
+		Initialize();
 	}
 
 	WindowManager::~WindowManager()
 	{
+		glfwDestroyWindow(mWindow);
+		mWindow = nullptr;
+		glfwTerminate();
+		LOGINFO("Window manager cleaned");
 	}
 
-	void WindowManager::Initialize(WindowState state)
+	void WindowManager::Initialize()
 	{
-        mWindowState = state;
-
         glfwInit();
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-        mWindow = glfwCreateWindow(state.mWidth, state.mHeight, state.mWindowName.c_str(), nullptr, nullptr);
-        glfwSetWindowPos(mWindow, state.mX, state.mY);
+        mWindow = glfwCreateWindow(mWindowState.mWidth, mWindowState.mHeight, mWindowState.mWindowName.c_str(), nullptr, nullptr);
+        glfwSetWindowPos(mWindow, mWindowState.mX, mWindowState.mY);
         glfwSetWindowUserPointer(mWindow, this);
         glfwSetFramebufferSizeCallback(mWindow, WindowManager::ResizeCallback);
         glfwSetKeyCallback(mWindow, WindowManager::OnKey);
@@ -30,14 +40,6 @@ namespace Renderer
 		glfwSetCursorPosCallback(mWindow, OnMouseMove);
 		glfwSetScrollCallback(mWindow, OnMouseScroll);
 		LOGINFO("Window manager initialized");
-	}
-
-	void WindowManager::Cleanup()
-	{
-		glfwDestroyWindow(mWindow);
-		mWindow = nullptr;
-		glfwTerminate();
-		LOGINFO("Window manager cleaned");
 	}
 
 	bool WindowManager::ShouldClose()
