@@ -12,33 +12,25 @@
 
 namespace Renderer
 {
-	DescriptorSet::DescriptorSet()
+	DescriptorSet::DescriptorSet(
+        const std::unique_ptr<Device>& device,
+        std::unique_ptr<DescriptorSetLayout>& descriptorSetLayout,
+        std::unique_ptr<UBO>& ubo,
+        std::unique_ptr<TextureImage>& image,
+        std::unique_ptr<TextureSampler>& sampler)
 		: mDescriptorSet(nullptr)
 	{
-	}
-
-	DescriptorSet::~DescriptorSet()
-	{
-        if (mDescriptorSet != nullptr)
-        {
-            LOGERROR("Vulkan description set should be cleanedup before destruction!");
-            ENGINE_DEBUG_BREAK();
-        }
-	}
-
-	void DescriptorSet::Initialize(const Device& device, DescriptorSetLayout& descriptorSetLayout, UBO& ubo, TextureImage& image, TextureSampler& sampler)
-	{
-        device.AllocateDescriptorSet(descriptorSetLayout, ubo, &mDescriptorSet);
+        device->AllocateDescriptorSet(descriptorSetLayout, ubo, &mDescriptorSet);
 
         VkDescriptorBufferInfo bufferInfo{};
-        bufferInfo.buffer = ubo.GetNativeBuffer();
+        bufferInfo.buffer = ubo->GetNativeBuffer();
         bufferInfo.offset = 0;
         bufferInfo.range = sizeof(UniformBufferObject);
 
         VkDescriptorImageInfo imageInfo{};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imageInfo.imageView = image.GetNativeImageView();
-        imageInfo.sampler = sampler.GetNativeSampler();
+        imageInfo.imageView = image->GetNativeImageView();
+        imageInfo.sampler = sampler->GetNativeSampler();
 
         std::array< VkWriteDescriptorSet, 2> descriptorWrites{};
         descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -57,13 +49,22 @@ namespace Renderer
         descriptorWrites[1].descriptorCount = 1;
         descriptorWrites[1].pImageInfo = &imageInfo;
 
-        vkUpdateDescriptorSets(device.GetNativeDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+        vkUpdateDescriptorSets(device->GetNativeDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
         LOGINFO("Vulkan descriptor set created");
 	}
 
-	void DescriptorSet::Cleanup(const Device& device)
+	DescriptorSet::~DescriptorSet()
 	{
-        device.FreeDescriptorSet(&mDescriptorSet);
+        if (mDescriptorSet != nullptr)
+        {
+            LOGERROR("Vulkan description set should be cleanedup before destruction!");
+            ENGINE_DEBUG_BREAK();
+        }
+	}
+
+	void DescriptorSet::Cleanup(const std::unique_ptr<Device>& device)
+	{
+        device->FreeDescriptorSet(&mDescriptorSet);
         mDescriptorSet = nullptr;
         LOGINFO("Vulkan descriptor set cleaned");
 	}

@@ -34,15 +34,6 @@
     <ClCompile Include="Renderer\Context\RenderContext.cpp">
       <Filter>Renderer\Context</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\RenderSchedule\RenderScedule.cpp">
-      <Filter>Renderer\RenderScedule</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\RenderPasses\ForwardPass.cpp">
-      <Filter>Renderer\RenderPasses</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\RenderPasses\PresentPass.cpp">
-      <Filter>Renderer\RenderPasses</Filter>
-    </ClCompile>
     <ClCompile Include="Renderer\Wrappeers\Device\Device.cpp">
       <Filter>Renderer\Wrappers\Device</Filter>
     </ClCompile>
@@ -55,9 +46,6 @@
     <ClCompile Include="Renderer\Wrappeers\Descriptors\DescriptorSetLayout.cpp">
       <Filter>Renderer\Wrappers\Descriptors</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Wrappeers\SyncObjects\SyncObjects.cpp">
-      <Filter>Renderer\Wrappers\SyncObjects</Filter>
-    </ClCompile>
     <ClCompile Include="Renderer\Wrappeers\SwapChain\SwapChain.cpp">
       <Filter>Renderer\Wrappers\SwapChain</Filter>
     </ClCompile>
@@ -66,9 +54,6 @@
     </ClCompile>
     <ClCompile Include="Renderer\Wrappeers\Pipeline\Pipeline.cpp">
       <Filter>Renderer\Wrappers\Pipeline</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Wrappeers\FrameBuffer\BackBuffers.cpp">
-      <Filter>Renderer\Wrappers\FrameBuffers</Filter>
     </ClCompile>
     <ClCompile Include="Renderer\Wrappeers\Commands\CommandBuffer.cpp">
       <Filter>Renderer\Wrappers\Commands</Filter>
@@ -85,18 +70,6 @@
     <ClCompile Include="Renderer\Wrappeers\Resources\TextureImage\TextureSampler.cpp">
       <Filter>Renderer\Wrappers\Resources\TextureImage</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Wrappeers\Resources\Texture\Texture2D.cpp">
-      <Filter>Renderer\Wrappers\Resources\Texture</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Containers\VertexDescription.cpp">
-      <Filter>Renderer\Containers</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Containers\Mesh.cpp">
-      <Filter>Renderer\Containers</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Containers\MeshContainer.cpp">
-      <Filter>Renderer\Containers</Filter>
-    </ClCompile>
     <ClCompile Include="Scene\Scene.cpp">
       <Filter>Scene</Filter>
     </ClCompile>
@@ -108,6 +81,54 @@
     </ClCompile>
     <ClCompile Include="Scene\SceneSystems\MeshSystem.cpp">
       <Filter>Scene\SceneSystems</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Context\FrameContext.cpp">
+      <Filter>Renderer\Context</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Context\EngineContext.cpp">
+      <Filter>Renderer\Context</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Context\ThreadContext.cpp">
+      <Filter>Renderer\Context</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Wrappeers\SyncObjects\SyncObject.cpp">
+      <Filter>Renderer\Wrappers\SyncObjects</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\RenderQueue\RenderQueue.cpp">
+      <Filter>Renderer\RenderQueue</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Wrappeers\Shaders\Shader.cpp">
+      <Filter>Renderer\Wrappers\Shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Wrappeers\Shaders\VertexShader.cpp">
+      <Filter>Renderer\Wrappers\Shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Wrappeers\Shaders\FragmentShader.cpp">
+      <Filter>Renderer\Wrappers\Shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\RenderPasses\ForwardPass.cpp">
+      <Filter>Renderer\RenderPasses\ForwardPass</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\RenderPasses\ForwardPassInfo.cpp">
+      <Filter>Renderer\RenderPasses\ForwardPass</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\RenderPasses\InitPass.cpp">
+      <Filter>Renderer\RenderPasses\InitPass</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\RenderPasses\PresentPass.cpp">
+      <Filter>Renderer\RenderPasses\PresentPass</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\RenderPasses\ForwardPipelineInfo.cpp">
+      <Filter>Renderer\RenderPasses\ForwardPass</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Containers\Mesh.cpp">
+      <Filter>Renderer\Containers\MeshContainer</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Containers\MeshContainer.cpp">
+      <Filter>Renderer\Containers\MeshContainer</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Containers\VertexDescription.cpp">
+      <Filter>Renderer\Containers\MeshContainer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -171,20 +192,8 @@
     <ClInclude Include="Renderer\Renderer.hpp">
       <Filter>Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\RenderPasses\BaseRenderPass.hpp">
-      <Filter>Renderer\RenderPasses</Filter>
-    </ClInclude>
     <ClInclude Include="Renderer\Context\RenderContext.hpp">
       <Filter>Renderer\Context</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\RenderSchedule\RenderScedule.hpp">
-      <Filter>Renderer\RenderScedule</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\RenderPasses\ForwardPass.hpp">
-      <Filter>Renderer\RenderPasses</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\RenderPasses\PresentPass.hpp">
-      <Filter>Renderer\RenderPasses</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\Wrappeers\Device\Device.hpp">
       <Filter>Renderer\Wrappers\Device</Filter>
@@ -201,9 +210,6 @@
     <ClInclude Include="Renderer\Wrappeers\Descriptors\DescriptorSetLayout.hpp">
       <Filter>Renderer\Wrappers\Descriptors</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Wrappeers\SyncObjects\SyncObjects.hpp">
-      <Filter>Renderer\Wrappers\SyncObjects</Filter>
-    </ClInclude>
     <ClInclude Include="Renderer\Wrappeers\SwapChain\SwapChain.hpp">
       <Filter>Renderer\Wrappers\SwapChain</Filter>
     </ClInclude>
@@ -212,9 +218,6 @@
     </ClInclude>
     <ClInclude Include="Renderer\Wrappeers\Pipeline\Pipeline.hpp">
       <Filter>Renderer\Wrappers\Pipeline</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Wrappeers\FrameBuffer\BackBuffers.hpp">
-      <Filter>Renderer\Wrappers\FrameBuffers</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\Wrappeers\Commands\CommandBuffer.hpp">
       <Filter>Renderer\Wrappers\Commands</Filter>
@@ -230,18 +233,6 @@
     </ClInclude>
     <ClInclude Include="Renderer\Wrappeers\Resources\TextureImage\TextureSampler.hpp">
       <Filter>Renderer\Wrappers\Resources\TextureImage</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Wrappeers\Resources\Texture\Texture2D.hpp">
-      <Filter>Renderer\Wrappers\Resources\Texture</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Containers\VertexDescription.hpp">
-      <Filter>Renderer\Containers</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Containers\Mesh.hpp">
-      <Filter>Renderer\Containers</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Containers\MeshContainer.hpp">
-      <Filter>Renderer\Containers</Filter>
     </ClInclude>
     <ClInclude Include="Scene\Scene.hpp">
       <Filter>Scene</Filter>
@@ -263,6 +254,57 @@
     </ClInclude>
     <ClInclude Include="Scene\SceneSystems\MeshSystem.hpp">
       <Filter>Scene\SceneSystems</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Context\FrameContext.hpp">
+      <Filter>Renderer\Context</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Context\EngineContext.hpp">
+      <Filter>Renderer\Context</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Context\ThreadContext.hpp">
+      <Filter>Renderer\Context</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\SyncObjects\SyncObject.hpp">
+      <Filter>Renderer\Wrappers\SyncObjects</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\RenderQueue\RenderQueue.hpp">
+      <Filter>Renderer\RenderQueue</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\Shaders\Shader.hpp">
+      <Filter>Renderer\Wrappers\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\Shaders\VertexShader.hpp">
+      <Filter>Renderer\Wrappers\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\Shaders\FragmentShader.hpp">
+      <Filter>Renderer\Wrappers\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\RenderPasses\ForwardPass.hpp">
+      <Filter>Renderer\RenderPasses\ForwardPass</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\RenderPasses\ForwardPassInfo.hpp">
+      <Filter>Renderer\RenderPasses\ForwardPass</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\RenderPasses\InitPass.hpp">
+      <Filter>Renderer\RenderPasses\InitPass</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\RenderPasses\PresentPass.hpp">
+      <Filter>Renderer\RenderPasses\PresentPass</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\RenderPasses\ForwardPipelineInfo.hpp">
+      <Filter>Renderer\RenderPasses\ForwardPass</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\Pipeline\PipelineInfo.hpp">
+      <Filter>Renderer\Wrappers\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Containers\Mesh.hpp">
+      <Filter>Renderer\Containers\MeshContainer</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Containers\MeshContainer.hpp">
+      <Filter>Renderer\Containers\MeshContainer</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Containers\VertexDescription.hpp">
+      <Filter>Renderer\Containers\MeshContainer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -328,9 +370,6 @@
     <Filter Include="Renderer\Context">
       <UniqueIdentifier>{ce1ce20a-f56d-4c9b-9067-f402b2adb917}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Renderer\RenderScedule">
-      <UniqueIdentifier>{78d6aad6-0d48-4795-9e3c-77bcdf84b765}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Renderer\Wrappers">
       <UniqueIdentifier>{24498bd2-eaee-4a20-b4fd-71b931b00345}</UniqueIdentifier>
     </Filter>
@@ -373,9 +412,6 @@
     <Filter Include="Renderer\Wrappers\Resources\TextureImage">
       <UniqueIdentifier>{21a98a9b-953c-4c85-8415-aa257797c4b5}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Renderer\Wrappers\Resources\Texture">
-      <UniqueIdentifier>{c4c369da-26ec-4a01-865d-36fa7c34c20f}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Renderer\Containers">
       <UniqueIdentifier>{54791467-0b8e-45f5-961e-cebff47e3b89}</UniqueIdentifier>
     </Filter>
@@ -387,6 +423,24 @@
     </Filter>
     <Filter Include="Scene\SceneSystems">
       <UniqueIdentifier>{a0766458-cc6a-4de4-b3bc-4cb85fd6abb1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\RenderQueue">
+      <UniqueIdentifier>{78d6aad6-0d48-4795-9e3c-77bcdf84b765}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Wrappers\Shaders">
+      <UniqueIdentifier>{51d6b92c-6c88-477e-aa00-525f79868700}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\RenderPasses\ForwardPass">
+      <UniqueIdentifier>{3c510977-4d82-4615-bcd6-4c011f924baa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\RenderPasses\InitPass">
+      <UniqueIdentifier>{d8f740f9-2a55-489c-a31e-33dd021a27d0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\RenderPasses\PresentPass">
+      <UniqueIdentifier>{35bdb1a6-fd58-4fce-8901-36e26959ca24}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Containers\MeshContainer">
+      <UniqueIdentifier>{24953777-77dd-46ce-9d22-7683301abc27}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

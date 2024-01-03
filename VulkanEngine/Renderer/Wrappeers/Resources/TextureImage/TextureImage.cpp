@@ -8,19 +8,45 @@
 
 namespace Renderer
 {
-	TextureImage::TextureImage()
+	TextureImage::TextureImage(const std::unique_ptr<Device>& device, const std::string fileName, VkFormat format)
 		: mTextureImage(nullptr)
 		, mTextureImageMemory(nullptr)
 		, mTextureImageView(nullptr)
 	{
-	}
+		ContentLoader::TextureLoader textureLoader;
+		textureLoader.LoadTexture(fileName);
+		int texWidth = textureLoader.GetWidth();
+		int texHeight = textureLoader.GetHeight();
+		VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth * texHeight * 4);
 
-	TextureImage::TextureImage(const std::string fileName)
-		: mFileName(fileName)
-		, mTextureImage(nullptr)
-		, mTextureImageMemory(nullptr)
-		, mTextureImageView(nullptr)
-	{
+		VkBuffer stagingBuffer;
+		VkDeviceMemory stagingBufferMemory;
+		device->CreateBuffer(
+			imageSize,
+			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			stagingBuffer, stagingBufferMemory);
+
+		device->CopyDataToBufferMemory(stagingBufferMemory, textureLoader.GetData(), static_cast<size_t>(imageSize));
+
+		device->CreateImage(
+			texWidth, texHeight,
+			VK_FORMAT_R8G8B8A8_SRGB,
+			VK_IMAGE_TILING_OPTIMAL,
+			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			mTextureImage, mTextureImageMemory);
+
+		device->TransitionImageLayout(mTextureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+		device->CopyBufferToImage(stagingBuffer, mTextureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
+		device->TransitionImageLayout(mTextureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+		device->DestroyBuffer(stagingBuffer, nullptr);
+		device->FreeMemory(stagingBufferMemory, nullptr);
+
+		mTextureImageView = device->CreateImageView(mTextureImage, format, VK_IMAGE_ASPECT_COLOR_BIT);
+
+		LOGINFO("Vulkan texture image created");
 	}
 
 	TextureImage::~TextureImage()
@@ -42,54 +68,11 @@ namespace Renderer
 		}
 	}
 
-	void TextureImage::SetFileName(const std::string fileName)
+	void TextureImage::Cleanup(const std::unique_ptr<Device>& device)
 	{
-		mFileName = fileName;
-	}
-
-	void TextureImage::Initialize(const Device& device, VkFormat format)
-	{
-		ContentLoader::TextureLoader textureLoader;
-		textureLoader.LoadTexture(mFileName);
-		int texWidth = textureLoader.GetWidth();
-		int texHeight = textureLoader.GetHeight();
-		VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth * texHeight * 4);
-
-		VkBuffer stagingBuffer;
-		VkDeviceMemory stagingBufferMemory;
-		device.CreateBuffer(
-			imageSize, 
-			VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 
-			stagingBuffer, stagingBufferMemory);
-	
-		device.CopyDataToBufferMemory(stagingBufferMemory, textureLoader.GetData(), static_cast<size_t>(imageSize));
-
-		device.CreateImage(
-			texWidth, texHeight, 
-			VK_FORMAT_R8G8B8A8_SRGB, 
-			VK_IMAGE_TILING_OPTIMAL, 
-			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, 
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
-			mTextureImage, mTextureImageMemory);
-
-		device.TransitionImageLayout(mTextureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-		device.CopyBufferToImage(stagingBuffer, mTextureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
-		device.TransitionImageLayout(mTextureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-		device.DestroyBuffer(stagingBuffer, nullptr);
-		device.FreeMemory(stagingBufferMemory, nullptr);
-
-		mTextureImageView = device.CreateImageView(mTextureImage, format, VK_IMAGE_ASPECT_COLOR_BIT);
-
-		LOGINFO("Vulkan texture image created");
-	}
-
-	void TextureImage::Cleanup(const Device& device)
-	{
-		device.DestroyImage(mTextureImage, nullptr);
-		device.FreeMemory(mTextureImageMemory, nullptr);		
-		vkDestroyImageView(device.GetNativeDevice(), mTextureImageView, nullptr);
+		device->DestroyImage(mTextureImage, nullptr);
+		device->FreeMemory(mTextureImageMemory, nullptr);		
+		vkDestroyImageView(device->GetNativeDevice(), mTextureImageView, nullptr);
 		
 		mTextureImageView = nullptr;
 		mTextureImage = nullptr;

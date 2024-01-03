@@ -1,41 +1,49 @@
 #pragma once
 
-#include "VulkanEngine/Renderer/Wrappeers/FrameBuffer/BackBuffers.hpp"
-#include "VulkanEngine/Renderer/Wrappeers/Commands/CommandBuffer.hpp"
-#include "VulkanEngine/Renderer/Common/RendererSettings.hpp"
-#include "VulkanEngine/Scene/Scene.hpp"
-#include "VulkanEngine/ECS/Entity.h"
-
-#include <vulkan/vulkan.h>
+#include <memory>
 
 namespace Renderer
 {
 	class Device;
+	class WindowManager;
+	class SwapChain;
+
+	class EngineContext;
+	class FrameContext;
+	class ThreadContext;
 
 	class RenderContext
 	{
 	public:
-		RenderContext() = default;
-		~RenderContext() = default;
+		RenderContext(const std::unique_ptr<Device>& device, const std::unique_ptr<SwapChain>& swapChain, std::unique_ptr<WindowManager>&& windowManager);
+		~RenderContext();
 
-		void Initialize(Device& device);
-		void Cleanup(Device& device);
+		void UpdateContext(float dt);
 
-		//CommandBuffer& GetCommandBuffer(size_t index);
-		VkExtent2D GetExtend() const;
-		uint32_t GetCurrentFrame() const;
+		void Cleanup(const std::unique_ptr<Device>& device);
 
-		void NextFrame();
+		RenderContext(const RenderContext&) = delete;
+		RenderContext& operator=(const RenderContext&) = delete;
+
+		std::unique_ptr<EngineContext>& GetEngineContext();
+		std::unique_ptr<FrameContext>& GetFrameContext();
+		std::unique_ptr<ThreadContext>& GetThreadContext();
+
+		const std::unique_ptr<EngineContext>& GetEngineContext() const;
+		const std::unique_ptr<FrameContext>& GetFrameContext() const;
+		const std::unique_ptr<ThreadContext>& GetThreadContext() const;
+
+		std::tuple<std::unique_ptr<EngineContext>&, std::unique_ptr<FrameContext>&, std::unique_ptr<ThreadContext>&> GetContexts();
+		std::tuple<const std::unique_ptr<EngineContext>&, const std::unique_ptr<FrameContext>&, const std::unique_ptr<ThreadContext>&> GetContexts() const;
+
+
 	private:
-		uint32_t mCurrentFrame;
-		VkExtent2D mExtend;
+		std::unique_ptr<EngineContext> mEngineContext;
+		std::unique_ptr<FrameContext> mFrameContext;
+		std::unique_ptr<ThreadContext> mThreadContext;
 
-		//BackBuffers mBackBuffers;
-		//CommandBuffer mCommandBuffers[MAX_FRAMES_IN_FLIGHT];
-
-		Scene::Scene mScene;
-		ECS::Entity mGameObject;
 	};
+
 }
 
 

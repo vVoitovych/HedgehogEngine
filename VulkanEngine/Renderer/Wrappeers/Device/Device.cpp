@@ -71,7 +71,7 @@ namespace Renderer
 		}
 	}
 
-	Device::Device()
+	Device::Device(const std::unique_ptr<WindowManager>& windowManager)
 		: mInstance(nullptr)
 		, mDebugMessenger(nullptr)
 		, mSurface(nullptr)
@@ -82,6 +82,13 @@ namespace Renderer
 		, mCommandPool(nullptr)
 		, mDescriptorPool(nullptr)
 	{
+		InitializeInstance();
+		InitializeDebugMessanger();
+		windowManager->CreateWindowSurface(mInstance, &mSurface);
+		PickPhysicalDevice();
+		CreateLogicalDevice();
+		CreateCommandPool();
+		CreateDescriptorPool();
 	}
 
 	Device::~Device()
@@ -116,17 +123,6 @@ namespace Renderer
 			LOGERROR("Vulkan descriptor pool should be cleanedup before destruction!");
 			ENGINE_DEBUG_BREAK();
 		}
-	}
-
-	void Device::Initialize(WindowManager& windowManager)
-	{
-		InitializeInstance();
-		InitializeDebugMessanger();
-		windowManager.CreateWindowSurface(mInstance, &mSurface);
-		PickPhysicalDevice();
-		CreateLogicalDevice();
-		CreateCommandPool();
-		CreateDescriptorPool();
 	}
 
 	void Device::InitializeInstance()
@@ -649,13 +645,16 @@ namespace Renderer
 	}
 
 	// Descriptor set functions
-	void Device::AllocateDescriptorSet(DescriptorSetLayout& descriptorSetLayout, const UBO& ubo, VkDescriptorSet* pDescriptorSet) const
+	void Device::AllocateDescriptorSet(
+		std::unique_ptr<DescriptorSetLayout>& descriptorSetLayout, 
+		const std::unique_ptr<UBO>& ubo, 
+		VkDescriptorSet* pDescriptorSet) const
 	{
 		VkDescriptorSetAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 		allocInfo.descriptorPool = mDescriptorPool;
 		allocInfo.descriptorSetCount = 1;
-		allocInfo.pSetLayouts = descriptorSetLayout.GetNativeLayout();
+		allocInfo.pSetLayouts = descriptorSetLayout->GetNativeLayout();
 
 		if (vkAllocateDescriptorSets(mDevice, &allocInfo, pDescriptorSet) != VK_SUCCESS)
 		{

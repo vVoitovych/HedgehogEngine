@@ -1,29 +1,50 @@
 #pragma once
 
-#include "BaseRenderPass.hpp"
-#include "VulkanEngine/Renderer/Wrappeers/RenderPass/RenderPass.hpp"
-#include "VulkanEngine/Renderer/Wrappeers/FrameBuffer/FrameBuffer.hpp"
+#include <memory>
+#include <vector>
 
 namespace Renderer
 {
-    class Device;
     class RenderContext;
-    class ResourceTracker;
+    class Device;
+    class SwapChain;
 
-	class ForwardPass : public BaseRenderPass
+    class RenderPass;
+    class DescriptorSetLayout;
+    class Pipeline;
+    class DepthBuffer;
+    class FrameBuffer;
+    class DescriptorSet;
+    class UBO;
+    class TextureImage;
+    class TextureSampler;
+
+	class ForwardPass
 	{
     public:
-        ForwardPass() = default;
-        virtual ~ForwardPass() = default;
+        ForwardPass(const std::unique_ptr<Device>& device, const std::unique_ptr<SwapChain>& swapChain);
+        ~ForwardPass();
 
-        virtual void Render(RenderContext& renderContext, ResourceTracker& resourceTracker);
-        virtual void Initialize(Device & device, RenderContext & renderContext);
-        virtual void Cleanup(Device & device);
+        void Render(std::unique_ptr<RenderContext>& renderContext);
+        void Cleanup(const std::unique_ptr<Device>& device);
+
+        void CleanSizedResources(const std::unique_ptr<Device>& device);
+        void CreateSizedResources(const std::unique_ptr<Device>& device, const std::unique_ptr<SwapChain>& swapChain);
 
     private:
-        RenderPass mRenderPass;
-        FrameBuffer mFrameBuffer;
+        std::unique_ptr<RenderPass> mRenderPass;
+        std::unique_ptr<DescriptorSetLayout> mDescriptorSetLayout;
+        std::unique_ptr<Pipeline> mPipeline;
 
+        std::unique_ptr<DepthBuffer> mDepthBuffer;
+        std::vector<FrameBuffer> mFrameBuffers;
+
+        std::unique_ptr<DescriptorSet> mDescriptorSet;
+        std::unique_ptr<UBO> mUniformBuffer;
+
+        // TODO remome teture and texture sampler from render pass
+        std::unique_ptr<TextureImage> mTextureImage;
+        std::unique_ptr<TextureSampler> mTextureSampler;
 	};
 
 }

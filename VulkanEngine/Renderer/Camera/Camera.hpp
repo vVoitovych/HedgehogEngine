@@ -32,8 +32,10 @@ namespace Renderer
 		void SetNearPlane(float nearPlane);
 		void SetFarPlane(float farPlane);
 
-		glm::mat4 GetViewMatrix();
-		glm::mat4 GetProjectionMatrix();
+		glm::mat4 GetViewMatrix() const;
+		glm::mat4 GetProjectionMatrix() const;
+		glm::vec3 GetPosition() const;
+
 
 	private:
 		void UpdateMatricies();

@@ -6,11 +6,19 @@
 
 namespace Renderer
 {
-	DepthBuffer::DepthBuffer()
+	DepthBuffer::DepthBuffer(const std::unique_ptr<Device>& device, VkExtent2D extend)
 		: mDepthImage(nullptr)
 		, mDepthImageMemory(nullptr)
 		, mDepthImageView(nullptr)
 	{
+		VkFormat depthFormat = device->FindDepthFormat();
+
+		device->CreateImage(extend.width, extend.height, depthFormat,
+			VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			mDepthImage, mDepthImageMemory);
+
+		mDepthImageView = device->CreateImageView(mDepthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+		LOGINFO("Depth buffer created");
 	}
 
 	DepthBuffer::~DepthBuffer()
@@ -32,22 +40,11 @@ namespace Renderer
 		}
 	}
 
-	void DepthBuffer::Initialize(const Device& device, VkExtent2D extend)
+	void DepthBuffer::Cleanup(const std::unique_ptr<Device>& device)
 	{
-		VkFormat depthFormat = device.FindDepthFormat();
-
-		device.CreateImage(extend.width, extend.height, depthFormat,
-			VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
-			mDepthImage, mDepthImageMemory);
-
-		mDepthImageView = device.CreateImageView(mDepthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
-	}
-
-	void DepthBuffer::Cleanup(const Device& device)
-	{
-		device.DestroyImage(mDepthImage, nullptr);
-		device.FreeMemory(mDepthImageMemory, nullptr);
-		vkDestroyImageView(device.GetNativeDevice(), mDepthImageView, nullptr);
+		device->DestroyImage(mDepthImage, nullptr);
+		device->FreeMemory(mDepthImageMemory, nullptr);
+		vkDestroyImageView(device->GetNativeDevice(), mDepthImageView, nullptr);
 
 		mDepthImage = nullptr;
 		mDepthImageMemory = nullptr;

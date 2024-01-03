@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
+#include <memory>
 
 namespace Renderer
 {
@@ -9,14 +10,13 @@ namespace Renderer
 	class DescriptorSetLayout
 	{
 	public:
-		DescriptorSetLayout();
+		DescriptorSetLayout(const std::unique_ptr<Device>& device);
 		~DescriptorSetLayout();
 
 		DescriptorSetLayout(const DescriptorSetLayout&) = delete;
 		DescriptorSetLayout& operator=(const DescriptorSetLayout&) = delete;
 
-		void Initialize(const Device& device);
-		void Cleanup(const Device& device);
+		void Cleanup(const std::unique_ptr<Device>& device);
 
 		VkDescriptorSetLayout* GetNativeLayout();
 	private:

@@ -52,7 +52,7 @@ namespace Renderer
 
     }
 
-    void MeshContainer::Initialize(const Device& device)
+    void MeshContainer::Initialize(const std::unique_ptr<Device>& device)
     {
         std::vector<VertexDescription> verticies;
         std::vector<uint32_t> indicies;
@@ -81,16 +81,16 @@ namespace Renderer
         CreateIndexBuffer(device, indicies);
     }
 
-    void MeshContainer::Cleanup(const Device& device)
+    void MeshContainer::Cleanup(const std::unique_ptr<Device>& device)
     {
-        vkDestroyBuffer(device.GetNativeDevice(), mVertexBuffer, nullptr);
-        vkFreeMemory(device.GetNativeDevice(), mVertexBufferMemory, nullptr);
+        vkDestroyBuffer(device->GetNativeDevice(), mVertexBuffer, nullptr);
+        vkFreeMemory(device->GetNativeDevice(), mVertexBufferMemory, nullptr);
         mVertexBuffer = nullptr;
         mVertexBufferMemory = nullptr;
         LOGINFO("Vertex buffer cleaned");
 
-        vkDestroyBuffer(device.GetNativeDevice(), mIndexBuffer, nullptr);
-        vkFreeMemory(device.GetNativeDevice(), mIndexBufferMemory, nullptr);
+        vkDestroyBuffer(device->GetNativeDevice(), mIndexBuffer, nullptr);
+        vkFreeMemory(device->GetNativeDevice(), mIndexBufferMemory, nullptr);
         mIndexBuffer = nullptr;
         mIndexBufferMemory = nullptr;
         LOGINFO("Index buffer cleaned");
@@ -111,38 +111,38 @@ namespace Renderer
         return mMeshes[index];
     }
 
-    void MeshContainer::CreateVertexBuffer(const Device& device, const std::vector<VertexDescription> verticies)
+    void MeshContainer::CreateVertexBuffer(const std::unique_ptr<Device>& device, const std::vector<VertexDescription> verticies)
     {
         VkDeviceSize size = sizeof(verticies[0]) * verticies.size();
 
         VkBuffer staginBuffer;
         VkDeviceMemory staginBufferMemory;
-        device.CreateBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staginBuffer, staginBufferMemory);
-        device.CopyDataToBufferMemory(staginBufferMemory, verticies.data(), (size_t)size);
+        device->CreateBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staginBuffer, staginBufferMemory);
+        device->CopyDataToBufferMemory(staginBufferMemory, verticies.data(), (size_t)size);
 
-        device.CreateBuffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mVertexBuffer, mVertexBufferMemory);
-        device.CopyBuffer(staginBuffer, mVertexBuffer, size);
+        device->CreateBuffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mVertexBuffer, mVertexBufferMemory);
+        device->CopyBuffer(staginBuffer, mVertexBuffer, size);
 
-        device.DestroyBuffer(staginBuffer, nullptr);
-        device.FreeMemory(staginBufferMemory, nullptr);
+        device->DestroyBuffer(staginBuffer, nullptr);
+        device->FreeMemory(staginBufferMemory, nullptr);
         LOGINFO("Vertex buffer created");
     }
 
-    void MeshContainer::CreateIndexBuffer(const Device& device, const std::vector<uint32_t> indicies)
+    void MeshContainer::CreateIndexBuffer(const std::unique_ptr<Device>& device, const std::vector<uint32_t> indicies)
     {
         VkDeviceSize size = sizeof(indicies[0]) * indicies.size();
 
         VkBuffer staginBuffer;
         VkDeviceMemory staginBufferMemory;
-        device.CreateBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staginBuffer, staginBufferMemory);
-        device.CopyDataToBufferMemory(staginBufferMemory, indicies.data(), (size_t)size);
+        device->CreateBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staginBuffer, staginBufferMemory);
+        device->CopyDataToBufferMemory(staginBufferMemory, indicies.data(), (size_t)size);
 
-        device.CreateBuffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        device->CreateBuffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
             mIndexBuffer, mIndexBufferMemory);
-        device.CopyBuffer(staginBuffer, mIndexBuffer, size);
+        device->CopyBuffer(staginBuffer, mIndexBuffer, size);
 
-        device.DestroyBuffer(staginBuffer, nullptr);
-        device.FreeMemory(staginBufferMemory, nullptr);
+        device->DestroyBuffer(staginBuffer, nullptr);
+        device->FreeMemory(staginBufferMemory, nullptr);
         LOGINFO("Index buffer created");
     }
 

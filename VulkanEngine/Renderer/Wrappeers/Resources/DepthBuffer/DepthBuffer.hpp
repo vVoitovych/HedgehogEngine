@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
+#include <memory>
 
 namespace Renderer
 {
@@ -9,14 +10,13 @@ namespace Renderer
 	class DepthBuffer
 	{
 	public:
-		DepthBuffer();
+		DepthBuffer(const std::unique_ptr<Device>& device, VkExtent2D extend);
 		~DepthBuffer();
 
 		DepthBuffer(const DepthBuffer&) = delete;
 		DepthBuffer& operator=(const DepthBuffer&) = delete;
 
-		void Initialize(const Device& device, VkExtent2D extend);
-		void Cleanup(const Device& device);
+		void Cleanup(const std::unique_ptr<Device>& device);
 
 		VkImageView GetNativeView() const;
 

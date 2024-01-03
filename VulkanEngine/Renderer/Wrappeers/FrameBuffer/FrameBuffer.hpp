@@ -2,25 +2,31 @@
 
 #include <vulkan/vulkan.h>
 #include <vector>
+#include <memory>
 
 namespace Renderer
 {
 	class Device;
-	class SwapChain;
 	class DepthBuffer;
 	class RenderPass;
 
 	class FrameBuffer
 	{
 	public:
-		FrameBuffer();
+		FrameBuffer(
+			const std::unique_ptr<Device>& device, 
+			std::vector<VkImageView> attachments, 
+			VkExtent2D extent, 
+			const std::unique_ptr<RenderPass>& renderPass);
 		~FrameBuffer();
 
 		FrameBuffer(const FrameBuffer&) = delete;
 		FrameBuffer& operator=(const FrameBuffer&) = delete;
 
-		void Initialize(const Device& device, std::vector<VkImageView> attachments, VkExtent2D extent, RenderPass& renderPass);
-		void Cleanup(const Device& device);
+		FrameBuffer(FrameBuffer&& other);
+		FrameBuffer& operator=(FrameBuffer&& other);
+
+		void Cleanup(const std::unique_ptr<Device>& device);
 
 		VkFramebuffer GetNativeFrameBuffer() const;
 

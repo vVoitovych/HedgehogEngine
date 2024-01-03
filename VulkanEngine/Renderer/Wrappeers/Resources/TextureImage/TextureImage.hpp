@@ -2,6 +2,7 @@
 
 #include <vulkan/vulkan.h>
 #include <string>
+#include <memory>
 
 namespace Renderer
 {
@@ -10,24 +11,18 @@ namespace Renderer
 	class TextureImage
 	{
 	public:
-		TextureImage();
-		TextureImage(const std::string fileName);
+		TextureImage(const std::unique_ptr<Device>& device, const std::string fileName, VkFormat format);
 		~TextureImage();
 
 		TextureImage(const TextureImage&) = delete;
 		TextureImage& operator=(const TextureImage&) = delete;
 
-		void SetFileName(const std::string fileName);
-
-		void Initialize(const Device& device, VkFormat format);
-		void Cleanup(const Device& device);
+		void Cleanup(const std::unique_ptr<Device>& device);
 
 		VkImage GetNativeImage() const;
 		VkImageView GetNativeImageView() const;
 
 	private:
-		std::string mFileName;
-
 		VkImage mTextureImage;
 		VkDeviceMemory mTextureImageMemory;
 

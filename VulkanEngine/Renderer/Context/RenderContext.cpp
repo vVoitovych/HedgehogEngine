@@ -1,55 +1,81 @@
 #include "RenderContext.hpp"
 
+#include "EngineContext.hpp"
+#include "FrameContext.hpp"
+#include "ThreadContext.hpp"
+
+#include "VulkanEngine/Renderer/Wrappeers/Device/Device.hpp"
+#include "VulkanEngine/Renderer/Wrappeers/SwapChain/SwapChain.hpp"
+#include "VulkanEngine/Renderer/WindowManagment/WindowManager.hpp"
+
 #include <stdexcept>
 
 namespace Renderer
 {
-    void RenderContext::Initialize(Device& device)
+    RenderContext::RenderContext(const std::unique_ptr<Device>& device, const std::unique_ptr<SwapChain>& swapChain, std::unique_ptr<WindowManager>&& windowManager)
     {
-        mScene.InitScene();
-        mGameObject = mScene.CreateGameObject();
-        mScene.AddMeshComponent(mGameObject);
-        mScene.ChangeMeshComponent(mGameObject, "Models\\viking_room.obj");
-        mScene.UpdateScene(0.0f);
-
-       // mBackBuffers.Initialize()
-        //for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
-        //{
-        //    mCommandBuffers[i].Initialize(device);
-        //}
+        mEngineContext = std::make_unique<EngineContext>(device, swapChain, std::move(windowManager));
+        mFrameContext = std::make_unique<FrameContext>();
+        mThreadContext = std::make_unique<ThreadContext>(device);
     }
 
-    void RenderContext::Cleanup(Device& device)
+    RenderContext::~RenderContext()
     {
-        //for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
-        //{
-        //    mCommandBuffers[i].Cleanup(device);
-        //}
     }
 
-    //CommandBuffer& RenderContext::GetCommandBuffer(size_t index)
-    //{
-    //    if (index >= MAX_FRAMES_IN_FLIGHT)
-    //    {
-    //        throw std::runtime_error("Validation layers requested, but not available!");
-    //    }
-    //    return mCommandBuffers[index];
-    //}
-
-    VkExtent2D RenderContext::GetExtend() const
+    void RenderContext::UpdateContext(float dt)
     {
-        return mExtend;
+        mEngineContext->UpdateContext(dt);
+        mFrameContext->UpdateContext(mEngineContext->GetCamera());
+
     }
 
-    uint32_t RenderContext::GetCurrentFrame() const
+    void RenderContext::Cleanup(const std::unique_ptr<Device>& device)
     {
-        return mCurrentFrame;
+        mEngineContext->Cleanup(device);
+        mThreadContext->Cleanup(device);
     }
 
-    void RenderContext::NextFrame()
+    std::unique_ptr<EngineContext>& RenderContext::GetEngineContext()
     {
-        mCurrentFrame = (mCurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+        return mEngineContext;
     }
+
+    std::unique_ptr<FrameContext>& RenderContext::GetFrameContext()
+    {
+        return mFrameContext;
+    }
+
+    std::unique_ptr<ThreadContext>& RenderContext::GetThreadContext()
+    {
+        return mThreadContext;
+    }
+
+    const std::unique_ptr<EngineContext>& RenderContext::GetEngineContext() const
+    {
+        return mEngineContext;
+    }
+
+    const std::unique_ptr<FrameContext>& RenderContext::GetFrameContext() const
+    {
+        return mFrameContext;
+    }
+
+    const std::unique_ptr<ThreadContext>& RenderContext::GetThreadContext() const
+    {
+        return mThreadContext;
+    }
+
+    std::tuple<std::unique_ptr<EngineContext>&, std::unique_ptr<FrameContext>&, std::unique_ptr<ThreadContext>&> RenderContext::GetContexts()
+    {
+        return {GetEngineContext(), GetFrameContext(), GetThreadContext()};
+    }
+
+    std::tuple<const std::unique_ptr<EngineContext>&, const std::unique_ptr<FrameContext>&, const std::unique_ptr<ThreadContext>&> RenderContext::GetContexts() const
+    {
+        return {GetEngineContext(), GetFrameContext(), GetThreadContext()};
+    }
+
 
 }
 

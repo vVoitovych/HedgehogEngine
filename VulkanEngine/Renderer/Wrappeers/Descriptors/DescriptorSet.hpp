@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
+#include <memory>
 
 namespace Renderer
 {
@@ -13,14 +14,18 @@ namespace Renderer
 	class DescriptorSet
 	{
 	public:
-		DescriptorSet();
+		DescriptorSet(
+			const std::unique_ptr<Device>& device, 
+			std::unique_ptr<DescriptorSetLayout>& descriptorSetLayout, 
+			std::unique_ptr<UBO>& ubo, 
+			std::unique_ptr<TextureImage>& image, 
+			std::unique_ptr<TextureSampler>& sampler);
 		~DescriptorSet();
 
 		DescriptorSet(const DescriptorSet&) = delete;
 		DescriptorSet& operator=(const DescriptorSet&) = delete;
 
-		void Initialize(const Device& device, DescriptorSetLayout& descriptorSetLayout, UBO& ubo, TextureImage& image, TextureSampler& sampler);
-		void Cleanup(const Device& device);
+		void Cleanup(const std::unique_ptr<Device>& device);
 
 		VkDescriptorSet* GetNativeSet();
 	private:

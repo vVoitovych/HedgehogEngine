@@ -6,6 +6,7 @@
 
 #include <vector>
 #include <string>
+#include <memory>
 
 namespace Renderer
 {
@@ -20,8 +21,8 @@ namespace Renderer
 		void LoadMeshData();
 		void LoadSingleMesh(std::string filePath);
 
-		void Initialize(const Device& device);
-		void Cleanup(const Device& device);
+		void Initialize(const std::unique_ptr<Device>& device);
+		void Cleanup(const std::unique_ptr<Device>& device);
 
 		VkBuffer GetVertexBuffer();
 		VkBuffer GetIndexBuffer();
@@ -29,8 +30,8 @@ namespace Renderer
 		Mesh& GetMesh(size_t index);
 
 	private:
-		void CreateVertexBuffer(const Device& device, const std::vector<VertexDescription> verticies);
-		void CreateIndexBuffer(const Device& device, const std::vector<uint32_t> indicies);
+		void CreateVertexBuffer(const std::unique_ptr<Device>& device, const std::vector<VertexDescription> verticies);
+		void CreateIndexBuffer(const std::unique_ptr<Device>& device, const std::vector<uint32_t> indicies);
 
 	private:
 		std::vector<std::string> mFilePathes;

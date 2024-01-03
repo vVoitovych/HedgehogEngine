@@ -13,13 +13,13 @@ namespace Renderer
 	{
 	public:
 		WindowManager();
+		WindowManager(const WindowState& state);
 		~WindowManager();
 
-		void Initialize(WindowState state);
-		void Cleanup();
-
 		WindowManager(const WindowManager& rhs) = delete;
+		WindowManager(WindowManager&& rhs) = default;
 		WindowManager& operator=(const WindowManager& rhs) = delete;
+		WindowManager& operator=(WindowManager&& rhs) = default;
 
 		bool ShouldClose();
 		void HandleInput();
@@ -37,6 +37,9 @@ namespace Renderer
 		static void OnMouseButton(GLFWwindow* window, int button, int action, int mods);
 		static void OnMouseMove(GLFWwindow* window, double x, double y);
 		static void OnMouseScroll(GLFWwindow* window, double x, double y);
+
+	private:
+		void Initialize();
 
 	private:
 		WindowState mWindowState;

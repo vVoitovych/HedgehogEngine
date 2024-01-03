@@ -81,14 +81,19 @@ namespace Renderer
         mFarPlane = farPlane;
     }
 
-    glm::mat4 Camera::GetViewMatrix()
+    glm::mat4 Camera::GetViewMatrix() const 
     {
         return mViewMatrix;
     }
 
-    glm::mat4 Camera::GetProjectionMatrix()
+    glm::mat4 Camera::GetProjectionMatrix() const 
     {
         return mProjMatrix;
+    }
+
+    glm::vec3 Camera::GetPosition() const
+    {
+        return mPos;
     }
 
     void Camera::UpdateMatricies()

@@ -1,25 +1,25 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
+#include <memory>
 
 namespace Renderer
 {
 	class Device;
-	class Camera;
+	class RenderContext;
 
 	class UBO
 	{
 	public:
-		UBO();
+		UBO(const std::unique_ptr<Device>& device);
 		~UBO();
 
 		UBO(const UBO&) = delete;
 		UBO& operator=(const UBO&) = delete;
 
-		void Initialize(const Device& device);
-		void Cleanup(const Device& device);
+		void Cleanup(const std::unique_ptr<Device>& device);
 
-		void UpdateUniformBuffer(float time, Camera& camera);
+		void UpdateUniformBuffer(std::unique_ptr< RenderContext>& context);
 		VkBuffer GetNativeBuffer();
 	private:
 		VkBuffer mUniformBuffer;

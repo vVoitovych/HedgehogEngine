@@ -7,21 +7,8 @@
 
 namespace Renderer
 {
-	DescriptorSetLayout::DescriptorSetLayout()
+	DescriptorSetLayout::DescriptorSetLayout(const std::unique_ptr<Device>& device)
 		: mDescriptorSetLayout(nullptr)
-	{
-	}
-
-	DescriptorSetLayout::~DescriptorSetLayout()
-	{
-		if (mDescriptorSetLayout != nullptr)
-		{
-			LOGERROR("Vulkan description set layout should be cleanedup before destruction!");
-			ENGINE_DEBUG_BREAK();
-		}
-	}
-
-	void DescriptorSetLayout::Initialize(const Device& device)
 	{
 		VkDescriptorSetLayoutBinding uboLayoutBinding{};
 		uboLayoutBinding.binding = 0;
@@ -44,14 +31,24 @@ namespace Renderer
 		layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
 		layoutInfo.pBindings = bindings.data();
 
-		if (vkCreateDescriptorSetLayout(device.GetNativeDevice(), &layoutInfo, nullptr, &mDescriptorSetLayout) != VK_SUCCESS) {
+		if (vkCreateDescriptorSetLayout(device->GetNativeDevice(), &layoutInfo, nullptr, &mDescriptorSetLayout) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create descriptor set layout!");
+		}
+		LOGINFO("Descriptor set layout initialized");
+	}
+
+	DescriptorSetLayout::~DescriptorSetLayout()
+	{
+		if (mDescriptorSetLayout != nullptr)
+		{
+			LOGERROR("Vulkan description set layout should be cleanedup before destruction!");
+			ENGINE_DEBUG_BREAK();
 		}
 	}
 
-	void DescriptorSetLayout::Cleanup(const Device& device)
+	void DescriptorSetLayout::Cleanup(const std::unique_ptr<Device>& device)
 	{
-		vkDestroyDescriptorSetLayout(device.GetNativeDevice(), mDescriptorSetLayout, nullptr);
+		vkDestroyDescriptorSetLayout(device->GetNativeDevice(), mDescriptorSetLayout, nullptr);
 		mDescriptorSetLayout = nullptr;
 		LOGINFO("Descriptor set layout cleaned");
 	}

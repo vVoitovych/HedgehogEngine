@@ -10,9 +10,11 @@
 
 namespace Renderer
 {
-	CommandBuffer::CommandBuffer()
+	CommandBuffer::CommandBuffer(const std::unique_ptr<Device>& device)
 		:mCommandBuffer(nullptr)
 	{
+		device->AllocateCommandBuffer(&mCommandBuffer);
+		LOGINFO("Command buffer created");
 	}
 
 	CommandBuffer::~CommandBuffer()
@@ -24,15 +26,26 @@ namespace Renderer
 		}
 	}
 
-	void CommandBuffer::Initialize(const Device& device)
+	CommandBuffer::CommandBuffer(CommandBuffer&& other)
+		: mCommandBuffer(other.mCommandBuffer)
 	{
-		device.AllocateCommandBuffer(&mCommandBuffer);
-		LOGINFO("Command buffer created");
+		other.mCommandBuffer = nullptr;
 	}
 
-	void CommandBuffer::Cleanup(const Device& device)
+	CommandBuffer& CommandBuffer::operator=(CommandBuffer&& other)
 	{
-		device.FreeCommandBuffer(&mCommandBuffer);
+		if (this != &other)
+		{
+			mCommandBuffer = other.mCommandBuffer;
+
+			other.mCommandBuffer = nullptr;
+		}
+		return *this;
+	}
+
+	void CommandBuffer::Cleanup(const std::unique_ptr<Device>& device)
+	{
+		device->FreeCommandBuffer(&mCommandBuffer);
 		mCommandBuffer = nullptr;
 		LOGINFO("Command  buffer cleaned");
 	}
@@ -63,7 +76,7 @@ namespace Renderer
 		}
 	}
 
-	void CommandBuffer::BeginRenderPass(VkExtent2D extend, RenderPass& renderPass, VkFramebuffer frameBuffer)
+	void CommandBuffer::BeginRenderPass(VkExtent2D extend, std::unique_ptr<RenderPass>& renderPass, VkFramebuffer frameBuffer)
 	{
 		std::array<VkClearValue, 2> clearValues{};
 		clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
@@ -72,7 +85,7 @@ namespace Renderer
 
 		VkRenderPassBeginInfo renderPassInfo{};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		renderPassInfo.renderPass = renderPass.GetNativeRenderPass();
+		renderPassInfo.renderPass = renderPass->GetNativeRenderPass();
 		renderPassInfo.framebuffer = frameBuffer;
 		renderPassInfo.renderArea.offset = { 0, 0 };
 		renderPassInfo.renderArea.extent = extend;
@@ -88,9 +101,9 @@ namespace Renderer
 		vkCmdEndRenderPass(mCommandBuffer);
 	}
 
-	void CommandBuffer::BindPipeline(Pipeline& pipeline, VkPipelineBindPoint bindPoint)
+	void CommandBuffer::BindPipeline(std::unique_ptr<Pipeline>& pipeline, VkPipelineBindPoint bindPoint)
 	{
-		vkCmdBindPipeline(mCommandBuffer, bindPoint, pipeline.GetNativePipeline());
+		vkCmdBindPipeline(mCommandBuffer, bindPoint, pipeline->GetNativePipeline());
 	}
 
 	void CommandBuffer::SetViewport(float x, float y, float width, float height, float minDepth, float maxDepth)
@@ -123,10 +136,15 @@ namespace Renderer
 		vkCmdBindIndexBuffer(mCommandBuffer, indexBuffer, offset, indexType);
 	}
 
-	void CommandBuffer::BindDescriptorSers(VkPipelineBindPoint bindPoint, Pipeline& pipeline, uint32_t firstSet, uint32_t setsCount, 
-		VkDescriptorSet* descriptorSets, uint32_t dynamicOffsetCount, uint32_t* pDynamicOffsets)
+	void CommandBuffer::BindDescriptorSers(
+		VkPipelineBindPoint bindPoint, 
+		std::unique_ptr<Pipeline>& pipeline, 
+		uint32_t firstSet, uint32_t setsCount,
+		VkDescriptorSet* descriptorSets, 
+		uint32_t dynamicOffsetCount, 
+		uint32_t* pDynamicOffsets)
 	{
-		vkCmdBindDescriptorSets(mCommandBuffer, bindPoint, pipeline.GetNativePipelineLayout(), firstSet, setsCount, descriptorSets, dynamicOffsetCount, pDynamicOffsets);
+		vkCmdBindDescriptorSets(mCommandBuffer, bindPoint, pipeline->GetNativePipelineLayout(), firstSet, setsCount, descriptorSets, dynamicOffsetCount, pDynamicOffsets);
 	}
 
 	void CommandBuffer::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)

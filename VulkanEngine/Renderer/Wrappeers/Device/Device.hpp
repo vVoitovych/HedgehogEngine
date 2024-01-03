@@ -3,9 +3,14 @@
 #include <vulkan/vulkan.h>
 #include <optional>
 #include <vector>
+#include <memory>
 
 namespace Renderer
 {
+	class WindowManager;
+	class DescriptorSetLayout;
+	const class UBO;
+
 	struct QueueFamilyIndices
 	{
 		std::optional<uint32_t> mGraphicsFamily;
@@ -27,13 +32,12 @@ namespace Renderer
 	class Device
 	{
 	public:
-		Device();
+		Device(const std::unique_ptr<WindowManager>& windowManager);
 		~Device();
 
 		Device(const Device&) = delete;
 		Device& operator=(const Device&) = delete;
 
-		void Initialize(class WindowManager& windowManager);
 		void Cleanup();
 
 		VkQueue GetNativeGraphicsQueue() const;
@@ -69,7 +73,10 @@ namespace Renderer
 		VkCommandBuffer BeginSingleTimeCommands() const;
 		void EndSingleTimeCommands(VkCommandBuffer commandBuffer) const;
 	public:
-		void AllocateDescriptorSet(class DescriptorSetLayout& descriptorSetLayout, const class UBO& ubo, VkDescriptorSet* pDescriptorSet) const;
+		void AllocateDescriptorSet(
+			std::unique_ptr<DescriptorSetLayout>& descriptorSetLayout, 
+			const std::unique_ptr<UBO>& ubo, 
+			VkDescriptorSet* pDescriptorSet) const;
 		void FreeDescriptorSet(VkDescriptorSet* pDescriptorSet) const;
 
 	public:
