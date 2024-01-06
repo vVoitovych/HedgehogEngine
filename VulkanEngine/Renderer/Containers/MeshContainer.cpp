@@ -62,8 +62,8 @@ namespace Renderer
         for (size_t i = 0; i < mMeshes.size(); ++i)
         {
             auto& mesh = mMeshes[i];
-            mesh.SetVertexOffset(verticies.size());
-            mesh.SetFirstIndex(indicies.size());
+            mesh.SetVertexOffset(static_cast<uint32_t>(verticies.size()));
+            mesh.SetFirstIndex(static_cast<uint32_t>(indicies.size()));
 
             auto meshVerticies = mesh.GetVerticies();
             for (size_t j = 0; j < meshVerticies.size(); ++j)
