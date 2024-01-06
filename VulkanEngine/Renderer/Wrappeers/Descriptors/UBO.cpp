@@ -39,6 +39,31 @@ namespace Renderer
 		}
 	}
 
+	UBO::UBO(UBO&& other) noexcept
+		: mUniformBuffer(other.mUniformBuffer)
+		, mUniformBufferMemory(other.mUniformBufferMemory)
+		, mUniformBufferMapped(other.mUniformBufferMapped)
+	{
+		other.mUniformBuffer = nullptr;
+		other.mUniformBufferMemory = nullptr;
+		other.mUniformBufferMapped = nullptr;
+	}
+
+	UBO& UBO::operator=(UBO&& other) noexcept
+	{
+		if (this != &other)
+		{
+			mUniformBuffer = other.mUniformBuffer;
+			mUniformBufferMemory = other.mUniformBufferMemory;
+			mUniformBufferMapped = other.mUniformBufferMapped;
+
+			other.mUniformBuffer = nullptr;
+			other.mUniformBufferMemory = nullptr;
+			other.mUniformBufferMapped = nullptr;
+		}
+		return *this;
+	}
+
 	void UBO::Cleanup(const std::unique_ptr<Device>& device)
 	{
 		device->DestroyBuffer(mUniformBuffer, nullptr);

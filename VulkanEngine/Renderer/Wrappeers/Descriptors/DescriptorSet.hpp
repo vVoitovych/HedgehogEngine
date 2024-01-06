@@ -17,13 +17,16 @@ namespace Renderer
 		DescriptorSet(
 			const std::unique_ptr<Device>& device, 
 			std::unique_ptr<DescriptorSetLayout>& descriptorSetLayout, 
-			std::unique_ptr<UBO>& ubo, 
+			UBO& ubo, 
 			std::unique_ptr<TextureImage>& image, 
 			std::unique_ptr<TextureSampler>& sampler);
 		~DescriptorSet();
 
 		DescriptorSet(const DescriptorSet&) = delete;
 		DescriptorSet& operator=(const DescriptorSet&) = delete;
+
+		DescriptorSet(DescriptorSet&& other) noexcept;
+		DescriptorSet& operator=(DescriptorSet&& other) noexcept;
 
 		void Cleanup(const std::unique_ptr<Device>& device);
 

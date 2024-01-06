@@ -75,7 +75,7 @@ namespace Renderer
 	public:
 		void AllocateDescriptorSet(
 			std::unique_ptr<DescriptorSetLayout>& descriptorSetLayout, 
-			const std::unique_ptr<UBO>& ubo, 
+			UBO& ubo, 
 			VkDescriptorSet* pDescriptorSet) const;
 		void FreeDescriptorSet(VkDescriptorSet* pDescriptorSet) const;
 

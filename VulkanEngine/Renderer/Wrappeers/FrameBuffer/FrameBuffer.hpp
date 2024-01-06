@@ -23,8 +23,8 @@ namespace Renderer
 		FrameBuffer(const FrameBuffer&) = delete;
 		FrameBuffer& operator=(const FrameBuffer&) = delete;
 
-		FrameBuffer(FrameBuffer&& other);
-		FrameBuffer& operator=(FrameBuffer&& other);
+		FrameBuffer(FrameBuffer&& other) noexcept;
+		FrameBuffer& operator=(FrameBuffer&& other) noexcept;
 
 		void Cleanup(const std::unique_ptr<Device>& device);
 
