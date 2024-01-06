@@ -39,8 +39,8 @@ namespace Renderer
         std::unique_ptr<DepthBuffer> mDepthBuffer;
         std::vector<FrameBuffer> mFrameBuffers;
 
-        std::unique_ptr<DescriptorSet> mDescriptorSet;
-        std::unique_ptr<UBO> mUniformBuffer;
+        std::vector<DescriptorSet> mDescriptorSets;
+        std::vector<UBO> mUniformBuffers;
 
         // TODO remome teture and texture sampler from render pass
         std::unique_ptr<TextureImage> mTextureImage;

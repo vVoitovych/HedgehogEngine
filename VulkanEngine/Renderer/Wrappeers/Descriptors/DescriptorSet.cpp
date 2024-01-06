@@ -15,7 +15,7 @@ namespace Renderer
 	DescriptorSet::DescriptorSet(
         const std::unique_ptr<Device>& device,
         std::unique_ptr<DescriptorSetLayout>& descriptorSetLayout,
-        std::unique_ptr<UBO>& ubo,
+        UBO& ubo,
         std::unique_ptr<TextureImage>& image,
         std::unique_ptr<TextureSampler>& sampler)
 		: mDescriptorSet(nullptr)
@@ -23,7 +23,7 @@ namespace Renderer
         device->AllocateDescriptorSet(descriptorSetLayout, ubo, &mDescriptorSet);
 
         VkDescriptorBufferInfo bufferInfo{};
-        bufferInfo.buffer = ubo->GetNativeBuffer();
+        bufferInfo.buffer = ubo.GetNativeBuffer();
         bufferInfo.offset = 0;
         bufferInfo.range = sizeof(UniformBufferObject);
 
@@ -62,7 +62,24 @@ namespace Renderer
         }
 	}
 
-	void DescriptorSet::Cleanup(const std::unique_ptr<Device>& device)
+    DescriptorSet::DescriptorSet(DescriptorSet&& other) noexcept
+        : mDescriptorSet(other.mDescriptorSet)
+    {
+        other.mDescriptorSet = nullptr;
+    }
+
+    DescriptorSet& DescriptorSet::operator=(DescriptorSet&& other) noexcept
+    {
+        if (this != &other)
+        {
+            mDescriptorSet = other.mDescriptorSet;
+
+            other.mDescriptorSet = nullptr;
+        }
+        return *this;
+    }
+
+    void DescriptorSet::Cleanup(const std::unique_ptr<Device>& device)
 	{
         device->FreeDescriptorSet(&mDescriptorSet);
         mDescriptorSet = nullptr;

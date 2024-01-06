@@ -33,7 +33,7 @@ namespace Renderer
 		auto extend = engineContext->GetExtent();
 		auto backBufferIndex = engineContext->GetBackBufferIndex();
 
-		mUniformBuffer->UpdateUniformBuffer(renderContext);
+		mUniformBuffers[frameIndex].UpdateUniformBuffer(renderContext);
 		
 		commandBuffer.BeginRenderPass(extend, mRenderPass, mFrameBuffers[backBufferIndex].GetNativeFrameBuffer());
 		commandBuffer.BindPipeline(mPipeline, VK_PIPELINE_BIND_POINT_GRAPHICS);
@@ -44,7 +44,7 @@ namespace Renderer
 		VkDeviceSize offsets[] = { 0 };
 		commandBuffer.BindVertexBuffers(0, 1, vertexBuffers, offsets);
 		commandBuffer.BindIndexBuffer(meshContainer.GetIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
-		commandBuffer.BindDescriptorSers(VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeline, 0, 1, mDescriptorSet->GetNativeSet(), 0, nullptr);
+		commandBuffer.BindDescriptorSers(VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeline, 0, 1, mDescriptorSets[frameIndex].GetNativeSet(), 0, nullptr);
 
 		auto& mesh = meshContainer.GetMesh(0);
 		commandBuffer.DrawIndexed(mesh.GetIndexCount(), 1, mesh.GetFirstIndex(), mesh.GetVertexOffset(), 0);
@@ -63,20 +63,35 @@ namespace Renderer
 		mTextureImage = std::make_unique<TextureImage>(device, "Textures\\viking_room.png", VK_FORMAT_R8G8B8A8_SRGB);
 		mTextureSampler = std::make_unique<TextureSampler>(device);
 
-		mUniformBuffer = std::make_unique<UBO>(device);
-		mDescriptorSet = std::make_unique<DescriptorSet>(device, mDescriptorSetLayout, mUniformBuffer, mTextureImage, mTextureSampler);
-
 		mDepthBuffer = std::make_unique<DepthBuffer>(device, swapChain->GetSwapChainExtend());
+
 		mFrameBuffers.clear();
+		mUniformBuffers.clear();
+		mDescriptorSets.clear();
 		size_t swapChainImagesSize = swapChain->GetSwapChainImagesSize();
 		for (size_t i = 0; i < swapChainImagesSize; ++i)
 		{
 			std::vector<VkImageView> attacments = { swapChain->GetNativeSwapChainImageView(i), mDepthBuffer->GetNativeView() };
-			FrameBuffer frameBuffer(device,
+			FrameBuffer frameBuffer(
+				device,
 				attacments,
 				swapChain->GetSwapChainExtend(),
 				mRenderPass);
 			mFrameBuffers.push_back(std::move(frameBuffer));
+		}
+
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+		{
+			UBO uniformBuffer(device);
+			mUniformBuffers.push_back(std::move(uniformBuffer));
+
+			DescriptorSet descriptorSet(
+				device, 
+				mDescriptorSetLayout, 
+				mUniformBuffers[i], 
+				mTextureImage, 
+				mTextureSampler);
+			mDescriptorSets.push_back(std::move(descriptorSet));
 		}
 
 		pipelineInfo->Cleanup(device);
@@ -92,9 +107,13 @@ namespace Renderer
 		{
 			mFrameBuffers[i].Cleanup(device);
 		}
+
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+		{
+			mDescriptorSets[i].Cleanup(device);
+			mUniformBuffers[i].Cleanup(device);
+		}
 		mDepthBuffer->Cleanup(device);
-		mDescriptorSet->Cleanup(device);
-		mUniformBuffer->Cleanup(device);
 	
 		mTextureImage->Cleanup(device);
 		mTextureSampler->Cleanup(device);

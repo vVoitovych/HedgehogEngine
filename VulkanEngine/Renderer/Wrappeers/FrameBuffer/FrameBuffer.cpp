@@ -41,13 +41,13 @@ namespace Renderer
 		}
 	}
 
-	FrameBuffer::FrameBuffer(FrameBuffer&& other)
+	FrameBuffer::FrameBuffer(FrameBuffer&& other) noexcept
 		: mFrameBuffer(other.mFrameBuffer)
 	{
 		other.mFrameBuffer = nullptr;
 	}
 
-	FrameBuffer& FrameBuffer::operator=(FrameBuffer&& other)
+	FrameBuffer& FrameBuffer::operator=(FrameBuffer&& other) noexcept
 	{
 		if (this != &other)
 		{

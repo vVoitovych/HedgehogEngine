@@ -17,6 +17,9 @@ namespace Renderer
 		UBO(const UBO&) = delete;
 		UBO& operator=(const UBO&) = delete;
 
+		UBO(UBO&& other) noexcept;
+		UBO& operator=(UBO&& other) noexcept;
+
 		void Cleanup(const std::unique_ptr<Device>& device);
 
 		void UpdateUniformBuffer(std::unique_ptr< RenderContext>& context);
