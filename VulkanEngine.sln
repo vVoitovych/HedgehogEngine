@@ -5,6 +5,10 @@ VisualStudioVersion = 16.0.33130.400
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VulkanEngine", "VulkanEngine\VulkanEngine.vcxproj", "{8E967722-644A-4284-89BC-6B4D7B9DC40D}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ThirdPart", "ThirdPart", "{3753D6A6-77BA-47B5-8B9D-1795C30F0F91}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ImGui", "ImGui\ImGui.vcxproj", "{C7AF49C8-283E-4644-AE90-EABFBE2E6B91}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,9 +25,20 @@ Global
 		{8E967722-644A-4284-89BC-6B4D7B9DC40D}.Release|x64.Build.0 = Release|x64
 		{8E967722-644A-4284-89BC-6B4D7B9DC40D}.Release|x86.ActiveCfg = Release|Win32
 		{8E967722-644A-4284-89BC-6B4D7B9DC40D}.Release|x86.Build.0 = Release|Win32
+		{C7AF49C8-283E-4644-AE90-EABFBE2E6B91}.Debug|x64.ActiveCfg = Debug|x64
+		{C7AF49C8-283E-4644-AE90-EABFBE2E6B91}.Debug|x64.Build.0 = Debug|x64
+		{C7AF49C8-283E-4644-AE90-EABFBE2E6B91}.Debug|x86.ActiveCfg = Debug|Win32
+		{C7AF49C8-283E-4644-AE90-EABFBE2E6B91}.Debug|x86.Build.0 = Debug|Win32
+		{C7AF49C8-283E-4644-AE90-EABFBE2E6B91}.Release|x64.ActiveCfg = Release|x64
+		{C7AF49C8-283E-4644-AE90-EABFBE2E6B91}.Release|x64.Build.0 = Release|x64
+		{C7AF49C8-283E-4644-AE90-EABFBE2E6B91}.Release|x86.ActiveCfg = Release|Win32
+		{C7AF49C8-283E-4644-AE90-EABFBE2E6B91}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{C7AF49C8-283E-4644-AE90-EABFBE2E6B91} = {3753D6A6-77BA-47B5-8B9D-1795C30F0F91}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {202914B8-A49B-4AF8-81B0-A3F0C391B1EE}
