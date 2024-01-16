@@ -1,8 +1,8 @@
 #pragma once
 
-#include "VulkanEngine/ECS/Coordinator.h"
-#include "VulkanEngine/ECS/Entity.h"
-#include "VulkanEngine/Scene/SceneComponents/MeshComponent.hpp"
+#include "ECS/Coordinator.h"
+#include "ECS/Entity.h"
+#include "Scene/SceneComponents/MeshComponent.hpp"
 
 #include <vector>
 

@@ -1,6 +1,6 @@
 #include "HierarchySystem.hpp"
-#include "VulkanEngine/Scene/SceneComponents/HierarchyComponent.hpp"
-#include "VulkanEngine/Scene/SceneComponents/TransformComponent.hpp"
+#include "Scene/SceneComponents/HierarchyComponent.hpp"
+#include "Scene/SceneComponents/TransformComponent.hpp"
 
 namespace Scene
 {

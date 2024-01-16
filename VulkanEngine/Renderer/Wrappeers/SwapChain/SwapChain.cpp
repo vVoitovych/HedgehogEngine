@@ -1,9 +1,9 @@
 #include "SwapChain.hpp"
 
-#include "VulkanEngine/Renderer/Wrappeers/Device/Device.hpp"
-#include "VulkanEngine/Renderer/WindowManagment/WindowManager.hpp"
-#include "VulkanEngine/Renderer/Common/EngineDebugBreak.hpp"
-#include "VulkanEngine/Logger/Logger.hpp"
+#include "Renderer/Wrappeers/Device/Device.hpp"
+#include "Renderer/WindowManagment/WindowManager.hpp"
+#include "Renderer/Common/EngineDebugBreak.hpp"
+#include "Logger/Logger.hpp"
 
 #include <limits>
 #include <algorithm>

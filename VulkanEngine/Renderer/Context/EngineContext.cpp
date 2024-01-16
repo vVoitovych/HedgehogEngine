@@ -1,6 +1,6 @@
 #include "EngineContext.hpp"
-#include "VulkanEngine/Renderer/Wrappeers/Device/Device.hpp"
-#include "VulkanEngine/Renderer/Wrappeers/SwapChain/SwapChain.hpp"
+#include "Renderer/Wrappeers/Device/Device.hpp"
+#include "Renderer/Wrappeers/SwapChain/SwapChain.hpp"
 
 namespace Renderer
 {

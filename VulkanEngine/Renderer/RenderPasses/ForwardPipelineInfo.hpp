@@ -1,6 +1,6 @@
 #pragma once
 
-#include "VulkanEngine/Renderer/Wrappeers/Pipeline/PipelineInfo.hpp"
+#include "Renderer/Wrappeers/Pipeline/PipelineInfo.hpp"
 
 #include <vulkan/vulkan.h>
 #include <memory>

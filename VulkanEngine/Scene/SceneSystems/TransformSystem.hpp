@@ -1,7 +1,7 @@
 #pragma once
 
-#include "VulkanEngine/ECS/System.h"
-#include "VulkanEngine/ECS/Coordinator.h"
+#include "ECS/System.h"
+#include "ECS/Coordinator.h"
 
 namespace Scene
 {

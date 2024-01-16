@@ -1,12 +1,12 @@
 #include "Pipeline.hpp"
 #include "PipelineInfo.hpp"
 
-#include "VulkanEngine/Renderer/Wrappeers/Device/Device.hpp"
-#include "VulkanEngine/Renderer/Wrappeers/RenderPass/RenderPass.hpp"
-#include "VulkanEngine/Renderer/Wrappeers/Descriptors/DescriptorSetLayout.hpp"
-#include "VulkanEngine/Renderer/Containers/VertexDescription.hpp"
-#include "VulkanEngine/Logger/Logger.hpp"
-#include "VulkanEngine/Renderer/Common/EngineDebugBreak.hpp"
+#include "Renderer/Wrappeers/Device/Device.hpp"
+#include "Renderer/Wrappeers/RenderPass/RenderPass.hpp"
+#include "Renderer/Wrappeers/Descriptors/DescriptorSetLayout.hpp"
+#include "Renderer/Containers/VertexDescription.hpp"
+#include "Logger/Logger.hpp"
+#include "Renderer/Common/EngineDebugBreak.hpp"
 
 #include <fstream>
 

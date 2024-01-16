@@ -1,10 +1,10 @@
 #include "Mesh.hpp"
 
 #define TINYOBJLOADER_IMPLEMENTATION
-#include "VulkanEngine/Libraries/TinyObjectLoader/tiny_obj_loader.h"
+#include "Libraries/TinyObjectLoader/tiny_obj_loader.h"
 
-#include "VulkanEngine/Logger/Logger.hpp"
-#include "VulkanEngine/ContentLoader/CommonFunctions.hpp"
+#include "Logger/Logger.hpp"
+#include "ContentLoader/CommonFunctions.hpp"
 
 #include <unordered_map>
 

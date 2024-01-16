@@ -9,7 +9,7 @@
 #include "Context/ThreadContext.hpp"
 #include "RenderQueue/RenderQueue.hpp"
 
-#include "VulkanEngine/Logger/Logger.hpp"
+#include "Logger/Logger.hpp"
 
 #include <chrono>
 

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "VulkanEngine/Renderer/Wrappeers/Commands/CommandBuffer.hpp"
-#include "VulkanEngine/Renderer/Wrappeers/SyncObjects/SyncObject.hpp"
+#include "Renderer/Wrappeers/Commands/CommandBuffer.hpp"
+#include "Renderer/Wrappeers/SyncObjects/SyncObject.hpp"
 
 #include <vector>
 #include <memory>

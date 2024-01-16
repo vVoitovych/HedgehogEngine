@@ -1,12 +1,12 @@
 #include "PresentPass.hpp"
 
-#include "VulkanEngine/Renderer/Wrappeers/Device/Device.hpp"
-#include "VulkanEngine/Renderer/Wrappeers/SwapChain/SwapChain.hpp"
-#include "VulkanEngine/Renderer/Context/RenderContext.hpp"
-#include "VulkanEngine/Renderer/Context/ThreadContext.hpp"
-#include "VulkanEngine/Renderer/Context/EngineContext.hpp"
-#include "VulkanEngine/Renderer/WindowManagment/WindowManager.hpp"
-#include "VulkanEngine/Renderer/Wrappeers/Commands/CommandBuffer.hpp"
+#include "Renderer/Wrappeers/Device/Device.hpp"
+#include "Renderer/Wrappeers/SwapChain/SwapChain.hpp"
+#include "Renderer/Context/RenderContext.hpp"
+#include "Renderer/Context/ThreadContext.hpp"
+#include "Renderer/Context/EngineContext.hpp"
+#include "Renderer/WindowManagment/WindowManager.hpp"
+#include "Renderer/Wrappeers/Commands/CommandBuffer.hpp"
 
 #include <stdexcept>
 
@@ -24,7 +24,7 @@ namespace Renderer
 	{
 		if (!mDevice.has_value() || !mSwapChain.has_value() || !mGraphicQueue.has_value() || !mPresentQueue.has_value())
 		{
-			throw std::runtime_error("Init pass doesn't initialized!");
+			throw std::runtime_error("Present pass doesn't initialized!");
 		}
 		auto [engineContext, frameContext, threadContext] = renderContext->GetContexts();
 		auto& syncObject = threadContext->GetSyncObject();

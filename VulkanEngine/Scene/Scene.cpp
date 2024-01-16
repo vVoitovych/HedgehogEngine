@@ -1,8 +1,8 @@
 #include "Scene.hpp"
 
-#include "VulkanEngine/Scene/SceneComponents/TransformComponent.hpp"
-#include "VulkanEngine/Scene/SceneComponents/HierarchyComponent.hpp"
-#include "VulkanEngine/Scene/SceneComponents/MeshComponent.hpp"
+#include "Scene/SceneComponents/TransformComponent.hpp"
+#include "Scene/SceneComponents/HierarchyComponent.hpp"
+#include "Scene/SceneComponents/MeshComponent.hpp"
 
 #include <sstream>
 

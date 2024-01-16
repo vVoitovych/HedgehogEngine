@@ -2,7 +2,7 @@
 #include "CommonFunctions.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "VulkanEngine/Libraries/stb/stb_image.hpp"
+#include "Libraries/stb/stb_image.hpp"
 
 #include <stdexcept>
 

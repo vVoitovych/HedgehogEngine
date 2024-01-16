@@ -1,10 +1,10 @@
 #include "CommandBuffer.hpp"
-#include "VulkanEngine/Renderer/Wrappeers/Device/Device.hpp"
-#include "VulkanEngine/Renderer/Wrappeers/SwapChain/SwapChain.hpp"
-#include "VulkanEngine/Renderer/Wrappeers/RenderPass/RenderPass.hpp"
-#include "VulkanEngine/Renderer/Wrappeers/Pipeline/Pipeline.hpp"
-#include "VulkanEngine/Logger/Logger.hpp"
-#include "VulkanEngine/Renderer/Common/EngineDebugBreak.hpp"
+#include "Renderer/Wrappeers/Device/Device.hpp"
+#include "Renderer/Wrappeers/SwapChain/SwapChain.hpp"
+#include "Renderer/Wrappeers/RenderPass/RenderPass.hpp"
+#include "Renderer/Wrappeers/Pipeline/Pipeline.hpp"
+#include "Logger/Logger.hpp"
+#include "Renderer/Common/EngineDebugBreak.hpp"
 
 #include <array>
 

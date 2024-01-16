@@ -1,10 +1,10 @@
 #include "UBO.hpp"
-#include "VulkanEngine/Renderer/Wrappeers/Device/Device.hpp"
+#include "Renderer/Wrappeers/Device/Device.hpp"
 #include "UBOInfo.hpp"
-#include "VulkanEngine/Logger/Logger.hpp"
-#include "VulkanEngine/Renderer/Common/EngineDebugBreak.hpp"
-#include "VulkanEngine/Renderer/Context/RenderContext.hpp"
-#include "VulkanEngine/Renderer/Context/FrameContext.hpp"
+#include "Logger/Logger.hpp"
+#include "Renderer/Common/EngineDebugBreak.hpp"
+#include "Renderer/Context/RenderContext.hpp"
+#include "Renderer/Context/FrameContext.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <chrono>

@@ -2,25 +2,25 @@
 #include "ForwardPassInfo.hpp"
 #include "ForwardPipelineInfo.hpp"
 
-#include "VulkanEngine/Renderer/Context/RenderContext.hpp"
-#include "VulkanEngine/Renderer/Context/EngineContext.hpp"
-#include "VulkanEngine/Renderer/Context/ThreadContext.hpp"
+#include "Renderer/Context/RenderContext.hpp"
+#include "Renderer/Context/EngineContext.hpp"
+#include "Renderer/Context/ThreadContext.hpp"
 
-#include "VulkanEngine/Renderer/Wrappeers/Device/Device.hpp"
-#include "VulkanEngine/Renderer/Wrappeers/SwapChain/SwapChain.hpp"
-#include "VulkanEngine/Renderer/Wrappeers/RenderPass/RenderPass.hpp"
+#include "Renderer/Wrappeers/Device/Device.hpp"
+#include "Renderer/Wrappeers/SwapChain/SwapChain.hpp"
+#include "Renderer/Wrappeers/RenderPass/RenderPass.hpp"
 
-#include "VulkanEngine/Renderer/Wrappeers/Resources/DepthBuffer/DepthBuffer.hpp"
-#include "VulkanEngine/Renderer/Wrappeers/FrameBuffer/FrameBuffer.hpp"
-#include "VulkanEngine/Renderer/Wrappeers/RenderPass/RenderPass.hpp"
-#include "VulkanEngine/Renderer/Wrappeers/Descriptors/DescriptorSetLayout.hpp"
-#include "VulkanEngine/Renderer/Wrappeers/Pipeline/Pipeline.hpp"
-#include "VulkanEngine/Renderer/Wrappeers/Descriptors/DescriptorSet.hpp"
-#include "VulkanEngine/Renderer/Wrappeers/Descriptors/UBO.hpp"
-#include "VulkanEngine/Renderer/Common/RendererSettings.hpp"
+#include "Renderer/Wrappeers/Resources/DepthBuffer/DepthBuffer.hpp"
+#include "Renderer/Wrappeers/FrameBuffer/FrameBuffer.hpp"
+#include "Renderer/Wrappeers/RenderPass/RenderPass.hpp"
+#include "Renderer/Wrappeers/Descriptors/DescriptorSetLayout.hpp"
+#include "Renderer/Wrappeers/Pipeline/Pipeline.hpp"
+#include "Renderer/Wrappeers/Descriptors/DescriptorSet.hpp"
+#include "Renderer/Wrappeers/Descriptors/UBO.hpp"
+#include "Renderer/Common/RendererSettings.hpp"
 // TODO remome texture and texture sampler from render pass
-#include "VulkanEngine/Renderer/Wrappeers/Resources/TextureImage/TextureImage.hpp"
-#include "VulkanEngine/Renderer/Wrappeers/Resources/TextureImage/TextureSampler.hpp"
+#include "Renderer/Wrappeers/Resources/TextureImage/TextureImage.hpp"
+#include "Renderer/Wrappeers/Resources/TextureImage/TextureSampler.hpp"
 
 namespace Renderer
 {

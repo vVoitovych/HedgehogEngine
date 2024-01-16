@@ -1,9 +1,5 @@
 #pragma once 
 
-#include "VulkanEngine/Renderer/RenderPasses/InitPass.hpp"
-#include "VulkanEngine/Renderer/RenderPasses/ForwardPass.hpp"
-#include "VulkanEngine/Renderer/RenderPasses/PresentPass.hpp"
-
 #include <memory>
 
 namespace Renderer
@@ -11,6 +7,10 @@ namespace Renderer
 	class Device;
 	class SwapChain;
 	class RenderContext;
+
+	class InitPass;
+	class ForwardPass;
+	class PresentPass;
 
 	class RenderQueue
 	{

@@ -1,9 +1,13 @@
 #include "RenderQueue.hpp"
 
-#include "VulkanEngine/Renderer/Wrappeers/Device/Device.hpp"
-#include "VulkanEngine/Renderer/Wrappeers/SwapChain/SwapChain.hpp"
-#include "VulkanEngine/Renderer/Context/RenderContext.hpp"
-#include "VulkanEngine/Renderer/Context/EngineContext.hpp"
+#include "Renderer/Wrappeers/Device/Device.hpp"
+#include "Renderer/Wrappeers/SwapChain/SwapChain.hpp"
+#include "Renderer/Context/RenderContext.hpp"
+#include "Renderer/Context/EngineContext.hpp"
+
+#include "Renderer/RenderPasses/InitPass.hpp"
+#include "Renderer/RenderPasses/ForwardPass.hpp"
+#include "Renderer/RenderPasses/PresentPass.hpp"
 
 namespace Renderer
 {

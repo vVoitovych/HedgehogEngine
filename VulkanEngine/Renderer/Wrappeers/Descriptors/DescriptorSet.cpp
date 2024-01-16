@@ -1,12 +1,12 @@
 #include "DescriptorSet.hpp"
-#include "VulkanEngine/Renderer/Wrappeers/Device/Device.hpp"
+#include "Renderer/Wrappeers/Device/Device.hpp"
 #include "DescriptorSetLayout.hpp"
 #include "UBOInfo.hpp"
 #include "UBO.hpp"
-#include "VulkanEngine/Logger/Logger.hpp"
-#include "VulkanEngine/Renderer/Common/EngineDebugBreak.hpp"
-#include "VulkanEngine/Renderer/Wrappeers/Resources/TextureImage/TextureSampler.hpp"
-#include "VulkanEngine/Renderer/Wrappeers/Resources/TextureImage/TextureImage.hpp"
+#include "Logger/Logger.hpp"
+#include "Renderer/Common/EngineDebugBreak.hpp"
+#include "Renderer/Wrappeers/Resources/TextureImage/TextureSampler.hpp"
+#include "Renderer/Wrappeers/Resources/TextureImage/TextureImage.hpp"
 
 #include <array>
 

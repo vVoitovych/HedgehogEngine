@@ -1,7 +1,7 @@
 #include "Camera.hpp"
 
-#include "VulkanEngine/Renderer/WindowManagment/Controls.hpp"
-#include "VulkanEngine/Logger/Logger.hpp"
+#include "Renderer/WindowManagment/Controls.hpp"
+#include "Logger/Logger.hpp"
 
 namespace Renderer
 {

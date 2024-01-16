@@ -1,6 +1,6 @@
 #pragma once
 
-#include "VulkanEngine/ECS/Entity.h"
+#include "ECS/Entity.h"
 #include <vector>
 #include <string>
 

@@ -1,6 +1,6 @@
 #include "TransformSystem.hpp"
 
-#include "VulkanEngine/Scene/SceneComponents/TransformComponent.hpp"
+#include "Scene/SceneComponents/TransformComponent.hpp"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>

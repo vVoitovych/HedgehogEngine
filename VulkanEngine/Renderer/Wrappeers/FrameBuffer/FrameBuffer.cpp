@@ -1,8 +1,8 @@
 #include "FrameBuffer.hpp"
-#include "VulkanEngine/Renderer/Wrappeers/Device/Device.hpp"
-#include "VulkanEngine/Renderer/Wrappeers/RenderPass/RenderPass.hpp"
-#include "VulkanEngine/Renderer/Common/EngineDebugBreak.hpp"
-#include "VulkanEngine/Logger/Logger.hpp"
+#include "Renderer/Wrappeers/Device/Device.hpp"
+#include "Renderer/Wrappeers/RenderPass/RenderPass.hpp"
+#include "Renderer/Common/EngineDebugBreak.hpp"
+#include "Logger/Logger.hpp"
 
 #include <array>
 

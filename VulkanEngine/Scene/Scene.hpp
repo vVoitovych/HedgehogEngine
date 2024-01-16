@@ -1,9 +1,9 @@
 #pragma once
 
-#include "VulkanEngine/ECS/Coordinator.h"
-#include "VulkanEngine/Scene/SceneSystems/TransformSystem.hpp"
-#include "VulkanEngine/Scene/SceneSystems/HierarchySystem.hpp"
-#include "VulkanEngine/Scene/SceneSystems/MeshSystem.hpp"
+#include "ECS/Coordinator.h"
+#include "Scene/SceneSystems/TransformSystem.hpp"
+#include "Scene/SceneSystems/HierarchySystem.hpp"
+#include "Scene/SceneSystems/MeshSystem.hpp"
 
 #include <set>
 #include <glm/glm.hpp>

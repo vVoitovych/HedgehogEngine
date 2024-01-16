@@ -1,5 +1,5 @@
 #include "FrameContext.hpp"
-#include "VulkanEngine/Renderer/Camera/Camera.hpp"
+#include "Renderer/Camera/Camera.hpp"
 
 namespace Renderer
 {

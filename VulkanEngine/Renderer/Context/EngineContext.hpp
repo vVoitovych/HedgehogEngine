@@ -1,10 +1,10 @@
 #pragma once
 
-#include "VulkanEngine/Renderer/Camera/Camera.hpp"
-#include "VulkanEngine/Scene/Scene.hpp"
-#include "VulkanEngine/Renderer/Containers/MeshContainer.hpp"
+#include "Renderer/Camera/Camera.hpp"
+#include "Scene/Scene.hpp"
+#include "Renderer/Containers/MeshContainer.hpp"
 
-#include "VulkanEngine/Renderer/WindowManagment/WindowManager.hpp"
+#include "Renderer/WindowManagment/WindowManager.hpp"
 
 #include <vulkan/vulkan.h>
 #include <memory>

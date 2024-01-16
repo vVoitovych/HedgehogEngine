@@ -1,7 +1,5 @@
 #pragma once
 
-#include "VulkanEngine/Renderer/Wrappeers/Device/Device.hpp"
-
 #include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
 #include <vector>
@@ -9,6 +7,7 @@
 
 namespace Renderer
 {
+	class Device;
 	class WindowManager;
 
 	class SwapChain

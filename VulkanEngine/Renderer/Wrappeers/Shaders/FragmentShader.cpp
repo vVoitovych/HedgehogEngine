@@ -2,9 +2,6 @@
 
 namespace Renderer
 {
-
-
-
 	FragmentShader::FragmentShader(const std::unique_ptr<Device>& device, const std::string& fileName)
 		:Shader(device, fileName)
 	{

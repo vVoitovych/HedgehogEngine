@@ -1,9 +1,9 @@
 #include "ForwardPipelineInfo.hpp"
 
-#include "VulkanEngine/Renderer/Wrappeers/Shaders/VertexShader.hpp"
-#include "VulkanEngine/Renderer/Wrappeers/Shaders/FragmentShader.hpp"
-#include "VulkanEngine/Renderer/Containers/VertexDescription.hpp"
-#include "VulkanEngine/Logger/Logger.hpp"
+#include "Renderer/Wrappeers/Shaders/VertexShader.hpp"
+#include "Renderer/Wrappeers/Shaders/FragmentShader.hpp"
+#include "Renderer/Containers/VertexDescription.hpp"
+#include "Logger/Logger.hpp"
 
 namespace Renderer
 {

@@ -1,7 +1,7 @@
 #include "Shader.hpp"
 
-#include "VulkanEngine/Renderer/Wrappeers/Device/Device.hpp"
-#include "VulkanEngine/Logger/Logger.hpp"
+#include "Renderer/Wrappeers/Device/Device.hpp"
+#include "Logger/Logger.hpp"
 #include <Windows.h>
 #include <fstream>
 

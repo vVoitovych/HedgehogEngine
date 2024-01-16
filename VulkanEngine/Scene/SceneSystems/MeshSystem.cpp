@@ -1,6 +1,6 @@
 #include "MeshSystem.hpp"
-#include "VulkanEngine/ContentLoader/CommonFunctions.hpp"
-#include "VulkanEngine/Logger/Logger.hpp"
+#include "ContentLoader/CommonFunctions.hpp"
+#include "Logger/Logger.hpp"
 
 #include <algorithm>
 #include <filesystem>

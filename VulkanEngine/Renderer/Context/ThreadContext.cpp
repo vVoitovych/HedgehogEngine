@@ -1,8 +1,8 @@
 #include "ThreadContext.hpp"
-#include "VulkanEngine/Renderer/Wrappeers/Device/Device.hpp"
-#include "VulkanEngine/Logger/Logger.hpp"
-#include "VulkanEngine/Renderer/Common/EngineDebugBreak.hpp"
-#include "VulkanEngine/Renderer/Common/RendererSettings.hpp"
+#include "Renderer/Wrappeers/Device/Device.hpp"
+#include "Logger/Logger.hpp"
+#include "Renderer/Common/EngineDebugBreak.hpp"
+#include "Renderer/Common/RendererSettings.hpp"
 
 #include <stdexcept>
 
