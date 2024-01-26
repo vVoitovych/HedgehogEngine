@@ -57,6 +57,16 @@ namespace Renderer
 		return mDeltaTime;
 	}
 
+	void FrameContext::SetBackBufferIndex(uint32_t index)
+	{
+		mBackBufferIndex = index;
+	}
+
+	uint32_t FrameContext::GetBackBufferIndex() const
+	{
+		return mBackBufferIndex;
+	}
+
 }
 
 

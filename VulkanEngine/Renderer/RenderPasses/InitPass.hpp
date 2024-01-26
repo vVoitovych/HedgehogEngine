@@ -6,25 +6,18 @@
 
 namespace Renderer
 {
-    class Device;
-    class SwapChain;
     class RenderContext;
 
     class InitPass
     {
     public:
-        InitPass(const std::unique_ptr<Device>& device, const std::unique_ptr<SwapChain>& swapChain);
+        InitPass(const std::unique_ptr<RenderContext>& context);
         ~InitPass() = default;
 
-        void Render(std::unique_ptr<RenderContext>& renderContext);
+        void Render(std::unique_ptr<RenderContext>& context);
 
-        void Cleanup(const std::unique_ptr<Device>& device);
+        void Cleanup(const std::unique_ptr<RenderContext>& context);
 
-        void SetSwapChain(const std::unique_ptr<SwapChain>& swapChain);
-
-    private:
-        std::optional<VkDevice> mDevice;
-        std::optional<VkSwapchainKHR> mSwapChain;
     };
 
 }

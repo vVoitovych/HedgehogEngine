@@ -25,7 +25,7 @@ namespace Renderer
 		Camera(const Camera&) = default;
 		Camera& operator=(const Camera&) = default;
 
-		void UpdateCamera(float dt, float ratio, Controls& controls);
+		void UpdateCamera(float dt, float ratio, const Controls& controls);
 
 		void SetFov(float fov);
 		void SetAspect(float aspect);

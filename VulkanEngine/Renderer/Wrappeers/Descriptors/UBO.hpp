@@ -7,6 +7,7 @@ namespace Renderer
 {
 	class Device;
 	class RenderContext;
+	class Buffer;
 
 	class UBO
 	{
@@ -20,13 +21,13 @@ namespace Renderer
 		UBO(UBO&& other) noexcept;
 		UBO& operator=(UBO&& other) noexcept;
 
-		void Cleanup(const std::unique_ptr<Device>& device);
+		void Cleanup();
 
 		void UpdateUniformBuffer(std::unique_ptr< RenderContext>& context);
 		VkBuffer GetNativeBuffer();
 	private:
-		VkBuffer mUniformBuffer;
-		VkDeviceMemory mUniformBufferMemory;
+		std::unique_ptr<Buffer> mUniformBuffer;
+
 		void* mUniformBufferMapped;
 	};
 }

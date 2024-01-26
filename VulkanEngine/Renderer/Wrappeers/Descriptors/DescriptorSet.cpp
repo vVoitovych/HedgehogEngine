@@ -1,12 +1,13 @@
 #include "DescriptorSet.hpp"
 #include "Renderer/Wrappeers/Device/Device.hpp"
+#include "Renderer/Wrappeers/Descriptors/DescriptorPool.hpp"
 #include "DescriptorSetLayout.hpp"
 #include "UBOInfo.hpp"
 #include "UBO.hpp"
 #include "Logger/Logger.hpp"
 #include "Renderer/Common/EngineDebugBreak.hpp"
-#include "Renderer/Wrappeers/Resources/TextureImage/TextureSampler.hpp"
-#include "Renderer/Wrappeers/Resources/TextureImage/TextureImage.hpp"
+#include "Renderer/Wrappeers/Resources/Image/Image.hpp"
+#include "Renderer/Wrappeers/Descriptors/Sampler.hpp"
 
 #include <array>
 
@@ -14,13 +15,14 @@ namespace Renderer
 {
 	DescriptorSet::DescriptorSet(
         const std::unique_ptr<Device>& device,
+        const std::unique_ptr<DescriptorPool>& descriptorPool,
         std::unique_ptr<DescriptorSetLayout>& descriptorSetLayout,
         UBO& ubo,
-        std::unique_ptr<TextureImage>& image,
-        std::unique_ptr<TextureSampler>& sampler)
+        const Image& image,
+        const Sampler& sampler)
 		: mDescriptorSet(nullptr)
 	{
-        device->AllocateDescriptorSet(descriptorSetLayout, ubo, &mDescriptorSet);
+        descriptorPool->AllocDescriptorSet(device, descriptorSetLayout, &mDescriptorSet);
 
         VkDescriptorBufferInfo bufferInfo{};
         bufferInfo.buffer = ubo.GetNativeBuffer();
@@ -29,8 +31,8 @@ namespace Renderer
 
         VkDescriptorImageInfo imageInfo{};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imageInfo.imageView = image->GetNativeImageView();
-        imageInfo.sampler = sampler->GetNativeSampler();
+        imageInfo.imageView = image.GetNativeView();
+        imageInfo.sampler = sampler.GetNativeSampler();
 
         std::array< VkWriteDescriptorSet, 2> descriptorWrites{};
         descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -79,9 +81,9 @@ namespace Renderer
         return *this;
     }
 
-    void DescriptorSet::Cleanup(const std::unique_ptr<Device>& device)
+    void DescriptorSet::Cleanup(const std::unique_ptr<Device>& device, const std::unique_ptr<DescriptorPool>& descriptorPool)
 	{
-        device->FreeDescriptorSet(&mDescriptorSet);
+        descriptorPool->FreeDescriptorSet(device, &mDescriptorSet);
         mDescriptorSet = nullptr;
         LOGINFO("Vulkan descriptor set cleaned");
 	}

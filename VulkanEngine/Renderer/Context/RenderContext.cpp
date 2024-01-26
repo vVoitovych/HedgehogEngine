@@ -1,22 +1,20 @@
 #include "RenderContext.hpp"
 
+#include "VulkanContext.hpp"
 #include "EngineContext.hpp"
 #include "FrameContext.hpp"
 #include "ThreadContext.hpp"
-
-#include "Renderer/Wrappeers/Device/Device.hpp"
-#include "Renderer/Wrappeers/SwapChain/SwapChain.hpp"
-#include "Renderer/WindowManagment/WindowManager.hpp"
 
 #include <stdexcept>
 
 namespace Renderer
 {
-    RenderContext::RenderContext(const std::unique_ptr<Device>& device, const std::unique_ptr<SwapChain>& swapChain, std::unique_ptr<WindowManager>&& windowManager)
+    RenderContext::RenderContext()
     {
-        mEngineContext = std::make_unique<EngineContext>(device, swapChain, std::move(windowManager));
+        mVulkanContext = std::make_unique<VulkanContext>();
+        mEngineContext = std::make_unique<EngineContext>(mVulkanContext);
         mFrameContext = std::make_unique<FrameContext>();
-        mThreadContext = std::make_unique<ThreadContext>(device);
+        mThreadContext = std::make_unique<ThreadContext>(mVulkanContext);
     }
 
     RenderContext::~RenderContext()
@@ -25,15 +23,21 @@ namespace Renderer
 
     void RenderContext::UpdateContext(float dt)
     {
-        mEngineContext->UpdateContext(dt);
+        mEngineContext->UpdateContext(mVulkanContext, dt);
         mFrameContext->UpdateContext(mEngineContext->GetCamera());
 
     }
 
-    void RenderContext::Cleanup(const std::unique_ptr<Device>& device)
+    void RenderContext::Cleanup()
     {
-        mEngineContext->Cleanup(device);
-        mThreadContext->Cleanup(device);
+        mEngineContext->Cleanup(mVulkanContext);
+        mThreadContext->Cleanup(mVulkanContext);
+        mVulkanContext->Cleanup();
+    }
+
+    std::unique_ptr<VulkanContext>& RenderContext::GetVulkanContext()
+    {
+        return mVulkanContext;
     }
 
     std::unique_ptr<EngineContext>& RenderContext::GetEngineContext()
@@ -51,6 +55,11 @@ namespace Renderer
         return mThreadContext;
     }
 
+    const std::unique_ptr<VulkanContext>& RenderContext::GetVulkanContext() const
+    {
+        return mVulkanContext;
+    }
+
     const std::unique_ptr<EngineContext>& RenderContext::GetEngineContext() const
     {
         return mEngineContext;
@@ -64,16 +73,6 @@ namespace Renderer
     const std::unique_ptr<ThreadContext>& RenderContext::GetThreadContext() const
     {
         return mThreadContext;
-    }
-
-    std::tuple<std::unique_ptr<EngineContext>&, std::unique_ptr<FrameContext>&, std::unique_ptr<ThreadContext>&> RenderContext::GetContexts()
-    {
-        return {GetEngineContext(), GetFrameContext(), GetThreadContext()};
-    }
-
-    std::tuple<const std::unique_ptr<EngineContext>&, const std::unique_ptr<FrameContext>&, const std::unique_ptr<ThreadContext>&> RenderContext::GetContexts() const
-    {
-        return {GetEngineContext(), GetFrameContext(), GetThreadContext()};
     }
 
 

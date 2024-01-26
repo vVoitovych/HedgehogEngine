@@ -25,7 +25,7 @@ namespace Renderer
 		VkSwapchainKHR GetNativeSwapChain() const;
 
 		VkFormat GetFormat() const;
-		VkExtent2D GetSwapChainExtend();
+		VkExtent2D GetSwapChainExtend() const;
 		size_t GetSwapChainImagesSize() const;
 
 		VkImageView GetNativeSwapChainImageView(size_t index) const;

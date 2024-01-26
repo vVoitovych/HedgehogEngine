@@ -5,41 +5,50 @@
 #include "Renderer/Context/RenderContext.hpp"
 #include "Renderer/Context/EngineContext.hpp"
 #include "Renderer/Context/ThreadContext.hpp"
+#include "Renderer/Context/VulkanContext.hpp"
+#include "Renderer/Context/FrameContext.hpp"
 
 #include "Renderer/Wrappeers/Device/Device.hpp"
 #include "Renderer/Wrappeers/SwapChain/SwapChain.hpp"
 #include "Renderer/Wrappeers/RenderPass/RenderPass.hpp"
-
-#include "Renderer/Wrappeers/Resources/DepthBuffer/DepthBuffer.hpp"
+#include "Renderer/Wrappeers/Commands/CommandBuffer.hpp"
 #include "Renderer/Wrappeers/FrameBuffer/FrameBuffer.hpp"
 #include "Renderer/Wrappeers/RenderPass/RenderPass.hpp"
 #include "Renderer/Wrappeers/Descriptors/DescriptorSetLayout.hpp"
 #include "Renderer/Wrappeers/Pipeline/Pipeline.hpp"
 #include "Renderer/Wrappeers/Descriptors/DescriptorSet.hpp"
 #include "Renderer/Wrappeers/Descriptors/UBO.hpp"
+#include "Renderer/Wrappeers/Resources/Image/Image.hpp"
+
+#include "Renderer/Containers/MeshContainer.hpp"
+#include "Renderer/Containers/TextureContainer.hpp"
+#include "Renderer/Containers/SamplerContainer.h"
+
 #include "Renderer/Common/RendererSettings.hpp"
-// TODO remome texture and texture sampler from render pass
-#include "Renderer/Wrappeers/Resources/TextureImage/TextureImage.hpp"
-#include "Renderer/Wrappeers/Resources/TextureImage/TextureSampler.hpp"
+#include "Logger/Logger.hpp"
 
 namespace Renderer
 {
-	void ForwardPass::Render(std::unique_ptr<RenderContext>& renderContext)
+	void ForwardPass::Render(std::unique_ptr<RenderContext>& context)
 	{
-		auto [engineContext, frameContext, threadContext] = renderContext->GetContexts();
+		auto& frameContext = context->GetFrameContext();
+		auto& threadContext = context->GetThreadContext();
+		auto& vulkanContext = context->GetVulkanContext();
+		auto& engineContext = context->GetEngineContext();
 
 		auto& commandBuffer = threadContext->GetCommandBuffer();
 		auto frameIndex = threadContext->GetFrame();
-		auto extend = engineContext->GetExtent();
-		auto backBufferIndex = engineContext->GetBackBufferIndex();
+		auto extend = vulkanContext->GetSwapChain()->GetSwapChainExtend();
+		auto backBufferIndex = frameContext->GetBackBufferIndex();
 
-		mUniformBuffers[frameIndex].UpdateUniformBuffer(renderContext);
+		mUniformBuffers[frameIndex].UpdateUniformBuffer(context);
 		
 		commandBuffer.BeginRenderPass(extend, mRenderPass, mFrameBuffers[backBufferIndex].GetNativeFrameBuffer());
 		commandBuffer.BindPipeline(mPipeline, VK_PIPELINE_BIND_POINT_GRAPHICS);
 		commandBuffer.SetViewport(0.0f, 0.0f, (float)extend.width, (float)extend.height, 0.0f, 1.0f);
 		commandBuffer.SetScissor({ 0, 0 }, extend);
 		auto& meshContainer = engineContext->GetMeshContainer();
+		
 		VkBuffer vertexBuffers[] = { meshContainer.GetVertexBuffer() };
 		VkDeviceSize offsets[] = { 0 };
 		commandBuffer.BindVertexBuffers(0, 1, vertexBuffers, offsets);
@@ -52,100 +61,125 @@ namespace Renderer
 		
 	}
 
-	ForwardPass::ForwardPass(const std::unique_ptr<Device>& device, const std::unique_ptr<SwapChain>& swapChain)
+	ForwardPass::ForwardPass(const std::unique_ptr<RenderContext>& context)
 	{
-		ForwardPassInfo info{ swapChain->GetFormat(), device->FindDepthFormat() };
-		mRenderPass = std::make_unique<RenderPass>(device, info.GetInfo());
-		mDescriptorSetLayout = std::make_unique<DescriptorSetLayout>(device);
-		std::unique_ptr<PipelineInfo> pipelineInfo = std::make_unique<ForwardPipelineInfo>(device);
-		mPipeline = std::make_unique<Pipeline>(device, mRenderPass, mDescriptorSetLayout, pipelineInfo);
+		auto& vulkanContext = context->GetVulkanContext();
 
-		mTextureImage = std::make_unique<TextureImage>(device, "Textures\\viking_room.png", VK_FORMAT_R8G8B8A8_SRGB);
-		mTextureSampler = std::make_unique<TextureSampler>(device);
+		ForwardPassInfo info{ vulkanContext->GetSwapChain()->GetFormat(), vulkanContext->GetDevice()->FindDepthFormat() };
+		mRenderPass = std::make_unique<RenderPass>(vulkanContext->GetDevice(), info.GetInfo());
+		mDescriptorSetLayout = std::make_unique<DescriptorSetLayout>(vulkanContext->GetDevice());
+		std::unique_ptr<PipelineInfo> pipelineInfo = std::make_unique<ForwardPipelineInfo>(vulkanContext->GetDevice());
+		mPipeline = std::make_unique<Pipeline>(vulkanContext->GetDevice(), mRenderPass, mDescriptorSetLayout, pipelineInfo);
 
-		mDepthBuffer = std::make_unique<DepthBuffer>(device, swapChain->GetSwapChainExtend());
+		CreateDepthBuffer(context);		
 
 		mFrameBuffers.clear();
 		mUniformBuffers.clear();
 		mDescriptorSets.clear();
-		size_t swapChainImagesSize = swapChain->GetSwapChainImagesSize();
+		size_t swapChainImagesSize = vulkanContext->GetSwapChain()->GetSwapChainImagesSize();
 		for (size_t i = 0; i < swapChainImagesSize; ++i)
 		{
-			std::vector<VkImageView> attacments = { swapChain->GetNativeSwapChainImageView(i), mDepthBuffer->GetNativeView() };
+			std::vector<VkImageView> attacments = { vulkanContext->GetSwapChain()->GetNativeSwapChainImageView(i), mDepthBuffer->GetNativeView() };
 			FrameBuffer frameBuffer(
-				device,
+				vulkanContext->GetDevice(),
 				attacments,
-				swapChain->GetSwapChainExtend(),
+				vulkanContext->GetSwapChain()->GetSwapChainExtend(),
 				mRenderPass);
 			mFrameBuffers.push_back(std::move(frameBuffer));
 		}
+		auto& engineContext = context->GetEngineContext();
+		auto& materialImage = engineContext->GetTextureContainer().GetImage(0);
+		auto& materalSampler = engineContext->GetSamplerContainer().GetSampler(SamplerType::Linear);
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
-			UBO uniformBuffer(device);
+			UBO uniformBuffer(vulkanContext->GetDevice());
 			mUniformBuffers.push_back(std::move(uniformBuffer));
 
 			DescriptorSet descriptorSet(
-				device, 
+				vulkanContext->GetDevice(),
+				vulkanContext->GetDescriptorPool(),
 				mDescriptorSetLayout, 
 				mUniformBuffers[i], 
-				mTextureImage, 
-				mTextureSampler);
+				materialImage,
+				materalSampler);
 			mDescriptorSets.push_back(std::move(descriptorSet));
 		}
 
-		pipelineInfo->Cleanup(device);
+		pipelineInfo->Cleanup(vulkanContext->GetDevice());
 	}
 
 	ForwardPass::~ForwardPass()
 	{
 	}
 
-	void ForwardPass::Cleanup(const std::unique_ptr<Device>& device)
+	void ForwardPass::Cleanup(const std::unique_ptr<RenderContext>& context)
 	{
+		auto& vulkanContext = context->GetVulkanContext();
+
 		for (size_t i = 0; i < mFrameBuffers.size(); ++i)
 		{
-			mFrameBuffers[i].Cleanup(device);
+			mFrameBuffers[i].Cleanup(vulkanContext->GetDevice());
 		}
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
-			mDescriptorSets[i].Cleanup(device);
-			mUniformBuffers[i].Cleanup(device);
+			mDescriptorSets[i].Cleanup(vulkanContext->GetDevice(), vulkanContext->GetDescriptorPool());
+			mUniformBuffers[i].Cleanup();
 		}
-		mDepthBuffer->Cleanup(device);
-	
-		mTextureImage->Cleanup(device);
-		mTextureSampler->Cleanup(device);
+		mDepthBuffer->Cleanup();
 
-		mPipeline->Cleanup(device);
-		mDescriptorSetLayout->Cleanup(device);
-		mRenderPass->Cleanup(device);
+		mPipeline->Cleanup(vulkanContext->GetDevice());
+		mDescriptorSetLayout->Cleanup(vulkanContext->GetDevice());
+		mRenderPass->Cleanup(vulkanContext->GetDevice());
 
 	}
 
-	void ForwardPass::CleanSizedResources(const std::unique_ptr<Device>& device)
+	void ForwardPass::CleanSizedResources(const std::unique_ptr<RenderContext>& context)
 	{
+		auto& vulkanContext = context->GetVulkanContext();
 		for (size_t i = 0; i < mFrameBuffers.size(); ++i)
 		{
-			mFrameBuffers[i].Cleanup(device);
+			mFrameBuffers[i].Cleanup(vulkanContext->GetDevice());
 		}
-		mDepthBuffer->Cleanup(device);
+		mDepthBuffer->Cleanup();
 	}
 
-	void ForwardPass::CreateSizedResources(const std::unique_ptr<Device>& device, const std::unique_ptr<SwapChain>& swapChain)
+	void ForwardPass::CreateSizedResources(const std::unique_ptr<RenderContext>& context)
 	{
-		mDepthBuffer = std::make_unique<DepthBuffer>(device, swapChain->GetSwapChainExtend());
+		CreateDepthBuffer(context);
 		mFrameBuffers.clear();
-		size_t swapChainImagesSize = swapChain->GetSwapChainImagesSize();
+
+		auto& vulkanContext = context->GetVulkanContext();
+		size_t swapChainImagesSize = vulkanContext->GetSwapChain()->GetSwapChainImagesSize();
 		for (size_t i = 0; i < swapChainImagesSize; ++i)
 		{
 			mFrameBuffers.push_back(FrameBuffer(
-				device,
-				{ swapChain->GetNativeSwapChainImageView(i), mDepthBuffer->GetNativeView() },
-				swapChain->GetSwapChainExtend(),
+				vulkanContext->GetDevice(),
+				{ vulkanContext->GetSwapChain()->GetNativeSwapChainImageView(i), mDepthBuffer->GetNativeView() },
+				vulkanContext->GetSwapChain()->GetSwapChainExtend(),
 				mRenderPass));
 		}
+	}
+
+	void ForwardPass::CreateDepthBuffer(const std::unique_ptr<RenderContext>& context)
+	{
+		auto& vulkanContext = context->GetVulkanContext();
+		auto depthFormat = vulkanContext->GetDevice()->FindDepthFormat();
+		auto extend = vulkanContext->GetSwapChain()->GetSwapChainExtend();
+
+		mDepthBuffer = std::make_unique<Image>(
+			vulkanContext->GetDevice(),
+			extend.width, 
+			extend.height, 
+			depthFormat, 
+			VK_IMAGE_TILING_OPTIMAL, 
+			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	
+		mDepthBuffer->CreateImageView(depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+		LOGINFO("Depth buffer created");
+
 	}
 
 

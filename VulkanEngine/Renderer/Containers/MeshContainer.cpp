@@ -1,12 +1,23 @@
 #include "MeshContainer.hpp"
 
 #include "Renderer/Wrappeers/Device/Device.hpp"
+#include "Renderer/Wrappeers/Commands/CommandPool.hpp"
+#include "Renderer/Wrappeers/Resources/Buffer/Buffer.hpp"
+
 #include "Logger/Logger.hpp"
 
 #include <algorithm>
 
 namespace Renderer
 {
+    MeshContainer::MeshContainer()
+    {
+    }
+
+    MeshContainer::~MeshContainer()
+    {
+    }
+
     void MeshContainer::AddFilePath(std::string filePath)
     {
         auto it = std::find(mFilePathes.begin(), mFilePathes.end(), filePath);
@@ -52,7 +63,7 @@ namespace Renderer
 
     }
 
-    void MeshContainer::Initialize(const std::unique_ptr<Device>& device)
+    void MeshContainer::Initialize(const std::unique_ptr<Device>& device, const std::unique_ptr<CommandPool>& commandPool)
     {
         std::vector<VertexDescription> verticies;
         std::vector<uint32_t> indicies;
@@ -77,72 +88,59 @@ namespace Renderer
             }
         }
 
-        CreateVertexBuffer(device, verticies);
-        CreateIndexBuffer(device, indicies);
+        CreateVertexBuffer(device, commandPool, verticies);
+        CreateIndexBuffer(device, commandPool, indicies);
     }
 
     void MeshContainer::Cleanup(const std::unique_ptr<Device>& device)
     {
-        vkDestroyBuffer(device->GetNativeDevice(), mVertexBuffer, nullptr);
-        vkFreeMemory(device->GetNativeDevice(), mVertexBufferMemory, nullptr);
-        mVertexBuffer = nullptr;
-        mVertexBufferMemory = nullptr;
+        mVertexBuffer->DestroyBuffer();
         LOGINFO("Vertex buffer cleaned");
 
-        vkDestroyBuffer(device->GetNativeDevice(), mIndexBuffer, nullptr);
-        vkFreeMemory(device->GetNativeDevice(), mIndexBufferMemory, nullptr);
-        mIndexBuffer = nullptr;
-        mIndexBufferMemory = nullptr;
+        mIndexBuffer->DestroyBuffer();
         LOGINFO("Index buffer cleaned");
     }
 
-    VkBuffer MeshContainer::GetVertexBuffer()
+    const VkBuffer& MeshContainer::GetVertexBuffer() const
     {
-        return mVertexBuffer;
+        return mVertexBuffer->GetNativeBuffer();
     }
 
-    VkBuffer MeshContainer::GetIndexBuffer()
+    const VkBuffer& MeshContainer::GetIndexBuffer() const
     {
-        return mIndexBuffer;
+        return mIndexBuffer->GetNativeBuffer();
     }
 
-    Mesh& MeshContainer::GetMesh(size_t index)
+    const Mesh& MeshContainer::GetMesh(size_t index) const
     {
         return mMeshes[index];
     }
 
-    void MeshContainer::CreateVertexBuffer(const std::unique_ptr<Device>& device, const std::vector<VertexDescription> verticies)
+    void MeshContainer::CreateVertexBuffer(const std::unique_ptr<Device>& device, const std::unique_ptr<CommandPool>& commandPool, const std::vector<VertexDescription> verticies)
     {
         VkDeviceSize size = sizeof(verticies[0]) * verticies.size();
 
-        VkBuffer staginBuffer;
-        VkDeviceMemory staginBufferMemory;
-        device->CreateBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staginBuffer, staginBufferMemory);
-        device->CopyDataToBufferMemory(staginBufferMemory, verticies.data(), (size_t)size);
+        Buffer staginBuffer(device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        staginBuffer.CopyDataToBufferMemory(verticies.data(), (size_t)size);
 
-        device->CreateBuffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, mVertexBuffer, mVertexBufferMemory);
-        device->CopyBuffer(staginBuffer, mVertexBuffer, size);
+        mVertexBuffer = std::make_unique<Buffer>(device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        staginBuffer.CopyBuffer(mVertexBuffer->GetNativeBuffer(), size, commandPool);
 
-        device->DestroyBuffer(staginBuffer, nullptr);
-        device->FreeMemory(staginBufferMemory, nullptr);
+        staginBuffer.DestroyBuffer();
         LOGINFO("Vertex buffer created");
     }
 
-    void MeshContainer::CreateIndexBuffer(const std::unique_ptr<Device>& device, const std::vector<uint32_t> indicies)
+    void MeshContainer::CreateIndexBuffer(const std::unique_ptr<Device>& device, const std::unique_ptr<CommandPool>& commandPool, const std::vector<uint32_t> indicies)
     {
         VkDeviceSize size = sizeof(indicies[0]) * indicies.size();
 
-        VkBuffer staginBuffer;
-        VkDeviceMemory staginBufferMemory;
-        device->CreateBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staginBuffer, staginBufferMemory);
-        device->CopyDataToBufferMemory(staginBufferMemory, indicies.data(), (size_t)size);
+        Buffer staginBuffer(device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        staginBuffer.CopyDataToBufferMemory(indicies.data(), (size_t)size);
 
-        device->CreateBuffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-            mIndexBuffer, mIndexBufferMemory);
-        device->CopyBuffer(staginBuffer, mIndexBuffer, size);
+        mIndexBuffer = std::make_unique<Buffer>(device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        staginBuffer.CopyBuffer(mIndexBuffer->GetNativeBuffer(), size, commandPool);
 
-        device->DestroyBuffer(staginBuffer, nullptr);
-        device->FreeMemory(staginBufferMemory, nullptr);
+        staginBuffer.DestroyBuffer();
         LOGINFO("Index buffer created");
     }
 

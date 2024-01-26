@@ -60,7 +60,7 @@ namespace Renderer
 		return mSwapChainImageFormat;
 	}
 
-	VkExtent2D SwapChain::GetSwapChainExtend()
+	VkExtent2D SwapChain::GetSwapChainExtend() const
 	{
 		return mSwapChainExtent;
 	}

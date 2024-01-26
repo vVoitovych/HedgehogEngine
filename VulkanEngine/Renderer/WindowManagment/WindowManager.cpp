@@ -82,7 +82,7 @@ namespace Renderer
 		app->mWindowResized = true;
 	}
 
-	Controls& WindowManager::GetControls()
+	Controls& WindowManager::GetControls() 
 	{
 		return mControls;
 	}

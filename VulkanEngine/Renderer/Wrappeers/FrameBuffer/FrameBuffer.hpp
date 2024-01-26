@@ -7,7 +7,6 @@
 namespace Renderer
 {
 	class Device;
-	class DepthBuffer;
 	class RenderPass;
 
 	class FrameBuffer

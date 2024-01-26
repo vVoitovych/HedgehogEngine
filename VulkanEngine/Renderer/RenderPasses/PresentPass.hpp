@@ -13,18 +13,12 @@ namespace Renderer
     class PresentPass
     {
     public:
-        PresentPass(const std::unique_ptr<Device>& device, const std::unique_ptr<SwapChain>& swapChain);
+        PresentPass(const std::unique_ptr<RenderContext>& context);
         ~PresentPass() = default;
 
-        void Render(std::unique_ptr<RenderContext>& renderContext);
+        void Render(std::unique_ptr<RenderContext>& context);
 
-        void Cleanup(const std::unique_ptr<Device>& device);
-        void SetSwapChain(const std::unique_ptr<SwapChain>& swapChain);
-    private:
-        std::optional<VkDevice> mDevice;
-        std::optional<VkSwapchainKHR> mSwapChain;
-        std::optional<VkQueue> mGraphicQueue;
-        std::optional<VkQueue> mPresentQueue;
+        void Cleanup(const std::unique_ptr<RenderContext>& context);
 
     };
 

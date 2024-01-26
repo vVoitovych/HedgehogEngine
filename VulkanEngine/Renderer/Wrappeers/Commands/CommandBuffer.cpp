@@ -1,5 +1,5 @@
 #include "CommandBuffer.hpp"
-#include "Renderer/Wrappeers/Device/Device.hpp"
+#include "CommandPool.hpp"
 #include "Renderer/Wrappeers/SwapChain/SwapChain.hpp"
 #include "Renderer/Wrappeers/RenderPass/RenderPass.hpp"
 #include "Renderer/Wrappeers/Pipeline/Pipeline.hpp"
@@ -10,10 +10,10 @@
 
 namespace Renderer
 {
-	CommandBuffer::CommandBuffer(const std::unique_ptr<Device>& device)
+	CommandBuffer::CommandBuffer(const std::unique_ptr<CommandPool>& cxommandPool)
 		:mCommandBuffer(nullptr)
 	{
-		device->AllocateCommandBuffer(&mCommandBuffer);
+		cxommandPool->AllocateCommandBuffer(&mCommandBuffer);
 		LOGINFO("Command buffer created");
 	}
 
@@ -43,9 +43,9 @@ namespace Renderer
 		return *this;
 	}
 
-	void CommandBuffer::Cleanup(const std::unique_ptr<Device>& device)
+	void CommandBuffer::Cleanup(const std::unique_ptr<CommandPool>& cxommandPool)
 	{
-		device->FreeCommandBuffer(&mCommandBuffer);
+		cxommandPool->FreeCommandBuffer(&mCommandBuffer);
 		mCommandBuffer = nullptr;
 		LOGINFO("Command  buffer cleaned");
 	}

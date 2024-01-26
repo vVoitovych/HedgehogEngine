@@ -3,6 +3,8 @@
 #include "Renderer/Camera/Camera.hpp"
 #include "Scene/Scene.hpp"
 #include "Renderer/Containers/MeshContainer.hpp"
+#include "Renderer/Containers/TextureContainer.hpp"
+#include "Renderer/Containers/SamplerContainer.h"
 
 #include "Renderer/WindowManagment/WindowManager.hpp"
 
@@ -11,42 +13,31 @@
 
 namespace Renderer
 {
-	class Device;
-	class SwapChain;
+	class VulkanContext;
 
 	class EngineContext
 	{
 	public:
-		EngineContext(const std::unique_ptr<Device>& device, const std::unique_ptr<SwapChain>& swapChain, std::unique_ptr<WindowManager>&& windowManager);
-		void Cleanup(const std::unique_ptr<Device>& device);
+		EngineContext(const std::unique_ptr<VulkanContext>& vulkanContext);
+		void Cleanup(const std::unique_ptr<VulkanContext>& vulkanContext);
 
-		void HandleInput();
-		void UpdateContext(float dt);
+		void UpdateContext(const std::unique_ptr<VulkanContext>& vulkanContext, float dt);
 
-		void UpdateBackBufferIdex(uint32_t index) const;
-		uint32_t GetBackBufferIndex() const;
-		VkExtent2D GetExtent();
-
-		MeshContainer& GetMeshContainer();
-		const std::unique_ptr<WindowManager>& GetWindowManager() const;
-
-		bool ShouldClose() const;
-		void ResizeWindow();
-		bool IsWindowResized();
-		void ResetWindowResizeState(VkExtent2D extent);
+		const MeshContainer& GetMeshContainer() const;
+		const TextureContaineer& GetTextureContainer() const;
+		const SamplerContainer& GetSamplerContainer() const;
 
 		const Camera& GetCamera() const;
 
 	private:
-		std::unique_ptr<WindowManager> mWindowManager;
 
 		Camera mCamera;
-		Scene::Scene mScene;
-		VkExtent2D mExtent;
-		MeshContainer mMeshContainer;
 
-		mutable uint32_t mBackBufferIndex;
-		bool mWindowResized = false;
+		Scene::Scene mScene;
+
+		MeshContainer mMeshContainer;
+		TextureContaineer mTextureContainer;
+		SamplerContainer mSamplerContainer;
 
 	};
 
