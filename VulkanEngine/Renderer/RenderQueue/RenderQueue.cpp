@@ -43,10 +43,10 @@ namespace Renderer
 
 	}
 
-	void RenderQueue::RecreateizedResources(const std::unique_ptr<RenderContext>& context)
+	void RenderQueue::ResizeResources(const std::unique_ptr<RenderContext>& context)
 	{
-		mForwardPass->RecreateizedResources(context);
-
+		mForwardPass->ResizeResources(context);
+		mGuiPass->ResizeResources(context);
 	}
 
 

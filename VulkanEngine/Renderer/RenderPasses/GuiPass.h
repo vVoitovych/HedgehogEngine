@@ -19,6 +19,7 @@ namespace Renderer
 		void Render(std::unique_ptr<RenderContext>& context);
 		void Cleanup(const std::unique_ptr<RenderContext>& context);
 
+		void ResizeResources(const std::unique_ptr<RenderContext>& context);
 	public:
 		static bool IsCursorPositionInGUI();
 

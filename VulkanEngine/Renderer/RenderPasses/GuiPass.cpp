@@ -133,6 +133,28 @@ namespace Renderer
 		mDescriptorPool->Cleanup(device);
 	}
 
+	void GuiPass::ResizeResources(const std::unique_ptr<RenderContext>& context)
+	{
+		auto& device = context->GetVulkanContext()->GetDevice();
+		for (size_t i = 0; i < mFrameBuffers.size(); ++i)
+		{
+			mFrameBuffers[i].Cleanup(device);
+		}
+		auto& swapChain = context->GetVulkanContext()->GetSwapChain();
+		mFrameBuffers.clear();
+		size_t swapChainImagesSize = swapChain->GetSwapChainImagesSize();
+		for (size_t i = 0; i < swapChainImagesSize; ++i)
+		{
+			std::vector<VkImageView> attacments = { swapChain->GetNativeSwapChainImageView(i) };
+			FrameBuffer frameBuffer(
+				device,
+				attacments,
+				swapChain->GetSwapChainExtent(),
+				mRenderPass);
+			mFrameBuffers.push_back(std::move(frameBuffer));
+		}
+	}
+
 	bool GuiPass::IsCursorPositionInGUI()
 	{
 		ImGuiIO& io = ImGui::GetIO();

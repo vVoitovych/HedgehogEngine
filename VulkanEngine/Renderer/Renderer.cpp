@@ -68,7 +68,7 @@ namespace Renderer
 		auto& vulkanContext = mRenderContext->GetVulkanContext();
 		vulkanContext->GetSwapChain()->Recreate(vulkanContext->GetDevice());
 
-		mRenderQueue->RecreateizedResources(mRenderContext);
+		mRenderQueue->ResizeResources(mRenderContext);
 	}
 
 	bool Renderer::ShouldClose()

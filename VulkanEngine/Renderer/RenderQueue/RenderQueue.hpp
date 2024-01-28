@@ -26,7 +26,7 @@ namespace Renderer
 		void Cleanup(const std::unique_ptr<RenderContext>& context);
 		void Render(std::unique_ptr<RenderContext>& context);
 
-		void RecreateizedResources(const std::unique_ptr<RenderContext>& context);
+		void ResizeResources(const std::unique_ptr<RenderContext>& context);
 
 	private:
 		std::unique_ptr<InitPass> mInitPass;

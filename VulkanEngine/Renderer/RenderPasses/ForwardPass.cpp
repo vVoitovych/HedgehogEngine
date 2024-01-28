@@ -135,7 +135,7 @@ namespace Renderer
 
 	}
 
-	void ForwardPass::RecreateizedResources(const std::unique_ptr<RenderContext>& context)
+	void ForwardPass::ResizeResources(const std::unique_ptr<RenderContext>& context)
 	{
 		auto& vulkanContext = context->GetVulkanContext();
 		for (size_t i = 0; i < mFrameBuffers.size(); ++i)
