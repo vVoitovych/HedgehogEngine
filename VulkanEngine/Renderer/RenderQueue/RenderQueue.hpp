@@ -9,6 +9,7 @@ namespace Renderer
 	class InitPass;
 	class ForwardPass;
 	class PresentPass;
+	class GuiPass;
 
 	class RenderQueue
 	{
@@ -25,14 +26,13 @@ namespace Renderer
 		void Cleanup(const std::unique_ptr<RenderContext>& context);
 		void Render(std::unique_ptr<RenderContext>& context);
 
-		void CleanSizedResources(const std::unique_ptr<RenderContext>& context);
-		void CreateSizedResources(const std::unique_ptr<RenderContext>& context);
+		void RecreateizedResources(const std::unique_ptr<RenderContext>& context);
 
 	private:
 		std::unique_ptr<InitPass> mInitPass;
 		std::unique_ptr<ForwardPass> mForwardPass;
 		std::unique_ptr<PresentPass> mPresentPass;
-
+		std::unique_ptr<GuiPass> mGuiPass;
 	};
 
 

@@ -48,9 +48,7 @@ namespace Renderer
 	}
 
 	void Renderer::DrawFrame()
-	{
-		mRenderQueue->Render(mRenderContext);
-		
+	{		
 		auto& engineContext = mRenderContext->GetEngineContext();
 		auto dt = GetFrameTime();
 		auto& vulkanContext = mRenderContext->GetVulkanContext();
@@ -60,15 +58,17 @@ namespace Renderer
 			RecreateSwapChain();
 			vulkanContext->ResetWindowResizeState();
 		}
+
+		mRenderQueue->Render(mRenderContext);
 	}
 
 	void Renderer::RecreateSwapChain()
 	{
 		vkDeviceWaitIdle(mRenderContext->GetVulkanContext()->GetDevice()->GetNativeDevice());
-		mRenderQueue->CleanSizedResources(mRenderContext);
 		auto& vulkanContext = mRenderContext->GetVulkanContext();
 		vulkanContext->GetSwapChain()->Recreate(vulkanContext->GetDevice());
-		mRenderQueue->CreateSizedResources(mRenderContext);
+
+		mRenderQueue->RecreateizedResources(mRenderContext);
 	}
 
 	bool Renderer::ShouldClose()

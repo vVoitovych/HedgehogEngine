@@ -282,6 +282,11 @@ namespace Renderer
 
 	////////////////////////////////////////////////////// 
 
+	VkInstance Device::GetNativeInstance() const
+	{
+		return mInstance;
+	}
+
 	VkQueue Device::GetNativeGraphicsQueue() const
 	{
 		return mGraphicsQueue;

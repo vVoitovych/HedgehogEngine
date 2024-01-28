@@ -38,7 +38,7 @@ namespace Renderer
 
 		auto& commandBuffer = threadContext->GetCommandBuffer();
 		auto frameIndex = threadContext->GetFrame();
-		auto extend = vulkanContext->GetSwapChain()->GetSwapChainExtend();
+		auto extend = vulkanContext->GetSwapChain()->GetSwapChainExtent();
 		auto backBufferIndex = frameContext->GetBackBufferIndex();
 
 		mUniformBuffers[frameIndex].UpdateUniformBuffer(context);
@@ -83,7 +83,7 @@ namespace Renderer
 			FrameBuffer frameBuffer(
 				vulkanContext->GetDevice(),
 				attacments,
-				vulkanContext->GetSwapChain()->GetSwapChainExtend(),
+				vulkanContext->GetSwapChain()->GetSwapChainExtent(),
 				mRenderPass);
 			mFrameBuffers.push_back(std::move(frameBuffer));
 		}
@@ -135,7 +135,7 @@ namespace Renderer
 
 	}
 
-	void ForwardPass::CleanSizedResources(const std::unique_ptr<RenderContext>& context)
+	void ForwardPass::RecreateizedResources(const std::unique_ptr<RenderContext>& context)
 	{
 		auto& vulkanContext = context->GetVulkanContext();
 		for (size_t i = 0; i < mFrameBuffers.size(); ++i)
@@ -143,21 +143,17 @@ namespace Renderer
 			mFrameBuffers[i].Cleanup(vulkanContext->GetDevice());
 		}
 		mDepthBuffer->Cleanup();
-	}
 
-	void ForwardPass::CreateSizedResources(const std::unique_ptr<RenderContext>& context)
-	{
 		CreateDepthBuffer(context);
 		mFrameBuffers.clear();
 
-		auto& vulkanContext = context->GetVulkanContext();
 		size_t swapChainImagesSize = vulkanContext->GetSwapChain()->GetSwapChainImagesSize();
 		for (size_t i = 0; i < swapChainImagesSize; ++i)
 		{
 			mFrameBuffers.push_back(FrameBuffer(
 				vulkanContext->GetDevice(),
 				{ vulkanContext->GetSwapChain()->GetNativeSwapChainImageView(i), mDepthBuffer->GetNativeView() },
-				vulkanContext->GetSwapChain()->GetSwapChainExtend(),
+				vulkanContext->GetSwapChain()->GetSwapChainExtent(),
 				mRenderPass));
 		}
 	}
@@ -166,7 +162,7 @@ namespace Renderer
 	{
 		auto& vulkanContext = context->GetVulkanContext();
 		auto depthFormat = vulkanContext->GetDevice()->FindDepthFormat();
-		auto extend = vulkanContext->GetSwapChain()->GetSwapChainExtend();
+		auto extend = vulkanContext->GetSwapChain()->GetSwapChainExtent();
 
 		mDepthBuffer = std::make_unique<Image>(
 			vulkanContext->GetDevice(),

@@ -7,6 +7,8 @@
 #include "Renderer/Wrappeers/Descriptors/DescriptorPool.hpp"
 #include "Renderer/Common/RendererSettings.hpp"
 
+#include "Renderer/RenderPasses/GuiPass.h"
+
 #include <vector>
 
 namespace Renderer
@@ -19,21 +21,11 @@ namespace Renderer
 
 		mCommandPool = std::make_unique<CommandPool>(mDevice);
 
-		std::vector<VkDescriptorPoolSize> poolSizes;
-		poolSizes.resize(2);
-
-		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-
-		poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-
-		VkDescriptorPoolCreateInfo poolInfo{};
-		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-		poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-		poolInfo.pPoolSizes = poolSizes.data();
-		poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-		poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+		std::vector<VkDescriptorPoolSize> poolSizes = 
+		{
+			{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, MAX_FRAMES_IN_FLIGHT},
+			{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_FRAMES_IN_FLIGHT}
+		};
 		mDescriptorPool = std::make_unique<DescriptorPool>(mDevice, poolSizes, 2);
 	}
 

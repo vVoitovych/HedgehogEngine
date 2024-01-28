@@ -29,7 +29,7 @@ namespace Renderer
         const auto& windowManager = vulkanContext->GetWindowManager();
         const auto& controls = windowManager->GetControls();
         const auto& swapChain = vulkanContext->GetSwapChain();
-        auto extend = swapChain->GetSwapChainExtend();
+        auto extend = swapChain->GetSwapChainExtent();
         mCamera.UpdateCamera(dt, extend.width / (float)extend.height, controls);
 
     }

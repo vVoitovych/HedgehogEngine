@@ -6,6 +6,7 @@
 #include "Renderer/RenderPasses/InitPass.hpp"
 #include "Renderer/RenderPasses/ForwardPass.hpp"
 #include "Renderer/RenderPasses/PresentPass.hpp"
+#include "Renderer/RenderPasses/GuiPass.h"
 
 namespace Renderer
 {
@@ -13,6 +14,7 @@ namespace Renderer
 	{
 		mInitPass = std::make_unique<InitPass>(context);
 		mForwardPass = std::make_unique<ForwardPass>(context);
+		mGuiPass = std::make_unique<GuiPass>(context);
 		mPresentPass = std::make_unique<PresentPass>(context);
 	}
 
@@ -24,13 +26,8 @@ namespace Renderer
 	{
 		mInitPass->Cleanup(context);
 		mForwardPass->Cleanup(context);
+		mGuiPass->Cleanup(context);
 		mPresentPass->Cleanup(context);
-	}
-
-	void RenderQueue::CreateSizedResources(const std::unique_ptr<RenderContext>& context)
-	{
-		mForwardPass->CreateSizedResources(context);
-
 	}
 
 	void RenderQueue::Render(std::unique_ptr<RenderContext>& context)
@@ -41,13 +38,15 @@ namespace Renderer
 		if (vulkanContext->IsWindowResized())
 			return;
 		mForwardPass->Render(context);
+		mGuiPass->Render(context);
 		mPresentPass->Render(context);
 
 	}
 
-	void RenderQueue::CleanSizedResources(const std::unique_ptr<RenderContext>& context)
+	void RenderQueue::RecreateizedResources(const std::unique_ptr<RenderContext>& context)
 	{
-		mForwardPass->CleanSizedResources(context);
+		mForwardPass->RecreateizedResources(context);
+
 	}
 
 

@@ -145,6 +145,12 @@
     <ClCompile Include="Renderer\Context\VulkanContext.cpp">
       <Filter>Renderer\Context</Filter>
     </ClCompile>
+    <ClCompile Include="Renderer\RenderPasses\GuiPass.cpp">
+      <Filter>Renderer\RenderPasses\GuiPass</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\RenderPasses\GuiPassInfo.cpp">
+      <Filter>Renderer\RenderPasses\GuiPass</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.hpp">
@@ -336,6 +342,12 @@
     <ClInclude Include="Renderer\Context\VulkanContext.hpp">
       <Filter>Renderer\Context</Filter>
     </ClInclude>
+    <ClInclude Include="Renderer\RenderPasses\GuiPass.h">
+      <Filter>Renderer\RenderPasses\GuiPass</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\RenderPasses\GuiPassInfo.hpp">
+      <Filter>Renderer\RenderPasses\GuiPass</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ShadersCompiler.bat">
@@ -480,6 +492,9 @@
     </Filter>
     <Filter Include="Renderer\Containers\SamplerContainer">
       <UniqueIdentifier>{dfa3de2f-a1c7-4498-b229-7157c1a8f042}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\RenderPasses\GuiPass">
+      <UniqueIdentifier>{b4a8cff3-9318-4d50-a093-05ebb8f45a2d}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

@@ -25,8 +25,7 @@ namespace Renderer
         void Render(std::unique_ptr<RenderContext>& context);
         void Cleanup(const std::unique_ptr<RenderContext>& context);
 
-        void CleanSizedResources(const std::unique_ptr<RenderContext>& context);
-        void CreateSizedResources(const std::unique_ptr<RenderContext>& context);
+        void RecreateizedResources(const std::unique_ptr<RenderContext>& context);
 
     private:
         void CreateDepthBuffer(const std::unique_ptr<RenderContext>& context);

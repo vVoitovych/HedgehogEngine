@@ -60,9 +60,14 @@ namespace Renderer
 		return mSwapChainImageFormat;
 	}
 
-	VkExtent2D SwapChain::GetSwapChainExtend() const
+	VkExtent2D SwapChain::GetSwapChainExtent() const
 	{
 		return mSwapChainExtent;
+	}
+
+	uint32_t SwapChain::GetMinImagesCount() const
+	{
+		return mMinImageCount;
 	}
 
 	size_t SwapChain::GetSwapChainImagesSize() const
@@ -83,7 +88,8 @@ namespace Renderer
 		VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapChainSupport.mPrecentModes);
 		VkExtent2D extent = ChooseSwapExtend(swapChainSupport.mCapabilities);
 
-		uint32_t imageCount = swapChainSupport.mCapabilities.minImageCount + 1;
+		mMinImageCount = swapChainSupport.mCapabilities.minImageCount;
+		uint32_t imageCount = mMinImageCount + 1;
 		if (swapChainSupport.mCapabilities.maxImageCount > 0 && imageCount > swapChainSupport.mCapabilities.maxImageCount)
 		{
 			imageCount = swapChainSupport.mCapabilities.maxImageCount;

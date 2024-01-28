@@ -40,6 +40,7 @@ namespace Renderer
 
 		void Cleanup();
 
+		VkInstance GetNativeInstance() const;
 		VkQueue GetNativeGraphicsQueue() const;
 		VkQueue GetNativePresentQueue() const;
 		VkSurfaceKHR GetNativeSurface() const ;
