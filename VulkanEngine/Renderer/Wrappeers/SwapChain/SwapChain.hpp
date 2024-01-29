@@ -31,6 +31,8 @@ namespace Renderer
 
 		VkImageView GetNativeSwapChainImageView(size_t index) const;
 
+		VkImage GetSwapChainImage(size_t index) const;
+
 	private:
 		void CreateSwapChain(const std::unique_ptr<Device>& device);
 		void CreateImageViews(const std::unique_ptr<Device>& device);

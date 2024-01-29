@@ -13,6 +13,7 @@
 #include "Renderer/Wrappeers/SwapChain/SwapChain.hpp"
 #include "Renderer/Wrappeers/Device/Device.hpp"
 #include "Renderer/Wrappeers/FrameBuffer/FrameBuffer.hpp"
+#include "Renderer/Wrappeers/Resources/Image/ImageManagement.hpp"
 
 #include "Renderer/WindowManagment/WindowManager.hpp"
 
@@ -99,9 +100,17 @@ namespace Renderer
 		auto& commandBuffer = threadContext->GetCommandBuffer();
 
 		auto& vulkanContext = context->GetVulkanContext();
-		auto extent = vulkanContext->GetSwapChain()->GetSwapChainExtent();
+		auto& swapChain = vulkanContext->GetSwapChain();
+		auto extent = swapChain->GetSwapChainExtent();
 
-		// Start the Dear ImGui frame
+		ImageManagement::RecordTransitionImageLayout(
+			1, 
+			VK_IMAGE_LAYOUT_UNDEFINED, 
+			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+			false, 
+			commandBuffer.GetNativeCommandBuffer(), 
+			swapChain->GetSwapChainImage(backBufferIndex));
+
 		ImGui_ImplVulkan_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();

@@ -188,6 +188,7 @@
     <ClCompile Include="Renderer\Wrappeers\RenderPass\RenderPass.cpp" />
     <ClCompile Include="Renderer\Wrappeers\Resources\Buffer\Buffer.cpp" />
     <ClCompile Include="Renderer\Wrappeers\Resources\Image\Image.cpp" />
+    <ClCompile Include="Renderer\Wrappeers\Resources\Image\ImageManagement.cpp" />
     <ClCompile Include="Renderer\Wrappeers\Shaders\FragmentShader.cpp" />
     <ClCompile Include="Renderer\Wrappeers\Shaders\Shader.cpp" />
     <ClCompile Include="Renderer\Wrappeers\Shaders\VertexShader.cpp" />
@@ -257,6 +258,7 @@
     <ClInclude Include="Renderer\Wrappeers\RenderPass\RenderPass.hpp" />
     <ClInclude Include="Renderer\Wrappeers\Resources\Buffer\Buffer.hpp" />
     <ClInclude Include="Renderer\Wrappeers\Resources\Image\Image.hpp" />
+    <ClInclude Include="Renderer\Wrappeers\Resources\Image\ImageManagement.hpp" />
     <ClInclude Include="Renderer\Wrappeers\Shaders\FragmentShader.hpp" />
     <ClInclude Include="Renderer\Wrappeers\Shaders\Shader.hpp" />
     <ClInclude Include="Renderer\Wrappeers\Shaders\VertexShader.hpp" />

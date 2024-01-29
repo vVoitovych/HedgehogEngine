@@ -151,6 +151,9 @@
     <ClCompile Include="Renderer\RenderPasses\GuiPassInfo.cpp">
       <Filter>Renderer\RenderPasses\GuiPass</Filter>
     </ClCompile>
+    <ClCompile Include="Renderer\Wrappeers\Resources\Image\ImageManagement.cpp">
+      <Filter>Renderer\Wrappers\Resources\Image</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.hpp">
@@ -347,6 +350,9 @@
     </ClInclude>
     <ClInclude Include="Renderer\RenderPasses\GuiPassInfo.hpp">
       <Filter>Renderer\RenderPasses\GuiPass</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\Resources\Image\ImageManagement.hpp">
+      <Filter>Renderer\Wrappers\Resources\Image</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

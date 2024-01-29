@@ -80,6 +80,11 @@ namespace Renderer
 		return mSwapChainImageViews[index];
 	}
 
+	VkImage SwapChain::GetSwapChainImage(size_t index) const
+	{
+		return mSwapChainImages[index];
+	}
+
 	void SwapChain::CreateSwapChain(const std::unique_ptr<Device>& device)
 	{
 		SwapChainSupportDetails swapChainSupport = device->QuerySwapChainSupport();

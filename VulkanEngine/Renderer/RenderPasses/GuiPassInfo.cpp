@@ -10,7 +10,7 @@ namespace Renderer
 		mColorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 		mColorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		mColorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		mColorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		mColorAttachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		mColorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
 		mColorAttachmentRef.attachment = 0;
