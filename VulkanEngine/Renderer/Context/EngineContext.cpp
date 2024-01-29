@@ -1,72 +1,54 @@
 #include "EngineContext.hpp"
-#include "Renderer/Wrappeers/Device/Device.hpp"
+#include "VulkanContext.hpp"
+
 #include "Renderer/Wrappeers/SwapChain/SwapChain.hpp"
 
 namespace Renderer
 {
-    EngineContext::EngineContext(const std::unique_ptr<Device>& device, const std::unique_ptr<SwapChain>& swapChain, std::unique_ptr<WindowManager>&& windowManager)
+    EngineContext::EngineContext(const std::unique_ptr<VulkanContext>& vulkanContext)
     {
-        mWindowManager = std::move(windowManager);
         mMeshContainer.AddFilePath("Models\\viking_room.obj");
         mMeshContainer.LoadMeshData();
-        mMeshContainer.Initialize(device);
-        mExtent = swapChain->GetSwapChainExtend();
+        mMeshContainer.Initialize(vulkanContext->GetDevice(), vulkanContext->GetCommandPool());
+
+        mTextureContainer.AddTexture("Textures\\viking_room.png", VK_FORMAT_R8G8B8A8_SRGB);
+        mTextureContainer.Initialize(vulkanContext->GetDevice(), vulkanContext->GetCommandPool());
+
+        mSamplerContainer.Initialize(vulkanContext->GetDevice());
     }
 
-    void EngineContext::Cleanup(const std::unique_ptr<Device>& device)
+    void EngineContext::Cleanup(const std::unique_ptr<VulkanContext>& vulkanContext)
     {
-        mMeshContainer.Cleanup(device);
+        mMeshContainer.Cleanup(vulkanContext->GetDevice());
+        mTextureContainer.Cleanup();
+        mSamplerContainer.Cleanup(vulkanContext->GetDevice());
     }
 
-    void EngineContext::HandleInput()
+    void EngineContext::UpdateContext(const std::unique_ptr<VulkanContext>& vulkanContext, float dt)
     {
-        mWindowManager->HandleInput();
-    }
-
-    void EngineContext::UpdateContext(float dt)
-    {
-        auto controls = mWindowManager->GetControls();
-        mCamera.UpdateCamera(dt, mExtent.width / (float)mExtent.height, controls);
+        const auto& windowManager = vulkanContext->GetWindowManager();
+        const auto& controls = windowManager->GetControls();
+        const auto& swapChain = vulkanContext->GetSwapChain();
+        auto extend = swapChain->GetSwapChainExtent();
+        mCamera.UpdateCamera(dt, extend.width / (float)extend.height, controls);
 
     }
 
-    void EngineContext::UpdateBackBufferIdex(uint32_t index) const
-    {
-        mBackBufferIndex = index;
-    }
-    uint32_t EngineContext::GetBackBufferIndex() const
-    {
-        return mBackBufferIndex;
-    }
-    VkExtent2D EngineContext::GetExtent()
-    {
-        return mExtent;
-    }
-    MeshContainer& EngineContext::GetMeshContainer() 
+    const MeshContainer& EngineContext::GetMeshContainer() const
     {
         return mMeshContainer;
     }
-    const std::unique_ptr<WindowManager>& EngineContext::GetWindowManager() const
+
+    const TextureContaineer& EngineContext::GetTextureContainer() const
     {
-        return mWindowManager;
+        return mTextureContainer;
     }
-    bool EngineContext::ShouldClose() const
+
+    const SamplerContainer& EngineContext::GetSamplerContainer() const
     {
-        return mWindowManager->ShouldClose();
+        return mSamplerContainer;
     }
-    void EngineContext::ResizeWindow()
-    {
-        mWindowResized = true;
-    }
-    bool EngineContext::IsWindowResized()
-    {
-        return mWindowResized;
-    }
-    void EngineContext::ResetWindowResizeState(VkExtent2D extent)
-    {
-        mExtent = extent;
-        mWindowResized = false;
-    }
+
     const Camera& EngineContext::GetCamera() const
     {
         return mCamera;

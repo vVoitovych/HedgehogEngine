@@ -33,6 +33,9 @@ namespace Renderer
 
 		float GetDeltaTime() const;
 
+		void SetBackBufferIndex(uint32_t index);
+		uint32_t GetBackBufferIndex() const;
+
 	private:
 		glm::mat4 mCameraViewMatrix;
 		glm::mat4 mCameraProjMatrix;
@@ -45,6 +48,7 @@ namespace Renderer
 		glm::vec3 mCameraPosition;
 
 		float mDeltaTime;
+		uint32_t mBackBufferIndex;
 
 	};
 

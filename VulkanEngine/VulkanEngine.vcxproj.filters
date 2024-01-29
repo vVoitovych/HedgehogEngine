@@ -61,15 +61,6 @@
     <ClCompile Include="Renderer\Wrappeers\FrameBuffer\FrameBuffer.cpp">
       <Filter>Renderer\Wrappers\FrameBuffers</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Wrappeers\Resources\DepthBuffer\DepthBuffer.cpp">
-      <Filter>Renderer\Wrappers\Resources\DepthBuffer</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Wrappeers\Resources\TextureImage\TextureImage.cpp">
-      <Filter>Renderer\Wrappers\Resources\TextureImage</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Wrappeers\Resources\TextureImage\TextureSampler.cpp">
-      <Filter>Renderer\Wrappers\Resources\TextureImage</Filter>
-    </ClCompile>
     <ClCompile Include="Scene\Scene.cpp">
       <Filter>Scene</Filter>
     </ClCompile>
@@ -129,6 +120,39 @@
     </ClCompile>
     <ClCompile Include="Renderer\Containers\VertexDescription.cpp">
       <Filter>Renderer\Containers\MeshContainer</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Wrappeers\Descriptors\DescriptorPool.cpp">
+      <Filter>Renderer\Wrappers\Descriptors</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Wrappeers\Commands\CommandPool.cpp">
+      <Filter>Renderer\Wrappers\Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Wrappeers\Resources\Buffer\Buffer.cpp">
+      <Filter>Renderer\Wrappers\Resources\Buffer</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Wrappeers\Resources\Image\Image.cpp">
+      <Filter>Renderer\Wrappers\Resources\Image</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Wrappeers\Descriptors\Sampler.cpp">
+      <Filter>Renderer\Wrappers\Descriptors\Types\Samplers</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Containers\TextureContainer.cpp">
+      <Filter>Renderer\Containers\TextureContainer</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Containers\SamplerContainer.cpp">
+      <Filter>Renderer\Containers\SamplerContainer</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Context\VulkanContext.cpp">
+      <Filter>Renderer\Context</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\RenderPasses\GuiPass.cpp">
+      <Filter>Renderer\RenderPasses\GuiPass</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\RenderPasses\GuiPassInfo.cpp">
+      <Filter>Renderer\RenderPasses\GuiPass</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Wrappeers\Resources\Image\ImageManagement.cpp">
+      <Filter>Renderer\Wrappers\Resources\Image</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -225,15 +249,6 @@
     <ClInclude Include="Renderer\Wrappeers\FrameBuffer\FrameBuffer.hpp">
       <Filter>Renderer\Wrappers\FrameBuffers</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Wrappeers\Resources\DepthBuffer\DepthBuffer.hpp">
-      <Filter>Renderer\Wrappers\Resources\DepthBuffer</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Wrappeers\Resources\TextureImage\TextureImage.hpp">
-      <Filter>Renderer\Wrappers\Resources\TextureImage</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Wrappeers\Resources\TextureImage\TextureSampler.hpp">
-      <Filter>Renderer\Wrappers\Resources\TextureImage</Filter>
-    </ClInclude>
     <ClInclude Include="Scene\Scene.hpp">
       <Filter>Scene</Filter>
     </ClInclude>
@@ -305,6 +320,39 @@
     </ClInclude>
     <ClInclude Include="Renderer\Containers\VertexDescription.hpp">
       <Filter>Renderer\Containers\MeshContainer</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\Descriptors\DescriptorPool.hpp">
+      <Filter>Renderer\Wrappers\Descriptors</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\Commands\CommandPool.hpp">
+      <Filter>Renderer\Wrappers\Commands</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\Resources\Buffer\Buffer.hpp">
+      <Filter>Renderer\Wrappers\Resources\Buffer</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\Resources\Image\Image.hpp">
+      <Filter>Renderer\Wrappers\Resources\Image</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\Descriptors\Sampler.hpp">
+      <Filter>Renderer\Wrappers\Descriptors\Types\Samplers</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Containers\TextureContainer.hpp">
+      <Filter>Renderer\Containers\TextureContainer</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Containers\SamplerContainer.h">
+      <Filter>Renderer\Containers\SamplerContainer</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Context\VulkanContext.hpp">
+      <Filter>Renderer\Context</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\RenderPasses\GuiPass.h">
+      <Filter>Renderer\RenderPasses\GuiPass</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\RenderPasses\GuiPassInfo.hpp">
+      <Filter>Renderer\RenderPasses\GuiPass</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\Resources\Image\ImageManagement.hpp">
+      <Filter>Renderer\Wrappers\Resources\Image</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -406,12 +454,6 @@
     <Filter Include="Renderer\Wrappers\Resources">
       <UniqueIdentifier>{e7f8d361-123f-4ae0-9c84-eb7861df0e35}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Renderer\Wrappers\Resources\DepthBuffer">
-      <UniqueIdentifier>{21b19f82-2b21-49dc-8907-352fb30c0b94}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Renderer\Wrappers\Resources\TextureImage">
-      <UniqueIdentifier>{21a98a9b-953c-4c85-8415-aa257797c4b5}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Renderer\Containers">
       <UniqueIdentifier>{54791467-0b8e-45f5-961e-cebff47e3b89}</UniqueIdentifier>
     </Filter>
@@ -441,6 +483,24 @@
     </Filter>
     <Filter Include="Renderer\Containers\MeshContainer">
       <UniqueIdentifier>{24953777-77dd-46ce-9d22-7683301abc27}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Wrappers\Resources\Image">
+      <UniqueIdentifier>{a39558c6-212d-4621-a484-85c1a6b23462}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Wrappers\Resources\Buffer">
+      <UniqueIdentifier>{53ac8c8a-0e9c-4cac-a19b-c31ff0c83a6f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Wrappers\Descriptors\Types\Samplers">
+      <UniqueIdentifier>{47bf764d-7383-4c11-b9ca-e21ff6f53174}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Containers\TextureContainer">
+      <UniqueIdentifier>{0bd65f78-6291-496b-9f8f-208e568fbe0e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Containers\SamplerContainer">
+      <UniqueIdentifier>{dfa3de2f-a1c7-4498-b229-7157c1a8f042}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\RenderPasses\GuiPass">
+      <UniqueIdentifier>{b4a8cff3-9318-4d50-a093-05ebb8f45a2d}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

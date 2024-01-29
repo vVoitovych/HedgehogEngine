@@ -116,14 +116,14 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)Libraries\TinyObjectLoader;$(ProjectDir);C:\VulkanSDK\1.3.231.1\Include;$(ProjectDir)Libraries\glm;$(ProjectDir)Libraries\glfw-3.3.8.bin.WIN64\include;$(ProjectDir)Libraries\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)Libraries\TinyObjectLoader;$(ProjectDir);C:\VulkanSDK\1.3.231.1\Include;$(ProjectDir)Libraries\glm;$(SolutionDir);$(SolutionDir)ThirdParty\glfw-3.3.8.bin.WIN64\include;$(ProjectDir)Libraries\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)Libraries\glfw-3.3.8.bin.WIN64\lib-vc2019;C:\VulkanSDK\1.3.231.1\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)x64\Debug;$(SolutionDir)ThirdParty\glfw-3.3.8.bin.WIN64\lib-vc2019;C:\VulkanSDK\1.3.231.1\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;ImGui.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -134,7 +134,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)Libraries\TinyObjectLoader;$(ProjectDir);C:\VulkanSDK\1.3.231.1\Include;$(ProjectDir)Libraries\glm;$(ProjectDir)Libraries\glfw-3.3.8.bin.WIN64\include;$(ProjectDir)Libraries\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)Libraries\TinyObjectLoader;$(ProjectDir);C:\VulkanSDK\1.3.231.1\Include;$(ProjectDir)Libraries\glm;$(SolutionDir);$(SolutionDir)ThirdParty\glfw-3.3.8.bin.WIN64\include;$(ProjectDir)Libraries\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -142,8 +142,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)Libraries\glfw-3.3.8.bin.WIN64\lib-vc2019;C:\VulkanSDK\1.3.231.1\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)x64\Release;$(SolutionDir)ThirdParty\glfw-3.3.8.bin.WIN64\lib-vc2019;C:\VulkanSDK\1.3.231.1\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;ImGui.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -156,31 +156,39 @@
     <ClCompile Include="Renderer\Camera\Camera.cpp" />
     <ClCompile Include="Renderer\Containers\Mesh.cpp" />
     <ClCompile Include="Renderer\Containers\MeshContainer.cpp" />
+    <ClCompile Include="Renderer\Containers\SamplerContainer.cpp" />
+    <ClCompile Include="Renderer\Containers\TextureContainer.cpp" />
     <ClCompile Include="Renderer\Containers\VertexDescription.cpp" />
     <ClCompile Include="Renderer\Context\EngineContext.cpp" />
     <ClCompile Include="Renderer\Context\FrameContext.cpp" />
     <ClCompile Include="Renderer\Context\RenderContext.cpp" />
     <ClCompile Include="Renderer\Context\ThreadContext.cpp" />
+    <ClCompile Include="Renderer\Context\VulkanContext.cpp" />
     <ClCompile Include="Renderer\Renderer.cpp" />
     <ClCompile Include="Renderer\RenderPasses\ForwardPass.cpp" />
     <ClCompile Include="Renderer\RenderPasses\ForwardPassInfo.cpp" />
     <ClCompile Include="Renderer\RenderPasses\ForwardPipelineInfo.cpp" />
+    <ClCompile Include="Renderer\RenderPasses\GuiPass.cpp" />
+    <ClCompile Include="Renderer\RenderPasses\GuiPassInfo.cpp" />
     <ClCompile Include="Renderer\RenderPasses\InitPass.cpp" />
     <ClCompile Include="Renderer\RenderPasses\PresentPass.cpp" />
     <ClCompile Include="Renderer\RenderQueue\RenderQueue.cpp" />
     <ClCompile Include="Renderer\WindowManagment\WindowManager.cpp" />
     <ClCompile Include="Renderer\WindowManagment\WindowState.cpp" />
     <ClCompile Include="Renderer\Wrappeers\Commands\CommandBuffer.cpp" />
+    <ClCompile Include="Renderer\Wrappeers\Commands\CommandPool.cpp" />
+    <ClCompile Include="Renderer\Wrappeers\Descriptors\DescriptorPool.cpp" />
     <ClCompile Include="Renderer\Wrappeers\Descriptors\DescriptorSet.cpp" />
     <ClCompile Include="Renderer\Wrappeers\Descriptors\DescriptorSetLayout.cpp" />
+    <ClCompile Include="Renderer\Wrappeers\Descriptors\Sampler.cpp" />
     <ClCompile Include="Renderer\Wrappeers\Descriptors\UBO.cpp" />
     <ClCompile Include="Renderer\Wrappeers\Device\Device.cpp" />
     <ClCompile Include="Renderer\Wrappeers\FrameBuffer\FrameBuffer.cpp" />
     <ClCompile Include="Renderer\Wrappeers\Pipeline\Pipeline.cpp" />
     <ClCompile Include="Renderer\Wrappeers\RenderPass\RenderPass.cpp" />
-    <ClCompile Include="Renderer\Wrappeers\Resources\DepthBuffer\DepthBuffer.cpp" />
-    <ClCompile Include="Renderer\Wrappeers\Resources\TextureImage\TextureImage.cpp" />
-    <ClCompile Include="Renderer\Wrappeers\Resources\TextureImage\TextureSampler.cpp" />
+    <ClCompile Include="Renderer\Wrappeers\Resources\Buffer\Buffer.cpp" />
+    <ClCompile Include="Renderer\Wrappeers\Resources\Image\Image.cpp" />
+    <ClCompile Include="Renderer\Wrappeers\Resources\Image\ImageManagement.cpp" />
     <ClCompile Include="Renderer\Wrappeers\Shaders\FragmentShader.cpp" />
     <ClCompile Include="Renderer\Wrappeers\Shaders\Shader.cpp" />
     <ClCompile Include="Renderer\Wrappeers\Shaders\VertexShader.cpp" />
@@ -215,15 +223,20 @@
     <ClInclude Include="Renderer\Common\RendererSettings.hpp" />
     <ClInclude Include="Renderer\Containers\Mesh.hpp" />
     <ClInclude Include="Renderer\Containers\MeshContainer.hpp" />
+    <ClInclude Include="Renderer\Containers\SamplerContainer.h" />
+    <ClInclude Include="Renderer\Containers\TextureContainer.hpp" />
     <ClInclude Include="Renderer\Containers\VertexDescription.hpp" />
     <ClInclude Include="Renderer\Context\EngineContext.hpp" />
     <ClInclude Include="Renderer\Context\FrameContext.hpp" />
     <ClInclude Include="Renderer\Context\RenderContext.hpp" />
     <ClInclude Include="Renderer\Context\ThreadContext.hpp" />
+    <ClInclude Include="Renderer\Context\VulkanContext.hpp" />
     <ClInclude Include="Renderer\Renderer.hpp" />
     <ClInclude Include="Renderer\RenderPasses\ForwardPass.hpp" />
     <ClInclude Include="Renderer\RenderPasses\ForwardPassInfo.hpp" />
     <ClInclude Include="Renderer\RenderPasses\ForwardPipelineInfo.hpp" />
+    <ClInclude Include="Renderer\RenderPasses\GuiPass.h" />
+    <ClInclude Include="Renderer\RenderPasses\GuiPassInfo.hpp" />
     <ClInclude Include="Renderer\RenderPasses\InitPass.hpp" />
     <ClInclude Include="Renderer\RenderPasses\PresentPass.hpp" />
     <ClInclude Include="Renderer\RenderQueue\RenderQueue.hpp" />
@@ -231,8 +244,11 @@
     <ClInclude Include="Renderer\WindowManagment\WindowManager.hpp" />
     <ClInclude Include="Renderer\WindowManagment\WindowState.hpp" />
     <ClInclude Include="Renderer\Wrappeers\Commands\CommandBuffer.hpp" />
+    <ClInclude Include="Renderer\Wrappeers\Commands\CommandPool.hpp" />
+    <ClInclude Include="Renderer\Wrappeers\Descriptors\DescriptorPool.hpp" />
     <ClInclude Include="Renderer\Wrappeers\Descriptors\DescriptorSet.hpp" />
     <ClInclude Include="Renderer\Wrappeers\Descriptors\DescriptorSetLayout.hpp" />
+    <ClInclude Include="Renderer\Wrappeers\Descriptors\Sampler.hpp" />
     <ClInclude Include="Renderer\Wrappeers\Descriptors\UBO.hpp" />
     <ClInclude Include="Renderer\Wrappeers\Descriptors\UBOInfo.hpp" />
     <ClInclude Include="Renderer\Wrappeers\Device\Device.hpp" />
@@ -240,9 +256,9 @@
     <ClInclude Include="Renderer\Wrappeers\Pipeline\Pipeline.hpp" />
     <ClInclude Include="Renderer\Wrappeers\Pipeline\PipelineInfo.hpp" />
     <ClInclude Include="Renderer\Wrappeers\RenderPass\RenderPass.hpp" />
-    <ClInclude Include="Renderer\Wrappeers\Resources\DepthBuffer\DepthBuffer.hpp" />
-    <ClInclude Include="Renderer\Wrappeers\Resources\TextureImage\TextureImage.hpp" />
-    <ClInclude Include="Renderer\Wrappeers\Resources\TextureImage\TextureSampler.hpp" />
+    <ClInclude Include="Renderer\Wrappeers\Resources\Buffer\Buffer.hpp" />
+    <ClInclude Include="Renderer\Wrappeers\Resources\Image\Image.hpp" />
+    <ClInclude Include="Renderer\Wrappeers\Resources\Image\ImageManagement.hpp" />
     <ClInclude Include="Renderer\Wrappeers\Shaders\FragmentShader.hpp" />
     <ClInclude Include="Renderer\Wrappeers\Shaders\Shader.hpp" />
     <ClInclude Include="Renderer\Wrappeers\Shaders\VertexShader.hpp" />

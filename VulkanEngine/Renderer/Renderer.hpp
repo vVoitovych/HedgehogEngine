@@ -4,9 +4,6 @@
 
 namespace Renderer
 {
-	class WindowManager;
-	class Device;
-	class SwapChain;
 	class RenderContext;
 	class RenderQueue;
 
@@ -20,7 +17,7 @@ namespace Renderer
 		Renderer& operator=(const Renderer&) = delete;
 
 		void Cleanup();
-
+		bool ShouldClose();
 		void HandleInput();
 		void Update(float dt);
 
@@ -28,17 +25,9 @@ namespace Renderer
 
 		void RecreateSwapChain();
 
-		bool ShouldClose();
-
 		float GetFrameTime();
 
 	private:
-
-		uint32_t currentFrame = 0;
-		bool mShouldClose = false;
-
-		std::unique_ptr<Device> mDevice;
-		std::unique_ptr<SwapChain> mSwapChain;
 
 		std::unique_ptr<RenderContext> mRenderContext;
 		std::unique_ptr<RenderQueue> mRenderQueue;

@@ -2,49 +2,45 @@
 
 #include <memory>
 #include <vector>
+#include <string>
 
 namespace Renderer
 {
     class RenderContext;
-    class Device;
-    class SwapChain;
 
     class RenderPass;
     class DescriptorSetLayout;
     class Pipeline;
-    class DepthBuffer;
     class FrameBuffer;
     class DescriptorSet;
     class UBO;
-    class TextureImage;
-    class TextureSampler;
+    class Image;
 
 	class ForwardPass
 	{
     public:
-        ForwardPass(const std::unique_ptr<Device>& device, const std::unique_ptr<SwapChain>& swapChain);
+        ForwardPass(const std::unique_ptr<RenderContext>& context);
         ~ForwardPass();
 
-        void Render(std::unique_ptr<RenderContext>& renderContext);
-        void Cleanup(const std::unique_ptr<Device>& device);
+        void Render(std::unique_ptr<RenderContext>& context);
+        void Cleanup(const std::unique_ptr<RenderContext>& context);
 
-        void CleanSizedResources(const std::unique_ptr<Device>& device);
-        void CreateSizedResources(const std::unique_ptr<Device>& device, const std::unique_ptr<SwapChain>& swapChain);
+        void ResizeResources(const std::unique_ptr<RenderContext>& context);
+
+    private:
+        void CreateDepthBuffer(const std::unique_ptr<RenderContext>& context);
 
     private:
         std::unique_ptr<RenderPass> mRenderPass;
         std::unique_ptr<DescriptorSetLayout> mDescriptorSetLayout;
         std::unique_ptr<Pipeline> mPipeline;
 
-        std::unique_ptr<DepthBuffer> mDepthBuffer;
+        std::unique_ptr<Image> mDepthBuffer;
         std::vector<FrameBuffer> mFrameBuffers;
 
         std::vector<DescriptorSet> mDescriptorSets;
         std::vector<UBO> mUniformBuffers;
 
-        // TODO remome teture and texture sampler from render pass
-        std::unique_ptr<TextureImage> mTextureImage;
-        std::unique_ptr<TextureSampler> mTextureSampler;
 	};
 
 }

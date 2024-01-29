@@ -1,13 +1,14 @@
 #include "Renderer.hpp"
 
-#include "WindowManagment/WindowManager.hpp"
-#include "Wrappeers/Device/Device.hpp"
-#include "Wrappeers/SwapChain/SwapChain.hpp"
 #include "Context/RenderContext.hpp"
+#include "Context/VulkanContext.hpp"
 #include "Context/EngineContext.hpp"
 #include "Context/FrameContext.hpp"
 #include "Context/ThreadContext.hpp"
 #include "RenderQueue/RenderQueue.hpp"
+
+#include "Wrappeers/Device/Device.hpp"
+#include "Wrappeers/SwapChain/SwapChain.hpp"
 
 #include "Logger/Logger.hpp"
 
@@ -17,12 +18,8 @@ namespace Renderer
 {
 	Renderer::Renderer()
 	{
-		auto windowManager = std::make_unique<WindowManager>(WindowState::GetDefaultState());
-		mDevice = std::make_unique<Device>(windowManager);
-		mSwapChain = std::make_unique<SwapChain>(mDevice, windowManager);
-
-		mRenderContext = std::make_unique<RenderContext>(mDevice, mSwapChain, std::move(windowManager));
-		mRenderQueue = std::make_unique<RenderQueue>(mDevice, mSwapChain);
+		mRenderContext = std::make_unique<RenderContext>();
+		mRenderQueue = std::make_unique<RenderQueue>(mRenderContext);
 
 	}
 
@@ -32,18 +29,16 @@ namespace Renderer
 	 
 	void Renderer::Cleanup()
 	{
-		vkQueueWaitIdle(mDevice->GetNativeGraphicsQueue());
+		vkQueueWaitIdle(mRenderContext->GetVulkanContext()->GetDevice()->GetNativeGraphicsQueue());
 
-		mRenderQueue->Cleanup(mDevice);
-		mRenderContext->Cleanup(mDevice);
-		mSwapChain->Cleanup(mDevice);
-		mDevice->Cleanup();
+		mRenderQueue->Cleanup(mRenderContext);
+		mRenderContext->Cleanup();
 	}
 
 	void Renderer::HandleInput()
 	{
-		auto& engineContext = mRenderContext->GetEngineContext();
-		engineContext->HandleInput();
+		auto& vilkanContext = mRenderContext->GetVulkanContext();
+		vilkanContext->HandleInput();
 	}
 
 	void Renderer::Update(float dt)
@@ -53,31 +48,33 @@ namespace Renderer
 	}
 
 	void Renderer::DrawFrame()
-	{
-		mRenderQueue->Render(mRenderContext);
-		
+	{		
 		auto& engineContext = mRenderContext->GetEngineContext();
 		auto dt = GetFrameTime();
-		engineContext->UpdateContext(dt);
-		if (engineContext->IsWindowResized())
+		auto& vulkanContext = mRenderContext->GetVulkanContext();
+		engineContext->UpdateContext(vulkanContext, dt);
+		if (vulkanContext->IsWindowResized())
 		{
 			RecreateSwapChain();
-			engineContext->ResetWindowResizeState(mSwapChain->GetSwapChainExtend());
+			vulkanContext->ResetWindowResizeState();
 		}
+
+		mRenderQueue->Render(mRenderContext);
 	}
 
 	void Renderer::RecreateSwapChain()
 	{
-		vkDeviceWaitIdle(mDevice->GetNativeDevice());
-		mRenderQueue->CleanSizedResources(mDevice);
-		mSwapChain->Recreate(mDevice);
-		mRenderQueue->CreateSizedResources(mDevice, mSwapChain);
+		vkDeviceWaitIdle(mRenderContext->GetVulkanContext()->GetDevice()->GetNativeDevice());
+		auto& vulkanContext = mRenderContext->GetVulkanContext();
+		vulkanContext->GetSwapChain()->Recreate(vulkanContext->GetDevice());
+
+		mRenderQueue->ResizeResources(mRenderContext);
 	}
 
 	bool Renderer::ShouldClose()
 	{
-		auto& engineContext = mRenderContext->GetEngineContext();
-		return engineContext->ShouldClose();
+		auto& vulkanContext = mRenderContext->GetVulkanContext();
+		return vulkanContext->ShouldClose();
 	}
 
 	float Renderer::GetFrameTime()

@@ -1,47 +1,45 @@
 #include "InitPass.hpp"
+#include "Renderer/Context/VulkanContext.hpp"
 #include "Renderer/Context/RenderContext.hpp"
 #include "Renderer/Context/ThreadContext.hpp"
 #include "Renderer/Context/EngineContext.hpp"
+#include "Renderer/Context/FrameContext.hpp"
 
 #include "Renderer/Wrappeers/Device/Device.hpp"
 #include "Renderer/Wrappeers/SwapChain/SwapChain.hpp"
 #include "Renderer/Wrappeers/Commands/CommandBuffer.hpp"
+#include "Renderer/Wrappeers/SyncObjects/SyncObject.hpp"
 
 #include <stdexcept>
 
 namespace Renderer
 {
-	InitPass::InitPass(const std::unique_ptr<Device>& device, const std::unique_ptr<SwapChain>& swapChain)
+	InitPass::InitPass(const std::unique_ptr<RenderContext>& context)
 	{
-		mDevice = device->GetNativeDevice();
-		mSwapChain = swapChain->GetNativeSwapChain();
 	}
 
-	void InitPass::Render(std::unique_ptr<RenderContext>& renderContext)
+	void InitPass::Render(std::unique_ptr<RenderContext>& context)
 	{
-		if (!mDevice.has_value() || !mSwapChain.has_value())
-		{
-			throw std::runtime_error("Init pass doesn't initialized!");
-		}
+		auto& vulkanContext = context->GetVulkanContext();
+		auto& frameContext = context->GetFrameContext();
+		auto& threadContext = context->GetThreadContext();
 
-		auto [engineContext, frameContext, threadContext] = renderContext->GetContexts();
 		auto& syncObject = threadContext->GetSyncObject();
 		syncObject.WaitforInFlightFence();
 
 		uint32_t imageIndex;
 		VkResult result = vkAcquireNextImageKHR(
-			mDevice.value(), 
-			mSwapChain.value(),
+			vulkanContext->GetDevice()->GetNativeDevice(), 
+			vulkanContext->GetSwapChain()->GetNativeSwapChain(),
 			UINT64_MAX, 
 			syncObject.GetImageAvailableSemaphore(), 
 			VK_NULL_HANDLE, 
 			&imageIndex);
-		engineContext->UpdateBackBufferIdex(imageIndex);
+		frameContext->SetBackBufferIndex(imageIndex);
 
 		if (result == VK_ERROR_OUT_OF_DATE_KHR)
 		{
-			engineContext->ResizeWindow();
-			mSwapChain.reset();
+			vulkanContext->ResizeWindow();
 			return;
 		}
 		else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
@@ -54,16 +52,11 @@ namespace Renderer
 		commandBuffer.BeginCommandBuffer(0);
 	}
 
-	void InitPass::Cleanup(const std::unique_ptr<Device>& device)
+	void InitPass::Cleanup(const std::unique_ptr<RenderContext>& context)
 	{
-		mDevice.reset();
-		mSwapChain.reset();
+
 	}
 
-	void InitPass::SetSwapChain(const std::unique_ptr<SwapChain>& swapChain)
-	{
-		mSwapChain = swapChain->GetNativeSwapChain();
-	}
 
 
 }

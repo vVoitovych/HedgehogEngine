@@ -60,9 +60,14 @@ namespace Renderer
 		return mSwapChainImageFormat;
 	}
 
-	VkExtent2D SwapChain::GetSwapChainExtend()
+	VkExtent2D SwapChain::GetSwapChainExtent() const
 	{
 		return mSwapChainExtent;
+	}
+
+	uint32_t SwapChain::GetMinImagesCount() const
+	{
+		return mMinImageCount;
 	}
 
 	size_t SwapChain::GetSwapChainImagesSize() const
@@ -75,6 +80,11 @@ namespace Renderer
 		return mSwapChainImageViews[index];
 	}
 
+	VkImage SwapChain::GetSwapChainImage(size_t index) const
+	{
+		return mSwapChainImages[index];
+	}
+
 	void SwapChain::CreateSwapChain(const std::unique_ptr<Device>& device)
 	{
 		SwapChainSupportDetails swapChainSupport = device->QuerySwapChainSupport();
@@ -83,7 +93,8 @@ namespace Renderer
 		VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapChainSupport.mPrecentModes);
 		VkExtent2D extent = ChooseSwapExtend(swapChainSupport.mCapabilities);
 
-		uint32_t imageCount = swapChainSupport.mCapabilities.minImageCount + 1;
+		mMinImageCount = swapChainSupport.mCapabilities.minImageCount;
+		uint32_t imageCount = mMinImageCount + 1;
 		if (swapChainSupport.mCapabilities.maxImageCount > 0 && imageCount > swapChainSupport.mCapabilities.maxImageCount)
 		{
 			imageCount = swapChainSupport.mCapabilities.maxImageCount;

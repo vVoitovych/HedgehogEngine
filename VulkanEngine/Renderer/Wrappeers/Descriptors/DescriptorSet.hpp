@@ -6,20 +6,22 @@
 namespace Renderer
 {
 	class Device;
+	class DescriptorPool;
 	class DescriptorSetLayout;
 	class UBO;
-	class TextureImage;
-	class TextureSampler;
+	class Image;
+	class Sampler;
 
 	class DescriptorSet
 	{
 	public:
 		DescriptorSet(
-			const std::unique_ptr<Device>& device, 
+			const std::unique_ptr<Device>& device,
+			const std::unique_ptr<DescriptorPool>& descriptorPool,
 			std::unique_ptr<DescriptorSetLayout>& descriptorSetLayout, 
 			UBO& ubo, 
-			std::unique_ptr<TextureImage>& image, 
-			std::unique_ptr<TextureSampler>& sampler);
+			const Image& image, 
+			const Sampler& sampler);
 		~DescriptorSet();
 
 		DescriptorSet(const DescriptorSet&) = delete;
@@ -28,7 +30,7 @@ namespace Renderer
 		DescriptorSet(DescriptorSet&& other) noexcept;
 		DescriptorSet& operator=(DescriptorSet&& other) noexcept;
 
-		void Cleanup(const std::unique_ptr<Device>& device);
+		void Cleanup(const std::unique_ptr<Device>& device, const std::unique_ptr<DescriptorPool>& descriptionPool);
 
 		VkDescriptorSet* GetNativeSet();
 	private:

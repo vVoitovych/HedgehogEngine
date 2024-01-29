@@ -5,14 +5,14 @@
 
 namespace Renderer
 {
-	class Device;
+	class CommandPool;
 	class RenderPass;
 	class Pipeline;
 
 	class CommandBuffer
 	{
 	public:
-		CommandBuffer(const std::unique_ptr<Device>& device);
+		CommandBuffer(const std::unique_ptr<CommandPool>& cxommandPool);
 		~CommandBuffer();
 
 		CommandBuffer(const CommandBuffer&) = delete;
@@ -22,7 +22,7 @@ namespace Renderer
 		CommandBuffer(CommandBuffer&& other);
 		CommandBuffer& operator=(CommandBuffer&& other);
 
-		void Cleanup(const std::unique_ptr<Device>& device);
+		void Cleanup(const std::unique_ptr<CommandPool>& commandPool);
 
 		VkCommandBuffer& GetNativeCommandBuffer();
 

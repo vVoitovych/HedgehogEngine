@@ -1,5 +1,6 @@
 #include "UBO.hpp"
 #include "Renderer/Wrappeers/Device/Device.hpp"
+#include "Renderer/Wrappeers/Resources/Buffer/Buffer.hpp"
 #include "UBOInfo.hpp"
 #include "Logger/Logger.hpp"
 #include "Renderer/Common/EngineDebugBreak.hpp"
@@ -12,40 +13,24 @@
 namespace Renderer
 {
 	UBO::UBO(const std::unique_ptr<Device>& device)
-		: mUniformBuffer(nullptr)
-		, mUniformBufferMemory(nullptr)
-		, mUniformBufferMapped(nullptr)
+		: mUniformBufferMapped(nullptr)
 	{
 		VkDeviceSize bufferSize = sizeof(UniformBufferObject);
-		device->CreateBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-			mUniformBuffer, mUniformBufferMemory);
+		mUniformBuffer = std::make_unique<Buffer>(device, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-		device->MapMemory(mUniformBufferMemory, 0, bufferSize, 0, &mUniformBufferMapped);
+		mUniformBuffer->MapMemory(0, bufferSize, 0, &mUniformBufferMapped);
 		LOGINFO("Vulkan UBO created");
 	}
 
 	UBO::~UBO()
 	{
-		if (mUniformBuffer != nullptr)
-		{
-			LOGERROR("Vulkan uniform buffer should be cleanedup before destruction!");
-			ENGINE_DEBUG_BREAK();
-		}
-		if (mUniformBufferMemory != nullptr)
-		{
-			LOGERROR("Vulkan uniform buffer memory should be cleanedup before destruction!");
-			ENGINE_DEBUG_BREAK();
-		}
 	}
 
 	UBO::UBO(UBO&& other) noexcept
-		: mUniformBuffer(other.mUniformBuffer)
-		, mUniformBufferMemory(other.mUniformBufferMemory)
+		: mUniformBuffer(std::move(other.mUniformBuffer))
 		, mUniformBufferMapped(other.mUniformBufferMapped)
 	{
-		other.mUniformBuffer = nullptr;
-		other.mUniformBufferMemory = nullptr;
 		other.mUniformBufferMapped = nullptr;
 	}
 
@@ -53,23 +38,17 @@ namespace Renderer
 	{
 		if (this != &other)
 		{
-			mUniformBuffer = other.mUniformBuffer;
-			mUniformBufferMemory = other.mUniformBufferMemory;
+			mUniformBuffer = std::move(other.mUniformBuffer);
 			mUniformBufferMapped = other.mUniformBufferMapped;
 
-			other.mUniformBuffer = nullptr;
-			other.mUniformBufferMemory = nullptr;
 			other.mUniformBufferMapped = nullptr;
 		}
 		return *this;
 	}
 
-	void UBO::Cleanup(const std::unique_ptr<Device>& device)
+	void UBO::Cleanup()
 	{
-		device->DestroyBuffer(mUniformBuffer, nullptr);
-		device->FreeMemory(mUniformBufferMemory, nullptr);
-		mUniformBuffer = nullptr;
-		mUniformBufferMemory = nullptr;
+		mUniformBuffer->DestroyBuffer();
 		LOGINFO("UBO cleaned");
 	}
 
@@ -90,7 +69,7 @@ namespace Renderer
 
 	VkBuffer UBO::GetNativeBuffer()
 	{
-		return mUniformBuffer;
+		return mUniformBuffer->GetNativeBuffer();
 	}
 
 }

@@ -25,10 +25,13 @@ namespace Renderer
 		VkSwapchainKHR GetNativeSwapChain() const;
 
 		VkFormat GetFormat() const;
-		VkExtent2D GetSwapChainExtend();
+		VkExtent2D GetSwapChainExtent() const;
+		uint32_t GetMinImagesCount() const;
 		size_t GetSwapChainImagesSize() const;
 
 		VkImageView GetNativeSwapChainImageView(size_t index) const;
+
+		VkImage GetSwapChainImage(size_t index) const;
 
 	private:
 		void CreateSwapChain(const std::unique_ptr<Device>& device);
@@ -46,7 +49,7 @@ namespace Renderer
 		std::vector<VkImage> mSwapChainImages;
 		VkFormat mSwapChainImageFormat;
 		VkExtent2D mSwapChainExtent;
-
+		uint32_t mMinImageCount;
 		std::vector<VkImageView> mSwapChainImageViews;
 
 	};
