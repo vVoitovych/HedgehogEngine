@@ -24,7 +24,9 @@ namespace Renderer
 		static bool IsCursorPositionInGUI();
 
 	private:
-		void ApplyStyle();
+		void DrawGui(const std::unique_ptr<RenderContext>& context);
+		void DrawTransformWindow(const std::unique_ptr<RenderContext>& context);
+
 		void UploadFonts();
 
 	private:
