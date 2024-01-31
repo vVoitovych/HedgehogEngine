@@ -15,6 +15,8 @@ namespace Renderer
         mTextureContainer.Initialize(vulkanContext->GetDevice(), vulkanContext->GetCommandPool());
 
         mSamplerContainer.Initialize(vulkanContext->GetDevice());
+
+        mScene.InitScene();
     }
 
     void EngineContext::Cleanup(const std::unique_ptr<VulkanContext>& vulkanContext)
@@ -52,6 +54,14 @@ namespace Renderer
     const Camera& EngineContext::GetCamera() const
     {
         return mCamera;
+    }
+    Scene::Scene& EngineContext::GetScene()
+    {
+        return mScene;
+    }
+    const Scene::Scene& EngineContext::GetScene() const
+    {
+        return mScene;
     }
 }
 

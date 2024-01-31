@@ -53,6 +53,17 @@ namespace Scene
 		return entity;
 	}
 
+	ECS::Entity Scene::CreateGameObject(ECS::Entity parentEntity)
+	{
+		auto& rootHierarchy = mSceneCoordinator.GetComponent<HierarchyComponent>(parentEntity);
+		ECS::Entity entity = mSceneCoordinator.CreateEntity();
+		mSceneCoordinator.AddComponent(entity, TransformComponent{});
+		mSceneCoordinator.AddComponent(entity, HierarchyComponent{ GetNewGameObjectName(), parentEntity, {} });
+		rootHierarchy.mChildren.push_back(entity);
+
+		return entity;
+	}
+
 	void Scene::DeleteGameObject(ECS::Entity entity)
 	{
 		auto& hierarchy = mSceneCoordinator.GetComponent<HierarchyComponent>(entity);
@@ -97,6 +108,16 @@ namespace Scene
 
 
 		return result;
+	}
+
+	ECS::Entity Scene::GetRoot() const
+	{
+		return mRoot;
+	}
+
+	HierarchyComponent& Scene::GetHierarchyComponent(ECS::Entity entity)
+	{
+		return mSceneCoordinator.GetComponent<HierarchyComponent>(entity);
 	}
 
 	void Scene::CreateSceneRoot()

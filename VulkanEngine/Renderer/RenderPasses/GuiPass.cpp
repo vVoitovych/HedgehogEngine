@@ -5,6 +5,7 @@
 #include "Renderer/Context/VulkanContext.hpp"
 #include "Renderer/Context/ThreadContext.hpp"
 #include "Renderer/Context/FrameContext.hpp"
+#include "Renderer/Context/EngineContext.hpp"
 
 #include "Renderer/Wrappeers/RenderPass/RenderPass.hpp"
 #include "Renderer/Wrappeers/Commands/CommandPool.hpp"
@@ -16,6 +17,9 @@
 #include "Renderer/Wrappeers/Resources/Image/ImageManagement.hpp"
 
 #include "Renderer/WindowManagment/WindowManager.hpp"
+
+#include "Scene/Scene.hpp"
+#include "Scene/SceneComponents/HierarchyComponent.hpp"
 
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_vulkan.h"
@@ -179,15 +183,19 @@ namespace Renderer
 
 	void GuiPass::DrawGui(const std::unique_ptr<RenderContext>& context)
 	{
-		DrawTransformWindow(context);
+		DrawScene(context);
+		DrawInspector(context);
+
+		// TODO remove
+		ImGui::ShowDemoWindow();
 	}
 
-	void GuiPass::DrawTransformWindow(const std::unique_ptr<RenderContext>& context)
+	void GuiPass::DrawInspector(const std::unique_ptr<RenderContext>& context)
 	{
 		float sizeX, sizeY, paddingY;
 
-		sizeX = 160.0f;
-		sizeY = 320.0f;
+		sizeX = 300.0f;
+		sizeY = float(ImGui::GetIO().DisplaySize.y);
 		paddingY = 0.05f;
 		ImGui::SetNextWindowSize(
 			ImVec2(sizeX, sizeY),
@@ -203,40 +211,134 @@ namespace Renderer
 		);
 			
 		ImGui::Begin(
-			"Transform",
+			"Inspector",
 			NULL,
-			ImGuiWindowFlags_NoResize
+			ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove
 		);
+		{
+			if (ImGui::CollapsingHeader("Transform"))
+			{
+				static float x = 0.0f;
+				static float y = 0.0f;
+				static float z = 0.0f;
 
-		static float x = 0.0f;
-		static float y = 0.0f;
-		static float z = 0.0f;
+				static float r_x = 0.0f;
+				static float r_y = 0.0f;
+				static float r_z = 0.0f;
 
-		static float r_x = 0.0f;
-		static float r_y = 0.0f;
-		static float r_z = 0.0f;
+				static float s_x = 0.0f;
+				static float s_y = 0.0f;
+				static float s_z = 0.0f;
 
-		static float s_x = 0.0f;
-		static float s_y = 0.0f;
-		static float s_z = 0.0f;
+				ImGui::SeparatorText("Position");
+				ImGui::DragFloat("pos x", &x, 0.005f);
+				ImGui::DragFloat("pos y", &y, 0.005f);
+				ImGui::DragFloat("pos z", &z, 0.005f);
 
-		ImGui::SeparatorText("Position");
-		ImGui::DragFloat("pos x", &x, 0.005f);
-		ImGui::DragFloat("pos y", &y, 0.005f);
-		ImGui::DragFloat("pos z", &z, 0.005f);
+				ImGui::SeparatorText("Rotation");
+				ImGui::DragFloat("rot x", &r_x, 0.005f);
+				ImGui::DragFloat("rot y", &r_y, 0.005f);
+				ImGui::DragFloat("rot z", &r_z, 0.005f);
 
-		ImGui::SeparatorText("Rotation");
-		ImGui::DragFloat("rot x", &r_x, 0.005f);
-		ImGui::DragFloat("rot y", &r_y, 0.005f);
-		ImGui::DragFloat("rot z", &r_z, 0.005f);
-
-		ImGui::SeparatorText("Scale");
-		ImGui::DragFloat("scale x", &s_x, 0.005f);
-		ImGui::DragFloat("scale y", &s_y, 0.005f);
-		ImGui::DragFloat("scale z", &s_z, 0.005f);
+				ImGui::SeparatorText("Scale");
+				ImGui::DragFloat("scale x", &s_x, 0.005f);
+				ImGui::DragFloat("scale y", &s_y, 0.005f);
+				ImGui::DragFloat("scale z", &s_z, 0.005f);
+			}
+		}
 
 		ImGui::End();
 	
+	}
+
+	void GuiPass::DrawHierarchyNode(const std::unique_ptr<RenderContext>& context, ECS::Entity entity, int& index)
+	{
+		auto& scene = context->GetEngineContext()->GetScene();
+		auto& component = scene.GetHierarchyComponent(entity);
+		ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow;
+		const bool isSelected = (mSelectionMask & (1 << index)) != 0 && mNodeClicked != -1;
+		if (isSelected)
+			nodeFlags |= ImGuiTreeNodeFlags_Selected;
+
+		if (component.mChildren.size() > 0)
+		{
+			bool node_open = ImGui::TreeNodeEx((void*)(intptr_t)index, nodeFlags, component.mName.c_str());
+			if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
+			{
+				mNodeClicked = index;
+				mSelectedNode = entity;
+			}
+			++index;
+			if (node_open)
+			{
+				for (auto entity : component.mChildren)
+				{
+					DrawHierarchyNode(context, entity, index);
+				}
+				ImGui::TreePop();
+			}
+		}
+		else
+		{
+			nodeFlags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+			ImGui::TreeNodeEx((void*)(intptr_t)index, nodeFlags, component.mName.c_str());
+			if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
+			{
+				mNodeClicked = index;
+				mSelectedNode = entity;
+			}
+			++index;
+		}
+	}
+
+
+	void GuiPass::DrawScene(const std::unique_ptr<RenderContext>& context)
+	{
+		float sizeX, sizeY, paddingY;
+
+		sizeX = 300.0f;
+		sizeY = float(ImGui::GetIO().DisplaySize.y);
+		paddingY = 0.05f;
+		ImGui::SetNextWindowSize(ImVec2(sizeX, sizeY), ImGuiCond_Always);
+		ImGui::SetNextWindowPos(ImVec2(sizeX, 0.0f), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
+
+		ImGui::Begin("Scene", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove);
+
+		{
+			auto& scene = context->GetEngineContext()->GetScene();
+
+			int index = 0;
+
+			ImVec2 sz = ImVec2(-FLT_MIN, 0.0f);
+
+			if (ImGui::Button("Create object", sz))
+			{
+				if (mNodeClicked != -1)
+				{
+					scene.CreateGameObject(mSelectedNode);
+				}
+				else
+				{
+					scene.CreateGameObject();
+				}
+			}
+			if (ImGui::Button("Delete object", sz))
+			{
+				if (mNodeClicked != -1)
+				{
+					scene.DeleteGameObject(mSelectedNode);
+					mNodeClicked = -1;
+				}
+			}
+
+			DrawHierarchyNode(context, scene.GetRoot(), index);
+
+			if (mNodeClicked != -1)
+			{
+				mSelectionMask = (1 << mNodeClicked);
+			}
+		}
+		ImGui::End();
 	}
 
 

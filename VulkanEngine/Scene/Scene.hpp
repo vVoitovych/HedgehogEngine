@@ -11,6 +11,8 @@
 
 namespace Scene
 {
+	class HierarchyComponent;
+
 	struct RenderObjectData
 	{
 		glm::mat4 objMatrix;
@@ -19,12 +21,14 @@ namespace Scene
 
 	class Scene
 	{
+
 	public:
 		void InitScene();
 		void UpdateScene(float dt);
 
 		ECS::Entity CreateGameObject();
-		void DeleteGameObject(ECS::Entity entity);
+		ECS::Entity CreateGameObject(ECS::Entity entity);
+		void DeleteGameObject(ECS::Entity parentEntity);
 
 		void AddMeshComponent(ECS::Entity& entity);
 		void AddMeshComponent(ECS::Entity& entity, std::string mesh);
@@ -32,6 +36,9 @@ namespace Scene
 		void ChangeMeshComponent(ECS::Entity& entity, std::string meshPath);
 
 		std::vector<RenderObjectData> GetRenderGameObjects();
+
+		ECS::Entity GetRoot() const;
+		HierarchyComponent& GetHierarchyComponent(ECS::Entity entity);
 
 	private:
 		void CreateSceneRoot();
