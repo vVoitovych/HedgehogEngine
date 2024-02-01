@@ -5,7 +5,7 @@
 #include "Scene/SceneSystems/HierarchySystem.hpp"
 #include "Scene/SceneSystems/MeshSystem.hpp"
 
-#include <set>
+#include <optional>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -40,6 +40,11 @@ namespace Scene
 		ECS::Entity GetRoot() const;
 		HierarchyComponent& GetHierarchyComponent(ECS::Entity entity);
 
+		bool IsGameObjectSelected() const;
+		ECS::Entity GetSelectedGameObject() const;
+		void UnselectGameObject();
+		void SelectGameObject(ECS::Entity entity);
+
 	private:
 		void CreateSceneRoot();
 		std::string GetNewGameObjectName();
@@ -47,6 +52,8 @@ namespace Scene
 	private:
 		ECS::Coordinator mSceneCoordinator;
 		ECS::Entity mRoot;
+
+		std::optional<ECS::Entity> mSelectedEntity;
 
 		// systems
 		std::shared_ptr<TransformSystem> mTransformSystem;

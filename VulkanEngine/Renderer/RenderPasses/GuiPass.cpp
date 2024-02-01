@@ -267,6 +267,7 @@ namespace Renderer
 			{
 				mNodeClicked = index;
 				mSelectedNode = entity;
+				scene.SelectGameObject(entity);
 			}
 			++index;
 			if (node_open)
@@ -286,6 +287,7 @@ namespace Renderer
 			{
 				mNodeClicked = index;
 				mSelectedNode = entity;
+				scene.SelectGameObject(entity);
 			}
 			++index;
 		}
@@ -324,9 +326,11 @@ namespace Renderer
 			}
 			if (ImGui::Button("Delete object", sz))
 			{
-				if (mNodeClicked != -1)
+				if (mNodeClicked != -1 && scene.IsGameObjectSelected())
 				{
-					scene.DeleteGameObject(mSelectedNode);
+					auto entity = scene.GetSelectedGameObject();
+					scene.DeleteGameObject(entity);
+					scene.UnselectGameObject();
 					mNodeClicked = -1;
 				}
 			}

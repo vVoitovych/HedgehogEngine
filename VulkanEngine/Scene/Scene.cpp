@@ -120,6 +120,31 @@ namespace Scene
 		return mSceneCoordinator.GetComponent<HierarchyComponent>(entity);
 	}
 
+	bool Scene::IsGameObjectSelected() const
+	{
+		return mSelectedEntity.has_value();
+	}
+
+	ECS::Entity Scene::GetSelectedGameObject() const
+	{
+		if (!mSelectedEntity.has_value())
+		{
+			throw std::runtime_error("No game object selected");
+		}
+		return mSelectedEntity.value();
+	}
+
+	void Scene::UnselectGameObject()
+	{
+		mSelectedEntity.reset();
+	}
+
+	void Scene::SelectGameObject(ECS::Entity entity)
+	{
+		if (entity != mRoot)
+			mSelectedEntity = entity;
+	}
+
 	void Scene::CreateSceneRoot()
 	{
 		mRoot = mSceneCoordinator.CreateEntity();
