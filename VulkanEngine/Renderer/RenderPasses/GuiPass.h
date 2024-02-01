@@ -4,6 +4,7 @@
 
 #include <memory>
 #include <vector>
+#include <string>
 
 namespace Renderer
 {
@@ -42,6 +43,8 @@ namespace Renderer
 		int mNodeClicked = -1;
 		int mSelectionMask = 0;
 		ECS::Entity mSelectedNode;
+		// inspector
+		std::string mName;
 
 	};
 }

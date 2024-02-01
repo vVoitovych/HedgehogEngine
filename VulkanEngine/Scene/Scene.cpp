@@ -120,6 +120,11 @@ namespace Scene
 		return mSceneCoordinator.GetComponent<HierarchyComponent>(entity);
 	}
 
+	TransformComponent& Scene::GetTransformComponent(ECS::Entity entity)
+	{
+		return mSceneCoordinator.GetComponent<TransformComponent>(entity);
+	}
+
 	bool Scene::IsGameObjectSelected() const
 	{
 		return mSelectedEntity.has_value();

@@ -20,6 +20,7 @@
 
 #include "Scene/Scene.hpp"
 #include "Scene/SceneComponents/HierarchyComponent.hpp"
+#include "Scene/SceneComponents/TransformComponent.hpp"
 
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_vulkan.h"
@@ -183,8 +184,8 @@ namespace Renderer
 
 	void GuiPass::DrawGui(const std::unique_ptr<RenderContext>& context)
 	{
-		DrawScene(context);
 		DrawInspector(context);
+		DrawScene(context);
 
 		// TODO remove
 		ImGui::ShowDemoWindow();
@@ -215,35 +216,36 @@ namespace Renderer
 			NULL,
 			ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove
 		);
+		auto& scene = context->GetEngineContext()->GetScene();
+
+		if (scene.IsGameObjectSelected())
 		{
+			auto entity = scene.GetSelectedGameObject();
+			auto& transform = scene.GetTransformComponent(entity);
+			auto& hierarchy = scene.GetHierarchyComponent(entity);			
+			if (ImGui::CollapsingHeader("Name"))
+			{
+				if (ImGui::InputText("input text", &mName[0], mName.capacity() + 1))
+				{
+					hierarchy.mName = mName;
+				}
+			}
 			if (ImGui::CollapsingHeader("Transform"))
 			{
-				static float x = 0.0f;
-				static float y = 0.0f;
-				static float z = 0.0f;
-
-				static float r_x = 0.0f;
-				static float r_y = 0.0f;
-				static float r_z = 0.0f;
-
-				static float s_x = 0.0f;
-				static float s_y = 0.0f;
-				static float s_z = 0.0f;
-
 				ImGui::SeparatorText("Position");
-				ImGui::DragFloat("pos x", &x, 0.005f);
-				ImGui::DragFloat("pos y", &y, 0.005f);
-				ImGui::DragFloat("pos z", &z, 0.005f);
+				ImGui::DragFloat("pos x", &transform.mPososition.x, 0.005f);
+				ImGui::DragFloat("pos y", &transform.mPososition.y, 0.005f);
+				ImGui::DragFloat("pos z", &transform.mPososition.z, 0.005f);
 
 				ImGui::SeparatorText("Rotation");
-				ImGui::DragFloat("rot x", &r_x, 0.005f);
-				ImGui::DragFloat("rot y", &r_y, 0.005f);
-				ImGui::DragFloat("rot z", &r_z, 0.005f);
+				ImGui::DragFloat("rot x", &transform.mRotation.x, 0.005f);
+				ImGui::DragFloat("rot y", &transform.mRotation.y, 0.005f);
+				ImGui::DragFloat("rot z", &transform.mRotation.z, 0.005f);
 
 				ImGui::SeparatorText("Scale");
-				ImGui::DragFloat("scale x", &s_x, 0.005f);
-				ImGui::DragFloat("scale y", &s_y, 0.005f);
-				ImGui::DragFloat("scale z", &s_z, 0.005f);
+				ImGui::DragFloat("scale x", &transform.mScale.x, 0.005f);
+				ImGui::DragFloat("scale y", &transform.mScale.y, 0.005f);
+				ImGui::DragFloat("scale z", &transform.mScale.z, 0.005f);
 			}
 		}
 
@@ -268,6 +270,7 @@ namespace Renderer
 				mNodeClicked = index;
 				mSelectedNode = entity;
 				scene.SelectGameObject(entity);
+				mName = component.mName;
 			}
 			++index;
 			if (node_open)
@@ -288,6 +291,7 @@ namespace Renderer
 				mNodeClicked = index;
 				mSelectedNode = entity;
 				scene.SelectGameObject(entity);
+				mName = component.mName;
 			}
 			++index;
 		}

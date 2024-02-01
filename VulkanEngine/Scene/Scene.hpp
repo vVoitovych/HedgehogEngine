@@ -12,6 +12,7 @@
 namespace Scene
 {
 	class HierarchyComponent;
+	class TransformComponent;
 
 	struct RenderObjectData
 	{
@@ -39,6 +40,7 @@ namespace Scene
 
 		ECS::Entity GetRoot() const;
 		HierarchyComponent& GetHierarchyComponent(ECS::Entity entity);
+		TransformComponent& GetTransformComponent(ECS::Entity entity);
 
 		bool IsGameObjectSelected() const;
 		ECS::Entity GetSelectedGameObject() const;
