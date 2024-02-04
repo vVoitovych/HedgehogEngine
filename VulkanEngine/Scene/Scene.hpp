@@ -6,6 +6,7 @@
 #include "Scene/SceneSystems/MeshSystem.hpp"
 
 #include <optional>
+#include <string>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -24,12 +25,21 @@ namespace Scene
 	{
 
 	public:
+		Scene();
+		~Scene();
+
+		Scene(const Scene&) = delete;
+		Scene(Scene&&) = delete;
+		Scene& operator=(const Scene&) = delete;
+		Scene& operator=(Scene&&) = delete;
+
 		void InitScene();
 		void UpdateScene(float dt);
 
+		std::string GetSceneName() const;
+
 		ECS::Entity CreateGameObject();
-		ECS::Entity CreateGameObject(ECS::Entity entity);
-		void DeleteGameObject(ECS::Entity parentEntity);
+		void DeleteGameObject();
 
 		void AddMeshComponent(ECS::Entity& entity);
 		void AddMeshComponent(ECS::Entity& entity, std::string mesh);
@@ -52,6 +62,8 @@ namespace Scene
 		std::string GetNewGameObjectName();
 
 	private:
+		std::string mSceneName;
+
 		ECS::Coordinator mSceneCoordinator;
 		ECS::Entity mRoot;
 

@@ -8,6 +8,15 @@
 
 namespace Scene
 {
+	Scene::Scene()
+	{
+		mSceneName = "Default";
+	}
+
+	Scene::~Scene()
+	{
+	}
+
 	void Scene::InitScene()
 	{
 		mSceneCoordinator.Init();
@@ -42,19 +51,22 @@ namespace Scene
 
 	}
 
-	ECS::Entity Scene::CreateGameObject()
+	std::string Scene::GetSceneName() const
 	{
-		auto& rootHierarchy = mSceneCoordinator.GetComponent<HierarchyComponent>(mRoot);
-		ECS::Entity entity = mSceneCoordinator.CreateEntity();
-		mSceneCoordinator.AddComponent(entity, TransformComponent{});
-		mSceneCoordinator.AddComponent(entity, HierarchyComponent{ GetNewGameObjectName(), mRoot, {} });
-		rootHierarchy.mChildren.push_back(entity);
-
-		return entity;
+		return mSceneName + " scene";
 	}
 
-	ECS::Entity Scene::CreateGameObject(ECS::Entity parentEntity)
+	ECS::Entity Scene::CreateGameObject()
 	{
+		ECS::Entity parentEntity;
+		if (IsGameObjectSelected())
+		{
+			parentEntity = mSelectedEntity.value();
+		}
+		else
+		{
+			parentEntity = mRoot;
+		}
 		auto& rootHierarchy = mSceneCoordinator.GetComponent<HierarchyComponent>(parentEntity);
 		ECS::Entity entity = mSceneCoordinator.CreateEntity();
 		mSceneCoordinator.AddComponent(entity, TransformComponent{});
@@ -64,8 +76,17 @@ namespace Scene
 		return entity;
 	}
 
-	void Scene::DeleteGameObject(ECS::Entity entity)
-	{
+	void Scene::DeleteGameObject()
+	{	
+		ECS::Entity entity;
+		if (IsGameObjectSelected())
+		{
+			entity = mSelectedEntity.value();
+		}
+		else
+		{
+			entity = mRoot;
+		}
 		auto& hierarchy = mSceneCoordinator.GetComponent<HierarchyComponent>(entity);
 		auto& parentHierarchy = mSceneCoordinator.GetComponent<HierarchyComponent>(hierarchy.mParent);
 		auto it = std::find(parentHierarchy.mChildren.begin(), parentHierarchy.mChildren.end(), entity);
@@ -77,6 +98,8 @@ namespace Scene
 			parentHierarchy.mChildren.push_back(hierarchy.mChildren[i]);
 		}
 		mSceneCoordinator.DestroyEntity(entity);
+
+		UnselectGameObject();
 	}
 
 	void Scene::AddMeshComponent(ECS::Entity& entity)

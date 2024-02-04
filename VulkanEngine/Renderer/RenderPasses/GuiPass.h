@@ -39,13 +39,6 @@ namespace Renderer
 		std::vector<FrameBuffer> mFrameBuffers;
 		std::unique_ptr<DescriptorPool> mDescriptorPool;
 
-		// scene window
-		int mNodeClicked = -1;
-		int mSelectionMask = 0;
-		ECS::Entity mSelectedNode;
-		// inspector
-		std::string mName;
-
 	};
 }
 

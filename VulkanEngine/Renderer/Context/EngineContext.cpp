@@ -7,6 +7,8 @@ namespace Renderer
 {
     EngineContext::EngineContext(const std::unique_ptr<VulkanContext>& vulkanContext)
     {
+        mScene.InitScene();
+
         mMeshContainer.AddFilePath("Models\\viking_room.obj");
         mMeshContainer.LoadMeshData();
         mMeshContainer.Initialize(vulkanContext->GetDevice(), vulkanContext->GetCommandPool());
@@ -15,8 +17,6 @@ namespace Renderer
         mTextureContainer.Initialize(vulkanContext->GetDevice(), vulkanContext->GetCommandPool());
 
         mSamplerContainer.Initialize(vulkanContext->GetDevice());
-
-        mScene.InitScene();
     }
 
     void EngineContext::Cleanup(const std::unique_ptr<VulkanContext>& vulkanContext)
