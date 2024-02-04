@@ -41,6 +41,9 @@ namespace Scene
 
 		CreateSceneRoot();
 
+
+		mMeshes.push_back("Models\\viking_room.obj");
+		mTextures.push_back("Textures\\viking_room.png");
 	}
 
 	void Scene::UpdateScene(float dt)
@@ -53,7 +56,12 @@ namespace Scene
 
 	std::string Scene::GetSceneName() const
 	{
-		return mSceneName + " scene";
+		return mSceneName;
+	}
+
+	void Scene::SetSceneName(std::string& str)
+	{
+		mSceneName = str;
 	}
 
 	ECS::Entity Scene::CreateGameObject()
@@ -102,25 +110,50 @@ namespace Scene
 
 	}
 
-	void Scene::AddMeshComponent(ECS::Entity& entity)
+	void Scene::AddMeshComponent()
 	{
-		mSceneCoordinator.AddComponent(entity, MeshComponent{MeshSystem::sDefaultMeshPath});
+		ECS::Entity entity;
+		if (IsGameObjectSelected())
+		{
+			entity = mSelectedEntity.value();
+			mSceneCoordinator.AddComponent(entity, MeshComponent{ MeshSystem::sDefaultMeshPath });
+		}
 	}
 
-	void Scene::AddMeshComponent(ECS::Entity& entity, std::string mesh)
+	void Scene::AddMeshComponent(std::string mesh)
 	{
-		mSceneCoordinator.AddComponent(entity, MeshComponent{ mesh });
+		ECS::Entity entity;
+		if (IsGameObjectSelected())
+		{
+			entity = mSelectedEntity.value();
+			mSceneCoordinator.AddComponent(entity, MeshComponent{ mesh });
+		}
 	}
 
-	void Scene::RemoveMeshComponent(ECS::Entity& entity)
+	void Scene::RemoveMeshComponent()
 	{
-		mSceneCoordinator.RemoveComponent<MeshComponent>(entity);
+		ECS::Entity entity;
+		if (IsGameObjectSelected())
+		{
+			entity = mSelectedEntity.value();
+			mSceneCoordinator.RemoveComponent<MeshComponent>(entity);
+		}
 	}
 
-	void Scene::ChangeMeshComponent(ECS::Entity& entity, std::string meshPath)
+	void Scene::ChangeMeshComponent(std::string meshPath)
 	{
-		auto& meshComponent = mSceneCoordinator.GetComponent<MeshComponent>(entity);
-		meshComponent.mMeshPath = meshPath;
+		ECS::Entity entity;
+		if (IsGameObjectSelected())
+		{
+			entity = mSelectedEntity.value();
+			auto& meshComponent = mSceneCoordinator.GetComponent<MeshComponent>(entity);
+			meshComponent.mMeshPath = meshPath;
+		}
+	}
+
+	bool Scene::HasMeshComponent(ECS::Entity& entity) const
+	{
+		return mSceneCoordinator.HasComponent<MeshComponent>(entity);
 	}
 
 	std::vector<RenderObjectData> Scene::GetRenderGameObjects()
@@ -171,6 +204,16 @@ namespace Scene
 	{
 		if (entity != mRoot)
 			mSelectedEntity = entity;
+	}
+
+	const std::vector<std::string>& Scene::GetMeshes() const
+	{
+		return mMeshes;
+	}
+
+	const std::vector<std::string>& Scene::GetTextures() const
+	{
+		return mTextures;
 	}
 
 	void Scene::CreateSceneRoot()

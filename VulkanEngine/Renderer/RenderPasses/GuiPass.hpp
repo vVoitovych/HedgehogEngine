@@ -31,6 +31,7 @@ namespace Renderer
 		void DrawInspector(const std::unique_ptr<RenderContext>& context);
 		void DrawScene(const std::unique_ptr<RenderContext>& context);
 		void DrawHierarchyNode(const std::unique_ptr<RenderContext>& context, ECS::Entity entity, int& index);
+		void ShowAppMainMenuBar(const std::unique_ptr<RenderContext>& context);
 
 		void UploadFonts();
 

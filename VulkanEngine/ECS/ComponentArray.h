@@ -55,6 +55,11 @@ namespace ECS
 			return componentsArray[entityToIndexMap[entity]];
 		}
 
+		bool HasData(Entity entity)
+		{
+			return entityToIndexMap.find(entity) != entityToIndexMap.end();
+		}
+
 		void EntityDestroyed(Entity entity) override
 		{
 			if (entityToIndexMap.find(entity) != entityToIndexMap.end())

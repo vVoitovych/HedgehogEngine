@@ -68,6 +68,12 @@ namespace ECS
 		}
 
 		template<typename T>
+		bool HasComponent(Entity entity) const
+		{
+			return componentManager->HasComponent<T>(entity);
+		}
+
+		template<typename T>
 		ComponentType GetComponentType() const
 		{
 			return componentManager->GetComponentType<T>();

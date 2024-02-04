@@ -187,8 +187,10 @@ namespace Renderer
 		DrawInspector(context);
 		DrawScene(context);
 
+
+		ShowAppMainMenuBar(context);
 		// TODO remove
-		ImGui::ShowDemoWindow();
+		//ImGui::ShowDemoWindow();
 	}
 
 	void GuiPass::DrawInspector(const std::unique_ptr<RenderContext>& context)
@@ -198,18 +200,8 @@ namespace Renderer
 		sizeX = 300.0f;
 		sizeY = float(ImGui::GetIO().DisplaySize.y);
 		paddingY = 0.05f;
-		ImGui::SetNextWindowSize(
-			ImVec2(sizeX, sizeY),
-			ImGuiCond_Always
-		);
-		ImGui::SetNextWindowPos(
-			ImVec2(
-				ImGui::GetIO().DisplaySize.x,
-				0.0f
-			),
-			ImGuiCond_Always,
-			ImVec2(1.0f, 0.0f)
-		);
+		ImGui::SetNextWindowSize(ImVec2(sizeX, sizeY), ImGuiCond_Always);
+		ImGui::SetNextWindowPos(ImVec2( ImGui::GetIO().DisplaySize.x, 20.0f), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
 			
 		ImGui::Begin(
 			"Inspector",
@@ -250,9 +242,12 @@ namespace Renderer
 				ImGui::DragFloat("scale z", &transform.mScale.z, 0.005f);
 			}
 			
-			if (ImGui::CollapsingHeader("Mesh Component"))
+			if (scene.HasMeshComponent(entity))
 			{
+				if (ImGui::CollapsingHeader("Mesh Component"))
+				{
 
+				}
 			}
 
 			if (ImGui::CollapsingHeader("Rendering  Component"))
@@ -306,6 +301,48 @@ namespace Renderer
 		}
 	}
 
+	void GuiPass::ShowAppMainMenuBar(const std::unique_ptr<RenderContext>& context)
+	{
+		auto& scene = context->GetEngineContext()->GetScene();
+		if (ImGui::BeginMainMenuBar())
+		{
+			if (ImGui::BeginMenu("File"))
+			{
+				if (ImGui::MenuItem("New")) {}
+				if (ImGui::MenuItem("Rename")) {}
+				if (ImGui::MenuItem("Open")) {}
+				if (ImGui::MenuItem("Save")) {}
+
+				ImGui::Separator();
+				if (ImGui::MenuItem("Create game object")) { scene.CreateGameObject(); }
+				if (ImGui::MenuItem("Delete game object")) { scene.DeleteGameObject(); }
+
+				if (ImGui::BeginMenu("Add component"))
+				{
+					if (ImGui::MenuItem("Mesh component")) { scene.AddMeshComponent(); }
+					if (ImGui::MenuItem("Render component")) {}
+					if (ImGui::MenuItem("Script component")) {}
+					ImGui::EndMenu();
+				}
+
+				ImGui::Separator();
+				if (ImGui::MenuItem("Quit", "Alt+F4")) {}
+				ImGui::EndMenu();
+			}
+			if (ImGui::BeginMenu("Edit"))
+			{
+				if (ImGui::MenuItem("Undo", "CTRL+Z")) {}
+				if (ImGui::MenuItem("Redo", "CTRL+Y", false, false)) {}  // Disabled item
+				ImGui::Separator();
+				if (ImGui::MenuItem("Cut", "CTRL+X")) {}
+				if (ImGui::MenuItem("Copy", "CTRL+C")) {}
+				if (ImGui::MenuItem("Paste", "CTRL+V")) {}
+				ImGui::EndMenu();
+			}
+			ImGui::EndMainMenuBar();
+		}
+	}
+
 
 	void GuiPass::DrawScene(const std::unique_ptr<RenderContext>& context)
 	{
@@ -315,7 +352,7 @@ namespace Renderer
 		sizeY = float(ImGui::GetIO().DisplaySize.y);
 		paddingY = 0.05f;
 		ImGui::SetNextWindowSize(ImVec2(sizeX, sizeY), ImGuiCond_Always);
-		ImGui::SetNextWindowPos(ImVec2(sizeX, 0.0f), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
+		ImGui::SetNextWindowPos(ImVec2(sizeX, 20.0f), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
 
 		auto& scene = context->GetEngineContext()->GetScene();
 		ImGui::Begin(scene.GetSceneName().c_str(), NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove);

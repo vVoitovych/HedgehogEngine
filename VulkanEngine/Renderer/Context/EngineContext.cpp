@@ -9,11 +9,17 @@ namespace Renderer
     {
         mScene.InitScene();
 
-        mMeshContainer.AddFilePath("Models\\viking_room.obj");
+        for (auto mesh : mScene.GetMeshes())
+        {
+            mMeshContainer.AddFilePath(mesh);
+        }
         mMeshContainer.LoadMeshData();
         mMeshContainer.Initialize(vulkanContext->GetDevice(), vulkanContext->GetCommandPool());
 
-        mTextureContainer.AddTexture("Textures\\viking_room.png", VK_FORMAT_R8G8B8A8_SRGB);
+        for (auto texture : mScene.GetTextures())
+        {
+            mTextureContainer.AddTexture(texture, VK_FORMAT_R8G8B8A8_SRGB);
+        }
         mTextureContainer.Initialize(vulkanContext->GetDevice(), vulkanContext->GetCommandPool());
 
         mSamplerContainer.Initialize(vulkanContext->GetDevice());

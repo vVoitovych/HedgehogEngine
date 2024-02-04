@@ -6,6 +6,7 @@
 #include "Scene/SceneSystems/MeshSystem.hpp"
 
 #include <optional>
+#include <vector>
 #include <string>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -37,14 +38,16 @@ namespace Scene
 		void UpdateScene(float dt);
 
 		std::string GetSceneName() const;
+		void SetSceneName(std::string& str);
 
 		ECS::Entity CreateGameObject();
 		void DeleteGameObject();
 
-		void AddMeshComponent(ECS::Entity& entity);
-		void AddMeshComponent(ECS::Entity& entity, std::string mesh);
-		void RemoveMeshComponent(ECS::Entity& entity);
-		void ChangeMeshComponent(ECS::Entity& entity, std::string meshPath);
+		void AddMeshComponent();
+		void AddMeshComponent(std::string mesh);
+		void RemoveMeshComponent();
+		void ChangeMeshComponent(std::string meshPath);
+		bool HasMeshComponent(ECS::Entity& entity) const;
 
 		std::vector<RenderObjectData> GetRenderGameObjects();
 
@@ -57,12 +60,18 @@ namespace Scene
 		void UnselectGameObject();
 		void SelectGameObject(ECS::Entity entity);
 
+		const std::vector<std::string>& GetMeshes() const;
+		const std::vector<std::string>& GetTextures() const;
+
 	private:
 		void CreateSceneRoot();
 		std::string GetNewGameObjectName();
 
 	private:
 		std::string mSceneName;
+
+		std::vector<std::string> mMeshes;
+		std::vector<std::string> mTextures;
 
 		ECS::Coordinator mSceneCoordinator;
 		ECS::Entity mRoot;
