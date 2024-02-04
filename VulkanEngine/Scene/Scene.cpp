@@ -82,24 +82,24 @@ namespace Scene
 		if (IsGameObjectSelected())
 		{
 			entity = mSelectedEntity.value();
-		}
-		else
-		{
-			entity = mRoot;
-		}
-		auto& hierarchy = mSceneCoordinator.GetComponent<HierarchyComponent>(entity);
-		auto& parentHierarchy = mSceneCoordinator.GetComponent<HierarchyComponent>(hierarchy.mParent);
-		auto it = std::find(parentHierarchy.mChildren.begin(), parentHierarchy.mChildren.end(), entity);
-		parentHierarchy.mChildren.erase(it);
-		for (size_t i = 0; i < hierarchy.mChildren.size(); ++i)
-		{
-			auto& childHierarchy = mSceneCoordinator.GetComponent<HierarchyComponent>(hierarchy.mChildren[i]);
-			childHierarchy.mParent = hierarchy.mParent;
-			parentHierarchy.mChildren.push_back(hierarchy.mChildren[i]);
-		}
-		mSceneCoordinator.DestroyEntity(entity);
+			auto& hierarchy = mSceneCoordinator.GetComponent<HierarchyComponent>(entity);
+			auto& parentHierarchy = mSceneCoordinator.GetComponent<HierarchyComponent>(hierarchy.mParent);
+			auto it = std::find(parentHierarchy.mChildren.begin(), parentHierarchy.mChildren.end(), entity);
+			if (it != parentHierarchy.mChildren.end())
+			{
+				parentHierarchy.mChildren.erase(it);
+				for (size_t i = 0; i < hierarchy.mChildren.size(); ++i)
+				{
+					auto& childHierarchy = mSceneCoordinator.GetComponent<HierarchyComponent>(hierarchy.mChildren[i]);
+					childHierarchy.mParent = hierarchy.mParent;
+					parentHierarchy.mChildren.push_back(hierarchy.mChildren[i]);
+				}
+			}
+			mSceneCoordinator.DestroyEntity(entity);
 
-		UnselectGameObject();
+			UnselectGameObject();
+		}
+
 	}
 
 	void Scene::AddMeshComponent(ECS::Entity& entity)

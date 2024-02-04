@@ -38,7 +38,7 @@ namespace ECS
 			size_t indexOfLastElement = size - 1;
 			componentsArray[indexOfRemovedEntity] = componentsArray[indexOfLastElement];
 
-			const Entity entityOfLastElement = entityToIndexMap[indexOfLastElement];
+			const Entity entityOfLastElement = indexToEntityMap[indexOfLastElement];
 			entityToIndexMap[entityOfLastElement] = indexOfRemovedEntity;
 			indexToEntityMap[indexOfRemovedEntity] = entityOfLastElement;
 
