@@ -1,6 +1,6 @@
 #include "WindowManager.hpp"
 #include "Logger/Logger.hpp"
-#include "Renderer/RenderPasses/GuiPass.h"
+#include "Renderer/RenderPasses/GuiPass.hpp"
 
 namespace Renderer
 {

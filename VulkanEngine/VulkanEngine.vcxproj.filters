@@ -345,7 +345,7 @@
     <ClInclude Include="Renderer\Context\VulkanContext.hpp">
       <Filter>Renderer\Context</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\RenderPasses\GuiPass.h">
+    <ClInclude Include="Renderer\RenderPasses\GuiPass.hpp">
       <Filter>Renderer\RenderPasses\GuiPass</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\RenderPasses\GuiPassInfo.hpp">

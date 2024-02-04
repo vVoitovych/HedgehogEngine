@@ -235,7 +235,7 @@
     <ClInclude Include="Renderer\RenderPasses\ForwardPass.hpp" />
     <ClInclude Include="Renderer\RenderPasses\ForwardPassInfo.hpp" />
     <ClInclude Include="Renderer\RenderPasses\ForwardPipelineInfo.hpp" />
-    <ClInclude Include="Renderer\RenderPasses\GuiPass.h" />
+    <ClInclude Include="Renderer\RenderPasses\GuiPass.hpp" />
     <ClInclude Include="Renderer\RenderPasses\GuiPassInfo.hpp" />
     <ClInclude Include="Renderer\RenderPasses\InitPass.hpp" />
     <ClInclude Include="Renderer\RenderPasses\PresentPass.hpp" />

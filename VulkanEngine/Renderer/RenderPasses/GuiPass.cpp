@@ -1,4 +1,4 @@
-#include "GuiPass.h"
+#include "GuiPass.hpp"
 #include "GuiPassInfo.hpp"
 
 #include "Renderer/Context/RenderContext.hpp"

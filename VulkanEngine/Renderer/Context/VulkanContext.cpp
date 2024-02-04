@@ -7,7 +7,7 @@
 #include "Renderer/Wrappeers/Descriptors/DescriptorPool.hpp"
 #include "Renderer/Common/RendererSettings.hpp"
 
-#include "Renderer/RenderPasses/GuiPass.h"
+#include "Renderer/RenderPasses/GuiPass.hpp"
 
 #include <vector>
 
