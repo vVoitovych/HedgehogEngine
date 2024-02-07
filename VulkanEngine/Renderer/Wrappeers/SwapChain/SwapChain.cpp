@@ -141,9 +141,12 @@ namespace Renderer
 		vkGetSwapchainImagesKHR(device->GetNativeDevice(), mSwapChain, &imageCount, mSwapChainImages.data());
 
 		mSwapChainImageFormat = surfaceFormat.format;
+		uint32_t minValue = 1;
 		mSwapChainExtent = extent;
+		mSwapChainExtent.width = std::max(mSwapChainExtent.width, minValue);
+		mSwapChainExtent.height = std::max(mSwapChainExtent.height, minValue);
 
-		LOGINFO("Swap chain created with ", imageCount, " back buffers");
+		LOGINFO("Swap chain created with ", imageCount, " back buffers. Swap chain extent: (", extent.width, ", ", extent.height, ")");
 	}
 
 	VkSurfaceFormatKHR SwapChain::ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) const
