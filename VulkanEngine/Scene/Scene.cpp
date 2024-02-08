@@ -54,6 +54,24 @@ namespace Scene
 
 	}
 
+	void Scene::ResetScene()
+	{
+		while (true)
+		{
+			auto hierarchy = mSceneCoordinator.GetComponent<HierarchyComponent>(mRoot);
+			if (hierarchy.mChildren.size() > 0)
+			{
+				mSelectedEntity = hierarchy.mChildren[0];
+				DeleteGameObject();
+				UnselectGameObject();
+			}
+			else
+			{
+				return;
+			}
+		}
+	}
+
 	std::string Scene::GetSceneName() const
 	{
 		return mSceneName;

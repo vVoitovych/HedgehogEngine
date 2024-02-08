@@ -186,8 +186,6 @@ namespace Renderer
 	{
 		DrawInspector(context);
 		DrawScene(context);
-
-
 		ShowAppMainMenuBar(context);
 		// TODO remove
 		//ImGui::ShowDemoWindow();
@@ -308,7 +306,7 @@ namespace Renderer
 		{
 			if (ImGui::BeginMenu("File"))
 			{
-				if (ImGui::MenuItem("New")) {}
+				if (ImGui::MenuItem("New")) { scene.ResetScene(); }
 				if (ImGui::MenuItem("Rename")) {}
 				if (ImGui::MenuItem("Open")) {}
 				if (ImGui::MenuItem("Save")) {}
