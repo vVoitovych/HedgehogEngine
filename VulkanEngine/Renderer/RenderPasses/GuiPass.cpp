@@ -22,9 +22,9 @@
 #include "Scene/SceneComponents/HierarchyComponent.hpp"
 #include "Scene/SceneComponents/TransformComponent.hpp"
 
-#include "ImGui/imgui.h"
-#include "ImGui/imgui_impl_vulkan.h"
-#include "ImGui/imgui_impl_glfw.h"
+#include "ThirdParty/ImGui/imgui.h"
+#include "ThirdParty/ImGui/imgui_impl_vulkan.h"
+#include "ThirdParty/ImGui/imgui_impl_glfw.h"
 
 #include <vector>
 
