@@ -308,8 +308,8 @@ namespace Renderer
 			{
 				if (ImGui::MenuItem("New")) { scene.ResetScene(); }
 				if (ImGui::MenuItem("Rename")) {}
-				if (ImGui::MenuItem("Open")) {}
-				if (ImGui::MenuItem("Save")) {}
+				if (ImGui::MenuItem("Open")) { scene.Load(); }
+				if (ImGui::MenuItem("Save")) { scene.Save(); }
 
 				ImGui::Separator();
 				if (ImGui::MenuItem("Create game object")) { scene.CreateGameObject(); }

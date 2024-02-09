@@ -37,6 +37,8 @@ namespace Scene
 		void InitScene();
 		void UpdateScene(float dt);
 		void ResetScene();
+		void Load();
+		void Save();
 
 		std::string GetSceneName() const;
 		void SetSceneName(std::string& str);
@@ -67,7 +69,7 @@ namespace Scene
 	private:
 		void CreateSceneRoot();
 		std::string GetNewGameObjectName();
-
+		std::string GetScenePath() const;
 	private:
 		std::string mSceneName;
 

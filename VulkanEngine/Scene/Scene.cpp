@@ -1,8 +1,10 @@
 #include "Scene.hpp"
+#include "SceneSerializer.hpp"
 
 #include "Scene/SceneComponents/TransformComponent.hpp"
 #include "Scene/SceneComponents/HierarchyComponent.hpp"
 #include "Scene/SceneComponents/MeshComponent.hpp"
+#include "ContentLoader/CommonFunctions.hpp"
 
 #include <sstream>
 
@@ -70,6 +72,16 @@ namespace Scene
 				return;
 			}
 		}
+	}
+
+	void Scene::Load()
+	{
+		SceneSerializer::DeserializeScene(*this, GetScenePath());
+	}
+
+	void Scene::Save()
+	{
+		SceneSerializer::SerializeScene(*this, GetScenePath());
 	}
 
 	std::string Scene::GetSceneName() const
@@ -248,6 +260,13 @@ namespace Scene
 		std::stringstream ss;
 		ss << "GameObject_" << mGameObjectIndex++;
 		return ss.str();
+	}
+
+	std::string Scene::GetScenePath() const
+	{
+		std::string result = ContentLoader::GetAssetsDirectory() + "Scenes\\" + mSceneName;
+
+		return result;
 	}
 
 

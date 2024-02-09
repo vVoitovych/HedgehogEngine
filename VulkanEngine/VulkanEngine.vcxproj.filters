@@ -154,6 +154,9 @@
     <ClCompile Include="Renderer\Wrappeers\Resources\Image\ImageManagement.cpp">
       <Filter>Renderer\Wrappers\Resources\Image</Filter>
     </ClCompile>
+    <ClCompile Include="Scene\SceneSerializer.cpp">
+      <Filter>Scene</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.hpp">
@@ -353,6 +356,9 @@
     </ClInclude>
     <ClInclude Include="Renderer\Wrappeers\Resources\Image\ImageManagement.hpp">
       <Filter>Renderer\Wrappers\Resources\Image</Filter>
+    </ClInclude>
+    <ClInclude Include="Scene\SceneSerializer.hpp">
+      <Filter>Scene</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
