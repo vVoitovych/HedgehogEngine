@@ -1,3 +1,72 @@
-Scene: Untitled
-Entities:
-  []
+Scene name: Default
+Scene:
+  - Entity: 0
+    Name: Root
+    Parent: 0
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [0, 0, 0]
+    Children:
+      - Entity: 1
+        Name: GameObject_0
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 0]
+          Rotation: [-0.519999981, 0.745000005, -0.529999971]
+          Scale: [0, 0, 0]
+        Children:
+          []
+      - Entity: 2
+        Name: GameObject_1
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 0]
+          Rotation: [0, 0, 0]
+          Scale: [0, 0, 0]
+        Children:
+          - Entity: 5
+            Name: GameObject_4
+            Parent: 2
+            TransformComponent:
+              Position: [0, 0, 0]
+              Rotation: [0, 0, 0]
+              Scale: [0, 0, 0]
+            Children:
+              []
+          - Entity: 6
+            Name: GameObject_5
+            Parent: 2
+            TransformComponent:
+              Position: [0, 0, 0]
+              Rotation: [0, 0, 0]
+              Scale: [0, 0, 0]
+            Children:
+              []
+          - Entity: 7
+            Name: GameObject_6
+            Parent: 2
+            TransformComponent:
+              Position: [0, 0, 0]
+              Rotation: [0, 0, 0]
+              Scale: [0, 0, 0]
+            Children:
+              []
+      - Entity: 3
+        Name: GameObject_2
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 0]
+          Rotation: [0, 0, 0]
+          Scale: [0, 0, 0]
+        Children:
+          []
+      - Entity: 4
+        Name: GameObject_3
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 0]
+          Rotation: [0, 0, 0]
+          Scale: [0, 0, 0]
+        Children:
+          []
