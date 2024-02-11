@@ -76,6 +76,9 @@ namespace Scene
 
 	void Scene::Load()
 	{
+		UnselectGameObject();
+		ResetScene();
+		mSceneCoordinator.DestroyEntity(mRoot);
 		SceneSerializer::DeserializeScene(*this, GetScenePath());
 	}
 
@@ -267,6 +270,14 @@ namespace Scene
 		std::string result = ContentLoader::GetAssetsDirectory() + "Scenes\\" + mSceneName;
 
 		return result;
+	}
+
+	void Scene::CreateGameObject(ECS::Entity entity)
+	{
+		mSceneCoordinator.CreateEntity(entity);
+		mSceneCoordinator.AddComponent(entity, TransformComponent{});
+		mSceneCoordinator.AddComponent(entity, HierarchyComponent{});
+
 	}
 
 

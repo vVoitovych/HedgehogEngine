@@ -23,6 +23,11 @@ namespace ECS
 			return  entityManager->CreateEntity();
 		}
 
+		void CreateEntity(Entity entity)
+		{
+			entityManager->CreateEntity(entity);
+		}
+
 		void DestroyEntity(Entity entity)
 		{
 			entityManager->DestroyEntity(entity);

@@ -44,6 +44,7 @@ namespace Scene
 		void SetSceneName(std::string& str);
 
 		ECS::Entity CreateGameObject();
+		void CreateGameObject(ECS::Entity entity);
 		void DeleteGameObject();
 
 		void AddMeshComponent();
@@ -70,6 +71,7 @@ namespace Scene
 		void CreateSceneRoot();
 		std::string GetNewGameObjectName();
 		std::string GetScenePath() const;
+
 	private:
 		std::string mSceneName;
 
@@ -87,6 +89,8 @@ namespace Scene
 		std::shared_ptr<MeshSystem> mMeshSystem;
 
 		uint16_t mGameObjectIndex = 0;
+	private:
+		friend class SceneSerializer;
 	};
 }
 

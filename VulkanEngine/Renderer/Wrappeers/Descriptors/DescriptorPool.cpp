@@ -29,7 +29,7 @@ namespace Renderer
 		{
 			throw std::runtime_error("Failed to create descriptor pool!");
 		}
-		LOGINFO("Descriptor pool cleaned");
+		LOGINFO("Descriptor pool created");
 	}
 
 	DescriptorPool::~DescriptorPool()
