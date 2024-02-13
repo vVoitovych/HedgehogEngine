@@ -41,10 +41,14 @@ namespace Scene
 		signature.set(mSceneCoordinator.GetComponentType<MeshComponent>());
 		mSceneCoordinator.SetSystemSignature<MeshSystem>(signature);
 
+
+		// TODO: remove all bellow and add loating instead
 		CreateSceneRoot();
 
-
 		mMeshes.push_back("Models\\viking_room.obj");
+		mMeshes.push_back("Models\\Default\\cube.obj");
+		mMeshes.push_back("Models\\Default\\sphere.obj");
+
 		mTextures.push_back("Textures\\viking_room.png");
 	}
 
@@ -143,50 +147,47 @@ namespace Scene
 
 	}
 
-	void Scene::AddMeshComponent()
+	void Scene::AddMeshComponent(ECS::Entity entity)
 	{
-		ECS::Entity entity;
-		if (IsGameObjectSelected())
+		if (!HasMeshComponent(entity))
 		{
-			entity = mSelectedEntity.value();
 			mSceneCoordinator.AddComponent(entity, MeshComponent{ MeshSystem::sDefaultMeshPath });
-		}
-	}
-
-	void Scene::AddMeshComponent(std::string mesh)
-	{
-		ECS::Entity entity;
-		if (IsGameObjectSelected())
-		{
-			entity = mSelectedEntity.value();
-			mSceneCoordinator.AddComponent(entity, MeshComponent{ mesh });
+			mMeshSystem->Update(mSceneCoordinator);
 		}
 	}
 
 	void Scene::RemoveMeshComponent()
 	{
-		ECS::Entity entity;
-		if (IsGameObjectSelected())
+		if (IsGameObjectSelected() && HasMeshComponent(mSelectedEntity.value()))
 		{
-			entity = mSelectedEntity.value();
+			ECS::Entity entity = mSelectedEntity.value();
 			mSceneCoordinator.RemoveComponent<MeshComponent>(entity);
 		}
 	}
 
-	void Scene::ChangeMeshComponent(std::string meshPath)
+	void Scene::ChangeMeshComponent(ECS::Entity entity, std::string meshPath)
 	{
-		ECS::Entity entity;
-		if (IsGameObjectSelected())
-		{
-			entity = mSelectedEntity.value();
-			auto& meshComponent = mSceneCoordinator.GetComponent<MeshComponent>(entity);
-			meshComponent.mMeshPath = meshPath;
-		}
+		auto& meshComponent = mSceneCoordinator.GetComponent<MeshComponent>(entity);
+		meshComponent.mMeshPath = meshPath;
+		mMeshSystem->Update(mSceneCoordinator);
 	}
 
-	bool Scene::HasMeshComponent(ECS::Entity& entity) const
+	bool Scene::HasMeshComponent(ECS::Entity entity) const
 	{
 		return mSceneCoordinator.HasComponent<MeshComponent>(entity);
+	}
+
+	void Scene::AddRenderComponent()
+	{
+	}
+
+	void Scene::RemoveRenderComponent()
+	{
+	}
+
+	bool Scene::HasRenderComponent() const
+	{
+		return false;
 	}
 
 	std::vector<RenderObjectData> Scene::GetRenderGameObjects()
@@ -212,6 +213,11 @@ namespace Scene
 	TransformComponent& Scene::GetTransformComponent(ECS::Entity entity)
 	{
 		return mSceneCoordinator.GetComponent<TransformComponent>(entity);
+	}
+
+	MeshComponent& Scene::GetMeshComponent(ECS::Entity entity)
+	{
+		return mSceneCoordinator.GetComponent<MeshComponent>(entity);
 	}
 
 	bool Scene::IsGameObjectSelected() const

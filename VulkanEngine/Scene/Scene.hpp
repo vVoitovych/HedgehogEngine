@@ -47,17 +47,22 @@ namespace Scene
 		void CreateGameObject(ECS::Entity entity);
 		void DeleteGameObject();
 
-		void AddMeshComponent();
-		void AddMeshComponent(std::string mesh);
+		void AddMeshComponent(ECS::Entity entity);
 		void RemoveMeshComponent();
-		void ChangeMeshComponent(std::string meshPath);
-		bool HasMeshComponent(ECS::Entity& entity) const;
+		void ChangeMeshComponent(ECS::Entity entity, std::string meshPath);
+		bool HasMeshComponent(ECS::Entity entity) const;
+
+		void AddRenderComponent();
+		void RemoveRenderComponent();
+		bool HasRenderComponent() const;
+
 
 		std::vector<RenderObjectData> GetRenderGameObjects();
 
 		ECS::Entity GetRoot() const;
 		HierarchyComponent& GetHierarchyComponent(ECS::Entity entity);
 		TransformComponent& GetTransformComponent(ECS::Entity entity);
+		MeshComponent& GetMeshComponent(ECS::Entity entity);
 
 		bool IsGameObjectSelected() const;
 		ECS::Entity GetSelectedGameObject() const;

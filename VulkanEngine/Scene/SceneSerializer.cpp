@@ -110,13 +110,25 @@ namespace Scene
 		out << YAML::Key << "Parent" << YAML::Value << hierarchy.mParent;
 		{ // transform
 			out << YAML::Key << "TransformComponent";
-			out << YAML::BeginMap; // TransformComponent
+			out << YAML::BeginMap; 
 
 			out << YAML::Key << "Position" << YAML::Value << transform.mPososition;
 			out << YAML::Key << "Rotation" << YAML::Value << transform.mRotation;
 			out << YAML::Key << "Scale" << YAML::Value << transform.mScale;
 
-			out << YAML::EndMap; // TransformComponent
+			out << YAML::EndMap; 
+		}
+		if (scene.HasMeshComponent(entity))
+		{ // mesh component
+			auto& mesh = scene.GetMeshComponent(entity);
+			out << YAML::Key << "MeshComponent";
+			out << YAML::BeginMap; 
+
+			out << YAML::Key << "MeshPath" << YAML::Value << mesh.mMeshPath;
+			out << YAML::Key << "MeshIndex" << YAML::Value << mesh.mMeshIndex.value();
+			out << YAML::Key << "CachedMeshPath" << YAML::Value << mesh.mCachedMeshPath;
+
+			out << YAML::EndMap; 
 		}
 		// annd other components here
 		out << YAML::Key << "Children" << YAML::Value << YAML::BeginSeq;
@@ -159,6 +171,17 @@ namespace Scene
 			transform.mRotation = transformData["Rotation"].as<glm::vec3>();
 			transform.mScale = transformData["Scale"].as<glm::vec3>();
 		}
+
+		auto mesh = node["MeshComponent"];
+		if (mesh)
+		{
+			scene.AddMeshComponent(entity);
+			auto& meshComponent = scene.GetMeshComponent(entity);
+			meshComponent.mMeshPath = mesh["MeshPath"].as<std::string>();
+			meshComponent.mMeshIndex = mesh["MeshIndex"].as<size_t>();
+			meshComponent.mCachedMeshPath = mesh["CachedMeshPath"].as<std::string>();
+		}
+
 		hierarchy.mName = node["Name"].as<std::string>();
 		hierarchy.mParent = node["Parent"].as<ECS::Entity>();
 		auto  children = node["Children"];

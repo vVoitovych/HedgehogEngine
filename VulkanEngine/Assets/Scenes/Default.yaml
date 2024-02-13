@@ -15,6 +15,10 @@ Scene:
           Position: [0, 0, 0]
           Rotation: [0, 0, 0]
           Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: Models\Default\cube.obj
+          MeshIndex: 0
+          CachedMeshPath: Models\Default\cube.obj
         Children:
           []
       - Entity: 2
@@ -24,183 +28,9 @@ Scene:
           Position: [0, 0, 0]
           Rotation: [0, 0, 0]
           Scale: [1, 1, 1]
-        Children:
-          - Entity: 8
-            Name: GameObject_7
-            Parent: 2
-            TransformComponent:
-              Position: [0, 0, 0]
-              Rotation: [0, 0, 0]
-              Scale: [1, 1, 1]
-            Children:
-              []
-          - Entity: 9
-            Name: GameObject_8
-            Parent: 2
-            TransformComponent:
-              Position: [0, 0, 0]
-              Rotation: [0, 0, 0]
-              Scale: [1, 1, 1]
-            Children:
-              []
-          - Entity: 10
-            Name: GameObject_9
-            Parent: 2
-            TransformComponent:
-              Position: [0.730000019, 1.07500005, -1.125]
-              Rotation: [0.709999979, 0, 0]
-              Scale: [1, 1, 1]
-            Children:
-              []
-          - Entity: 11
-            Name: GameObject_10
-            Parent: 2
-            TransformComponent:
-              Position: [0, 0, 0]
-              Rotation: [0, 0, 0]
-              Scale: [1, 1, 1]
-            Children:
-              []
-          - Entity: 12
-            Name: GameObject_11
-            Parent: 2
-            TransformComponent:
-              Position: [0, 0, 0]
-              Rotation: [0, 0, 0]
-              Scale: [1, 1, 1]
-            Children:
-              []
-          - Entity: 13
-            Name: GameObject_12
-            Parent: 2
-            TransformComponent:
-              Position: [0, 0, 0]
-              Rotation: [0, 0, 0]
-              Scale: [1, 1, 1]
-            Children:
-              []
-          - Entity: 14
-            Name: GameObject_13
-            Parent: 2
-            TransformComponent:
-              Position: [0, 0, 0]
-              Rotation: [0, 0, 0]
-              Scale: [1, 1, 1]
-            Children:
-              []
-          - Entity: 15
-            Name: GameObject_14
-            Parent: 2
-            TransformComponent:
-              Position: [0, 0, 0]
-              Rotation: [0, 0, 0]
-              Scale: [1, 1, 1]
-            Children:
-              []
-          - Entity: 16
-            Name: GameObject_15
-            Parent: 2
-            TransformComponent:
-              Position: [0, 0, 0]
-              Rotation: [0, 0, 0]
-              Scale: [1, 1, 1]
-            Children:
-              []
-      - Entity: 3
-        Name: GameObject_2
-        Parent: 0
-        TransformComponent:
-          Position: [0, 0, 0]
-          Rotation: [0, 0, 0]
-          Scale: [1, 1, 1]
-        Children:
-          []
-      - Entity: 4
-        Name: GameObject_3
-        Parent: 0
-        TransformComponent:
-          Position: [0, 0, 0]
-          Rotation: [0, 0, 0]
-          Scale: [1, 1, 1]
-        Children:
-          []
-      - Entity: 5
-        Name: GameObject_4
-        Parent: 0
-        TransformComponent:
-          Position: [0, 0, 0]
-          Rotation: [0, 0, 0]
-          Scale: [1, 1, 1]
-        Children:
-          - Entity: 17
-            Name: GameObject_16
-            Parent: 5
-            TransformComponent:
-              Position: [0, 0, 0]
-              Rotation: [0, 0, 0]
-              Scale: [1, 1, 1]
-            Children:
-              []
-          - Entity: 18
-            Name: GameObject_17
-            Parent: 5
-            TransformComponent:
-              Position: [0, 0, 0]
-              Rotation: [0, 0, 0]
-              Scale: [1, 1, 1]
-            Children:
-              []
-          - Entity: 19
-            Name: GameObject_18
-            Parent: 5
-            TransformComponent:
-              Position: [0, 0, 0]
-              Rotation: [0, 0, 0]
-              Scale: [1, 1, 1]
-            Children:
-              []
-          - Entity: 20
-            Name: GameObject_19
-            Parent: 5
-            TransformComponent:
-              Position: [0, 0, 0]
-              Rotation: [0, 0, 0]
-              Scale: [1, 1, 1]
-            Children:
-              []
-          - Entity: 21
-            Name: GameObject_20
-            Parent: 5
-            TransformComponent:
-              Position: [0, 0, 0]
-              Rotation: [0, 0, 0]
-              Scale: [1, 1, 1]
-            Children:
-              []
-          - Entity: 22
-            Name: GameObject_21
-            Parent: 5
-            TransformComponent:
-              Position: [0, 0, 0]
-              Rotation: [0, 0, 0]
-              Scale: [1, 1, 1]
-            Children:
-              []
-      - Entity: 6
-        Name: GameObject_5
-        Parent: 0
-        TransformComponent:
-          Position: [0, 0, 0]
-          Rotation: [0, 0, 0]
-          Scale: [1, 1, 1]
-        Children:
-          []
-      - Entity: 7
-        Name: GameObject_6
-        Parent: 0
-        TransformComponent:
-          Position: [0, 0, 0]
-          Rotation: [0, 0, 0]
-          Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: Models\viking_room.obj
+          MeshIndex: 1
+          CachedMeshPath: Models\viking_room.obj
         Children:
           []

@@ -21,6 +21,7 @@
 #include "Scene/Scene.hpp"
 #include "Scene/SceneComponents/HierarchyComponent.hpp"
 #include "Scene/SceneComponents/TransformComponent.hpp"
+#include "Scene/SceneComponents/MeshComponent.hpp"
 
 #include "ThirdParty/ImGui/imgui.h"
 #include "ThirdParty/ImGui/imgui_impl_vulkan.h"
@@ -188,7 +189,7 @@ namespace Renderer
 		DrawScene(context);
 		ShowAppMainMenuBar(context);
 		// TODO remove
-		//ImGui::ShowDemoWindow();
+		// ImGui::ShowDemoWindow();
 	}
 
 	void GuiPass::DrawInspector(const std::unique_ptr<RenderContext>& context)
@@ -244,7 +245,24 @@ namespace Renderer
 			{
 				if (ImGui::CollapsingHeader("Mesh Component"))
 				{
+					auto& mesh = scene.GetMeshComponent(entity);
+					auto& meshes = scene.GetMeshes();
+					int selectedIndex = mesh.mMeshIndex.value();
 
+					if (ImGui::BeginCombo("mesh", mesh.mMeshPath.c_str())) {
+						for (int i = 0; i < meshes.size(); ++i) {
+							const bool isSelected = (selectedIndex == i);
+							if (ImGui::Selectable(meshes[i].c_str(), isSelected)) {
+								selectedIndex = i;
+								scene.ChangeMeshComponent(entity, meshes[i]);
+							}
+
+							if (isSelected) {
+								ImGui::SetItemDefaultFocus();
+							}
+						}
+						ImGui::EndCombo();
+					}
 				}
 			}
 
@@ -317,8 +335,9 @@ namespace Renderer
 
 				if (ImGui::BeginMenu("Add component"))
 				{
-					if (ImGui::MenuItem("Mesh component")) { scene.AddMeshComponent(); }
-					if (ImGui::MenuItem("Render component")) {}
+					if (ImGui::MenuItem("Mesh component")) { if (scene.IsGameObjectSelected()) { scene.AddMeshComponent(scene.GetSelectedGameObject()); } }
+					if (ImGui::MenuItem("Render component")) { scene.AddRenderComponent(); }
+					if (ImGui::MenuItem("Light component")) {}
 					if (ImGui::MenuItem("Script component")) {}
 					ImGui::EndMenu();
 				}
@@ -327,16 +346,7 @@ namespace Renderer
 				if (ImGui::MenuItem("Quit", "Alt+F4")) {}
 				ImGui::EndMenu();
 			}
-			if (ImGui::BeginMenu("Edit"))
-			{
-				if (ImGui::MenuItem("Undo", "CTRL+Z")) {}
-				if (ImGui::MenuItem("Redo", "CTRL+Y", false, false)) {}  // Disabled item
-				ImGui::Separator();
-				if (ImGui::MenuItem("Cut", "CTRL+X")) {}
-				if (ImGui::MenuItem("Copy", "CTRL+C")) {}
-				if (ImGui::MenuItem("Paste", "CTRL+V")) {}
-				ImGui::EndMenu();
-			}
+
 			ImGui::EndMainMenuBar();
 		}
 	}
