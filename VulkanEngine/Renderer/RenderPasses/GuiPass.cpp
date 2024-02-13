@@ -263,6 +263,10 @@ namespace Renderer
 						}
 						ImGui::EndCombo();
 					}
+					if (ImGui::Button("Remove component"))
+					{
+						scene.RemoveMeshComponent();
+					}
 				}
 			}
 
