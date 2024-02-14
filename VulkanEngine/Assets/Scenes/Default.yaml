@@ -13,24 +13,11 @@ Scene:
         Parent: 0
         TransformComponent:
           Position: [0, 0, 0]
-          Rotation: [0, 0, 0]
-          Scale: [1, 1, 1]
-        MeshComponent:
-          MeshPath: Models\Default\cube.obj
-          MeshIndex: 0
-          CachedMeshPath: Models\Default\cube.obj
-        Children:
-          []
-      - Entity: 2
-        Name: GameObject_1
-        Parent: 0
-        TransformComponent:
-          Position: [0, 0, 0]
-          Rotation: [0, 0, 0]
+          Rotation: [-5.5, -18, 146.5]
           Scale: [1, 1, 1]
         MeshComponent:
           MeshPath: Models\viking_room.obj
-          MeshIndex: 1
+          MeshIndex: 0
           CachedMeshPath: Models\viking_room.obj
         Children:
           []

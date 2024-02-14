@@ -226,19 +226,19 @@ namespace Renderer
 			if (ImGui::CollapsingHeader("Transform Component"))
 			{
 				ImGui::SeparatorText("Position");
-				ImGui::DragFloat("pos x", &transform.mPososition.x, 0.005f);
-				ImGui::DragFloat("pos y", &transform.mPososition.y, 0.005f);
-				ImGui::DragFloat("pos z", &transform.mPososition.z, 0.005f);
+				ImGui::DragFloat("pos x", &transform.mPososition.x, 0.5f);
+				ImGui::DragFloat("pos y", &transform.mPososition.y, 0.5f);
+				ImGui::DragFloat("pos z", &transform.mPososition.z, 0.5f);
 
 				ImGui::SeparatorText("Rotation");
-				ImGui::DragFloat("rot x", &transform.mRotation.x, 0.005f);
-				ImGui::DragFloat("rot y", &transform.mRotation.y, 0.005f);
-				ImGui::DragFloat("rot z", &transform.mRotation.z, 0.005f);
+				ImGui::DragFloat("rot x", &transform.mRotation.x, 0.5f);
+				ImGui::DragFloat("rot y", &transform.mRotation.y, 0.5f);
+				ImGui::DragFloat("rot z", &transform.mRotation.z, 0.5f);
 
 				ImGui::SeparatorText("Scale");
-				ImGui::DragFloat("scale x", &transform.mScale.x, 0.005f);
-				ImGui::DragFloat("scale y", &transform.mScale.y, 0.005f);
-				ImGui::DragFloat("scale z", &transform.mScale.z, 0.005f);
+				ImGui::DragFloat("scale x", &transform.mScale.x, 0.5f);
+				ImGui::DragFloat("scale y", &transform.mScale.y, 0.5f);
+				ImGui::DragFloat("scale z", &transform.mScale.z, 0.5f);
 			}
 			
 			if (scene.HasMeshComponent(entity))
@@ -247,7 +247,7 @@ namespace Renderer
 				{
 					auto& mesh = scene.GetMeshComponent(entity);
 					auto& meshes = scene.GetMeshes();
-					int selectedIndex = mesh.mMeshIndex.value();
+					int selectedIndex = static_cast<int>(mesh.mMeshIndex.value());
 
 					if (ImGui::BeginCombo("mesh", mesh.mMeshPath.c_str())) {
 						for (int i = 0; i < meshes.size(); ++i) {
@@ -263,7 +263,7 @@ namespace Renderer
 						}
 						ImGui::EndCombo();
 					}
-					int temp = mesh.mMeshIndex.value();
+					int temp = static_cast<int>(mesh.mMeshIndex.value());
 					ImGui::InputInt("mesh index", &temp);
 
 					if (ImGui::Button("Remove component"))

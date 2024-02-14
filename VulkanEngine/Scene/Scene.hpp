@@ -4,10 +4,10 @@
 #include "Scene/SceneSystems/TransformSystem.hpp"
 #include "Scene/SceneSystems/HierarchySystem.hpp"
 #include "Scene/SceneSystems/MeshSystem.hpp"
+#include "RenderObjectsManager.hpp"
 
 #include <optional>
 #include <vector>
-#include <unordered_map>
 #include <string>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -16,12 +16,6 @@ namespace Scene
 {
 	class HierarchyComponent;
 	class TransformComponent;
-
-	struct RenderObjectData
-	{
-		glm::mat4 objMatrix;
-		size_t meshIndex;
-	};
 
 	class Scene
 	{
@@ -57,9 +51,6 @@ namespace Scene
 		void RemoveRenderComponent();
 		bool HasRenderComponent() const;
 
-
-		std::vector<RenderObjectData> GetRenderGameObjects();
-
 		ECS::Entity GetRoot() const;
 		HierarchyComponent& GetHierarchyComponent(ECS::Entity entity);
 		TransformComponent& GetTransformComponent(ECS::Entity entity);
@@ -72,7 +63,8 @@ namespace Scene
 
 		const std::vector<std::string>& GetMeshes() const;
 		const std::vector<std::string>& GetTextures() const;
-		const std::unordered_map<ECS::Entity, size_t> GetMeshEntities() const;
+		const std::vector<RenderableObject>& GetRenderableObjects() const;
+		void UpdateRendarable(ECS::Entity entity, size_t meshIndex);
 	private:
 		void CreateSceneRoot();
 		std::string GetNewGameObjectName();
@@ -85,9 +77,9 @@ namespace Scene
 
 		ECS::Coordinator mSceneCoordinator;
 		ECS::Entity mRoot;
-
 		std::optional<ECS::Entity> mSelectedEntity;
-		std::unordered_map<ECS::Entity, size_t> mMeshEntities;
+
+		RenderObjectsManager mRenderObjectsManager;
 		// systems
 		std::shared_ptr<TransformSystem> mTransformSystem;
 		std::shared_ptr<HierarchySystem> mHierarchySystem;
@@ -98,6 +90,7 @@ namespace Scene
 		friend class SceneSerializer;
 	};
 }
+
 
 
 

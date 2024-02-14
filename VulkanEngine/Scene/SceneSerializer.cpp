@@ -2,6 +2,7 @@
 #include "Scene.hpp"
 #include "SceneComponents/TransformComponent.hpp"
 #include "SceneComponents/HierarchyComponent.hpp"
+#include "RenderObjectsManager.hpp"
 
 #include "Logger/Logger.hpp"
 
@@ -180,6 +181,8 @@ namespace Scene
 			meshComponent.mMeshPath = mesh["MeshPath"].as<std::string>();
 			meshComponent.mMeshIndex = mesh["MeshIndex"].as<size_t>();
 			meshComponent.mCachedMeshPath = mesh["CachedMeshPath"].as<std::string>();
+
+			scene.UpdateRendarable(entity, meshComponent.mMeshIndex.value());
 		}
 
 		hierarchy.mName = node["Name"].as<std::string>();

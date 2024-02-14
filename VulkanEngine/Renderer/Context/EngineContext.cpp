@@ -39,7 +39,7 @@ namespace Renderer
         const auto& swapChain = vulkanContext->GetSwapChain();
         auto extend = swapChain->GetSwapChainExtent();
         mCamera.UpdateCamera(dt, extend.width / (float)extend.height, controls);
-
+        mScene.UpdateScene(dt);
     }
 
     const MeshContainer& EngineContext::GetMeshContainer() const

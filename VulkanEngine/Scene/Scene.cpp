@@ -55,7 +55,13 @@ namespace Scene
 	{
 		mTransformSystem->Update(mSceneCoordinator);
 		mHierarchySystem->Update(mSceneCoordinator);
-
+		auto& objects = mRenderObjectsManager.GetRenderableObjects();
+		for (size_t i = 0; i < objects.size(); ++i)
+		{
+			auto entity = mRenderObjectsManager.GetEntityByIndex(i);
+			auto& transform = mSceneCoordinator.GetComponent<TransformComponent>(entity);
+			objects[i].objMatrix = transform.mObjMatrix;
+		}
 	}
 
 	void Scene::ResetScene()
@@ -152,7 +158,12 @@ namespace Scene
 			mSceneCoordinator.AddComponent(entity, MeshComponent{ MeshSystem::sDefaultMeshPath });
 			mMeshSystem->Update(mSceneCoordinator, entity);
 			auto& meshComponent = GetMeshComponent(entity);
-			mMeshEntities[entity] = meshComponent.mMeshIndex.value();
+
+			auto& transform = GetTransformComponent(entity);
+			auto& object = mRenderObjectsManager.AddEntity(entity);
+			object.isVisible = true;
+			object.meshIndex = meshComponent.mMeshIndex.value();
+			object.objMatrix = transform.mObjMatrix;
 		}
 	}
 
@@ -162,7 +173,8 @@ namespace Scene
 		{
 			ECS::Entity entity = mSelectedEntity.value();
 			mSceneCoordinator.RemoveComponent<MeshComponent>(entity);
-			mMeshEntities.erase(entity);
+
+			mRenderObjectsManager.RemoveEntity(entity);
 		}
 	}
 
@@ -171,7 +183,9 @@ namespace Scene
 		auto& meshComponent = mSceneCoordinator.GetComponent<MeshComponent>(entity);
 		meshComponent.mMeshPath = meshPath;
 		mMeshSystem->Update(mSceneCoordinator, entity);
-		mMeshEntities[entity] = meshComponent.mMeshIndex.value();
+
+		auto& object = mRenderObjectsManager.GetEntityData(entity);
+		object.meshIndex = meshComponent.mMeshIndex.value();
 	}
 
 	bool Scene::HasMeshComponent(ECS::Entity entity) const
@@ -190,16 +204,6 @@ namespace Scene
 	bool Scene::HasRenderComponent() const
 	{
 		return false;
-	}
-
-	std::vector<RenderObjectData> Scene::GetRenderGameObjects()
-	{
-		std::vector<RenderObjectData> result;
-		result.clear();
-
-
-
-		return result;
 	}
 
 	ECS::Entity Scene::GetRoot() const
@@ -257,9 +261,19 @@ namespace Scene
 		return mTextures;
 	}
 
-	const std::unordered_map<ECS::Entity, size_t> Scene::GetMeshEntities() const
+	const std::vector<RenderableObject>& Scene::GetRenderableObjects() const
 	{
-		return mMeshEntities;
+		return mRenderObjectsManager.GetRenderableObjects();
+	}
+
+	void Scene::UpdateRendarable(ECS::Entity entity, size_t meshIndex)
+	{
+		auto& meshComponent = GetMeshComponent(entity);
+		auto& transform = GetTransformComponent(entity);
+		auto& object = mRenderObjectsManager.GetEntityData(entity);
+		object.isVisible = true;
+		object.meshIndex = meshComponent.mMeshIndex.value();
+		object.objMatrix = transform.mObjMatrix;
 	}
 
 	void Scene::CreateSceneRoot()

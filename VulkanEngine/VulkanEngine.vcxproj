@@ -194,6 +194,7 @@
     <ClCompile Include="Renderer\Wrappeers\Shaders\VertexShader.cpp" />
     <ClCompile Include="Renderer\Wrappeers\SwapChain\SwapChain.cpp" />
     <ClCompile Include="Renderer\Wrappeers\SyncObjects\SyncObject.cpp" />
+    <ClCompile Include="Scene\RenderObjectsManager.cpp" />
     <ClCompile Include="Scene\Scene.cpp" />
     <ClCompile Include="Scene\SceneSerializer.cpp" />
     <ClCompile Include="Scene\SceneSystems\HierarchySystem.cpp" />
@@ -235,6 +236,7 @@
     <ClInclude Include="Renderer\Renderer.hpp" />
     <ClInclude Include="Renderer\RenderPasses\ForwardPass.hpp" />
     <ClInclude Include="Renderer\RenderPasses\ForwardPassInfo.hpp" />
+    <ClInclude Include="Renderer\RenderPasses\ForwardPassPushConstants.hpp" />
     <ClInclude Include="Renderer\RenderPasses\ForwardPipelineInfo.hpp" />
     <ClInclude Include="Renderer\RenderPasses\GuiPass.hpp" />
     <ClInclude Include="Renderer\RenderPasses\GuiPassInfo.hpp" />
@@ -265,6 +267,7 @@
     <ClInclude Include="Renderer\Wrappeers\Shaders\VertexShader.hpp" />
     <ClInclude Include="Renderer\Wrappeers\SwapChain\SwapChain.hpp" />
     <ClInclude Include="Renderer\Wrappeers\SyncObjects\SyncObject.hpp" />
+    <ClInclude Include="Scene\RenderObjectsManager.hpp" />
     <ClInclude Include="Scene\Scene.hpp" />
     <ClInclude Include="Scene\SceneComponents\HierarchyComponent.hpp" />
     <ClInclude Include="Scene\SceneComponents\MeshComponent.hpp" />

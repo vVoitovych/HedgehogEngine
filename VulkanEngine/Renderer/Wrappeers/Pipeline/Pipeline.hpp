@@ -2,6 +2,7 @@
 
 #include <vulkan/vulkan.h>
 #include <memory>
+#include <vector>
 
 namespace Renderer
 {
@@ -16,7 +17,8 @@ namespace Renderer
 		Pipeline(
 			const std::unique_ptr<Device>& device,
 			const std::unique_ptr<RenderPass>& renderPass,
-			const std::unique_ptr<DescriptorSetLayout>& layout,
+			const std::vector<VkDescriptorSetLayout>& layouts,
+			const std::vector<VkPushConstantRange>& pushConstantRanges,
 			const std::unique_ptr<PipelineInfo>& info);
 		~Pipeline();
 

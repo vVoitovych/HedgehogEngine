@@ -147,6 +147,11 @@ namespace Renderer
 		vkCmdBindDescriptorSets(mCommandBuffer, bindPoint, pipeline->GetNativePipelineLayout(), firstSet, setsCount, descriptorSets, dynamicOffsetCount, pDynamicOffsets);
 	}
 
+	void CommandBuffer::PushConstants(VkPipelineLayout layout, VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size, const void* pValues)
+	{
+		vkCmdPushConstants(mCommandBuffer, layout, stageFlags, offset, size, pValues);
+	}
+
 	void CommandBuffer::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
 	{
 		vkCmdDraw(mCommandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);

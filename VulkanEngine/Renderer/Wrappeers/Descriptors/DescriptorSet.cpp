@@ -22,7 +22,7 @@ namespace Renderer
         const Sampler& sampler)
 		: mDescriptorSet(nullptr)
 	{
-        descriptorPool->AllocDescriptorSet(device, descriptorSetLayout, &mDescriptorSet);
+        descriptorPool->AllocDescriptorSets(device, { descriptorSetLayout->GetNativeLayout() }, &mDescriptorSet);
 
         VkDescriptorBufferInfo bufferInfo{};
         bufferInfo.buffer = ubo.GetNativeBuffer();

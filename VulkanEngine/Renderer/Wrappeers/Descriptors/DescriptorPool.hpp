@@ -28,9 +28,9 @@ namespace Renderer
 		void Cleanup(const std::unique_ptr<Device>& device);
 		const VkDescriptorPool& GetNativeDescriptoPool() const;
 
-		void AllocDescriptorSet(
+		void AllocDescriptorSets(
 			const std::unique_ptr<Device>& device,
-			const std::unique_ptr<DescriptorSetLayout>& descriptorSetLayout,
+			const std::vector<VkDescriptorSetLayout>& descriptorSetLayouts,
 			VkDescriptorSet* descriptorSets
 		) const;
 

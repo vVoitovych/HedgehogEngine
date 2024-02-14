@@ -18,7 +18,8 @@ namespace Renderer
 
 		void Cleanup(const std::unique_ptr<Device>& device);
 
-		VkDescriptorSetLayout* GetNativeLayout();
+		VkDescriptorSetLayout GetNativeLayout();
+		VkDescriptorSetLayout* GetNativeLayoutPtr();
 	private:
 		VkDescriptorSetLayout mDescriptorSetLayout;
 	};

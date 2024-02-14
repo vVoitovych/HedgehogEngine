@@ -52,7 +52,11 @@ namespace Renderer
 		mDescriptorSetLayout = nullptr;
 		LOGINFO("Descriptor set layout cleaned");
 	}
-	VkDescriptorSetLayout* DescriptorSetLayout::GetNativeLayout() 
+	VkDescriptorSetLayout DescriptorSetLayout::GetNativeLayout() 
+	{
+		return mDescriptorSetLayout;
+	}
+	VkDescriptorSetLayout* DescriptorSetLayout::GetNativeLayoutPtr()
 	{
 		return &mDescriptorSetLayout;
 	}

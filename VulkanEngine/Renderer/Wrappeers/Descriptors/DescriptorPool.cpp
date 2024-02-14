@@ -52,17 +52,17 @@ namespace Renderer
 		return mDescriptorPool;
 	}
 
-	void DescriptorPool::AllocDescriptorSet(
-		const std::unique_ptr<Device>& device, 
-		const std::unique_ptr<DescriptorSetLayout>& descriptorSetLayout,
+	void DescriptorPool::AllocDescriptorSets(
+		const std::unique_ptr<Device>& device,
+		const std::vector<VkDescriptorSetLayout>& descriptorSetLayouts,
 		VkDescriptorSet* descriptorSets
 	) const
 	{
 		VkDescriptorSetAllocateInfo allocInfo{};
 		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 		allocInfo.descriptorPool = mDescriptorPool;
-		allocInfo.descriptorSetCount = 1;
-		allocInfo.pSetLayouts = descriptorSetLayout->GetNativeLayout();
+		allocInfo.descriptorSetCount = static_cast<uint32_t>(descriptorSetLayouts.size());
+		allocInfo.pSetLayouts = descriptorSetLayouts.data();
 
 		if (vkAllocateDescriptorSets(device->GetNativeDevice(), &allocInfo, descriptorSets) != VK_SUCCESS)
 		{
