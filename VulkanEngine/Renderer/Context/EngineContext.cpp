@@ -8,11 +8,11 @@ namespace Renderer
     EngineContext::EngineContext(const std::unique_ptr<VulkanContext>& vulkanContext)
     {
         mScene.InitScene();
-
-        for (auto mesh : mScene.GetMeshes())
+        for (auto& mesh : mScene.GetMeshes())
         {
             mMeshContainer.AddFilePath(mesh);
         }
+
         mMeshContainer.LoadMeshData();
         mMeshContainer.Initialize(vulkanContext->GetDevice(), vulkanContext->GetCommandPool());
 

@@ -11,13 +11,14 @@ namespace Scene
 	class MeshSystem : public ECS::System
 	{
 	public:
-		void Update(ECS::Coordinator& coordinator);
+		void Update(ECS::Coordinator& coordinator, ECS::Entity entity);
 
 		bool ShouldUpdateMeshContainer() const;
 		void MeshContainerUpdated();
-		std::vector<std::string> GetMeshes();
+		const std::vector<std::string>& GetMeshes() const; 
 		std::set<ECS::Entity> GetEntities();
 
+		void AddMeshPath(std::string meshPath);
 	private:
 		void CheckMeshPath(MeshComponent& meshComponent, std::string fallbackPath);
 

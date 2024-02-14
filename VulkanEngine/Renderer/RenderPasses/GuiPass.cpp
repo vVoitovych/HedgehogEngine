@@ -263,6 +263,9 @@ namespace Renderer
 						}
 						ImGui::EndCombo();
 					}
+					int temp = mesh.mMeshIndex.value();
+					ImGui::InputInt("mesh index", &temp);
+
 					if (ImGui::Button("Remove component"))
 					{
 						scene.RemoveMeshComponent();

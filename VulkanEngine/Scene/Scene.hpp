@@ -7,6 +7,7 @@
 
 #include <optional>
 #include <vector>
+#include <unordered_map>
 #include <string>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -71,7 +72,7 @@ namespace Scene
 
 		const std::vector<std::string>& GetMeshes() const;
 		const std::vector<std::string>& GetTextures() const;
-
+		const std::unordered_map<ECS::Entity, size_t> GetMeshEntities() const;
 	private:
 		void CreateSceneRoot();
 		std::string GetNewGameObjectName();
@@ -80,14 +81,13 @@ namespace Scene
 	private:
 		std::string mSceneName;
 
-		std::vector<std::string> mMeshes;
 		std::vector<std::string> mTextures;
 
 		ECS::Coordinator mSceneCoordinator;
 		ECS::Entity mRoot;
 
 		std::optional<ECS::Entity> mSelectedEntity;
-
+		std::unordered_map<ECS::Entity, size_t> mMeshEntities;
 		// systems
 		std::shared_ptr<TransformSystem> mTransformSystem;
 		std::shared_ptr<HierarchySystem> mHierarchySystem;

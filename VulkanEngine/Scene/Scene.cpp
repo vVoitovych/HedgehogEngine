@@ -44,10 +44,9 @@ namespace Scene
 
 		// TODO: remove all bellow and add loating instead
 		CreateSceneRoot();
-
-		mMeshes.push_back("Models\\viking_room.obj");
-		mMeshes.push_back("Models\\Default\\cube.obj");
-		mMeshes.push_back("Models\\Default\\sphere.obj");
+		mMeshSystem->AddMeshPath("Models\\viking_room.obj");
+		mMeshSystem->AddMeshPath("Models\\Default\\cube.obj");
+		mMeshSystem->AddMeshPath("Models\\Default\\sphere.obj");
 
 		mTextures.push_back("Textures\\viking_room.png");
 	}
@@ -56,7 +55,6 @@ namespace Scene
 	{
 		mTransformSystem->Update(mSceneCoordinator);
 		mHierarchySystem->Update(mSceneCoordinator);
-		mMeshSystem->Update(mSceneCoordinator);
 
 	}
 
@@ -152,7 +150,9 @@ namespace Scene
 		if (!HasMeshComponent(entity))
 		{
 			mSceneCoordinator.AddComponent(entity, MeshComponent{ MeshSystem::sDefaultMeshPath });
-			mMeshSystem->Update(mSceneCoordinator);
+			mMeshSystem->Update(mSceneCoordinator, entity);
+			auto& meshComponent = GetMeshComponent(entity);
+			mMeshEntities[entity] = meshComponent.mMeshIndex.value();
 		}
 	}
 
@@ -162,6 +162,7 @@ namespace Scene
 		{
 			ECS::Entity entity = mSelectedEntity.value();
 			mSceneCoordinator.RemoveComponent<MeshComponent>(entity);
+			mMeshEntities.erase(entity);
 		}
 	}
 
@@ -169,7 +170,8 @@ namespace Scene
 	{
 		auto& meshComponent = mSceneCoordinator.GetComponent<MeshComponent>(entity);
 		meshComponent.mMeshPath = meshPath;
-		mMeshSystem->Update(mSceneCoordinator);
+		mMeshSystem->Update(mSceneCoordinator, entity);
+		mMeshEntities[entity] = meshComponent.mMeshIndex.value();
 	}
 
 	bool Scene::HasMeshComponent(ECS::Entity entity) const
@@ -245,14 +247,19 @@ namespace Scene
 			mSelectedEntity = entity;
 	}
 
-	const std::vector<std::string>& Scene::GetMeshes() const
+	const std::vector<std::string>& Scene::GetMeshes() const 
 	{
-		return mMeshes;
+		return mMeshSystem->GetMeshes();
 	}
 
 	const std::vector<std::string>& Scene::GetTextures() const
 	{
 		return mTextures;
+	}
+
+	const std::unordered_map<ECS::Entity, size_t> Scene::GetMeshEntities() const
+	{
+		return mMeshEntities;
 	}
 
 	void Scene::CreateSceneRoot()

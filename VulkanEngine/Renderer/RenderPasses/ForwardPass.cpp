@@ -55,8 +55,11 @@ namespace Renderer
 		commandBuffer.BindIndexBuffer(meshContainer.GetIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
 		commandBuffer.BindDescriptorSers(VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeline, 0, 1, mDescriptorSets[frameIndex].GetNativeSet(), 0, nullptr);
 
-		auto& mesh = meshContainer.GetMesh(0);
-		commandBuffer.DrawIndexed(mesh.GetIndexCount(), 1, mesh.GetFirstIndex(), mesh.GetVertexOffset(), 0);
+		for (auto& meshData : engineContext->GetScene().GetMeshEntities())
+		{
+			auto& mesh = meshContainer.GetMesh(meshData.second);
+			commandBuffer.DrawIndexed(mesh.GetIndexCount(), 1, mesh.GetFirstIndex(), mesh.GetVertexOffset(), 0);
+		}
 		commandBuffer.EndRenderPass();
 		
 	}
