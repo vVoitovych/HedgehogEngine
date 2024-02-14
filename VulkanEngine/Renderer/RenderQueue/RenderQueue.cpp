@@ -6,7 +6,7 @@
 #include "Renderer/RenderPasses/InitPass.hpp"
 #include "Renderer/RenderPasses/ForwardPass.hpp"
 #include "Renderer/RenderPasses/PresentPass.hpp"
-#include "Renderer/RenderPasses/GuiPass.h"
+#include "Renderer/RenderPasses/GuiPass.hpp"
 
 namespace Renderer
 {

@@ -15,9 +15,14 @@ layout(location = 3) in vec2 inNormal;
 layout(location = 0) out vec3 fragColor;
 layout(location = 1) out vec2 fragTexCoord;
 
+layout( push_constant ) uniform constants
+{
+	mat4 model;
+} PushConstants;
+
 void main()
 {
-	gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition, 1.0);
+	gl_Position = ubo.proj * ubo.view * PushConstants.model * vec4(inPosition, 1.0);
     gl_Position /= gl_Position.w;
 	fragColor = inColor;
     fragTexCoord = inTexCoord;

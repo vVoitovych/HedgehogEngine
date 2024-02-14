@@ -16,17 +16,18 @@ namespace Renderer
 	Pipeline::Pipeline(
 		const std::unique_ptr<Device>& device, 
 		const std::unique_ptr<RenderPass>& renderPass, 
-		const std::unique_ptr<DescriptorSetLayout>& layout,
+		const std::vector<VkDescriptorSetLayout>& layouts,
+		const std::vector<VkPushConstantRange>& pushConstantRanges,
 		const std::unique_ptr<PipelineInfo>& info)
 		: mPipeline(nullptr)
 		, mGraphycsPipelineLayout(nullptr)
 	{
 		VkPipelineLayoutCreateInfo layoutCreateInfo{};
 		layoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-		layoutCreateInfo.setLayoutCount = 1;
-		layoutCreateInfo.pSetLayouts = layout->GetNativeLayout();
-		layoutCreateInfo.pushConstantRangeCount = 0;
-		layoutCreateInfo.pPushConstantRanges = nullptr;
+		layoutCreateInfo.setLayoutCount = static_cast<uint32_t>(layouts.size());
+		layoutCreateInfo.pSetLayouts = layouts.data();
+		layoutCreateInfo.pushConstantRangeCount = static_cast<uint32_t>(pushConstantRanges.size());
+		layoutCreateInfo.pPushConstantRanges = pushConstantRanges.data();
 
 		if (vkCreatePipelineLayout(device->GetNativeDevice(), &layoutCreateInfo, nullptr, &mGraphycsPipelineLayout) != VK_SUCCESS)
 		{

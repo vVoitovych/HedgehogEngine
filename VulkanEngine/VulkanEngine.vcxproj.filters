@@ -154,6 +154,12 @@
     <ClCompile Include="Renderer\Wrappeers\Resources\Image\ImageManagement.cpp">
       <Filter>Renderer\Wrappers\Resources\Image</Filter>
     </ClCompile>
+    <ClCompile Include="Scene\SceneSerializer.cpp">
+      <Filter>Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Scene\RenderObjectsManager.cpp">
+      <Filter>Scene</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.hpp">
@@ -345,7 +351,7 @@
     <ClInclude Include="Renderer\Context\VulkanContext.hpp">
       <Filter>Renderer\Context</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\RenderPasses\GuiPass.h">
+    <ClInclude Include="Renderer\RenderPasses\GuiPass.hpp">
       <Filter>Renderer\RenderPasses\GuiPass</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\RenderPasses\GuiPassInfo.hpp">
@@ -353,6 +359,15 @@
     </ClInclude>
     <ClInclude Include="Renderer\Wrappeers\Resources\Image\ImageManagement.hpp">
       <Filter>Renderer\Wrappers\Resources\Image</Filter>
+    </ClInclude>
+    <ClInclude Include="Scene\SceneSerializer.hpp">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\RenderPasses\ForwardPassPushConstants.hpp">
+      <Filter>Renderer\RenderPasses\ForwardPass</Filter>
+    </ClInclude>
+    <ClInclude Include="Scene\RenderObjectsManager.hpp">
+      <Filter>Scene</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

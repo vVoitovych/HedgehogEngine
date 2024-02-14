@@ -1,10 +1,11 @@
-#include "GuiPass.h"
+#include "GuiPass.hpp"
 #include "GuiPassInfo.hpp"
 
 #include "Renderer/Context/RenderContext.hpp"
 #include "Renderer/Context/VulkanContext.hpp"
 #include "Renderer/Context/ThreadContext.hpp"
 #include "Renderer/Context/FrameContext.hpp"
+#include "Renderer/Context/EngineContext.hpp"
 
 #include "Renderer/Wrappeers/RenderPass/RenderPass.hpp"
 #include "Renderer/Wrappeers/Commands/CommandPool.hpp"
@@ -17,9 +18,14 @@
 
 #include "Renderer/WindowManagment/WindowManager.hpp"
 
-#include "ImGui/imgui.h"
-#include "ImGui/imgui_impl_vulkan.h"
-#include "ImGui/imgui_impl_glfw.h"
+#include "Scene/Scene.hpp"
+#include "Scene/SceneComponents/HierarchyComponent.hpp"
+#include "Scene/SceneComponents/TransformComponent.hpp"
+#include "Scene/SceneComponents/MeshComponent.hpp"
+
+#include "ThirdParty/ImGui/imgui.h"
+#include "ThirdParty/ImGui/imgui_impl_vulkan.h"
+#include "ThirdParty/ImGui/imgui_impl_glfw.h"
 
 #include <vector>
 
@@ -54,7 +60,7 @@ namespace Renderer
 		ImGuiIO& io = ImGui::GetIO();
 		(void)io;
 
-		ApplyStyle();
+		ImGui::StyleColorsDark();
 
 		ImGui_ImplGlfw_InitForVulkan(vulkanContext->GetWindowManager()->GetGlfwWindow(), true);
 		ImGui_ImplVulkan_InitInfo initInfo = {};
@@ -115,10 +121,7 @@ namespace Renderer
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
-		// begin ImGui here
-		ImGui::ShowDemoWindow();
-
-		// end ImGui here
+		DrawGui(context);
 		ImGui::Render();
 
 		commandBuffer.BeginRenderPass(extent, mRenderPass, mFrameBuffers[backBufferIndex].GetNativeFrameBuffer());
@@ -174,69 +177,219 @@ namespace Renderer
 		return false;
 	}
 
-	void GuiPass::ApplyStyle()
-	{
-		auto& style = ImGui::GetStyle();
-		style.FrameRounding = 4.0f;
-		style.WindowBorderSize = 0.0f;
-		style.PopupBorderSize = 0.0f;
-		style.GrabRounding = 4.0f;
-
-		ImVec4* colors = ImGui::GetStyle().Colors;
-		colors[ImGuiCol_Text] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
-		colors[ImGuiCol_TextDisabled] = ImVec4(0.73f, 0.75f, 0.74f, 1.00f);
-		colors[ImGuiCol_WindowBg] = ImVec4(0.09f, 0.09f, 0.09f, 0.94f);
-		colors[ImGuiCol_ChildBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-		colors[ImGuiCol_PopupBg] = ImVec4(0.08f, 0.08f, 0.08f, 0.94f);
-		colors[ImGuiCol_Border] = ImVec4(0.20f, 0.20f, 0.20f, 0.50f);
-		colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-		colors[ImGuiCol_FrameBg] = ImVec4(0.71f, 0.39f, 0.39f, 0.54f);
-		colors[ImGuiCol_FrameBgHovered] = ImVec4(0.84f, 0.66f, 0.66f, 0.40f);
-		colors[ImGuiCol_FrameBgActive] = ImVec4(0.84f, 0.66f, 0.66f, 0.67f);
-		colors[ImGuiCol_TitleBg] = ImVec4(0.47f, 0.22f, 0.22f, 0.67f);
-		colors[ImGuiCol_TitleBgActive] = ImVec4(0.47f, 0.22f, 0.22f, 1.00f);
-		colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.47f, 0.22f, 0.22f, 0.67f);
-		colors[ImGuiCol_MenuBarBg] = ImVec4(0.34f, 0.16f, 0.16f, 1.00f);
-		colors[ImGuiCol_ScrollbarBg] = ImVec4(0.02f, 0.02f, 0.02f, 0.53f);
-		colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.31f, 0.31f, 0.31f, 1.00f);
-		colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.41f, 0.41f, 0.41f, 1.00f);
-		colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.51f, 0.51f, 0.51f, 1.00f);
-		colors[ImGuiCol_CheckMark] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
-		colors[ImGuiCol_SliderGrab] = ImVec4(0.71f, 0.39f, 0.39f, 1.00f);
-		colors[ImGuiCol_SliderGrabActive] = ImVec4(0.84f, 0.66f, 0.66f, 1.00f);
-		colors[ImGuiCol_Button] = ImVec4(0.47f, 0.22f, 0.22f, 0.65f);
-		colors[ImGuiCol_ButtonHovered] = ImVec4(0.71f, 0.39f, 0.39f, 0.65f);
-		colors[ImGuiCol_ButtonActive] = ImVec4(0.20f, 0.20f, 0.20f, 0.50f);
-		colors[ImGuiCol_Header] = ImVec4(0.71f, 0.39f, 0.39f, 0.54f);
-		colors[ImGuiCol_HeaderHovered] = ImVec4(0.84f, 0.66f, 0.66f, 0.65f);
-		colors[ImGuiCol_HeaderActive] = ImVec4(0.84f, 0.66f, 0.66f, 0.00f);
-		colors[ImGuiCol_Separator] = ImVec4(0.43f, 0.43f, 0.50f, 0.50f);
-		colors[ImGuiCol_SeparatorHovered] = ImVec4(0.71f, 0.39f, 0.39f, 0.54f);
-		colors[ImGuiCol_SeparatorActive] = ImVec4(0.71f, 0.39f, 0.39f, 0.54f);
-		colors[ImGuiCol_ResizeGrip] = ImVec4(0.71f, 0.39f, 0.39f, 0.54f);
-		colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.84f, 0.66f, 0.66f, 0.66f);
-		colors[ImGuiCol_ResizeGripActive] = ImVec4(0.84f, 0.66f, 0.66f, 0.66f);
-		colors[ImGuiCol_Tab] = ImVec4(0.71f, 0.39f, 0.39f, 0.54f);
-		colors[ImGuiCol_TabHovered] = ImVec4(0.84f, 0.66f, 0.66f, 0.66f);
-		colors[ImGuiCol_TabActive] = ImVec4(0.84f, 0.66f, 0.66f, 0.66f);
-		colors[ImGuiCol_TabUnfocused] = ImVec4(0.07f, 0.10f, 0.15f, 0.97f);
-		colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.14f, 0.26f, 0.42f, 1.00f);
-		colors[ImGuiCol_PlotLines] = ImVec4(0.61f, 0.61f, 0.61f, 1.00f);
-		colors[ImGuiCol_PlotLinesHovered] = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);
-		colors[ImGuiCol_PlotHistogram] = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
-		colors[ImGuiCol_PlotHistogramHovered] = ImVec4(1.00f, 0.60f, 0.00f, 1.00f);
-		colors[ImGuiCol_TextSelectedBg] = ImVec4(0.26f, 0.59f, 0.98f, 0.35f);
-		colors[ImGuiCol_DragDropTarget] = ImVec4(1.00f, 1.00f, 0.00f, 0.90f);
-		colors[ImGuiCol_NavHighlight] = ImVec4(0.41f, 0.41f, 0.41f, 1.00f);
-		colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.00f, 1.00f, 1.00f, 0.70f);
-		colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
-		colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
-	}
-
 	void GuiPass::UploadFonts()
 	{
 		ImGui_ImplVulkan_CreateFontsTexture();
 
+	}
+
+	void GuiPass::DrawGui(const std::unique_ptr<RenderContext>& context)
+	{
+		DrawInspector(context);
+		DrawScene(context);
+		ShowAppMainMenuBar(context);
+		// TODO remove
+		// ImGui::ShowDemoWindow();
+	}
+
+	void GuiPass::DrawInspector(const std::unique_ptr<RenderContext>& context)
+	{
+		float sizeX, sizeY, paddingY;
+
+		sizeX = 300.0f;
+		sizeY = float(ImGui::GetIO().DisplaySize.y);
+		paddingY = 0.05f;
+		ImGui::SetNextWindowSize(ImVec2(sizeX, sizeY), ImGuiCond_Always);
+		ImGui::SetNextWindowPos(ImVec2( ImGui::GetIO().DisplaySize.x, 20.0f), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
+			
+		ImGui::Begin(
+			"Inspector",
+			NULL,
+			ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove
+		);
+		auto& scene = context->GetEngineContext()->GetScene();
+
+		if (scene.IsGameObjectSelected())
+		{
+			auto entity = scene.GetSelectedGameObject();
+			auto& transform = scene.GetTransformComponent(entity);
+			auto& hierarchy = scene.GetHierarchyComponent(entity);	
+			auto name = hierarchy.mName;
+			if (ImGui::CollapsingHeader("Name"))
+			{
+				if (ImGui::InputText("input text", &name[0], name.capacity() + 1))
+				{
+					hierarchy.mName = name;
+				}
+			}
+			
+			if (ImGui::CollapsingHeader("Transform Component"))
+			{
+				ImGui::SeparatorText("Position");
+				ImGui::DragFloat("pos x", &transform.mPososition.x, 0.5f);
+				ImGui::DragFloat("pos y", &transform.mPososition.y, 0.5f);
+				ImGui::DragFloat("pos z", &transform.mPososition.z, 0.5f);
+
+				ImGui::SeparatorText("Rotation");
+				ImGui::DragFloat("rot x", &transform.mRotation.x, 0.5f);
+				ImGui::DragFloat("rot y", &transform.mRotation.y, 0.5f);
+				ImGui::DragFloat("rot z", &transform.mRotation.z, 0.5f);
+
+				ImGui::SeparatorText("Scale");
+				ImGui::DragFloat("scale x", &transform.mScale.x, 0.5f);
+				ImGui::DragFloat("scale y", &transform.mScale.y, 0.5f);
+				ImGui::DragFloat("scale z", &transform.mScale.z, 0.5f);
+			}
+			
+			if (scene.HasMeshComponent(entity))
+			{
+				if (ImGui::CollapsingHeader("Mesh Component"))
+				{
+					auto& mesh = scene.GetMeshComponent(entity);
+					auto& meshes = scene.GetMeshes();
+					int selectedIndex = static_cast<int>(mesh.mMeshIndex.value());
+
+					if (ImGui::BeginCombo("mesh", mesh.mMeshPath.c_str())) {
+						for (int i = 0; i < meshes.size(); ++i) {
+							const bool isSelected = (selectedIndex == i);
+							if (ImGui::Selectable(meshes[i].c_str(), isSelected)) {
+								selectedIndex = i;
+								scene.ChangeMeshComponent(entity, meshes[i]);
+							}
+
+							if (isSelected) {
+								ImGui::SetItemDefaultFocus();
+							}
+						}
+						ImGui::EndCombo();
+					}
+					int temp = static_cast<int>(mesh.mMeshIndex.value());
+					ImGui::InputInt("mesh index", &temp);
+
+					if (ImGui::Button("Remove component"))
+					{
+						scene.RemoveMeshComponent();
+					}
+				}
+			}
+
+			if (ImGui::CollapsingHeader("Rendering  Component"))
+			{
+			}
+		}
+
+		ImGui::End();
+	
+	}
+
+	void GuiPass::DrawHierarchyNode(const std::unique_ptr<RenderContext>& context, ECS::Entity entity, int& index)
+	{
+		auto& scene = context->GetEngineContext()->GetScene();
+		auto& component = scene.GetHierarchyComponent(entity);
+		ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow;
+		bool isSelected = false;
+		if (scene.IsGameObjectSelected() && entity == scene.GetSelectedGameObject())
+		{
+			isSelected = true;
+		}
+		if (isSelected)
+			nodeFlags |= ImGuiTreeNodeFlags_Selected;
+
+		if (component.mChildren.size() > 0)
+		{
+			bool node_open = ImGui::TreeNodeEx((void*)(intptr_t)index, nodeFlags, component.mName.c_str());
+			if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
+			{
+				scene.SelectGameObject(entity);
+			}
+			++index;
+			if (node_open)
+			{
+				for (auto entity : component.mChildren)
+				{
+					DrawHierarchyNode(context, entity, index);
+				}
+				ImGui::TreePop();
+			}
+		}
+		else
+		{
+			nodeFlags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+			ImGui::TreeNodeEx((void*)(intptr_t)index, nodeFlags, component.mName.c_str());
+			if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
+			{
+				scene.SelectGameObject(entity);
+			}
+			++index;
+		}
+	}
+
+	void GuiPass::ShowAppMainMenuBar(const std::unique_ptr<RenderContext>& context)
+	{
+		auto& scene = context->GetEngineContext()->GetScene();
+		if (ImGui::BeginMainMenuBar())
+		{
+			if (ImGui::BeginMenu("File"))
+			{
+				if (ImGui::MenuItem("New")) { scene.ResetScene(); }
+				if (ImGui::MenuItem("Rename")) {}
+				if (ImGui::MenuItem("Open")) { scene.Load(); }
+				if (ImGui::MenuItem("Save")) { scene.Save(); }
+
+				ImGui::Separator();
+				if (ImGui::MenuItem("Create game object")) { scene.CreateGameObject(); }
+				if (ImGui::MenuItem("Delete game object")) { scene.DeleteGameObject(); }
+
+				if (ImGui::BeginMenu("Add component"))
+				{
+					if (ImGui::MenuItem("Mesh component")) { if (scene.IsGameObjectSelected()) { scene.AddMeshComponent(scene.GetSelectedGameObject()); } }
+					if (ImGui::MenuItem("Render component")) { scene.AddRenderComponent(); }
+					if (ImGui::MenuItem("Light component")) {}
+					if (ImGui::MenuItem("Script component")) {}
+					ImGui::EndMenu();
+				}
+
+				ImGui::Separator();
+				if (ImGui::MenuItem("Quit", "Alt+F4")) {}
+				ImGui::EndMenu();
+			}
+
+			ImGui::EndMainMenuBar();
+		}
+	}
+
+
+	void GuiPass::DrawScene(const std::unique_ptr<RenderContext>& context)
+	{
+		float sizeX, sizeY, paddingY;
+
+		sizeX = 300.0f;
+		sizeY = float(ImGui::GetIO().DisplaySize.y);
+		paddingY = 0.05f;
+		ImGui::SetNextWindowSize(ImVec2(sizeX, sizeY), ImGuiCond_Always);
+		ImGui::SetNextWindowPos(ImVec2(sizeX, 20.0f), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
+
+		auto& scene = context->GetEngineContext()->GetScene();
+		ImGui::Begin(scene.GetSceneName().c_str(), NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove);
+
+		{
+			int index = 0;
+
+			ImVec2 sz = ImVec2(-FLT_MIN, 0.0f);
+
+			if (ImGui::Button("Create object", sz))
+			{
+				scene.CreateGameObject();
+			}
+			if (ImGui::Button("Delete object", sz))
+			{
+				scene.DeleteGameObject();
+			}
+
+			DrawHierarchyNode(context, scene.GetRoot(), index);
+
+		}
+		ImGui::End();
 	}
 
 

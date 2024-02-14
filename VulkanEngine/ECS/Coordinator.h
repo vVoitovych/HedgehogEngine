@@ -23,6 +23,11 @@ namespace ECS
 			return  entityManager->CreateEntity();
 		}
 
+		void CreateEntity(Entity entity)
+		{
+			entityManager->CreateEntity(entity);
+		}
+
 		void DestroyEntity(Entity entity)
 		{
 			entityManager->DestroyEntity(entity);
@@ -65,6 +70,12 @@ namespace ECS
 		T& GetComponent(Entity entity) const
 		{
 			return componentManager->GetComponent<T>(entity);
+		}
+
+		template<typename T>
+		bool HasComponent(Entity entity) const
+		{
+			return componentManager->HasComponent<T>(entity);
 		}
 
 		template<typename T>

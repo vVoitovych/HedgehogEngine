@@ -1,6 +1,7 @@
 #include "ForwardPass.hpp"
 #include "ForwardPassInfo.hpp"
 #include "ForwardPipelineInfo.hpp"
+#include "ForwardPassPushConstants.hpp"
 
 #include "Renderer/Context/RenderContext.hpp"
 #include "Renderer/Context/EngineContext.hpp"
@@ -23,7 +24,7 @@
 #include "Renderer/Containers/MeshContainer.hpp"
 #include "Renderer/Containers/TextureContainer.hpp"
 #include "Renderer/Containers/SamplerContainer.h"
-
+#include "Scene/RenderObjectsManager.hpp"
 #include "Renderer/Common/RendererSettings.hpp"
 #include "Logger/Logger.hpp"
 
@@ -55,8 +56,12 @@ namespace Renderer
 		commandBuffer.BindIndexBuffer(meshContainer.GetIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
 		commandBuffer.BindDescriptorSers(VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeline, 0, 1, mDescriptorSets[frameIndex].GetNativeSet(), 0, nullptr);
 
-		auto& mesh = meshContainer.GetMesh(0);
-		commandBuffer.DrawIndexed(mesh.GetIndexCount(), 1, mesh.GetFirstIndex(), mesh.GetVertexOffset(), 0);
+		for (auto& object : engineContext->GetScene().GetRenderableObjects())
+		{
+			commandBuffer.PushConstants(mPipeline->GetNativePipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ForwardPassPushConstants), &object.objMatrix);
+			auto& mesh = meshContainer.GetMesh(object.meshIndex);
+			commandBuffer.DrawIndexed(mesh.GetIndexCount(), 1, mesh.GetFirstIndex(), mesh.GetVertexOffset(), 0);
+		}
 		commandBuffer.EndRenderPass();
 		
 	}
@@ -69,7 +74,13 @@ namespace Renderer
 		mRenderPass = std::make_unique<RenderPass>(vulkanContext->GetDevice(), info.GetInfo());
 		mDescriptorSetLayout = std::make_unique<DescriptorSetLayout>(vulkanContext->GetDevice());
 		std::unique_ptr<PipelineInfo> pipelineInfo = std::make_unique<ForwardPipelineInfo>(vulkanContext->GetDevice());
-		mPipeline = std::make_unique<Pipeline>(vulkanContext->GetDevice(), mRenderPass, mDescriptorSetLayout, pipelineInfo);
+		std::vector<VkDescriptorSetLayout> descriptorLayouts = { mDescriptorSetLayout->GetNativeLayout() };
+		VkPushConstantRange pushConstant;
+		pushConstant.offset = 0;
+		pushConstant.size = sizeof(ForwardPassPushConstants);
+		pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+		std::vector<VkPushConstantRange> pushConstants = { pushConstant };
+		mPipeline = std::make_unique<Pipeline>(vulkanContext->GetDevice(), mRenderPass, descriptorLayouts, pushConstants, pipelineInfo);
 
 		CreateDepthBuffer(context);		
 

@@ -1,5 +1,6 @@
 #include "WindowManager.hpp"
 #include "Logger/Logger.hpp"
+#include "Renderer/RenderPasses/GuiPass.hpp"
 
 namespace Renderer
 {
@@ -126,6 +127,8 @@ namespace Renderer
 
 	void WindowManager::OnMouseButton(GLFWwindow* window, int button, int action, int mods)
 	{
+		if (GuiPass::IsCursorPositionInGUI())
+			return;
 		auto app = reinterpret_cast<WindowManager*>(glfwGetWindowUserPointer(window));
 
 		Controls& controls = app->GetControls();

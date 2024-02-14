@@ -38,7 +38,7 @@ namespace ECS
 			size_t indexOfLastElement = size - 1;
 			componentsArray[indexOfRemovedEntity] = componentsArray[indexOfLastElement];
 
-			const Entity entityOfLastElement = entityToIndexMap[indexOfLastElement];
+			const Entity entityOfLastElement = indexToEntityMap[indexOfLastElement];
 			entityToIndexMap[entityOfLastElement] = indexOfRemovedEntity;
 			indexToEntityMap[indexOfRemovedEntity] = entityOfLastElement;
 
@@ -53,6 +53,11 @@ namespace ECS
 			assert(entityToIndexMap.find(entity) != entityToIndexMap.end() && "Entity doesn't have component.");
 
 			return componentsArray[entityToIndexMap[entity]];
+		}
+
+		bool HasData(Entity entity)
+		{
+			return entityToIndexMap.find(entity) != entityToIndexMap.end();
 		}
 
 		void EntityDestroyed(Entity entity) override

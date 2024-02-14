@@ -1,7 +1,10 @@
 #pragma once
 
+#include "ECS/Entity.h"
+
 #include <memory>
 #include <vector>
+#include <string>
 
 namespace Renderer
 {
@@ -24,13 +27,19 @@ namespace Renderer
 		static bool IsCursorPositionInGUI();
 
 	private:
-		void ApplyStyle();
+		void DrawGui(const std::unique_ptr<RenderContext>& context);
+		void DrawInspector(const std::unique_ptr<RenderContext>& context);
+		void DrawScene(const std::unique_ptr<RenderContext>& context);
+		void DrawHierarchyNode(const std::unique_ptr<RenderContext>& context, ECS::Entity entity, int& index);
+		void ShowAppMainMenuBar(const std::unique_ptr<RenderContext>& context);
+
 		void UploadFonts();
 
 	private:
 		std::unique_ptr<RenderPass> mRenderPass;
 		std::vector<FrameBuffer> mFrameBuffers;
 		std::unique_ptr<DescriptorPool> mDescriptorPool;
+
 	};
 }
 

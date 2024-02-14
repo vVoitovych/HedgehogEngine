@@ -28,7 +28,8 @@ namespace Renderer
 		const SamplerContainer& GetSamplerContainer() const;
 
 		const Camera& GetCamera() const;
-
+		Scene::Scene& GetScene();
+		const Scene::Scene& GetScene() const;
 	private:
 
 		Camera mCamera;

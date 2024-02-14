@@ -14,25 +14,22 @@ namespace Scene
 		return std::filesystem::exists(ContentLoader::GetAssetsDirectory() + path);
 	}
 
-	void MeshSystem::Update(ECS::Coordinator& coordinator)
+	void MeshSystem::Update(ECS::Coordinator& coordinator, ECS::Entity entity)
 	{
-		for (auto const& entity : entities)
+	auto& meshComponent = coordinator.GetComponent<MeshComponent>(entity);
+		if (meshComponent.mMeshIndex.has_value())
 		{
-			auto& meshComponent = coordinator.GetComponent<MeshComponent>(entity);
-			if (meshComponent.mMeshIndex.has_value())
+			// already initialized
+			size_t index = meshComponent.mMeshIndex.value();
+			if (mMeshPathes[index] != meshComponent.mMeshPath)
 			{
-				// already initialized
-				size_t index = meshComponent.mMeshIndex.value();
-				if (mMeshPathes[index] != meshComponent.mMeshPath)
-				{
-					CheckMeshPath(meshComponent, meshComponent.mCachedMeshPath);
-				}
+				CheckMeshPath(meshComponent, meshComponent.mCachedMeshPath);
 			}
-			else
-			{
-				// should be initialize
-				CheckMeshPath(meshComponent, sDefaultMeshPath);
-			}
+		}
+		else
+		{
+			// should be initialize
+			CheckMeshPath(meshComponent, sDefaultMeshPath);
 		}
 	}
 
@@ -47,7 +44,7 @@ namespace Scene
 		mUpdateMeshContainer = false;
 	}
 
-	std::vector<std::string> MeshSystem::GetMeshes()
+	const std::vector<std::string>& MeshSystem::GetMeshes() const
 	{
 		return mMeshPathes;
 	}
@@ -55,6 +52,11 @@ namespace Scene
 	std::set<ECS::Entity> MeshSystem::GetEntities()
 	{
 		return entities;
+	}
+
+	void MeshSystem::AddMeshPath(std::string meshPath)
+	{
+		mMeshPathes.push_back(meshPath);
 	}
 
 	void MeshSystem::CheckMeshPath(MeshComponent& meshComponent, std::string fallbackPath)

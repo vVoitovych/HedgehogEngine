@@ -7,11 +7,19 @@ namespace Renderer
 {
     EngineContext::EngineContext(const std::unique_ptr<VulkanContext>& vulkanContext)
     {
-        mMeshContainer.AddFilePath("Models\\viking_room.obj");
+        mScene.InitScene();
+        for (auto& mesh : mScene.GetMeshes())
+        {
+            mMeshContainer.AddFilePath(mesh);
+        }
+
         mMeshContainer.LoadMeshData();
         mMeshContainer.Initialize(vulkanContext->GetDevice(), vulkanContext->GetCommandPool());
 
-        mTextureContainer.AddTexture("Textures\\viking_room.png", VK_FORMAT_R8G8B8A8_SRGB);
+        for (auto texture : mScene.GetTextures())
+        {
+            mTextureContainer.AddTexture(texture, VK_FORMAT_R8G8B8A8_SRGB);
+        }
         mTextureContainer.Initialize(vulkanContext->GetDevice(), vulkanContext->GetCommandPool());
 
         mSamplerContainer.Initialize(vulkanContext->GetDevice());
@@ -31,7 +39,7 @@ namespace Renderer
         const auto& swapChain = vulkanContext->GetSwapChain();
         auto extend = swapChain->GetSwapChainExtent();
         mCamera.UpdateCamera(dt, extend.width / (float)extend.height, controls);
-
+        mScene.UpdateScene(dt);
     }
 
     const MeshContainer& EngineContext::GetMeshContainer() const
@@ -52,6 +60,14 @@ namespace Renderer
     const Camera& EngineContext::GetCamera() const
     {
         return mCamera;
+    }
+    Scene::Scene& EngineContext::GetScene()
+    {
+        return mScene;
+    }
+    const Scene::Scene& EngineContext::GetScene() const
+    {
+        return mScene;
     }
 }
 
