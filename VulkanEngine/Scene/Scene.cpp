@@ -145,6 +145,7 @@ namespace Scene
 				}
 			}
 			mSceneCoordinator.DestroyEntity(entity);
+			mRenderObjectsManager.RemoveEntity(entity);
 
 			UnselectGameObject();
 		}

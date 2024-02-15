@@ -9,7 +9,7 @@ Scene:
       Scale: [1, 1, 1]
     Children:
       - Entity: 1
-        Name: GameObject_0
+        Name: "room\x00bject_0"
         Parent: 0
         TransformComponent:
           Position: [0, 0, 0]
