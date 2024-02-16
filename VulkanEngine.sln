@@ -11,6 +11,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ImGui", "ThirdParty\ImGui\I
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Logger", "Logger\Logger.vcxproj", "{A241907E-B46E-4839-BA7B-C8874981C028}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ContentLoader", "ContentLoader\ContentLoader.vcxproj", "{AB6BD5F9-CB16-4548-BB32-97B8ACB99FFA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -43,6 +45,14 @@ Global
 		{A241907E-B46E-4839-BA7B-C8874981C028}.Release|x64.Build.0 = Release|x64
 		{A241907E-B46E-4839-BA7B-C8874981C028}.Release|x86.ActiveCfg = Release|Win32
 		{A241907E-B46E-4839-BA7B-C8874981C028}.Release|x86.Build.0 = Release|Win32
+		{AB6BD5F9-CB16-4548-BB32-97B8ACB99FFA}.Debug|x64.ActiveCfg = Debug|x64
+		{AB6BD5F9-CB16-4548-BB32-97B8ACB99FFA}.Debug|x64.Build.0 = Debug|x64
+		{AB6BD5F9-CB16-4548-BB32-97B8ACB99FFA}.Debug|x86.ActiveCfg = Debug|Win32
+		{AB6BD5F9-CB16-4548-BB32-97B8ACB99FFA}.Debug|x86.Build.0 = Debug|Win32
+		{AB6BD5F9-CB16-4548-BB32-97B8ACB99FFA}.Release|x64.ActiveCfg = Release|x64
+		{AB6BD5F9-CB16-4548-BB32-97B8ACB99FFA}.Release|x64.Build.0 = Release|x64
+		{AB6BD5F9-CB16-4548-BB32-97B8ACB99FFA}.Release|x86.ActiveCfg = Release|Win32
+		{AB6BD5F9-CB16-4548-BB32-97B8ACB99FFA}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

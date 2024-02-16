@@ -4,17 +4,11 @@
     <ClCompile Include="Application.cpp">
       <Filter>Application</Filter>
     </ClCompile>
-    <ClCompile Include="ContentLoader\TextureLoader.cpp">
-      <Filter>ContentLoader</Filter>
-    </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>SourceFiles</Filter>
     </ClCompile>
     <ClCompile Include="Renderer\Camera\Camera.cpp">
       <Filter>Renderer\Camera</Filter>
-    </ClCompile>
-    <ClCompile Include="ContentLoader\CommonFunctions.cpp">
-      <Filter>ContentLoader</Filter>
     </ClCompile>
     <ClCompile Include="Renderer\WindowManagment\WindowManager.cpp">
       <Filter>Renderer\WindowManager</Filter>
@@ -162,12 +156,6 @@
     <ClInclude Include="Application.hpp">
       <Filter>Application</Filter>
     </ClInclude>
-    <ClInclude Include="ContentLoader\TextureLoader.hpp">
-      <Filter>ContentLoader</Filter>
-    </ClInclude>
-    <ClInclude Include="Libraries\stb\stb_image.hpp">
-      <Filter>ContentLoader\stb</Filter>
-    </ClInclude>
     <ClInclude Include="Renderer\Camera\Camera.hpp">
       <Filter>Renderer\Camera</Filter>
     </ClInclude>
@@ -176,9 +164,6 @@
     </ClInclude>
     <ClInclude Include="Renderer\Common\RendererSettings.hpp">
       <Filter>Renderer\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="ContentLoader\CommonFunctions.hpp">
-      <Filter>ContentLoader</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\WindowManagment\Controls.hpp">
       <Filter>Renderer\WindowManager</Filter>
@@ -375,12 +360,6 @@
   <ItemGroup>
     <Filter Include="Application">
       <UniqueIdentifier>{7a7a7411-a85a-42a7-9c77-6df39233ec5e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ContentLoader">
-      <UniqueIdentifier>{1288b47a-ea47-49b5-a2f8-04772cca3ff5}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ContentLoader\stb">
-      <UniqueIdentifier>{6f7a25fb-cfe0-4d19-8a6c-8b670c1cab42}</UniqueIdentifier>
     </Filter>
     <Filter Include="Renderer">
       <UniqueIdentifier>{c6d15c2a-2efe-4c60-97bf-366c53bbc55d}</UniqueIdentifier>
