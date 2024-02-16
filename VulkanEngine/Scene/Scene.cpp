@@ -49,6 +49,7 @@ namespace Scene
 		mMeshSystem->AddMeshPath("Models\\Default\\sphere.obj");
 
 		mTextures.push_back("Textures\\viking_room.png");
+
 	}
 
 	void Scene::UpdateScene(float dt)

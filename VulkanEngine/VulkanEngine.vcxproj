@@ -123,7 +123,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>D:\Vulkan\Projects\VulkanEngine\ThirdParty\yaml-cpp;$(SolutionDir)x64\Debug;$(SolutionDir)ThirdParty\glfw-3.3.8.bin.WIN64\lib-vc2019;C:\VulkanSDK\1.3.231.1\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;ImGui.lib;yaml-cppd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;ImGui.lib;yaml-cppd.lib;Logger.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -143,7 +143,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>D:\Vulkan\Projects\VulkanEngine\ThirdParty\yaml-cpp;$(SolutionDir)x64\Release;$(SolutionDir)ThirdParty\glfw-3.3.8.bin.WIN64\lib-vc2019;C:\VulkanSDK\1.3.231.1\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;ImGui.lib;yaml-cpp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;ImGui.lib;yaml-cpp.lib;Logger.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -151,7 +151,6 @@
     <ClCompile Include="ContentLoader\CommonFunctions.cpp" />
     <ClCompile Include="ContentLoader\TextureLoader.cpp" />
     <ClCompile Include="ECS\EntityManager.cpp" />
-    <ClCompile Include="Logger\LogColorized.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Renderer\Camera\Camera.cpp" />
     <ClCompile Include="Renderer\Containers\Mesh.cpp" />
@@ -218,8 +217,6 @@
     <ClInclude Include="ECS\System.h" />
     <ClInclude Include="ECS\SystemManager.h" />
     <ClInclude Include="Libraries\stb\stb_image.hpp" />
-    <ClInclude Include="Logger\LogColorized.hpp" />
-    <ClInclude Include="Logger\Logger.hpp" />
     <ClInclude Include="Renderer\Camera\Camera.hpp" />
     <ClInclude Include="Renderer\Common\EngineDebugBreak.hpp" />
     <ClInclude Include="Renderer\Common\RendererSettings.hpp" />

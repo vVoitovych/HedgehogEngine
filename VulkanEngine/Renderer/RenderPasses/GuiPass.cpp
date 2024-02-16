@@ -189,7 +189,7 @@ namespace Renderer
 		DrawScene(context);
 		ShowAppMainMenuBar(context);
 		// TODO remove
-		// ImGui::ShowDemoWindow();
+		//ImGui::ShowDemoWindow();
 	}
 
 	void GuiPass::DrawInspector(const std::unique_ptr<RenderContext>& context)

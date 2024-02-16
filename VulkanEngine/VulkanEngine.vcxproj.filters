@@ -7,9 +7,6 @@
     <ClCompile Include="ContentLoader\TextureLoader.cpp">
       <Filter>ContentLoader</Filter>
     </ClCompile>
-    <ClCompile Include="Logger\LogColorized.cpp">
-      <Filter>Logger</Filter>
-    </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>SourceFiles</Filter>
     </ClCompile>
@@ -170,12 +167,6 @@
     </ClInclude>
     <ClInclude Include="Libraries\stb\stb_image.hpp">
       <Filter>ContentLoader\stb</Filter>
-    </ClInclude>
-    <ClInclude Include="Logger\LogColorized.hpp">
-      <Filter>Logger</Filter>
-    </ClInclude>
-    <ClInclude Include="Logger\Logger.hpp">
-      <Filter>Logger</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\Camera\Camera.hpp">
       <Filter>Renderer\Camera</Filter>
@@ -390,9 +381,6 @@
     </Filter>
     <Filter Include="ContentLoader\stb">
       <UniqueIdentifier>{6f7a25fb-cfe0-4d19-8a6c-8b670c1cab42}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Logger">
-      <UniqueIdentifier>{6a95c0fe-9b1c-44e2-9900-721c2dc01b7f}</UniqueIdentifier>
     </Filter>
     <Filter Include="Renderer">
       <UniqueIdentifier>{c6d15c2a-2efe-4c60-97bf-366c53bbc55d}</UniqueIdentifier>
