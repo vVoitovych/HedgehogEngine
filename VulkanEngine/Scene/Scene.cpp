@@ -4,6 +4,7 @@
 #include "Scene/SceneComponents/TransformComponent.hpp"
 #include "Scene/SceneComponents/HierarchyComponent.hpp"
 #include "Scene/SceneComponents/MeshComponent.hpp"
+#include "Scene/SceneComponents/LightComponent.hpp"
 #include "ContentLoader/CommonFunctions.hpp"
 
 #include <sstream>
@@ -26,11 +27,13 @@ namespace Scene
 		mSceneCoordinator.RegisterComponent<TransformComponent>();
 		mSceneCoordinator.RegisterComponent<HierarchyComponent>();
 		mSceneCoordinator.RegisterComponent<MeshComponent>();
+		mSceneCoordinator.RegisterComponent<LightComponent>();
 
 		//register systems
 		mTransformSystem = mSceneCoordinator.RegisterSystem<TransformSystem>();
 		mHierarchySystem = mSceneCoordinator.RegisterSystem<HierarchySystem>();
 		mMeshSystem = mSceneCoordinator.RegisterSystem<MeshSystem>();
+		mLightSystem = mSceneCoordinator.RegisterSystem<LightSystem>();
 
 		//bind systems and components
 		ECS::Signature signature;
@@ -40,6 +43,8 @@ namespace Scene
 		mSceneCoordinator.SetSystemSignature<HierarchySystem>(signature);
 		signature.set(mSceneCoordinator.GetComponentType<MeshComponent>());
 		mSceneCoordinator.SetSystemSignature<MeshSystem>(signature);
+		signature.set(mSceneCoordinator.GetComponentType<LightComponent>());
+		mSceneCoordinator.SetSystemSignature<LightSystem>(signature);
 
 
 		// TODO: remove all bellow and add loating instead
@@ -56,6 +61,7 @@ namespace Scene
 	{
 		mTransformSystem->Update(mSceneCoordinator);
 		mHierarchySystem->Update(mSceneCoordinator);
+		mLightSystem->UpdateLights(mSceneCoordinator);
 		auto& objects = mRenderObjectsManager.GetRenderableObjects();
 		for (size_t i = 0; i < objects.size(); ++i)
 		{
@@ -208,6 +214,28 @@ namespace Scene
 		return false;
 	}
 
+	void Scene::AddLightComponent(ECS::Entity entity)
+	{
+		if (!HasLightComponent(entity))
+		{
+			mSceneCoordinator.AddComponent(entity, LightComponent());
+		}
+	}
+
+	void Scene::RemoveLightComponent()
+	{
+		if (IsGameObjectSelected() && HasLightComponent(mSelectedEntity.value()))
+		{
+			ECS::Entity entity = mSelectedEntity.value();
+			mSceneCoordinator.RemoveComponent<LightComponent>(entity);
+		}
+	}
+
+	bool Scene::HasLightComponent(ECS::Entity entity) const
+	{
+		return mSceneCoordinator.HasComponent<LightComponent>(entity);
+	}
+
 	ECS::Entity Scene::GetRoot() const
 	{
 		return mRoot;
@@ -226,6 +254,11 @@ namespace Scene
 	MeshComponent& Scene::GetMeshComponent(ECS::Entity entity)
 	{
 		return mSceneCoordinator.GetComponent<MeshComponent>(entity);
+	}
+
+	LightComponent& Scene::GetLightComponent(ECS::Entity entity)
+	{
+		return mSceneCoordinator.GetComponent<LightComponent>(entity);
 	}
 
 	bool Scene::IsGameObjectSelected() const

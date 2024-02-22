@@ -151,6 +151,12 @@
     <ClCompile Include="Scene\RenderObjectsManager.cpp">
       <Filter>Scene</Filter>
     </ClCompile>
+    <ClCompile Include="Renderer\Containers\LightContainer.cpp">
+      <Filter>Renderer\Containers\LightContainer</Filter>
+    </ClCompile>
+    <ClCompile Include="Scene\SceneSystems\LightSystem.cpp">
+      <Filter>Scene\SceneSystems</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.hpp">
@@ -345,6 +351,18 @@
     <ClInclude Include="Scene\RenderObjectsManager.hpp">
       <Filter>Scene</Filter>
     </ClInclude>
+    <ClInclude Include="Renderer\Containers\Light.hpp">
+      <Filter>Renderer\Containers\LightContainer</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Containers\LightContainer.hpp">
+      <Filter>Renderer\Containers\LightContainer</Filter>
+    </ClInclude>
+    <ClInclude Include="Scene\SceneComponents\LightComponent.hpp">
+      <Filter>Scene\SceneComponents</Filter>
+    </ClInclude>
+    <ClInclude Include="Scene\SceneSystems\LightSystem.hpp">
+      <Filter>Scene\SceneSystems</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ShadersCompiler.bat">
@@ -483,6 +501,9 @@
     </Filter>
     <Filter Include="Renderer\RenderPasses\GuiPass">
       <UniqueIdentifier>{b4a8cff3-9318-4d50-a093-05ebb8f45a2d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Containers\LightContainer">
+      <UniqueIdentifier>{545034a6-e1d3-4e66-b104-89b795e59420}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

@@ -13,11 +13,23 @@ Scene:
         Parent: 0
         TransformComponent:
           Position: [0, 0, 0]
-          Rotation: [-5.5, -18, 146.5]
+          Rotation: [-5.5, -18, 132]
           Scale: [1, 1, 1]
         MeshComponent:
           MeshPath: Models\viking_room.obj
           MeshIndex: 0
           CachedMeshPath: Models\viking_room.obj
         Children:
-          []
+          - Entity: 2
+            Name: "sub_room\x00t_0"
+            Parent: 1
+            TransformComponent:
+              Position: [3, 3.5, -1]
+              Rotation: [0, 5, 50.5]
+              Scale: [1, 1, 1]
+            MeshComponent:
+              MeshPath: Models\viking_room.obj
+              MeshIndex: 0
+              CachedMeshPath: Models\viking_room.obj
+            Children:
+              []
