@@ -280,6 +280,10 @@ namespace Renderer
 				{
 					auto& light = scene.GetLightComponent(entity);
 
+					static bool enabled = light.mEnable;
+					ImGui::Checkbox("Enabled", &enabled);
+					light.mEnable = enabled;
+
 					const char* types[] = { "Direction Light", "Point Light", "Spot Light" };
 					static int lightType = static_cast<int>(light.mLightType);
 					ImGui::Combo("Type", &lightType, types, IM_ARRAYSIZE(types));

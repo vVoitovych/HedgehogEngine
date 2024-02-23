@@ -18,11 +18,12 @@ namespace Scene
 	class LightComponent
 	{
 	public:
-		LightType mLightType;
-		glm::vec3 mColor;
-		float mIntencity;
-		float mRadius;
-		float mConeAngle;
+		bool mEnable = true;
+		LightType mLightType = LightType::DirectionLight;
+		glm::vec3 mColor = { 1.0f, 1.0f, 1.0f };
+		float mIntencity = 1.0f;
+		float mRadius = 1.0f;
+		float mConeAngle = 1.0f;
 
 		glm::vec3 mPosition;
 		glm::vec3 mDirection;

@@ -34,13 +34,14 @@ Scene:
             Children:
               []
       - Entity: 3
-        Name: "Lantern"
+        Name: Lantern
         Parent: 0
         TransformComponent:
           Position: [0, 0, 0]
           Rotation: [0, 0, 0]
           Scale: [1, 1, 1]
         LightComponent:
+          LightEnabled: true
           LightType: 2
           LightColor: [1, 0, 0]
           LightIntencity: 22.9050007

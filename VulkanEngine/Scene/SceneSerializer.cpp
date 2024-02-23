@@ -138,6 +138,7 @@ namespace Scene
 			out << YAML::Key << "LightComponent";
 			out << YAML::BeginMap;
 
+			out << YAML::Key << "LightEnabled" << YAML::Value << light.mEnable;
 			out << YAML::Key << "LightType" << YAML::Value << static_cast<size_t>(light.mLightType);
 			out << YAML::Key << "LightColor" << YAML::Value << light.mColor;
 			out << YAML::Key << "LightIntencity" << YAML::Value << light.mIntencity;
@@ -205,6 +206,7 @@ namespace Scene
 		{
 			scene.AddLightComponent(entity);
 			auto& lightComponent = scene.GetLightComponent(entity);
+			lightComponent.mEnable = light["LightEnabled"].as<bool>();
 			lightComponent.mLightType = static_cast<LightType>(light["LightType"].as<size_t>());
 			lightComponent.mColor = light["LightColor"].as<glm::vec3>();
 			lightComponent.mIntencity = light["LightIntencity"].as<float>();
