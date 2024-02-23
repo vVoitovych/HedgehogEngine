@@ -282,21 +282,21 @@ namespace Renderer
 
 					const char* types[] = { "Direction Light", "Point Light", "Spot Light" };
 					static int lightType = static_cast<int>(light.mLightType);
-					ImGui::Combo("Light type", &lightType, types, IM_ARRAYSIZE(types));
+					ImGui::Combo("Type", &lightType, types, IM_ARRAYSIZE(types));
 					light.mLightType = static_cast<Scene::LightType>(lightType);
 					
 					static float color[3] = { light.mColor.r, light.mColor.g, light.mColor.b };
-					ImGui::ColorEdit3("light color", color);
+					ImGui::ColorEdit3("Color", color);
 					light.mColor = {color[0], color[1], color[2]};
 
 					static float intencity = light.mIntencity;
-					ImGui::SliderFloat("Light intencity", &intencity, 0.0f, 100.0f, "ratio = %.3f");
+					ImGui::SliderFloat("Intencity", &intencity, 0.0f, 100.0f, "ratio = %.3f");
 					light.mIntencity = intencity;
 
 					if (lightType > 0)
 					{
 						static float radius = light.mRadius;
-						ImGui::SliderFloat("Light radius", &radius, 0.0f, 100.0f, "ratio = %.3f");
+						ImGui::SliderFloat("Radius", &radius, 0.0f, 100.0f, "ratio = %.3f");
 						light.mRadius = radius;
 						if (lightType > 1)
 						{
