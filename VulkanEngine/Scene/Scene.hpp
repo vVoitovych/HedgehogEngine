@@ -56,6 +56,9 @@ namespace Scene
 		void RemoveLightComponent();
 		bool HasLightComponent(ECS::Entity entity) const;
 
+		size_t GetLightCount() const;
+		const LightComponent& GetLightComponentByIndex(size_t index);
+
 		ECS::Entity GetRoot() const;
 		HierarchyComponent& GetHierarchyComponent(ECS::Entity entity);
 		TransformComponent& GetTransformComponent(ECS::Entity entity);

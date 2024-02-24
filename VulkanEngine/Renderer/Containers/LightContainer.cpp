@@ -9,6 +9,11 @@ namespace Renderer
 {
 	LightContainer::LightContainer()
 	{
+		mLights.resize(MAX_LIGHTS_COUNT);
+	}
+
+	void LightContainer::UpdateLights(const std::unique_ptr<RenderContext>& context)
+	{
 	}
 
 
