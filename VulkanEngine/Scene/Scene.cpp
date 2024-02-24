@@ -241,10 +241,6 @@ namespace Scene
 		return mLightSystem->GetLightComponentsCount();
 	}
 
-	const std::vector<LightComponent>& Scene::GetLightComponents()
-	{
-		mLightSystem->GetLightComponents(mSceneCoordinator);
-	}
 
 	ECS::Entity Scene::GetRoot() const
 	{

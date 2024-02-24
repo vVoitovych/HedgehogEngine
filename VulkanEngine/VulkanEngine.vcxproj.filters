@@ -16,9 +16,6 @@
     <ClCompile Include="Renderer\WindowManagment\WindowState.cpp">
       <Filter>Renderer\WindowManager</Filter>
     </ClCompile>
-    <ClCompile Include="ECS\EntityManager.cpp">
-      <Filter>ECS\Entity</Filter>
-    </ClCompile>
     <ClCompile Include="Renderer\Renderer.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
@@ -179,27 +176,6 @@
     </ClInclude>
     <ClInclude Include="Renderer\WindowManagment\WindowState.hpp">
       <Filter>Renderer\WindowManager</Filter>
-    </ClInclude>
-    <ClInclude Include="ECS\Entity.h">
-      <Filter>ECS\Entity</Filter>
-    </ClInclude>
-    <ClInclude Include="ECS\EntityManager.h">
-      <Filter>ECS\Entity</Filter>
-    </ClInclude>
-    <ClInclude Include="ECS\ComponentArray.h">
-      <Filter>ECS\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="ECS\ComponentManager.h">
-      <Filter>ECS\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="ECS\System.h">
-      <Filter>ECS\System</Filter>
-    </ClInclude>
-    <ClInclude Include="ECS\SystemManager.h">
-      <Filter>ECS\System</Filter>
-    </ClInclude>
-    <ClInclude Include="ECS\Coordinator.h">
-      <Filter>ECS</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\Renderer.hpp">
       <Filter>Renderer</Filter>
@@ -399,18 +375,6 @@
     </Filter>
     <Filter Include="Renderer\WindowManager">
       <UniqueIdentifier>{4eb469f1-78bd-4366-af94-eb0959030fab}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ECS">
-      <UniqueIdentifier>{8ad25b6a-f52a-445c-9636-4d72f28aca70}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ECS\Entity">
-      <UniqueIdentifier>{9dfdb32e-31da-451f-a62d-35e01646f476}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ECS\Component">
-      <UniqueIdentifier>{d210ff3a-2bee-476c-a410-3a85ba877ef7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ECS\System">
-      <UniqueIdentifier>{51879ec0-60c9-4f94-b9f4-fd0c5e3b1701}</UniqueIdentifier>
     </Filter>
     <Filter Include="Renderer\RenderPasses">
       <UniqueIdentifier>{db25bbb4-4977-4c2b-97d0-b8532d027ef0}</UniqueIdentifier>
