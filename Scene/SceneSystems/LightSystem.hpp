@@ -1,7 +1,5 @@
 #pragma once
 
-#define MAX_LIGHT_COUNT
-
 #include "ECS/Coordinator.h"
 #include "ECS/Entity.h"
 #include "Scene/SceneComponents/LightComponent.hpp"
