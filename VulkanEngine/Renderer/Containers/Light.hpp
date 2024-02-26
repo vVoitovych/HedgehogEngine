@@ -9,9 +9,10 @@ namespace Renderer
 {
 	struct Light
 	{
-		glm::vec4 mPosition;	// vec3 position, uint lightType
-		glm::vec4 mDirection;	// vec3 direction, float radius
-		glm::vec4 mColor;		// vec3 color, floar intencity
+		alignas(16) glm::vec3 mPosition;
+		alignas(16) glm::vec3 mDirection;
+		alignas(16) glm::vec3 mColor;
+		alignas(16) glm::vec4 mData;		// type, intencity, radius, coneAngle
 	};
 }
 

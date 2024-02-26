@@ -39,10 +39,13 @@ namespace Scene
 		ECS::Signature signature;
 		signature.set(mSceneCoordinator.GetComponentType<TransformComponent>());
 		mSceneCoordinator.SetSystemSignature<TransformSystem>(signature);
+		signature.reset();
 		signature.set(mSceneCoordinator.GetComponentType<HierarchyComponent>());
 		mSceneCoordinator.SetSystemSignature<HierarchySystem>(signature);
+		signature.reset();
 		signature.set(mSceneCoordinator.GetComponentType<MeshComponent>());
 		mSceneCoordinator.SetSystemSignature<MeshSystem>(signature);
+		signature.reset();
 		signature.set(mSceneCoordinator.GetComponentType<LightComponent>());
 		mSceneCoordinator.SetSystemSignature<LightSystem>(signature);
 
@@ -239,6 +242,11 @@ namespace Scene
 	size_t Scene::GetLightCount() const
 	{
 		return mLightSystem->GetLightComponentsCount();
+	}
+
+	const LightComponent& Scene::GetLightComponentByIndex(size_t index) const
+	{
+		return mLightSystem->GetLightComponentByIndex(mSceneCoordinator, index);
 	}
 
 

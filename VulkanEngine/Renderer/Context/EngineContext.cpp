@@ -23,6 +23,7 @@ namespace Renderer
         mTextureContainer.Initialize(vulkanContext->GetDevice(), vulkanContext->GetCommandPool());
 
         mSamplerContainer.Initialize(vulkanContext->GetDevice());
+        mLightContainer.UpdateLights(mScene);
     }
 
     void EngineContext::Cleanup(const std::unique_ptr<VulkanContext>& vulkanContext)
@@ -40,6 +41,7 @@ namespace Renderer
         auto extend = swapChain->GetSwapChainExtent();
         mCamera.UpdateCamera(dt, extend.width / (float)extend.height, controls);
         mScene.UpdateScene(dt);
+        mLightContainer.UpdateLights(mScene);
     }
 
     const MeshContainer& EngineContext::GetMeshContainer() const
@@ -55,6 +57,11 @@ namespace Renderer
     const SamplerContainer& EngineContext::GetSamplerContainer() const
     {
         return mSamplerContainer;
+    }
+
+    const LightContainer& EngineContext::GetLightContainer() const
+    {
+        return mLightContainer;
     }
 
     const Camera& EngineContext::GetCamera() const

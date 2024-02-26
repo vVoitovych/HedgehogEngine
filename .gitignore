@@ -555,3 +555,14 @@
 /x64/Release/Scene.pdb
 /x64/Release/VulkanEngine.exe
 /x64/Release/VulkanEngine.pdb
+/.vs/VulkanEngine/FileContentIndex/0d561466-de5e-46b1-ba31-3629e1bd9870.vsidx
+/.vs/VulkanEngine/FileContentIndex/9b250edb-3cf4-4ce0-b4fa-8166441d3f0d.vsidx
+/.vs/VulkanEngine/FileContentIndex/b12f7ccf-f1a0-419d-9dcb-d21cc826b3f5.vsidx
+/.vs/VulkanEngine/v17/ipch/AutoPCH/26f9810e6215fc39/MESHCONTAINER.ipch
+/.vs/VulkanEngine/v17/ipch/AutoPCH/29af355a8e3b1bb1/COORDINATOR.ipch
+/.vs/VulkanEngine/v17/ipch/AutoPCH/2a01aff71fde2676/LIGHTCONTAINER.ipch
+/.vs/VulkanEngine/v17/ipch/AutoPCH/acbf74d196f59244/MESH.ipch
+/.vs/VulkanEngine/v17/ipch/AutoPCH/af512d6e1b3ced39/DESCRIPTORSET.ipch
+/.vs/VulkanEngine/v17/ipch/AutoPCH/bd2c816bca8c875/VERTEXDESCRIPTION.ipch
+/.vs/VulkanEngine/v17/ipch/AutoPCH/c059e907999ea07b/SCENE.ipch
+/x64

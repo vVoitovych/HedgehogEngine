@@ -5,6 +5,7 @@
 #include "Renderer/Containers/MeshContainer.hpp"
 #include "Renderer/Containers/TextureContainer.hpp"
 #include "Renderer/Containers/SamplerContainer.h"
+#include "Renderer/Containers/LightContainer.hpp"
 
 #include "Renderer/WindowManagment/WindowManager.hpp"
 
@@ -26,6 +27,7 @@ namespace Renderer
 		const MeshContainer& GetMeshContainer() const;
 		const TextureContaineer& GetTextureContainer() const;
 		const SamplerContainer& GetSamplerContainer() const;
+		const LightContainer& GetLightContainer() const;
 
 		const Camera& GetCamera() const;
 		Scene::Scene& GetScene();
@@ -39,7 +41,7 @@ namespace Renderer
 		MeshContainer mMeshContainer;
 		TextureContaineer mTextureContainer;
 		SamplerContainer mSamplerContainer;
-
+		LightContainer mLightContainer;
 	};
 
 }

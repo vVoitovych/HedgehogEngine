@@ -1,24 +1,29 @@
 #pragma once
 
+#include "Light.hpp"
+
 #include <vector>
 #include <memory>
 
+namespace Scene
+{
+	class Scene;
+}
+
 namespace Renderer
 {
-	struct Light;
-
-	class RenderContext;
-
 	class LightContainer
 	{
 	public:
 		LightContainer();
-		void UpdateLights(const std::unique_ptr<RenderContext>& context);
-
+		void UpdateLights(const Scene::Scene& scene);
+		size_t GetLightCount() const;
+		const std::vector<Light>& GetLights() const;
 	private:
 		std::vector<Light> mLights;
 
 		size_t mCachedLightComponentCount;
+		size_t mLightCont;
 	};
 
 }

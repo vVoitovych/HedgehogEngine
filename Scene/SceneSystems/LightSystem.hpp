@@ -14,7 +14,7 @@ namespace Scene
 		const std::vector<LightComponent>& GetLightComponents(ECS::Coordinator& coordinator);
 		void UpdateLights(ECS::Coordinator& coordinator);
 		size_t GetLightComponentsCount() const;
-
+		const LightComponent& GetLightComponentByIndex(const ECS::Coordinator& coordinator, size_t index) const;
 	private:
 		std::vector<LightComponent> mLightComponents;
 	};

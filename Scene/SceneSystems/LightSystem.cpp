@@ -33,6 +33,12 @@ namespace Scene
 		return entities.size();
 	}
 
+	const LightComponent& LightSystem::GetLightComponentByIndex(const ECS::Coordinator& coordinator, size_t index) const
+	{
+		auto& entity = entities[index];
+		return coordinator.GetComponent<LightComponent>(entity);
+	}
+
 }
 
 

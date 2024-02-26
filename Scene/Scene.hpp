@@ -57,7 +57,7 @@ namespace Scene
 		bool HasLightComponent(ECS::Entity entity) const;
 
 		size_t GetLightCount() const;
-		const LightComponent& GetLightComponentByIndex(size_t index);
+		const LightComponent& GetLightComponentByIndex(size_t index) const;
 
 		ECS::Entity GetRoot() const;
 		HierarchyComponent& GetHierarchyComponent(ECS::Entity entity);

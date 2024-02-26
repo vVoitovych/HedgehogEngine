@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include <memory>
 #include <cassert>
+#include <algorithm>
 
 #include "Entity.h"
 #include "System.h"
@@ -36,7 +37,11 @@ namespace ECS
 			for (auto const& pair : systems)
 			{
 				auto const& system = pair.second;
-				system->entities.erase(entity);
+				auto it = std::find(system->entities.begin(), system->entities.end(), entity);
+				if (it != system->entities.end())
+				{
+					system->entities.erase(it);
+				}
 			}
 		}
 
@@ -50,11 +55,19 @@ namespace ECS
 
 				if ((systemSignature & signature) == systemSignature)
 				{
-					system->entities.insert(entity);
+					auto it = std::find(system->entities.begin(), system->entities.end(), entity);
+					if (it == system->entities.end())
+					{
+						system->entities.push_back(entity);
+					}
 				}
 				else
 				{
-					system->entities.erase(entity);
+					auto it = std::find(system->entities.begin(), system->entities.end(), entity);
+					if (it != system->entities.end())
+					{
+						system->entities.erase(it);
+					}
 				}
 			}
 		}
