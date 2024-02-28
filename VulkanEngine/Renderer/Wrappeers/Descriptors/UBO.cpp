@@ -1,10 +1,12 @@
 #include "UBO.hpp"
 #include "Renderer/Wrappeers/Device/Device.hpp"
 #include "Renderer/Wrappeers/Resources/Buffer/Buffer.hpp"
+#include "Renderer/Containers/LightContainer.hpp"
 #include "UBOInfo.hpp"
 #include "Logger/Logger.hpp"
 #include "Renderer/Common/EngineDebugBreak.hpp"
 #include "Renderer/Context/RenderContext.hpp"
+#include "Renderer/Context/EngineContext.hpp"
 #include "Renderer/Context/FrameContext.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -52,17 +54,24 @@ namespace Renderer
 		LOGINFO("UBO cleaned");
 	}
 
-	void UBO::UpdateUniformBuffer(std::unique_ptr< RenderContext>& context)
+	void UBO::UpdateUniformBuffer(std::unique_ptr<RenderContext>& context)
 	{
 		static auto startTime = std::chrono::high_resolution_clock::now();
 		auto currentTime = std::chrono::high_resolution_clock::now();
 		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
 		const auto& frameContext = context->GetFrameContext();
+		const auto& engineContext = context->GetEngineContext();
+		const auto& lightContainer = engineContext->GetLightContainer();
 		UniformBufferObject ubo{};
 		ubo.view = frameContext->GetCameraViewMatrix();
 		ubo.proj = frameContext->GetCameraProjMatrix();
-
+		ubo.lightCount = lightContainer.GetLightCount();
+		const auto& lights = lightContainer.GetLights();
+		for (size_t i = 0; i < ubo.lightCount; ++i)
+		{
+			ubo.lights[i] = lights[i];
+		}
 		memcpy(mUniformBufferMapped, &ubo, sizeof(ubo));
 	}
 

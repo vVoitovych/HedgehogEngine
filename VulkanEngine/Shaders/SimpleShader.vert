@@ -1,9 +1,21 @@
 #version 450
 
+#define MAX_LIGHTS_COUNT 16
+
+struct Light
+{
+	vec3 mPosition;
+	vec3 mDirection;
+	vec3 mColor;
+	vec4 mData;		// type, intencity, radius, coneAngle
+};
+
 layout(binding = 0) uniform UniformBufferObject 
 {
     mat4 view;
     mat4 proj;
+    Light lights[MAX_LIGHTS_COUNT];
+    int lightCount;
 } ubo;
 
 layout(location = 0) in vec3 inPosition;
