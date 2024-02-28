@@ -25,6 +25,8 @@ namespace Renderer
 
 		void UpdateUniformBuffer(std::unique_ptr< RenderContext>& context);
 		VkBuffer GetNativeBuffer();
+		const std::unique_ptr<Buffer>& GetBuffer() const;
+
 	private:
 		std::unique_ptr<Buffer> mUniformBuffer;
 

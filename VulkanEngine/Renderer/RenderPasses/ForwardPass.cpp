@@ -111,7 +111,7 @@ namespace Renderer
 				vulkanContext->GetDevice(),
 				vulkanContext->GetDescriptorPool(),
 				mDescriptorSetLayout, 
-				mUniformBuffers[i], 
+				mUniformBuffers[i].GetBuffer(),
 				materialImage,
 				materalSampler);
 			mDescriptorSets.push_back(std::move(descriptorSet));

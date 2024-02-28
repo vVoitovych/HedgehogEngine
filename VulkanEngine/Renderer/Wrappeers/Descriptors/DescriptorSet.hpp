@@ -8,7 +8,7 @@ namespace Renderer
 	class Device;
 	class DescriptorPool;
 	class DescriptorSetLayout;
-	class UBO;
+	class Buffer;
 	class Image;
 	class Sampler;
 
@@ -18,8 +18,8 @@ namespace Renderer
 		DescriptorSet(
 			const std::unique_ptr<Device>& device,
 			const std::unique_ptr<DescriptorPool>& descriptorPool,
-			std::unique_ptr<DescriptorSetLayout>& descriptorSetLayout, 
-			UBO& ubo, 
+			const std::unique_ptr<DescriptorSetLayout>& descriptorSetLayout, 
+			const std::unique_ptr<Buffer>& ubo,
 			const Image& image, 
 			const Sampler& sampler);
 		~DescriptorSet();

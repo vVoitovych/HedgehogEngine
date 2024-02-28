@@ -71,6 +71,11 @@ namespace Renderer
 		return mUniformBuffer->GetNativeBuffer();
 	}
 
+	const std::unique_ptr<Buffer>& UBO::GetBuffer() const
+	{
+		return mUniformBuffer;
+	}
+
 }
 
 

@@ -27,8 +27,10 @@ namespace Renderer
 		void DestroyBuffer();
 
 		const VkBuffer& GetNativeBuffer() const;
+		VkDeviceSize GetBufferSize() const;
 
 	private:
+		VkDeviceSize mBufferSize;
 		VkBuffer mBuffer;
 		VkDeviceMemory mBufferMemory;
 
