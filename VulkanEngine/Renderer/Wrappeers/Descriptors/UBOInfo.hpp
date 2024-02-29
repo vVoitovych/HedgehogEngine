@@ -13,7 +13,8 @@ namespace Renderer
     {
         alignas(16) glm::mat4 view;
         alignas(16) glm::mat4 proj;
-        Light lights[MAX_LIGHTS_COUNT];
+        alignas(16) glm::vec4 eyePosition;
+        alignas(16) Light lights[MAX_LIGHTS_COUNT];
         int lightCount;
     };
 }

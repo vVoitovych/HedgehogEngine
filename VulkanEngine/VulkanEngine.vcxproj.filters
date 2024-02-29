@@ -296,6 +296,18 @@
     <None Include="Shaders\SimpleShader.vert">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="Shaders\GammaCorection.glsli">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\Lighting.glsli">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\LightData.glsli">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\SurfaceData.glsli">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Application">

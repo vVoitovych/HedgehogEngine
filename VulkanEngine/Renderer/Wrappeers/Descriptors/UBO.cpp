@@ -66,6 +66,7 @@ namespace Renderer
 		UniformBufferObject ubo{};
 		ubo.view = frameContext->GetCameraViewMatrix();
 		ubo.proj = frameContext->GetCameraProjMatrix();
+		ubo.eyePosition = glm::vec4(frameContext->GetCameraPosition(), 1.0f);
 		ubo.lightCount = lightContainer.GetLightCount();
 		const auto& lights = lightContainer.GetLights();
 		for (size_t i = 0; i < ubo.lightCount; ++i)

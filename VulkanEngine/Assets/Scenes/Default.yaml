@@ -28,9 +28,9 @@ Scene:
               Rotation: [0, 5, 50.5]
               Scale: [1, 1, 1]
             MeshComponent:
-              MeshPath: Models\viking_room.obj
-              MeshIndex: 0
-              CachedMeshPath: Models\viking_room.obj
+              MeshPath: Models\Default\sphere.obj
+              MeshIndex: 2
+              CachedMeshPath: Models\Default\sphere.obj
             Children:
               []
       - Entity: 3
@@ -38,13 +38,13 @@ Scene:
         Parent: 0
         TransformComponent:
           Position: [0, 0, 0]
-          Rotation: [0, 0, 0]
+          Rotation: [0, 0, 138.5]
           Scale: [1, 1, 1]
         LightComponent:
           LightEnabled: true
-          LightType: 2
-          LightColor: [1, 0, 0]
-          LightIntencity: 22.9050007
+          LightType: 0
+          LightColor: [0.0376778133, 0.480392158, 0.21997191]
+          LightIntencity: 6.704
           LightRadius: 1
           LightConeAngle: 2
         Children:

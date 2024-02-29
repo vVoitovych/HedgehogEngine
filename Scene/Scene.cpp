@@ -297,7 +297,13 @@ namespace Scene
 	void Scene::SelectGameObject(ECS::Entity entity)
 	{
 		if (entity != mRoot)
+		{
 			mSelectedEntity = entity;
+		}
+		else
+		{
+			UnselectGameObject();
+		}
 	}
 
 	const std::vector<std::string>& Scene::GetMeshes() const 

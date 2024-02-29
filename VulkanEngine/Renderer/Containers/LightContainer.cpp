@@ -32,7 +32,11 @@ namespace Renderer
 				light.mPosition = lightComponent.mPosition;
 				light.mDirection = lightComponent.mDirection;
 				light.mColor = lightComponent.mColor;
-				light.mData = { lightComponent .mLightType, lightComponent.mIntencity, lightComponent.mRadius, lightComponent.mConeAngle};
+				light.mData = { 
+					lightComponent .mLightType, 
+					lightComponent.mIntencity, 
+					lightComponent.mRadius, 
+					cos(glm::radians(lightComponent.mConeAngle))};
 				++counter;
 			}
 		}
