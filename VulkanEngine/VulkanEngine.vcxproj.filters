@@ -16,9 +16,6 @@
     <ClCompile Include="Renderer\WindowManagment\WindowState.cpp">
       <Filter>Renderer\WindowManager</Filter>
     </ClCompile>
-    <ClCompile Include="ECS\EntityManager.cpp">
-      <Filter>ECS\Entity</Filter>
-    </ClCompile>
     <ClCompile Include="Renderer\Renderer.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
@@ -51,18 +48,6 @@
     </ClCompile>
     <ClCompile Include="Renderer\Wrappeers\FrameBuffer\FrameBuffer.cpp">
       <Filter>Renderer\Wrappers\FrameBuffers</Filter>
-    </ClCompile>
-    <ClCompile Include="Scene\Scene.cpp">
-      <Filter>Scene</Filter>
-    </ClCompile>
-    <ClCompile Include="Scene\SceneSystems\TransformSystem.cpp">
-      <Filter>Scene\SceneSystems</Filter>
-    </ClCompile>
-    <ClCompile Include="Scene\SceneSystems\HierarchySystem.cpp">
-      <Filter>Scene\SceneSystems</Filter>
-    </ClCompile>
-    <ClCompile Include="Scene\SceneSystems\MeshSystem.cpp">
-      <Filter>Scene\SceneSystems</Filter>
     </ClCompile>
     <ClCompile Include="Renderer\Context\FrameContext.cpp">
       <Filter>Renderer\Context</Filter>
@@ -145,11 +130,8 @@
     <ClCompile Include="Renderer\Wrappeers\Resources\Image\ImageManagement.cpp">
       <Filter>Renderer\Wrappers\Resources\Image</Filter>
     </ClCompile>
-    <ClCompile Include="Scene\SceneSerializer.cpp">
-      <Filter>Scene</Filter>
-    </ClCompile>
-    <ClCompile Include="Scene\RenderObjectsManager.cpp">
-      <Filter>Scene</Filter>
+    <ClCompile Include="Renderer\Containers\LightContainer.cpp">
+      <Filter>Renderer\Containers\LightContainer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -173,27 +155,6 @@
     </ClInclude>
     <ClInclude Include="Renderer\WindowManagment\WindowState.hpp">
       <Filter>Renderer\WindowManager</Filter>
-    </ClInclude>
-    <ClInclude Include="ECS\Entity.h">
-      <Filter>ECS\Entity</Filter>
-    </ClInclude>
-    <ClInclude Include="ECS\EntityManager.h">
-      <Filter>ECS\Entity</Filter>
-    </ClInclude>
-    <ClInclude Include="ECS\ComponentArray.h">
-      <Filter>ECS\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="ECS\ComponentManager.h">
-      <Filter>ECS\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="ECS\System.h">
-      <Filter>ECS\System</Filter>
-    </ClInclude>
-    <ClInclude Include="ECS\SystemManager.h">
-      <Filter>ECS\System</Filter>
-    </ClInclude>
-    <ClInclude Include="ECS\Coordinator.h">
-      <Filter>ECS</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\Renderer.hpp">
       <Filter>Renderer</Filter>
@@ -230,27 +191,6 @@
     </ClInclude>
     <ClInclude Include="Renderer\Wrappeers\FrameBuffer\FrameBuffer.hpp">
       <Filter>Renderer\Wrappers\FrameBuffers</Filter>
-    </ClInclude>
-    <ClInclude Include="Scene\Scene.hpp">
-      <Filter>Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="Scene\SceneComponents\TransformComponent.hpp">
-      <Filter>Scene\SceneComponents</Filter>
-    </ClInclude>
-    <ClInclude Include="Scene\SceneSystems\TransformSystem.hpp">
-      <Filter>Scene\SceneSystems</Filter>
-    </ClInclude>
-    <ClInclude Include="Scene\SceneComponents\HierarchyComponent.hpp">
-      <Filter>Scene\SceneComponents</Filter>
-    </ClInclude>
-    <ClInclude Include="Scene\SceneSystems\HierarchySystem.hpp">
-      <Filter>Scene\SceneSystems</Filter>
-    </ClInclude>
-    <ClInclude Include="Scene\SceneComponents\MeshComponent.hpp">
-      <Filter>Scene\SceneComponents</Filter>
-    </ClInclude>
-    <ClInclude Include="Scene\SceneSystems\MeshSystem.hpp">
-      <Filter>Scene\SceneSystems</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\Context\FrameContext.hpp">
       <Filter>Renderer\Context</Filter>
@@ -336,14 +276,14 @@
     <ClInclude Include="Renderer\Wrappeers\Resources\Image\ImageManagement.hpp">
       <Filter>Renderer\Wrappers\Resources\Image</Filter>
     </ClInclude>
-    <ClInclude Include="Scene\SceneSerializer.hpp">
-      <Filter>Scene</Filter>
-    </ClInclude>
     <ClInclude Include="Renderer\RenderPasses\ForwardPassPushConstants.hpp">
       <Filter>Renderer\RenderPasses\ForwardPass</Filter>
     </ClInclude>
-    <ClInclude Include="Scene\RenderObjectsManager.hpp">
-      <Filter>Scene</Filter>
+    <ClInclude Include="Renderer\Containers\Light.hpp">
+      <Filter>Renderer\Containers\LightContainer</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Containers\LightContainer.hpp">
+      <Filter>Renderer\Containers\LightContainer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -354,6 +294,18 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="Shaders\SimpleShader.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\GammaCorection.glsli">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\Lighting.glsli">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\LightData.glsli">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\SurfaceData.glsli">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>
@@ -381,18 +333,6 @@
     </Filter>
     <Filter Include="Renderer\WindowManager">
       <UniqueIdentifier>{4eb469f1-78bd-4366-af94-eb0959030fab}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ECS">
-      <UniqueIdentifier>{8ad25b6a-f52a-445c-9636-4d72f28aca70}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ECS\Entity">
-      <UniqueIdentifier>{9dfdb32e-31da-451f-a62d-35e01646f476}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ECS\Component">
-      <UniqueIdentifier>{d210ff3a-2bee-476c-a410-3a85ba877ef7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ECS\System">
-      <UniqueIdentifier>{51879ec0-60c9-4f94-b9f4-fd0c5e3b1701}</UniqueIdentifier>
     </Filter>
     <Filter Include="Renderer\RenderPasses">
       <UniqueIdentifier>{db25bbb4-4977-4c2b-97d0-b8532d027ef0}</UniqueIdentifier>
@@ -439,15 +379,6 @@
     <Filter Include="Renderer\Containers">
       <UniqueIdentifier>{54791467-0b8e-45f5-961e-cebff47e3b89}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Scene">
-      <UniqueIdentifier>{28172bfe-f0ce-47c3-8afd-92e6458e9486}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Scene\SceneComponents">
-      <UniqueIdentifier>{8389148c-9fc8-44f1-a916-7608ab045b35}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Scene\SceneSystems">
-      <UniqueIdentifier>{a0766458-cc6a-4de4-b3bc-4cb85fd6abb1}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Renderer\RenderQueue">
       <UniqueIdentifier>{78d6aad6-0d48-4795-9e3c-77bcdf84b765}</UniqueIdentifier>
     </Filter>
@@ -483,6 +414,9 @@
     </Filter>
     <Filter Include="Renderer\RenderPasses\GuiPass">
       <UniqueIdentifier>{b4a8cff3-9318-4d50-a093-05ebb8f45a2d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Containers\LightContainer">
+      <UniqueIdentifier>{545034a6-e1d3-4e66-b104-89b795e59420}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

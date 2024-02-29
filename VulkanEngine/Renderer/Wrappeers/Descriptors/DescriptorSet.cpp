@@ -2,8 +2,8 @@
 #include "Renderer/Wrappeers/Device/Device.hpp"
 #include "Renderer/Wrappeers/Descriptors/DescriptorPool.hpp"
 #include "DescriptorSetLayout.hpp"
-#include "UBOInfo.hpp"
-#include "UBO.hpp"
+#include "Renderer/Wrappeers/Resources/Buffer/Buffer.hpp"
+
 #include "Logger/Logger.hpp"
 #include "Renderer/Common/EngineDebugBreak.hpp"
 #include "Renderer/Wrappeers/Resources/Image/Image.hpp"
@@ -16,8 +16,8 @@ namespace Renderer
 	DescriptorSet::DescriptorSet(
         const std::unique_ptr<Device>& device,
         const std::unique_ptr<DescriptorPool>& descriptorPool,
-        std::unique_ptr<DescriptorSetLayout>& descriptorSetLayout,
-        UBO& ubo,
+        const std::unique_ptr<DescriptorSetLayout>& descriptorSetLayout,
+        const std::unique_ptr<Buffer>& ubo,
         const Image& image,
         const Sampler& sampler)
 		: mDescriptorSet(nullptr)
@@ -25,9 +25,9 @@ namespace Renderer
         descriptorPool->AllocDescriptorSets(device, { descriptorSetLayout->GetNativeLayout() }, &mDescriptorSet);
 
         VkDescriptorBufferInfo bufferInfo{};
-        bufferInfo.buffer = ubo.GetNativeBuffer();
+        bufferInfo.buffer = ubo->GetNativeBuffer();
         bufferInfo.offset = 0;
-        bufferInfo.range = sizeof(UniformBufferObject);
+        bufferInfo.range = ubo->GetBufferSize();
 
         VkDescriptorImageInfo imageInfo{};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;

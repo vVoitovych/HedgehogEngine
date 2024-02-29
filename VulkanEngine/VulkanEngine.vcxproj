@@ -116,14 +116,14 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir);C:\VulkanSDK\1.3.231.1\Include;$(ProjectDir)Libraries\glm;$(SolutionDir);$(SolutionDir)ThirdParty\glfw-3.3.8.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);C:\VulkanSDK\1.3.231.1\Include;$(SolutionDir)ThirdParty\glm;$(SolutionDir);$(SolutionDir)ThirdParty\glfw-3.3.8.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>D:\Vulkan\Projects\VulkanEngine\ThirdParty\yaml-cpp;$(SolutionDir)x64\Debug;$(SolutionDir)ThirdParty\glfw-3.3.8.bin.WIN64\lib-vc2019;C:\VulkanSDK\1.3.231.1\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;ImGui.lib;yaml-cppd.lib;Logger.lib;ContentLoader.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)x64\Debug;$(SolutionDir)ThirdParty\glfw-3.3.8.bin.WIN64\lib-vc2019;C:\VulkanSDK\1.3.231.1\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;ImGui.lib;Logger.lib;ContentLoader.lib;Scene.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -134,7 +134,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir);C:\VulkanSDK\1.3.231.1\Include;$(ProjectDir)Libraries\glm;$(SolutionDir);$(SolutionDir)ThirdParty\glfw-3.3.8.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);C:\VulkanSDK\1.3.231.1\Include;$(SolutionDir)ThirdParty\glm;$(SolutionDir);$(SolutionDir)ThirdParty\glfw-3.3.8.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -142,15 +142,15 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>D:\Vulkan\Projects\VulkanEngine\ThirdParty\yaml-cpp;$(SolutionDir)x64\Release;$(SolutionDir)ThirdParty\glfw-3.3.8.bin.WIN64\lib-vc2019;C:\VulkanSDK\1.3.231.1\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;ImGui.lib;yaml-cpp.lib;Logger.lib;ContentLoader.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)x64\Release;$(SolutionDir)ThirdParty\glfw-3.3.8.bin.WIN64\lib-vc2019;C:\VulkanSDK\1.3.231.1\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;ImGui.lib;Logger.lib;ContentLoader.lib;Scene.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Application.cpp" />
-    <ClCompile Include="ECS\EntityManager.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Renderer\Camera\Camera.cpp" />
+    <ClCompile Include="Renderer\Containers\LightContainer.cpp" />
     <ClCompile Include="Renderer\Containers\Mesh.cpp" />
     <ClCompile Include="Renderer\Containers\MeshContainer.cpp" />
     <ClCompile Include="Renderer\Containers\SamplerContainer.cpp" />
@@ -191,30 +191,23 @@
     <ClCompile Include="Renderer\Wrappeers\Shaders\VertexShader.cpp" />
     <ClCompile Include="Renderer\Wrappeers\SwapChain\SwapChain.cpp" />
     <ClCompile Include="Renderer\Wrappeers\SyncObjects\SyncObject.cpp" />
-    <ClCompile Include="Scene\RenderObjectsManager.cpp" />
-    <ClCompile Include="Scene\Scene.cpp" />
-    <ClCompile Include="Scene\SceneSerializer.cpp" />
-    <ClCompile Include="Scene\SceneSystems\HierarchySystem.cpp" />
-    <ClCompile Include="Scene\SceneSystems\MeshSystem.cpp" />
-    <ClCompile Include="Scene\SceneSystems\TransformSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ShadersCompiler.bat" />
+    <None Include="Shaders\GammaCorection.glsli" />
+    <None Include="Shaders\LightData.glsli" />
+    <None Include="Shaders\Lighting.glsli" />
     <None Include="Shaders\SimpleShader.frag" />
     <None Include="Shaders\SimpleShader.vert" />
+    <None Include="Shaders\SurfaceData.glsli" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.hpp" />
-    <ClInclude Include="ECS\ComponentArray.h" />
-    <ClInclude Include="ECS\ComponentManager.h" />
-    <ClInclude Include="ECS\Coordinator.h" />
-    <ClInclude Include="ECS\Entity.h" />
-    <ClInclude Include="ECS\EntityManager.h" />
-    <ClInclude Include="ECS\System.h" />
-    <ClInclude Include="ECS\SystemManager.h" />
     <ClInclude Include="Renderer\Camera\Camera.hpp" />
     <ClInclude Include="Renderer\Common\EngineDebugBreak.hpp" />
     <ClInclude Include="Renderer\Common\RendererSettings.hpp" />
+    <ClInclude Include="Renderer\Containers\Light.hpp" />
+    <ClInclude Include="Renderer\Containers\LightContainer.hpp" />
     <ClInclude Include="Renderer\Containers\Mesh.hpp" />
     <ClInclude Include="Renderer\Containers\MeshContainer.hpp" />
     <ClInclude Include="Renderer\Containers\SamplerContainer.h" />
@@ -259,15 +252,6 @@
     <ClInclude Include="Renderer\Wrappeers\Shaders\VertexShader.hpp" />
     <ClInclude Include="Renderer\Wrappeers\SwapChain\SwapChain.hpp" />
     <ClInclude Include="Renderer\Wrappeers\SyncObjects\SyncObject.hpp" />
-    <ClInclude Include="Scene\RenderObjectsManager.hpp" />
-    <ClInclude Include="Scene\Scene.hpp" />
-    <ClInclude Include="Scene\SceneComponents\HierarchyComponent.hpp" />
-    <ClInclude Include="Scene\SceneComponents\MeshComponent.hpp" />
-    <ClInclude Include="Scene\SceneComponents\TransformComponent.hpp" />
-    <ClInclude Include="Scene\SceneSerializer.hpp" />
-    <ClInclude Include="Scene\SceneSystems\HierarchySystem.hpp" />
-    <ClInclude Include="Scene\SceneSystems\MeshSystem.hpp" />
-    <ClInclude Include="Scene\SceneSystems\TransformSystem.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -49,7 +49,7 @@ namespace Scene
 		return mMeshPathes;
 	}
 
-	std::set<ECS::Entity> MeshSystem::GetEntities()
+	std::vector<ECS::Entity> MeshSystem::GetEntities()
 	{
 		return entities;
 	}

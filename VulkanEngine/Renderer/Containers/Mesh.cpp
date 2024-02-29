@@ -1,7 +1,7 @@
 #include "Mesh.hpp"
 
 #define TINYOBJLOADER_IMPLEMENTATION
-#include "Libraries/TinyObjectLoader/tiny_obj_loader.h"
+#include "ThirdParty/TinyObjectLoader/tiny_obj_loader.h"
 
 #include "Logger/Logger.hpp"
 #include "ContentLoader/CommonFunctions.hpp"

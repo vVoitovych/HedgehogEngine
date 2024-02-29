@@ -13,11 +13,39 @@ Scene:
         Parent: 0
         TransformComponent:
           Position: [0, 0, 0]
-          Rotation: [-5.5, -18, 146.5]
+          Rotation: [-5.5, -18, 132]
           Scale: [1, 1, 1]
         MeshComponent:
           MeshPath: Models\viking_room.obj
           MeshIndex: 0
           CachedMeshPath: Models\viking_room.obj
+        Children:
+          - Entity: 2
+            Name: "sub_room\x00t_0"
+            Parent: 1
+            TransformComponent:
+              Position: [3, 3.5, -1]
+              Rotation: [0, 5, 50.5]
+              Scale: [1, 1, 1]
+            MeshComponent:
+              MeshPath: Models\Default\sphere.obj
+              MeshIndex: 2
+              CachedMeshPath: Models\Default\sphere.obj
+            Children:
+              []
+      - Entity: 3
+        Name: Lantern
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 0]
+          Rotation: [0, 0, 138.5]
+          Scale: [1, 1, 1]
+        LightComponent:
+          LightEnabled: true
+          LightType: 0
+          LightColor: [0.0376778133, 0.480392158, 0.21997191]
+          LightIntencity: 6.704
+          LightRadius: 1
+          LightConeAngle: 2
         Children:
           []

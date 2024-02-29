@@ -4,6 +4,7 @@
 #include "Scene/SceneSystems/TransformSystem.hpp"
 #include "Scene/SceneSystems/HierarchySystem.hpp"
 #include "Scene/SceneSystems/MeshSystem.hpp"
+#include "Scene/SceneSystems/LightSystem.hpp"
 #include "RenderObjectsManager.hpp"
 
 #include <optional>
@@ -51,10 +52,18 @@ namespace Scene
 		void RemoveRenderComponent();
 		bool HasRenderComponent() const;
 
+		void AddLightComponent(ECS::Entity entity);
+		void RemoveLightComponent();
+		bool HasLightComponent(ECS::Entity entity) const;
+
+		size_t GetLightCount() const;
+		const LightComponent& GetLightComponentByIndex(size_t index) const;
+
 		ECS::Entity GetRoot() const;
 		HierarchyComponent& GetHierarchyComponent(ECS::Entity entity);
 		TransformComponent& GetTransformComponent(ECS::Entity entity);
 		MeshComponent& GetMeshComponent(ECS::Entity entity);
+		LightComponent& GetLightComponent(ECS::Entity entity);
 
 		bool IsGameObjectSelected() const;
 		ECS::Entity GetSelectedGameObject() const;
@@ -84,6 +93,7 @@ namespace Scene
 		std::shared_ptr<TransformSystem> mTransformSystem;
 		std::shared_ptr<HierarchySystem> mHierarchySystem;
 		std::shared_ptr<MeshSystem> mMeshSystem;
+		std::shared_ptr<LightSystem> mLightSystem;
 
 		uint16_t mGameObjectIndex = 0;
 	private:

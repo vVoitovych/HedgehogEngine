@@ -22,6 +22,7 @@
 #include "Scene/SceneComponents/HierarchyComponent.hpp"
 #include "Scene/SceneComponents/TransformComponent.hpp"
 #include "Scene/SceneComponents/MeshComponent.hpp"
+#include "Scene/SceneComponents/LightComponent.hpp"
 
 #include "ThirdParty/ImGui/imgui.h"
 #include "ThirdParty/ImGui/imgui_impl_vulkan.h"
@@ -189,7 +190,7 @@ namespace Renderer
 		DrawScene(context);
 		ShowAppMainMenuBar(context);
 		// TODO remove
-		//ImGui::ShowDemoWindow();
+		ImGui::ShowDemoWindow();
 	}
 
 	void GuiPass::DrawInspector(const std::unique_ptr<RenderContext>& context)
@@ -273,6 +274,49 @@ namespace Renderer
 				}
 			}
 
+			if (scene.HasLightComponent(entity))
+			{
+				if (ImGui::CollapsingHeader("Light Component"))
+				{
+					auto& light = scene.GetLightComponent(entity);
+
+					static bool enabled = light.mEnable;
+					ImGui::Checkbox("Enabled", &enabled);
+					light.mEnable = enabled;
+
+					const char* types[] = { "Direction Light", "Point Light", "Spot Light" };
+					static int lightType = static_cast<int>(light.mLightType);
+					ImGui::Combo("Type", &lightType, types, IM_ARRAYSIZE(types));
+					light.mLightType = static_cast<Scene::LightType>(lightType);
+					
+					static float color[3] = { light.mColor.r, light.mColor.g, light.mColor.b };
+					ImGui::ColorEdit3("Color", color);
+					light.mColor = {color[0], color[1], color[2]};
+
+					static float intencity = light.mIntencity;
+					ImGui::SliderFloat("Intencity", &intencity, 0.0f, 30.0f, "ratio = %.3f");
+					light.mIntencity = intencity;
+
+					if (lightType > 0)
+					{
+						static float radius = light.mRadius;
+						ImGui::SliderFloat("Radius", &radius, 0.0f, 100.0f, "ratio = %.3f");
+						light.mRadius = radius;
+						if (lightType > 1)
+						{
+							static float coneAngle = light.mConeAngle;
+							ImGui::SliderFloat("Cone angle", &coneAngle, 0.1f, 179.9f, "ratio = %.3f");
+							light.mConeAngle = coneAngle;
+						}
+					}
+
+					if (ImGui::Button("Remove component"))
+					{
+						scene.RemoveLightComponent();
+					}
+				}
+			}
+
 			if (ImGui::CollapsingHeader("Rendering  Component"))
 			{
 			}
@@ -344,7 +388,7 @@ namespace Renderer
 				{
 					if (ImGui::MenuItem("Mesh component")) { if (scene.IsGameObjectSelected()) { scene.AddMeshComponent(scene.GetSelectedGameObject()); } }
 					if (ImGui::MenuItem("Render component")) { scene.AddRenderComponent(); }
-					if (ImGui::MenuItem("Light component")) {}
+					if (ImGui::MenuItem("Light component")) { if (scene.IsGameObjectSelected()) { scene.AddLightComponent(scene.GetSelectedGameObject()); } }					
 					if (ImGui::MenuItem("Script component")) {}
 					ImGui::EndMenu();
 				}

@@ -16,7 +16,7 @@ namespace Scene
 		bool ShouldUpdateMeshContainer() const;
 		void MeshContainerUpdated();
 		const std::vector<std::string>& GetMeshes() const; 
-		std::set<ECS::Entity> GetEntities();
+		std::vector<ECS::Entity> GetEntities();
 
 		void AddMeshPath(std::string meshPath);
 	private:

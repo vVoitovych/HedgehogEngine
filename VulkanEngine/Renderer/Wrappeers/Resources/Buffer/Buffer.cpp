@@ -18,6 +18,7 @@ namespace Renderer
 		, mBufferMemory(nullptr)
 		, mDevice(nullptr)
 	{
+		mBufferSize = size;
 		mDevice = device->GetNativeDevice();
 		VkBufferCreateInfo info{};
 		info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -116,6 +117,11 @@ namespace Renderer
 	const VkBuffer& Buffer::GetNativeBuffer() const
 	{
 		return mBuffer;
+	}
+
+	VkDeviceSize Buffer::GetBufferSize() const
+	{
+		return mBufferSize;
 	}
 
 }
