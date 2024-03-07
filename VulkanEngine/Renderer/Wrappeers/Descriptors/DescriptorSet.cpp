@@ -7,7 +7,7 @@
 #include "Logger/Logger.hpp"
 #include "Renderer/Common/EngineDebugBreak.hpp"
 #include "Renderer/Wrappeers/Resources/Image/Image.hpp"
-#include "Renderer/Wrappeers/Descriptors/Sampler.hpp"
+#include "Renderer/Wrappeers/Resources/Sampler/Sampler.hpp"
 
 #include <array>
 

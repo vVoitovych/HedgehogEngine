@@ -109,14 +109,8 @@
     <ClCompile Include="Renderer\Wrappeers\Resources\Image\Image.cpp">
       <Filter>Renderer\Wrappers\Resources\Image</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Wrappeers\Descriptors\Sampler.cpp">
-      <Filter>Renderer\Wrappers\Descriptors\Types\Samplers</Filter>
-    </ClCompile>
     <ClCompile Include="Renderer\Containers\TextureContainer.cpp">
       <Filter>Renderer\Containers\TextureContainer</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer\Containers\SamplerContainer.cpp">
-      <Filter>Renderer\Containers\SamplerContainer</Filter>
     </ClCompile>
     <ClCompile Include="Renderer\Context\VulkanContext.cpp">
       <Filter>Renderer\Context</Filter>
@@ -132,6 +126,9 @@
     </ClCompile>
     <ClCompile Include="Renderer\Containers\LightContainer.cpp">
       <Filter>Renderer\Containers\LightContainer</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Wrappeers\Resources\Sampler\Sampler.cpp">
+      <Filter>Renderer\Wrappers\Resources\Sampler</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -255,14 +252,8 @@
     <ClInclude Include="Renderer\Wrappeers\Resources\Image\Image.hpp">
       <Filter>Renderer\Wrappers\Resources\Image</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Wrappeers\Descriptors\Sampler.hpp">
-      <Filter>Renderer\Wrappers\Descriptors\Types\Samplers</Filter>
-    </ClInclude>
     <ClInclude Include="Renderer\Containers\TextureContainer.hpp">
       <Filter>Renderer\Containers\TextureContainer</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Containers\SamplerContainer.h">
-      <Filter>Renderer\Containers\SamplerContainer</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\Context\VulkanContext.hpp">
       <Filter>Renderer\Context</Filter>
@@ -284,6 +275,12 @@
     </ClInclude>
     <ClInclude Include="Renderer\Containers\LightContainer.hpp">
       <Filter>Renderer\Containers\LightContainer</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\Descriptors\DescriptorInfo.hpp">
+      <Filter>Renderer\Wrappers\Descriptors</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\Resources\Sampler\Sampler.hpp">
+      <Filter>Renderer\Wrappers\Resources\Sampler</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -403,20 +400,17 @@
     <Filter Include="Renderer\Wrappers\Resources\Buffer">
       <UniqueIdentifier>{53ac8c8a-0e9c-4cac-a19b-c31ff0c83a6f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Renderer\Wrappers\Descriptors\Types\Samplers">
-      <UniqueIdentifier>{47bf764d-7383-4c11-b9ca-e21ff6f53174}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Renderer\Containers\TextureContainer">
       <UniqueIdentifier>{0bd65f78-6291-496b-9f8f-208e568fbe0e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Renderer\Containers\SamplerContainer">
-      <UniqueIdentifier>{dfa3de2f-a1c7-4498-b229-7157c1a8f042}</UniqueIdentifier>
     </Filter>
     <Filter Include="Renderer\RenderPasses\GuiPass">
       <UniqueIdentifier>{b4a8cff3-9318-4d50-a093-05ebb8f45a2d}</UniqueIdentifier>
     </Filter>
     <Filter Include="Renderer\Containers\LightContainer">
       <UniqueIdentifier>{545034a6-e1d3-4e66-b104-89b795e59420}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Wrappers\Resources\Sampler">
+      <UniqueIdentifier>{e786c4be-dfe6-4745-ad02-41b5ad27845c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

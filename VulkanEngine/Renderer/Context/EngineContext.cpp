@@ -22,15 +22,13 @@ namespace Renderer
         }
         mTextureContainer.Initialize(vulkanContext->GetDevice(), vulkanContext->GetCommandPool());
 
-        mSamplerContainer.Initialize(vulkanContext->GetDevice());
         mLightContainer.UpdateLights(mScene);
     }
 
     void EngineContext::Cleanup(const std::unique_ptr<VulkanContext>& vulkanContext)
     {
         mMeshContainer.Cleanup(vulkanContext->GetDevice());
-        mTextureContainer.Cleanup();
-        mSamplerContainer.Cleanup(vulkanContext->GetDevice());
+        mTextureContainer.Cleanup(vulkanContext->GetDevice());
     }
 
     void EngineContext::UpdateContext(const std::unique_ptr<VulkanContext>& vulkanContext, float dt)
@@ -52,11 +50,6 @@ namespace Renderer
     const TextureContaineer& EngineContext::GetTextureContainer() const
     {
         return mTextureContainer;
-    }
-
-    const SamplerContainer& EngineContext::GetSamplerContainer() const
-    {
-        return mSamplerContainer;
     }
 
     const LightContainer& EngineContext::GetLightContainer() const

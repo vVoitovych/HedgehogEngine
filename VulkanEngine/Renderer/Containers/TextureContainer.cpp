@@ -4,6 +4,7 @@
 #include "Renderer/Wrappeers/Commands/CommandPool.hpp"
 #include "Renderer/Wrappeers/Resources/Image/Image.hpp"
 #include "Renderer/Wrappeers/Resources/Buffer/Buffer.hpp"
+#include "Renderer/Wrappeers/Resources/Sampler/Sampler.hpp"
 #include "ContentLoader/TextureLoader.hpp"
 #include "Logger/Logger.hpp"
 
@@ -26,7 +27,7 @@ namespace Renderer
 		}
 		else
 		{
-			LOGWARNING("Mesh ", filePath, " already added");
+			LOGWARNING("Texture ", filePath, " already added");
 		}
 	}
 
@@ -72,20 +73,60 @@ namespace Renderer
 			mImages.push_back(std::move(image));
 			LOGINFO("Vulkan texture ", mTexturesList[i].filePath, " loaded and initialized");
 		}
+
+		mSamplersList.clear();
+		Sampler linearSampler(device);
+		mSamplersList.push_back(std::move(linearSampler));
 	}
 
-	void TextureContaineer::Cleanup()
+	void TextureContaineer::Cleanup(const std::unique_ptr<Device>& device)
 	{
 		for (size_t i = 0; i < mTexturesList.size(); ++i)
 		{
 			mImages[i].Cleanup();
 		}
 		mImages.clear();
+
+		for (auto& sampler : mSamplersList)
+		{
+			sampler.Cleanup(device);
+		}
+		mSamplersList.clear();
+	}
+
+	const Image& TextureContaineer::GetImage(std::string filePath) const
+	{
+		auto it = std::find_if(mTexturesList.begin(), mTexturesList.end(), [&filePath](const TextureInfo& info) { return info.filePath == filePath; });
+		if (it != mTexturesList.end())
+		{
+			return mImages[it - mTexturesList.begin()];
+		}
+		else
+		{
+			LOGERROR("TYexture ", filePath, " not found");
+		}
 	}
 
 	const Image& TextureContaineer::GetImage(size_t index) const
 	{
 		return mImages[index];
+	}
+
+	size_t TypeToIndex(SamplerType type)
+	{
+		switch (type)
+		{
+		case Renderer::SamplerType::Linear:
+			return 0;
+			break;
+		default:
+			throw std::exception("Wrond sampler type");
+		}
+	}
+
+	const Sampler& TextureContaineer::GetSampler(SamplerType type) const
+	{
+		return mSamplersList[TypeToIndex(type)];
 	}
 
 }
