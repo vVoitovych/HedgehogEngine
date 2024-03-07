@@ -23,7 +23,6 @@
 
 #include "Renderer/Containers/MeshContainer.hpp"
 #include "Renderer/Containers/TextureContainer.hpp"
-#include "Renderer/Containers/SamplerContainer.h"
 #include "Scene/RenderObjectsManager.hpp"
 #include "Renderer/Common/RendererSettings.hpp"
 #include "Logger/Logger.hpp"
@@ -72,8 +71,21 @@ namespace Renderer
 
 		ForwardPassInfo info{ vulkanContext->GetSwapChain()->GetFormat(), vulkanContext->GetDevice()->FindDepthFormat() };
 		mRenderPass = std::make_unique<RenderPass>(vulkanContext->GetDevice(), info.GetInfo());
-		mDescriptorSetLayout = std::make_unique<DescriptorSetLayout>(vulkanContext->GetDevice());
+
+		DescriptorInfo uboInfo;
+		uboInfo.bindingNumber = 0;
+		uboInfo.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		uboInfo.shaderStage = static_cast<VkShaderStageFlagBits>(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
+		std::vector<DescriptorInfo> bindingUBOs = { uboInfo };
+		DescriptorInfo samplerInfo;
+		samplerInfo.bindingNumber = 1;
+		samplerInfo.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		samplerInfo.shaderStage = VK_SHADER_STAGE_FRAGMENT_BIT;
+		std::vector<DescriptorInfo> bindingSamplers = { samplerInfo };
+		mDescriptorSetLayout = std::make_unique<DescriptorSetLayout>(vulkanContext->GetDevice(), bindingUBOs, bindingSamplers);
+
 		std::unique_ptr<PipelineInfo> pipelineInfo = std::make_unique<ForwardPipelineInfo>(vulkanContext->GetDevice());
+
 		std::vector<VkDescriptorSetLayout> descriptorLayouts = { mDescriptorSetLayout->GetNativeLayout() };
 		VkPushConstantRange pushConstant;
 		pushConstant.offset = 0;
@@ -100,7 +112,7 @@ namespace Renderer
 		}
 		auto& engineContext = context->GetEngineContext();
 		auto& materialImage = engineContext->GetTextureContainer().GetImage(0);
-		auto& materalSampler = engineContext->GetSamplerContainer().GetSampler(SamplerType::Linear);
+		auto& materalSampler = engineContext->GetTextureContainer().GetSampler(SamplerType::Linear);
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{

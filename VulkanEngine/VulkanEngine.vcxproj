@@ -153,7 +153,6 @@
     <ClCompile Include="Renderer\Containers\LightContainer.cpp" />
     <ClCompile Include="Renderer\Containers\Mesh.cpp" />
     <ClCompile Include="Renderer\Containers\MeshContainer.cpp" />
-    <ClCompile Include="Renderer\Containers\SamplerContainer.cpp" />
     <ClCompile Include="Renderer\Containers\TextureContainer.cpp" />
     <ClCompile Include="Renderer\Containers\VertexDescription.cpp" />
     <ClCompile Include="Renderer\Context\EngineContext.cpp" />
@@ -177,7 +176,6 @@
     <ClCompile Include="Renderer\Wrappeers\Descriptors\DescriptorPool.cpp" />
     <ClCompile Include="Renderer\Wrappeers\Descriptors\DescriptorSet.cpp" />
     <ClCompile Include="Renderer\Wrappeers\Descriptors\DescriptorSetLayout.cpp" />
-    <ClCompile Include="Renderer\Wrappeers\Descriptors\Sampler.cpp" />
     <ClCompile Include="Renderer\Wrappeers\Descriptors\UBO.cpp" />
     <ClCompile Include="Renderer\Wrappeers\Device\Device.cpp" />
     <ClCompile Include="Renderer\Wrappeers\FrameBuffer\FrameBuffer.cpp" />
@@ -186,6 +184,7 @@
     <ClCompile Include="Renderer\Wrappeers\Resources\Buffer\Buffer.cpp" />
     <ClCompile Include="Renderer\Wrappeers\Resources\Image\Image.cpp" />
     <ClCompile Include="Renderer\Wrappeers\Resources\Image\ImageManagement.cpp" />
+    <ClCompile Include="Renderer\Wrappeers\Resources\Sampler\Sampler.cpp" />
     <ClCompile Include="Renderer\Wrappeers\Shaders\FragmentShader.cpp" />
     <ClCompile Include="Renderer\Wrappeers\Shaders\Shader.cpp" />
     <ClCompile Include="Renderer\Wrappeers\Shaders\VertexShader.cpp" />
@@ -210,7 +209,6 @@
     <ClInclude Include="Renderer\Containers\LightContainer.hpp" />
     <ClInclude Include="Renderer\Containers\Mesh.hpp" />
     <ClInclude Include="Renderer\Containers\MeshContainer.hpp" />
-    <ClInclude Include="Renderer\Containers\SamplerContainer.h" />
     <ClInclude Include="Renderer\Containers\TextureContainer.hpp" />
     <ClInclude Include="Renderer\Containers\VertexDescription.hpp" />
     <ClInclude Include="Renderer\Context\EngineContext.hpp" />
@@ -233,10 +231,10 @@
     <ClInclude Include="Renderer\WindowManagment\WindowState.hpp" />
     <ClInclude Include="Renderer\Wrappeers\Commands\CommandBuffer.hpp" />
     <ClInclude Include="Renderer\Wrappeers\Commands\CommandPool.hpp" />
+    <ClInclude Include="Renderer\Wrappeers\Descriptors\DescriptorInfo.hpp" />
     <ClInclude Include="Renderer\Wrappeers\Descriptors\DescriptorPool.hpp" />
     <ClInclude Include="Renderer\Wrappeers\Descriptors\DescriptorSet.hpp" />
     <ClInclude Include="Renderer\Wrappeers\Descriptors\DescriptorSetLayout.hpp" />
-    <ClInclude Include="Renderer\Wrappeers\Descriptors\Sampler.hpp" />
     <ClInclude Include="Renderer\Wrappeers\Descriptors\UBO.hpp" />
     <ClInclude Include="Renderer\Wrappeers\Descriptors\UBOInfo.hpp" />
     <ClInclude Include="Renderer\Wrappeers\Device\Device.hpp" />
@@ -247,6 +245,7 @@
     <ClInclude Include="Renderer\Wrappeers\Resources\Buffer\Buffer.hpp" />
     <ClInclude Include="Renderer\Wrappeers\Resources\Image\Image.hpp" />
     <ClInclude Include="Renderer\Wrappeers\Resources\Image\ImageManagement.hpp" />
+    <ClInclude Include="Renderer\Wrappeers\Resources\Sampler\Sampler.hpp" />
     <ClInclude Include="Renderer\Wrappeers\Shaders\FragmentShader.hpp" />
     <ClInclude Include="Renderer\Wrappeers\Shaders\Shader.hpp" />
     <ClInclude Include="Renderer\Wrappeers\Shaders\VertexShader.hpp" />
