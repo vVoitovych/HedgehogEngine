@@ -159,7 +159,7 @@ namespace Scene
 
 	std::string GetSceneName(std::string inPath)
 	{
-		return std::filesystem::path(inPath).filename().string();
+		return std::filesystem::path(inPath).stem().string();
 	}
 
 	void SceneSerializer::SerializeScene(Scene& scene, std::string scenePath)

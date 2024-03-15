@@ -1,4 +1,4 @@
-Scene name: SaveTest.yaml
+Scene name: test
 Scene:
   - Entity: 0
     Name: Root
