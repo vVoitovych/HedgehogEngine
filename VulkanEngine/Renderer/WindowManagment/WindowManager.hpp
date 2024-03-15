@@ -28,6 +28,8 @@ namespace Renderer
 		GLFWwindow* GetGlfwWindow();
 		Controls& GetControls();
 
+		char* OpenDialog() const;
+
 		bool IsWindowResized() const;
 		void ResetResizedState();
 

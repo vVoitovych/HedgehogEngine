@@ -2,6 +2,8 @@
 #include "Logger/Logger.hpp"
 #include "Renderer/RenderPasses/GuiPass.hpp"
 
+#include "ThirdParty/tinyfiledialogs/tinyfiledialogs.h"
+
 namespace Renderer
 {
 	WindowManager::WindowManager()
@@ -88,12 +90,23 @@ namespace Renderer
 		return mControls;
 	}
 
+	char* WindowManager::OpenDialog() const
+	{
+		char const* lFilterPatterns[2] = { "*.txt", "*.yaml" };
+		return tinyfd_openFileDialog(
+			"let us read the password back",
+			"../",
+			2,
+			lFilterPatterns,
+			"text files",
+			1);;
+	}
+
 	void WindowManager::OnKey(GLFWwindow* window, int key, int scancode, int action, int mods)
 	{
 		auto app = reinterpret_cast<WindowManager*>(glfwGetWindowUserPointer(window));
 
 		const bool press_or_repeat = (action == GLFW_PRESS || action == GLFW_REPEAT);
-
 		(void)mods;
 
 		Controls& controls = app->GetControls();
@@ -119,7 +132,10 @@ namespace Renderer
             break;
         case GLFW_KEY_E:
             controls.IsPressedE = press_or_repeat;
-            break;       
+            break;     
+		case GLFW_KEY_O:
+			app->OpenDialog();
+			break;
         default:
             break;
         }
