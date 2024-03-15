@@ -26,8 +26,8 @@ namespace Scene
 		float mRadius = 1.0f;
 		float mConeAngle = 1.0f;
 
-		glm::vec3 mPosition;
-		glm::vec3 mDirection;
+		glm::vec3 mPosition = glm::vec3(0.0f, 0.0f, 0.0f);
+		glm::vec3 mDirection = glm::vec3(0.0f, 0.0f, 0.0f);
 	};
 }
 

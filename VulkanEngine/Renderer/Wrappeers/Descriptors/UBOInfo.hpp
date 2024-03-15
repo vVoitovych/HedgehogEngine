@@ -15,7 +15,7 @@ namespace Renderer
         alignas(16) glm::mat4 proj;
         alignas(16) glm::vec4 eyePosition;
         alignas(16) Light lights[MAX_LIGHTS_COUNT];
-        int lightCount;
+        size_t lightCount;
     };
 }
 

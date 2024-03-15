@@ -4,5 +4,6 @@ namespace DialogueWindows
 {
 	char* SceneOpenDialogue();
 
+	char* SceneSaveDialogue();
 }
 

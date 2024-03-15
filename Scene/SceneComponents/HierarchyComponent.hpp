@@ -11,7 +11,7 @@ namespace Scene
 	public:
 		std::string mName;
 
-		ECS::Entity mParent;
+		ECS::Entity mParent = 0;
 		std::vector<ECS::Entity> mChildren;
 
 	};

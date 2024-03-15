@@ -12,7 +12,7 @@
 #include "ThirdParty/yaml-cpp/yaml.h"
 
 #include <fstream>
-
+#include <filesystem>
 
 namespace YAML {
 
@@ -157,12 +157,19 @@ namespace Scene
 		out << YAML::EndMap; // Entity
 	}
 
+	std::string GetSceneName(std::string inPath)
+	{
+		return std::filesystem::path(inPath).filename().string();
+	}
+
 	void SceneSerializer::SerializeScene(Scene& scene, std::string scenePath)
 	{
-		LOGINFO("SerializeScene: ", scenePath, ".yaml");
+		LOGINFO("SerializeScene: ", scenePath);
+		std::string sceneName = GetSceneName(scenePath);
+		scene.mSceneName = sceneName;
 		YAML::Emitter out;
 		out << YAML::BeginMap;
-		out << YAML::Key << "Scene name" << YAML::Value << scene.GetSceneName();
+		out << YAML::Key << "Scene name" << YAML::Value << sceneName;
 		out << YAML::Key << "Scene" << YAML::Value << YAML::BeginSeq;
 		
 		SerializeEntity(out, scene, scene.GetRoot());
@@ -170,7 +177,7 @@ namespace Scene
 		out << YAML::EndSeq;
 		out << YAML::EndMap;
 
-		std::ofstream fout(scenePath + ".yaml");
+		std::ofstream fout(scenePath);
 		fout << out.c_str();
 	}
 
@@ -237,7 +244,7 @@ namespace Scene
 		}
 		catch (YAML::ParserException e)
 		{
-			LOGERROR("Failed to load scene: ", scenePath, ".yaml", " with error: ", e.what());
+			LOGERROR("Failed to load scene: ", scenePath, " with error: ", e.what());
 			return;
 		}
 

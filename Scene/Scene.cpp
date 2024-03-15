@@ -7,7 +7,7 @@
 #include "Scene/SceneComponents/LightComponent.hpp"
 #include "ContentLoader/CommonFunctions.hpp"
 #include "Logger/Logger.hpp"
-#include "DialogueWindows/SceneOpenDialogue.hpp"
+#include "DialogueWindows/SceneDialogue/SceneDialogue.hpp"
 
 #include <sstream>
 
@@ -110,7 +110,13 @@ namespace Scene
 
 	void Scene::Save()
 	{
-		SceneSerializer::SerializeScene(*this, GetScenePath());
+		char* path = DialogueWindows::SceneSaveDialogue();
+		if (path == nullptr)
+		{
+			return;
+		}
+
+		SceneSerializer::SerializeScene(*this, path);
 	}
 
 	std::string Scene::GetSceneName() const
