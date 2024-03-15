@@ -35,6 +35,7 @@ namespace Scene
 		void ResetScene();
 		void Load();
 		void Save();
+		void RenameScene();
 
 		std::string GetSceneName() const;
 		void SetSceneName(std::string& str);

@@ -376,7 +376,7 @@ namespace Renderer
 			if (ImGui::BeginMenu("File"))
 			{
 				if (ImGui::MenuItem("New")) { scene.ResetScene(); }
-				if (ImGui::MenuItem("Rename")) {}
+				if (ImGui::MenuItem("Rename")) { scene.RenameScene(); }
 				if (ImGui::MenuItem("Open")) { scene.Load(); }
 				if (ImGui::MenuItem("Save")) { scene.Save(); }
 

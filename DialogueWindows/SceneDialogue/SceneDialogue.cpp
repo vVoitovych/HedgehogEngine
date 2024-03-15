@@ -27,5 +27,10 @@ namespace DialogueWindows
 			"scene files");
 	}
 
+	char* SceneRenameDialogue()
+	{
+		return tinyfd_inputBox("Rename", "Test message", "New Scene");
+	}
+
 }
 

@@ -119,6 +119,13 @@ namespace Scene
 		SceneSerializer::SerializeScene(*this, path);
 	}
 
+	void Scene::RenameScene()
+	{
+		char* newName = DialogueWindows::SceneRenameDialogue();
+		if (newName != nullptr)
+			mSceneName = newName;
+	}
+
 	std::string Scene::GetSceneName() const
 	{
 		return mSceneName;
