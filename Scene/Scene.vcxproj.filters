@@ -48,6 +48,12 @@
     <ClInclude Include="SceneSerializer.hpp">
       <Filter>Scene</Filter>
     </ClInclude>
+    <ClInclude Include="SceneComponents\RenderComponent.hpp">
+      <Filter>SceneComponents</Filter>
+    </ClInclude>
+    <ClInclude Include="SceneSystems\RenderSystem.hpp">
+      <Filter>SceneSystems</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SceneSystems\HierarchySystem.cpp">
@@ -70,6 +76,9 @@
     </ClCompile>
     <ClCompile Include="SceneSerializer.cpp">
       <Filter>Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="SceneSystems\RenderSystem.cpp">
+      <Filter>SceneSystems</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
