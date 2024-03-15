@@ -15,7 +15,7 @@ namespace Scene
 		void UpdateChildrenMatricies(ECS::Coordinator& coordinator, ECS::Entity parent);
 
 	private:
-		ECS::Entity mRoot;
+		ECS::Entity mRoot = 0;
 	};
 }
 

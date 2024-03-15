@@ -567,3 +567,6 @@
 /.vs/VulkanEngine/v17/ipch/AutoPCH/c059e907999ea07b/SCENE.ipch
 /x64
 .vs
+/ThirdParty/tinyfiledialogs/x64
+/DialogueWindows/x64
+/Scene/x64

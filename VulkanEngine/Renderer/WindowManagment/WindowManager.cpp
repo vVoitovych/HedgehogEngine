@@ -2,6 +2,8 @@
 #include "Logger/Logger.hpp"
 #include "Renderer/RenderPasses/GuiPass.hpp"
 
+#include "ThirdParty/tinyfiledialogs/tinyfiledialogs.h"
+
 namespace Renderer
 {
 	WindowManager::WindowManager()
@@ -93,7 +95,6 @@ namespace Renderer
 		auto app = reinterpret_cast<WindowManager*>(glfwGetWindowUserPointer(window));
 
 		const bool press_or_repeat = (action == GLFW_PRESS || action == GLFW_REPEAT);
-
 		(void)mods;
 
 		Controls& controls = app->GetControls();
@@ -119,7 +120,7 @@ namespace Renderer
             break;
         case GLFW_KEY_E:
             controls.IsPressedE = press_or_repeat;
-            break;       
+            break;     
         default:
             break;
         }

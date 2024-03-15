@@ -16,7 +16,7 @@ namespace Scene
 		glm::vec3 mRotation = glm::vec3(0.0f, 0.0f, 0.0f);
 		glm::vec3 mScale = glm::vec3(1.0f, 1.0f, 1.0f);
 
-		glm::mat4 mObjMatrix;
+		glm::mat4 mObjMatrix = glm::mat4(0.0f);
 
 	};
 }
