@@ -90,18 +90,6 @@ namespace Renderer
 		return mControls;
 	}
 
-	char* WindowManager::OpenDialog() const
-	{
-		char const* lFilterPatterns[2] = { "*.txt", "*.yaml" };
-		return tinyfd_openFileDialog(
-			"let us read the password back",
-			"../",
-			2,
-			lFilterPatterns,
-			"text files",
-			1);;
-	}
-
 	void WindowManager::OnKey(GLFWwindow* window, int key, int scancode, int action, int mods)
 	{
 		auto app = reinterpret_cast<WindowManager*>(glfwGetWindowUserPointer(window));
@@ -133,9 +121,6 @@ namespace Renderer
         case GLFW_KEY_E:
             controls.IsPressedE = press_or_repeat;
             break;     
-		case GLFW_KEY_O:
-			app->OpenDialog();
-			break;
         default:
             break;
         }

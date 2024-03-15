@@ -6,6 +6,8 @@
 #include "Scene/SceneComponents/MeshComponent.hpp"
 #include "Scene/SceneComponents/LightComponent.hpp"
 #include "ContentLoader/CommonFunctions.hpp"
+#include "Logger/Logger.hpp"
+#include "DialogueWindows/SceneOpenDialogue.hpp"
 
 #include <sstream>
 
@@ -94,10 +96,16 @@ namespace Scene
 
 	void Scene::Load()
 	{
+		char* path = DialogueWindows::SceneOpenDialogue();
+		if (path == nullptr)
+		{
+			return;
+		}
 		UnselectGameObject();
 		ResetScene();
 		mSceneCoordinator.DestroyEntity(mRoot);
-		SceneSerializer::DeserializeScene(*this, GetScenePath());
+		SceneSerializer::DeserializeScene(*this, path);
+
 	}
 
 	void Scene::Save()

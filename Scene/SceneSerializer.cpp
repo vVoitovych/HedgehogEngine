@@ -228,12 +228,12 @@ namespace Scene
 
 	void SceneSerializer::DeserializeScene(Scene& scene, std::string scenePath)
 	{
-		LOGINFO("DeserializeScene: ", scenePath, ".yaml");
+		LOGINFO("DeserializeScene: ", scenePath);
 
 		YAML::Node data;
 		try
 		{
-			data = YAML::LoadFile(scenePath + ".yaml");
+			data = YAML::LoadFile(scenePath);
 		}
 		catch (YAML::ParserException e)
 		{

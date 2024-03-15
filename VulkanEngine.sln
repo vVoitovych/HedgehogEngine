@@ -25,9 +25,15 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Scene", "Scene\Scene.vcxpro
 	ProjectSection(ProjectDependencies) = postProject
 		{12F40516-3DD3-491B-B740-45BFC0E1DB67} = {12F40516-3DD3-491B-B740-45BFC0E1DB67}
 		{A241907E-B46E-4839-BA7B-C8874981C028} = {A241907E-B46E-4839-BA7B-C8874981C028}
+		{B4C90F40-E640-4C3E-A880-969E73159122} = {B4C90F40-E640-4C3E-A880-969E73159122}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tinyfiledialogs", "ThirdParty\tinyfiledialogs\tinyfiledialogs.vcxproj", "{AE31AB9F-D54F-45EB-8174-6D070240C0CC}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DialogueWindows", "DialogueWindows\DialogueWindows.vcxproj", "{B4C90F40-E640-4C3E-A880-969E73159122}"
+	ProjectSection(ProjectDependencies) = postProject
+		{AE31AB9F-D54F-45EB-8174-6D070240C0CC} = {AE31AB9F-D54F-45EB-8174-6D070240C0CC}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -93,6 +99,14 @@ Global
 		{AE31AB9F-D54F-45EB-8174-6D070240C0CC}.Release|x64.Build.0 = Release|x64
 		{AE31AB9F-D54F-45EB-8174-6D070240C0CC}.Release|x86.ActiveCfg = Release|Win32
 		{AE31AB9F-D54F-45EB-8174-6D070240C0CC}.Release|x86.Build.0 = Release|Win32
+		{B4C90F40-E640-4C3E-A880-969E73159122}.Debug|x64.ActiveCfg = Debug|x64
+		{B4C90F40-E640-4C3E-A880-969E73159122}.Debug|x64.Build.0 = Debug|x64
+		{B4C90F40-E640-4C3E-A880-969E73159122}.Debug|x86.ActiveCfg = Debug|Win32
+		{B4C90F40-E640-4C3E-A880-969E73159122}.Debug|x86.Build.0 = Debug|Win32
+		{B4C90F40-E640-4C3E-A880-969E73159122}.Release|x64.ActiveCfg = Release|x64
+		{B4C90F40-E640-4C3E-A880-969E73159122}.Release|x64.Build.0 = Release|x64
+		{B4C90F40-E640-4C3E-A880-969E73159122}.Release|x86.ActiveCfg = Release|Win32
+		{B4C90F40-E640-4C3E-A880-969E73159122}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
