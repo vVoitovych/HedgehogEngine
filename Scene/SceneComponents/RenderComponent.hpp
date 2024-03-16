@@ -1,22 +1,16 @@
 #pragma once
 
+#include <string>
+
 namespace Scene
 {
-	enum class GeometryType
-	{
-		Opaque,
-		Transparent
-	};
 
 	class RenderComponent
 	{
 	public:
 		bool mIsVisible;
 
-		GeometryType mGeometryType;
-
-		size_t mColorTexture;
-		size_t mColorSampler;
+		std::string mMaterial;
 
 	};
 }
