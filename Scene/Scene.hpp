@@ -44,6 +44,7 @@ namespace Scene
 		void CreateGameObject(ECS::Entity entity);
 		void DeleteGameObject();
 
+		void TryToAddMeshComponent();
 		void AddMeshComponent(ECS::Entity entity);
 		void RemoveMeshComponent();
 		void ChangeMeshComponent(ECS::Entity entity, std::string meshPath);
@@ -53,6 +54,7 @@ namespace Scene
 		void RemoveRenderComponent();
 		bool HasRenderComponent() const;
 
+		void TryToAddLightComponent();
 		void AddLightComponent(ECS::Entity entity);
 		void RemoveLightComponent();
 		bool HasLightComponent(ECS::Entity entity) const;

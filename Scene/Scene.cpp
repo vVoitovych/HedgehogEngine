@@ -183,6 +183,12 @@ namespace Scene
 
 	}
 
+	void Scene::TryToAddMeshComponent()
+	{
+		if (mSelectedEntity.has_value())
+			AddMeshComponent(mSelectedEntity.value());
+	}
+
 	void Scene::AddMeshComponent(ECS::Entity entity)
 	{
 		if (!HasMeshComponent(entity))
@@ -236,6 +242,12 @@ namespace Scene
 	bool Scene::HasRenderComponent() const
 	{
 		return false;
+	}
+
+	void Scene::TryToAddLightComponent()
+	{
+		if (mSelectedEntity.has_value())
+			AddLightComponent(mSelectedEntity.value());
 	}
 
 	void Scene::AddLightComponent(ECS::Entity entity)

@@ -386,9 +386,9 @@ namespace Renderer
 
 				if (ImGui::BeginMenu("Add component"))
 				{
-					if (ImGui::MenuItem("Mesh component")) { if (scene.IsGameObjectSelected()) { scene.AddMeshComponent(scene.GetSelectedGameObject()); } }
+					if (ImGui::MenuItem("Mesh component")) { scene.TryToAddMeshComponent(); }
 					if (ImGui::MenuItem("Render component")) { scene.AddRenderComponent(); }
-					if (ImGui::MenuItem("Light component")) { if (scene.IsGameObjectSelected()) { scene.AddLightComponent(scene.GetSelectedGameObject()); } }					
+					if (ImGui::MenuItem("Light component")) { scene.TryToAddLightComponent(); }
 					if (ImGui::MenuItem("Script component")) {}
 					ImGui::EndMenu();
 				}
