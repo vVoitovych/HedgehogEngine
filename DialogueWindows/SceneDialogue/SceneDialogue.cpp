@@ -4,27 +4,28 @@
 
 namespace DialogueWindows
 {
+	const int filterNum = 1;
+	char const* lFilterPatterns[filterNum] = { "*.yaml" };
+
 	char* SceneOpenDialogue()
 	{
-		char const* lFilterPatterns[1] = { "*.yaml" };
 		return tinyfd_openFileDialog(
 			"Open scene",
 			"../",
-			1,
+			filterNum,
 			lFilterPatterns,
-			"scene files",
+			"scene files (*.yaml)",
 			1);
 	}
 
 	char* SceneSaveDialogue()
 	{
-		char const* lFilterPatterns[1] = { "*.yaml" };
 		return tinyfd_saveFileDialog(
 			"Save scene",
 			"../",
-			1,
+			filterNum,
 			lFilterPatterns,
-			"scene files");
+			"scene files (*.yaml)");
 	}
 
 	char* SceneRenameDialogue()

@@ -5,15 +5,24 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
     </Filter>
+    <Filter Include="MaterialDialogue">
+      <UniqueIdentifier>{2f0de20c-d347-4be6-ba29-57ed8a45a9a3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SceneDialogue\SceneDialogue.cpp">
       <Filter>SceneDialogue</Filter>
     </ClCompile>
+    <ClCompile Include="MaterialDialogue\MaterialDialogue.cpp">
+      <Filter>MaterialDialogue</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SceneDialogue\SceneDialogue.hpp">
       <Filter>SceneDialogue</Filter>
+    </ClInclude>
+    <ClInclude Include="MaterialDialogue\MaterialDialogue.hpp">
+      <Filter>MaterialDialogue</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

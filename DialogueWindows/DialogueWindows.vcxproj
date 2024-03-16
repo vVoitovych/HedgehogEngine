@@ -19,9 +19,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="MaterialDialogue\MaterialDialogue.cpp" />
     <ClCompile Include="SceneDialogue\SceneDialogue.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="MaterialDialogue\MaterialDialogue.hpp" />
     <ClInclude Include="SceneDialogue\SceneDialogue.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
