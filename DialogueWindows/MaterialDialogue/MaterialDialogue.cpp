@@ -4,26 +4,27 @@
 
 namespace DialogueWindows
 {
-	constexpr int filterNum = 1;
-	char const* lFilterPatterns[filterNum] = { "*.mat" };
+	constexpr int materialFilterNum = 1;
+	char const* materialFilterPatterns[materialFilterNum] = { "*.material" };
+	const char* materialFilterDescription = "material files (*.material)";
 
 	char* MaterialCreationDialogue()
 	{
 		return tinyfd_saveFileDialog(
 			"New material",
 			"../",
-			filterNum,
-			lFilterPatterns,
-			"material files (*.mat)");
+			materialFilterNum,
+			materialFilterPatterns,
+			materialFilterDescription);
 	}
 	char* MaterialOpenDialogue()
 	{
 		return tinyfd_openFileDialog(
 			"Open material",
 			"../",
-			filterNum,
-			lFilterPatterns,
-			"material files (*.mat)",
+			materialFilterNum,
+			materialFilterPatterns,
+			materialFilterDescription,
 			1);
 	}
 
@@ -32,8 +33,9 @@ namespace DialogueWindows
 		return tinyfd_saveFileDialog(
 			"Save material",
 			"../",
-			filterNum,
-			lFilterPatterns,
-			"material files (*.mat)");
+			materialFilterNum,
+			materialFilterPatterns,
+			materialFilterDescription);
 	}
 }
+

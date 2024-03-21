@@ -8,6 +8,9 @@
     <Filter Include="MaterialDialogue">
       <UniqueIdentifier>{2f0de20c-d347-4be6-ba29-57ed8a45a9a3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="MeshDialogue">
+      <UniqueIdentifier>{0be8d042-2169-48a9-aa2c-68f0b06cd62f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SceneDialogue\SceneDialogue.cpp">
@@ -16,6 +19,9 @@
     <ClCompile Include="MaterialDialogue\MaterialDialogue.cpp">
       <Filter>MaterialDialogue</Filter>
     </ClCompile>
+    <ClCompile Include="MeshDialogue\MeshDialogue.cpp">
+      <Filter>MeshDialogue</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SceneDialogue\SceneDialogue.hpp">
@@ -23,6 +29,9 @@
     </ClInclude>
     <ClInclude Include="MaterialDialogue\MaterialDialogue.hpp">
       <Filter>MaterialDialogue</Filter>
+    </ClInclude>
+    <ClInclude Include="MeshDialogue\MeshDialogue.hpp">
+      <Filter>MeshDialogue</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

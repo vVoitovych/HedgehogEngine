@@ -8,6 +8,7 @@ namespace ContentLoader
 
 	std::string GetAssetsDirectory();
 
+	std::string GetAssetRelativetlyPath(const std::string path);
 }
 
 

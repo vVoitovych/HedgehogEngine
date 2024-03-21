@@ -19,6 +19,9 @@ namespace Scene
 		std::vector<ECS::Entity> GetEntities();
 
 		void AddMeshPath(std::string meshPath);
+
+		void LoadMesh(ECS::Coordinator& coordinator, ECS::Entity entity);
+
 	private:
 		void CheckMeshPath(MeshComponent& meshComponent, std::string fallbackPath);
 

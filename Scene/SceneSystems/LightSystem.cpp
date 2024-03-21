@@ -15,7 +15,7 @@ namespace Scene
 		return mLightComponents;
 	}
 
-	void LightSystem::UpdateLights(ECS::Coordinator& coordinator)
+	void LightSystem::Update(ECS::Coordinator& coordinator)
 	{
 		for (auto const& entity : entities)
 		{

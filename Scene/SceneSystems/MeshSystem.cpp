@@ -1,6 +1,7 @@
 #include "MeshSystem.hpp"
 #include "ContentLoader/CommonFunctions.hpp"
 #include "Logger/Logger.hpp"
+#include "DialogueWindows/MeshDialogue/MeshDialogue.hpp"
 
 #include <algorithm>
 #include <filesystem>
@@ -19,7 +20,6 @@ namespace Scene
 	auto& meshComponent = coordinator.GetComponent<MeshComponent>(entity);
 		if (meshComponent.mMeshIndex.has_value())
 		{
-			// already initialized
 			size_t index = meshComponent.mMeshIndex.value();
 			if (mMeshPathes[index] != meshComponent.mMeshPath)
 			{
@@ -28,7 +28,6 @@ namespace Scene
 		}
 		else
 		{
-			// should be initialize
 			CheckMeshPath(meshComponent, sDefaultMeshPath);
 		}
 	}
@@ -57,6 +56,19 @@ namespace Scene
 	void MeshSystem::AddMeshPath(std::string meshPath)
 	{
 		mMeshPathes.push_back(meshPath);
+	}
+
+	void MeshSystem::LoadMesh(ECS::Coordinator& coordinator, ECS::Entity entity)
+	{
+		char* path = DialogueWindows::MeshOpenDialogue();
+		if (path == nullptr)
+		{
+			return;
+		}
+
+		std::string relatedPath = ContentLoader::GetAssetRelativetlyPath(path);
+		auto& meshComponent = coordinator.GetComponent<MeshComponent>(entity);
+		meshComponent.mMeshPath = relatedPath;
 	}
 
 	void MeshSystem::CheckMeshPath(MeshComponent& meshComponent, std::string fallbackPath)

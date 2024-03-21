@@ -5,6 +5,7 @@
 #include "Scene/SceneComponents/HierarchyComponent.hpp"
 #include "Scene/SceneComponents/MeshComponent.hpp"
 #include "Scene/SceneComponents/LightComponent.hpp"
+#include "Scene/SceneComponents/RenderComponent.hpp"
 #include "ContentLoader/CommonFunctions.hpp"
 #include "Logger/Logger.hpp"
 #include "DialogueWindows/SceneDialogue/SceneDialogue.hpp"
@@ -30,12 +31,14 @@ namespace Scene
 		mSceneCoordinator.RegisterComponent<HierarchyComponent>();
 		mSceneCoordinator.RegisterComponent<MeshComponent>();
 		mSceneCoordinator.RegisterComponent<LightComponent>();
+		mSceneCoordinator.RegisterComponent<RenderComponent>();
 
 		//register systems
 		mTransformSystem = mSceneCoordinator.RegisterSystem<TransformSystem>();
 		mHierarchySystem = mSceneCoordinator.RegisterSystem<HierarchySystem>();
 		mMeshSystem = mSceneCoordinator.RegisterSystem<MeshSystem>();
 		mLightSystem = mSceneCoordinator.RegisterSystem<LightSystem>();
+		mRenderSystem = mSceneCoordinator.RegisterSystem<RenderSystem>();
 
 		//bind systems and components
 		ECS::Signature signature;
@@ -50,7 +53,9 @@ namespace Scene
 		signature.reset();
 		signature.set(mSceneCoordinator.GetComponentType<LightComponent>());
 		mSceneCoordinator.SetSystemSignature<LightSystem>(signature);
-
+		signature.reset();
+		signature.set(mSceneCoordinator.GetComponentType<RenderComponent>());
+		mSceneCoordinator.SetSystemSignature<RenderSystem>(signature);
 
 		// TODO: remove all bellow and add loating instead
 		CreateSceneRoot();
@@ -66,7 +71,7 @@ namespace Scene
 	{
 		mTransformSystem->Update(mSceneCoordinator);
 		mHierarchySystem->Update(mSceneCoordinator);
-		mLightSystem->UpdateLights(mSceneCoordinator);
+		mLightSystem->Update(mSceneCoordinator);
 		auto& objects = mRenderObjectsManager.GetRenderableObjects();
 		for (size_t i = 0; i < objects.size(); ++i)
 		{
@@ -231,17 +236,54 @@ namespace Scene
 		return mSceneCoordinator.HasComponent<MeshComponent>(entity);
 	}
 
-	void Scene::AddRenderComponent()
+	void Scene::LoadMesh(ECS::Entity entity)
 	{
+		mMeshSystem->LoadMesh(mSceneCoordinator, entity);
+	}
+
+	void Scene::TryToAddRenderComponent()
+	{
+		if (mSelectedEntity.has_value())
+		{
+			AddRenderComponent(mSelectedEntity.value());
+		}
+	}
+
+	void Scene::AddRenderComponent(ECS::Entity entity)
+	{
+		if (!HasRenderComponent(entity))
+		{
+			mSceneCoordinator.AddComponent(entity, RenderComponent());
+		}
 	}
 
 	void Scene::RemoveRenderComponent()
 	{
+		if (IsGameObjectSelected() && HasRenderComponent(mSelectedEntity.value()))
+		{
+			ECS::Entity entity = mSelectedEntity.value();
+			mSceneCoordinator.RemoveComponent<RenderComponent>(entity);
+		}
 	}
 
-	bool Scene::HasRenderComponent() const
+	bool Scene::HasRenderComponent(ECS::Entity entity) const
 	{
-		return false;
+		return mSceneCoordinator.HasComponent<RenderComponent>(entity);;
+	}
+
+	void Scene::CreateMaterial()
+	{
+		mRenderSystem->CreateMaterial();
+	}
+
+	void Scene::LoadMaterial(ECS::Entity entity)
+	{
+		mRenderSystem->LoadMaterial(mSceneCoordinator, entity);
+	}
+
+	void Scene::UpdateMaterialComponent(ECS::Entity entity)
+	{
+		mRenderSystem->Update(mSceneCoordinator, entity);
 	}
 
 	void Scene::TryToAddLightComponent()
@@ -308,6 +350,11 @@ namespace Scene
 		return mSceneCoordinator.GetComponent<LightComponent>(entity);
 	}
 
+	RenderComponent& Scene::GetRenderComponent(ECS::Entity entity)
+	{
+		return mSceneCoordinator.GetComponent<RenderComponent>(entity);
+	}
+
 	bool Scene::IsGameObjectSelected() const
 	{
 		return mSelectedEntity.has_value();
@@ -347,6 +394,11 @@ namespace Scene
 	const std::vector<std::string>& Scene::GetTextures() const
 	{
 		return mTextures;
+	}
+
+	const std::vector<std::string>& Scene::GetMaterials() const
+	{
+		return mRenderSystem->GetMaterials();
 	}
 
 	const std::vector<RenderableObject>& Scene::GetRenderableObjects() const
