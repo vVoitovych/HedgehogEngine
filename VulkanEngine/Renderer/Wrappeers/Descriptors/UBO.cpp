@@ -56,10 +56,6 @@ namespace Renderer
 
 	void UBO::UpdateUniformBuffer(std::unique_ptr<RenderContext>& context)
 	{
-		static auto startTime = std::chrono::high_resolution_clock::now();
-		auto currentTime = std::chrono::high_resolution_clock::now();
-		float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
 		const auto& frameContext = context->GetFrameContext();
 		const auto& engineContext = context->GetEngineContext();
 		const auto& lightContainer = engineContext->GetLightContainer();

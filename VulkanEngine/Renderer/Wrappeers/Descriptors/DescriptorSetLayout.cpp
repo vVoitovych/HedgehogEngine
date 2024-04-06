@@ -7,24 +7,37 @@
 
 namespace Renderer
 {
-	DescriptorSetLayout::DescriptorSetLayout(const std::unique_ptr<Device>& device)
+	DescriptorSetLayout::DescriptorSetLayout(
+		const std::unique_ptr<Device>& device,
+		const std::vector<DescriptorInfo>& bindingUBOs,
+		const std::vector<DescriptorInfo>& bindingSamplers
+	)
 		: mDescriptorSetLayout(nullptr)
 	{
-		VkDescriptorSetLayoutBinding uboLayoutBinding{};
-		uboLayoutBinding.binding = 0;
-		uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		uboLayoutBinding.descriptorCount = 1;
-		uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-		uboLayoutBinding.pImmutableSamplers = nullptr;
+		std::vector<VkDescriptorSetLayoutBinding> bindings;
+		bindings.clear();
+		for (size_t i = 0; i < bindingUBOs.size(); ++i)
+		{
+			VkDescriptorSetLayoutBinding binding{};
+			binding.binding = bindingUBOs[i].bindingNumber;
+			binding.descriptorType = bindingUBOs[i].descriptorType;
+			binding.descriptorCount = 1;
+			binding.stageFlags = bindingUBOs[i].shaderStage;
+			binding.pImmutableSamplers = nullptr;
 
-		VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-		samplerLayoutBinding.binding = 1;
-		samplerLayoutBinding.descriptorCount = 1;
-		samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		samplerLayoutBinding.pImmutableSamplers = nullptr;
-		samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+			bindings.push_back(binding);
+		}
+		for (size_t i = 0; i < bindingUBOs.size(); ++i)
+		{
+			VkDescriptorSetLayoutBinding binding{};
+			binding.binding = bindingSamplers[i].bindingNumber;
+			binding.descriptorType = bindingSamplers[i].descriptorType;
+			binding.descriptorCount = 1;
+			binding.stageFlags = bindingSamplers[i].shaderStage;
+			binding.pImmutableSamplers = nullptr;
 
-		std::array<VkDescriptorSetLayoutBinding, 2> bindings = { uboLayoutBinding, samplerLayoutBinding };
+			bindings.push_back(binding);
+		}
 
 		VkDescriptorSetLayoutCreateInfo layoutInfo{};
 		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;

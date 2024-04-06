@@ -11,11 +11,17 @@ namespace Renderer
 	class Device;
 	class CommandPool;
 	class Image;
+	class Sampler;
 
 	struct TextureInfo
 	{
 		std::string filePath;
 		VkFormat format;
+	};
+
+	enum class SamplerType
+	{
+		Linear
 	};
 
 	class TextureContaineer
@@ -33,14 +39,16 @@ namespace Renderer
 		void ClearFileList();
 
 		void Initialize(const std::unique_ptr<Device>& device, const std::unique_ptr<CommandPool>& commandPool);
-		void Cleanup();
+		void Cleanup(const std::unique_ptr<Device>& device);
 
+		const Image& GetImage(std::string filePath) const;
 		const Image& GetImage(size_t index) const;
+		const Sampler& GetSampler(SamplerType type) const;
 
 	private:
 		std::vector<TextureInfo> mTexturesList;
+		std::vector<Sampler> mSamplersList;
 		std::vector<Image> mImages;
-
 	};
 
 

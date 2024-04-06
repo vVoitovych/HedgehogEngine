@@ -144,11 +144,13 @@
     <ClInclude Include="SceneComponents\HierarchyComponent.hpp" />
     <ClInclude Include="SceneComponents\LightComponent.hpp" />
     <ClInclude Include="SceneComponents\MeshComponent.hpp" />
+    <ClInclude Include="SceneComponents\RenderComponent.hpp" />
     <ClInclude Include="SceneComponents\TransformComponent.hpp" />
     <ClInclude Include="SceneSerializer.hpp" />
     <ClInclude Include="SceneSystems\HierarchySystem.hpp" />
     <ClInclude Include="SceneSystems\LightSystem.hpp" />
     <ClInclude Include="SceneSystems\MeshSystem.hpp" />
+    <ClInclude Include="SceneSystems\RenderSystem.hpp" />
     <ClInclude Include="SceneSystems\TransformSystem.hpp" />
   </ItemGroup>
   <ItemGroup>
@@ -158,6 +160,7 @@
     <ClCompile Include="SceneSystems\HierarchySystem.cpp" />
     <ClCompile Include="SceneSystems\LightSystem.cpp" />
     <ClCompile Include="SceneSystems\MeshSystem.cpp" />
+    <ClCompile Include="SceneSystems\RenderSystem.cpp" />
     <ClCompile Include="SceneSystems\TransformSystem.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

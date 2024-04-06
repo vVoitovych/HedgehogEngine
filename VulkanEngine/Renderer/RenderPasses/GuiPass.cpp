@@ -23,6 +23,7 @@
 #include "Scene/SceneComponents/TransformComponent.hpp"
 #include "Scene/SceneComponents/MeshComponent.hpp"
 #include "Scene/SceneComponents/LightComponent.hpp"
+#include "Scene/SceneComponents/RenderComponent.hpp"
 
 #include "ThirdParty/ImGui/imgui.h"
 #include "ThirdParty/ImGui/imgui_impl_vulkan.h"
@@ -250,22 +251,28 @@ namespace Renderer
 					auto& meshes = scene.GetMeshes();
 					int selectedIndex = static_cast<int>(mesh.mMeshIndex.value());
 
-					if (ImGui::BeginCombo("mesh", mesh.mMeshPath.c_str())) {
-						for (int i = 0; i < meshes.size(); ++i) {
+					if (ImGui::BeginCombo("mesh", mesh.mMeshPath.c_str())) 
+					{
+						for (int i = 0; i < meshes.size(); ++i) 
+						{
 							const bool isSelected = (selectedIndex == i);
-							if (ImGui::Selectable(meshes[i].c_str(), isSelected)) {
+							if (ImGui::Selectable(meshes[i].c_str(), isSelected)) 
+							{
 								selectedIndex = i;
 								scene.ChangeMeshComponent(entity, meshes[i]);
 							}
 
-							if (isSelected) {
+							if (isSelected) 
+							{
 								ImGui::SetItemDefaultFocus();
 							}
 						}
 						ImGui::EndCombo();
 					}
-					int temp = static_cast<int>(mesh.mMeshIndex.value());
-					ImGui::InputInt("mesh index", &temp);
+					if (ImGui::Button("Load mesh"))
+					{
+						scene.LoadMesh(entity);
+					}
 
 					if (ImGui::Button("Remove component"))
 					{
@@ -317,8 +324,52 @@ namespace Renderer
 				}
 			}
 
-			if (ImGui::CollapsingHeader("Rendering  Component"))
+			if (scene.HasRenderComponent(entity))
 			{
+				if (ImGui::CollapsingHeader("Rendering  Component"))
+				{
+					auto& render = scene.GetRenderComponent(entity);
+
+					static bool enabled = render.mIsVisible;
+					ImGui::Checkbox("Visible", &enabled);
+					render.mIsVisible = enabled;
+
+					auto& materials = scene.GetMaterials();
+
+					if (!materials.empty())
+					{
+						if (ImGui::BeginCombo("material", render.mMaterial.c_str()))
+						{
+							int selectedIndex = static_cast<int>(render.mMaterialIndex.value());
+
+							for (int i = 0; i < materials.size(); ++i)
+							{
+								const bool isSelected = (selectedIndex == i);
+								if (ImGui::Selectable(materials[i].c_str(), isSelected))
+								{
+									selectedIndex = i;
+									render.mMaterial = materials[i];
+									scene.UpdateMaterialComponent(entity);
+								}
+
+								if (isSelected)
+								{
+									ImGui::SetItemDefaultFocus();
+								}
+							}
+							ImGui::EndCombo();
+						}
+					}
+					if (ImGui::Button("Load material"))
+					{
+						scene.LoadMaterial(entity);
+					}
+
+					if (ImGui::Button("Remove component"))
+					{
+						scene.RemoveRenderComponent();
+					}
+				}
 			}
 		}
 
@@ -381,22 +432,29 @@ namespace Renderer
 				if (ImGui::MenuItem("Save")) { scene.Save(); }
 
 				ImGui::Separator();
-				if (ImGui::MenuItem("Create game object")) { scene.CreateGameObject(); }
-				if (ImGui::MenuItem("Delete game object")) { scene.DeleteGameObject(); }
+				if (ImGui::MenuItem("Quit", "Alt+F4")) {}
+				ImGui::EndMenu();
+			}
 
+			if (ImGui::BeginMenu("Create"))
+			{
+				if (ImGui::MenuItem("Create game object")) { scene.CreateGameObject(); }
+
+				ImGui::Separator();
 				if (ImGui::BeginMenu("Add component"))
 				{
-					if (ImGui::MenuItem("Mesh component")) { if (scene.IsGameObjectSelected()) { scene.AddMeshComponent(scene.GetSelectedGameObject()); } }
-					if (ImGui::MenuItem("Render component")) { scene.AddRenderComponent(); }
-					if (ImGui::MenuItem("Light component")) { if (scene.IsGameObjectSelected()) { scene.AddLightComponent(scene.GetSelectedGameObject()); } }					
-					if (ImGui::MenuItem("Script component")) {}
+					if (ImGui::MenuItem("Mesh component")) { scene.TryToAddMeshComponent(); }
+					if (ImGui::MenuItem("Render component")) { scene.TryToAddRenderComponent(); }
+					if (ImGui::MenuItem("Light component")) { scene.TryToAddLightComponent(); }
+					if (ImGui::MenuItem("Script component")) { }
 					ImGui::EndMenu();
 				}
 
 				ImGui::Separator();
-				if (ImGui::MenuItem("Quit", "Alt+F4")) {}
+				if (ImGui::MenuItem("Create material")) { scene.CreateMaterial(); }
 				ImGui::EndMenu();
 			}
+
 
 			ImGui::EndMainMenuBar();
 		}

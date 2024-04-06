@@ -2,6 +2,7 @@
 
 #include <Windows.h>
 #include <stdexcept>
+#include <filesystem>
 
 namespace ContentLoader
 {
@@ -16,9 +17,22 @@ namespace ContentLoader
 
 	std::string GetAssetsDirectory()
 	{
-		std::string result = GetCurrentDirectory();
-		result += "\\..\\..\\VulkanEngine\\Assets\\";
-		return result;
+		std::string path = GetCurrentDirectory();
+		std::filesystem::path fsPath(path);
+		std::string rootPath = fsPath.parent_path().parent_path().string();
+		rootPath += "\\Assets\\";
+		return rootPath;
+	}
+
+	std::string GetAssetRelativetlyPath(const std::string path)
+	{
+		std::string assetPath = GetAssetsDirectory();
+		if (path.find(assetPath) == std::string::npos)
+		{
+			throw std::runtime_error("file isn\'t in asset forlder!");
+		}
+
+		return path.substr(assetPath.size());
 	}
 
 }

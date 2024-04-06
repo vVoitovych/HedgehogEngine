@@ -5,6 +5,7 @@
 #include "Scene/SceneSystems/HierarchySystem.hpp"
 #include "Scene/SceneSystems/MeshSystem.hpp"
 #include "Scene/SceneSystems/LightSystem.hpp"
+#include "Scene/SceneSystems/RenderSystem.hpp"
 #include "RenderObjectsManager.hpp"
 
 #include <optional>
@@ -44,15 +45,22 @@ namespace Scene
 		void CreateGameObject(ECS::Entity entity);
 		void DeleteGameObject();
 
+		void TryToAddMeshComponent();
 		void AddMeshComponent(ECS::Entity entity);
 		void RemoveMeshComponent();
 		void ChangeMeshComponent(ECS::Entity entity, std::string meshPath);
 		bool HasMeshComponent(ECS::Entity entity) const;
+		void LoadMesh(ECS::Entity entity);
 
-		void AddRenderComponent();
+		void TryToAddRenderComponent();
+		void AddRenderComponent(ECS::Entity entity);
 		void RemoveRenderComponent();
-		bool HasRenderComponent() const;
+		bool HasRenderComponent(ECS::Entity entity) const;
+		void CreateMaterial();
+		void LoadMaterial(ECS::Entity entity);
+		void UpdateMaterialComponent(ECS::Entity entity);
 
+		void TryToAddLightComponent();
 		void AddLightComponent(ECS::Entity entity);
 		void RemoveLightComponent();
 		bool HasLightComponent(ECS::Entity entity) const;
@@ -65,6 +73,7 @@ namespace Scene
 		TransformComponent& GetTransformComponent(ECS::Entity entity);
 		MeshComponent& GetMeshComponent(ECS::Entity entity);
 		LightComponent& GetLightComponent(ECS::Entity entity);
+		RenderComponent& GetRenderComponent(ECS::Entity entity);
 
 		bool IsGameObjectSelected() const;
 		ECS::Entity GetSelectedGameObject() const;
@@ -73,6 +82,8 @@ namespace Scene
 
 		const std::vector<std::string>& GetMeshes() const;
 		const std::vector<std::string>& GetTextures() const;
+		const std::vector<std::string>& GetMaterials() const;
+
 		const std::vector<RenderableObject>& GetRenderableObjects() const;
 		void UpdateRendarable(ECS::Entity entity, size_t meshIndex);
 	private:
@@ -95,6 +106,7 @@ namespace Scene
 		std::shared_ptr<HierarchySystem> mHierarchySystem;
 		std::shared_ptr<MeshSystem> mMeshSystem;
 		std::shared_ptr<LightSystem> mLightSystem;
+		std::shared_ptr< RenderSystem> mRenderSystem;
 
 		uint16_t mGameObjectIndex = 0;
 	private:

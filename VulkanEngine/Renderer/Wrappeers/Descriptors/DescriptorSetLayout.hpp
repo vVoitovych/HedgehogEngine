@@ -1,7 +1,10 @@
 #pragma once
 
+#include "DescriptorInfo.hpp"
+
 #include <vulkan/vulkan.h>
 #include <memory>
+#include <vector>
 
 namespace Renderer
 {
@@ -10,7 +13,10 @@ namespace Renderer
 	class DescriptorSetLayout
 	{
 	public:
-		DescriptorSetLayout(const std::unique_ptr<Device>& device);
+		DescriptorSetLayout(
+			const std::unique_ptr<Device>& device,
+			const std::vector<DescriptorInfo>& bindingUBOs,
+			const std::vector<DescriptorInfo>& bindingSamplers);
 		~DescriptorSetLayout();
 
 		DescriptorSetLayout(const DescriptorSetLayout&) = delete;
