@@ -1,12 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="Application.cpp">
-      <Filter>Application</Filter>
-    </ClCompile>
-    <ClCompile Include="main.cpp">
-      <Filter>SourceFiles</Filter>
-    </ClCompile>
     <ClCompile Include="Renderer\Camera\Camera.cpp">
       <Filter>Renderer\Camera</Filter>
     </ClCompile>
@@ -132,9 +126,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Application.hpp">
-      <Filter>Application</Filter>
-    </ClInclude>
     <ClInclude Include="Renderer\Camera\Camera.hpp">
       <Filter>Renderer\Camera</Filter>
     </ClInclude>
@@ -307,9 +298,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="Application">
-      <UniqueIdentifier>{7a7a7411-a85a-42a7-9c77-6df39233ec5e}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Renderer">
       <UniqueIdentifier>{c6d15c2a-2efe-4c60-97bf-366c53bbc55d}</UniqueIdentifier>
     </Filter>
@@ -318,9 +306,6 @@
     </Filter>
     <Filter Include="Shaders">
       <UniqueIdentifier>{add2bcb1-c1d5-41c3-8c5f-3854973917ea}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="SourceFiles">
-      <UniqueIdentifier>{4995a3f2-fa48-4365-aedd-c38026efe3f7}</UniqueIdentifier>
     </Filter>
     <Filter Include="Renderer\Camera">
       <UniqueIdentifier>{8495a375-3af5-407c-bc43-f8bc6a3fff45}</UniqueIdentifier>

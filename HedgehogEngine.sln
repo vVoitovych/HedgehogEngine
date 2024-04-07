@@ -35,6 +35,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DialogueWindows", "Dialogue
 		{AE31AB9F-D54F-45EB-8174-6D070240C0CC} = {AE31AB9F-D54F-45EB-8174-6D070240C0CC}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Client", "Client\Client.vcxproj", "{5D0726C2-5341-4B52-8829-1DCB67520E6B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{8E967722-644A-4284-89BC-6B4D7B9DC40D} = {8E967722-644A-4284-89BC-6B4D7B9DC40D}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -107,6 +112,14 @@ Global
 		{B4C90F40-E640-4C3E-A880-969E73159122}.Release|x64.Build.0 = Release|x64
 		{B4C90F40-E640-4C3E-A880-969E73159122}.Release|x86.ActiveCfg = Release|Win32
 		{B4C90F40-E640-4C3E-A880-969E73159122}.Release|x86.Build.0 = Release|Win32
+		{5D0726C2-5341-4B52-8829-1DCB67520E6B}.Debug|x64.ActiveCfg = Debug|x64
+		{5D0726C2-5341-4B52-8829-1DCB67520E6B}.Debug|x64.Build.0 = Debug|x64
+		{5D0726C2-5341-4B52-8829-1DCB67520E6B}.Debug|x86.ActiveCfg = Debug|Win32
+		{5D0726C2-5341-4B52-8829-1DCB67520E6B}.Debug|x86.Build.0 = Debug|Win32
+		{5D0726C2-5341-4B52-8829-1DCB67520E6B}.Release|x64.ActiveCfg = Release|x64
+		{5D0726C2-5341-4B52-8829-1DCB67520E6B}.Release|x64.Build.0 = Release|x64
+		{5D0726C2-5341-4B52-8829-1DCB67520E6B}.Release|x86.ActiveCfg = Release|Win32
+		{5D0726C2-5341-4B52-8829-1DCB67520E6B}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

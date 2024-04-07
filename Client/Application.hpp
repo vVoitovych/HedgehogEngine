@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Renderer/Renderer.hpp"
+#include "VulkanEngine/Renderer/Renderer.hpp"
 
 // std lib
 #include <memory>
