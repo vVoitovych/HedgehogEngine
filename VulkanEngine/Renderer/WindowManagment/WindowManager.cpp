@@ -2,6 +2,8 @@
 #include "Logger/Logger.hpp"
 #include "Renderer/RenderPasses/GuiPass.hpp"
 
+#include "ContentLoader/TextureLoader.hpp"
+
 #include "ThirdParty/tinyfiledialogs/tinyfiledialogs.h"
 
 namespace Renderer
@@ -42,6 +44,16 @@ namespace Renderer
 		glfwSetMouseButtonCallback(mWindow, WindowManager::OnMouseButton);
 		glfwSetCursorPosCallback(mWindow, OnMouseMove);
 		glfwSetScrollCallback(mWindow, OnMouseScroll);
+
+		ContentLoader::TextureLoader texLoader;
+		texLoader.LoadTexture("Textures\\Logo\\logo2.jpg");
+		GLFWimage images[1];
+		images[0].width = texLoader.GetWidth();
+		images[0].height = texLoader.GetHeight();
+		images[0].pixels = static_cast<unsigned char*>(texLoader.GetData());
+
+		glfwSetWindowIcon(mWindow, 1, images);
+
 		LOGINFO("Window manager initialized");
 	}
 
