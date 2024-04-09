@@ -46,7 +46,7 @@ namespace Renderer
 		glfwSetScrollCallback(mWindow, OnMouseScroll);
 
 		ContentLoader::TextureLoader texLoader;
-		texLoader.LoadTexture("Textures\\Logo\\logo2.jpg");
+		texLoader.LoadTexture("Textures\\Logo\\logo1.png");
 		GLFWimage images[1];
 		images[0].width = texLoader.GetWidth();
 		images[0].height = texLoader.GetHeight();
