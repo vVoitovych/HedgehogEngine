@@ -5,6 +5,8 @@
 #include "Renderer/Common/RendererSettings.hpp"
 #include "Renderer/Wrappeers/Descriptors/UBO.hpp"
 #include "Renderer/Wrappeers/Descriptors/DescriptorSetLayout.hpp"
+#define VMA_IMPLEMENTATION
+#include "ThirdParty/VulkanMemoryAllocator/vk_mem_alloc.h"
 
 #include <vector>
 #include <set>
@@ -85,6 +87,7 @@ namespace Renderer
 		windowManager->CreateWindowSurface(mInstance, &mSurface);
 		PickPhysicalDevice();
 		CreateLogicalDevice();
+		InitializeAllocator();
 	}
 
 	Device::~Device()
@@ -107,6 +110,11 @@ namespace Renderer
 		if (mDevice != nullptr)
 		{
 			LOGERROR("Vulkan device should be cleanedup before destruction!");
+			ENGINE_DEBUG_BREAK();
+		}
+		if (mAllocator != nullptr)
+		{
+			LOGERROR("Vulkan allocator should be cleanedup before destruction!");
 			ENGINE_DEBUG_BREAK();
 		}
 	}
@@ -258,8 +266,26 @@ namespace Renderer
 		LOGINFO("Logical device created");
 	}
 
+	void Device::InitializeAllocator()
+	{
+		VmaVulkanFunctions vulkanFunctions = {};
+		vulkanFunctions.vkGetInstanceProcAddr = &vkGetInstanceProcAddr;
+		vulkanFunctions.vkGetDeviceProcAddr = &vkGetDeviceProcAddr;
+
+		VmaAllocatorCreateInfo allocatorCreateInfo = {};
+		allocatorCreateInfo.flags = VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT;
+		allocatorCreateInfo.vulkanApiVersion = VK_API_VERSION_1_2;
+		allocatorCreateInfo.physicalDevice = mPhysicalDevice;
+		allocatorCreateInfo.device = mDevice;
+		allocatorCreateInfo.instance = mInstance;
+		allocatorCreateInfo.pVulkanFunctions = &vulkanFunctions;
+
+		vmaCreateAllocator(&allocatorCreateInfo, &mAllocator);
+	}
+
 	void Device::Cleanup()
 	{
+		vmaDestroyAllocator(mAllocator);
 		vkDestroyDevice(mDevice, nullptr);
 		vkDestroySurfaceKHR(mInstance, mSurface, nullptr);
 		CleanupDebugMessanger();
@@ -269,6 +295,7 @@ namespace Renderer
 		mDebugMessenger = nullptr;
 		mPhysicalDevice = nullptr;
 		mDevice = nullptr;
+		mAllocator = nullptr;
 		LOGINFO("Device cleaned");
 	}
 
@@ -315,6 +342,11 @@ namespace Renderer
 	QueueFamilyIndices Device::GetIndicies() const
 	{
 		return mIndices;
+	}
+
+	const VmaAllocator& Device::GetAllocator() const
+	{
+		return mAllocator;
 	}
 
 	uint32_t Device::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const
