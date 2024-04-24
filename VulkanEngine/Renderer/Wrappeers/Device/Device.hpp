@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ThirdParty/VulkanMemoryAllocator/vk_mem_alloc.h"
+
 #include <vulkan/vulkan.h>
 #include <optional>
 #include <vector>
@@ -47,6 +49,7 @@ namespace Renderer
 		VkDevice GetNativeDevice() const;
 		VkPhysicalDevice GetNativePhysicalDevice() const;
 		QueueFamilyIndices GetIndicies() const;
+		const VmaAllocator& GetAllocator() const;
 		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const;
 
 	public:
@@ -61,6 +64,7 @@ namespace Renderer
 		void CleanupDebugMessanger();
 		void PickPhysicalDevice();
 		void CreateLogicalDevice();
+		void InitializeAllocator();
 
 		bool IsEnableValidationLayers() const;
 		void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) const;
@@ -89,6 +93,9 @@ namespace Renderer
 		VkQueue mPresentQueue;
 
 		QueueFamilyIndices mIndices;
+
+		VmaAllocator mAllocator;
+
 	};
 }
 

@@ -50,9 +50,9 @@ namespace Renderer
 				device,
 				imageSize,
 				VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+				VMA_MEMORY_USAGE_CPU_TO_GPU);
 
-			stageBuffer.CopyDataToBufferMemory(textureLoader.GetData(), static_cast<size_t>(imageSize));
+			stageBuffer.CopyDataToBufferMemory(device, textureLoader.GetData(), static_cast<size_t>(imageSize));
 
 			Image image(
 				device,
@@ -66,9 +66,9 @@ namespace Renderer
 			stageBuffer.CopyBufferToImage(image.GetNativeImage(), static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight), commandPool);
 			image.TransitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, commandPool);
 
-			stageBuffer.DestroyBuffer();
+			stageBuffer.DestroyBuffer(device);
 
-			image.CreateImageView(mTexturesList[i].format, VK_IMAGE_ASPECT_COLOR_BIT);
+			image.CreateImageView(device, mTexturesList[i].format, VK_IMAGE_ASPECT_COLOR_BIT);
 
 			mImages.push_back(std::move(image));
 			LOGINFO("Vulkan texture ", mTexturesList[i].filePath, " loaded and initialized");
@@ -83,7 +83,7 @@ namespace Renderer
 	{
 		for (size_t i = 0; i < mTexturesList.size(); ++i)
 		{
-			mImages[i].Cleanup();
+			mImages[i].Cleanup(device);
 		}
 		mImages.clear();
 
