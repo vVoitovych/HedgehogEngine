@@ -5,6 +5,8 @@
 #include "Logger/Logger.hpp"
 #include "Renderer/Common/EngineDebugBreak.hpp"
 
+#include "ThirdParty/VulkanMemoryAllocator/vk_mem_alloc.h"
+
 #include <stdexcept>
 
 namespace Renderer
@@ -13,38 +15,26 @@ namespace Renderer
 		const std::unique_ptr<Device>& device, 
 		VkDeviceSize size, 
 		VkBufferUsageFlags usage, 
-		VkMemoryPropertyFlags properties)
+		VmaMemoryUsage memUsage)
 		: mBuffer(nullptr)
-		, mBufferMemory(nullptr)
-		, mDevice(nullptr)
+		, mAllocation(nullptr)
 	{
 		mBufferSize = size;
-		mDevice = device->GetNativeDevice();
-		VkBufferCreateInfo info{};
-		info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		info.size = size;
-		info.usage = usage;
-		info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-		if (vkCreateBuffer(mDevice, &info, nullptr, &mBuffer) != VK_SUCCESS)
+		VkBufferCreateInfo bufferInfo = {};
+		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+		bufferInfo.size = size;
+		bufferInfo.usage = usage;
+		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+		VmaAllocationCreateInfo vmaallocInfo = {};
+		vmaallocInfo.usage = memUsage; //VMA_MEMORY_USAGE_CPU_TO_GPU;
+
+		if (vmaCreateBuffer(device->GetAllocator(), &bufferInfo, &vmaallocInfo,	&mBuffer, &mAllocation, nullptr) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create buffer");
 		}
 
-		VkMemoryRequirements memRequirements;
-		vkGetBufferMemoryRequirements(mDevice, mBuffer, &memRequirements);
-
-		VkMemoryAllocateInfo allocateInfo{};
-		allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-		allocateInfo.allocationSize = memRequirements.size;
-		allocateInfo.memoryTypeIndex = device->FindMemoryType(memRequirements.memoryTypeBits, properties);
-
-		if (vkAllocateMemory(mDevice, &allocateInfo, nullptr, &mBufferMemory) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to allocate memory!");
-		}
-
-		vkBindBufferMemory(mDevice, mBuffer, mBufferMemory, 0);
 	}
 
 	Buffer::~Buffer()
@@ -54,9 +44,9 @@ namespace Renderer
 			LOGERROR("Vulkan buffer should be cleanedup before destruction!");
 			ENGINE_DEBUG_BREAK();
 		}
-		if (mBufferMemory != nullptr)
+		if (mAllocation != nullptr)
 		{
-			LOGERROR("Vulkan buffer memory should be cleanedup before destruction!");
+			LOGERROR("Vulkan buffer allocation should be cleanedup before destruction!");
 			ENGINE_DEBUG_BREAK();
 		}
 	}
@@ -93,25 +83,29 @@ namespace Renderer
 		commandPool->EndSingleTimeCommands(commandBuffer);
 	}
 
-	void Buffer::CopyDataToBufferMemory(const void* data, size_t size)
+	void Buffer::CopyDataToBufferMemory(const std::unique_ptr<Device>& device, const void* data, size_t size)
 	{
 		void* tempData;
-		vkMapMemory(mDevice, mBufferMemory, 0, size, 0, &tempData);
+		MapMemory(device, &tempData);
 		memcpy(tempData, data, size);
-		vkUnmapMemory(mDevice, mBufferMemory);
+		UnapMemory(device);
 	}
 
-	void Buffer::MapMemory(VkDeviceSize offset, VkDeviceSize size, VkMemoryMapFlags flags, void** ppData)
+	void Buffer::DestroyBuffer(const std::unique_ptr<Device>& device)
 	{
-		vkMapMemory(mDevice, mBufferMemory, offset, size, flags, ppData);
-	}
-
-	void Buffer::DestroyBuffer()
-	{
-		vkDestroyBuffer(mDevice, mBuffer, nullptr);
-		vkFreeMemory(mDevice, mBufferMemory, nullptr);
-		mBufferMemory = nullptr;
+		vmaDestroyBuffer(device->GetAllocator(), mBuffer, mAllocation);
+		mAllocation = nullptr;
 		mBuffer = nullptr;
+	}
+
+	void Buffer::MapMemory(const std::unique_ptr<Device>& device, void** ppData)
+	{
+		vmaMapMemory(device->GetAllocator(), mAllocation, ppData);
+	}
+
+	void Buffer::UnapMemory(const std::unique_ptr<Device>& device)
+	{
+		vmaUnmapMemory(device->GetAllocator(), mAllocation);
 	}
 
 	const VkBuffer& Buffer::GetNativeBuffer() const

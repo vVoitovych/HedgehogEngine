@@ -94,10 +94,10 @@ namespace Renderer
 
     void MeshContainer::Cleanup(const std::unique_ptr<Device>& device)
     {
-        mVertexBuffer->DestroyBuffer();
+        mVertexBuffer->DestroyBuffer(device);
         LOGINFO("Vertex buffer cleaned");
 
-        mIndexBuffer->DestroyBuffer();
+        mIndexBuffer->DestroyBuffer(device);
         LOGINFO("Index buffer cleaned");
     }
 
@@ -120,13 +120,13 @@ namespace Renderer
     {
         VkDeviceSize size = sizeof(verticies[0]) * verticies.size();
 
-        Buffer staginBuffer(device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-        staginBuffer.CopyDataToBufferMemory(verticies.data(), (size_t)size);
+        Buffer staginBuffer(device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+        staginBuffer.CopyDataToBufferMemory(device, verticies.data(), (size_t)size);
 
-        mVertexBuffer = std::make_unique<Buffer>(device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        mVertexBuffer = std::make_unique<Buffer>(device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
         staginBuffer.CopyBuffer(mVertexBuffer->GetNativeBuffer(), size, commandPool);
 
-        staginBuffer.DestroyBuffer();
+        staginBuffer.DestroyBuffer(device);
         LOGINFO("Vertex buffer created");
     }
 
@@ -134,13 +134,13 @@ namespace Renderer
     {
         VkDeviceSize size = sizeof(indicies[0]) * indicies.size();
 
-        Buffer staginBuffer(device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-        staginBuffer.CopyDataToBufferMemory(indicies.data(), (size_t)size);
+        Buffer staginBuffer(device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+        staginBuffer.CopyDataToBufferMemory(device, indicies.data(), (size_t)size);
 
-        mIndexBuffer = std::make_unique<Buffer>(device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        mIndexBuffer = std::make_unique<Buffer>(device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
         staginBuffer.CopyBuffer(mIndexBuffer->GetNativeBuffer(), size, commandPool);
 
-        staginBuffer.DestroyBuffer();
+        staginBuffer.DestroyBuffer(device);
         LOGINFO("Index buffer created");
     }
 

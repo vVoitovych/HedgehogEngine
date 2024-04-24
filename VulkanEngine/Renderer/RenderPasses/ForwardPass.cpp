@@ -148,7 +148,7 @@ namespace Renderer
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
 			mDescriptorSets[i].Cleanup(vulkanContext->GetDevice(), vulkanContext->GetDescriptorPool());
-			mUniformBuffers[i].Cleanup();
+			mUniformBuffers[i].Cleanup(vulkanContext->GetDevice());
 		}
 		mDepthBuffer->Cleanup();
 

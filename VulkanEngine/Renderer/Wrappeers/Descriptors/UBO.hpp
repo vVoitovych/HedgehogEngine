@@ -21,7 +21,7 @@ namespace Renderer
 		UBO(UBO&& other) noexcept;
 		UBO& operator=(UBO&& other) noexcept;
 
-		void Cleanup();
+		void Cleanup(const std::unique_ptr<Device>& device);
 
 		void UpdateUniformBuffer(std::unique_ptr< RenderContext>& context);
 		VkBuffer GetNativeBuffer();

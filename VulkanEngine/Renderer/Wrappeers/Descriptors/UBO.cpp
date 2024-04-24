@@ -19,9 +19,9 @@ namespace Renderer
 	{
 		VkDeviceSize bufferSize = sizeof(UniformBufferObject);
 		mUniformBuffer = std::make_unique<Buffer>(device, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+			VMA_MEMORY_USAGE_CPU_TO_GPU);
 
-		mUniformBuffer->MapMemory(0, bufferSize, 0, &mUniformBufferMapped);
+		mUniformBuffer->MapMemory(device, &mUniformBufferMapped);
 		LOGINFO("Vulkan UBO created");
 	}
 
@@ -48,9 +48,9 @@ namespace Renderer
 		return *this;
 	}
 
-	void UBO::Cleanup()
+	void UBO::Cleanup(const std::unique_ptr<Device>& device)
 	{
-		mUniformBuffer->DestroyBuffer();
+		mUniformBuffer->DestroyBuffer(device);
 		LOGINFO("UBO cleaned");
 	}
 
