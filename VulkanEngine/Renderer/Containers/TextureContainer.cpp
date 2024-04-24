@@ -68,7 +68,7 @@ namespace Renderer
 
 			stageBuffer.DestroyBuffer(device);
 
-			image.CreateImageView(mTexturesList[i].format, VK_IMAGE_ASPECT_COLOR_BIT);
+			image.CreateImageView(device, mTexturesList[i].format, VK_IMAGE_ASPECT_COLOR_BIT);
 
 			mImages.push_back(std::move(image));
 			LOGINFO("Vulkan texture ", mTexturesList[i].filePath, " loaded and initialized");
@@ -83,7 +83,7 @@ namespace Renderer
 	{
 		for (size_t i = 0; i < mTexturesList.size(); ++i)
 		{
-			mImages[i].Cleanup();
+			mImages[i].Cleanup(device);
 		}
 		mImages.clear();
 

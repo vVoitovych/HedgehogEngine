@@ -19,11 +19,9 @@ namespace Renderer
 		VkImageUsageFlags usage, 
 		VkMemoryPropertyFlags properties)
 		: mImage(nullptr)
-		, mImageMemory(nullptr)
+		, mAllocation(nullptr)
 		, mImageView(nullptr)
-		, mDevice(nullptr)
 	{
-		mDevice = device->GetNativeDevice();
 		VkImageCreateInfo imageInfo{};
 		imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 		imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -39,25 +37,12 @@ namespace Renderer
 		imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 		imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-		if (vkCreateImage(mDevice, &imageInfo, nullptr, &mImage) != VK_SUCCESS)
+		VmaAllocationCreateInfo allocInfo = {};
+		allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+		if (vmaCreateImage(device->GetAllocator(), &imageInfo, &allocInfo, &mImage, &mAllocation, nullptr) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create image!");
 		}
-
-		VkMemoryRequirements memRequirements;
-		vkGetImageMemoryRequirements(mDevice, mImage, &memRequirements);
-
-		VkMemoryAllocateInfo allocInfo{};
-		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-		allocInfo.allocationSize = memRequirements.size;
-		allocInfo.memoryTypeIndex = device->FindMemoryType(memRequirements.memoryTypeBits, properties);
-
-		if (vkAllocateMemory(mDevice, &allocInfo, nullptr, &mImageMemory) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to allocate image memory!");
-		}
-
-		vkBindImageMemory(mDevice, mImage, mImageMemory, 0);
 	}
 
 	Image::~Image()
@@ -67,9 +52,9 @@ namespace Renderer
 			LOGERROR("Vulkan image should be cleanedup before destruction!");
 			ENGINE_DEBUG_BREAK();
 		}
-		if (mImageMemory != nullptr)
+		if (mAllocation != nullptr)
 		{
-			LOGERROR("Vulkan image memory should be cleanedup before destruction!");
+			LOGERROR("Vulkan image allocation should be cleanedup before destruction!");
 			ENGINE_DEBUG_BREAK();
 		}
 		if (mImageView != nullptr)
@@ -81,12 +66,11 @@ namespace Renderer
 
 	Image::Image(Image&& other) noexcept
 		: mImage(other.mImage)
-		, mImageMemory(other.mImageMemory)
+		, mAllocation(other.mAllocation)
 		, mImageView(other.mImageView)
-		, mDevice(other.mDevice)
 	{
 		other.mImage = nullptr;
-		other.mImageMemory = nullptr;
+		other.mAllocation = nullptr;
 		other.mImageView = nullptr;
 	}
 
@@ -95,24 +79,23 @@ namespace Renderer
 		if (this != &other)
 		{
 			mImage = other.mImage;
-			mImageMemory = other.mImageMemory;
+			mAllocation = other.mAllocation;
 			mImageView = other.mImageView;
-			mDevice = other.mDevice;
 
 			other.mImage = nullptr;
-			other.mImageMemory = nullptr;
+			other.mAllocation = nullptr;
 			other.mImageView = nullptr;
 		}
 		return *this;
 	}
 
-	void Image::Cleanup()
+	void Image::Cleanup(const std::unique_ptr<Device>& device)
 	{
-		vkDestroyImage(mDevice, mImage, nullptr);
-		vkFreeMemory(mDevice, mImageMemory, nullptr);
-		vkDestroyImageView(mDevice, mImageView, nullptr);
+		vkDestroyImageView(device->GetNativeDevice(), mImageView, nullptr);
+
+		vmaDestroyImage(device->GetAllocator(), mImage, mAllocation);
 		mImage = nullptr;
-		mImageMemory = nullptr;
+		mAllocation = nullptr;
 		mImageView = nullptr;
 
 	}
@@ -124,7 +107,7 @@ namespace Renderer
 		commandPool->EndSingleTimeCommands(commandBuffer);
 	}
 
-	void Image::CreateImageView(VkFormat format, VkImageAspectFlags aspectFlags)
+	void Image::CreateImageView(const std::unique_ptr<Device>& device, VkFormat format, VkImageAspectFlags aspectFlags)
 	{
 		VkImageViewCreateInfo viewInfo{};
 		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -137,7 +120,7 @@ namespace Renderer
 		viewInfo.subresourceRange.baseArrayLayer = 0;
 		viewInfo.subresourceRange.layerCount = 1;
 
-		if (vkCreateImageView(mDevice, &viewInfo, nullptr, &mImageView) != VK_SUCCESS)
+		if (vkCreateImageView(device->GetNativeDevice(), &viewInfo, nullptr, &mImageView) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create texture image view!");
 		}

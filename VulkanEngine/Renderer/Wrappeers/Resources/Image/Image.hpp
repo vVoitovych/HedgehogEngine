@@ -1,7 +1,8 @@
 #pragma once
 
-#include <vulkan/vulkan.h>
+#include "ThirdParty/VulkanMemoryAllocator/vk_mem_alloc.h"
 
+#include <vulkan/vulkan.h>
 #include <memory>
 
 namespace Renderer
@@ -28,23 +29,21 @@ namespace Renderer
 		Image(Image&& other) noexcept;
 		Image& operator=(Image&& other) noexcept;
 
-		void Cleanup();
+		void Cleanup(const std::unique_ptr<Device>& device);
 
 		void TransitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout, const std::unique_ptr<CommandPool>& commandPool);
-		void CreateImageView(VkFormat format, VkImageAspectFlags aspectFlags);
+		void CreateImageView(const std::unique_ptr<Device>& device, VkFormat format, VkImageAspectFlags aspectFlags);
 
 		const VkImage& GetNativeImage() const;
 		const VkImageView& GetNativeView() const;
 
 	private:
 		VkImage mImage;
-		VkDeviceMemory mImageMemory;
+		VmaAllocation mAllocation;
 
 		VkImageView mImageView;
 
-		VkDevice mDevice;
 	};
-
 
 }
 

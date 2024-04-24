@@ -150,7 +150,7 @@ namespace Renderer
 			mDescriptorSets[i].Cleanup(vulkanContext->GetDevice(), vulkanContext->GetDescriptorPool());
 			mUniformBuffers[i].Cleanup(vulkanContext->GetDevice());
 		}
-		mDepthBuffer->Cleanup();
+		mDepthBuffer->Cleanup(vulkanContext->GetDevice());
 
 		mPipeline->Cleanup(vulkanContext->GetDevice());
 		mDescriptorSetLayout->Cleanup(vulkanContext->GetDevice());
@@ -165,7 +165,7 @@ namespace Renderer
 		{
 			mFrameBuffers[i].Cleanup(vulkanContext->GetDevice());
 		}
-		mDepthBuffer->Cleanup();
+		mDepthBuffer->Cleanup(vulkanContext->GetDevice());
 
 		CreateDepthBuffer(context);
 		mFrameBuffers.clear();
@@ -196,7 +196,7 @@ namespace Renderer
 			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 
 			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	
-		mDepthBuffer->CreateImageView(depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+		mDepthBuffer->CreateImageView(vulkanContext->GetDevice(), depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
 		LOGINFO("Depth buffer created");
 
 	}
