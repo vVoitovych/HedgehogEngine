@@ -9,6 +9,8 @@
 #include "Renderer/Context/VulkanContext.hpp"
 #include "Renderer/Context/FrameContext.hpp"
 
+#include "Renderer/ResourceManager/ResourceManager.hpp"
+
 #include "Renderer/Wrappeers/Device/Device.hpp"
 #include "Renderer/Wrappeers/SwapChain/SwapChain.hpp"
 #include "Renderer/Wrappeers/RenderPass/RenderPass.hpp"
@@ -43,7 +45,7 @@ namespace Renderer
 
 		mUniformBuffers[frameIndex].UpdateUniformBuffer(context);
 		
-		commandBuffer.BeginRenderPass(extend, mRenderPass, mFrameBuffers[backBufferIndex].GetNativeFrameBuffer());
+		commandBuffer.BeginRenderPass(extend, mRenderPass, mFrameBuffer->GetNativeFrameBuffer());
 		commandBuffer.BindPipeline(mPipeline, VK_PIPELINE_BIND_POINT_GRAPHICS);
 		commandBuffer.SetViewport(0.0f, 0.0f, (float)extend.width, (float)extend.height, 0.0f, 1.0f);
 		commandBuffer.SetScissor({ 0, 0 }, extend);
@@ -65,7 +67,7 @@ namespace Renderer
 		
 	}
 
-	ForwardPass::ForwardPass(const std::unique_ptr<RenderContext>& context)
+	ForwardPass::ForwardPass(const std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager)
 	{
 		auto& vulkanContext = context->GetVulkanContext();
 
@@ -94,22 +96,16 @@ namespace Renderer
 		std::vector<VkPushConstantRange> pushConstants = { pushConstant };
 		mPipeline = std::make_unique<Pipeline>(vulkanContext->GetDevice(), mRenderPass, descriptorLayouts, pushConstants, pipelineInfo);
 
-		CreateDepthBuffer(context);		
-
-		mFrameBuffers.clear();
 		mUniformBuffers.clear();
 		mDescriptorSets.clear();
-		size_t swapChainImagesSize = vulkanContext->GetSwapChain()->GetSwapChainImagesSize();
-		for (size_t i = 0; i < swapChainImagesSize; ++i)
-		{
-			std::vector<VkImageView> attacments = { vulkanContext->GetSwapChain()->GetNativeSwapChainImageView(i), mDepthBuffer->GetNativeView() };
-			FrameBuffer frameBuffer(
-				vulkanContext->GetDevice(),
-				attacments,
-				vulkanContext->GetSwapChain()->GetSwapChainExtent(),
-				mRenderPass);
-			mFrameBuffers.push_back(std::move(frameBuffer));
-		}
+
+		std::vector<VkImageView> attacments = { resourceManager->GetColorBuffer()->GetNativeView(), resourceManager->GetDepthBuffer()->GetNativeView()};
+		 mFrameBuffer = std::make_unique<FrameBuffer>(
+			vulkanContext->GetDevice(),
+			attacments,
+			vulkanContext->GetSwapChain()->GetSwapChainExtent(),
+			mRenderPass);
+
 		auto& engineContext = context->GetEngineContext();
 		auto& materialImage = engineContext->GetTextureContainer().GetImage(0);
 		auto& materalSampler = engineContext->GetTextureContainer().GetSampler(SamplerType::Linear);
@@ -140,17 +136,13 @@ namespace Renderer
 	{
 		auto& vulkanContext = context->GetVulkanContext();
 
-		for (size_t i = 0; i < mFrameBuffers.size(); ++i)
-		{
-			mFrameBuffers[i].Cleanup(vulkanContext->GetDevice());
-		}
+		mFrameBuffer->Cleanup(vulkanContext->GetDevice());
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
 			mDescriptorSets[i].Cleanup(vulkanContext->GetDevice(), vulkanContext->GetDescriptorPool());
 			mUniformBuffers[i].Cleanup(vulkanContext->GetDevice());
 		}
-		mDepthBuffer->Cleanup(vulkanContext->GetDevice());
 
 		mPipeline->Cleanup(vulkanContext->GetDevice());
 		mDescriptorSetLayout->Cleanup(vulkanContext->GetDevice());
@@ -158,47 +150,17 @@ namespace Renderer
 
 	}
 
-	void ForwardPass::ResizeResources(const std::unique_ptr<RenderContext>& context)
+	void ForwardPass::ResizeResources(const std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager)
 	{
 		auto& vulkanContext = context->GetVulkanContext();
-		for (size_t i = 0; i < mFrameBuffers.size(); ++i)
-		{
-			mFrameBuffers[i].Cleanup(vulkanContext->GetDevice());
-		}
-		mDepthBuffer->Cleanup(vulkanContext->GetDevice());
+		mFrameBuffer->Cleanup(vulkanContext->GetDevice());
 
-		CreateDepthBuffer(context);
-		mFrameBuffers.clear();
-
-		size_t swapChainImagesSize = vulkanContext->GetSwapChain()->GetSwapChainImagesSize();
-		for (size_t i = 0; i < swapChainImagesSize; ++i)
-		{
-			mFrameBuffers.push_back(FrameBuffer(
-				vulkanContext->GetDevice(),
-				{ vulkanContext->GetSwapChain()->GetNativeSwapChainImageView(i), mDepthBuffer->GetNativeView() },
-				vulkanContext->GetSwapChain()->GetSwapChainExtent(),
-				mRenderPass));
-		}
-	}
-
-	void ForwardPass::CreateDepthBuffer(const std::unique_ptr<RenderContext>& context)
-	{
-		auto& vulkanContext = context->GetVulkanContext();
-		auto depthFormat = vulkanContext->GetDevice()->FindDepthFormat();
-		auto extend = vulkanContext->GetSwapChain()->GetSwapChainExtent();
-
-		mDepthBuffer = std::make_unique<Image>(
+		std::vector<VkImageView> attacments = { resourceManager->GetColorBuffer()->GetNativeView(), resourceManager->GetDepthBuffer()->GetNativeView() };
+		mFrameBuffer = std::make_unique<FrameBuffer>(
 			vulkanContext->GetDevice(),
-			extend.width, 
-			extend.height, 
-			depthFormat, 
-			VK_IMAGE_TILING_OPTIMAL, 
-			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-	
-		mDepthBuffer->CreateImageView(vulkanContext->GetDevice(), depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
-		LOGINFO("Depth buffer created");
-
+			attacments,
+			vulkanContext->GetSwapChain()->GetSwapChainExtent(),
+			mRenderPass);
 	}
 
 

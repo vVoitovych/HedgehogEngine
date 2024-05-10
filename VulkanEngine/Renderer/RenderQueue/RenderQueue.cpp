@@ -2,7 +2,7 @@
 
 #include "Renderer/Context/RenderContext.hpp"
 #include "Renderer/Context/VulkanContext.hpp"
-
+#include "Renderer/ResourceManager/ResourceManager.hpp"
 #include "Renderer/RenderPasses/InitPass.hpp"
 #include "Renderer/RenderPasses/ForwardPass.hpp"
 #include "Renderer/RenderPasses/PresentPass.hpp"
@@ -10,11 +10,11 @@
 
 namespace Renderer
 {
-	RenderQueue::RenderQueue(const std::unique_ptr<RenderContext>& context)
+	RenderQueue::RenderQueue(const std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager)
 	{
 		mInitPass = std::make_unique<InitPass>(context);
-		mForwardPass = std::make_unique<ForwardPass>(context);
-		mGuiPass = std::make_unique<GuiPass>(context);
+		mForwardPass = std::make_unique<ForwardPass>(context, resourceManager);
+		mGuiPass = std::make_unique<GuiPass>(context, resourceManager);
 		mPresentPass = std::make_unique<PresentPass>(context);
 	}
 
@@ -43,10 +43,10 @@ namespace Renderer
 
 	}
 
-	void RenderQueue::ResizeResources(const std::unique_ptr<RenderContext>& context)
+	void RenderQueue::ResizeResources(const std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager)
 	{
-		mForwardPass->ResizeResources(context);
-		mGuiPass->ResizeResources(context);
+		mForwardPass->ResizeResources(context, resourceManager);
+		mGuiPass->ResizeResources(context, resourceManager);
 	}
 
 

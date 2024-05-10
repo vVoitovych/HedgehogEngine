@@ -6,7 +6,7 @@
 #include "Context/FrameContext.hpp"
 #include "Context/ThreadContext.hpp"
 #include "RenderQueue/RenderQueue.hpp"
-
+#include "Renderer/ResourceManager/ResourceManager.hpp"
 #include "Wrappeers/Device/Device.hpp"
 #include "Wrappeers/SwapChain/SwapChain.hpp"
 
@@ -19,7 +19,8 @@ namespace Renderer
 	Renderer::Renderer()
 	{
 		mRenderContext = std::make_unique<RenderContext>();
-		mRenderQueue = std::make_unique<RenderQueue>(mRenderContext);
+		mResourceManager = std::make_unique<ResourceManager>(mRenderContext);
+		mRenderQueue = std::make_unique<RenderQueue>(mRenderContext, mResourceManager);
 
 	}
 
@@ -32,6 +33,7 @@ namespace Renderer
 		vkQueueWaitIdle(mRenderContext->GetVulkanContext()->GetDevice()->GetNativeGraphicsQueue());
 
 		mRenderQueue->Cleanup(mRenderContext);
+		mResourceManager->Cleanup(mRenderContext);
 		mRenderContext->Cleanup();
 	}
 
@@ -68,7 +70,8 @@ namespace Renderer
 		auto& vulkanContext = mRenderContext->GetVulkanContext();
 		vulkanContext->GetSwapChain()->Recreate(vulkanContext->GetDevice());
 
-		mRenderQueue->ResizeResources(mRenderContext);
+		mResourceManager->ResizeResources(mRenderContext);
+		mRenderQueue->ResizeResources(mRenderContext, mResourceManager);
 	}
 
 	bool Renderer::ShouldClose()

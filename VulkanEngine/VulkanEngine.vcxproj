@@ -179,6 +179,7 @@
     <ClCompile Include="Renderer\RenderPasses\InitPass.cpp" />
     <ClCompile Include="Renderer\RenderPasses\PresentPass.cpp" />
     <ClCompile Include="Renderer\RenderQueue\RenderQueue.cpp" />
+    <ClCompile Include="Renderer\ResourceManager\ResourceManager.cpp" />
     <ClCompile Include="Renderer\WindowManagment\WindowManager.cpp" />
     <ClCompile Include="Renderer\WindowManagment\WindowState.cpp" />
     <ClCompile Include="Renderer\Wrappeers\Commands\CommandBuffer.cpp" />
@@ -235,6 +236,7 @@
     <ClInclude Include="Renderer\RenderPasses\InitPass.hpp" />
     <ClInclude Include="Renderer\RenderPasses\PresentPass.hpp" />
     <ClInclude Include="Renderer\RenderQueue\RenderQueue.hpp" />
+    <ClInclude Include="Renderer\ResourceManager\ResourceManager.hpp" />
     <ClInclude Include="Renderer\WindowManagment\Controls.hpp" />
     <ClInclude Include="Renderer\WindowManagment\WindowManager.hpp" />
     <ClInclude Include="Renderer\WindowManagment\WindowState.hpp" />
