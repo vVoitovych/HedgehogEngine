@@ -50,6 +50,7 @@ namespace Renderer
 
 	void UBO::Cleanup(const std::unique_ptr<Device>& device)
 	{
+		mUniformBuffer->UnapMemory(device);
 		mUniformBuffer->DestroyBuffer(device);
 		LOGINFO("UBO cleaned");
 	}
