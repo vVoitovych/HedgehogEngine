@@ -36,13 +36,16 @@ namespace Renderer
 
 		const VkImage& GetNativeImage() const;
 		const VkImageView& GetNativeView() const;
+		VkFormat GetFormat() const;
+		VkExtent2D GetExtent() const;
 
 	private:
 		VkImage mImage;
 		VmaAllocation mAllocation;
 
 		VkImageView mImageView;
-
+		VkFormat mFormat;
+		VkExtent2D mExtent;
 	};
 
 }

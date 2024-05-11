@@ -5,6 +5,7 @@
 
 namespace Renderer
 {
+	class Device;
 	class CommandPool;
 	class RenderPass;
 	class Pipeline;
@@ -12,24 +13,28 @@ namespace Renderer
 	class CommandBuffer
 	{
 	public:
-		CommandBuffer(const std::unique_ptr<CommandPool>& cxommandPool);
+		CommandBuffer(const std::unique_ptr<Device>& device, const std::unique_ptr<CommandPool>& commandPool);
 		~CommandBuffer();
 
 		CommandBuffer(const CommandBuffer&) = delete;
 		CommandBuffer& operator=(const CommandBuffer&) = delete;
 
-
 		CommandBuffer(CommandBuffer&& other);
 		CommandBuffer& operator=(CommandBuffer&& other);
 
-		void Cleanup(const std::unique_ptr<CommandPool>& commandPool);
+		void Cleanup(const std::unique_ptr<Device>& device, const std::unique_ptr<CommandPool>& commandPool);
 
 		VkCommandBuffer& GetNativeCommandBuffer();
 
 		void BeginCommandBuffer(VkCommandBufferUsageFlags flags);
 		void EndCommandBuffer();
+
+		void BeginSingleTimeCommands() const;
+		void EndSingleTimeCommands(const std::unique_ptr<Device>& device) const;
+
 		void BeginRenderPass(VkExtent2D extend, std::unique_ptr<RenderPass>& renderPass, VkFramebuffer frameBuffer);
 		void EndRenderPass();
+
 		void BindPipeline(std::unique_ptr<Pipeline>& pipeline, VkPipelineBindPoint bindPoint);
 		void SetViewport(float x, float y, float width, float height, float minDepth, float maxDepth);
 		void SetScissor(VkOffset2D offset, VkExtent2D extend);
@@ -41,6 +46,17 @@ namespace Renderer
 		void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance);
 		void DrawIndexed(uint32_t IndexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance);
 
+		void CopyImageToImage(VkImage source, VkImage destination, VkExtent2D srcSize, VkExtent2D dstSize);
+		void ClearColorImage(VkImage image, VkImageLayout imageLayout, const VkClearColorValue* pColor, uint32_t rangeCount, const VkImageSubresourceRange* pRanges);
+		void ClearDepthStencilImage(VkImage image, VkImageLayout imageLayout, const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount, const VkImageSubresourceRange* pRanges);
+		void RecordTransitionImageLayout(
+            const uint32_t mipLevels,
+            const VkImageLayout& oldLayout,
+            const VkImageLayout& newLayout,
+            const bool isCubemap,
+            const VkImage& image
+        );
+	
 	private:
 		VkCommandBuffer mCommandBuffer;
 	};

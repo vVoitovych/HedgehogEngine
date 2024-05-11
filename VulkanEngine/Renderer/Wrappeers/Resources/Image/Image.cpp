@@ -21,7 +21,11 @@ namespace Renderer
 		: mImage(nullptr)
 		, mAllocation(nullptr)
 		, mImageView(nullptr)
+		, mFormat(format)
 	{
+		mExtent.width = width;
+		mExtent.height = height;
+
 		VkImageCreateInfo imageInfo{};
 		imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 		imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -103,7 +107,7 @@ namespace Renderer
 	void Image::TransitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout, const std::unique_ptr<CommandPool>& commandPool)
 	{
 		VkCommandBuffer commandBuffer = commandPool->BeginSingleTimeCommands();
-		ImageManagement::RecordTransitionImageLayout(1, oldLayout, newLayout, false, commandBuffer, mImage);
+		commandBuffer.RecordTransitionImageLayout(1, oldLayout, newLayout, false, mImage);
 		commandPool->EndSingleTimeCommands(commandBuffer);
 	}
 
@@ -135,6 +139,16 @@ namespace Renderer
 	const VkImageView& Image::GetNativeView() const
 	{
 		return mImageView;
+	}
+
+	VkFormat Image::GetFormat() const
+	{
+		return mFormat;
+	}
+
+	VkExtent2D Image::GetExtent() const
+	{
+		return mExtent;
 	}
 
 

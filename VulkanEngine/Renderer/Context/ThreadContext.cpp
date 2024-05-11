@@ -18,7 +18,7 @@ namespace Renderer
 		mSyncObjects.clear();
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
-			CommandBuffer commandBuffer(vulkanContext->GetCommandPool());
+			CommandBuffer commandBuffer(vulkanContext->GetDevice(), vulkanContext->GetCommandPool());
 			mCommandBuffers.push_back(std::move(commandBuffer));
 			SyncObject syncObject(vulkanContext->GetDevice());
 			mSyncObjects.push_back(std::move(syncObject));
@@ -34,7 +34,7 @@ namespace Renderer
 	{
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
-			mCommandBuffers[i].Cleanup(vulkanContext->GetCommandPool());
+			mCommandBuffers[i].Cleanup(vulkanContext->GetDevice(), vulkanContext->GetCommandPool());
 			mSyncObjects[i].Cleanup();
 		}
 		mCommandBuffers.clear();

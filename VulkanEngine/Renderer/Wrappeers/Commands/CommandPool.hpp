@@ -19,20 +19,14 @@ namespace Renderer
 		CommandPool& operator=(const CommandPool&) = delete;
 		CommandPool& operator=(CommandPool&&) = delete;
 
-		void Cleanup();
+		void Cleanup(const std::unique_ptr<Device>& device);
 
 		const VkCommandPool& GetNativeCommandPool() const;
-		VkCommandPool GetNativeCommandPool();
 
-		void AllocateCommandBuffer(VkCommandBuffer* pCommandBuffer) const;
-		void FreeCommandBuffer(VkCommandBuffer* pCommandBuffer) const;
-
-		VkCommandBuffer BeginSingleTimeCommands() const;
-		void EndSingleTimeCommands(VkCommandBuffer commandBuffer) const;
+		void AllocateCommandBuffer(const std::unique_ptr<Device>& device, VkCommandBuffer* pCommandBuffer) const;
+		void FreeCommandBuffer(const std::unique_ptr<Device>& device, VkCommandBuffer* pCommandBuffer) const;
 
 	private:
-		VkDevice mDevice;
-		VkQueue mQueue;
 		VkCommandPool mCommandPool;
 
 	};

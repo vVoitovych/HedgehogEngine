@@ -22,7 +22,7 @@ namespace Renderer
         ForwardPass(const std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager);
         ~ForwardPass();
 
-        void Render(std::unique_ptr<RenderContext>& context);
+        void Render(std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager);
         void Cleanup(const std::unique_ptr<RenderContext>& context);
 
         void ResizeResources(const std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager);

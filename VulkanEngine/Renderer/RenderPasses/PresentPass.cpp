@@ -7,6 +7,7 @@
 #include "Renderer/Context/EngineContext.hpp"
 #include "Renderer/Context/FrameContext.hpp"
 #include "Renderer/Context/VulkanContext.hpp"
+#include "Renderer/ResourceManager/ResourceManager.hpp"
 
 #include "Renderer/WindowManagment/WindowManager.hpp"
 #include "Renderer/Wrappeers/Commands/CommandBuffer.hpp"
@@ -20,7 +21,7 @@ namespace Renderer
 	{
 	}
 
-	void PresentPass::Render(std::unique_ptr<RenderContext>& context)
+	void PresentPass::Render(std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager)
 	{
 
 		auto& engineContext = context->GetEngineContext();

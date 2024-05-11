@@ -19,7 +19,7 @@ namespace Renderer
 		GuiPass(const std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager);
 		~GuiPass();
 
-		void Render(std::unique_ptr<RenderContext>& context);
+		void Render(std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager);
 		void Cleanup(const std::unique_ptr<RenderContext>& context);
 
 		void ResizeResources(const std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager);

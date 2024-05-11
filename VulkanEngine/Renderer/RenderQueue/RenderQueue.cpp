@@ -30,16 +30,16 @@ namespace Renderer
 		mPresentPass->Cleanup(context);
 	}
 
-	void RenderQueue::Render(std::unique_ptr<RenderContext>& context)
+	void RenderQueue::Render(std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager)
 	{
 		auto& vulkanContext = context->GetVulkanContext();
 
 		mInitPass->Render(context);
 		if (vulkanContext->IsWindowResized())
 			return;
-		mForwardPass->Render(context);
-		mGuiPass->Render(context);
-		mPresentPass->Render(context);
+		mForwardPass->Render(context, resourceManager);
+		mGuiPass->Render(context, resourceManager);
+		mPresentPass->Render(context, resourceManager);
 
 	}
 

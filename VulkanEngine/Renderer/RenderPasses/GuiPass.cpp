@@ -17,7 +17,6 @@
 #include "Renderer/Wrappeers/Device/Device.hpp"
 #include "Renderer/Wrappeers/FrameBuffer/FrameBuffer.hpp"
 #include "Renderer/Wrappeers/Resources/Image/Image.hpp"
-#include "Renderer/Wrappeers/Resources/Image/ImageManagement.hpp"
 
 #include "Renderer/WindowManagment/WindowManager.hpp"
 
@@ -56,7 +55,7 @@ namespace Renderer
 		};
 		mDescriptorPool = std::make_unique<DescriptorPool>(device, poolSizes, 1000 * 11);
 		auto& swapChain = context->GetVulkanContext()->GetSwapChain();
-		GuiPassInfo passInfo(swapChain->GetFormat());
+		GuiPassInfo passInfo(resourceManager->GetColorBuffer()->GetFormat());
 		mRenderPass = std::make_unique<RenderPass>(context->GetVulkanContext()->GetDevice(), passInfo.GetInfo());
 
 		// - Imgui init
@@ -88,7 +87,7 @@ namespace Renderer
 		mFrameBuffer = std::make_unique<FrameBuffer>(
 			device,
 			attacments,
-			swapChain->GetSwapChainExtent(),
+			resourceManager->GetColorBuffer()->GetExtent(),
 			mRenderPass);
 
 	}	
@@ -97,7 +96,7 @@ namespace Renderer
 	{
 	}
 
-	void GuiPass::Render(std::unique_ptr<RenderContext>& context)
+	void GuiPass::Render(std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager)
 	{
 		auto& frameContext = context->GetFrameContext();
 		auto backBufferIndex = frameContext->GetBackBufferIndex();
@@ -109,13 +108,12 @@ namespace Renderer
 		auto& swapChain = vulkanContext->GetSwapChain();
 		auto extent = swapChain->GetSwapChainExtent();
 
-		ImageManagement::RecordTransitionImageLayout(
+		commandBuffer.RecordTransitionImageLayout(
 			1, 
 			VK_IMAGE_LAYOUT_UNDEFINED, 
 			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 			false, 
-			commandBuffer.GetNativeCommandBuffer(), 
-			swapChain->GetSwapChainImage(backBufferIndex));
+			resourceManager->GetColorBuffer()->GetNativeImage());
 
 		ImGui_ImplVulkan_NewFrame();
 		ImGui_ImplGlfw_NewFrame();

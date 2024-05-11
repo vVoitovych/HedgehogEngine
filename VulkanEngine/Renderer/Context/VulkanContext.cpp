@@ -36,7 +36,7 @@ namespace Renderer
 	void VulkanContext::Cleanup()
 	{
 		mDescriptorPool->Cleanup(mDevice);
-		mCommandPool->Cleanup();
+		mCommandPool->Cleanup(mDevice);
 		mSwapChain->Cleanup(mDevice);
 		mDevice->Cleanup();
 	}

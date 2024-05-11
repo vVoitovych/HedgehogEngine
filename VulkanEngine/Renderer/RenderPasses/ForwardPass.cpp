@@ -31,7 +31,7 @@
 
 namespace Renderer
 {
-	void ForwardPass::Render(std::unique_ptr<RenderContext>& context)
+	void ForwardPass::Render(std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager)
 	{
 		auto& frameContext = context->GetFrameContext();
 		auto& threadContext = context->GetThreadContext();
@@ -71,7 +71,7 @@ namespace Renderer
 	{
 		auto& vulkanContext = context->GetVulkanContext();
 
-		ForwardPassInfo info{ vulkanContext->GetSwapChain()->GetFormat(), vulkanContext->GetDevice()->FindDepthFormat() };
+		ForwardPassInfo info{ resourceManager->GetColorBuffer()->GetFormat(), resourceManager->GetDepthBuffer()->GetFormat()};
 		mRenderPass = std::make_unique<RenderPass>(vulkanContext->GetDevice(), info.GetInfo());
 
 		DescriptorInfo uboInfo;

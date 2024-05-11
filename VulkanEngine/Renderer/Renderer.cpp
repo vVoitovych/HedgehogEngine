@@ -61,7 +61,7 @@ namespace Renderer
 			vulkanContext->ResetWindowResizeState();
 		}
 
-		mRenderQueue->Render(mRenderContext);
+		mRenderQueue->Render(mRenderContext, mResourceManager);
 	}
 
 	void Renderer::RecreateSwapChain()
