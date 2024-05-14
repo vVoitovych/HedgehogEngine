@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
-#include <memory>
 
 namespace Renderer
 {
@@ -10,7 +9,7 @@ namespace Renderer
 	class Sampler
 	{
 	public:
-		Sampler(const std::unique_ptr<Device>& device);
+		Sampler(const Device& device);
 		~Sampler();
 
 		Sampler(const Sampler&) = delete;
@@ -19,7 +18,7 @@ namespace Renderer
 		Sampler(Sampler&& other) noexcept;
 		Sampler& operator=(Sampler&& other) noexcept;
 
-		void Cleanup(const std::unique_ptr<Device>& device);
+		void Cleanup(const Device& device);
 
 		VkSampler GetNativeSampler() const;
 

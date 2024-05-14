@@ -10,7 +10,7 @@
 
 namespace Renderer
 {
-	DescriptorPool::DescriptorPool(const std::unique_ptr<Device>& device, const std::vector<VkDescriptorPoolSize> poolSizes, const uint32_t descriptorSetsCount)
+	DescriptorPool::DescriptorPool(const Device& device, const std::vector<VkDescriptorPoolSize> poolSizes, const uint32_t descriptorSetsCount)
 		: mDescriptorPool(nullptr) 
 	{
 		if (poolSizes.size() == 0)
@@ -25,7 +25,7 @@ namespace Renderer
 		poolInfo.maxSets = descriptorSetsCount;
 		poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
-		if (vkCreateDescriptorPool(device->GetNativeDevice(), &poolInfo, nullptr, &mDescriptorPool) != VK_SUCCESS)
+		if (vkCreateDescriptorPool(device.GetNativeDevice(), &poolInfo, nullptr, &mDescriptorPool) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Failed to create descriptor pool!");
 		}
@@ -41,9 +41,9 @@ namespace Renderer
 		}
 	}
 
-	void DescriptorPool::Cleanup(const std::unique_ptr<Device>& device)
+	void DescriptorPool::Cleanup(const Device& device)
 	{
-		vkDestroyDescriptorPool(device->GetNativeDevice(), mDescriptorPool, nullptr);
+		vkDestroyDescriptorPool(device.GetNativeDevice(), mDescriptorPool, nullptr);
 		mDescriptorPool = nullptr;
 	}
 
@@ -53,7 +53,7 @@ namespace Renderer
 	}
 
 	void DescriptorPool::AllocDescriptorSets(
-		const std::unique_ptr<Device>& device,
+		const Device& device,
 		const std::vector<VkDescriptorSetLayout>& descriptorSetLayouts,
 		VkDescriptorSet* descriptorSets
 	) const
@@ -64,17 +64,17 @@ namespace Renderer
 		allocInfo.descriptorSetCount = static_cast<uint32_t>(descriptorSetLayouts.size());
 		allocInfo.pSetLayouts = descriptorSetLayouts.data();
 
-		if (vkAllocateDescriptorSets(device->GetNativeDevice(), &allocInfo, descriptorSets) != VK_SUCCESS)
+		if (vkAllocateDescriptorSets(device.GetNativeDevice(), &allocInfo, descriptorSets) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to allocate descriptor sets!");
 		}
 	}
 
 	void DescriptorPool::FreeDescriptorSet(
-		const std::unique_ptr<Device>& device,
+		const Device& device,
 		VkDescriptorSet* pDescriptorSet) const
 	{
-		vkFreeDescriptorSets(device->GetNativeDevice(), mDescriptorPool, 1, pDescriptorSet);
+		vkFreeDescriptorSets(device.GetNativeDevice(), mDescriptorPool, 1, pDescriptorSet);
 	}
 
 }

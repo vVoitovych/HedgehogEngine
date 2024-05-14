@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
-#include <memory>
 
 namespace Renderer
 {
@@ -10,7 +9,7 @@ namespace Renderer
 	class SyncObject
 	{
 	public:
-		SyncObject(const std::unique_ptr<Device>& device);
+		SyncObject(const Device& device);
 		~SyncObject();
 
 		SyncObject(const SyncObject&) = delete;
@@ -19,20 +18,19 @@ namespace Renderer
 		SyncObject(SyncObject&& other);
 		SyncObject& operator=(SyncObject&& other);
 
-		void Cleanup();
+		void Cleanup(const Device& device);
 
 		VkSemaphore GetImageAvailableSemaphore();
 		VkSemaphore GetRenderFinishedSemaphore();
 		VkFence GetInFlightFence();
 
-		void WaitforInFlightFence();
-		void ResetInFlightFence();
+		void WaitforInFlightFence(const Device& device);
+		void ResetInFlightFence(const Device& device);
 	private:
 		VkSemaphore mImageAvailableSemaphore;
 		VkSemaphore mRendeerFinishedSemaphore;
 		VkFence mInFlightFence;
 
-		VkDevice mDevice;
 	};
 
 }

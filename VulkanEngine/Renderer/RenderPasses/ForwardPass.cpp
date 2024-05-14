@@ -40,13 +40,13 @@ namespace Renderer
 
 		auto& commandBuffer = threadContext->GetCommandBuffer();
 		auto frameIndex = threadContext->GetFrame();
-		auto extend = vulkanContext->GetSwapChain()->GetSwapChainExtent();
+		auto extend = vulkanContext->GetSwapChain().GetSwapChainExtent();
 		auto backBufferIndex = frameContext->GetBackBufferIndex();
 
-		mUniformBuffers[frameIndex].UpdateUniformBuffer(context);
+		mUniformBuffers[frameIndex].UpdateUniformBuffer(*context);
 		
-		commandBuffer.BeginRenderPass(extend, mRenderPass, mFrameBuffer->GetNativeFrameBuffer());
-		commandBuffer.BindPipeline(mPipeline, VK_PIPELINE_BIND_POINT_GRAPHICS);
+		commandBuffer.BeginRenderPass(extend, *mRenderPass, mFrameBuffer->GetNativeFrameBuffer());
+		commandBuffer.BindPipeline(*mPipeline, VK_PIPELINE_BIND_POINT_GRAPHICS);
 		commandBuffer.SetViewport(0.0f, 0.0f, (float)extend.width, (float)extend.height, 0.0f, 1.0f);
 		commandBuffer.SetScissor({ 0, 0 }, extend);
 		auto& meshContainer = engineContext->GetMeshContainer();
@@ -55,7 +55,7 @@ namespace Renderer
 		VkDeviceSize offsets[] = { 0 };
 		commandBuffer.BindVertexBuffers(0, 1, vertexBuffers, offsets);
 		commandBuffer.BindIndexBuffer(meshContainer.GetIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
-		commandBuffer.BindDescriptorSers(VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeline, 0, 1, mDescriptorSets[frameIndex].GetNativeSet(), 0, nullptr);
+		commandBuffer.BindDescriptorSers(VK_PIPELINE_BIND_POINT_GRAPHICS, *mPipeline, 0, 1, mDescriptorSets[frameIndex].GetNativeSet(), 0, nullptr);
 
 		for (auto& object : engineContext->GetScene().GetRenderableObjects())
 		{
@@ -70,9 +70,9 @@ namespace Renderer
 	ForwardPass::ForwardPass(const std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager)
 	{
 		auto& vulkanContext = context->GetVulkanContext();
-
+		auto& device = vulkanContext->GetDevice();
 		ForwardPassInfo info{ resourceManager->GetColorBuffer()->GetFormat(), resourceManager->GetDepthBuffer()->GetFormat()};
-		mRenderPass = std::make_unique<RenderPass>(vulkanContext->GetDevice(), info.GetInfo());
+		mRenderPass = std::make_unique<RenderPass>(device, info.GetInfo());
 
 		DescriptorInfo uboInfo;
 		uboInfo.bindingNumber = 0;
@@ -84,9 +84,9 @@ namespace Renderer
 		samplerInfo.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		samplerInfo.shaderStage = VK_SHADER_STAGE_FRAGMENT_BIT;
 		std::vector<DescriptorInfo> bindingSamplers = { samplerInfo };
-		mDescriptorSetLayout = std::make_unique<DescriptorSetLayout>(vulkanContext->GetDevice(), bindingUBOs, bindingSamplers);
+		mDescriptorSetLayout = std::make_unique<DescriptorSetLayout>(device, bindingUBOs, bindingSamplers);
 
-		std::unique_ptr<PipelineInfo> pipelineInfo = std::make_unique<ForwardPipelineInfo>(vulkanContext->GetDevice());
+		std::unique_ptr<PipelineInfo> pipelineInfo = std::make_unique<ForwardPipelineInfo>(device);
 
 		std::vector<VkDescriptorSetLayout> descriptorLayouts = { mDescriptorSetLayout->GetNativeLayout() };
 		VkPushConstantRange pushConstant;
@@ -94,16 +94,16 @@ namespace Renderer
 		pushConstant.size = sizeof(ForwardPassPushConstants);
 		pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 		std::vector<VkPushConstantRange> pushConstants = { pushConstant };
-		mPipeline = std::make_unique<Pipeline>(vulkanContext->GetDevice(), mRenderPass, descriptorLayouts, pushConstants, pipelineInfo);
+		mPipeline = std::make_unique<Pipeline>(device, mRenderPass, descriptorLayouts, pushConstants, pipelineInfo);
 
 		mUniformBuffers.clear();
 		mDescriptorSets.clear();
 
 		std::vector<VkImageView> attacments = { resourceManager->GetColorBuffer()->GetNativeView(), resourceManager->GetDepthBuffer()->GetNativeView()};
 		 mFrameBuffer = std::make_unique<FrameBuffer>(
-			vulkanContext->GetDevice(),
+			device,
 			attacments,
-			vulkanContext->GetSwapChain()->GetSwapChainExtent(),
+			vulkanContext->GetSwapChain().GetSwapChainExtent(),
 			mRenderPass);
 
 		auto& engineContext = context->GetEngineContext();
@@ -112,13 +112,13 @@ namespace Renderer
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
-			UBO uniformBuffer(vulkanContext->GetDevice());
+			UBO uniformBuffer(device);
 			mUniformBuffers.push_back(std::move(uniformBuffer));
 
 			DescriptorSet descriptorSet(
-				vulkanContext->GetDevice(),
+				device,
 				vulkanContext->GetDescriptorPool(),
-				mDescriptorSetLayout, 
+				*mDescriptorSetLayout, 
 				mUniformBuffers[i].GetBuffer(),
 				materialImage,
 				materalSampler);
@@ -159,7 +159,7 @@ namespace Renderer
 		mFrameBuffer = std::make_unique<FrameBuffer>(
 			vulkanContext->GetDevice(),
 			attacments,
-			vulkanContext->GetSwapChain()->GetSwapChainExtent(),
+			vulkanContext->GetSwapChain().GetSwapChainExtent(),
 			mRenderPass);
 	}
 

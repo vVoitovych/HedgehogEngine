@@ -1,8 +1,5 @@
 #include "Image.hpp"
-#include "ImageManagement.hpp"
-
 #include "Renderer/Wrappeers/Device/Device.hpp"
-#include "Renderer/Wrappeers/Commands/CommandPool.hpp"
 #include "Logger/Logger.hpp"
 #include "Renderer/Common/EngineDebugBreak.hpp"
 
@@ -11,7 +8,7 @@
 namespace Renderer
 {
 	Image::Image(
-		const std::unique_ptr<Device>& device, 
+		const Device& device, 
 		uint32_t width, 
 		uint32_t height, 
 		VkFormat format, 
@@ -43,7 +40,7 @@ namespace Renderer
 
 		VmaAllocationCreateInfo allocInfo = {};
 		allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-		if (vmaCreateImage(device->GetAllocator(), &imageInfo, &allocInfo, &mImage, &mAllocation, nullptr) != VK_SUCCESS)
+		if (vmaCreateImage(device.GetAllocator(), &imageInfo, &allocInfo, &mImage, &mAllocation, nullptr) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create image!");
 		}
@@ -93,25 +90,18 @@ namespace Renderer
 		return *this;
 	}
 
-	void Image::Cleanup(const std::unique_ptr<Device>& device)
+	void Image::Cleanup(const Device& device)
 	{
-		vkDestroyImageView(device->GetNativeDevice(), mImageView, nullptr);
+		vkDestroyImageView(device.GetNativeDevice(), mImageView, nullptr);
 
-		vmaDestroyImage(device->GetAllocator(), mImage, mAllocation);
+		vmaDestroyImage(device.GetAllocator(), mImage, mAllocation);
 		mImage = nullptr;
 		mAllocation = nullptr;
 		mImageView = nullptr;
 
 	}
 
-	void Image::TransitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout, const std::unique_ptr<CommandPool>& commandPool)
-	{
-		VkCommandBuffer commandBuffer = commandPool->BeginSingleTimeCommands();
-		commandBuffer.RecordTransitionImageLayout(1, oldLayout, newLayout, false, mImage);
-		commandPool->EndSingleTimeCommands(commandBuffer);
-	}
-
-	void Image::CreateImageView(const std::unique_ptr<Device>& device, VkFormat format, VkImageAspectFlags aspectFlags)
+	void Image::CreateImageView(const Device& device, VkFormat format, VkImageAspectFlags aspectFlags)
 	{
 		VkImageViewCreateInfo viewInfo{};
 		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -124,7 +114,7 @@ namespace Renderer
 		viewInfo.subresourceRange.baseArrayLayer = 0;
 		viewInfo.subresourceRange.layerCount = 1;
 
-		if (vkCreateImageView(device->GetNativeDevice(), &viewInfo, nullptr, &mImageView) != VK_SUCCESS)
+		if (vkCreateImageView(device.GetNativeDevice(), &viewInfo, nullptr, &mImageView) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create texture image view!");
 		}

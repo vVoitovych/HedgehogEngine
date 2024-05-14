@@ -30,7 +30,7 @@ namespace Renderer
 	 
 	void Renderer::Cleanup()
 	{
-		vkQueueWaitIdle(mRenderContext->GetVulkanContext()->GetDevice()->GetNativeGraphicsQueue());
+		vkQueueWaitIdle(mRenderContext->GetVulkanContext()->GetDevice().GetNativeGraphicsQueue());
 
 		mRenderQueue->Cleanup(mRenderContext);
 		mResourceManager->Cleanup(mRenderContext);
@@ -54,7 +54,7 @@ namespace Renderer
 		auto& engineContext = mRenderContext->GetEngineContext();
 		auto dt = GetFrameTime();
 		auto& vulkanContext = mRenderContext->GetVulkanContext();
-		engineContext->UpdateContext(vulkanContext, dt);
+		engineContext->UpdateContext(*vulkanContext, dt);
 		if (vulkanContext->IsWindowResized())
 		{
 			RecreateSwapChain();
@@ -66,9 +66,9 @@ namespace Renderer
 
 	void Renderer::RecreateSwapChain()
 	{
-		vkDeviceWaitIdle(mRenderContext->GetVulkanContext()->GetDevice()->GetNativeDevice());
+		vkDeviceWaitIdle(mRenderContext->GetVulkanContext()->GetDevice().GetNativeDevice());
 		auto& vulkanContext = mRenderContext->GetVulkanContext();
-		vulkanContext->GetSwapChain()->Recreate(vulkanContext->GetDevice());
+		vulkanContext->GetSwapChain().Recreate(vulkanContext->GetDevice());
 
 		mResourceManager->ResizeResources(mRenderContext);
 		mRenderQueue->ResizeResources(mRenderContext, mResourceManager);

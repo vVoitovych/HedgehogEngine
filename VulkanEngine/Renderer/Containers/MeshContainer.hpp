@@ -10,9 +10,9 @@
 
 namespace Renderer
 {
-	class Device;
-	class CommandPool;
+	class VulkanContext;
 	class Buffer;
+	class Mesh;
 
 	class MeshContainer
 	{
@@ -31,8 +31,8 @@ namespace Renderer
 		void LoadMeshData();
 		void LoadSingleMesh(std::string filePath);
 
-		void Initialize(const std::unique_ptr<Device>& device, const std::unique_ptr<CommandPool>& commandPool);
-		void Cleanup(const std::unique_ptr<Device>& device);
+		void Initialize(const VulkanContext& context);
+		void Cleanup(const VulkanContext& context);
 
 		const VkBuffer& GetVertexBuffer() const;
 		const VkBuffer& GetIndexBuffer() const;
@@ -40,8 +40,8 @@ namespace Renderer
 		const Mesh& GetMesh(size_t index) const;
 
 	private:
-		void CreateVertexBuffer(const std::unique_ptr<Device>& device, const std::unique_ptr<CommandPool>& commandPool, const std::vector<VertexDescription> verticies);
-		void CreateIndexBuffer(const std::unique_ptr<Device>& device, const std::unique_ptr<CommandPool>& commandPool, const std::vector<uint32_t> indicies);
+		void CreateVertexBuffer(const VulkanContext& context, const std::vector<VertexDescription> verticies);
+		void CreateIndexBuffer(const VulkanContext& context, const std::vector<uint32_t> indicies);
 
 	private:
 		std::vector<std::string> mFilePathes;

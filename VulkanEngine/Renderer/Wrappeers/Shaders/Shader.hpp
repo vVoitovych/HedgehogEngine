@@ -2,7 +2,6 @@
 
 #include <vulkan/vulkan.h>
 #include <string>
-#include <memory>
 
 namespace Renderer
 {
@@ -11,7 +10,7 @@ namespace Renderer
 	class Shader
 	{
 	public:
-		Shader(const std::unique_ptr<Device>& device, const std::string& fileName);
+		Shader(const Device& device, const std::string& fileName);
 		virtual ~Shader();
 
 		Shader(const Shader&) = default;
@@ -19,7 +18,7 @@ namespace Renderer
 		Shader& operator=(const Shader&) = default;
 		Shader& operator=(Shader&&) = default;
 
-		void Cleanup(const std::unique_ptr<Device>& device);
+		void Cleanup(const Device& device);
 		VkPipelineShaderStageCreateInfo GetCreateInfo();
 
 	protected:

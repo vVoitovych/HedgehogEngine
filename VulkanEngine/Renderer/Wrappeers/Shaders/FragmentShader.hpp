@@ -11,7 +11,7 @@ namespace Renderer
 	class FragmentShader : public Shader
 	{
 	public:
-		FragmentShader(const std::unique_ptr<Device>& device, const std::string& fileName);
+		FragmentShader(const Device& device, const std::string& fileName);
 		~FragmentShader() override;
 
 

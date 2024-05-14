@@ -94,9 +94,6 @@
     <ClCompile Include="Renderer\Wrappeers\Descriptors\DescriptorPool.cpp">
       <Filter>Renderer\Wrappers\Descriptors</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Wrappeers\Commands\CommandPool.cpp">
-      <Filter>Renderer\Wrappers\Commands</Filter>
-    </ClCompile>
     <ClCompile Include="Renderer\Wrappeers\Resources\Buffer\Buffer.cpp">
       <Filter>Renderer\Wrappers\Resources\Buffer</Filter>
     </ClCompile>
@@ -233,9 +230,6 @@
     </ClInclude>
     <ClInclude Include="Renderer\Wrappeers\Descriptors\DescriptorPool.hpp">
       <Filter>Renderer\Wrappers\Descriptors</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Wrappeers\Commands\CommandPool.hpp">
-      <Filter>Renderer\Wrappers\Commands</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\Wrappeers\Resources\Buffer\Buffer.hpp">
       <Filter>Renderer\Wrappers\Resources\Buffer</Filter>

@@ -14,12 +14,11 @@
 
 namespace Renderer
 {
-	UBO::UBO(const std::unique_ptr<Device>& device)
+	UBO::UBO(const Device& device)
 		: mUniformBufferMapped(nullptr)
 	{
 		VkDeviceSize bufferSize = sizeof(UniformBufferObject);
-		mUniformBuffer = std::make_unique<Buffer>(device, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-			VMA_MEMORY_USAGE_CPU_TO_GPU);
+		mUniformBuffer = std::make_unique<Buffer>(device, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 
 		mUniformBuffer->MapMemory(device, &mUniformBufferMapped);
 		LOGINFO("Vulkan UBO created");
@@ -48,17 +47,17 @@ namespace Renderer
 		return *this;
 	}
 
-	void UBO::Cleanup(const std::unique_ptr<Device>& device)
+	void UBO::Cleanup(const Device& device)
 	{
 		mUniformBuffer->UnapMemory(device);
 		mUniformBuffer->DestroyBuffer(device);
 		LOGINFO("UBO cleaned");
 	}
 
-	void UBO::UpdateUniformBuffer(std::unique_ptr<RenderContext>& context)
+	void UBO::UpdateUniformBuffer(const RenderContext& context)
 	{
-		const auto& frameContext = context->GetFrameContext();
-		const auto& engineContext = context->GetEngineContext();
+		const auto& frameContext = context.GetFrameContext();
+		const auto& engineContext = context.GetEngineContext();
 		const auto& lightContainer = engineContext->GetLightContainer();
 		UniformBufferObject ubo{};
 		ubo.view = frameContext->GetCameraViewMatrix();
@@ -78,9 +77,9 @@ namespace Renderer
 		return mUniformBuffer->GetNativeBuffer();
 	}
 
-	const std::unique_ptr<Buffer>& UBO::GetBuffer() const
+	const Buffer& UBO::GetBuffer() const
 	{
-		return mUniformBuffer;
+		return *mUniformBuffer;
 	}
 
 }

@@ -24,7 +24,7 @@ namespace Renderer
 		bool ShouldClose();
 		void HandleInput();
 
-		void CreateWindowSurface(VkInstance instance, VkSurfaceKHR* surface);
+		void CreateWindowSurface(VkInstance instance, VkSurfaceKHR* surface) const;
 		GLFWwindow* GetGlfwWindow();
 		Controls& GetControls();
 

@@ -10,11 +10,11 @@
 
 namespace Renderer
 {
-	SwapChain::SwapChain(const std::unique_ptr<Device>& device, std::unique_ptr<WindowManager>& windowManager)
+	SwapChain::SwapChain(const Device& device, WindowManager& windowManager)
 		: mSwapChain(nullptr)
 		, mWindow(nullptr)
 	{
-		mWindow = windowManager->GetGlfwWindow();
+		mWindow = windowManager.GetGlfwWindow();
 
 		CreateSwapChain(device);
 		CreateImageViews(device);
@@ -30,19 +30,19 @@ namespace Renderer
 	}
 
 
-	void SwapChain::Cleanup(const std::unique_ptr<Device>& device)
+	void SwapChain::Cleanup(const Device& device)
 	{
 		for (auto imageView : mSwapChainImageViews)
 		{
-			vkDestroyImageView(device->GetNativeDevice(), imageView, nullptr);
+			vkDestroyImageView(device.GetNativeDevice(), imageView, nullptr);
 		}
 		mSwapChainImageViews.clear();
-		vkDestroySwapchainKHR(device->GetNativeDevice(), mSwapChain, nullptr);
+		vkDestroySwapchainKHR(device.GetNativeDevice(), mSwapChain, nullptr);
 		mSwapChain = nullptr;
 		LOGINFO("Swap chain cleaned");
 	}
 
-	void SwapChain::Recreate(const std::unique_ptr<Device>& device)
+	void SwapChain::Recreate(const Device& device)
 	{
 		Cleanup(device);
 
@@ -85,9 +85,9 @@ namespace Renderer
 		return mSwapChainImages[index];
 	}
 
-	void SwapChain::CreateSwapChain(const std::unique_ptr<Device>& device)
+	void SwapChain::CreateSwapChain(const Device& device)
 	{
-		SwapChainSupportDetails swapChainSupport = device->QuerySwapChainSupport();
+		SwapChainSupportDetails swapChainSupport = device.QuerySwapChainSupport();
 
 		VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.mFormats);
 		VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapChainSupport.mPrecentModes);
@@ -102,7 +102,7 @@ namespace Renderer
 
 		VkSwapchainCreateInfoKHR createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-		createInfo.surface = device->GetNativeSurface();
+		createInfo.surface = device.GetNativeSurface();
 		createInfo.minImageCount = imageCount;
 		createInfo.imageFormat = surfaceFormat.format;
 		createInfo.imageColorSpace = surfaceFormat.colorSpace;
@@ -110,7 +110,7 @@ namespace Renderer
 		createInfo.imageArrayLayers = 1;
 		createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-		QueueFamilyIndices indices = device->GetIndicies();
+		QueueFamilyIndices indices = device.GetIndicies();
 		uint32_t queueFamilyIndices[] = { indices.mGraphicsFamily.value(), indices.mPresentFamily.value() };
 		if (indices.mGraphicsFamily != indices.mPresentFamily)
 		{
@@ -131,14 +131,14 @@ namespace Renderer
 		createInfo.clipped = VK_TRUE;
 		createInfo.oldSwapchain = nullptr;
 
-		if (vkCreateSwapchainKHR(device->GetNativeDevice(), &createInfo, nullptr, &mSwapChain) != VK_SUCCESS)
+		if (vkCreateSwapchainKHR(device.GetNativeDevice(), &createInfo, nullptr, &mSwapChain) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Failed to create swap chain!");
 		}
 
-		vkGetSwapchainImagesKHR(device->GetNativeDevice(), mSwapChain, &imageCount, nullptr);
+		vkGetSwapchainImagesKHR(device.GetNativeDevice(), mSwapChain, &imageCount, nullptr);
 		mSwapChainImages.resize(imageCount);
-		vkGetSwapchainImagesKHR(device->GetNativeDevice(), mSwapChain, &imageCount, mSwapChainImages.data());
+		vkGetSwapchainImagesKHR(device.GetNativeDevice(), mSwapChain, &imageCount, mSwapChainImages.data());
 
 		mSwapChainImageFormat = surfaceFormat.format;
 		uint32_t minValue = 1;
@@ -192,7 +192,7 @@ namespace Renderer
 		}
 	}
 
-	void SwapChain::CreateImageViews(const std::unique_ptr<Device>& device)
+	void SwapChain::CreateImageViews(const Device& device)
 	{
 		mSwapChainImageViews.resize(mSwapChainImages.size());
 		for (size_t i = 0; i < mSwapChainImages.size(); ++i)
@@ -212,7 +212,7 @@ namespace Renderer
 			createInfo.subresourceRange.baseArrayLayer = 0;
 			createInfo.subresourceRange.layerCount = 1;
 
-			if (vkCreateImageView(device->GetNativeDevice(), &createInfo, nullptr, &mSwapChainImageViews[i]) != VK_SUCCESS)
+			if (vkCreateImageView(device.GetNativeDevice(), &createInfo, nullptr, &mSwapChainImageViews[i]) != VK_SUCCESS)
 			{
 				throw std::runtime_error("failed to create image view!");
 			}

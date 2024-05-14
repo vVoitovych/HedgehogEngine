@@ -12,7 +12,7 @@ namespace Renderer
 	class UBO
 	{
 	public:
-		UBO(const std::unique_ptr<Device>& device);
+		UBO(const Device& device);
 		~UBO();
 
 		UBO(const UBO&) = delete;
@@ -21,11 +21,11 @@ namespace Renderer
 		UBO(UBO&& other) noexcept;
 		UBO& operator=(UBO&& other) noexcept;
 
-		void Cleanup(const std::unique_ptr<Device>& device);
+		void Cleanup(const Device& device);
 
-		void UpdateUniformBuffer(std::unique_ptr< RenderContext>& context);
+		void UpdateUniformBuffer(const RenderContext& context);
 		VkBuffer GetNativeBuffer();
-		const std::unique_ptr<Buffer>& GetBuffer() const;
+		const Buffer& GetBuffer() const;
 
 	private:
 		std::unique_ptr<Buffer> mUniformBuffer;

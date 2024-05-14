@@ -3,6 +3,7 @@
 #include "Logger/Logger.hpp"
 #include "Renderer/Common/EngineDebugBreak.hpp"
 #include "Renderer/Common/RendererSettings.hpp"
+#include "Renderer/Wrappeers/Commands/CommandBuffer.hpp"
 #include "Renderer/Wrappeers/Descriptors/UBO.hpp"
 #include "Renderer/Wrappeers/Descriptors/DescriptorSetLayout.hpp"
 #define VMA_IMPLEMENTATION
@@ -73,7 +74,7 @@ namespace Renderer
 		}
 	}
 
-	Device::Device(const std::unique_ptr<WindowManager>& windowManager)
+	Device::Device(const WindowManager& windowManager)
 		: mInstance(nullptr)
 		, mDebugMessenger(nullptr)
 		, mSurface(nullptr)
@@ -84,10 +85,11 @@ namespace Renderer
 	{
 		InitializeInstance();
 		InitializeDebugMessanger();
-		windowManager->CreateWindowSurface(mInstance, &mSurface);
+		windowManager.CreateWindowSurface(mInstance, &mSurface);
 		PickPhysicalDevice();
 		CreateLogicalDevice();
 		InitializeAllocator();
+		InitializeCommandPool();
 	}
 
 	Device::~Device()
@@ -115,6 +117,11 @@ namespace Renderer
 		if (mAllocator != nullptr)
 		{
 			LOGERROR("Vulkan allocator should be cleanedup before destruction!");
+			ENGINE_DEBUG_BREAK();
+		}
+		if (mCommandPool != nullptr)
+		{
+			LOGERROR("Vulkan command pool should be cleanedup before destruction!");
 			ENGINE_DEBUG_BREAK();
 		}
 	}
@@ -283,8 +290,24 @@ namespace Renderer
 		vmaCreateAllocator(&allocatorCreateInfo, &mAllocator);
 	}
 
+	void Device::InitializeCommandPool()
+	{
+		VkCommandPoolCreateInfo createInfo{};
+		createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+		createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+		createInfo.queueFamilyIndex = mIndices.mGraphicsFamily.value();
+
+		if (vkCreateCommandPool(mDevice, &createInfo, nullptr, &mCommandPool) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create command pool!");
+		}
+
+		LOGINFO("Command pool created");
+	}
+
 	void Device::Cleanup()
 	{
+		vkDestroyCommandPool(mDevice, mCommandPool, nullptr);
 		vmaDestroyAllocator(mAllocator);
 		vkDestroyDevice(mDevice, nullptr);
 		vkDestroySurfaceKHR(mInstance, mSurface, nullptr);
@@ -296,6 +319,7 @@ namespace Renderer
 		mPhysicalDevice = nullptr;
 		mDevice = nullptr;
 		mAllocator = nullptr;
+		mCommandPool = nullptr;
 		LOGINFO("Device cleaned");
 	}
 
@@ -422,6 +446,52 @@ namespace Renderer
 		return FindSupportedFormat({ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
 			VK_IMAGE_TILING_OPTIMAL,
 			VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+	}
+
+	void Device::AllocateCommandBuffer(VkCommandBuffer* pCommandBuffer) const
+	{
+		VkCommandBufferAllocateInfo allocateInfo{};
+		allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		allocateInfo.commandPool = mCommandPool;
+		allocateInfo.commandBufferCount = 1;
+		allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+
+		if (vkAllocateCommandBuffers(mDevice, &allocateInfo, pCommandBuffer) != VK_SUCCESS)
+		{
+			LOGERROR("failed to allocate command buffer!");
+			ENGINE_DEBUG_BREAK();
+		}
+	}
+
+	void Device::FreeCommandBuffer(VkCommandBuffer* pCommandBuffer) const
+	{
+		vkFreeCommandBuffers(mDevice, mCommandPool, 1, pCommandBuffer);
+	}
+
+	void Device::CopyBufferToBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) const
+	{
+		CommandBuffer commandBuffer(*this);
+		commandBuffer.BeginSingleTimeCommands();
+		commandBuffer.CopyBufferToBuffer(srcBuffer, dstBuffer, size);
+		commandBuffer.EndSingleTimeCommands(*this);
+		commandBuffer.Cleanup(*this);
+	}
+
+	void Device::CopyBufferToImage(VkBuffer srcBuffer, VkImage image, uint32_t width, uint32_t height) const
+	{
+		CommandBuffer commandBuffer(*this);
+		commandBuffer.BeginSingleTimeCommands();
+		commandBuffer.CopyBufferToImage(srcBuffer, image, width, height);
+		commandBuffer.EndSingleTimeCommands(*this);
+		commandBuffer.Cleanup(*this);
+	}
+
+	void Device::TransitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout) const
+	{
+		CommandBuffer commandBuffer(*this);
+		commandBuffer.BeginSingleTimeCommands();
+		commandBuffer.RecordTransitionImageLayout(1, oldLayout, newLayout, false, image);
+		commandBuffer.EndSingleTimeCommands(*this);
 	}
 
 	bool Device::IsEnableValidationLayers() const

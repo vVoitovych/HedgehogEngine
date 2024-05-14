@@ -1,5 +1,4 @@
 #include "CommandBuffer.hpp"
-#include "CommandPool.hpp"
 #include "Renderer/Wrappeers/Device/Device.hpp"
 #include "Renderer/Wrappeers/SwapChain/SwapChain.hpp"
 #include "Renderer/Wrappeers/RenderPass/RenderPass.hpp"
@@ -11,10 +10,10 @@
 
 namespace Renderer
 {
-	CommandBuffer::CommandBuffer(const std::unique_ptr<Device>& device, const std::unique_ptr<CommandPool>& commandPool)
+	CommandBuffer::CommandBuffer(const Device& device)
 		:mCommandBuffer(nullptr)
 	{
-		commandPool->AllocateCommandBuffer(device, &mCommandBuffer);
+		device.AllocateCommandBuffer(&mCommandBuffer);
 		LOGINFO("Command buffer created");
 	}
 
@@ -44,9 +43,9 @@ namespace Renderer
 		return *this;
 	}
 
-	void CommandBuffer::Cleanup(const std::unique_ptr<Device>& device, const std::unique_ptr<CommandPool>& cxommandPool)
+	void CommandBuffer::Cleanup(const Device& device)
 	{
-		cxommandPool->FreeCommandBuffer(device, &mCommandBuffer);
+		device.FreeCommandBuffer(&mCommandBuffer);
 		mCommandBuffer = nullptr;
 		LOGINFO("Command  buffer cleaned");
 	}
@@ -86,7 +85,7 @@ namespace Renderer
 		vkBeginCommandBuffer(mCommandBuffer, &beginInfo);
 	}
 
-	void CommandBuffer::EndSingleTimeCommands(const std::unique_ptr<Device>& device) const
+	void CommandBuffer::EndSingleTimeCommands(const Device& device) const
 	{
 		vkEndCommandBuffer(mCommandBuffer);
 
@@ -95,12 +94,12 @@ namespace Renderer
 		submitInfo.commandBufferCount = 1;
 		submitInfo.pCommandBuffers = &mCommandBuffer;
 
-		vkQueueSubmit(device->GetNativeGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE);
-		vkQueueWaitIdle(device->GetNativeGraphicsQueue());
+		vkQueueSubmit(device.GetNativeGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE);
+		vkQueueWaitIdle(device.GetNativeGraphicsQueue());
 
 	}
 
-	void CommandBuffer::BeginRenderPass(VkExtent2D extend, std::unique_ptr<RenderPass>& renderPass, VkFramebuffer frameBuffer)
+	void CommandBuffer::BeginRenderPass(VkExtent2D extend, const RenderPass& renderPass, VkFramebuffer frameBuffer)
 	{
 		std::array<VkClearValue, 2> clearValues{};
 		clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
@@ -109,7 +108,7 @@ namespace Renderer
 
 		VkRenderPassBeginInfo renderPassInfo{};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		renderPassInfo.renderPass = renderPass->GetNativeRenderPass();
+		renderPassInfo.renderPass = renderPass.GetNativeRenderPass();
 		renderPassInfo.framebuffer = frameBuffer;
 		renderPassInfo.renderArea.offset = { 0, 0 };
 		renderPassInfo.renderArea.extent = extend;
@@ -125,9 +124,9 @@ namespace Renderer
 		vkCmdEndRenderPass(mCommandBuffer);
 	}
 
-	void CommandBuffer::BindPipeline(std::unique_ptr<Pipeline>& pipeline, VkPipelineBindPoint bindPoint)
+	void CommandBuffer::BindPipeline(const Pipeline& pipeline, VkPipelineBindPoint bindPoint)
 	{
-		vkCmdBindPipeline(mCommandBuffer, bindPoint, pipeline->GetNativePipeline());
+		vkCmdBindPipeline(mCommandBuffer, bindPoint, pipeline.GetNativePipeline());
 	}
 
 	void CommandBuffer::SetViewport(float x, float y, float width, float height, float minDepth, float maxDepth)
@@ -162,13 +161,13 @@ namespace Renderer
 
 	void CommandBuffer::BindDescriptorSers(
 		VkPipelineBindPoint bindPoint, 
-		std::unique_ptr<Pipeline>& pipeline, 
+		const Pipeline& pipeline, 
 		uint32_t firstSet, uint32_t setsCount,
 		VkDescriptorSet* descriptorSets, 
 		uint32_t dynamicOffsetCount, 
 		uint32_t* pDynamicOffsets)
 	{
-		vkCmdBindDescriptorSets(mCommandBuffer, bindPoint, pipeline->GetNativePipelineLayout(), firstSet, setsCount, descriptorSets, dynamicOffsetCount, pDynamicOffsets);
+		vkCmdBindDescriptorSets(mCommandBuffer, bindPoint, pipeline.GetNativePipelineLayout(), firstSet, setsCount, descriptorSets, dynamicOffsetCount, pDynamicOffsets);
 	}
 
 	void CommandBuffer::PushConstants(VkPipelineLayout layout, VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size, const void* pValues)
@@ -222,6 +221,29 @@ namespace Renderer
 		blitInfo.pRegions = &blitRegion;
 
 		vkCmdBlitImage2(mCommandBuffer, &blitInfo);
+	}
+
+	void CommandBuffer::CopyBufferToBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+	{
+		VkBufferCopy copyRegion{};
+		copyRegion.size = size;
+		vkCmdCopyBuffer(mCommandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+	}
+
+	void CommandBuffer::CopyBufferToImage(VkBuffer srcBuffer, VkImage image, uint32_t width, uint32_t height)
+	{
+		VkBufferImageCopy region{};
+		region.bufferOffset = 0;
+		region.bufferRowLength = 0;
+		region.bufferImageHeight = 0;
+		region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		region.imageSubresource.mipLevel = 0;
+		region.imageSubresource.baseArrayLayer = 0;
+		region.imageSubresource.layerCount = 1;
+		region.imageOffset = { 0, 0, 0 };
+		region.imageExtent = { width, height, 1 };
+
+		vkCmdCopyBufferToImage(mCommandBuffer, srcBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 	}
 
 	void CommandBuffer::ClearColorImage(VkImage image, VkImageLayout imageLayout, const VkClearColorValue* pColor, uint32_t rangeCount, const VkImageSubresourceRange* pRanges)

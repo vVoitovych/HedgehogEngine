@@ -56,8 +56,8 @@ namespace Renderer
 	void ResourceManager::CreateDepthBuffer(const std::unique_ptr<RenderContext>& context)
 	{
 		auto& vulkanContext = context->GetVulkanContext();
-		auto depthFormat = vulkanContext->GetDevice()->FindDepthFormat();
-		auto extend = vulkanContext->GetSwapChain()->GetSwapChainExtent();
+		auto depthFormat = vulkanContext->GetDevice().FindDepthFormat();
+		auto extend = vulkanContext->GetSwapChain().GetSwapChainExtent();
 
 		mDepthBuffer = std::make_unique<Image>(
 			vulkanContext->GetDevice(),
@@ -76,7 +76,7 @@ namespace Renderer
 	{
 		auto& vulkanContext = context->GetVulkanContext();
 		auto colorFormat = VK_FORMAT_R16G16B16A16_UNORM;
-		auto extend = vulkanContext->GetSwapChain()->GetSwapChainExtent();
+		auto extend = vulkanContext->GetSwapChain().GetSwapChainExtent();
 
 		mColorBuffer = std::make_unique<Image>(
 			vulkanContext->GetDevice(),

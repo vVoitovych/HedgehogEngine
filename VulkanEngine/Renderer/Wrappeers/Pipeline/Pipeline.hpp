@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
-#include <memory>
 #include <vector>
 
 namespace Renderer
@@ -15,20 +14,20 @@ namespace Renderer
 	{
 	public:
 		Pipeline(
-			const std::unique_ptr<Device>& device,
-			const std::unique_ptr<RenderPass>& renderPass,
+			const Device& device,
+			const RenderPass& renderPass,
 			const std::vector<VkDescriptorSetLayout>& layouts,
 			const std::vector<VkPushConstantRange>& pushConstantRanges,
-			const std::unique_ptr<PipelineInfo>& info);
+			const PipelineInfo& info);
 		~Pipeline();
 
 		Pipeline(const Pipeline&) = delete;
 		Pipeline& operator=(const Pipeline&) = delete;
 
-		void Cleanup(const std::unique_ptr<Device>& device);
+		void Cleanup(const Device& device);
 
 		VkPipeline GetNativePipeline() const;
-		VkPipelineLayout GetNativePipelineLayout();
+		VkPipelineLayout GetNativePipelineLayout() const;
 
 	private:
 		VkPipeline mPipeline;

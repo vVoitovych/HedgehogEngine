@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vector>
-#include <memory>
 
 namespace Renderer
 {
@@ -12,13 +11,13 @@ namespace Renderer
 	class ThreadContext
 	{
 	public:
-		ThreadContext(const std::unique_ptr<VulkanContext>& vulkanContext);
+		ThreadContext(const VulkanContext& vulkanContext);
 		~ThreadContext();
 
 		ThreadContext(const ThreadContext&) = delete;
 		ThreadContext& operator=(const ThreadContext&) = delete;
 
-		void Cleanup(const std::unique_ptr<VulkanContext>& vulkanContext);
+		void Cleanup(const VulkanContext& vulkanContext);
 
 		void NextFrame();
 		uint32_t GetFrame() const;

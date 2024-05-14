@@ -23,15 +23,15 @@ namespace Renderer
 
     void RenderContext::UpdateContext(float dt)
     {
-        mEngineContext->UpdateContext(mVulkanContext, dt);
+        mEngineContext->UpdateContext(*mVulkanContext, dt);
         mFrameContext->UpdateContext(mEngineContext->GetCamera());
 
     }
 
     void RenderContext::Cleanup()
     {
-        mEngineContext->Cleanup(mVulkanContext);
-        mThreadContext->Cleanup(mVulkanContext);
+        mEngineContext->Cleanup(*mVulkanContext);
+        mThreadContext->Cleanup(*mVulkanContext);
         mVulkanContext->Cleanup();
     }
 

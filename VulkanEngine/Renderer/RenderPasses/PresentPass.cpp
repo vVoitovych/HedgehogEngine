@@ -48,7 +48,7 @@ namespace Renderer
 		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pSignalSemaphores = signalSemaphores;
 
-		auto graphicQueue = vulkanContext->GetDevice()->GetNativeGraphicsQueue();
+		auto graphicQueue = vulkanContext->GetDevice().GetNativeGraphicsQueue();
 
 		if (vkQueueSubmit(graphicQueue, 1, &submitInfo, syncObject.GetInFlightFence()) != VK_SUCCESS)
 		{
@@ -59,18 +59,18 @@ namespace Renderer
 		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 		presentInfo.waitSemaphoreCount = 1;
 		presentInfo.pWaitSemaphores = signalSemaphores;
-		VkSwapchainKHR swapChains[] = { vulkanContext->GetSwapChain()->GetNativeSwapChain() };
+		VkSwapchainKHR swapChains[] = { vulkanContext->GetSwapChain().GetNativeSwapChain() };
 		presentInfo.swapchainCount = 1;
 		presentInfo.pSwapchains = swapChains;
 		presentInfo.pImageIndices = &index;
 		presentInfo.pResults = nullptr;
 
-		auto presentcQueue = vulkanContext->GetDevice()->GetNativePresentQueue();
+		auto presentcQueue = vulkanContext->GetDevice().GetNativePresentQueue();
 
 		VkResult result = vkQueuePresentKHR(presentcQueue, &presentInfo);
-		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || vulkanContext->GetWindowManager()->IsWindowResized())
+		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || vulkanContext->GetWindowManager().IsWindowResized())
 		{
-			vulkanContext->GetWindowManager()->ResetResizedState();
+			vulkanContext->GetWindowManager().ResetResizedState();
 			vulkanContext->ResizeWindow();
 		}
 		else if (result != VK_SUCCESS)

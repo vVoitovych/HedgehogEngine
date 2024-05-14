@@ -7,7 +7,7 @@
 
 namespace Renderer
 {
-	ForwardPipelineInfo::ForwardPipelineInfo(const std::unique_ptr<Device>& device)
+	ForwardPipelineInfo::ForwardPipelineInfo(const Device& device)
 		: PipelineInfo(device)
 	{
 		mVertexShader = std::make_unique<VertexShader>(device, "CompiledShaders\\Shaders\\SimpleShader.vert.spv");
@@ -83,49 +83,49 @@ namespace Renderer
 	{
 	}
 
-	void ForwardPipelineInfo::Cleanup(const std::unique_ptr<Device>& device)
+	void ForwardPipelineInfo::Cleanup(const Device& device)
 	{
 		mVertexShader->Cleanup(device);
 		mFragmentShader->Cleanup(device);
 	}
 
-	uint32_t ForwardPipelineInfo::GetStagesCount()
+	const uint32_t ForwardPipelineInfo::GetStagesCount() const
 	{
 		return static_cast<uint32_t>(mStages.size());
 	}
-	VkPipelineShaderStageCreateInfo* ForwardPipelineInfo::GetStages()
+	const VkPipelineShaderStageCreateInfo* ForwardPipelineInfo::GetStages() const
 	{
 		return mStages.data();
 	}
-	VkPipelineVertexInputStateCreateInfo* ForwardPipelineInfo::GetVertexInputInfo()
+	const VkPipelineVertexInputStateCreateInfo* ForwardPipelineInfo::GetVertexInputInfo() const
 	{
 		return &mVertexInputInfo;
 	}
-	VkPipelineInputAssemblyStateCreateInfo* ForwardPipelineInfo::GetInputAssemblyInfo()
+	const VkPipelineInputAssemblyStateCreateInfo* ForwardPipelineInfo::GetInputAssemblyInfo() const
 	{
 		return &mInputAssembly;
 	}
-	VkPipelineViewportStateCreateInfo* ForwardPipelineInfo::GetViewportInfo()
+	const VkPipelineViewportStateCreateInfo* ForwardPipelineInfo::GetViewportInfo() const
 	{
 		return &mViewportInfo;
 	}
-	VkPipelineRasterizationStateCreateInfo* ForwardPipelineInfo::GetRasterizationInfo()
+	const VkPipelineRasterizationStateCreateInfo* ForwardPipelineInfo::GetRasterizationInfo() const
 	{
 		return &mRasterizerInfo;
 	}
-	VkPipelineMultisampleStateCreateInfo* ForwardPipelineInfo::GetMultisamplingInfo()
+	const VkPipelineMultisampleStateCreateInfo* ForwardPipelineInfo::GetMultisamplingInfo() const
 	{
 		return &mMultisampling;
 	}
-	VkPipelineDepthStencilStateCreateInfo* ForwardPipelineInfo::GetDepthStencilInfo()
+	const VkPipelineDepthStencilStateCreateInfo* ForwardPipelineInfo::GetDepthStencilInfo() const
 	{
 		return &mDepthStencil;
 	}
-	VkPipelineColorBlendStateCreateInfo* ForwardPipelineInfo::GetColorBlendingInfo()
+	const VkPipelineColorBlendStateCreateInfo* ForwardPipelineInfo::GetColorBlendingInfo() const
 	{
 		return &mColorBlending;
 	}
-	VkPipelineDynamicStateCreateInfo* ForwardPipelineInfo::GetDynamicStateInfo()
+	const VkPipelineDynamicStateCreateInfo* ForwardPipelineInfo::GetDynamicStateInfo() const
 	{
 		return &mDynamicStateInfo;
 	}

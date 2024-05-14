@@ -10,7 +10,6 @@
 #include "Renderer/ResourceManager/ResourceManager.hpp"
 
 #include "Renderer/Wrappeers/RenderPass/RenderPass.hpp"
-#include "Renderer/Wrappeers/Commands/CommandPool.hpp"
 #include "Renderer/Wrappeers/Commands/CommandBuffer.hpp"
 #include "Renderer/Wrappeers/Descriptors/DescriptorPool.hpp"
 #include "Renderer/Wrappeers/SwapChain/SwapChain.hpp"
@@ -66,18 +65,18 @@ namespace Renderer
 
 		ImGui::StyleColorsDark();
 
-		ImGui_ImplGlfw_InitForVulkan(vulkanContext->GetWindowManager()->GetGlfwWindow(), true);
+		ImGui_ImplGlfw_InitForVulkan(vulkanContext->GetWindowManager().GetGlfwWindow(), true);
 		ImGui_ImplVulkan_InitInfo initInfo = {};
-		initInfo.Instance = device->GetNativeInstance();
-		initInfo.PhysicalDevice = device->GetNativePhysicalDevice();
-		initInfo.Device = device->GetNativeDevice();
-		initInfo.QueueFamily = device->GetIndicies().mGraphicsFamily.value();
-		initInfo.Queue = device->GetNativeGraphicsQueue();
+		initInfo.Instance = device.GetNativeInstance();
+		initInfo.PhysicalDevice = device.GetNativePhysicalDevice();
+		initInfo.Device = device.GetNativeDevice();
+		initInfo.QueueFamily = device.GetIndicies().mGraphicsFamily.value();
+		initInfo.Queue = device.GetNativeGraphicsQueue();
 		initInfo.PipelineCache = VK_NULL_HANDLE;
 		initInfo.DescriptorPool = mDescriptorPool->GetNativeDescriptoPool();
 		initInfo.Allocator = nullptr;
-		initInfo.MinImageCount = swapChain->GetMinImagesCount();
-		initInfo.ImageCount = static_cast<uint32_t>(swapChain->GetSwapChainImagesSize());
+		initInfo.MinImageCount = swapChain.GetMinImagesCount();
+		initInfo.ImageCount = static_cast<uint32_t>(swapChain.GetSwapChainImagesSize());
 		initInfo.CheckVkResultFn = nullptr;
 		ImGui_ImplVulkan_Init(&initInfo, mRenderPass->GetNativeRenderPass());
 
@@ -106,7 +105,7 @@ namespace Renderer
 
 		auto& vulkanContext = context->GetVulkanContext();
 		auto& swapChain = vulkanContext->GetSwapChain();
-		auto extent = swapChain->GetSwapChainExtent();
+		auto extent = swapChain.GetSwapChainExtent();
 
 		commandBuffer.RecordTransitionImageLayout(
 			1, 
@@ -122,7 +121,7 @@ namespace Renderer
 		DrawGui(context);
 		ImGui::Render();
 
-		commandBuffer.BeginRenderPass(extent, mRenderPass, mFrameBuffer->GetNativeFrameBuffer());
+		commandBuffer.BeginRenderPass(extent, *mRenderPass, mFrameBuffer->GetNativeFrameBuffer());
 		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer.GetNativeCommandBuffer());
 		commandBuffer.EndRenderPass();
 
@@ -150,7 +149,7 @@ namespace Renderer
 		mFrameBuffer = std::make_unique<FrameBuffer>(
 			device,
 			attacments,
-			swapChain->GetSwapChainExtent(),
+			swapChain.GetSwapChainExtent(),
 			mRenderPass);
 	}
 

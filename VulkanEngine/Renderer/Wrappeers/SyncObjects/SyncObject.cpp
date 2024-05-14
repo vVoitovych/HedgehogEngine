@@ -6,13 +6,11 @@
 
 namespace Renderer
 {
-	SyncObject::SyncObject(const std::unique_ptr<Device>& device)
+	SyncObject::SyncObject(const Device& device)
 		: mImageAvailableSemaphore(nullptr)
 		, mRendeerFinishedSemaphore(nullptr)
 		, mInFlightFence(nullptr)
-		, mDevice(nullptr)
 	{
-		mDevice = device->GetNativeDevice();
 		VkSemaphoreCreateInfo semaphoreInfo{};
 		semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
@@ -20,17 +18,17 @@ namespace Renderer
 		fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 		fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-		if (vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &mImageAvailableSemaphore) != VK_SUCCESS)
+		if (vkCreateSemaphore(device.GetNativeDevice(), &semaphoreInfo, nullptr, &mImageAvailableSemaphore) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create image available semaphore!");
 		}
 
-		if (vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &mRendeerFinishedSemaphore) != VK_SUCCESS)
+		if (vkCreateSemaphore(device.GetNativeDevice(), &semaphoreInfo, nullptr, &mRendeerFinishedSemaphore) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create render finished semaphore!");
 		}
 
-		if (vkCreateFence(mDevice, &fenceInfo, nullptr, &mInFlightFence) != VK_SUCCESS)
+		if (vkCreateFence(device.GetNativeDevice(), &fenceInfo, nullptr, &mInFlightFence) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create in flight fence!");
 		}
@@ -61,12 +59,10 @@ namespace Renderer
 		: mImageAvailableSemaphore(other.mImageAvailableSemaphore)
 		, mRendeerFinishedSemaphore(other.mRendeerFinishedSemaphore)
 		, mInFlightFence(other.mInFlightFence)
-		, mDevice(other.mDevice)
 	{
 		other.mImageAvailableSemaphore = nullptr;
 		other.mRendeerFinishedSemaphore = nullptr;
 		other.mInFlightFence = nullptr;
-		other.mDevice = nullptr;
 	}
 
 	SyncObject& SyncObject::operator=(SyncObject&& other)
@@ -76,26 +72,23 @@ namespace Renderer
 			mImageAvailableSemaphore = other.mImageAvailableSemaphore;
 			mRendeerFinishedSemaphore = other.mRendeerFinishedSemaphore;
 			mInFlightFence = other.mInFlightFence;
-			mDevice = other.mDevice;
 
 			other.mImageAvailableSemaphore = nullptr;
 			other.mRendeerFinishedSemaphore = nullptr;
 			other.mInFlightFence = nullptr;
-			other.mDevice = nullptr;
 		}
 		return *this;
 	}
 
-	void SyncObject::Cleanup()
+	void SyncObject::Cleanup(const Device& device)
 	{
-		vkDestroySemaphore(mDevice, mImageAvailableSemaphore, nullptr);
-		vkDestroySemaphore(mDevice, mRendeerFinishedSemaphore, nullptr);
-		vkDestroyFence(mDevice, mInFlightFence, nullptr);
+		vkDestroySemaphore(device.GetNativeDevice(), mImageAvailableSemaphore, nullptr);
+		vkDestroySemaphore(device.GetNativeDevice(), mRendeerFinishedSemaphore, nullptr);
+		vkDestroyFence(device.GetNativeDevice(), mInFlightFence, nullptr);
 
 		mImageAvailableSemaphore = nullptr;
 		mRendeerFinishedSemaphore = nullptr;
 		mInFlightFence = nullptr;
-		mDevice = nullptr;
 		LOGINFO("Sync objects cleaned");
 	}
 
@@ -114,14 +107,14 @@ namespace Renderer
 		return mInFlightFence;
 	}
 
-	void SyncObject::WaitforInFlightFence()
+	void SyncObject::WaitforInFlightFence(const Device& device)
 	{
-		vkWaitForFences(mDevice, 1, &mInFlightFence, VK_TRUE, UINT64_MAX);
+		vkWaitForFences(device.GetNativeDevice(), 1, &mInFlightFence, VK_TRUE, UINT64_MAX);
 	}
 
-	void SyncObject::ResetInFlightFence()
+	void SyncObject::ResetInFlightFence(const Device& device)
 	{
-		vkResetFences(mDevice, 1, &mInFlightFence);
+		vkResetFences(device.GetNativeDevice(), 1, &mInFlightFence);
 	}
 
 }
