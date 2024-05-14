@@ -87,7 +87,7 @@ namespace Renderer
 			device,
 			attacments,
 			resourceManager->GetColorBuffer()->GetExtent(),
-			mRenderPass);
+			*mRenderPass);
 
 	}	
 
@@ -150,7 +150,7 @@ namespace Renderer
 			device,
 			attacments,
 			swapChain.GetSwapChainExtent(),
-			mRenderPass);
+			*mRenderPass);
 	}
 
 	bool GuiPass::IsCursorPositionInGUI()

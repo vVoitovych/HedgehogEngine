@@ -94,7 +94,7 @@ namespace Renderer
 		pushConstant.size = sizeof(ForwardPassPushConstants);
 		pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 		std::vector<VkPushConstantRange> pushConstants = { pushConstant };
-		mPipeline = std::make_unique<Pipeline>(device, mRenderPass, descriptorLayouts, pushConstants, pipelineInfo);
+		mPipeline = std::make_unique<Pipeline>(device, *mRenderPass, descriptorLayouts, pushConstants, *pipelineInfo);
 
 		mUniformBuffers.clear();
 		mDescriptorSets.clear();
@@ -104,7 +104,7 @@ namespace Renderer
 			device,
 			attacments,
 			vulkanContext->GetSwapChain().GetSwapChainExtent(),
-			mRenderPass);
+			*mRenderPass);
 
 		auto& engineContext = context->GetEngineContext();
 		auto& materialImage = engineContext->GetTextureContainer().GetImage(0);
@@ -160,7 +160,7 @@ namespace Renderer
 			vulkanContext->GetDevice(),
 			attacments,
 			vulkanContext->GetSwapChain().GetSwapChainExtent(),
-			mRenderPass);
+			*mRenderPass);
 	}
 
 
