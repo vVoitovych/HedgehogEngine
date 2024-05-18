@@ -51,6 +51,8 @@ namespace Renderer
 		const VmaAllocator& GetAllocator() const;
 		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const;
 
+		void SetObjectName(uint64_t objectHandle, VkObjectType objectType, const char* name) const;
+
 	public:
 		SwapChainSupportDetails QuerySwapChainSupport() const;
 		VkPhysicalDeviceProperties GetPhysicalDeviceProperties() const;
@@ -65,6 +67,7 @@ namespace Renderer
 		void TransitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout) const;
 
 	private:
+		void InitLayersAndExtentions();
 		void InitializeInstance();
 		void InitializeDebugMessanger();
 		void CleanupDebugMessanger();
@@ -98,6 +101,9 @@ namespace Renderer
 
 		VmaAllocator mAllocator;
 		VkCommandPool mCommandPool;
+
+		std::vector<const char*> mValidationLayers;
+		std::vector<const char*> mDeviceExtensions;
 	};
 }
 

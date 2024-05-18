@@ -69,6 +69,7 @@ namespace Renderer
 			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
 		mDepthBuffer->CreateImageView(vulkanContext->GetDevice(), depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+		vulkanContext->GetDevice().SetObjectName(reinterpret_cast<uint64_t>(mDepthBuffer->GetNativeImage()), VK_OBJECT_TYPE_IMAGE, "DepthBuffer");
 		LOGINFO("Depth buffer created");
 	}
 
@@ -88,6 +89,8 @@ namespace Renderer
 			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
 		mColorBuffer->CreateImageView(vulkanContext->GetDevice(), colorFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+
+		vulkanContext->GetDevice().SetObjectName(reinterpret_cast<uint64_t>(mColorBuffer->GetNativeImage()), VK_OBJECT_TYPE_IMAGE, "ColorBuffer");
 		LOGINFO("Color buffer created");
 	}
 

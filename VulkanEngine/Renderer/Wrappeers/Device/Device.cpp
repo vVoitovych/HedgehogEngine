@@ -16,9 +16,6 @@
 
 namespace Renderer
 {
-	const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
-	const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME , VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME };
-
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 		VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 		VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -83,6 +80,7 @@ namespace Renderer
 		, mGraphicsQueue(nullptr)
 		, mPresentQueue(nullptr)
 	{
+		InitLayersAndExtentions();
 		InitializeInstance();
 		InitializeDebugMessanger();
 		windowManager.CreateWindowSurface(mInstance, &mSurface);
@@ -126,6 +124,17 @@ namespace Renderer
 		}
 	}
 
+	void Device::InitLayersAndExtentions()
+	{
+		mValidationLayers.clear();
+		mDeviceExtensions.clear();
+
+		mValidationLayers.push_back("VK_LAYER_KHRONOS_validation"); 
+		
+		mDeviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+		mDeviceExtensions.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+	}
+
 	void Device::InitializeInstance()
 	{
 #ifdef DEBUG
@@ -152,8 +161,8 @@ namespace Renderer
 
 		VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
 #ifdef DEBUG
-		createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-		createInfo.ppEnabledLayerNames = validationLayers.data();
+		createInfo.enabledLayerCount = static_cast<uint32_t>(mValidationLayers.size());
+		createInfo.ppEnabledLayerNames = mValidationLayers.data();
 		PopulateDebugMessengerCreateInfo(debugCreateInfo);
 		createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
 #else
@@ -249,12 +258,12 @@ namespace Renderer
 		createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
 		createInfo.pQueueCreateInfos = queueCreateInfos.data();
 		createInfo.pEnabledFeatures = &deviceFeatures;
-		createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
-		createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+		createInfo.enabledExtensionCount = static_cast<uint32_t>(mDeviceExtensions.size());
+		createInfo.ppEnabledExtensionNames = mDeviceExtensions.data();
 
 #ifdef DEBUG
-		createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-		createInfo.ppEnabledLayerNames = validationLayers.data();
+		createInfo.enabledLayerCount = static_cast<uint32_t>(mValidationLayers.size());
+		createInfo.ppEnabledLayerNames = mValidationLayers.data();
 #else
 		createInfo.enabledLayerCount = 0;
 #endif
@@ -383,6 +392,27 @@ namespace Renderer
 			}
 		}
 		throw std::runtime_error("Failed to find memory type");
+	}
+
+	void Device::SetObjectName(uint64_t objectHandle, VkObjectType objectType, const char* name) const
+	{
+#ifdef DEBUG
+		PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectNameEXT =
+			(PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(mInstance, "vkSetDebugUtilsObjectNameEXT");
+
+		if (!vkSetDebugUtilsObjectNameEXT) {
+			throw std::runtime_error("failed to load vkSetDebugUtilsObjectNameEXT");
+		}
+
+		VkDebugUtilsObjectNameInfoEXT nameInfo = {};
+		nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+		nameInfo.pNext = nullptr;
+		nameInfo.objectType = objectType;
+		nameInfo.objectHandle = objectHandle;
+		nameInfo.pObjectName = name;
+
+		vkSetDebugUtilsObjectNameEXT(mDevice, &nameInfo);
+#endif
 	}
 
 	// Additional functions
@@ -518,7 +548,7 @@ namespace Renderer
 		std::vector<VkLayerProperties> availableLayers(layerCount);
 		vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
-		for (const char* layerName : validationLayers)
+		for (const char* layerName : mValidationLayers)
 		{
 			bool layerFound = false;
 
@@ -587,7 +617,7 @@ namespace Renderer
 		std::vector<VkExtensionProperties> availableExtensions(extensionsCount); 
 		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionsCount, availableExtensions.data());
 
-		std::set<std::string> requiredExtensins(deviceExtensions.begin(), deviceExtensions.end());
+		std::set<std::string> requiredExtensins(mDeviceExtensions.begin(), mDeviceExtensions.end());
 
 		for (const auto& extension : availableExtensions)
 		{
