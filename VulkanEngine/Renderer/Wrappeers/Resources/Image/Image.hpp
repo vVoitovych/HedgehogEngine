@@ -3,7 +3,6 @@
 #include "ThirdParty/VulkanMemoryAllocator/vk_mem_alloc.h"
 
 #include <vulkan/vulkan.h>
-#include <memory>
 
 namespace Renderer
 {
@@ -14,7 +13,7 @@ namespace Renderer
 	{
 	public:
 		Image(
-			const std::unique_ptr<Device>& device,
+			const Device& device,
 			uint32_t width, 
 			uint32_t height, 
 			VkFormat format, 
@@ -29,20 +28,22 @@ namespace Renderer
 		Image(Image&& other) noexcept;
 		Image& operator=(Image&& other) noexcept;
 
-		void Cleanup(const std::unique_ptr<Device>& device);
+		void Cleanup(const Device& device);
 
-		void TransitionImageLayout(VkImageLayout oldLayout, VkImageLayout newLayout, const std::unique_ptr<CommandPool>& commandPool);
-		void CreateImageView(const std::unique_ptr<Device>& device, VkFormat format, VkImageAspectFlags aspectFlags);
+		void CreateImageView(const Device& device, VkFormat format, VkImageAspectFlags aspectFlags);
 
 		const VkImage& GetNativeImage() const;
 		const VkImageView& GetNativeView() const;
+		VkFormat GetFormat() const;
+		VkExtent2D GetExtent() const;
 
 	private:
 		VkImage mImage;
 		VmaAllocation mAllocation;
 
 		VkImageView mImageView;
-
+		VkFormat mFormat;
+		VkExtent2D mExtent;
 	};
 
 }

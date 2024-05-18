@@ -2,7 +2,7 @@
 
 namespace Renderer
 {
-	VertexShader::VertexShader(const std::unique_ptr<Device>& device, const std::string& fileName)
+	VertexShader::VertexShader(const Device& device, const std::string& fileName)
 		:Shader(device, fileName)
 	{
 		mShadereStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;

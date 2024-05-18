@@ -18,10 +18,10 @@ namespace Renderer
 	class EngineContext
 	{
 	public:
-		EngineContext(const std::unique_ptr<VulkanContext>& vulkanContext);
-		void Cleanup(const std::unique_ptr<VulkanContext>& vulkanContext);
+		EngineContext(const VulkanContext& vulkanContext);
+		void Cleanup(const VulkanContext& vulkanContext);
 
-		void UpdateContext(const std::unique_ptr<VulkanContext>& vulkanContext, float dt);
+		void UpdateContext(VulkanContext& vulkanContext, float dt);
 
 		const MeshContainer& GetMeshContainer() const;
 		const TextureContaineer& GetTextureContainer() const;

@@ -68,7 +68,7 @@ namespace Renderer
 
 	}
 
-	void WindowManager::CreateWindowSurface(VkInstance instance, VkSurfaceKHR* surface)
+	void WindowManager::CreateWindowSurface(VkInstance instance, VkSurfaceKHR* surface) const
 	{
 		if (glfwCreateWindowSurface(instance, mWindow, nullptr, surface) != VK_SUCCESS)
 		{
@@ -76,7 +76,7 @@ namespace Renderer
 		}
 	}
 
-	GLFWwindow* WindowManager::GetGlfwWindow()
+	GLFWwindow* WindowManager::GetGlfwWindow() 
 	{
 		return mWindow;
 	}

@@ -15,21 +15,21 @@ namespace Renderer
 	class ForwardPipelineInfo : public PipelineInfo
 	{
 	public:
-		ForwardPipelineInfo(const std::unique_ptr<Device>& device);
+		ForwardPipelineInfo(const Device& device);
 		~ForwardPipelineInfo();
 
-		void Cleanup(const std::unique_ptr<Device>& device) override;
+		void Cleanup(const Device& device) override;
 
-		uint32_t GetStagesCount() override;
-		VkPipelineShaderStageCreateInfo* GetStages() override;
-		VkPipelineVertexInputStateCreateInfo* GetVertexInputInfo() override;
-		VkPipelineInputAssemblyStateCreateInfo* GetInputAssemblyInfo() override;
-		VkPipelineViewportStateCreateInfo* GetViewportInfo() override;
-		VkPipelineRasterizationStateCreateInfo* GetRasterizationInfo() override;
-		VkPipelineMultisampleStateCreateInfo* GetMultisamplingInfo() override;
-		VkPipelineDepthStencilStateCreateInfo* GetDepthStencilInfo() override;
-		VkPipelineColorBlendStateCreateInfo* GetColorBlendingInfo() override;
-		VkPipelineDynamicStateCreateInfo* GetDynamicStateInfo() override;
+		const uint32_t GetStagesCount() const override;
+		const VkPipelineShaderStageCreateInfo* GetStages() const override;
+		const VkPipelineVertexInputStateCreateInfo* GetVertexInputInfo() const override;
+		const VkPipelineInputAssemblyStateCreateInfo* GetInputAssemblyInfo() const override;
+		const VkPipelineViewportStateCreateInfo* GetViewportInfo() const override;
+		const VkPipelineRasterizationStateCreateInfo* GetRasterizationInfo() const override;
+		const VkPipelineMultisampleStateCreateInfo* GetMultisamplingInfo() const override;
+		const VkPipelineDepthStencilStateCreateInfo* GetDepthStencilInfo() const override;
+		const VkPipelineColorBlendStateCreateInfo* GetColorBlendingInfo() const override;
+		const VkPipelineDynamicStateCreateInfo* GetDynamicStateInfo() const override;
 
 	private:
 		std::unique_ptr<Shader> mVertexShader;

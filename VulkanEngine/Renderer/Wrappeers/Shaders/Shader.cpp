@@ -55,22 +55,22 @@ namespace Renderer
 	}
 
 	// shader functionality
-	Shader::Shader(const std::unique_ptr<Device>& device, const std::string& fileName)
+	Shader::Shader(const Device& device, const std::string& fileName)
 		: mShaderModule(nullptr)
 		, mShadereStageCreateInfo{}
 
 	{
 		auto shaderCode = ReadFile(fileName);
-		mShaderModule = CreateShaderModule(device->GetNativeDevice(), shaderCode);
+		mShaderModule = CreateShaderModule(device.GetNativeDevice(), shaderCode);
 	}
 
 	Shader::~Shader()
 	{
 	}
 
-	void Shader::Cleanup(const std::unique_ptr<Device>& device)
+	void Shader::Cleanup(const Device& device)
 	{
-		vkDestroyShaderModule(device->GetNativeDevice(), mShaderModule, nullptr);
+		vkDestroyShaderModule(device.GetNativeDevice(), mShaderModule, nullptr);
 	}
 
 	VkPipelineShaderStageCreateInfo Shader::GetCreateInfo()

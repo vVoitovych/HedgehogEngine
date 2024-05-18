@@ -7,11 +7,12 @@
 #include "Renderer/Context/EngineContext.hpp"
 #include "Renderer/Context/FrameContext.hpp"
 #include "Renderer/Context/VulkanContext.hpp"
+#include "Renderer/ResourceManager/ResourceManager.hpp"
 
 #include "Renderer/WindowManagment/WindowManager.hpp"
 #include "Renderer/Wrappeers/Commands/CommandBuffer.hpp"
 #include "Renderer/Wrappeers/SyncObjects/SyncObject.hpp"
-
+#include "Renderer/Wrappeers/Resources/Image/Image.hpp"
 #include <stdexcept>
 
 namespace Renderer
@@ -20,7 +21,7 @@ namespace Renderer
 	{
 	}
 
-	void PresentPass::Render(std::unique_ptr<RenderContext>& context)
+	void PresentPass::Render(std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager)
 	{
 
 		auto& engineContext = context->GetEngineContext();
@@ -30,6 +31,29 @@ namespace Renderer
 
 		auto& syncObject = threadContext->GetSyncObject();
 		auto& commandBuffer = threadContext->GetCommandBuffer();
+
+		auto backBufferIndex = frameContext->GetBackBufferIndex();
+		auto& colorBuffer = resourceManager->GetColorBuffer();
+
+		commandBuffer.TransitionImage(
+			colorBuffer->GetNativeImage(),
+			VK_IMAGE_LAYOUT_UNDEFINED,
+			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+		commandBuffer.TransitionImage(
+			vulkanContext->GetSwapChain().GetSwapChainImage(backBufferIndex),
+			VK_IMAGE_LAYOUT_UNDEFINED,
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+		commandBuffer.CopyImageToImage(
+			colorBuffer->GetNativeImage(), 
+			vulkanContext->GetSwapChain().GetSwapChainImage(backBufferIndex), 
+			colorBuffer->GetExtent(), 
+			vulkanContext->GetSwapChain().GetSwapChainExtent());
+
+		commandBuffer.TransitionImage(
+			vulkanContext->GetSwapChain().GetSwapChainImage(backBufferIndex),
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
 		commandBuffer.EndCommandBuffer();
 
@@ -47,7 +71,7 @@ namespace Renderer
 		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pSignalSemaphores = signalSemaphores;
 
-		auto graphicQueue = vulkanContext->GetDevice()->GetNativeGraphicsQueue();
+		auto graphicQueue = vulkanContext->GetDevice().GetNativeGraphicsQueue();
 
 		if (vkQueueSubmit(graphicQueue, 1, &submitInfo, syncObject.GetInFlightFence()) != VK_SUCCESS)
 		{
@@ -58,18 +82,18 @@ namespace Renderer
 		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 		presentInfo.waitSemaphoreCount = 1;
 		presentInfo.pWaitSemaphores = signalSemaphores;
-		VkSwapchainKHR swapChains[] = { vulkanContext->GetSwapChain()->GetNativeSwapChain() };
+		VkSwapchainKHR swapChains[] = { vulkanContext->GetSwapChain().GetNativeSwapChain() };
 		presentInfo.swapchainCount = 1;
 		presentInfo.pSwapchains = swapChains;
 		presentInfo.pImageIndices = &index;
 		presentInfo.pResults = nullptr;
 
-		auto presentcQueue = vulkanContext->GetDevice()->GetNativePresentQueue();
+		auto presentcQueue = vulkanContext->GetDevice().GetNativePresentQueue();
 
 		VkResult result = vkQueuePresentKHR(presentcQueue, &presentInfo);
-		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || vulkanContext->GetWindowManager()->IsWindowResized())
+		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || vulkanContext->GetWindowManager().IsWindowResized())
 		{
-			vulkanContext->GetWindowManager()->ResetResizedState();
+			vulkanContext->GetWindowManager().ResetResizedState();
 			vulkanContext->ResizeWindow();
 		}
 		else if (result != VK_SUCCESS)

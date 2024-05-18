@@ -7,7 +7,6 @@ namespace Renderer
 {
 	class WindowManager;
 	class Device;
-	class CommandPool;
 	class DescriptorPool;
 	class SwapChain;
 
@@ -25,18 +24,18 @@ namespace Renderer
 		void Cleanup();
 
 		void HandleInput();
-		const std::unique_ptr<WindowManager>& GetWindowManager() const;
+		WindowManager& GetWindowManager();
 
 		bool ShouldClose() const;
 		void ResizeWindow();
 		bool IsWindowResized();
 		void ResetWindowResizeState();
 
-		const std::unique_ptr<Device>& GetDevice() const;
-		const std::unique_ptr<SwapChain>& GetSwapChain() const;
+		const Device& GetDevice() const;
+		const SwapChain& GetSwapChain() const;
+		SwapChain& GetSwapChain();
 
-		const std::unique_ptr<CommandPool>& GetCommandPool() const;
-		const std::unique_ptr<DescriptorPool>& GetDescriptorPool() const;
+		const DescriptorPool& GetDescriptorPool() const;
 
 	private:
 		std::unique_ptr<WindowManager> mWindowManager;
@@ -45,7 +44,6 @@ namespace Renderer
 		std::unique_ptr<Device> mDevice;
 		std::unique_ptr<SwapChain> mSwapChain;
 
-		std::unique_ptr<CommandPool> mCommandPool;
 		std::unique_ptr<DescriptorPool> mDescriptorPool;
 	};
 

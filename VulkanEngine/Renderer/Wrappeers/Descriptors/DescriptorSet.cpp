@@ -14,20 +14,20 @@
 namespace Renderer
 {
 	DescriptorSet::DescriptorSet(
-        const std::unique_ptr<Device>& device,
-        const std::unique_ptr<DescriptorPool>& descriptorPool,
-        const std::unique_ptr<DescriptorSetLayout>& descriptorSetLayout,
-        const std::unique_ptr<Buffer>& ubo,
+        const Device& device,
+        const DescriptorPool& descriptorPool,
+        const DescriptorSetLayout& descriptorSetLayout,
+        const Buffer& ubo,
         const Image& image,
         const Sampler& sampler)
 		: mDescriptorSet(nullptr)
 	{
-        descriptorPool->AllocDescriptorSets(device, { descriptorSetLayout->GetNativeLayout() }, &mDescriptorSet);
+        descriptorPool.AllocDescriptorSets(device, { descriptorSetLayout.GetNativeLayout() }, &mDescriptorSet);
 
         VkDescriptorBufferInfo bufferInfo{};
-        bufferInfo.buffer = ubo->GetNativeBuffer();
+        bufferInfo.buffer = ubo.GetNativeBuffer();
         bufferInfo.offset = 0;
-        bufferInfo.range = ubo->GetBufferSize();
+        bufferInfo.range = ubo.GetBufferSize();
 
         VkDescriptorImageInfo imageInfo{};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -51,7 +51,7 @@ namespace Renderer
         descriptorWrites[1].descriptorCount = 1;
         descriptorWrites[1].pImageInfo = &imageInfo;
 
-        vkUpdateDescriptorSets(device->GetNativeDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+        vkUpdateDescriptorSets(device.GetNativeDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
         LOGINFO("Vulkan descriptor set created");
 	}
 
@@ -81,9 +81,9 @@ namespace Renderer
         return *this;
     }
 
-    void DescriptorSet::Cleanup(const std::unique_ptr<Device>& device, const std::unique_ptr<DescriptorPool>& descriptorPool)
+    void DescriptorSet::Cleanup(const Device& device, const DescriptorPool& descriptorPool)
 	{
-        descriptorPool->FreeDescriptorSet(device, &mDescriptorSet);
+        descriptorPool.FreeDescriptorSet(device, &mDescriptorSet);
         mDescriptorSet = nullptr;
         LOGINFO("Vulkan descriptor set cleaned");
 	}

@@ -8,7 +8,7 @@
 namespace Renderer
 {
 	DescriptorSetLayout::DescriptorSetLayout(
-		const std::unique_ptr<Device>& device,
+		const Device& device,
 		const std::vector<DescriptorInfo>& bindingUBOs,
 		const std::vector<DescriptorInfo>& bindingSamplers
 	)
@@ -44,7 +44,7 @@ namespace Renderer
 		layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
 		layoutInfo.pBindings = bindings.data();
 
-		if (vkCreateDescriptorSetLayout(device->GetNativeDevice(), &layoutInfo, nullptr, &mDescriptorSetLayout) != VK_SUCCESS) {
+		if (vkCreateDescriptorSetLayout(device.GetNativeDevice(), &layoutInfo, nullptr, &mDescriptorSetLayout) != VK_SUCCESS) {
 			throw std::runtime_error("failed to create descriptor set layout!");
 		}
 		LOGINFO("Descriptor set layout initialized");
@@ -59,13 +59,13 @@ namespace Renderer
 		}
 	}
 
-	void DescriptorSetLayout::Cleanup(const std::unique_ptr<Device>& device)
+	void DescriptorSetLayout::Cleanup(const Device& device)
 	{
-		vkDestroyDescriptorSetLayout(device->GetNativeDevice(), mDescriptorSetLayout, nullptr);
+		vkDestroyDescriptorSetLayout(device.GetNativeDevice(), mDescriptorSetLayout, nullptr);
 		mDescriptorSetLayout = nullptr;
 		LOGINFO("Descriptor set layout cleaned");
 	}
-	VkDescriptorSetLayout DescriptorSetLayout::GetNativeLayout() 
+	VkDescriptorSetLayout DescriptorSetLayout::GetNativeLayout() const
 	{
 		return mDescriptorSetLayout;
 	}

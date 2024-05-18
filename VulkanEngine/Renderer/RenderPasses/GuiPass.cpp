@@ -7,14 +7,15 @@
 #include "Renderer/Context/FrameContext.hpp"
 #include "Renderer/Context/EngineContext.hpp"
 
+#include "Renderer/ResourceManager/ResourceManager.hpp"
+
 #include "Renderer/Wrappeers/RenderPass/RenderPass.hpp"
-#include "Renderer/Wrappeers/Commands/CommandPool.hpp"
 #include "Renderer/Wrappeers/Commands/CommandBuffer.hpp"
 #include "Renderer/Wrappeers/Descriptors/DescriptorPool.hpp"
 #include "Renderer/Wrappeers/SwapChain/SwapChain.hpp"
 #include "Renderer/Wrappeers/Device/Device.hpp"
 #include "Renderer/Wrappeers/FrameBuffer/FrameBuffer.hpp"
-#include "Renderer/Wrappeers/Resources/Image/ImageManagement.hpp"
+#include "Renderer/Wrappeers/Resources/Image/Image.hpp"
 
 #include "Renderer/WindowManagment/WindowManager.hpp"
 
@@ -33,7 +34,7 @@
 
 namespace Renderer
 {
-	GuiPass::GuiPass(const std::unique_ptr<RenderContext>& context)
+	GuiPass::GuiPass(const std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager)
 	{
 		auto& vulkanContext = context->GetVulkanContext();
 		auto& device = vulkanContext->GetDevice();
@@ -53,7 +54,7 @@ namespace Renderer
 		};
 		mDescriptorPool = std::make_unique<DescriptorPool>(device, poolSizes, 1000 * 11);
 		auto& swapChain = context->GetVulkanContext()->GetSwapChain();
-		GuiPassInfo passInfo(swapChain->GetFormat());
+		GuiPassInfo passInfo(resourceManager->GetColorBuffer()->GetFormat());
 		mRenderPass = std::make_unique<RenderPass>(context->GetVulkanContext()->GetDevice(), passInfo.GetInfo());
 
 		// - Imgui init
@@ -64,42 +65,37 @@ namespace Renderer
 
 		ImGui::StyleColorsDark();
 
-		ImGui_ImplGlfw_InitForVulkan(vulkanContext->GetWindowManager()->GetGlfwWindow(), true);
+		ImGui_ImplGlfw_InitForVulkan(vulkanContext->GetWindowManager().GetGlfwWindow(), true);
 		ImGui_ImplVulkan_InitInfo initInfo = {};
-		initInfo.Instance = device->GetNativeInstance();
-		initInfo.PhysicalDevice = device->GetNativePhysicalDevice();
-		initInfo.Device = device->GetNativeDevice();
-		initInfo.QueueFamily = device->GetIndicies().mGraphicsFamily.value();
-		initInfo.Queue = device->GetNativeGraphicsQueue();
+		initInfo.Instance = device.GetNativeInstance();
+		initInfo.PhysicalDevice = device.GetNativePhysicalDevice();
+		initInfo.Device = device.GetNativeDevice();
+		initInfo.QueueFamily = device.GetIndicies().mGraphicsFamily.value();
+		initInfo.Queue = device.GetNativeGraphicsQueue();
 		initInfo.PipelineCache = VK_NULL_HANDLE;
 		initInfo.DescriptorPool = mDescriptorPool->GetNativeDescriptoPool();
 		initInfo.Allocator = nullptr;
-		initInfo.MinImageCount = swapChain->GetMinImagesCount();
-		initInfo.ImageCount = static_cast<uint32_t>(swapChain->GetSwapChainImagesSize());
+		initInfo.MinImageCount = swapChain.GetMinImagesCount();
+		initInfo.ImageCount = static_cast<uint32_t>(swapChain.GetSwapChainImagesSize());
 		initInfo.CheckVkResultFn = nullptr;
 		ImGui_ImplVulkan_Init(&initInfo, mRenderPass->GetNativeRenderPass());
 
 		UploadFonts();
 
-		mFrameBuffers.clear();
-		size_t swapChainImagesSize = swapChain->GetSwapChainImagesSize();
-		for (size_t i = 0; i < swapChainImagesSize; ++i)
-		{
-			std::vector<VkImageView> attacments = { swapChain->GetNativeSwapChainImageView(i) };
-			FrameBuffer frameBuffer(
-				device,
-				attacments,
-				swapChain->GetSwapChainExtent(),
-				mRenderPass);
-			mFrameBuffers.push_back(std::move(frameBuffer));
-		}
+		std::vector<VkImageView> attacments = { resourceManager->GetColorBuffer()->GetNativeView()};
+		mFrameBuffer = std::make_unique<FrameBuffer>(
+			device,
+			attacments,
+			resourceManager->GetColorBuffer()->GetExtent(),
+			*mRenderPass);
+
 	}	
 
 	GuiPass::~GuiPass()
 	{
 	}
 
-	void GuiPass::Render(std::unique_ptr<RenderContext>& context)
+	void GuiPass::Render(std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager)
 	{
 		auto& frameContext = context->GetFrameContext();
 		auto backBufferIndex = frameContext->GetBackBufferIndex();
@@ -109,15 +105,12 @@ namespace Renderer
 
 		auto& vulkanContext = context->GetVulkanContext();
 		auto& swapChain = vulkanContext->GetSwapChain();
-		auto extent = swapChain->GetSwapChainExtent();
+		auto extent = swapChain.GetSwapChainExtent();
 
-		ImageManagement::RecordTransitionImageLayout(
-			1, 
+		commandBuffer.TransitionImage(
+			resourceManager->GetColorBuffer()->GetNativeImage(),
 			VK_IMAGE_LAYOUT_UNDEFINED, 
-			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-			false, 
-			commandBuffer.GetNativeCommandBuffer(), 
-			swapChain->GetSwapChainImage(backBufferIndex));
+			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
 		ImGui_ImplVulkan_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
@@ -126,7 +119,7 @@ namespace Renderer
 		DrawGui(context);
 		ImGui::Render();
 
-		commandBuffer.BeginRenderPass(extent, mRenderPass, mFrameBuffers[backBufferIndex].GetNativeFrameBuffer());
+		commandBuffer.BeginRenderPass(extent, *mRenderPass, mFrameBuffer->GetNativeFrameBuffer());
 		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer.GetNativeCommandBuffer());
 		commandBuffer.EndRenderPass();
 
@@ -139,34 +132,23 @@ namespace Renderer
 		ImGui::DestroyContext();
 
 		auto& device = context->GetVulkanContext()->GetDevice();
-		for (size_t i = 0; i < mFrameBuffers.size(); ++i)
-		{
-			mFrameBuffers[i].Cleanup(device);
-		}
+		mFrameBuffer->Cleanup(device);
 		mRenderPass->Cleanup(device);
 		mDescriptorPool->Cleanup(device);
 	}
 
-	void GuiPass::ResizeResources(const std::unique_ptr<RenderContext>& context)
+	void GuiPass::ResizeResources(const std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager)
 	{
 		auto& device = context->GetVulkanContext()->GetDevice();
-		for (size_t i = 0; i < mFrameBuffers.size(); ++i)
-		{
-			mFrameBuffers[i].Cleanup(device);
-		}
+		mFrameBuffer->Cleanup(device);
+
 		auto& swapChain = context->GetVulkanContext()->GetSwapChain();
-		mFrameBuffers.clear();
-		size_t swapChainImagesSize = swapChain->GetSwapChainImagesSize();
-		for (size_t i = 0; i < swapChainImagesSize; ++i)
-		{
-			std::vector<VkImageView> attacments = { swapChain->GetNativeSwapChainImageView(i) };
-			FrameBuffer frameBuffer(
-				device,
-				attacments,
-				swapChain->GetSwapChainExtent(),
-				mRenderPass);
-			mFrameBuffers.push_back(std::move(frameBuffer));
-		}
+		std::vector<VkImageView> attacments = { resourceManager->GetColorBuffer()->GetNativeView() };
+		mFrameBuffer = std::make_unique<FrameBuffer>(
+			device,
+			attacments,
+			swapChain.GetSwapChainExtent(),
+			*mRenderPass);
 	}
 
 	bool GuiPass::IsCursorPositionInGUI()

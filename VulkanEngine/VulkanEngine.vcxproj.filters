@@ -94,9 +94,6 @@
     <ClCompile Include="Renderer\Wrappeers\Descriptors\DescriptorPool.cpp">
       <Filter>Renderer\Wrappers\Descriptors</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Wrappeers\Commands\CommandPool.cpp">
-      <Filter>Renderer\Wrappers\Commands</Filter>
-    </ClCompile>
     <ClCompile Include="Renderer\Wrappeers\Resources\Buffer\Buffer.cpp">
       <Filter>Renderer\Wrappers\Resources\Buffer</Filter>
     </ClCompile>
@@ -115,14 +112,14 @@
     <ClCompile Include="Renderer\RenderPasses\GuiPassInfo.cpp">
       <Filter>Renderer\RenderPasses\GuiPass</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Wrappeers\Resources\Image\ImageManagement.cpp">
-      <Filter>Renderer\Wrappers\Resources\Image</Filter>
-    </ClCompile>
     <ClCompile Include="Renderer\Containers\LightContainer.cpp">
       <Filter>Renderer\Containers\LightContainer</Filter>
     </ClCompile>
     <ClCompile Include="Renderer\Wrappeers\Resources\Sampler\Sampler.cpp">
       <Filter>Renderer\Wrappers\Resources\Sampler</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\ResourceManager\ResourceManager.cpp">
+      <Filter>Renderer\ResouceManager</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -234,9 +231,6 @@
     <ClInclude Include="Renderer\Wrappeers\Descriptors\DescriptorPool.hpp">
       <Filter>Renderer\Wrappers\Descriptors</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Wrappeers\Commands\CommandPool.hpp">
-      <Filter>Renderer\Wrappers\Commands</Filter>
-    </ClInclude>
     <ClInclude Include="Renderer\Wrappeers\Resources\Buffer\Buffer.hpp">
       <Filter>Renderer\Wrappers\Resources\Buffer</Filter>
     </ClInclude>
@@ -255,9 +249,6 @@
     <ClInclude Include="Renderer\RenderPasses\GuiPassInfo.hpp">
       <Filter>Renderer\RenderPasses\GuiPass</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Wrappeers\Resources\Image\ImageManagement.hpp">
-      <Filter>Renderer\Wrappers\Resources\Image</Filter>
-    </ClInclude>
     <ClInclude Include="Renderer\RenderPasses\ForwardPassPushConstants.hpp">
       <Filter>Renderer\RenderPasses\ForwardPass</Filter>
     </ClInclude>
@@ -272,6 +263,9 @@
     </ClInclude>
     <ClInclude Include="Renderer\Wrappeers\Resources\Sampler\Sampler.hpp">
       <Filter>Renderer\Wrappers\Resources\Sampler</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\ResourceManager\ResourceManager.hpp">
+      <Filter>Renderer\ResouceManager</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -396,6 +390,9 @@
     </Filter>
     <Filter Include="Renderer\Wrappers\Resources\Sampler">
       <UniqueIdentifier>{e786c4be-dfe6-4745-ad02-41b5ad27845c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\ResouceManager">
+      <UniqueIdentifier>{5b955a6a-953c-45a4-ba94-213ee92cdb94}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

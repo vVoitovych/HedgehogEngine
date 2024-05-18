@@ -3,7 +3,6 @@
 #include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
 #include <vector>
-#include <memory>
 
 namespace Renderer
 {
@@ -13,14 +12,14 @@ namespace Renderer
 	class SwapChain
 	{
 	public:
-		SwapChain(const std::unique_ptr<Device>& device, std::unique_ptr<WindowManager>& windowManager);
+		SwapChain(const Device& device, WindowManager& windowManager);
 		~SwapChain();
 
 		SwapChain(const SwapChain&) = delete;
 		SwapChain& operator=(const SwapChain&) = delete;
 
-		void Cleanup(const std::unique_ptr<Device>& device);
-		void Recreate(const std::unique_ptr<Device>& device);
+		void Cleanup(const Device& device);
+		void Recreate(const Device& device);
 
 		VkSwapchainKHR GetNativeSwapChain() const;
 
@@ -34,8 +33,8 @@ namespace Renderer
 		VkImage GetSwapChainImage(size_t index) const;
 
 	private:
-		void CreateSwapChain(const std::unique_ptr<Device>& device);
-		void CreateImageViews(const std::unique_ptr<Device>& device);
+		void CreateSwapChain(const Device& device);
+		void CreateImageViews(const Device& device);
 
 		VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) const;
 		VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) const;

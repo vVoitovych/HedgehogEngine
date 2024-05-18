@@ -3,12 +3,12 @@
 #include "ECS/Entity.h"
 
 #include <memory>
-#include <vector>
 #include <string>
 
 namespace Renderer
 {
 	class RenderContext;
+	class ResourceManager;
 	class RenderPass;
 	class DescriptorPool;
 	class FrameBuffer;
@@ -16,13 +16,13 @@ namespace Renderer
 	class GuiPass
 	{
 	public:
-		GuiPass(const std::unique_ptr<RenderContext>& context);
+		GuiPass(const std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager);
 		~GuiPass();
 
-		void Render(std::unique_ptr<RenderContext>& context);
+		void Render(std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager);
 		void Cleanup(const std::unique_ptr<RenderContext>& context);
 
-		void ResizeResources(const std::unique_ptr<RenderContext>& context);
+		void ResizeResources(const std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager);
 	public:
 		static bool IsCursorPositionInGUI();
 
@@ -37,7 +37,7 @@ namespace Renderer
 
 	private:
 		std::unique_ptr<RenderPass> mRenderPass;
-		std::vector<FrameBuffer> mFrameBuffers;
+		std::unique_ptr<FrameBuffer> mFrameBuffer;
 		std::unique_ptr<DescriptorPool> mDescriptorPool;
 
 	};

@@ -4,12 +4,10 @@
 
 #include <string>
 #include <vector>
-#include <memory>
 
 namespace Renderer
 {
 	class Device;
-	class CommandPool;
 	class Image;
 	class Sampler;
 
@@ -38,8 +36,8 @@ namespace Renderer
 		void AddTexture(std::string filePath, VkFormat format);
 		void ClearFileList();
 
-		void Initialize(const std::unique_ptr<Device>& device, const std::unique_ptr<CommandPool>& commandPool);
-		void Cleanup(const std::unique_ptr<Device>& device);
+		void Initialize(const Device& device);
+		void Cleanup(const Device& device);
 
 		const Image& GetImage(std::string filePath) const;
 		const Image& GetImage(size_t index) const;

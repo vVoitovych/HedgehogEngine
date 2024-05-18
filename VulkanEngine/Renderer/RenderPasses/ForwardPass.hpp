@@ -7,7 +7,7 @@
 namespace Renderer
 {
     class RenderContext;
-
+    class ResourceManager;
     class RenderPass;
     class DescriptorSetLayout;
     class Pipeline;
@@ -19,24 +19,19 @@ namespace Renderer
 	class ForwardPass
 	{
     public:
-        ForwardPass(const std::unique_ptr<RenderContext>& context);
+        ForwardPass(const std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager);
         ~ForwardPass();
 
-        void Render(std::unique_ptr<RenderContext>& context);
+        void Render(std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager);
         void Cleanup(const std::unique_ptr<RenderContext>& context);
 
-        void ResizeResources(const std::unique_ptr<RenderContext>& context);
-
-    private:
-        void CreateDepthBuffer(const std::unique_ptr<RenderContext>& context);
+        void ResizeResources(const std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager);
 
     private:
         std::unique_ptr<RenderPass> mRenderPass;
         std::unique_ptr<DescriptorSetLayout> mDescriptorSetLayout;
         std::unique_ptr<Pipeline> mPipeline;
-
-        std::unique_ptr<Image> mDepthBuffer;
-        std::vector<FrameBuffer> mFrameBuffers;
+        std::unique_ptr<FrameBuffer> mFrameBuffer;
 
         std::vector<DescriptorSet> mDescriptorSets;
         std::vector<UBO> mUniformBuffers;

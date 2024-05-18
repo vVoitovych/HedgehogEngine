@@ -3,6 +3,7 @@
 #include "Logger/Logger.hpp"
 #include "Renderer/Common/EngineDebugBreak.hpp"
 #include "Renderer/Common/RendererSettings.hpp"
+#include "Renderer/Wrappeers/Commands/CommandBuffer.hpp"
 #include "Renderer/Wrappeers/Descriptors/UBO.hpp"
 #include "Renderer/Wrappeers/Descriptors/DescriptorSetLayout.hpp"
 #define VMA_IMPLEMENTATION
@@ -15,9 +16,6 @@
 
 namespace Renderer
 {
-	const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
-	const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
-
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 		VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 		VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -73,7 +71,7 @@ namespace Renderer
 		}
 	}
 
-	Device::Device(const std::unique_ptr<WindowManager>& windowManager)
+	Device::Device(const WindowManager& windowManager)
 		: mInstance(nullptr)
 		, mDebugMessenger(nullptr)
 		, mSurface(nullptr)
@@ -82,12 +80,14 @@ namespace Renderer
 		, mGraphicsQueue(nullptr)
 		, mPresentQueue(nullptr)
 	{
+		InitLayersAndExtentions();
 		InitializeInstance();
 		InitializeDebugMessanger();
-		windowManager->CreateWindowSurface(mInstance, &mSurface);
+		windowManager.CreateWindowSurface(mInstance, &mSurface);
 		PickPhysicalDevice();
 		CreateLogicalDevice();
 		InitializeAllocator();
+		InitializeCommandPool();
 	}
 
 	Device::~Device()
@@ -117,15 +117,32 @@ namespace Renderer
 			LOGERROR("Vulkan allocator should be cleanedup before destruction!");
 			ENGINE_DEBUG_BREAK();
 		}
+		if (mCommandPool != nullptr)
+		{
+			LOGERROR("Vulkan command pool should be cleanedup before destruction!");
+			ENGINE_DEBUG_BREAK();
+		}
+	}
+
+	void Device::InitLayersAndExtentions()
+	{
+		mValidationLayers.clear();
+		mDeviceExtensions.clear();
+
+		mValidationLayers.push_back("VK_LAYER_KHRONOS_validation"); 
+		
+		mDeviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+		mDeviceExtensions.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
 	}
 
 	void Device::InitializeInstance()
 	{
-		if (enableValidationLayers && !CheckValidationLayerSupport())
+#ifdef DEBUG
+		if (!CheckValidationLayerSupport())
 		{
 			throw std::runtime_error("Validation layers requested, but not available!");
 		}
-
+#endif
 		VkApplicationInfo appInfo{};
 		appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 		appInfo.pApplicationName = "Vulkan Engine";
@@ -143,18 +160,15 @@ namespace Renderer
 		createInfo.ppEnabledExtensionNames = extensions.data();
 
 		VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
-		if (enableValidationLayers)
-		{
-			createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-			createInfo.ppEnabledLayerNames = validationLayers.data();
-			PopulateDebugMessengerCreateInfo(debugCreateInfo);
-			createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
-		}
-		else
-		{
-			createInfo.enabledLayerCount = 0;
-			createInfo.pNext = nullptr;
-		}
+#ifdef DEBUG
+		createInfo.enabledLayerCount = static_cast<uint32_t>(mValidationLayers.size());
+		createInfo.ppEnabledLayerNames = mValidationLayers.data();
+		PopulateDebugMessengerCreateInfo(debugCreateInfo);
+		createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
+#else
+		createInfo.enabledLayerCount = 0;
+		createInfo.pNext = nullptr;
+#endif
 
 		if (vkCreateInstance(&createInfo, nullptr, &mInstance) != VK_SUCCESS)
 		{
@@ -168,8 +182,7 @@ namespace Renderer
 
 	void Device::InitializeDebugMessanger()
 	{
-		if (!enableValidationLayers) return;
-
+#ifdef DEBUG
 		VkDebugUtilsMessengerCreateInfoEXT createInfo;
 		PopulateDebugMessengerCreateInfo(createInfo);
 
@@ -178,6 +191,7 @@ namespace Renderer
 			throw std::runtime_error("failed to set up debug messenger!");
 		}
 		LOGINFO("Debug messenger created");
+#endif
 	}
 
 	void Device::PickPhysicalDevice()
@@ -234,26 +248,26 @@ namespace Renderer
 
 		VkPhysicalDeviceFeatures deviceFeatures{};
 
+		VkPhysicalDeviceSynchronization2FeaturesKHR synchronization2Features = {};
+		synchronization2Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR;
+		synchronization2Features.synchronization2 = VK_TRUE;
+
+
 		VkDeviceCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-
 		createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
 		createInfo.pQueueCreateInfos = queueCreateInfos.data();
-
 		createInfo.pEnabledFeatures = &deviceFeatures;
+		createInfo.enabledExtensionCount = static_cast<uint32_t>(mDeviceExtensions.size());
+		createInfo.ppEnabledExtensionNames = mDeviceExtensions.data();
 
-		createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
-		createInfo.ppEnabledExtensionNames = deviceExtensions.data();
-
-		if (enableValidationLayers)
-		{
-			createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-			createInfo.ppEnabledLayerNames = validationLayers.data();
-		}
-		else
-		{
-			createInfo.enabledLayerCount = 0;
-		}
+#ifdef DEBUG
+		createInfo.enabledLayerCount = static_cast<uint32_t>(mValidationLayers.size());
+		createInfo.ppEnabledLayerNames = mValidationLayers.data();
+#else
+		createInfo.enabledLayerCount = 0;
+#endif
+		createInfo.pNext = &synchronization2Features;
 
 		if (vkCreateDevice(mPhysicalDevice, &createInfo, nullptr, &mDevice) != VK_SUCCESS)
 		{
@@ -283,8 +297,24 @@ namespace Renderer
 		vmaCreateAllocator(&allocatorCreateInfo, &mAllocator);
 	}
 
+	void Device::InitializeCommandPool()
+	{
+		VkCommandPoolCreateInfo createInfo{};
+		createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+		createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+		createInfo.queueFamilyIndex = mIndices.mGraphicsFamily.value();
+
+		if (vkCreateCommandPool(mDevice, &createInfo, nullptr, &mCommandPool) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create command pool!");
+		}
+
+		LOGINFO("Command pool created");
+	}
+
 	void Device::Cleanup()
 	{
+		vkDestroyCommandPool(mDevice, mCommandPool, nullptr);
 		vmaDestroyAllocator(mAllocator);
 		vkDestroyDevice(mDevice, nullptr);
 		vkDestroySurfaceKHR(mInstance, mSurface, nullptr);
@@ -296,15 +326,15 @@ namespace Renderer
 		mPhysicalDevice = nullptr;
 		mDevice = nullptr;
 		mAllocator = nullptr;
+		mCommandPool = nullptr;
 		LOGINFO("Device cleaned");
 	}
 
 	void Device::CleanupDebugMessanger()
 	{
-		if (enableValidationLayers)
-		{
-			DestroyDebugUtilsMessengerEXT(mInstance, mDebugMessenger, nullptr);
-		}
+#ifdef DEBUG
+		DestroyDebugUtilsMessengerEXT(mInstance, mDebugMessenger, nullptr);
+#endif
 	}
 
 	////////////////////////////////////////////////////// 
@@ -362,6 +392,27 @@ namespace Renderer
 			}
 		}
 		throw std::runtime_error("Failed to find memory type");
+	}
+
+	void Device::SetObjectName(uint64_t objectHandle, VkObjectType objectType, const char* name) const
+	{
+#ifdef DEBUG
+		PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectNameEXT =
+			(PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(mInstance, "vkSetDebugUtilsObjectNameEXT");
+
+		if (!vkSetDebugUtilsObjectNameEXT) {
+			throw std::runtime_error("failed to load vkSetDebugUtilsObjectNameEXT");
+		}
+
+		VkDebugUtilsObjectNameInfoEXT nameInfo = {};
+		nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+		nameInfo.pNext = nullptr;
+		nameInfo.objectType = objectType;
+		nameInfo.objectHandle = objectHandle;
+		nameInfo.pObjectName = name;
+
+		vkSetDebugUtilsObjectNameEXT(mDevice, &nameInfo);
+#endif
 	}
 
 	// Additional functions
@@ -424,9 +475,60 @@ namespace Renderer
 			VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 	}
 
+	void Device::AllocateCommandBuffer(VkCommandBuffer* pCommandBuffer) const
+	{
+		VkCommandBufferAllocateInfo allocateInfo{};
+		allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		allocateInfo.commandPool = mCommandPool;
+		allocateInfo.commandBufferCount = 1;
+		allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+
+		if (vkAllocateCommandBuffers(mDevice, &allocateInfo, pCommandBuffer) != VK_SUCCESS)
+		{
+			LOGERROR("failed to allocate command buffer!");
+			ENGINE_DEBUG_BREAK();
+		}
+	}
+
+	void Device::FreeCommandBuffer(VkCommandBuffer* pCommandBuffer) const
+	{
+		vkFreeCommandBuffers(mDevice, mCommandPool, 1, pCommandBuffer);
+	}
+
+	void Device::CopyBufferToBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) const
+	{
+		CommandBuffer commandBuffer(*this);
+		commandBuffer.BeginSingleTimeCommands();
+		commandBuffer.CopyBufferToBuffer(srcBuffer, dstBuffer, size);
+		commandBuffer.EndSingleTimeCommands(*this);
+		commandBuffer.Cleanup(*this);
+	}
+
+	void Device::CopyBufferToImage(VkBuffer srcBuffer, VkImage image, uint32_t width, uint32_t height) const
+	{
+		CommandBuffer commandBuffer(*this);
+		commandBuffer.BeginSingleTimeCommands();
+		commandBuffer.CopyBufferToImage(srcBuffer, image, width, height);
+		commandBuffer.EndSingleTimeCommands(*this);
+		commandBuffer.Cleanup(*this);
+	}
+
+	void Device::TransitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout) const
+	{
+		CommandBuffer commandBuffer(*this);
+		commandBuffer.BeginSingleTimeCommands();
+		commandBuffer.TransitionImage(image, oldLayout, newLayout);
+		commandBuffer.EndSingleTimeCommands(*this);
+		commandBuffer.Cleanup(*this);
+	}
+
 	bool Device::IsEnableValidationLayers() const
 	{
-		return enableValidationLayers;
+#ifdef DEBUG
+		return true;
+#else
+		return false;
+#endif
 	}
 
 	void Device::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) const
@@ -446,7 +548,7 @@ namespace Renderer
 		std::vector<VkLayerProperties> availableLayers(layerCount);
 		vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
-		for (const char* layerName : validationLayers)
+		for (const char* layerName : mValidationLayers)
 		{
 			bool layerFound = false;
 
@@ -474,12 +576,9 @@ namespace Renderer
 		glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
 		std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
-
-		if (enableValidationLayers)
-		{
-			extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-		}
-
+#ifdef DEBUG
+		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+#endif
 		return extensions;
 	}
 
@@ -518,7 +617,7 @@ namespace Renderer
 		std::vector<VkExtensionProperties> availableExtensions(extensionsCount); 
 		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionsCount, availableExtensions.data());
 
-		std::set<std::string> requiredExtensins(deviceExtensions.begin(), deviceExtensions.end());
+		std::set<std::string> requiredExtensins(mDeviceExtensions.begin(), mDeviceExtensions.end());
 
 		for (const auto& extension : availableExtensions)
 		{

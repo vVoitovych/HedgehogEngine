@@ -5,7 +5,6 @@
 #include <vulkan/vulkan.h>
 #include <optional>
 #include <vector>
-#include <memory>
 
 namespace Renderer
 {
@@ -34,7 +33,7 @@ namespace Renderer
 	class Device
 	{
 	public:
-		Device(const std::unique_ptr<WindowManager>& windowManager);
+		Device(const WindowManager& windowManager);
 		~Device();
 
 		Device(const Device&) = delete;
@@ -52,19 +51,30 @@ namespace Renderer
 		const VmaAllocator& GetAllocator() const;
 		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const;
 
+		void SetObjectName(uint64_t objectHandle, VkObjectType objectType, const char* name) const;
+
 	public:
 		SwapChainSupportDetails QuerySwapChainSupport() const;
 		VkPhysicalDeviceProperties GetPhysicalDeviceProperties() const;
 		VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const;
 		VkFormat FindDepthFormat() const;
 
+		void AllocateCommandBuffer(VkCommandBuffer* pCommandBuffer) const;
+		void FreeCommandBuffer(VkCommandBuffer* pCommandBuffer) const;
+
+		void CopyBufferToBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) const;
+		void CopyBufferToImage(VkBuffer srcBuffer, VkImage image, uint32_t width, uint32_t height) const;
+		void TransitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout) const;
+
 	private:
+		void InitLayersAndExtentions();
 		void InitializeInstance();
 		void InitializeDebugMessanger();
 		void CleanupDebugMessanger();
 		void PickPhysicalDevice();
 		void CreateLogicalDevice();
 		void InitializeAllocator();
+		void InitializeCommandPool();
 
 		bool IsEnableValidationLayers() const;
 		void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) const;
@@ -78,11 +88,6 @@ namespace Renderer
 		SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device) const;
 
 	private:
-#ifdef DEBUG
-		const bool enableValidationLayers = true;
-#else
-		const bool enableValidationLayers = false;
-#endif
 		VkInstance mInstance;
 		VkDebugUtilsMessengerEXT mDebugMessenger;
 		VkSurfaceKHR mSurface;
@@ -95,7 +100,10 @@ namespace Renderer
 		QueueFamilyIndices mIndices;
 
 		VmaAllocator mAllocator;
+		VkCommandPool mCommandPool;
 
+		std::vector<const char*> mValidationLayers;
+		std::vector<const char*> mDeviceExtensions;
 	};
 }
 

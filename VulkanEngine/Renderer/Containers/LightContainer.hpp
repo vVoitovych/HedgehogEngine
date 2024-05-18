@@ -3,7 +3,6 @@
 #include "Light.hpp"
 
 #include <vector>
-#include <memory>
 
 namespace Scene
 {

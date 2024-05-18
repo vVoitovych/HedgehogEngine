@@ -3,7 +3,6 @@
 #include "Renderer/WindowManagment/WindowManager.hpp"
 #include "Renderer/Wrappeers/Device/Device.hpp"
 #include "Renderer/Wrappeers/SwapChain/SwapChain.hpp"
-#include "Renderer/Wrappeers/Commands/CommandPool.hpp"
 #include "Renderer/Wrappeers/Descriptors/DescriptorPool.hpp"
 #include "Renderer/Common/RendererSettings.hpp"
 
@@ -16,17 +15,15 @@ namespace Renderer
 	VulkanContext::VulkanContext()
 	{
 		mWindowManager = std::make_unique<WindowManager>(WindowState::GetDefaultState());
-		mDevice = std::make_unique<Device>(mWindowManager);
-		mSwapChain = std::make_unique<SwapChain>(mDevice, mWindowManager);
-
-		mCommandPool = std::make_unique<CommandPool>(mDevice);
+		mDevice = std::make_unique<Device>(*mWindowManager);
+		mSwapChain = std::make_unique<SwapChain>(*mDevice, *mWindowManager);
 
 		std::vector<VkDescriptorPoolSize> poolSizes = 
 		{
 			{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, MAX_FRAMES_IN_FLIGHT + MAX_MATERIAL_COUNT},
 			{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_FRAMES_IN_FLIGHT + MAX_MATERIAL_COUNT * MAX_TEXTURES_PER_MATERIAL}
 		};
-		mDescriptorPool = std::make_unique<DescriptorPool>(mDevice, poolSizes, 2);
+		mDescriptorPool = std::make_unique<DescriptorPool>(*mDevice, poolSizes, 2);
 	}
 
 	VulkanContext::~VulkanContext()
@@ -35,9 +32,8 @@ namespace Renderer
 
 	void VulkanContext::Cleanup()
 	{
-		mDescriptorPool->Cleanup(mDevice);
-		mCommandPool->Cleanup();
-		mSwapChain->Cleanup(mDevice);
+		mDescriptorPool->Cleanup(*mDevice);
+		mSwapChain->Cleanup(*mDevice);
 		mDevice->Cleanup();
 	}
 
@@ -46,29 +42,29 @@ namespace Renderer
 		mWindowManager->HandleInput();
 	}
 
-	const std::unique_ptr<WindowManager>& VulkanContext::GetWindowManager() const
+	WindowManager& VulkanContext::GetWindowManager() 
 	{
-		return mWindowManager;
+		return *mWindowManager;
 	}
 
-	const std::unique_ptr<Device>& VulkanContext::GetDevice() const
+	const Device& VulkanContext::GetDevice() const
 	{
-		return mDevice;
+		return *mDevice;
 	}
 
-	const std::unique_ptr<SwapChain>& VulkanContext::GetSwapChain() const
+	const SwapChain& VulkanContext::GetSwapChain() const
 	{
-		return mSwapChain;
+		return *mSwapChain;
 	}
 
-	const std::unique_ptr<CommandPool>& VulkanContext::GetCommandPool() const
+	SwapChain& VulkanContext::GetSwapChain()
 	{
-		return mCommandPool;
+		return *mSwapChain;
 	}
 
-	const std::unique_ptr<DescriptorPool>& VulkanContext::GetDescriptorPool() const
+	const DescriptorPool& VulkanContext::GetDescriptorPool() const
 	{
-		return mDescriptorPool;
+		return *mDescriptorPool;
 	}
 
 	bool VulkanContext::ShouldClose() const

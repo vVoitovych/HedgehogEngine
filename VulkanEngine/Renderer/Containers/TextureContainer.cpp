@@ -1,7 +1,6 @@
 #include "TextureContainer.hpp"
 
 #include "Renderer/Wrappeers/Device/Device.hpp"
-#include "Renderer/Wrappeers/Commands/CommandPool.hpp"
 #include "Renderer/Wrappeers/Resources/Image/Image.hpp"
 #include "Renderer/Wrappeers/Resources/Buffer/Buffer.hpp"
 #include "Renderer/Wrappeers/Resources/Sampler/Sampler.hpp"
@@ -36,7 +35,7 @@ namespace Renderer
 		mTexturesList.clear();
 	}
 
-	void TextureContaineer::Initialize(const std::unique_ptr<Device>& device, const std::unique_ptr<CommandPool>& commandPool)
+	void TextureContaineer::Initialize(const Device& device)
 	{
 		for (size_t i = 0; i < mTexturesList.size(); ++i)
 		{
@@ -61,13 +60,10 @@ namespace Renderer
 				VK_IMAGE_TILING_OPTIMAL,
 				VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-			image.TransitionImageLayout(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, commandPool);
-			stageBuffer.CopyBufferToImage(image.GetNativeImage(), static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight), commandPool);
-			image.TransitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, commandPool);
-
+			device.TransitionImageLayout(image.GetNativeImage(), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+			device.CopyBufferToImage(stageBuffer.GetNativeBuffer(), image.GetNativeImage(), static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
+			device.TransitionImageLayout(image.GetNativeImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 			stageBuffer.DestroyBuffer(device);
-
 			image.CreateImageView(device, mTexturesList[i].format, VK_IMAGE_ASPECT_COLOR_BIT);
 
 			mImages.push_back(std::move(image));
@@ -79,7 +75,7 @@ namespace Renderer
 		mSamplersList.push_back(std::move(linearSampler));
 	}
 
-	void TextureContaineer::Cleanup(const std::unique_ptr<Device>& device)
+	void TextureContaineer::Cleanup(const Device& device)
 	{
 		for (size_t i = 0; i < mTexturesList.size(); ++i)
 		{

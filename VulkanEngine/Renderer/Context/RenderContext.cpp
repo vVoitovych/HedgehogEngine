@@ -12,9 +12,9 @@ namespace Renderer
     RenderContext::RenderContext()
     {
         mVulkanContext = std::make_unique<VulkanContext>();
-        mEngineContext = std::make_unique<EngineContext>(mVulkanContext);
+        mEngineContext = std::make_unique<EngineContext>(*mVulkanContext);
         mFrameContext = std::make_unique<FrameContext>();
-        mThreadContext = std::make_unique<ThreadContext>(mVulkanContext);
+        mThreadContext = std::make_unique<ThreadContext>(*mVulkanContext);
     }
 
     RenderContext::~RenderContext()
@@ -23,15 +23,15 @@ namespace Renderer
 
     void RenderContext::UpdateContext(float dt)
     {
-        mEngineContext->UpdateContext(mVulkanContext, dt);
+        mEngineContext->UpdateContext(*mVulkanContext, dt);
         mFrameContext->UpdateContext(mEngineContext->GetCamera());
 
     }
 
     void RenderContext::Cleanup()
     {
-        mEngineContext->Cleanup(mVulkanContext);
-        mThreadContext->Cleanup(mVulkanContext);
+        mEngineContext->Cleanup(*mVulkanContext);
+        mThreadContext->Cleanup(*mVulkanContext);
         mVulkanContext->Cleanup();
     }
 

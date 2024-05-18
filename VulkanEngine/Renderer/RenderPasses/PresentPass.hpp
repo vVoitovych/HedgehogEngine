@@ -6,9 +6,8 @@
 
 namespace Renderer
 {
-    class Device;
     class RenderContext;
-    class SwapChain;
+    class ResourceManager;
 
     class PresentPass
     {
@@ -16,7 +15,7 @@ namespace Renderer
         PresentPass(const std::unique_ptr<RenderContext>& context);
         ~PresentPass() = default;
 
-        void Render(std::unique_ptr<RenderContext>& context);
+        void Render(std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager);
 
         void Cleanup(const std::unique_ptr<RenderContext>& context);
 

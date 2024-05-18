@@ -14,11 +14,11 @@ namespace Renderer
 {
 
 	Pipeline::Pipeline(
-		const std::unique_ptr<Device>& device, 
-		const std::unique_ptr<RenderPass>& renderPass, 
+		const Device& device, 
+		const RenderPass& renderPass, 
 		const std::vector<VkDescriptorSetLayout>& layouts,
 		const std::vector<VkPushConstantRange>& pushConstantRanges,
-		const std::unique_ptr<PipelineInfo>& info)
+		const PipelineInfo& info)
 		: mPipeline(nullptr)
 		, mGraphycsPipelineLayout(nullptr)
 	{
@@ -29,30 +29,30 @@ namespace Renderer
 		layoutCreateInfo.pushConstantRangeCount = static_cast<uint32_t>(pushConstantRanges.size());
 		layoutCreateInfo.pPushConstantRanges = pushConstantRanges.data();
 
-		if (vkCreatePipelineLayout(device->GetNativeDevice(), &layoutCreateInfo, nullptr, &mGraphycsPipelineLayout) != VK_SUCCESS)
+		if (vkCreatePipelineLayout(device.GetNativeDevice(), &layoutCreateInfo, nullptr, &mGraphycsPipelineLayout) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create pipeline layout!");
 		}
 
 		VkGraphicsPipelineCreateInfo pipelineInfo{};
 		pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-		pipelineInfo.stageCount = info->GetStagesCount();
-		pipelineInfo.pStages = info->GetStages();
-		pipelineInfo.pVertexInputState = info->GetVertexInputInfo();
-		pipelineInfo.pInputAssemblyState = info->GetInputAssemblyInfo();
-		pipelineInfo.pViewportState = info->GetViewportInfo();
-		pipelineInfo.pRasterizationState = info->GetRasterizationInfo();
-		pipelineInfo.pMultisampleState = info->GetMultisamplingInfo();
-		pipelineInfo.pDepthStencilState = info->GetDepthStencilInfo();
-		pipelineInfo.pColorBlendState = info->GetColorBlendingInfo();
-		pipelineInfo.pDynamicState = info->GetDynamicStateInfo();
+		pipelineInfo.stageCount = info.GetStagesCount();
+		pipelineInfo.pStages = info.GetStages();
+		pipelineInfo.pVertexInputState = info.GetVertexInputInfo();
+		pipelineInfo.pInputAssemblyState = info.GetInputAssemblyInfo();
+		pipelineInfo.pViewportState = info.GetViewportInfo();
+		pipelineInfo.pRasterizationState = info.GetRasterizationInfo();
+		pipelineInfo.pMultisampleState = info.GetMultisamplingInfo();
+		pipelineInfo.pDepthStencilState = info.GetDepthStencilInfo();
+		pipelineInfo.pColorBlendState = info.GetColorBlendingInfo();
+		pipelineInfo.pDynamicState = info.GetDynamicStateInfo();
 		pipelineInfo.layout = mGraphycsPipelineLayout;
-		pipelineInfo.renderPass = renderPass->GetNativeRenderPass();
+		pipelineInfo.renderPass = renderPass.GetNativeRenderPass();
 		pipelineInfo.subpass = 0;
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 		pipelineInfo.basePipelineIndex = -1;
 
-		if (vkCreateGraphicsPipelines(device->GetNativeDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &mPipeline) != VK_SUCCESS)
+		if (vkCreateGraphicsPipelines(device.GetNativeDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &mPipeline) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create pipeline");
 		}
@@ -75,10 +75,10 @@ namespace Renderer
 	}
 
 
-	void Pipeline::Cleanup(const std::unique_ptr<Device>& device)
+	void Pipeline::Cleanup(const Device& device)
 	{
-		vkDestroyPipeline(device->GetNativeDevice(), mPipeline, nullptr);
-		vkDestroyPipelineLayout(device->GetNativeDevice(), mGraphycsPipelineLayout, nullptr);
+		vkDestroyPipeline(device.GetNativeDevice(), mPipeline, nullptr);
+		vkDestroyPipelineLayout(device.GetNativeDevice(), mGraphycsPipelineLayout, nullptr);
 
 		mPipeline = nullptr;
 		mGraphycsPipelineLayout = nullptr;
@@ -90,7 +90,7 @@ namespace Renderer
 		return mPipeline;
 	}
 
-	VkPipelineLayout Pipeline::GetNativePipelineLayout()
+	VkPipelineLayout Pipeline::GetNativePipelineLayout() const
 	{
 		return mGraphycsPipelineLayout;
 	}

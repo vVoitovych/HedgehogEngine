@@ -2,7 +2,6 @@
 
 #include <vulkan/vulkan.h>
 #include <vector>
-#include <memory>
 
 namespace Renderer
 {
@@ -13,10 +12,10 @@ namespace Renderer
 	{
 	public:
 		FrameBuffer(
-			const std::unique_ptr<Device>& device, 
+			const Device& device, 
 			std::vector<VkImageView> attachments, 
 			VkExtent2D extent, 
-			const std::unique_ptr<RenderPass>& renderPass);
+			const RenderPass& renderPass);
 		~FrameBuffer();
 
 		FrameBuffer(const FrameBuffer&) = delete;
@@ -25,7 +24,7 @@ namespace Renderer
 		FrameBuffer(FrameBuffer&& other) noexcept;
 		FrameBuffer& operator=(FrameBuffer&& other) noexcept;
 
-		void Cleanup(const std::unique_ptr<Device>& device);
+		void Cleanup(const Device& device);
 
 		VkFramebuffer GetNativeFrameBuffer() const;
 

@@ -3,6 +3,7 @@
 
 #include "Renderer/Wrappeers/Commands/CommandBuffer.hpp"
 #include "Renderer/Wrappeers/SyncObjects/SyncObject.hpp"
+#include "Renderer/Context/VulkanContext.hpp"
 
 #include "Logger/Logger.hpp"
 #include "Renderer/Common/EngineDebugBreak.hpp"
@@ -12,15 +13,15 @@
 
 namespace Renderer
 {
-	ThreadContext::ThreadContext(const std::unique_ptr<VulkanContext>& vulkanContext)
+	ThreadContext::ThreadContext(const VulkanContext& vulkanContext)
 	{
 		mCommandBuffers.clear();
 		mSyncObjects.clear();
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
-			CommandBuffer commandBuffer(vulkanContext->GetCommandPool());
+			CommandBuffer commandBuffer(vulkanContext.GetDevice());
 			mCommandBuffers.push_back(std::move(commandBuffer));
-			SyncObject syncObject(vulkanContext->GetDevice());
+			SyncObject syncObject(vulkanContext.GetDevice());
 			mSyncObjects.push_back(std::move(syncObject));
 		}
 		LOGINFO("Thread context Initialized");
@@ -30,12 +31,12 @@ namespace Renderer
 	{
 	}
 
-	void ThreadContext::Cleanup(const std::unique_ptr<VulkanContext>& vulkanContext)
+	void ThreadContext::Cleanup(const VulkanContext& vulkanContext)
 	{
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
-			mCommandBuffers[i].Cleanup(vulkanContext->GetCommandPool());
-			mSyncObjects[i].Cleanup();
+			mCommandBuffers[i].Cleanup(vulkanContext.GetDevice());
+			mSyncObjects[i].Cleanup(vulkanContext.GetDevice());
 		}
 		mCommandBuffers.clear();
 		mSyncObjects.clear();

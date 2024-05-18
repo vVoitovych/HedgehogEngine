@@ -5,7 +5,7 @@
 
 namespace Renderer
 {
-    EngineContext::EngineContext(const std::unique_ptr<VulkanContext>& vulkanContext)
+    EngineContext::EngineContext(const VulkanContext& vulkanContext)
     {
         mScene.InitScene();
         for (auto& mesh : mScene.GetMeshes())
@@ -14,29 +14,29 @@ namespace Renderer
         }
 
         mMeshContainer.LoadMeshData();
-        mMeshContainer.Initialize(vulkanContext->GetDevice(), vulkanContext->GetCommandPool());
+        mMeshContainer.Initialize(vulkanContext);
 
         for (auto texture : mScene.GetTextures())
         {
             mTextureContainer.AddTexture(texture, VK_FORMAT_R8G8B8A8_SRGB);
         }
-        mTextureContainer.Initialize(vulkanContext->GetDevice(), vulkanContext->GetCommandPool());
+        mTextureContainer.Initialize(vulkanContext.GetDevice());
 
         mLightContainer.UpdateLights(mScene);
     }
 
-    void EngineContext::Cleanup(const std::unique_ptr<VulkanContext>& vulkanContext)
+    void EngineContext::Cleanup(const VulkanContext& vulkanContext)
     {
-        mMeshContainer.Cleanup(vulkanContext->GetDevice());
-        mTextureContainer.Cleanup(vulkanContext->GetDevice());
+        mMeshContainer.Cleanup(vulkanContext);
+        mTextureContainer.Cleanup(vulkanContext.GetDevice());
     }
 
-    void EngineContext::UpdateContext(const std::unique_ptr<VulkanContext>& vulkanContext, float dt)
+    void EngineContext::UpdateContext(VulkanContext& vulkanContext, float dt)
     {
-        const auto& windowManager = vulkanContext->GetWindowManager();
-        const auto& controls = windowManager->GetControls();
-        const auto& swapChain = vulkanContext->GetSwapChain();
-        auto extend = swapChain->GetSwapChainExtent();
+        auto& windowManager = vulkanContext.GetWindowManager();
+        auto& controls = windowManager.GetControls();
+        const auto& swapChain = vulkanContext.GetSwapChain();
+        auto extend = swapChain.GetSwapChainExtent();
         mCamera.UpdateCamera(dt, extend.width / (float)extend.height, controls);
         mScene.UpdateScene(dt);
         mLightContainer.UpdateLights(mScene);
