@@ -107,12 +107,10 @@ namespace Renderer
 		auto& swapChain = vulkanContext->GetSwapChain();
 		auto extent = swapChain.GetSwapChainExtent();
 
-		commandBuffer.RecordTransitionImageLayout(
-			1, 
+		commandBuffer.TransitionImage(
+			resourceManager->GetColorBuffer()->GetNativeImage(),
 			VK_IMAGE_LAYOUT_UNDEFINED, 
-			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-			false, 
-			resourceManager->GetColorBuffer()->GetNativeImage());
+			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
 		ImGui_ImplVulkan_NewFrame();
 		ImGui_ImplGlfw_NewFrame();

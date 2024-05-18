@@ -490,8 +490,9 @@ namespace Renderer
 	{
 		CommandBuffer commandBuffer(*this);
 		commandBuffer.BeginSingleTimeCommands();
-		commandBuffer.RecordTransitionImageLayout(1, oldLayout, newLayout, false, image);
+		commandBuffer.TransitionImage(image, oldLayout, newLayout);
 		commandBuffer.EndSingleTimeCommands(*this);
+		commandBuffer.Cleanup(*this);
 	}
 
 	bool Device::IsEnableValidationLayers() const

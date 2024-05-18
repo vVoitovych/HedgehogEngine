@@ -12,7 +12,7 @@
 #include "Renderer/WindowManagment/WindowManager.hpp"
 #include "Renderer/Wrappeers/Commands/CommandBuffer.hpp"
 #include "Renderer/Wrappeers/SyncObjects/SyncObject.hpp"
-
+#include "Renderer/Wrappeers/Resources/Image/Image.hpp"
 #include <stdexcept>
 
 namespace Renderer
@@ -31,6 +31,29 @@ namespace Renderer
 
 		auto& syncObject = threadContext->GetSyncObject();
 		auto& commandBuffer = threadContext->GetCommandBuffer();
+
+		auto backBufferIndex = frameContext->GetBackBufferIndex();
+		auto& colorBuffer = resourceManager->GetColorBuffer();
+
+		commandBuffer.TransitionImage(
+			colorBuffer->GetNativeImage(),
+			VK_IMAGE_LAYOUT_GENERAL,
+			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+		commandBuffer.TransitionImage(
+			vulkanContext->GetSwapChain().GetSwapChainImage(backBufferIndex),
+			VK_IMAGE_LAYOUT_UNDEFINED,
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+		commandBuffer.CopyImageToImage(
+			colorBuffer->GetNativeImage(), 
+			vulkanContext->GetSwapChain().GetSwapChainImage(backBufferIndex), 
+			colorBuffer->GetExtent(), 
+			vulkanContext->GetSwapChain().GetSwapChainExtent());
+
+		commandBuffer.TransitionImage(
+			vulkanContext->GetSwapChain().GetSwapChainImage(backBufferIndex),
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
 		commandBuffer.EndCommandBuffer();
 

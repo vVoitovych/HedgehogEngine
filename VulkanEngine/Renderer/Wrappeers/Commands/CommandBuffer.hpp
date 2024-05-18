@@ -50,13 +50,7 @@ namespace Renderer
 
 		void ClearColorImage(VkImage image, VkImageLayout imageLayout, const VkClearColorValue* pColor, uint32_t rangeCount, const VkImageSubresourceRange* pRanges);
 		void ClearDepthStencilImage(VkImage image, VkImageLayout imageLayout, const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount, const VkImageSubresourceRange* pRanges);
-		void RecordTransitionImageLayout(
-            const uint32_t mipLevels,
-            const VkImageLayout& oldLayout,
-            const VkImageLayout& newLayout,
-            const bool isCubemap,
-            const VkImage& image
-        );
+		void TransitionImage(VkImage image, VkImageLayout currentLayout, VkImageLayout newLayout);
 	
 	private:
 		VkCommandBuffer mCommandBuffer;
