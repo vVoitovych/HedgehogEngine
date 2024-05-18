@@ -17,7 +17,7 @@
 namespace Renderer
 {
 	const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
-	const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+	const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME , VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME };
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 		VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -241,14 +241,16 @@ namespace Renderer
 
 		VkPhysicalDeviceFeatures deviceFeatures{};
 
+		VkPhysicalDeviceSynchronization2FeaturesKHR synchronization2Features = {};
+		synchronization2Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR;
+		synchronization2Features.synchronization2 = VK_TRUE;
+
+
 		VkDeviceCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-
 		createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
 		createInfo.pQueueCreateInfos = queueCreateInfos.data();
-
 		createInfo.pEnabledFeatures = &deviceFeatures;
-
 		createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
 		createInfo.ppEnabledExtensionNames = deviceExtensions.data();
 
@@ -261,6 +263,7 @@ namespace Renderer
 		{
 			createInfo.enabledLayerCount = 0;
 		}
+		createInfo.pNext = &synchronization2Features;
 
 		if (vkCreateDevice(mPhysicalDevice, &createInfo, nullptr, &mDevice) != VK_SUCCESS)
 		{

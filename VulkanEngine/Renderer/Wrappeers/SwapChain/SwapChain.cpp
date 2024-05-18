@@ -108,7 +108,7 @@ namespace Renderer
 		createInfo.imageColorSpace = surfaceFormat.colorSpace;
 		createInfo.imageExtent = extent;
 		createInfo.imageArrayLayers = 1;
-		createInfo.imageUsage =  VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+		createInfo.imageUsage =  VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
 		QueueFamilyIndices indices = device.GetIndicies();
 		uint32_t queueFamilyIndices[] = { indices.mGraphicsFamily.value(), indices.mPresentFamily.value() };
@@ -211,7 +211,7 @@ namespace Renderer
 			createInfo.subresourceRange.levelCount = 1;
 			createInfo.subresourceRange.baseArrayLayer = 0;
 			createInfo.subresourceRange.layerCount = 1;
-
+			
 			if (vkCreateImageView(device.GetNativeDevice(), &createInfo, nullptr, &mSwapChainImageViews[i]) != VK_SUCCESS)
 			{
 				throw std::runtime_error("failed to create image view!");

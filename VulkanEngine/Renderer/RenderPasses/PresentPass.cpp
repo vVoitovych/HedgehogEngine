@@ -37,7 +37,7 @@ namespace Renderer
 
 		commandBuffer.TransitionImage(
 			colorBuffer->GetNativeImage(),
-			VK_IMAGE_LAYOUT_GENERAL,
+			VK_IMAGE_LAYOUT_UNDEFINED,
 			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 		commandBuffer.TransitionImage(
 			vulkanContext->GetSwapChain().GetSwapChainImage(backBufferIndex),
