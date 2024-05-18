@@ -85,11 +85,6 @@ namespace Renderer
 		SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device) const;
 
 	private:
-#ifdef DEBUG
-		const bool enableValidationLayers = true;
-#else
-		const bool enableValidationLayers = false;
-#endif
 		VkInstance mInstance;
 		VkDebugUtilsMessengerEXT mDebugMessenger;
 		VkSurfaceKHR mSurface;
