@@ -17,6 +17,7 @@
 #include "Renderer/Wrappeers/Commands/CommandBuffer.hpp"
 #include "Renderer/Wrappeers/FrameBuffer/FrameBuffer.hpp"
 #include "Renderer/Wrappeers/RenderPass/RenderPass.hpp"
+#include "Renderer/Wrappeers/Descriptors/DescriptorLayoutBuilder.hpp"
 #include "Renderer/Wrappeers/Descriptors/DescriptorSetLayout.hpp"
 #include "Renderer/Wrappeers/Pipeline/Pipeline.hpp"
 #include "Renderer/Wrappeers/Descriptors/DescriptorSet.hpp"
@@ -74,17 +75,10 @@ namespace Renderer
 		ForwardPassInfo info{ resourceManager->GetColorBuffer()->GetFormat(), resourceManager->GetDepthBuffer()->GetFormat()};
 		mRenderPass = std::make_unique<RenderPass>(device, info.GetInfo());
 
-		DescriptorInfo uboInfo;
-		uboInfo.bindingNumber = 0;
-		uboInfo.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		uboInfo.shaderStage = static_cast<VkShaderStageFlagBits>(VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
-		std::vector<DescriptorInfo> bindingUBOs = { uboInfo };
-		DescriptorInfo samplerInfo;
-		samplerInfo.bindingNumber = 1;
-		samplerInfo.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		samplerInfo.shaderStage = VK_SHADER_STAGE_FRAGMENT_BIT;
-		std::vector<DescriptorInfo> bindingSamplers = { samplerInfo };
-		mDescriptorSetLayout = std::make_unique<DescriptorSetLayout>(device, bindingUBOs, bindingSamplers);
+		DescriptorLayoutBuilder builder;
+		builder.AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+		builder.AddBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+		mDescriptorSetLayout = std::make_unique<DescriptorSetLayout>(device, builder, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
 
 		std::unique_ptr<PipelineInfo> pipelineInfo = std::make_unique<ForwardPipelineInfo>(device);
 

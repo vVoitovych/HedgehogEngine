@@ -183,6 +183,7 @@
     <ClCompile Include="Renderer\WindowManagment\WindowManager.cpp" />
     <ClCompile Include="Renderer\WindowManagment\WindowState.cpp" />
     <ClCompile Include="Renderer\Wrappeers\Commands\CommandBuffer.cpp" />
+    <ClCompile Include="Renderer\Wrappeers\Descriptors\DescriptorLayoutBuilder.cpp" />
     <ClCompile Include="Renderer\Wrappeers\Descriptors\DescriptorPool.cpp" />
     <ClCompile Include="Renderer\Wrappeers\Descriptors\DescriptorSet.cpp" />
     <ClCompile Include="Renderer\Wrappeers\Descriptors\DescriptorSetLayout.cpp" />
@@ -240,6 +241,7 @@
     <ClInclude Include="Renderer\WindowManagment\WindowState.hpp" />
     <ClInclude Include="Renderer\Wrappeers\Commands\CommandBuffer.hpp" />
     <ClInclude Include="Renderer\Wrappeers\Descriptors\DescriptorInfo.hpp" />
+    <ClInclude Include="Renderer\Wrappeers\Descriptors\DescriptorLayoutBuilder.hpp" />
     <ClInclude Include="Renderer\Wrappeers\Descriptors\DescriptorPool.hpp" />
     <ClInclude Include="Renderer\Wrappeers\Descriptors\DescriptorSet.hpp" />
     <ClInclude Include="Renderer\Wrappeers\Descriptors\DescriptorSetLayout.hpp" />

@@ -9,8 +9,6 @@
 namespace Renderer
 {
 	class WindowManager;
-	class DescriptorSetLayout;
-	const class UBO;
 
 	struct QueueFamilyIndices
 	{

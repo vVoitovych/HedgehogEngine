@@ -121,6 +121,9 @@
     <ClCompile Include="Renderer\ResourceManager\ResourceManager.cpp">
       <Filter>Renderer\ResouceManager</Filter>
     </ClCompile>
+    <ClCompile Include="Renderer\Wrappeers\Descriptors\DescriptorLayoutBuilder.cpp">
+      <Filter>Renderer\Wrappers\Descriptors</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Renderer\Camera\Camera.hpp">
@@ -266,6 +269,9 @@
     </ClInclude>
     <ClInclude Include="Renderer\ResourceManager\ResourceManager.hpp">
       <Filter>Renderer\ResouceManager</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\Descriptors\DescriptorLayoutBuilder.hpp">
+      <Filter>Renderer\Wrappers\Descriptors</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
