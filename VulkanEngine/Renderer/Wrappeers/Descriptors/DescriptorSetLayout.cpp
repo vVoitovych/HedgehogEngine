@@ -39,7 +39,7 @@ namespace Renderer
 	{
 		return mDescriptorSetLayout;
 	}
-	VkDescriptorSetLayout* DescriptorSetLayout::GetNativeLayoutPtr()
+	const VkDescriptorSetLayout* DescriptorSetLayout::GetNativeLayoutPtr() const
 	{
 		return &mDescriptorSetLayout;
 	}

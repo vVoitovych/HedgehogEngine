@@ -1,7 +1,6 @@
 #pragma once
 
 #include <memory>
-#include <vector>
 #include <string>
 
 namespace Renderer
@@ -10,11 +9,10 @@ namespace Renderer
     class ResourceManager;
     class RenderPass;
     class DescriptorSetLayout;
+    class DescriptorAllocator;
     class Pipeline;
     class FrameBuffer;
     class DescriptorSet;
-    class UBO;
-    class Image;
 
 	class ForwardPass
 	{
@@ -29,12 +27,13 @@ namespace Renderer
 
     private:
         std::unique_ptr<RenderPass> mRenderPass;
-        std::unique_ptr<DescriptorSetLayout> mDescriptorSetLayout;
-        std::unique_ptr<Pipeline> mPipeline;
         std::unique_ptr<FrameBuffer> mFrameBuffer;
+        std::unique_ptr<DescriptorSetLayout> mDescriptorSetLayout;
+        std::unique_ptr<DescriptorAllocator> mDescriptorAllocator;
+        std::unique_ptr<Pipeline> mPipeline;
 
-        std::vector<DescriptorSet> mDescriptorSets;
-        std::vector<UBO> mUniformBuffers;
+        std::unique_ptr<DescriptorSet> mDescriptorSet;
+        
 
 	};
 

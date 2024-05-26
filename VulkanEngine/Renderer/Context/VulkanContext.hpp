@@ -7,7 +7,6 @@ namespace Renderer
 {
 	class WindowManager;
 	class Device;
-	class DescriptorPool;
 	class SwapChain;
 
 	class VulkanContext
@@ -35,16 +34,12 @@ namespace Renderer
 		const SwapChain& GetSwapChain() const;
 		SwapChain& GetSwapChain();
 
-		const DescriptorPool& GetDescriptorPool() const;
-
 	private:
 		std::unique_ptr<WindowManager> mWindowManager;
 		bool mWindowResized = false;
 
 		std::unique_ptr<Device> mDevice;
 		std::unique_ptr<SwapChain> mSwapChain;
-
-		std::unique_ptr<DescriptorPool> mDescriptorPool;
 	};
 
 }

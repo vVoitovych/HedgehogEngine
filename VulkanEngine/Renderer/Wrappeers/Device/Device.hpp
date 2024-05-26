@@ -64,6 +64,7 @@ namespace Renderer
 		void CopyBufferToImage(VkBuffer srcBuffer, VkImage image, uint32_t width, uint32_t height) const;
 		void TransitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout) const;
 
+		void UpdateDescriptorSets(std::vector<VkWriteDescriptorSet>& descriptorWrites) const;
 	private:
 		void InitLayersAndExtentions();
 		void InitializeInstance();

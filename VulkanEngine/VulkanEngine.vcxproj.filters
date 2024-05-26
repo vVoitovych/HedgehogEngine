@@ -19,9 +19,6 @@
     <ClCompile Include="Renderer\Wrappeers\Device\Device.cpp">
       <Filter>Renderer\Wrappers\Device</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Wrappeers\Descriptors\UBO.cpp">
-      <Filter>Renderer\Wrappers\Descriptors\Types\UBO</Filter>
-    </ClCompile>
     <ClCompile Include="Renderer\Wrappeers\Descriptors\DescriptorSet.cpp">
       <Filter>Renderer\Wrappers\Descriptors</Filter>
     </ClCompile>
@@ -91,9 +88,6 @@
     <ClCompile Include="Renderer\Containers\VertexDescription.cpp">
       <Filter>Renderer\Containers\MeshContainer</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Wrappeers\Descriptors\DescriptorPool.cpp">
-      <Filter>Renderer\Wrappers\Descriptors</Filter>
-    </ClCompile>
     <ClCompile Include="Renderer\Wrappeers\Resources\Buffer\Buffer.cpp">
       <Filter>Renderer\Wrappers\Resources\Buffer</Filter>
     </ClCompile>
@@ -122,6 +116,9 @@
       <Filter>Renderer\ResouceManager</Filter>
     </ClCompile>
     <ClCompile Include="Renderer\Wrappeers\Descriptors\DescriptorLayoutBuilder.cpp">
+      <Filter>Renderer\Wrappers\Descriptors</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Wrappeers\Descriptors\DescriptorAllocator.cpp">
       <Filter>Renderer\Wrappers\Descriptors</Filter>
     </ClCompile>
   </ItemGroup>
@@ -154,9 +151,6 @@
       <Filter>Renderer\Wrappers\Device</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\Wrappeers\Descriptors\UBO.hpp">
-      <Filter>Renderer\Wrappers\Descriptors\Types\UBO</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer\Wrappeers\Descriptors\UBOInfo.hpp">
       <Filter>Renderer\Wrappers\Descriptors\Types\UBO</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\Wrappeers\Descriptors\DescriptorSet.hpp">
@@ -231,9 +225,6 @@
     <ClInclude Include="Renderer\Containers\VertexDescription.hpp">
       <Filter>Renderer\Containers\MeshContainer</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Wrappeers\Descriptors\DescriptorPool.hpp">
-      <Filter>Renderer\Wrappers\Descriptors</Filter>
-    </ClInclude>
     <ClInclude Include="Renderer\Wrappeers\Resources\Buffer\Buffer.hpp">
       <Filter>Renderer\Wrappers\Resources\Buffer</Filter>
     </ClInclude>
@@ -271,6 +262,9 @@
       <Filter>Renderer\ResouceManager</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\Wrappeers\Descriptors\DescriptorLayoutBuilder.hpp">
+      <Filter>Renderer\Wrappers\Descriptors</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\Descriptors\DescriptorAllocator.hpp">
       <Filter>Renderer\Wrappers\Descriptors</Filter>
     </ClInclude>
   </ItemGroup>

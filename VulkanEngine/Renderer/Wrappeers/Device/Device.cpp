@@ -520,6 +520,11 @@ namespace Renderer
 		commandBuffer.Cleanup(*this);
 	}
 
+	void Device::UpdateDescriptorSets(std::vector<VkWriteDescriptorSet>& descriptorWrites) const
+	{
+		vkUpdateDescriptorSets(mDevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+	}
+
 	bool Device::IsEnableValidationLayers() const
 	{
 #ifdef DEBUG

@@ -3,7 +3,6 @@
 #include "Renderer/WindowManagment/WindowManager.hpp"
 #include "Renderer/Wrappeers/Device/Device.hpp"
 #include "Renderer/Wrappeers/SwapChain/SwapChain.hpp"
-#include "Renderer/Wrappeers/Descriptors/DescriptorPool.hpp"
 #include "Renderer/Common/RendererSettings.hpp"
 
 #include "Renderer/RenderPasses/GuiPass.hpp"
@@ -17,13 +16,6 @@ namespace Renderer
 		mWindowManager = std::make_unique<WindowManager>(WindowState::GetDefaultState());
 		mDevice = std::make_unique<Device>(*mWindowManager);
 		mSwapChain = std::make_unique<SwapChain>(*mDevice, *mWindowManager);
-
-		std::vector<VkDescriptorPoolSize> poolSizes = 
-		{
-			{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, MAX_FRAMES_IN_FLIGHT + MAX_MATERIAL_COUNT},
-			{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_FRAMES_IN_FLIGHT + MAX_MATERIAL_COUNT * MAX_TEXTURES_PER_MATERIAL}
-		};
-		mDescriptorPool = std::make_unique<DescriptorPool>(*mDevice, poolSizes, 2);
 	}
 
 	VulkanContext::~VulkanContext()
@@ -32,7 +24,6 @@ namespace Renderer
 
 	void VulkanContext::Cleanup()
 	{
-		mDescriptorPool->Cleanup(*mDevice);
 		mSwapChain->Cleanup(*mDevice);
 		mDevice->Cleanup();
 	}
@@ -60,11 +51,6 @@ namespace Renderer
 	SwapChain& VulkanContext::GetSwapChain()
 	{
 		return *mSwapChain;
-	}
-
-	const DescriptorPool& VulkanContext::GetDescriptorPool() const
-	{
-		return *mDescriptorPool;
 	}
 
 	bool VulkanContext::ShouldClose() const

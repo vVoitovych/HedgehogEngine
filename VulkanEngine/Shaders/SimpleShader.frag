@@ -9,7 +9,7 @@ layout(location = 3) in vec4 inWorldPosition;
 
 #include "Lighting.glsli"
 
-layout(binding = 0) uniform UniformBufferObject 
+layout(set = 0, binding = 0) uniform UniformBufferObject 
 {
     mat4 view;
     mat4 proj;
@@ -18,7 +18,7 @@ layout(binding = 0) uniform UniformBufferObject
     int lightCount;
 } ubo;
 
-layout(binding = 1) uniform sampler2D texSampler;
+layout(set = 1, binding = 0) uniform sampler2D texSampler;
 
 layout(location = 0) out vec4 outColor;
 

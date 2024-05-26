@@ -27,7 +27,7 @@ namespace Renderer
 		void Cleanup(const Device& device);
 
 		VkDescriptorSetLayout GetNativeLayout() const;
-		VkDescriptorSetLayout* GetNativeLayoutPtr();
+		const VkDescriptorSetLayout* GetNativeLayoutPtr() const;
 	private:
 		VkDescriptorSetLayout mDescriptorSetLayout;
 	};
