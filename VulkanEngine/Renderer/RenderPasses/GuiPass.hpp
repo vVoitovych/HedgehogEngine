@@ -10,7 +10,7 @@ namespace Renderer
 	class RenderContext;
 	class ResourceManager;
 	class RenderPass;
-	class DescriptorPool;
+	class DescriptorAllocator;
 	class FrameBuffer;
 
 	class GuiPass
@@ -38,7 +38,7 @@ namespace Renderer
 	private:
 		std::unique_ptr<RenderPass> mRenderPass;
 		std::unique_ptr<FrameBuffer> mFrameBuffer;
-		std::unique_ptr<DescriptorPool> mDescriptorPool;
+		std::unique_ptr<DescriptorAllocator> mDescriptorAllocator;
 
 	};
 }

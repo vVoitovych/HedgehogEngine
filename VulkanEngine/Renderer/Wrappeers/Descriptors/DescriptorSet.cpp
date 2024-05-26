@@ -1,6 +1,6 @@
 #include "DescriptorSet.hpp"
 #include "Renderer/Wrappeers/Device/Device.hpp"
-#include "Renderer/Wrappeers/Descriptors/DescriptorPool.hpp"
+#include "Renderer/Wrappeers/Descriptors/DescriptorAllocator.hpp"
 #include "DescriptorSetLayout.hpp"
 #include "Renderer/Wrappeers/Resources/Buffer/Buffer.hpp"
 
@@ -9,49 +9,15 @@
 #include "Renderer/Wrappeers/Resources/Image/Image.hpp"
 #include "Renderer/Wrappeers/Resources/Sampler/Sampler.hpp"
 
-#include <array>
-
 namespace Renderer
 {
 	DescriptorSet::DescriptorSet(
         const Device& device,
-        const DescriptorPool& descriptorPool,
-        const DescriptorSetLayout& descriptorSetLayout,
-        const Buffer& ubo,
-        const Image& image,
-        const Sampler& sampler)
+        const DescriptorAllocator& allocator,
+        const DescriptorSetLayout& descriptorSetLayout)
 		: mDescriptorSet(nullptr)
 	{
-        descriptorPool.AllocDescriptorSets(device, { descriptorSetLayout.GetNativeLayout() }, &mDescriptorSet);
-
-        VkDescriptorBufferInfo bufferInfo{};
-        bufferInfo.buffer = ubo.GetNativeBuffer();
-        bufferInfo.offset = 0;
-        bufferInfo.range = ubo.GetBufferSize();
-
-        VkDescriptorImageInfo imageInfo{};
-        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        imageInfo.imageView = image.GetNativeView();
-        imageInfo.sampler = sampler.GetNativeSampler();
-
-        std::array< VkWriteDescriptorSet, 2> descriptorWrites{};
-        descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[0].dstSet = mDescriptorSet;
-        descriptorWrites[0].dstBinding = 0;
-        descriptorWrites[0].dstArrayElement = 0;
-        descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrites[0].descriptorCount = 1;
-        descriptorWrites[0].pBufferInfo = &bufferInfo;
-
-        descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrites[1].dstSet = mDescriptorSet;
-        descriptorWrites[1].dstBinding = 1;
-        descriptorWrites[1].dstArrayElement = 0;
-        descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptorWrites[1].descriptorCount = 1;
-        descriptorWrites[1].pImageInfo = &imageInfo;
-
-        vkUpdateDescriptorSets(device.GetNativeDevice(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+        mDescriptorSet = allocator.Allocate(device, descriptorSetLayout);
         LOGINFO("Vulkan descriptor set created");
 	}
 
@@ -81,12 +47,38 @@ namespace Renderer
         return *this;
     }
 
-    void DescriptorSet::Cleanup(const Device& device, const DescriptorPool& descriptorPool)
-	{
-        descriptorPool.FreeDescriptorSet(device, &mDescriptorSet);
+    void DescriptorSet::Update(const Device& device, std::vector<DescriptorWrites>& descriptorWrites)
+    {
+        std::vector<VkWriteDescriptorSet> writes;
+        writes.resize(descriptorWrites.size());
+        for (size_t i = 0; i < descriptorWrites.size(); ++i)
+        {
+            writes[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            writes[i].dstSet = mDescriptorSet;
+            writes[i].descriptorType = descriptorWrites[i].descriptorType;
+            writes[i].dstBinding = descriptorWrites[i].dstBinding;
+            writes[i].dstArrayElement = descriptorWrites[i].dstArrayElement;
+            writes[i].descriptorCount = descriptorWrites[i].descriptorCount;
+            writes[i].pImageInfo = descriptorWrites[i].pImageInfo;
+            writes[i].pBufferInfo = descriptorWrites[i].pBufferInfo;
+            writes[i].pTexelBufferView = descriptorWrites[i].pTexelBufferView;
+            writes[i].pNext = descriptorWrites[i].pNext;
+        }
+
+        device.UpdateDescriptorSets(writes);
+    }
+
+    void DescriptorSet::Cleanup(const Device& device, const DescriptorAllocator& allocator)
+	{        
+        allocator.FreeDescriptorSet(device, &mDescriptorSet);
         mDescriptorSet = nullptr;
         LOGINFO("Vulkan descriptor set cleaned");
 	}
+
+    const VkDescriptorSet* DescriptorSet::GetNativeSet() const
+    {
+        return &mDescriptorSet;
+    }
 
     VkDescriptorSet* DescriptorSet::GetNativeSet()
     {

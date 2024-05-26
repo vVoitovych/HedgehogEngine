@@ -4,8 +4,6 @@
 #include "Renderer/Common/EngineDebugBreak.hpp"
 #include "Renderer/Common/RendererSettings.hpp"
 #include "Renderer/Wrappeers/Commands/CommandBuffer.hpp"
-#include "Renderer/Wrappeers/Descriptors/UBO.hpp"
-#include "Renderer/Wrappeers/Descriptors/DescriptorSetLayout.hpp"
 #define VMA_IMPLEMENTATION
 #include "ThirdParty/VulkanMemoryAllocator/vk_mem_alloc.h"
 
@@ -520,6 +518,11 @@ namespace Renderer
 		commandBuffer.TransitionImage(image, oldLayout, newLayout);
 		commandBuffer.EndSingleTimeCommands(*this);
 		commandBuffer.Cleanup(*this);
+	}
+
+	void Device::UpdateDescriptorSets(std::vector<VkWriteDescriptorSet>& descriptorWrites) const
+	{
+		vkUpdateDescriptorSets(mDevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 	}
 
 	bool Device::IsEnableValidationLayers() const

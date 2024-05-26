@@ -11,7 +11,7 @@
 
 #include "Renderer/Wrappeers/RenderPass/RenderPass.hpp"
 #include "Renderer/Wrappeers/Commands/CommandBuffer.hpp"
-#include "Renderer/Wrappeers/Descriptors/DescriptorPool.hpp"
+#include "Renderer/Wrappeers/Descriptors/DescriptorAllocator.hpp"
 #include "Renderer/Wrappeers/SwapChain/SwapChain.hpp"
 #include "Renderer/Wrappeers/Device/Device.hpp"
 #include "Renderer/Wrappeers/FrameBuffer/FrameBuffer.hpp"
@@ -38,21 +38,22 @@ namespace Renderer
 	{
 		auto& vulkanContext = context->GetVulkanContext();
 		auto& device = vulkanContext->GetDevice();
-		std::vector<VkDescriptorPoolSize> poolSizes =
+		std::vector<PoolSizeRatio> sizes =
 		{
-			{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
-			{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
-			{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
-			{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
-			{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
-			{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
-			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
-			{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
-			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
-			{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
-			{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+			{ VK_DESCRIPTOR_TYPE_SAMPLER, 1 },
+			{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 },
+			{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1 },
+			{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1 },
+			{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1 },
+			{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1 },
+			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 },
+			{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1 },
+			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1 },
+			{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1 },
+			{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1 }
 		};
-		mDescriptorPool = std::make_unique<DescriptorPool>(device, poolSizes, 1000 * 11);
+
+		mDescriptorAllocator = std::make_unique<DescriptorAllocator>(device, 1000, sizes);
 		auto& swapChain = context->GetVulkanContext()->GetSwapChain();
 		GuiPassInfo passInfo(resourceManager->GetColorBuffer()->GetFormat());
 		mRenderPass = std::make_unique<RenderPass>(context->GetVulkanContext()->GetDevice(), passInfo.GetInfo());
@@ -73,7 +74,7 @@ namespace Renderer
 		initInfo.QueueFamily = device.GetIndicies().mGraphicsFamily.value();
 		initInfo.Queue = device.GetNativeGraphicsQueue();
 		initInfo.PipelineCache = VK_NULL_HANDLE;
-		initInfo.DescriptorPool = mDescriptorPool->GetNativeDescriptoPool();
+		initInfo.DescriptorPool = mDescriptorAllocator->GetNativeDescriptoPool();
 		initInfo.Allocator = nullptr;
 		initInfo.MinImageCount = swapChain.GetMinImagesCount();
 		initInfo.ImageCount = static_cast<uint32_t>(swapChain.GetSwapChainImagesSize());
@@ -134,7 +135,7 @@ namespace Renderer
 		auto& device = context->GetVulkanContext()->GetDevice();
 		mFrameBuffer->Cleanup(device);
 		mRenderPass->Cleanup(device);
-		mDescriptorPool->Cleanup(device);
+		mDescriptorAllocator->Cleanup(device);
 	}
 
 	void GuiPass::ResizeResources(const std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager)

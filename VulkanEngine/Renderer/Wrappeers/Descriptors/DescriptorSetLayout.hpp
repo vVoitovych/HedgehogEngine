@@ -8,14 +8,17 @@
 namespace Renderer
 {
 	class Device;
+	class DescriptorLayoutBuilder;
 
 	class DescriptorSetLayout
 	{
 	public:
 		DescriptorSetLayout(
-			const Device& device,
-			const std::vector<DescriptorInfo>& bindingUBOs,
-			const std::vector<DescriptorInfo>& bindingSamplers);
+			const Device& device, 
+			DescriptorLayoutBuilder& builder, 
+			VkShaderStageFlags shaderStages, 
+			void* pNext = nullptr, 
+			VkDescriptorSetLayoutCreateFlags flags = 0);
 		~DescriptorSetLayout();
 
 		DescriptorSetLayout(const DescriptorSetLayout&) = delete;
@@ -24,7 +27,7 @@ namespace Renderer
 		void Cleanup(const Device& device);
 
 		VkDescriptorSetLayout GetNativeLayout() const;
-		VkDescriptorSetLayout* GetNativeLayoutPtr();
+		const VkDescriptorSetLayout* GetNativeLayoutPtr() const;
 	private:
 		VkDescriptorSetLayout mDescriptorSetLayout;
 	};

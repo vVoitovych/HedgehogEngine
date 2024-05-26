@@ -25,7 +25,7 @@ namespace Renderer
     {
         mEngineContext->UpdateContext(*mVulkanContext, dt);
         mFrameContext->UpdateContext(mEngineContext->GetCamera());
-
+        mThreadContext->Update(*mEngineContext, *mFrameContext);
     }
 
     void RenderContext::Cleanup()
