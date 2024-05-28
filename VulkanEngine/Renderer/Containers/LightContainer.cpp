@@ -22,6 +22,7 @@ namespace Renderer
 			LOGWARNING("To many light components. Some of them won't be processed!");
 		}
 		lightComponentsCount = std::min(lightComponentsCount, static_cast<size_t>(MAX_LIGHTS_COUNT));
+		//TODO: make some defoult light when there are no any light component on scene
 		size_t counter = 0;
 		for (size_t i = 0; i < lightComponentsCount; ++i)
 		{

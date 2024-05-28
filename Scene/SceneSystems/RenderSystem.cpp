@@ -16,16 +16,10 @@ namespace Scene
 	void RenderSystem::Update(ECS::Coordinator& coordinator, ECS::Entity entity)
 	{
 		auto& render = coordinator.GetComponent<RenderComponent>(entity);
-		if (render.mMaterialIndex.has_value())
-		{
-			if (mMaterialPathes[render.mMaterialIndex.value()] != render.mMaterial)
-			{
-				UpdateMaterialPath(coordinator, entity);
-			}
-		}
-		else
+		if (render.mDirty)
 		{
 			UpdateMaterialPath(coordinator, entity);
+			render.mDirty = false;
 		}
 	}
 
@@ -37,9 +31,13 @@ namespace Scene
 			return;
 		}
 		std::string relatedPath = ContentLoader::GetAssetRelativetlyPath(path);
-
-		LOGINFO("Material created: ", path);
-		
+				
+		if (mMaterials.find(path) != mMaterials.end())
+		{
+			LOGWARNING("Material ", path, " already exist!");
+			return;
+		}
+		mMaterials[path] = CreateDefaultMaterial();
 		YAML::Emitter out;
 		out << YAML::BeginMap;
 		out << YAML::Key << "Material path" << YAML::Value << relatedPath;
@@ -48,6 +46,8 @@ namespace Scene
 
 		std::ofstream fout(path);
 		fout << out.c_str();
+
+		LOGINFO("Material created: ", path);
     }
 
 	void RenderSystem::LoadMaterial(ECS::Coordinator& coordinator, ECS::Entity entity)
@@ -64,9 +64,21 @@ namespace Scene
 		UpdateMaterialPath(coordinator, entity);
 	}
 
-	const std::vector<std::string>& RenderSystem::GetMaterials() const
+	const std::unordered_map<std::string, Material>& RenderSystem::GetMaterials() const
 	{
-		return mMaterialPathes;
+		return mMaterials;
+	}
+
+	Material RenderSystem::CreateDefaultMaterial()
+	{
+		Material result;
+		const std::string defaulTexture = "Textures\\Default\\white.png";
+		
+		result.type = MaterialType::Opaque;
+		result.baseColor = defaulTexture;
+		result.transparency = 1.0f;
+
+		return result;
 	}
 
 	void RenderSystem::UpdateMaterialPath(ECS::Coordinator& coordinator, ECS::Entity entity)
