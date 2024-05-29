@@ -5,13 +5,15 @@
 
 namespace Scene
 {
+
 	class RenderComponent
 	{
 	public:
 		bool mIsVisible;
 
 		std::string mMaterial;
-		bool mDirty = false;
+		std::optional<size_t> mMaterialIndex;
+
 	};
 }
 
