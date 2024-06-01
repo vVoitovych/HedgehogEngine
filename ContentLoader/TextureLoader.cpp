@@ -6,54 +6,56 @@
 
 #include <stdexcept>
 
-namespace ContentLoader
+namespace Hedgehog
 {
-
-	TextureLoader::TextureLoader()
-		: mData(nullptr)
-		, mWidth(0)
-		, mHeight(0)
-		, mChanels(0)
+	namespace ContentLoader
 	{
-	}
-
-	TextureLoader::~TextureLoader()
-	{
-		if (!mData)
+		TextureLoader::TextureLoader()
+			: mData(nullptr)
+			, mWidth(0)
+			, mHeight(0)
+			, mChanels(0)
 		{
-			stbi_image_free(mData);
 		}
-	}
 
-	void TextureLoader::LoadTexture(const std::string& file)
-	{
-		std::string fullPath = GetAssetsDirectory() + file;
-		mData = stbi_load(fullPath.c_str(), &mWidth, &mHeight, &mChanels, STBI_rgb_alpha);
-		if (!mData)
+		TextureLoader::~TextureLoader()
 		{
-			throw std::runtime_error("failed to load texture image!");
+			if (!mData)
+			{
+				stbi_image_free(mData);
+			}
 		}
-	}
 
-	int TextureLoader::GetWidth() const
-	{
-		return mWidth;
-	}
+		void TextureLoader::LoadTexture(const std::string& file)
+		{
+			std::string fullPath = GetAssetsDirectory() + file;
+			mData = stbi_load(fullPath.c_str(), &mWidth, &mHeight, &mChanels, STBI_rgb_alpha);
+			if (!mData)
+			{
+				throw std::runtime_error("failed to load texture image!");
+			}
+		}
 
-	int TextureLoader::GetHeight() const
-	{
-		return mHeight;
-	}
+		int TextureLoader::GetWidth() const
+		{
+			return mWidth;
+		}
 
-	int TextureLoader::GetChanels() const
-	{
-		return mChanels;
-	}
+		int TextureLoader::GetHeight() const
+		{
+			return mHeight;
+		}
 
-	void* TextureLoader::GetData() const
-	{
-		return mData;
-	}
+		int TextureLoader::GetChanels() const
+		{
+			return mChanels;
+		}
 
+		void* TextureLoader::GetData() const
+		{
+			return mData;
+		}
+
+	}
 }
 

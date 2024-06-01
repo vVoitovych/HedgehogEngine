@@ -1,19 +1,21 @@
 #pragma once
 #include <stdint.h>
 
-namespace EngineLogger
+namespace Hedgehog
 {
-	class LogColorized
+	namespace Logger
 	{
-	public:
-		LogColorized();
+		class LogColorized
+		{
+		public:
+			LogColorized();
 
-		void SetLogColor(uint16_t color);
-	private:
-		void* mConsole;
-	};
+			void SetLogColor(uint16_t color);
+		private:
+			void* mConsole;
+		};
+	}
 }
-
 
 
 
