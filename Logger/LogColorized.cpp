@@ -1,19 +1,16 @@
 #include "LogColorized.hpp"
 #include <Windows.h>
 
-namespace Hedgehog
+namespace EngineLogger
 {
-	namespace Logger
+	LogColorized::LogColorized()
 	{
-		LogColorized::LogColorized()
-		{
-			mConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-		}
+		mConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	}
 
-		void LogColorized::SetLogColor(uint16_t color)
-		{
-			SetConsoleTextAttribute(mConsole, color);
-		}
+	void LogColorized::SetLogColor(uint16_t color)
+	{
+		SetConsoleTextAttribute(mConsole, color);
 	}
 }
 

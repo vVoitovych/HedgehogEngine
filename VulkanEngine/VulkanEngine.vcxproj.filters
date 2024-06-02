@@ -16,6 +16,30 @@
     <ClCompile Include="Renderer\Context\RenderContext.cpp">
       <Filter>Renderer\Context</Filter>
     </ClCompile>
+    <ClCompile Include="Renderer\Wrappeers\Device\Device.cpp">
+      <Filter>Renderer\Wrappers\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Wrappeers\Descriptors\DescriptorSet.cpp">
+      <Filter>Renderer\Wrappers\Descriptors</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Wrappeers\Descriptors\DescriptorSetLayout.cpp">
+      <Filter>Renderer\Wrappers\Descriptors</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Wrappeers\SwapChain\SwapChain.cpp">
+      <Filter>Renderer\Wrappers\SwapChain</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Wrappeers\RenderPass\RenderPass.cpp">
+      <Filter>Renderer\Wrappers\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Wrappeers\Pipeline\Pipeline.cpp">
+      <Filter>Renderer\Wrappers\Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Wrappeers\Commands\CommandBuffer.cpp">
+      <Filter>Renderer\Wrappers\Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Wrappeers\FrameBuffer\FrameBuffer.cpp">
+      <Filter>Renderer\Wrappers\FrameBuffers</Filter>
+    </ClCompile>
     <ClCompile Include="Renderer\Context\FrameContext.cpp">
       <Filter>Renderer\Context</Filter>
     </ClCompile>
@@ -25,8 +49,20 @@
     <ClCompile Include="Renderer\Context\ThreadContext.cpp">
       <Filter>Renderer\Context</Filter>
     </ClCompile>
+    <ClCompile Include="Renderer\Wrappeers\SyncObjects\SyncObject.cpp">
+      <Filter>Renderer\Wrappers\SyncObjects</Filter>
+    </ClCompile>
     <ClCompile Include="Renderer\RenderQueue\RenderQueue.cpp">
       <Filter>Renderer\RenderQueue</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Wrappeers\Shaders\Shader.cpp">
+      <Filter>Renderer\Wrappers\Shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Wrappeers\Shaders\VertexShader.cpp">
+      <Filter>Renderer\Wrappers\Shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Wrappeers\Shaders\FragmentShader.cpp">
+      <Filter>Renderer\Wrappers\Shaders</Filter>
     </ClCompile>
     <ClCompile Include="Renderer\RenderPasses\ForwardPass.cpp">
       <Filter>Renderer\RenderPasses\ForwardPass</Filter>
@@ -52,6 +88,12 @@
     <ClCompile Include="Renderer\Containers\VertexDescription.cpp">
       <Filter>Renderer\Containers\MeshContainer</Filter>
     </ClCompile>
+    <ClCompile Include="Renderer\Wrappeers\Resources\Buffer\Buffer.cpp">
+      <Filter>Renderer\Wrappers\Resources\Buffer</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Wrappeers\Resources\Image\Image.cpp">
+      <Filter>Renderer\Wrappers\Resources\Image</Filter>
+    </ClCompile>
     <ClCompile Include="Renderer\Containers\TextureContainer.cpp">
       <Filter>Renderer\Containers\TextureContainer</Filter>
     </ClCompile>
@@ -67,13 +109,28 @@
     <ClCompile Include="Renderer\Containers\LightContainer.cpp">
       <Filter>Renderer\Containers\LightContainer</Filter>
     </ClCompile>
+    <ClCompile Include="Renderer\Wrappeers\Resources\Sampler\Sampler.cpp">
+      <Filter>Renderer\Wrappers\Resources\Sampler</Filter>
+    </ClCompile>
     <ClCompile Include="Renderer\ResourceManager\ResourceManager.cpp">
       <Filter>Renderer\ResouceManager</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Wrappeers\Descriptors\DescriptorLayoutBuilder.cpp">
+      <Filter>Renderer\Wrappers\Descriptors</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Wrappeers\Descriptors\DescriptorAllocator.cpp">
+      <Filter>Renderer\Wrappers\Descriptors</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Renderer\Camera\Camera.hpp">
       <Filter>Renderer\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Common\EngineDebugBreak.hpp">
+      <Filter>Renderer\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Common\RendererSettings.hpp">
+      <Filter>Renderer\Common</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\WindowManagment\Controls.hpp">
       <Filter>Renderer\WindowManager</Filter>
@@ -90,6 +147,33 @@
     <ClInclude Include="Renderer\Context\RenderContext.hpp">
       <Filter>Renderer\Context</Filter>
     </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\Device\Device.hpp">
+      <Filter>Renderer\Wrappers\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\Descriptors\UBO.hpp">
+      <Filter>Renderer\Wrappers\Descriptors\Types\UBO</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\Descriptors\DescriptorSet.hpp">
+      <Filter>Renderer\Wrappers\Descriptors</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\Descriptors\DescriptorSetLayout.hpp">
+      <Filter>Renderer\Wrappers\Descriptors</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\SwapChain\SwapChain.hpp">
+      <Filter>Renderer\Wrappers\SwapChain</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\RenderPass\RenderPass.hpp">
+      <Filter>Renderer\Wrappers\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\Pipeline\Pipeline.hpp">
+      <Filter>Renderer\Wrappers\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\Commands\CommandBuffer.hpp">
+      <Filter>Renderer\Wrappers\Commands</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\FrameBuffer\FrameBuffer.hpp">
+      <Filter>Renderer\Wrappers\FrameBuffers</Filter>
+    </ClInclude>
     <ClInclude Include="Renderer\Context\FrameContext.hpp">
       <Filter>Renderer\Context</Filter>
     </ClInclude>
@@ -99,8 +183,20 @@
     <ClInclude Include="Renderer\Context\ThreadContext.hpp">
       <Filter>Renderer\Context</Filter>
     </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\SyncObjects\SyncObject.hpp">
+      <Filter>Renderer\Wrappers\SyncObjects</Filter>
+    </ClInclude>
     <ClInclude Include="Renderer\RenderQueue\RenderQueue.hpp">
       <Filter>Renderer\RenderQueue</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\Shaders\Shader.hpp">
+      <Filter>Renderer\Wrappers\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\Shaders\VertexShader.hpp">
+      <Filter>Renderer\Wrappers\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\Shaders\FragmentShader.hpp">
+      <Filter>Renderer\Wrappers\Shaders</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\RenderPasses\ForwardPass.hpp">
       <Filter>Renderer\RenderPasses\ForwardPass</Filter>
@@ -117,6 +213,9 @@
     <ClInclude Include="Renderer\RenderPasses\ForwardPipelineInfo.hpp">
       <Filter>Renderer\RenderPasses\ForwardPass</Filter>
     </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\Pipeline\PipelineInfo.hpp">
+      <Filter>Renderer\Wrappers\Pipeline</Filter>
+    </ClInclude>
     <ClInclude Include="Renderer\Containers\Mesh.hpp">
       <Filter>Renderer\Containers\MeshContainer</Filter>
     </ClInclude>
@@ -125,6 +224,12 @@
     </ClInclude>
     <ClInclude Include="Renderer\Containers\VertexDescription.hpp">
       <Filter>Renderer\Containers\MeshContainer</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\Resources\Buffer\Buffer.hpp">
+      <Filter>Renderer\Wrappers\Resources\Buffer</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\Resources\Image\Image.hpp">
+      <Filter>Renderer\Wrappers\Resources\Image</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\Containers\TextureContainer.hpp">
       <Filter>Renderer\Containers\TextureContainer</Filter>
@@ -147,8 +252,20 @@
     <ClInclude Include="Renderer\Containers\LightContainer.hpp">
       <Filter>Renderer\Containers\LightContainer</Filter>
     </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\Descriptors\DescriptorInfo.hpp">
+      <Filter>Renderer\Wrappers\Descriptors</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\Resources\Sampler\Sampler.hpp">
+      <Filter>Renderer\Wrappers\Resources\Sampler</Filter>
+    </ClInclude>
     <ClInclude Include="Renderer\ResourceManager\ResourceManager.hpp">
       <Filter>Renderer\ResouceManager</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\Descriptors\DescriptorLayoutBuilder.hpp">
+      <Filter>Renderer\Wrappers\Descriptors</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Wrappeers\Descriptors\DescriptorAllocator.hpp">
+      <Filter>Renderer\Wrappers\Descriptors</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -187,6 +304,9 @@
     <Filter Include="Renderer\Camera">
       <UniqueIdentifier>{8495a375-3af5-407c-bc43-f8bc6a3fff45}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Renderer\Common">
+      <UniqueIdentifier>{648d1ca9-ac93-4e5a-96f5-8349c6de5c8e}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Renderer\WindowManager">
       <UniqueIdentifier>{4eb469f1-78bd-4366-af94-eb0959030fab}</UniqueIdentifier>
     </Filter>
@@ -196,11 +316,50 @@
     <Filter Include="Renderer\Context">
       <UniqueIdentifier>{ce1ce20a-f56d-4c9b-9067-f402b2adb917}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Renderer\Wrappers">
+      <UniqueIdentifier>{24498bd2-eaee-4a20-b4fd-71b931b00345}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Wrappers\Commands">
+      <UniqueIdentifier>{a594eed2-fb1e-4ce1-8522-b26e8483d977}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Wrappers\Descriptors">
+      <UniqueIdentifier>{82a4b54d-1ae1-4bfc-9ec5-60ffa980bcca}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Wrappers\Descriptors\Types">
+      <UniqueIdentifier>{163200b3-fe60-4dcb-b5a5-cf5995b38951}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Wrappers\Descriptors\Types\UBO">
+      <UniqueIdentifier>{368bd7f1-5d79-4895-9cca-672ba3998b84}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Wrappers\Device">
+      <UniqueIdentifier>{946352cd-9681-44ad-ac9a-7acd9cc295e9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Wrappers\FrameBuffers">
+      <UniqueIdentifier>{05eefc2f-092b-4268-8f19-2046a2d8f2c4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Wrappers\Pipeline">
+      <UniqueIdentifier>{58d840e8-6003-4ba8-9539-88e59fcc2e1d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Wrappers\RenderPass">
+      <UniqueIdentifier>{44157383-f8cd-45b7-be41-3810eb57d52e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Wrappers\SwapChain">
+      <UniqueIdentifier>{937ebe96-2601-47ac-9eec-82fec5ec3a5a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Wrappers\SyncObjects">
+      <UniqueIdentifier>{11c63417-2662-4c27-9ad9-ca54ead9c6d1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Wrappers\Resources">
+      <UniqueIdentifier>{e7f8d361-123f-4ae0-9c84-eb7861df0e35}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Renderer\Containers">
       <UniqueIdentifier>{54791467-0b8e-45f5-961e-cebff47e3b89}</UniqueIdentifier>
     </Filter>
     <Filter Include="Renderer\RenderQueue">
       <UniqueIdentifier>{78d6aad6-0d48-4795-9e3c-77bcdf84b765}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Wrappers\Shaders">
+      <UniqueIdentifier>{51d6b92c-6c88-477e-aa00-525f79868700}</UniqueIdentifier>
     </Filter>
     <Filter Include="Renderer\RenderPasses\ForwardPass">
       <UniqueIdentifier>{3c510977-4d82-4615-bcd6-4c011f924baa}</UniqueIdentifier>
@@ -214,6 +373,12 @@
     <Filter Include="Renderer\Containers\MeshContainer">
       <UniqueIdentifier>{24953777-77dd-46ce-9d22-7683301abc27}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Renderer\Wrappers\Resources\Image">
+      <UniqueIdentifier>{a39558c6-212d-4621-a484-85c1a6b23462}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Wrappers\Resources\Buffer">
+      <UniqueIdentifier>{53ac8c8a-0e9c-4cac-a19b-c31ff0c83a6f}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Renderer\Containers\TextureContainer">
       <UniqueIdentifier>{0bd65f78-6291-496b-9f8f-208e568fbe0e}</UniqueIdentifier>
     </Filter>
@@ -222,6 +387,9 @@
     </Filter>
     <Filter Include="Renderer\Containers\LightContainer">
       <UniqueIdentifier>{545034a6-e1d3-4e66-b104-89b795e59420}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Wrappers\Resources\Sampler">
+      <UniqueIdentifier>{e786c4be-dfe6-4745-ad02-41b5ad27845c}</UniqueIdentifier>
     </Filter>
     <Filter Include="Renderer\ResouceManager">
       <UniqueIdentifier>{5b955a6a-953c-45a4-ba94-213ee92cdb94}</UniqueIdentifier>

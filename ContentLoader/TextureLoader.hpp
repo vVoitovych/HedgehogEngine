@@ -2,31 +2,29 @@
 
 #include <string>
 
-namespace Hedgehog
+
+namespace ContentLoader
 {
-	namespace ContentLoader
+	class TextureLoader
 	{
-		class TextureLoader
-		{
-		public:
-			TextureLoader();
-			~TextureLoader();
+	public:
+		TextureLoader();
+		~TextureLoader();
 
-			void LoadTexture(const std::string& file);
+		void LoadTexture(const std::string& file);
 
-			int GetWidth() const;
-			int GetHeight() const;
-			int GetChanels() const;
+		int GetWidth() const;
+		int GetHeight() const;
+		int GetChanels() const;
 
-			void* GetData() const;
+		void* GetData() const;
 
-		private:
-			int mWidth;
-			int mHeight;
-			int mChanels;
+	private:
+		int mWidth;
+		int mHeight;
+		int mChanels;
 
-			void* mData;
-		};
-	}
+		void* mData;
+	};
 }
 

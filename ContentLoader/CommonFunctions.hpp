@@ -2,15 +2,13 @@
 
 #include <string>
 
-namespace Hedgehog
+namespace ContentLoader
 {
-	namespace ContentLoader
-	{
-		std::string GetCurrentDirectory();
+	std::string GetCurrentDirectory();
 
-		std::string GetAssetsDirectory();
+	std::string GetAssetsDirectory();
 
-		std::string GetAssetRelativetlyPath(const std::string path);
-	}
+	std::string GetAssetRelativetlyPath(const std::string path);
 }
+
 
