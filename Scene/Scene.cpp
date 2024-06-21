@@ -9,8 +9,11 @@
 #include "ContentLoader/CommonFunctions.hpp"
 #include "Logger/Logger.hpp"
 #include "DialogueWindows/SceneDialogue/SceneDialogue.hpp"
+#include "DialogueWindows/MaterialDialogue/MaterialDialogue.hpp"
 
 #include <sstream>
+#include <fstream>
+#include <filesystem>
 
 namespace Scene
 {
@@ -271,19 +274,27 @@ namespace Scene
 		return mSceneCoordinator.HasComponent<RenderComponent>(entity);;
 	}
 
-	void Scene::CreateMaterial()
-	{
-		mRenderSystem->CreateMaterial();
-	}
-
 	void Scene::LoadMaterial(ECS::Entity entity)
 	{
-		mRenderSystem->LoadMaterial(mSceneCoordinator, entity);
+		char* path = DialogueWindows::MaterialOpenDialogue();
+		if (path == nullptr)
+		{
+			return;
+		}
+		std::string relatedPath = ContentLoader::GetAssetRelativetlyPath(path);
+		auto& component = mSceneCoordinator.GetComponent<RenderComponent>(entity);
+		component.mMaterial = relatedPath;		
+
+		mRenderSystem->Update(mSceneCoordinator, entity);
 	}
 
 	void Scene::UpdateMaterialComponent(ECS::Entity entity)
 	{
 		mRenderSystem->Update(mSceneCoordinator, entity);
+	}
+	void Scene::CreateMaterial()
+	{
+		LOGERROR("Function create material didn't implemented");
 	}
 
 	void Scene::TryToAddLightComponent()

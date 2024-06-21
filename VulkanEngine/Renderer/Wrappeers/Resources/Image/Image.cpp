@@ -69,6 +69,8 @@ namespace Renderer
 		: mImage(other.mImage)
 		, mAllocation(other.mAllocation)
 		, mImageView(other.mImageView)
+		, mExtent(other.mExtent)
+		, mFormat(other.mFormat)
 	{
 		other.mImage = nullptr;
 		other.mAllocation = nullptr;

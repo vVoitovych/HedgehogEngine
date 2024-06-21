@@ -10,7 +10,6 @@
 #include "Renderer/Context/FrameContext.hpp"
 
 #include "Renderer/ResourceManager/ResourceManager.hpp"
-
 #include "Renderer/Wrappeers/Device/Device.hpp"
 #include "Renderer/Wrappeers/SwapChain/SwapChain.hpp"
 #include "Renderer/Wrappeers/RenderPass/RenderPass.hpp"
@@ -28,7 +27,10 @@
 
 #include "Renderer/Containers/MeshContainer.hpp"
 #include "Renderer/Containers/TextureContainer.hpp"
+
 #include "Scene/RenderObjectsManager.hpp"
+#include "Scene/Scene.hpp"
+
 #include "Renderer/Common/RendererSettings.hpp"
 #include "Logger/Logger.hpp"
 
@@ -76,8 +78,8 @@ namespace Renderer
 		auto& threadContext = context->GetThreadContext();
 		auto& engineContext = context->GetEngineContext();
 
-		auto& materialImage = engineContext->GetTextureContainer().GetImage(0);
-		auto& materalSampler = engineContext->GetTextureContainer().GetSampler(SamplerType::Linear);
+		auto& materialImage = engineContext->GetTextureContainer().GetImage(vulkanContext->GetDevice(), "Textures\\viking_room.png");
+		auto& materalSampler = engineContext->GetTextureContainer().GetSampler(vulkanContext->GetDevice(), SamplerType::Linear);
 
 		auto& device = vulkanContext->GetDevice();
 		ForwardPassInfo info{ resourceManager->GetColorBuffer()->GetFormat(), resourceManager->GetDepthBuffer()->GetFormat()};

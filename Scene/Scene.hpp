@@ -56,9 +56,9 @@ namespace Scene
 		void AddRenderComponent(ECS::Entity entity);
 		void RemoveRenderComponent();
 		bool HasRenderComponent(ECS::Entity entity) const;
-		void CreateMaterial();
 		void LoadMaterial(ECS::Entity entity);
 		void UpdateMaterialComponent(ECS::Entity entity);
+		void CreateMaterial();
 
 		void TryToAddLightComponent();
 		void AddLightComponent(ECS::Entity entity);
@@ -106,7 +106,7 @@ namespace Scene
 		std::shared_ptr<HierarchySystem> mHierarchySystem;
 		std::shared_ptr<MeshSystem> mMeshSystem;
 		std::shared_ptr<LightSystem> mLightSystem;
-		std::shared_ptr< RenderSystem> mRenderSystem;
+		std::shared_ptr<RenderSystem> mRenderSystem;
 
 		uint16_t mGameObjectIndex = 0;
 	private:

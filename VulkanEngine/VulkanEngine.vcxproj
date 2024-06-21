@@ -161,6 +161,8 @@
   <ItemGroup>
     <ClCompile Include="Renderer\Camera\Camera.cpp" />
     <ClCompile Include="Renderer\Containers\LightContainer.cpp" />
+    <ClCompile Include="Renderer\Containers\MaterialContainer.cpp" />
+    <ClCompile Include="Renderer\Containers\MaterialSerializer.cpp" />
     <ClCompile Include="Renderer\Containers\Mesh.cpp" />
     <ClCompile Include="Renderer\Containers\MeshContainer.cpp" />
     <ClCompile Include="Renderer\Containers\TextureContainer.cpp" />
@@ -215,6 +217,9 @@
     <ClInclude Include="Renderer\Common\RendererSettings.hpp" />
     <ClInclude Include="Renderer\Containers\Light.hpp" />
     <ClInclude Include="Renderer\Containers\LightContainer.hpp" />
+    <ClInclude Include="Renderer\Containers\MaterialContainer.hpp" />
+    <ClInclude Include="Renderer\Containers\MaterialData.hpp" />
+    <ClInclude Include="Renderer\Containers\MaterialSerializer.hpp" />
     <ClInclude Include="Renderer\Containers\Mesh.hpp" />
     <ClInclude Include="Renderer\Containers\MeshContainer.hpp" />
     <ClInclude Include="Renderer\Containers\TextureContainer.hpp" />

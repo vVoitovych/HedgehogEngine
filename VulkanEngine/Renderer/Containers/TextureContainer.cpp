@@ -7,122 +7,110 @@
 #include "ContentLoader/TextureLoader.hpp"
 #include "Logger/Logger.hpp"
 
+#include <stdexcept>
+
 namespace Renderer
 {
-	TextureContaineer::TextureContaineer()
+	TextureContainer::TextureContainer()
+	{
+
+	}
+
+	TextureContainer::~TextureContainer()
 	{
 	}
 
-	TextureContaineer::~TextureContaineer()
+	void TextureContainer::Cleanup(const Device& device)
 	{
-	}
-
-	void TextureContaineer::AddTexture(std::string filePath, VkFormat format)
-	{
-		auto it = std::find_if(mTexturesList.begin(), mTexturesList.end(), [&filePath](const TextureInfo& info) { return info.filePath == filePath; });
-		if (it == mTexturesList.end())
+		for (auto& image : mImages)
 		{
-			mTexturesList.push_back({ filePath, format });
-		}
-		else
-		{
-			LOGWARNING("Texture ", filePath, " already added");
-		}
-	}
-
-	void TextureContaineer::ClearFileList()
-	{
-		mTexturesList.clear();
-	}
-
-	void TextureContaineer::Initialize(const Device& device)
-	{
-		for (size_t i = 0; i < mTexturesList.size(); ++i)
-		{
-			ContentLoader::TextureLoader textureLoader;
-			textureLoader.LoadTexture(mTexturesList[i].filePath);
-			int texWidth = textureLoader.GetWidth();
-			int texHeight = textureLoader.GetHeight();
-			VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth * texHeight * 4);
-
-			Buffer stageBuffer(
-				device,
-				imageSize,
-				VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-				VMA_MEMORY_USAGE_CPU_TO_GPU);
-
-			stageBuffer.CopyDataToBufferMemory(device, textureLoader.GetData(), static_cast<size_t>(imageSize));
-
-			Image image(
-				device,
-				texWidth, texHeight,
-				mTexturesList[i].format,
-				VK_IMAGE_TILING_OPTIMAL,
-				VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-			device.TransitionImageLayout(image.GetNativeImage(), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-			device.CopyBufferToImage(stageBuffer.GetNativeBuffer(), image.GetNativeImage(), static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
-			device.TransitionImageLayout(image.GetNativeImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-			stageBuffer.DestroyBuffer(device);
-			image.CreateImageView(device, mTexturesList[i].format, VK_IMAGE_ASPECT_COLOR_BIT);
-
-			mImages.push_back(std::move(image));
-			LOGINFO("Vulkan texture ", mTexturesList[i].filePath, " loaded and initialized");
-		}
-
-		mSamplersList.clear();
-		Sampler linearSampler(device);
-		mSamplersList.push_back(std::move(linearSampler));
-	}
-
-	void TextureContaineer::Cleanup(const Device& device)
-	{
-		for (size_t i = 0; i < mTexturesList.size(); ++i)
-		{
-			mImages[i].Cleanup(device);
+			image.second.Cleanup(device);
 		}
 		mImages.clear();
 
 		for (auto& sampler : mSamplersList)
 		{
-			sampler.Cleanup(device);
+			sampler.second.Cleanup(device);
 		}
 		mSamplersList.clear();
 	}
 
-	const Image& TextureContaineer::GetImage(std::string filePath) const
+	const Image& TextureContainer::CreateImage(const Device& device, std::string filePath) const
 	{
-		auto it = std::find_if(mTexturesList.begin(), mTexturesList.end(), [&filePath](const TextureInfo& info) { return info.filePath == filePath; });
-		if (it != mTexturesList.end())
+		ContentLoader::TextureLoader textureLoader;
+		textureLoader.LoadTexture(filePath);
+		int texWidth = textureLoader.GetWidth();
+		int texHeight = textureLoader.GetHeight();
+		VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth * texHeight * 4);
+
+		Buffer stageBuffer(
+			device,
+			imageSize,
+			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			VMA_MEMORY_USAGE_CPU_TO_GPU);
+
+		stageBuffer.CopyDataToBufferMemory(device, textureLoader.GetData(), static_cast<size_t>(imageSize));
+
+		VkFormat format = VK_FORMAT_R8G8B8A8_SRGB; //TODO: make different texture formats
+		Image image(
+			device,
+			texWidth, texHeight,
+			format,
+			VK_IMAGE_TILING_OPTIMAL,
+			VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+		device.TransitionImageLayout(image.GetNativeImage(), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+		device.CopyBufferToImage(stageBuffer.GetNativeBuffer(), image.GetNativeImage(), static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
+		device.TransitionImageLayout(image.GetNativeImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		stageBuffer.DestroyBuffer(device);
+		image.CreateImageView(device, format, VK_IMAGE_ASPECT_COLOR_BIT);
+
+		auto result = mImages.emplace(filePath, std::move(image));
+		LOGINFO("Vulkan texture ", filePath, " loaded and initialized");
+		auto it = mImages.find(filePath);
+		return it->second;
+	}
+
+	const Sampler& TextureContainer::CreateSampler(const Device& device, SamplerType type) const
+	{
+		if (type== Renderer::SamplerType::Linear)
 		{
-			return mImages[it - mTexturesList.begin()];
+			Sampler linearSampler(device);
+			mSamplersList.emplace(SamplerType::Linear, std::move(linearSampler));
+			auto it = mSamplersList.find(type);
+			return it->second;
 		}
 		else
 		{
-			LOGERROR("TYexture ", filePath, " not found");
+			throw std::runtime_error("unsupported sampler type");
 		}
 	}
 
-	const Image& TextureContaineer::GetImage(size_t index) const
+	const Image& TextureContainer::GetImage(const Device& device, std::string filePath) const
 	{
-		return mImages[index];
-	}
-
-	size_t TypeToIndex(SamplerType type)
-	{
-		switch (type)
+		auto it = mImages.find(filePath);
+		if (it != mImages.end())
 		{
-		case Renderer::SamplerType::Linear:
-			return 0;
-			break;
-		default:
-			throw std::exception("Wrond sampler type");
+			return it->second;
+		}
+		else
+		{
+			return CreateImage(device, filePath);
 		}
 	}
 
-	const Sampler& TextureContaineer::GetSampler(SamplerType type) const
+	const Sampler& TextureContainer::GetSampler(const Device& device, SamplerType type) const
 	{
-		return mSamplersList[TypeToIndex(type)];
+		auto it = mSamplersList.find(type);
+		if (it != mSamplersList.end())
+		{
+			return it->second;
+		}
+		else
+		{
+			return CreateSampler(device, type);
+		}
+
 	}
 
 }

@@ -20,6 +20,12 @@ namespace Renderer
 		);
 		~Buffer();
 
+		Buffer(const Buffer&) = delete;
+		Buffer& operator=(const Buffer&) = delete;
+
+		Buffer(Buffer&& other) noexcept;
+		Buffer& operator=(Buffer&& other) noexcept;
+
 		void CopyDataToBufferMemory(const Device& device, const void* data, size_t size);
 		void DestroyBuffer(const Device& device);
 
