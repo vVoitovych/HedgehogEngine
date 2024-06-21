@@ -17,7 +17,7 @@ namespace Renderer
 
 		MaterialType type;
 		std::string baseColor;
-		float tansparency;
+		float transparency;
 	};
 
 }

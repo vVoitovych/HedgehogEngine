@@ -30,6 +30,7 @@ namespace Renderer
 		const TextureContainer& GetTextureContainer() const;
 		const LightContainer& GetLightContainer() const;
 		const MaterialContainer& GetMaterialContainer() const;
+		MaterialContainer& GetMaterialContainer();
 
 		const Camera& GetCamera() const;
 		Scene::Scene& GetScene();

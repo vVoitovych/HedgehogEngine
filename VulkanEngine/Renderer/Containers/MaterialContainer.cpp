@@ -14,6 +14,9 @@
 #include "Renderer/Context/VulkanContext.hpp"
 #include "Renderer/Common/RendererSettings.hpp"
 
+#include "DialogueWindows/MaterialDialogue/MaterialDialogue.hpp"
+#include "ContentLoader/CommonFunctions.hpp"
+
 #include "Scene/Scene.hpp"
 
 namespace Renderer
@@ -30,7 +33,8 @@ namespace Renderer
 		mDescriptorAllocator = std::make_unique<DescriptorAllocator>(context.GetDevice(), materialCount, sizes);
 
 		DescriptorLayoutBuilder builder;
-		builder.AddBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+		builder.AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+		builder.AddBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 		mLayout = std::make_unique<DescriptorSetLayout>(context.GetDevice(), builder, VK_SHADER_STAGE_FRAGMENT_BIT);
 	}
 
@@ -44,16 +48,10 @@ namespace Renderer
 		for (size_t i = mMaterials.size(); i < materialsInScene.size(); ++i)
 		{
 			MaterialData data;
-			MaterialSerializer::Deserialize(data, materialsInScene[i]);
+			MaterialSerializer::Deserialize(data, ContentLoader::GetAssetsDirectory() + materialsInScene[i]);
 			mMaterials.push_back(data);
-
-			if (std::find(mTextures.begin(), mTextures.end(), data.baseColor) == mTextures.end())
-			{
-				mTextures.push_back(data.baseColor);
-			}
-
 		}
-		UpdateIndicies();
+		UpdateIndicies(); // TODO: optimize it
 	}
 
 	void MaterialContainer::UpdateResources(const VulkanContext& context, const TextureContainer& textureContainer)
@@ -63,11 +61,11 @@ namespace Renderer
 			auto& device = context.GetDevice();
 			VkDeviceSize size = sizeof(MaterialUniform);
 			MaterialUniform materialData;
-			materialData.transparency = mMaterials[i].tansparency;
+			materialData.transparency = mMaterials[i].transparency;
 			Buffer staginBuffer(device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 			staginBuffer.CopyDataToBufferMemory(device, &materialData, (size_t)size);
 
-			Buffer materialUniform(device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
+			Buffer materialUniform(device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
 			device.CopyBufferToBuffer(staginBuffer.GetNativeBuffer(), materialUniform.GetNativeBuffer(), size);
 
 			VkDescriptorBufferInfo bufferInfo{};
@@ -110,7 +108,7 @@ namespace Renderer
 		auto& device = context.GetDevice();
 		VkDeviceSize size = sizeof(MaterialUniform);
 		MaterialUniform materialData;
-		materialData.transparency = mMaterials[index].tansparency;
+		materialData.transparency = mMaterials[index].transparency;
 		Buffer staginBuffer(device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 		staginBuffer.CopyDataToBufferMemory(device, &materialData, (size_t)size);
 
@@ -153,7 +151,11 @@ namespace Renderer
 			set.Cleanup(context.GetDevice(), *mDescriptorAllocator);
 		}
 		mDescriptorSets.clear();
-
+		for (auto& uniform : mMaterialUniforms)
+		{
+			uniform.DestroyBuffer(context.GetDevice());
+		}
+		mMaterialUniforms.clear();
 		mLayout->Cleanup(context.GetDevice());
 		mDescriptorAllocator->Cleanup(context.GetDevice());
 	}
@@ -161,6 +163,24 @@ namespace Renderer
 	void MaterialContainer::ClearMaterials()
 	{
 		mMaterials.clear();
+	}
+
+	void MaterialContainer::CreateNewMaterial()
+	{
+		auto path = DialogueWindows::MaterialCreationDialogue();
+		if (path != nullptr)
+		{
+			MaterialData newData;
+			newData.type = MaterialType::Opaque;
+			newData.transparency = 1.0f;
+			newData.baseColor = mDefaultCellTexture;
+			newData.path = ContentLoader::GetAssetRelativetlyPath(path);
+
+			MaterialSerializer::Serialize(newData, path);
+
+			mMaterials.push_back(newData);
+		}
+
 	}
 
 	void MaterialContainer::UpdateIndicies()

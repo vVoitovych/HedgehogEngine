@@ -292,10 +292,6 @@ namespace Scene
 	{
 		mRenderSystem->Update(mSceneCoordinator, entity);
 	}
-	void Scene::CreateMaterial()
-	{
-		LOGERROR("Function create material didn't implemented");
-	}
 
 	void Scene::TryToAddLightComponent()
 	{

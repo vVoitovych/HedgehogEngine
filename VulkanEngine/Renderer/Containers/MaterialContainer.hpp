@@ -40,6 +40,8 @@ namespace Renderer
 
 		void ClearMaterials();
 
+		void CreateNewMaterial();
+
 		size_t GetOpaqueMaterialsCount() const;
 		size_t GetTransparentMaterialsCount() const;
 		size_t GetCutoffMaterialsCount() const;
@@ -61,8 +63,10 @@ namespace Renderer
 			float transparency;
 		};
 	private:
+		const std::string mDefaultWtiteTexture = "Textures\\Default\\white.png";
+		const std::string mDefaultCellTexture = "Textures\\Default\\cells.png";
+
 		std::vector<MaterialData> mMaterials;
-		std::vector<std::string> mTextures;
 
 		std::unique_ptr<DescriptorSetLayout> mLayout;
 		std::unique_ptr<DescriptorAllocator> mDescriptorAllocator;

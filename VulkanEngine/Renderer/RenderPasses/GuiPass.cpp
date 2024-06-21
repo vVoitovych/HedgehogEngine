@@ -8,6 +8,7 @@
 #include "Renderer/Context/EngineContext.hpp"
 
 #include "Renderer/ResourceManager/ResourceManager.hpp"
+#include "Renderer/Containers/MaterialContainer.hpp"
 
 #include "Renderer/Wrappeers/RenderPass/RenderPass.hpp"
 #include "Renderer/Wrappeers/Commands/CommandBuffer.hpp"
@@ -434,7 +435,7 @@ namespace Renderer
 				}
 
 				ImGui::Separator();
-				if (ImGui::MenuItem("Create material")) { scene.CreateMaterial(); }
+				if (ImGui::MenuItem("Create material")) { context->GetEngineContext()->GetMaterialContainer().CreateNewMaterial(); }
 				ImGui::EndMenu();
 			}
 

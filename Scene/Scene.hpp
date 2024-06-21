@@ -58,7 +58,6 @@ namespace Scene
 		bool HasRenderComponent(ECS::Entity entity) const;
 		void LoadMaterial(ECS::Entity entity);
 		void UpdateMaterialComponent(ECS::Entity entity);
-		void CreateMaterial();
 
 		void TryToAddLightComponent();
 		void AddLightComponent(ECS::Entity entity);

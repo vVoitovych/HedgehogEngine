@@ -9,7 +9,7 @@ namespace Renderer
 	class MaterialSerializer
 	{
 	public:
-		static void Serialize(MaterialData& material);
+		static void Serialize(MaterialData& material, std::string materialPath);
 
 		static void Deserialize(MaterialData& material, std::string materialPath);
 

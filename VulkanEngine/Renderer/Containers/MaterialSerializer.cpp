@@ -2,6 +2,7 @@
 
 #include "MaterialData.hpp"
 #include "Logger/Logger.hpp"
+#include "ContentLoader/CommonFunctions.hpp"
 
 #define YAML_CPP_STATIC_DEFINE
 #include "ThirdParty/yaml-cpp/yaml.h"
@@ -11,18 +12,18 @@
 
 namespace Renderer
 {
-	void MaterialSerializer::Serialize(MaterialData& material)
+	void MaterialSerializer::Serialize(MaterialData& material, std::string materialPath)
 	{
-		LOGINFO("Serialize material: ", material.path);
+		LOGINFO("Serialize material: ", materialPath);
 
 		YAML::Emitter out;
 		out << YAML::BeginMap;
 		out << YAML::Key << "Type" << YAML::Value << static_cast<size_t>(material.type);
 		out << YAML::Key << "BaseColor" << YAML::Value << material.baseColor;
-		out << YAML::Key << "Transparency" << YAML::Value << material.tansparency;
+		out << YAML::Key << "Transparency" << YAML::Value << material.transparency;
 		out << YAML::EndMap;
 
-		std::ofstream fout(material.path);
+		std::ofstream fout(materialPath);
 		fout << out.c_str();
 	}
 
@@ -40,10 +41,10 @@ namespace Renderer
 			LOGERROR("Failed to load scene: ", materialPath, " with error: ", e.what());
 			return;
 		}
-		material.path = materialPath;
+		material.path = ContentLoader::GetAssetRelativetlyPath(materialPath);
 		material.type =	static_cast<MaterialType>(data["Type"].as<size_t>());
 		material.baseColor = data["BaseColor"].as<std::string>();
-		material.tansparency = data["Transparency"].as<float>();;
+		material.transparency = data["Transparency"].as<float>();;
 	}
 
 }

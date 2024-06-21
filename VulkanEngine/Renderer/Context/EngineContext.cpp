@@ -30,6 +30,8 @@ namespace Renderer
         mTextureContainer = std::make_unique<TextureContainer>();
         mLightContainer = std::make_unique<LightContainer>();
         mLightContainer->UpdateLights(*mScene);
+
+        mMaterialContainer = std::make_unique<MaterialContainer>(vulkanContext);
     }
 
     EngineContext::~EngineContext()
@@ -40,6 +42,7 @@ namespace Renderer
     {
         mMeshContainer->Cleanup(vulkanContext);
         mTextureContainer->Cleanup(vulkanContext.GetDevice());
+        mMaterialContainer->Cleanup(vulkanContext);
     }
 
     void EngineContext::UpdateContext(VulkanContext& vulkanContext, float dt)
@@ -51,6 +54,8 @@ namespace Renderer
         mCamera->UpdateCamera(dt, extend.width / (float)extend.height, controls);
         mScene->UpdateScene(dt);
         mLightContainer->UpdateLights(*mScene);
+        mMaterialContainer->Update(*mScene);
+        mMaterialContainer->UpdateResources(vulkanContext, *mTextureContainer);
     }
 
     const MeshContainer& EngineContext::GetMeshContainer() const
@@ -69,6 +74,11 @@ namespace Renderer
     }
 
     const MaterialContainer& EngineContext::GetMaterialContainer() const
+    {
+        return *mMaterialContainer;
+    }
+
+    MaterialContainer& EngineContext::GetMaterialContainer()
     {
         return *mMaterialContainer;
     }
