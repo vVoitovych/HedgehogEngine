@@ -18,6 +18,14 @@ namespace Scene
 		}
 	}
 
+	void RenderSystem::UpdataSystem(ECS::Coordinator& coordinator)
+	{
+		for (auto entity : entities)
+		{
+			Update(coordinator, entity);
+		}
+	}
+
 	size_t RenderSystem::GetMaterialsCount() const
 	{
 		return mMaterialPathes.size();

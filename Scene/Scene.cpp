@@ -114,6 +114,7 @@ namespace Scene
 		mSceneCoordinator.DestroyEntity(mRoot);
 		SceneSerializer::DeserializeScene(*this, path);
 
+		mRenderSystem->UpdataSystem(mSceneCoordinator);
 	}
 
 	void Scene::Save()

@@ -11,7 +11,7 @@ namespace Scene
 	{
 	public:
 		void Update(ECS::Coordinator& coordinator, ECS::Entity entity);
-
+		void UpdataSystem(ECS::Coordinator& coordinator);
 		size_t GetMaterialsCount() const;
 		const std::vector<std::string>& GetMaterials() const;
 

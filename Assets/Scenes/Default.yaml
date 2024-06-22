@@ -19,6 +19,9 @@ Scene:
           MeshPath: Models\viking_room.obj
           MeshIndex: 0
           CachedMeshPath: Models\viking_room.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials\test1.material
         Children:
           - Entity: 2
             Name: "sub_room\x00t_0"
