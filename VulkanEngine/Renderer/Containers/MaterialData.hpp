@@ -8,7 +8,7 @@ namespace Renderer
 	{
 		Opaque,
 		Cutoff,
-		Transparency
+		Transparent
 	};
 
 	struct MaterialData

@@ -66,8 +66,6 @@ namespace Scene
 		mMeshSystem->AddMeshPath("Models\\Default\\cube.obj");
 		mMeshSystem->AddMeshPath("Models\\Default\\sphere.obj");
 
-		mTextures.push_back("Textures\\viking_room.png");
-
 	}
 
 	void Scene::UpdateScene(float dt)
@@ -399,11 +397,6 @@ namespace Scene
 		return mMeshSystem->GetMeshes();
 	}
 
-	const std::vector<std::string>& Scene::GetTextures() const
-	{
-		return mTextures;
-	}
-
 	const std::vector<std::string>& Scene::GetMaterials() const
 	{
 		return mRenderSystem->GetMaterials();
@@ -435,8 +428,9 @@ namespace Scene
 
 	std::string Scene::GetNewGameObjectName()
 	{
+		static size_t gameObjectIndex = 0;
 		std::stringstream ss;
-		ss << "GameObject_" << mGameObjectIndex++;
+		ss << "GameObject_" << gameObjectIndex++;
 		return ss.str();
 	}
 

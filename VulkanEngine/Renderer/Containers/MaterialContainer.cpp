@@ -183,6 +183,13 @@ namespace Renderer
 
 	}
 
+	void MaterialContainer::SaveMaterial(size_t index)
+	{
+		MaterialData newData = mMaterials[index];
+
+		MaterialSerializer::Serialize(newData, ContentLoader::GetAssetsDirectory() + newData.path);
+	}
+
 	void MaterialContainer::UpdateIndicies()
 	{
 		mOpaqueMaterials.clear();
@@ -195,7 +202,7 @@ namespace Renderer
 			{
 			case MaterialType::Opaque: mOpaqueMaterials.push_back(i);
 				break;
-			case MaterialType::Transparency: mTransparentMaterials.push_back(i);
+			case MaterialType::Transparent: mTransparentMaterials.push_back(i);
 				break;
 			case MaterialType::Cutoff: mCutoffMaterials.push_back(i);
 				break;

@@ -4,6 +4,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace Renderer
 {
@@ -29,6 +30,8 @@ namespace Renderer
 
 		const Image& GetImage(const Device& device, std::string filePath) const;
 		const Sampler& GetSampler(const Device& device, SamplerType type) const;
+		const std::vector<std::string>& GetTexturePathes() const;
+		size_t GetTextureIndex(std::string name) const;
 
 		void Cleanup(const Device& device);
 	private:
@@ -38,6 +41,7 @@ namespace Renderer
 	private:
 		mutable std::unordered_map<SamplerType, Sampler> mSamplersList;
 		mutable std::unordered_map<std::string, Image> mImages;
+		mutable std::vector<std::string> mTexturePathes;
 	};
 
 

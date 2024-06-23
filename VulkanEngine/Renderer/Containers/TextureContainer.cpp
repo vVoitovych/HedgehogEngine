@@ -27,6 +27,7 @@ namespace Renderer
 			image.second.Cleanup(device);
 		}
 		mImages.clear();
+		mTexturePathes.clear();
 
 		for (auto& sampler : mSamplersList)
 		{
@@ -66,6 +67,8 @@ namespace Renderer
 		image.CreateImageView(device, format, VK_IMAGE_ASPECT_COLOR_BIT);
 
 		auto result = mImages.emplace(filePath, std::move(image));
+		mTexturePathes.push_back(filePath);
+
 		LOGINFO("Vulkan texture ", filePath, " loaded and initialized");
 		auto it = mImages.find(filePath);
 		return it->second;
@@ -111,6 +114,17 @@ namespace Renderer
 			return CreateSampler(device, type);
 		}
 
+	}
+
+	const std::vector<std::string>& TextureContainer::GetTexturePathes() const
+	{
+		return mTexturePathes;
+	}
+
+	size_t TextureContainer::GetTextureIndex(std::string name) const
+	{
+		auto it = std::find(mTexturePathes.begin(), mTexturePathes.end(), name);
+		return it - mTexturePathes.begin();
 	}
 
 }

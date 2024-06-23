@@ -80,7 +80,6 @@ namespace Scene
 		void SelectGameObject(ECS::Entity entity);
 
 		const std::vector<std::string>& GetMeshes() const;
-		const std::vector<std::string>& GetTextures() const;
 		const std::vector<std::string>& GetMaterials() const;
 
 		const std::vector<RenderableObject>& GetRenderableObjects() const;
@@ -92,8 +91,6 @@ namespace Scene
 
 	private:
 		std::string mSceneName;
-
-		std::vector<std::string> mTextures;
 
 		ECS::Coordinator mSceneCoordinator;
 		ECS::Entity mRoot;
@@ -107,7 +104,6 @@ namespace Scene
 		std::shared_ptr<LightSystem> mLightSystem;
 		std::shared_ptr<RenderSystem> mRenderSystem;
 
-		uint16_t mGameObjectIndex = 0;
 	private:
 		friend class SceneSerializer;
 	};

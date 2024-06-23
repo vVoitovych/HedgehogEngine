@@ -41,6 +41,7 @@ namespace Renderer
 		void ClearMaterials();
 
 		void CreateNewMaterial();
+		void SaveMaterial(size_t index);
 
 		size_t GetOpaqueMaterialsCount() const;
 		size_t GetTransparentMaterialsCount() const;

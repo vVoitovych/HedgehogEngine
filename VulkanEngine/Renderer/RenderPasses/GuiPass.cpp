@@ -9,6 +9,8 @@
 
 #include "Renderer/ResourceManager/ResourceManager.hpp"
 #include "Renderer/Containers/MaterialContainer.hpp"
+#include "Renderer/Containers/TextureContainer.hpp"
+#include "Renderer/Containers/MaterialData.hpp"
 
 #include "Renderer/Wrappeers/RenderPass/RenderPass.hpp"
 #include "Renderer/Wrappeers/Commands/CommandBuffer.hpp"
@@ -26,6 +28,8 @@
 #include "Scene/SceneComponents/MeshComponent.hpp"
 #include "Scene/SceneComponents/LightComponent.hpp"
 #include "Scene/SceneComponents/RenderComponent.hpp"
+
+#include "Logger/Logger.hpp"
 
 #include "ThirdParty/ImGui/imgui.h"
 #include "ThirdParty/ImGui/imgui_impl_vulkan.h"
@@ -198,7 +202,6 @@ namespace Renderer
 		if (scene.IsGameObjectSelected())
 		{
 			auto entity = scene.GetSelectedGameObject();
-			auto& transform = scene.GetTransformComponent(entity);
 			auto& hierarchy = scene.GetHierarchyComponent(entity);	
 			auto name = hierarchy.mName;
 			if (ImGui::CollapsingHeader("Name"))
@@ -211,6 +214,8 @@ namespace Renderer
 			
 			if (ImGui::CollapsingHeader("Transform Component"))
 			{
+
+				auto& transform = scene.GetTransformComponent(entity);
 				ImGui::SeparatorText("Position");
 				ImGui::DragFloat("pos x", &transform.mPososition.x, 0.5f);
 				ImGui::DragFloat("pos y", &transform.mPososition.y, 0.5f);
@@ -348,10 +353,64 @@ namespace Renderer
 					{
 						scene.LoadMaterial(entity);
 					}
-
+					if (!materials.empty())
+					{
+						if (ImGui::Button("Save material"))
+						{
+							context->GetEngineContext()->GetMaterialContainer().SaveMaterial(render.mMaterialIndex.value());
+						}
+					}
 					if (ImGui::Button("Remove component"))
 					{
 						scene.RemoveRenderComponent();
+					}
+					if (!materials.empty())
+					{
+						ImGui::SeparatorText("Material");
+						auto& materialContainer = context->GetEngineContext()->GetMaterialContainer();
+						auto& textuteContainer = context->GetEngineContext()->GetTextureContainer();
+
+						auto& materialData = materialContainer.GetMaterialDataByIndex(render.mMaterialIndex.value());
+
+						const char* types[] = { "Opaque", "Cutoff", "Transparent" };
+						static int materialType = static_cast<int>(materialData.type);
+						ImGui::Combo("Type", &materialType, types, IM_ARRAYSIZE(types));
+						materialData.type = static_cast<MaterialType>(materialType);
+
+						auto& textures = textuteContainer.GetTexturePathes();
+						int selectedIndex = static_cast<int>(textuteContainer.GetTextureIndex(materialData.baseColor));
+
+						if (ImGui::BeginCombo("baseColor", materialData.baseColor.c_str()))
+						{
+							for (int i = 0; i < textures.size(); ++i)
+							{
+								const bool isSelected = (selectedIndex == i);
+								if (ImGui::Selectable(textures[i].c_str(), isSelected))
+								{
+									selectedIndex = i;
+									materialData.baseColor = textures[i];
+									materialContainer.UpdateMaterialByIndex(render.mMaterialIndex.value(), *context->GetVulkanContext(), textuteContainer);
+								}
+
+								if (isSelected)
+								{
+									ImGui::SetItemDefaultFocus();
+								}
+							}
+							ImGui::EndCombo();
+						}
+						if (ImGui::Button("Load texture"))
+						{
+
+						}
+
+
+						if (materialData.type == MaterialType::Transparent)
+						{
+							static float materialTransparency = materialData.transparency;
+							ImGui::SliderFloat("slider float", &materialTransparency, 0.0f, 1.0f, "ratio = %.3f");
+							materialData.transparency = materialTransparency;
+						}
 					}
 				}
 			}
