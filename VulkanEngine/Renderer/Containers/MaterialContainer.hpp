@@ -43,20 +43,12 @@ namespace Renderer
 		void CreateNewMaterial();
 		void SaveMaterial(size_t index);
 
-		size_t GetOpaqueMaterialsCount() const;
-		size_t GetTransparentMaterialsCount() const;
-		size_t GetCutoffMaterialsCount() const;
-		const std::vector<size_t>& GetOpequeMaterials() const;
-		const std::vector<size_t>& GetTransparentMaterials() const;
-		const std::vector<size_t>& GetCutoffMaterials() const;
+		void LoadBaseTexture(size_t index, const VulkanContext& context, const TextureContainer& textureContainer);
 
 		const DescriptorSetLayout& GetDescriptorSetLayout() const;
 		const DescriptorSet& GetDescriptorSet(size_t index) const;
 
 		MaterialData& GetMaterialDataByIndex(size_t index);
-
-	private:
-		void UpdateIndicies();
 
 	private:
 		struct MaterialUniform
@@ -74,9 +66,6 @@ namespace Renderer
 		std::vector<Buffer> mMaterialUniforms;
 		std::vector<DescriptorSet> mDescriptorSets;
 
-		std::vector<size_t> mOpaqueMaterials;
-		std::vector<size_t> mTransparentMaterials;
-		std::vector<size_t> mCutoffMaterials;
 	};
 
 }

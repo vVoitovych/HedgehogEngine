@@ -401,7 +401,7 @@ namespace Renderer
 						}
 						if (ImGui::Button("Load texture"))
 						{
-
+							materialContainer.LoadBaseTexture(render.mMaterialIndex.value(), *context->GetVulkanContext(), textuteContainer);
 						}
 
 
@@ -410,6 +410,7 @@ namespace Renderer
 							static float materialTransparency = materialData.transparency;
 							ImGui::SliderFloat("slider float", &materialTransparency, 0.0f, 1.0f, "ratio = %.3f");
 							materialData.transparency = materialTransparency;
+							// TODO: update material UBO
 						}
 					}
 				}

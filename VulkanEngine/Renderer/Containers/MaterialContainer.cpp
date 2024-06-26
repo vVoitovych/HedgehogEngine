@@ -15,6 +15,8 @@
 #include "Renderer/Common/RendererSettings.hpp"
 
 #include "DialogueWindows/MaterialDialogue/MaterialDialogue.hpp"
+#include "DialogueWindows/TextureDialogue/TextureDialogue.hpp"
+
 #include "ContentLoader/CommonFunctions.hpp"
 
 #include "Scene/Scene.hpp"
@@ -51,7 +53,6 @@ namespace Renderer
 			MaterialSerializer::Deserialize(data, ContentLoader::GetAssetsDirectory() + materialsInScene[i]);
 			mMaterials.push_back(data);
 		}
-		UpdateIndicies(); // TODO: optimize it
 	}
 
 	void MaterialContainer::UpdateResources(const VulkanContext& context, const TextureContainer& textureContainer)
@@ -190,54 +191,14 @@ namespace Renderer
 		MaterialSerializer::Serialize(newData, ContentLoader::GetAssetsDirectory() + newData.path);
 	}
 
-	void MaterialContainer::UpdateIndicies()
+	void MaterialContainer::LoadBaseTexture(size_t index, const VulkanContext& context, const TextureContainer& textureContainer)
 	{
-		mOpaqueMaterials.clear();
-		mTransparentMaterials.clear();
-		mCutoffMaterials.clear();
+		auto texturePath = DialogueWindows::TextureOpenDialogue();
+		if (texturePath == nullptr)
+			return;
+		mMaterials[index].baseColor = ContentLoader::GetAssetRelativetlyPath(texturePath);
 
-		for (size_t i = 0; i < mMaterials.size(); ++i)
-		{
-			switch (mMaterials[i].type)
-			{
-			case MaterialType::Opaque: mOpaqueMaterials.push_back(i);
-				break;
-			case MaterialType::Transparent: mTransparentMaterials.push_back(i);
-				break;
-			case MaterialType::Cutoff: mCutoffMaterials.push_back(i);
-				break;
-			}
-		}
-	}
-
-	size_t MaterialContainer::GetOpaqueMaterialsCount() const
-	{
-		return mOpaqueMaterials.size();
-	}
-
-	size_t MaterialContainer::GetTransparentMaterialsCount() const
-	{
-		return mTransparentMaterials.size();
-	}
-
-	size_t MaterialContainer::GetCutoffMaterialsCount() const
-	{
-		return mCutoffMaterials.size();
-	}
-
-	const std::vector<size_t>& MaterialContainer::GetOpequeMaterials() const
-	{
-		return mOpaqueMaterials;
-	}
-
-	const std::vector<size_t>& MaterialContainer::GetTransparentMaterials() const
-	{
-		return mTransparentMaterials;
-	}
-
-	const std::vector<size_t>& MaterialContainer::GetCutoffMaterials() const
-	{
-		return mCutoffMaterials;
+		UpdateMaterialByIndex(index, context, textureContainer);
 	}
 
 	const DescriptorSetLayout& MaterialContainer::GetDescriptorSetLayout() const
