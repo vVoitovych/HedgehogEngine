@@ -1,34 +1,51 @@
 #include "EngineContext.hpp"
 #include "VulkanContext.hpp"
 
+#include "Renderer/Containers/MeshContainer.hpp"
+#include "Renderer/Containers/TextureContainer.hpp"
+#include "Renderer/Containers/LightContainer.hpp"
+#include "Renderer/Containers/MaterialContainer.hpp"
+#include "Renderer/Containers/DrawListContainer.hpp"
+
+#include "Renderer/Camera/Camera.hpp"
+#include "Scene/Scene.hpp"
+
+#include "Renderer/WindowManagment/WindowManager.hpp"
 #include "Renderer/Wrappeers/SwapChain/SwapChain.hpp"
 
 namespace Renderer
 {
     EngineContext::EngineContext(const VulkanContext& vulkanContext)
     {
-        mScene.InitScene();
-        for (auto& mesh : mScene.GetMeshes())
+        mCamera = std::make_unique<Camera>();
+        mScene = std::make_unique<Scene::Scene>();
+        mScene->InitScene();
+
+        mMeshContainer = std::make_unique<MeshContainer>();
+        for (auto& mesh : mScene->GetMeshes())
         {
-            mMeshContainer.AddFilePath(mesh);
+            mMeshContainer->AddFilePath(mesh);
         }
+        mMeshContainer->LoadMeshData();
+        mMeshContainer->Initialize(vulkanContext);
 
-        mMeshContainer.LoadMeshData();
-        mMeshContainer.Initialize(vulkanContext);
+        mTextureContainer = std::make_unique<TextureContainer>();
+        mLightContainer = std::make_unique<LightContainer>();
+        mLightContainer->UpdateLights(*mScene);
 
-        for (auto texture : mScene.GetTextures())
-        {
-            mTextureContainer.AddTexture(texture, VK_FORMAT_R8G8B8A8_SRGB);
-        }
-        mTextureContainer.Initialize(vulkanContext.GetDevice());
+        mMaterialContainer = std::make_unique<MaterialContainer>(vulkanContext);
+        mDrawListContainer = std::make_unique<DrawListContainer>();
+    }
 
-        mLightContainer.UpdateLights(mScene);
+    EngineContext::~EngineContext()
+    {
     }
 
     void EngineContext::Cleanup(const VulkanContext& vulkanContext)
     {
-        mMeshContainer.Cleanup(vulkanContext);
-        mTextureContainer.Cleanup(vulkanContext.GetDevice());
+        mMeshContainer->Cleanup(vulkanContext);
+        mTextureContainer->Cleanup(vulkanContext.GetDevice());
+        mMaterialContainer->Cleanup(vulkanContext);
     }
 
     void EngineContext::UpdateContext(VulkanContext& vulkanContext, float dt)
@@ -37,37 +54,58 @@ namespace Renderer
         auto& controls = windowManager.GetControls();
         const auto& swapChain = vulkanContext.GetSwapChain();
         auto extend = swapChain.GetSwapChainExtent();
-        mCamera.UpdateCamera(dt, extend.width / (float)extend.height, controls);
-        mScene.UpdateScene(dt);
-        mLightContainer.UpdateLights(mScene);
+        mCamera->UpdateCamera(dt, extend.width / (float)extend.height, controls);
+        mScene->UpdateScene(dt);
+        mLightContainer->UpdateLights(*mScene);
+        mMaterialContainer->Update(*mScene);
+        mMaterialContainer->UpdateResources(vulkanContext, *mTextureContainer);
+        mDrawListContainer->Update(*mScene, *mMaterialContainer);
     }
 
     const MeshContainer& EngineContext::GetMeshContainer() const
     {
-        return mMeshContainer;
+        return *mMeshContainer;
     }
 
-    const TextureContaineer& EngineContext::GetTextureContainer() const
+    const TextureContainer& EngineContext::GetTextureContainer() const
     {
-        return mTextureContainer;
+        return *mTextureContainer;
     }
 
     const LightContainer& EngineContext::GetLightContainer() const
     {
-        return mLightContainer;
+        return *mLightContainer;
+    }
+
+    const MaterialContainer& EngineContext::GetMaterialContainer() const
+    {
+        return *mMaterialContainer;
+    }
+
+    MaterialContainer& EngineContext::GetMaterialContainer()
+    {
+        return *mMaterialContainer;
+    }
+
+    const DrawListContainer& EngineContext::GetDrawListContainer() const
+    {
+        return *mDrawListContainer;
     }
 
     const Camera& EngineContext::GetCamera() const
     {
-        return mCamera;
+        return *mCamera;
     }
+
     Scene::Scene& EngineContext::GetScene()
     {
-        return mScene;
+        return *mScene;
     }
+
     const Scene::Scene& EngineContext::GetScene() const
     {
-        return mScene;
+        return *mScene;
     }
+
 }
 

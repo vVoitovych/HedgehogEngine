@@ -22,11 +22,13 @@
     <ClCompile Include="MaterialDialogue\MaterialDialogue.cpp" />
     <ClCompile Include="MeshDialogue\MeshDialogue.cpp" />
     <ClCompile Include="SceneDialogue\SceneDialogue.cpp" />
+    <ClCompile Include="TextureDialogue\TextureDialogue.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MaterialDialogue\MaterialDialogue.hpp" />
     <ClInclude Include="MeshDialogue\MeshDialogue.hpp" />
     <ClInclude Include="SceneDialogue\SceneDialogue.hpp" />
+    <ClInclude Include="TextureDialogue\TextureDialogue.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

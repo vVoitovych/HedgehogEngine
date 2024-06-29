@@ -9,8 +9,11 @@
 #include "ContentLoader/CommonFunctions.hpp"
 #include "Logger/Logger.hpp"
 #include "DialogueWindows/SceneDialogue/SceneDialogue.hpp"
+#include "DialogueWindows/MaterialDialogue/MaterialDialogue.hpp"
 
 #include <sstream>
+#include <fstream>
+#include <filesystem>
 
 namespace Scene
 {
@@ -63,8 +66,6 @@ namespace Scene
 		mMeshSystem->AddMeshPath("Models\\Default\\cube.obj");
 		mMeshSystem->AddMeshPath("Models\\Default\\sphere.obj");
 
-		mTextures.push_back("Textures\\viking_room.png");
-
 	}
 
 	void Scene::UpdateScene(float dt)
@@ -72,13 +73,6 @@ namespace Scene
 		mTransformSystem->Update(mSceneCoordinator);
 		mHierarchySystem->Update(mSceneCoordinator);
 		mLightSystem->Update(mSceneCoordinator);
-		auto& objects = mRenderObjectsManager.GetRenderableObjects();
-		for (size_t i = 0; i < objects.size(); ++i)
-		{
-			auto entity = mRenderObjectsManager.GetEntityByIndex(i);
-			auto& transform = mSceneCoordinator.GetComponent<TransformComponent>(entity);
-			objects[i].objMatrix = transform.mObjMatrix;
-		}
 	}
 
 	void Scene::ResetScene()
@@ -111,6 +105,7 @@ namespace Scene
 		mSceneCoordinator.DestroyEntity(mRoot);
 		SceneSerializer::DeserializeScene(*this, path);
 
+		mRenderSystem->UpdataSystem(mSceneCoordinator);
 	}
 
 	void Scene::Save()
@@ -181,7 +176,6 @@ namespace Scene
 				}
 			}
 			mSceneCoordinator.DestroyEntity(entity);
-			mRenderObjectsManager.RemoveEntity(entity);
 
 			UnselectGameObject();
 		}
@@ -203,10 +197,6 @@ namespace Scene
 			auto& meshComponent = GetMeshComponent(entity);
 
 			auto& transform = GetTransformComponent(entity);
-			auto& object = mRenderObjectsManager.AddEntity(entity);
-			object.isVisible = true;
-			object.meshIndex = meshComponent.mMeshIndex.value();
-			object.objMatrix = transform.mObjMatrix;
 		}
 	}
 
@@ -216,8 +206,6 @@ namespace Scene
 		{
 			ECS::Entity entity = mSelectedEntity.value();
 			mSceneCoordinator.RemoveComponent<MeshComponent>(entity);
-
-			mRenderObjectsManager.RemoveEntity(entity);
 		}
 	}
 
@@ -226,9 +214,6 @@ namespace Scene
 		auto& meshComponent = mSceneCoordinator.GetComponent<MeshComponent>(entity);
 		meshComponent.mMeshPath = meshPath;
 		mMeshSystem->Update(mSceneCoordinator, entity);
-
-		auto& object = mRenderObjectsManager.GetEntityData(entity);
-		object.meshIndex = meshComponent.mMeshIndex.value();
 	}
 
 	bool Scene::HasMeshComponent(ECS::Entity entity) const
@@ -254,6 +239,7 @@ namespace Scene
 		if (!HasRenderComponent(entity))
 		{
 			mSceneCoordinator.AddComponent(entity, RenderComponent());
+			mRenderSystem->Update(mSceneCoordinator, entity);
 		}
 	}
 
@@ -271,14 +257,18 @@ namespace Scene
 		return mSceneCoordinator.HasComponent<RenderComponent>(entity);;
 	}
 
-	void Scene::CreateMaterial()
-	{
-		mRenderSystem->CreateMaterial();
-	}
-
 	void Scene::LoadMaterial(ECS::Entity entity)
 	{
-		mRenderSystem->LoadMaterial(mSceneCoordinator, entity);
+		char* path = DialogueWindows::MaterialOpenDialogue();
+		if (path == nullptr)
+		{
+			return;
+		}
+		std::string relatedPath = ContentLoader::GetAssetRelativetlyPath(path);
+		auto& component = mSceneCoordinator.GetComponent<RenderComponent>(entity);
+		component.mMaterial = relatedPath;		
+
+		mRenderSystem->Update(mSceneCoordinator, entity);
 	}
 
 	void Scene::UpdateMaterialComponent(ECS::Entity entity)
@@ -330,27 +320,27 @@ namespace Scene
 		return mRoot;
 	}
 
-	HierarchyComponent& Scene::GetHierarchyComponent(ECS::Entity entity)
+	HierarchyComponent& Scene::GetHierarchyComponent(ECS::Entity entity) const
 	{
 		return mSceneCoordinator.GetComponent<HierarchyComponent>(entity);
 	}
 
-	TransformComponent& Scene::GetTransformComponent(ECS::Entity entity)
+	TransformComponent& Scene::GetTransformComponent(ECS::Entity entity) const
 	{
 		return mSceneCoordinator.GetComponent<TransformComponent>(entity);
 	}
 
-	MeshComponent& Scene::GetMeshComponent(ECS::Entity entity)
+	MeshComponent& Scene::GetMeshComponent(ECS::Entity entity) const
 	{
 		return mSceneCoordinator.GetComponent<MeshComponent>(entity);
 	}
 
-	LightComponent& Scene::GetLightComponent(ECS::Entity entity)
+	LightComponent& Scene::GetLightComponent(ECS::Entity entity) const
 	{
 		return mSceneCoordinator.GetComponent<LightComponent>(entity);
 	}
 
-	RenderComponent& Scene::GetRenderComponent(ECS::Entity entity)
+	RenderComponent& Scene::GetRenderComponent(ECS::Entity entity) const
 	{
 		return mSceneCoordinator.GetComponent<RenderComponent>(entity);
 	}
@@ -391,29 +381,14 @@ namespace Scene
 		return mMeshSystem->GetMeshes();
 	}
 
-	const std::vector<std::string>& Scene::GetTextures() const
-	{
-		return mTextures;
-	}
-
 	const std::vector<std::string>& Scene::GetMaterials() const
 	{
 		return mRenderSystem->GetMaterials();
 	}
 
-	const std::vector<RenderableObject>& Scene::GetRenderableObjects() const
+	const std::vector<ECS::Entity>& Scene::GetRenderableEntities() const
 	{
-		return mRenderObjectsManager.GetRenderableObjects();
-	}
-
-	void Scene::UpdateRendarable(ECS::Entity entity, size_t meshIndex)
-	{
-		auto& meshComponent = GetMeshComponent(entity);
-		auto& transform = GetTransformComponent(entity);
-		auto& object = mRenderObjectsManager.GetEntityData(entity);
-		object.isVisible = true;
-		object.meshIndex = meshComponent.mMeshIndex.value();
-		object.objMatrix = transform.mObjMatrix;
+		return mRenderSystem->GetEntities();
 	}
 
 	void Scene::CreateSceneRoot()
@@ -427,8 +402,9 @@ namespace Scene
 
 	std::string Scene::GetNewGameObjectName()
 	{
+		static size_t gameObjectIndex = 0;
 		std::stringstream ss;
-		ss << "GameObject_" << mGameObjectIndex++;
+		ss << "GameObject_" << gameObjectIndex++;
 		return ss.str();
 	}
 

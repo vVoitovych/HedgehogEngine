@@ -10,7 +10,6 @@
 #include "Renderer/Context/FrameContext.hpp"
 
 #include "Renderer/ResourceManager/ResourceManager.hpp"
-
 #include "Renderer/Wrappeers/Device/Device.hpp"
 #include "Renderer/Wrappeers/SwapChain/SwapChain.hpp"
 #include "Renderer/Wrappeers/RenderPass/RenderPass.hpp"
@@ -27,8 +26,11 @@
 #include "Renderer/Wrappeers/Resources/Sampler/Sampler.hpp"
 
 #include "Renderer/Containers/MeshContainer.hpp"
-#include "Renderer/Containers/TextureContainer.hpp"
-#include "Scene/RenderObjectsManager.hpp"
+#include "Renderer/Containers/MaterialContainer.hpp"
+#include "Renderer/Containers/DrawListContainer.hpp"
+
+#include "Scene/Scene.hpp"
+
 #include "Renderer/Common/RendererSettings.hpp"
 #include "Logger/Logger.hpp"
 
@@ -40,6 +42,9 @@ namespace Renderer
 		auto& threadContext = context->GetThreadContext();
 		auto& vulkanContext = context->GetVulkanContext();
 		auto& engineContext = context->GetEngineContext();
+
+		auto& materialContainer = engineContext->GetMaterialContainer();
+		auto& drawListContainer = engineContext->GetDrawListContainer();
 
 		auto& commandBuffer = threadContext->GetCommandBuffer();
 		auto extend = vulkanContext->GetSwapChain().GetSwapChainExtent();
@@ -57,9 +62,12 @@ namespace Renderer
 		commandBuffer.BindIndexBuffer(meshContainer.GetIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
 		commandBuffer.BindDescriptorSers(VK_PIPELINE_BIND_POINT_GRAPHICS, *mPipeline, 0, 1, threadContext->GetDescriptorSet().GetNativeSet(), 0, nullptr);
-		{ // materials
-			commandBuffer.BindDescriptorSers(VK_PIPELINE_BIND_POINT_GRAPHICS, *mPipeline, 1, 1, mDescriptorSet->GetNativeSet(), 0, nullptr);
-			for (auto& object : engineContext->GetScene().GetRenderableObjects())
+		auto& opaqueDrawList = drawListContainer.GetOpaqueList();
+		for(auto& drawNode : opaqueDrawList)
+		{ 
+			auto& descriptorSet = materialContainer.GetDescriptorSet(drawNode.materialIndex);
+			commandBuffer.BindDescriptorSers(VK_PIPELINE_BIND_POINT_GRAPHICS, *mPipeline, 1, 1, descriptorSet.GetNativeSet(), 0, nullptr);
+			for (auto& object : drawNode.objects)
 			{
 				commandBuffer.PushConstants(mPipeline->GetNativePipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ForwardPassPushConstants), &object.objMatrix);
 				auto& mesh = meshContainer.GetMesh(object.meshIndex);
@@ -76,26 +84,14 @@ namespace Renderer
 		auto& threadContext = context->GetThreadContext();
 		auto& engineContext = context->GetEngineContext();
 
-		auto& materialImage = engineContext->GetTextureContainer().GetImage(0);
-		auto& materalSampler = engineContext->GetTextureContainer().GetSampler(SamplerType::Linear);
+		auto& materialContainer = engineContext->GetMaterialContainer();
 
 		auto& device = vulkanContext->GetDevice();
 		ForwardPassInfo info{ resourceManager->GetColorBuffer()->GetFormat(), resourceManager->GetDepthBuffer()->GetFormat()};
 		mRenderPass = std::make_unique<RenderPass>(device, info.GetInfo());
 
-		uint32_t materialCount = 1;
-		std::vector<PoolSizeRatio> sizes =
-		{
-			{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 }
-		};
-
-		mDescriptorAllocator = std::make_unique<DescriptorAllocator>(device, materialCount, sizes);
-		DescriptorLayoutBuilder builder;
-		builder.AddBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-		mDescriptorSetLayout = std::make_unique<DescriptorSetLayout>(device, builder, VK_SHADER_STAGE_FRAGMENT_BIT);
-
 		std::unique_ptr<PipelineInfo> pipelineInfo = std::make_unique<ForwardPipelineInfo>(device);
-		std::vector<VkDescriptorSetLayout> descriptorLayouts = { threadContext->GetLayout().GetNativeLayout(), mDescriptorSetLayout->GetNativeLayout() };
+		std::vector<VkDescriptorSetLayout> descriptorLayouts = { threadContext->GetLayout().GetNativeLayout(), materialContainer.GetDescriptorSetLayout().GetNativeLayout()};
 
 		VkPushConstantRange pushConstant;
 		pushConstant.offset = 0;
@@ -103,25 +99,6 @@ namespace Renderer
 		pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 		std::vector<VkPushConstantRange> pushConstants = { pushConstant };
 		mPipeline = std::make_unique<Pipeline>(device, *mRenderPass, descriptorLayouts, pushConstants, *pipelineInfo);
-
-		VkDescriptorImageInfo imageInfo{};
-		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		imageInfo.imageView = materialImage.GetNativeView();
-		imageInfo.sampler = materalSampler.GetNativeSampler();
-
-		DescriptorWrites write;
-		write.dstBinding = 0;
-		write.dstArrayElement = 0;
-		write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		write.descriptorCount = 1;
-		write.pImageInfo = &imageInfo;
-		write.pNext = nullptr;
-
-		std::vector<DescriptorWrites> writes;
-		writes.push_back(write);
-
-		mDescriptorSet = std::make_unique<DescriptorSet>(vulkanContext->GetDevice(), *mDescriptorAllocator, *mDescriptorSetLayout);
-		mDescriptorSet->Update(vulkanContext->GetDevice(), writes);
 
 		std::vector<VkImageView> attacments = { resourceManager->GetColorBuffer()->GetNativeView(), resourceManager->GetDepthBuffer()->GetNativeView()};
 		 mFrameBuffer = std::make_unique<FrameBuffer>(
@@ -141,10 +118,7 @@ namespace Renderer
 	{
 		auto& vulkanContext = context->GetVulkanContext();
 
-		mDescriptorSet->Cleanup(vulkanContext->GetDevice(), *mDescriptorAllocator);
 		mPipeline->Cleanup(vulkanContext->GetDevice());
-		mDescriptorSetLayout->Cleanup(vulkanContext->GetDevice());
-		mDescriptorAllocator->Cleanup(vulkanContext->GetDevice());
 		mFrameBuffer->Cleanup(vulkanContext->GetDevice());
 		mRenderPass->Cleanup(vulkanContext->GetDevice());
 

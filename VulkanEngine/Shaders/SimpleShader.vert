@@ -32,7 +32,7 @@ layout( push_constant ) uniform constants
 void main()
 {
     outWorldPosition = PushConstants.model * vec4(inPosition, 1.0);
-    outNormal = PushConstants.model * vec4(inNormal, 1.0);
+    outNormal = PushConstants.model * vec4(inNormal, 0.0);
 	gl_Position = ubo.proj * ubo.view * outWorldPosition;
     gl_Position /= gl_Position.w;
 	fragColor = inColor;

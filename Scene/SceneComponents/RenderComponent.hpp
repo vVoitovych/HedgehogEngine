@@ -9,7 +9,7 @@ namespace Scene
 	class RenderComponent
 	{
 	public:
-		bool mIsVisible;
+		bool mIsVisible = true;
 
 		std::string mMaterial;
 		std::optional<size_t> mMaterialIndex;

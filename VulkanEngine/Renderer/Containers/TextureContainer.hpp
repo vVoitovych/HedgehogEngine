@@ -3,6 +3,7 @@
 #include <vulkan/vulkan.h>
 
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace Renderer
@@ -11,42 +12,36 @@ namespace Renderer
 	class Image;
 	class Sampler;
 
-	struct TextureInfo
-	{
-		std::string filePath;
-		VkFormat format;
-	};
-
 	enum class SamplerType
 	{
 		Linear
 	};
 
-	class TextureContaineer
+	class TextureContainer
 	{
 	public:
-		TextureContaineer();
-		~TextureContaineer();
+		TextureContainer();
+		~TextureContainer();
 
-		TextureContaineer(const TextureContaineer&) = delete;
-		TextureContaineer(TextureContaineer&&) = delete;
-		TextureContaineer& operator=(const TextureContaineer&) = delete;
-		TextureContaineer& operator=(TextureContaineer&&) = delete;
+		TextureContainer(const TextureContainer&) = delete;
+		TextureContainer(TextureContainer&&) = delete;
+		TextureContainer& operator=(const TextureContainer&) = delete;
+		TextureContainer& operator=(TextureContainer&&) = delete;
 
-		void AddTexture(std::string filePath, VkFormat format);
-		void ClearFileList();
+		const Image& GetImage(const Device& device, std::string filePath) const;
+		const Sampler& GetSampler(const Device& device, SamplerType type) const;
+		const std::vector<std::string>& GetTexturePathes() const;
+		size_t GetTextureIndex(std::string name) const;
 
-		void Initialize(const Device& device);
 		void Cleanup(const Device& device);
-
-		const Image& GetImage(std::string filePath) const;
-		const Image& GetImage(size_t index) const;
-		const Sampler& GetSampler(SamplerType type) const;
+	private:
+		const Image& CreateImage(const Device& device, std::string filePath) const;
+		const Sampler& CreateSampler(const Device& device, SamplerType type) const;
 
 	private:
-		std::vector<TextureInfo> mTexturesList;
-		std::vector<Sampler> mSamplersList;
-		std::vector<Image> mImages;
+		mutable std::unordered_map<SamplerType, Sampler> mSamplersList;
+		mutable std::unordered_map<std::string, Image> mImages;
+		mutable std::vector<std::string> mTexturePathes;
 	};
 
 

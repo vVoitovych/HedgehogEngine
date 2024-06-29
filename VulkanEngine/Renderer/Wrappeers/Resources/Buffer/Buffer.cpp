@@ -50,6 +50,29 @@ namespace Renderer
 		}
 	}
 
+	Buffer::Buffer(Buffer&& other) noexcept
+		: mBuffer(other.mBuffer)
+		, mAllocation(other.mAllocation)
+		, mBufferSize(other.mBufferSize)
+	{
+		other.mBuffer = nullptr;
+		other.mAllocation = nullptr;
+	}
+
+	Buffer& Buffer::operator=(Buffer&& other) noexcept
+	{
+		if (this != &other)
+		{
+			mBuffer = other.mBuffer;
+			mAllocation = other.mAllocation;
+			mBufferSize = other.mBufferSize;
+
+			other.mBuffer = nullptr;
+			other.mAllocation = nullptr;
+		}
+		return *this;
+	}
+
 	void Buffer::CopyDataToBufferMemory(const Device& device, const void* data, size_t size)
 	{
 		void* tempData;

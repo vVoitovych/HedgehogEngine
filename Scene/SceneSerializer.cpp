@@ -3,7 +3,6 @@
 #include "SceneComponents/TransformComponent.hpp"
 #include "SceneComponents/HierarchyComponent.hpp"
 #include "Scene/SceneComponents/LightComponent.hpp"
-#include "RenderObjectsManager.hpp"
 
 #include "Logger/Logger.hpp"
 
@@ -147,6 +146,17 @@ namespace Scene
 
 			out << YAML::EndMap;
 		}
+		if (scene.HasRenderComponent(entity))
+		{ // render component
+			auto& renderComponent = scene.GetRenderComponent(entity);
+			out << YAML::Key << "RenderComponent";
+			out << YAML::BeginMap;
+
+			out << YAML::Key << "Visible" << YAML::Value << renderComponent.mIsVisible;
+			out << YAML::Key << "Material" << YAML::Value << renderComponent.mMaterial;
+
+			out << YAML::EndMap;
+		}
 		// annd other components here
 		out << YAML::Key << "Children" << YAML::Value << YAML::BeginSeq;
 		for (auto child : hierarchy.mChildren)
@@ -204,8 +214,6 @@ namespace Scene
 			meshComponent.mMeshPath = mesh["MeshPath"].as<std::string>();
 			meshComponent.mMeshIndex = mesh["MeshIndex"].as<size_t>();
 			meshComponent.mCachedMeshPath = mesh["CachedMeshPath"].as<std::string>();
-
-			scene.UpdateRendarable(entity, meshComponent.mMeshIndex.value());
 		}
 
 		auto light = node["LightComponent"];
@@ -219,6 +227,16 @@ namespace Scene
 			lightComponent.mIntencity = light["LightIntencity"].as<float>();
 			lightComponent.mRadius = light["LightRadius"].as<float>();
 			lightComponent.mConeAngle = light["LightConeAngle"].as<float>();
+
+		}
+
+		auto renderComponentData = node["RenderComponent"];
+		if (renderComponentData)
+		{
+			scene.AddRenderComponent(entity);
+			auto& renderComponent = scene.GetRenderComponent(entity);
+			renderComponent.mIsVisible = renderComponentData["Visible"].as<bool>();
+			renderComponent.mMaterial = renderComponentData["Material"].as<std::string>();
 
 		}
 

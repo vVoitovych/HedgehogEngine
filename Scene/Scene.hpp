@@ -6,7 +6,6 @@
 #include "Scene/SceneSystems/MeshSystem.hpp"
 #include "Scene/SceneSystems/LightSystem.hpp"
 #include "Scene/SceneSystems/RenderSystem.hpp"
-#include "RenderObjectsManager.hpp"
 
 #include <optional>
 #include <vector>
@@ -56,7 +55,6 @@ namespace Scene
 		void AddRenderComponent(ECS::Entity entity);
 		void RemoveRenderComponent();
 		bool HasRenderComponent(ECS::Entity entity) const;
-		void CreateMaterial();
 		void LoadMaterial(ECS::Entity entity);
 		void UpdateMaterialComponent(ECS::Entity entity);
 
@@ -69,11 +67,11 @@ namespace Scene
 		const LightComponent& GetLightComponentByIndex(size_t index) const;
 
 		ECS::Entity GetRoot() const;
-		HierarchyComponent& GetHierarchyComponent(ECS::Entity entity);
-		TransformComponent& GetTransformComponent(ECS::Entity entity);
-		MeshComponent& GetMeshComponent(ECS::Entity entity);
-		LightComponent& GetLightComponent(ECS::Entity entity);
-		RenderComponent& GetRenderComponent(ECS::Entity entity);
+		HierarchyComponent& GetHierarchyComponent(ECS::Entity entity) const;
+		TransformComponent& GetTransformComponent(ECS::Entity entity) const;
+		MeshComponent& GetMeshComponent(ECS::Entity entity) const;
+		LightComponent& GetLightComponent(ECS::Entity entity) const;
+		RenderComponent& GetRenderComponent(ECS::Entity entity) const;
 
 		bool IsGameObjectSelected() const;
 		ECS::Entity GetSelectedGameObject() const;
@@ -81,11 +79,9 @@ namespace Scene
 		void SelectGameObject(ECS::Entity entity);
 
 		const std::vector<std::string>& GetMeshes() const;
-		const std::vector<std::string>& GetTextures() const;
 		const std::vector<std::string>& GetMaterials() const;
+		const std::vector<ECS::Entity>& GetRenderableEntities() const;
 
-		const std::vector<RenderableObject>& GetRenderableObjects() const;
-		void UpdateRendarable(ECS::Entity entity, size_t meshIndex);
 	private:
 		void CreateSceneRoot();
 		std::string GetNewGameObjectName();
@@ -94,21 +90,17 @@ namespace Scene
 	private:
 		std::string mSceneName;
 
-		std::vector<std::string> mTextures;
-
 		ECS::Coordinator mSceneCoordinator;
 		ECS::Entity mRoot;
 		std::optional<ECS::Entity> mSelectedEntity;
 
-		RenderObjectsManager mRenderObjectsManager;
 		// systems
 		std::shared_ptr<TransformSystem> mTransformSystem;
 		std::shared_ptr<HierarchySystem> mHierarchySystem;
 		std::shared_ptr<MeshSystem> mMeshSystem;
 		std::shared_ptr<LightSystem> mLightSystem;
-		std::shared_ptr< RenderSystem> mRenderSystem;
+		std::shared_ptr<RenderSystem> mRenderSystem;
 
-		uint16_t mGameObjectIndex = 0;
 	private:
 		friend class SceneSerializer;
 	};

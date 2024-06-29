@@ -1,1 +1,3 @@
-Material path: Materials\test.material
+Type: 2
+BaseColor: Textures\Default\cells.png
+Transparency: 0.463999987

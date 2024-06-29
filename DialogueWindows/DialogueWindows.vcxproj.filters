@@ -11,6 +11,9 @@
     <Filter Include="MeshDialogue">
       <UniqueIdentifier>{0be8d042-2169-48a9-aa2c-68f0b06cd62f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="TextureDialogue">
+      <UniqueIdentifier>{822380d8-336a-4bc2-840b-c07573f99f52}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SceneDialogue\SceneDialogue.cpp">
@@ -22,6 +25,9 @@
     <ClCompile Include="MeshDialogue\MeshDialogue.cpp">
       <Filter>MeshDialogue</Filter>
     </ClCompile>
+    <ClCompile Include="TextureDialogue\TextureDialogue.cpp">
+      <Filter>TextureDialogue</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SceneDialogue\SceneDialogue.hpp">
@@ -32,6 +38,9 @@
     </ClInclude>
     <ClInclude Include="MeshDialogue\MeshDialogue.hpp">
       <Filter>MeshDialogue</Filter>
+    </ClInclude>
+    <ClInclude Include="TextureDialogue\TextureDialogue.hpp">
+      <Filter>TextureDialogue</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
