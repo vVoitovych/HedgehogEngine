@@ -18,6 +18,8 @@ namespace Renderer
 		MaterialType type;
 		std::string baseColor;
 		float transparency;
+
+		bool isDirty;
 	};
 
 }

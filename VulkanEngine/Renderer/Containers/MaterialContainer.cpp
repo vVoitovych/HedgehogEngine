@@ -57,51 +57,24 @@ namespace Renderer
 
 	void MaterialContainer::UpdateResources(const VulkanContext& context, const TextureContainer& textureContainer)
 	{
-		for (size_t i = mMaterialUniforms.size(); i < mMaterials.size(); ++i)
+		size_t createdResourceCount = mMaterialUniforms.size();
+		for (size_t i = 0; i < createdResourceCount; ++i)
 		{
-			auto& device = context.GetDevice();
-			VkDeviceSize size = sizeof(MaterialUniform);
-			MaterialUniform materialData;
-			materialData.transparency = mMaterials[i].transparency;
-			Buffer staginBuffer(device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
-			staginBuffer.CopyDataToBufferMemory(device, &materialData, (size_t)size);
-
-			Buffer materialUniform(device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
-			device.CopyBufferToBuffer(staginBuffer.GetNativeBuffer(), materialUniform.GetNativeBuffer(), size);
-
-			VkDescriptorBufferInfo bufferInfo{};
-			bufferInfo.buffer = materialUniform.GetNativeBuffer();
-			bufferInfo.offset = 0;
-			bufferInfo.range = materialUniform.GetBufferSize();
-
-			staginBuffer.DestroyBuffer(device);
-			mMaterialUniforms.push_back(std::move(materialUniform));
-
-			VkDescriptorImageInfo imageInfo{};
-			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			imageInfo.imageView = textureContainer.GetImage(device, mMaterials[i].baseColor).GetNativeView();
-			imageInfo.sampler = textureContainer.GetSampler(device, SamplerType::Linear).GetNativeSampler();
-
-			std::vector<DescriptorWrites> writes;
-			writes.resize(2);
-
-			writes[0].dstBinding = 0;
-			writes[0].dstArrayElement = 0;
-			writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			writes[0].descriptorCount = 1;
-			writes[0].pBufferInfo = &bufferInfo;
-
-			writes[1].dstBinding = 1;
-			writes[1].dstArrayElement = 0;
-			writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			writes[1].descriptorCount = 1;
-			writes[1].pImageInfo = &imageInfo;
-
-			DescriptorSet descriptorSet(context.GetDevice(), *mDescriptorAllocator, *mLayout);
-			descriptorSet.Update(context.GetDevice(), writes);
-
-			mDescriptorSets.push_back(std::move(descriptorSet));
+			if (mMaterials[i].isDirty)
+			{
+				UpdateMaterialByIndex(i, context, textureContainer);
+				mMaterials[i].isDirty = false;
+			}
 		}
+		for (size_t i = createdResourceCount; i < mMaterials.size(); ++i)
+		{
+			CreateMaterialResources(mMaterials[i], context, textureContainer);
+		}
+	}
+
+	void MaterialContainer::SetMaterialDirty(size_t index)
+	{
+		mMaterials[index].isDirty = true;
 	}
 
 	void MaterialContainer::UpdateMaterialByIndex(size_t index, const VulkanContext& context, const TextureContainer& textureContainer)
@@ -143,6 +116,54 @@ namespace Renderer
 		writes[1].pImageInfo = &imageInfo;
 
 		mDescriptorSets[index].Update(context.GetDevice(), writes);
+	}
+
+	void MaterialContainer::CreateMaterialResources(MaterialData& data, const VulkanContext& context, const TextureContainer& textureContainer)
+	{
+		auto& device = context.GetDevice();
+		VkDeviceSize size = sizeof(MaterialUniform);
+		MaterialUniform materialData;
+		materialData.transparency = data.transparency;
+		Buffer staginBuffer(device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+		staginBuffer.CopyDataToBufferMemory(device, &materialData, (size_t)size);
+
+		Buffer materialUniform(device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
+		device.CopyBufferToBuffer(staginBuffer.GetNativeBuffer(), materialUniform.GetNativeBuffer(), size);
+
+		VkDescriptorBufferInfo bufferInfo{};
+		bufferInfo.buffer = materialUniform.GetNativeBuffer();
+		bufferInfo.offset = 0;
+		bufferInfo.range = materialUniform.GetBufferSize();
+
+		staginBuffer.DestroyBuffer(device);
+		mMaterialUniforms.push_back(std::move(materialUniform));
+
+		VkDescriptorImageInfo imageInfo{};
+		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		imageInfo.imageView = textureContainer.GetImage(device, data.baseColor).GetNativeView();
+		imageInfo.sampler = textureContainer.GetSampler(device, SamplerType::Linear).GetNativeSampler();
+
+		std::vector<DescriptorWrites> writes;
+		writes.resize(2);
+
+		writes[0].dstBinding = 0;
+		writes[0].dstArrayElement = 0;
+		writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		writes[0].descriptorCount = 1;
+		writes[0].pBufferInfo = &bufferInfo;
+
+		writes[1].dstBinding = 1;
+		writes[1].dstArrayElement = 0;
+		writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		writes[1].descriptorCount = 1;
+		writes[1].pImageInfo = &imageInfo;
+
+		DescriptorSet descriptorSet(context.GetDevice(), *mDescriptorAllocator, *mLayout);
+		descriptorSet.Update(context.GetDevice(), writes);
+
+		mDescriptorSets.push_back(std::move(descriptorSet));
+
+		data.isDirty = false;
 	}
 
 	void MaterialContainer::Cleanup(const VulkanContext& context)

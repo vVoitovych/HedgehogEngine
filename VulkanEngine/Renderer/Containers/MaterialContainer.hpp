@@ -34,8 +34,7 @@ namespace Renderer
 
 		void Update(const Scene::Scene& scene);
 		void UpdateResources(const VulkanContext& VulkanContext, const TextureContainer& textureContainer);
-		void UpdateMaterialByIndex(size_t index, const VulkanContext& context, const TextureContainer& textureContainer);
-
+		void SetMaterialDirty(size_t index);
 		void Cleanup(const VulkanContext& context);
 
 		void ClearMaterials();
@@ -51,6 +50,10 @@ namespace Renderer
 
 		MaterialData& GetMaterialDataByIndex(size_t index);
 		const MaterialData& GetMaterialDataByIndex(size_t index) const;
+	private:
+		void UpdateMaterialByIndex(size_t index, const VulkanContext& context, const TextureContainer& textureContainer);
+		void CreateMaterialResources(MaterialData& data, const VulkanContext& context, const TextureContainer& textureContainer);
+
 	private:
 		struct MaterialUniform
 		{

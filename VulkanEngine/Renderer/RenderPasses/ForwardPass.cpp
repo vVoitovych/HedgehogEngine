@@ -29,7 +29,6 @@
 #include "Renderer/Containers/MaterialContainer.hpp"
 #include "Renderer/Containers/DrawListContainer.hpp"
 
-#include "Scene/RenderObjectsManager.hpp"
 #include "Scene/Scene.hpp"
 
 #include "Renderer/Common/RendererSettings.hpp"

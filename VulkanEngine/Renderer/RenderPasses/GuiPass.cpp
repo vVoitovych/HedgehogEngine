@@ -389,7 +389,7 @@ namespace Renderer
 								{
 									selectedIndex = i;
 									materialData.baseColor = textures[i];
-									materialContainer.UpdateMaterialByIndex(render.mMaterialIndex.value(), *context->GetVulkanContext(), textuteContainer);
+									materialContainer.SetMaterialDirty(render.mMaterialIndex.value());
 								}
 
 								if (isSelected)
@@ -412,7 +412,7 @@ namespace Renderer
 							if (materialData.transparency != materialTransparency)
 							{
 								materialData.transparency = materialTransparency;
-								materialContainer.UpdateMaterialByIndex(render.mMaterialIndex.value(), *context->GetVulkanContext(), textuteContainer);
+								materialContainer.SetMaterialDirty(render.mMaterialIndex.value());
 							}
 						}
 					}
