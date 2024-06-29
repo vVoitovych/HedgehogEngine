@@ -36,6 +36,11 @@ namespace Scene
 		return mMaterialPathes;
 	}
 
+	const std::vector<ECS::Entity>& RenderSystem::GetEntities() const
+	{
+		return entities;
+	}
+
 	RenderComponent& RenderSystem::GetRenderComponentByIndex(ECS::Coordinator& coordinator, size_t index) const
 	{
 		auto entity = entities[index];

@@ -16,6 +16,7 @@ namespace Renderer
 	class TextureContainer;
 	class LightContainer;
 	class MaterialContainer;
+	class DrawListContainer;
 
 	class EngineContext
 	{
@@ -31,6 +32,7 @@ namespace Renderer
 		const LightContainer& GetLightContainer() const;
 		const MaterialContainer& GetMaterialContainer() const;
 		MaterialContainer& GetMaterialContainer();
+		const DrawListContainer& GetDrawListContainer() const;
 
 		const Camera& GetCamera() const;
 		Scene::Scene& GetScene();
@@ -44,6 +46,7 @@ namespace Renderer
 		std::unique_ptr<TextureContainer> mTextureContainer;
 		std::unique_ptr<LightContainer> mLightContainer;
 		std::unique_ptr<MaterialContainer> mMaterialContainer;
+		std::unique_ptr< DrawListContainer> mDrawListContainer;
 	};
 
 }

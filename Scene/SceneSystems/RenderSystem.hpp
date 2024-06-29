@@ -17,6 +17,8 @@ namespace Scene
 
 		RenderComponent& GetRenderComponentByIndex(ECS::Coordinator& coordinator, size_t index) const;
 
+		const std::vector<ECS::Entity>& GetEntities() const;
+
 	private:
 		void UpdateMaterialPath(ECS::Coordinator& coordinator, ECS::Entity entity);
 

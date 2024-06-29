@@ -34,6 +34,9 @@ Scene:
               MeshPath: Models\Default\sphere.obj
               MeshIndex: 2
               CachedMeshPath: Models\Default\sphere.obj
+            RenderComponent:
+              Visible: true
+              Material: Materials\test2.material
             Children:
               []
       - Entity: 3

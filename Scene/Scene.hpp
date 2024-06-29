@@ -68,11 +68,11 @@ namespace Scene
 		const LightComponent& GetLightComponentByIndex(size_t index) const;
 
 		ECS::Entity GetRoot() const;
-		HierarchyComponent& GetHierarchyComponent(ECS::Entity entity);
-		TransformComponent& GetTransformComponent(ECS::Entity entity);
-		MeshComponent& GetMeshComponent(ECS::Entity entity);
-		LightComponent& GetLightComponent(ECS::Entity entity);
-		RenderComponent& GetRenderComponent(ECS::Entity entity);
+		HierarchyComponent& GetHierarchyComponent(ECS::Entity entity) const;
+		TransformComponent& GetTransformComponent(ECS::Entity entity) const;
+		MeshComponent& GetMeshComponent(ECS::Entity entity) const;
+		LightComponent& GetLightComponent(ECS::Entity entity) const;
+		RenderComponent& GetRenderComponent(ECS::Entity entity) const;
 
 		bool IsGameObjectSelected() const;
 		ECS::Entity GetSelectedGameObject() const;
@@ -81,6 +81,7 @@ namespace Scene
 
 		const std::vector<std::string>& GetMeshes() const;
 		const std::vector<std::string>& GetMaterials() const;
+		const std::vector<ECS::Entity>& GetRenderableEntities() const;
 
 		const std::vector<RenderableObject>& GetRenderableObjects() const;
 		void UpdateRendarable(ECS::Entity entity, size_t meshIndex);

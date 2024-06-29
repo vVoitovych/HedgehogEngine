@@ -256,6 +256,7 @@ namespace Scene
 		if (!HasRenderComponent(entity))
 		{
 			mSceneCoordinator.AddComponent(entity, RenderComponent());
+			mRenderSystem->Update(mSceneCoordinator, entity);
 		}
 	}
 
@@ -336,27 +337,27 @@ namespace Scene
 		return mRoot;
 	}
 
-	HierarchyComponent& Scene::GetHierarchyComponent(ECS::Entity entity)
+	HierarchyComponent& Scene::GetHierarchyComponent(ECS::Entity entity) const
 	{
 		return mSceneCoordinator.GetComponent<HierarchyComponent>(entity);
 	}
 
-	TransformComponent& Scene::GetTransformComponent(ECS::Entity entity)
+	TransformComponent& Scene::GetTransformComponent(ECS::Entity entity) const
 	{
 		return mSceneCoordinator.GetComponent<TransformComponent>(entity);
 	}
 
-	MeshComponent& Scene::GetMeshComponent(ECS::Entity entity)
+	MeshComponent& Scene::GetMeshComponent(ECS::Entity entity) const
 	{
 		return mSceneCoordinator.GetComponent<MeshComponent>(entity);
 	}
 
-	LightComponent& Scene::GetLightComponent(ECS::Entity entity)
+	LightComponent& Scene::GetLightComponent(ECS::Entity entity) const
 	{
 		return mSceneCoordinator.GetComponent<LightComponent>(entity);
 	}
 
-	RenderComponent& Scene::GetRenderComponent(ECS::Entity entity)
+	RenderComponent& Scene::GetRenderComponent(ECS::Entity entity) const
 	{
 		return mSceneCoordinator.GetComponent<RenderComponent>(entity);
 	}
@@ -400,6 +401,11 @@ namespace Scene
 	const std::vector<std::string>& Scene::GetMaterials() const
 	{
 		return mRenderSystem->GetMaterials();
+	}
+
+	const std::vector<ECS::Entity>& Scene::GetRenderableEntities() const
+	{
+		return mRenderSystem->GetEntities();
 	}
 
 	const std::vector<RenderableObject>& Scene::GetRenderableObjects() const

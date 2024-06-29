@@ -127,6 +127,9 @@
     <ClCompile Include="Renderer\Containers\MaterialSerializer.cpp">
       <Filter>Renderer\Containers\MaterialContainer</Filter>
     </ClCompile>
+    <ClCompile Include="Renderer\Containers\DrawListContainer.cpp">
+      <Filter>Renderer\Containers\DrawListContainer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Renderer\Camera\Camera.hpp">
@@ -282,6 +285,9 @@
     <ClInclude Include="Renderer\Containers\MaterialSerializer.hpp">
       <Filter>Renderer\Containers\MaterialContainer</Filter>
     </ClInclude>
+    <ClInclude Include="Renderer\Containers\DrawListContainer.hpp">
+      <Filter>Renderer\Containers\DrawListContainer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ShadersCompiler.bat">
@@ -411,6 +417,9 @@
     </Filter>
     <Filter Include="Renderer\Containers\MaterialContainer">
       <UniqueIdentifier>{2765719e-3d87-43a5-9328-7a9f324ff25d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Containers\DrawListContainer">
+      <UniqueIdentifier>{919177e0-b5e3-4f74-bc5a-d90921ecdd21}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

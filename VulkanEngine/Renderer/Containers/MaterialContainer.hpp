@@ -49,7 +49,7 @@ namespace Renderer
 		const DescriptorSet& GetDescriptorSet(size_t index) const;
 
 		MaterialData& GetMaterialDataByIndex(size_t index);
-
+		const MaterialData& GetMaterialDataByIndex(size_t index) const;
 	private:
 		struct MaterialUniform
 		{

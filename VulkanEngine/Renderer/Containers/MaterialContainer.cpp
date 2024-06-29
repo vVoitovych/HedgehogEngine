@@ -216,6 +216,11 @@ namespace Renderer
 		return mMaterials[index];
 	}
 
+	const MaterialData& MaterialContainer::GetMaterialDataByIndex(size_t index) const
+	{
+		return mMaterials[index];
+	}
+
 }
 
 

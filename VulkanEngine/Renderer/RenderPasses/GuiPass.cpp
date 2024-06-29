@@ -329,7 +329,7 @@ namespace Renderer
 					{
 						if (ImGui::BeginCombo("material", render.mMaterial.c_str()))
 						{
-							int selectedIndex = static_cast<int>(render.mMaterialIndex.value());
+							int selectedIndex = static_cast<int>(render.mMaterialIndex.has_value() ? render.mMaterialIndex.value() : 0);
 
 							for (int i = 0; i < materials.size(); ++i)
 							{
@@ -364,7 +364,7 @@ namespace Renderer
 					{
 						scene.RemoveRenderComponent();
 					}
-					if (!materials.empty())
+					if (!materials.empty() && render.mMaterialIndex.has_value())
 					{
 						ImGui::SeparatorText("Material");
 						auto& materialContainer = context->GetEngineContext()->GetMaterialContainer();
@@ -373,7 +373,7 @@ namespace Renderer
 						auto& materialData = materialContainer.GetMaterialDataByIndex(render.mMaterialIndex.value());
 
 						const char* types[] = { "Opaque", "Cutoff", "Transparent" };
-						static int materialType = static_cast<int>(materialData.type);
+						int materialType = static_cast<int>(materialData.type);
 						ImGui::Combo("Type", &materialType, types, IM_ARRAYSIZE(types));
 						materialData.type = static_cast<MaterialType>(materialType);
 

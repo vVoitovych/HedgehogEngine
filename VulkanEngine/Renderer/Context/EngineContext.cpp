@@ -5,6 +5,8 @@
 #include "Renderer/Containers/TextureContainer.hpp"
 #include "Renderer/Containers/LightContainer.hpp"
 #include "Renderer/Containers/MaterialContainer.hpp"
+#include "Renderer/Containers/DrawListContainer.hpp"
+
 #include "Renderer/Camera/Camera.hpp"
 #include "Scene/Scene.hpp"
 
@@ -32,6 +34,7 @@ namespace Renderer
         mLightContainer->UpdateLights(*mScene);
 
         mMaterialContainer = std::make_unique<MaterialContainer>(vulkanContext);
+        mDrawListContainer = std::make_unique<DrawListContainer>();
     }
 
     EngineContext::~EngineContext()
@@ -56,6 +59,7 @@ namespace Renderer
         mLightContainer->UpdateLights(*mScene);
         mMaterialContainer->Update(*mScene);
         mMaterialContainer->UpdateResources(vulkanContext, *mTextureContainer);
+        mDrawListContainer->Update(*mScene, *mMaterialContainer);
     }
 
     const MeshContainer& EngineContext::GetMeshContainer() const
@@ -81,6 +85,11 @@ namespace Renderer
     MaterialContainer& EngineContext::GetMaterialContainer()
     {
         return *mMaterialContainer;
+    }
+
+    const DrawListContainer& EngineContext::GetDrawListContainer() const
+    {
+        return *mDrawListContainer;
     }
 
     const Camera& EngineContext::GetCamera() const
