@@ -28,13 +28,8 @@ namespace Renderer
     private:
         std::unique_ptr<RenderPass> mRenderPass;
         std::unique_ptr<FrameBuffer> mFrameBuffer;
-        std::unique_ptr<DescriptorSetLayout> mDescriptorSetLayout;
-        std::unique_ptr<DescriptorAllocator> mDescriptorAllocator;
         std::unique_ptr<Pipeline> mPipeline;
-
-        std::unique_ptr<DescriptorSet> mDescriptorSet;
-        
-
+             
 	};
 
 }

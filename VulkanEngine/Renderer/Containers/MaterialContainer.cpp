@@ -211,6 +211,11 @@ namespace Renderer
 		return mDescriptorSets[index];
 	}
 
+	DescriptorSet& MaterialContainer::GetDescriptorSet(size_t index)
+	{
+		return mDescriptorSets[index];
+	}
+
 	MaterialData& MaterialContainer::GetMaterialDataByIndex(size_t index)
 	{
 		return mMaterials[index];

@@ -47,6 +47,7 @@ namespace Renderer
 
 		const DescriptorSetLayout& GetDescriptorSetLayout() const;
 		const DescriptorSet& GetDescriptorSet(size_t index) const;
+		DescriptorSet& GetDescriptorSet(size_t index);
 
 		MaterialData& GetMaterialDataByIndex(size_t index);
 		const MaterialData& GetMaterialDataByIndex(size_t index) const;
