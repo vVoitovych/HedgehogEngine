@@ -3,7 +3,6 @@
 #include "SceneComponents/TransformComponent.hpp"
 #include "SceneComponents/HierarchyComponent.hpp"
 #include "Scene/SceneComponents/LightComponent.hpp"
-#include "RenderObjectsManager.hpp"
 
 #include "Logger/Logger.hpp"
 
@@ -215,8 +214,6 @@ namespace Scene
 			meshComponent.mMeshPath = mesh["MeshPath"].as<std::string>();
 			meshComponent.mMeshIndex = mesh["MeshIndex"].as<size_t>();
 			meshComponent.mCachedMeshPath = mesh["CachedMeshPath"].as<std::string>();
-
-			scene.UpdateRendarable(entity, meshComponent.mMeshIndex.value());
 		}
 
 		auto light = node["LightComponent"];

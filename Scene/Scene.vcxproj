@@ -139,7 +139,6 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="RenderObjectsManager.hpp" />
     <ClInclude Include="Scene.hpp" />
     <ClInclude Include="SceneComponents\HierarchyComponent.hpp" />
     <ClInclude Include="SceneComponents\LightComponent.hpp" />
@@ -154,7 +153,6 @@
     <ClInclude Include="SceneSystems\TransformSystem.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="RenderObjectsManager.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="SceneSerializer.cpp" />
     <ClCompile Include="SceneSystems\HierarchySystem.cpp" />

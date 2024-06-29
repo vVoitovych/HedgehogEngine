@@ -73,13 +73,6 @@ namespace Scene
 		mTransformSystem->Update(mSceneCoordinator);
 		mHierarchySystem->Update(mSceneCoordinator);
 		mLightSystem->Update(mSceneCoordinator);
-		auto& objects = mRenderObjectsManager.GetRenderableObjects();
-		for (size_t i = 0; i < objects.size(); ++i)
-		{
-			auto entity = mRenderObjectsManager.GetEntityByIndex(i);
-			auto& transform = mSceneCoordinator.GetComponent<TransformComponent>(entity);
-			objects[i].objMatrix = transform.mObjMatrix;
-		}
 	}
 
 	void Scene::ResetScene()
@@ -183,7 +176,6 @@ namespace Scene
 				}
 			}
 			mSceneCoordinator.DestroyEntity(entity);
-			mRenderObjectsManager.RemoveEntity(entity);
 
 			UnselectGameObject();
 		}
@@ -205,10 +197,6 @@ namespace Scene
 			auto& meshComponent = GetMeshComponent(entity);
 
 			auto& transform = GetTransformComponent(entity);
-			auto& object = mRenderObjectsManager.AddEntity(entity);
-			object.isVisible = true;
-			object.meshIndex = meshComponent.mMeshIndex.value();
-			object.objMatrix = transform.mObjMatrix;
 		}
 	}
 
@@ -218,8 +206,6 @@ namespace Scene
 		{
 			ECS::Entity entity = mSelectedEntity.value();
 			mSceneCoordinator.RemoveComponent<MeshComponent>(entity);
-
-			mRenderObjectsManager.RemoveEntity(entity);
 		}
 	}
 
@@ -228,9 +214,6 @@ namespace Scene
 		auto& meshComponent = mSceneCoordinator.GetComponent<MeshComponent>(entity);
 		meshComponent.mMeshPath = meshPath;
 		mMeshSystem->Update(mSceneCoordinator, entity);
-
-		auto& object = mRenderObjectsManager.GetEntityData(entity);
-		object.meshIndex = meshComponent.mMeshIndex.value();
 	}
 
 	bool Scene::HasMeshComponent(ECS::Entity entity) const
@@ -406,21 +389,6 @@ namespace Scene
 	const std::vector<ECS::Entity>& Scene::GetRenderableEntities() const
 	{
 		return mRenderSystem->GetEntities();
-	}
-
-	const std::vector<RenderableObject>& Scene::GetRenderableObjects() const
-	{
-		return mRenderObjectsManager.GetRenderableObjects();
-	}
-
-	void Scene::UpdateRendarable(ECS::Entity entity, size_t meshIndex)
-	{
-		auto& meshComponent = GetMeshComponent(entity);
-		auto& transform = GetTransformComponent(entity);
-		auto& object = mRenderObjectsManager.GetEntityData(entity);
-		object.isVisible = true;
-		object.meshIndex = meshComponent.mMeshIndex.value();
-		object.objMatrix = transform.mObjMatrix;
 	}
 
 	void Scene::CreateSceneRoot()

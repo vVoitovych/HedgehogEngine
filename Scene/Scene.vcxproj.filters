@@ -39,9 +39,6 @@
     <ClInclude Include="SceneSystems\TransformSystem.hpp">
       <Filter>SceneSystems</Filter>
     </ClInclude>
-    <ClInclude Include="RenderObjectsManager.hpp">
-      <Filter>Scene</Filter>
-    </ClInclude>
     <ClInclude Include="Scene.hpp">
       <Filter>Scene</Filter>
     </ClInclude>
@@ -67,9 +64,6 @@
     </ClCompile>
     <ClCompile Include="SceneSystems\TransformSystem.cpp">
       <Filter>SceneSystems</Filter>
-    </ClCompile>
-    <ClCompile Include="RenderObjectsManager.cpp">
-      <Filter>Scene</Filter>
     </ClCompile>
     <ClCompile Include="Scene.cpp">
       <Filter>Scene</Filter>

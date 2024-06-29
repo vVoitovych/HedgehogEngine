@@ -6,7 +6,6 @@
 #include "Scene/SceneSystems/MeshSystem.hpp"
 #include "Scene/SceneSystems/LightSystem.hpp"
 #include "Scene/SceneSystems/RenderSystem.hpp"
-#include "RenderObjectsManager.hpp"
 
 #include <optional>
 #include <vector>
@@ -83,8 +82,6 @@ namespace Scene
 		const std::vector<std::string>& GetMaterials() const;
 		const std::vector<ECS::Entity>& GetRenderableEntities() const;
 
-		const std::vector<RenderableObject>& GetRenderableObjects() const;
-		void UpdateRendarable(ECS::Entity entity, size_t meshIndex);
 	private:
 		void CreateSceneRoot();
 		std::string GetNewGameObjectName();
@@ -97,7 +94,6 @@ namespace Scene
 		ECS::Entity mRoot;
 		std::optional<ECS::Entity> mSelectedEntity;
 
-		RenderObjectsManager mRenderObjectsManager;
 		// systems
 		std::shared_ptr<TransformSystem> mTransformSystem;
 		std::shared_ptr<HierarchySystem> mHierarchySystem;
