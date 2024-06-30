@@ -44,14 +44,30 @@ Scene:
         Parent: 0
         TransformComponent:
           Position: [0, 0, 0]
-          Rotation: [0, 0, 138.5]
+          Rotation: [448.5, 297, 122.5]
           Scale: [1, 1, 1]
         LightComponent:
           LightEnabled: true
           LightType: 0
-          LightColor: [0.0376778133, 0.480392158, 0.21997191]
-          LightIntencity: 6.704
+          LightColor: [0.98046422, 0.995098054, 0.986489892]
+          LightIntencity: 0.838
           LightRadius: 1
           LightConeAngle: 2
+        Children:
+          []
+      - Entity: 4
+        Name: "ground\x00ect_0"
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, -4]
+          Rotation: [0, 0, 0]
+          Scale: [12.5, 14.5, 1]
+        MeshComponent:
+          MeshPath: Models\Default\cube.obj
+          MeshIndex: 1
+          CachedMeshPath: Models\Default\cube.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials\test3.material
         Children:
           []
