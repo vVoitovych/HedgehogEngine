@@ -38,7 +38,7 @@ namespace Renderer
 		mRasterizerInfo.rasterizerDiscardEnable = VK_FALSE;
 		mRasterizerInfo.polygonMode = VK_POLYGON_MODE_FILL;
 		mRasterizerInfo.lineWidth = 1.0f;
-		mRasterizerInfo.cullMode = VK_CULL_MODE_NONE; // VK_CULL_MODE_FRONT_BIT;
+		mRasterizerInfo.cullMode = VK_CULL_MODE_FRONT_BIT;
 		mRasterizerInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
 		mRasterizerInfo.depthBiasEnable = VK_FALSE;
 

@@ -44,11 +44,11 @@ namespace Renderer
 		float mFOV = glm::radians(45.0f);
 		float mAspect = 1.0f;
 		float mNearPlane = 0.1f;
-		float mFarPlane = 100.0f;
+		float mFarPlane = 1000.0f;
 
 		float mCameraSpeed = 10.0f;
 
-		float mMouseSensitivity = 0.05f;
+		float mMouseSensitivity = 0.01f;
 		float mYaw = 0.0f;
 		float mPitch = 0.0f;
 

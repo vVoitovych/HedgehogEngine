@@ -50,11 +50,9 @@ namespace Renderer
         if (mPitch < -80.0f)
             mPitch = -80.0f;
 
-        glm::vec3 direction;
-        direction.x = cos(glm::radians(mPitch)) * cos(glm::radians(mYaw));
-        direction.y = sin(glm::radians(mYaw));
-        direction.z = sin(glm::radians(mPitch)) * cos(glm::radians(mYaw));
-        mDirection = glm::normalize(direction);
+        mDirection.x = cos(glm::radians(mYaw)) * cos(glm::radians(mPitch));
+        mDirection.y = sin(glm::radians(mYaw)) * cos(glm::radians(mPitch));
+        mDirection.z = sin(glm::radians(mPitch));
 
         mRightVector = glm::normalize(glm::cross(mDirection, mUpVector));
 
@@ -99,7 +97,7 @@ namespace Renderer
     void Camera::UpdateMatricies()
     {
         mViewMatrix = glm::lookAt(mPos, mPos + mDirection, mUpVector);
-        mProjMatrix = glm::perspective(mFOV, mAspect, mNearPlane, mFarPlane);
+        mProjMatrix = glm::perspective(mFOV / mAspect, mAspect, mNearPlane, mFarPlane);
         mProjMatrix[1][1] *= -1;
     }
 

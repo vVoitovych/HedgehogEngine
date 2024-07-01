@@ -11,7 +11,7 @@ namespace Scene
 
 namespace Renderer
 {
-	class MaterialData;
+	struct MaterialData;
 
 	class DescriptorSetLayout;
 	class DescriptorAllocator;

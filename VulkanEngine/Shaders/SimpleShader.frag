@@ -39,6 +39,5 @@ void main()
     {
         outColor += CalculateLight(ubo.lights[i], data, ubo.eyePos);
     }
-
 }
 
