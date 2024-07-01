@@ -14,14 +14,14 @@ namespace Scene
 		{
 			auto& transform = coordinator.GetComponent<TransformComponent>(entity);
 
-			glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), transform.mPososition);
-			glm::mat4 rotationMatrix = 
-				glm::rotate(glm::mat4(1.0f), glm::radians(transform.mRotation.x), glm::vec3(1.0f, 0.0f, 0.0f)) *
-				glm::rotate(glm::mat4(1.0f), glm::radians(transform.mRotation.y), glm::vec3(0.0f, 1.0f, 0.0f)) *
-				glm::rotate(glm::mat4(1.0f), glm::radians(transform.mRotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
-			glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), transform.mScale);
+			glm::mat4 matrix = glm::mat4(1.0f);
+			matrix = glm::translate(matrix, transform.mPososition);
+			matrix = glm::rotate(matrix, glm::radians(transform.mRotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+			matrix = glm::rotate(matrix, glm::radians(transform.mRotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+			matrix = glm::rotate(matrix, glm::radians(transform.mRotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+			matrix = glm::scale(matrix, transform.mScale);
 			
-			transform.mObjMatrix = translationMatrix * rotationMatrix * scaleMatrix;
+			transform.mObjMatrix = matrix;
 
 		}
 	}
