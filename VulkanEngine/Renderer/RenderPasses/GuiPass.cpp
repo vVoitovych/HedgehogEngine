@@ -39,10 +39,10 @@
 
 namespace Renderer
 {
-	GuiPass::GuiPass(const std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager)
+	GuiPass::GuiPass(const RenderContext& context, const ResourceManager& resourceManager)
 	{
-		auto& vulkanContext = context->GetVulkanContext();
-		auto& device = vulkanContext->GetDevice();
+		auto& vulkanContext = context.GetVulkanContext();
+		auto& device = vulkanContext.GetDevice();
 		std::vector<PoolSizeRatio> sizes =
 		{
 			{ VK_DESCRIPTOR_TYPE_SAMPLER, 1 },
@@ -59,9 +59,9 @@ namespace Renderer
 		};
 
 		mDescriptorAllocator = std::make_unique<DescriptorAllocator>(device, 1000, sizes);
-		auto& swapChain = context->GetVulkanContext()->GetSwapChain();
-		GuiPassInfo passInfo(resourceManager->GetColorBuffer()->GetFormat());
-		mRenderPass = std::make_unique<RenderPass>(context->GetVulkanContext()->GetDevice(), passInfo.GetInfo());
+		auto& swapChain = context.GetVulkanContext().GetSwapChain();
+		GuiPassInfo passInfo(resourceManager.GetColorBuffer().GetFormat());
+		mRenderPass = std::make_unique<RenderPass>(context.GetVulkanContext().GetDevice(), passInfo.GetInfo());
 
 		// - Imgui init
 		IMGUI_CHECKVERSION();
@@ -71,7 +71,7 @@ namespace Renderer
 
 		ImGui::StyleColorsDark();
 
-		ImGui_ImplGlfw_InitForVulkan(vulkanContext->GetWindowManager().GetGlfwWindow(), true);
+		ImGui_ImplGlfw_InitForVulkan(const_cast<GLFWwindow*>(vulkanContext.GetWindowManager().GetGlfwWindow()), true);
 		ImGui_ImplVulkan_InitInfo initInfo = {};
 		initInfo.Instance = device.GetNativeInstance();
 		initInfo.PhysicalDevice = device.GetNativePhysicalDevice();
@@ -88,11 +88,11 @@ namespace Renderer
 
 		UploadFonts();
 
-		std::vector<VkImageView> attacments = { resourceManager->GetColorBuffer()->GetNativeView()};
+		std::vector<VkImageView> attacments = { resourceManager.GetColorBuffer().GetNativeView()};
 		mFrameBuffer = std::make_unique<FrameBuffer>(
 			device,
 			attacments,
-			resourceManager->GetColorBuffer()->GetExtent(),
+			resourceManager.GetColorBuffer().GetExtent(),
 			*mRenderPass);
 
 	}	
@@ -101,20 +101,20 @@ namespace Renderer
 	{
 	}
 
-	void GuiPass::Render(std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager)
+	void GuiPass::Render(RenderContext& context, const ResourceManager& resourceManager)
 	{
-		auto& frameContext = context->GetFrameContext();
-		auto backBufferIndex = frameContext->GetBackBufferIndex();
+		auto& frameContext = context.GetFrameContext();
+		auto backBufferIndex = frameContext.GetBackBufferIndex();
 
-		auto& threadContext = context->GetThreadContext();
-		auto& commandBuffer = threadContext->GetCommandBuffer();
+		auto& threadContext = context.GetThreadContext();
+		auto& commandBuffer = threadContext.GetCommandBuffer();
 
-		auto& vulkanContext = context->GetVulkanContext();
-		auto& swapChain = vulkanContext->GetSwapChain();
+		auto& vulkanContext = context.GetVulkanContext();
+		auto& swapChain = vulkanContext.GetSwapChain();
 		auto extent = swapChain.GetSwapChainExtent();
 
 		commandBuffer.TransitionImage(
-			resourceManager->GetColorBuffer()->GetNativeImage(),
+			resourceManager.GetColorBuffer().GetNativeImage(),
 			VK_IMAGE_LAYOUT_UNDEFINED, 
 			VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
@@ -131,25 +131,25 @@ namespace Renderer
 
 	}
 
-	void GuiPass::Cleanup(const std::unique_ptr<RenderContext>& context)
+	void GuiPass::Cleanup(const RenderContext& context)
 	{
 		ImGui_ImplVulkan_Shutdown();
 		ImGui_ImplGlfw_Shutdown();
 		ImGui::DestroyContext();
 
-		auto& device = context->GetVulkanContext()->GetDevice();
+		auto& device = context.GetVulkanContext().GetDevice();
 		mFrameBuffer->Cleanup(device);
 		mRenderPass->Cleanup(device);
 		mDescriptorAllocator->Cleanup(device);
 	}
 
-	void GuiPass::ResizeResources(const std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager)
+	void GuiPass::ResizeResources(const RenderContext& context, const ResourceManager& resourceManager)
 	{
-		auto& device = context->GetVulkanContext()->GetDevice();
+		auto& device = context.GetVulkanContext().GetDevice();
 		mFrameBuffer->Cleanup(device);
 
-		auto& swapChain = context->GetVulkanContext()->GetSwapChain();
-		std::vector<VkImageView> attacments = { resourceManager->GetColorBuffer()->GetNativeView() };
+		auto& swapChain = context.GetVulkanContext().GetSwapChain();
+		std::vector<VkImageView> attacments = { resourceManager.GetColorBuffer().GetNativeView() };
 		mFrameBuffer = std::make_unique<FrameBuffer>(
 			device,
 			attacments,
@@ -173,7 +173,7 @@ namespace Renderer
 
 	}
 
-	void GuiPass::DrawGui(const std::unique_ptr<RenderContext>& context)
+	void GuiPass::DrawGui(RenderContext& context)
 	{
 		DrawInspector(context);
 		DrawScene(context);
@@ -182,7 +182,7 @@ namespace Renderer
 		ImGui::ShowDemoWindow();
 	}
 
-	void GuiPass::DrawInspector(const std::unique_ptr<RenderContext>& context)
+	void GuiPass::DrawInspector(RenderContext& context)
 	{
 		float sizeX, sizeY, paddingY;
 
@@ -197,12 +197,23 @@ namespace Renderer
 			NULL,
 			ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove
 		);
-		auto& scene = context->GetEngineContext()->GetScene();
+		DrawTitle(context);
+		DrawTransform(context);
+		DrawLight(context);
+		DrawMesh(context);
+		DrawRender(context);
 
+		ImGui::End();
+	
+	}
+
+	void GuiPass::DrawTitle(RenderContext& context)
+	{
+		auto& scene = context.GetEngineContext().GetScene();
 		if (scene.IsGameObjectSelected())
 		{
 			auto entity = scene.GetSelectedGameObject();
-			auto& hierarchy = scene.GetHierarchyComponent(entity);	
+			auto& hierarchy = scene.GetHierarchyComponent(entity);
 			auto name = hierarchy.mName;
 			if (ImGui::CollapsingHeader("Name"))
 			{
@@ -211,7 +222,17 @@ namespace Renderer
 					hierarchy.mName = name;
 				}
 			}
-			
+		}
+	}
+
+	void GuiPass::DrawTransform(RenderContext& context)
+	{
+		auto& scene = context.GetEngineContext().GetScene();
+
+		if (scene.IsGameObjectSelected())
+		{
+			auto entity = scene.GetSelectedGameObject();
+
 			if (ImGui::CollapsingHeader("Transform Component"))
 			{
 
@@ -231,7 +252,16 @@ namespace Renderer
 				ImGui::DragFloat("scale y", &transform.mScale.y, 0.5f);
 				ImGui::DragFloat("scale z", &transform.mScale.z, 0.5f);
 			}
-			
+		}
+	}
+
+	void GuiPass::DrawMesh(RenderContext& context)
+	{
+		auto& scene = context.GetEngineContext().GetScene();
+
+		if (scene.IsGameObjectSelected())
+		{
+			auto entity = scene.GetSelectedGameObject();
 			if (scene.HasMeshComponent(entity))
 			{
 				if (ImGui::CollapsingHeader("Mesh Component"))
@@ -240,18 +270,18 @@ namespace Renderer
 					auto& meshes = scene.GetMeshes();
 					int selectedIndex = static_cast<int>(mesh.mMeshIndex.value());
 
-					if (ImGui::BeginCombo("mesh", mesh.mMeshPath.c_str())) 
+					if (ImGui::BeginCombo("mesh", mesh.mMeshPath.c_str()))
 					{
-						for (int i = 0; i < meshes.size(); ++i) 
+						for (int i = 0; i < meshes.size(); ++i)
 						{
 							const bool isSelected = (selectedIndex == i);
-							if (ImGui::Selectable(meshes[i].c_str(), isSelected)) 
+							if (ImGui::Selectable(meshes[i].c_str(), isSelected))
 							{
 								selectedIndex = i;
 								scene.ChangeMeshComponent(entity, meshes[i]);
 							}
 
-							if (isSelected) 
+							if (isSelected)
 							{
 								ImGui::SetItemDefaultFocus();
 							}
@@ -269,50 +299,17 @@ namespace Renderer
 					}
 				}
 			}
+		}
+	}
 
-			if (scene.HasLightComponent(entity))
-			{
-				if (ImGui::CollapsingHeader("Light Component"))
-				{
-					auto& light = scene.GetLightComponent(entity);
+	void GuiPass::DrawRender(RenderContext& context)
+	{
+		auto& scene = context.GetEngineContext().GetScene();
 
-					static bool enabled = light.mEnable;
-					ImGui::Checkbox("Enabled", &enabled);
-					light.mEnable = enabled;
-
-					const char* types[] = { "Direction Light", "Point Light", "Spot Light" };
-					static int lightType = static_cast<int>(light.mLightType);
-					ImGui::Combo("Type", &lightType, types, IM_ARRAYSIZE(types));
-					light.mLightType = static_cast<Scene::LightType>(lightType);
-					
-					static float color[3] = { light.mColor.r, light.mColor.g, light.mColor.b };
-					ImGui::ColorEdit3("Color", color);
-					light.mColor = {color[0], color[1], color[2]};
-
-					static float intencity = light.mIntencity;
-					ImGui::SliderFloat("Intencity", &intencity, 0.0f, 30.0f, "ratio = %.3f");
-					light.mIntencity = intencity;
-
-					if (lightType > 0)
-					{
-						static float radius = light.mRadius;
-						ImGui::SliderFloat("Radius", &radius, 0.0f, 100.0f, "ratio = %.3f");
-						light.mRadius = radius;
-						if (lightType > 1)
-						{
-							static float coneAngle = light.mConeAngle;
-							ImGui::SliderFloat("Cone angle", &coneAngle, 0.1f, 179.9f, "ratio = %.3f");
-							light.mConeAngle = coneAngle;
-						}
-					}
-
-					if (ImGui::Button("Remove component"))
-					{
-						scene.RemoveLightComponent();
-					}
-				}
-			}
-
+		if (scene.IsGameObjectSelected())
+		{
+			auto entity = scene.GetSelectedGameObject();
+		
 			if (scene.HasRenderComponent(entity))
 			{
 				if (ImGui::CollapsingHeader("Rendering  Component"))
@@ -357,7 +354,7 @@ namespace Renderer
 					{
 						if (ImGui::Button("Save material"))
 						{
-							context->GetEngineContext()->GetMaterialContainer().SaveMaterial(render.mMaterialIndex.value());
+							context.GetEngineContext().GetMaterialContainer().SaveMaterial(render.mMaterialIndex.value());
 						}
 					}
 					if (ImGui::Button("Remove component"))
@@ -367,8 +364,8 @@ namespace Renderer
 					if (!materials.empty() && render.mMaterialIndex.has_value())
 					{
 						ImGui::SeparatorText("Material");
-						auto& materialContainer = context->GetEngineContext()->GetMaterialContainer();
-						auto& textuteContainer = context->GetEngineContext()->GetTextureContainer();
+						auto& materialContainer = context.GetEngineContext().GetMaterialContainer();
+						auto& textuteContainer = context.GetEngineContext().GetTextureContainer();
 
 						auto& materialData = materialContainer.GetMaterialDataByIndex(render.mMaterialIndex.value());
 
@@ -401,7 +398,7 @@ namespace Renderer
 						}
 						if (ImGui::Button("Load texture"))
 						{
-							materialContainer.LoadBaseTexture(render.mMaterialIndex.value(), *context->GetVulkanContext(), textuteContainer);
+							materialContainer.LoadBaseTexture(render.mMaterialIndex.value(), context.GetVulkanContext(), textuteContainer);
 						}
 
 
@@ -419,14 +416,64 @@ namespace Renderer
 				}
 			}
 		}
-
-		ImGui::End();
-	
 	}
 
-	void GuiPass::DrawHierarchyNode(const std::unique_ptr<RenderContext>& context, ECS::Entity entity, int& index)
+	void GuiPass::DrawLight(RenderContext& context)
 	{
-		auto& scene = context->GetEngineContext()->GetScene();
+		auto& scene = context.GetEngineContext().GetScene();
+
+		if (scene.IsGameObjectSelected())
+		{
+			auto entity = scene.GetSelectedGameObject();
+
+			if (scene.HasLightComponent(entity))
+			{
+				if (ImGui::CollapsingHeader("Light Component"))
+				{
+					auto& light = scene.GetLightComponent(entity);
+
+					static bool enabled = light.mEnable;
+					ImGui::Checkbox("Enabled", &enabled);
+					light.mEnable = enabled;
+
+					const char* types[] = { "Direction Light", "Point Light", "Spot Light" };
+					static int lightType = static_cast<int>(light.mLightType);
+					ImGui::Combo("Type", &lightType, types, IM_ARRAYSIZE(types));
+					light.mLightType = static_cast<Scene::LightType>(lightType);
+
+					static float color[3] = { light.mColor.r, light.mColor.g, light.mColor.b };
+					ImGui::ColorEdit3("Color", color);
+					light.mColor = { color[0], color[1], color[2] };
+
+					static float intencity = light.mIntencity;
+					ImGui::SliderFloat("Intencity", &intencity, 0.0f, 30.0f, "ratio = %.3f");
+					light.mIntencity = intencity;
+
+					if (lightType > 0)
+					{
+						static float radius = light.mRadius;
+						ImGui::SliderFloat("Radius", &radius, 0.0f, 100.0f, "ratio = %.3f");
+						light.mRadius = radius;
+						if (lightType > 1)
+						{
+							static float coneAngle = light.mConeAngle;
+							ImGui::SliderFloat("Cone angle", &coneAngle, 0.1f, 179.9f, "ratio = %.3f");
+							light.mConeAngle = coneAngle;
+						}
+					}
+
+					if (ImGui::Button("Remove component"))
+					{
+						scene.RemoveLightComponent();
+					}
+				}
+			}
+		}
+	}
+
+	void GuiPass::DrawHierarchyNode(RenderContext& context, ECS::Entity entity, int& index)
+	{
+		auto& scene = context.GetEngineContext().GetScene();
 		auto& component = scene.GetHierarchyComponent(entity);
 		ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow;
 		bool isSelected = false;
@@ -466,9 +513,9 @@ namespace Renderer
 		}
 	}
 
-	void GuiPass::ShowAppMainMenuBar(const std::unique_ptr<RenderContext>& context)
+	void GuiPass::ShowAppMainMenuBar(RenderContext& context)
 	{
-		auto& scene = context->GetEngineContext()->GetScene();
+		auto& scene = context.GetEngineContext().GetScene();
 		if (ImGui::BeginMainMenuBar())
 		{
 			if (ImGui::BeginMenu("File"))
@@ -498,7 +545,7 @@ namespace Renderer
 				}
 
 				ImGui::Separator();
-				if (ImGui::MenuItem("Create material")) { context->GetEngineContext()->GetMaterialContainer().CreateNewMaterial(); }
+				if (ImGui::MenuItem("Create material")) { context.GetEngineContext().GetMaterialContainer().CreateNewMaterial(); }
 				ImGui::EndMenu();
 			}
 
@@ -508,7 +555,7 @@ namespace Renderer
 	}
 
 
-	void GuiPass::DrawScene(const std::unique_ptr<RenderContext>& context)
+	void GuiPass::DrawScene(RenderContext& context)
 	{
 		float sizeX, sizeY, paddingY;
 
@@ -518,7 +565,7 @@ namespace Renderer
 		ImGui::SetNextWindowSize(ImVec2(sizeX, sizeY), ImGuiCond_Always);
 		ImGui::SetNextWindowPos(ImVec2(sizeX, 20.0f), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
 
-		auto& scene = context->GetEngineContext()->GetScene();
+		auto& scene = context.GetEngineContext().GetScene();
 		ImGui::Begin(scene.GetSceneName().c_str(), NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove);
 
 		{

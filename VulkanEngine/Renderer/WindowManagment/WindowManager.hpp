@@ -26,6 +26,7 @@ namespace Renderer
 
 		void CreateWindowSurface(VkInstance instance, VkSurfaceKHR* surface) const;
 		GLFWwindow* GetGlfwWindow();
+		const GLFWwindow* GetGlfwWindow() const;
 		Controls& GetControls();
 
 		bool IsWindowResized() const;

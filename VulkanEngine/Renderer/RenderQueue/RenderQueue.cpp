@@ -10,7 +10,7 @@
 
 namespace Renderer
 {
-	RenderQueue::RenderQueue(const std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager)
+	RenderQueue::RenderQueue(const RenderContext& context, const ResourceManager& resourceManager)
 	{
 		mInitPass = std::make_unique<InitPass>(context);
 		mForwardPass = std::make_unique<ForwardPass>(context, resourceManager);
@@ -22,7 +22,7 @@ namespace Renderer
 	{
 	}
 
-	void RenderQueue::Cleanup(const std::unique_ptr<RenderContext>& context)
+	void RenderQueue::Cleanup(const RenderContext& context)
 	{
 		mInitPass->Cleanup(context);
 		mForwardPass->Cleanup(context);
@@ -30,12 +30,12 @@ namespace Renderer
 		mPresentPass->Cleanup(context);
 	}
 
-	void RenderQueue::Render(std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager)
+	void RenderQueue::Render(RenderContext& context, const ResourceManager& resourceManager)
 	{
-		auto& vulkanContext = context->GetVulkanContext();
+		auto& vulkanContext = context.GetVulkanContext();
 
 		mInitPass->Render(context);
-		if (vulkanContext->IsWindowResized())
+		if (vulkanContext.IsWindowResized())
 			return;
 		mForwardPass->Render(context, resourceManager);
 		mGuiPass->Render(context, resourceManager);
@@ -43,7 +43,7 @@ namespace Renderer
 
 	}
 
-	void RenderQueue::ResizeResources(const std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager)
+	void RenderQueue::ResizeResources(const RenderContext& context, const ResourceManager& resourceManager)
 	{
 		mForwardPass->ResizeResources(context, resourceManager);
 		mGuiPass->ResizeResources(context, resourceManager);

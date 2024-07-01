@@ -16,22 +16,28 @@ namespace Renderer
 	class GuiPass
 	{
 	public:
-		GuiPass(const std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager);
+		GuiPass(const RenderContext& context, const ResourceManager& resourceManager);
 		~GuiPass();
 
-		void Render(std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager);
-		void Cleanup(const std::unique_ptr<RenderContext>& context);
+		void Render(RenderContext& context, const ResourceManager& resourceManager);
+		void Cleanup(const RenderContext& context);
 
-		void ResizeResources(const std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager);
+		void ResizeResources(const RenderContext& context, const ResourceManager& resourceManager);
 	public:
 		static bool IsCursorPositionInGUI();
 
 	private:
-		void DrawGui(const std::unique_ptr<RenderContext>& context);
-		void DrawInspector(const std::unique_ptr<RenderContext>& context);
-		void DrawScene(const std::unique_ptr<RenderContext>& context);
-		void DrawHierarchyNode(const std::unique_ptr<RenderContext>& context, ECS::Entity entity, int& index);
-		void ShowAppMainMenuBar(const std::unique_ptr<RenderContext>& context);
+		void DrawGui(RenderContext& context);
+		void DrawInspector(RenderContext& context);
+		void DrawTitle(RenderContext& context);
+		void DrawTransform(RenderContext& context);
+		void DrawMesh(RenderContext& context);
+		void DrawRender(RenderContext& context);
+		void DrawLight(RenderContext& context);
+
+		void DrawScene(RenderContext& context);
+		void DrawHierarchyNode(RenderContext& context, ECS::Entity entity, int& index);
+		void ShowAppMainMenuBar(RenderContext& context);
 
 		void UploadFonts();
 

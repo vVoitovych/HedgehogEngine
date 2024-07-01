@@ -17,13 +17,13 @@ namespace Renderer
 	class ForwardPass
 	{
     public:
-        ForwardPass(const std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager);
+        ForwardPass(const RenderContext& context, const ResourceManager& resourceManager);
         ~ForwardPass();
 
-        void Render(std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager);
-        void Cleanup(const std::unique_ptr<RenderContext>& context);
+        void Render(RenderContext& context, const ResourceManager& resourceManager);
+        void Cleanup(const RenderContext& context);
 
-        void ResizeResources(const std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager);
+        void ResizeResources(const RenderContext& context, const ResourceManager& resourceManager);
 
     private:
         std::unique_ptr<RenderPass> mRenderPass;

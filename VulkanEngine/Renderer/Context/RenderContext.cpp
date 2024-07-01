@@ -35,44 +35,44 @@ namespace Renderer
         mVulkanContext->Cleanup();
     }
 
-    std::unique_ptr<VulkanContext>& RenderContext::GetVulkanContext()
+    VulkanContext& RenderContext::GetVulkanContext()
     {
-        return mVulkanContext;
+        return *mVulkanContext;
     }
 
-    std::unique_ptr<EngineContext>& RenderContext::GetEngineContext()
+    EngineContext& RenderContext::GetEngineContext()
     {
-        return mEngineContext;
+        return *mEngineContext;
     }
 
-    std::unique_ptr<FrameContext>& RenderContext::GetFrameContext()
+    FrameContext& RenderContext::GetFrameContext()
     {
-        return mFrameContext;
+        return *mFrameContext;
     }
 
-    std::unique_ptr<ThreadContext>& RenderContext::GetThreadContext()
+    ThreadContext& RenderContext::GetThreadContext()
     {
-        return mThreadContext;
+        return *mThreadContext;
     }
 
-    const std::unique_ptr<VulkanContext>& RenderContext::GetVulkanContext() const
+    const VulkanContext& RenderContext::GetVulkanContext() const
     {
-        return mVulkanContext;
+        return *mVulkanContext;
     }
 
-    const std::unique_ptr<EngineContext>& RenderContext::GetEngineContext() const
+    const EngineContext& RenderContext::GetEngineContext() const
     {
-        return mEngineContext;
+        return *mEngineContext;
     }
 
-    const std::unique_ptr<FrameContext>& RenderContext::GetFrameContext() const
+    const FrameContext& RenderContext::GetFrameContext() const
     {
-        return mFrameContext;
+        return *mFrameContext;
     }
 
-    const std::unique_ptr<ThreadContext>& RenderContext::GetThreadContext() const
+    const ThreadContext& RenderContext::GetThreadContext() const
     {
-        return mThreadContext;
+        return *mThreadContext;
     }
 
 

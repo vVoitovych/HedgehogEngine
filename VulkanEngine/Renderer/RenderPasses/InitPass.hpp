@@ -1,9 +1,5 @@
 #pragma once
 
-#include <vulkan/vulkan.h>
-#include <optional>
-#include <memory>
-
 namespace Renderer
 {
     class RenderContext;
@@ -11,12 +7,12 @@ namespace Renderer
     class InitPass
     {
     public:
-        InitPass(const std::unique_ptr<RenderContext>& context);
+        InitPass(const RenderContext& context);
         ~InitPass() = default;
 
-        void Render(std::unique_ptr<RenderContext>& context);
+        void Render(RenderContext& context);
 
-        void Cleanup(const std::unique_ptr<RenderContext>& context);
+        void Cleanup(const RenderContext& context);
 
     };
 

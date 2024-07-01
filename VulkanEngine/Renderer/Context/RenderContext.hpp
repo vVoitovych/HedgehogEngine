@@ -24,15 +24,15 @@ namespace Renderer
 		RenderContext(RenderContext&&) = delete;
 		RenderContext& operator=(RenderContext&&) = delete;
 
-		std::unique_ptr<VulkanContext>& GetVulkanContext();
-		std::unique_ptr<EngineContext>& GetEngineContext();
-		std::unique_ptr<FrameContext>& GetFrameContext();
-		std::unique_ptr<ThreadContext>& GetThreadContext();
+		VulkanContext& GetVulkanContext();
+		EngineContext& GetEngineContext();
+		FrameContext& GetFrameContext();
+		ThreadContext& GetThreadContext();
 
-		const std::unique_ptr<VulkanContext>& GetVulkanContext() const;
-		const std::unique_ptr<EngineContext>& GetEngineContext() const;
-		const std::unique_ptr<FrameContext>& GetFrameContext() const;
-		const std::unique_ptr<ThreadContext>& GetThreadContext() const;
+		const VulkanContext& GetVulkanContext() const;
+		const EngineContext& GetEngineContext() const;
+		const FrameContext& GetFrameContext() const;
+		const ThreadContext& GetThreadContext() const;
 
 	private:
 		std::unique_ptr<VulkanContext> mVulkanContext;
