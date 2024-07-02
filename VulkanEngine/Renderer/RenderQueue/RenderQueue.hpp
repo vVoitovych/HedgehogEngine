@@ -15,7 +15,7 @@ namespace Renderer
 	class RenderQueue
 	{
 	public:
-		RenderQueue(const std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager);
+		RenderQueue(const RenderContext& context, const ResourceManager& resourceManager);
 		~RenderQueue();
 
 		RenderQueue(const RenderQueue&) = delete;
@@ -24,10 +24,10 @@ namespace Renderer
 		RenderQueue& operator=(RenderQueue&&) = delete;
 
 
-		void Cleanup(const std::unique_ptr<RenderContext>& context);
-		void Render(std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager);
+		void Cleanup(const RenderContext& context);
+		void Render(RenderContext& context, const ResourceManager& resourceManager);
 
-		void ResizeResources(const std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager);
+		void ResizeResources(const RenderContext& context, const ResourceManager& resourceManager);
 
 	private:
 		std::unique_ptr<InitPass> mInitPass;

@@ -12,19 +12,19 @@ namespace Renderer
 	class ResourceManager
 	{
 	public:
-		ResourceManager(const std::unique_ptr<RenderContext>& context);
+		ResourceManager(const RenderContext& context);
 		~ResourceManager();
 
-		void Cleanup(const std::unique_ptr<RenderContext>& context);
+		void Cleanup(const RenderContext& context);
 
-		void ResizeResources(const std::unique_ptr<RenderContext>& context);
+		void ResizeResources(const RenderContext& context);
 
-		const std::unique_ptr<Image>& GetColorBuffer() const;
-		const std::unique_ptr<Image>& GetDepthBuffer() const;
+		const Image& GetColorBuffer() const;
+		const Image& GetDepthBuffer() const;
 
 	private:
-		void CreateDepthBuffer(const std::unique_ptr<RenderContext>& context);
-		void CreateColorBuffer(const std::unique_ptr<RenderContext>& context);
+		void CreateDepthBuffer(const RenderContext& context);
+		void CreateColorBuffer(const RenderContext& context);
 
 	private:
 		std::unique_ptr<Image> mDepthBuffer;

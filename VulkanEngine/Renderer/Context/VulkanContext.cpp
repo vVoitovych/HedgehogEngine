@@ -38,6 +38,11 @@ namespace Renderer
 		return *mWindowManager;
 	}
 
+	const WindowManager& VulkanContext::GetWindowManager() const
+	{
+		return *mWindowManager;
+	}
+
 	const Device& VulkanContext::GetDevice() const
 	{
 		return *mDevice;

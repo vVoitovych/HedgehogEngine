@@ -24,6 +24,7 @@ namespace Renderer
 
 		void HandleInput();
 		WindowManager& GetWindowManager();
+		const WindowManager& GetWindowManager() const;
 
 		bool ShouldClose() const;
 		void ResizeWindow();

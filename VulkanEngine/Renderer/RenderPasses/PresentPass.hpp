@@ -1,8 +1,6 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
-#include <optional>
-#include <memory>
 
 namespace Renderer
 {
@@ -12,12 +10,12 @@ namespace Renderer
     class PresentPass
     {
     public:
-        PresentPass(const std::unique_ptr<RenderContext>& context);
+        PresentPass(const RenderContext& context);
         ~PresentPass() = default;
 
-        void Render(std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager);
+        void Render(RenderContext& context, const ResourceManager& resourceManager);
 
-        void Cleanup(const std::unique_ptr<RenderContext>& context);
+        void Cleanup(const RenderContext& context);
 
     };
 

@@ -19,8 +19,8 @@ namespace Renderer
 	Renderer::Renderer()
 	{
 		mRenderContext = std::make_unique<RenderContext>();
-		mResourceManager = std::make_unique<ResourceManager>(mRenderContext);
-		mRenderQueue = std::make_unique<RenderQueue>(mRenderContext, mResourceManager);
+		mResourceManager = std::make_unique<ResourceManager>(*mRenderContext);
+		mRenderQueue = std::make_unique<RenderQueue>(*mRenderContext, *mResourceManager);
 
 	}
 
@@ -30,17 +30,17 @@ namespace Renderer
 	 
 	void Renderer::Cleanup()
 	{
-		vkQueueWaitIdle(mRenderContext->GetVulkanContext()->GetDevice().GetNativeGraphicsQueue());
+		vkQueueWaitIdle(mRenderContext->GetVulkanContext().GetDevice().GetNativeGraphicsQueue());
 
-		mRenderQueue->Cleanup(mRenderContext);
-		mResourceManager->Cleanup(mRenderContext);
+		mRenderQueue->Cleanup(*mRenderContext);
+		mResourceManager->Cleanup(*mRenderContext);
 		mRenderContext->Cleanup();
 	}
 
 	void Renderer::HandleInput()
 	{
 		auto& vilkanContext = mRenderContext->GetVulkanContext();
-		vilkanContext->HandleInput();
+		vilkanContext.HandleInput();
 	}
 
 	void Renderer::Update(float dt)
@@ -54,30 +54,30 @@ namespace Renderer
 		auto& engineContext = mRenderContext->GetEngineContext();
 		auto dt = GetFrameTime();
 		auto& vulkanContext = mRenderContext->GetVulkanContext();
-		engineContext->UpdateContext(*vulkanContext, dt);
-		if (vulkanContext->IsWindowResized())
+		engineContext.UpdateContext(vulkanContext, dt);
+		if (vulkanContext.IsWindowResized())
 		{
 			RecreateSwapChain();
-			vulkanContext->ResetWindowResizeState();
+			vulkanContext.ResetWindowResizeState();
 		}
 
-		mRenderQueue->Render(mRenderContext, mResourceManager);
+		mRenderQueue->Render(*mRenderContext, *mResourceManager);
 	}
 
 	void Renderer::RecreateSwapChain()
 	{
-		vkDeviceWaitIdle(mRenderContext->GetVulkanContext()->GetDevice().GetNativeDevice());
+		vkDeviceWaitIdle(mRenderContext->GetVulkanContext().GetDevice().GetNativeDevice());
 		auto& vulkanContext = mRenderContext->GetVulkanContext();
-		vulkanContext->GetSwapChain().Recreate(vulkanContext->GetDevice());
+		vulkanContext.GetSwapChain().Recreate(vulkanContext.GetDevice());
 
-		mResourceManager->ResizeResources(mRenderContext);
-		mRenderQueue->ResizeResources(mRenderContext, mResourceManager);
+		mResourceManager->ResizeResources(*mRenderContext);
+		mRenderQueue->ResizeResources(*mRenderContext, *mResourceManager);
 	}
 
 	bool Renderer::ShouldClose()
 	{
 		auto& vulkanContext = mRenderContext->GetVulkanContext();
-		return vulkanContext->ShouldClose();
+		return vulkanContext.ShouldClose();
 	}
 
 	float Renderer::GetFrameTime()

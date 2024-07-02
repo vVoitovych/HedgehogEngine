@@ -36,32 +36,32 @@
 
 namespace Renderer
 {
-	void ForwardPass::Render(std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager)
+	void ForwardPass::Render(RenderContext& context, const ResourceManager& resourceManager)
 	{
-		auto& frameContext = context->GetFrameContext();
-		auto& threadContext = context->GetThreadContext();
-		auto& vulkanContext = context->GetVulkanContext();
-		auto& engineContext = context->GetEngineContext();
+		auto& frameContext = context.GetFrameContext();
+		auto& threadContext = context.GetThreadContext();
+		auto& vulkanContext = context.GetVulkanContext();
+		auto& engineContext = context.GetEngineContext();
 
-		auto& materialContainer = engineContext->GetMaterialContainer();
-		auto& drawListContainer = engineContext->GetDrawListContainer();
+		auto& materialContainer = engineContext.GetMaterialContainer();
+		auto& drawListContainer = engineContext.GetDrawListContainer();
 
-		auto& commandBuffer = threadContext->GetCommandBuffer();
-		auto extend = vulkanContext->GetSwapChain().GetSwapChainExtent();
-		auto backBufferIndex = frameContext->GetBackBufferIndex();
+		auto& commandBuffer = threadContext.GetCommandBuffer();
+		auto extend = vulkanContext.GetSwapChain().GetSwapChainExtent();
+		auto backBufferIndex = frameContext.GetBackBufferIndex();
 				
 		commandBuffer.BeginRenderPass(extend, *mRenderPass, mFrameBuffer->GetNativeFrameBuffer());
 		commandBuffer.BindPipeline(*mPipeline, VK_PIPELINE_BIND_POINT_GRAPHICS);
 		commandBuffer.SetViewport(0.0f, 0.0f, (float)extend.width, (float)extend.height, 0.0f, 1.0f);
 		commandBuffer.SetScissor({ 0, 0 }, extend);
 
-		auto& meshContainer = engineContext->GetMeshContainer();		
+		auto& meshContainer = engineContext.GetMeshContainer();		
 		VkBuffer vertexBuffers[] = { meshContainer.GetVertexBuffer() };
 		VkDeviceSize offsets[] = { 0 };
 		commandBuffer.BindVertexBuffers(0, 1, vertexBuffers, offsets);
 		commandBuffer.BindIndexBuffer(meshContainer.GetIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
-		commandBuffer.BindDescriptorSers(VK_PIPELINE_BIND_POINT_GRAPHICS, *mPipeline, 0, 1, threadContext->GetDescriptorSet().GetNativeSet(), 0, nullptr);
+		commandBuffer.BindDescriptorSers(VK_PIPELINE_BIND_POINT_GRAPHICS, *mPipeline, 0, 1, threadContext.GetDescriptorSet().GetNativeSet(), 0, nullptr);
 		auto& opaqueDrawList = drawListContainer.GetOpaqueList();
 		for(auto& drawNode : opaqueDrawList)
 		{ 
@@ -78,20 +78,20 @@ namespace Renderer
 		
 	}
 
-	ForwardPass::ForwardPass(const std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager)
+	ForwardPass::ForwardPass(const RenderContext& context, const ResourceManager& resourceManager)
 	{
-		auto& vulkanContext = context->GetVulkanContext();
-		auto& threadContext = context->GetThreadContext();
-		auto& engineContext = context->GetEngineContext();
+		auto& vulkanContext = context.GetVulkanContext();
+		auto& threadContext = context.GetThreadContext();
+		auto& engineContext = context.GetEngineContext();
 
-		auto& materialContainer = engineContext->GetMaterialContainer();
+		auto& materialContainer = engineContext.GetMaterialContainer();
 
-		auto& device = vulkanContext->GetDevice();
-		ForwardPassInfo info{ resourceManager->GetColorBuffer()->GetFormat(), resourceManager->GetDepthBuffer()->GetFormat()};
+		auto& device = vulkanContext.GetDevice();
+		ForwardPassInfo info{ resourceManager.GetColorBuffer().GetFormat(), resourceManager.GetDepthBuffer().GetFormat()};
 		mRenderPass = std::make_unique<RenderPass>(device, info.GetInfo());
 
 		std::unique_ptr<PipelineInfo> pipelineInfo = std::make_unique<ForwardPipelineInfo>(device);
-		std::vector<VkDescriptorSetLayout> descriptorLayouts = { threadContext->GetLayout().GetNativeLayout(), materialContainer.GetDescriptorSetLayout().GetNativeLayout()};
+		std::vector<VkDescriptorSetLayout> descriptorLayouts = { threadContext.GetLayout().GetNativeLayout(), materialContainer.GetDescriptorSetLayout().GetNativeLayout()};
 
 		VkPushConstantRange pushConstant;
 		pushConstant.offset = 0;
@@ -100,40 +100,40 @@ namespace Renderer
 		std::vector<VkPushConstantRange> pushConstants = { pushConstant };
 		mPipeline = std::make_unique<Pipeline>(device, *mRenderPass, descriptorLayouts, pushConstants, *pipelineInfo);
 
-		std::vector<VkImageView> attacments = { resourceManager->GetColorBuffer()->GetNativeView(), resourceManager->GetDepthBuffer()->GetNativeView()};
+		std::vector<VkImageView> attacments = { resourceManager.GetColorBuffer().GetNativeView(), resourceManager.GetDepthBuffer().GetNativeView()};
 		 mFrameBuffer = std::make_unique<FrameBuffer>(
 			device,
 			attacments,
-			vulkanContext->GetSwapChain().GetSwapChainExtent(),
+			vulkanContext.GetSwapChain().GetSwapChainExtent(),
 			*mRenderPass);
 
-		pipelineInfo->Cleanup(vulkanContext->GetDevice());
+		pipelineInfo->Cleanup(vulkanContext.GetDevice());
 	}
 
 	ForwardPass::~ForwardPass()
 	{
 	}
 
-	void ForwardPass::Cleanup(const std::unique_ptr<RenderContext>& context)
+	void ForwardPass::Cleanup(const RenderContext& context)
 	{
-		auto& vulkanContext = context->GetVulkanContext();
+		auto& vulkanContext = context.GetVulkanContext();
 
-		mPipeline->Cleanup(vulkanContext->GetDevice());
-		mFrameBuffer->Cleanup(vulkanContext->GetDevice());
-		mRenderPass->Cleanup(vulkanContext->GetDevice());
+		mPipeline->Cleanup(vulkanContext.GetDevice());
+		mFrameBuffer->Cleanup(vulkanContext.GetDevice());
+		mRenderPass->Cleanup(vulkanContext.GetDevice());
 
 	}
 
-	void ForwardPass::ResizeResources(const std::unique_ptr<RenderContext>& context, const std::unique_ptr<ResourceManager>& resourceManager)
+	void ForwardPass::ResizeResources(const RenderContext& context, const ResourceManager& resourceManager)
 	{
-		auto& vulkanContext = context->GetVulkanContext();
-		mFrameBuffer->Cleanup(vulkanContext->GetDevice());
+		auto& vulkanContext = context.GetVulkanContext();
+		mFrameBuffer->Cleanup(vulkanContext.GetDevice());
 
-		std::vector<VkImageView> attacments = { resourceManager->GetColorBuffer()->GetNativeView(), resourceManager->GetDepthBuffer()->GetNativeView() };
+		std::vector<VkImageView> attacments = { resourceManager.GetColorBuffer().GetNativeView(), resourceManager.GetDepthBuffer().GetNativeView() };
 		mFrameBuffer = std::make_unique<FrameBuffer>(
-			vulkanContext->GetDevice(),
+			vulkanContext.GetDevice(),
 			attacments,
-			vulkanContext->GetSwapChain().GetSwapChainExtent(),
+			vulkanContext.GetSwapChain().GetSwapChainExtent(),
 			*mRenderPass);
 	}
 

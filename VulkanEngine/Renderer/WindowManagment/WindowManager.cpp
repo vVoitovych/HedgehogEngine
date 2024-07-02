@@ -81,6 +81,11 @@ namespace Renderer
 		return mWindow;
 	}
 
+	const GLFWwindow* WindowManager::GetGlfwWindow() const
+	{
+		return mWindow;
+	}
+
 	bool WindowManager::IsWindowResized() const
 	{
 		return mWindowResized;
