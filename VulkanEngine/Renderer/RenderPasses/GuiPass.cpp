@@ -11,6 +11,9 @@
 #include "Renderer/Containers/MaterialContainer.hpp"
 #include "Renderer/Containers/TextureContainer.hpp"
 #include "Renderer/Containers/MaterialData.hpp"
+#include "Renderer/Containers/MeshContainer.hpp"
+#include "Renderer/Containers/Mesh.hpp"
+#include "Renderer/Containers/VertexDescription.hpp"
 
 #include "Renderer/Wrappeers/RenderPass/RenderPass.hpp"
 #include "Renderer/Wrappeers/Commands/CommandBuffer.hpp"
@@ -21,6 +24,7 @@
 #include "Renderer/Wrappeers/Resources/Image/Image.hpp"
 
 #include "Renderer/WindowManagment/WindowManager.hpp"
+#include "Renderer/Camera/Camera.hpp"
 
 #include "Scene/Scene.hpp"
 #include "Scene/SceneComponents/HierarchyComponent.hpp"
@@ -36,6 +40,7 @@
 #include "ThirdParty/ImGui/imgui_impl_glfw.h"
 
 #include <vector>
+#include <algorithm>
 
 namespace Renderer
 {
@@ -297,6 +302,7 @@ namespace Renderer
 					{
 						scene.RemoveMeshComponent();
 					}
+
 				}
 			}
 		}
@@ -553,7 +559,6 @@ namespace Renderer
 			ImGui::EndMainMenuBar();
 		}
 	}
-
 
 	void GuiPass::DrawScene(RenderContext& context)
 	{

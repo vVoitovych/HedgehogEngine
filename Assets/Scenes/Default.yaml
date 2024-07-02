@@ -61,7 +61,7 @@ Scene:
         TransformComponent:
           Position: [0, 0, -4]
           Rotation: [0, 0, 0]
-          Scale: [12.5, 14.5, 1]
+          Scale: [10, 10, 1]
         MeshComponent:
           MeshPath: Models\Default\cube.obj
           MeshIndex: 1
