@@ -8,7 +8,7 @@
 
 int main() 
 {
-    VkEngine::VkApplication app{};
+    HedgehogClient::HedgehogClient app{};
     try
     {
         app.Run();

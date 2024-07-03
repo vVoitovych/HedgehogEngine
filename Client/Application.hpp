@@ -1,15 +1,21 @@
 #pragma once
 
-#include "VulkanEngine/Renderer/Renderer.hpp"
-
-// std lib
 #include <memory>
 
-namespace VkEngine
+namespace Renderer
 {
-	class VkApplication
+	class Renderer;
+	class RenderContext;
+}
+
+namespace HedgehogClient
+{
+	class HedgehogClient
 	{
 	public:
+		HedgehogClient();
+		~HedgehogClient();
+
 		void Run();
 
 	private:
@@ -17,8 +23,11 @@ namespace VkEngine
 		void MainLoop();
 		void Cleanup();
 
+		float GetFrameTime();
+
 	private:
-		Renderer::Renderer mRenderer;
+		std::unique_ptr<Renderer::RenderContext> mContext;
+		std::unique_ptr<Renderer::Renderer> mRenderer;
 	};
 }
 

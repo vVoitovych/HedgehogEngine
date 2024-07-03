@@ -1,0 +1,72 @@
+#include "FrameContext.hpp"
+#include "Camera/Camera.hpp"
+
+namespace Renderer
+{
+	void FrameContext::UpdateContext(const Camera& camera)
+	{
+		mCameraViewMatrix = camera.GetViewMatrix();
+		mCameraProjMatrix = camera.GetProjectionMatrix();
+		mCameraViewProjMatrix = mCameraProjMatrix * mCameraViewMatrix;
+
+		mCameraInvViewMatrix = inverse(mCameraViewMatrix);
+		mCameraInvProjMatrix = inverse(mCameraProjMatrix);
+		mCameraInvViewProjMatrix = inverse(mCameraViewProjMatrix);
+
+		mCameraPosition = camera.GetPosition();
+
+	}
+
+	glm::mat4 FrameContext::GetCameraViewMatrix() const
+	{
+		return mCameraViewMatrix;
+	}
+
+	glm::mat4 FrameContext::GetCameraProjMatrix() const
+	{
+		return mCameraProjMatrix;
+	}
+
+	glm::mat4 FrameContext::GetCameraViewProjMatrix() const
+	{
+		return mCameraViewProjMatrix;
+	}
+
+	glm::mat4 FrameContext::GetCameraInvViewMatrix() const
+	{
+		return mCameraInvViewMatrix;
+	}
+
+	glm::mat4 FrameContext::GetCameraInvProjMatrix() const
+	{
+		return mCameraInvProjMatrix;
+	}
+
+	glm::mat4 FrameContext::GetCameraInvViewProjMatrix() const
+	{
+		return mCameraInvViewProjMatrix;
+	}
+
+	glm::vec3 FrameContext::GetCameraPosition() const
+	{
+		return mCameraPosition;
+	}
+
+	float FrameContext::GetDeltaTime() const
+	{
+		return mDeltaTime;
+	}
+
+	void FrameContext::SetBackBufferIndex(uint32_t index)
+	{
+		mBackBufferIndex = index;
+	}
+
+	uint32_t FrameContext::GetBackBufferIndex() const
+	{
+		return mBackBufferIndex;
+	}
+
+}
+
+

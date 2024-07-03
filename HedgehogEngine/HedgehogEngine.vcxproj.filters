@@ -1,0 +1,425 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="Camera\Camera.cpp">
+      <Filter>Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="WindowManagment\WindowManager.cpp">
+      <Filter>WindowManager</Filter>
+    </ClCompile>
+    <ClCompile Include="WindowManagment\WindowState.cpp">
+      <Filter>WindowManager</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\Renderer.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Context\RenderContext.cpp">
+      <Filter>Context</Filter>
+    </ClCompile>
+    <ClCompile Include="Wrappeers\Device\Device.cpp">
+      <Filter>Wrappers\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="Wrappeers\Descriptors\DescriptorSet.cpp">
+      <Filter>Wrappers\Descriptors</Filter>
+    </ClCompile>
+    <ClCompile Include="Wrappeers\Descriptors\DescriptorSetLayout.cpp">
+      <Filter>Wrappers\Descriptors</Filter>
+    </ClCompile>
+    <ClCompile Include="Wrappeers\SwapChain\SwapChain.cpp">
+      <Filter>Wrappers\SwapChain</Filter>
+    </ClCompile>
+    <ClCompile Include="Wrappeers\RenderPass\RenderPass.cpp">
+      <Filter>Wrappers\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="Wrappeers\Pipeline\Pipeline.cpp">
+      <Filter>Wrappers\Pipeline</Filter>
+    </ClCompile>
+    <ClCompile Include="Wrappeers\Commands\CommandBuffer.cpp">
+      <Filter>Wrappers\Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="Wrappeers\FrameBuffer\FrameBuffer.cpp">
+      <Filter>Wrappers\FrameBuffers</Filter>
+    </ClCompile>
+    <ClCompile Include="Context\FrameContext.cpp">
+      <Filter>Context</Filter>
+    </ClCompile>
+    <ClCompile Include="Context\EngineContext.cpp">
+      <Filter>Context</Filter>
+    </ClCompile>
+    <ClCompile Include="Context\ThreadContext.cpp">
+      <Filter>Context</Filter>
+    </ClCompile>
+    <ClCompile Include="Wrappeers\SyncObjects\SyncObject.cpp">
+      <Filter>Wrappers\SyncObjects</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderQueue\RenderQueue.cpp">
+      <Filter>RenderQueue</Filter>
+    </ClCompile>
+    <ClCompile Include="Wrappeers\Shaders\Shader.cpp">
+      <Filter>Wrappers\Shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="Wrappeers\Shaders\VertexShader.cpp">
+      <Filter>Wrappers\Shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="Wrappeers\Shaders\FragmentShader.cpp">
+      <Filter>Wrappers\Shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderPasses\ForwardPass.cpp">
+      <Filter>RenderPasses\ForwardPass</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderPasses\ForwardPassInfo.cpp">
+      <Filter>RenderPasses\ForwardPass</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderPasses\InitPass.cpp">
+      <Filter>RenderPasses\InitPass</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderPasses\PresentPass.cpp">
+      <Filter>RenderPasses\PresentPass</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderPasses\ForwardPipelineInfo.cpp">
+      <Filter>RenderPasses\ForwardPass</Filter>
+    </ClCompile>
+    <ClCompile Include="Containers\Mesh.cpp">
+      <Filter>Containers\MeshContainer</Filter>
+    </ClCompile>
+    <ClCompile Include="Containers\MeshContainer.cpp">
+      <Filter>Containers\MeshContainer</Filter>
+    </ClCompile>
+    <ClCompile Include="Containers\VertexDescription.cpp">
+      <Filter>Containers\MeshContainer</Filter>
+    </ClCompile>
+    <ClCompile Include="Wrappeers\Resources\Buffer\Buffer.cpp">
+      <Filter>Wrappers\Resources\Buffer</Filter>
+    </ClCompile>
+    <ClCompile Include="Wrappeers\Resources\Image\Image.cpp">
+      <Filter>Wrappers\Resources\Image</Filter>
+    </ClCompile>
+    <ClCompile Include="Containers\TextureContainer.cpp">
+      <Filter>Containers\TextureContainer</Filter>
+    </ClCompile>
+    <ClCompile Include="Context\VulkanContext.cpp">
+      <Filter>Context</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderPasses\GuiPass.cpp">
+      <Filter>RenderPasses\GuiPass</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderPasses\GuiPassInfo.cpp">
+      <Filter>RenderPasses\GuiPass</Filter>
+    </ClCompile>
+    <ClCompile Include="Containers\LightContainer.cpp">
+      <Filter>Containers\LightContainer</Filter>
+    </ClCompile>
+    <ClCompile Include="Wrappeers\Resources\Sampler\Sampler.cpp">
+      <Filter>Wrappers\Resources\Sampler</Filter>
+    </ClCompile>
+    <ClCompile Include="ResourceManager\ResourceManager.cpp">
+      <Filter>ResouceManager</Filter>
+    </ClCompile>
+    <ClCompile Include="Wrappeers\Descriptors\DescriptorLayoutBuilder.cpp">
+      <Filter>Wrappers\Descriptors</Filter>
+    </ClCompile>
+    <ClCompile Include="Wrappeers\Descriptors\DescriptorAllocator.cpp">
+      <Filter>Wrappers\Descriptors</Filter>
+    </ClCompile>
+    <ClCompile Include="Containers\MaterialContainer.cpp">
+      <Filter>Containers\MaterialContainer</Filter>
+    </ClCompile>
+    <ClCompile Include="Containers\MaterialSerializer.cpp">
+      <Filter>Containers\MaterialContainer</Filter>
+    </ClCompile>
+    <ClCompile Include="Containers\DrawListContainer.cpp">
+      <Filter>Containers\DrawListContainer</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Camera\Camera.hpp">
+      <Filter>Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\EngineDebugBreak.hpp">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Common\RendererSettings.hpp">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowManagment\Controls.hpp">
+      <Filter>WindowManager</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowManagment\WindowManager.hpp">
+      <Filter>WindowManager</Filter>
+    </ClInclude>
+    <ClInclude Include="WindowManagment\WindowState.hpp">
+      <Filter>WindowManager</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Renderer.hpp">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Context\RenderContext.hpp">
+      <Filter>Context</Filter>
+    </ClInclude>
+    <ClInclude Include="Wrappeers\Device\Device.hpp">
+      <Filter>Wrappers\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Wrappeers\Descriptors\UBO.hpp">
+      <Filter>Wrappers\Descriptors\Types\UBO</Filter>
+    </ClInclude>
+    <ClInclude Include="Wrappeers\Descriptors\DescriptorSet.hpp">
+      <Filter>Wrappers\Descriptors</Filter>
+    </ClInclude>
+    <ClInclude Include="Wrappeers\Descriptors\DescriptorSetLayout.hpp">
+      <Filter>Wrappers\Descriptors</Filter>
+    </ClInclude>
+    <ClInclude Include="Wrappeers\SwapChain\SwapChain.hpp">
+      <Filter>Wrappers\SwapChain</Filter>
+    </ClInclude>
+    <ClInclude Include="Wrappeers\RenderPass\RenderPass.hpp">
+      <Filter>Wrappers\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="Wrappeers\Pipeline\Pipeline.hpp">
+      <Filter>Wrappers\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="Wrappeers\Commands\CommandBuffer.hpp">
+      <Filter>Wrappers\Commands</Filter>
+    </ClInclude>
+    <ClInclude Include="Wrappeers\FrameBuffer\FrameBuffer.hpp">
+      <Filter>Wrappers\FrameBuffers</Filter>
+    </ClInclude>
+    <ClInclude Include="Context\FrameContext.hpp">
+      <Filter>Context</Filter>
+    </ClInclude>
+    <ClInclude Include="Context\EngineContext.hpp">
+      <Filter>Context</Filter>
+    </ClInclude>
+    <ClInclude Include="Context\ThreadContext.hpp">
+      <Filter>Context</Filter>
+    </ClInclude>
+    <ClInclude Include="Wrappeers\SyncObjects\SyncObject.hpp">
+      <Filter>Wrappers\SyncObjects</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderQueue\RenderQueue.hpp">
+      <Filter>RenderQueue</Filter>
+    </ClInclude>
+    <ClInclude Include="Wrappeers\Shaders\Shader.hpp">
+      <Filter>Wrappers\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Wrappeers\Shaders\VertexShader.hpp">
+      <Filter>Wrappers\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Wrappeers\Shaders\FragmentShader.hpp">
+      <Filter>Wrappers\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderPasses\ForwardPass.hpp">
+      <Filter>RenderPasses\ForwardPass</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderPasses\ForwardPassInfo.hpp">
+      <Filter>RenderPasses\ForwardPass</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderPasses\InitPass.hpp">
+      <Filter>RenderPasses\InitPass</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderPasses\PresentPass.hpp">
+      <Filter>RenderPasses\PresentPass</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderPasses\ForwardPipelineInfo.hpp">
+      <Filter>RenderPasses\ForwardPass</Filter>
+    </ClInclude>
+    <ClInclude Include="Wrappeers\Pipeline\PipelineInfo.hpp">
+      <Filter>Wrappers\Pipeline</Filter>
+    </ClInclude>
+    <ClInclude Include="Containers\Mesh.hpp">
+      <Filter>Containers\MeshContainer</Filter>
+    </ClInclude>
+    <ClInclude Include="Containers\MeshContainer.hpp">
+      <Filter>Containers\MeshContainer</Filter>
+    </ClInclude>
+    <ClInclude Include="Containers\VertexDescription.hpp">
+      <Filter>Containers\MeshContainer</Filter>
+    </ClInclude>
+    <ClInclude Include="Wrappeers\Resources\Buffer\Buffer.hpp">
+      <Filter>Wrappers\Resources\Buffer</Filter>
+    </ClInclude>
+    <ClInclude Include="Wrappeers\Resources\Image\Image.hpp">
+      <Filter>Wrappers\Resources\Image</Filter>
+    </ClInclude>
+    <ClInclude Include="Containers\TextureContainer.hpp">
+      <Filter>Containers\TextureContainer</Filter>
+    </ClInclude>
+    <ClInclude Include="Context\VulkanContext.hpp">
+      <Filter>Context</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderPasses\GuiPass.hpp">
+      <Filter>RenderPasses\GuiPass</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderPasses\GuiPassInfo.hpp">
+      <Filter>RenderPasses\GuiPass</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderPasses\ForwardPassPushConstants.hpp">
+      <Filter>RenderPasses\ForwardPass</Filter>
+    </ClInclude>
+    <ClInclude Include="Containers\Light.hpp">
+      <Filter>Containers\LightContainer</Filter>
+    </ClInclude>
+    <ClInclude Include="Containers\LightContainer.hpp">
+      <Filter>Containers\LightContainer</Filter>
+    </ClInclude>
+    <ClInclude Include="Wrappeers\Descriptors\DescriptorInfo.hpp">
+      <Filter>Wrappers\Descriptors</Filter>
+    </ClInclude>
+    <ClInclude Include="Wrappeers\Resources\Sampler\Sampler.hpp">
+      <Filter>Wrappers\Resources\Sampler</Filter>
+    </ClInclude>
+    <ClInclude Include="ResourceManager\ResourceManager.hpp">
+      <Filter>ResouceManager</Filter>
+    </ClInclude>
+    <ClInclude Include="Wrappeers\Descriptors\DescriptorLayoutBuilder.hpp">
+      <Filter>Wrappers\Descriptors</Filter>
+    </ClInclude>
+    <ClInclude Include="Wrappeers\Descriptors\DescriptorAllocator.hpp">
+      <Filter>Wrappers\Descriptors</Filter>
+    </ClInclude>
+    <ClInclude Include="Containers\MaterialContainer.hpp">
+      <Filter>Containers\MaterialContainer</Filter>
+    </ClInclude>
+    <ClInclude Include="Containers\MaterialData.hpp">
+      <Filter>Containers\MaterialContainer</Filter>
+    </ClInclude>
+    <ClInclude Include="Containers\MaterialSerializer.hpp">
+      <Filter>Containers\MaterialContainer</Filter>
+    </ClInclude>
+    <ClInclude Include="Containers\DrawListContainer.hpp">
+      <Filter>Containers\DrawListContainer</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ShadersCompiler.bat">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Shaders\SimpleShader.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\SimpleShader.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\GammaCorection.glsli">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\Lighting.glsli">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\LightData.glsli">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\SurfaceData.glsli">
+      <Filter>Shaders</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Renderer">
+      <UniqueIdentifier>{c6d15c2a-2efe-4c60-97bf-366c53bbc55d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{9c12a490-8a7f-4c22-85d7-9d590b6a7c2d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{add2bcb1-c1d5-41c3-8c5f-3854973917ea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Camera">
+      <UniqueIdentifier>{8495a375-3af5-407c-bc43-f8bc6a3fff45}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Common">
+      <UniqueIdentifier>{648d1ca9-ac93-4e5a-96f5-8349c6de5c8e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Containers">
+      <UniqueIdentifier>{54791467-0b8e-45f5-961e-cebff47e3b89}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Containers\MeshContainer">
+      <UniqueIdentifier>{24953777-77dd-46ce-9d22-7683301abc27}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Containers\TextureContainer">
+      <UniqueIdentifier>{0bd65f78-6291-496b-9f8f-208e568fbe0e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Containers\LightContainer">
+      <UniqueIdentifier>{545034a6-e1d3-4e66-b104-89b795e59420}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Containers\MaterialContainer">
+      <UniqueIdentifier>{2765719e-3d87-43a5-9328-7a9f324ff25d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Containers\DrawListContainer">
+      <UniqueIdentifier>{919177e0-b5e3-4f74-bc5a-d90921ecdd21}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Context">
+      <UniqueIdentifier>{ce1ce20a-f56d-4c9b-9067-f402b2adb917}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RenderPasses">
+      <UniqueIdentifier>{db25bbb4-4977-4c2b-97d0-b8532d027ef0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RenderPasses\ForwardPass">
+      <UniqueIdentifier>{3c510977-4d82-4615-bcd6-4c011f924baa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RenderPasses\InitPass">
+      <UniqueIdentifier>{d8f740f9-2a55-489c-a31e-33dd021a27d0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RenderPasses\PresentPass">
+      <UniqueIdentifier>{35bdb1a6-fd58-4fce-8901-36e26959ca24}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RenderPasses\GuiPass">
+      <UniqueIdentifier>{b4a8cff3-9318-4d50-a093-05ebb8f45a2d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RenderQueue">
+      <UniqueIdentifier>{78d6aad6-0d48-4795-9e3c-77bcdf84b765}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ResouceManager">
+      <UniqueIdentifier>{5b955a6a-953c-45a4-ba94-213ee92cdb94}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="WindowManager">
+      <UniqueIdentifier>{4eb469f1-78bd-4366-af94-eb0959030fab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Wrappers">
+      <UniqueIdentifier>{24498bd2-eaee-4a20-b4fd-71b931b00345}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Wrappers\Commands">
+      <UniqueIdentifier>{a594eed2-fb1e-4ce1-8522-b26e8483d977}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Wrappers\Descriptors">
+      <UniqueIdentifier>{82a4b54d-1ae1-4bfc-9ec5-60ffa980bcca}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Wrappers\Descriptors\Types">
+      <UniqueIdentifier>{163200b3-fe60-4dcb-b5a5-cf5995b38951}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Wrappers\Descriptors\Types\UBO">
+      <UniqueIdentifier>{368bd7f1-5d79-4895-9cca-672ba3998b84}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Wrappers\Device">
+      <UniqueIdentifier>{946352cd-9681-44ad-ac9a-7acd9cc295e9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Wrappers\FrameBuffers">
+      <UniqueIdentifier>{05eefc2f-092b-4268-8f19-2046a2d8f2c4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Wrappers\Pipeline">
+      <UniqueIdentifier>{58d840e8-6003-4ba8-9539-88e59fcc2e1d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Wrappers\RenderPass">
+      <UniqueIdentifier>{44157383-f8cd-45b7-be41-3810eb57d52e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Wrappers\SwapChain">
+      <UniqueIdentifier>{937ebe96-2601-47ac-9eec-82fec5ec3a5a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Wrappers\SyncObjects">
+      <UniqueIdentifier>{11c63417-2662-4c27-9ad9-ca54ead9c6d1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Wrappers\Resources">
+      <UniqueIdentifier>{e7f8d361-123f-4ae0-9c84-eb7861df0e35}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Wrappers\Resources\Image">
+      <UniqueIdentifier>{a39558c6-212d-4621-a484-85c1a6b23462}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Wrappers\Resources\Buffer">
+      <UniqueIdentifier>{53ac8c8a-0e9c-4cac-a19b-c31ff0c83a6f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Wrappers\Resources\Sampler">
+      <UniqueIdentifier>{e786c4be-dfe6-4745-ad02-41b5ad27845c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Wrappers\Shaders">
+      <UniqueIdentifier>{51d6b92c-6c88-477e-aa00-525f79868700}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
