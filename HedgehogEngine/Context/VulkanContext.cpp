@@ -7,6 +7,8 @@
 #include "RenderPasses/GuiPass.hpp"
 
 #include <vector>
+#include <vulkan/vulkan.h>
+
 
 namespace Renderer
 {

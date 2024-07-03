@@ -11,24 +11,19 @@ namespace Renderer
 	class Renderer
 	{
 	public:
-		Renderer();
+		Renderer(const RenderContext& context);
 		~Renderer();
 
 		Renderer(const Renderer&) = delete;
 		Renderer& operator=(const Renderer&) = delete;
 
-		void Cleanup();
-		bool ShouldClose();
-		void HandleInput();
-		void Update(float dt);
+		void Cleanup(const RenderContext& context);
 
-		void DrawFrame();
+		void DrawFrame(RenderContext& context);
 
-		void RecreateSwapChain();
+		void RecreateSwapChain(RenderContext& context);
 
 	private:
-
-		std::unique_ptr<RenderContext> mRenderContext;
 		std::unique_ptr< ResourceManager> mResourceManager;
 		std::unique_ptr<RenderQueue> mRenderQueue;
 

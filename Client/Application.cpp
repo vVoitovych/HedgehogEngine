@@ -1,42 +1,58 @@
 #include "Application.hpp"
 
+#include "HedgehogEngine/Context/RenderContext.hpp"
+#include "HedgehogEngine/Context/VulkanContext.hpp"
+
+#include "HedgehogEngine/Renderer/Renderer.hpp"
+
 #include "Logger/Logger.hpp"
 
 #include <chrono>
 
-namespace VkEngine
+namespace HedgehogClient
 {
-	void VkApplication::Run()
+	HedgehogClient::HedgehogClient()
+	{
+	}
+
+	HedgehogClient::~HedgehogClient()
+	{
+	}
+
+	void HedgehogClient::Run()
 	{
 		InitVulkan();
 		MainLoop();
 	}
 
-	void VkApplication::InitVulkan()
+	void HedgehogClient::InitVulkan()
 	{
+		mContext = std::make_unique<Renderer::RenderContext>();
+		mRenderer = std::make_unique<Renderer::Renderer>(*mContext);
 		LOGINFO("Vulkan initialized");
 	}
 
-	void VkApplication::MainLoop()
+	void HedgehogClient::MainLoop()
 	{
 
-		while (!mRenderer.ShouldClose())
+		while (!mContext->GetVulkanContext().ShouldClose())
 		{
 			float dt = GetFrameTime();
-			mRenderer.HandleInput();
-			mRenderer.Update(dt);
-			mRenderer.DrawFrame();
+			mContext->GetVulkanContext().HandleInput();
+			mContext->UpdateContext(dt);
+			mRenderer->DrawFrame(*mContext);
 		}
 
 		Cleanup();
 	}
 
-	void VkApplication::Cleanup()
+	void HedgehogClient::Cleanup()
 	{
-		mRenderer.Cleanup();
+		mRenderer->Cleanup(*mContext);
+		mContext->Cleanup();
 	}
 
-	float VkApplication::GetFrameTime()
+	float HedgehogClient::GetFrameTime()
 	{
 		static auto prevTime = std::chrono::high_resolution_clock::now();
 
