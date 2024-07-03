@@ -290,37 +290,8 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ShadersCompiler.bat">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="Shaders\SimpleShader.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\SimpleShader.vert">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\GammaCorection.glsli">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\Lighting.glsli">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\LightData.glsli">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Shaders\SurfaceData.glsli">
-      <Filter>Shaders</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
     <Filter Include="Renderer">
       <UniqueIdentifier>{c6d15c2a-2efe-4c60-97bf-366c53bbc55d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{9c12a490-8a7f-4c22-85d7-9d590b6a7c2d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Shaders">
-      <UniqueIdentifier>{add2bcb1-c1d5-41c3-8c5f-3854973917ea}</UniqueIdentifier>
     </Filter>
     <Filter Include="Camera">
       <UniqueIdentifier>{8495a375-3af5-407c-bc43-f8bc6a3fff45}</UniqueIdentifier>
