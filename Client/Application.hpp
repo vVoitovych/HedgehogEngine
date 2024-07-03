@@ -17,6 +17,8 @@ namespace VkEngine
 		void MainLoop();
 		void Cleanup();
 
+		float GetFrameTime();
+
 	private:
 		Renderer::Renderer mRenderer;
 	};

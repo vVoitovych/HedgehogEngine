@@ -12,8 +12,6 @@
 
 #include "Logger/Logger.hpp"
 
-#include <chrono>
-
 namespace Renderer
 {
 	Renderer::Renderer()
@@ -39,8 +37,8 @@ namespace Renderer
 
 	void Renderer::HandleInput()
 	{
-		auto& vilkanContext = mRenderContext->GetVulkanContext();
-		vilkanContext.HandleInput();
+		auto& vulkanContext = mRenderContext->GetVulkanContext();
+		vulkanContext.HandleInput();
 	}
 
 	void Renderer::Update(float dt)
@@ -51,10 +49,7 @@ namespace Renderer
 
 	void Renderer::DrawFrame()
 	{		
-		auto& engineContext = mRenderContext->GetEngineContext();
-		auto dt = GetFrameTime();
 		auto& vulkanContext = mRenderContext->GetVulkanContext();
-		engineContext.UpdateContext(vulkanContext, dt);
 		if (vulkanContext.IsWindowResized())
 		{
 			RecreateSwapChain();
@@ -78,16 +73,6 @@ namespace Renderer
 	{
 		auto& vulkanContext = mRenderContext->GetVulkanContext();
 		return vulkanContext.ShouldClose();
-	}
-
-	float Renderer::GetFrameTime()
-	{
-		static auto prevTime = std::chrono::high_resolution_clock::now();
-
-		auto currentTime = std::chrono::high_resolution_clock::now();
-		float deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - prevTime).count();
-		prevTime = currentTime;
-		return deltaTime;
 	}
 
 }

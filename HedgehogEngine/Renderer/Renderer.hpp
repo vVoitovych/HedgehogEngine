@@ -26,8 +26,6 @@ namespace Renderer
 
 		void RecreateSwapChain();
 
-		float GetFrameTime();
-
 	private:
 
 		std::unique_ptr<RenderContext> mRenderContext;

@@ -452,7 +452,7 @@ namespace Renderer
 					light.mColor = { color[0], color[1], color[2] };
 
 					static float intencity = light.mIntencity;
-					ImGui::SliderFloat("Intencity", &intencity, 0.0f, 30.0f, "ratio = %.3f");
+					ImGui::SliderFloat("Intencity", &intencity, 0.0f, 3.0f, "ratio = %.03f");
 					light.mIntencity = intencity;
 
 					if (lightType > 0)
