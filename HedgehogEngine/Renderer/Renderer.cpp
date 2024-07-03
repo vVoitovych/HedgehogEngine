@@ -6,7 +6,7 @@
 #include "Context/FrameContext.hpp"
 #include "Context/ThreadContext.hpp"
 #include "RenderQueue/RenderQueue.hpp"
-#include "Renderer/ResourceManager/ResourceManager.hpp"
+#include "ResourceManager/ResourceManager.hpp"
 #include "Wrappeers/Device/Device.hpp"
 #include "Wrappeers/SwapChain/SwapChain.hpp"
 
