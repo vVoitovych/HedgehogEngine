@@ -3,8 +3,8 @@
 #include "Scene/Scene.hpp"
 #include "Scene/SceneComponents/LightComponent.hpp"
 
-#include "VulkanEngine/Renderer/Common/RendererSettings.hpp"
-#include "VulkanEngine/Renderer/Common/EngineDebugBreak.hpp"
+#include "Renderer/Common/RendererSettings.hpp"
+#include "Renderer/Common/EngineDebugBreak.hpp"
 #include "Logger/Logger.hpp"
 
 namespace Renderer
