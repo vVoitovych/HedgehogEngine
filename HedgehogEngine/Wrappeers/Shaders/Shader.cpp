@@ -2,26 +2,17 @@
 
 #include "Wrappeers/Device/Device.hpp"
 
+#include "ContentLoader/CommonFunctions.hpp"
+
 #include "Logger/Logger.hpp"
 
-#include <Windows.h>
 #include <fstream>
 
 namespace Renderer
 {
-	// additional functions
-	std::string GetCurrentDirectory()
-	{
-		char buffer[MAX_PATH];
-		GetModuleFileNameA(NULL, buffer, MAX_PATH);
-		std::string::size_type pos = std::string(buffer).find_last_of("\\/");
-
-		return std::string(buffer).substr(0, pos);
-	}
-
 	std::vector<char> ReadFile(const std::string& filename)
 	{
-		std::string fullName = GetCurrentDirectory() + "\\" + filename;
+		std::string fullName = ContentLoader::GetShadersDirectory() + filename;
 		LOGINFO(fullName);
 
 		std::ifstream file(fullName, std::ios::ate | std::ios::binary);

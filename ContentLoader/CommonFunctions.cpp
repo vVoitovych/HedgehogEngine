@@ -35,6 +35,19 @@ namespace ContentLoader
 		return path.substr(assetPath.size());
 	}
 
+	std::string GetShadersDirectory()
+	{
+		std::string path = GetCurrentDirectory();
+		std::filesystem::path fsPath(path);
+		std::string rootPath = fsPath.parent_path().parent_path().string();
+#ifdef _DEBUG
+		rootPath += "\\Shaders\\Shaders\\CompiledShaders\\Debug\\Shaders\\";
+#else
+		rootPath += "\\Shaders\\Shaders\\CompiledShaders\\Release\\Shaders\\";
+#endif
+		return rootPath;
+	}
+
 }
 
 

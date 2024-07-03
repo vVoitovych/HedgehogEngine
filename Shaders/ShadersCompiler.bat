@@ -2,8 +2,8 @@
 set VULKAN_SDK_PATH=C:\VulkanSDK\1.3.231.1\Bin
 set SHADER_SOURCE_DIR=Shaders
 
-set DEBUG_SHADER_OUTPUT_DIR=..\x64\Debug\CompiledShaders
-set RELEASE_SHADER_OUTPUT_DIR=..\x64\Release\CompiledShaders
+set DEBUG_SHADER_OUTPUT_DIR=Shaders\CompiledShaders\Debug
+set RELEASE_SHADER_OUTPUT_DIR=Shaders\CompiledShaders\Release
 
 echo "Debug shader compilation"
 

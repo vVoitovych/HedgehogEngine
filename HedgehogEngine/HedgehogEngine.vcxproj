@@ -205,15 +205,6 @@
     <ClCompile Include="Wrappeers\SyncObjects\SyncObject.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="ShadersCompiler.bat" />
-    <None Include="Shaders\GammaCorection.glsli" />
-    <None Include="Shaders\LightData.glsli" />
-    <None Include="Shaders\Lighting.glsli" />
-    <None Include="Shaders\SimpleShader.frag" />
-    <None Include="Shaders\SimpleShader.vert" />
-    <None Include="Shaders\SurfaceData.glsli" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="Camera\Camera.hpp" />
     <ClInclude Include="Common\EngineDebugBreak.hpp" />
     <ClInclude Include="Common\RendererSettings.hpp" />
