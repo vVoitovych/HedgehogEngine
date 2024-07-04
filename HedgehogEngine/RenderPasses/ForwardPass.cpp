@@ -88,9 +88,9 @@ namespace Renderer
 
 		auto& device = vulkanContext.GetDevice();
 		ForwardPassInfo info{ resourceManager.GetColorBuffer().GetFormat(), resourceManager.GetDepthBuffer().GetFormat()};
-		mRenderPass = std::make_unique<RenderPass>(device, info.GetInfo());
+		mRenderPass = std::make_unique<Wrappers::RenderPass>(device, info.GetInfo());
 
-		std::unique_ptr<PipelineInfo> pipelineInfo = std::make_unique<ForwardPipelineInfo>(device);
+		std::unique_ptr<Wrappers::PipelineInfo> pipelineInfo = std::make_unique<ForwardPipelineInfo>(device);
 		std::vector<VkDescriptorSetLayout> descriptorLayouts = { threadContext.GetLayout().GetNativeLayout(), materialContainer.GetDescriptorSetLayout().GetNativeLayout()};
 
 		VkPushConstantRange pushConstant;
@@ -98,10 +98,10 @@ namespace Renderer
 		pushConstant.size = sizeof(ForwardPassPushConstants);
 		pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 		std::vector<VkPushConstantRange> pushConstants = { pushConstant };
-		mPipeline = std::make_unique<Pipeline>(device, *mRenderPass, descriptorLayouts, pushConstants, *pipelineInfo);
+		mPipeline = std::make_unique<Wrappers::Pipeline>(device, *mRenderPass, descriptorLayouts, pushConstants, *pipelineInfo);
 
 		std::vector<VkImageView> attacments = { resourceManager.GetColorBuffer().GetNativeView(), resourceManager.GetDepthBuffer().GetNativeView()};
-		 mFrameBuffer = std::make_unique<FrameBuffer>(
+		 mFrameBuffer = std::make_unique<Wrappers::FrameBuffer>(
 			device,
 			attacments,
 			vulkanContext.GetSwapChain().GetSwapChainExtent(),
@@ -130,7 +130,7 @@ namespace Renderer
 		mFrameBuffer->Cleanup(vulkanContext.GetDevice());
 
 		std::vector<VkImageView> attacments = { resourceManager.GetColorBuffer().GetNativeView(), resourceManager.GetDepthBuffer().GetNativeView() };
-		mFrameBuffer = std::make_unique<FrameBuffer>(
+		mFrameBuffer = std::make_unique<Wrappers::FrameBuffer>(
 			vulkanContext.GetDevice(),
 			attacments,
 			vulkanContext.GetSwapChain().GetSwapChainExtent(),

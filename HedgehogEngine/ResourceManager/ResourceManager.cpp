@@ -44,12 +44,12 @@ namespace Renderer
 		CreateDepthBuffer(context);
 	}
 
-	const Image& ResourceManager::GetColorBuffer() const
+	const Wrappers::Image& ResourceManager::GetColorBuffer() const
 	{
 		return *mColorBuffer;
 	}
 
-	const Image& ResourceManager::GetDepthBuffer() const
+	const Wrappers::Image& ResourceManager::GetDepthBuffer() const
 	{
 		return *mDepthBuffer;
 	}
@@ -60,7 +60,7 @@ namespace Renderer
 		auto depthFormat = vulkanContext.GetDevice().FindDepthFormat();
 		auto extend = vulkanContext.GetSwapChain().GetSwapChainExtent();
 
-		mDepthBuffer = std::make_unique<Image>(
+		mDepthBuffer = std::make_unique<Wrappers::Image>(
 			vulkanContext.GetDevice(),
 			extend.width,
 			extend.height,
@@ -80,7 +80,7 @@ namespace Renderer
 		auto colorFormat = VK_FORMAT_R16G16B16A16_UNORM;
 		auto extend = vulkanContext.GetSwapChain().GetSwapChainExtent();
 
-		mColorBuffer = std::make_unique<Image>(
+		mColorBuffer = std::make_unique<Wrappers::Image>(
 			vulkanContext.GetDevice(),
 			extend.width,
 			extend.height,

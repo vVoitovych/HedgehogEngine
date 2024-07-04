@@ -1,6 +1,6 @@
 #include "VertexShader.hpp"
 
-namespace Renderer
+namespace Wrappers
 {
 	VertexShader::VertexShader(const Device& device, const std::string& fileName)
 		:Shader(device, fileName)

@@ -14,9 +14,9 @@ namespace Renderer
 {
 	VulkanContext::VulkanContext()
 	{
-		mWindowManager = std::make_unique<WindowManager>(WindowState::GetDefaultState());
-		mDevice = std::make_unique<Device>(*mWindowManager);
-		mSwapChain = std::make_unique<SwapChain>(*mDevice, *mWindowManager);
+		mWindowManager = std::make_unique<WinManager::WindowManager>(WinManager::WindowState::GetDefaultState());
+		mDevice = std::make_unique<Wrappers::Device>(*mWindowManager);
+		mSwapChain = std::make_unique<Wrappers::SwapChain>(*mDevice, *mWindowManager);
 	}
 
 	VulkanContext::~VulkanContext()
@@ -34,27 +34,27 @@ namespace Renderer
 		mWindowManager->HandleInput();
 	}
 
-	WindowManager& VulkanContext::GetWindowManager() 
+	WinManager::WindowManager& VulkanContext::GetWindowManager()
 	{
 		return *mWindowManager;
 	}
 
-	const WindowManager& VulkanContext::GetWindowManager() const
+	const WinManager::WindowManager& VulkanContext::GetWindowManager() const
 	{
 		return *mWindowManager;
 	}
 
-	const Device& VulkanContext::GetDevice() const
+	const Wrappers::Device& VulkanContext::GetDevice() const
 	{
 		return *mDevice;
 	}
 
-	const SwapChain& VulkanContext::GetSwapChain() const
+	const Wrappers::SwapChain& VulkanContext::GetSwapChain() const
 	{
 		return *mSwapChain;
 	}
 
-	SwapChain& VulkanContext::GetSwapChain()
+	Wrappers::SwapChain& VulkanContext::GetSwapChain()
 	{
 		return *mSwapChain;
 	}

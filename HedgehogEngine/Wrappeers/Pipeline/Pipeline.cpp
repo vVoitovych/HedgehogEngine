@@ -11,7 +11,7 @@
 
 #include <fstream>
 
-namespace Renderer
+namespace Wrappers
 {
 
 	Pipeline::Pipeline(

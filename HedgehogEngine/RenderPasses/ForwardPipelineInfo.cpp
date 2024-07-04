@@ -8,11 +8,11 @@
 
 namespace Renderer
 {
-	ForwardPipelineInfo::ForwardPipelineInfo(const Device& device)
-		: PipelineInfo(device)
+	ForwardPipelineInfo::ForwardPipelineInfo(const Wrappers::Device& device)
+		: Wrappers::PipelineInfo(device)
 	{
-		mVertexShader = std::make_unique<VertexShader>(device, "SimpleShader.vert.spv");
-		mFragmentShader = std::make_unique<FragmentShader>(device, "SimpleShader.frag.spv");
+		mVertexShader = std::make_unique<Wrappers::VertexShader>(device, "SimpleShader.vert.spv");
+		mFragmentShader = std::make_unique<Wrappers::FragmentShader>(device, "SimpleShader.frag.spv");
 		mStages = {mVertexShader->GetCreateInfo(), mFragmentShader->GetCreateInfo()};
 
 		mBindingDesc = VertexDescription::GetBindingDescription();
@@ -84,7 +84,7 @@ namespace Renderer
 	{
 	}
 
-	void ForwardPipelineInfo::Cleanup(const Device& device)
+	void ForwardPipelineInfo::Cleanup(const Wrappers::Device& device)
 	{
 		mVertexShader->Cleanup(device);
 		mFragmentShader->Cleanup(device);

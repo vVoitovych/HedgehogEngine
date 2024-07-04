@@ -5,7 +5,7 @@
 
 #include "Logger/Logger.hpp"
 
-namespace Renderer
+namespace Wrappers
 {
 	SyncObject::SyncObject(const Device& device)
 		: mImageAvailableSemaphore(nullptr)

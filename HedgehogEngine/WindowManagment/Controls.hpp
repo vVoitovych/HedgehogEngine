@@ -2,7 +2,7 @@
 
 #include <glm/glm.hpp>
 
-namespace Renderer
+namespace WinManager
 {
 	struct Controls
 	{

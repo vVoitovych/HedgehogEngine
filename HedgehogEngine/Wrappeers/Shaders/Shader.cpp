@@ -8,7 +8,7 @@
 
 #include <fstream>
 
-namespace Renderer
+namespace Wrappers
 {
 	std::vector<char> ReadFile(const std::string& filename)
 	{

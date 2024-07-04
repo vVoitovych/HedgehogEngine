@@ -10,7 +10,7 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
-namespace Renderer
+namespace Wrappers
 {
 	class Device;
 	class RenderContext;

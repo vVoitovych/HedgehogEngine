@@ -4,7 +4,7 @@
 
 #include <memory>
 
-namespace Renderer
+namespace Wrappers
 {
 	class Device;
 

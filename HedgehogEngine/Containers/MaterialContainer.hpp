@@ -9,17 +9,20 @@ namespace Scene
 	class Scene;
 }
 
+namespace Wrappers
+{
+	class DescriptorSetLayout;
+	class DescriptorAllocator;
+	class DescriptorSet;
+	class Buffer;
+}
+
 namespace Renderer
 {
 	struct MaterialData;
 
-	class DescriptorSetLayout;
-	class DescriptorAllocator;
-	class DescriptorSet;
-
 	class VulkanContext;
 	class TextureContainer;
-	class Buffer;
 
 	class MaterialContainer
 	{
@@ -44,9 +47,9 @@ namespace Renderer
 
 		void LoadBaseTexture(size_t index, const VulkanContext& context, const TextureContainer& textureContainer);
 
-		const DescriptorSetLayout& GetDescriptorSetLayout() const;
-		const DescriptorSet& GetDescriptorSet(size_t index) const;
-		DescriptorSet& GetDescriptorSet(size_t index);
+		const Wrappers::DescriptorSetLayout& GetDescriptorSetLayout() const;
+		const Wrappers::DescriptorSet& GetDescriptorSet(size_t index) const;
+		Wrappers::DescriptorSet& GetDescriptorSet(size_t index);
 
 		MaterialData& GetMaterialDataByIndex(size_t index);
 		const MaterialData& GetMaterialDataByIndex(size_t index) const;
@@ -65,10 +68,10 @@ namespace Renderer
 
 		std::vector<MaterialData> mMaterials;
 
-		std::unique_ptr<DescriptorSetLayout> mLayout;
-		std::unique_ptr<DescriptorAllocator> mDescriptorAllocator;
-		std::vector<Buffer> mMaterialUniforms;
-		std::vector<DescriptorSet> mDescriptorSets;
+		std::unique_ptr<Wrappers::DescriptorSetLayout> mLayout;
+		std::unique_ptr<Wrappers::DescriptorAllocator> mDescriptorAllocator;
+		std::vector<Wrappers::Buffer> mMaterialUniforms;
+		std::vector<Wrappers::DescriptorSet> mDescriptorSets;
 
 	};
 

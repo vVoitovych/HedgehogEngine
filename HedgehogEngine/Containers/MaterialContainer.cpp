@@ -26,18 +26,18 @@ namespace Renderer
 	MaterialContainer::MaterialContainer(const VulkanContext& context)
 	{
 		uint32_t materialCount = MAX_MATERIAL_COUNT;
-		std::vector<PoolSizeRatio> sizes =
+		std::vector<Wrappers::PoolSizeRatio> sizes =
 		{
 			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1},
 			{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_TEXTURES_PER_MATERIAL }
 		};
 
-		mDescriptorAllocator = std::make_unique<DescriptorAllocator>(context.GetDevice(), materialCount, sizes);
+		mDescriptorAllocator = std::make_unique<Wrappers::DescriptorAllocator>(context.GetDevice(), materialCount, sizes);
 
-		DescriptorLayoutBuilder builder;
+		Wrappers::DescriptorLayoutBuilder builder;
 		builder.AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
 		builder.AddBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-		mLayout = std::make_unique<DescriptorSetLayout>(context.GetDevice(), builder, VK_SHADER_STAGE_FRAGMENT_BIT);
+		mLayout = std::make_unique<Wrappers::DescriptorSetLayout>(context.GetDevice(), builder, VK_SHADER_STAGE_FRAGMENT_BIT);
 	}
 
 	MaterialContainer::~MaterialContainer()
@@ -83,7 +83,7 @@ namespace Renderer
 		VkDeviceSize size = sizeof(MaterialUniform);
 		MaterialUniform materialData;
 		materialData.transparency = mMaterials[index].transparency;
-		Buffer staginBuffer(device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+		Wrappers::Buffer staginBuffer(device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 		staginBuffer.CopyDataToBufferMemory(device, &materialData, (size_t)size);
 
 		device.CopyBufferToBuffer(staginBuffer.GetNativeBuffer(), mMaterialUniforms[index].GetNativeBuffer(), size);
@@ -100,7 +100,7 @@ namespace Renderer
 		imageInfo.imageView = textureContainer.GetImage(device, mMaterials[index].baseColor).GetNativeView();
 		imageInfo.sampler = textureContainer.GetSampler(device, SamplerType::Linear).GetNativeSampler();
 
-		std::vector<DescriptorWrites> writes;
+		std::vector<Wrappers::DescriptorWrites> writes;
 		writes.resize(2);
 
 		writes[0].dstBinding = 0;
@@ -124,10 +124,10 @@ namespace Renderer
 		VkDeviceSize size = sizeof(MaterialUniform);
 		MaterialUniform materialData;
 		materialData.transparency = data.transparency;
-		Buffer staginBuffer(device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+		Wrappers::Buffer staginBuffer(device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 		staginBuffer.CopyDataToBufferMemory(device, &materialData, (size_t)size);
 
-		Buffer materialUniform(device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
+		Wrappers::Buffer materialUniform(device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
 		device.CopyBufferToBuffer(staginBuffer.GetNativeBuffer(), materialUniform.GetNativeBuffer(), size);
 
 		VkDescriptorBufferInfo bufferInfo{};
@@ -143,7 +143,7 @@ namespace Renderer
 		imageInfo.imageView = textureContainer.GetImage(device, data.baseColor).GetNativeView();
 		imageInfo.sampler = textureContainer.GetSampler(device, SamplerType::Linear).GetNativeSampler();
 
-		std::vector<DescriptorWrites> writes;
+		std::vector<Wrappers::DescriptorWrites> writes;
 		writes.resize(2);
 
 		writes[0].dstBinding = 0;
@@ -158,7 +158,7 @@ namespace Renderer
 		writes[1].descriptorCount = 1;
 		writes[1].pImageInfo = &imageInfo;
 
-		DescriptorSet descriptorSet(context.GetDevice(), *mDescriptorAllocator, *mLayout);
+		Wrappers::DescriptorSet descriptorSet(context.GetDevice(), *mDescriptorAllocator, *mLayout);
 		descriptorSet.Update(context.GetDevice(), writes);
 
 		mDescriptorSets.push_back(std::move(descriptorSet));
@@ -222,17 +222,17 @@ namespace Renderer
 		UpdateMaterialByIndex(index, context, textureContainer);
 	}
 
-	const DescriptorSetLayout& MaterialContainer::GetDescriptorSetLayout() const
+	const Wrappers::DescriptorSetLayout& MaterialContainer::GetDescriptorSetLayout() const
 	{
 		return *mLayout;
 	}
 
-	const DescriptorSet& MaterialContainer::GetDescriptorSet(size_t index) const
+	const Wrappers::DescriptorSet& MaterialContainer::GetDescriptorSet(size_t index) const
 	{
 		return mDescriptorSets[index];
 	}
 
-	DescriptorSet& MaterialContainer::GetDescriptorSet(size_t index)
+	Wrappers::DescriptorSet& MaterialContainer::GetDescriptorSet(size_t index)
 	{
 		return mDescriptorSets[index];
 	}

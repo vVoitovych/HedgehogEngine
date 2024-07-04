@@ -6,10 +6,13 @@
 #include <optional>
 #include <vector>
 
-namespace Renderer
+namespace WinManager
 {
 	class WindowManager;
+}
 
+namespace Wrappers
+{
 	struct QueueFamilyIndices
 	{
 		std::optional<uint32_t> mGraphicsFamily;
@@ -31,7 +34,7 @@ namespace Renderer
 	class Device
 	{
 	public:
-		Device(const WindowManager& windowManager);
+		Device(const WinManager::WindowManager& windowManager);
 		~Device();
 
 		Device(const Device&) = delete;

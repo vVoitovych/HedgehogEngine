@@ -1,7 +1,7 @@
 #include "WindowState.hpp"
 
 
-namespace Renderer
+namespace WinManager
 {
 	WindowState WindowState::GetDefaultState()
 	{

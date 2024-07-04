@@ -9,7 +9,7 @@
 
 #include <stdexcept>
 
-namespace Renderer
+namespace Wrappers
 {
 	Buffer::Buffer(
 		const Device& device, 

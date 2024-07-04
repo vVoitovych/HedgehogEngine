@@ -46,7 +46,7 @@ namespace Renderer
 		std::unique_ptr<TextureContainer> mTextureContainer;
 		std::unique_ptr<LightContainer> mLightContainer;
 		std::unique_ptr<MaterialContainer> mMaterialContainer;
-		std::unique_ptr< DrawListContainer> mDrawListContainer;
+		std::unique_ptr<DrawListContainer> mDrawListContainer;
 	};
 
 }

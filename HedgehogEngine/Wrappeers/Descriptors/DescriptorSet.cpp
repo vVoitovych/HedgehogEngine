@@ -9,7 +9,7 @@
 
 #include "Logger/Logger.hpp"
 
-namespace Renderer
+namespace Wrappers
 {
 	DescriptorSet::DescriptorSet(
         const Device& device,

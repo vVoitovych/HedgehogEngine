@@ -6,11 +6,8 @@
 #include <memory>
 #include <vector>
 
-namespace Renderer
+namespace Wrappers
 {
-	class VulkanContext;
-	class EngineContext;
-	class FrameContext;
 	class CommandBuffer;
 	class SyncObject;
 
@@ -20,6 +17,14 @@ namespace Renderer
 
 	template<typename T>
 	class UBO;
+
+}
+
+namespace Renderer
+{
+	class VulkanContext;
+	class EngineContext;
+	class FrameContext;
 
 	class ThreadContext
 	{
@@ -35,12 +40,12 @@ namespace Renderer
 
 		void NextFrame();
 
-		CommandBuffer& GetCommandBuffer();
-		SyncObject& GetSyncObject();
+		Wrappers::CommandBuffer& GetCommandBuffer();
+		Wrappers::SyncObject& GetSyncObject();
 
-		const DescriptorSetLayout& GetLayout() const;
-		const DescriptorSet& GetDescriptorSet() const;
-		DescriptorSet& GetDescriptorSet();
+		const Wrappers::DescriptorSetLayout& GetLayout() const;
+		const Wrappers::DescriptorSet& GetDescriptorSet() const;
+		Wrappers::DescriptorSet& GetDescriptorSet();
 
 	private:
 		struct FrameUniform
@@ -53,14 +58,14 @@ namespace Renderer
 		};
 
 	private:
-		std::vector<CommandBuffer> mCommandBuffers;
-		std::vector<SyncObject> mSyncObjects;
+		std::vector<Wrappers::CommandBuffer> mCommandBuffers;
+		std::vector<Wrappers::SyncObject> mSyncObjects;
 
-		std::unique_ptr<DescriptorSetLayout> mFrameLayout;
-		std::unique_ptr<DescriptorAllocator> mFrameAllocator;
+		std::unique_ptr<Wrappers::DescriptorSetLayout> mFrameLayout;
+		std::unique_ptr<Wrappers::DescriptorAllocator> mFrameAllocator;
 
-		std::vector<UBO<FrameUniform>> mFrameUniforms;
-		std::vector<DescriptorSet> mFrameSets;
+		std::vector<Wrappers::UBO<FrameUniform>> mFrameUniforms;
+		std::vector<Wrappers::DescriptorSet> mFrameSets;
 
 		uint32_t mFrameIndex = 0;
 	};

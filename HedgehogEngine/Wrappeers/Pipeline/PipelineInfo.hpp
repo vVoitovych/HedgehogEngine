@@ -4,7 +4,7 @@
 #include <array>
 #include <vector>
 
-namespace Renderer
+namespace Wrappers
 {
 	class Device;
 	class Shader;

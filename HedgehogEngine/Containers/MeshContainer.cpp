@@ -122,10 +122,10 @@ namespace Renderer
         auto& device = context.GetDevice();
         VkDeviceSize size = sizeof(verticies[0]) * verticies.size();
 
-        Buffer staginBuffer(device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+        Wrappers::Buffer staginBuffer(device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
         staginBuffer.CopyDataToBufferMemory(device, verticies.data(), (size_t)size);
 
-        mVertexBuffer = std::make_unique<Buffer>(device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
+        mVertexBuffer = std::make_unique<Wrappers::Buffer>(device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
         device.CopyBufferToBuffer(staginBuffer.GetNativeBuffer(), mVertexBuffer->GetNativeBuffer(), size);
 
         staginBuffer.DestroyBuffer(device);
@@ -137,10 +137,10 @@ namespace Renderer
         auto& device = context.GetDevice();
         VkDeviceSize size = sizeof(indicies[0]) * indicies.size();
 
-        Buffer staginBuffer(device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+        Wrappers::Buffer staginBuffer(device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
         staginBuffer.CopyDataToBufferMemory(device, indicies.data(), (size_t)size);
 
-        mIndexBuffer = std::make_unique<Buffer>(device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
+        mIndexBuffer = std::make_unique<Wrappers::Buffer>(device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
         device.CopyBufferToBuffer(staginBuffer.GetNativeBuffer(), mIndexBuffer->GetNativeBuffer(), size);
 
         staginBuffer.DestroyBuffer(device);

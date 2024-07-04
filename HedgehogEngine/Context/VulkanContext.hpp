@@ -2,11 +2,19 @@
 
 #include <memory>
 
-namespace Renderer
+namespace Wrappers
 {
-	class WindowManager;
 	class Device;
 	class SwapChain;
+}
+
+namespace WinManager
+{
+	class WindowManager;
+}
+
+namespace Renderer
+{
 
 	class VulkanContext
 	{
@@ -22,24 +30,24 @@ namespace Renderer
 		void Cleanup();
 
 		void HandleInput();
-		WindowManager& GetWindowManager();
-		const WindowManager& GetWindowManager() const;
+		WinManager::WindowManager& GetWindowManager();
+		const WinManager::WindowManager& GetWindowManager() const;
 
 		bool ShouldClose() const;
 		void ResizeWindow();
 		bool IsWindowResized();
 		void ResetWindowResizeState();
 
-		const Device& GetDevice() const;
-		const SwapChain& GetSwapChain() const;
-		SwapChain& GetSwapChain();
+		const Wrappers::Device& GetDevice() const;
+		const Wrappers::SwapChain& GetSwapChain() const;
+		Wrappers::SwapChain& GetSwapChain();
 
 	private:
-		std::unique_ptr<WindowManager> mWindowManager;
+		std::unique_ptr<WinManager::WindowManager> mWindowManager;
 		bool mWindowResized = false;
 
-		std::unique_ptr<Device> mDevice;
-		std::unique_ptr<SwapChain> mSwapChain;
+		std::unique_ptr<Wrappers::Device> mDevice;
+		std::unique_ptr<Wrappers::SwapChain> mSwapChain;
 	};
 
 }

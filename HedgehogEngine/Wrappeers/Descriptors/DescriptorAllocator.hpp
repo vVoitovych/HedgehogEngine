@@ -3,7 +3,7 @@
 #include <vulkan/vulkan.h>
 #include <vector>
 
-namespace Renderer
+namespace Wrappers
 {
 	class Device;
 	class DescriptorSetLayout;

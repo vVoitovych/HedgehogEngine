@@ -2,7 +2,7 @@
 
 #include <vulkan/vulkan.h>
 
-namespace Renderer
+namespace Wrappers
 {
 	struct DescriptorInfo
 	{

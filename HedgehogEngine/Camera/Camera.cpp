@@ -5,7 +5,7 @@
 
 namespace Renderer
 {
-    void Camera::UpdateCamera(float dt, float ratio, const Controls& controls)
+    void Camera::UpdateCamera(float dt, float ratio, const WinManager::Controls& controls)
     {
         mAspect = ratio;
 

@@ -7,7 +7,7 @@
 
 #include "Controls.hpp"
 
-namespace Renderer
+namespace WinManager
 {
 	class WindowManager
 	{

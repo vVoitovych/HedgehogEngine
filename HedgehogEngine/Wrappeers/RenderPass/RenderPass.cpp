@@ -6,7 +6,7 @@
 
 #include <array>
 
-namespace Renderer
+namespace Wrappers
 {
 
 	RenderPass::RenderPass(const Device& device, VkRenderPassCreateInfo* renderPassInfo)

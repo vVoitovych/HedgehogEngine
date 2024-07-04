@@ -28,28 +28,28 @@ namespace Renderer
 		mSyncObjects.clear();
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
-			CommandBuffer commandBuffer(vulkanContext.GetDevice());
+			Wrappers::CommandBuffer commandBuffer(vulkanContext.GetDevice());
 			mCommandBuffers.push_back(std::move(commandBuffer));
-			SyncObject syncObject(vulkanContext.GetDevice());
+			Wrappers::SyncObject syncObject(vulkanContext.GetDevice());
 			mSyncObjects.push_back(std::move(syncObject));
 		}
 		uint32_t materialCount = 1;
-		std::vector<PoolSizeRatio> sizes =
+		std::vector<Wrappers::PoolSizeRatio> sizes =
 		{
 			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 }
 		};
 
-		mFrameAllocator = std::make_unique<DescriptorAllocator>(vulkanContext.GetDevice(), MAX_FRAMES_IN_FLIGHT, sizes);
+		mFrameAllocator = std::make_unique<Wrappers::DescriptorAllocator>(vulkanContext.GetDevice(), MAX_FRAMES_IN_FLIGHT, sizes);
 
-		DescriptorLayoutBuilder builder;
+		Wrappers::DescriptorLayoutBuilder builder;
 		builder.AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-		mFrameLayout = std::make_unique<DescriptorSetLayout>(vulkanContext.GetDevice(), builder, VK_SHADER_STAGE_VERTEX_BIT  | VK_SHADER_STAGE_FRAGMENT_BIT);
+		mFrameLayout = std::make_unique<Wrappers::DescriptorSetLayout>(vulkanContext.GetDevice(), builder, VK_SHADER_STAGE_VERTEX_BIT  | VK_SHADER_STAGE_FRAGMENT_BIT);
 
 		mFrameUniforms.clear();
 		mFrameSets.clear();
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
-			UBO<FrameUniform> frameUniformBuffer(vulkanContext.GetDevice());
+			Wrappers::UBO<FrameUniform> frameUniformBuffer(vulkanContext.GetDevice());
 			mFrameUniforms.push_back(std::move(frameUniformBuffer));
 		}
 
@@ -60,17 +60,17 @@ namespace Renderer
 			bufferInfo.offset = 0;
 			bufferInfo.range = mFrameUniforms[i].GetBufferSize();
 
-			DescriptorWrites write{};
+			Wrappers::DescriptorWrites write{};
 			write.dstBinding = 0;
 			write.dstArrayElement = 0;
 			write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 			write.descriptorCount = 1;
 			write.pBufferInfo = &bufferInfo;
 			write.pNext = nullptr;
-			std::vector<DescriptorWrites> writes;
+			std::vector<Wrappers::DescriptorWrites> writes;
 			writes.push_back(write);
 
-			DescriptorSet descriptorSet(vulkanContext.GetDevice(), *mFrameAllocator, *mFrameLayout);
+			Wrappers::DescriptorSet descriptorSet(vulkanContext.GetDevice(), *mFrameAllocator, *mFrameLayout);
 			descriptorSet.Update(vulkanContext.GetDevice(), writes);
 			mFrameSets.push_back(std::move(descriptorSet));
 		}
@@ -131,27 +131,27 @@ namespace Renderer
 		mFrameIndex = (mFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
 	}
 
-	CommandBuffer& ThreadContext::GetCommandBuffer()
+	Wrappers::CommandBuffer& ThreadContext::GetCommandBuffer()
 	{
 		return mCommandBuffers[mFrameIndex];
 	}
 
-	SyncObject& ThreadContext::GetSyncObject()
+	Wrappers::SyncObject& ThreadContext::GetSyncObject()
 	{
 		return mSyncObjects[mFrameIndex];
 	}
 
-	const DescriptorSetLayout& ThreadContext::GetLayout() const
+	const Wrappers::DescriptorSetLayout& ThreadContext::GetLayout() const
 	{
 		return *mFrameLayout;
 	}
 
-	const DescriptorSet& ThreadContext::GetDescriptorSet() const
+	const Wrappers::DescriptorSet& ThreadContext::GetDescriptorSet() const
 	{
 		return mFrameSets[mFrameIndex];
 	}
 
-	DescriptorSet& ThreadContext::GetDescriptorSet()
+	Wrappers::DescriptorSet& ThreadContext::GetDescriptorSet()
 	{
 		return mFrameSets[mFrameIndex];
 	}

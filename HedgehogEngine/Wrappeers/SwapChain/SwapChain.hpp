@@ -4,15 +4,19 @@
 #include <GLFW/glfw3.h>
 #include <vector>
 
-namespace Renderer
+namespace WinManager
+{
+	class WindowManager;
+}
+
+namespace Wrappers
 {
 	class Device;
-	class WindowManager;
 
 	class SwapChain
 	{
 	public:
-		SwapChain(const Device& device, WindowManager& windowManager);
+		SwapChain(const Device& device, WinManager::WindowManager& windowManager);
 		~SwapChain();
 
 		SwapChain(const SwapChain&) = delete;

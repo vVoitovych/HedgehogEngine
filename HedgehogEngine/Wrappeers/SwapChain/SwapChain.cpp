@@ -9,9 +9,9 @@
 #include <limits>
 #include <algorithm>
 
-namespace Renderer
+namespace Wrappers
 {
-	SwapChain::SwapChain(const Device& device, WindowManager& windowManager)
+	SwapChain::SwapChain(const Device& device, WinManager::WindowManager& windowManager)
 		: mSwapChain(nullptr)
 		, mWindow(nullptr)
 	{

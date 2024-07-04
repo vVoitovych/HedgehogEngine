@@ -6,7 +6,7 @@
 
 #include "ThirdParty/tinyfiledialogs/tinyfiledialogs.h"
 
-namespace Renderer
+namespace WinManager
 {
 	WindowManager::WindowManager()
 		: mWindowState(WindowState::GetDefaultState())
@@ -145,7 +145,7 @@ namespace Renderer
 
 	void WindowManager::OnMouseButton(GLFWwindow* window, int button, int action, int mods)
 	{
-		if (GuiPass::IsCursorPositionInGUI())
+		if (Renderer::GuiPass::IsCursorPositionInGUI())
 			return;
 		auto app = reinterpret_cast<WindowManager*>(glfwGetWindowUserPointer(window));
 

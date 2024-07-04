@@ -7,18 +7,21 @@
 #include <array>
 #include <vector>
 
-namespace Renderer
+namespace Wrappers
 {
 	class Device;
 	class Shader;
+}
 
-	class ForwardPipelineInfo : public PipelineInfo
+namespace Renderer
+{
+	class ForwardPipelineInfo : public Wrappers::PipelineInfo
 	{
 	public:
-		ForwardPipelineInfo(const Device& device);
+		ForwardPipelineInfo(const Wrappers::Device& device);
 		~ForwardPipelineInfo();
 
-		void Cleanup(const Device& device) override;
+		void Cleanup(const Wrappers::Device& device) override;
 
 		const uint32_t GetStagesCount() const override;
 		const VkPipelineShaderStageCreateInfo* GetStages() const override;
@@ -32,8 +35,8 @@ namespace Renderer
 		const VkPipelineDynamicStateCreateInfo* GetDynamicStateInfo() const override;
 
 	private:
-		std::unique_ptr<Shader> mVertexShader;
-		std::unique_ptr<Shader> mFragmentShader;
+		std::unique_ptr<Wrappers::Shader> mVertexShader;
+		std::unique_ptr<Wrappers::Shader> mFragmentShader;
 		std::array<VkPipelineShaderStageCreateInfo, 2> mStages;
 
 		VkVertexInputBindingDescription mBindingDesc;

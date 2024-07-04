@@ -8,10 +8,14 @@
 #include <string>
 #include <memory>
 
+namespace Wrappers
+{
+	class Buffer;
+}
+
 namespace Renderer
 {
 	class VulkanContext;
-	class Buffer;
 	class Mesh;
 
 	class MeshContainer
@@ -48,9 +52,9 @@ namespace Renderer
 		std::vector<Mesh> mMeshes;
 
 	private:
-		std::unique_ptr<Buffer> mVertexBuffer;
+		std::unique_ptr<Wrappers::Buffer> mVertexBuffer;
 
-		std::unique_ptr<Buffer> mIndexBuffer;
+		std::unique_ptr<Wrappers::Buffer> mIndexBuffer;
 
 	};
 

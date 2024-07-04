@@ -3,7 +3,7 @@
 #include <vulkan/vulkan.h>
 #include <string>
 
-namespace Renderer
+namespace Wrappers
 {
 	class Device;
 

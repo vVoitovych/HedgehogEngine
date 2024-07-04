@@ -2,7 +2,7 @@
 
 #include "Shader.hpp"
 
-namespace Renderer
+namespace Wrappers
 {
 	class Device;
 

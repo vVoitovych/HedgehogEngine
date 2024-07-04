@@ -1,6 +1,6 @@
 #include "FragmentShader.hpp"
 
-namespace Renderer
+namespace Wrappers
 {
 	FragmentShader::FragmentShader(const Device& device, const std::string& fileName)
 		:Shader(device, fileName)

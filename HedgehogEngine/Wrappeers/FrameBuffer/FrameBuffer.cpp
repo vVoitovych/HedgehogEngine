@@ -7,7 +7,7 @@
 
 #include <array>
 
-namespace Renderer
+namespace Wrappers
 {
 	FrameBuffer::FrameBuffer(
 		const Device& device, 

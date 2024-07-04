@@ -4,7 +4,7 @@
 
 #include <stdexcept>
 
-namespace Renderer
+namespace Wrappers
 {
 	void DescriptorLayoutBuilder::AddBinding(uint32_t binding, VkDescriptorType type)
 	{

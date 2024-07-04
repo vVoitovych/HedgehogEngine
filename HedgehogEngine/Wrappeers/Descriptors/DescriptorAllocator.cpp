@@ -7,7 +7,7 @@
 
 #include <stdexcept>
 
-namespace Renderer
+namespace Wrappers
 {
 	DescriptorAllocator::DescriptorAllocator(const Device& device, uint32_t maxSets, const std::vector<PoolSizeRatio>& poolRatios)
 		: mPool(nullptr)

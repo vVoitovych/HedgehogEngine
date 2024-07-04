@@ -5,13 +5,18 @@
 #include <memory>
 #include <string>
 
+namespace Wrappers
+{
+	class RenderPass;
+	class DescriptorAllocator;
+	class FrameBuffer;
+
+}
+
 namespace Renderer
 {
 	class RenderContext;
 	class ResourceManager;
-	class RenderPass;
-	class DescriptorAllocator;
-	class FrameBuffer;
 
 	class GuiPass
 	{
@@ -42,9 +47,9 @@ namespace Renderer
 		void UploadFonts();
 
 	private:
-		std::unique_ptr<RenderPass> mRenderPass;
-		std::unique_ptr<FrameBuffer> mFrameBuffer;
-		std::unique_ptr<DescriptorAllocator> mDescriptorAllocator;
+		std::unique_ptr<Wrappers::RenderPass> mRenderPass;
+		std::unique_ptr<Wrappers::FrameBuffer> mFrameBuffer;
+		std::unique_ptr<Wrappers::DescriptorAllocator> mDescriptorAllocator;
 
 	};
 }

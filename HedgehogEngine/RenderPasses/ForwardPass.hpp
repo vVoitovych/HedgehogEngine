@@ -3,16 +3,20 @@
 #include <memory>
 #include <string>
 
-namespace Renderer
+namespace Wrappers
 {
-    class RenderContext;
-    class ResourceManager;
     class RenderPass;
     class DescriptorSetLayout;
     class DescriptorAllocator;
     class Pipeline;
     class FrameBuffer;
     class DescriptorSet;
+}
+
+namespace Renderer
+{
+    class RenderContext;
+    class ResourceManager;
 
 	class ForwardPass
 	{
@@ -26,9 +30,9 @@ namespace Renderer
         void ResizeResources(const RenderContext& context, const ResourceManager& resourceManager);
 
     private:
-        std::unique_ptr<RenderPass> mRenderPass;
-        std::unique_ptr<FrameBuffer> mFrameBuffer;
-        std::unique_ptr<Pipeline> mPipeline;
+        std::unique_ptr<Wrappers::RenderPass> mRenderPass;
+        std::unique_ptr<Wrappers::FrameBuffer> mFrameBuffer;
+        std::unique_ptr<Wrappers::Pipeline> mPipeline;
              
 	};
 

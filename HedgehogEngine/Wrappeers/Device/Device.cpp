@@ -14,7 +14,7 @@
 #include <unordered_set>
 #include <array>
 
-namespace Renderer
+namespace Wrappers
 {
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
 		VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -71,7 +71,7 @@ namespace Renderer
 		}
 	}
 
-	Device::Device(const WindowManager& windowManager)
+	Device::Device(const WinManager::WindowManager& windowManager)
 		: mInstance(nullptr)
 		, mDebugMessenger(nullptr)
 		, mSurface(nullptr)

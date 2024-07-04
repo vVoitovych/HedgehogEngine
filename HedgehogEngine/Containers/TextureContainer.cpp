@@ -21,7 +21,7 @@ namespace Renderer
 	{
 	}
 
-	void TextureContainer::Cleanup(const Device& device)
+	void TextureContainer::Cleanup(const Wrappers::Device& device)
 	{
 		for (auto& image : mImages)
 		{
@@ -37,7 +37,7 @@ namespace Renderer
 		mSamplersList.clear();
 	}
 
-	const Image& TextureContainer::CreateImage(const Device& device, std::string filePath) const
+	const Wrappers::Image& TextureContainer::CreateImage(const Wrappers::Device& device, std::string filePath) const
 	{
 		ContentLoader::TextureLoader textureLoader;
 		textureLoader.LoadTexture(filePath);
@@ -45,7 +45,7 @@ namespace Renderer
 		int texHeight = textureLoader.GetHeight();
 		VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth * texHeight * 4);
 
-		Buffer stageBuffer(
+		Wrappers::Buffer stageBuffer(
 			device,
 			imageSize,
 			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -54,7 +54,7 @@ namespace Renderer
 		stageBuffer.CopyDataToBufferMemory(device, textureLoader.GetData(), static_cast<size_t>(imageSize));
 
 		VkFormat format = VK_FORMAT_R8G8B8A8_SRGB; //TODO: make different texture formats
-		Image image(
+		Wrappers::Image image(
 			device,
 			texWidth, texHeight,
 			format,
@@ -75,11 +75,11 @@ namespace Renderer
 		return it->second;
 	}
 
-	const Sampler& TextureContainer::CreateSampler(const Device& device, SamplerType type) const
+	const Wrappers::Sampler& TextureContainer::CreateSampler(const Wrappers::Device& device, SamplerType type) const
 	{
 		if (type== Renderer::SamplerType::Linear)
 		{
-			Sampler linearSampler(device);
+			Wrappers::Sampler linearSampler(device);
 			mSamplersList.emplace(SamplerType::Linear, std::move(linearSampler));
 			auto it = mSamplersList.find(type);
 			return it->second;
@@ -90,7 +90,7 @@ namespace Renderer
 		}
 	}
 
-	const Image& TextureContainer::GetImage(const Device& device, std::string filePath) const
+	const Wrappers::Image& TextureContainer::GetImage(const Wrappers::Device& device, std::string filePath) const
 	{
 		auto it = mImages.find(filePath);
 		if (it != mImages.end())
@@ -103,7 +103,7 @@ namespace Renderer
 		}
 	}
 
-	const Sampler& TextureContainer::GetSampler(const Device& device, SamplerType type) const
+	const Wrappers::Sampler& TextureContainer::GetSampler(const Wrappers::Device& device, SamplerType type) const
 	{
 		auto it = mSamplersList.find(type);
 		if (it != mSamplersList.end())

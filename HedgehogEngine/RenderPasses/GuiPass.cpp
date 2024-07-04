@@ -48,7 +48,7 @@ namespace Renderer
 	{
 		auto& vulkanContext = context.GetVulkanContext();
 		auto& device = vulkanContext.GetDevice();
-		std::vector<PoolSizeRatio> sizes =
+		std::vector<Wrappers::PoolSizeRatio> sizes =
 		{
 			{ VK_DESCRIPTOR_TYPE_SAMPLER, 1 },
 			{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 },
@@ -63,10 +63,10 @@ namespace Renderer
 			{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1 }
 		};
 
-		mDescriptorAllocator = std::make_unique<DescriptorAllocator>(device, 1000, sizes);
+		mDescriptorAllocator = std::make_unique<Wrappers::DescriptorAllocator>(device, 1000, sizes);
 		auto& swapChain = context.GetVulkanContext().GetSwapChain();
 		GuiPassInfo passInfo(resourceManager.GetColorBuffer().GetFormat());
-		mRenderPass = std::make_unique<RenderPass>(context.GetVulkanContext().GetDevice(), passInfo.GetInfo());
+		mRenderPass = std::make_unique<Wrappers::RenderPass>(context.GetVulkanContext().GetDevice(), passInfo.GetInfo());
 
 		// - Imgui init
 		IMGUI_CHECKVERSION();
@@ -94,7 +94,7 @@ namespace Renderer
 		UploadFonts();
 
 		std::vector<VkImageView> attacments = { resourceManager.GetColorBuffer().GetNativeView()};
-		mFrameBuffer = std::make_unique<FrameBuffer>(
+		mFrameBuffer = std::make_unique<Wrappers::FrameBuffer>(
 			device,
 			attacments,
 			resourceManager.GetColorBuffer().GetExtent(),
@@ -155,7 +155,7 @@ namespace Renderer
 
 		auto& swapChain = context.GetVulkanContext().GetSwapChain();
 		std::vector<VkImageView> attacments = { resourceManager.GetColorBuffer().GetNativeView() };
-		mFrameBuffer = std::make_unique<FrameBuffer>(
+		mFrameBuffer = std::make_unique<Wrappers::FrameBuffer>(
 			device,
 			attacments,
 			swapChain.GetSwapChainExtent(),

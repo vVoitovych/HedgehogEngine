@@ -7,7 +7,7 @@
 
 #include <array>
 
-namespace Renderer
+namespace Wrappers
 {
 	DescriptorSetLayout::DescriptorSetLayout(
 		const Device& device, 

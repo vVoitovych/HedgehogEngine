@@ -9,7 +9,7 @@
 
 #include <array>
 
-namespace Renderer
+namespace Wrappers
 {
 	CommandBuffer::CommandBuffer(const Device& device)
 		:mCommandBuffer(nullptr)

@@ -6,7 +6,7 @@
 
 #include <stdexcept>
 
-namespace Renderer
+namespace Wrappers
 {
 	Image::Image(
 		const Device& device, 

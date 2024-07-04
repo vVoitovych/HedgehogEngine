@@ -6,10 +6,13 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-namespace Renderer
+namespace WinManager
 {
 	struct Controls;
+}
 
+namespace Renderer
+{
 	enum class CameraType
 	{
 		OrtoCamera,
@@ -25,7 +28,7 @@ namespace Renderer
 		Camera(const Camera&) = default;
 		Camera& operator=(const Camera&) = default;
 
-		void UpdateCamera(float dt, float ratio, const Controls& controls);
+		void UpdateCamera(float dt, float ratio, const WinManager::Controls& controls);
 
 		void SetFov(float fov);
 		void SetAspect(float aspect);

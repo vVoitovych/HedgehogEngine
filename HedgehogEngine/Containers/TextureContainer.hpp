@@ -6,12 +6,16 @@
 #include <unordered_map>
 #include <vector>
 
-namespace Renderer
+namespace Wrappers
 {
 	class Device;
 	class Image;
 	class Sampler;
 
+}
+
+namespace Renderer
+{
 	enum class SamplerType
 	{
 		Linear
@@ -28,19 +32,19 @@ namespace Renderer
 		TextureContainer& operator=(const TextureContainer&) = delete;
 		TextureContainer& operator=(TextureContainer&&) = delete;
 
-		const Image& GetImage(const Device& device, std::string filePath) const;
-		const Sampler& GetSampler(const Device& device, SamplerType type) const;
+		const Wrappers::Image& GetImage(const Wrappers::Device& device, std::string filePath) const;
+		const Wrappers::Sampler& GetSampler(const Wrappers::Device& device, SamplerType type) const;
 		const std::vector<std::string>& GetTexturePathes() const;
 		size_t GetTextureIndex(std::string name) const;
 
-		void Cleanup(const Device& device);
+		void Cleanup(const Wrappers::Device& device);
 	private:
-		const Image& CreateImage(const Device& device, std::string filePath) const;
-		const Sampler& CreateSampler(const Device& device, SamplerType type) const;
+		const Wrappers::Image& CreateImage(const Wrappers::Device& device, std::string filePath) const;
+		const Wrappers::Sampler& CreateSampler(const Wrappers::Device& device, SamplerType type) const;
 
 	private:
-		mutable std::unordered_map<SamplerType, Sampler> mSamplersList;
-		mutable std::unordered_map<std::string, Image> mImages;
+		mutable std::unordered_map<SamplerType, Wrappers::Sampler> mSamplersList;
+		mutable std::unordered_map<std::string, Wrappers::Image> mImages;
 		mutable std::vector<std::string> mTexturePathes;
 	};
 

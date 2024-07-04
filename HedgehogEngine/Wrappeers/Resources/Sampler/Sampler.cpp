@@ -5,7 +5,7 @@
 
 #include "Logger/Logger.hpp"
 
-namespace Renderer
+namespace Wrappers
 {
 	Sampler::Sampler(const Device& device)
 		: mSampler(nullptr)
