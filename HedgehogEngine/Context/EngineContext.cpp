@@ -13,7 +13,7 @@
 #include "Scene/Scene.hpp"
 
 
-namespace Renderer
+namespace Context
 {
     EngineContext::EngineContext(const VulkanContext& vulkanContext)
     {

@@ -10,7 +10,7 @@
 #include <vulkan/vulkan.h>
 
 
-namespace Renderer
+namespace Context
 {
 	VulkanContext::VulkanContext()
 	{

@@ -1,6 +1,6 @@
 #include "ResourceManager.hpp"
 
-#include "Context/RenderContext.hpp"
+#include "Context/Context.hpp"
 #include "Context/EngineContext.hpp"
 #include "Context/ThreadContext.hpp"
 #include "Context/VulkanContext.hpp"
@@ -17,7 +17,7 @@
 
 namespace Renderer
 {
-	ResourceManager::ResourceManager(const RenderContext& context)
+	ResourceManager::ResourceManager(const Context::Context& context)
 	{
 		CreateColorBuffer(context);
 		CreateDepthBuffer(context);
@@ -27,14 +27,14 @@ namespace Renderer
 	{
 	}
 
-	void ResourceManager::Cleanup(const RenderContext& context)
+	void ResourceManager::Cleanup(const Context::Context& context)
 	{
 		auto& vulkanContext = context.GetVulkanContext();
 		mColorBuffer->Cleanup(vulkanContext.GetDevice());
 		mDepthBuffer->Cleanup(vulkanContext.GetDevice());
 	}
 
-	void ResourceManager::ResizeResources(const RenderContext& context)
+	void ResourceManager::ResizeResources(const Context::Context& context)
 	{
 		auto& vulkanContext = context.GetVulkanContext();
 		mColorBuffer->Cleanup(vulkanContext.GetDevice());
@@ -54,7 +54,7 @@ namespace Renderer
 		return *mDepthBuffer;
 	}
 
-	void ResourceManager::CreateDepthBuffer(const RenderContext& context)
+	void ResourceManager::CreateDepthBuffer(const Context::Context& context)
 	{
 		auto& vulkanContext = context.GetVulkanContext();
 		auto depthFormat = vulkanContext.GetDevice().FindDepthFormat();
@@ -74,7 +74,7 @@ namespace Renderer
 		LOGINFO("Depth buffer created");
 	}
 
-	void ResourceManager::CreateColorBuffer(const RenderContext& context)
+	void ResourceManager::CreateColorBuffer(const Context::Context& context)
 	{
 		auto& vulkanContext = context.GetVulkanContext();
 		auto colorFormat = VK_FORMAT_R16G16B16A16_UNORM;

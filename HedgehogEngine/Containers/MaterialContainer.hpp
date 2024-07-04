@@ -17,7 +17,7 @@ namespace Wrappers
 	class Buffer;
 }
 
-namespace Renderer
+namespace Context
 {
 	struct MaterialData;
 

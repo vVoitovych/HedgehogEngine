@@ -1,7 +1,7 @@
 #include "GuiPass.hpp"
 #include "GuiPassInfo.hpp"
 
-#include "Context/RenderContext.hpp"
+#include "Context/Context.hpp"
 #include "Context/VulkanContext.hpp"
 #include "Context/ThreadContext.hpp"
 #include "Context/FrameContext.hpp"
@@ -44,7 +44,7 @@
 
 namespace Renderer
 {
-	GuiPass::GuiPass(const RenderContext& context, const ResourceManager& resourceManager)
+	GuiPass::GuiPass(const Context::Context& context, const ResourceManager& resourceManager)
 	{
 		auto& vulkanContext = context.GetVulkanContext();
 		auto& device = vulkanContext.GetDevice();
@@ -106,7 +106,7 @@ namespace Renderer
 	{
 	}
 
-	void GuiPass::Render(RenderContext& context, const ResourceManager& resourceManager)
+	void GuiPass::Render(Context::Context& context, const ResourceManager& resourceManager)
 	{
 		auto& frameContext = context.GetFrameContext();
 		auto backBufferIndex = frameContext.GetBackBufferIndex();
@@ -136,7 +136,7 @@ namespace Renderer
 
 	}
 
-	void GuiPass::Cleanup(const RenderContext& context)
+	void GuiPass::Cleanup(const Context::Context& context)
 	{
 		ImGui_ImplVulkan_Shutdown();
 		ImGui_ImplGlfw_Shutdown();
@@ -148,7 +148,7 @@ namespace Renderer
 		mDescriptorAllocator->Cleanup(device);
 	}
 
-	void GuiPass::ResizeResources(const RenderContext& context, const ResourceManager& resourceManager)
+	void GuiPass::ResizeResources(const Context::Context& context, const ResourceManager& resourceManager)
 	{
 		auto& device = context.GetVulkanContext().GetDevice();
 		mFrameBuffer->Cleanup(device);
@@ -178,7 +178,7 @@ namespace Renderer
 
 	}
 
-	void GuiPass::DrawGui(RenderContext& context)
+	void GuiPass::DrawGui(Context::Context& context)
 	{
 		DrawInspector(context);
 		DrawScene(context);
@@ -187,7 +187,7 @@ namespace Renderer
 		ImGui::ShowDemoWindow();
 	}
 
-	void GuiPass::DrawInspector(RenderContext& context)
+	void GuiPass::DrawInspector(Context::Context& context)
 	{
 		float sizeX, sizeY, paddingY;
 
@@ -212,7 +212,7 @@ namespace Renderer
 	
 	}
 
-	void GuiPass::DrawTitle(RenderContext& context)
+	void GuiPass::DrawTitle(Context::Context& context)
 	{
 		auto& scene = context.GetEngineContext().GetScene();
 		if (scene.IsGameObjectSelected())
@@ -230,7 +230,7 @@ namespace Renderer
 		}
 	}
 
-	void GuiPass::DrawTransform(RenderContext& context)
+	void GuiPass::DrawTransform(Context::Context& context)
 	{
 		auto& scene = context.GetEngineContext().GetScene();
 
@@ -260,7 +260,7 @@ namespace Renderer
 		}
 	}
 
-	void GuiPass::DrawMesh(RenderContext& context)
+	void GuiPass::DrawMesh(Context::Context& context)
 	{
 		auto& scene = context.GetEngineContext().GetScene();
 
@@ -308,7 +308,7 @@ namespace Renderer
 		}
 	}
 
-	void GuiPass::DrawRender(RenderContext& context)
+	void GuiPass::DrawRender(Context::Context& context)
 	{
 		auto& scene = context.GetEngineContext().GetScene();
 
@@ -378,7 +378,7 @@ namespace Renderer
 						const char* types[] = { "Opaque", "Cutoff", "Transparent" };
 						int materialType = static_cast<int>(materialData.type);
 						ImGui::Combo("Type", &materialType, types, IM_ARRAYSIZE(types));
-						materialData.type = static_cast<MaterialType>(materialType);
+						materialData.type = static_cast<Context::MaterialType>(materialType);
 
 						auto& textures = textuteContainer.GetTexturePathes();
 						int selectedIndex = static_cast<int>(textuteContainer.GetTextureIndex(materialData.baseColor));
@@ -408,7 +408,7 @@ namespace Renderer
 						}
 
 
-						if (materialData.type == MaterialType::Transparent)
+						if (materialData.type == Context::MaterialType::Transparent)
 						{
 							static float materialTransparency = materialData.transparency;
 							ImGui::SliderFloat("slider float", &materialTransparency, 0.0f, 1.0f, "ratio = %.3f");
@@ -424,7 +424,7 @@ namespace Renderer
 		}
 	}
 
-	void GuiPass::DrawLight(RenderContext& context)
+	void GuiPass::DrawLight(Context::Context& context)
 	{
 		auto& scene = context.GetEngineContext().GetScene();
 
@@ -477,7 +477,7 @@ namespace Renderer
 		}
 	}
 
-	void GuiPass::DrawHierarchyNode(RenderContext& context, ECS::Entity entity, int& index)
+	void GuiPass::DrawHierarchyNode(Context::Context& context, ECS::Entity entity, int& index)
 	{
 		auto& scene = context.GetEngineContext().GetScene();
 		auto& component = scene.GetHierarchyComponent(entity);
@@ -519,7 +519,7 @@ namespace Renderer
 		}
 	}
 
-	void GuiPass::ShowAppMainMenuBar(RenderContext& context)
+	void GuiPass::ShowAppMainMenuBar(Context::Context& context)
 	{
 		auto& scene = context.GetEngineContext().GetScene();
 		if (ImGui::BeginMainMenuBar())
@@ -560,7 +560,7 @@ namespace Renderer
 		}
 	}
 
-	void GuiPass::DrawScene(RenderContext& context)
+	void GuiPass::DrawScene(Context::Context& context)
 	{
 		float sizeX, sizeY, paddingY;
 

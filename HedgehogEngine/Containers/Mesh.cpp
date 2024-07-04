@@ -8,7 +8,7 @@
 
 #include <unordered_map>
 
-namespace Renderer
+namespace Context
 {
 	void Mesh::LoadData(const std::string fileName)
 	{

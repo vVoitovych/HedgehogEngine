@@ -2,20 +2,24 @@
 
 #include <vulkan/vulkan.h>
 
+namespace Context
+{
+    class Context;
+}
+
 namespace Renderer
 {
-    class RenderContext;
     class ResourceManager;
 
     class PresentPass
     {
     public:
-        PresentPass(const RenderContext& context);
+        PresentPass(const Context::Context& context);
         ~PresentPass() = default;
 
-        void Render(RenderContext& context, const ResourceManager& resourceManager);
+        void Render(Context::Context& context, const ResourceManager& resourceManager);
 
-        void Cleanup(const RenderContext& context);
+        void Cleanup(const Context::Context& context);
 
     };
 

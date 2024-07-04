@@ -9,7 +9,7 @@ namespace Scene
 	class Scene;
 }
 
-namespace Renderer
+namespace Context
 {
 	class LightContainer
 	{

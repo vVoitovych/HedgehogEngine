@@ -10,7 +10,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/hash.hpp>
 
-namespace Renderer
+namespace Context
 {
 	class VertexDescription
 	{
@@ -33,9 +33,9 @@ namespace Renderer
 namespace std
 {
 	template<>
-	struct hash<Renderer::VertexDescription>
+	struct hash<Context::VertexDescription>
 	{
-		size_t operator()(Renderer::VertexDescription const& vertex) const
+		size_t operator()(Context::VertexDescription const& vertex) const
 		{
 			return (
 				(hash<glm::vec3>()(vertex.pos) ^ (hash<glm::vec3>()(vertex.color) << 1)) >> 1) ^ 

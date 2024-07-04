@@ -13,7 +13,7 @@ namespace WinManager
 	class WindowManager;
 }
 
-namespace Renderer
+namespace Context
 {
 
 	class VulkanContext

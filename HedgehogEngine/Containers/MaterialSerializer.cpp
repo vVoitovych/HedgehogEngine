@@ -10,7 +10,7 @@
 #include <fstream>
 #include <filesystem>
 
-namespace Renderer
+namespace Context
 {
 	void MaterialSerializer::Serialize(MaterialData& material, std::string materialPath)
 	{

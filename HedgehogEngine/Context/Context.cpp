@@ -1,4 +1,4 @@
-#include "RenderContext.hpp"
+#include "Context.hpp"
 
 #include "VulkanContext.hpp"
 #include "EngineContext.hpp"
@@ -7,9 +7,9 @@
 
 #include <stdexcept>
 
-namespace Renderer
+namespace Context
 {
-    RenderContext::RenderContext()
+    Context::Context()
     {
         mVulkanContext = std::make_unique<VulkanContext>();
         mEngineContext = std::make_unique<EngineContext>(*mVulkanContext);
@@ -17,60 +17,60 @@ namespace Renderer
         mThreadContext = std::make_unique<ThreadContext>(*mVulkanContext);
     }
 
-    RenderContext::~RenderContext()
+    Context::~Context()
     {
     }
 
-    void RenderContext::UpdateContext(float dt)
+    void Context::UpdateContext(float dt)
     {
         mEngineContext->UpdateContext(*mVulkanContext, dt);
         mFrameContext->UpdateContext(mEngineContext->GetCamera());
         mThreadContext->Update(*mEngineContext, *mFrameContext);
     }
 
-    void RenderContext::Cleanup()
+    void Context::Cleanup()
     {
         mEngineContext->Cleanup(*mVulkanContext);
         mThreadContext->Cleanup(*mVulkanContext);
         mVulkanContext->Cleanup();
     }
 
-    VulkanContext& RenderContext::GetVulkanContext()
+    VulkanContext& Context::GetVulkanContext()
     {
         return *mVulkanContext;
     }
 
-    EngineContext& RenderContext::GetEngineContext()
+    EngineContext& Context::GetEngineContext()
     {
         return *mEngineContext;
     }
 
-    FrameContext& RenderContext::GetFrameContext()
+    FrameContext& Context::GetFrameContext()
     {
         return *mFrameContext;
     }
 
-    ThreadContext& RenderContext::GetThreadContext()
+    ThreadContext& Context::GetThreadContext()
     {
         return *mThreadContext;
     }
 
-    const VulkanContext& RenderContext::GetVulkanContext() const
+    const VulkanContext& Context::GetVulkanContext() const
     {
         return *mVulkanContext;
     }
 
-    const EngineContext& RenderContext::GetEngineContext() const
+    const EngineContext& Context::GetEngineContext() const
     {
         return *mEngineContext;
     }
 
-    const FrameContext& RenderContext::GetFrameContext() const
+    const FrameContext& Context::GetFrameContext() const
     {
         return *mFrameContext;
     }
 
-    const ThreadContext& RenderContext::GetThreadContext() const
+    const ThreadContext& Context::GetThreadContext() const
     {
         return *mThreadContext;
     }

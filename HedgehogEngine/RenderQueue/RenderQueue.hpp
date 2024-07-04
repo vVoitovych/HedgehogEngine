@@ -2,9 +2,13 @@
 
 #include <memory>
 
+namespace Context
+{
+	class Context;
+}
+
 namespace Renderer
 {
-	class RenderContext;
 	class ResourceManager;
 
 	class InitPass;
@@ -15,7 +19,7 @@ namespace Renderer
 	class RenderQueue
 	{
 	public:
-		RenderQueue(const RenderContext& context, const ResourceManager& resourceManager);
+		RenderQueue(const Context::Context& context, const ResourceManager& resourceManager);
 		~RenderQueue();
 
 		RenderQueue(const RenderQueue&) = delete;
@@ -24,10 +28,10 @@ namespace Renderer
 		RenderQueue& operator=(RenderQueue&&) = delete;
 
 
-		void Cleanup(const RenderContext& context);
-		void Render(RenderContext& context, const ResourceManager& resourceManager);
+		void Cleanup(const Context::Context& context);
+		void Render(Context::Context& context, const ResourceManager& resourceManager);
 
-		void ResizeResources(const RenderContext& context, const ResourceManager& resourceManager);
+		void ResizeResources(const Context::Context& context, const ResourceManager& resourceManager);
 
 	private:
 		std::unique_ptr<InitPass> mInitPass;

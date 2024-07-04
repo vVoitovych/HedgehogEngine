@@ -3,7 +3,7 @@
 #include "ForwardPipelineInfo.hpp"
 #include "ForwardPassPushConstants.hpp"
 
-#include "Context/RenderContext.hpp"
+#include "Context/Context.hpp"
 #include "Context/EngineContext.hpp"
 #include "Context/ThreadContext.hpp"
 #include "Context/VulkanContext.hpp"
@@ -36,7 +36,7 @@
 
 namespace Renderer
 {
-	void ForwardPass::Render(RenderContext& context, const ResourceManager& resourceManager)
+	void ForwardPass::Render(Context::Context& context, const ResourceManager& resourceManager)
 	{
 		auto& frameContext = context.GetFrameContext();
 		auto& threadContext = context.GetThreadContext();
@@ -78,7 +78,7 @@ namespace Renderer
 		
 	}
 
-	ForwardPass::ForwardPass(const RenderContext& context, const ResourceManager& resourceManager)
+	ForwardPass::ForwardPass(const Context::Context& context, const ResourceManager& resourceManager)
 	{
 		auto& vulkanContext = context.GetVulkanContext();
 		auto& threadContext = context.GetThreadContext();
@@ -114,7 +114,7 @@ namespace Renderer
 	{
 	}
 
-	void ForwardPass::Cleanup(const RenderContext& context)
+	void ForwardPass::Cleanup(const Context::Context& context)
 	{
 		auto& vulkanContext = context.GetVulkanContext();
 
@@ -124,7 +124,7 @@ namespace Renderer
 
 	}
 
-	void ForwardPass::ResizeResources(const RenderContext& context, const ResourceManager& resourceManager)
+	void ForwardPass::ResizeResources(const Context::Context& context, const ResourceManager& resourceManager)
 	{
 		auto& vulkanContext = context.GetVulkanContext();
 		mFrameBuffer->Cleanup(vulkanContext.GetDevice());

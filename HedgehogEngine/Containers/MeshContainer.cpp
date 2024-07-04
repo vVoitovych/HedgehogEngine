@@ -8,7 +8,7 @@
 
 #include <algorithm>
 
-namespace Renderer
+namespace Context
 {
     MeshContainer::MeshContainer()
     {

@@ -11,10 +11,9 @@ namespace Wrappers
 	class Device;
 	class Image;
 	class Sampler;
-
 }
 
-namespace Renderer
+namespace Context
 {
 	enum class SamplerType
 	{

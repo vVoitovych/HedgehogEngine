@@ -2,27 +2,27 @@
 
 #include <memory>
 
-namespace Renderer
+namespace Context
 {
 	class VulkanContext;
 	class EngineContext;
 	class FrameContext;
 	class ThreadContext;
 
-	class RenderContext
+	class Context
 	{
 	public:
-		RenderContext();
-		~RenderContext();
+		Context();
+		~Context();
 
 		void UpdateContext(float dt);
 
 		void Cleanup();
 
-		RenderContext(const RenderContext&) = delete;
-		RenderContext& operator=(const RenderContext&) = delete;
-		RenderContext(RenderContext&&) = delete;
-		RenderContext& operator=(RenderContext&&) = delete;
+		Context(const Context&) = delete;
+		Context& operator=(const Context&) = delete;
+		Context(Context&&) = delete;
+		Context& operator=(Context&&) = delete;
 
 		VulkanContext& GetVulkanContext();
 		EngineContext& GetEngineContext();

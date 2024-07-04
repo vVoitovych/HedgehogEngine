@@ -1,6 +1,6 @@
 #include "Renderer.hpp"
 
-#include "Context/RenderContext.hpp"
+#include "Context/Context.hpp"
 #include "Context/VulkanContext.hpp"
 #include "Context/EngineContext.hpp"
 #include "Context/FrameContext.hpp"
@@ -14,7 +14,7 @@
 
 namespace Renderer
 {
-	Renderer::Renderer(const RenderContext& context)
+	Renderer::Renderer(const Context::Context& context)
 	{
 		mResourceManager = std::make_unique<ResourceManager>(context);
 		mRenderQueue = std::make_unique<RenderQueue>(context, *mResourceManager);
@@ -25,7 +25,7 @@ namespace Renderer
 	{
 	}
 	 
-	void Renderer::Cleanup(const RenderContext& context)
+	void Renderer::Cleanup(const Context::Context& context)
 	{
 		vkQueueWaitIdle(context.GetVulkanContext().GetDevice().GetNativeGraphicsQueue());
 
@@ -33,7 +33,7 @@ namespace Renderer
 		mResourceManager->Cleanup(context);
 	}
 
-	void Renderer::DrawFrame(RenderContext& context)
+	void Renderer::DrawFrame(Context::Context& context)
 	{		
 		auto& vulkanContext = context.GetVulkanContext();
 		if (vulkanContext.IsWindowResized())
@@ -45,7 +45,7 @@ namespace Renderer
 		mRenderQueue->Render(context, *mResourceManager);
 	}
 
-	void Renderer::RecreateSwapChain(RenderContext& context)
+	void Renderer::RecreateSwapChain(Context::Context& context)
 	{
 		vkDeviceWaitIdle(context.GetVulkanContext().GetDevice().GetNativeDevice());
 		auto& vulkanContext = context.GetVulkanContext();

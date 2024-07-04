@@ -2,7 +2,7 @@
 
 #include "Wrappeers/Device/Device.hpp"
 #include "Wrappeers/SwapChain/SwapChain.hpp"
-#include "Context/RenderContext.hpp"
+#include "Context/Context.hpp"
 #include "Context/ThreadContext.hpp"
 #include "Context/EngineContext.hpp"
 #include "Context/FrameContext.hpp"
@@ -18,11 +18,11 @@
 
 namespace Renderer
 {
-	PresentPass::PresentPass(const RenderContext& context)
+	PresentPass::PresentPass(const Context::Context& context)
 	{
 	}
 
-	void PresentPass::Render(RenderContext& context, const ResourceManager& resourceManager)
+	void PresentPass::Render(Context::Context& context, const ResourceManager& resourceManager)
 	{
 
 		auto& engineContext = context.GetEngineContext();
@@ -104,7 +104,7 @@ namespace Renderer
 		threadContext.NextFrame();
 	}
 
-	void PresentPass::Cleanup(const RenderContext& context)
+	void PresentPass::Cleanup(const Context::Context& context)
 	{
 	}
 

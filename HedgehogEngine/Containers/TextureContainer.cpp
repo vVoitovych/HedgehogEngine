@@ -10,7 +10,7 @@
 
 #include <stdexcept>
 
-namespace Renderer
+namespace Context
 {
 	TextureContainer::TextureContainer()
 	{
@@ -77,7 +77,7 @@ namespace Renderer
 
 	const Wrappers::Sampler& TextureContainer::CreateSampler(const Wrappers::Device& device, SamplerType type) const
 	{
-		if (type== Renderer::SamplerType::Linear)
+		if (type== Context::SamplerType::Linear)
 		{
 			Wrappers::Sampler linearSampler(device);
 			mSamplersList.emplace(SamplerType::Linear, std::move(linearSampler));

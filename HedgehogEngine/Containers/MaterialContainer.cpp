@@ -21,7 +21,7 @@
 
 #include "Scene/Scene.hpp"
 
-namespace Renderer
+namespace Context
 {
 	MaterialContainer::MaterialContainer(const VulkanContext& context)
 	{

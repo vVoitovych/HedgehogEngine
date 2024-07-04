@@ -2,6 +2,11 @@
 
 #include <memory>
 
+namespace Context
+{
+	class Context;
+}
+
 namespace Renderer
 {
 	class Renderer;
@@ -26,7 +31,7 @@ namespace HedgehogClient
 		float GetFrameTime();
 
 	private:
-		std::unique_ptr<Renderer::RenderContext> mContext;
+		std::unique_ptr<Context::Context> mContext;
 		std::unique_ptr<Renderer::Renderer> mRenderer;
 	};
 }

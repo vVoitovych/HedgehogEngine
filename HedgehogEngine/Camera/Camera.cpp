@@ -3,7 +3,7 @@
 #include "WindowManagment/Controls.hpp"
 #include "Logger/Logger.hpp"
 
-namespace Renderer
+namespace Context
 {
     void Camera::UpdateCamera(float dt, float ratio, const WinManager::Controls& controls)
     {

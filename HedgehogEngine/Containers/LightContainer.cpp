@@ -7,7 +7,7 @@
 #include "Common/EngineDebugBreak.hpp"
 #include "Logger/Logger.hpp"
 
-namespace Renderer
+namespace Context
 {
 	LightContainer::LightContainer()
 	{

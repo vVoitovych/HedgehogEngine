@@ -20,7 +20,7 @@
 
 #include <stdexcept>
 
-namespace Renderer
+namespace Context
 {
 	ThreadContext::ThreadContext(const VulkanContext& vulkanContext)
 	{

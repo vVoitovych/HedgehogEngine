@@ -13,7 +13,7 @@ namespace Wrappers
 	class Buffer;
 }
 
-namespace Renderer
+namespace Context
 {
 	class VulkanContext;
 	class Mesh;

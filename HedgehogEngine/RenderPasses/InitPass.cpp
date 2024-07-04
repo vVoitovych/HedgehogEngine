@@ -1,6 +1,6 @@
 #include "InitPass.hpp"
 #include "Context/VulkanContext.hpp"
-#include "Context/RenderContext.hpp"
+#include "Context/Context.hpp"
 #include "Context/ThreadContext.hpp"
 #include "Context/EngineContext.hpp"
 #include "Context/FrameContext.hpp"
@@ -14,11 +14,11 @@
 
 namespace Renderer
 {
-	InitPass::InitPass(const RenderContext& context)
+	InitPass::InitPass(const Context::Context& context)
 	{
 	}
 
-	void InitPass::Render(RenderContext& context)
+	void InitPass::Render(Context::Context& context)
 	{
 		auto& vulkanContext = context.GetVulkanContext();
 		auto& frameContext = context.GetFrameContext();
@@ -52,7 +52,7 @@ namespace Renderer
 		commandBuffer.BeginCommandBuffer(0);
 	}
 
-	void InitPass::Cleanup(const RenderContext& context)
+	void InitPass::Cleanup(const Context::Context& context)
 	{
 
 	}

@@ -20,7 +20,7 @@ namespace Wrappers
 
 }
 
-namespace Renderer
+namespace Context
 {
 	class VulkanContext;
 	class EngineContext;

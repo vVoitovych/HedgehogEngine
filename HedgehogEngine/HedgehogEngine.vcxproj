@@ -171,7 +171,7 @@
     <ClCompile Include="Containers\VertexDescription.cpp" />
     <ClCompile Include="Context\EngineContext.cpp" />
     <ClCompile Include="Context\FrameContext.cpp" />
-    <ClCompile Include="Context\RenderContext.cpp" />
+    <ClCompile Include="Context\Context.cpp" />
     <ClCompile Include="Context\ThreadContext.cpp" />
     <ClCompile Include="Context\VulkanContext.cpp" />
     <ClCompile Include="Renderer\Renderer.cpp" />
@@ -220,7 +220,7 @@
     <ClInclude Include="Containers\VertexDescription.hpp" />
     <ClInclude Include="Context\EngineContext.hpp" />
     <ClInclude Include="Context\FrameContext.hpp" />
-    <ClInclude Include="Context\RenderContext.hpp" />
+    <ClInclude Include="Context\Context.hpp" />
     <ClInclude Include="Context\ThreadContext.hpp" />
     <ClInclude Include="Context\VulkanContext.hpp" />
     <ClInclude Include="Renderer\Renderer.hpp" />

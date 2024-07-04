@@ -5,7 +5,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/hash.hpp>
 
-namespace Renderer
+namespace Context
 {
 	struct Light
 	{

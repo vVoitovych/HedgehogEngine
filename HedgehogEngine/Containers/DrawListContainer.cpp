@@ -10,7 +10,7 @@
 
 #include <algorithm>
 
-namespace Renderer
+namespace Context
 {
 	void DrawListContainer::Update(const Scene::Scene& scene, const MaterialContainer& materialContainer)
 	{

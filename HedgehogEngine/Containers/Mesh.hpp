@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 
-namespace Renderer
+namespace Context
 {
 	class Mesh
 	{

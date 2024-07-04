@@ -15,8 +15,8 @@ namespace Renderer
 		mFragmentShader = std::make_unique<Wrappers::FragmentShader>(device, "SimpleShader.frag.spv");
 		mStages = {mVertexShader->GetCreateInfo(), mFragmentShader->GetCreateInfo()};
 
-		mBindingDesc = VertexDescription::GetBindingDescription();
-		mAttributeDesc = VertexDescription::GetAttributeDescription();
+		mBindingDesc = Context::VertexDescription::GetBindingDescription();
+		mAttributeDesc = Context::VertexDescription::GetAttributeDescription();
 
 		mVertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 		mVertexInputInfo.vertexBindingDescriptionCount = 1;

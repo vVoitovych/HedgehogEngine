@@ -1,18 +1,21 @@
 #pragma once
 
+namespace Context
+{
+    class Context;
+}
+
 namespace Renderer
 {
-    class RenderContext;
-
     class InitPass
     {
     public:
-        InitPass(const RenderContext& context);
+        InitPass(const Context::Context& context);
         ~InitPass() = default;
 
-        void Render(RenderContext& context);
+        void Render(Context::Context& context);
 
-        void Cleanup(const RenderContext& context);
+        void Cleanup(const Context::Context& context);
 
     };
 

@@ -11,7 +11,7 @@ namespace WinManager
 	struct Controls;
 }
 
-namespace Renderer
+namespace Context
 {
 	enum class CameraType
 	{

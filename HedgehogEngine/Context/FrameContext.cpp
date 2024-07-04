@@ -1,7 +1,7 @@
 #include "FrameContext.hpp"
 #include "Camera/Camera.hpp"
 
-namespace Renderer
+namespace Context
 {
 	void FrameContext::UpdateContext(const Camera& camera)
 	{

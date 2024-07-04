@@ -10,39 +10,42 @@ namespace Wrappers
 	class RenderPass;
 	class DescriptorAllocator;
 	class FrameBuffer;
+}
 
+namespace Context
+{
+	class Context;
 }
 
 namespace Renderer
 {
-	class RenderContext;
 	class ResourceManager;
 
 	class GuiPass
 	{
 	public:
-		GuiPass(const RenderContext& context, const ResourceManager& resourceManager);
+		GuiPass(const Context::Context& context, const ResourceManager& resourceManager);
 		~GuiPass();
 
-		void Render(RenderContext& context, const ResourceManager& resourceManager);
-		void Cleanup(const RenderContext& context);
+		void Render(Context::Context& context, const ResourceManager& resourceManager);
+		void Cleanup(const Context::Context& context);
 
-		void ResizeResources(const RenderContext& context, const ResourceManager& resourceManager);
+		void ResizeResources(const Context::Context& context, const ResourceManager& resourceManager);
 	public:
 		static bool IsCursorPositionInGUI();
 
 	private:
-		void DrawGui(RenderContext& context);
-		void DrawInspector(RenderContext& context);
-		void DrawTitle(RenderContext& context);
-		void DrawTransform(RenderContext& context);
-		void DrawMesh(RenderContext& context);
-		void DrawRender(RenderContext& context);
-		void DrawLight(RenderContext& context);
+		void DrawGui(Context::Context& context);
+		void DrawInspector(Context::Context& context);
+		void DrawTitle(Context::Context& context);
+		void DrawTransform(Context::Context& context);
+		void DrawMesh(Context::Context& context);
+		void DrawRender(Context::Context& context);
+		void DrawLight(Context::Context& context);
 
-		void DrawScene(RenderContext& context);
-		void DrawHierarchyNode(RenderContext& context, ECS::Entity entity, int& index);
-		void ShowAppMainMenuBar(RenderContext& context);
+		void DrawScene(Context::Context& context);
+		void DrawHierarchyNode(Context::Context& context, ECS::Entity entity, int& index);
+		void ShowAppMainMenuBar(Context::Context& context);
 
 		void UploadFonts();
 

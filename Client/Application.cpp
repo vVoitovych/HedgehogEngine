@@ -1,6 +1,6 @@
 #include "Application.hpp"
 
-#include "HedgehogEngine/Context/RenderContext.hpp"
+#include "HedgehogEngine/Context/Context.hpp"
 #include "HedgehogEngine/Context/VulkanContext.hpp"
 
 #include "HedgehogEngine/Renderer/Renderer.hpp"
@@ -27,7 +27,7 @@ namespace HedgehogClient
 
 	void HedgehogClient::InitVulkan()
 	{
-		mContext = std::make_unique<Renderer::RenderContext>();
+		mContext = std::make_unique<Context::Context>();
 		mRenderer = std::make_unique<Renderer::Renderer>(*mContext);
 		LOGINFO("Vulkan initialized");
 	}

@@ -13,21 +13,25 @@ namespace Wrappers
     class DescriptorSet;
 }
 
+namespace Context
+{
+    class Context;
+}
+
 namespace Renderer
 {
-    class RenderContext;
     class ResourceManager;
 
 	class ForwardPass
 	{
     public:
-        ForwardPass(const RenderContext& context, const ResourceManager& resourceManager);
+        ForwardPass(const Context::Context& context, const ResourceManager& resourceManager);
         ~ForwardPass();
 
-        void Render(RenderContext& context, const ResourceManager& resourceManager);
-        void Cleanup(const RenderContext& context);
+        void Render(Context::Context& context, const ResourceManager& resourceManager);
+        void Cleanup(const Context::Context& context);
 
-        void ResizeResources(const RenderContext& context, const ResourceManager& resourceManager);
+        void ResizeResources(const Context::Context& context, const ResourceManager& resourceManager);
 
     private:
         std::unique_ptr<Wrappers::RenderPass> mRenderPass;

@@ -1,6 +1,6 @@
 #include "VertexDescription.hpp"
 
-namespace Renderer
+namespace Context
 {
 	bool VertexDescription::operator==(const VertexDescription& other) const
 	{
