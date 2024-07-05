@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <initializer_list>
+#include <algorithm>
 
 namespace HM
 {
@@ -142,7 +143,6 @@ namespace HM
     Vector<componentCount, elementType>::Vector(std::initializer_list<elementType> data)
         : m_data{}
     {
-        BLK_ASSERT(data.size() <= componentCount);
         std::copy(data.begin(), data.end(), begin());
     }
 
@@ -150,7 +150,6 @@ namespace HM
     Vector<componentCount, elementType>::Vector(const elementType* first, const elementType* last)
         : m_data{}
     {
-        BLK_ASSERT(last - first <= componentCount);
         std::copy(first, last, begin());
     }
 
@@ -290,13 +289,11 @@ namespace HM
     template <size_t componentCount, typename elementType>
     elementType& Vector<componentCount, elementType>::operator[](size_t i)
     {
-        BLK_ASSERT(i < componentCount);
         return m_data[i];
     };
     template <size_t componentCount, typename elementType>
     const elementType& Vector<componentCount, elementType>::operator[](size_t i) const
     {
-        BLK_ASSERT(i < componentCount);
         return m_data[i];
     };
 

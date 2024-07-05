@@ -424,7 +424,7 @@ namespace HM
     Matrix4x4 Matrix4x4::CalculateProjPerspective(float nearZ, float farZ, float aspectRatio,
         float fovY)
     {
-        float h = 1.0f / tan(fovY * 0.5f);
+        float h = 1.0f / tanf(fovY * 0.5f);
         float w = h / aspectRatio;
         float a = farZ / (farZ - nearZ);
         float b = (-nearZ * farZ) / (farZ - nearZ);
