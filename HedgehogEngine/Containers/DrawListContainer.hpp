@@ -1,12 +1,8 @@
 #pragma once
 
+#include "HedgehogMath/Matrix.hpp"
+
 #include <vector>
-
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE 
-#define GLM_ENABLE_EXPERIMENTAL
-
-#include <glm/glm.hpp>
 
 namespace Scene
 {
@@ -20,7 +16,7 @@ namespace Context
 	struct DrawObject
 	{
 		size_t meshIndex;
-		glm::mat4 objMatrix;
+		HM::Matrix4x4 objMatrix;
 	};
 
 	struct DrawNode

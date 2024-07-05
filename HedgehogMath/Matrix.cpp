@@ -386,6 +386,31 @@ namespace HM
         };
     }
 
+    Matrix4x4 Matrix4x4::LookAt(const Vector4& eye, const Vector4& center, const Vector4& up)
+    {
+        Vector4 dir = (center - eye).Normalize();
+        Vector4 up_norm = up.Normalize();
+        Vector4 cross = (dir.Cross(up_norm)).Normalize();
+        up_norm = cross.Cross(dir);
+
+        Matrix4x4 m = GetIdentity();
+
+        m[0][0] = cross[0];
+        m[1][0] = cross[1];
+        m[2][0] = cross[2];
+        m[0][1] = up_norm[0];
+        m[1][1] = up_norm[1];
+        m[2][1] = up_norm[2];
+        m[0][2] = -dir[0];
+        m[1][2] = -dir[1];
+        m[2][2] = -dir[2];
+        m[3][0] = -cross.Dot(eye);
+        m[3][1] = -up_norm.Dot(eye);
+        m[3][2] = dir.Dot(eye);
+
+        return m;
+    }
+
     Matrix4x4 Matrix4x4::CalculateView(const Vector4& right, const Vector4& up,
         const Vector4& forward, const Vector4& position)
     {
@@ -421,8 +446,7 @@ namespace HM
         return CalculateView(right[cubeMapFace], up[cubeMapFace], forward[cubeMapFace], position);
     }
 
-    Matrix4x4 Matrix4x4::CalculateProjPerspective(float nearZ, float farZ, float aspectRatio,
-        float fovY)
+    Matrix4x4 Matrix4x4::CalculateProjPerspective(float aspectRatio, float fovY, float nearZ, float farZ)
     {
         float h = 1.0f / tanf(fovY * 0.5f);
         float w = h / aspectRatio;

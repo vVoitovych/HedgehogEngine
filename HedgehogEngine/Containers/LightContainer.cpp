@@ -5,6 +5,9 @@
 
 #include "Common/RendererSettings.hpp"
 #include "Common/EngineDebugBreak.hpp"
+
+#include "HedgehogMath/Common.hpp"
+#include "HedgehogMath/Vector.hpp"
 #include "Logger/Logger.hpp"
 
 namespace Context
@@ -33,10 +36,10 @@ namespace Context
 				light.mDirection = lightComponent.mDirection;
 				light.mColor = lightComponent.mColor;
 				light.mData = { 
-					lightComponent .mLightType, 
+					(float)lightComponent.mLightType, 
 					lightComponent.mIntencity, 
 					lightComponent.mRadius, 
-					cos(glm::radians(lightComponent.mConeAngle))};
+					cos(HM::ToRadians(lightComponent.mConeAngle))};
 				++counter;
 			}
 		}

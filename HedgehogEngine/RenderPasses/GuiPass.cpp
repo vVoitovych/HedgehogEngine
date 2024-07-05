@@ -243,19 +243,19 @@ namespace Renderer
 
 				auto& transform = scene.GetTransformComponent(entity);
 				ImGui::SeparatorText("Position");
-				ImGui::DragFloat("pos x", &transform.mPososition.x, 0.5f);
-				ImGui::DragFloat("pos y", &transform.mPososition.y, 0.5f);
-				ImGui::DragFloat("pos z", &transform.mPososition.z, 0.5f);
+				ImGui::DragFloat("pos x", &transform.mPososition.x(), 0.5f);
+				ImGui::DragFloat("pos y", &transform.mPososition.y(), 0.5f);
+				ImGui::DragFloat("pos z", &transform.mPososition.z(), 0.5f);
 
 				ImGui::SeparatorText("Rotation");
-				ImGui::DragFloat("rot x", &transform.mRotation.x, 0.5f);
-				ImGui::DragFloat("rot y", &transform.mRotation.y, 0.5f);
-				ImGui::DragFloat("rot z", &transform.mRotation.z, 0.5f);
+				ImGui::DragFloat("rot x", &transform.mRotation.x(), 0.5f);
+				ImGui::DragFloat("rot y", &transform.mRotation.y(), 0.5f);
+				ImGui::DragFloat("rot z", &transform.mRotation.z(), 0.5f);
 
 				ImGui::SeparatorText("Scale");
-				ImGui::DragFloat("scale x", &transform.mScale.x, 0.5f);
-				ImGui::DragFloat("scale y", &transform.mScale.y, 0.5f);
-				ImGui::DragFloat("scale z", &transform.mScale.z, 0.5f);
+				ImGui::DragFloat("scale x", &transform.mScale.x(), 0.5f);
+				ImGui::DragFloat("scale y", &transform.mScale.y(), 0.5f);
+				ImGui::DragFloat("scale z", &transform.mScale.z(), 0.5f);
 			}
 		}
 	}
@@ -447,7 +447,7 @@ namespace Renderer
 					ImGui::Combo("Type", &lightType, types, IM_ARRAYSIZE(types));
 					light.mLightType = static_cast<Scene::LightType>(lightType);
 
-					static float color[3] = { light.mColor.r, light.mColor.g, light.mColor.b };
+					static float color[3] = { light.mColor.r(), light.mColor.g(), light.mColor.b()};
 					ImGui::ColorEdit3("Color", color);
 					light.mColor = { color[0], color[1], color[2] };
 

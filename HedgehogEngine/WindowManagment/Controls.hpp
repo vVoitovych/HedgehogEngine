@@ -1,7 +1,6 @@
 #pragma once
 
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/glm.hpp>
+#include "HedgehogMath/Vector.hpp"
 
 namespace WinManager
 {
@@ -20,9 +19,9 @@ namespace WinManager
 		bool IsMiddleMouseButton = false;
 		bool IsRightMouseButton = false;
 
-		glm::vec2 MousePos = glm::vec2(0.0f, 0.0f);
-		glm::vec2 MouseDelta = glm::vec2(0.0f, 0.0f);
-		glm::vec2 ScrollDelta = glm::vec2(0.0f, 0.0f);
+		HM::Vector2 MousePos = HM::Vector2(0.0f, 0.0f);
+		HM::Vector2 MouseDelta = HM::Vector2(0.0f, 0.0f);
+		HM::Vector2 ScrollDelta = HM::Vector2(0.0f, 0.0f);
 
 	};
 }

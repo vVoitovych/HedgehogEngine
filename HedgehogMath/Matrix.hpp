@@ -56,11 +56,11 @@ namespace HM
          static Matrix4x4 GetRotationY(float angle);
          static Matrix4x4 GetRotationZ(float angle);
 
+         static Matrix4x4 LookAt(const Vector4& eye, const Vector4& center, const Vector4& up);
          static Matrix4x4 CalculateView(const Vector4& right, const Vector4& up,
             const Vector4& forward,
             const Vector4& position);
-         static Matrix4x4 CalculateProjPerspective(float nearZ, float farZ,
-            float aspectRatio, float fovY);
+         static Matrix4x4 CalculateProjPerspective(float aspectRatio, float fovY, float nearZ, float farZ);
          static Matrix4x4 CalculateProjOrtographic(float nearZ, float farZ,
             float width, float height);
 

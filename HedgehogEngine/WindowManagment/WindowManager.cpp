@@ -2,6 +2,8 @@
 #include "RenderPasses/GuiPass.hpp"
 #include "ContentLoader/TextureLoader.hpp"
 
+#include "HedgehogMath/Vector.hpp"
+
 #include "Logger/Logger.hpp"
 
 #include "ThirdParty/tinyfiledialogs/tinyfiledialogs.h"
@@ -158,15 +160,15 @@ namespace WinManager
 				{
 					double x, y;
 					glfwGetCursorPos(window, &x, &y);
-					controls.MousePos = glm::vec2((float)x, (float)y);
-					controls.MouseDelta = glm::vec2(0, 0);
+					controls.MousePos = HM::Vector2((float)x, (float)y);
+					controls.MouseDelta = HM::Vector2(0.0f, 0.0f);
 				}
 				controls.IsLeftMouseButton = true;
 			}
 			else if (action == GLFW_RELEASE)
 			{
 				controls.IsLeftMouseButton = false;
-				controls.MouseDelta = glm::vec2(0, 0);
+				controls.MouseDelta = HM::Vector2(0.0f, 0.0f);
 			}
 		}
 		if (button == GLFW_MOUSE_BUTTON_RIGHT)
@@ -177,15 +179,15 @@ namespace WinManager
 				{
 					double x, y;
 					glfwGetCursorPos(window, &x, &y);
-					controls.MousePos = glm::vec2((float)x, (float)y);
-					controls.MouseDelta = glm::vec2(0, 0);
+					controls.MousePos = HM::Vector2((float)x, (float)y);
+					controls.MouseDelta = HM::Vector2(0.0f, 0.0f);
 				}
 				controls.IsRightMouseButton = true;
 			}
 			else if (action == GLFW_RELEASE)
 			{
 				controls.IsRightMouseButton = false;
-				controls.MouseDelta = glm::vec2(0, 0);
+				controls.MouseDelta = HM::Vector2(0.0f, 0.0f);
 			}
 		}
 		if (button == GLFW_MOUSE_BUTTON_MIDDLE)
@@ -196,15 +198,15 @@ namespace WinManager
 				{
 					double x, y;
 					glfwGetCursorPos(window, &x, &y);
-					controls.MousePos = glm::vec2((float)x, (float)y);
-					controls.MouseDelta = glm::vec2(0, 0);
+					controls.MousePos = HM::Vector2((float)x, (float)y);
+					controls.MouseDelta = HM::Vector2(0.0f, 0.0f);
 				}
 				controls.IsMiddleMouseButton = true;
 			}
 			else if (action == GLFW_RELEASE)
 			{
 				controls.IsMiddleMouseButton = false;
-				controls.MouseDelta = glm::vec2(0, 0);
+				controls.MouseDelta = HM::Vector2(0.0f, 0.0f);
 			}
 		}
 	}
@@ -216,16 +218,16 @@ namespace WinManager
 		Controls& controls = app->GetControls();
 		if (controls.IsLeftMouseButton || controls.IsMiddleMouseButton || controls.IsRightMouseButton)
 		{
-			controls.MouseDelta = glm::vec2((float)x, (float)y) - controls.MousePos;
-			controls.MousePos = glm::vec2((float)x, (float)y);
+			controls.MouseDelta = HM::Vector2((float)x, (float)y) - controls.MousePos;
+			controls.MousePos = HM::Vector2((float)x, (float)y);
 
-			if (abs(controls.MouseDelta.x) < 2)
+			if (abs(controls.MouseDelta.x()) < 2)
 			{
-				controls.MouseDelta.x = 0.0f;
+				controls.MouseDelta.x() = 0.0f;
 			}
-			if (abs(controls.MouseDelta.y) < 2)
+			if (abs(controls.MouseDelta.y()) < 2)
 			{
-				controls.MouseDelta.y = 0.0f;
+				controls.MouseDelta.y() = 0.0f;
 			}
 		}
 	}
@@ -235,7 +237,7 @@ namespace WinManager
 		auto app = reinterpret_cast<WindowManager*>(glfwGetWindowUserPointer(window));
 
 		Controls& controls = app->GetControls();
-		controls.ScrollDelta = glm::vec2((float)x, (float)y);
+		controls.ScrollDelta = HM::Vector2((float)x, (float)y);
 	}
 
 

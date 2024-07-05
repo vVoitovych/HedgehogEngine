@@ -5,11 +5,7 @@
 #include <array>
 #include <functional>
 
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/glm.hpp>
-#include <glm/gtx/hash.hpp>
+#include "HedgehogMath/Vector.hpp"
 
 namespace Context
 {
@@ -19,10 +15,10 @@ namespace Context
 		bool operator==(const VertexDescription& other) const;
 
 	public:
-		glm::vec3 pos;
-		glm::vec3 color;
-		glm::vec2 texCoord;
-		glm::vec3 normal;
+		HM::Vector3 pos;
+		HM::Vector3 color;
+		HM::Vector2 texCoord;
+		HM::Vector3 normal;
 
 	public:
 		static VkVertexInputBindingDescription GetBindingDescription();
@@ -34,14 +30,39 @@ namespace Context
 namespace std
 {
 	template<>
+	struct hash<HM::Vector2>
+	{
+		size_t operator()(HM::Vector2 const& vector) const
+		{
+			return (
+				(hash<float>()(vector.x()) ^
+				(hash<float>()(vector.y()) << 1))
+				);
+		}
+	};
+
+	template<>
+	struct hash<HM::Vector3>
+	{
+		size_t operator()(HM::Vector3 const& vector) const
+		{
+			return (
+				(hash<float>()(vector.x()) ^
+				(hash<float>()(vector.y()) << 1) ^
+				(hash<float>()(vector.z())))
+				);
+		}
+	};
+
+	template<>
 	struct hash<Context::VertexDescription>
 	{
 		size_t operator()(Context::VertexDescription const& vertex) const
 		{
 			return (
-				(hash<glm::vec3>()(vertex.pos) ^ (hash<glm::vec3>()(vertex.color) << 1)) >> 1) ^ 
-				(hash<glm::vec2>()(vertex.texCoord) << 1) ^
-				(hash<glm::vec3>()(vertex.normal));
+				(hash<HM::Vector3>()(vertex.pos) ^ (hash<HM::Vector3>()(vertex.color) << 1)) >> 1) ^
+				(hash<HM::Vector2>()(vertex.texCoord) << 1) ^
+				(hash<HM::Vector3>()(vertex.normal));
 		}
 	};
 }

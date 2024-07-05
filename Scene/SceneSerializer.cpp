@@ -4,8 +4,9 @@
 #include "SceneComponents/HierarchyComponent.hpp"
 #include "Scene/SceneComponents/LightComponent.hpp"
 
-#include "Logger/Logger.hpp"
+#include "HedgehogMath/Vector.hpp"
 
+#include "Logger/Logger.hpp"
 
 #define YAML_CPP_STATIC_DEFINE
 #include "ThirdParty/yaml-cpp/yaml.h"
@@ -16,76 +17,76 @@
 namespace YAML {
 
 	template<>
-	struct convert<glm::vec2>
+	struct convert<HM::Vector2>
 	{
-		static Node encode(const glm::vec2& rhs)
+		static Node encode(const HM::Vector2& rhs)
 		{
 			Node node;
-			node.push_back(rhs.x);
-			node.push_back(rhs.y);
+			node.push_back(rhs.x());
+			node.push_back(rhs.y());
 			node.SetStyle(EmitterStyle::Flow);
 			return node;
 		}
 
-		static bool decode(const Node& node, glm::vec2& rhs)
+		static bool decode(const Node& node, HM::Vector2& rhs)
 		{
 			if (!node.IsSequence() || node.size() != 2)
 				return false;
 
-			rhs.x = node[0].as<float>();
-			rhs.y = node[1].as<float>();
+			rhs.x() = node[0].as<float>();
+			rhs.y() = node[1].as<float>();
 			return true;
 		}
 	};
 
 	template<>
-	struct convert<glm::vec3>
+	struct convert<HM::Vector3>
 	{
-		static Node encode(const glm::vec3& rhs)
+		static Node encode(const HM::Vector3& rhs)
 		{
 			Node node;
-			node.push_back(rhs.x);
-			node.push_back(rhs.y);
-			node.push_back(rhs.z);
+			node.push_back(rhs.x());
+			node.push_back(rhs.y());
+			node.push_back(rhs.z());
 			node.SetStyle(EmitterStyle::Flow);
 			return node;
 		}
 
-		static bool decode(const Node& node, glm::vec3& rhs)
+		static bool decode(const Node& node, HM::Vector3& rhs)
 		{
 			if (!node.IsSequence() || node.size() != 3)
 				return false;
 
-			rhs.x = node[0].as<float>();
-			rhs.y = node[1].as<float>();
-			rhs.z = node[2].as<float>();
+			rhs.x() = node[0].as<float>();
+			rhs.y() = node[1].as<float>();
+			rhs.z() = node[2].as<float>();
 			return true;
 		}
 	};
 
 	template<>
-	struct convert<glm::vec4>
+	struct convert<HM::Vector4>
 	{
-		static Node encode(const glm::vec4& rhs)
+		static Node encode(const HM::Vector4& rhs)
 		{
 			Node node;
-			node.push_back(rhs.x);
-			node.push_back(rhs.y);
-			node.push_back(rhs.z);
-			node.push_back(rhs.w);
+			node.push_back(rhs.x());
+			node.push_back(rhs.y());
+			node.push_back(rhs.z());
+			node.push_back(rhs.w());
 			node.SetStyle(EmitterStyle::Flow);
 			return node;
 		}
 
-		static bool decode(const Node& node, glm::vec4& rhs)
+		static bool decode(const Node& node, HM::Vector4& rhs)
 		{
 			if (!node.IsSequence() || node.size() != 4)
 				return false;
 
-			rhs.x = node[0].as<float>();
-			rhs.y = node[1].as<float>();
-			rhs.z = node[2].as<float>();
-			rhs.w = node[3].as<float>();
+			rhs.x() = node[0].as<float>();
+			rhs.y() = node[1].as<float>();
+			rhs.z() = node[2].as<float>();
+			rhs.w() = node[3].as<float>();
 			return true;
 		}
 	};
@@ -94,10 +95,10 @@ namespace YAML {
 namespace Scene
 {
 
-	static YAML::Emitter& operator<<(YAML::Emitter& out, const glm::vec3& v)
+	static YAML::Emitter& operator<<(YAML::Emitter& out, const HM::Vector3& v)
 	{
 		out << YAML::Flow;
-		out << YAML::BeginSeq << v.x << v.y << v.z << YAML::EndSeq;
+		out << YAML::BeginSeq << v.x() << v.y() << v.z() << YAML::EndSeq;
 		return out;
 	}
 
@@ -201,9 +202,9 @@ namespace Scene
 		auto transformData = node["TransformComponent"];
 		if (transformData)
 		{
-			transform.mPososition = transformData["Position"].as<glm::vec3>();
-			transform.mRotation = transformData["Rotation"].as<glm::vec3>();
-			transform.mScale = transformData["Scale"].as<glm::vec3>();
+			transform.mPososition = transformData["Position"].as<HM::Vector3>();
+			transform.mRotation = transformData["Rotation"].as<HM::Vector3>();
+			transform.mScale = transformData["Scale"].as<HM::Vector3>();
 		}
 
 		auto mesh = node["MeshComponent"];
@@ -223,7 +224,7 @@ namespace Scene
 			auto& lightComponent = scene.GetLightComponent(entity);
 			lightComponent.mEnable = light["LightEnabled"].as<bool>();
 			lightComponent.mLightType = static_cast<LightType>(light["LightType"].as<size_t>());
-			lightComponent.mColor = light["LightColor"].as<glm::vec3>();
+			lightComponent.mColor = light["LightColor"].as<HM::Vector3>();
 			lightComponent.mIntencity = light["LightIntencity"].as<float>();
 			lightComponent.mRadius = light["LightRadius"].as<float>();
 			lightComponent.mConeAngle = light["LightConeAngle"].as<float>();

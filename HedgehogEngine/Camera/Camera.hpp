@@ -1,11 +1,8 @@
 #pragma once
 
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#define GLM_FORCE_RADIANS
-#define GLM_ENABLE_EXPERIMENTAL
-
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include "HedgehogMath/Vector.hpp"
+#include "HedgehogMath/Matrix.hpp"
+#include "HedgehogMath/Common.hpp"
 
 namespace WinManager
 {
@@ -36,16 +33,16 @@ namespace Context
 		void SetNearPlane(float nearPlane);
 		void SetFarPlane(float farPlane);
 
-		glm::mat4 GetViewMatrix() const;
-		glm::mat4 GetProjectionMatrix() const;
-		glm::vec3 GetPosition() const;
+		HM::Matrix4x4 GetViewMatrix() const;
+		HM::Matrix4x4 GetProjectionMatrix() const;
+		HM::Vector3 GetPosition() const;
 
 
 	private:
 		void UpdateMatricies();
 
 	private:
-		float mFOV = glm::radians(45.0f);
+		float mFOV = HM::ToRadians(45.0f);
 		float mAspect = 1.0f;
 		float mNearPlane = 0.1f;
 		float mFarPlane = 1000.0f;
@@ -58,13 +55,13 @@ namespace Context
 
 		CameraType mCameraType = CameraType::PerspectiveCamera;
 
-		glm::vec3 mPos = glm::vec3(-10.0f, 0.0f, 0.0f);
-		glm::vec3 mDirection = glm::vec3(1.0f, 0.0f, 0.0f);
-		glm::vec3 mUpVector = glm::vec3(0.0f, 0.0f, 1.0f);
-		glm::vec3 mRightVector = glm::normalize(glm::cross(mDirection, mUpVector));
+		HM::Vector3 mPos = HM::Vector3(-10.0f, 0.0f, 0.0f);
+		HM::Vector3 mDirection = HM::Vector3(1.0f, 0.0f, 0.0f);
+		HM::Vector3 mUpVector = HM::Vector3(0.0f, 0.0f, 1.0f);
+		HM::Vector3 mRightVector = (mDirection.Cross(mUpVector)).Normalize();
 
-		glm::mat4 mViewMatrix;
-		glm::mat4 mProjMatrix;
+		HM::Matrix4x4 mViewMatrix;
+		HM::Matrix4x4 mProjMatrix;
 	};
 
 }

@@ -1,6 +1,8 @@
 #include "Camera.hpp"
-
 #include "WindowManagment/Controls.hpp"
+
+#include "HedgehogMath/Common.hpp"
+
 #include "Logger/Logger.hpp"
 
 namespace Context
@@ -36,8 +38,8 @@ namespace Context
             mPos -= mRightVector * mCameraSpeed * dt;
         }
 
-        float xoffset = controls.MouseDelta.x;
-        float yoffset = controls.MouseDelta.y;
+        float xoffset = controls.MouseDelta.x();
+        float yoffset = controls.MouseDelta.y();
 
         xoffset *= mMouseSensitivity;
         yoffset *= mMouseSensitivity;
@@ -50,11 +52,11 @@ namespace Context
         if (mPitch < -80.0f)
             mPitch = -80.0f;
 
-        mDirection.x = cos(glm::radians(mYaw)) * cos(glm::radians(mPitch));
-        mDirection.y = sin(glm::radians(mYaw)) * cos(glm::radians(mPitch));
-        mDirection.z = sin(glm::radians(mPitch));
+        mDirection.x() = cos(HM::ToRadians(mYaw)) * cos(HM::ToRadians(mPitch));
+        mDirection.y() = sin(HM::ToRadians(mYaw)) * cos(HM::ToRadians(mPitch));
+        mDirection.z() = sin(HM::ToRadians(mPitch));
 
-        mRightVector = glm::normalize(glm::cross(mDirection, mUpVector));
+        mRightVector = (mDirection.Cross(mUpVector)).Normalize();
 
         UpdateMatricies();
     }
@@ -79,25 +81,25 @@ namespace Context
         mFarPlane = farPlane;
     }
 
-    glm::mat4 Camera::GetViewMatrix() const 
+    HM::Matrix4x4 Camera::GetViewMatrix() const
     {
         return mViewMatrix;
     }
 
-    glm::mat4 Camera::GetProjectionMatrix() const 
+    HM::Matrix4x4 Camera::GetProjectionMatrix() const
     {
         return mProjMatrix;
     }
 
-    glm::vec3 Camera::GetPosition() const
+    HM::Vector3 Camera::GetPosition() const
     {
         return mPos;
     }
 
     void Camera::UpdateMatricies()
     {
-        mViewMatrix = glm::lookAt(mPos, mPos + mDirection, mUpVector);
-        mProjMatrix = glm::perspective(mFOV / mAspect, mAspect, mNearPlane, mFarPlane);
+        mViewMatrix = HM::Matrix4x4::LookAt(mPos, mPos + mDirection, mUpVector);
+        mProjMatrix = HM::Matrix4x4::CalculateProjPerspective(mFOV, mAspect, mNearPlane, mFarPlane);
         mProjMatrix[1][1] *= -1;
     }
 

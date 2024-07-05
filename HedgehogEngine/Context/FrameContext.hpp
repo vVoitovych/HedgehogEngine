@@ -1,10 +1,7 @@
 #pragma once
 
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#define GLM_FORCE_RADIANS
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include "HedgehogMath/Vector.hpp"
+#include "HedgehogMath/Matrix.hpp"
 
 namespace Context
 {
@@ -21,15 +18,15 @@ namespace Context
 
 		void UpdateContext(const Camera& camera);
 
-		glm::mat4 GetCameraViewMatrix() const;
-		glm::mat4 GetCameraProjMatrix() const;
-		glm::mat4 GetCameraViewProjMatrix() const;
+		HM::Matrix4x4 GetCameraViewMatrix() const;
+		HM::Matrix4x4 GetCameraProjMatrix() const;
+		HM::Matrix4x4 GetCameraViewProjMatrix() const;
 
-		glm::mat4 GetCameraInvViewMatrix() const;
-		glm::mat4 GetCameraInvProjMatrix() const;
-		glm::mat4 GetCameraInvViewProjMatrix() const;
+		HM::Matrix4x4 GetCameraInvViewMatrix() const;
+		HM::Matrix4x4 GetCameraInvProjMatrix() const;
+		HM::Matrix4x4 GetCameraInvViewProjMatrix() const;
 
-		glm::vec3 GetCameraPosition() const;
+		HM::Vector3 GetCameraPosition() const;
 
 		float GetDeltaTime() const;
 
@@ -37,15 +34,15 @@ namespace Context
 		uint32_t GetBackBufferIndex() const;
 
 	private:
-		glm::mat4 mCameraViewMatrix;
-		glm::mat4 mCameraProjMatrix;
-		glm::mat4 mCameraViewProjMatrix;
+		HM::Matrix4x4 mCameraViewMatrix;
+		HM::Matrix4x4 mCameraProjMatrix;
+		HM::Matrix4x4 mCameraViewProjMatrix;
 
-		glm::mat4 mCameraInvViewMatrix;
-		glm::mat4 mCameraInvProjMatrix;
-		glm::mat4 mCameraInvViewProjMatrix;
+		HM::Matrix4x4 mCameraInvViewMatrix;
+		HM::Matrix4x4 mCameraInvProjMatrix;
+		HM::Matrix4x4 mCameraInvViewProjMatrix;
 
-		glm::vec3 mCameraPosition;
+		HM::Vector3 mCameraPosition;
 
 		float mDeltaTime;
 		uint32_t mBackBufferIndex;

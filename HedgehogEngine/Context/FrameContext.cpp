@@ -9,45 +9,46 @@ namespace Context
 		mCameraProjMatrix = camera.GetProjectionMatrix();
 		mCameraViewProjMatrix = mCameraProjMatrix * mCameraViewMatrix;
 
-		mCameraInvViewMatrix = inverse(mCameraViewMatrix);
-		mCameraInvProjMatrix = inverse(mCameraProjMatrix);
-		mCameraInvViewProjMatrix = inverse(mCameraViewProjMatrix);
+		bool succes = true;
+		mCameraInvViewMatrix = mCameraViewMatrix.Inverse(succes);
+		mCameraInvProjMatrix = mCameraProjMatrix.Inverse(succes);
+		mCameraInvViewProjMatrix = mCameraViewProjMatrix.Inverse(succes);
 
 		mCameraPosition = camera.GetPosition();
 
 	}
 
-	glm::mat4 FrameContext::GetCameraViewMatrix() const
+	HM::Matrix4x4 FrameContext::GetCameraViewMatrix() const
 	{
 		return mCameraViewMatrix;
 	}
 
-	glm::mat4 FrameContext::GetCameraProjMatrix() const
+	HM::Matrix4x4 FrameContext::GetCameraProjMatrix() const
 	{
 		return mCameraProjMatrix;
 	}
 
-	glm::mat4 FrameContext::GetCameraViewProjMatrix() const
+	HM::Matrix4x4 FrameContext::GetCameraViewProjMatrix() const
 	{
 		return mCameraViewProjMatrix;
 	}
 
-	glm::mat4 FrameContext::GetCameraInvViewMatrix() const
+	HM::Matrix4x4 FrameContext::GetCameraInvViewMatrix() const
 	{
 		return mCameraInvViewMatrix;
 	}
 
-	glm::mat4 FrameContext::GetCameraInvProjMatrix() const
+	HM::Matrix4x4 FrameContext::GetCameraInvProjMatrix() const
 	{
 		return mCameraInvProjMatrix;
 	}
 
-	glm::mat4 FrameContext::GetCameraInvViewProjMatrix() const
+	HM::Matrix4x4 FrameContext::GetCameraInvViewProjMatrix() const
 	{
 		return mCameraInvViewProjMatrix;
 	}
 
-	glm::vec3 FrameContext::GetCameraPosition() const
+	HM::Vector3 FrameContext::GetCameraPosition() const
 	{
 		return mCameraPosition;
 	}
