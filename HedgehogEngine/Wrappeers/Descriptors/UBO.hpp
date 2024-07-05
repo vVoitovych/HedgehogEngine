@@ -8,6 +8,7 @@
 #include <vulkan/vulkan.h>
 #include <memory>
 
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace Wrappers
