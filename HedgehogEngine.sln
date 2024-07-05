@@ -43,6 +43,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HedgehogEngine", "HedgehogE
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Shaders", "Shaders\Shaders.vcxproj", "{704B8D36-CB6C-4F8A-9F90-D11DCFF4CE11}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HedgehogMath", "HedgehogMath\HedgehogMath.vcxproj", "{11DF27A4-EB5C-4905-87A3-408CB83A5175}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -131,6 +133,14 @@ Global
 		{704B8D36-CB6C-4F8A-9F90-D11DCFF4CE11}.Release|x64.Build.0 = Release|x64
 		{704B8D36-CB6C-4F8A-9F90-D11DCFF4CE11}.Release|x86.ActiveCfg = Release|Win32
 		{704B8D36-CB6C-4F8A-9F90-D11DCFF4CE11}.Release|x86.Build.0 = Release|Win32
+		{11DF27A4-EB5C-4905-87A3-408CB83A5175}.Debug|x64.ActiveCfg = Debug|x64
+		{11DF27A4-EB5C-4905-87A3-408CB83A5175}.Debug|x64.Build.0 = Debug|x64
+		{11DF27A4-EB5C-4905-87A3-408CB83A5175}.Debug|x86.ActiveCfg = Debug|Win32
+		{11DF27A4-EB5C-4905-87A3-408CB83A5175}.Debug|x86.Build.0 = Debug|Win32
+		{11DF27A4-EB5C-4905-87A3-408CB83A5175}.Release|x64.ActiveCfg = Release|x64
+		{11DF27A4-EB5C-4905-87A3-408CB83A5175}.Release|x64.Build.0 = Release|x64
+		{11DF27A4-EB5C-4905-87A3-408CB83A5175}.Release|x86.ActiveCfg = Release|Win32
+		{11DF27A4-EB5C-4905-87A3-408CB83A5175}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
