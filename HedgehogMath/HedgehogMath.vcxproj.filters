@@ -14,5 +14,13 @@
     <ClInclude Include="Vector.hpp">
       <Filter>Vector</Filter>
     </ClInclude>
+    <ClInclude Include="Matrix.hpp">
+      <Filter>Matrix</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Matrix.cpp">
+      <Filter>Matrix</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
