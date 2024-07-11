@@ -1,13 +1,12 @@
 #pragma once
 
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/glm.hpp>
+#include "HedgehogMath/Matrix.hpp"
 
 namespace Renderer
 {
 	struct ForwardPassPushConstants
 	{
-		glm::mat4 objToWorld;
+		HM::Matrix4x4 objToWorld;
 	};
 
 }

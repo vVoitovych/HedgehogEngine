@@ -1,19 +1,15 @@
 #pragma once
 
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/glm.hpp>
-#include <glm/gtx/hash.hpp>
+#include "HedgehogMath/Vector.hpp"
 
 namespace Context
 {
 	struct Light
 	{
-		alignas(16) glm::vec3 mPosition;
-		alignas(16) glm::vec3 mDirection;
-		alignas(16) glm::vec3 mColor;
-		alignas(16) glm::vec4 mData;		// type, intencity, radius, coneAngle
+		alignas(16) HM::Vector3 mPosition;
+		alignas(16) HM::Vector3 mDirection;
+		alignas(16) HM::Vector3 mColor;
+		alignas(16) HM::Vector4 mData;		// type, intencity, radius, coneAngle
 	};
 }
 

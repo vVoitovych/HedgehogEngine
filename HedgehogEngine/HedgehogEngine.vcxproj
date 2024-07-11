@@ -117,7 +117,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)ThirdParty\Vulkan\Include;$(SolutionDir)ThirdParty\glm;$(SolutionDir);$(SolutionDir)ThirdParty\glfw-3.3.8.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)ThirdParty\Vulkan\Include;$(SolutionDir);$(SolutionDir)ThirdParty\glfw-3.3.8.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -127,7 +127,7 @@
       <AdditionalDependencies>vulkan-1.lib;glfw3.lib;ImGui.lib;Logger.lib;ContentLoader.lib;Scene.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
-      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;ImGui.lib;Logger.lib;ContentLoader.lib;Scene.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;ImGui.lib;Logger.lib;ContentLoader.lib;Scene.lib;HedgehogMath.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <Lib>
       <AdditionalLibraryDirectories>$(SolutionDir)x64\Debug;$(SolutionDir)ThirdParty\glfw-3.3.8.bin.WIN64\lib-vc2019;$(SolutionDir)ThirdParty\Vulkan\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -141,7 +141,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)ThirdParty\Vulkan\Include;$(SolutionDir)ThirdParty\glm;$(SolutionDir);$(SolutionDir)ThirdParty\glfw-3.3.8.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)ThirdParty\Vulkan\Include;$(SolutionDir);$(SolutionDir)ThirdParty\glfw-3.3.8.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -153,7 +153,7 @@
       <AdditionalDependencies>vulkan-1.lib;glfw3.lib;ImGui.lib;Logger.lib;ContentLoader.lib;Scene.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
-      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;ImGui.lib;Logger.lib;ContentLoader.lib;Scene.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;ImGui.lib;Logger.lib;ContentLoader.lib;Scene.lib;HedgehogMath.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <Lib>
       <AdditionalLibraryDirectories>$(SolutionDir)ThirdParty\glfw-3.3.8.bin.WIN64\lib-vc2019;$(SolutionDir)ThirdParty\Vulkan\Lib;$(SolutionDir)x64\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>

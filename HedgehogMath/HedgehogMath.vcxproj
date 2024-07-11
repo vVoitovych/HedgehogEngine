@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{53beb76e-39fe-4be2-ac25-c45c4dfb24f2}</ProjectGuid>
-    <RootNamespace>Scene</RootNamespace>
+    <ProjectGuid>{11df27a4-eb5c-4905-87a3-408cb83a5175}</ProjectGuid>
+    <RootNamespace>HedgehogMath</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -105,16 +105,11 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
-    <Lib>
-      <AdditionalLibraryDirectories>$(SolutionDir)ThirdParty\yaml-cpp;$(SolutionDir)x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>yaml-cppd.lib;Logger.lib;ECS.lib;DialogueWindows.lib;HedgehogMath.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -125,7 +120,6 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -133,33 +127,15 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
-    <Lib>
-      <AdditionalLibraryDirectories>$(SolutionDir)x64\Release;$(SolutionDir)ThirdParty\yaml-cpp;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>yaml-cpp.lib;Logger.lib;ECS.lib;DialogueWindows.lib;HedgehogMath.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Scene.hpp" />
-    <ClInclude Include="SceneComponents\HierarchyComponent.hpp" />
-    <ClInclude Include="SceneComponents\LightComponent.hpp" />
-    <ClInclude Include="SceneComponents\MeshComponent.hpp" />
-    <ClInclude Include="SceneComponents\RenderComponent.hpp" />
-    <ClInclude Include="SceneComponents\TransformComponent.hpp" />
-    <ClInclude Include="SceneSerializer.hpp" />
-    <ClInclude Include="SceneSystems\HierarchySystem.hpp" />
-    <ClInclude Include="SceneSystems\LightSystem.hpp" />
-    <ClInclude Include="SceneSystems\MeshSystem.hpp" />
-    <ClInclude Include="SceneSystems\RenderSystem.hpp" />
-    <ClInclude Include="SceneSystems\TransformSystem.hpp" />
+    <ClInclude Include="Common.hpp" />
+    <ClInclude Include="Matrix.hpp" />
+    <ClInclude Include="Vector.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Scene.cpp" />
-    <ClCompile Include="SceneSerializer.cpp" />
-    <ClCompile Include="SceneSystems\HierarchySystem.cpp" />
-    <ClCompile Include="SceneSystems\LightSystem.cpp" />
-    <ClCompile Include="SceneSystems\MeshSystem.cpp" />
-    <ClCompile Include="SceneSystems\RenderSystem.cpp" />
-    <ClCompile Include="SceneSystems\TransformSystem.cpp" />
+    <ClCompile Include="Common.cpp" />
+    <ClCompile Include="Matrix.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

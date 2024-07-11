@@ -2,10 +2,10 @@
 
 #include "Scene/SceneComponents/TransformComponent.hpp"
 
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/transform.hpp>
+#include "HedgehogMath/Vector.hpp"
+#include "HedgehogMath/Matrix.hpp"
+#include "HedgehogMath/Common.hpp"
+
 
 namespace Scene
 {
@@ -15,12 +15,12 @@ namespace Scene
 		{
 			auto& transform = coordinator.GetComponent<TransformComponent>(entity);
 
-			glm::mat4 matrix = glm::mat4(1.0f);
-			matrix = glm::translate(matrix, transform.mPososition);
-			matrix = glm::rotate(matrix, glm::radians(transform.mRotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-			matrix = glm::rotate(matrix, glm::radians(transform.mRotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-			matrix = glm::rotate(matrix, glm::radians(transform.mRotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
-			matrix = glm::scale(matrix, transform.mScale);
+			HM::Matrix4x4 matrix = HM::Matrix4x4::GetIdentity();
+			matrix = HM::Matrix4x4::Translate(matrix, transform.mPososition);
+			matrix = HM::Matrix4x4::Rotate(matrix, HM::ToRadians(transform.mRotation.x()), { 1.0f, 0.0f, 0.0f });
+			matrix = HM::Matrix4x4::Rotate(matrix, HM::ToRadians(transform.mRotation.y()), { 0.0f, 1.0f, 0.0f });
+			matrix = HM::Matrix4x4::Rotate(matrix, HM::ToRadians(transform.mRotation.z()), { 0.0f, 0.0f, 1.0f });
+			matrix = HM::Matrix4x4::Scale(matrix, transform.mScale);
 			
 			transform.mObjMatrix = matrix;
 

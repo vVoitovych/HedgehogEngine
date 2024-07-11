@@ -3,6 +3,9 @@
 #include "Common/RendererSettings.hpp"
 #include "Containers/Light.hpp"
 
+#include "HedgehogMath/Vector.hpp"
+#include "HedgehogMath/Matrix.hpp"
+
 #include <memory>
 #include <vector>
 
@@ -50,9 +53,9 @@ namespace Context
 	private:
 		struct FrameUniform
 		{
-			alignas(16) glm::mat4 view;
-			alignas(16) glm::mat4 proj;
-			alignas(16) glm::vec4 eyePosition;
+			alignas(16) HM::Matrix4x4 view;
+			alignas(16) HM::Matrix4x4 proj;
+			alignas(16) HM::Vector3 eyePosition;
 			alignas(16) Light lights[MAX_LIGHTS_COUNT];
 			size_t lightCount;
 		};

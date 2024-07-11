@@ -23,7 +23,7 @@ namespace Scene
 			auto& transform = coordinator.GetComponent<TransformComponent>(entity);
 			auto& transformMatrix = transform.mObjMatrix;
 			light.mPosition = transform.mPososition;
-			glm::vec3 dir = { transformMatrix[0][0], transformMatrix[0][1], transformMatrix[0][2] };
+			HM::Vector3 dir = { transformMatrix[0][0], transformMatrix[0][1], transformMatrix[0][2] };
 			light.mDirection = dir;
 		}
 	}
