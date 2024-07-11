@@ -62,15 +62,12 @@ namespace HM
         elementType* GetBuffer();
         const elementType* GetBuffer() const;
 
+        size_t size() const;
+
         elementType* begin();
         elementType* end();
         const elementType* begin() const;
         const elementType* end() const;
-
-        size_t size() const;
-
-        elementType Dot(const thisType& other) const;
-        thisType Cross(const thisType& other) const;
 
         elementType LengthSlow() const;
         elementType LengthSqr() const;
@@ -108,8 +105,6 @@ namespace HM
         thisType operator<(const thisType& other) const;
         thisType operator>=(const thisType& other) const;
         thisType operator<=(const thisType& other) const;
-        thisType EqualMask(const thisType& other) const;
-        thisType NotEqualMask(const thisType& other) const;
 
     protected:
         elementType m_data[componentCount];
@@ -122,6 +117,28 @@ namespace HM
         template <size_t currentIndex>
         void InitializeTemplateList();
     };
+
+    template <size_t componentCount, typename elementType>
+    elementType Dot(const Vector<componentCount, elementType>& first, const Vector<componentCount, elementType>& second)
+    {
+        elementType result = 0;
+        for (size_t i = 0; i < componentCount; i++)
+        {
+            result += first[i] * second[i];
+        }
+
+        return result;
+    }
+
+    template <size_t componentCount, typename elementType>
+    Vector<componentCount, elementType> Cross(const Vector<componentCount, elementType>& first, const Vector<componentCount, elementType>& second)
+    {
+        static_assert(componentCount >= 3);
+
+        return Vector<componentCount, elementType>{ first[1] * second[2] - first[2] * second[1],
+                        first[2] * second[0] - first[0] * second[2],
+                        first[0] * second[1] - first[1] * second[0] };
+    }
 
     template <size_t componentCount, typename elementType>
     template <typename otherType>
@@ -333,29 +350,6 @@ namespace HM
     size_t Vector<componentCount, elementType>::size() const
     {
         return componentCount;
-    }
-
-    template <size_t componentCount, typename elementType>
-    elementType Vector<componentCount, elementType>::Dot(const thisType& other) const
-    {
-        elementType result = 0;
-        for (size_t i = 0; i < componentCount; i++)
-        {
-            result += (*this)[i] * other[i];
-        }
-
-        return result;
-    }
-
-    template <size_t componentCount, typename elementType>
-    Vector<componentCount, elementType> Vector<componentCount, elementType>::Cross(
-        const thisType& other) const
-    {
-        static_assert(componentCount >= 3);
-
-        return thisType{ (*this)[1] * other[2] - (*this)[2] * other[1],
-                        (*this)[2] * other[0] - (*this)[0] * other[2],
-                        (*this)[0] * other[1] - (*this)[1] * other[0] };
     }
 
     template <size_t componentCount, typename elementType>
@@ -639,29 +633,6 @@ namespace HM
         return result;
     }
 
-    template <size_t componentCount, typename elementType>
-    Vector<componentCount, elementType> Vector<componentCount, elementType>::EqualMask(
-        const thisType& other) const
-    {
-        thisType result;
-        for (size_t i = 0; i < componentCount; ++i)
-        {
-            result[i] = (*this)[i] == other[i] ? 1.0f : 0.0f;
-        }
-        return result;
-    }
-
-    template <size_t componentCount, typename elementType>
-    Vector<componentCount, elementType> Vector<componentCount, elementType>::NotEqualMask(
-        const thisType& other) const
-    {
-        thisType result;
-        for (size_t i = 0; i < componentCount; ++i)
-        {
-            result[i] = (*this)[i] != other[i] ? 1.0f : 0.0f;
-        }
-        return result;
-    }
 
     template <size_t componentCount, typename elementType>
     template <size_t currentIndex, size_t firstComponentCount, typename... Args>

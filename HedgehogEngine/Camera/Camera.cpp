@@ -56,7 +56,7 @@ namespace Context
         mDirection.y() = sin(HM::ToRadians(mYaw)) * cos(HM::ToRadians(mPitch));
         mDirection.z() = sin(HM::ToRadians(mPitch));
 
-        mRightVector = (mDirection.Cross(mUpVector)).Normalize();
+        mRightVector = (Cross(mDirection, mUpVector)).Normalize();
 
         UpdateMatricies();
     }
@@ -99,7 +99,7 @@ namespace Context
     void Camera::UpdateMatricies()
     {
         mViewMatrix = HM::Matrix4x4::LookAt(mPos, mPos + mDirection, mUpVector);
-        mProjMatrix = HM::Matrix4x4::CalculateProjPerspective(mFOV, mAspect, mNearPlane, mFarPlane);
+        mProjMatrix = HM::Matrix4x4::Perspective(mFOV / mAspect, mAspect, mNearPlane, mFarPlane);
         mProjMatrix[1][1] *= -1;
     }
 

@@ -58,7 +58,7 @@ namespace Context
 		HM::Vector3 mPos = HM::Vector3(-10.0f, 0.0f, 0.0f);
 		HM::Vector3 mDirection = HM::Vector3(1.0f, 0.0f, 0.0f);
 		HM::Vector3 mUpVector = HM::Vector3(0.0f, 0.0f, 1.0f);
-		HM::Vector3 mRightVector = (mDirection.Cross(mUpVector)).Normalize();
+		HM::Vector3 mRightVector = (Cross(mDirection, mUpVector)).Normalize();
 
 		HM::Matrix4x4 mViewMatrix;
 		HM::Matrix4x4 mProjMatrix;

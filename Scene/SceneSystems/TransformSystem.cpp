@@ -15,13 +15,14 @@ namespace Scene
 		{
 			auto& transform = coordinator.GetComponent<TransformComponent>(entity);
 
-			HM::Matrix4x4 translation = HM::Matrix4x4::GetTranslation(transform.mPososition.x(), transform.mPososition.y(), transform.mPososition.z());
-			HM::Matrix4x4 xRotation = HM::Matrix4x4::GetRotationX(HM::ToRadians(transform.mRotation.x()));
-			HM::Matrix4x4 yRotation = HM::Matrix4x4::GetRotationY(HM::ToRadians(transform.mRotation.y()));
-			HM::Matrix4x4 zRotation = HM::Matrix4x4::GetRotationX(HM::ToRadians(transform.mRotation.z()));
-			HM::Matrix4x4 scale = HM::Matrix4x4::GetScale(transform.mScale.x(), transform.mScale.y(), transform.mScale.z());
+			HM::Matrix4x4 matrix = HM::Matrix4x4::GetIdentity();
+			matrix = HM::Matrix4x4::Translate(matrix, transform.mPososition);
+			matrix = HM::Matrix4x4::Rotate(matrix, HM::ToRadians(transform.mRotation.x()), { 1.0f, 0.0f, 0.0f });
+			matrix = HM::Matrix4x4::Rotate(matrix, HM::ToRadians(transform.mRotation.y()), { 0.0f, 1.0f, 0.0f });
+			matrix = HM::Matrix4x4::Rotate(matrix, HM::ToRadians(transform.mRotation.z()), { 0.0f, 0.0f, 1.0f });
+			matrix = HM::Matrix4x4::Scale(matrix, transform.mScale);
 			
-			transform.mObjMatrix = scale * zRotation * yRotation * xRotation * translation;
+			transform.mObjMatrix = matrix;
 
 		}
 	}

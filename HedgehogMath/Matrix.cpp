@@ -1,6 +1,7 @@
 #include "Matrix.hpp"
 
 #include <algorithm>
+#include <cassert>
 
 namespace HM
 {
@@ -266,34 +267,6 @@ namespace HM
 
         return result;
     }
-
-#ifdef BLK_USE_SSE
-
-    Matrix4x4 Matrix4x4::Transpose() const
-    {
-        // Same algorithm as in _MM_TRANSPOSE4_PS
-
-        const __m128& row0 = m_data[0].GetInternal();
-        const __m128& row1 = m_data[1].GetInternal();
-        const __m128& row2 = m_data[2].GetInternal();
-        const __m128& row3 = m_data[3].GetInternal();
-        __m128 tmp3, tmp2, tmp1, tmp0;
-
-        tmp0 = _mm_shuffle_ps((row0), (row1), 0x44);
-        tmp2 = _mm_shuffle_ps((row0), (row1), 0xEE);
-        tmp1 = _mm_shuffle_ps((row2), (row3), 0x44);
-        tmp3 = _mm_shuffle_ps((row2), (row3), 0xEE);
-
-        return Matrix4x4{
-            _mm_shuffle_ps(tmp0, tmp1, 0x88),
-            _mm_shuffle_ps(tmp0, tmp1, 0xDD),
-            _mm_shuffle_ps(tmp2, tmp3, 0x88),
-            _mm_shuffle_ps(tmp2, tmp3, 0xDD),
-        };
-    }
-
-#else
-
     Matrix4x4 Matrix4x4::Transpose() const
     {
         return Matrix4x4{
@@ -304,8 +277,6 @@ namespace HM
         };
     }
 
-#endif // BLK_USE_SSE
-
     Matrix4x4 Matrix4x4::GetIdentity()
     {
         return Matrix4x4{
@@ -313,6 +284,16 @@ namespace HM
             {0.0f, 1.0f, 0.0f, 0.0f},
             {0.0f, 0.0f, 1.0f, 0.0f},
             {0.0f, 0.0f, 0.0f, 1.0f},
+        };
+    }
+
+    Matrix4x4 Matrix4x4::GetZero()
+    {
+        return Matrix4x4{
+            {0.0f, 0.0f, 0.0f, 0.0f},
+            {0.0f, 0.0f, 0.0f, 0.0f},
+            {0.0f, 0.0f, 0.0f, 0.0f},
+            {0.0f, 0.0f, 0.0f, 0.0f},
         };
     }
 
@@ -390,8 +371,8 @@ namespace HM
     {
         Vector4 dir = (center - eye).Normalize();
         Vector4 up_norm = up.Normalize();
-        Vector4 cross = (dir.Cross(up_norm)).Normalize();
-        up_norm = cross.Cross(dir);
+        Vector4 cross = (Cross(dir, up_norm)).Normalize();
+        up_norm = Cross(cross, dir);
 
         Matrix4x4 m = GetIdentity();
 
@@ -404,11 +385,26 @@ namespace HM
         m[0][2] = -dir[0];
         m[1][2] = -dir[1];
         m[2][2] = -dir[2];
-        m[3][0] = -cross.Dot(eye);
-        m[3][1] = -up_norm.Dot(eye);
-        m[3][2] = dir.Dot(eye);
+        m[3][0] = -Dot(cross, eye);
+        m[3][1] = -Dot(up_norm, eye);
+        m[3][2] = Dot(dir, eye);
 
         return m;
+    }
+
+    Matrix4x4 Matrix4x4::Perspective(float fov, float aspect, float zNear, float zFar)
+    {
+        assert(abs(aspect - std::numeric_limits<float>::epsilon()) > static_cast<float>(0));
+
+        const float tanHalfFov = tan(fov / 2.0f);
+
+        Matrix4x4 result = GetZero();
+        result[0][0] = 1.0f / (aspect * tanHalfFov);
+        result[1][1] = 1.0f / (tanHalfFov);
+        result[2][2] = -zFar / (zFar - zNear);
+        result[2][3] = -1.0f;
+        result[3][2] = -(zFar * zNear) / (zFar - zNear);
+        return result;
     }
 
     Matrix4x4 Matrix4x4::CalculateView(const Vector4& right, const Vector4& up,
@@ -420,7 +416,7 @@ namespace HM
             {right[0], up[0], forward[0], 0.0f},
             {right[1], up[1], forward[1], 0.0f},
             {right[2], up[2], forward[2], 0.0f},
-            {minusPos.Dot(right), minusPos.Dot(up), minusPos.Dot(forward), 1.0f},
+            {Dot(minusPos, right), Dot(minusPos, up), Dot(minusPos, forward), 1.0f},
         };
 
         return view;
@@ -479,6 +475,53 @@ namespace HM
         };
 
         return projMatrix;
+    }
+
+    Matrix4x4 Matrix4x4::Translate(const Matrix4x4& mat, const Vector3& vec)
+    {
+        Matrix4x4 result(mat);
+        result[3] = mat[0] * vec[0] + mat[1] * vec[1] + mat[2] * vec[2] + mat[3];
+        return result;
+    }
+
+    Matrix4x4 Matrix4x4::Rotate(const Matrix4x4& mat, float angle, const Vector3& vec)
+    {
+        const float a = angle;
+        const float c = cos(a);
+        const float s = sin(a);
+
+        Vector3 axis(vec.Normalize());
+        Vector3 temp(axis * (1.0f - c));
+
+        Matrix4x4 rotate;
+        rotate[0][0] = c + temp[0] * axis[0];
+        rotate[0][1] = temp[0] * axis[1] + s * axis[2];
+        rotate[0][2] = temp[0] * axis[2] - s * axis[1];
+
+        rotate[1][0] = temp[1] * axis[0] - s * axis[2];
+        rotate[1][1] = c + temp[1] * axis[1];
+        rotate[1][2] = temp[1] * axis[2] + s * axis[0];
+
+        rotate[2][0] = temp[2] * axis[0] + s * axis[1];
+        rotate[2][1] = temp[2] * axis[1] - s * axis[0];
+        rotate[2][2] = c + temp[2] * axis[2];
+
+        Matrix4x4 Result;
+        Result[0] = mat[0] * rotate[0][0] + mat[1] * rotate[0][1] + mat[2] * rotate[0][2];
+        Result[1] = mat[0] * rotate[1][0] + mat[1] * rotate[1][1] + mat[2] * rotate[1][2];
+        Result[2] = mat[0] * rotate[2][0] + mat[1] * rotate[2][1] + mat[2] * rotate[2][2];
+        Result[3] = mat[3];
+        return Result;
+    }
+
+    Matrix4x4 Matrix4x4::Scale(const Matrix4x4& mat, const Vector3& vec)
+    {
+        Matrix4x4 rotate;
+        rotate[0] = mat[0] * vec[0];
+        rotate[1] = mat[1] * vec[1];
+        rotate[2] = mat[2] * vec[2];
+        rotate[3] = mat[3];
+        return rotate;
     }
 
     Matrix4x4 Matrix4x4::GetUVToTexCoord()
