@@ -113,7 +113,7 @@
     </Link>
     <Lib>
       <AdditionalLibraryDirectories>$(SolutionDir)ThirdParty\yaml-cpp;$(SolutionDir)x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>yaml-cppd.lib;Logger.lib;ECS.lib;DialogueWindows.lib;HedgehogMath.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>yaml-cppd.lib;ECS.lib;DialogueWindows.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -135,7 +135,7 @@
     </Link>
     <Lib>
       <AdditionalLibraryDirectories>$(SolutionDir)x64\Release;$(SolutionDir)ThirdParty\yaml-cpp;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>yaml-cpp.lib;Logger.lib;ECS.lib;DialogueWindows.lib;HedgehogMath.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>yaml-cpp.lib;ECS.lib;DialogueWindows.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
