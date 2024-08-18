@@ -5,7 +5,7 @@ project "ECS"
    targetdir "Binaries/%{cfg.buildcfg}"
    staticruntime "off"
 
-   files { "**.hpp", "**.cpp" }
+   files { "**.h", "**.cpp" }
 
    includedirs  {   }
 

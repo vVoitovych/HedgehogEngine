@@ -9,6 +9,7 @@ project "ContentLoader"
 
    includedirs
    {
+        "../ThirdParty"
    }
 
    targetdir ("../Binaries/" .. OutputDir .. "/%{prj.name}")

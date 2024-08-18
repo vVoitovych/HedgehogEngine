@@ -9,6 +9,12 @@ project "DialogueWindows"
 
    includedirs
    {
+    "../ThirdParty"
+   }
+
+   links
+   {
+      "tinyfiledialogs"
    }
 
    targetdir ("../Binaries/" .. OutputDir .. "/%{prj.name}")

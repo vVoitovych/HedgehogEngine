@@ -2,7 +2,7 @@
 #include "CommonFunctions.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "Libraries/stb/stb_image.hpp"
+#include "stb/stb_image.hpp"
 
 #include <stdexcept>
 
