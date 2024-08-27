@@ -17,8 +17,7 @@ def download_vulkan_sdk(installer_url, save_path):
 
 def install_vulkan_sdk(installer_path):
     print("Installing Vulkan SDK...")
-    subprocess.run([installer_path])
-    print("Vulkan SDK installation complete.")
+    os.startfile(os.path.abspath(installer_path))
 
 def main():
     if is_vulkan_sdk_installed():
@@ -32,8 +31,5 @@ def main():
         download_vulkan_sdk(installer_url, save_path)
         install_vulkan_sdk(save_path)
         
-        os.remove(save_path)
-        print("Installer file removed.")
-
 if __name__ == "__main__":
     main()
