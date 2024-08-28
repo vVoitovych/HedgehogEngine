@@ -590,3 +590,13 @@ Binaries
 /ThirdParty/ImGui/*.vcxproj
 /ThirdParty/tinyfiledialogs/*.vcxproj
 /ThirdParty/tinyfiledialogs/*.user
+/ContentLoader/ContentLoader.vcxproj.user
+/ECS/ECS.vcxproj.user
+/HedgehogMath/HadgehogMath.vcxproj.user
+/Logger/Logger.vcxproj.user
+/Scripts/__pycache__/SetupVulkan.cpython-312.pyc
+/Scripts/vulkan_sdk.exe
+/ThirdParty/GLFW.vcxproj
+/ThirdParty/GLFW.vcxproj.filters
+/ThirdParty/GLFW.vcxproj.user
+/ThirdParty/ImGui/ImGui.vcxproj.user

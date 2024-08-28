@@ -8,8 +8,10 @@ workspace "HadgehogEngine"
       buildoptions {  }
 
 OutputDir = "%{cfg.system}-%{cfg.architecture}/%{cfg.buildcfg}"
+VulkanSDK = os.getenv("VULKAN_SDK")
 
 group "ThirdParty"
+   include "ThirdParty/Build-glfw.lua"
 	include "ThirdParty/ImGui/Build-ImGui.lua"
    include "ThirdParty/tinyfiledialogs/Build-tinyfiledialogs.lua"
 group ""

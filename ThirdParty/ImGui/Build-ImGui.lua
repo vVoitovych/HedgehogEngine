@@ -8,7 +8,9 @@ project "ImGui"
    files { "**.h", "**.cpp" }
 
    includedirs
-   {   }
+   { 
+   "../glfw/include"  
+    }
 
    targetdir ("../Binaries/" .. OutputDir .. "/%{prj.name}")
    objdir ("../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")
