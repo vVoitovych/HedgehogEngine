@@ -556,3 +556,7 @@ Binaries
 /Logger/Logger.vcxproj.user
 /Scripts/__pycache__/SetupVulkan.cpython-312.pyc
 /Scripts/vulkan_sdk.exe
+/ThirdParty/ImGui/*.vcxproj
+/ThirdParty/glfw/*.vcxproj
+/ThirdParty/glfw/*.filters
+/ThirdParty/tinyfiledialogs/*.vcxproj

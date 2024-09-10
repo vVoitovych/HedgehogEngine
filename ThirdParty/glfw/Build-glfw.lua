@@ -16,7 +16,6 @@ project "GLFW"
         "glfw/src/vulkan.c",
         "glfw/src/window.c",
         "glfw/src/xkb_unicode.c",
-        -- Add other source files as needed
     }
 
     filter "system:windows"
