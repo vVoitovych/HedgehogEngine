@@ -1,3 +1,5 @@
+include "Dependencies.lua"
+
 workspace "HadgehogEngine"
    architecture "x64"
    configurations { "Debug", "Release" }

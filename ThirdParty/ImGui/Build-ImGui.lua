@@ -5,10 +5,6 @@ project "ImGui"
    targetdir "Binaries/%{cfg.buildcfg}"
    staticruntime "off"
 
-    IncludeDir = {}
-    IncludeDir["GLFW"] = "../glfw/glfw/include"
-    IncludeDir["Vulkan"] = VulkanSDK .. "/Include"
-
    files 
    { 
     "imgui/imconfig.h", 
@@ -31,7 +27,7 @@ project "ImGui"
    includedirs
    { 
     "%{IncludeDir.GLFW}",
-    "%{IncludeDir.Vulkan}",
+    "%{IncludeDir.VulkanSDK}",
     "imgui" 
    }
 
