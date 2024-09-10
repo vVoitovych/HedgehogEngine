@@ -560,3 +560,4 @@ Binaries
 /ThirdParty/glfw/*.vcxproj
 /ThirdParty/glfw/*.filters
 /ThirdParty/tinyfiledialogs/*.vcxproj
+/ThirdParty/ImGui/*.filters
