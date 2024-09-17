@@ -13,6 +13,8 @@ project "Scene"
 
    includedirs
    {
+    "%{IncludeDir.yaml_cpp}",
+    ".."
    }
 
    targetdir ("../Binaries/" .. OutputDir .. "/%{prj.name}")
