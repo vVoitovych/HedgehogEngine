@@ -16,6 +16,7 @@ group "ThirdParty"
    include "ThirdParty/glfw/Build-glfw.lua"
 	include "ThirdParty/ImGui/Build-ImGui.lua"
    include "ThirdParty/tinyfiledialogs/Build-tinyfiledialogs.lua"
+   include "ThirdParty/YamlCpp/Build-YamlCpp.lua"
 group ""
 
 include "Client/Build-Client.lua"

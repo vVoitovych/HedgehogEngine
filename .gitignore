@@ -561,3 +561,5 @@ Binaries
 /ThirdParty/glfw/*.filters
 /ThirdParty/tinyfiledialogs/*.vcxproj
 /ThirdParty/ImGui/*.filters
+/ThirdParty/YamlCpp/*.vcxproj
+/ThirdParty/YamlCpp/*.filters
