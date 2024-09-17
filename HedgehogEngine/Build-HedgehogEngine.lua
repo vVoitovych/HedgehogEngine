@@ -31,7 +31,12 @@ project "HedgehogEngine"
 
    includedirs
    {
-     
+     "%{IncludeDir.VulkanSDK}",
+     "%{IncludeDir.GLFW}",
+     "%{IncludeDir.ImGui}".."/imgui",
+     "%{IncludeDir.yaml_cpp}",
+     "../HedgehogEngine",
+     ".."
    }
 
    targetdir ("../Binaries/" .. OutputDir .. "/%{prj.name}")

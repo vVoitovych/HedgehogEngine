@@ -35,9 +35,9 @@
 
 #include "Logger/Logger.hpp"
 
-#include "ThirdParty/ImGui/imgui.h"
-#include "ThirdParty/ImGui/imgui_impl_vulkan.h"
-#include "ThirdParty/ImGui/imgui_impl_glfw.h"
+#include "imgui.h"
+#include "backends/imgui_impl_vulkan.h"
+#include "backends/imgui_impl_glfw.h"
 
 #include <vector>
 #include <algorithm>
@@ -89,7 +89,8 @@ namespace Renderer
 		initInfo.MinImageCount = swapChain.GetMinImagesCount();
 		initInfo.ImageCount = static_cast<uint32_t>(swapChain.GetSwapChainImagesSize());
 		initInfo.CheckVkResultFn = nullptr;
-		ImGui_ImplVulkan_Init(&initInfo, mRenderPass->GetNativeRenderPass());
+		initInfo.RenderPass = mRenderPass->GetNativeRenderPass();
+		ImGui_ImplVulkan_Init(&initInfo);
 
 		UploadFonts();
 
