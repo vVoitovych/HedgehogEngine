@@ -1,35 +1,40 @@
 project "Scene"
-   kind "StaticLib"
-   language "C++"
-   cppdialect "C++20"
-   targetdir "Binaries/%{cfg.buildcfg}"
-   staticruntime "off"
+    kind "StaticLib"
+    language "C++"
+    cppdialect "C++20"
+    targetdir "Binaries/%{cfg.buildcfg}"
+    staticruntime "off"
 
-   files    { 
-    "**.hpp", "**.cpp",
-    "SceneComponents/**.hpp", "SceneComponents/**.cpp",
-    "SceneSystems/**.hpp", "SceneSystems/**.cpp",
+    files    { 
+        "**.hpp", "**.cpp"
     }
 
-   includedirs
-   {
-    "%{IncludeDir.yaml_cpp}",
-    ".."
-   }
+    includedirs
+    {
+        "%{IncludeDir.yaml_cpp}",
+        ".."
+    }
 
-   targetdir ("../Binaries/" .. OutputDir .. "/%{prj.name}")
-   objdir ("../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")
+    links {
+        "ECS",
+        "HadgehogMath", 
+        "yaml-cpp",
+        "Logger"
+    }
 
-   filter "system:windows"
+    targetdir ("../Binaries/" .. OutputDir .. "/%{prj.name}")
+    objdir ("../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")
+
+    filter "system:windows"
        systemversion "latest"
        defines { }
 
-   filter "configurations:Debug"
+    filter "configurations:Debug"
        defines { "DEBUG" }
        runtime "Debug"
        symbols "On"
 
-   filter "configurations:Release"
+    filter "configurations:Release"
        defines { "RELEASE" }
        runtime "Release"
        optimize "On"

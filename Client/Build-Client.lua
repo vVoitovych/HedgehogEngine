@@ -9,8 +9,13 @@ project "Client"
 
    includedirs
    {
-      "Source"
+      ".."
    }
+
+   links { 
+    "HedgehogEngine",
+    "Logger"
+    }
 
    targetdir ("../Binaries/" .. OutputDir .. "/%{prj.name}")
    objdir ("../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")
