@@ -25,8 +25,8 @@ def main():
     else:
         print("Vulkan SDK not found.")
         
-        installer_url = "https://sdk.lunarg.com/sdk/download/latest/windows/vulkan_sdk.exe"
-        save_path = "vulkan_sdk.exe"
+        installer_url = "https://sdk.lunarg.com/sdk/download/1.3.231.1/windows/VulkanSDK-1.3.231.1-Installer.exe"
+        save_path = "VulkanSDK-1.3.231.1-Installer.exe"
         
         download_vulkan_sdk(installer_url, save_path)
         install_vulkan_sdk(save_path)
