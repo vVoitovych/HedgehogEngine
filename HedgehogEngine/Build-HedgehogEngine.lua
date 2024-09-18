@@ -26,6 +26,7 @@ project "HedgehogEngine"
     }
 
     links { 
+        "ContentLoader",
         "DialogueWindows",
         "HadgehogMath",
         "Logger",
