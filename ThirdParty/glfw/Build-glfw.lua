@@ -56,12 +56,14 @@ project "glfw"
             "_CRT_SECURE_NO_WARNINGS"
         }
 
-    filter "configurations:Debug"
-        runtime "Debug"
-        symbols "on"
+   filter "configurations:Debug"
+       defines { "DEBUG" }
+       runtime "Debug"
+       symbols "On"
 
-    filter "configurations:Release"
-        runtime "Release"
-        optimize "on"
+   filter "configurations:Release"
+       defines { "RELEASE" }
+       runtime "Release"
+       optimize "On"
 
         

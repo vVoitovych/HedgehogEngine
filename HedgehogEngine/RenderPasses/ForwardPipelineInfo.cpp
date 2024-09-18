@@ -27,6 +27,8 @@ namespace Renderer
 		mInputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 		mInputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 		mInputAssembly.primitiveRestartEnable = VK_FALSE;
+		mInputAssembly.pNext = nullptr;
+		mInputAssembly.flags = 0;
 
 		mViewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
 		mViewportInfo.viewportCount = 1;
@@ -78,6 +80,8 @@ namespace Renderer
 		mDynamicStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
 		mDynamicStateInfo.dynamicStateCount = static_cast<uint32_t>(mDynamicStates.size());
 		mDynamicStateInfo.pDynamicStates = mDynamicStates.data();
+		mDynamicStateInfo.pNext = nullptr;
+		mDynamicStateInfo.flags = 0;
 	}
 
 	ForwardPipelineInfo::~ForwardPipelineInfo()
