@@ -25,5 +25,4 @@ project "Logger"
        defines { "RELEASE" }
        runtime "Release"
        optimize "On"
-       symbols "On"
 

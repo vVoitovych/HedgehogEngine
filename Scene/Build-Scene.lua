@@ -16,6 +16,7 @@ project "Scene"
     }
 
     links {
+        "DialogueWindows",
         "ECS",
         "HadgehogMath", 
         "yaml-cpp",
@@ -38,5 +39,4 @@ project "Scene"
        defines { "RELEASE" }
        runtime "Release"
        optimize "On"
-       symbols "On"
 

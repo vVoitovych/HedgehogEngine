@@ -563,3 +563,4 @@ Binaries
 /ThirdParty/ImGui/*.filters
 /ThirdParty/YamlCpp/*.vcxproj
 /ThirdParty/YamlCpp/*.filters
+/Client/Client.vcxproj.user

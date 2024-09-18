@@ -12,10 +12,6 @@ project "ContentLoader"
         "../ThirdParty"
     }
 
-    links {
-    "tinyfiledialogs"
-    }
-
     targetdir ("../Binaries/" .. OutputDir .. "/%{prj.name}")
     objdir ("../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")
 
@@ -32,4 +28,3 @@ project "ContentLoader"
        defines { "RELEASE" }
        runtime "Release"
        optimize "On"
-       symbols "On"

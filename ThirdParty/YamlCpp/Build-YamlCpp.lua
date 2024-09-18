@@ -30,5 +30,4 @@ project "yaml-cpp"
        defines { "RELEASE", "YAML_CPP_STATIC_DEFINE" }
        runtime "Release"
        optimize "On"
-       symbols "On"
 

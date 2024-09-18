@@ -33,4 +33,3 @@ project "Client"
        defines { "RELEASE" }
        runtime "Release"
        optimize "On"
-       symbols "On"

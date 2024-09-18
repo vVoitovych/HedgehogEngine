@@ -33,5 +33,4 @@ project "DialogueWindows"
        defines { "RELEASE" }
        runtime "Release"
        optimize "On"
-       symbols "On"
 

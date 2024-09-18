@@ -25,5 +25,4 @@ project "HadgehogMath"
        defines { "RELEASE" }
        runtime "Release"
        optimize "On"
-       symbols "On"
 

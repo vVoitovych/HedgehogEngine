@@ -25,5 +25,4 @@ project "ECS"
        defines { "RELEASE" }
        runtime "Release"
        optimize "On"
-       symbols "On"
 
