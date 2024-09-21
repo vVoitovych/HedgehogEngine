@@ -23,6 +23,8 @@ namespace Renderer
 		mVertexInputInfo.pVertexBindingDescriptions = &mBindingDesc;
 		mVertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(mAttributeDesc.size());
 		mVertexInputInfo.pVertexAttributeDescriptions = mAttributeDesc.data();
+		mVertexInputInfo.flags = 0;
+		mVertexInputInfo.pNext = nullptr;
 
 		mInputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 		mInputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -35,19 +37,30 @@ namespace Renderer
 		mViewportInfo.pViewports = nullptr;
 		mViewportInfo.scissorCount = 1;
 		mViewportInfo.pScissors = nullptr;
+		mViewportInfo.flags = 0;
+		mViewportInfo.pNext = nullptr;
 
 		mRasterizerInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 		mRasterizerInfo.depthClampEnable = VK_FALSE;
+		mRasterizerInfo.depthBiasClamp = 0.0f;
 		mRasterizerInfo.rasterizerDiscardEnable = VK_FALSE;
 		mRasterizerInfo.polygonMode = VK_POLYGON_MODE_FILL;
 		mRasterizerInfo.lineWidth = 1.0f;
 		mRasterizerInfo.cullMode = VK_CULL_MODE_FRONT_BIT;
 		mRasterizerInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
 		mRasterizerInfo.depthBiasEnable = VK_FALSE;
+		mRasterizerInfo.flags = 0;
+		mRasterizerInfo.pNext = nullptr;
 
 		mMultisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
 		mMultisampling.sampleShadingEnable = VK_FALSE;
 		mMultisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+		mMultisampling.minSampleShading = 1.0f;
+		mMultisampling.pSampleMask = nullptr;
+		mMultisampling.alphaToCoverageEnable = VK_FALSE;
+		mMultisampling.alphaToOneEnable = VK_FALSE;
+		mMultisampling.flags = 0;
+		mMultisampling.pNext = nullptr;
 
 		mDepthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 		mDepthStencil.depthTestEnable = VK_TRUE;
@@ -55,6 +68,14 @@ namespace Renderer
 		mDepthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
 		mDepthStencil.depthBoundsTestEnable = VK_FALSE;
 		mDepthStencil.stencilTestEnable = VK_FALSE;
+		mDepthStencil.front.failOp = VK_STENCIL_OP_KEEP;
+		mDepthStencil.front.passOp = VK_STENCIL_OP_KEEP;
+		mDepthStencil.front.depthFailOp = VK_STENCIL_OP_KEEP;
+		mDepthStencil.front.compareOp = VK_COMPARE_OP_ALWAYS;
+		mDepthStencil.back = mDepthStencil.front;
+
+		mDepthStencil.flags = 0;
+		mDepthStencil.pNext = nullptr;
 
 		mColorBlendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 		mColorBlendAttachmentState.blendEnable = VK_FALSE;
@@ -74,6 +95,8 @@ namespace Renderer
 		mColorBlending.blendConstants[1] = 0.0f;
 		mColorBlending.blendConstants[2] = 0.0f;
 		mColorBlending.blendConstants[3] = 0.0f;
+		mColorBlending.flags = 0;
+		mColorBlending.pNext = nullptr;
 
 		mDynamicStates = { VK_DYNAMIC_STATE_VIEWPORT ,VK_DYNAMIC_STATE_SCISSOR };
 
