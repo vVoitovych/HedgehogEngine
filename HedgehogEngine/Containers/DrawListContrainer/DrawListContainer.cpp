@@ -1,7 +1,7 @@
 #include "DrawListContainer.hpp"
-#include "MaterialContainer.hpp"
+#include "Containers/MaterialContainer/MaterialContainer.hpp"
 
-#include "Containers/MaterialData.hpp"
+#include "Containers/MaterialContainer/MaterialData.hpp"
 
 #include "Scene/Scene.hpp"
 #include "Scene/SceneComponents/TransformComponent.hpp"

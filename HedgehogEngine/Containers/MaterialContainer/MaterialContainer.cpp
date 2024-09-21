@@ -10,7 +10,7 @@
 #include "Wrappeers/Resources/Image/Image.hpp"
 #include "Wrappeers/Resources/Sampler/Sampler.hpp"
 #include "Wrappeers/Device/Device.hpp"
-#include "Containers/TextureContainer.hpp"
+#include "Containers/TextureContainer/TextureContainer.hpp"
 #include "Context/VulkanContext.hpp"
 #include "Common/RendererSettings.hpp"
 

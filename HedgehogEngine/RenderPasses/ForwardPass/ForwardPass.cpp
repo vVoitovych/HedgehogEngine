@@ -25,9 +25,9 @@
 #include "Wrappeers/Resources/Image/Image.hpp"
 #include "Wrappeers/Resources/Sampler/Sampler.hpp"
 
-#include "Containers/MeshContainer.hpp"
-#include "Containers/MaterialContainer.hpp"
-#include "Containers/DrawListContainer.hpp"
+#include "Containers/MeshContainer/MeshContainer.hpp"
+#include "Containers/MaterialContainer/MaterialContainer.hpp"
+#include "Containers/DrawListContrainer/DrawListContainer.hpp"
 #include "Common/RendererSettings.hpp"
 
 #include "Scene/Scene.hpp"

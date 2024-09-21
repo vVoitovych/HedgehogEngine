@@ -1,5 +1,5 @@
 #include "WindowManager.hpp"
-#include "RenderPasses/GuiPass.hpp"
+#include "RenderPasses/GuiPass/GuiPass.hpp"
 #include "ContentLoader/TextureLoader.hpp"
 
 #include "HedgehogMath/Vector.hpp"

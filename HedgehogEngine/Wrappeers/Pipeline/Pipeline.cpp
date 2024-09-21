@@ -4,7 +4,7 @@
 #include "Wrappeers/Device/Device.hpp"
 #include "Wrappeers/RenderPass/RenderPass.hpp"
 #include "Wrappeers/Descriptors/DescriptorSetLayout.hpp"
-#include "Containers/VertexDescription.hpp"
+#include "Containers/MeshContainer/VertexDescription.hpp"
 #include "Common/EngineDebugBreak.hpp"
 
 #include "Logger/Logger.hpp"

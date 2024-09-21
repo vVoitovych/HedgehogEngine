@@ -8,12 +8,12 @@
 #include "Context/EngineContext.hpp"
 
 #include "ResourceManager/ResourceManager.hpp"
-#include "Containers/MaterialContainer.hpp"
-#include "Containers/TextureContainer.hpp"
-#include "Containers/MaterialData.hpp"
-#include "Containers/MeshContainer.hpp"
-#include "Containers/Mesh.hpp"
-#include "Containers/VertexDescription.hpp"
+#include "Containers/MaterialContainer/MaterialContainer.hpp"
+#include "Containers/TextureContainer/TextureContainer.hpp"
+#include "Containers/MaterialContainer/MaterialData.hpp"
+#include "Containers/MeshContainer/MeshContainer.hpp"
+#include "Containers/MeshContainer/Mesh.hpp"
+#include "Containers/MeshContainer/VertexDescription.hpp"
 
 #include "Wrappeers/RenderPass/RenderPass.hpp"
 #include "Wrappeers/Commands/CommandBuffer.hpp"

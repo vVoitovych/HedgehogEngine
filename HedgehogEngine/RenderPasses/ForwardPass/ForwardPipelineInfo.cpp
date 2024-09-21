@@ -2,7 +2,7 @@
 
 #include "Wrappeers/Shaders/VertexShader.hpp"
 #include "Wrappeers/Shaders/FragmentShader.hpp"
-#include "Containers/VertexDescription.hpp"
+#include "Containers/MeshContainer/VertexDescription.hpp"
 
 #include "Logger/Logger.hpp"
 
