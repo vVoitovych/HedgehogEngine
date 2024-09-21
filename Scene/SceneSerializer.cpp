@@ -9,7 +9,7 @@
 #include "Logger/Logger.hpp"
 
 #define YAML_CPP_STATIC_DEFINE
-#include "ThirdParty/yaml-cpp/yaml.h"
+#include "yaml-cpp/yaml.h"
 
 #include <fstream>
 #include <filesystem>

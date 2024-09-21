@@ -4,7 +4,7 @@
 #include "Wrappeers/Device/Device.hpp"
 #include "Wrappeers/SwapChain/SwapChain.hpp"
 #include "Common/RendererSettings.hpp"
-#include "RenderPasses/GuiPass.hpp"
+#include "RenderPasses/GuiPass/GuiPass.hpp"
 
 #include <vector>
 #include <vulkan/vulkan.h>

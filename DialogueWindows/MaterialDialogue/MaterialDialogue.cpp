@@ -1,6 +1,6 @@
 #include "MaterialDialogue.hpp"
 
-#include "ThirdParty/tinyfiledialogs/tinyfiledialogs.h"
+#include "tinyfiledialogs/tinyfiledialogs.h"
 
 namespace DialogueWindows
 {

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Common/RendererSettings.hpp"
-#include "Containers/Light.hpp"
+#include "Containers/LightContainer/Light.hpp"
 
 #include "HedgehogMath/Vector.hpp"
 #include "HedgehogMath/Matrix.hpp"

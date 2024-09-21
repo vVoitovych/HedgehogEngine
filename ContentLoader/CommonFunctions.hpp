@@ -4,7 +4,7 @@
 
 namespace ContentLoader
 {
-	std::string GetCurrentDirectory();
+	std::string GetRootDirectory();
 
 	std::string GetAssetsDirectory();
 

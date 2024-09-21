@@ -6,22 +6,23 @@
 
 namespace ContentLoader
 {
-	std::string GetCurrentDirectory()
+	std::string GetRootDirectory()
 	{
 		char buffer[MAX_PATH];
 		GetModuleFileNameA(NULL, buffer, MAX_PATH);
 		std::string::size_type pos = std::string(buffer).find_last_of("\\/");
 
-		return std::string(buffer).substr(0, pos);
+		std::string programPath =  std::string(buffer).substr(0, pos);
+		std::filesystem::path fsPath(programPath);
+		std::string rootPath = fsPath.parent_path().parent_path().parent_path().parent_path().string();
+		return rootPath;
 	}
 
 	std::string GetAssetsDirectory()
 	{
-		std::string path = GetCurrentDirectory();
-		std::filesystem::path fsPath(path);
-		std::string rootPath = fsPath.parent_path().parent_path().string();
-		rootPath += "\\Assets\\";
-		return rootPath;
+		std::string path = GetRootDirectory();
+		path += "\\Assets\\";
+		return path;
 	}
 
 	std::string GetAssetRelativetlyPath(const std::string path)
@@ -37,15 +38,13 @@ namespace ContentLoader
 
 	std::string GetShadersDirectory()
 	{
-		std::string path = GetCurrentDirectory();
-		std::filesystem::path fsPath(path);
-		std::string rootPath = fsPath.parent_path().parent_path().string();
+		std::string path = GetRootDirectory();
 #ifdef _DEBUG
-		rootPath += "\\Shaders\\Shaders\\CompiledShaders\\Debug\\Shaders\\";
+		path += "\\Shaders\\Shaders\\CompiledShaders\\Debug\\Shaders\\";
 #else
-		rootPath += "\\Shaders\\Shaders\\CompiledShaders\\Release\\Shaders\\";
+		path += "\\Shaders\\Shaders\\CompiledShaders\\Release\\Shaders\\";
 #endif
-		return rootPath;
+		return path;
 	}
 
 }

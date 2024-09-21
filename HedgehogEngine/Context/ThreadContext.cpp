@@ -12,7 +12,7 @@
 #include "Context/VulkanContext.hpp"
 #include "Context/EngineContext.hpp"
 #include "Context/FrameContext.hpp"
-#include "Containers/LightContainer.hpp"
+#include "Containers/LightContainer/LightContainer.hpp"
 #include "Common/EngineDebugBreak.hpp"
 #include "Common/RendererSettings.hpp"
 

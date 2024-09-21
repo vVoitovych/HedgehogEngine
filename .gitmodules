@@ -1,1 +1,9 @@
-
+[submodule "ThirdParty/glfw/glfw"]
+	path = ThirdParty/glfw/glfw
+	url = https://github.com/glfw/glfw.git
+[submodule "ThirdParty/ImGui/imgui"]
+	path = ThirdParty/ImGui/imgui
+	url = https://github.com/ocornut/imgui.git
+[submodule "ThirdParty/YamlCpp/yaml-cpp"]
+	path = ThirdParty/YamlCpp/yaml-cpp
+	url = https://github.com/jbeder/yaml-cpp

@@ -396,7 +396,7 @@ namespace HM
     {
         assert(abs(aspect - std::numeric_limits<float>::epsilon()) > static_cast<float>(0));
 
-        const float tanHalfFov = tan(fov / 2.0f);
+        const float tanHalfFov = tanf(fov / 2.0f);
 
         Matrix4x4 result = GetZero();
         result[0][0] = 1.0f / (aspect * tanHalfFov);
@@ -487,8 +487,8 @@ namespace HM
     Matrix4x4 Matrix4x4::Rotate(const Matrix4x4& mat, float angle, const Vector3& vec)
     {
         const float a = angle;
-        const float c = cos(a);
-        const float s = sin(a);
+        const float c = cosf(a);
+        const float s = sinf(a);
 
         Vector3 axis(vec.Normalize());
         Vector3 temp(axis * (1.0f - c));

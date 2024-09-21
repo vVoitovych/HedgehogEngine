@@ -355,7 +355,7 @@ namespace HM
     template <size_t componentCount, typename elementType>
     elementType Vector<componentCount, elementType>::LengthSlow() const
     {
-        return ::sqrt(LengthSqr());
+        return ::sqrtf(LengthSqr());
     }
 
     template <size_t componentCount, typename elementType>

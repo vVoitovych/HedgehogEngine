@@ -34,6 +34,7 @@ namespace EngineLogger
             std::cout << "[INFO]";
             LogHelper(args...);
             std::cout << std::endl;
+            mColoriser.SetLogColor(7);
         }
         template <typename... Args>
         void Verbose(Args... args)
@@ -42,6 +43,7 @@ namespace EngineLogger
             std::cout << "[VERBOSE]";
             LogHelper(args...);
             std::cout << std::endl;
+            mColoriser.SetLogColor(7);
         }
         template <typename... Args>
         void Warning(Args... args) 
@@ -50,6 +52,7 @@ namespace EngineLogger
             std::cout << "[WARNING]";
             LogHelper(args...);
             std::cout << std::endl;
+            mColoriser.SetLogColor(7);
         }
 
         template <typename... Args>
@@ -59,6 +62,7 @@ namespace EngineLogger
             std::cout << "[ERROR]";
             LogHelper(args...);
             std::cout << std::endl;
+            mColoriser.SetLogColor(7);
         }
     private:
 

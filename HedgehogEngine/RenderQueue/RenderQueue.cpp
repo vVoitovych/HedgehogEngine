@@ -3,10 +3,10 @@
 #include "Context/Context.hpp"
 #include "Context/VulkanContext.hpp"
 #include "ResourceManager/ResourceManager.hpp"
-#include "RenderPasses/InitPass.hpp"
-#include "RenderPasses/ForwardPass.hpp"
-#include "RenderPasses/PresentPass.hpp"
-#include "RenderPasses/GuiPass.hpp"
+#include "RenderPasses/InitPass/InitPass.hpp"
+#include "RenderPasses/ForwardPass/ForwardPass.hpp"
+#include "RenderPasses/PresentPass/PresentPass.hpp"
+#include "RenderPasses/GuiPass/GuiPass.hpp"
 
 namespace Renderer
 {

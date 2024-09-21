@@ -4,7 +4,7 @@
 #include "Wrappeers/Device/Device.hpp"
 #include "Wrappeers/RenderPass/RenderPass.hpp"
 #include "Wrappeers/Descriptors/DescriptorSetLayout.hpp"
-#include "Containers/VertexDescription.hpp"
+#include "Containers/MeshContainer/VertexDescription.hpp"
 #include "Common/EngineDebugBreak.hpp"
 
 #include "Logger/Logger.hpp"
@@ -52,6 +52,7 @@ namespace Wrappers
 		pipelineInfo.subpass = 0;
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 		pipelineInfo.basePipelineIndex = -1;
+		pipelineInfo.pNext = nullptr;
 
 		if (vkCreateGraphicsPipelines(device.GetNativeDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &mPipeline) != VK_SUCCESS)
 		{
