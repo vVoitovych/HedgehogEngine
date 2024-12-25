@@ -1,20 +1,29 @@
 #pragma once
 
-#include "Shader.hpp"
-
-#include <memory>
+#include <vulkan/vulkan.h>
+#include <string>
 
 namespace Wrappers
 {
 	class Device;
 
-	class FragmentShader : public Shader
+	class FragmentShader
 	{
 	public:
 		FragmentShader(const Device& device, const std::string& fileName);
-		~FragmentShader() override;
+		~FragmentShader();
 
+		FragmentShader(const FragmentShader&) = default;
+		FragmentShader(FragmentShader&&) = default;
+		FragmentShader& operator=(const FragmentShader&) = default;
+		FragmentShader& operator=(FragmentShader&&) = default;
 
+		void Cleanup(const Device& device);
+		VkPipelineShaderStageCreateInfo GetCreateInfo();
+
+	private:
+		VkShaderModule mShaderModule;
+		VkPipelineShaderStageCreateInfo mShadereStageCreateInfo = {};
 	};
 
 }

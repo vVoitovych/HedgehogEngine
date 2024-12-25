@@ -5,9 +5,19 @@ project "Shaders"
    targetdir "Binaries/%{cfg.buildcfg}"
    staticruntime "off"
 
-   files {  }
+   files { "**.hpp", "**.cpp"  }
 
-   includedirs {   }
+   includedirs 
+   { 
+        "%{IncludeDir.VulkanSDK}",
+        ".." 
+   } 
+   libdirs { "%{LibraryDir.VulkanSDK}" }   
+
+   links 
+   { 
+       "ContentLoader"
+   }
 
    targetdir ("../Binaries/" .. OutputDir .. "/%{prj.name}")
    objdir ("../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")
@@ -17,11 +27,13 @@ project "Shaders"
        defines { }
 
    filter "configurations:Debug"
+       links { "shaderc_combinedd.lib" }
        defines { "DEBUG" }
        runtime "Debug"
        symbols "On"
 
    filter "configurations:Release"
+       links { "shaderc_combined.lib" }
        defines { "RELEASE" }
        runtime "Release"
        optimize "On"

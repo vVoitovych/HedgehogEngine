@@ -39,11 +39,7 @@ namespace ContentLoader
 	std::string GetShadersDirectory()
 	{
 		std::string path = GetRootDirectory();
-#ifdef _DEBUG
-		path += "\\Shaders\\Shaders\\CompiledShaders\\Debug\\Shaders\\";
-#else
-		path += "\\Shaders\\Shaders\\CompiledShaders\\Release\\Shaders\\";
-#endif
+		path += "\\Shaders\\Shaders\\";
 		return path;
 	}
 

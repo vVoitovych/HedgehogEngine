@@ -31,6 +31,7 @@ project "HedgehogEngine"
         "HadgehogMath",
         "Logger",
         "Scene",
+        "Shaders",
         "glfw",
         "imgui",
         "yaml-cpp",

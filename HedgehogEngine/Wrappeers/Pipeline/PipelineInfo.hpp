@@ -7,7 +7,6 @@
 namespace Wrappers
 {
 	class Device;
-	class Shader;
 
 	class PipelineInfo
 	{

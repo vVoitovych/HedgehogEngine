@@ -10,7 +10,8 @@
 namespace Wrappers
 {
 	class Device;
-	class Shader;
+	class VertexShader;
+	class FragmentShader;
 }
 
 namespace Renderer
@@ -35,8 +36,8 @@ namespace Renderer
 		const VkPipelineDynamicStateCreateInfo* GetDynamicStateInfo() const override;
 
 	private:
-		std::unique_ptr<Wrappers::Shader> mVertexShader;
-		std::unique_ptr<Wrappers::Shader> mFragmentShader;
+		std::unique_ptr<Wrappers::VertexShader> mVertexShader;
+		std::unique_ptr<Wrappers::FragmentShader> mFragmentShader;
 		std::array<VkPipelineShaderStageCreateInfo, 2> mStages;
 
 		VkVertexInputBindingDescription mBindingDesc;
