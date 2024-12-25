@@ -7,7 +7,5 @@ def main():
 
     subprocess.run([premake_exe, "--file=Build.lua", "vs2022"])
 
-    input("Press Enter to continue...")
-
 if __name__ == "__main__":
     main()
