@@ -1,7 +1,5 @@
 #include "Camera.hpp"
 
-#include "HedgehogMath/Common.hpp"
-
 namespace Context
 {
     void Camera::UpdateCamera(

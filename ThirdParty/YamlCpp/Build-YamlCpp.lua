@@ -17,6 +17,8 @@ project "yaml-cpp"
    targetdir ("../../Binaries/" .. OutputDir .. "/%{prj.name}")
    objdir ("../../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")
 
+    warnings "Off" 
+
    filter "system:windows"
        systemversion "latest"
        defines { }
