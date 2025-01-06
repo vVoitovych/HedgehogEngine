@@ -4,7 +4,7 @@
 #include "HedgehogWrappers/Wrappeers/Device/Device.hpp"
 #include "HedgehogWrappers/Wrappeers/RenderPass/RenderPass.hpp"
 #include "HedgehogWrappers/Wrappeers/Descriptors/DescriptorSetLayout.hpp"
-#include "HedgehogContext/Containers/MeshContainer/VertexDescription.hpp"
+
 #include "HedgehogCommon/Common/EngineDebugBreak.hpp"
 
 #include "Logger/Logger.hpp"
