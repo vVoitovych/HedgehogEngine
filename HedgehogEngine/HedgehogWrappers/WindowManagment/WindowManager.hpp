@@ -4,6 +4,7 @@
 #include "WindowState.hpp"
 
 #include <vulkan/vulkan.h>
+#include <functional>
 
 struct GLFWwindow;
 
@@ -32,6 +33,8 @@ namespace WinManager
 		bool IsWindowResized() const;
 		void ResetResizedState();
 
+		static void SetOnGuiCallback(std::function<bool()> func);
+
 	public:
 		static void ResizeCallback(GLFWwindow* window, int width, int height);
 		static void OnKey(GLFWwindow* window, int key, int scancode, int action, int mods);
@@ -49,6 +52,8 @@ namespace WinManager
 		bool mWindowResized = false;
 
 		Controls mControls;
+
+		static std::function<bool()> mGuiCallback;
 	};
 }
 

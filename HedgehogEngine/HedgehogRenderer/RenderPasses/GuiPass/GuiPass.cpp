@@ -46,6 +46,9 @@ namespace Renderer
 {
 	GuiPass::GuiPass(const Context::Context& context, const ResourceManager& resourceManager)
 	{
+		WinManager::WindowManager::SetOnGuiCallback([]() {
+			return GuiPass::IsCursorPositionInGUI();
+			});
 		auto& vulkanContext = context.GetVulkanContext();
 		auto& device = vulkanContext.GetDevice();
 		std::vector<Wrappers::PoolSizeRatio> sizes =

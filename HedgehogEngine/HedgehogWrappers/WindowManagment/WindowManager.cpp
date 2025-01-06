@@ -1,5 +1,4 @@
 #include "WindowManager.hpp"
-#include "HedgehogEngine/HedgehogRenderer/RenderPasses/GuiPass/GuiPass.hpp"
 #include "ContentLoader/TextureLoader.hpp"
 
 #include "HedgehogMath/Vector.hpp"
@@ -13,6 +12,8 @@
 
 namespace WinManager
 {
+	std::function<bool()> WindowManager::mGuiCallback = nullptr;
+
 	WindowManager::WindowManager()
 		: mWindowState(WindowState::GetDefaultState())
 		, mWindow(nullptr)
@@ -101,6 +102,11 @@ namespace WinManager
 		mWindowResized = false;
 	}
 
+	void WindowManager::SetOnGuiCallback(std::function<bool()> func)
+	{
+		mGuiCallback = func;
+	}
+
 	void WindowManager::ResizeCallback(GLFWwindow* window, int width, int height)
 	{
 		auto app = reinterpret_cast<WindowManager*>(glfwGetWindowUserPointer(window));
@@ -150,7 +156,7 @@ namespace WinManager
 
 	void WindowManager::OnMouseButton(GLFWwindow* window, int button, int action, int mods)
 	{
-		if (Renderer::GuiPass::IsCursorPositionInGUI())
+		if (mGuiCallback && mGuiCallback())
 			return;
 		auto app = reinterpret_cast<WindowManager*>(glfwGetWindowUserPointer(window));
 
