@@ -7,6 +7,7 @@
 #include <functional>
 
 struct GLFWwindow;
+struct GLFWimage;
 
 namespace WinManager
 {
@@ -34,7 +35,7 @@ namespace WinManager
 		void ResetResizedState();
 
 		static void SetOnGuiCallback(std::function<bool()> func);
-
+		void SetIcon(int width, int height, unsigned char* data);
 	public:
 		static void ResizeCallback(GLFWwindow* window, int width, int height);
 		static void OnKey(GLFWwindow* window, int key, int scancode, int action, int mods);

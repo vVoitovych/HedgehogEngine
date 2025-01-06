@@ -6,6 +6,8 @@
 #include "HedgehogCommon/Common/RendererSettings.hpp"
 #include "HedgehogRenderer/RenderPasses/GuiPass/GuiPass.hpp"
 
+#include "ContentLoader/TextureLoader.hpp"
+
 #include <vector>
 #include <vulkan/vulkan.h>
 
@@ -15,6 +17,10 @@ namespace Context
 	VulkanContext::VulkanContext()
 	{
 		mWindowManager = std::make_unique<WinManager::WindowManager>(WinManager::WindowState::GetDefaultState());
+		ContentLoader::TextureLoader texLoader;
+		texLoader.LoadTexture("Textures\\Logo\\logo1.png");
+		mWindowManager->SetIcon(texLoader.GetWidth(), texLoader.GetHeight(), static_cast<unsigned char*>(texLoader.GetData()));
+
 		mDevice = std::make_unique<Wrappers::Device>(*mWindowManager);
 		mSwapChain = std::make_unique<Wrappers::SwapChain>(*mDevice, *mWindowManager);
 	}

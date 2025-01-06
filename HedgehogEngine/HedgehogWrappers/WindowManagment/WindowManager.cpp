@@ -1,5 +1,4 @@
 #include "WindowManager.hpp"
-#include "ContentLoader/TextureLoader.hpp"
 
 #include "HedgehogMath/Vector.hpp"
 
@@ -51,15 +50,6 @@ namespace WinManager
 		glfwSetCursorPosCallback(mWindow, OnMouseMove);
 		glfwSetScrollCallback(mWindow, OnMouseScroll);
 
-		ContentLoader::TextureLoader texLoader;
-		texLoader.LoadTexture("Textures\\Logo\\logo1.png");
-		GLFWimage images[1];
-		images[0].width = texLoader.GetWidth();
-		images[0].height = texLoader.GetHeight();
-		images[0].pixels = static_cast<unsigned char*>(texLoader.GetData());
-
-		glfwSetWindowIcon(mWindow, 1, images);
-
 		LOGINFO("Window manager initialized");
 	}
 
@@ -105,6 +95,16 @@ namespace WinManager
 	void WindowManager::SetOnGuiCallback(std::function<bool()> func)
 	{
 		mGuiCallback = func;
+	}
+
+	void WindowManager::SetIcon(int width, int height, unsigned char* data)
+	{
+		GLFWimage images[1];
+		images[0].width = width;
+		images[0].height = height;
+		images[0].pixels = data;
+
+		glfwSetWindowIcon(mWindow, 1, images);
 	}
 
 	void WindowManager::ResizeCallback(GLFWwindow* window, int width, int height)
