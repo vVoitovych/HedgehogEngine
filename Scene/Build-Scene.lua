@@ -18,7 +18,7 @@ project "Scene"
     links {
         "DialogueWindows",
         "ECS",
-        "HadgehogMath", 
+        "HedgehogMath", 
         "yaml-cpp",
         "Logger"
     }
