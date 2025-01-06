@@ -9,6 +9,9 @@
 #define VMA_IMPLEMENTATION
 #include "vma/vk_mem_alloc.h"
 
+#define GLFW_INCLUDE_VULKAN
+#include "ThirdParty/glfw/glfw/include/GLFW/glfw3.h"
+
 #include <vector>
 #include <set>
 #include <unordered_set>

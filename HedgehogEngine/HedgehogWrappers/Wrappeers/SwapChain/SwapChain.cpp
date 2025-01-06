@@ -6,6 +6,8 @@
 
 #include "Logger/Logger.hpp"
 
+#include "GLFW/glfw3.h"
+
 #include <limits>
 #include <algorithm>
 

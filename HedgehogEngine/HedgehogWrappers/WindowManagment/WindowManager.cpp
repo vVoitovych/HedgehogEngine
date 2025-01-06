@@ -8,6 +8,9 @@
 
 #include "ThirdParty/tinyfiledialogs/tinyfiledialogs.h"
 
+#define GLFW_INCLUDE_VULKAN
+#include "GLFW/glfw3.h"
+
 namespace WinManager
 {
 	WindowManager::WindowManager()
@@ -240,6 +243,6 @@ namespace WinManager
 		controls.ScrollDelta = HM::Vector2((float)x, (float)y);
 	}
 
-
+	
 }
 

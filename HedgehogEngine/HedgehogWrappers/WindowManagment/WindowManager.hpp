@@ -3,9 +3,9 @@
 #include "Controls.hpp"
 #include "WindowState.hpp"
 
-#define GLFW_INCLUDE_VULKAN
-#include "ThirdParty/glfw/glfw/include/GLFW/glfw3.h"
 #include <vulkan/vulkan.h>
+
+struct GLFWwindow;
 
 namespace WinManager
 {

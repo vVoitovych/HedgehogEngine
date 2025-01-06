@@ -53,11 +53,41 @@ namespace Context
         auto& windowManager = vulkanContext.GetWindowManager();
         auto& controls = windowManager.GetControls();
         const auto& swapChain = vulkanContext.GetSwapChain();
-        auto extend = swapChain.GetSwapChainExtent();
-        mCamera->UpdateCamera(dt, extend.width / (float)extend.height, controls);
         mScene->UpdateScene(dt);
         mLightContainer->UpdateLights(*mScene);
         mMaterialContainer->Update(*mScene);
+        auto extend = swapChain.GetSwapChainExtent();
+        HM::Vector3 posOffset(0.0f, 0.0f, 0.0f);
+        HM::Vector2 dirOffset(controls.MouseDelta.x(), controls.MouseDelta.y());
+
+        if (controls.IsPressedQ)
+        {
+            posOffset.z() = -1.0f;
+        }
+        if (controls.IsPressedE)
+        {
+            posOffset.z() = 1.0f;
+        }
+
+        if (controls.IsPressedW)
+        {
+            posOffset.x() = 1.0f;
+        }
+        if (controls.IsPressedS)
+        {
+            posOffset.x() = -1.0f;
+        }
+
+        if (controls.IsPressedD)
+        {
+            posOffset.y() = -1.0f;
+        }
+        if (controls.IsPressedA)
+        {
+            posOffset.y() = 1.0f;
+        }
+
+        mCamera->UpdateCamera(dt, extend.width / (float)extend.height, posOffset, dirOffset);
         mMaterialContainer->UpdateResources(vulkanContext, *mTextureContainer);
         mDrawListContainer->Update(*mScene, *mMaterialContainer);
     }
