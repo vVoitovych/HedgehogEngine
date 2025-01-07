@@ -6,11 +6,8 @@
 namespace Wrappers
 {
     class RenderPass;
-    class DescriptorSetLayout;
-    class DescriptorAllocator;
     class Pipeline;
     class FrameBuffer;
-    class DescriptorSet;
 }
 
 namespace Context

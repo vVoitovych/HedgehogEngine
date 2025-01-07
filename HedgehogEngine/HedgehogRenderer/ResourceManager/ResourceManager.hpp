@@ -5,7 +5,6 @@
 
 namespace Wrappers
 {
-	class FrameBuffer;
 	class Image;
 }
 

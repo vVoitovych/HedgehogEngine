@@ -1,15 +1,11 @@
 #include "ResourceManager.hpp"
 
 #include "HedgehogContext/Context/Context.hpp"
-#include "HedgehogContext/Context/EngineContext.hpp"
-#include "HedgehogContext/Context/ThreadContext.hpp"
 #include "HedgehogContext/Context/VulkanContext.hpp"
-#include "HedgehogContext/Context/FrameContext.hpp"
 
 #include "HedgehogWrappers/Wrappeers/Device/Device.hpp"
 #include "HedgehogWrappers/Wrappeers/SwapChain/SwapChain.hpp"
 #include "HedgehogWrappers/Wrappeers/Resources/Image/Image.hpp"
-#include "HedgehogWrappers/Wrappeers/FrameBuffer/FrameBuffer.hpp"
 
 #include "HedgehogCommon/Common/RendererSettings.hpp"
 
