@@ -1,29 +1,36 @@
-project "Client"
-   kind "ConsoleApp"
+project "HedgehogCommon"
+   kind "StaticLib"
    language "C++"
    cppdialect "C++20"
    targetdir "Binaries/%{cfg.buildcfg}"
    staticruntime "off"
 
-   files { "**.hpp", "**.cpp" }
-
-   includedirs
-   {
-      ".."
-   }
-
-   links { 
-    "HedgehogContext",
-    "HedgehogRenderer",
-    "Logger"
+    files 
+    { 
+        "**.hpp", "**.cpp"
     }
 
-   targetdir ("../Binaries/" .. OutputDir .. "/%{prj.name}")
-   objdir ("../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")
+    includedirs
+    {
+        "../.."
+    }
+
+    libdirs
+    {
+    }
+
+    links 
+    { 
+        "HedgehogMath"
+    }
+
+
+   targetdir ("../../Binaries/" .. OutputDir .. "/%{prj.name}")
+   objdir ("../../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")
 
    filter "system:windows"
        systemversion "latest"
-       defines { }
+       defines {  }
 
    filter "configurations:Debug"
        defines { "DEBUG" }
@@ -34,3 +41,6 @@ project "Client"
        defines { "RELEASE" }
        runtime "Release"
        optimize "On"
+
+
+

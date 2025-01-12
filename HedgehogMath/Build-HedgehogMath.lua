@@ -1,4 +1,4 @@
-project "HadgehogMath"
+project "HedgehogMath"
    kind "StaticLib"
    language "C++"
    cppdialect "C++20"

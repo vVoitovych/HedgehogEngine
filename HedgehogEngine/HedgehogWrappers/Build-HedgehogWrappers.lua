@@ -1,35 +1,54 @@
-project "yaml-cpp"
+project "HedgehogWrappers"
    kind "StaticLib"
    language "C++"
    cppdialect "C++20"
    targetdir "Binaries/%{cfg.buildcfg}"
    staticruntime "off"
 
-   files    { 
-        "yaml-cpp/include/**.h",
-        "yaml-cpp/src/**.cpp"
+    files 
+    { 
+        "**.hpp", "**.cpp"
     }
-   includedirs
-   {
-    "%{IncludeDir.yaml_cpp}"
-   }
+
+    includedirs
+    {
+        "%{IncludeDir.VulkanSDK}",
+        "%{IncludeDir.GLFW}",
+        "../..",
+        ".."
+    }
+
+    libdirs
+    {
+        "%{LibraryDir.VulkanSDK}"
+    }
+
+    links { 
+        "HedgehogCommon",
+        "HedgehogMath",
+        "Logger",
+        "Shaders",
+        "glfw",
+        "vulkan-1"
+    }
+
 
    targetdir ("../../Binaries/" .. OutputDir .. "/%{prj.name}")
    objdir ("../../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")
 
-    warnings "Off" 
-
    filter "system:windows"
        systemversion "latest"
-       defines { }
+       defines {  }
 
    filter "configurations:Debug"
-       defines { "DEBUG", "YAML_CPP_STATIC_DEFINE" }
+       defines { "DEBUG" }
        runtime "Debug"
        symbols "On"
 
    filter "configurations:Release"
-       defines { "RELEASE", "YAML_CPP_STATIC_DEFINE" }
+       defines { "RELEASE" }
        runtime "Release"
        optimize "On"
+
+
 

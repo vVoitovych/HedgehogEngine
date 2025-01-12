@@ -1,9 +1,9 @@
 #include "Application.hpp"
 
-#include "HedgehogEngine/Context/Context.hpp"
-#include "HedgehogEngine/Context/VulkanContext.hpp"
+#include "HedgehogEngine/HedgehogContext/Context/Context.hpp"
+#include "HedgehogEngine/HedgehogContext/Context/VulkanContext.hpp"
 
-#include "HedgehogEngine/Renderer/Renderer.hpp"
+#include "HedgehogEngine/HedgehogRenderer/Renderer/Renderer.hpp"
 
 #include "Logger/Logger.hpp"
 

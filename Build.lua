@@ -1,6 +1,6 @@
 include "Dependencies.lua"
 
-workspace "HadgehogEngine"
+workspace "HedgehogEngine"
    architecture "x64"
    configurations { "Debug", "Release" }
    startproject "Client"
@@ -19,11 +19,17 @@ group "ThirdParty"
    include "ThirdParty/YamlCpp/Build-YamlCpp.lua"
 group ""
 
+include "HedgehogEngine/HedgehogCommon/Build-HedgehogCommon.lua"
+include "HedgehogEngine/HedgehogContext/Build-HedgehogContext.lua"
+include "HedgehogEngine/HedgehogRenderer/Build-HedgehogRenderer.lua"
+include "HedgehogEngine/HedgehogWrappers/Build-HedgehogWrappers.lua"
+
 include "Client/Build-Client.lua"
 include "ContentLoader/Build-ContentLoader.lua"
 include "DialogueWindows/Build-DialogueWindows.lua"
 include "ECS/Build-ECS.lua"
-include "HedgehogEngine/Build-HedgehogEngine.lua"
+
+
 include "HedgehogMath/Build-HedgehogMath.lua"
 include "Logger/Build-Logger.lua"
 include "Scene/Build-Scene.lua"
