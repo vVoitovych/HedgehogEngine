@@ -1,4 +1,5 @@
 #include "GltfMeshLoader.hpp"
+#include "Logger/Logger.hpp"
 
 #include "ThirdParty/tinygltf/tiny_gltf.h"
 
@@ -190,6 +191,8 @@ namespace ContentLoader
                 }
             }
         }
+
+        LOGINFO("Model [", path, "] loaded with ", meshData.mPositions.size(), " verticies and ", meshData.mIndicies.size(), " indicies!");
 
         return meshData;
     }

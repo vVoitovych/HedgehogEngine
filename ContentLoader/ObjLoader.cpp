@@ -1,8 +1,7 @@
 #include "ObjLoader.hpp"
-#include "CommonFunctions.hpp"
-
 #include "Logger/Logger.hpp"
 
+#define TINYOBJLOADER_IMPLEMENTATION
 #include "ThirdParty/TinyObjectLoader/tiny_obj_loader.h"
 
 #include <stdexcept>
@@ -68,9 +67,7 @@ namespace ContentLoader
 		std::vector<tinyobj::material_t> materials;
 		std::string warn, err;
 
-		std::string modelPath = ContentLoader::GetAssetsDirectory() + path;
-
-		if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, modelPath.c_str()))
+		if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, path.c_str()))
 		{
 			throw std::runtime_error(warn + err);
 		}
