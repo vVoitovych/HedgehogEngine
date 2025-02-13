@@ -1,6 +1,6 @@
 #pragma once 
 
-#include "LoadedMesh.hpp"
+#include "LoadedData.hpp"
 
 #include <string>
 

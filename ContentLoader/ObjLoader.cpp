@@ -14,6 +14,12 @@ namespace ContentLoader
 		HM::Vector3 pos;
 		HM::Vector2 texCoord;
 		HM::Vector3 normal;
+
+		bool operator==(const VertexDescription& other) const {
+			return pos == other.pos &&
+				normal == other.normal &&
+				texCoord == other.texCoord;
+		}
 	};
 }
 
@@ -100,19 +106,20 @@ namespace ContentLoader
 
 				if (uniqueVertices.count(vertex) == 0)
 				{
-					uniqueVertices[vertex] = static_cast<uint32_t>(mesh.mPositions.size());
-					mesh.mPositions.push_back(vertex.pos);
-					mesh.mTexCoords.push_back(vertex.texCoord);
-					mesh.mNormals.push_back(vertex.normal);
-					mesh.mJointIndices.push_back(HM::Vector4u());
-					mesh.mJointWeights.push_back(HM::Vector4());
+					uniqueVertices[vertex] = static_cast<uint32_t>(mesh.verticies.size());
+					LoadedVertexData loadedVertex;
+					loadedVertex.position = HM::Vector4(vertex.pos.x(), vertex.pos.y(), vertex.pos.z(), 1.0f);
+					loadedVertex.uv = vertex.texCoord;
+					loadedVertex.normal = HM::Vector4(vertex.normal.x(), vertex.normal.y(), vertex.normal.z(), 0.0f);
+					loadedVertex.jointIndex = HM::Vector4u();
+					loadedVertex.jointWeight = HM::Vector4();
 				}
 
-				mesh.mIndicies.push_back(uniqueVertices[vertex]);
+				mesh.indicies.push_back(uniqueVertices[vertex]);
 			}
 		}
 
-		LOGINFO("Model [", path, "] loaded with ", mesh.mPositions.size(), " verticies and ", mesh.mIndicies.size(), " indicies!");
+		LOGINFO("Model [", path, "] loaded with ", mesh.verticies.size(), " verticies and ", mesh.indicies.size(), " indicies!");
 
 		return mesh;
 	}

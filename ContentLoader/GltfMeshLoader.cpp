@@ -7,36 +7,10 @@
 
 namespace ContentLoader
 {
-    void LoadAttributeData(
-        const tinygltf::Model& model, 
-        const tinygltf::Primitive& primitive,
-        const std::string& attributeName, 
-        std::vector<float>& output, 
-        int expectedComponents) 
-    {
-        if (primitive.attributes.find(attributeName) == primitive.attributes.end()) 
-            return;
-
-        const tinygltf::Accessor& accessor = model.accessors[primitive.attributes.at(attributeName)];
-        const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
-        const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
-
-        const float* data = reinterpret_cast<const float*>(&buffer.data[bufferView.byteOffset + accessor.byteOffset]);
-        size_t count = accessor.count;
-
-        for (size_t i = 0; i < count; ++i) 
-        {
-            for (int j = 0; j < expectedComponents; ++j) 
-            {
-                output.push_back(data[i * expectedComponents + j]);
-            }
-        }
-    }
-
     void LoadPositionData(
         const tinygltf::Model& model,
         const tinygltf::Primitive& primitive,
-        std::vector<HM::Vector3>& output)
+        std::vector<HM::Vector4>& output)
     {
         if (primitive.attributes.find("POSITION") == primitive.attributes.end())
             return;
@@ -50,14 +24,14 @@ namespace ContentLoader
 
         for (size_t i = 0; i < count; ++i)
         {
-            output.push_back(HM::Vector3(data[i * 3 + 0], data[i * 3 + 1], data[i * 3 + 2]));
+            output.push_back(HM::Vector4(data[i * 3 + 0], data[i * 3 + 1], data[i * 3 + 2], 1.0f));
         }
     }
 
     void LoadNormalData(
         const tinygltf::Model& model,
         const tinygltf::Primitive& primitive,
-        std::vector<HM::Vector3>& output)
+        std::vector<HM::Vector4>& output)
     {
         if (primitive.attributes.find("NORMAL") == primitive.attributes.end())
             return;
@@ -71,7 +45,7 @@ namespace ContentLoader
 
         for (size_t i = 0; i < count; ++i)
         {
-            output.push_back(HM::Vector3(data[i * 3 + 0], data[i * 3 + 1], data[i * 3 + 2]));
+            output.push_back(HM::Vector4(data[i * 3 + 0], data[i * 3 + 1], data[i * 3 + 2], 0.0f));
         }
     }
 
@@ -154,11 +128,29 @@ namespace ContentLoader
         for (const auto& gltfMesh : model.meshes) {
             for (const auto& primitive : gltfMesh.primitives) 
             {
-                LoadPositionData(model, primitive, meshData.mPositions);
-                LoadNormalData(model, primitive, meshData.mNormals);
-                LoadUVData(model, primitive, meshData.mTexCoords);
-                LoadJointData(model, primitive, meshData.mJointIndices);
-                LoadWeightData(model, primitive, meshData.mJointWeights);
+                std::vector<HM::Vector4> positions;
+                std::vector<HM::Vector4> normals;
+                std::vector<HM::Vector2> texCoords;
+                std::vector<HM::Vector4u> jointIndicies;
+                std::vector<HM::Vector4> jointWeights;
+
+                LoadPositionData(model, primitive, positions);
+                LoadNormalData(model, primitive, normals);
+                LoadUVData(model, primitive, texCoords);
+                LoadJointData(model, primitive, jointIndicies);
+                LoadWeightData(model, primitive, jointWeights);
+
+                for (size_t i = 0; i < positions.size(); ++i)
+                {
+                    LoadedVertexData vertex;
+                    vertex.position = positions[i];
+                    vertex.normal = normals[i];
+                    vertex.uv = texCoords[i];
+                    vertex.jointIndex = jointIndicies[i];
+                    vertex.jointWeight = jointWeights[i];
+
+                    meshData.verticies.push_back(vertex);
+                }
 
                 // Extract indices
                 if (primitive.indices >= 0) {
@@ -172,17 +164,17 @@ namespace ContentLoader
                     switch (accessor.componentType) {
                     case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
                         for (size_t i = 0; i < indexCount; ++i) {
-                            meshData.mIndicies.push_back(static_cast<uint32_t>(reinterpret_cast<const uint8_t*>(dataPtr)[i]));
+                            meshData.indicies.push_back(static_cast<uint32_t>(reinterpret_cast<const uint8_t*>(dataPtr)[i]));
                         }
                         break;
                     case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
                         for (size_t i = 0; i < indexCount; ++i) {
-                            meshData.mIndicies.push_back(static_cast<uint32_t>(reinterpret_cast<const uint16_t*>(dataPtr)[i]));
+                            meshData.indicies.push_back(static_cast<uint32_t>(reinterpret_cast<const uint16_t*>(dataPtr)[i]));
                         }
                         break;
                     case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
                         for (size_t i = 0; i < indexCount; ++i) {
-                            meshData.mIndicies.push_back(reinterpret_cast<const uint32_t*>(dataPtr)[i]);
+                            meshData.indicies.push_back(reinterpret_cast<const uint32_t*>(dataPtr)[i]);
                         }
                         break;
                     default:
@@ -192,7 +184,7 @@ namespace ContentLoader
             }
         }
 
-        LOGINFO("Model [", path, "] loaded with ", meshData.mPositions.size(), " verticies and ", meshData.mIndicies.size(), " indicies!");
+        LOGINFO("Model [", path, "] loaded with ", meshData.verticies.size(), " verticies and ", meshData.indicies.size(), " indicies!");
 
         return meshData;
     }
