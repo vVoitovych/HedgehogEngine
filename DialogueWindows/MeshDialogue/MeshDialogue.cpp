@@ -4,8 +4,8 @@
 
 namespace DialogueWindows
 {
-	constexpr int meshFilterNum = 1;
-	char const* meshFilterPatterns[meshFilterNum] = { "*.obj" };
+	constexpr int meshFilterNum = 2;
+	char const* meshFilterPatterns[meshFilterNum] = { "*.obj", "*.gltf"};
 
 	char* MeshOpenDialogue()
 	{
@@ -14,7 +14,7 @@ namespace DialogueWindows
 			"../",
 			meshFilterNum,
 			meshFilterPatterns,
-			"mesh files (*.obj)",
+			"mesh files (*.obj, *.gltf)",
 			1);
 	}
 }

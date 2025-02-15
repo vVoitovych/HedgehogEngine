@@ -13,6 +13,11 @@ namespace Wrappers
 	class Buffer;
 }
 
+namespace Scene
+{
+	class Scene;
+}
+
 namespace Context
 {
 	class VulkanContext;
@@ -29,13 +34,8 @@ namespace Context
 		MeshContainer& operator=(const MeshContainer&) = delete;
 		MeshContainer& operator=(MeshContainer&&) = delete;
 
-		void AddFilePath(std::string filePath);
-		void ClearFileList();
+		void Update(const VulkanContext& context, Scene::Scene& scene);
 
-		void LoadMeshData();
-		void LoadSingleMesh(std::string filePath);
-
-		void Initialize(const VulkanContext& context);
 		void Cleanup(const VulkanContext& context);
 
 		const VkBuffer& GetVertexBuffer() const;
@@ -44,6 +44,12 @@ namespace Context
 		const Mesh& GetMesh(size_t index) const;
 
 	private:
+		void AddFilePath(std::string filePath);
+		void ClearFileList();
+
+		void LoadMeshData();
+
+		void Initialize(const VulkanContext& context);
 		void CreateVertexBuffer(const VulkanContext& context, const std::vector<VertexDescription> verticies);
 		void CreateIndexBuffer(const VulkanContext& context, const std::vector<uint32_t> indicies);
 

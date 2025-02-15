@@ -4,6 +4,8 @@
 #include "HedgehogWrappers/Wrappeers/Device/Device.hpp"
 #include "HedgehogWrappers/Wrappeers/Resources/Buffer/Buffer.hpp"
 
+#include "Scene/Scene.hpp"
+
 #include "Logger/Logger.hpp"
 
 #include <algorithm>
@@ -39,7 +41,7 @@ namespace Context
     void MeshContainer::LoadMeshData()
     {
         mMeshes.clear();
-        for (size_t i = 0; i < mFilePathes.size(); ++i)
+        for (size_t i = mMeshes.size(); i < mFilePathes.size(); ++i)
         {
             Mesh mesh;
             mesh.LoadData(mFilePathes[i]);
@@ -47,20 +49,6 @@ namespace Context
             mMeshes.push_back(mesh);
 
         }
-    }
-
-    void MeshContainer::LoadSingleMesh(std::string filePath)
-    {
-        auto it = std::find(mFilePathes.begin(), mFilePathes.end(), filePath);
-        if (it == mFilePathes.end())
-            return;
-        mFilePathes.push_back(filePath);
-
-        Mesh mesh;        
-        mesh.LoadData(filePath);
-        LOGINFO("Loaded mesh data: ", filePath);
-        mMeshes.push_back(mesh);
-
     }
 
     void MeshContainer::Initialize(const VulkanContext& context)
@@ -92,6 +80,19 @@ namespace Context
         CreateIndexBuffer(context, indicies);
     }
 
+    void MeshContainer::Update(const VulkanContext& context, Scene::Scene& scene)
+    {
+        auto& meshes = scene.GetMeshes();
+        if (meshes.size() <= mMeshes.size())
+            return;
+        for (size_t i = mMeshes.size(); i < meshes.size(); ++i)
+        {
+            AddFilePath(meshes[i]);
+        }
+        LoadMeshData();
+        Initialize(context);
+    }
+
     void MeshContainer::Cleanup(const VulkanContext& context)
     {
         auto& device = context.GetDevice();
@@ -119,6 +120,11 @@ namespace Context
 
     void MeshContainer::CreateVertexBuffer(const VulkanContext& context, const std::vector<VertexDescription> verticies)
     {
+        if (mVertexBuffer != nullptr)
+        {
+            mVertexBuffer->DestroyBuffer(context.GetDevice());
+            mVertexBuffer = nullptr;
+        }
         auto& device = context.GetDevice();
         VkDeviceSize size = sizeof(verticies[0]) * verticies.size();
 
@@ -134,6 +140,11 @@ namespace Context
 
     void MeshContainer::CreateIndexBuffer(const VulkanContext& context, const std::vector<uint32_t> indicies)
     {
+        if (mIndexBuffer != nullptr)
+        {
+            mIndexBuffer->DestroyBuffer(context.GetDevice());
+            mIndexBuffer = nullptr;
+        }
         auto& device = context.GetDevice();
         VkDeviceSize size = sizeof(indicies[0]) * indicies.size();
 

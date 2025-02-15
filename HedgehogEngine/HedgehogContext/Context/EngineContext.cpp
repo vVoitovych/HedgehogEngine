@@ -22,12 +22,7 @@ namespace Context
         mScene->InitScene();
 
         mMeshContainer = std::make_unique<MeshContainer>();
-        for (auto& mesh : mScene->GetMeshes())
-        {
-            mMeshContainer->AddFilePath(mesh);
-        }
-        mMeshContainer->LoadMeshData();
-        mMeshContainer->Initialize(vulkanContext);
+        mMeshContainer->Update(vulkanContext, *mScene);
 
         mTextureContainer = std::make_unique<TextureContainer>();
         mLightContainer = std::make_unique<LightContainer>();
@@ -56,6 +51,7 @@ namespace Context
         mScene->UpdateScene(dt);
         mLightContainer->UpdateLights(*mScene);
         mMaterialContainer->Update(*mScene);
+        mMeshContainer->Update(vulkanContext, *mScene);
         auto extend = swapChain.GetSwapChainExtent();
         HM::Vector3 posOffset(0.0f, 0.0f, 0.0f);
         HM::Vector2 dirOffset(controls.MouseDelta.x(), controls.MouseDelta.y());

@@ -68,7 +68,10 @@ namespace Scene
 
 		std::string relatedPath = ContentLoader::GetAssetRelativetlyPath(path);
 		auto& meshComponent = coordinator.GetComponent<MeshComponent>(entity);
+		auto prevMeshPath = meshComponent.mMeshPath;
 		meshComponent.mMeshPath = relatedPath;
+		AddMeshPath(relatedPath);
+		CheckMeshPath(meshComponent, prevMeshPath);
 	}
 
 	void MeshSystem::CheckMeshPath(MeshComponent& meshComponent, std::string fallbackPath)
