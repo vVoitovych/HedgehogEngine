@@ -1,6 +1,7 @@
 #include "GltfMeshLoader.hpp"
 #include "Logger/Logger.hpp"
 
+#define TINYGLTF_IMPLEMENTATION
 #include "ThirdParty/tinygltf/tiny_gltf.h"
 
 #include <stdexcept>

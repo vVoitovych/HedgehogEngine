@@ -41,7 +41,7 @@ namespace Renderer
 		std::array<VkPipelineShaderStageCreateInfo, 2> mStages;
 
 		VkVertexInputBindingDescription mBindingDesc;
-		std::array<VkVertexInputAttributeDescription, 4>  mAttributeDesc;
+		std::array<VkVertexInputAttributeDescription, 5>  mAttributeDesc;
 		VkPipelineVertexInputStateCreateInfo mVertexInputInfo;
 
 		VkPipelineInputAssemblyStateCreateInfo mInputAssembly;

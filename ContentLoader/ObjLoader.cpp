@@ -26,40 +26,14 @@ namespace ContentLoader
 namespace std
 {
 	template<>
-	struct hash<HM::Vector2>
-	{
-		size_t operator()(HM::Vector2 const& vector) const
-		{
-			return (
-				(hash<float>()(vector.x()) ^
-					(hash<float>()(vector.y()) << 1))
-				);
-		}
-	};
-
-	template<>
-	struct hash<HM::Vector3>
-	{
-		size_t operator()(HM::Vector3 const& vector) const
-		{
-			return (
-				(hash<float>()(vector.x()) ^
-					(hash<float>()(vector.y()) << 1) ^
-					(hash<float>()(vector.z())))
-				);
-		}
-	};
-
-	template<>
 	struct hash<ContentLoader::VertexDescription>
 	{
 		size_t operator()(ContentLoader::VertexDescription const& vertex) const
 		{
 			return (
-				(hash<HM::Vector3>()(vertex.pos) )^ 
+				hash<HM::Vector3>()(vertex.pos) ^
 				(hash<HM::Vector2>()(vertex.texCoord) << 1) ^
-				(hash<HM::Vector3>()(vertex.normal))
-					);
+				hash<HM::Vector3>()(vertex.normal));
 		}
 	};
 }
