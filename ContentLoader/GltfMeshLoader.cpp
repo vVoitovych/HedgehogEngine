@@ -2,6 +2,7 @@
 #include "Logger/Logger.hpp"
 
 #define TINYGLTF_IMPLEMENTATION
+#define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "ThirdParty/tinygltf/tiny_gltf.h"
 
 #include <stdexcept>
@@ -11,7 +12,7 @@ namespace ContentLoader
     void LoadPositionData(
         const tinygltf::Model& model,
         const tinygltf::Primitive& primitive,
-        std::vector<HM::Vector4>& output)
+        std::vector<HM::Vector3>& output)
     {
         if (primitive.attributes.find("POSITION") == primitive.attributes.end())
             return;
@@ -25,14 +26,14 @@ namespace ContentLoader
 
         for (size_t i = 0; i < count; ++i)
         {
-            output.push_back(HM::Vector4(data[i * 3 + 0], data[i * 3 + 1], data[i * 3 + 2], 1.0f));
+            output.push_back(HM::Vector3(data[i * 3 + 0], data[i * 3 + 1], data[i * 3 + 2]));
         }
     }
 
     void LoadNormalData(
         const tinygltf::Model& model,
         const tinygltf::Primitive& primitive,
-        std::vector<HM::Vector4>& output)
+        std::vector<HM::Vector3>& output)
     {
         if (primitive.attributes.find("NORMAL") == primitive.attributes.end())
             return;
@@ -46,7 +47,7 @@ namespace ContentLoader
 
         for (size_t i = 0; i < count; ++i)
         {
-            output.push_back(HM::Vector4(data[i * 3 + 0], data[i * 3 + 1], data[i * 3 + 2], 0.0f));
+            output.push_back(HM::Vector3(data[i * 3 + 0], data[i * 3 + 1], data[i * 3 + 2]));
         }
     }
 
@@ -129,17 +130,15 @@ namespace ContentLoader
         for (const auto& gltfMesh : model.meshes) {
             for (const auto& primitive : gltfMesh.primitives) 
             {
-                std::vector<HM::Vector4> positions;
-                std::vector<HM::Vector4> normals;
+                std::vector<HM::Vector3> positions;
+                std::vector<HM::Vector3> normals;
                 std::vector<HM::Vector2> texCoords;
-                std::vector<HM::Vector4u> jointIndicies;
-                std::vector<HM::Vector4> jointWeights;
 
                 LoadPositionData(model, primitive, positions);
                 LoadNormalData(model, primitive, normals);
                 LoadUVData(model, primitive, texCoords);
-                LoadJointData(model, primitive, jointIndicies);
-                LoadWeightData(model, primitive, jointWeights);
+                //LoadJointData(model, primitive, jointIndicies);
+                //LoadWeightData(model, primitive, jointWeights);
 
                 for (size_t i = 0; i < positions.size(); ++i)
                 {
@@ -147,8 +146,6 @@ namespace ContentLoader
                     vertex.position = positions[i];
                     vertex.normal = normals[i];
                     vertex.uv = texCoords[i];
-                    vertex.jointIndex = jointIndicies[i];
-                    vertex.jointWeight = jointWeights[i];
 
                     meshData.verticies.push_back(vertex);
                 }

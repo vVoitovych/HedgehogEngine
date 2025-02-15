@@ -6,9 +6,7 @@ namespace Context
 	{
 		return pos == other.pos && 
 			texCoord == other.texCoord &&
-			normal == other.normal &&
-			jointIndex == other.jointIndex &&
-			jointWeight == other.jointWeight;
+			normal == other.normal;
 	}
 
 	VkVertexInputBindingDescription VertexDescription::GetBindingDescription()
@@ -22,9 +20,9 @@ namespace Context
 		return desc;
 	}
 
-	std::array<VkVertexInputAttributeDescription, 5> VertexDescription::GetAttributeDescription()
+	std::array<VkVertexInputAttributeDescription, 3> VertexDescription::GetAttributeDescription()
 	{
-		std::array<VkVertexInputAttributeDescription, 5> desc;
+		std::array<VkVertexInputAttributeDescription, 3> desc;
 
 		desc[0].binding = 0;
 		desc[0].location = 0;
@@ -40,16 +38,6 @@ namespace Context
 		desc[2].location = 2;
 		desc[2].format = VK_FORMAT_R32G32B32A32_SFLOAT;
 		desc[2].offset = offsetof(VertexDescription, normal);
-
-		desc[3].binding = 0;
-		desc[3].location = 3;
-		desc[3].format = VK_FORMAT_R32G32B32A32_SINT;
-		desc[3].offset = offsetof(VertexDescription, jointIndex);
-
-		desc[4].binding = 0;
-		desc[4].location = 4;
-		desc[4].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-		desc[4].offset = offsetof(VertexDescription, jointWeight);
 
 		return desc;
 	}

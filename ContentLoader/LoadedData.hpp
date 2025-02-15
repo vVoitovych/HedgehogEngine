@@ -9,12 +9,15 @@ namespace ContentLoader
 
 	struct LoadedVertexData
 	{
-		HM::Vector4 position;
+		HM::Vector3 position;
 		HM::Vector2 uv;
-		HM::Vector4 normal;
+		HM::Vector3 normal;
 
-		HM::Vector4u jointIndex;
-		HM::Vector4 jointWeight;
+		bool operator==(const LoadedVertexData& other) const {
+			return position == other.position &&
+				normal == other.normal &&
+				uv == other.uv;
+		}
 	};
 
 	struct LoadedMesh
@@ -25,7 +28,20 @@ namespace ContentLoader
 
 }
 
-
+namespace std
+{
+	template<>
+	struct hash<ContentLoader::LoadedVertexData>
+	{
+		size_t operator()(ContentLoader::LoadedVertexData const& vertex) const
+		{
+			return (
+				hash<HM::Vector3>()(vertex.position) ^
+				(hash<HM::Vector2>()(vertex.uv) << 1) ^
+				hash<HM::Vector3>()(vertex.normal));
+		}
+	};
+}
 
 
 

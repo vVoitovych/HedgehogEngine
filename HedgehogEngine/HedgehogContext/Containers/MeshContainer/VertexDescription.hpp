@@ -18,12 +18,10 @@ namespace Context
 		HM::Vector4 pos;
 		HM::Vector2 texCoord;
 		HM::Vector4 normal;
-		HM::Vector4u jointIndex;
-		HM::Vector4 jointWeight;
 
 	public:
 		static VkVertexInputBindingDescription GetBindingDescription();
-		static std::array<VkVertexInputAttributeDescription, 5>  GetAttributeDescription();
+		static std::array<VkVertexInputAttributeDescription, 3>  GetAttributeDescription();
 
 	};
 }

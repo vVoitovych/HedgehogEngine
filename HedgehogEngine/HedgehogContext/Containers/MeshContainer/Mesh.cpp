@@ -12,16 +12,18 @@ namespace Context
 
 		auto mesh = ContentLoader::LoadMesh(fileName);
 		mIndiciesData = mesh.indicies;
-		mIndiciesData.reserve(mesh.verticies.size());
+		mVerticiesData.reserve(mesh.verticies.size());
 		for (size_t i = 0; i < mesh.verticies.size(); ++i)
 		{
-			mVerticiesData[i].pos = mesh.verticies[i].position;
-			mVerticiesData[i].normal = mesh.verticies[i].normal;
-			mVerticiesData[i].texCoord = mesh.verticies[i].uv;
-			mVerticiesData[i].jointIndex = mesh.verticies[i].jointIndex;
-			mVerticiesData[i].jointWeight = mesh.verticies[i].jointWeight;
+			Context::VertexDescription vertex;
 
+			vertex.pos = mesh.verticies[i].position;
+			vertex.normal = mesh.verticies[i].normal;
+			vertex.texCoord = mesh.verticies[i].uv;
+			mVerticiesData.push_back(vertex);
 		}
+
+		mIndexCount = static_cast<uint32_t>(mIndiciesData.size());
 
 		LOGINFO("Model [", fileName,"] loaded with ", mVerticiesData.size(), " verticies and ", mIndiciesData.size(), " indicies!");
 	}
