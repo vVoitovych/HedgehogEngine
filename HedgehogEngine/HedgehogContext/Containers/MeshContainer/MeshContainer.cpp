@@ -75,13 +75,36 @@ namespace Context
                 indicies.push_back(meshIndicies[j]);
             }
         }
-
-        CreateVertexBuffer(context, verticies);
-        CreateIndexBuffer(context, indicies);
+        if (mVertexBuffer == nullptr && mIndexBuffer == nullptr)
+        {
+            CreateVertexBuffer(context, verticies, mVertexBuffer);
+            CreateIndexBuffer(context, indicies, mIndexBuffer);
+        }
+        else
+        {
+            CreateVertexBuffer(context, verticies, mAdditionalVertexBuffer);
+            CreateIndexBuffer(context, indicies, mAdditionalIndexBuffer);
+            mIsSwaped = false;
+        }
     }
 
     void MeshContainer::Update(const VulkanContext& context, Scene::Scene& scene)
     {
+        if (mIsSwaped)
+        {
+            if (mAdditionalVertexBuffer != nullptr)
+            {
+                mVertexBuffer->DestroyBuffer(context.GetDevice());
+                mVertexBuffer = std::move(mAdditionalVertexBuffer);
+                mAdditionalVertexBuffer = nullptr;
+            }
+            if (mAdditionalIndexBuffer != nullptr)
+            {
+                mIndexBuffer->DestroyBuffer(context.GetDevice());
+                mIndexBuffer = std::move(mAdditionalIndexBuffer);
+                mAdditionalIndexBuffer = nullptr;
+            }
+        }
         auto& meshes = scene.GetMeshes();
         if (meshes.size() <= mMeshes.size())
             return;
@@ -96,21 +119,28 @@ namespace Context
     void MeshContainer::Cleanup(const VulkanContext& context)
     {
         auto& device = context.GetDevice();
-        mVertexBuffer->DestroyBuffer(device);
-        LOGINFO("Vertex buffer cleaned");
-
-        mIndexBuffer->DestroyBuffer(device);
-        LOGINFO("Index buffer cleaned");
+        if (mVertexBuffer != nullptr)
+            mVertexBuffer->DestroyBuffer(device);
+        if (mIndexBuffer != nullptr)
+            mIndexBuffer->DestroyBuffer(device);
+        if (mAdditionalVertexBuffer != nullptr)
+            mAdditionalVertexBuffer->DestroyBuffer(device);
+        if (mAdditionalIndexBuffer != nullptr)
+            mAdditionalIndexBuffer->DestroyBuffer(device);
     }
 
     const VkBuffer& MeshContainer::GetVertexBuffer() const
     {
-        return mVertexBuffer->GetNativeBuffer();
+        if (mIsSwaped)
+            return mVertexBuffer->GetNativeBuffer();
+        return mAdditionalVertexBuffer->GetNativeBuffer();
     }
 
     const VkBuffer& MeshContainer::GetIndexBuffer() const
     {
-        return mIndexBuffer->GetNativeBuffer();
+        if (mIsSwaped)
+            return mIndexBuffer->GetNativeBuffer();
+        return mAdditionalIndexBuffer->GetNativeBuffer();
     }
 
     const Mesh& MeshContainer::GetMesh(size_t index) const
@@ -118,41 +148,37 @@ namespace Context
         return mMeshes[index];
     }
 
-    void MeshContainer::CreateVertexBuffer(const VulkanContext& context, const std::vector<VertexDescription> verticies)
+    void MeshContainer::SwapBuffers()
     {
-        if (mVertexBuffer != nullptr)
-        {
-            mVertexBuffer->DestroyBuffer(context.GetDevice());
-            mVertexBuffer = nullptr;
-        }
+        if (!mIsSwaped)
+            mIsSwaped = true;
+    }
+
+    void MeshContainer::CreateVertexBuffer(const VulkanContext& context, const std::vector<VertexDescription> verticies, std::unique_ptr<Wrappers::Buffer>& buffer)
+    {
         auto& device = context.GetDevice();
         VkDeviceSize size = sizeof(verticies[0]) * verticies.size();
 
         Wrappers::Buffer staginBuffer(device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
         staginBuffer.CopyDataToBufferMemory(device, verticies.data(), (size_t)size);
 
-        mVertexBuffer = std::make_unique<Wrappers::Buffer>(device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
-        device.CopyBufferToBuffer(staginBuffer.GetNativeBuffer(), mVertexBuffer->GetNativeBuffer(), size);
+        buffer = std::make_unique<Wrappers::Buffer>(device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
+        device.CopyBufferToBuffer(staginBuffer.GetNativeBuffer(), buffer->GetNativeBuffer(), size);
 
         staginBuffer.DestroyBuffer(device);
         LOGINFO("Vertex buffer created");
     }
 
-    void MeshContainer::CreateIndexBuffer(const VulkanContext& context, const std::vector<uint32_t> indicies)
+    void MeshContainer::CreateIndexBuffer(const VulkanContext& context, const std::vector<uint32_t> indicies, std::unique_ptr<Wrappers::Buffer>& buffer)
     {
-        if (mIndexBuffer != nullptr)
-        {
-            mIndexBuffer->DestroyBuffer(context.GetDevice());
-            mIndexBuffer = nullptr;
-        }
         auto& device = context.GetDevice();
         VkDeviceSize size = sizeof(indicies[0]) * indicies.size();
 
         Wrappers::Buffer staginBuffer(device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
         staginBuffer.CopyDataToBufferMemory(device, indicies.data(), (size_t)size);
 
-        mIndexBuffer = std::make_unique<Wrappers::Buffer>(device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
-        device.CopyBufferToBuffer(staginBuffer.GetNativeBuffer(), mIndexBuffer->GetNativeBuffer(), size);
+        buffer = std::make_unique<Wrappers::Buffer>(device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
+        device.CopyBufferToBuffer(staginBuffer.GetNativeBuffer(), buffer->GetNativeBuffer(), size);
 
         staginBuffer.DestroyBuffer(device);
         LOGINFO("Index buffer created");

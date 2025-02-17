@@ -105,6 +105,7 @@ namespace Scene
 		mSceneCoordinator.DestroyEntity(mRoot);
 		SceneSerializer::DeserializeScene(*this, path);
 
+		mMeshSystem->Update(mSceneCoordinator);
 		mRenderSystem->UpdataSystem(mSceneCoordinator);
 	}
 

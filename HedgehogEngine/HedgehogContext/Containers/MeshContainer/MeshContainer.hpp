@@ -42,7 +42,7 @@ namespace Context
 		const VkBuffer& GetIndexBuffer() const;
 
 		const Mesh& GetMesh(size_t index) const;
-
+		void SwapBuffers();
 	private:
 		void AddFilePath(std::string filePath);
 		void ClearFileList();
@@ -50,17 +50,20 @@ namespace Context
 		void LoadMeshData();
 
 		void Initialize(const VulkanContext& context);
-		void CreateVertexBuffer(const VulkanContext& context, const std::vector<VertexDescription> verticies);
-		void CreateIndexBuffer(const VulkanContext& context, const std::vector<uint32_t> indicies);
+		void CreateVertexBuffer(const VulkanContext& context, const std::vector<VertexDescription> verticies, std::unique_ptr<Wrappers::Buffer>& buffer);
+		void CreateIndexBuffer(const VulkanContext& context, const std::vector<uint32_t> indicies, std::unique_ptr<Wrappers::Buffer>& buffer);
 
 	private:
 		std::vector<std::string> mFilePathes;
 		std::vector<Mesh> mMeshes;
 
-	private:
-		std::unique_ptr<Wrappers::Buffer> mVertexBuffer;
+		bool mIsSwaped = true;
 
+		std::unique_ptr<Wrappers::Buffer> mVertexBuffer;
 		std::unique_ptr<Wrappers::Buffer> mIndexBuffer;
+
+		std::unique_ptr<Wrappers::Buffer> mAdditionalVertexBuffer;
+		std::unique_ptr<Wrappers::Buffer> mAdditionalIndexBuffer;
 
 	};
 

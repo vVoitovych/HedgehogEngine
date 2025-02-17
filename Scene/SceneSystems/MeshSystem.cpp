@@ -32,6 +32,25 @@ namespace Scene
 		}
 	}
 
+	void MeshSystem::Update(ECS::Coordinator& coordinator)
+	{
+		for (auto& entity : entities)
+		{
+			auto& meshComponent = coordinator.GetComponent<MeshComponent>(entity);
+			if (meshComponent.mMeshIndex.has_value())
+			{
+				size_t index = meshComponent.mMeshIndex.value();
+				if (mMeshPathes[index] != meshComponent.mMeshPath)
+				{
+					CheckMeshPath(meshComponent, meshComponent.mCachedMeshPath);
+				}
+			}
+			else
+			{
+				CheckMeshPath(meshComponent, sDefaultMeshPath);
+			}
+		}
+	}
 
 	bool MeshSystem::ShouldUpdateMeshContainer() const
 	{
