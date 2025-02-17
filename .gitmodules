@@ -7,3 +7,6 @@
 [submodule "ThirdParty/YamlCpp/yaml-cpp"]
 	path = ThirdParty/YamlCpp/yaml-cpp
 	url = https://github.com/jbeder/yaml-cpp
+[submodule "ThirdParty/tinygltf"]
+	path = ThirdParty/tinygltf
+	url = https://github.com/syoyo/tinygltf.git

@@ -31,9 +31,7 @@ Scene:
               Rotation: [0, 5, 50.5]
               Scale: [1, 1, 1]
             MeshComponent:
-              MeshPath: Models\Default\sphere.obj
-              MeshIndex: 2
-              CachedMeshPath: Models\Default\sphere.obj
+              MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
             RenderComponent:
               Visible: true
               Material: Materials\test2.material
@@ -49,7 +47,7 @@ Scene:
         LightComponent:
           LightEnabled: true
           LightType: 0
-          LightColor: [0.98046422, 0.995098054, 0.986489892]
+          LightColor: [0.9804642, 0.99509805, 0.9864899]
           LightIntencity: 0.838
           LightRadius: 1
           LightConeAngle: 2
@@ -64,8 +62,6 @@ Scene:
           Scale: [10, 10, 1]
         MeshComponent:
           MeshPath: Models\Default\cube.obj
-          MeshIndex: 1
-          CachedMeshPath: Models\Default\cube.obj
         RenderComponent:
           Visible: true
           Material: Materials\test3.material

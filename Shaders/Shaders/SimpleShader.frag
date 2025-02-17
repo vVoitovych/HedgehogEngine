@@ -1,9 +1,8 @@
 #version 450
 
-layout(location = 0) in vec3 fragColor;
-layout(location = 1) in vec2 fragTexCoord;
-layout(location = 2) in vec4 inNormal;
-layout(location = 3) in vec4 inWorldPosition;
+layout(location = 0) in vec2 fragTexCoord;
+layout(location = 1) in vec4 inNormal;
+layout(location = 2) in vec4 inWorldPosition;
 
 #define MAX_LIGHTS_COUNT 16
 

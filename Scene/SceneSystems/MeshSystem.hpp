@@ -12,6 +12,7 @@ namespace Scene
 	{
 	public:
 		void Update(ECS::Coordinator& coordinator, ECS::Entity entity);
+		void Update(ECS::Coordinator& coordinator);
 
 		bool ShouldUpdateMeshContainer() const;
 		void MeshContainerUpdated();

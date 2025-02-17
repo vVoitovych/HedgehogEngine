@@ -7,9 +7,14 @@ project "ContentLoader"
 
     files { "**.hpp", "**.cpp" }
 
-    includedirs
-    {
-        "../ThirdParty"
+    includedirs    {
+        "../ThirdParty",
+        ".."
+    }
+
+    links {
+        "HedgehogMath", 
+        "Logger"
     }
 
     targetdir ("../Binaries/" .. OutputDir .. "/%{prj.name}")

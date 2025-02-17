@@ -127,8 +127,6 @@ namespace Scene
 			out << YAML::BeginMap; 
 
 			out << YAML::Key << "MeshPath" << YAML::Value << mesh.mMeshPath;
-			out << YAML::Key << "MeshIndex" << YAML::Value << mesh.mMeshIndex.value();
-			out << YAML::Key << "CachedMeshPath" << YAML::Value << mesh.mCachedMeshPath;
 
 			out << YAML::EndMap; 
 		}
@@ -213,8 +211,6 @@ namespace Scene
 			scene.AddMeshComponent(entity);
 			auto& meshComponent = scene.GetMeshComponent(entity);
 			meshComponent.mMeshPath = mesh["MeshPath"].as<std::string>();
-			meshComponent.mMeshIndex = mesh["MeshIndex"].as<size_t>();
-			meshComponent.mCachedMeshPath = mesh["CachedMeshPath"].as<std::string>();
 		}
 
 		auto light = node["LightComponent"];

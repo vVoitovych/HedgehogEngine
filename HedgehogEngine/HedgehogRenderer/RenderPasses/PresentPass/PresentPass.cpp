@@ -76,6 +76,7 @@ namespace Renderer
 
 		if (vkQueueSubmit(graphicQueue, 1, &submitInfo, syncObject.GetInFlightFence()) != VK_SUCCESS)
 		{
+			
 			throw std::runtime_error("failed to submit draw command buffer!");
 		}
 		auto index = frameContext.GetBackBufferIndex();
