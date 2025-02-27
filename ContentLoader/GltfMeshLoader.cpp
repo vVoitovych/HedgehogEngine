@@ -113,6 +113,8 @@ namespace ContentLoader
             output.push_back(HM::Vector4(data[i * 4 + 0], data[i * 4 + 1], data[i * 4 + 2], data[i * 4 + 3]));
         }
     }
+
+
     LoadedMesh LoadGltfMesh(const std::string& path)
     {
         tinygltf::Model model;
@@ -137,8 +139,6 @@ namespace ContentLoader
                 LoadPositionData(model, primitive, positions);
                 LoadNormalData(model, primitive, normals);
                 LoadUVData(model, primitive, texCoords);
-                //LoadJointData(model, primitive, jointIndicies);
-                //LoadWeightData(model, primitive, jointWeights);
 
                 for (size_t i = 0; i < positions.size(); ++i)
                 {

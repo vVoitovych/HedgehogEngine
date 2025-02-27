@@ -17,8 +17,6 @@ Scene:
           Scale: [1, 1, 1]
         MeshComponent:
           MeshPath: Models\viking_room.obj
-          MeshIndex: 0
-          CachedMeshPath: Models\viking_room.obj
         RenderComponent:
           Visible: true
           Material: Materials\test1.material
@@ -28,7 +26,7 @@ Scene:
             Parent: 1
             TransformComponent:
               Position: [3, 3.5, -1]
-              Rotation: [0, 5, 50.5]
+              Rotation: [0, 180, 203.5]
               Scale: [1, 1, 1]
             MeshComponent:
               MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf

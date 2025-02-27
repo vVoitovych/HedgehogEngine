@@ -12,6 +12,8 @@ namespace ContentLoader
 		HM::Vector3 position;
 		HM::Vector2 uv;
 		HM::Vector3 normal;
+		HM::Vector3 tangent;  
+		HM::Vector3 bitangent; 
 
 		bool operator==(const LoadedVertexData& other) const {
 			return position == other.position &&

@@ -23,38 +23,84 @@ namespace ContentLoader
 
 		std::unordered_map<LoadedVertexData, uint32_t> uniqueVertices{};
 		LoadedMesh mesh;
-		for (const auto& shape : shapes) {
-			for (const auto& index : shape.mesh.indices) {
-				LoadedVertexData vertex{};
+		for (const auto& shape : shapes) 
+		{
+			for (size_t i = 0; i < shape.mesh.indices.size(); i += 3) 
+			{
+				auto idx0 = shape.mesh.indices[i + 0];
+				auto idx1 = shape.mesh.indices[i + 1];
+				auto idx2 = shape.mesh.indices[i + 2];
 
-				vertex.position =
-				{
-					attrib.vertices[3 * index.vertex_index + 0],
-					attrib.vertices[3 * index.vertex_index + 1],
-					attrib.vertices[3 * index.vertex_index + 2]
-				};
+				LoadedVertexData v0{}, v1{}, v2{};
 
-				vertex.uv =
-				{
-					attrib.texcoords[2 * index.texcoord_index + 0],
-					1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
-				};
+				auto loadVertex = [&](LoadedVertexData& v, tinyobj::index_t idx) 
+					{
+						v.position = 
+						{
+						  attrib.vertices[3 * idx.vertex_index + 0],
+						  attrib.vertices[3 * idx.vertex_index + 1],
+						  attrib.vertices[3 * idx.vertex_index + 2]
+						};
 
-				vertex.normal =
-				{
-					attrib.normals[3 * index.normal_index + 0],
-					attrib.normals[3 * index.normal_index + 1],
-					attrib.normals[3 * index.normal_index + 2]
-				};
+						v.uv = 
+						{
+						  attrib.texcoords[2 * idx.texcoord_index + 0],
+						  1.0f - attrib.texcoords[2 * idx.texcoord_index + 1]
+						};
 
-				if (uniqueVertices.count(vertex) == 0)
+						v.normal = 
+						{
+						  attrib.normals[3 * idx.normal_index + 0],
+						  attrib.normals[3 * idx.normal_index + 1],
+						  attrib.normals[3 * idx.normal_index + 2]
+						};
+					};
+
+				loadVertex(v0, idx0);
+				loadVertex(v1, idx1);
+				loadVertex(v2, idx2);
+
+				// Compute tangent and bitangent for the triangle
+				HM::Vector3 edge1 = v1.position - v0.position;
+				HM::Vector3 edge2 = v2.position - v0.position;
+
+				HM::Vector2 deltaUV1 = v1.uv - v0.uv;
+				HM::Vector2 deltaUV2 = v2.uv - v0.uv;
+
+				float determinant = deltaUV1.x() * deltaUV2.y() - deltaUV2.x() * deltaUV1.y();
+				float invDet = (determinant == 0.0f) ? 0.0f : (1.0f / determinant);
+
+				HM::Vector3 tangent, bitangent;
+				if (determinant != 0.0f) 
 				{
-					uniqueVertices[vertex] = static_cast<uint32_t>(mesh.verticies.size());
-					mesh.verticies.push_back(vertex);
-					
+					tangent = (edge1 * deltaUV2.y() - edge2 * deltaUV1.y()) * invDet;
+					bitangent = (edge2 * deltaUV1.x() - edge1 * deltaUV2.x()) * invDet;
+				}
+				else 
+				{
+					tangent = HM::Vector3(1, 0, 0); // Fallback
+					bitangent = HM::Vector3(0, 1, 0);
 				}
 
-				mesh.indicies.push_back(uniqueVertices[vertex]);
+				// Normalize tangent and bitangent
+				tangent = tangent.Normalize();
+				bitangent = bitangent.Normalize();
+
+				auto addVertex = [&](LoadedVertexData& vertex) 
+				{
+					if (uniqueVertices.count(vertex) == 0)
+					{
+						uniqueVertices[vertex] = static_cast<uint32_t>(mesh.verticies.size());
+						vertex.tangent = tangent;
+						vertex.bitangent = bitangent;
+						mesh.verticies.push_back(vertex);
+					}
+					mesh.indicies.push_back(uniqueVertices[vertex]);
+				};
+
+				addVertex(v0);
+				addVertex(v1);
+				addVertex(v2);
 			}
 		}
 
