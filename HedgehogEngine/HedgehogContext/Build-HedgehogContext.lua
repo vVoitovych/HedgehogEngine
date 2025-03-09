@@ -13,7 +13,6 @@ project "HedgehogContext"
     includedirs
     {
         "%{IncludeDir.VulkanSDK}",
-        "%{IncludeDir.yaml_cpp}",
         "../..",
         ".."
     }
@@ -31,8 +30,6 @@ project "HedgehogContext"
         "HedgehogMath",
         "Logger",
         "Scene",
-        "imgui",
-        "yaml-cpp",
         "vulkan-1"
     }
 

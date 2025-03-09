@@ -4,7 +4,7 @@
 #include "HedgehogWrappers/Wrappeers/Resources/Image/Image.hpp"
 #include "HedgehogWrappers/Wrappeers/Resources/Buffer/Buffer.hpp"
 #include "HedgehogWrappers/Wrappeers/Resources/Sampler/Sampler.hpp"
-#include "ContentLoader/TextureLoader.hpp"
+#include "ContentLoader/TextureLoader/TextureLoader.hpp"
 
 #include "Logger/Logger.hpp"
 

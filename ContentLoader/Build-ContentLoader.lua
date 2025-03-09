@@ -9,11 +9,14 @@ project "ContentLoader"
 
     includedirs    {
         "../ThirdParty",
-        ".."
+        "%{IncludeDir.yaml_cpp}",
+        "..",
+        ""
     }
 
     links {
         "HedgehogMath", 
+        "yaml-cpp",
         "Logger"
     }
 

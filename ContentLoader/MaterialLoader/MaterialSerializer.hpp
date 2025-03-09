@@ -2,9 +2,25 @@
 
 #include <string>
 
-namespace Context
+namespace ContentLoader
 {
-	struct MaterialData;
+	enum class MaterialType
+	{
+		Opaque,
+		Cutoff,
+		Transparent
+	};
+
+	struct MaterialData
+	{
+		std::string path;
+
+		MaterialType type;
+		std::string baseColor;
+		float transparency;
+
+		bool isDirty;
+	};
 
 	class MaterialSerializer
 	{

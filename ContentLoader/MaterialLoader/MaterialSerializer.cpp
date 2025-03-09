@@ -1,8 +1,7 @@
 #include "MaterialSerializer.hpp"
 
-#include "MaterialData.hpp"
 #include "Logger/Logger.hpp"
-#include "ContentLoader/CommonFunctions.hpp"
+#include "ContentLoader/Common/CommonFunctions.hpp"
 
 #define YAML_CPP_STATIC_DEFINE
 #include "yaml-cpp/yaml.h"
@@ -10,7 +9,7 @@
 #include <fstream>
 #include <filesystem>
 
-namespace Context
+namespace ContentLoader
 {
 	void MaterialSerializer::Serialize(MaterialData& material, std::string materialPath)
 	{
@@ -38,7 +37,7 @@ namespace Context
 		}
 		catch (YAML::ParserException e)
 		{
-			LOGERROR("Failed to load scene: ", materialPath, " with error: ", e.what());
+			LOGERROR("Failed to load material: ", materialPath, " with error: ", e.what());
 			return;
 		}
 		material.path = ContentLoader::GetAssetRelativetlyPath(materialPath);

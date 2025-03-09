@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Common">
+      <UniqueIdentifier>{8EEA3EAC-7A8C-6982-6347-7DD64F88F0D2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="MaterialLoader">
+      <UniqueIdentifier>{CB972D09-B765-210F-A0F9-91358C66FD73}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="MeshLoader">
+      <UniqueIdentifier>{69028782-55BA-C8CF-BEC1-A12BAA9863C0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="TextureLoader">
+      <UniqueIdentifier>{4D05AFAA-B9C5-2AE1-8200-745EEE7F6FBD}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Common\CommonFunctions.hpp">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="MaterialLoader\MaterialSerializer.hpp">
+      <Filter>MaterialLoader</Filter>
+    </ClInclude>
+    <ClInclude Include="MeshLoader\GltfMeshLoader.hpp">
+      <Filter>MeshLoader</Filter>
+    </ClInclude>
+    <ClInclude Include="MeshLoader\LoadedData.hpp">
+      <Filter>MeshLoader</Filter>
+    </ClInclude>
+    <ClInclude Include="MeshLoader\MeshLoader.hpp">
+      <Filter>MeshLoader</Filter>
+    </ClInclude>
+    <ClInclude Include="MeshLoader\ObjLoader.hpp">
+      <Filter>MeshLoader</Filter>
+    </ClInclude>
+    <ClInclude Include="TextureLoader\TextureLoader.hpp">
+      <Filter>TextureLoader</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Common\CommonFunctions.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="MaterialLoader\MaterialSerializer.cpp">
+      <Filter>MaterialLoader</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshLoader\GltfMeshLoader.cpp">
+      <Filter>MeshLoader</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshLoader\MeshLoader.cpp">
+      <Filter>MeshLoader</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshLoader\ObjLoader.cpp">
+      <Filter>MeshLoader</Filter>
+    </ClCompile>
+    <ClCompile Include="TextureLoader\TextureLoader.cpp">
+      <Filter>TextureLoader</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

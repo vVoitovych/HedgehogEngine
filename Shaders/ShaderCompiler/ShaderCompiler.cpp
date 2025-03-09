@@ -1,5 +1,5 @@
 #include "ShaderCompiler.hpp"
-#include "ContentLoader/CommonFunctions.hpp"
+#include "ContentLoader/Common/CommonFunctions.hpp"
 
 #include <shaderc/shaderc.hpp>
 

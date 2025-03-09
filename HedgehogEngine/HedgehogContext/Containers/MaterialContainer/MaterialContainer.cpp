@@ -1,6 +1,5 @@
 #include "MaterialContainer.hpp"
 #include "MaterialData.hpp"
-#include "MaterialSerializer.hpp"
 
 #include "HedgehogWrappers/Wrappeers/Descriptors/DescriptorAllocator.hpp"
 #include "HedgehogWrappers/Wrappeers/Descriptors/DescriptorSetLayout.hpp"
@@ -17,8 +16,8 @@
 #include "DialogueWindows/MaterialDialogue/MaterialDialogue.hpp"
 #include "DialogueWindows/TextureDialogue/TextureDialogue.hpp"
 
-#include "ContentLoader/CommonFunctions.hpp"
-
+#include "ContentLoader/Common/CommonFunctions.hpp"
+#include "ContentLoader/MaterialLoader/MaterialSerializer.hpp"
 #include "Scene/Scene.hpp"
 
 namespace Context
@@ -44,14 +43,67 @@ namespace Context
 	{
 	}
 
+	ContentLoader::MaterialData ToContentLoaderData(const MaterialData& data)
+	{
+		ContentLoader::MaterialData result;
+
+		result.baseColor = data.baseColor;
+		result.isDirty = data.isDirty;
+		result.path = data.path;
+		result.transparency = data.transparency;
+		switch (data.type)
+		{
+		case MaterialType::Cutoff:
+			result.type = ContentLoader::MaterialType::Cutoff;
+			break;
+		case MaterialType::Opaque:
+			result.type = ContentLoader::MaterialType::Opaque;
+			break;
+		case MaterialType::Transparent:
+			result.type = ContentLoader::MaterialType::Transparent;
+		default:
+			break;
+		}
+
+		return result;
+	}
+
+	MaterialData ToContainerData(const ContentLoader::MaterialData& data)
+	{
+		MaterialData result;
+
+		result.baseColor = data.baseColor;
+		result.isDirty = data.isDirty;
+		result.path = data.path;
+		result.transparency = data.transparency;
+		switch (data.type)
+		{
+		case ContentLoader::MaterialType::Cutoff:
+			result.type = MaterialType::Cutoff;
+			break;
+		case ContentLoader::MaterialType::Opaque:
+			result.type = MaterialType::Opaque;
+			break;
+		case ContentLoader::MaterialType::Transparent:
+			result.type = MaterialType::Transparent;
+		default:
+			break;
+		}
+
+		return result;
+	}
+
 	void MaterialContainer::Update(const Scene::Scene& scene)
 	{
 		auto materialsInScene = scene.GetMaterials();
 		for (size_t i = mMaterials.size(); i < materialsInScene.size(); ++i)
 		{
-			MaterialData data;
-			MaterialSerializer::Deserialize(data, ContentLoader::GetAssetsDirectory() + materialsInScene[i]);
-			mMaterials.push_back(data);
+			ContentLoader::MaterialData data;
+			ContentLoader::MaterialSerializer::Deserialize(data, ContentLoader::GetAssetsDirectory() + materialsInScene[i]);
+
+			MaterialData materialData = ToContainerData(data);
+
+			mMaterials.push_back(materialData);
 		}
 	}
 
@@ -192,24 +244,24 @@ namespace Context
 		auto path = DialogueWindows::MaterialCreationDialogue();
 		if (path != nullptr)
 		{
-			MaterialData newData;
-			newData.type = MaterialType::Opaque;
+			ContentLoader::MaterialData newData;
+			newData.type = ContentLoader::MaterialType::Opaque;
 			newData.transparency = 1.0f;
 			newData.baseColor = mDefaultCellTexture;
 			newData.path = ContentLoader::GetAssetRelativetlyPath(path);
 
-			MaterialSerializer::Serialize(newData, path);
+			ContentLoader::MaterialSerializer::Serialize(newData, path);
 
-			mMaterials.push_back(newData);
+			mMaterials.push_back(ToContainerData(newData));
 		}
 
 	}
 
 	void MaterialContainer::SaveMaterial(size_t index)
 	{
-		MaterialData newData = mMaterials[index];
+		auto newData = ToContentLoaderData(mMaterials[index]);
 
-		MaterialSerializer::Serialize(newData, ContentLoader::GetAssetsDirectory() + newData.path);
+		ContentLoader::MaterialSerializer::Serialize(newData, ContentLoader::GetAssetsDirectory() + newData.path);
 	}
 
 	void MaterialContainer::LoadBaseTexture(size_t index, const VulkanContext& context, const TextureContainer& textureContainer)

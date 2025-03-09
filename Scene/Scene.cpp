@@ -6,7 +6,7 @@
 #include "Scene/SceneComponents/MeshComponent.hpp"
 #include "Scene/SceneComponents/LightComponent.hpp"
 #include "Scene/SceneComponents/RenderComponent.hpp"
-#include "ContentLoader/CommonFunctions.hpp"
+#include "ContentLoader/Common/CommonFunctions.hpp"
 #include "Logger/Logger.hpp"
 #include "DialogueWindows/SceneDialogue/SceneDialogue.hpp"
 #include "DialogueWindows/MaterialDialogue/MaterialDialogue.hpp"

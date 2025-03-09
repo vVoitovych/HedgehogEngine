@@ -1,5 +1,5 @@
 #include "MeshLoader.hpp"
-#include "CommonFunctions.hpp"
+#include "Common/CommonFunctions.hpp"
 
 #include "ObjLoader.hpp"
 #include "GltfMeshLoader.hpp"

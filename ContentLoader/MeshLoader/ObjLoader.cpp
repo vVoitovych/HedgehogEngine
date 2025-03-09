@@ -78,8 +78,8 @@ namespace ContentLoader
 				}
 				else 
 				{
-					tangent = HM::Vector3(1, 0, 0); // Fallback
-					bitangent = HM::Vector3(0, 1, 0);
+					tangent = HM::Vector3(1.0f, 0.0f, 0.0f); // Fallback
+					bitangent = HM::Vector3(0.0f, 1.0f, 0.0f);
 				}
 
 				// Normalize tangent and bitangent
