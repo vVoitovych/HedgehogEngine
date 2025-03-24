@@ -1,7 +1,8 @@
 Hedgehog Engine
 ============
-BoolkaEngine is Vulkan game engine.
+HedgehogEngine is Vulkan game engine.
 
+![Screenshot](https://github.com/vVoitovych/HedgehogEngine/blob/master/Screenshot.png)
 
 Features
 --------
