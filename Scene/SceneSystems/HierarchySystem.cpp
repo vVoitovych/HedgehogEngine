@@ -21,7 +21,8 @@ namespace Scene
 		for (auto const& entity : hierarchy.mChildren)
 		{
 			auto& childTransform = coordinator.GetComponent<TransformComponent>(entity);
-			childTransform.mObjMatrix = transform.mObjMatrix * childTransform.mObjMatrix;
+			childTransform.mObjMatrix = childTransform.mObjMatrix * transform.mObjMatrix;
+			UpdateChildrenMatricies(coordinator, entity);
 
 		}
 

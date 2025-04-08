@@ -12,13 +12,11 @@ Scene:
         Name: "room\x00bject_0"
         Parent: 0
         TransformComponent:
-          Position: [0, 0, 0]
-          Rotation: [-5.5, -18, 132]
+          Position: [4.5, -0.5, 0.5]
+          Rotation: [-3, -16, 150]
           Scale: [1, 1, 1]
         MeshComponent:
           MeshPath: Models\viking_room.obj
-          MeshIndex: 0
-          CachedMeshPath: Models\viking_room.obj
         RenderComponent:
           Visible: true
           Material: Materials\test1.material
@@ -27,8 +25,8 @@ Scene:
             Name: "sub_room\x00t_0"
             Parent: 1
             TransformComponent:
-              Position: [3, 3.5, -1]
-              Rotation: [0, 5, 50.5]
+              Position: [1.5, 0.5, -1]
+              Rotation: [0, 172.5, 6.5]
               Scale: [1, 1, 1]
             MeshComponent:
               MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
