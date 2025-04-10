@@ -2,7 +2,7 @@ project "DialogueWindows"
    kind "StaticLib"
    language "C++"
    cppdialect "C++20"
-   targetdir "Binaries/%{cfg.buildcfg}"
+   
    staticruntime "off"
 
    files { "**.hpp", "**.cpp" }

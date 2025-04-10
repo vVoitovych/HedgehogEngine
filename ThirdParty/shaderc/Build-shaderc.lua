@@ -1,35 +1,37 @@
-project "yaml-cpp"
+project "shaderc"
    kind "StaticLib"
    language "C++"
    cppdialect "C++20"
    
    staticruntime "off"
 
-   files    { 
-        "yaml-cpp/include/**.h",
-        "yaml-cpp/src/**.cpp"
+    files 
+    { 
+        "shaderc/libshaderc/**.cc",
+        "shaderc/libshaderc/**.h"
     }
-   includedirs
-   {
-    "%{IncludeDir.yaml_cpp}"
-   }
+
+    includedirs
+    { 
+        "shaderc/libshaderc/include",
+        "shaderc/libshaderc_util/include",
+        "../SPIRV-Headers/SPIRV-Headers/include"
+    }
 
    targetdir ("../../Binaries/" .. OutputDir .. "/%{prj.name}")
    objdir ("../../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")
-
-    warnings "Off" 
 
    filter "system:windows"
        systemversion "latest"
        defines { }
 
    filter "configurations:Debug"
-       defines { "DEBUG", "YAML_CPP_STATIC_DEFINE" }
+       defines { "DEBUG" }
        runtime "Debug"
        symbols "On"
 
    filter "configurations:Release"
-       defines { "RELEASE", "YAML_CPP_STATIC_DEFINE" }
+       defines { "RELEASE" }
        runtime "Release"
        optimize "On"
 

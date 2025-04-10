@@ -10,3 +10,6 @@
 [submodule "ThirdParty/tinygltf"]
 	path = ThirdParty/tinygltf
 	url = https://github.com/syoyo/tinygltf.git
+[submodule "ThirdParty/SPIRV-Reflect/SPIRV-Reflect"]
+	path = ThirdParty/SPIRV-Reflect/SPIRV-Reflect
+	url = https://github.com/KhronosGroup/SPIRV-Reflect.git

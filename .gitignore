@@ -574,3 +574,5 @@ Binaries
 /HedgehogEngine/HedgehogWrappers/HedgehogWrappers.vcxproj
 /HedgehogEngine/HedgehogWrappers/HedgehogWrappers.vcxproj.filters
 /HedgehogEngine/HedgehogWrappers/HedgehogWrappers.vcxproj.user
+/ThirdParty/shaderc/shaderc.vcxproj
+/ThirdParty/shaderc/shaderc.vcxproj.filters

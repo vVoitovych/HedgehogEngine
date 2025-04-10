@@ -2,7 +2,7 @@ project "HedgehogWrappers"
    kind "StaticLib"
    language "C++"
    cppdialect "C++20"
-   targetdir "Binaries/%{cfg.buildcfg}"
+   
    staticruntime "off"
 
     files 

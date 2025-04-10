@@ -1,35 +1,35 @@
-project "yaml-cpp"
+project "SPIRV-Reflect"
    kind "StaticLib"
    language "C++"
    cppdialect "C++20"
-   
+
    staticruntime "off"
 
-   files    { 
-        "yaml-cpp/include/**.h",
-        "yaml-cpp/src/**.cpp"
+    files 
+    { 
+        "SPIRV-Reflect/spirv_reflect.cpp",
+        "SPIRV-Reflect/spirv_reflect.h"
     }
-   includedirs
-   {
-    "%{IncludeDir.yaml_cpp}"
-   }
+
+    includedirs
+    { 
+        "SPIRV-Reflect"
+    }
 
    targetdir ("../../Binaries/" .. OutputDir .. "/%{prj.name}")
    objdir ("../../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")
-
-    warnings "Off" 
 
    filter "system:windows"
        systemversion "latest"
        defines { }
 
    filter "configurations:Debug"
-       defines { "DEBUG", "YAML_CPP_STATIC_DEFINE" }
+       defines { "DEBUG" }
        runtime "Debug"
        symbols "On"
 
    filter "configurations:Release"
-       defines { "RELEASE", "YAML_CPP_STATIC_DEFINE" }
+       defines { "RELEASE" }
        runtime "Release"
        optimize "On"
 
