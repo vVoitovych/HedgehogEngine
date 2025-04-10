@@ -17,6 +17,7 @@ group "ThirdParty"
 	include "ThirdParty/ImGui/Build-ImGui.lua"
    include "ThirdParty/tinyfiledialogs/Build-tinyfiledialogs.lua"
    include "ThirdParty/YamlCpp/Build-YamlCpp.lua"
+   include "ThirdParty/SPIRV-Reflect/Build-SPIRV-Reflect.lua"
 group ""
 
 include "HedgehogEngine/HedgehogCommon/Build-HedgehogCommon.lua"

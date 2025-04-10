@@ -16,7 +16,9 @@ project "Shaders"
 
    links 
    { 
-       "ContentLoader"
+       "ContentLoader",
+       "SPIRV-Reflect",
+       "Logger"
    }
 
    targetdir ("../Binaries/" .. OutputDir .. "/%{prj.name}")

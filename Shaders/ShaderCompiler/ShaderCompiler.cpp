@@ -1,9 +1,11 @@
 #include "ShaderCompiler.hpp"
 #include "ContentLoader/CommonFunctions.hpp"
+#include "Logger/Logger.hpp"
+
+#include "ThirdParty/SPIRV-Reflect/SPIRV-Reflect/spirv_reflect.h"
 
 #include <shaderc/shaderc.hpp>
 
-#include <iostream>
 #include <fstream>
 #include <string>
 #include <unordered_set>
@@ -96,6 +98,30 @@ namespace ShaderCompiler
         }
     }
 
+    void PrintUniforms(const std::vector<uint32_t>& spirvData) 
+    {
+        SpvReflectShaderModule module;
+        SpvReflectResult result = spvReflectCreateShaderModule(spirvData.size() * sizeof(uint32_t), spirvData.data(), &module);
+
+        if (result != SPV_REFLECT_RESULT_SUCCESS) 
+        {
+            LOGERROR("Failed to create SPIRV reflection module");
+            return;
+        }
+
+        uint32_t count = 0;
+        spvReflectEnumerateDescriptorBindings(&module, &count, nullptr);
+        std::vector<SpvReflectDescriptorBinding*> bindings(count);
+        spvReflectEnumerateDescriptorBindings(&module, &count, bindings.data());
+
+        for (const auto* binding : bindings) 
+        {
+            LOGVERBOSE("Name: ", binding->name, ", Binding: ", binding->binding, ", Set: ", binding->set, ", DescriptorType: ", binding->descriptor_type);
+        }
+
+        spvReflectDestroyShaderModule(&module);
+    }
+
 	std::vector<uint32_t> ReadAndCompileShader(const std::string& file, ShaderType type)
 	{
         std::string shaderDirectory = ContentLoader::GetShadersDirectory();
@@ -105,7 +131,9 @@ namespace ShaderCompiler
         std::string preprocessedVertexSource = PreprocessShader(vertexSource, shaderDirectory, includedFiles);
 
         std::vector<uint32_t> result = CompileShader(preprocessedVertexSource, ToNativeKind(type), file);
-
+#ifdef DEBUG
+        PrintUniforms(result);
+#endif
 		return result;
 	}
 }

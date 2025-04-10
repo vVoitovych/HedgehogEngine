@@ -22,7 +22,7 @@ Scene:
           Material: Materials\test1.material
         Children:
           - Entity: 2
-            Name: "sub_room\x00t_0"
+            Name: "helmet\x00m\x00t_0"
             Parent: 1
             TransformComponent:
               Position: [1.5, 0.5, -1]
