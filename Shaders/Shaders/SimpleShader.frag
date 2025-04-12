@@ -4,18 +4,8 @@ layout(location = 0) in vec2 fragTexCoord;
 layout(location = 1) in vec4 inNormal;
 layout(location = 2) in vec4 inWorldPosition;
 
-#define MAX_LIGHTS_COUNT 16
-
-#include "Lighting.glsli"
-
-layout(set = 0, binding = 0) uniform UniformBufferObject 
-{
-    mat4 view;
-    mat4 proj;
-    vec4 eyePos;
-    Light lights[MAX_LIGHTS_COUNT];
-    int lightCount;
-} ubo;
+#include "Common/Lighting.glsli"
+#include "Common/UniformFrameData.glsli"
 
 layout(set = 1, binding = 0) uniform MaterialData 
 {

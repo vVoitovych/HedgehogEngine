@@ -127,10 +127,12 @@ namespace ShaderCompiler
         std::string shaderDirectory = ContentLoader::GetShadersDirectory();
         std::unordered_set<std::string> includedFiles;
 
-        std::string vertexSource = ReadFile(ContentLoader::GetShadersDirectory() + file);
-        std::string preprocessedVertexSource = PreprocessShader(vertexSource, shaderDirectory, includedFiles);
+        std::string source = ReadFile(ContentLoader::GetShadersDirectory() + file);
+        std::string preprocessedShaderSource = PreprocessShader(source, shaderDirectory, includedFiles);
 
-        std::vector<uint32_t> result = CompileShader(preprocessedVertexSource, ToNativeKind(type), file);
+        LOGVERBOSE(preprocessedShaderSource);
+
+        std::vector<uint32_t> result = CompileShader(preprocessedShaderSource, ToNativeKind(type), file);
 #ifdef DEBUG
         PrintUniforms(result);
 #endif

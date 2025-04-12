@@ -1,18 +1,7 @@
 #version 450
 
-#define MAX_LIGHTS_COUNT 16
-
-#include "LightData.glsli"
-
-layout(set = 0, binding = 0) uniform UniformBufferObject 
-{
-    mat4 view;
-    mat4 proj;
-    vec4 eyePos;
-    Light lights[MAX_LIGHTS_COUNT];
-    int lightCount;
-} ubo;
-
+#include "Common/LightData.glsli"
+#include "Common/UniformFrameData.glsli"
 
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec2 inTexCoord;
