@@ -130,8 +130,6 @@ namespace ShaderCompiler
         std::string source = ReadFile(ContentLoader::GetShadersDirectory() + file);
         std::string preprocessedShaderSource = PreprocessShader(source, shaderDirectory, includedFiles);
 
-        LOGVERBOSE(preprocessedShaderSource);
-
         std::vector<uint32_t> result = CompileShader(preprocessedShaderSource, ToNativeKind(type), file);
 #ifdef DEBUG
         PrintUniforms(result);
