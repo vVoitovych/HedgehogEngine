@@ -98,6 +98,41 @@ namespace ShaderCompiler
         }
     }
 
+    std::string GetTypeName(const SpvReflectBlockVariable& member) 
+    {
+        uint32_t width = member.numeric.scalar.width;
+        uint32_t components = member.numeric.vector.component_count;
+        uint32_t rows = member.numeric.matrix.row_count;
+        uint32_t cols = member.numeric.matrix.column_count;
+
+        std::string typeStr;
+
+        if (cols > 1 && rows > 1) 
+        {
+            typeStr = "mat" + std::to_string(cols) + "x" + std::to_string(rows);
+        }
+
+        else if (components > 1) 
+        {
+            typeStr = "vec" + std::to_string(components);
+        }
+
+        else 
+        {
+            typeStr = "float"; 
+        }
+
+        if (member.array.dims_count > 0) 
+        {
+            for (uint32_t i = 0; i < member.array.dims_count; ++i) 
+            {
+                typeStr += "[" + std::to_string(member.array.dims[i]) + "]";
+            }
+        }
+
+        return typeStr;
+    }
+
     void PrintUniforms(const std::vector<uint32_t>& spirvData) 
     {
         SpvReflectShaderModule module;
@@ -117,6 +152,19 @@ namespace ShaderCompiler
         for (const auto* binding : bindings) 
         {
             LOGVERBOSE("Name: ", binding->name, ", Binding: ", binding->binding, ", Set: ", binding->set, ", DescriptorType: ", binding->descriptor_type);
+
+            if (binding->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER) 
+            {
+                const SpvReflectBlockVariable& block = binding->block;
+
+                for (uint32_t i = 0; i < block.member_count; ++i) 
+                {
+                    const SpvReflectBlockVariable& member = block.members[i];
+                    std::string type = GetTypeName(member);
+
+                    LOGVERBOSE("\tMember: ", member.name, ", Offset: ", member.offset, ", Size: ", member.size, ", Type: ", type);
+                }
+            }
         }
 
         spvReflectDestroyShaderModule(&module);
