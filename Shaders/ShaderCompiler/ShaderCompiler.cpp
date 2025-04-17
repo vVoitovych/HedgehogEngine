@@ -2,8 +2,6 @@
 #include "ContentLoader/CommonFunctions.hpp"
 #include "Logger/Logger.hpp"
 
-#include "ThirdParty/SPIRV-Reflect/SPIRV-Reflect/spirv_reflect.h"
-
 #include <shaderc/shaderc.hpp>
 
 #include <fstream>
@@ -11,7 +9,6 @@
 #include <unordered_set>
 #include <vector>
 
-#include <Windows.h>
 #include <stdexcept>
 #include <filesystem>
 
@@ -38,11 +35,15 @@ namespace ShaderCompiler
         std::ostringstream processed;
         std::string line;
 
-        while (std::getline(stream, line)) {
-            if (line.find("#include") == 0) {
+        while (std::getline(stream, line)) 
+        {
+            if (line.find("#include") == 0) 
+            {
                 size_t start = line.find('"');
                 size_t end = line.find('"', start + 1);
-                if (start == std::string::npos || end == std::string::npos) {
+                if (start == std::string::npos || end == std::string::npos) 
+                {
+                    LOGERROR("Malformed #include directive: ", line);
                     throw std::runtime_error("Malformed #include directive: " + line);
                 }
 
@@ -56,7 +57,8 @@ namespace ShaderCompiler
                 std::string includedSource = ReadFile(includePath);
                 processed << PreprocessShader(includedSource, directory, includedFiles);
             }
-            else {
+            else 
+            {
                 processed << line << "\n";
             }
         }
@@ -74,6 +76,7 @@ namespace ShaderCompiler
         auto result = compiler.CompileGlslToSpv(source, kind, name.c_str(), options);
         if (result.GetCompilationStatus() != shaderc_compilation_status_success)
         {
+            LOGERROR(result.GetErrorMessage());
             throw std::runtime_error(result.GetErrorMessage());
         }
 
@@ -98,77 +101,7 @@ namespace ShaderCompiler
         }
     }
 
-    std::string GetTypeName(const SpvReflectBlockVariable& member) 
-    {
-        uint32_t width = member.numeric.scalar.width;
-        uint32_t components = member.numeric.vector.component_count;
-        uint32_t rows = member.numeric.matrix.row_count;
-        uint32_t cols = member.numeric.matrix.column_count;
 
-        std::string typeStr;
-
-        if (cols > 1 && rows > 1) 
-        {
-            typeStr = "mat" + std::to_string(cols) + "x" + std::to_string(rows);
-        }
-
-        else if (components > 1) 
-        {
-            typeStr = "vec" + std::to_string(components);
-        }
-
-        else 
-        {
-            typeStr = "float"; 
-        }
-
-        if (member.array.dims_count > 0) 
-        {
-            for (uint32_t i = 0; i < member.array.dims_count; ++i) 
-            {
-                typeStr += "[" + std::to_string(member.array.dims[i]) + "]";
-            }
-        }
-
-        return typeStr;
-    }
-
-    void PrintUniforms(const std::vector<uint32_t>& spirvData) 
-    {
-        SpvReflectShaderModule module;
-        SpvReflectResult result = spvReflectCreateShaderModule(spirvData.size() * sizeof(uint32_t), spirvData.data(), &module);
-
-        if (result != SPV_REFLECT_RESULT_SUCCESS) 
-        {
-            LOGERROR("Failed to create SPIRV reflection module");
-            return;
-        }
-
-        uint32_t count = 0;
-        spvReflectEnumerateDescriptorBindings(&module, &count, nullptr);
-        std::vector<SpvReflectDescriptorBinding*> bindings(count);
-        spvReflectEnumerateDescriptorBindings(&module, &count, bindings.data());
-
-        for (const auto* binding : bindings) 
-        {
-            LOGVERBOSE("Name: ", binding->name, ", Binding: ", binding->binding, ", Set: ", binding->set, ", DescriptorType: ", binding->descriptor_type);
-
-            if (binding->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER) 
-            {
-                const SpvReflectBlockVariable& block = binding->block;
-
-                for (uint32_t i = 0; i < block.member_count; ++i) 
-                {
-                    const SpvReflectBlockVariable& member = block.members[i];
-                    std::string type = GetTypeName(member);
-
-                    LOGVERBOSE("\tMember: ", member.name, ", Offset: ", member.offset, ", Size: ", member.size, ", Type: ", type);
-                }
-            }
-        }
-
-        spvReflectDestroyShaderModule(&module);
-    }
 
 	std::vector<uint32_t> ReadAndCompileShader(const std::string& file, ShaderType type)
 	{
@@ -179,9 +112,6 @@ namespace ShaderCompiler
         std::string preprocessedShaderSource = PreprocessShader(source, shaderDirectory, includedFiles);
 
         std::vector<uint32_t> result = CompileShader(preprocessedShaderSource, ToNativeKind(type), file);
-#ifdef DEBUG
-        PrintUniforms(result);
-#endif
 		return result;
 	}
 }

@@ -8,6 +8,10 @@ namespace DialogueWindows
 	char const* materialFilterPatterns[materialFilterNum] = { "*.material" };
 	const char* materialFilterDescription = "material files (*.material)";
 
+	constexpr int materialInstanceFilterNum = 1;
+	char const* materialInstanceFilterPatterns[materialFilterNum] = { "*.minst" };
+	const char* materialInstanceFilterDescription = "material instance files (*.minst)";
+
 	char* MaterialCreationDialogue()
 	{
 		return tinyfd_saveFileDialog(
@@ -36,6 +40,34 @@ namespace DialogueWindows
 			materialFilterNum,
 			materialFilterPatterns,
 			materialFilterDescription);
+	}
+	char* MaterialInstanceCreationDialogue()
+	{
+		return tinyfd_saveFileDialog(
+			"New material instance",
+			"../",
+			materialInstanceFilterNum,
+			materialInstanceFilterPatterns,
+			materialInstanceFilterDescription);
+	}
+	char* MaterialInstanceOpenDialogue()
+	{
+		return tinyfd_openFileDialog(
+			"Open material instance",
+			"../",
+			materialInstanceFilterNum,
+			materialInstanceFilterPatterns,
+			materialInstanceFilterDescription,
+			1);
+	}
+	char* MaterioalInstanceSaveDialogue()
+	{
+		return tinyfd_saveFileDialog(
+			"Save material instance",
+			"../",
+			materialInstanceFilterNum,
+			materialInstanceFilterPatterns,
+			materialInstanceFilterDescription);
 	}
 }
 

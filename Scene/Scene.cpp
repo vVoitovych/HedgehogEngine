@@ -267,7 +267,7 @@ namespace Scene
 		}
 		std::string relatedPath = ContentLoader::GetAssetRelativetlyPath(path);
 		auto& component = mSceneCoordinator.GetComponent<RenderComponent>(entity);
-		component.mMaterial = relatedPath;		
+		component.mMaterialInstance = relatedPath;		
 
 		mRenderSystem->Update(mSceneCoordinator, entity);
 	}

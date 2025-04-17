@@ -23,7 +23,7 @@ namespace Scene
 		void UpdateMaterialPath(ECS::Coordinator& coordinator, ECS::Entity entity);
 
 	private:
-		std::vector<std::string> mMaterialPathes;
+		std::vector<std::string> mMaterialInstancePathes;
 
 	};
 

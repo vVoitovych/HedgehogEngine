@@ -7,7 +7,7 @@ namespace Scene
 		auto& render = coordinator.GetComponent<RenderComponent>(entity);
 		if (render.mMaterialIndex.has_value())
 		{
-			if (mMaterialPathes[render.mMaterialIndex.value()] != render.mMaterial)
+			if (mMaterialInstancePathes[render.mMaterialIndex.value()] != render.mMaterialInstance)
 			{
 				UpdateMaterialPath(coordinator, entity);
 			}
@@ -28,12 +28,12 @@ namespace Scene
 
 	size_t RenderSystem::GetMaterialsCount() const
 	{
-		return mMaterialPathes.size();
+		return mMaterialInstancePathes.size();
 	}
 
 	const std::vector<std::string>& RenderSystem::GetMaterials() const
 	{
-		return mMaterialPathes;
+		return mMaterialInstancePathes;
 	}
 
 	const std::vector<ECS::Entity>& RenderSystem::GetEntities() const
@@ -51,17 +51,17 @@ namespace Scene
 	{
 		auto& component = coordinator.GetComponent<RenderComponent>(entity);
 
-		if (!component.mMaterial.empty())
+		if (!component.mMaterialInstance.empty())
 		{
-			auto it = std::find(mMaterialPathes.begin(), mMaterialPathes.end(), component.mMaterial);
-			if (it != mMaterialPathes.end())
+			auto it = std::find(mMaterialInstancePathes.begin(), mMaterialInstancePathes.end(), component.mMaterialInstance);
+			if (it != mMaterialInstancePathes.end())
 			{
-				component.mMaterialIndex = it - mMaterialPathes.begin();
+				component.mMaterialIndex = it - mMaterialInstancePathes.begin();
 			}
 			else
 			{
-				component.mMaterialIndex = mMaterialPathes.size();
-				mMaterialPathes.push_back(component.mMaterial);
+				component.mMaterialIndex = mMaterialInstancePathes.size();
+				mMaterialInstancePathes.push_back(component.mMaterialInstance);
 			}
 
 		}

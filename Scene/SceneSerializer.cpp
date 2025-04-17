@@ -152,7 +152,7 @@ namespace Scene
 			out << YAML::BeginMap;
 
 			out << YAML::Key << "Visible" << YAML::Value << renderComponent.mIsVisible;
-			out << YAML::Key << "Material" << YAML::Value << renderComponent.mMaterial;
+			out << YAML::Key << "Material" << YAML::Value << renderComponent.mMaterialInstance;
 
 			out << YAML::EndMap;
 		}
@@ -233,7 +233,7 @@ namespace Scene
 			scene.AddRenderComponent(entity);
 			auto& renderComponent = scene.GetRenderComponent(entity);
 			renderComponent.mIsVisible = renderComponentData["Visible"].as<bool>();
-			renderComponent.mMaterial = renderComponentData["Material"].as<std::string>();
+			renderComponent.mMaterialInstance = renderComponentData["Material"].as<std::string>();
 
 		}
 

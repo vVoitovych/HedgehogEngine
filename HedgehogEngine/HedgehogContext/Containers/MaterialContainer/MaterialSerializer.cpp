@@ -1,6 +1,7 @@
 #include "MaterialSerializer.hpp"
 
 #include "MaterialData.hpp"
+#include "Material.hpp"
 #include "Logger/Logger.hpp"
 #include "ContentLoader/CommonFunctions.hpp"
 
@@ -44,7 +45,52 @@ namespace Context
 		material.path = ContentLoader::GetAssetRelativetlyPath(materialPath);
 		material.type =	static_cast<MaterialType>(data["Type"].as<size_t>());
 		material.baseColor = data["BaseColor"].as<std::string>();
-		material.transparency = data["Transparency"].as<float>();;
+		material.transparency = data["Transparency"].as<float>();
+	}
+
+	void MaterialSerializer::Serialize(Material& material, std::string materialPath)
+	{
+		LOGINFO("Serialize material: ", materialPath);
+
+		YAML::Emitter out;
+		out << YAML::BeginMap;
+		out << YAML::Key << "Type" << YAML::Value << static_cast<size_t>(material.materialType);
+		out << YAML::Key << "Culling" << YAML::Value << static_cast<size_t>(material.cullingType);
+		out << YAML::Key << "VertexShader" << YAML::Value << material.vertexShader;
+		out << YAML::Key << "FragmentShader" << YAML::Value << material.fragmentShader;
+		if (!material.geometryShader.empty())
+			out << YAML::Key << "GeometryShader" << YAML::Value << material.geometryShader;
+		if (!material.tessellationShader.empty())
+			out << YAML::Key << "TessellationShader" << YAML::Value << material.tessellationShader;
+		out << YAML::EndMap;
+
+		std::ofstream fout(materialPath);
+		fout << out.c_str();
+	}
+
+	void MaterialSerializer::Deserialize(Material& material, std::string materialPath)
+	{
+		LOGINFO("Deserialize material: ", materialPath);
+
+		YAML::Node data;
+		try
+		{
+			data = YAML::LoadFile(materialPath);
+		}
+		catch (YAML::ParserException e)
+		{
+			LOGERROR("Failed to load scene: ", materialPath, " with error: ", e.what());
+			return;
+		}
+		material.path = ContentLoader::GetAssetRelativetlyPath(materialPath);
+		material.materialType = static_cast<MaterialSurfaceType>(data["Type"].as<size_t>());
+		material.cullingType = static_cast<CullingType>(data["Culling"].as<size_t>());
+		material.vertexShader = data["VertexShader"].as<std::string>();
+		material.fragmentShader = data["FragmentShader"].as<std::string>();
+		if (data["GeometryShader"])
+			material.geometryShader = data["GeometryShader"].as<std::string>();
+		if (data["TessellationShader"])
+			material.tessellationShader = data["TessellationShader"].as<std::string>();
 	}
 
 }

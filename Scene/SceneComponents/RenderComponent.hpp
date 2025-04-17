@@ -11,7 +11,7 @@ namespace Scene
 	public:
 		bool mIsVisible = true;
 
-		std::string mMaterial;
+		std::string mMaterialInstance;
 		std::optional<size_t> mMaterialIndex;
 
 	};

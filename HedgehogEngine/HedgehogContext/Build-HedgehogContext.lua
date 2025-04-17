@@ -32,6 +32,7 @@ project "HedgehogContext"
         "Logger",
         "Scene",
         "imgui",
+        "SPIRV-Reflect",
         "yaml-cpp",
         "vulkan-1"
     }

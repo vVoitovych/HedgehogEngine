@@ -5,6 +5,7 @@
 namespace Context
 {
 	struct MaterialData;
+	struct Material;
 
 	class MaterialSerializer
 	{
@@ -13,6 +14,9 @@ namespace Context
 
 		static void Deserialize(MaterialData& material, std::string materialPath);
 
+		static void Serialize(Material& material, std::string materialPath);
+
+		static void Deserialize(Material& material, std::string materialPath);
 	};
 
 }

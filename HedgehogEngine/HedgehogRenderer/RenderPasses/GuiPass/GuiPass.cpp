@@ -334,7 +334,7 @@ namespace Renderer
 
 					if (!materials.empty())
 					{
-						if (ImGui::BeginCombo("material", render.mMaterial.c_str()))
+						if (ImGui::BeginCombo("material", render.mMaterialInstance.c_str()))
 						{
 							int selectedIndex = static_cast<int>(render.mMaterialIndex.has_value() ? render.mMaterialIndex.value() : 0);
 
@@ -344,7 +344,7 @@ namespace Renderer
 								if (ImGui::Selectable(materials[i].c_str(), isSelected))
 								{
 									selectedIndex = i;
-									render.mMaterial = materials[i];
+									render.mMaterialInstance = materials[i];
 									scene.UpdateMaterialComponent(entity);
 								}
 
