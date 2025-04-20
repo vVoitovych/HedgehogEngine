@@ -5,7 +5,7 @@
 namespace Context
 {
 	struct MaterialData;
-	struct Material;
+	class Material;
 
 	class MaterialSerializer
 	{
