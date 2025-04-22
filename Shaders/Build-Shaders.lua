@@ -16,8 +16,7 @@ project "Shaders"
 
    links 
    { 
-       "ContentLoader",
-       "Logger"
+       "ContentLoader"
    }
 
    targetdir ("../Binaries/" .. OutputDir .. "/%{prj.name}")

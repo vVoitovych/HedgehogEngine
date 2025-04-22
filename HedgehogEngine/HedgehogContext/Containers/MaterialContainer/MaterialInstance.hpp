@@ -7,27 +7,23 @@
 namespace Context
 {
    
-    class MaterilInstance
+    class MaterialInstance
     {
     public:
-        MaterilInstance(const std::string& material) : mMaterial(material) {}
+        MaterialInstance(const std::string& path, const Material& material);
 
+        void UpdateMaterialInstance(const Material& material);
 
         const ShaderParameters& GetVertexShaderParameters() const;
         ShaderParameters& GetVertexShaderParameters();
         const ShaderParameters& GetFragmentShaderParameters() const;
         ShaderParameters& GetFragmentShaderParameters();
-        const ShaderParameters& GetTesselationShaderParameters() const;
-        ShaderParameters& GetTesselationShaderParameters();
-        const ShaderParameters& GetGeometryShaderParameters() const;
-        ShaderParameters& GetGeometryShaderParameters();
-    private:
-        std::string mMaterial;
 
-        ShaderParameters mVertexShaderParameters;
-        ShaderParameters mTesselationShaderParameters;
-        ShaderParameters mGeometryShaderParameters;
-        ShaderParameters mFragmentShaderParameters;
+    private:
+        std::string m_MaterialPath;
+        std::string m_Path;
+        ShaderParameters m_VertexShaderParameters;
+        ShaderParameters m_FragmentShaderParameters;
 
     };
 

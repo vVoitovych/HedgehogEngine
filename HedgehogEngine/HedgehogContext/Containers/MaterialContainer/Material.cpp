@@ -1,10 +1,12 @@
 #include "Material.hpp"
 
 #include "ThirdParty/SPIRV-Reflect/SPIRV-Reflect/spirv_reflect.h"
+#include "Shaders/ShaderCompiler/ShaderCompiler.hpp"
 #include "Logger/Logger.hpp"
 
 #include <vector>
 #include <unordered_map>
+#include <stdexcept>
 
 namespace Context
 {
@@ -65,7 +67,7 @@ namespace Context
         }
     }
 
-    void ParseShaderParameters(const std::vector<uint32_t>& spirvData, ShaderParameters& params)
+    void Material::ParseShaderParameters(const std::vector<uint32_t>& spirvData, ShaderParameters& params)
     {
         if (spirvData.empty())
             return;
@@ -75,8 +77,7 @@ namespace Context
 
         if (result != SPV_REFLECT_RESULT_SUCCESS)
         {
-            LOGERROR("Failed to create SPIRV reflection module");
-            return;
+            throw std::runtime_error("Failed to create SPIRV reflection module");
         }
 
         uint32_t count = 0;
@@ -88,7 +89,7 @@ namespace Context
         {
             if (strcmp(binding->name, "ubo") == 0)
                 continue;
-
+            //TODO: remove
             LOGVERBOSE("Name: ", binding->name, ", Binding: ", binding->binding, ", Set: ", binding->set, ", DescriptorType: ", binding->descriptor_type);
 
             if (binding->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER || binding->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
@@ -105,6 +106,7 @@ namespace Context
                     const SpvReflectBlockVariable& member = block.members[i];
                     auto type = GetTypeName(member);
                     auto paramType = TypeNameToType(type);
+                    //TODO: remove
                     LOGVERBOSE("\tMember: ", member.name, ", Offset: ", member.offset, ", Size: ", member.size, ", Type: ", type);
                     if (paramType != ShaderParamType::Unknown)
                     {
@@ -117,23 +119,43 @@ namespace Context
         spvReflectDestroyShaderModule(&module);
     }
 
-    void Material::ParseVertexShaderParemeters(const std::vector<uint32_t>& spirv)
+
+    Material::Material(const std::string& path)
+        : m_Path(path)
     {
-        ParseShaderParameters(spirv, mVertexShaderParameters);
     }
 
-    void Material::ParseFragmentShaderParemeters(const std::vector<uint32_t>& spirv)
+    void Material::SetVertexShader(const std::string& path)
     {
-        ParseShaderParameters(spirv, mFragmentShaderParameters);
+        m_VertexShader = path;
+        m_VertexShaderSPIRV = ShaderCompiler::ReadAndCompileShader(path, ShaderCompiler::ShaderType::Vertex);
+        ParseShaderParameters(m_VertexShaderSPIRV, m_VertexShaderParameters);
+    }
+
+    void Material::SetFragmentShader(const std::string& path)
+    {
+        m_FragmentShader = path;
+        m_FragmentShaderSPIRV = ShaderCompiler::ReadAndCompileShader(path, ShaderCompiler::ShaderType::Fragment);
+        ParseShaderParameters(m_FragmentShaderSPIRV, m_FragmentShaderParameters);
+    }
+
+    const std::string& Material::GetMaterialPath() const
+    {
+        return m_Path;
     }
 
     ShaderParameters Material::GetVertexShaderParameters() const
     {
-        return mVertexShaderParameters;
+        return m_VertexShaderParameters;
     }
     ShaderParameters Material::GetFragmentShaderParameters() const
     {
-        return mFragmentShaderParameters;
+        return m_FragmentShaderParameters;
+    }
+
+    bool Material::IsValid() const
+    {
+        return !m_VertexShaderSPIRV.empty() && !m_FragmentShaderSPIRV.empty();
     }
 
 }

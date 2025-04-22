@@ -1,6 +1,5 @@
 #include "ShaderCompiler.hpp"
 #include "ContentLoader/CommonFunctions.hpp"
-#include "Logger/Logger.hpp"
 
 #include <shaderc/shaderc.hpp>
 
@@ -43,7 +42,6 @@ namespace ShaderCompiler
                 size_t end = line.find('"', start + 1);
                 if (start == std::string::npos || end == std::string::npos) 
                 {
-                    LOGERROR("Malformed #include directive: ", line);
                     throw std::runtime_error("Malformed #include directive: " + line);
                 }
 
@@ -76,7 +74,6 @@ namespace ShaderCompiler
         auto result = compiler.CompileGlslToSpv(source, kind, name.c_str(), options);
         if (result.GetCompilationStatus() != shaderc_compilation_status_success)
         {
-            LOGERROR(result.GetErrorMessage());
             throw std::runtime_error(result.GetErrorMessage());
         }
 

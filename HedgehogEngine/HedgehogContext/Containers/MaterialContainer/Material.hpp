@@ -58,7 +58,7 @@ namespace Context
         {
             ShaderParameterValue param;
             param.type = type;
-            mParameters[name] = param;
+            m_Parameters[name] = param;
         }
 
         void SetParam(const std::string& name, ShaderParamType type, const void* value, size_t size)
@@ -67,7 +67,7 @@ namespace Context
             param.type = type;
             param.data.resize(size);
             memcpy(param.data.data(), value, size);
-            mParameters[name] = param;
+            m_Parameters[name] = param;
         }
 
         template<typename T>
@@ -81,24 +81,37 @@ namespace Context
             ShaderParameterValue param;
             param.type = ShaderParamType::Texture;
             param.texture = path;
-            mParameters[name] = param;
+            m_Parameters[name] = param;
         }
 
         template<typename T>
         T Get(const std::string& name) const
         {
-            auto it = mParameters.find(name);
-            if (it != mParameters.end())
+            auto it = m_Parameters.find(name);
+            if (it != m_Parameters.end())
             {
                 return it->second.Get<T>();
             }
             return T{};
         }
 
+        bool Has(const std::string& name) const
+        {
+            return m_Parameters.contains(name);
+        }
+
+        void Remove(const std::string& name)
+        {
+            if (m_Parameters.contains(name))
+            {
+                m_Parameters.erase(name);
+            }
+        }
+
         std::string GetTexture(const std::string& name) const
         {
-            auto it = mParameters.find(name);
-            if (it != mParameters.end() && it->second.type == ShaderParamType::Texture)
+            auto it = m_Parameters.find(name);
+            if (it != m_Parameters.end() && it->second.type == ShaderParamType::Texture)
             {
                 return it->second.GetTexturePath();
             }
@@ -107,16 +120,16 @@ namespace Context
 
         const std::unordered_map<std::string, ShaderParameterValue>& GetAll() const
         {
-            return mParameters;
+            return m_Parameters;
         }
 
         bool IsEmpty() const
         {
-            return mParameters.empty();
+            return m_Parameters.empty();
         }
 
     private:
-        std::unordered_map<std::string, ShaderParameterValue> mParameters;
+        std::unordered_map<std::string, ShaderParameterValue> m_Parameters;
 
     };
 
@@ -138,26 +151,35 @@ namespace Context
 	class Material
 	{
     public:
+        Material(const std::string& path);
 
+        void SetVertexShader(const std::string& path);
+        void SetFragmentShader(const std::string& path);
+
+        const std::string& GetMaterialPath() const;
         ShaderParameters GetVertexShaderParameters() const;
         ShaderParameters GetFragmentShaderParameters() const;
 
-    private:
-        void ParseVertexShaderParemeters(const std::vector<uint32_t>& spirv);
-        void ParseFragmentShaderParemeters(const std::vector<uint32_t>& spirv);
+        bool IsValid() const;
 
     private:
+        void ParseShaderParameters(const std::vector<uint32_t>& spirvData, ShaderParameters& params);
 
-		std::string path;
+    private:
 
-		std::string vertexShader;
-		std::string fragmentShader;
+		std::string m_Path;
 
-		MaterialSurfaceType materialType;
-		CullingType cullingType;
+		std::string m_VertexShader;
+        std::vector<uint32_t> m_VertexShaderSPIRV;
+        ShaderParameters m_VertexShaderParameters;
 
-        ShaderParameters mVertexShaderParameters;
-        ShaderParameters mFragmentShaderParameters;
+		std::string m_FragmentShader;
+        std::vector<uint32_t> m_FragmentShaderSPIRV;
+        ShaderParameters m_FragmentShaderParameters;
+
+
+		MaterialSurfaceType m_MaterialType = MaterialSurfaceType::Opaque;
+        CullingType m_CullingType = CullingType::None;
 
 	};
 
