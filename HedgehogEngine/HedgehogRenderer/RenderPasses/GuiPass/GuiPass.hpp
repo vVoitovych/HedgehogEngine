@@ -1,7 +1,5 @@
 #pragma once
 
-#include "ECS/Entity.h"
-
 #include <memory>
 #include <string>
 
@@ -36,16 +34,6 @@ namespace Renderer
 
 	private:
 		void DrawGui(Context::Context& context);
-		void DrawInspector(Context::Context& context);
-		void DrawTitle(Context::Context& context);
-		void DrawTransform(Context::Context& context);
-		void DrawMesh(Context::Context& context);
-		void DrawRender(Context::Context& context);
-		void DrawLight(Context::Context& context);
-
-		void DrawScene(Context::Context& context);
-		void DrawHierarchyNode(Context::Context& context, ECS::Entity entity, int& index);
-		void ShowAppMainMenuBar(Context::Context& context);
 
 		void UploadFonts();
 
