@@ -53,7 +53,6 @@ namespace Context
             {"vec2", ShaderParamType::Vec2},
             {"vec3", ShaderParamType::Vec3},
             {"vec4", ShaderParamType::Vec4},
-            {"mat3x3", ShaderParamType::Mat3},
             {"mat4x4", ShaderParamType::Mat4},
             {"texture", ShaderParamType::Texture}
         };
@@ -119,6 +118,10 @@ namespace Context
         spvReflectDestroyShaderModule(&module);
     }
 
+    Material::Material()
+    {
+
+    }
 
     Material::Material(const std::string& path)
         : m_Path(path)
@@ -156,6 +159,36 @@ namespace Context
     bool Material::IsValid() const
     {
         return !m_VertexShaderSPIRV.empty() && !m_FragmentShaderSPIRV.empty();
+    }
+
+    MaterialSurfaceType Material::GetSurfaceType() const
+    {
+        return m_MaterialType;
+    }
+
+    void Material::SetSurfaceType(MaterialSurfaceType type)
+    {
+        m_MaterialType = type;
+    }
+
+    CullingType Material::GetCullingType() const
+    {
+        return m_CullingType;
+    }
+
+    void Material::SetCullingType(CullingType type)
+    {
+        m_CullingType = type;
+    }
+
+    std::string Material::GetVertexShader() const
+    {
+        return m_VertexShader;
+    }
+
+    std::string Material::GetFragmentShader() const
+    {
+        return m_FragmentShader;
     }
 
 }

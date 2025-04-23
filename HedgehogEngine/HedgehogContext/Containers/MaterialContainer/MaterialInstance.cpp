@@ -4,6 +4,10 @@
 
 namespace Context
 {
+	MaterialInstance::MaterialInstance()
+	{
+	}
+
 	MaterialInstance::MaterialInstance(const std::string& path, const Material& material)
 		: m_Path(path)
 	{
@@ -67,6 +71,26 @@ namespace Context
 	ShaderParameters& MaterialInstance::GetFragmentShaderParameters()
 	{
 		return m_FragmentShaderParameters;
+	}
+
+	std::string MaterialInstance::GetPath() const
+	{
+		return m_Path;
+	}
+
+	std::string MaterialInstance::GetMaterialPath() const
+	{
+		return m_MaterialPath;
+	}
+
+	void MaterialInstance::SetPath(const std::string& path)
+	{
+		m_Path = path;
+	}
+
+	void MaterialInstance::SetMaterialPath(const std::string& path)
+	{
+		m_MaterialPath = path;
 	}
 
 

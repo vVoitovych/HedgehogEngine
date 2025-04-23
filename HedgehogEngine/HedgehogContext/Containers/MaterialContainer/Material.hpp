@@ -12,7 +12,6 @@ namespace Context
         Vec2,
         Vec3,
         Vec4,
-        Mat3,
         Mat4,
         Texture,
         Unknown
@@ -43,10 +42,6 @@ namespace Context
             type = ShaderParamType::Texture;
             texture = path;
             data.clear();
-        }
-
-        std::string GetTexturePath() const {
-            return texture;
         }
 
     };
@@ -113,7 +108,7 @@ namespace Context
             auto it = m_Parameters.find(name);
             if (it != m_Parameters.end() && it->second.type == ShaderParamType::Texture)
             {
-                return it->second.GetTexturePath();
+                return it->second.texture;
             }
             return {};
         }
@@ -151,6 +146,7 @@ namespace Context
 	class Material
 	{
     public:
+        Material();
         Material(const std::string& path);
 
         void SetVertexShader(const std::string& path);
@@ -161,6 +157,15 @@ namespace Context
         ShaderParameters GetFragmentShaderParameters() const;
 
         bool IsValid() const;
+
+        MaterialSurfaceType GetSurfaceType() const;
+        void SetSurfaceType(MaterialSurfaceType type);
+
+        CullingType GetCullingType() const;
+        void SetCullingType(CullingType type);
+
+        std::string GetVertexShader() const;
+        std::string GetFragmentShader() const;
 
     private:
         void ParseShaderParameters(const std::vector<uint32_t>& spirvData, ShaderParameters& params);
