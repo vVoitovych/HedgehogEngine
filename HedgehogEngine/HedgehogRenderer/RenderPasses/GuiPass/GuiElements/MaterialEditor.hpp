@@ -11,6 +11,10 @@ namespace Renderer
 	{
 	public:
 		static void Draw(Context::Context& context);
+		static void ShowMaterialWindow();
+
+	private:
+		static bool s_MaterialWindowShow;
 	};
 
 }

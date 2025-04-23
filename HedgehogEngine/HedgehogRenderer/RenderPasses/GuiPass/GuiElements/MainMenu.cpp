@@ -1,5 +1,7 @@
 #include "MainMenu.hpp"
 
+#include "MaterialEditor.hpp"
+
 #include "HedgehogContext/Context/Context.hpp"
 #include "HedgehogContext/Context/EngineContext.hpp"
 #include "HedgehogContext/Containers/MaterialContainer/MaterialContainer.hpp"
@@ -46,6 +48,7 @@ namespace Renderer
 
 				ImGui::Separator();
 				if (ImGui::MenuItem("Create material")) { context.GetEngineContext().GetMaterialContainer().CreateNewMaterial(); }
+				if (ImGui::MenuItem("Material editor")) { MaterialEditor::ShowMaterialWindow(); }
 				ImGui::EndMenu();
 			}
 
