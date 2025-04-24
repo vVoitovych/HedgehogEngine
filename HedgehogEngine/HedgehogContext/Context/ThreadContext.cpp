@@ -1,5 +1,7 @@
 #include "ThreadContext.hpp"
 #include "VulkanContext.hpp"
+#include "EngineContext.hpp"
+#include "FrameContext.hpp"
 
 #include "HedgehogWrappers/Wrappeers/Commands/CommandBuffer.hpp"
 #include "HedgehogWrappers/Wrappeers/SyncObjects/SyncObject.hpp"
@@ -9,11 +11,10 @@
 #include "HedgehogWrappers/Wrappeers/Resources/Buffer/Buffer.hpp"
 #include "HedgehogWrappers/Wrappeers/Descriptors/DescriptorSet.hpp"
 #include "HedgehogWrappers/Wrappeers/Descriptors/DescriptorLayoutBuilder.hpp"
-#include "HedgehogContext/Context/VulkanContext.hpp"
-#include "HedgehogContext/Context/EngineContext.hpp"
-#include "HedgehogContext/Context/FrameContext.hpp"
+
 #include "HedgehogContext/Containers/LightContainer/LightContainer.hpp"
 #include "HedgehogCommon/Common/EngineDebugBreak.hpp"
+#include "HedgehogCommon/Common/FrameUniformBufferBuilder.hpp"
 #include "HedgehogCommon/Common/RendererSettings.hpp"
 
 #include "Logger/Logger.hpp"
@@ -41,8 +42,7 @@ namespace Context
 
 		mFrameAllocator = std::make_unique<Wrappers::DescriptorAllocator>(vulkanContext.GetDevice(), MAX_FRAMES_IN_FLIGHT, sizes);
 
-		Wrappers::DescriptorLayoutBuilder builder;
-		builder.AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+		Wrappers::DescriptorLayoutBuilder builder = Context::FrameUniformBufferBilder::Build();
 		mFrameLayout = std::make_unique<Wrappers::DescriptorSetLayout>(vulkanContext.GetDevice(), builder, VK_SHADER_STAGE_VERTEX_BIT  | VK_SHADER_STAGE_FRAGMENT_BIT);
 
 		mFrameUniforms.clear();

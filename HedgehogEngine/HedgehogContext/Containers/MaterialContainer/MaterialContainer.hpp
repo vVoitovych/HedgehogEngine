@@ -40,21 +40,30 @@ namespace Context
 		void SetMaterialDirty(size_t index);
 		void Cleanup(const VulkanContext& context);
 
+		[[deprecated]]
 		void ClearMaterials();
 
+		[[deprecated]]
 		void CreateNewMaterial();
+		[[deprecated]]
 		void SaveMaterial(size_t index);
-
+		[[deprecated]]
 		void LoadBaseTexture(size_t index, const VulkanContext& context, const TextureContainer& textureContainer);
 
+		[[deprecated]]
 		const Wrappers::DescriptorSetLayout& GetDescriptorSetLayout() const;
+		[[deprecated]]
 		const Wrappers::DescriptorSet& GetDescriptorSet(size_t index) const;
+		[[deprecated]]
 		Wrappers::DescriptorSet& GetDescriptorSet(size_t index);
-
+		[[deprecated]]
 		MaterialData& GetMaterialDataByIndex(size_t index);
+		[[deprecated]]
 		const MaterialData& GetMaterialDataByIndex(size_t index) const;
 	private:
+		[[deprecated]]
 		void UpdateMaterialByIndex(size_t index, const VulkanContext& context, const TextureContainer& textureContainer);
+		[[deprecated]]
 		void CreateMaterialResources(MaterialData& data, const VulkanContext& context, const TextureContainer& textureContainer);
 
 	private:

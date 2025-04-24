@@ -19,8 +19,21 @@ namespace Renderer
 			ImGui::SetNextWindowSize(ImVec2(sizeX, sizeY), ImGuiCond_Appearing);
 			ImGui::SetNextWindowPos(ImVec2(450.0f, 150.0f), ImGuiCond_Appearing, ImVec2(1.0f, 0.0f));
 
-			ImGui::Begin("Material Editor", &s_MaterialWindowShow);
-			ImGui::Text("Materials!");
+			ImGui::Begin("Material Editor", &s_MaterialWindowShow, ImGuiWindowFlags_MenuBar);
+			if (ImGui::BeginMenuBar())
+			{
+				if (ImGui::BeginMenu("File"))
+				{
+					if (ImGui::MenuItem("New")) {  }
+					if (ImGui::MenuItem("Open")) {  }
+					if (ImGui::MenuItem("Save")) {  }
+
+					ImGui::Separator();
+					if (ImGui::MenuItem("Quit")) { s_MaterialWindowShow = false; }
+					ImGui::EndMenu();
+				}
+				ImGui::EndMenuBar();
+			}
 
 			ImGui::End();
 		}

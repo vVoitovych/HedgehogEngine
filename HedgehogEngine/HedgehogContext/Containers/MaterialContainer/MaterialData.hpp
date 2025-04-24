@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-
+// TODO [[deprecated]]
 namespace Context
 {
 	enum class MaterialType

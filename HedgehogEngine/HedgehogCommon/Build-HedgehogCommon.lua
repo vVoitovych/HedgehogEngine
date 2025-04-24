@@ -12,7 +12,9 @@ project "HedgehogCommon"
 
     includedirs
     {
-        "../.."
+        "%{IncludeDir.VulkanSDK}",
+        "../..",
+        ".."
     }
 
     libdirs
