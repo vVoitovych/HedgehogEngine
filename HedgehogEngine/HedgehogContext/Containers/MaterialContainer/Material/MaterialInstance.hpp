@@ -1,19 +1,21 @@
 #pragma once
 
-#include "Material.hpp"
+#include "MaterialFrontend.hpp"
 
 #include <string>
+#include <memory>
 
 namespace Context
 {
-   
+    class ShaderParameters;
+
     class MaterialInstance
     {
     public:
         MaterialInstance();
-        MaterialInstance(const std::string& path, const Material& material);
+        MaterialInstance(const std::string& path, const MaterialFrontend& material);
 
-        void UpdateMaterialInstance(const Material& material);
+        void UpdateMaterialInstance(const MaterialFrontend& material);
 
         const ShaderParameters& GetVertexShaderParameters() const;
         ShaderParameters& GetVertexShaderParameters();
@@ -27,8 +29,8 @@ namespace Context
     private:
         std::string m_Path;
         std::string m_MaterialPath;
-        ShaderParameters m_VertexShaderParameters;
-        ShaderParameters m_FragmentShaderParameters;
+        std::unique_ptr<ShaderParameters> m_VertexShaderParameters;
+        std::unique_ptr<ShaderParameters> m_FragmentShaderParameters;
 
     };
 

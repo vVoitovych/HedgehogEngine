@@ -5,7 +5,7 @@
 namespace Context
 {
 	struct MaterialData;
-	class Material;
+	class MaterialFrontend;
 	class MaterialInstance;
 
 	class MaterialSerializer
@@ -17,9 +17,9 @@ namespace Context
 		[[deprecated]]
 		static void Deserialize(MaterialData& material, std::string materialPath);
 
-		static void Serialize(Material& material, std::string materialPath);
+		static void Serialize(MaterialFrontend& material, std::string materialPath);
 
-		static void Deserialize(Material& material, std::string materialPath);
+		static void Deserialize(MaterialFrontend& material, std::string materialPath);
 
 		static void Serialize(MaterialInstance& materialInstance, std::string materialInstancePath);
 

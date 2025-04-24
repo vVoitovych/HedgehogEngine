@@ -2,6 +2,11 @@
 
 #include <memory>
 
+namespace Context
+{
+	class VulkanContext;
+}
+
 namespace Wrappers
 {
 	class Pipeline;
@@ -10,11 +15,15 @@ namespace Wrappers
 
 namespace Context
 {  
-	class MaterialVilkanLayer
+	class MaterialFrontend;
+
+	class MaterialVulkanLayer
 	{
     public:
-        MaterialVilkanLayer();
+		MaterialVulkanLayer(const Context::VulkanContext& context, const MaterialFrontend& material);
+		~MaterialVulkanLayer();
 
+		void Init();
 
     private:
 		std::unique_ptr<Wrappers::DescriptorSetLayout> m_DescriptorSetLayout;

@@ -4,7 +4,7 @@
 
 #include <vulkan/vulkan.h>
 
-namespace Context
+namespace HedgehogCommon
 {
 	Wrappers::DescriptorLayoutBuilder FrameUniformBufferBilder::Build()
 	{

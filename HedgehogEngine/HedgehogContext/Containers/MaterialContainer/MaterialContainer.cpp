@@ -1,6 +1,6 @@
 #include "MaterialContainer.hpp"
 #include "MaterialData.hpp"
-#include "MaterialSerializer.hpp"
+#include "Material/MaterialSerializer.hpp"
 
 #include "HedgehogWrappers/Wrappeers/Descriptors/DescriptorAllocator.hpp"
 #include "HedgehogWrappers/Wrappeers/Descriptors/DescriptorSetLayout.hpp"

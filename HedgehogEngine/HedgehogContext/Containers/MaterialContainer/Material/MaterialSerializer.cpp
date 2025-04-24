@@ -1,7 +1,8 @@
 #include "MaterialSerializer.hpp"
+#include "ShaderParameters.hpp"
 
-#include "MaterialData.hpp"
-#include "Material.hpp"
+#include "../MaterialData.hpp"
+#include "MaterialFrontend.hpp"
 #include "MaterialInstance.hpp"
 #include "HedgehogMath/Vector.hpp"
 #include "HedgehogMath/Matrix.hpp"
@@ -181,7 +182,7 @@ namespace Context
 		material.transparency = data["Transparency"].as<float>();
 	}
 
-	void MaterialSerializer::Serialize(Material& material, std::string materialPath)
+	void MaterialSerializer::Serialize(MaterialFrontend& material, std::string materialPath)
 	{
 		YAML::Emitter out;
 		out << YAML::BeginMap;
@@ -195,7 +196,7 @@ namespace Context
 		fout << out.c_str();
 	}
 
-	void MaterialSerializer::Deserialize(Material& material, std::string materialPath)
+	void MaterialSerializer::Deserialize(MaterialFrontend& material, std::string materialPath)
 	{
 		YAML::Node data;
 		try

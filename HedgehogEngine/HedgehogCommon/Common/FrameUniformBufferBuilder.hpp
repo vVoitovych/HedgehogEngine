@@ -5,7 +5,7 @@ namespace Wrappers
 	class DescriptorLayoutBuilder;
 }
 
-namespace Context
+namespace HedgehogCommon
 {
 	class FrameUniformBufferBilder
 	{

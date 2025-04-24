@@ -42,7 +42,7 @@ namespace Context
 
 		mFrameAllocator = std::make_unique<Wrappers::DescriptorAllocator>(vulkanContext.GetDevice(), MAX_FRAMES_IN_FLIGHT, sizes);
 
-		Wrappers::DescriptorLayoutBuilder builder = Context::FrameUniformBufferBilder::Build();
+		Wrappers::DescriptorLayoutBuilder builder = HedgehogCommon::FrameUniformBufferBilder::Build();
 		mFrameLayout = std::make_unique<Wrappers::DescriptorSetLayout>(vulkanContext.GetDevice(), builder, VK_SHADER_STAGE_VERTEX_BIT  | VK_SHADER_STAGE_FRAGMENT_BIT);
 
 		mFrameUniforms.clear();

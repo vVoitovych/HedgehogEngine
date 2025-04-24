@@ -1,4 +1,5 @@
-#include "Material.hpp"
+#include "MaterialFrontend.hpp"
+#include "ShaderParameters.hpp"
 
 #include "ThirdParty/SPIRV-Reflect/SPIRV-Reflect/spirv_reflect.h"
 #include "Shaders/ShaderCompiler/ShaderCompiler.hpp"
@@ -66,7 +67,7 @@ namespace Context
         }
     }
 
-    void Material::ParseShaderParameters(const std::vector<uint32_t>& spirvData, ShaderParameters& params)
+    void MaterialFrontend::ParseShaderParameters(const std::vector<uint32_t>& spirvData, ShaderParameters& params)
     {
         if (spirvData.empty())
             return;
@@ -118,75 +119,79 @@ namespace Context
         spvReflectDestroyShaderModule(&module);
     }
 
-    Material::Material()
+    MaterialFrontend::MaterialFrontend()
     {
 
     }
 
-    Material::Material(const std::string& path)
+    MaterialFrontend::~MaterialFrontend()
+    {
+    }
+
+    MaterialFrontend::MaterialFrontend(const std::string& path)
         : m_Path(path)
     {
     }
 
-    void Material::SetVertexShader(const std::string& path)
+    void MaterialFrontend::SetVertexShader(const std::string& path)
     {
         m_VertexShader = path;
         m_VertexShaderSPIRV = ShaderCompiler::ReadAndCompileShader(path, ShaderCompiler::ShaderType::Vertex);
-        ParseShaderParameters(m_VertexShaderSPIRV, m_VertexShaderParameters);
+        ParseShaderParameters(m_VertexShaderSPIRV, *m_VertexShaderParameters);
     }
 
-    void Material::SetFragmentShader(const std::string& path)
+    void MaterialFrontend::SetFragmentShader(const std::string& path)
     {
         m_FragmentShader = path;
         m_FragmentShaderSPIRV = ShaderCompiler::ReadAndCompileShader(path, ShaderCompiler::ShaderType::Fragment);
-        ParseShaderParameters(m_FragmentShaderSPIRV, m_FragmentShaderParameters);
+        ParseShaderParameters(m_FragmentShaderSPIRV, *m_FragmentShaderParameters);
     }
 
-    const std::string& Material::GetMaterialPath() const
+    const std::string& MaterialFrontend::GetMaterialPath() const
     {
         return m_Path;
     }
 
-    ShaderParameters Material::GetVertexShaderParameters() const
+    ShaderParameters MaterialFrontend::GetVertexShaderParameters() const
     {
-        return m_VertexShaderParameters;
+        return *m_VertexShaderParameters;
     }
-    ShaderParameters Material::GetFragmentShaderParameters() const
+    ShaderParameters MaterialFrontend::GetFragmentShaderParameters() const
     {
-        return m_FragmentShaderParameters;
+        return *m_FragmentShaderParameters;
     }
 
-    bool Material::IsValid() const
+    bool MaterialFrontend::IsValid() const
     {
         return !m_VertexShaderSPIRV.empty() && !m_FragmentShaderSPIRV.empty();
     }
 
-    MaterialSurfaceType Material::GetSurfaceType() const
+    MaterialSurfaceType MaterialFrontend::GetSurfaceType() const
     {
         return m_MaterialType;
     }
 
-    void Material::SetSurfaceType(MaterialSurfaceType type)
+    void MaterialFrontend::SetSurfaceType(MaterialSurfaceType type)
     {
         m_MaterialType = type;
     }
 
-    CullingType Material::GetCullingType() const
+    CullingType MaterialFrontend::GetCullingType() const
     {
         return m_CullingType;
     }
 
-    void Material::SetCullingType(CullingType type)
+    void MaterialFrontend::SetCullingType(CullingType type)
     {
         m_CullingType = type;
     }
 
-    std::string Material::GetVertexShader() const
+    std::string MaterialFrontend::GetVertexShader() const
     {
         return m_VertexShader;
     }
 
-    std::string Material::GetFragmentShader() const
+    std::string MaterialFrontend::GetFragmentShader() const
     {
         return m_FragmentShader;
     }
