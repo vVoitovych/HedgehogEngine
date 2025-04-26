@@ -36,7 +36,7 @@ namespace Wrappers
 		void FreeDescriptorSet(const Device& device, VkDescriptorSet* pDescriptorSet) const;
 
 	private:
-		VkDescriptorPool mPool;
+		VkDescriptorPool m_Pool;
 
 	};
 }

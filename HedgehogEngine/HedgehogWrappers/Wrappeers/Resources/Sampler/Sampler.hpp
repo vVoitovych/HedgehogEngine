@@ -23,7 +23,7 @@ namespace Wrappers
 		VkSampler GetNativeSampler() const;
 
 	private:
-		VkSampler mSampler;
+		VkSampler m_Sampler;
 	};
 
 }

@@ -19,12 +19,12 @@ namespace Wrappers
 	{
 	public:
 		UBO(const Device& device) 
-			: mUniformBufferMapped(nullptr)
+			: m_UniformBufferMapped(nullptr)
 		{
 			VkDeviceSize bufferSize = sizeof(T);
-			mUniformBuffer = std::make_unique<Buffer>(device, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+			m_UniformBuffer = std::make_unique<Buffer>(device, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 
-			mUniformBuffer->MapMemory(device, &mUniformBufferMapped);
+			m_UniformBuffer->MapMemory(device, &m_UniformBufferMapped);
 			LOGINFO("Vulkan UBO created");
 		}
 		~UBO() {}
@@ -33,55 +33,55 @@ namespace Wrappers
 		UBO& operator=(const UBO&) = delete;
 
 		UBO(UBO&& other) noexcept
-			: mUniformBuffer(std::move(other.mUniformBuffer))
-			, mUniformBufferMapped(other.mUniformBufferMapped)
+			: m_UniformBuffer(std::move(other.m_UniformBuffer))
+			, m_UniformBufferMapped(other.m_UniformBufferMapped)
 		{
-			other.mUniformBufferMapped = nullptr;
+			other.m_UniformBufferMapped = nullptr;
 		}
 
 		UBO& operator=(UBO&& other) noexcept
 		{
 			if (this != &other)
 			{
-				mUniformBuffer = std::move(other.mUniformBuffer);
-				mUniformBufferMapped = other.mUniformBufferMapped;
+				m_UniformBuffer = std::move(other.m_UniformBuffer);
+				m_UniformBufferMapped = other.m_UniformBufferMapped;
 
-				other.mUniformBufferMapped = nullptr;
+				other.m_UniformBufferMapped = nullptr;
 			}
 			return *this;
 		}
 
 		void Cleanup(const Device& device)
 		{
-			mUniformBuffer->UnapMemory(device);
-			mUniformBuffer->DestroyBuffer(device);
+			m_UniformBuffer->UnapMemory(device);
+			m_UniformBuffer->DestroyBuffer(device);
 			LOGINFO("UBO cleaned");
 		}
 
 		void UpdateUniformBuffer(const T& ubo)
 		{
-			memcpy(mUniformBufferMapped, &ubo, sizeof(ubo));
+			memcpy(m_UniformBufferMapped, &ubo, sizeof(ubo));
 		}
 
 		VkBuffer GetNativeBuffer()
 		{
-			return mUniformBuffer->GetNativeBuffer();
+			return m_UniformBuffer->GetNativeBuffer();
 		}
 
 		const Buffer& GetBuffer() const
 		{
-			return *mUniformBuffer;
+			return *m_UniformBuffer;
 		}
 
 		VkDeviceSize GetBufferSize() const
 		{
-			return mUniformBuffer->GetBufferSize();
+			return m_UniformBuffer->GetBufferSize();
 		}
 
 	private:
-		std::unique_ptr<Buffer> mUniformBuffer;
+		std::unique_ptr<Buffer> m_UniformBuffer;
 
-		void* mUniformBufferMapped;
+		void* m_UniformBufferMapped;
 	};
 }
 

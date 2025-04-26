@@ -20,8 +20,8 @@ namespace Wrappers
 		const std::vector<VkDescriptorSetLayout>& layouts,
 		const std::vector<VkPushConstantRange>& pushConstantRanges,
 		const PipelineInfo& info)
-		: mPipeline(nullptr)
-		, mGraphycsPipelineLayout(nullptr)
+		: m_Pipeline(nullptr)
+		, m_GraphycsPipelineLayout(nullptr)
 	{
 		VkPipelineLayoutCreateInfo layoutCreateInfo{};
 		layoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -30,7 +30,7 @@ namespace Wrappers
 		layoutCreateInfo.pushConstantRangeCount = static_cast<uint32_t>(pushConstantRanges.size());
 		layoutCreateInfo.pPushConstantRanges = pushConstantRanges.data();
 
-		if (vkCreatePipelineLayout(device.GetNativeDevice(), &layoutCreateInfo, nullptr, &mGraphycsPipelineLayout) != VK_SUCCESS)
+		if (vkCreatePipelineLayout(device.GetNativeDevice(), &layoutCreateInfo, nullptr, &m_GraphycsPipelineLayout) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create pipeline layout!");
 		}
@@ -47,14 +47,14 @@ namespace Wrappers
 		pipelineInfo.pDepthStencilState = info.GetDepthStencilInfo();
 		pipelineInfo.pColorBlendState = info.GetColorBlendingInfo();
 		pipelineInfo.pDynamicState = info.GetDynamicStateInfo();
-		pipelineInfo.layout = mGraphycsPipelineLayout;
+		pipelineInfo.layout = m_GraphycsPipelineLayout;
 		pipelineInfo.renderPass = renderPass.GetNativeRenderPass();
 		pipelineInfo.subpass = 0;
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 		pipelineInfo.basePipelineIndex = -1;
 		pipelineInfo.pNext = nullptr;
 
-		if (vkCreateGraphicsPipelines(device.GetNativeDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &mPipeline) != VK_SUCCESS)
+		if (vkCreateGraphicsPipelines(device.GetNativeDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_Pipeline) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create pipeline");
 		}
@@ -64,12 +64,12 @@ namespace Wrappers
 
 	Pipeline::~Pipeline()
 	{
-		if (mPipeline != nullptr)
+		if (m_Pipeline != nullptr)
 		{
 			LOGERROR("Vulkan pipeline should be cleanedup before destruction!");
 			ENGINE_DEBUG_BREAK();
 		}
-		if (mGraphycsPipelineLayout != nullptr)
+		if (m_GraphycsPipelineLayout != nullptr)
 		{
 			LOGERROR("Vulkan pipeline layout should be cleanedup before destruction!");
 			ENGINE_DEBUG_BREAK();
@@ -77,24 +77,45 @@ namespace Wrappers
 	}
 
 
+	Pipeline::Pipeline(Pipeline&& rhs) noexcept
+		: m_Pipeline(rhs.m_Pipeline)
+		, m_GraphycsPipelineLayout(rhs.m_GraphycsPipelineLayout)
+	{
+		rhs.m_Pipeline = nullptr;
+		rhs.m_GraphycsPipelineLayout = nullptr;
+	}
+
+	Pipeline& Pipeline::operator=(Pipeline&& rhs) noexcept
+	{
+		if (this != &rhs)
+		{
+			m_Pipeline = rhs.m_Pipeline;
+			m_GraphycsPipelineLayout = rhs.m_GraphycsPipelineLayout;
+
+			rhs.m_Pipeline = nullptr;
+			rhs.m_GraphycsPipelineLayout = nullptr;
+		}
+		return *this;
+	}
+
 	void Pipeline::Cleanup(const Device& device)
 	{
-		vkDestroyPipeline(device.GetNativeDevice(), mPipeline, nullptr);
-		vkDestroyPipelineLayout(device.GetNativeDevice(), mGraphycsPipelineLayout, nullptr);
+		vkDestroyPipeline(device.GetNativeDevice(), m_Pipeline, nullptr);
+		vkDestroyPipelineLayout(device.GetNativeDevice(), m_GraphycsPipelineLayout, nullptr);
 
-		mPipeline = nullptr;
-		mGraphycsPipelineLayout = nullptr;
+		m_Pipeline = nullptr;
+		m_GraphycsPipelineLayout = nullptr;
 		LOGINFO("Pipeline cleaned");
 	}
 
 	VkPipeline Pipeline::GetNativePipeline() const
 	{
-		return mPipeline;
+		return m_Pipeline;
 	}
 
 	VkPipelineLayout Pipeline::GetNativePipelineLayout() const
 	{
-		return mGraphycsPipelineLayout;
+		return m_GraphycsPipelineLayout;
 	}
 
 

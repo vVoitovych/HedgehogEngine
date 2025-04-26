@@ -24,14 +24,17 @@ namespace Wrappers
 		Pipeline(const Pipeline&) = delete;
 		Pipeline& operator=(const Pipeline&) = delete;
 
+		Pipeline(Pipeline&& rhs) noexcept;
+		Pipeline& operator=(Pipeline&& rhs) noexcept;
+
 		void Cleanup(const Device& device);
 
 		VkPipeline GetNativePipeline() const;
 		VkPipelineLayout GetNativePipelineLayout() const;
 
 	private:
-		VkPipeline mPipeline;
-		VkPipelineLayout mGraphycsPipelineLayout;
+		VkPipeline m_Pipeline;
+		VkPipelineLayout m_GraphycsPipelineLayout;
 
 	};
 }

@@ -36,9 +36,9 @@ namespace Wrappers
 		VkDeviceSize GetBufferSize() const;
 
 	private:
-		VkDeviceSize mBufferSize;
-		VkBuffer mBuffer;
-		VmaAllocation mAllocation;
+		VkDeviceSize m_BufferSize;
+		VkBuffer m_Buffer;
+		VmaAllocation m_Allocation;
 
 	};
 

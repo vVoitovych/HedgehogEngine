@@ -11,26 +11,26 @@
 
 namespace WinManager
 {
-	std::function<bool()> WindowManager::mGuiCallback = nullptr;
+	std::function<bool()> WindowManager::m_GuiCallback = nullptr;
 
 	WindowManager::WindowManager()
-		: mWindowState(WindowState::GetDefaultState())
-		, mWindow(nullptr)
+		: m_WindowState(WindowState::GetDefaultState())
+		, m_Window(nullptr)
 	{
 		Initialize();
 	}
 
 	WindowManager::WindowManager(const WindowState& state)
-		: mWindowState(state)
-		, mWindow(nullptr)
+		: m_WindowState(state)
+		, m_Window(nullptr)
 	{
 		Initialize();
 	}
 
 	WindowManager::~WindowManager()
 	{
-		glfwDestroyWindow(mWindow);
-		mWindow = nullptr;
+		glfwDestroyWindow(m_Window);
+		m_Window = nullptr;
 		glfwTerminate();
 		LOGINFO("Window manager cleaned");
 	}
@@ -41,21 +41,21 @@ namespace WinManager
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-        mWindow = glfwCreateWindow(mWindowState.mWidth, mWindowState.mHeight, mWindowState.mWindowName.c_str(), nullptr, nullptr);
-        glfwSetWindowPos(mWindow, mWindowState.mX, mWindowState.mY);
-        glfwSetWindowUserPointer(mWindow, this);
-        glfwSetFramebufferSizeCallback(mWindow, WindowManager::ResizeCallback);
-        glfwSetKeyCallback(mWindow, WindowManager::OnKey);
-		glfwSetMouseButtonCallback(mWindow, WindowManager::OnMouseButton);
-		glfwSetCursorPosCallback(mWindow, OnMouseMove);
-		glfwSetScrollCallback(mWindow, OnMouseScroll);
+        m_Window = glfwCreateWindow(m_WindowState.width, m_WindowState.height, m_WindowState.windowName.c_str(), nullptr, nullptr);
+        glfwSetWindowPos(m_Window, m_WindowState.x, m_WindowState.y);
+        glfwSetWindowUserPointer(m_Window, this);
+        glfwSetFramebufferSizeCallback(m_Window, WindowManager::ResizeCallback);
+        glfwSetKeyCallback(m_Window, WindowManager::OnKey);
+		glfwSetMouseButtonCallback(m_Window, WindowManager::OnMouseButton);
+		glfwSetCursorPosCallback(m_Window, OnMouseMove);
+		glfwSetScrollCallback(m_Window, OnMouseScroll);
 
 		LOGINFO("Window manager initialized");
 	}
 
 	bool WindowManager::ShouldClose()
 	{
-		return glfwWindowShouldClose(mWindow);
+		return glfwWindowShouldClose(m_Window);
 	}
 
 	void WindowManager::HandleInput()
@@ -66,7 +66,7 @@ namespace WinManager
 
 	void WindowManager::CreateWindowSurface(VkInstance instance, VkSurfaceKHR* surface) const
 	{
-		if (glfwCreateWindowSurface(instance, mWindow, nullptr, surface) != VK_SUCCESS)
+		if (glfwCreateWindowSurface(instance, m_Window, nullptr, surface) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Failed to create window surface!");
 		}
@@ -74,27 +74,27 @@ namespace WinManager
 
 	GLFWwindow* WindowManager::GetGlfwWindow() 
 	{
-		return mWindow;
+		return m_Window;
 	}
 
 	const GLFWwindow* WindowManager::GetGlfwWindow() const
 	{
-		return mWindow;
+		return m_Window;
 	}
 
 	bool WindowManager::IsWindowResized() const
 	{
-		return mWindowResized;
+		return m_WindowResized;
 	}
 
 	void WindowManager::ResetResizedState()
 	{
-		mWindowResized = false;
+		m_WindowResized = false;
 	}
 
 	void WindowManager::SetOnGuiCallback(std::function<bool()> func)
 	{
-		mGuiCallback = func;
+		m_GuiCallback = func;
 	}
 
 	void WindowManager::SetIcon(int width, int height, unsigned char* data)
@@ -104,18 +104,18 @@ namespace WinManager
 		images[0].height = height;
 		images[0].pixels = data;
 
-		glfwSetWindowIcon(mWindow, 1, images);
+		glfwSetWindowIcon(m_Window, 1, images);
 	}
 
 	void WindowManager::ResizeCallback(GLFWwindow* window, int width, int height)
 	{
 		auto app = reinterpret_cast<WindowManager*>(glfwGetWindowUserPointer(window));
-		app->mWindowResized = true;
+		app->m_WindowResized = true;
 	}
 
 	Controls& WindowManager::GetControls() 
 	{
-		return mControls;
+		return m_Controls;
 	}
 
 	void WindowManager::OnKey(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -156,7 +156,7 @@ namespace WinManager
 
 	void WindowManager::OnMouseButton(GLFWwindow* window, int button, int action, int mods)
 	{
-		if (mGuiCallback && mGuiCallback())
+		if (m_GuiCallback && m_GuiCallback())
 			return;
 		auto app = reinterpret_cast<WindowManager*>(glfwGetWindowUserPointer(window));
 

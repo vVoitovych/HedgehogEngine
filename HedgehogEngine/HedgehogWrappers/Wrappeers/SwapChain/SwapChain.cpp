@@ -14,10 +14,10 @@
 namespace Wrappers
 {
 	SwapChain::SwapChain(const Device& device, WinManager::WindowManager& windowManager)
-		: mSwapChain(nullptr)
-		, mWindow(nullptr)
+		: m_SwapChain(nullptr)
+		, m_Window(nullptr)
 	{
-		mWindow = windowManager.GetGlfwWindow();
+		m_Window = windowManager.GetGlfwWindow();
 
 		CreateSwapChain(device);
 		CreateImageViews(device);
@@ -25,7 +25,7 @@ namespace Wrappers
 
 	SwapChain::~SwapChain()
 	{
-		if (mSwapChain != nullptr)
+		if (m_SwapChain != nullptr)
 		{
 			LOGERROR("Vulkan swap chain should be cleanedup before destruction!");
 			ENGINE_DEBUG_BREAK();
@@ -35,13 +35,13 @@ namespace Wrappers
 
 	void SwapChain::Cleanup(const Device& device)
 	{
-		for (auto imageView : mSwapChainImageViews)
+		for (auto imageView : m_SwapChainImageViews)
 		{
 			vkDestroyImageView(device.GetNativeDevice(), imageView, nullptr);
 		}
-		mSwapChainImageViews.clear();
-		vkDestroySwapchainKHR(device.GetNativeDevice(), mSwapChain, nullptr);
-		mSwapChain = nullptr;
+		m_SwapChainImageViews.clear();
+		vkDestroySwapchainKHR(device.GetNativeDevice(), m_SwapChain, nullptr);
+		m_SwapChain = nullptr;
 		LOGINFO("Swap chain cleaned");
 	}
 
@@ -55,52 +55,52 @@ namespace Wrappers
 
 	VkSwapchainKHR SwapChain::GetNativeSwapChain() const
 	{
-		return mSwapChain;
+		return m_SwapChain;
 	}
 
 	VkFormat SwapChain::GetFormat() const
 	{
-		return mSwapChainImageFormat;
+		return m_SwapChainImageFormat;
 	}
 
 	VkExtent2D SwapChain::GetSwapChainExtent() const
 	{
-		return mSwapChainExtent;
+		return m_SwapChainExtent;
 	}
 
 	uint32_t SwapChain::GetMinImagesCount() const
 	{
-		return mMinImageCount;
+		return m_MinImageCount;
 	}
 
 	size_t SwapChain::GetSwapChainImagesSize() const
 	{
-		return mSwapChainImages.size();
+		return m_SwapChainImages.size();
 	}
 
 	VkImageView SwapChain::GetNativeSwapChainImageView(size_t index) const
 	{
-		return mSwapChainImageViews[index];
+		return m_SwapChainImageViews[index];
 	}
 
 	VkImage SwapChain::GetSwapChainImage(size_t index) const
 	{
-		return mSwapChainImages[index];
+		return m_SwapChainImages[index];
 	}
 
 	void SwapChain::CreateSwapChain(const Device& device)
 	{
 		SwapChainSupportDetails swapChainSupport = device.QuerySwapChainSupport();
 
-		VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.mFormats);
-		VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapChainSupport.mPrecentModes);
-		VkExtent2D extent = ChooseSwapExtend(swapChainSupport.mCapabilities);
+		VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.formats);
+		VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapChainSupport.precentModes);
+		VkExtent2D extent = ChooseSwapExtend(swapChainSupport.capabilities);
 
-		mMinImageCount = swapChainSupport.mCapabilities.minImageCount;
-		uint32_t imageCount = mMinImageCount + 1;
-		if (swapChainSupport.mCapabilities.maxImageCount > 0 && imageCount > swapChainSupport.mCapabilities.maxImageCount)
+		m_MinImageCount = swapChainSupport.capabilities.minImageCount;
+		uint32_t imageCount = m_MinImageCount + 1;
+		if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount)
 		{
-			imageCount = swapChainSupport.mCapabilities.maxImageCount;
+			imageCount = swapChainSupport.capabilities.maxImageCount;
 		}
 
 		VkSwapchainCreateInfoKHR createInfo{};
@@ -114,8 +114,8 @@ namespace Wrappers
 		createInfo.imageUsage =  VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
 		QueueFamilyIndices indices = device.GetIndicies();
-		uint32_t queueFamilyIndices[] = { indices.mGraphicsFamily.value(), indices.mPresentFamily.value() };
-		if (indices.mGraphicsFamily != indices.mPresentFamily)
+		uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+		if (indices.graphicsFamily != indices.presentFamily)
 		{
 			createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
 			createInfo.queueFamilyIndexCount = 2;
@@ -128,26 +128,26 @@ namespace Wrappers
 			createInfo.pQueueFamilyIndices = nullptr;
 		}
 
-		createInfo.preTransform = swapChainSupport.mCapabilities.currentTransform;
+		createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
 		createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 		createInfo.presentMode = presentMode;
 		createInfo.clipped = VK_TRUE;
 		createInfo.oldSwapchain = nullptr;
 
-		if (vkCreateSwapchainKHR(device.GetNativeDevice(), &createInfo, nullptr, &mSwapChain) != VK_SUCCESS)
+		if (vkCreateSwapchainKHR(device.GetNativeDevice(), &createInfo, nullptr, &m_SwapChain) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Failed to create swap chain!");
 		}
 
-		vkGetSwapchainImagesKHR(device.GetNativeDevice(), mSwapChain, &imageCount, nullptr);
-		mSwapChainImages.resize(imageCount);
-		vkGetSwapchainImagesKHR(device.GetNativeDevice(), mSwapChain, &imageCount, mSwapChainImages.data());
+		vkGetSwapchainImagesKHR(device.GetNativeDevice(), m_SwapChain, &imageCount, nullptr);
+		m_SwapChainImages.resize(imageCount);
+		vkGetSwapchainImagesKHR(device.GetNativeDevice(), m_SwapChain, &imageCount, m_SwapChainImages.data());
 
-		mSwapChainImageFormat = surfaceFormat.format;
+		m_SwapChainImageFormat = surfaceFormat.format;
 		uint32_t minValue = 1;
-		mSwapChainExtent = extent;
-		mSwapChainExtent.width = std::max(mSwapChainExtent.width, minValue);
-		mSwapChainExtent.height = std::max(mSwapChainExtent.height, minValue);
+		m_SwapChainExtent = extent;
+		m_SwapChainExtent.width = std::max(m_SwapChainExtent.width, minValue);
+		m_SwapChainExtent.height = std::max(m_SwapChainExtent.height, minValue);
 
 		LOGINFO("Swap chain created with ", imageCount, " back buffers. Swap chain extent: (", extent.width, ", ", extent.height, ")");
 	}
@@ -185,7 +185,7 @@ namespace Wrappers
 			int width;
 			int height;
 
-				glfwGetFramebufferSize(mWindow, &width, &height);
+				glfwGetFramebufferSize(m_Window, &width, &height);
 
 			VkExtent2D actualExtend = { static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
 			actualExtend.width = std::clamp(actualExtend.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
@@ -197,14 +197,14 @@ namespace Wrappers
 
 	void SwapChain::CreateImageViews(const Device& device)
 	{
-		mSwapChainImageViews.resize(mSwapChainImages.size());
-		for (size_t i = 0; i < mSwapChainImages.size(); ++i)
+		m_SwapChainImageViews.resize(m_SwapChainImages.size());
+		for (size_t i = 0; i < m_SwapChainImages.size(); ++i)
 		{
 			VkImageViewCreateInfo createInfo{};
 			createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-			createInfo.image = mSwapChainImages[i];
+			createInfo.image = m_SwapChainImages[i];
 			createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-			createInfo.format = mSwapChainImageFormat;
+			createInfo.format = m_SwapChainImageFormat;
 			createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
 			createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
 			createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -215,7 +215,7 @@ namespace Wrappers
 			createInfo.subresourceRange.baseArrayLayer = 0;
 			createInfo.subresourceRange.layerCount = 1;
 			
-			if (vkCreateImageView(device.GetNativeDevice(), &createInfo, nullptr, &mSwapChainImageViews[i]) != VK_SUCCESS)
+			if (vkCreateImageView(device.GetNativeDevice(), &createInfo, nullptr, &m_SwapChainImageViews[i]) != VK_SUCCESS)
 			{
 				throw std::runtime_error("failed to create image view!");
 			}
