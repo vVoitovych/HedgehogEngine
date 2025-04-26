@@ -13,17 +13,17 @@ namespace Wrappers
 		newBinding.descriptorCount = 1;
 		newBinding.descriptorType = type;
 
-		mBindings.push_back(newBinding);
+		m_Bindings.push_back(newBinding);
 	}
 
 	void DescriptorLayoutBuilder::ClearBindings()
 	{
-		mBindings.clear();
+		m_Bindings.clear();
 	}
 
 	VkDescriptorSetLayout DescriptorLayoutBuilder::Build(const Device& device, VkShaderStageFlags shaderStages, void* pNext, VkDescriptorSetLayoutCreateFlags flags)
 	{
-		for (auto& b : mBindings) 
+		for (auto& b : m_Bindings) 
 		{
 			b.stageFlags |= shaderStages;
 		}
@@ -32,8 +32,8 @@ namespace Wrappers
 		info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 		info.pNext = pNext;
 
-		info.pBindings = mBindings.data();
-		info.bindingCount = (uint32_t)mBindings.size();
+		info.pBindings = m_Bindings.data();
+		info.bindingCount = (uint32_t)m_Bindings.size();
 		info.flags = flags;
 
 		VkDescriptorSetLayout result;

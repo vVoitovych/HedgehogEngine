@@ -11,15 +11,15 @@
 namespace Wrappers
 {
 	CommandBuffer::CommandBuffer(const Device& device)
-		:mCommandBuffer(nullptr)
+		:m_CommandBuffer(nullptr)
 	{
-		device.AllocateCommandBuffer(&mCommandBuffer);
+		device.AllocateCommandBuffer(&m_CommandBuffer);
 		LOGINFO("Command buffer created");
 	}
 
 	CommandBuffer::~CommandBuffer()
 	{
-		if (mCommandBuffer != nullptr)
+		if (m_CommandBuffer != nullptr)
 		{
 			LOGERROR("Vulkan command buffer should be cleanedup before destruction!");
 			ENGINE_DEBUG_BREAK();
@@ -27,32 +27,32 @@ namespace Wrappers
 	}
 
 	CommandBuffer::CommandBuffer(CommandBuffer&& other) noexcept
-		: mCommandBuffer(other.mCommandBuffer)
+		: m_CommandBuffer(other.m_CommandBuffer)
 	{
-		other.mCommandBuffer = nullptr;
+		other.m_CommandBuffer = nullptr;
 	}
 
 	CommandBuffer& CommandBuffer::operator=(CommandBuffer&& other) noexcept
 	{
 		if (this != &other)
 		{
-			mCommandBuffer = other.mCommandBuffer;
+			m_CommandBuffer = other.m_CommandBuffer;
 
-			other.mCommandBuffer = nullptr;
+			other.m_CommandBuffer = nullptr;
 		}
 		return *this;
 	}
 
 	void CommandBuffer::Cleanup(const Device& device)
 	{
-		device.FreeCommandBuffer(&mCommandBuffer);
-		mCommandBuffer = nullptr;
+		device.FreeCommandBuffer(&m_CommandBuffer);
+		m_CommandBuffer = nullptr;
 		LOGINFO("Command  buffer cleaned");
 	}
 
 	VkCommandBuffer& CommandBuffer::GetNativeCommandBuffer() 
 	{
-		return mCommandBuffer;
+		return m_CommandBuffer;
 	}
 
 	void CommandBuffer::BeginCommandBuffer(VkCommandBufferUsageFlags flags)
@@ -62,7 +62,7 @@ namespace Wrappers
 		beginInfo.flags = flags;
 		beginInfo.pInheritanceInfo = nullptr;
 
-		if (vkBeginCommandBuffer(mCommandBuffer, &beginInfo) != VK_SUCCESS)
+		if (vkBeginCommandBuffer(m_CommandBuffer, &beginInfo) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to begin command buffer");
 		}
@@ -70,7 +70,7 @@ namespace Wrappers
 
 	void CommandBuffer::EndCommandBuffer()
 	{
-		if (vkEndCommandBuffer(mCommandBuffer) != VK_SUCCESS)
+		if (vkEndCommandBuffer(m_CommandBuffer) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to end command buffer!");
 		}
@@ -82,17 +82,17 @@ namespace Wrappers
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-		vkBeginCommandBuffer(mCommandBuffer, &beginInfo);
+		vkBeginCommandBuffer(m_CommandBuffer, &beginInfo);
 	}
 
 	void CommandBuffer::EndSingleTimeCommands(const Device& device) const
 	{
-		vkEndCommandBuffer(mCommandBuffer);
+		vkEndCommandBuffer(m_CommandBuffer);
 
 		VkSubmitInfo submitInfo{};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &mCommandBuffer;
+		submitInfo.pCommandBuffers = &m_CommandBuffer;
 
 		vkQueueSubmit(device.GetNativeGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE);
 		vkQueueWaitIdle(device.GetNativeGraphicsQueue());
@@ -116,17 +116,17 @@ namespace Wrappers
 		renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
 		renderPassInfo.pClearValues = clearValues.data();
 
-		vkCmdBeginRenderPass(mCommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+		vkCmdBeginRenderPass(m_CommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 	}
 
 	void CommandBuffer::EndRenderPass()
 	{
-		vkCmdEndRenderPass(mCommandBuffer);
+		vkCmdEndRenderPass(m_CommandBuffer);
 	}
 
 	void CommandBuffer::BindPipeline(const Pipeline& pipeline, VkPipelineBindPoint bindPoint)
 	{
-		vkCmdBindPipeline(mCommandBuffer, bindPoint, pipeline.GetNativePipeline());
+		vkCmdBindPipeline(m_CommandBuffer, bindPoint, pipeline.GetNativePipeline());
 	}
 
 	void CommandBuffer::SetViewport(float x, float y, float width, float height, float minDepth, float maxDepth)
@@ -138,7 +138,7 @@ namespace Wrappers
 		viewport.height = height;
 		viewport.minDepth = minDepth;
 		viewport.maxDepth = maxDepth;
-		vkCmdSetViewport(mCommandBuffer, 0, 1, &viewport);
+		vkCmdSetViewport(m_CommandBuffer, 0, 1, &viewport);
 	}
 
 	void CommandBuffer::SetScissor(VkOffset2D offset, VkExtent2D extend)
@@ -146,17 +146,17 @@ namespace Wrappers
 		VkRect2D scissor{};
 		scissor.offset = offset;
 		scissor.extent = extend;
-		vkCmdSetScissor(mCommandBuffer, 0, 1, &scissor);
+		vkCmdSetScissor(m_CommandBuffer, 0, 1, &scissor);
 	}
 
 	void CommandBuffer::BindVertexBuffers(uint32_t firstBinding, uint32_t bindingsCount, VkBuffer* buffers, VkDeviceSize* offsets)
 	{
-		vkCmdBindVertexBuffers(mCommandBuffer, firstBinding, bindingsCount, buffers, offsets);
+		vkCmdBindVertexBuffers(m_CommandBuffer, firstBinding, bindingsCount, buffers, offsets);
 	}
 
 	void CommandBuffer::BindIndexBuffer(VkBuffer indexBuffer, VkDeviceSize offset, VkIndexType indexType)
 	{
-		vkCmdBindIndexBuffer(mCommandBuffer, indexBuffer, offset, indexType);
+		vkCmdBindIndexBuffer(m_CommandBuffer, indexBuffer, offset, indexType);
 	}
 
 	void CommandBuffer::BindDescriptorSers(
@@ -167,22 +167,22 @@ namespace Wrappers
 		uint32_t dynamicOffsetCount, 
 		uint32_t* pDynamicOffsets)
 	{
-		vkCmdBindDescriptorSets(mCommandBuffer, bindPoint, pipeline.GetNativePipelineLayout(), firstSet, setsCount, descriptorSets, dynamicOffsetCount, pDynamicOffsets);
+		vkCmdBindDescriptorSets(m_CommandBuffer, bindPoint, pipeline.GetNativePipelineLayout(), firstSet, setsCount, descriptorSets, dynamicOffsetCount, pDynamicOffsets);
 	}
 
 	void CommandBuffer::PushConstants(VkPipelineLayout layout, VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size, const void* pValues)
 	{
-		vkCmdPushConstants(mCommandBuffer, layout, stageFlags, offset, size, pValues);
+		vkCmdPushConstants(m_CommandBuffer, layout, stageFlags, offset, size, pValues);
 	}
 
 	void CommandBuffer::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
 	{
-		vkCmdDraw(mCommandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
+		vkCmdDraw(m_CommandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
 	}
 
 	void CommandBuffer::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
 	{
-		vkCmdDrawIndexed(mCommandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+		vkCmdDrawIndexed(m_CommandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 	}
 
 	void CommandBuffer::CopyImageToImage(VkImage source, VkImage destination, VkExtent2D srcSize, VkExtent2D dstSize)
@@ -220,14 +220,14 @@ namespace Wrappers
 		blitInfo.regionCount = 1;
 		blitInfo.pRegions = &blitRegion;
 
-		vkCmdBlitImage2(mCommandBuffer, &blitInfo);
+		vkCmdBlitImage2(m_CommandBuffer, &blitInfo);
 	}
 
 	void CommandBuffer::CopyBufferToBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
 	{
 		VkBufferCopy copyRegion{};
 		copyRegion.size = size;
-		vkCmdCopyBuffer(mCommandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+		vkCmdCopyBuffer(m_CommandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 	}
 
 	void CommandBuffer::CopyBufferToImage(VkBuffer srcBuffer, VkImage image, uint32_t width, uint32_t height)
@@ -243,18 +243,18 @@ namespace Wrappers
 		region.imageOffset = { 0, 0, 0 };
 		region.imageExtent = { width, height, 1 };
 
-		vkCmdCopyBufferToImage(mCommandBuffer, srcBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+		vkCmdCopyBufferToImage(m_CommandBuffer, srcBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 	}
 
 	void CommandBuffer::ClearColorImage(VkImage image, VkImageLayout imageLayout, const VkClearColorValue* pColor, uint32_t rangeCount, const VkImageSubresourceRange* pRanges)
 	{
-		vkCmdClearColorImage(mCommandBuffer, image, imageLayout, pColor, rangeCount, pRanges);
+		vkCmdClearColorImage(m_CommandBuffer, image, imageLayout, pColor, rangeCount, pRanges);
 	}
 
 	void CommandBuffer::ClearDepthStencilImage(VkImage image, VkImageLayout imageLayout, const VkClearDepthStencilValue* pDepthStencil, 
 													uint32_t rangeCount, const VkImageSubresourceRange* pRanges)
 	{
-		vkCmdClearDepthStencilImage(mCommandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges);
+		vkCmdClearDepthStencilImage(m_CommandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges);
 	}
 
 	VkImageSubresourceRange ImageSubresourceRange(VkImageAspectFlags aspectMask)
@@ -294,7 +294,7 @@ namespace Wrappers
 		depInfo.imageMemoryBarrierCount = 1;
 		depInfo.pImageMemoryBarriers = &imageBarrier;
 
-		vkCmdPipelineBarrier2(mCommandBuffer, &depInfo);
+		vkCmdPipelineBarrier2(m_CommandBuffer, &depInfo);
 	}
 
 }

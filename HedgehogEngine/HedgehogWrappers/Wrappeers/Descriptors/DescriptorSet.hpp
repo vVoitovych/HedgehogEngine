@@ -47,7 +47,7 @@ namespace Wrappers
 		const VkDescriptorSet* GetNativeSet() const;
 		VkDescriptorSet* GetNativeSet();
 	private:
-		VkDescriptorSet mDescriptorSet;
+		VkDescriptorSet m_DescriptorSet;
 
 	};
 

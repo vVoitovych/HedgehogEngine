@@ -47,14 +47,14 @@ namespace WinManager
 		void Initialize();
 
 	private:
-		WindowState mWindowState;
-		GLFWwindow* mWindow;
+		WindowState m_WindowState;
+		GLFWwindow* m_Window;
 
-		bool mWindowResized = false;
+		bool m_WindowResized = false;
 
-		Controls mControls;
+		Controls m_Controls;
 
-		static std::function<bool()> mGuiCallback;
+		static std::function<bool()> m_GuiCallback;
 	};
 }
 

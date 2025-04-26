@@ -15,8 +15,8 @@ namespace Wrappers
 		SyncObject(const SyncObject&) = delete;
 		SyncObject& operator=(const SyncObject&) = delete;
 
-		SyncObject(SyncObject&& other);
-		SyncObject& operator=(SyncObject&& other);
+		SyncObject(SyncObject&& other) noexcept;
+		SyncObject& operator=(SyncObject&& other) noexcept;
 
 		void Cleanup(const Device& device);
 
@@ -27,9 +27,9 @@ namespace Wrappers
 		void WaitforInFlightFence(const Device& device);
 		void ResetInFlightFence(const Device& device);
 	private:
-		VkSemaphore mImageAvailableSemaphore;
-		VkSemaphore mRendeerFinishedSemaphore;
-		VkFence mInFlightFence;
+		VkSemaphore m_ImageAvailableSemaphore;
+		VkSemaphore m_RendeerFinishedSemaphore;
+		VkFence m_InFlightFence;
 
 	};
 

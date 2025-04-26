@@ -22,6 +22,8 @@ namespace Wrappers
 
 		SwapChain(const SwapChain&) = delete;
 		SwapChain& operator=(const SwapChain&) = delete;
+		SwapChain(SwapChain&&) = delete;
+		SwapChain& operator=(SwapChain&&) = delete;
 
 		void Cleanup(const Device& device);
 		void Recreate(const Device& device);
@@ -46,15 +48,15 @@ namespace Wrappers
 		VkExtent2D ChooseSwapExtend(const VkSurfaceCapabilitiesKHR& capabilities) const;
 
 	private:
-		GLFWwindow* mWindow;
+		GLFWwindow* m_Window;
 
-		VkSwapchainKHR mSwapChain;
+		VkSwapchainKHR m_SwapChain;
 
-		std::vector<VkImage> mSwapChainImages;
-		VkFormat mSwapChainImageFormat;
-		VkExtent2D mSwapChainExtent;
-		uint32_t mMinImageCount;
-		std::vector<VkImageView> mSwapChainImageViews;
+		std::vector<VkImage> m_SwapChainImages;
+		VkFormat m_SwapChainImageFormat;
+		VkExtent2D m_SwapChainExtent;
+		uint32_t m_MinImageCount;
+		std::vector<VkImageView> m_SwapChainImageViews;
 
 	};
 }

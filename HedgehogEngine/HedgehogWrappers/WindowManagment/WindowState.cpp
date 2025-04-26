@@ -6,12 +6,12 @@ namespace WinManager
 	WindowState WindowState::GetDefaultState()
 	{
 		WindowState result{};
-		result.mWindowName = "Hengehog Engine";
-		result.mX = 100;
-		result.mY = 100;
-		result.mWidth = 1366;
-		result.mHeight = 768;
-		result.mWindowMode = WindowMode::Windowed;
+		result.windowName = "Hengehog Engine";
+		result.x = 100;
+		result.y = 100;
+		result.width = 1366;
+		result.height = 768;
+		result.windowMode = WindowMode::Windowed;
 		return result;
 	}
 }

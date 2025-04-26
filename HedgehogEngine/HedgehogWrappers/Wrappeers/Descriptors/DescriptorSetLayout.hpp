@@ -24,12 +24,15 @@ namespace Wrappers
 		DescriptorSetLayout(const DescriptorSetLayout&) = delete;
 		DescriptorSetLayout& operator=(const DescriptorSetLayout&) = delete;
 
+		DescriptorSetLayout(DescriptorSetLayout&& rhs) noexcept;
+		DescriptorSetLayout& operator=(DescriptorSetLayout&& rhs) noexcept;
+
 		void Cleanup(const Device& device);
 
 		VkDescriptorSetLayout GetNativeLayout() const;
 		const VkDescriptorSetLayout* GetNativeLayoutPtr() const;
 	private:
-		VkDescriptorSetLayout mDescriptorSetLayout;
+		VkDescriptorSetLayout m_DescriptorSetLayout;
 	};
 }
 

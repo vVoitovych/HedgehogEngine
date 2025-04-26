@@ -10,9 +10,9 @@ namespace Wrappers
 {
 
 	RenderPass::RenderPass(const Device& device, VkRenderPassCreateInfo* renderPassInfo)
-		: mRenderPass(nullptr)
+		: m_RenderPass(nullptr)
 	{
-		if (vkCreateRenderPass(device.GetNativeDevice(), renderPassInfo, nullptr, &mRenderPass) != VK_SUCCESS)
+		if (vkCreateRenderPass(device.GetNativeDevice(), renderPassInfo, nullptr, &m_RenderPass) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create render pass");
 		}
@@ -21,7 +21,7 @@ namespace Wrappers
 
 	RenderPass::~RenderPass()
 	{
-		if (mRenderPass != nullptr)
+		if (m_RenderPass != nullptr)
 		{
 			LOGERROR("Vulkan rendere pass should be cleanedup before destruction!");
 			ENGINE_DEBUG_BREAK();
@@ -30,14 +30,14 @@ namespace Wrappers
 
 	void RenderPass::Cleanup(const Device& device)
 	{
-		vkDestroyRenderPass(device.GetNativeDevice(), mRenderPass, nullptr);
-		mRenderPass = nullptr;
+		vkDestroyRenderPass(device.GetNativeDevice(), m_RenderPass, nullptr);
+		m_RenderPass = nullptr;
 		LOGINFO("Render pass cleaned");
 	}
 
 	VkRenderPass RenderPass::GetNativeRenderPass() const
 	{
-		return mRenderPass;
+		return m_RenderPass;
 	}
 
 }

@@ -53,7 +53,7 @@ namespace Wrappers
 		void TransitionImage(VkImage image, VkImageLayout currentLayout, VkImageLayout newLayout);
 	
 	private:
-		VkCommandBuffer mCommandBuffer;
+		VkCommandBuffer m_CommandBuffer;
 	};
 }
 
