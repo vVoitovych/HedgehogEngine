@@ -23,6 +23,12 @@ namespace Context
 		MaterialVulkanLayer(const Context::VulkanContext& context, const MaterialFrontend& material);
 		~MaterialVulkanLayer();
 
+		MaterialVulkanLayer(const MaterialVulkanLayer&) = delete;
+		MaterialVulkanLayer& operator=(const MaterialVulkanLayer&) = delete;
+
+		MaterialVulkanLayer(MaterialVulkanLayer&& rhs);
+		MaterialVulkanLayer& operator=(MaterialVulkanLayer&& rhs);
+
 		void Init();
 
     private:

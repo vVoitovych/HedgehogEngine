@@ -48,7 +48,7 @@ namespace Context
         std::string GetFragmentShader() const;
 
     private:
-        void ParseShaderParameters(const std::vector<uint32_t>& spirvData, ShaderParameters& params);
+        void ParseShaderParameters(const std::vector<uint32_t>& spirvData, std::unique_ptr<ShaderParameters>& params);
 
     private:
 

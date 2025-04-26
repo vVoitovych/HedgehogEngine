@@ -15,6 +15,15 @@ namespace Context
 	{
 	}
 
+	MaterialVulkanLayer::MaterialVulkanLayer(MaterialVulkanLayer&& rhs)
+	{
+	}
+
+	MaterialVulkanLayer& MaterialVulkanLayer::operator=(MaterialVulkanLayer&& rhs)
+	{
+		// TODO: insert return statement here
+	}
+
 	void MaterialVulkanLayer::Init()
 	{
 	}

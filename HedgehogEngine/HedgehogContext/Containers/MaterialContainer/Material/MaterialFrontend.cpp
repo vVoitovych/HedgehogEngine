@@ -67,7 +67,7 @@ namespace Context
         }
     }
 
-    void MaterialFrontend::ParseShaderParameters(const std::vector<uint32_t>& spirvData, ShaderParameters& params)
+    void MaterialFrontend::ParseShaderParameters(const std::vector<uint32_t>& spirvData, std::unique_ptr<ShaderParameters>& params)
     {
         if (spirvData.empty())
             return;
@@ -94,7 +94,7 @@ namespace Context
 
             if (binding->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER || binding->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE)
             {
-                params.CreateParam(binding->name, ShaderParamType::Texture);
+                params->CreateParam(binding->name, ShaderParamType::Texture);
             }
 
             if (binding->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
@@ -110,7 +110,7 @@ namespace Context
                     LOGVERBOSE("\tMember: ", member.name, ", Offset: ", member.offset, ", Size: ", member.size, ", Type: ", type);
                     if (paramType != ShaderParamType::Unknown)
                     {
-                        params.CreateParam(member.name, paramType);
+                        params->CreateParam(member.name, paramType);
                     }
                 }
             }
@@ -137,14 +137,14 @@ namespace Context
     {
         m_VertexShader = path;
         m_VertexShaderSPIRV = ShaderCompiler::ReadAndCompileShader(path, ShaderCompiler::ShaderType::Vertex);
-        ParseShaderParameters(m_VertexShaderSPIRV, *m_VertexShaderParameters);
+        ParseShaderParameters(m_VertexShaderSPIRV, m_VertexShaderParameters);
     }
 
     void MaterialFrontend::SetFragmentShader(const std::string& path)
     {
         m_FragmentShader = path;
         m_FragmentShaderSPIRV = ShaderCompiler::ReadAndCompileShader(path, ShaderCompiler::ShaderType::Fragment);
-        ParseShaderParameters(m_FragmentShaderSPIRV, *m_FragmentShaderParameters);
+        ParseShaderParameters(m_FragmentShaderSPIRV, m_FragmentShaderParameters);
     }
 
     const std::string& MaterialFrontend::GetMaterialPath() const
