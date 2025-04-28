@@ -13,3 +13,6 @@
 [submodule "ThirdParty/SPIRV-Reflect/SPIRV-Reflect"]
 	path = ThirdParty/SPIRV-Reflect/SPIRV-Reflect
 	url = https://github.com/KhronosGroup/SPIRV-Reflect.git
+[submodule "ThirdParty/SPIRV-Headers/SPIRV-Headers"]
+	path = ThirdParty/SPIRV-Headers/SPIRV-Headers
+	url = https://github.com/KhronosGroup/SPIRV-Headers.git

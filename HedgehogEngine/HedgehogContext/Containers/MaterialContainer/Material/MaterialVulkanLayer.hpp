@@ -26,8 +26,8 @@ namespace Context
 		MaterialVulkanLayer(const MaterialVulkanLayer&) = delete;
 		MaterialVulkanLayer& operator=(const MaterialVulkanLayer&) = delete;
 
-		MaterialVulkanLayer(MaterialVulkanLayer&& rhs);
-		MaterialVulkanLayer& operator=(MaterialVulkanLayer&& rhs);
+		MaterialVulkanLayer(MaterialVulkanLayer&& rhs) noexcept;
+		MaterialVulkanLayer& operator=(MaterialVulkanLayer&& rhs) noexcept;
 
 		void Init();
 

@@ -15,13 +15,25 @@ namespace Context
 	{
 	}
 
-	MaterialVulkanLayer::MaterialVulkanLayer(MaterialVulkanLayer&& rhs)
+	MaterialVulkanLayer::MaterialVulkanLayer(MaterialVulkanLayer&& rhs) noexcept
+		: m_DescriptorSetLayout(std::move(rhs.m_DescriptorSetLayout))
+		, m_Pipeline(std::move(rhs.m_Pipeline))
 	{
+		rhs.m_DescriptorSetLayout = nullptr;
+		rhs.m_Pipeline = nullptr;
 	}
 
-	MaterialVulkanLayer& MaterialVulkanLayer::operator=(MaterialVulkanLayer&& rhs)
+	MaterialVulkanLayer& MaterialVulkanLayer::operator=(MaterialVulkanLayer&& rhs) noexcept
 	{
-		// TODO: insert return statement here
+		if (this != &rhs)
+		{
+			m_DescriptorSetLayout = std::move(rhs.m_DescriptorSetLayout);
+			m_Pipeline = std::move(rhs.m_Pipeline);
+
+			rhs.m_DescriptorSetLayout = nullptr;
+			rhs.m_Pipeline = nullptr;
+		}
+		return *this;
 	}
 
 	void MaterialVulkanLayer::Init()
