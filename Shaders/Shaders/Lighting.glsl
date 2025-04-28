@@ -3,8 +3,8 @@
 
 #define EPS 0.0000001;
 
-#include "LightData.glsli"
-#include "SurfaceData.glsli"
+#include "LightData.glsl"
+#include "SurfaceData.glsl"
 
 vec4 CalculateDirectional(Light light, SurfaceData data, vec4 eyePos)
 {

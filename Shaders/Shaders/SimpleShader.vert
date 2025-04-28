@@ -2,7 +2,7 @@
 
 #define MAX_LIGHTS_COUNT 16
 
-#include "LightData.glsli"
+#include "LightData.glsl"
 
 layout(set = 0, binding = 0) uniform UniformBufferObject 
 {

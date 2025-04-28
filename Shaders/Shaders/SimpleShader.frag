@@ -6,7 +6,7 @@ layout(location = 2) in vec4 inWorldPosition;
 
 #define MAX_LIGHTS_COUNT 16
 
-#include "Lighting.glsli"
+#include "Lighting.glsl"
 
 layout(set = 0, binding = 0) uniform UniformBufferObject 
 {
