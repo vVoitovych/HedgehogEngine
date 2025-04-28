@@ -270,13 +270,15 @@ namespace Wrappers
 
 		std::vector<VkPhysicalDevice> devices(deviceCount);
 		vkEnumeratePhysicalDevices(m_Instance, &deviceCount, devices.data());
-
+		
+		int maxScore = 0;
 		for (const auto& device : devices)
 		{
-			if (IsDeviceSuitable(device))
+			int score = GetDeviceScore(device);
+			if (score > maxScore)
 			{
 				m_PhysicalDevice = device;
-				break;
+				maxScore = score;
 			}
 		}
 
@@ -639,19 +641,15 @@ namespace Wrappers
 		std::vector<VkExtensionProperties> extensions(extensionCount);
 		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
 
-		LOGINFO("available extensions:");
 		std::unordered_set<std::string> available;
 		for (const auto& extension : extensions)
 		{
-			LOGINFO("\t", extension.extensionName);
 			available.insert(extension.extensionName);
 		}
 
-		LOGINFO("required extensions:");
 		auto requiredExtensions = GetRequiredExtensions();
 		for (const auto& required : requiredExtensions)
 		{
-			LOGINFO("\t", required);
 			if (available.find(required) == available.end())
 			{
 				throw std::runtime_error("Missing required glfw extension");
@@ -677,7 +675,7 @@ namespace Wrappers
 		return requiredExtensins.empty();
 	}
 
-	bool Device::IsDeviceSuitable(VkPhysicalDevice device) const
+	int Device::GetDeviceScore(VkPhysicalDevice device) const
 	{
 		QueueFamilyIndices indices = FindQueueFamilies(device, m_Surface);
 		bool extensionsSupported = CheckDeviceExtensionSupport(device);
@@ -687,7 +685,20 @@ namespace Wrappers
 			auto swapChainSupport = GetSwapChainSupport(device, m_Surface);
 			swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.precentModes.empty();
 		}
-		return indices.IsComplete() && extensionsSupported && swapChainAdequate;
+		int score = 1;
+
+		bool conditions = indices.IsComplete() && extensionsSupported && swapChainAdequate;
+		if (!conditions)
+			return 0;
+
+		VkPhysicalDeviceProperties deviceProperties;
+		vkGetPhysicalDeviceProperties(device, &deviceProperties);
+		if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) 
+		{
+			score += 1000;
+		}
+
+		return score;
 	}
 
 

@@ -85,7 +85,7 @@ namespace Wrappers
 		void HasGflwRequiredInstanceExtensions() const;
 
 		bool CheckDeviceExtensionSupport(VkPhysicalDevice device) const;
-		bool IsDeviceSuitable(VkPhysicalDevice device) const;
+		int GetDeviceScore(VkPhysicalDevice device) const;
 
 		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const;
 		VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const;
