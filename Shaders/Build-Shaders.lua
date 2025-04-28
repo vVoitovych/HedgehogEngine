@@ -5,7 +5,14 @@ project "Shaders"
    targetdir "Binaries/%{cfg.buildcfg}"
    staticruntime "off"
 
-   files { "**.hpp", "**.cpp"  }
+   files 
+   { 
+        "**.hpp", 
+        "**.cpp",
+        "**.vert",
+        "**.frag",
+        "**.glsl"  
+    }
 
    includedirs 
    { 
@@ -21,6 +28,15 @@ project "Shaders"
 
    targetdir ("../Binaries/" .. OutputDir .. "/%{prj.name}")
    objdir ("../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")
+
+    filter { "files:**.vert" }
+        buildaction "None"
+
+    filter { "files:**.frag" }
+        buildaction "None"
+
+    filter { "files:**.glsl" }
+        buildaction "None"
 
    filter "system:windows"
        systemversion "latest"
