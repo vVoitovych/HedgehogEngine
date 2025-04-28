@@ -52,14 +52,12 @@ namespace Wrappers
 		VkPhysicalDevice GetNativePhysicalDevice() const;
 		QueueFamilyIndices GetIndicies() const;
 		const VmaAllocator& GetAllocator() const;
-		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const;
 
 		void SetObjectName(uint64_t objectHandle, VkObjectType objectType, const char* name) const;
 
 	public:
 		SwapChainSupportDetails QuerySwapChainSupport() const;
 		VkPhysicalDeviceProperties GetPhysicalDeviceProperties() const;
-		VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const;
 		VkFormat FindDepthFormat() const;
 
 		void AllocateCommandBuffer(VkCommandBuffer* pCommandBuffer) const;
@@ -88,8 +86,9 @@ namespace Wrappers
 
 		bool CheckDeviceExtensionSupport(VkPhysicalDevice device) const;
 		bool IsDeviceSuitable(VkPhysicalDevice device) const;
-		QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device) const;
-		SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device) const;
+
+		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const;
+		VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const;
 
 	private:
 		VkInstance m_Instance;
