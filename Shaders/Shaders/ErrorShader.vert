@@ -1,7 +1,7 @@
 #version 450
 
-#include "Common/LightData.glsli"
-#include "Common/UniformFrameData.glsli"
+#include "Common/LightData.glsl"
+#include "Common/UniformFrameData.glsl"
 
 layout(location = 0) in vec3 inPosition;
 

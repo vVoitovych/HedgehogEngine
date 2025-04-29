@@ -14,12 +14,14 @@ namespace Wrappers
 
 		RenderPass(const RenderPass&) = delete;
 		RenderPass& operator=(const RenderPass&) = delete;
+		RenderPass(RenderPass&&) = delete;
+		RenderPass& operator=(RenderPass&&) = delete;
 
 		void Cleanup(const Device& device);
 
 		VkRenderPass GetNativeRenderPass() const;
 	private:
-		VkRenderPass mRenderPass;
+		VkRenderPass m_RenderPass;
 
 	};
 }

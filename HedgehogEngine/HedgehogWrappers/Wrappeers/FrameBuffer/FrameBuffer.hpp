@@ -29,7 +29,7 @@ namespace Wrappers
 		VkFramebuffer GetNativeFrameBuffer() const;
 
 	private:
-		VkFramebuffer mFrameBuffer;
+		VkFramebuffer m_FrameBuffer;
 	};
 }
 

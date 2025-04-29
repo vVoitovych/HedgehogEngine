@@ -577,3 +577,4 @@ Binaries
 /ThirdParty/shaderc/shaderc.vcxproj
 /ThirdParty/shaderc/shaderc.vcxproj.filters
 /ThirdParty/SPIRV-Reflect/SPIRV-Reflect.vcxproj
+/Shaders/*.filters

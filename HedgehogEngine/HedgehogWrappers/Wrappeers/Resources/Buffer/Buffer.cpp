@@ -16,10 +16,10 @@ namespace Wrappers
 		VkDeviceSize size, 
 		VkBufferUsageFlags usage, 
 		VmaMemoryUsage memUsage)
-		: mBuffer(nullptr)
-		, mAllocation(nullptr)
+		: m_Buffer(nullptr)
+		, m_Allocation(nullptr)
 	{
-		mBufferSize = size;
+		m_BufferSize = size;
 
 		VkBufferCreateInfo bufferInfo = {};
 		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -30,7 +30,7 @@ namespace Wrappers
 		VmaAllocationCreateInfo vmaallocInfo = {};
 		vmaallocInfo.usage = memUsage; //VMA_MEMORY_USAGE_CPU_TO_GPU;
 
-		if (vmaCreateBuffer(device.GetAllocator(), &bufferInfo, &vmaallocInfo,	&mBuffer, &mAllocation, nullptr) != VK_SUCCESS)
+		if (vmaCreateBuffer(device.GetAllocator(), &bufferInfo, &vmaallocInfo,	&m_Buffer, &m_Allocation, nullptr) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create buffer");
 		}
@@ -39,12 +39,12 @@ namespace Wrappers
 
 	Buffer::~Buffer()
 	{
-		if (mBuffer != nullptr)
+		if (m_Buffer != nullptr)
 		{
 			LOGERROR("Vulkan buffer should be cleanedup before destruction!");
 			ENGINE_DEBUG_BREAK();
 		}
-		if (mAllocation != nullptr)
+		if (m_Allocation != nullptr)
 		{
 			LOGERROR("Vulkan buffer allocation should be cleanedup before destruction!");
 			ENGINE_DEBUG_BREAK();
@@ -52,24 +52,24 @@ namespace Wrappers
 	}
 
 	Buffer::Buffer(Buffer&& other) noexcept
-		: mBuffer(other.mBuffer)
-		, mAllocation(other.mAllocation)
-		, mBufferSize(other.mBufferSize)
+		: m_Buffer(other.m_Buffer)
+		, m_Allocation(other.m_Allocation)
+		, m_BufferSize(other.m_BufferSize)
 	{
-		other.mBuffer = nullptr;
-		other.mAllocation = nullptr;
+		other.m_Buffer = nullptr;
+		other.m_Allocation = nullptr;
 	}
 
 	Buffer& Buffer::operator=(Buffer&& other) noexcept
 	{
 		if (this != &other)
 		{
-			mBuffer = other.mBuffer;
-			mAllocation = other.mAllocation;
-			mBufferSize = other.mBufferSize;
+			m_Buffer = other.m_Buffer;
+			m_Allocation = other.m_Allocation;
+			m_BufferSize = other.m_BufferSize;
 
-			other.mBuffer = nullptr;
-			other.mAllocation = nullptr;
+			other.m_Buffer = nullptr;
+			other.m_Allocation = nullptr;
 		}
 		return *this;
 	}
@@ -84,29 +84,29 @@ namespace Wrappers
 
 	void Buffer::DestroyBuffer(const Device& device)
 	{
-		vmaDestroyBuffer(device.GetAllocator(), mBuffer, mAllocation);
-		mAllocation = nullptr;
-		mBuffer = nullptr;
+		vmaDestroyBuffer(device.GetAllocator(), m_Buffer, m_Allocation);
+		m_Allocation = nullptr;
+		m_Buffer = nullptr;
 	}
 
 	void Buffer::MapMemory(const Device& device, void** ppData)
 	{
-		vmaMapMemory(device.GetAllocator(), mAllocation, ppData);
+		vmaMapMemory(device.GetAllocator(), m_Allocation, ppData);
 	}
 
 	void Buffer::UnapMemory(const Device& device)
 	{
-		vmaUnmapMemory(device.GetAllocator(), mAllocation);
+		vmaUnmapMemory(device.GetAllocator(), m_Allocation);
 	}
 
 	const VkBuffer& Buffer::GetNativeBuffer() const
 	{
-		return mBuffer;
+		return m_Buffer;
 	}
 
 	VkDeviceSize Buffer::GetBufferSize() const
 	{
-		return mBufferSize;
+		return m_BufferSize;
 	}
 
 }

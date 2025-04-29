@@ -80,7 +80,7 @@ namespace Renderer
 		initInfo.Instance = device.GetNativeInstance();
 		initInfo.PhysicalDevice = device.GetNativePhysicalDevice();
 		initInfo.Device = device.GetNativeDevice();
-		initInfo.QueueFamily = device.GetIndicies().mGraphicsFamily.value();
+		initInfo.QueueFamily = device.GetIndicies().graphicsFamily.value();
 		initInfo.Queue = device.GetNativeGraphicsQueue();
 		initInfo.PipelineCache = VK_NULL_HANDLE;
 		initInfo.DescriptorPool = mDescriptorAllocator->GetNativeDescriptoPool();

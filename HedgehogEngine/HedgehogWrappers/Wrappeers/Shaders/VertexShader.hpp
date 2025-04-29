@@ -22,8 +22,8 @@ namespace Wrappers
 		VkPipelineShaderStageCreateInfo GetCreateInfo();
 
 	private:
-		VkShaderModule mShaderModule;
-		VkPipelineShaderStageCreateInfo mShadereStageCreateInfo = {};
+		VkShaderModule m_ShaderModule;
+		VkPipelineShaderStageCreateInfo m_ShadereStageCreateInfo = {};
 	};
 
 }

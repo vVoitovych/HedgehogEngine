@@ -16,13 +16,13 @@ namespace Wrappers
 		VkImageTiling tiling, 
 		VkImageUsageFlags usage, 
 		VkMemoryPropertyFlags properties)
-		: mImage(nullptr)
-		, mAllocation(nullptr)
-		, mImageView(nullptr)
-		, mFormat(format)
+		: m_Image(nullptr)
+		, m_Allocation(nullptr)
+		, m_ImageView(nullptr)
+		, m_Format(format)
 	{
-		mExtent.width = width;
-		mExtent.height = height;
+		m_Extent.width = width;
+		m_Extent.height = height;
 
 		VkImageCreateInfo imageInfo{};
 		imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -41,7 +41,7 @@ namespace Wrappers
 
 		VmaAllocationCreateInfo allocInfo = {};
 		allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-		if (vmaCreateImage(device.GetAllocator(), &imageInfo, &allocInfo, &mImage, &mAllocation, nullptr) != VK_SUCCESS)
+		if (vmaCreateImage(device.GetAllocator(), &imageInfo, &allocInfo, &m_Image, &m_Allocation, nullptr) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create image!");
 		}
@@ -49,17 +49,17 @@ namespace Wrappers
 
 	Image::~Image()
 	{
-		if (mImage != nullptr)
+		if (m_Image != nullptr)
 		{
 			LOGERROR("Vulkan image should be cleanedup before destruction!");
 			ENGINE_DEBUG_BREAK();
 		}
-		if (mAllocation != nullptr)
+		if (m_Allocation != nullptr)
 		{
 			LOGERROR("Vulkan image allocation should be cleanedup before destruction!");
 			ENGINE_DEBUG_BREAK();
 		}
-		if (mImageView != nullptr)
+		if (m_ImageView != nullptr)
 		{
 			LOGERROR("Vulkan image view should be cleanedup before destruction!");
 			ENGINE_DEBUG_BREAK();
@@ -67,40 +67,40 @@ namespace Wrappers
 	}
 
 	Image::Image(Image&& other) noexcept
-		: mImage(other.mImage)
-		, mAllocation(other.mAllocation)
-		, mImageView(other.mImageView)
-		, mExtent(other.mExtent)
-		, mFormat(other.mFormat)
+		: m_Image(other.m_Image)
+		, m_Allocation(other.m_Allocation)
+		, m_ImageView(other.m_ImageView)
+		, m_Extent(other.m_Extent)
+		, m_Format(other.m_Format)
 	{
-		other.mImage = nullptr;
-		other.mAllocation = nullptr;
-		other.mImageView = nullptr;
+		other.m_Image = nullptr;
+		other.m_Allocation = nullptr;
+		other.m_ImageView = nullptr;
 	}
 
 	Image& Image::operator=(Image&& other) noexcept
 	{
 		if (this != &other)
 		{
-			mImage = other.mImage;
-			mAllocation = other.mAllocation;
-			mImageView = other.mImageView;
+			m_Image = other.m_Image;
+			m_Allocation = other.m_Allocation;
+			m_ImageView = other.m_ImageView;
 
-			other.mImage = nullptr;
-			other.mAllocation = nullptr;
-			other.mImageView = nullptr;
+			other.m_Image = nullptr;
+			other.m_Allocation = nullptr;
+			other.m_ImageView = nullptr;
 		}
 		return *this;
 	}
 
 	void Image::Cleanup(const Device& device)
 	{
-		vkDestroyImageView(device.GetNativeDevice(), mImageView, nullptr);
+		vkDestroyImageView(device.GetNativeDevice(), m_ImageView, nullptr);
 
-		vmaDestroyImage(device.GetAllocator(), mImage, mAllocation);
-		mImage = nullptr;
-		mAllocation = nullptr;
-		mImageView = nullptr;
+		vmaDestroyImage(device.GetAllocator(), m_Image, m_Allocation);
+		m_Image = nullptr;
+		m_Allocation = nullptr;
+		m_ImageView = nullptr;
 
 	}
 
@@ -108,7 +108,7 @@ namespace Wrappers
 	{
 		VkImageViewCreateInfo viewInfo{};
 		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		viewInfo.image = mImage;
+		viewInfo.image = m_Image;
 		viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
 		viewInfo.format = format;
 		viewInfo.subresourceRange.aspectMask = aspectFlags;
@@ -117,7 +117,7 @@ namespace Wrappers
 		viewInfo.subresourceRange.baseArrayLayer = 0;
 		viewInfo.subresourceRange.layerCount = 1;
 
-		if (vkCreateImageView(device.GetNativeDevice(), &viewInfo, nullptr, &mImageView) != VK_SUCCESS)
+		if (vkCreateImageView(device.GetNativeDevice(), &viewInfo, nullptr, &m_ImageView) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create texture image view!");
 		}
@@ -126,22 +126,22 @@ namespace Wrappers
 
 	const VkImage& Image::GetNativeImage() const
 	{
-		return mImage;
+		return m_Image;
 	}
 
 	const VkImageView& Image::GetNativeView() const
 	{
-		return mImageView;
+		return m_ImageView;
 	}
 
 	VkFormat Image::GetFormat() const
 	{
-		return mFormat;
+		return m_Format;
 	}
 
 	VkExtent2D Image::GetExtent() const
 	{
-		return mExtent;
+		return m_Extent;
 	}
 
 

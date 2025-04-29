@@ -76,19 +76,79 @@ namespace Wrappers
 		}
 	}
 
+	QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface)
+	{
+		QueueFamilyIndices indices;
+
+		uint32_t queueFamilyCount = 0;
+		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+		std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+
+		int i = 0;
+		for (const auto& queueFamily : queueFamilies)
+		{
+			if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+			{
+				indices.graphicsFamily = i;
+			}
+			VkBool32 presentSupport = false;
+			vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+
+			if (presentSupport)
+			{
+				indices.presentFamily = i;
+			}
+
+			if (indices.IsComplete())
+			{
+				break;
+			}
+			i++;
+		}
+		return indices;
+	}
+
+	SwapChainSupportDetails GetSwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface)
+	{
+		SwapChainSupportDetails details;
+
+		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
+
+		uint32_t formatCount;
+		vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
+		if (formatCount != 0)
+		{
+			details.formats.resize(formatCount);
+			vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
+		}
+
+		uint32_t presentModeCount;
+		vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
+		if (presentModeCount != 0)
+		{
+			details.precentModes.resize(presentModeCount);
+			vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.precentModes.data());
+		}
+		return details;
+	}
+
+	// Device methods
+
 	Device::Device(const WinManager::WindowManager& windowManager)
-		: mInstance(nullptr)
-		, mDebugMessenger(nullptr)
-		, mSurface(nullptr)
-		, mPhysicalDevice(nullptr)
-		, mDevice(nullptr)
-		, mGraphicsQueue(nullptr)
-		, mPresentQueue(nullptr)
+		: m_Instance(nullptr)
+		, m_DebugMessenger(nullptr)
+		, m_Surface(nullptr)
+		, m_PhysicalDevice(nullptr)
+		, m_Device(nullptr)
+		, m_GraphicsQueue(nullptr)
+		, m_PresentQueue(nullptr)
 	{
 		InitLayersAndExtentions();
 		InitializeInstance();
 		InitializeDebugMessanger();
-		windowManager.CreateWindowSurface(mInstance, &mSurface);
+		windowManager.CreateWindowSurface(m_Instance, &m_Surface);
 		PickPhysicalDevice();
 		CreateLogicalDevice();
 		InitializeAllocator();
@@ -97,32 +157,32 @@ namespace Wrappers
 
 	Device::~Device()
 	{
-		if (mInstance != nullptr)
+		if (m_Instance != nullptr)
 		{
 			LOGERROR("Vulkan instance should be cleanedup before destruction!");
 			ENGINE_DEBUG_BREAK();
 		}
-		if (mDebugMessenger != nullptr)
+		if (m_DebugMessenger != nullptr)
 		{
 			LOGERROR("Vulkan debug messenger should be cleanedup before destruction!");
 			ENGINE_DEBUG_BREAK();
 		}
-		if (mPhysicalDevice != nullptr)
+		if (m_PhysicalDevice != nullptr)
 		{
 			LOGERROR("Vulkan physical device should be cleanedup before destruction!");
 			ENGINE_DEBUG_BREAK();
 		}
-		if (mDevice != nullptr)
+		if (m_Device != nullptr)
 		{
 			LOGERROR("Vulkan device should be cleanedup before destruction!");
 			ENGINE_DEBUG_BREAK();
 		}
-		if (mAllocator != nullptr)
+		if (m_Allocator != nullptr)
 		{
 			LOGERROR("Vulkan allocator should be cleanedup before destruction!");
 			ENGINE_DEBUG_BREAK();
 		}
-		if (mCommandPool != nullptr)
+		if (m_CommandPool != nullptr)
 		{
 			LOGERROR("Vulkan command pool should be cleanedup before destruction!");
 			ENGINE_DEBUG_BREAK();
@@ -131,13 +191,12 @@ namespace Wrappers
 
 	void Device::InitLayersAndExtentions()
 	{
-		mValidationLayers.clear();
-		mDeviceExtensions.clear();
+		m_ValidationLayers.clear();
+		m_DeviceExtensions.clear();
 
-		mValidationLayers.push_back("VK_LAYER_KHRONOS_validation"); 
+		m_ValidationLayers.push_back("VK_LAYER_KHRONOS_validation"); 
 		
-		mDeviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-		mDeviceExtensions.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+		m_DeviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 	}
 
 	void Device::InitializeInstance()
@@ -166,8 +225,8 @@ namespace Wrappers
 
 		VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
 #ifdef DEBUG
-		createInfo.enabledLayerCount = static_cast<uint32_t>(mValidationLayers.size());
-		createInfo.ppEnabledLayerNames = mValidationLayers.data();
+		createInfo.enabledLayerCount = static_cast<uint32_t>(m_ValidationLayers.size());
+		createInfo.ppEnabledLayerNames = m_ValidationLayers.data();
 		PopulateDebugMessengerCreateInfo(debugCreateInfo);
 		createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
 #else
@@ -175,7 +234,7 @@ namespace Wrappers
 		createInfo.pNext = nullptr;
 #endif
 
-		if (vkCreateInstance(&createInfo, nullptr, &mInstance) != VK_SUCCESS)
+		if (vkCreateInstance(&createInfo, nullptr, &m_Instance) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create instance!");
 		}
@@ -191,7 +250,7 @@ namespace Wrappers
 		VkDebugUtilsMessengerCreateInfoEXT createInfo;
 		PopulateDebugMessengerCreateInfo(createInfo);
 
-		if (CreateDebugUtilsMessengerEXT(mInstance, &createInfo, nullptr, &mDebugMessenger) != VK_SUCCESS)
+		if (CreateDebugUtilsMessengerEXT(m_Instance, &createInfo, nullptr, &m_DebugMessenger) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to set up debug messenger!");
 		}
@@ -202,7 +261,7 @@ namespace Wrappers
 	void Device::PickPhysicalDevice()
 	{
 		uint32_t deviceCount = 0;
-		vkEnumeratePhysicalDevices(mInstance, &deviceCount, nullptr);
+		vkEnumeratePhysicalDevices(m_Instance, &deviceCount, nullptr);
 		LOGINFO("Devices count: ", deviceCount);
 		if (deviceCount == 0)
 		{
@@ -210,24 +269,26 @@ namespace Wrappers
 		}
 
 		std::vector<VkPhysicalDevice> devices(deviceCount);
-		vkEnumeratePhysicalDevices(mInstance, &deviceCount, devices.data());
-
+		vkEnumeratePhysicalDevices(m_Instance, &deviceCount, devices.data());
+		
+		int maxScore = 0;
 		for (const auto& device : devices)
 		{
-			if (IsDeviceSuitable(device))
+			int score = GetDeviceScore(device);
+			if (score > maxScore)
 			{
-				mPhysicalDevice = device;
-				break;
+				m_PhysicalDevice = device;
+				maxScore = score;
 			}
 		}
 
-		if (mPhysicalDevice == nullptr)
+		if (m_PhysicalDevice == nullptr)
 		{
 			throw std::runtime_error("failed to find a suitable GPU!");
 		}
 
 		VkPhysicalDeviceProperties properties;
-		vkGetPhysicalDeviceProperties(mPhysicalDevice, &properties);
+		vkGetPhysicalDeviceProperties(m_PhysicalDevice, &properties);
 		LOGINFO("Physical device: ", properties.deviceName);
 
 		LOGINFO("Physical device picked");
@@ -235,10 +296,10 @@ namespace Wrappers
 
 	void Device::CreateLogicalDevice()
 	{
-		mIndices = FindQueueFamilies(mPhysicalDevice);
+		m_Indices = FindQueueFamilies(m_PhysicalDevice, m_Surface);
 
 		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-		std::set<uint32_t> uniqueQueueFamilies = { mIndices.mGraphicsFamily.value(), mIndices.mPresentFamily.value() };
+		std::set<uint32_t> uniqueQueueFamilies = { m_Indices.graphicsFamily.value(), m_Indices.presentFamily.value() };
 
 		float queuePriority = 1.0f;
 		for (uint32_t queueFamily : uniqueQueueFamilies)
@@ -263,24 +324,24 @@ namespace Wrappers
 		createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
 		createInfo.pQueueCreateInfos = queueCreateInfos.data();
 		createInfo.pEnabledFeatures = &deviceFeatures;
-		createInfo.enabledExtensionCount = static_cast<uint32_t>(mDeviceExtensions.size());
-		createInfo.ppEnabledExtensionNames = mDeviceExtensions.data();
+		createInfo.enabledExtensionCount = static_cast<uint32_t>(m_DeviceExtensions.size());
+		createInfo.ppEnabledExtensionNames = m_DeviceExtensions.data();
 
 #ifdef DEBUG
-		createInfo.enabledLayerCount = static_cast<uint32_t>(mValidationLayers.size());
-		createInfo.ppEnabledLayerNames = mValidationLayers.data();
+		createInfo.enabledLayerCount = static_cast<uint32_t>(m_ValidationLayers.size());
+		createInfo.ppEnabledLayerNames = m_ValidationLayers.data();
 #else
 		createInfo.enabledLayerCount = 0;
 #endif
 		createInfo.pNext = &synchronization2Features;
 
-		if (vkCreateDevice(mPhysicalDevice, &createInfo, nullptr, &mDevice) != VK_SUCCESS)
+		if (vkCreateDevice(m_PhysicalDevice, &createInfo, nullptr, &m_Device) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create logical device!");
 		}
 
-		vkGetDeviceQueue(mDevice, mIndices.mGraphicsFamily.value(), 0, &mGraphicsQueue);
-		vkGetDeviceQueue(mDevice, mIndices.mPresentFamily.value(), 0, &mPresentQueue);
+		vkGetDeviceQueue(m_Device, m_Indices.graphicsFamily.value(), 0, &m_GraphicsQueue);
+		vkGetDeviceQueue(m_Device, m_Indices.presentFamily.value(), 0, &m_PresentQueue);
 
 		LOGINFO("Logical device created");
 	}
@@ -294,12 +355,12 @@ namespace Wrappers
 		VmaAllocatorCreateInfo allocatorCreateInfo = {};
 		allocatorCreateInfo.flags = VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT;
 		allocatorCreateInfo.vulkanApiVersion = VK_API_VERSION_1_2;
-		allocatorCreateInfo.physicalDevice = mPhysicalDevice;
-		allocatorCreateInfo.device = mDevice;
-		allocatorCreateInfo.instance = mInstance;
+		allocatorCreateInfo.physicalDevice = m_PhysicalDevice;
+		allocatorCreateInfo.device = m_Device;
+		allocatorCreateInfo.instance = m_Instance;
 		allocatorCreateInfo.pVulkanFunctions = &vulkanFunctions;
 
-		vmaCreateAllocator(&allocatorCreateInfo, &mAllocator);
+		vmaCreateAllocator(&allocatorCreateInfo, &m_Allocator);
 	}
 
 	void Device::InitializeCommandPool()
@@ -307,9 +368,9 @@ namespace Wrappers
 		VkCommandPoolCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 		createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-		createInfo.queueFamilyIndex = mIndices.mGraphicsFamily.value();
+		createInfo.queueFamilyIndex = m_Indices.graphicsFamily.value();
 
-		if (vkCreateCommandPool(mDevice, &createInfo, nullptr, &mCommandPool) != VK_SUCCESS)
+		if (vkCreateCommandPool(m_Device, &createInfo, nullptr, &m_CommandPool) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create command pool!");
 		}
@@ -319,26 +380,26 @@ namespace Wrappers
 
 	void Device::Cleanup()
 	{
-		vkDestroyCommandPool(mDevice, mCommandPool, nullptr);
-		vmaDestroyAllocator(mAllocator);
-		vkDestroyDevice(mDevice, nullptr);
-		vkDestroySurfaceKHR(mInstance, mSurface, nullptr);
+		vkDestroyCommandPool(m_Device, m_CommandPool, nullptr);
+		vmaDestroyAllocator(m_Allocator);
+		vkDestroyDevice(m_Device, nullptr);
+		vkDestroySurfaceKHR(m_Instance, m_Surface, nullptr);
 		CleanupDebugMessanger();
-		vkDestroyInstance(mInstance, nullptr);
+		vkDestroyInstance(m_Instance, nullptr);
 
-		mInstance = nullptr;
-		mDebugMessenger = nullptr;
-		mPhysicalDevice = nullptr;
-		mDevice = nullptr;
-		mAllocator = nullptr;
-		mCommandPool = nullptr;
+		m_Instance = nullptr;
+		m_DebugMessenger = nullptr;
+		m_PhysicalDevice = nullptr;
+		m_Device = nullptr;
+		m_Allocator = nullptr;
+		m_CommandPool = nullptr;
 		LOGINFO("Device cleaned");
 	}
 
 	void Device::CleanupDebugMessanger()
 	{
 #ifdef DEBUG
-		DestroyDebugUtilsMessengerEXT(mInstance, mDebugMessenger, nullptr);
+		DestroyDebugUtilsMessengerEXT(m_Instance, m_DebugMessenger, nullptr);
 #endif
 	}
 
@@ -346,48 +407,48 @@ namespace Wrappers
 
 	VkInstance Device::GetNativeInstance() const
 	{
-		return mInstance;
+		return m_Instance;
 	}
 
 	VkQueue Device::GetNativeGraphicsQueue() const
 	{
-		return mGraphicsQueue;
+		return m_GraphicsQueue;
 	}
 
 	VkQueue Device::GetNativePresentQueue() const
 	{
-		return mPresentQueue;
+		return m_PresentQueue;
 	}
 
 	VkSurfaceKHR Device::GetNativeSurface() const 
 	{
-		return mSurface;
+		return m_Surface;
 	}
 
 	VkDevice Device::GetNativeDevice() const
 	{
-		return mDevice;
+		return m_Device;
 	}
 
 	VkPhysicalDevice Device::GetNativePhysicalDevice() const
 	{
-		return mPhysicalDevice;
+		return m_PhysicalDevice;
 	}
 
 	QueueFamilyIndices Device::GetIndicies() const
 	{
-		return mIndices;
+		return m_Indices;
 	}
 
 	const VmaAllocator& Device::GetAllocator() const
 	{
-		return mAllocator;
+		return m_Allocator;
 	}
 
 	uint32_t Device::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const
 	{
 		VkPhysicalDeviceMemoryProperties memProperties;
-		vkGetPhysicalDeviceMemoryProperties(mPhysicalDevice, &memProperties);
+		vkGetPhysicalDeviceMemoryProperties(m_PhysicalDevice, &memProperties);
 
 		for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
 		{
@@ -403,7 +464,7 @@ namespace Wrappers
 	{
 #ifdef DEBUG
 		PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectNameEXT =
-			(PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(mInstance, "vkSetDebugUtilsObjectNameEXT");
+			(PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(m_Instance, "vkSetDebugUtilsObjectNameEXT");
 
 		if (!vkSetDebugUtilsObjectNameEXT) {
 			throw std::runtime_error("failed to load vkSetDebugUtilsObjectNameEXT");
@@ -416,7 +477,7 @@ namespace Wrappers
 		nameInfo.objectHandle = objectHandle;
 		nameInfo.pObjectName = name;
 
-		vkSetDebugUtilsObjectNameEXT(mDevice, &nameInfo);
+		vkSetDebugUtilsObjectNameEXT(m_Device, &nameInfo);
 #endif
 	}
 
@@ -424,32 +485,13 @@ namespace Wrappers
 
 	SwapChainSupportDetails Device::QuerySwapChainSupport() const
 	{
-		SwapChainSupportDetails details;
-
-		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(mPhysicalDevice, mSurface, &details.mCapabilities);
-
-		uint32_t formatCount;
-		vkGetPhysicalDeviceSurfaceFormatsKHR(mPhysicalDevice, mSurface, &formatCount, nullptr);
-		if (formatCount != 0)
-		{
-			details.mFormats.resize(formatCount);
-			vkGetPhysicalDeviceSurfaceFormatsKHR(mPhysicalDevice, mSurface, &formatCount, details.mFormats.data());
-		}
-
-		uint32_t presentModeCount;
-		vkGetPhysicalDeviceSurfacePresentModesKHR(mPhysicalDevice, mSurface, &presentModeCount, nullptr);
-		if (presentModeCount != 0)
-		{
-			details.mPrecentModes.resize(presentModeCount);
-			vkGetPhysicalDeviceSurfacePresentModesKHR(mPhysicalDevice, mSurface, &presentModeCount, details.mPrecentModes.data());
-		}
-		return details;
+		return GetSwapChainSupport(m_PhysicalDevice, m_Surface);
 	}
 
 	VkPhysicalDeviceProperties Device::GetPhysicalDeviceProperties() const
 	{
 		VkPhysicalDeviceProperties properties{};
-		vkGetPhysicalDeviceProperties(mPhysicalDevice, &properties);
+		vkGetPhysicalDeviceProperties(m_PhysicalDevice, &properties);
 		return properties;
 	}
 
@@ -458,7 +500,7 @@ namespace Wrappers
 		for (VkFormat format : candidates) 
 		{
 			VkFormatProperties props;
-			vkGetPhysicalDeviceFormatProperties(mPhysicalDevice, format, &props);
+			vkGetPhysicalDeviceFormatProperties(m_PhysicalDevice, format, &props);
 
 			if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) 
 			{
@@ -484,11 +526,11 @@ namespace Wrappers
 	{
 		VkCommandBufferAllocateInfo allocateInfo{};
 		allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		allocateInfo.commandPool = mCommandPool;
+		allocateInfo.commandPool = m_CommandPool;
 		allocateInfo.commandBufferCount = 1;
 		allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
-		if (vkAllocateCommandBuffers(mDevice, &allocateInfo, pCommandBuffer) != VK_SUCCESS)
+		if (vkAllocateCommandBuffers(m_Device, &allocateInfo, pCommandBuffer) != VK_SUCCESS)
 		{
 			LOGERROR("failed to allocate command buffer!");
 			ENGINE_DEBUG_BREAK();
@@ -497,7 +539,7 @@ namespace Wrappers
 
 	void Device::FreeCommandBuffer(VkCommandBuffer* pCommandBuffer) const
 	{
-		vkFreeCommandBuffers(mDevice, mCommandPool, 1, pCommandBuffer);
+		vkFreeCommandBuffers(m_Device, m_CommandPool, 1, pCommandBuffer);
 	}
 
 	void Device::CopyBufferToBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) const
@@ -529,7 +571,7 @@ namespace Wrappers
 
 	void Device::UpdateDescriptorSets(std::vector<VkWriteDescriptorSet>& descriptorWrites) const
 	{
-		vkUpdateDescriptorSets(mDevice, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+		vkUpdateDescriptorSets(m_Device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 	}
 
 	bool Device::IsEnableValidationLayers() const
@@ -558,7 +600,7 @@ namespace Wrappers
 		std::vector<VkLayerProperties> availableLayers(layerCount);
 		vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
-		for (const char* layerName : mValidationLayers)
+		for (const char* layerName : m_ValidationLayers)
 		{
 			bool layerFound = false;
 
@@ -599,19 +641,15 @@ namespace Wrappers
 		std::vector<VkExtensionProperties> extensions(extensionCount);
 		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
 
-		LOGINFO("available extensions:");
 		std::unordered_set<std::string> available;
 		for (const auto& extension : extensions)
 		{
-			LOGINFO("\t", extension.extensionName);
 			available.insert(extension.extensionName);
 		}
 
-		LOGINFO("required extensions:");
 		auto requiredExtensions = GetRequiredExtensions();
 		for (const auto& required : requiredExtensions)
 		{
-			LOGINFO("\t", required);
 			if (available.find(required) == available.end())
 			{
 				throw std::runtime_error("Missing required glfw extension");
@@ -627,7 +665,7 @@ namespace Wrappers
 		std::vector<VkExtensionProperties> availableExtensions(extensionsCount); 
 		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionsCount, availableExtensions.data());
 
-		std::set<std::string> requiredExtensins(mDeviceExtensions.begin(), mDeviceExtensions.end());
+		std::set<std::string> requiredExtensins(m_DeviceExtensions.begin(), m_DeviceExtensions.end());
 
 		for (const auto& extension : availableExtensions)
 		{
@@ -637,76 +675,32 @@ namespace Wrappers
 		return requiredExtensins.empty();
 	}
 
-	bool Device::IsDeviceSuitable(VkPhysicalDevice device) const
+	int Device::GetDeviceScore(VkPhysicalDevice device) const
 	{
-		QueueFamilyIndices indices = FindQueueFamilies(device);
+		QueueFamilyIndices indices = FindQueueFamilies(device, m_Surface);
 		bool extensionsSupported = CheckDeviceExtensionSupport(device);
 		bool swapChainAdequate = false;
 		if (extensionsSupported)
 		{
-			auto swapChainSupport = QuerySwapChainSupport(device);
-			swapChainAdequate = !swapChainSupport.mFormats.empty() && !swapChainSupport.mPrecentModes.empty();
+			auto swapChainSupport = GetSwapChainSupport(device, m_Surface);
+			swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.precentModes.empty();
 		}
-		return indices.IsComplete() && extensionsSupported && swapChainAdequate;
+		int score = 1;
+
+		bool conditions = indices.IsComplete() && extensionsSupported && swapChainAdequate;
+		if (!conditions)
+			return 0;
+
+		VkPhysicalDeviceProperties deviceProperties;
+		vkGetPhysicalDeviceProperties(device, &deviceProperties);
+		if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) 
+		{
+			score += 1000;
+		}
+
+		return score;
 	}
 
-	QueueFamilyIndices Device::FindQueueFamilies(VkPhysicalDevice device) const
-	{
-		QueueFamilyIndices indices;
-
-		uint32_t queueFamilyCount = 0;
-		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
-
-		std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
-
-		int i = 0;
-		for (const auto& queueFamily : queueFamilies)
-		{
-			if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
-			{
-				indices.mGraphicsFamily = i;
-			}
-			VkBool32 presentSupport = false;
-			vkGetPhysicalDeviceSurfaceSupportKHR(device, i, mSurface, &presentSupport);
-
-			if (presentSupport)
-			{
-				indices.mPresentFamily = i;
-			}
-
-			if (indices.IsComplete())
-			{
-				break;
-			}
-			i++;
-		}
-		return indices;
-	}
-
-	SwapChainSupportDetails Device::QuerySwapChainSupport(VkPhysicalDevice device) const
-	{
-		SwapChainSupportDetails details;
-
-		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, mSurface, &details.mCapabilities);
-
-		uint32_t formatCount;
-		vkGetPhysicalDeviceSurfaceFormatsKHR(device, mSurface, &formatCount, nullptr);
-		if (formatCount != 0)
-		{
-			details.mFormats.resize(formatCount);
-			vkGetPhysicalDeviceSurfaceFormatsKHR(device, mSurface, &formatCount, details.mFormats.data());
-		}
-
-		uint32_t presentModeCount;
-		vkGetPhysicalDeviceSurfacePresentModesKHR(device, mSurface, &presentModeCount, nullptr);
-		if (presentModeCount != 0)
-		{
-			details.mPrecentModes.resize(presentModeCount);
-			vkGetPhysicalDeviceSurfacePresentModesKHR(device, mSurface, &presentModeCount, details.mPrecentModes.data());
-		}
-		return details;
-	}
 
 }
 

@@ -16,7 +16,7 @@ namespace Wrappers
 		std::vector<VkImageView> attachments, 
 		VkExtent2D extent, 
 		const RenderPass& renderPass)
-		: mFrameBuffer(nullptr)
+		: m_FrameBuffer(nullptr)
 	{
 		VkFramebufferCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -27,7 +27,7 @@ namespace Wrappers
 		createInfo.height = extent.height;
 		createInfo.layers = 1;
 
-		if (vkCreateFramebuffer(device.GetNativeDevice(), &createInfo, nullptr, &mFrameBuffer) != VK_SUCCESS)
+		if (vkCreateFramebuffer(device.GetNativeDevice(), &createInfo, nullptr, &m_FrameBuffer) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create frame buffer!");
 		}
@@ -37,7 +37,7 @@ namespace Wrappers
 
 	FrameBuffer::~FrameBuffer()
 	{
-		if (mFrameBuffer != nullptr)
+		if (m_FrameBuffer != nullptr)
 		{
 			LOGERROR("Vulkan frame buffer should be cleanedup before destruction!");
 			ENGINE_DEBUG_BREAK();
@@ -45,32 +45,32 @@ namespace Wrappers
 	}
 
 	FrameBuffer::FrameBuffer(FrameBuffer&& other) noexcept
-		: mFrameBuffer(other.mFrameBuffer)
+		: m_FrameBuffer(other.m_FrameBuffer)
 	{
-		other.mFrameBuffer = nullptr;
+		other.m_FrameBuffer = nullptr;
 	}
 
 	FrameBuffer& FrameBuffer::operator=(FrameBuffer&& other) noexcept
 	{
 		if (this != &other)
 		{
-			mFrameBuffer = other.mFrameBuffer;
+			m_FrameBuffer = other.m_FrameBuffer;
 
-			other.mFrameBuffer = nullptr;
+			other.m_FrameBuffer = nullptr;
 		}
 		return *this;
 	}
 
 	void FrameBuffer::Cleanup(const Device& device)
 	{
-		vkDestroyFramebuffer(device.GetNativeDevice(), mFrameBuffer, nullptr);
-		mFrameBuffer = nullptr;
+		vkDestroyFramebuffer(device.GetNativeDevice(), m_FrameBuffer, nullptr);
+		m_FrameBuffer = nullptr;
 		LOGINFO("Frame buffer cleaned");
 	}
 
 	VkFramebuffer FrameBuffer::GetNativeFrameBuffer() const
 	{
-		return mFrameBuffer;
+		return m_FrameBuffer;
 	}
 
 }

@@ -38,12 +38,12 @@ namespace Wrappers
 		VkExtent2D GetExtent() const;
 
 	private:
-		VkImage mImage;
-		VmaAllocation mAllocation;
+		VkImage m_Image;
+		VmaAllocation m_Allocation;
 
-		VkImageView mImageView;
-		VkFormat mFormat;
-		VkExtent2D mExtent;
+		VkImageView m_ImageView;
+		VkFormat m_Format;
+		VkExtent2D m_Extent;
 	};
 
 }

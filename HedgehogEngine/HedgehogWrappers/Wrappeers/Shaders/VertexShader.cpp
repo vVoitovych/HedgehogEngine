@@ -8,7 +8,7 @@
 namespace Wrappers
 {
 	VertexShader::VertexShader(const Device& device, const std::string& fileName)
-		: mShaderModule(nullptr)
+		: m_ShaderModule(nullptr)
 	{
 		std::vector<uint32_t> code = ShaderCompiler::ReadAndCompileShader(fileName, ShaderCompiler::ShaderType::Vertex);
 
@@ -17,15 +17,15 @@ namespace Wrappers
 		createInfo.codeSize = code.size() * sizeof(uint32_t);
 		createInfo.pCode = code.data();
 
-		if (vkCreateShaderModule(device.GetNativeDevice(), &createInfo, nullptr, &mShaderModule) != VK_SUCCESS)
+		if (vkCreateShaderModule(device.GetNativeDevice(), &createInfo, nullptr, &m_ShaderModule) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Failed to create shadeer module!");
 		}
 
-		mShadereStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		mShadereStageCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-		mShadereStageCreateInfo.module = mShaderModule;
-		mShadereStageCreateInfo.pName = "main";
+		m_ShadereStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		m_ShadereStageCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+		m_ShadereStageCreateInfo.module = m_ShaderModule;
+		m_ShadereStageCreateInfo.pName = "main";
 	}
 
 	VertexShader::~VertexShader()
@@ -34,12 +34,12 @@ namespace Wrappers
 
 	void VertexShader::Cleanup(const Device& device)
 	{
-		vkDestroyShaderModule(device.GetNativeDevice(), mShaderModule, nullptr);
+		vkDestroyShaderModule(device.GetNativeDevice(), m_ShaderModule, nullptr);
 	}
 
 	VkPipelineShaderStageCreateInfo VertexShader::GetCreateInfo()
 	{
-		return mShadereStageCreateInfo;
+		return m_ShadereStageCreateInfo;
 	}
 
 }

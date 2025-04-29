@@ -17,15 +17,15 @@ namespace Wrappers
         const Device& device,
         const DescriptorAllocator& allocator,
         const DescriptorSetLayout& descriptorSetLayout)
-		: mDescriptorSet(nullptr)
+		: m_DescriptorSet(nullptr)
 	{
-        mDescriptorSet = allocator.Allocate(device, descriptorSetLayout);
+        m_DescriptorSet = allocator.Allocate(device, descriptorSetLayout);
         LOGINFO("Vulkan descriptor set created");
 	}
 
 	DescriptorSet::~DescriptorSet()
 	{
-        if (mDescriptorSet != nullptr)
+        if (m_DescriptorSet != nullptr)
         {
             LOGERROR("Vulkan description set should be cleanedup before destruction!");
             ENGINE_DEBUG_BREAK();
@@ -33,18 +33,18 @@ namespace Wrappers
 	}
 
     DescriptorSet::DescriptorSet(DescriptorSet&& other) noexcept
-        : mDescriptorSet(other.mDescriptorSet)
+        : m_DescriptorSet(other.m_DescriptorSet)
     {
-        other.mDescriptorSet = nullptr;
+        other.m_DescriptorSet = nullptr;
     }
 
     DescriptorSet& DescriptorSet::operator=(DescriptorSet&& other) noexcept
     {
         if (this != &other)
         {
-            mDescriptorSet = other.mDescriptorSet;
+            m_DescriptorSet = other.m_DescriptorSet;
 
-            other.mDescriptorSet = nullptr;
+            other.m_DescriptorSet = nullptr;
         }
         return *this;
     }
@@ -56,7 +56,7 @@ namespace Wrappers
         for (size_t i = 0; i < descriptorWrites.size(); ++i)
         {
             writes[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            writes[i].dstSet = mDescriptorSet;
+            writes[i].dstSet = m_DescriptorSet;
             writes[i].descriptorType = descriptorWrites[i].descriptorType;
             writes[i].dstBinding = descriptorWrites[i].dstBinding;
             writes[i].dstArrayElement = descriptorWrites[i].dstArrayElement;
@@ -72,19 +72,19 @@ namespace Wrappers
 
     void DescriptorSet::Cleanup(const Device& device, const DescriptorAllocator& allocator)
 	{        
-        allocator.FreeDescriptorSet(device, &mDescriptorSet);
-        mDescriptorSet = nullptr;
+        allocator.FreeDescriptorSet(device, &m_DescriptorSet);
+        m_DescriptorSet = nullptr;
         LOGINFO("Vulkan descriptor set cleaned");
 	}
 
     const VkDescriptorSet* DescriptorSet::GetNativeSet() const
     {
-        return &mDescriptorSet;
+        return &m_DescriptorSet;
     }
 
     VkDescriptorSet* DescriptorSet::GetNativeSet()
     {
-        return &mDescriptorSet;
+        return &m_DescriptorSet;
     }
 
 }

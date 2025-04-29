@@ -15,20 +15,20 @@ namespace Wrappers
 {
 	struct QueueFamilyIndices
 	{
-		std::optional<uint32_t> mGraphicsFamily;
-		std::optional<uint32_t> mPresentFamily;
+		std::optional<uint32_t> graphicsFamily;
+		std::optional<uint32_t> presentFamily;
 
 		bool IsComplete()
 		{
-			return mGraphicsFamily.has_value() && mPresentFamily.has_value();
+			return graphicsFamily.has_value() && presentFamily.has_value();
 		}
 	};
 
 	struct SwapChainSupportDetails
 	{
-		VkSurfaceCapabilitiesKHR mCapabilities;
-		std::vector<VkSurfaceFormatKHR> mFormats;
-		std::vector<VkPresentModeKHR> mPrecentModes;
+		VkSurfaceCapabilitiesKHR capabilities;
+		std::vector<VkSurfaceFormatKHR> formats;
+		std::vector<VkPresentModeKHR> precentModes;
 	};
 
 	class Device
@@ -39,6 +39,8 @@ namespace Wrappers
 
 		Device(const Device&) = delete;
 		Device& operator=(const Device&) = delete;
+		Device(Device&&) = delete;
+		Device& operator=(Device&&) = delete;
 
 		void Cleanup();
 
@@ -50,14 +52,12 @@ namespace Wrappers
 		VkPhysicalDevice GetNativePhysicalDevice() const;
 		QueueFamilyIndices GetIndicies() const;
 		const VmaAllocator& GetAllocator() const;
-		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const;
 
 		void SetObjectName(uint64_t objectHandle, VkObjectType objectType, const char* name) const;
 
 	public:
 		SwapChainSupportDetails QuerySwapChainSupport() const;
 		VkPhysicalDeviceProperties GetPhysicalDeviceProperties() const;
-		VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const;
 		VkFormat FindDepthFormat() const;
 
 		void AllocateCommandBuffer(VkCommandBuffer* pCommandBuffer) const;
@@ -85,27 +85,28 @@ namespace Wrappers
 		void HasGflwRequiredInstanceExtensions() const;
 
 		bool CheckDeviceExtensionSupport(VkPhysicalDevice device) const;
-		bool IsDeviceSuitable(VkPhysicalDevice device) const;
-		QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device) const;
-		SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device) const;
+		int GetDeviceScore(VkPhysicalDevice device) const;
+
+		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const;
+		VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const;
 
 	private:
-		VkInstance mInstance;
-		VkDebugUtilsMessengerEXT mDebugMessenger;
-		VkSurfaceKHR mSurface;
-		VkPhysicalDevice mPhysicalDevice;
-		VkDevice mDevice;
+		VkInstance m_Instance;
+		VkDebugUtilsMessengerEXT m_DebugMessenger;
+		VkSurfaceKHR m_Surface;
+		VkPhysicalDevice m_PhysicalDevice;
+		VkDevice m_Device;
 
-		VkQueue mGraphicsQueue;
-		VkQueue mPresentQueue;
+		VkQueue m_GraphicsQueue;
+		VkQueue m_PresentQueue;
 
-		QueueFamilyIndices mIndices;
+		QueueFamilyIndices m_Indices;
 
-		VmaAllocator mAllocator;
-		VkCommandPool mCommandPool;
+		VmaAllocator m_Allocator;
+		VkCommandPool m_CommandPool;
 
-		std::vector<const char*> mValidationLayers;
-		std::vector<const char*> mDeviceExtensions;
+		std::vector<const char*> m_ValidationLayers;
+		std::vector<const char*> m_DeviceExtensions;
 	};
 }
 

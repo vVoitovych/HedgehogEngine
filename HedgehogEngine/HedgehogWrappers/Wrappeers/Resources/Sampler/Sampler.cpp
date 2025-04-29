@@ -8,7 +8,7 @@
 namespace Wrappers
 {
 	Sampler::Sampler(const Device& device)
-		: mSampler(nullptr)
+		: m_Sampler(nullptr)
 	{
 		VkPhysicalDeviceProperties properties = device.GetPhysicalDeviceProperties();
 
@@ -27,7 +27,7 @@ namespace Wrappers
 		samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
 		samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 
-		if (vkCreateSampler(device.GetNativeDevice(), &samplerInfo, nullptr, &mSampler) != VK_SUCCESS)
+		if (vkCreateSampler(device.GetNativeDevice(), &samplerInfo, nullptr, &m_Sampler) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create texture sampler!");
 		}
@@ -36,7 +36,7 @@ namespace Wrappers
 
 	Sampler::~Sampler()
 	{
-		if (mSampler != nullptr)
+		if (m_Sampler != nullptr)
 		{
 			LOGERROR("Vulkan texture sampler should be cleanedup before destruction!");
 			ENGINE_DEBUG_BREAK();
@@ -44,31 +44,31 @@ namespace Wrappers
 	}
 
 	Sampler::Sampler(Sampler&& other) noexcept
-		: mSampler(other.mSampler)
+		: m_Sampler(other.m_Sampler)
 	{
-		other.mSampler = nullptr;
+		other.m_Sampler = nullptr;
 	}
 
 	Sampler& Sampler::operator=(Sampler&& other) noexcept
 	{
 		if (&other != this)
 		{
-			mSampler = other.mSampler;
-			other.mSampler = nullptr;
+			m_Sampler = other.m_Sampler;
+			other.m_Sampler = nullptr;
 		}
 		return *this;
 	}
 
 	void Sampler::Cleanup(const Device& device)
 	{
-		vkDestroySampler(device.GetNativeDevice(), mSampler, nullptr);
-		mSampler = nullptr;
+		vkDestroySampler(device.GetNativeDevice(), m_Sampler, nullptr);
+		m_Sampler = nullptr;
 		LOGINFO("Vulkan texture sampler cleaned");
 	}
 
 	VkSampler Sampler::GetNativeSampler() const
 	{
-		return mSampler;
+		return m_Sampler;
 	}
 
 }

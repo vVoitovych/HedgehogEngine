@@ -19,7 +19,7 @@ namespace Wrappers
 		VkDescriptorSetLayout Build(const Device& device, VkShaderStageFlags shaderStages, void* pNext = nullptr, VkDescriptorSetLayoutCreateFlags flags = 0);
 
 	private:
-		std::vector<VkDescriptorSetLayoutBinding> mBindings;
+		std::vector<VkDescriptorSetLayoutBinding> m_Bindings;
 	};
 }
 
