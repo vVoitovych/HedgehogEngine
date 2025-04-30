@@ -195,7 +195,8 @@ namespace Wrappers
 		m_DeviceExtensions.clear();
 
 		m_ValidationLayers.push_back("VK_LAYER_KHRONOS_validation"); 
-		
+
+		m_DeviceExtensions.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
 		m_DeviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 	}
 
