@@ -2,7 +2,6 @@
 
 #include "HedgehogWrappers/Wrappeers/Shaders/VertexShader.hpp"
 #include "HedgehogWrappers/Wrappeers/Shaders/FragmentShader.hpp"
-#include "HedgehogContext/Containers/MeshContainer/VertexDescription.hpp"
 
 #include "Logger/Logger.hpp"
 
@@ -15,13 +14,38 @@ namespace Renderer
 		mFragmentShader = std::make_unique<Wrappers::FragmentShader>(device, "SimpleShader.frag");
 		mStages = {mVertexShader->GetCreateInfo(), mFragmentShader->GetCreateInfo()};
 
-		mBindingDesc = Context::VertexDescription::GetBindingDescription();
-		mAttributeDesc = Context::VertexDescription::GetAttributeDescription();
+		mBindingDesc[0].binding = 0;
+		mBindingDesc[0].stride = 3 * sizeof(float);
+		mBindingDesc[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+		mBindingDesc[1].binding = 1;
+		mBindingDesc[1].stride = 2 * sizeof(float);
+		mBindingDesc[1].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+		mBindingDesc[2].binding = 2;
+		mBindingDesc[2].stride = 3 * sizeof(float);
+		mBindingDesc[2].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+		mAttributeDesc[0].binding = 0;
+		mAttributeDesc[0].location = 0;
+		mAttributeDesc[0].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+		mAttributeDesc[0].offset = 0;
+
+		mAttributeDesc[1].binding = 1;
+		mAttributeDesc[1].location = 1;
+		mAttributeDesc[1].format = VK_FORMAT_R32G32_SFLOAT;
+		mAttributeDesc[1].offset = 0;
+
+		mAttributeDesc[2].binding = 2;
+		mAttributeDesc[2].location = 2;
+		mAttributeDesc[2].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+		mAttributeDesc[2].offset = 0;
+
 
 		mVertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-		mVertexInputInfo.vertexBindingDescriptionCount = 1;
-		mVertexInputInfo.pVertexBindingDescriptions = &mBindingDesc;
-		mVertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(mAttributeDesc.size());
+		mVertexInputInfo.vertexBindingDescriptionCount = 3;
+		mVertexInputInfo.pVertexBindingDescriptions = mBindingDesc.data();
+		mVertexInputInfo.vertexAttributeDescriptionCount = 3;
 		mVertexInputInfo.pVertexAttributeDescriptions = mAttributeDesc.data();
 		mVertexInputInfo.flags = 0;
 		mVertexInputInfo.pNext = nullptr;

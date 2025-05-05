@@ -40,7 +40,7 @@ namespace Renderer
 		std::unique_ptr<Wrappers::FragmentShader> mFragmentShader;
 		std::array<VkPipelineShaderStageCreateInfo, 2> mStages;
 
-		VkVertexInputBindingDescription mBindingDesc;
+		std::array<VkVertexInputBindingDescription, 3> mBindingDesc;
 		std::array<VkVertexInputAttributeDescription, 3>  mAttributeDesc;
 		VkPipelineVertexInputStateCreateInfo mVertexInputInfo;
 

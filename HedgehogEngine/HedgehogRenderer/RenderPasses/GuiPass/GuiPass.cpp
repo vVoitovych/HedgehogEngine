@@ -13,7 +13,6 @@
 #include "HedgehogContext/Containers/MaterialContainer/MaterialData.hpp"
 #include "HedgehogContext/Containers/MeshContainer/MeshContainer.hpp"
 #include "HedgehogContext/Containers/MeshContainer/Mesh.hpp"
-#include "HedgehogContext/Containers/MeshContainer/VertexDescription.hpp"
 
 #include "HedgehogWrappers/Wrappeers/RenderPass/RenderPass.hpp"
 #include "HedgehogWrappers/Wrappeers/Commands/CommandBuffer.hpp"

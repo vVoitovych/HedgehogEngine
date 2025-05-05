@@ -15,7 +15,6 @@
 #include "HedgehogWrappers/Wrappeers/RenderPass/RenderPass.hpp"
 #include "HedgehogWrappers/Wrappeers/Commands/CommandBuffer.hpp"
 #include "HedgehogWrappers/Wrappeers/FrameBuffer/FrameBuffer.hpp"
-#include "HedgehogWrappers/Wrappeers/RenderPass/RenderPass.hpp"
 #include "HedgehogWrappers/Wrappeers/Descriptors/DescriptorLayoutBuilder.hpp"
 #include "HedgehogWrappers/Wrappeers/Descriptors/DescriptorSetLayout.hpp"
 #include "HedgehogWrappers/Wrappeers/Descriptors/DescriptorAllocator.hpp"
@@ -26,6 +25,7 @@
 #include "HedgehogWrappers/Wrappeers/Resources/Sampler/Sampler.hpp"
 
 #include "HedgehogContext/Containers/MeshContainer/MeshContainer.hpp"
+#include "HedgehogContext/Containers/MeshContainer/Mesh.hpp"
 #include "HedgehogContext/Containers/MaterialContainer/MaterialContainer.hpp"
 #include "HedgehogContext/Containers/DrawListContrainer/DrawListContainer.hpp"
 #include "HedgehogCommon/Common/RendererSettings.hpp"
@@ -55,10 +55,15 @@ namespace Renderer
 		commandBuffer.SetViewport(0.0f, 0.0f, (float)extend.width, (float)extend.height, 0.0f, 1.0f);
 		commandBuffer.SetScissor({ 0, 0 }, extend);
 
-		auto& meshContainer = engineContext.GetMeshContainer();		
-		VkBuffer vertexBuffers[] = { meshContainer.GetVertexBuffer() };
+		auto& meshContainer = engineContext.GetMeshContainer();
 		VkDeviceSize offsets[] = { 0 };
-		commandBuffer.BindVertexBuffers(0, 1, vertexBuffers, offsets);
+		VkBuffer positionBuffers[] = { meshContainer.GetPositionsBuffer() };
+		VkBuffer texCoordsBuffers[] = { meshContainer.GetTexCoordsBuffer() };
+		VkBuffer normalsBuffers[] = { meshContainer.GetNormalsBuffer() };
+
+		commandBuffer.BindVertexBuffers(0, 1, positionBuffers, offsets);
+		commandBuffer.BindVertexBuffers(1, 1, texCoordsBuffers, offsets);
+		commandBuffer.BindVertexBuffers(2, 1, normalsBuffers, offsets);
 		commandBuffer.BindIndexBuffer(meshContainer.GetIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
 		commandBuffer.BindDescriptorSers(VK_PIPELINE_BIND_POINT_GRAPHICS, *mPipeline, 0, 1, threadContext.GetDescriptorSet().GetNativeSet(), 0, nullptr);
