@@ -42,9 +42,9 @@ namespace Context
 		const Wrappers::Sampler& CreateSampler(const Wrappers::Device& device, SamplerType type) const;
 
 	private:
-		mutable std::unordered_map<SamplerType, Wrappers::Sampler> mSamplersList;
-		mutable std::unordered_map<std::string, Wrappers::Image> mImages;
-		mutable std::vector<std::string> mTexturePathes;
+		mutable std::unordered_map<SamplerType, Wrappers::Sampler> m_SamplersList;
+		mutable std::unordered_map<std::string, Wrappers::Image> m_Images;
+		mutable std::vector<std::string> m_TexturePathes;
 	};
 
 
