@@ -28,7 +28,7 @@ namespace Renderer
 
 		mAttributeDesc[0].binding = 0;
 		mAttributeDesc[0].location = 0;
-		mAttributeDesc[0].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+		mAttributeDesc[0].format = VK_FORMAT_R32G32B32_SFLOAT;
 		mAttributeDesc[0].offset = 0;
 
 		mAttributeDesc[1].binding = 1;
@@ -38,14 +38,14 @@ namespace Renderer
 
 		mAttributeDesc[2].binding = 2;
 		mAttributeDesc[2].location = 2;
-		mAttributeDesc[2].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+		mAttributeDesc[2].format = VK_FORMAT_R32G32B32_SFLOAT;
 		mAttributeDesc[2].offset = 0;
 
 
 		mVertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-		mVertexInputInfo.vertexBindingDescriptionCount = 3;
+		mVertexInputInfo.vertexBindingDescriptionCount = mBindingDesc.size();
 		mVertexInputInfo.pVertexBindingDescriptions = mBindingDesc.data();
-		mVertexInputInfo.vertexAttributeDescriptionCount = 3;
+		mVertexInputInfo.vertexAttributeDescriptionCount = mAttributeDesc.size();
 		mVertexInputInfo.pVertexAttributeDescriptions = mAttributeDesc.data();
 		mVertexInputInfo.flags = 0;
 		mVertexInputInfo.pNext = nullptr;
@@ -88,8 +88,8 @@ namespace Renderer
 
 		mDepthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 		mDepthStencil.depthTestEnable = VK_TRUE;
-		mDepthStencil.depthWriteEnable = VK_TRUE;
-		mDepthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+		mDepthStencil.depthWriteEnable = VK_FALSE;
+		mDepthStencil.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
 		mDepthStencil.depthBoundsTestEnable = VK_FALSE;
 		mDepthStencil.stencilTestEnable = VK_FALSE;
 		mDepthStencil.front.failOp = VK_STENCIL_OP_KEEP;

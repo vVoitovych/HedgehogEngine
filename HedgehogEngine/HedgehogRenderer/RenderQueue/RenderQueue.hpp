@@ -12,6 +12,7 @@ namespace Renderer
 	class ResourceManager;
 
 	class InitPass;
+	class DepthPrePass;
 	class ForwardPass;
 	class PresentPass;
 	class GuiPass;
@@ -34,10 +35,11 @@ namespace Renderer
 		void ResizeResources(const Context::Context& context, const ResourceManager& resourceManager);
 
 	private:
-		std::unique_ptr<InitPass> mInitPass;
-		std::unique_ptr<ForwardPass> mForwardPass;
-		std::unique_ptr<PresentPass> mPresentPass;
-		std::unique_ptr<GuiPass> mGuiPass;
+		std::unique_ptr<InitPass> m_InitPass;
+		std::unique_ptr<DepthPrePass> m_DepthPrePass;
+		std::unique_ptr<ForwardPass> m_ForwardPass;
+		std::unique_ptr<PresentPass> m_PresentPass;
+		std::unique_ptr<GuiPass> m_GuiPass;
 	};
 
 

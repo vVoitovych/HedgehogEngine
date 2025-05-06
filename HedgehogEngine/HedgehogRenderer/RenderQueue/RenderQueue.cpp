@@ -4,6 +4,7 @@
 #include "HedgehogContext/Context/VulkanContext.hpp"
 #include "HedgehogRenderer/ResourceManager/ResourceManager.hpp"
 #include "HedgehogRenderer/RenderPasses/InitPass/InitPass.hpp"
+#include "HedgehogRenderer/RenderPasses/DepthPrepass/DepthPrePass.hpp"
 #include "HedgehogRenderer/RenderPasses/ForwardPass/ForwardPass.hpp"
 #include "HedgehogRenderer/RenderPasses/PresentPass/PresentPass.hpp"
 #include "HedgehogRenderer/RenderPasses/GuiPass/GuiPass.hpp"
@@ -12,10 +13,11 @@ namespace Renderer
 {
 	RenderQueue::RenderQueue(const Context::Context& context, const ResourceManager& resourceManager)
 	{
-		mInitPass = std::make_unique<InitPass>(context);
-		mForwardPass = std::make_unique<ForwardPass>(context, resourceManager);
-		mGuiPass = std::make_unique<GuiPass>(context, resourceManager);
-		mPresentPass = std::make_unique<PresentPass>(context);
+		m_InitPass = std::make_unique<InitPass>(context);
+		m_DepthPrePass = std::make_unique<DepthPrePass>(context, resourceManager);
+		m_ForwardPass = std::make_unique<ForwardPass>(context, resourceManager);
+		m_GuiPass = std::make_unique<GuiPass>(context, resourceManager);
+		m_PresentPass = std::make_unique<PresentPass>(context);
 	}
 
 	RenderQueue::~RenderQueue()
@@ -24,29 +26,32 @@ namespace Renderer
 
 	void RenderQueue::Cleanup(const Context::Context& context)
 	{
-		mInitPass->Cleanup(context);
-		mForwardPass->Cleanup(context);
-		mGuiPass->Cleanup(context);
-		mPresentPass->Cleanup(context);
+		m_InitPass->Cleanup(context);
+		m_DepthPrePass->Cleanup(context);
+		m_ForwardPass->Cleanup(context);
+		m_GuiPass->Cleanup(context);
+		m_PresentPass->Cleanup(context);
 	}
 
 	void RenderQueue::Render(Context::Context& context, const ResourceManager& resourceManager)
 	{
 		auto& vulkanContext = context.GetVulkanContext();
 
-		mInitPass->Render(context);
+		m_InitPass->Render(context);
 		if (vulkanContext.IsWindowResized())
 			return;
-		mForwardPass->Render(context, resourceManager);
-		mGuiPass->Render(context, resourceManager);
-		mPresentPass->Render(context, resourceManager);
+		m_DepthPrePass->Render(context, resourceManager);
+		m_ForwardPass->Render(context, resourceManager);
+		m_GuiPass->Render(context, resourceManager);
+		m_PresentPass->Render(context, resourceManager);
 
 	}
 
 	void RenderQueue::ResizeResources(const Context::Context& context, const ResourceManager& resourceManager)
 	{
-		mForwardPass->ResizeResources(context, resourceManager);
-		mGuiPass->ResizeResources(context, resourceManager);
+		m_DepthPrePass->ResizeResources(context, resourceManager);
+		m_ForwardPass->ResizeResources(context, resourceManager);
+		m_GuiPass->ResizeResources(context, resourceManager);
 	}
 
 
