@@ -7,7 +7,7 @@ namespace Renderer
 	DepthPrePassPipelineInfo::DepthPrePassPipelineInfo(const Wrappers::Device& device)
 		: Wrappers::PipelineInfo(device)
 	{
-		m_VertexShader = std::make_unique<Wrappers::VertexShader>(device, "SimpleShader.vert");
+		m_VertexShader = std::make_unique<Wrappers::VertexShader>(device, "DepthPrepass/Base.vert");
 		m_Stages = { m_VertexShader->GetCreateInfo() };
 
 		m_BindingDesc[0].binding = 0;

@@ -6,7 +6,7 @@ layout(location = 2) in vec4 inWorldPosition;
 
 #define MAX_LIGHTS_COUNT 16
 
-#include "Lighting.glsl"
+#include "Common/Lighting.glsl"
 
 layout(set = 0, binding = 0) uniform UniformBufferObject 
 {
@@ -32,7 +32,7 @@ void main()
     data.pos = inWorldPosition;
 	data.norm = inNormal;
 	data.albedo = texture(texSampler, fragTexCoord);
-    outColor = vec4(0.0, 0.0, 0.0, 0.0);
+    outColor = vec4(0.0f, 0.0f, 0.0f, 0.0f);
 
     for (int i = 0; i < ubo.lightCount; ++i)
     {

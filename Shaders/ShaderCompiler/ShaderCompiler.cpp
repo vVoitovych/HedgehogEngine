@@ -9,7 +9,6 @@
 #include <unordered_set>
 #include <vector>
 
-#include <Windows.h>
 #include <stdexcept>
 #include <filesystem>
 
@@ -105,7 +104,7 @@ namespace ShaderCompiler
         std::string preprocessedVertexSource = PreprocessShader(vertexSource, shaderDirectory, includedFiles);
 
         std::vector<uint32_t> result = CompileShader(preprocessedVertexSource, ToNativeKind(type), file);
-
+       
 		return result;
 	}
 }

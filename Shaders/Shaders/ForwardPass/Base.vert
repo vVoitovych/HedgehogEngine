@@ -2,7 +2,7 @@
 
 #define MAX_LIGHTS_COUNT 16
 
-#include "LightData.glsl"
+#include "Common/LightData.glsl"
 
 layout(set = 0, binding = 0) uniform UniformBufferObject 
 {
@@ -29,8 +29,8 @@ layout( push_constant ) uniform constants
 
 void main()
 {
-    outWorldPosition = PushConstants.model * vec4(inPosition, 1.0);
-    outNormal = PushConstants.model * vec4(inNormal, 0.0);
+    outWorldPosition = PushConstants.model * vec4(inPosition, 1.0f);
+    outNormal = PushConstants.model * vec4(inNormal, 0.0f);
 	gl_Position = ubo.proj * ubo.view * outWorldPosition;
     fragTexCoord = inTexCoord;
 }

@@ -10,8 +10,8 @@ namespace Renderer
 	ForwardPipelineInfo::ForwardPipelineInfo(const Wrappers::Device& device)
 		: Wrappers::PipelineInfo(device)
 	{
-		mVertexShader = std::make_unique<Wrappers::VertexShader>(device, "SimpleShader.vert");
-		mFragmentShader = std::make_unique<Wrappers::FragmentShader>(device, "SimpleShader.frag");
+		mVertexShader = std::make_unique<Wrappers::VertexShader>(device, "ForwardPass/Base.vert");
+		mFragmentShader = std::make_unique<Wrappers::FragmentShader>(device, "ForwardPass/Base.frag");
 		mStages = {mVertexShader->GetCreateInfo(), mFragmentShader->GetCreateInfo()};
 
 		mBindingDesc[0].binding = 0;
