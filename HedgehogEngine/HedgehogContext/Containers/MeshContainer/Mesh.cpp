@@ -11,62 +11,73 @@ namespace Context
 		ClearData();
 
 		auto mesh = ContentLoader::LoadMesh(fileName);
-		mIndiciesData = mesh.indicies;
-		mVerticiesData.reserve(mesh.verticies.size());
+		m_IndiciesData = mesh.indicies;
+		m_Positions.reserve(mesh.verticies.size());
+		m_TexCoords.reserve(mesh.verticies.size());
+		m_Normals.reserve(mesh.verticies.size());
 		for (size_t i = 0; i < mesh.verticies.size(); ++i)
 		{
-			Context::VertexDescription vertex;
-
-			vertex.pos = mesh.verticies[i].position;
-			vertex.normal = mesh.verticies[i].normal;
-			vertex.texCoord = mesh.verticies[i].uv;
-			mVerticiesData.push_back(vertex);
+			m_Positions.push_back(mesh.verticies[i].position);
+			m_Normals.push_back(mesh.verticies[i].normal);
+			m_TexCoords.push_back(mesh.verticies[i].uv);
 		}
 
-		mIndexCount = static_cast<uint32_t>(mIndiciesData.size());
+		m_IndexCount = static_cast<uint32_t>(m_IndiciesData.size());
 
-		LOGINFO("Model [", fileName,"] loaded with ", mVerticiesData.size(), " verticies and ", mIndiciesData.size(), " indicies!");
+		LOGINFO("Model [", fileName,"] loaded with ", m_Positions.size(), " verticies and ", m_IndiciesData.size(), " indicies!");
 	}
 
 	void Mesh::ClearData()
 	{
-		mVerticiesData.clear();
-		mIndiciesData.clear();
+		m_Positions.clear();
+		m_TexCoords.clear();
+		m_Normals.clear();
+		m_IndiciesData.clear();
 	}
 
-	std::vector<VertexDescription> Mesh::GetVerticies() const
+	std::vector<HM::Vector3> Mesh::GetPositions() const
 	{
-		return mVerticiesData;
+		return m_Positions;
+	}
+
+	std::vector<HM::Vector2> Mesh::GetTexCoords() const
+	{
+		return m_TexCoords;
+	}
+
+	std::vector<HM::Vector3> Mesh::GetNormals() const
+	{
+		return m_Normals;
 	}
 
 	std::vector<uint32_t> Mesh::GetIndicies() const
 	{
-		return mIndiciesData;
+		return m_IndiciesData;
 	}
 
 	uint32_t Mesh::GetIndexCount() const
 	{
-		return mIndexCount;
+		return m_IndexCount;
 	}
 
 	uint32_t Mesh::GetFirstIndex() const
 	{
-		return mFirstIndex;
+		return m_FirstIndex;
 	}
 
 	uint32_t Mesh::GetVertexOffset() const
 	{
-		return mVertexOffset;
+		return m_VertexOffset;
 	}
 
 	void Mesh::SetFirstIndex(uint32_t firstIndex)
 	{
-		mFirstIndex = firstIndex;
+		m_FirstIndex = firstIndex;
 	}
 
 	void Mesh::SetVertexOffset(uint32_t offset)
 	{
-		mVertexOffset = offset;
+		m_VertexOffset = offset;
 	}
 
 }

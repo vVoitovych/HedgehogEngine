@@ -31,6 +31,7 @@ namespace Wrappers
 		void EndSingleTimeCommands(const Device& device) const;
 
 		void BeginRenderPass(VkExtent2D extend, const RenderPass& renderPass, VkFramebuffer frameBuffer);
+		void BeginRenderPass(VkRenderPassBeginInfo info);
 		void EndRenderPass();
 
 		void BindPipeline(const Pipeline& pipeline, VkPipelineBindPoint bindPoint);

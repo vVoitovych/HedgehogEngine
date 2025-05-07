@@ -13,7 +13,6 @@
 #include "HedgehogContext/Containers/MaterialContainer/MaterialData.hpp"
 #include "HedgehogContext/Containers/MeshContainer/MeshContainer.hpp"
 #include "HedgehogContext/Containers/MeshContainer/Mesh.hpp"
-#include "HedgehogContext/Containers/MeshContainer/VertexDescription.hpp"
 
 #include "HedgehogWrappers/Wrappeers/RenderPass/RenderPass.hpp"
 #include "HedgehogWrappers/Wrappeers/Commands/CommandBuffer.hpp"
@@ -66,10 +65,10 @@ namespace Renderer
 			{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1 }
 		};
 
-		mDescriptorAllocator = std::make_unique<Wrappers::DescriptorAllocator>(device, 1000, sizes);
+		m_DescriptorAllocator = std::make_unique<Wrappers::DescriptorAllocator>(device, 1000, sizes);
 		auto& swapChain = context.GetVulkanContext().GetSwapChain();
 		GuiPassInfo passInfo(resourceManager.GetColorBuffer().GetFormat());
-		mRenderPass = std::make_unique<Wrappers::RenderPass>(context.GetVulkanContext().GetDevice(), passInfo.GetInfo());
+		m_RenderPass = std::make_unique<Wrappers::RenderPass>(context.GetVulkanContext().GetDevice(), passInfo.GetInfo());
 
 		// - Imgui init
 		IMGUI_CHECKVERSION();
@@ -87,22 +86,22 @@ namespace Renderer
 		initInfo.QueueFamily = device.GetIndicies().graphicsFamily.value();
 		initInfo.Queue = device.GetNativeGraphicsQueue();
 		initInfo.PipelineCache = VK_NULL_HANDLE;
-		initInfo.DescriptorPool = mDescriptorAllocator->GetNativeDescriptoPool();
+		initInfo.DescriptorPool = m_DescriptorAllocator->GetNativeDescriptoPool();
 		initInfo.Allocator = nullptr;
 		initInfo.MinImageCount = swapChain.GetMinImagesCount();
 		initInfo.ImageCount = static_cast<uint32_t>(swapChain.GetSwapChainImagesSize());
 		initInfo.CheckVkResultFn = nullptr;
-		initInfo.RenderPass = mRenderPass->GetNativeRenderPass();
+		initInfo.RenderPass = m_RenderPass->GetNativeRenderPass();
 		ImGui_ImplVulkan_Init(&initInfo);
 
 		UploadFonts();
 
 		std::vector<VkImageView> attacments = { resourceManager.GetColorBuffer().GetNativeView()};
-		mFrameBuffer = std::make_unique<Wrappers::FrameBuffer>(
+		m_FrameBuffer = std::make_unique<Wrappers::FrameBuffer>(
 			device,
 			attacments,
 			resourceManager.GetColorBuffer().GetExtent(),
-			*mRenderPass);
+			*m_RenderPass);
 
 	}	
 
@@ -134,7 +133,7 @@ namespace Renderer
 		DrawGui(context);
 		ImGui::Render();
 
-		commandBuffer.BeginRenderPass(extent, *mRenderPass, mFrameBuffer->GetNativeFrameBuffer());
+		commandBuffer.BeginRenderPass(extent, *m_RenderPass, m_FrameBuffer->GetNativeFrameBuffer());
 		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer.GetNativeCommandBuffer());
 		commandBuffer.EndRenderPass();
 
@@ -147,23 +146,23 @@ namespace Renderer
 		ImGui::DestroyContext();
 
 		auto& device = context.GetVulkanContext().GetDevice();
-		mFrameBuffer->Cleanup(device);
-		mRenderPass->Cleanup(device);
-		mDescriptorAllocator->Cleanup(device);
+		m_FrameBuffer->Cleanup(device);
+		m_RenderPass->Cleanup(device);
+		m_DescriptorAllocator->Cleanup(device);
 	}
 
 	void GuiPass::ResizeResources(const Context::Context& context, const ResourceManager& resourceManager)
 	{
 		auto& device = context.GetVulkanContext().GetDevice();
-		mFrameBuffer->Cleanup(device);
+		m_FrameBuffer->Cleanup(device);
 
 		auto& swapChain = context.GetVulkanContext().GetSwapChain();
 		std::vector<VkImageView> attacments = { resourceManager.GetColorBuffer().GetNativeView() };
-		mFrameBuffer = std::make_unique<Wrappers::FrameBuffer>(
+		m_FrameBuffer = std::make_unique<Wrappers::FrameBuffer>(
 			device,
 			attacments,
 			swapChain.GetSwapChainExtent(),
-			*mRenderPass);
+			*m_RenderPass);
 	}
 
 	bool GuiPass::IsCursorPositionInGUI()

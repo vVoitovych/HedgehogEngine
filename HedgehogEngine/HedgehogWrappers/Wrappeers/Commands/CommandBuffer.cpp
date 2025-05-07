@@ -119,6 +119,11 @@ namespace Wrappers
 		vkCmdBeginRenderPass(m_CommandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 	}
 
+	void CommandBuffer::BeginRenderPass(VkRenderPassBeginInfo info)
+	{
+		vkCmdBeginRenderPass(m_CommandBuffer, &info, VK_SUBPASS_CONTENTS_INLINE);
+	}
+
 	void CommandBuffer::EndRenderPass()
 	{
 		vkCmdEndRenderPass(m_CommandBuffer);

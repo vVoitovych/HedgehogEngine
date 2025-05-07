@@ -1,7 +1,7 @@
-#include "ForwardPass.hpp"
-#include "ForwardPassInfo.hpp"
-#include "ForwardPipelineInfo.hpp"
-#include "ForwardPassPushConstants.hpp"
+#include "DepthPrePass.hpp"
+#include "DepthPrePassInfo.hpp"
+#include "DepthPrePassPipelineInfo.hpp"
+#include "DepthPrePassPushConstants.hpp"
 
 #include "HedgehogContext/Context/Context.hpp"
 #include "HedgehogContext/Context/EngineContext.hpp"
@@ -36,7 +36,7 @@
 
 namespace Renderer
 {
-	void ForwardPass::Render(Context::Context& context, const ResourceManager& resourceManager)
+	void DepthPrePass::Render(Context::Context& context, const ResourceManager& resourceManager)
 	{
 		auto& frameContext = context.GetFrameContext();
 		auto& threadContext = context.GetThreadContext();
@@ -50,9 +50,8 @@ namespace Renderer
 		auto extend = vulkanContext.GetSwapChain().GetSwapChainExtent();
 		auto backBufferIndex = frameContext.GetBackBufferIndex();
 
-		std::array<VkClearValue, 2> clearValues{};
-		clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
-		clearValues[1].depthStencil = { 1.0f, 0 };
+		std::array<VkClearValue, 1> clearValues{};
+		clearValues[0].depthStencil = { 1.0f, 0 };
 
 		VkRenderPassBeginInfo renderPassInfo{};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -70,10 +69,10 @@ namespace Renderer
 		commandBuffer.SetScissor({ 0, 0 }, extend);
 
 		auto& meshContainer = engineContext.GetMeshContainer();
-		VkDeviceSize offsets[] = { 0, 0, 0 };
-		VkBuffer buffers[] = { meshContainer.GetPositionsBuffer(), meshContainer.GetTexCoordsBuffer(), meshContainer.GetNormalsBuffer() };
+		VkDeviceSize offsets[] = { 0 };
+		VkBuffer positionBuffers[] = { meshContainer.GetPositionsBuffer() };
 
-		commandBuffer.BindVertexBuffers(0, 3, buffers, offsets);
+		commandBuffer.BindVertexBuffers(0, 1, positionBuffers, offsets);
 		commandBuffer.BindIndexBuffer(meshContainer.GetIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
 		commandBuffer.BindDescriptorSers(VK_PIPELINE_BIND_POINT_GRAPHICS, *m_Pipeline, 0, 1, threadContext.GetDescriptorSet().GetNativeSet(), 0, nullptr);
@@ -84,7 +83,7 @@ namespace Renderer
 			commandBuffer.BindDescriptorSers(VK_PIPELINE_BIND_POINT_GRAPHICS, *m_Pipeline, 1, 1, descriptorSet.GetNativeSet(), 0, nullptr);
 			for (auto& object : drawNode.objects)
 			{
-				commandBuffer.PushConstants(m_Pipeline->GetNativePipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ForwardPassPushConstants), &object.objMatrix);
+				commandBuffer.PushConstants(m_Pipeline->GetNativePipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(DepthPrePassPushConstants), &object.objMatrix);
 				auto& mesh = meshContainer.GetMesh(object.meshIndex);
 				commandBuffer.DrawIndexed(mesh.GetIndexCount(), 1, mesh.GetFirstIndex(), mesh.GetVertexOffset(), 0);
 			}
@@ -93,7 +92,7 @@ namespace Renderer
 		
 	}
 
-	ForwardPass::ForwardPass(const Context::Context& context, const ResourceManager& resourceManager)
+	DepthPrePass::DepthPrePass(const Context::Context& context, const ResourceManager& resourceManager)
 	{
 		auto& vulkanContext = context.GetVulkanContext();
 		auto& threadContext = context.GetThreadContext();
@@ -102,21 +101,21 @@ namespace Renderer
 		auto& materialContainer = engineContext.GetMaterialContainer();
 
 		auto& device = vulkanContext.GetDevice();
-		ForwardPassInfo info{ resourceManager.GetColorBuffer().GetFormat(), resourceManager.GetDepthBuffer().GetFormat()};
+		DepthPrePassInfo info{ resourceManager.GetDepthBuffer().GetFormat()};
 		m_RenderPass = std::make_unique<Wrappers::RenderPass>(device, info.GetInfo());
 
-		std::unique_ptr<Wrappers::PipelineInfo> pipelineInfo = std::make_unique<ForwardPipelineInfo>(device);
+		std::unique_ptr<Wrappers::PipelineInfo> pipelineInfo = std::make_unique<DepthPrePassPipelineInfo>(device);
 		std::vector<VkDescriptorSetLayout> descriptorLayouts = { threadContext.GetLayout().GetNativeLayout(), materialContainer.GetDescriptorSetLayout().GetNativeLayout()};
 
 		VkPushConstantRange pushConstant;
 		pushConstant.offset = 0;
-		pushConstant.size = sizeof(ForwardPassPushConstants);
+		pushConstant.size = sizeof(DepthPrePassPushConstants);
 		pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 		std::vector<VkPushConstantRange> pushConstants = { pushConstant };
 		m_Pipeline = std::make_unique<Wrappers::Pipeline>(device, *m_RenderPass, descriptorLayouts, pushConstants, *pipelineInfo);
 
-		std::vector<VkImageView> attacments = { resourceManager.GetColorBuffer().GetNativeView(), resourceManager.GetDepthBuffer().GetNativeView()};
-		 m_FrameBuffer = std::make_unique<Wrappers::FrameBuffer>(
+		std::vector<VkImageView> attacments = { resourceManager.GetDepthBuffer().GetNativeView()};
+		m_FrameBuffer = std::make_unique<Wrappers::FrameBuffer>(
 			device,
 			attacments,
 			vulkanContext.GetSwapChain().GetSwapChainExtent(),
@@ -125,11 +124,11 @@ namespace Renderer
 		pipelineInfo->Cleanup(vulkanContext.GetDevice());
 	}
 
-	ForwardPass::~ForwardPass()
+	DepthPrePass::~DepthPrePass()
 	{
 	}
 
-	void ForwardPass::Cleanup(const Context::Context& context)
+	void DepthPrePass::Cleanup(const Context::Context& context)
 	{
 		auto& vulkanContext = context.GetVulkanContext();
 
@@ -139,12 +138,12 @@ namespace Renderer
 
 	}
 
-	void ForwardPass::ResizeResources(const Context::Context& context, const ResourceManager& resourceManager)
+	void DepthPrePass::ResizeResources(const Context::Context& context, const ResourceManager& resourceManager)
 	{
 		auto& vulkanContext = context.GetVulkanContext();
 		m_FrameBuffer->Cleanup(vulkanContext.GetDevice());
 
-		std::vector<VkImageView> attacments = { resourceManager.GetColorBuffer().GetNativeView(), resourceManager.GetDepthBuffer().GetNativeView() };
+		std::vector<VkImageView> attacments = { resourceManager.GetDepthBuffer().GetNativeView() };
 		m_FrameBuffer = std::make_unique<Wrappers::FrameBuffer>(
 			vulkanContext.GetDevice(),
 			attacments,

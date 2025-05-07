@@ -19,11 +19,11 @@ namespace Renderer
 {
     class ResourceManager;
 
-	class ForwardPass
+	class DepthPrePass
 	{
     public:
-        ForwardPass(const Context::Context& context, const ResourceManager& resourceManager);
-        ~ForwardPass();
+        DepthPrePass(const Context::Context& context, const ResourceManager& resourceManager);
+        ~DepthPrePass();
 
         void Render(Context::Context& context, const ResourceManager& resourceManager);
         void Cleanup(const Context::Context& context);

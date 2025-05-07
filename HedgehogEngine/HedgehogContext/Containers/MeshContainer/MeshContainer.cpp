@@ -1,4 +1,5 @@
 #include "MeshContainer.hpp"
+#include "Mesh.hpp"
 
 #include "HedgehogContext/Context/VulkanContext.hpp"
 #include "HedgehogWrappers/Wrappeers/Device/Device.hpp"
@@ -9,9 +10,35 @@
 #include "Logger/Logger.hpp"
 
 #include <algorithm>
+#include <stdexcept>
 
 namespace Context
 {
+    template<typename T>
+    void CreateBuffer(const VulkanContext& context, const std::vector<T> data, std::unique_ptr<Wrappers::Buffer>& buffer)
+    {
+        auto& device = context.GetDevice();
+        VkDeviceSize size = sizeof(T) * data.size();
+
+        Wrappers::Buffer staginBuffer(device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+        staginBuffer.CopyDataToBufferMemory(device, data.data(), (size_t)size);
+
+        VkBufferUsageFlags flags = 0;
+        if (std::is_same<T, uint32_t>::value)
+        {
+            flags = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+        }
+        else
+        {
+            flags = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+        }
+        buffer = std::make_unique<Wrappers::Buffer>(device, size, flags, VMA_MEMORY_USAGE_GPU_ONLY);
+        device.CopyBufferToBuffer(staginBuffer.GetNativeBuffer(), buffer->GetNativeBuffer(), size);
+
+        staginBuffer.DestroyBuffer(device);
+    }
+
+
     MeshContainer::MeshContainer()
     {
     }
@@ -22,10 +49,10 @@ namespace Context
 
     void MeshContainer::AddFilePath(std::string filePath)
     {
-        auto it = std::find(mFilePathes.begin(), mFilePathes.end(), filePath);
-        if (it == mFilePathes.end())
+        auto it = std::find(m_FilePathes.begin(), m_FilePathes.end(), filePath);
+        if (it == m_FilePathes.end())
         {
-            mFilePathes.push_back(filePath);
+            m_FilePathes.push_back(filePath);
         }
         else
         {
@@ -35,39 +62,51 @@ namespace Context
 
     void MeshContainer::ClearFileList()
     {
-        mFilePathes.clear();
+        m_FilePathes.clear();
     }
 
     void MeshContainer::LoadMeshData()
     {
-        mMeshes.clear();
-        for (size_t i = mMeshes.size(); i < mFilePathes.size(); ++i)
+        m_Meshes.clear();
+        for (size_t i = m_Meshes.size(); i < m_FilePathes.size(); ++i)
         {
             Mesh mesh;
-            mesh.LoadData(mFilePathes[i]);
-            LOGINFO("Loaded mesh data: ", mFilePathes[i]);
-            mMeshes.push_back(mesh);
+            mesh.LoadData(m_FilePathes[i]);
+            LOGINFO("Loaded mesh data: ", m_FilePathes[i]);
+            m_Meshes.push_back(mesh);
 
         }
     }
 
     void MeshContainer::Initialize(const VulkanContext& context)
     {
-        std::vector<VertexDescription> verticies;
+        std::vector<HM::Vector3> positions;
+        std::vector<HM::Vector2> texCoords;
+        std::vector<HM::Vector3> normals;
         std::vector<uint32_t> indicies;
-        verticies.clear();
+        positions.clear();
+        texCoords.clear();
+        normals.clear();
         indicies.clear();
 
-        for (size_t i = 0; i < mMeshes.size(); ++i)
+        for (size_t i = 0; i < m_Meshes.size(); ++i)
         {
-            auto& mesh = mMeshes[i];
-            mesh.SetVertexOffset(static_cast<uint32_t>(verticies.size()));
+            auto& mesh = m_Meshes[i];
+            mesh.SetVertexOffset(static_cast<uint32_t>(positions.size()));
             mesh.SetFirstIndex(static_cast<uint32_t>(indicies.size()));
 
-            auto meshVerticies = mesh.GetVerticies();
-            for (size_t j = 0; j < meshVerticies.size(); ++j)
+            auto meshPositions = mesh.GetPositions();
+            auto meshUV = mesh.GetTexCoords();
+            auto meshNormals = mesh.GetNormals();
+            if (meshPositions.size() != meshUV.size() || meshUV.size() != meshNormals.size())
             {
-                verticies.push_back(meshVerticies[j]);
+                throw std::runtime_error("In mesh positions, texcoords and normals have different sizes!");
+            }
+            for (size_t j = 0; j < meshPositions.size(); ++j)
+            {
+                positions.push_back(meshPositions[j]);
+                texCoords.push_back(meshUV[j]);
+                normals.push_back(meshNormals[j]);
             }
             auto meshIndicies = mesh.GetIndicies();
             for (size_t j = 0; j < meshIndicies.size(); ++j)
@@ -75,40 +114,61 @@ namespace Context
                 indicies.push_back(meshIndicies[j]);
             }
         }
-        if (mVertexBuffer == nullptr && mIndexBuffer == nullptr)
-        {
-            CreateVertexBuffer(context, verticies, mVertexBuffer);
-            CreateIndexBuffer(context, indicies, mIndexBuffer);
-        }
-        else
-        {
-            CreateVertexBuffer(context, verticies, mAdditionalVertexBuffer);
-            CreateIndexBuffer(context, indicies, mAdditionalIndexBuffer);
-            mIsSwaped = false;
-        }
+
+        CreateBuffer(context, positions, m_AdditionalPositionsBuffer);
+        CreateBuffer(context, texCoords, m_AdditionalTexCoordsBuffer);
+        CreateBuffer(context, normals, m_AdditionalNormalsBuffer);
+        CreateBuffer(context, indicies, m_AdditionalIndexBuffer);
+
+        m_IsSwaped = true;
     }
 
     void MeshContainer::Update(const VulkanContext& context, Scene::Scene& scene)
     {
-        if (mIsSwaped)
+        if (m_IsSwaped)
         {
-            if (mAdditionalVertexBuffer != nullptr)
+            if (m_AdditionalPositionsBuffer != nullptr)
             {
-                mVertexBuffer->DestroyBuffer(context.GetDevice());
-                mVertexBuffer = std::move(mAdditionalVertexBuffer);
-                mAdditionalVertexBuffer = nullptr;
+                if (m_PositionsBuffer != nullptr)
+                {
+                    m_PositionsBuffer->DestroyBuffer(context.GetDevice());
+                }
+                m_PositionsBuffer = std::move(m_AdditionalPositionsBuffer);
+                m_AdditionalPositionsBuffer = nullptr;
             }
-            if (mAdditionalIndexBuffer != nullptr)
+            if (m_AdditionalTexCoordsBuffer != nullptr)
             {
-                mIndexBuffer->DestroyBuffer(context.GetDevice());
-                mIndexBuffer = std::move(mAdditionalIndexBuffer);
-                mAdditionalIndexBuffer = nullptr;
+                if (m_TexCoordsBuffer != nullptr)
+                {
+                    m_TexCoordsBuffer->DestroyBuffer(context.GetDevice());
+                }
+                m_TexCoordsBuffer = std::move(m_AdditionalTexCoordsBuffer);
+                m_AdditionalTexCoordsBuffer = nullptr;
             }
+            if (m_AdditionalNormalsBuffer != nullptr)
+            {
+                if (m_NormalsBuffer != nullptr)
+                {
+                    m_NormalsBuffer->DestroyBuffer(context.GetDevice());
+                }
+                m_NormalsBuffer = std::move(m_AdditionalNormalsBuffer);
+                m_AdditionalNormalsBuffer = nullptr;
+            }
+            if (m_AdditionalIndexBuffer != nullptr)
+            {
+                if (m_IndexBuffer != nullptr)
+                {
+                    m_IndexBuffer->DestroyBuffer(context.GetDevice());
+                }
+                m_IndexBuffer = std::move(m_AdditionalIndexBuffer);
+                m_AdditionalIndexBuffer = nullptr;
+            }
+            m_IsSwaped = false;
         }
         auto& meshes = scene.GetMeshes();
-        if (meshes.size() <= mMeshes.size())
+        if (meshes.size() <= m_Meshes.size())
             return;
-        for (size_t i = mMeshes.size(); i < meshes.size(); ++i)
+        for (size_t i = m_Meshes.size(); i < meshes.size(); ++i)
         {
             AddFilePath(meshes[i]);
         }
@@ -119,70 +179,57 @@ namespace Context
     void MeshContainer::Cleanup(const VulkanContext& context)
     {
         auto& device = context.GetDevice();
-        if (mVertexBuffer != nullptr)
-            mVertexBuffer->DestroyBuffer(device);
-        if (mIndexBuffer != nullptr)
-            mIndexBuffer->DestroyBuffer(device);
-        if (mAdditionalVertexBuffer != nullptr)
-            mAdditionalVertexBuffer->DestroyBuffer(device);
-        if (mAdditionalIndexBuffer != nullptr)
-            mAdditionalIndexBuffer->DestroyBuffer(device);
+        if (m_PositionsBuffer != nullptr)
+            m_PositionsBuffer->DestroyBuffer(device);
+        if (m_TexCoordsBuffer != nullptr)
+            m_TexCoordsBuffer->DestroyBuffer(device);
+        if (m_NormalsBuffer != nullptr)
+            m_NormalsBuffer->DestroyBuffer(device);
+        if (m_IndexBuffer != nullptr)
+            m_IndexBuffer->DestroyBuffer(device);
+        if (m_AdditionalPositionsBuffer != nullptr)
+            m_AdditionalPositionsBuffer->DestroyBuffer(device);
+        if (m_AdditionalTexCoordsBuffer != nullptr)
+            m_AdditionalTexCoordsBuffer->DestroyBuffer(device);
+        if (m_AdditionalNormalsBuffer != nullptr)
+            m_AdditionalNormalsBuffer->DestroyBuffer(device);
+        if (m_AdditionalIndexBuffer != nullptr)
+            m_AdditionalIndexBuffer->DestroyBuffer(device);
     }
 
-    const VkBuffer& MeshContainer::GetVertexBuffer() const
+    const VkBuffer& MeshContainer::GetPositionsBuffer() const
     {
-        if (mIsSwaped)
-            return mVertexBuffer->GetNativeBuffer();
-        return mAdditionalVertexBuffer->GetNativeBuffer();
+        if (!m_IsSwaped)
+            return m_PositionsBuffer->GetNativeBuffer();
+        return m_AdditionalPositionsBuffer->GetNativeBuffer();
+    }
+
+    const VkBuffer& MeshContainer::GetTexCoordsBuffer() const
+    {
+        if (!m_IsSwaped)
+            return m_TexCoordsBuffer->GetNativeBuffer();
+        return m_AdditionalTexCoordsBuffer->GetNativeBuffer();
+    }
+
+    const VkBuffer& MeshContainer::GetNormalsBuffer() const
+    {
+        if (!m_IsSwaped)
+            return m_NormalsBuffer->GetNativeBuffer();
+        return m_AdditionalNormalsBuffer->GetNativeBuffer();
     }
 
     const VkBuffer& MeshContainer::GetIndexBuffer() const
     {
-        if (mIsSwaped)
-            return mIndexBuffer->GetNativeBuffer();
-        return mAdditionalIndexBuffer->GetNativeBuffer();
+        if (!m_IsSwaped)
+            return m_IndexBuffer->GetNativeBuffer();
+        return m_AdditionalIndexBuffer->GetNativeBuffer();
     }
 
     const Mesh& MeshContainer::GetMesh(size_t index) const
     {
-        return mMeshes[index];
+        return m_Meshes[index];
     }
 
-    void MeshContainer::SwapBuffers()
-    {
-        if (!mIsSwaped)
-            mIsSwaped = true;
-    }
-
-    void MeshContainer::CreateVertexBuffer(const VulkanContext& context, const std::vector<VertexDescription> verticies, std::unique_ptr<Wrappers::Buffer>& buffer)
-    {
-        auto& device = context.GetDevice();
-        VkDeviceSize size = sizeof(verticies[0]) * verticies.size();
-
-        Wrappers::Buffer staginBuffer(device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
-        staginBuffer.CopyDataToBufferMemory(device, verticies.data(), (size_t)size);
-
-        buffer = std::make_unique<Wrappers::Buffer>(device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
-        device.CopyBufferToBuffer(staginBuffer.GetNativeBuffer(), buffer->GetNativeBuffer(), size);
-
-        staginBuffer.DestroyBuffer(device);
-        LOGINFO("Vertex buffer created");
-    }
-
-    void MeshContainer::CreateIndexBuffer(const VulkanContext& context, const std::vector<uint32_t> indicies, std::unique_ptr<Wrappers::Buffer>& buffer)
-    {
-        auto& device = context.GetDevice();
-        VkDeviceSize size = sizeof(indicies[0]) * indicies.size();
-
-        Wrappers::Buffer staginBuffer(device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
-        staginBuffer.CopyDataToBufferMemory(device, indicies.data(), (size_t)size);
-
-        buffer = std::make_unique<Wrappers::Buffer>(device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
-        device.CopyBufferToBuffer(staginBuffer.GetNativeBuffer(), buffer->GetNativeBuffer(), size);
-
-        staginBuffer.DestroyBuffer(device);
-        LOGINFO("Index buffer created");
-    }
 
 }
 

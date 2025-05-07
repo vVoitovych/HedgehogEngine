@@ -1,5 +1,6 @@
 #pragma once
-#include "VertexDescription.hpp"
+
+#include "HedgehogMath/Vector.hpp"
 
 #include <vector>
 #include <string>
@@ -12,7 +13,9 @@ namespace Context
 		void LoadData(const std::string fileName);
 		void ClearData();
 
-		std::vector<VertexDescription> GetVerticies() const;
+		std::vector<HM::Vector3> GetPositions() const;
+		std::vector<HM::Vector2> GetTexCoords() const;
+		std::vector<HM::Vector3> GetNormals() const;
 		std::vector<uint32_t> GetIndicies() const;
 
 		uint32_t GetIndexCount() const;
@@ -23,12 +26,15 @@ namespace Context
 		void SetVertexOffset(uint32_t offset);
 
 	private:
-		std::vector<VertexDescription> mVerticiesData;
-		std::vector<uint32_t> mIndiciesData;
+		std::vector<HM::Vector3> m_Positions;
+		std::vector<HM::Vector2> m_TexCoords;
+		std::vector<HM::Vector3> m_Normals;
 
-		uint32_t mIndexCount;
-		uint32_t mFirstIndex;
-		uint32_t mVertexOffset;
+		std::vector<uint32_t> m_IndiciesData;
+
+		uint32_t m_IndexCount;
+		uint32_t m_FirstIndex;
+		uint32_t m_VertexOffset;
 
 	};
 }

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Mesh.hpp"
-
 #include <vulkan/vulkan.h>
 
 #include <vector>
@@ -38,11 +36,13 @@ namespace Context
 
 		void Cleanup(const VulkanContext& context);
 
-		const VkBuffer& GetVertexBuffer() const;
+		const VkBuffer& GetPositionsBuffer() const;
+		const VkBuffer& GetTexCoordsBuffer() const;
+		const VkBuffer& GetNormalsBuffer() const;
 		const VkBuffer& GetIndexBuffer() const;
 
 		const Mesh& GetMesh(size_t index) const;
-		void SwapBuffers();
+
 	private:
 		void AddFilePath(std::string filePath);
 		void ClearFileList();
@@ -50,20 +50,22 @@ namespace Context
 		void LoadMeshData();
 
 		void Initialize(const VulkanContext& context);
-		void CreateVertexBuffer(const VulkanContext& context, const std::vector<VertexDescription> verticies, std::unique_ptr<Wrappers::Buffer>& buffer);
-		void CreateIndexBuffer(const VulkanContext& context, const std::vector<uint32_t> indicies, std::unique_ptr<Wrappers::Buffer>& buffer);
 
 	private:
-		std::vector<std::string> mFilePathes;
-		std::vector<Mesh> mMeshes;
+		std::vector<std::string> m_FilePathes;
+		std::vector<Mesh> m_Meshes;
 
-		bool mIsSwaped = true;
+		bool m_IsSwaped = false;
 
-		std::unique_ptr<Wrappers::Buffer> mVertexBuffer;
-		std::unique_ptr<Wrappers::Buffer> mIndexBuffer;
+		std::unique_ptr<Wrappers::Buffer> m_PositionsBuffer;
+		std::unique_ptr<Wrappers::Buffer> m_TexCoordsBuffer;
+		std::unique_ptr<Wrappers::Buffer> m_NormalsBuffer;
+		std::unique_ptr<Wrappers::Buffer> m_IndexBuffer;
 
-		std::unique_ptr<Wrappers::Buffer> mAdditionalVertexBuffer;
-		std::unique_ptr<Wrappers::Buffer> mAdditionalIndexBuffer;
+		std::unique_ptr<Wrappers::Buffer> m_AdditionalPositionsBuffer;
+		std::unique_ptr<Wrappers::Buffer> m_AdditionalTexCoordsBuffer;
+		std::unique_ptr<Wrappers::Buffer> m_AdditionalNormalsBuffer;
+		std::unique_ptr<Wrappers::Buffer> m_AdditionalIndexBuffer;
 
 	};
 

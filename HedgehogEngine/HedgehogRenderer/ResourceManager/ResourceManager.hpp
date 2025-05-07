@@ -33,8 +33,8 @@ namespace Renderer
 		void CreateColorBuffer(const Context::Context& context);
 
 	private:
-		std::unique_ptr<Wrappers::Image> mDepthBuffer;
-		std::unique_ptr<Wrappers::Image> mColorBuffer;
+		std::unique_ptr<Wrappers::Image> m_DepthBuffer;
+		std::unique_ptr<Wrappers::Image> m_ColorBuffer;
 	};
 }
 

@@ -50,9 +50,9 @@ namespace Renderer
 		void UploadFonts();
 
 	private:
-		std::unique_ptr<Wrappers::RenderPass> mRenderPass;
-		std::unique_ptr<Wrappers::FrameBuffer> mFrameBuffer;
-		std::unique_ptr<Wrappers::DescriptorAllocator> mDescriptorAllocator;
+		std::unique_ptr<Wrappers::RenderPass> m_RenderPass;
+		std::unique_ptr<Wrappers::FrameBuffer> m_FrameBuffer;
+		std::unique_ptr<Wrappers::DescriptorAllocator> m_DescriptorAllocator;
 
 	};
 }

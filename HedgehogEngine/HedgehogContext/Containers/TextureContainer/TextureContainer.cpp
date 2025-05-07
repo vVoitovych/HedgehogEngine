@@ -23,18 +23,18 @@ namespace Context
 
 	void TextureContainer::Cleanup(const Wrappers::Device& device)
 	{
-		for (auto& image : mImages)
+		for (auto& image : m_Images)
 		{
 			image.second.Cleanup(device);
 		}
-		mImages.clear();
-		mTexturePathes.clear();
+		m_Images.clear();
+		m_TexturePathes.clear();
 
-		for (auto& sampler : mSamplersList)
+		for (auto& sampler : m_SamplersList)
 		{
 			sampler.second.Cleanup(device);
 		}
-		mSamplersList.clear();
+		m_SamplersList.clear();
 	}
 
 	const Wrappers::Image& TextureContainer::CreateImage(const Wrappers::Device& device, std::string filePath) const
@@ -67,11 +67,11 @@ namespace Context
 		stageBuffer.DestroyBuffer(device);
 		image.CreateImageView(device, format, VK_IMAGE_ASPECT_COLOR_BIT);
 
-		auto result = mImages.emplace(filePath, std::move(image));
-		mTexturePathes.push_back(filePath);
+		auto result = m_Images.emplace(filePath, std::move(image));
+		m_TexturePathes.push_back(filePath);
 
 		LOGINFO("Vulkan texture ", filePath, " loaded and initialized");
-		auto it = mImages.find(filePath);
+		auto it = m_Images.find(filePath);
 		return it->second;
 	}
 
@@ -80,8 +80,8 @@ namespace Context
 		if (type== Context::SamplerType::Linear)
 		{
 			Wrappers::Sampler linearSampler(device);
-			mSamplersList.emplace(SamplerType::Linear, std::move(linearSampler));
-			auto it = mSamplersList.find(type);
+			m_SamplersList.emplace(SamplerType::Linear, std::move(linearSampler));
+			auto it = m_SamplersList.find(type);
 			return it->second;
 		}
 		else
@@ -92,8 +92,8 @@ namespace Context
 
 	const Wrappers::Image& TextureContainer::GetImage(const Wrappers::Device& device, std::string filePath) const
 	{
-		auto it = mImages.find(filePath);
-		if (it != mImages.end())
+		auto it = m_Images.find(filePath);
+		if (it != m_Images.end())
 		{
 			return it->second;
 		}
@@ -105,8 +105,8 @@ namespace Context
 
 	const Wrappers::Sampler& TextureContainer::GetSampler(const Wrappers::Device& device, SamplerType type) const
 	{
-		auto it = mSamplersList.find(type);
-		if (it != mSamplersList.end())
+		auto it = m_SamplersList.find(type);
+		if (it != m_SamplersList.end())
 		{
 			return it->second;
 		}
@@ -119,13 +119,13 @@ namespace Context
 
 	const std::vector<std::string>& TextureContainer::GetTexturePathes() const
 	{
-		return mTexturePathes;
+		return m_TexturePathes;
 	}
 
 	size_t TextureContainer::GetTextureIndex(std::string name) const
 	{
-		auto it = std::find(mTexturePathes.begin(), mTexturePathes.end(), name);
-		return it - mTexturePathes.begin();
+		auto it = std::find(m_TexturePathes.begin(), m_TexturePathes.end(), name);
+		return it - m_TexturePathes.begin();
 	}
 
 }
