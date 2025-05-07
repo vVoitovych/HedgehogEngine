@@ -12,12 +12,12 @@ namespace Renderer
 		VkRenderPassCreateInfo* GetInfo();
 
 	private:
-		VkAttachmentDescription mColorAttachment{};
-		VkAttachmentReference mColorAttachmentRef{};
-		VkSubpassDescription mSubpass{};
-		VkSubpassDependency mDependency{};
-		std::array<VkAttachmentDescription, 1> mAttachments;
-		VkRenderPassCreateInfo mRenderPassInfo{};
+		VkAttachmentDescription m_ColorAttachment{};
+		VkAttachmentReference m_ColorAttachmentRef{};
+		VkSubpassDescription m_Subpass{};
+		VkSubpassDependency m_Dependency{};
+		std::array<VkAttachmentDescription, 1> m_Attachments;
+		VkRenderPassCreateInfo m_RenderPassInfo{};
 
 	};
 }

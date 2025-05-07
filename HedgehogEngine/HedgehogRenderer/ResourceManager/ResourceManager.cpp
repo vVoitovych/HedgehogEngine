@@ -26,15 +26,15 @@ namespace Renderer
 	void ResourceManager::Cleanup(const Context::Context& context)
 	{
 		auto& vulkanContext = context.GetVulkanContext();
-		mColorBuffer->Cleanup(vulkanContext.GetDevice());
-		mDepthBuffer->Cleanup(vulkanContext.GetDevice());
+		m_ColorBuffer->Cleanup(vulkanContext.GetDevice());
+		m_DepthBuffer->Cleanup(vulkanContext.GetDevice());
 	}
 
 	void ResourceManager::ResizeResources(const Context::Context& context)
 	{
 		auto& vulkanContext = context.GetVulkanContext();
-		mColorBuffer->Cleanup(vulkanContext.GetDevice());
-		mDepthBuffer->Cleanup(vulkanContext.GetDevice());
+		m_ColorBuffer->Cleanup(vulkanContext.GetDevice());
+		m_DepthBuffer->Cleanup(vulkanContext.GetDevice());
 
 		CreateColorBuffer(context);
 		CreateDepthBuffer(context);
@@ -42,12 +42,12 @@ namespace Renderer
 
 	const Wrappers::Image& ResourceManager::GetColorBuffer() const
 	{
-		return *mColorBuffer;
+		return *m_ColorBuffer;
 	}
 
 	const Wrappers::Image& ResourceManager::GetDepthBuffer() const
 	{
-		return *mDepthBuffer;
+		return *m_DepthBuffer;
 	}
 
 	void ResourceManager::CreateDepthBuffer(const Context::Context& context)
@@ -56,7 +56,7 @@ namespace Renderer
 		auto depthFormat = vulkanContext.GetDevice().FindDepthFormat();
 		auto extend = vulkanContext.GetSwapChain().GetSwapChainExtent();
 
-		mDepthBuffer = std::make_unique<Wrappers::Image>(
+		m_DepthBuffer = std::make_unique<Wrappers::Image>(
 			vulkanContext.GetDevice(),
 			extend.width,
 			extend.height,
@@ -65,8 +65,8 @@ namespace Renderer
 			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
 			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-		mDepthBuffer->CreateImageView(vulkanContext.GetDevice(), depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
-		vulkanContext.GetDevice().SetObjectName(reinterpret_cast<uint64_t>(mDepthBuffer->GetNativeImage()), VK_OBJECT_TYPE_IMAGE, "DepthBuffer");
+		m_DepthBuffer->CreateImageView(vulkanContext.GetDevice(), depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+		vulkanContext.GetDevice().SetObjectName(reinterpret_cast<uint64_t>(m_DepthBuffer->GetNativeImage()), VK_OBJECT_TYPE_IMAGE, "DepthBuffer");
 		LOGINFO("Depth buffer created");
 	}
 
@@ -76,7 +76,7 @@ namespace Renderer
 		auto colorFormat = VK_FORMAT_R16G16B16A16_UNORM;
 		auto extend = vulkanContext.GetSwapChain().GetSwapChainExtent();
 
-		mColorBuffer = std::make_unique<Wrappers::Image>(
+		m_ColorBuffer = std::make_unique<Wrappers::Image>(
 			vulkanContext.GetDevice(),
 			extend.width,
 			extend.height,
@@ -85,9 +85,9 @@ namespace Renderer
 			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_STORAGE_BIT,
 			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-		mColorBuffer->CreateImageView(vulkanContext.GetDevice(), colorFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+		m_ColorBuffer->CreateImageView(vulkanContext.GetDevice(), colorFormat, VK_IMAGE_ASPECT_COLOR_BIT);
 
-		vulkanContext.GetDevice().SetObjectName(reinterpret_cast<uint64_t>(mColorBuffer->GetNativeImage()), VK_OBJECT_TYPE_IMAGE, "ColorBuffer");
+		vulkanContext.GetDevice().SetObjectName(reinterpret_cast<uint64_t>(m_ColorBuffer->GetNativeImage()), VK_OBJECT_TYPE_IMAGE, "ColorBuffer");
 		LOGINFO("Color buffer created");
 	}
 

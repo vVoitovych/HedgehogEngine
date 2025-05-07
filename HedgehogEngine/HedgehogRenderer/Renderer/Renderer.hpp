@@ -28,8 +28,8 @@ namespace Renderer
 		void RecreateSwapChain(Context::Context& context);
 
 	private:
-		std::unique_ptr< ResourceManager> mResourceManager;
-		std::unique_ptr<RenderQueue> mRenderQueue;
+		std::unique_ptr< ResourceManager> m_ResourceManager;
+		std::unique_ptr<RenderQueue> m_RenderQueue;
 
 	};
 }
