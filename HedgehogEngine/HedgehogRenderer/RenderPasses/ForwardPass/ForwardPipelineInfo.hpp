@@ -36,23 +36,23 @@ namespace Renderer
 		const VkPipelineDynamicStateCreateInfo* GetDynamicStateInfo() const override;
 
 	private:
-		std::unique_ptr<Wrappers::VertexShader> mVertexShader;
-		std::unique_ptr<Wrappers::FragmentShader> mFragmentShader;
-		std::array<VkPipelineShaderStageCreateInfo, 2> mStages;
+		std::unique_ptr<Wrappers::VertexShader> m_VertexShader;
+		std::unique_ptr<Wrappers::FragmentShader> m_FragmentShader;
+		std::array<VkPipelineShaderStageCreateInfo, 2> m_Stages;
 
-		std::array<VkVertexInputBindingDescription, 3> mBindingDesc;
-		std::array<VkVertexInputAttributeDescription, 3>  mAttributeDesc;
-		VkPipelineVertexInputStateCreateInfo mVertexInputInfo;
+		std::array<VkVertexInputBindingDescription, 3> m_BindingDesc;
+		std::array<VkVertexInputAttributeDescription, 3>  m_AttributeDesc;
+		VkPipelineVertexInputStateCreateInfo m_VertexInputInfo;
 
-		VkPipelineInputAssemblyStateCreateInfo mInputAssembly;
-		VkPipelineViewportStateCreateInfo mViewportInfo;
-		VkPipelineRasterizationStateCreateInfo mRasterizerInfo;
-		VkPipelineMultisampleStateCreateInfo mMultisampling;
-		VkPipelineDepthStencilStateCreateInfo mDepthStencil;
-		VkPipelineColorBlendAttachmentState mColorBlendAttachmentState;
-		VkPipelineColorBlendStateCreateInfo mColorBlending;
-		std::vector<VkDynamicState> mDynamicStates;
-		VkPipelineDynamicStateCreateInfo mDynamicStateInfo;
+		VkPipelineInputAssemblyStateCreateInfo m_InputAssembly;
+		VkPipelineViewportStateCreateInfo m_ViewportInfo;
+		VkPipelineRasterizationStateCreateInfo m_RasterizerInfo;
+		VkPipelineMultisampleStateCreateInfo m_Multisampling;
+		VkPipelineDepthStencilStateCreateInfo m_DepthStencil;
+		VkPipelineColorBlendAttachmentState m_ColorBlendAttachmentState;
+		VkPipelineColorBlendStateCreateInfo m_ColorBlending;
+		std::vector<VkDynamicState> m_DynamicStates;
+		VkPipelineDynamicStateCreateInfo m_DynamicStateInfo;
 
 	};
 }

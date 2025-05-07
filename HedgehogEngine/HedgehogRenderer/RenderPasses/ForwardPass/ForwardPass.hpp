@@ -31,9 +31,9 @@ namespace Renderer
         void ResizeResources(const Context::Context& context, const ResourceManager& resourceManager);
 
     private:
-        std::unique_ptr<Wrappers::RenderPass> mRenderPass;
-        std::unique_ptr<Wrappers::FrameBuffer> mFrameBuffer;
-        std::unique_ptr<Wrappers::Pipeline> mPipeline;
+        std::unique_ptr<Wrappers::RenderPass> m_RenderPass;
+        std::unique_ptr<Wrappers::FrameBuffer> m_FrameBuffer;
+        std::unique_ptr<Wrappers::Pipeline> m_Pipeline;
              
 	};
 
