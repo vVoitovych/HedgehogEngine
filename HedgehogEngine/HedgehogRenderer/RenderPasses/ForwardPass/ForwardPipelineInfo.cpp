@@ -43,9 +43,9 @@ namespace Renderer
 
 
 		mVertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-		mVertexInputInfo.vertexBindingDescriptionCount = mBindingDesc.size();
+		mVertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(mBindingDesc.size());
 		mVertexInputInfo.pVertexBindingDescriptions = mBindingDesc.data();
-		mVertexInputInfo.vertexAttributeDescriptionCount = mAttributeDesc.size();
+		mVertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(mAttributeDesc.size());
 		mVertexInputInfo.pVertexAttributeDescriptions = mAttributeDesc.data();
 		mVertexInputInfo.flags = 0;
 		mVertexInputInfo.pNext = nullptr;

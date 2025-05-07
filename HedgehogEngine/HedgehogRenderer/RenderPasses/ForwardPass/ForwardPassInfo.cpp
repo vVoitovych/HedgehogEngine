@@ -16,18 +16,18 @@ namespace Renderer
 
 		mDepthAttachment.format = depthFormat;
 		mDepthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-		mDepthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		mDepthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
 		mDepthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		mDepthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		mDepthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		mDepthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		mDepthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+		mDepthAttachment.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+		mDepthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 
 		mColorAttachmentRef.attachment = 0;
 		mColorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 		mDepthAttachmentRef.attachment = 1;
-		mDepthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+		mDepthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 
 		mSubpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 		mSubpass.colorAttachmentCount = 1;

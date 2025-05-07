@@ -11,7 +11,7 @@ namespace Renderer
 		m_DepthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		m_DepthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		m_DepthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		m_DepthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+		m_DepthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 
 		m_DepthAttachmentRef.attachment = 0;
 		m_DepthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
@@ -30,6 +30,9 @@ namespace Renderer
 
 		m_Attachments = { m_DepthAttachment };
 		
+		std::array<VkClearValue, 1> clearValues{};
+		clearValues[0].depthStencil = { 1.0f, 0 };
+
 		m_RenderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 		m_RenderPassInfo.attachmentCount = static_cast<uint32_t>(m_Attachments.size());
 		m_RenderPassInfo.pAttachments = m_Attachments.data();
@@ -37,6 +40,7 @@ namespace Renderer
 		m_RenderPassInfo.pSubpasses = &m_Subpass;
 		m_RenderPassInfo.dependencyCount = 1;
 		m_RenderPassInfo.pDependencies = &m_Dependency;
+		
 	}
 
 	VkRenderPassCreateInfo* DepthPrePassInfo::GetInfo()

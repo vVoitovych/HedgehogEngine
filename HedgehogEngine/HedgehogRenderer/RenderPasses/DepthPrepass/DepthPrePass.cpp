@@ -49,8 +49,21 @@ namespace Renderer
 		auto& commandBuffer = threadContext.GetCommandBuffer();
 		auto extend = vulkanContext.GetSwapChain().GetSwapChainExtent();
 		auto backBufferIndex = frameContext.GetBackBufferIndex();
+
+		std::array<VkClearValue, 1> clearValues{};
+		clearValues[0].depthStencil = { 1.0f, 0 };
+
+		VkRenderPassBeginInfo renderPassInfo{};
+		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		renderPassInfo.renderPass = m_RenderPass->GetNativeRenderPass();
+		renderPassInfo.framebuffer = m_FrameBuffer->GetNativeFrameBuffer();
+		renderPassInfo.renderArea.offset = { 0, 0 };
+		renderPassInfo.renderArea.extent = extend;
+		VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+		renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+		renderPassInfo.pClearValues = clearValues.data();
 				
-		commandBuffer.BeginRenderPass(extend, *m_RenderPass, m_FrameBuffer->GetNativeFrameBuffer());
+		commandBuffer.BeginRenderPass(renderPassInfo);
 		commandBuffer.BindPipeline(*m_Pipeline, VK_PIPELINE_BIND_POINT_GRAPHICS);
 		commandBuffer.SetViewport(0.0f, 0.0f, (float)extend.width, (float)extend.height, 0.0f, 1.0f);
 		commandBuffer.SetScissor({ 0, 0 }, extend);
