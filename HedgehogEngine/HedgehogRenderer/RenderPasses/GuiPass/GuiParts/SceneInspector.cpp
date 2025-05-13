@@ -54,7 +54,7 @@ namespace Renderer
 		}
 	}
 
-	void DrawScene(Context::Context& context)
+	void SceneInspector::Draw(Context::Context& context)
 	{
 		float sizeX, sizeY, paddingY;
 

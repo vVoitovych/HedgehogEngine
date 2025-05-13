@@ -13,7 +13,7 @@
 
 namespace Renderer
 {
-	void DrawMainMenuBar(Context::Context& context)
+	void MainMenu::Draw(Context::Context& context)
 	{
 		auto& scene = context.GetEngineContext().GetScene();
 		if (ImGui::BeginMainMenuBar())

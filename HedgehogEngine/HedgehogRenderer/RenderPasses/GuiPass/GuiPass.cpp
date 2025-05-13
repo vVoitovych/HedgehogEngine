@@ -169,9 +169,9 @@ namespace Renderer
 
 	void GuiPass::DrawGui(Context::Context& context)
 	{
-		DrawInspector(context);
-		DrawScene(context);
-		DrawMainMenuBar(context);
+		Inspector::Draw(context);
+		SceneInspector::Draw(context);
+		MainMenu::Draw(context);
 		// TODO remove
 		ImGui::ShowDemoWindow();
 	}

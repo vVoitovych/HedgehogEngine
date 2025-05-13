@@ -7,7 +7,13 @@ namespace Context
 
 namespace Renderer
 {
-	void DrawMainMenuBar(Context::Context& context);
+	class MainMenu
+	{
+	public:
+		static void Draw(Context::Context& context);
+
+	};
+
 }
 
 

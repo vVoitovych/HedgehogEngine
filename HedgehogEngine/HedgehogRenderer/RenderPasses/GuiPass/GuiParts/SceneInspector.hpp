@@ -7,7 +7,13 @@ namespace Context
 
 namespace Renderer
 {
-	void DrawScene(Context::Context& context);
+	class SceneInspector
+	{
+	public:
+		static void Draw(Context::Context& context);
+
+	};
+
 }
 
 

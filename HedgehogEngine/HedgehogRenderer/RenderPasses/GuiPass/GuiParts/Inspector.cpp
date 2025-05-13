@@ -293,7 +293,7 @@ namespace Renderer
 		}
 	}
 
-	void DrawInspector(Context::Context& context)
+	void Inspector::Draw(Context::Context& context)
 	{
 		float sizeX, sizeY, paddingY;
 
