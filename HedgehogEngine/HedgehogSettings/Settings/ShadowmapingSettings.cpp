@@ -58,5 +58,33 @@ namespace HedgehogSettings
 		m_Split3 = std::max(m_Split2 + 0.1f, std::min(val, 100.0f));
 	}
 
+	void ShadowmapSettings::SetDefaultSplits()
+	{
+		if (m_CascadesCount == 1)
+		{
+			m_Split1 = 100.0f;
+			m_Split2 = 100.0f;
+			m_Split3 = 100.0f;
+		}
+		else if (m_CascadesCount == 2)
+		{
+			m_Split1 = 35.0f;
+			m_Split2 = 100.0f;
+			m_Split3 = 100.0f;
+		}
+		else if (m_CascadesCount == 3)
+		{
+			m_Split1 = 20.0f;
+			m_Split2 = 60.0f;
+			m_Split3 = 100.0f;
+		}
+		else if(m_CascadesCount == 4)
+		{
+			m_Split1 = 10.0f;
+			m_Split2 = 25.0f;
+			m_Split3 = 50.0f;
+		}
+	}
+
 }
 

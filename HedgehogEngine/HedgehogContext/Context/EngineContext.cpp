@@ -123,6 +123,11 @@ namespace Context
         return *m_DrawListContainer;
     }
 
+    HedgehogSettings::Settings& EngineContext::GetSettings()
+    {
+        return *m_Settings;
+    }
+
     const Camera& EngineContext::GetCamera() const
     {
         return *m_Camera;

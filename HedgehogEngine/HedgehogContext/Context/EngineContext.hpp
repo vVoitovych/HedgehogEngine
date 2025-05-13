@@ -39,6 +39,7 @@ namespace Context
 		MaterialContainer& GetMaterialContainer();
 		const DrawListContainer& GetDrawListContainer() const;
 
+		HedgehogSettings::Settings& GetSettings();
 		const Camera& GetCamera() const;
 		Scene::Scene& GetScene();
 		const Scene::Scene& GetScene() const;

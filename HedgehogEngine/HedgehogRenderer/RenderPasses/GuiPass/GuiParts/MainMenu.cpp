@@ -1,4 +1,5 @@
 #include "MainMenu.hpp"
+#include "SettingsWindow.hpp"
 
 #include "HedgehogContext/Context/Context.hpp"
 #include "HedgehogContext/Context/EngineContext.hpp"
@@ -46,6 +47,13 @@ namespace Renderer
 
 				ImGui::Separator();
 				if (ImGui::MenuItem("Create material")) { context.GetEngineContext().GetMaterialContainer().CreateNewMaterial(); }
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::BeginMenu("Settings"))
+			{
+				if (ImGui::MenuItem("Settings")) { SettingsWindow::ShowMaterialWindow(); }
+
 				ImGui::EndMenu();
 			}
 

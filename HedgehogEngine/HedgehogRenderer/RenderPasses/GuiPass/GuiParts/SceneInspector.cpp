@@ -16,7 +16,7 @@ namespace Renderer
 	{
 		auto& scene = context.GetEngineContext().GetScene();
 		auto& component = scene.GetHierarchyComponent(entity);
-		ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow;
+		ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen;
 		bool isSelected = false;
 		if (scene.IsGameObjectSelected() && entity == scene.GetSelectedGameObject())
 		{

@@ -4,6 +4,7 @@
 #include "GuiParts/Inspector.hpp"
 #include "GuiParts/SceneInspector.hpp"
 #include "GuiParts/MainMenu.hpp"
+#include "GuiParts/SettingsWindow.hpp"
 
 #include "HedgehogContext/Context/Context.hpp"
 #include "HedgehogContext/Context/VulkanContext.hpp"
@@ -172,6 +173,7 @@ namespace Renderer
 		Inspector::Draw(context);
 		SceneInspector::Draw(context);
 		MainMenu::Draw(context);
+		SettingsWindow::Draw(context);
 		// TODO remove
 		ImGui::ShowDemoWindow();
 	}

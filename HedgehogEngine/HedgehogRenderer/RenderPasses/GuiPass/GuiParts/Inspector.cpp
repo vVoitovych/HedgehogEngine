@@ -36,7 +36,7 @@ namespace Renderer
 			auto entity = scene.GetSelectedGameObject();
 			auto& hierarchy = scene.GetHierarchyComponent(entity);
 			auto name = hierarchy.mName;
-			if (ImGui::CollapsingHeader("Name"))
+			if (ImGui::CollapsingHeader("Name", ImGuiTreeNodeFlags_DefaultOpen))
 			{
 				if (ImGui::InputText("input text", &name[0], name.capacity() + 1))
 				{
@@ -54,7 +54,7 @@ namespace Renderer
 		{
 			auto entity = scene.GetSelectedGameObject();
 
-			if (ImGui::CollapsingHeader("Transform Component"))
+			if (ImGui::CollapsingHeader("Transform Component", ImGuiTreeNodeFlags_DefaultOpen))
 			{
 
 				auto& transform = scene.GetTransformComponent(entity);
@@ -85,7 +85,7 @@ namespace Renderer
 			auto entity = scene.GetSelectedGameObject();
 			if (scene.HasMeshComponent(entity))
 			{
-				if (ImGui::CollapsingHeader("Mesh Component"))
+				if (ImGui::CollapsingHeader("Mesh Component", ImGuiTreeNodeFlags_DefaultOpen))
 				{
 					auto& mesh = scene.GetMeshComponent(entity);
 					auto& meshes = scene.GetMeshes();
@@ -134,7 +134,7 @@ namespace Renderer
 
 			if (scene.HasRenderComponent(entity))
 			{
-				if (ImGui::CollapsingHeader("Rendering  Component"))
+				if (ImGui::CollapsingHeader("Rendering  Component", ImGuiTreeNodeFlags_DefaultOpen))
 				{
 					auto& render = scene.GetRenderComponent(entity);
 
@@ -250,7 +250,7 @@ namespace Renderer
 
 			if (scene.HasLightComponent(entity))
 			{
-				if (ImGui::CollapsingHeader("Light Component"))
+				if (ImGui::CollapsingHeader("Light Component", ImGuiTreeNodeFlags_DefaultOpen))
 				{
 					auto& light = scene.GetLightComponent(entity);
 

@@ -27,6 +27,9 @@ namespace HedgehogSettings
 
 		float GetSplit3() const;
 		void SetSplit3(float val);
+
+		void SetDefaultSplits();
+
 	private:
 		int m_ShadowmapSize = 2048;
 		int m_CascadesCount = 4;
