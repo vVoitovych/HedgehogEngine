@@ -5,67 +5,67 @@ namespace Context
 {
 	void FrameContext::UpdateContext(const Camera& camera)
 	{
-		mCameraViewMatrix = camera.GetViewMatrix();
-		mCameraProjMatrix = camera.GetProjectionMatrix();
-		mCameraViewProjMatrix = mCameraProjMatrix * mCameraViewMatrix;
+		m_CameraViewMatrix = camera.GetViewMatrix();
+		m_CameraProjMatrix = camera.GetProjectionMatrix();
+		m_CameraViewProjMatrix = m_CameraProjMatrix * m_CameraViewMatrix;
 
 		bool succes = true;
-		mCameraInvViewMatrix = mCameraViewMatrix.Inverse(succes);
-		mCameraInvProjMatrix = mCameraProjMatrix.Inverse(succes);
-		mCameraInvViewProjMatrix = mCameraViewProjMatrix.Inverse(succes);
+		m_CameraInvViewMatrix = m_CameraViewMatrix.Inverse(succes);
+		m_CameraInvProjMatrix = m_CameraProjMatrix.Inverse(succes);
+		m_CameraInvViewProjMatrix = m_CameraViewProjMatrix.Inverse(succes);
 
-		mCameraPosition = camera.GetPosition();
+		m_CameraPosition = camera.GetPosition();
 
 	}
 
 	HM::Matrix4x4 FrameContext::GetCameraViewMatrix() const
 	{
-		return mCameraViewMatrix;
+		return m_CameraViewMatrix;
 	}
 
 	HM::Matrix4x4 FrameContext::GetCameraProjMatrix() const
 	{
-		return mCameraProjMatrix;
+		return m_CameraProjMatrix;
 	}
 
 	HM::Matrix4x4 FrameContext::GetCameraViewProjMatrix() const
 	{
-		return mCameraViewProjMatrix;
+		return m_CameraViewProjMatrix;
 	}
 
 	HM::Matrix4x4 FrameContext::GetCameraInvViewMatrix() const
 	{
-		return mCameraInvViewMatrix;
+		return m_CameraInvViewMatrix;
 	}
 
 	HM::Matrix4x4 FrameContext::GetCameraInvProjMatrix() const
 	{
-		return mCameraInvProjMatrix;
+		return m_CameraInvProjMatrix;
 	}
 
 	HM::Matrix4x4 FrameContext::GetCameraInvViewProjMatrix() const
 	{
-		return mCameraInvViewProjMatrix;
+		return m_CameraInvViewProjMatrix;
 	}
 
 	HM::Vector3 FrameContext::GetCameraPosition() const
 	{
-		return mCameraPosition;
+		return m_CameraPosition;
 	}
 
 	float FrameContext::GetDeltaTime() const
 	{
-		return mDeltaTime;
+		return m_DeltaTime;
 	}
 
 	void FrameContext::SetBackBufferIndex(uint32_t index)
 	{
-		mBackBufferIndex = index;
+		m_BackBufferIndex = index;
 	}
 
 	uint32_t FrameContext::GetBackBufferIndex() const
 	{
-		return mBackBufferIndex;
+		return m_BackBufferIndex;
 	}
 
 }

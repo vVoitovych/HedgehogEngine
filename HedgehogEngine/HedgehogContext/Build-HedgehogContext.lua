@@ -25,6 +25,7 @@ project "HedgehogContext"
 
     links { 
         "HedgehogCommon",
+        "HedgehogSettings",
         "HedgehogWrappers",
         "ContentLoader",
         "DialogueWindows",

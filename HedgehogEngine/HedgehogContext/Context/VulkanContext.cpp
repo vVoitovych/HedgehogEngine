@@ -16,13 +16,13 @@ namespace Context
 {
 	VulkanContext::VulkanContext()
 	{
-		mWindowManager = std::make_unique<WinManager::WindowManager>(WinManager::WindowState::GetDefaultState());
+		m_WindowManager = std::make_unique<WinManager::WindowManager>(WinManager::WindowState::GetDefaultState());
 		ContentLoader::TextureLoader texLoader;
 		texLoader.LoadTexture("Textures\\Logo\\logo1.png");
-		mWindowManager->SetIcon(texLoader.GetWidth(), texLoader.GetHeight(), static_cast<unsigned char*>(texLoader.GetData()));
+		m_WindowManager->SetIcon(texLoader.GetWidth(), texLoader.GetHeight(), static_cast<unsigned char*>(texLoader.GetData()));
 
-		mDevice = std::make_unique<Wrappers::Device>(*mWindowManager);
-		mSwapChain = std::make_unique<Wrappers::SwapChain>(*mDevice, *mWindowManager);
+		m_Device = std::make_unique<Wrappers::Device>(*m_WindowManager);
+		m_SwapChain = std::make_unique<Wrappers::SwapChain>(*m_Device, *m_WindowManager);
 	}
 
 	VulkanContext::~VulkanContext()
@@ -31,58 +31,58 @@ namespace Context
 
 	void VulkanContext::Cleanup()
 	{
-		mSwapChain->Cleanup(*mDevice);
-		mDevice->Cleanup();
+		m_SwapChain->Cleanup(*m_Device);
+		m_Device->Cleanup();
 	}
 
 	void VulkanContext::HandleInput()
 	{
-		mWindowManager->HandleInput();
+		m_WindowManager->HandleInput();
 	}
 
 	WinManager::WindowManager& VulkanContext::GetWindowManager()
 	{
-		return *mWindowManager;
+		return *m_WindowManager;
 	}
 
 	const WinManager::WindowManager& VulkanContext::GetWindowManager() const
 	{
-		return *mWindowManager;
+		return *m_WindowManager;
 	}
 
 	const Wrappers::Device& VulkanContext::GetDevice() const
 	{
-		return *mDevice;
+		return *m_Device;
 	}
 
 	const Wrappers::SwapChain& VulkanContext::GetSwapChain() const
 	{
-		return *mSwapChain;
+		return *m_SwapChain;
 	}
 
 	Wrappers::SwapChain& VulkanContext::GetSwapChain()
 	{
-		return *mSwapChain;
+		return *m_SwapChain;
 	}
 
 	bool VulkanContext::ShouldClose() const
 	{
-		return mWindowManager->ShouldClose();
+		return m_WindowManager->ShouldClose();
 	}
 
 	void VulkanContext::ResizeWindow()
 	{
-		mWindowResized = true;
+		m_WindowResized = true;
 	}
 
 	bool VulkanContext::IsWindowResized()
 	{
-		return mWindowResized;
+		return m_WindowResized;
 	}
 
 	void VulkanContext::ResetWindowResizeState()
 	{
-		mWindowResized = false;
+		m_WindowResized = false;
 	}
 
 }

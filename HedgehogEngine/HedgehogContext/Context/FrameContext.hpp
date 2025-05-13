@@ -34,18 +34,18 @@ namespace Context
 		uint32_t GetBackBufferIndex() const;
 
 	private:
-		HM::Matrix4x4 mCameraViewMatrix;
-		HM::Matrix4x4 mCameraProjMatrix;
-		HM::Matrix4x4 mCameraViewProjMatrix;
+		HM::Matrix4x4 m_CameraViewMatrix;
+		HM::Matrix4x4 m_CameraProjMatrix;
+		HM::Matrix4x4 m_CameraViewProjMatrix;
 
-		HM::Matrix4x4 mCameraInvViewMatrix;
-		HM::Matrix4x4 mCameraInvProjMatrix;
-		HM::Matrix4x4 mCameraInvViewProjMatrix;
+		HM::Matrix4x4 m_CameraInvViewMatrix;
+		HM::Matrix4x4 m_CameraInvProjMatrix;
+		HM::Matrix4x4 m_CameraInvViewProjMatrix;
 
-		HM::Vector3 mCameraPosition;
+		HM::Vector3 m_CameraPosition;
 
-		float mDeltaTime;
-		uint32_t mBackBufferIndex;
+		float m_DeltaTime;
+		uint32_t m_BackBufferIndex;
 
 	};
 
