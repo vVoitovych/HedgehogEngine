@@ -30,6 +30,9 @@ namespace HedgehogSettings
 
 		void SetDefaultSplits();
 
+		bool IsDirty() const;
+		void CleanDirtyState();
+
 	private:
 		int m_ShadowmapSize = 2048;
 		int m_CascadesCount = 4;
@@ -38,7 +41,7 @@ namespace HedgehogSettings
 		float m_Split2 = 25.0f;
 		float m_Split3 = 50.0f;
 
-
+		bool m_IsDirty = false;
 	};
 }
 
