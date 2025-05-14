@@ -38,21 +38,17 @@ namespace Renderer
 		auto& vulkanContext = context.GetVulkanContext();
 		if (vulkanContext.IsWindowResized())
 		{
-			RecreateSwapChain(context);
+			vkDeviceWaitIdle(vulkanContext.GetDevice().GetNativeDevice());
+			vulkanContext.GetSwapChain().Recreate(vulkanContext.GetDevice());
+
+			m_ResourceManager->ResizeFrameBufferSizeDependenteResources(context);
+			m_RenderQueue->ResizeResources(context, *m_ResourceManager);
+
 			vulkanContext.ResetWindowResizeState();
 		}
+		m_ResourceManager->ResizeSettingsDependenteResources(context);
 
 		m_RenderQueue->Render(context, *m_ResourceManager);
-	}
-
-	void Renderer::RecreateSwapChain(Context::Context& context)
-	{
-		vkDeviceWaitIdle(context.GetVulkanContext().GetDevice().GetNativeDevice());
-		auto& vulkanContext = context.GetVulkanContext();
-		vulkanContext.GetSwapChain().Recreate(vulkanContext.GetDevice());
-
-		m_ResourceManager->ResizeResources(context);
-		m_RenderQueue->ResizeResources(context, *m_ResourceManager);
 	}
 
 }

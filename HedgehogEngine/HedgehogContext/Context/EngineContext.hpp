@@ -40,6 +40,7 @@ namespace Context
 		const DrawListContainer& GetDrawListContainer() const;
 
 		HedgehogSettings::Settings& GetSettings();
+		const HedgehogSettings::Settings& GetSettings() const;
 		const Camera& GetCamera() const;
 		Scene::Scene& GetScene();
 		const Scene::Scene& GetScene() const;

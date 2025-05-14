@@ -16,5 +16,9 @@ namespace HedgehogSettings
 	{
 		return m_ShadowmapSettings;
 	}
+	const std::unique_ptr<ShadowmapSettings>& Settings::GetShadowmapSettings() const
+	{
+		return m_ShadowmapSettings;
+	}
 }
 

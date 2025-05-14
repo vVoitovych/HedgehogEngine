@@ -18,6 +18,7 @@ namespace HedgehogSettings
 		Settings& operator=(Settings&&) = delete;
 
 		std::unique_ptr<ShadowmapSettings>& GetShadowmapSettings();
+		const std::unique_ptr<ShadowmapSettings>& GetShadowmapSettings() const;
 
 	private:
 		std::unique_ptr<ShadowmapSettings> m_ShadowmapSettings;
