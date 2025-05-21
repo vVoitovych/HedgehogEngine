@@ -81,7 +81,7 @@ namespace HM
             const Vector4& position);
 
     private:
-        Vector4 m_Data[4];
+        Vector4 m_data[4];
     };
 
      Vector4 operator*(const Vector4& first, const Matrix4x4& second);

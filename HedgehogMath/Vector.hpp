@@ -14,6 +14,13 @@ namespace HM
 
         Vector();
 
+        ~Vector() = default;
+
+        Vector(const Vector&) = default;
+        Vector(Vector&&) = default;
+        Vector& operator=(const Vector&) = default;
+        Vector& operator=(Vector&&) = default;
+
         Vector(std::initializer_list<elementType> data);
         Vector(const elementType* first, const elementType* last);
 
@@ -100,7 +107,7 @@ namespace HM
         thisType operator<=(const thisType& other) const;
 
     protected:
-        elementType m_Data[componentCount];
+        elementType m_data[componentCount];
 
         template <size_t currentIndex, size_t firstComponentCount, typename... Args>
         void InitializeTemplateList(const Vector<firstComponentCount, elementType>& first,
@@ -139,26 +146,26 @@ namespace HM
     {
         for (size_t i = 0; i < componentCount; ++i)
         {
-            m_Data[i] = other[i];
+            m_data[i] = other[i];
         }
     }
 
     template <size_t componentCount, typename elementType>
     Vector<componentCount, elementType>::Vector()
-        : m_Data{}
+        : m_data{}
     {
     }
 
     template <size_t componentCount, typename elementType>
     Vector<componentCount, elementType>::Vector(std::initializer_list<elementType> data)
-        : m_Data{}
+        : m_data{}
     {
         std::copy(data.begin(), data.end(), begin());
     }
 
     template <size_t componentCount, typename elementType>
     Vector<componentCount, elementType>::Vector(const elementType* first, const elementType* last)
-        : m_Data{}
+        : m_data{}
     {
         std::copy(first, last, begin());
     }
@@ -167,7 +174,7 @@ namespace HM
     template <size_t otherComponentCount>
     Vector<componentCount, elementType>::Vector(
         const Vector<otherComponentCount, elementType>& other)
-        : m_Data{}
+        : m_data{}
     {
         if constexpr (otherComponentCount > componentCount)
         {
@@ -183,7 +190,7 @@ namespace HM
     template <size_t firstComponentCount, typename... Args>
     Vector<componentCount, elementType>::Vector(
         const Vector<firstComponentCount, elementType>& first, Args... args)
-        : m_Data{}
+        : m_data{}
     {
         InitializeTemplateList<0>(first, args...);
     }
@@ -191,7 +198,7 @@ namespace HM
     template <size_t componentCount, typename elementType>
     template <typename... Args>
     Vector<componentCount, elementType>::Vector(elementType first, Args... args)
-        : m_Data{}
+        : m_data{}
     {
         InitializeTemplateList<0>(first, args...);
     }
@@ -200,143 +207,143 @@ namespace HM
     elementType Vector<componentCount, elementType>::x() const
     {
         static_assert(componentCount > 0);
-        return m_Data[0];
+        return m_data[0];
     };
     template <size_t componentCount, typename elementType>
     elementType Vector<componentCount, elementType>::y() const
     {
         static_assert(componentCount > 1);
-        return m_Data[1];
+        return m_data[1];
     };
     template <size_t componentCount, typename elementType>
     elementType Vector<componentCount, elementType>::z() const
     {
         static_assert(componentCount > 2);
-        return m_Data[2];
+        return m_data[2];
     };
     template <size_t componentCount, typename elementType>
     elementType Vector<componentCount, elementType>::w() const
     {
         static_assert(componentCount > 3);
-        return m_Data[3];
+        return m_data[3];
     };
 
     template <size_t componentCount, typename elementType>
     elementType& Vector<componentCount, elementType>::x()
     {
         static_assert(componentCount > 0);
-        return m_Data[0];
+        return m_data[0];
     };
     template <size_t componentCount, typename elementType>
     elementType& Vector<componentCount, elementType>::y()
     {
         static_assert(componentCount > 1);
-        return m_Data[1];
+        return m_data[1];
     };
     template <size_t componentCount, typename elementType>
     elementType& Vector<componentCount, elementType>::z()
     {
         static_assert(componentCount > 2);
-        return m_Data[2];
+        return m_data[2];
     };
     template <size_t componentCount, typename elementType>
     elementType& Vector<componentCount, elementType>::w()
     {
         static_assert(componentCount > 3);
-        return m_Data[3];
+        return m_data[3];
     };
 
     template <size_t componentCount, typename elementType>
     elementType Vector<componentCount, elementType>::r() const
     {
         static_assert(componentCount > 0);
-        return m_Data[0];
+        return m_data[0];
     };
     template <size_t componentCount, typename elementType>
     elementType Vector<componentCount, elementType>::g() const
     {
         static_assert(componentCount > 1);
-        return m_Data[1];
+        return m_data[1];
     };
     template <size_t componentCount, typename elementType>
     elementType Vector<componentCount, elementType>::b() const
     {
         static_assert(componentCount > 2);
-        return m_Data[2];
+        return m_data[2];
     };
     template <size_t componentCount, typename elementType>
     elementType Vector<componentCount, elementType>::a() const
     {
         static_assert(componentCount > 3);
-        return m_Data[3];
+        return m_data[3];
     };
 
     template <size_t componentCount, typename elementType>
     elementType& Vector<componentCount, elementType>::r()
     {
         static_assert(componentCount > 0);
-        return m_Data[0];
+        return m_data[0];
     };
     template <size_t componentCount, typename elementType>
     elementType& Vector<componentCount, elementType>::g()
     {
         static_assert(componentCount > 1);
-        return m_Data[1];
+        return m_data[1];
     };
     template <size_t componentCount, typename elementType>
     elementType& Vector<componentCount, elementType>::b()
     {
         static_assert(componentCount > 2);
-        return m_Data[2];
+        return m_data[2];
     };
     template <size_t componentCount, typename elementType>
     elementType& Vector<componentCount, elementType>::a()
     {
         static_assert(componentCount > 3);
-        return m_Data[3];
+        return m_data[3];
     };
 
     template <size_t componentCount, typename elementType>
     elementType& Vector<componentCount, elementType>::operator[](size_t i)
     {
-        return m_Data[i];
+        return m_data[i];
     };
     template <size_t componentCount, typename elementType>
     const elementType& Vector<componentCount, elementType>::operator[](size_t i) const
     {
-        return m_Data[i];
+        return m_data[i];
     };
 
     template <size_t componentCount, typename elementType>
     elementType* Vector<componentCount, elementType>::GetBuffer()
     {
-        return m_Data;
+        return m_data;
     }
     template <size_t componentCount, typename elementType>
     const elementType* Vector<componentCount, elementType>::GetBuffer() const
     {
-        return m_Data;
+        return m_data;
     }
 
     template <size_t componentCount, typename elementType>
     elementType* Vector<componentCount, elementType>::begin()
     {
-        return m_Data;
+        return m_data;
     }
     template <size_t componentCount, typename elementType>
     elementType* Vector<componentCount, elementType>::end()
     {
-        return m_Data + componentCount;
+        return m_data + componentCount;
     }
     template <size_t componentCount, typename elementType>
     const elementType* Vector<componentCount, elementType>::begin() const
     {
-        return m_Data;
+        return m_data;
     }
     template <size_t componentCount, typename elementType>
     const elementType* Vector<componentCount, elementType>::end() const
     {
-        return m_Data + componentCount;
+        return m_data + componentCount;
     }
 
     template <size_t componentCount, typename elementType>
@@ -355,7 +362,7 @@ namespace HM
     elementType Vector<componentCount, elementType>::LengthSqr() const
     {
         elementType result = 0;
-        for (auto& value : m_Data)
+        for (auto& value : m_data)
         {
             result += value * value;
         }
@@ -383,7 +390,7 @@ namespace HM
         elementType result = 0;
         for (size_t i = 0; i < 3; ++i)
         {
-            result += m_Data[i] * m_Data[i];
+            result += m_data[i] * m_data[i];
         }
 
         return result;
@@ -398,12 +405,12 @@ namespace HM
 
     template <size_t componentCount, typename elementType>
     Vector<componentCount, elementType> Vector<componentCount, elementType>::Min(
-        const thisType& other) const
+        const Vector<componentCount, elementType>& other) const
     {
         Vector<componentCount, elementType> result;
         for (size_t i = 0; i < componentCount; ++i)
         {
-            result[i] = std::min((*this)[i], other[i]);
+            result[i] = min((*this)[i], other[i]);
         }
         return result;
     }
@@ -415,7 +422,7 @@ namespace HM
         Vector<componentCount, elementType> result;
         for (size_t i = 0; i < componentCount; ++i)
         {
-            result[i] = std::max((*this)[i], other[i]);
+            result[i] = max((*this)[i], other[i]);
         }
         return result;
     }
@@ -448,7 +455,7 @@ namespace HM
     Vector<componentCount, elementType>& Vector<componentCount, elementType>::operator*=(
         elementType other)
     {
-        for (elementType& element : m_Data)
+        for (elementType& element : m_data)
         {
             element *= other;
         }
@@ -460,7 +467,7 @@ namespace HM
     Vector<componentCount, elementType>& Vector<componentCount, elementType>::operator/=(
         elementType other)
     {
-        for (elementType& element : m_Data)
+        for (elementType& element : m_data)
         {
             element /= other;
         }
@@ -569,7 +576,7 @@ namespace HM
     template <size_t componentCount, typename elementType>
     bool Vector<componentCount, elementType>::operator==(const thisType& other) const
     {
-        return std::equal(std::begin(m_Data), std::end(m_Data), std::begin(other.m_Data));
+        return std::equal(std::begin(m_data), std::end(m_data), std::begin(other.m_data));
     }
 
     template <size_t componentCount, typename elementType>
@@ -633,7 +640,7 @@ namespace HM
         const Vector<firstComponentCount, elementType>& first, Args... args)
     {
         static_assert(currentIndex + firstComponentCount <= componentCount);
-        std::copy(first.begin(), first.end(), &m_Data[currentIndex]);
+        std::copy(first.begin(), first.end(), &m_data[currentIndex]);
         InitializeTemplateList<currentIndex + firstComponentCount>(args...);
     }
     template <size_t componentCount, typename elementType>
@@ -642,7 +649,7 @@ namespace HM
         Args... args)
     {
         static_assert(currentIndex + 1 <= componentCount);
-        m_Data[currentIndex] = first;
+        m_data[currentIndex] = first;
         InitializeTemplateList<currentIndex + 1>(args...);
     }
     template <size_t componentCount, typename elementType>
