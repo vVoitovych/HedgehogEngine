@@ -8,7 +8,7 @@ namespace HM
     Matrix4x4::Matrix4x4(std::initializer_list<float> list)
     {
         auto iter = list.begin();
-        for (auto& vector : m_data)
+        for (auto& vector : m_Data)
         {
             vector = Vector4(iter, iter + 4);
             iter += 4;
@@ -17,7 +17,7 @@ namespace HM
 
     Matrix4x4::Matrix4x4(const Vector4& row1, const Vector4& row2, const Vector4& row3,
         const Vector4& row4)
-        : m_data{ row1, row2, row3, row4 }
+        : m_Data{ row1, row2, row3, row4 }
     {
     }
 
@@ -31,42 +31,42 @@ namespace HM
 
     const Vector4* Matrix4x4::end() const
     {
-        return m_data + 4;
+        return m_Data + 4;
     }
 
     Vector4* Matrix4x4::end()
     {
-        return m_data + 4;
+        return m_Data + 4;
     }
 
     const Vector4& Matrix4x4::operator[](size_t i) const
     {
-        return m_data[i];
+        return m_Data[i];
     }
 
     Vector4& Matrix4x4::operator[](size_t i)
     {
-        return m_data[i];
+        return m_Data[i];
     }
 
     const float* Matrix4x4::GetBuffer() const
     {
-        return m_data[0].GetBuffer();
+        return m_Data[0].GetBuffer();
     }
 
     float* Matrix4x4::GetBuffer()
     {
-        return m_data[0].GetBuffer();
+        return m_Data[0].GetBuffer();
     }
 
     const Vector4* Matrix4x4::begin() const
     {
-        return m_data;
+        return m_Data;
     }
 
     Vector4* Matrix4x4::begin()
     {
-        return m_data;
+        return m_Data;
     }
 
     Matrix4x4 Matrix4x4::operator-()
@@ -74,14 +74,14 @@ namespace HM
         Matrix4x4 result;
         for (size_t i = 0; i < 4; i++)
         {
-            result[i] = -m_data[i];
+            result[i] = -m_Data[i];
         }
         return result;
     }
 
     Matrix4x4& Matrix4x4::operator*=(float other)
     {
-        for (auto& element : m_data)
+        for (auto& element : m_Data)
         {
             element *= other;
         }
@@ -90,7 +90,7 @@ namespace HM
 
     Matrix4x4& Matrix4x4::operator/=(float other)
     {
-        for (auto& element : m_data)
+        for (auto& element : m_Data)
         {
             element /= other;
         }
@@ -128,7 +128,7 @@ namespace HM
 
     bool Matrix4x4::operator==(const Matrix4x4& other) const
     {
-        return std::equal(std::begin(m_data), std::end(m_data), std::begin(other.m_data));
+        return std::equal(std::begin(m_Data), std::end(m_Data), std::begin(other.m_Data));
     }
 
     bool Matrix4x4::operator!=(const Matrix4x4& other) const
