@@ -405,12 +405,12 @@ namespace HM
 
     template <size_t componentCount, typename elementType>
     Vector<componentCount, elementType> Vector<componentCount, elementType>::Min(
-        const Vector<componentCount, elementType>& other) const
+        const thisType& other) const
     {
         Vector<componentCount, elementType> result;
         for (size_t i = 0; i < componentCount; ++i)
         {
-            result[i] = min((*this)[i], other[i]);
+            result[i] = std::min((*this)[i], other[i]);
         }
         return result;
     }
@@ -422,7 +422,7 @@ namespace HM
         Vector<componentCount, elementType> result;
         for (size_t i = 0; i < componentCount; ++i)
         {
-            result[i] = max((*this)[i], other[i]);
+            result[i] = std::max((*this)[i], other[i]);
         }
         return result;
     }

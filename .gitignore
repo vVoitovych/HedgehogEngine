@@ -575,5 +575,6 @@ Binaries
 /HedgehogEngine/HedgehogWrappers/HedgehogWrappers.vcxproj.filters
 /HedgehogEngine/HedgehogWrappers/HedgehogWrappers.vcxproj.user
 /Shaders/*.filters
-/HedgehogEngine/HedgehogSettings/HedgehogSettings.vcxproj
 /HedgehogEngine/HedgehogRenderer/HedgehogRenderer.vcxproj.user
+/HedgehogEngine/HedgehogSettings/HedgehogSettings.vcxproj
+/HedgehogMath/HedgehogMath.vcxproj.user
