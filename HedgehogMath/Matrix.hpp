@@ -34,8 +34,8 @@ namespace HM
 
          Matrix4x4 operator-();
 
-        Matrix4x4& operator*=(float other);
-        Matrix4x4& operator/=(float other);
+         Matrix4x4& operator*=(float other);
+         Matrix4x4& operator/=(float other);
          Matrix4x4 operator*(float other) const;
          Matrix4x4 operator/(float other) const;
 
