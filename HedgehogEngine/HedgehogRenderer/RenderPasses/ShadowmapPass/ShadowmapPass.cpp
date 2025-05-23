@@ -9,6 +9,7 @@
 #include "HedgehogContext/Context/VulkanContext.hpp"
 #include "HedgehogContext/Context/FrameContext.hpp"
 
+
 #include "HedgehogRenderer/ResourceManager/ResourceManager.hpp"
 #include "HedgehogWrappers/Wrappeers/Device/Device.hpp"
 #include "HedgehogWrappers/Wrappeers/SwapChain/SwapChain.hpp"
@@ -102,7 +103,7 @@ namespace Renderer
 		auto& materialContainer = engineContext.GetMaterialContainer();
 
 		auto& device = vulkanContext.GetDevice();
-		ShadowmapPassInfo info{ resourceManager.GetColorBuffer().GetFormat(), resourceManager.GetDepthBuffer().GetFormat()};
+		ShadowmapPassInfo info{ resourceManager.GetDepthBuffer().GetFormat()};
 		m_RenderPass = std::make_unique<Wrappers::RenderPass>(device, info.GetInfo());
 
 		std::unique_ptr<Wrappers::PipelineInfo> pipelineInfo = std::make_unique<ShadowmapPipelineInfo>(device);
@@ -144,7 +145,10 @@ namespace Renderer
 		auto& vulkanContext = context.GetVulkanContext();
 		m_FrameBuffer->Cleanup(vulkanContext.GetDevice());
 
-		std::vector<VkImageView> attacments = { resourceManager.GetColorBuffer().GetNativeView(), resourceManager.GetDepthBuffer().GetNativeView() };
+		std::vector<VkImageView> attacments = { resourceManager.GetShadowMap().GetNativeView() };
+		//auto& settings = context.GetEngineContext().GetSettings();
+
+		//VkExtent2D entent = 
 		m_FrameBuffer = std::make_unique<Wrappers::FrameBuffer>(
 			vulkanContext.GetDevice(),
 			attacments,

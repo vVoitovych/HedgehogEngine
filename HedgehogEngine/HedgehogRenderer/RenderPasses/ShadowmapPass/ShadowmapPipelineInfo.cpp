@@ -9,7 +9,7 @@ namespace Renderer
 	ShadowmapPipelineInfo::ShadowmapPipelineInfo(const Wrappers::Device& device)
 		: Wrappers::PipelineInfo(device)
 	{
-		m_VertexShader = std::make_unique<Wrappers::VertexShader>(device, "ForwardPass/Base.vert");
+		m_VertexShader = std::make_unique<Wrappers::VertexShader>(device, "ShadowmapPass/Shadowmap.vert");
 		m_Stages = { m_VertexShader->GetCreateInfo() };
 
 		m_BindingDesc[0].binding = 0;
@@ -49,7 +49,7 @@ namespace Renderer
 		m_RasterizerInfo.rasterizerDiscardEnable = VK_FALSE;
 		m_RasterizerInfo.polygonMode = VK_POLYGON_MODE_FILL;
 		m_RasterizerInfo.lineWidth = 1.0f;
-		m_RasterizerInfo.cullMode = VK_CULL_MODE_FRONT_BIT;
+		m_RasterizerInfo.cullMode = VK_CULL_MODE_BACK_BIT;
 		m_RasterizerInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
 		m_RasterizerInfo.depthBiasEnable = VK_FALSE;
 		m_RasterizerInfo.flags = 0;
@@ -67,7 +67,7 @@ namespace Renderer
 
 		m_DepthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 		m_DepthStencil.depthTestEnable = VK_TRUE;
-		m_DepthStencil.depthWriteEnable = VK_FALSE;
+		m_DepthStencil.depthWriteEnable = VK_TRUE;
 		m_DepthStencil.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
 		m_DepthStencil.depthBoundsTestEnable = VK_FALSE;
 		m_DepthStencil.stencilTestEnable = VK_FALSE;
@@ -76,30 +76,8 @@ namespace Renderer
 		m_DepthStencil.front.depthFailOp = VK_STENCIL_OP_KEEP;
 		m_DepthStencil.front.compareOp = VK_COMPARE_OP_ALWAYS;
 		m_DepthStencil.back = m_DepthStencil.front;
-
 		m_DepthStencil.flags = 0;
 		m_DepthStencil.pNext = nullptr;
-
-		m_ColorBlendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-		m_ColorBlendAttachmentState.blendEnable = VK_FALSE;
-		m_ColorBlendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
-		m_ColorBlendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
-		m_ColorBlendAttachmentState.colorBlendOp = VK_BLEND_OP_ADD;
-		m_ColorBlendAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-		m_ColorBlendAttachmentState.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-		m_ColorBlendAttachmentState.alphaBlendOp = VK_BLEND_OP_ADD;
-
-		m_ColorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-		m_ColorBlending.logicOpEnable = VK_FALSE;
-		m_ColorBlending.logicOp = VK_LOGIC_OP_COPY;
-		m_ColorBlending.attachmentCount = 1;
-		m_ColorBlending.pAttachments = &m_ColorBlendAttachmentState;
-		m_ColorBlending.blendConstants[0] = 0.0f;
-		m_ColorBlending.blendConstants[1] = 0.0f;
-		m_ColorBlending.blendConstants[2] = 0.0f;
-		m_ColorBlending.blendConstants[3] = 0.0f;
-		m_ColorBlending.flags = 0;
-		m_ColorBlending.pNext = nullptr;
 
 		m_DynamicStates = { VK_DYNAMIC_STATE_VIEWPORT ,VK_DYNAMIC_STATE_SCISSOR };
 
@@ -153,7 +131,7 @@ namespace Renderer
 	}
 	const VkPipelineColorBlendStateCreateInfo* ShadowmapPipelineInfo::GetColorBlendingInfo() const
 	{
-		return &m_ColorBlending;
+		return nullptr;
 	}
 	const VkPipelineDynamicStateCreateInfo* ShadowmapPipelineInfo::GetDynamicStateInfo() const
 	{

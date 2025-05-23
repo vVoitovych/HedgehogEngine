@@ -39,8 +39,8 @@ namespace Renderer
 		std::unique_ptr<Wrappers::VertexShader> m_VertexShader;
 		std::array<VkPipelineShaderStageCreateInfo, 1> m_Stages;
 
-		std::array<VkVertexInputBindingDescription, 3> m_BindingDesc;
-		std::array<VkVertexInputAttributeDescription, 3>  m_AttributeDesc;
+		std::array<VkVertexInputBindingDescription, 1> m_BindingDesc;
+		std::array<VkVertexInputAttributeDescription, 1>  m_AttributeDesc;
 		VkPipelineVertexInputStateCreateInfo m_VertexInputInfo;
 
 		VkPipelineInputAssemblyStateCreateInfo m_InputAssembly;
@@ -48,8 +48,6 @@ namespace Renderer
 		VkPipelineRasterizationStateCreateInfo m_RasterizerInfo;
 		VkPipelineMultisampleStateCreateInfo m_Multisampling;
 		VkPipelineDepthStencilStateCreateInfo m_DepthStencil;
-		VkPipelineColorBlendAttachmentState m_ColorBlendAttachmentState;
-		VkPipelineColorBlendStateCreateInfo m_ColorBlending;
 		std::vector<VkDynamicState> m_DynamicStates;
 		VkPipelineDynamicStateCreateInfo m_DynamicStateInfo;
 

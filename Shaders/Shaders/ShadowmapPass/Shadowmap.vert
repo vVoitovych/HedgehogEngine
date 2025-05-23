@@ -1,16 +1,8 @@
 #version 450
 
-#define MAX_LIGHTS_COUNT 16
-
-#include "Common/LightData.glsl"
-
 layout(set = 0, binding = 0) uniform UniformBufferObject 
 {
-    mat4 view;
-    mat4 proj;
-    vec4 eyePos;
-    Light lights[MAX_LIGHTS_COUNT];
-    int lightCount;
+    mat4 viewProj;
 } ubo;
 
 
@@ -23,7 +15,7 @@ layout( push_constant ) uniform constants
 
 void main()
 {
-	gl_Position = ubo.proj * ubo.view * PushConstants.model * vec4(inPosition, 1.0f);
+	gl_Position = ubo.viewProj * PushConstants.model * vec4(inPosition, 1.0f);
 }
 
 

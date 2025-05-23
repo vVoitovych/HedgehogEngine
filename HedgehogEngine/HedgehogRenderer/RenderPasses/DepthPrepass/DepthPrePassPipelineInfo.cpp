@@ -74,10 +74,8 @@ namespace Renderer
 		m_DepthStencil.front.depthFailOp = VK_STENCIL_OP_KEEP;
 		m_DepthStencil.front.compareOp = VK_COMPARE_OP_ALWAYS;
 		m_DepthStencil.back = m_DepthStencil.front;
-
 		m_DepthStencil.flags = 0;
 		m_DepthStencil.pNext = nullptr;
-
 
 		m_DynamicStates = { VK_DYNAMIC_STATE_VIEWPORT ,VK_DYNAMIC_STATE_SCISSOR };
 
