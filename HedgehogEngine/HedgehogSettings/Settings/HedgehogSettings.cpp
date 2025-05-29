@@ -20,5 +20,13 @@ namespace HedgehogSettings
 	{
 		return m_ShadowmapSettings;
 	}
+	bool Settings::IsDirty() const
+	{
+		return m_ShadowmapSettings->IsDirty();
+	}
+	void Settings::CleanDirtyState()
+	{
+		m_ShadowmapSettings->CleanDirtyState();
+	}
 }
 

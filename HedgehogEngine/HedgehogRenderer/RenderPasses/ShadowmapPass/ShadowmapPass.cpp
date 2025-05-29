@@ -9,6 +9,8 @@
 #include "HedgehogContext/Context/VulkanContext.hpp"
 #include "HedgehogContext/Context/FrameContext.hpp"
 
+#include "HedgehogSettings/Settings/HedgehogSettings.hpp"
+#include "HedgehogSettings/Settings/ShadowmapingSettings.hpp"
 
 #include "HedgehogRenderer/ResourceManager/ResourceManager.hpp"
 #include "HedgehogWrappers/Wrappeers/Device/Device.hpp"
@@ -140,24 +142,21 @@ namespace Renderer
 
 	}
 
-	void ShadowmapPass::ResizeResources(const Context::Context& context, const ResourceManager& resourceManager)
+	void ShadowmapPass::UpdateResources(const Context::Context& context, const ResourceManager& resourceManager)
 	{
 		auto& vulkanContext = context.GetVulkanContext();
-		m_FrameBuffer->Cleanup(vulkanContext.GetDevice());
+		if (m_FrameBuffer != nullptr)
+			m_FrameBuffer->Cleanup(vulkanContext.GetDevice());
 
 		std::vector<VkImageView> attacments = { resourceManager.GetShadowMap().GetNativeView() };
-		//auto& settings = context.GetEngineContext().GetSettings();
+		auto& settings = context.GetEngineContext().GetSettings().GetShadowmapSettings();
 
-		//VkExtent2D entent = 
+		VkExtent2D extent = { settings->GetShadowmapSize(), settings->GetShadowmapSize() };
 		m_FrameBuffer = std::make_unique<Wrappers::FrameBuffer>(
 			vulkanContext.GetDevice(),
 			attacments,
-			vulkanContext.GetSwapChain().GetSwapChainExtent(),
+			extent,
 			*m_RenderPass);
-	}
-
-	void ShadowmapPass::UpdateResources(const Context::Context& context)
-	{
 	}
 
 

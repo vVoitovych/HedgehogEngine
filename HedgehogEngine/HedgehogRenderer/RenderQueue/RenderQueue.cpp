@@ -54,6 +54,11 @@ namespace Renderer
 		m_GuiPass->ResizeResources(context, resourceManager);
 	}
 
+	void RenderQueue::UpdateResources(const Context::Context& context, const ResourceManager& resourceManager)
+	{
+		
+	}
+
 
 
 }

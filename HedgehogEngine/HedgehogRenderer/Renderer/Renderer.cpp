@@ -9,6 +9,7 @@
 #include "HedgehogRenderer/ResourceManager/ResourceManager.hpp"
 #include "HedgehogWrappers/Wrappeers/Device/Device.hpp"
 #include "HedgehogWrappers/Wrappeers/SwapChain/SwapChain.hpp"
+#include "HedgehogSettings/Settings/HedgehogSettings.hpp"
 
 #include "Logger/Logger.hpp"
 
@@ -36,6 +37,7 @@ namespace Renderer
 	void Renderer::DrawFrame(Context::Context& context)
 	{		
 		auto& vulkanContext = context.GetVulkanContext();
+		auto& settings = context.GetEngineContext().GetSettings();
 		if (vulkanContext.IsWindowResized())
 		{
 			vkDeviceWaitIdle(vulkanContext.GetDevice().GetNativeDevice());
@@ -46,7 +48,13 @@ namespace Renderer
 
 			vulkanContext.ResetWindowResizeState();
 		}
-		m_ResourceManager->ResizeSettingsDependenteResources(context);
+		if (settings.IsDirty())
+		{
+			m_ResourceManager->ResizeSettingsDependenteResources(context);
+			m_RenderQueue->UpdateResources(context, *m_ResourceManager);
+
+			settings.CleanDirtyState();
+		}
 
 		m_RenderQueue->Render(context, *m_ResourceManager);
 	}

@@ -33,6 +33,7 @@ namespace Renderer
 		void Render(Context::Context& context, const ResourceManager& resourceManager);
 
 		void ResizeResources(const Context::Context& context, const ResourceManager& resourceManager);
+		void UpdateResources(const Context::Context& context, const ResourceManager& resourceManager);
 
 	private:
 		std::unique_ptr<InitPass> m_InitPass;

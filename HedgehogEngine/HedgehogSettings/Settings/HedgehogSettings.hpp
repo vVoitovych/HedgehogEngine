@@ -19,6 +19,8 @@ namespace HedgehogSettings
 
 		std::unique_ptr<ShadowmapSettings>& GetShadowmapSettings();
 		const std::unique_ptr<ShadowmapSettings>& GetShadowmapSettings() const;
+		bool IsDirty() const;
+		void CleanDirtyState();
 
 	private:
 		std::unique_ptr<ShadowmapSettings> m_ShadowmapSettings;

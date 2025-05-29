@@ -27,7 +27,6 @@ namespace HedgehogSettings
 	void ShadowmapSettings::SetCascadesCount(int cascadesCount)
 	{
 		m_CascadesCount = std::max(1, std::min(cascadesCount, 4));
-		m_IsDirty = true;
 	}
 
 	float ShadowmapSettings::GetSplit1() const
@@ -38,7 +37,6 @@ namespace HedgehogSettings
 	void ShadowmapSettings::SetSplit1(float val)
 	{
 		m_Split1 = std::max(0.0f, std::min(val, m_Split2 - 0.1f));
-		m_IsDirty = true;
 	}
 
 	float ShadowmapSettings::GetSplit2() const
@@ -49,7 +47,6 @@ namespace HedgehogSettings
 	void ShadowmapSettings::SetSplit2(float val)
 	{
 		m_Split2 = std::max(m_Split1 + 0.1f, std::min(val, m_Split3 - 0.1f));
-		m_IsDirty = true;
 	}
 
 	float ShadowmapSettings::GetSplit3() const
@@ -60,7 +57,6 @@ namespace HedgehogSettings
 	void ShadowmapSettings::SetSplit3(float val)
 	{
 		m_Split3 = std::max(m_Split2 + 0.1f, std::min(val, 100.0f));
-		m_IsDirty = true;
 	}
 
 	void ShadowmapSettings::SetDefaultSplits()
@@ -89,7 +85,6 @@ namespace HedgehogSettings
 			m_Split2 = 25.0f;
 			m_Split3 = 50.0f;
 		}
-		m_IsDirty = true;
 	}
 
 	bool ShadowmapSettings::IsDirty() const
