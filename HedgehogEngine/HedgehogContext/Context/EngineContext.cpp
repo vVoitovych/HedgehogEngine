@@ -50,45 +50,11 @@ namespace Context
 
     void EngineContext::UpdateContext(VulkanContext& vulkanContext, float dt)
     {
-        auto& windowManager = vulkanContext.GetWindowManager();
-        auto& controls = windowManager.GetControls();
-        const auto& swapChain = vulkanContext.GetSwapChain();
+        UpdateCamera(vulkanContext, dt);
         m_Scene->UpdateScene(dt);
         m_LightContainer->UpdateLights(*m_Scene);
         m_MaterialContainer->Update(*m_Scene);
-        m_MeshContainer->Update(vulkanContext, *m_Scene);
-        auto extend = swapChain.GetSwapChainExtent();
-        HM::Vector3 posOffset(0.0f, 0.0f, 0.0f);
-        HM::Vector2 dirOffset(controls.MouseDelta.x(), controls.MouseDelta.y());
-
-        if (controls.IsPressedQ)
-        {
-            posOffset.z() = -1.0f;
-        }
-        if (controls.IsPressedE)
-        {
-            posOffset.z() = 1.0f;
-        }
-
-        if (controls.IsPressedW)
-        {
-            posOffset.x() = 1.0f;
-        }
-        if (controls.IsPressedS)
-        {
-            posOffset.x() = -1.0f;
-        }
-
-        if (controls.IsPressedD)
-        {
-            posOffset.y() = -1.0f;
-        }
-        if (controls.IsPressedA)
-        {
-            posOffset.y() = 1.0f;
-        }
-
-        m_Camera->UpdateCamera(dt, extend.width / (float)extend.height, posOffset, dirOffset);
+        m_MeshContainer->Update(vulkanContext, *m_Scene); 
         m_MaterialContainer->UpdateResources(vulkanContext, *m_TextureContainer);
         m_DrawListContainer->Update(*m_Scene, *m_MaterialContainer);
     }
@@ -146,6 +112,45 @@ namespace Context
     const Scene::Scene& EngineContext::GetScene() const
     {
         return *m_Scene;
+    }
+
+    void EngineContext::UpdateCamera(VulkanContext& vulkanContext, float dt)
+    {
+        auto& windowManager = vulkanContext.GetWindowManager();
+        auto& controls = windowManager.GetControls();
+        const auto& swapChain = vulkanContext.GetSwapChain();
+
+        auto extend = swapChain.GetSwapChainExtent();
+        HM::Vector3 posOffset(0.0f, 0.0f, 0.0f);
+        HM::Vector2 dirOffset(controls.MouseDelta.x(), controls.MouseDelta.y());
+
+        if (controls.IsPressedQ)
+        {
+            posOffset.z() = -1.0f;
+        }
+        if (controls.IsPressedE)
+        {
+            posOffset.z() = 1.0f;
+        }
+
+        if (controls.IsPressedW)
+        {
+            posOffset.x() = 1.0f;
+        }
+        if (controls.IsPressedS)
+        {
+            posOffset.x() = -1.0f;
+        }
+
+        if (controls.IsPressedD)
+        {
+            posOffset.y() = -1.0f;
+        }
+        if (controls.IsPressedA)
+        {
+            posOffset.y() = 1.0f;
+        }
+        m_Camera->UpdateCamera(dt, extend.width / (float)extend.height, posOffset, dirOffset);
     }
 
 }

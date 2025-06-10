@@ -47,6 +47,11 @@ namespace Renderer
 
 	}
 
+	void RenderQueue::UpdateData(const Context::Context& context)
+	{
+
+	}
+
 	void RenderQueue::ResizeResources(const Context::Context& context, const ResourceManager& resourceManager)
 	{
 		m_DepthPrePass->ResizeResources(context, resourceManager);

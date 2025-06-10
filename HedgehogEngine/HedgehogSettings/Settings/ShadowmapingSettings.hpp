@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 namespace HedgehogSettings
 {
 	class ShadowmapSettings
@@ -13,11 +15,14 @@ namespace HedgehogSettings
 		ShadowmapSettings& operator=(const ShadowmapSettings&) = delete;
 		ShadowmapSettings& operator=(ShadowmapSettings&&) = delete;
 
-		int GetShadowmapSize() const;
-		void SetShadowmapSize(int size);
+		uint32_t GetShadowmapSize() const;
+		void SetShadowmapSize(uint32_t size);
 
-		int GetCascadesCount() const;
-		void SetCascadesCount(int cascadesCount);
+		uint32_t GetCascadesCount() const;
+		void SetCascadesCount(uint32_t cascadesCount);
+
+		float GetCascadeSplitLambda() const;
+		void SetCascadeSplitLambda(float val);
 
 		float GetSplit1() const;
 		void SetSplit1(float val);
@@ -34,8 +39,10 @@ namespace HedgehogSettings
 		void CleanDirtyState();
 
 	private:
-		int m_ShadowmapSize = 2048;
-		int m_CascadesCount = 4;
+		uint32_t m_ShadowmapSize = 2048;
+		uint32_t m_CascadesCount = 4;
+
+		float m_CascadeSplitLambda = 0.95f;
 
 		float m_Split1 = 10.0f;
 		float m_Split2 = 25.0f;

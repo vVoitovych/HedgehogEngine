@@ -8,74 +8,84 @@ namespace Context
         const HM::Vector3& posOffset,
         const HM::Vector2& dirOffset)
     {
-        mAspect = ratio;
+        m_Aspect = ratio;
 
-        mPos += posOffset * mCameraSpeed * dt;
+        m_Pos += posOffset * m_CameraSpeed * dt;
         
 
         float xoffset = dirOffset.x();
         float yoffset = dirOffset.y();
 
-        xoffset *= mMouseSensitivity;
-        yoffset *= mMouseSensitivity;
+        xoffset *= m_MouseSensitivity;
+        yoffset *= m_MouseSensitivity;
 
-        mYaw -= xoffset;
-        mPitch -= yoffset;
+        m_Yaw -= xoffset;
+        m_Pitch -= yoffset;
 
-        if (mPitch > 80.0f)
-            mPitch = 80.0f;
-        if (mPitch < -80.0f)
-            mPitch = -80.0f;
+        if (m_Pitch > 80.0f)
+            m_Pitch = 80.0f;
+        if (m_Pitch < -80.0f)
+            m_Pitch = -80.0f;
 
-        mDirection.x() = cosf(HM::ToRadians(mYaw)) * cosf(HM::ToRadians(mPitch));
-        mDirection.y() = sinf(HM::ToRadians(mYaw)) * cosf(HM::ToRadians(mPitch));
-        mDirection.z() = sinf(HM::ToRadians(mPitch));
+        m_Direction.x() = cosf(HM::ToRadians(m_Yaw)) * cosf(HM::ToRadians(m_Pitch));
+        m_Direction.y() = sinf(HM::ToRadians(m_Yaw)) * cosf(HM::ToRadians(m_Pitch));
+        m_Direction.z() = sinf(HM::ToRadians(m_Pitch));
 
-        mRightVector = (Cross(mDirection, mUpVector)).Normalize();
+        m_RightVector = (Cross(m_Direction, m_UpVector)).Normalize();
 
         UpdateMatricies();
     }
 
     void Camera::SetFov(float fov)
     {
-        mFOV = fov;
+        m_FOV = fov;
     }
 
     void Camera::SetAspect(float aspect)
     {
-        mAspect = aspect;
+        m_Aspect = aspect;
     }
 
     void Camera::SetNearPlane(float nearPlane)
     {
-        mNearPlane = nearPlane;
+        m_NearPlane = nearPlane;
     }
 
     void Camera::SetFarPlane(float farPlane)
     {
-        mFarPlane = farPlane;
+        m_FarPlane = farPlane;
     }
 
     HM::Matrix4x4 Camera::GetViewMatrix() const
     {
-        return mViewMatrix;
+        return m_ViewMatrix;
     }
 
     HM::Matrix4x4 Camera::GetProjectionMatrix() const
     {
-        return mProjMatrix;
+        return m_ProjMatrix;
     }
 
     HM::Vector3 Camera::GetPosition() const
     {
-        return mPos;
+        return m_Pos;
+    }
+
+    float Camera::GetNearPlane() const
+    {
+        return m_NearPlane;
+    }
+
+    float Camera::GetFarPlane() const
+    {
+        return m_FarPlane;
     }
 
     void Camera::UpdateMatricies()
     {
-        mViewMatrix = HM::Matrix4x4::LookAt(mPos, mPos + mDirection, mUpVector);
-        mProjMatrix = HM::Matrix4x4::Perspective(mFOV / mAspect, mAspect, mNearPlane, mFarPlane);
-        mProjMatrix[1][1] *= -1;
+        m_ViewMatrix = HM::Matrix4x4::LookAt(m_Pos, m_Pos + m_Direction, m_UpVector);
+        m_ProjMatrix = HM::Matrix4x4::Perspective(m_FOV / m_Aspect, m_Aspect, m_NearPlane, m_FarPlane);
+        m_ProjMatrix[1][1] *= -1;
     }
 
 }

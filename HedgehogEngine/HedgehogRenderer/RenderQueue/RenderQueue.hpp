@@ -28,10 +28,10 @@ namespace Renderer
 		RenderQueue& operator=(const RenderQueue&) = delete;
 		RenderQueue& operator=(RenderQueue&&) = delete;
 
-
 		void Cleanup(const Context::Context& context);
 		void Render(Context::Context& context, const ResourceManager& resourceManager);
 
+		void UpdateData(const Context::Context& context);
 		void ResizeResources(const Context::Context& context, const ResourceManager& resourceManager);
 		void UpdateResources(const Context::Context& context, const ResourceManager& resourceManager);
 

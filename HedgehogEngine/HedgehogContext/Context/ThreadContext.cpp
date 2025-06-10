@@ -1,5 +1,7 @@
 #include "ThreadContext.hpp"
 #include "VulkanContext.hpp"
+#include "EngineContext.hpp"
+#include "FrameContext.hpp"
 
 #include "HedgehogWrappers/Wrappeers/Commands/CommandBuffer.hpp"
 #include "HedgehogWrappers/Wrappeers/SyncObjects/SyncObject.hpp"
@@ -9,9 +11,7 @@
 #include "HedgehogWrappers/Wrappeers/Resources/Buffer/Buffer.hpp"
 #include "HedgehogWrappers/Wrappeers/Descriptors/DescriptorSet.hpp"
 #include "HedgehogWrappers/Wrappeers/Descriptors/DescriptorLayoutBuilder.hpp"
-#include "HedgehogContext/Context/VulkanContext.hpp"
-#include "HedgehogContext/Context/EngineContext.hpp"
-#include "HedgehogContext/Context/FrameContext.hpp"
+
 #include "HedgehogContext/Containers/LightContainer/LightContainer.hpp"
 #include "HedgehogCommon/Common/EngineDebugBreak.hpp"
 #include "HedgehogCommon/Common/RendererSettings.hpp"
@@ -33,7 +33,7 @@ namespace Context
 			Wrappers::SyncObject syncObject(vulkanContext.GetDevice());
 			m_SyncObjects.push_back(std::move(syncObject));
 		}
-		uint32_t materialCount = 1;
+
 		std::vector<Wrappers::PoolSizeRatio> sizes =
 		{
 			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 }

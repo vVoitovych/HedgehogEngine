@@ -8,25 +8,41 @@ namespace HedgehogSettings
 	{
 	}
 
-	int ShadowmapSettings::GetShadowmapSize() const
+	uint32_t ShadowmapSettings::GetShadowmapSize() const
 	{
 		return m_ShadowmapSize;
 	}
 
-	void ShadowmapSettings::SetShadowmapSize(int size)
+	void ShadowmapSettings::SetShadowmapSize(uint32_t size)
 	{
-		m_ShadowmapSize = std::max(1, std::min(size, 4096));
+		uint32_t minSize = 1;
+		uint32_t maxSize = 4096;
+
+		m_ShadowmapSize = std::max(minSize, std::min(size, maxSize));
 		m_IsDirty = true;
 	}
 
-	int ShadowmapSettings::GetCascadesCount() const
+	uint32_t ShadowmapSettings::GetCascadesCount() const
 	{
 		return m_CascadesCount;
 	}
 
-	void ShadowmapSettings::SetCascadesCount(int cascadesCount)
+	void ShadowmapSettings::SetCascadesCount(uint32_t cascadesCount)
 	{
-		m_CascadesCount = std::max(1, std::min(cascadesCount, 4));
+		uint32_t minCascades = 1;
+		uint32_t maxCascades = 4;
+
+		m_CascadesCount = std::max(minCascades, std::min(cascadesCount, maxCascades));
+	}
+
+	float ShadowmapSettings::GetCascadeSplitLambda() const
+	{
+		return m_CascadeSplitLambda;
+	}
+
+	void ShadowmapSettings::SetCascadeSplitLambda(float val)
+	{
+		m_CascadeSplitLambda = val;
 	}
 
 	float ShadowmapSettings::GetSplit1() const

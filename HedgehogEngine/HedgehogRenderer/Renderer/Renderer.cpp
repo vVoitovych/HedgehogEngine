@@ -38,6 +38,7 @@ namespace Renderer
 	{		
 		auto& vulkanContext = context.GetVulkanContext();
 		auto& settings = context.GetEngineContext().GetSettings();
+		m_RenderQueue->UpdateData(context);
 		if (vulkanContext.IsWindowResized())
 		{
 			vkDeviceWaitIdle(vulkanContext.GetDevice().GetNativeDevice());

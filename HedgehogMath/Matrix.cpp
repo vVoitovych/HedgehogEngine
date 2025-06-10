@@ -126,6 +126,21 @@ namespace HM
         return result;
     }
 
+    Vector4 Matrix4x4::operator*(const Vector4& other) const
+    {
+        Vector4 result;
+
+        for (size_t i = 0; i < 4; i++)
+        {
+            for (size_t j = 0; j < 4; j++)
+            {
+                result[i] = other[j] * (*this)[i][j];
+            }
+        }
+
+        return result;
+    }
+
     bool Matrix4x4::operator==(const Matrix4x4& other) const
     {
         return std::equal(std::begin(m_data), std::end(m_data), std::begin(other.m_data));
@@ -404,6 +419,20 @@ namespace HM
         result[2][2] = -zFar / (zFar - zNear);
         result[2][3] = -1.0f;
         result[3][2] = -(zFar * zNear) / (zFar - zNear);
+        return result;
+    }
+
+    Matrix4x4 Matrix4x4::Ortho(float left, float right, float top, float bottom, float zNear, float zFar)
+    {
+        Matrix4x4 result = Matrix4x4::GetIdentity();
+
+        result[0][0] = 2.0f / (right - left);
+        result[1][1] = 2.0f / (top - bottom);
+        result[2][2] = -2.0f / (zFar - zNear);
+        result[3][0] = -(right + left) / (right - left);
+        result[3][1] = -(top + bottom) / (top - bottom);
+        result[3][2] = -(zFar + zNear) / (zFar - zNear);
+
         return result;
     }
 

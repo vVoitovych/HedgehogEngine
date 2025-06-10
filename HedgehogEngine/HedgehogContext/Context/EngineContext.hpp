@@ -44,8 +44,11 @@ namespace Context
 		const Camera& GetCamera() const;
 		Scene::Scene& GetScene();
 		const Scene::Scene& GetScene() const;
-	private:
 
+	private:
+		void UpdateCamera(VulkanContext& vulkanContext, float dt);
+
+	private:
 		std::unique_ptr<Camera> m_Camera;
 		std::unique_ptr<Scene::Scene> m_Scene;
 
