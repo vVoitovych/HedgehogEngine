@@ -7,7 +7,6 @@
 #include "Scene/SceneSystems/LightSystem.hpp"
 #include "Scene/SceneSystems/RenderSystem.hpp"
 
-#include <optional>
 #include <vector>
 #include <string>
 
@@ -39,27 +38,23 @@ namespace Scene
 
 		ECS::Entity CreateGameObject(std::optional <ECS::Entity> parentEntity);
 		void CreateGameObject(ECS::Entity entity);
-		void DeleteGameObject();
 		void DeleteGameObject(ECS::Entity entity);
 		void DeleteGameObjectAndChildren(ECS::Entity entity);
 
-		void TryToAddMeshComponent();
 		void AddMeshComponent(ECS::Entity entity);
-		void RemoveMeshComponent();
+		void RemoveMeshComponent(ECS::Entity entity);
 		void ChangeMeshComponent(ECS::Entity entity, std::string meshPath);
 		bool HasMeshComponent(ECS::Entity entity) const;
 		void LoadMesh(ECS::Entity entity);
 
-		void TryToAddRenderComponent();
 		void AddRenderComponent(ECS::Entity entity);
-		void RemoveRenderComponent();
+		void RemoveRenderComponent(ECS::Entity entity);
 		bool HasRenderComponent(ECS::Entity entity) const;
 		void LoadMaterial(ECS::Entity entity);
 		void UpdateMaterialComponent(ECS::Entity entity);
 
-		void TryToAddLightComponent();
 		void AddLightComponent(ECS::Entity entity);
-		void RemoveLightComponent();
+		void RemoveLightComponent(ECS::Entity entity);
 		bool HasLightComponent(ECS::Entity entity) const;
 
 		size_t GetLightCount() const;
@@ -72,11 +67,6 @@ namespace Scene
 		MeshComponent& GetMeshComponent(ECS::Entity entity) const;
 		LightComponent& GetLightComponent(ECS::Entity entity) const;
 		RenderComponent& GetRenderComponent(ECS::Entity entity) const;
-
-		bool IsGameObjectSelected() const;
-		ECS::Entity GetSelectedGameObject() const;
-		void UnselectGameObject();
-		void SelectGameObject(ECS::Entity entity);
 
 		const std::vector<std::string>& GetMeshes() const;
 		const std::vector<std::string>& GetMaterials() const;
@@ -92,7 +82,6 @@ namespace Scene
 
 		ECS::Coordinator mSceneCoordinator;
 		ECS::Entity mRoot;
-		std::optional<ECS::Entity> mSelectedEntity;
 
 		// systems
 		std::shared_ptr<TransformSystem> mTransformSystem;

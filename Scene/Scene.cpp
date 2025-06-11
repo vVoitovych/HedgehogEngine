@@ -75,20 +75,7 @@ namespace Scene
 
 	void Scene::ResetScene()
 	{
-		while (true)
-		{
-			auto hierarchy = mSceneCoordinator.GetComponent<HierarchyComponent>(mRoot);
-			if (hierarchy.mChildren.size() > 0)
-			{
-				mSelectedEntity = hierarchy.mChildren[0];
-				DeleteGameObject();
-				UnselectGameObject();
-			}
-			else
-			{
-				return;
-			}
-		}
+		DeleteGameObjectAndChildren(mRoot);
 	}
 
 	void Scene::Load()
@@ -98,9 +85,7 @@ namespace Scene
 		{
 			return;
 		}
-		UnselectGameObject();
 		ResetScene();
-		mSceneCoordinator.DestroyEntity(mRoot);
 		SceneSerializer::DeserializeScene(*this, path);
 
 		mMeshSystem->Update(mSceneCoordinator);
@@ -158,32 +143,6 @@ namespace Scene
 
 	}
 
-	void Scene::DeleteGameObject()
-	{	
-		ECS::Entity entity;
-		if (IsGameObjectSelected())
-		{
-			entity = mSelectedEntity.value();
-			auto& hierarchy = mSceneCoordinator.GetComponent<HierarchyComponent>(entity);
-			auto& parentHierarchy = mSceneCoordinator.GetComponent<HierarchyComponent>(hierarchy.mParent);
-			auto it = std::find(parentHierarchy.mChildren.begin(), parentHierarchy.mChildren.end(), entity);
-			if (it != parentHierarchy.mChildren.end())
-			{
-				parentHierarchy.mChildren.erase(it);
-				for (size_t i = 0; i < hierarchy.mChildren.size(); ++i)
-				{
-					auto& childHierarchy = mSceneCoordinator.GetComponent<HierarchyComponent>(hierarchy.mChildren[i]);
-					childHierarchy.mParent = hierarchy.mParent;
-					parentHierarchy.mChildren.push_back(hierarchy.mChildren[i]);
-				}
-			}
-			mSceneCoordinator.DestroyEntity(entity);
-
-			UnselectGameObject();
-		}
-
-	}
-
 	void Scene::DeleteGameObject(ECS::Entity entity)
 	{
 		auto& hierarchy = mSceneCoordinator.GetComponent<HierarchyComponent>(entity);
@@ -212,11 +171,6 @@ namespace Scene
 		mSceneCoordinator.DestroyEntity(entity);
 	}
 
-	void Scene::TryToAddMeshComponent()
-	{
-		if (mSelectedEntity.has_value())
-			AddMeshComponent(mSelectedEntity.value());
-	}
 
 	void Scene::AddMeshComponent(ECS::Entity entity)
 	{
@@ -230,13 +184,9 @@ namespace Scene
 		}
 	}
 
-	void Scene::RemoveMeshComponent()
+	void Scene::RemoveMeshComponent(ECS::Entity entity)
 	{
-		if (IsGameObjectSelected() && HasMeshComponent(mSelectedEntity.value()))
-		{
-			ECS::Entity entity = mSelectedEntity.value();
-			mSceneCoordinator.RemoveComponent<MeshComponent>(entity);
-		}
+		mSceneCoordinator.RemoveComponent<MeshComponent>(entity);
 	}
 
 	void Scene::ChangeMeshComponent(ECS::Entity entity, std::string meshPath)
@@ -256,14 +206,6 @@ namespace Scene
 		mMeshSystem->LoadMesh(mSceneCoordinator, entity);
 	}
 
-	void Scene::TryToAddRenderComponent()
-	{
-		if (mSelectedEntity.has_value())
-		{
-			AddRenderComponent(mSelectedEntity.value());
-		}
-	}
-
 	void Scene::AddRenderComponent(ECS::Entity entity)
 	{
 		if (!HasRenderComponent(entity))
@@ -273,13 +215,9 @@ namespace Scene
 		}
 	}
 
-	void Scene::RemoveRenderComponent()
+	void Scene::RemoveRenderComponent(ECS::Entity entity)
 	{
-		if (IsGameObjectSelected() && HasRenderComponent(mSelectedEntity.value()))
-		{
-			ECS::Entity entity = mSelectedEntity.value();
-			mSceneCoordinator.RemoveComponent<RenderComponent>(entity);
-		}
+		mSceneCoordinator.RemoveComponent<RenderComponent>(entity);
 	}
 
 	bool Scene::HasRenderComponent(ECS::Entity entity) const
@@ -306,12 +244,6 @@ namespace Scene
 		mRenderSystem->Update(mSceneCoordinator, entity);
 	}
 
-	void Scene::TryToAddLightComponent()
-	{
-		if (mSelectedEntity.has_value())
-			AddLightComponent(mSelectedEntity.value());
-	}
-
 	void Scene::AddLightComponent(ECS::Entity entity)
 	{
 		if (!HasLightComponent(entity))
@@ -320,13 +252,9 @@ namespace Scene
 		}
 	}
 
-	void Scene::RemoveLightComponent()
+	void Scene::RemoveLightComponent(ECS::Entity entity)
 	{
-		if (IsGameObjectSelected() && HasLightComponent(mSelectedEntity.value()))
-		{
-			ECS::Entity entity = mSelectedEntity.value();
-			mSceneCoordinator.RemoveComponent<LightComponent>(entity);
-		}
+		mSceneCoordinator.RemoveComponent<LightComponent>(entity);
 	}
 
 	bool Scene::HasLightComponent(ECS::Entity entity) const
@@ -378,37 +306,6 @@ namespace Scene
 	RenderComponent& Scene::GetRenderComponent(ECS::Entity entity) const
 	{
 		return mSceneCoordinator.GetComponent<RenderComponent>(entity);
-	}
-
-	bool Scene::IsGameObjectSelected() const
-	{
-		return mSelectedEntity.has_value();
-	}
-
-	ECS::Entity Scene::GetSelectedGameObject() const
-	{
-		if (!mSelectedEntity.has_value())
-		{
-			throw std::runtime_error("No game object selected");
-		}
-		return mSelectedEntity.value();
-	}
-
-	void Scene::UnselectGameObject()
-	{
-		mSelectedEntity.reset();
-	}
-
-	void Scene::SelectGameObject(ECS::Entity entity)
-	{
-		if (entity != mRoot)
-		{
-			mSelectedEntity = entity;
-		}
-		else
-		{
-			UnselectGameObject();
-		}
 	}
 
 	const std::vector<std::string>& Scene::GetMeshes() const 

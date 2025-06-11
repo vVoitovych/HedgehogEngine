@@ -118,7 +118,7 @@ namespace Renderer
 
 					if (ImGui::Button("Remove component"))
 					{
-						scene.RemoveMeshComponent();
+						scene.RemoveMeshComponent(entity);
 					}
 
 				}
@@ -185,7 +185,7 @@ namespace Renderer
 					}
 					if (ImGui::Button("Remove component"))
 					{
-						scene.RemoveRenderComponent();
+						scene.RemoveRenderComponent(entity);
 					}
 					if (!materials.empty() && render.mMaterialIndex.has_value())
 					{
@@ -335,7 +335,7 @@ namespace Renderer
 
 					if (ImGui::Button("Remove component"))
 					{
-						scene.RemoveLightComponent();
+						scene.RemoveLightComponent(entity);
 					}
 				}
 			}
