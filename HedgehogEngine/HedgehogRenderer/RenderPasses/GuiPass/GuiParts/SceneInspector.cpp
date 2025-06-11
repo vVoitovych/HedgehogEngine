@@ -98,9 +98,10 @@ namespace Renderer
 			}
 			if (ImGui::Button("Delete object", sz))
 			{
-				if (m_SelectedObject.has_value())
+				if (m_SelectedObject.has_value() && m_SelectedObject.value() != scene.GetRoot())
 				{
 					scene.DeleteGameObject(m_SelectedObject.value());
+					m_SelectedObject.reset();
 				}
 			}
 
