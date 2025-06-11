@@ -9,7 +9,7 @@ namespace Scene
 	{
 	public:
 		std::string mMeshPath;
-		std::optional<size_t> mMeshIndex;
+		std::optional<uint64_t> mMeshIndex;
 
 		std::string mCachedMeshPath;
 

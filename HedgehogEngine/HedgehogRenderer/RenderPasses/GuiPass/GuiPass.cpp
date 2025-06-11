@@ -1,11 +1,6 @@
 #include "GuiPass.hpp"
 #include "GuiPassInfo.hpp"
 
-#include "GuiParts/Inspector.hpp"
-#include "GuiParts/SceneInspector.hpp"
-#include "GuiParts/MainMenu.hpp"
-#include "GuiParts/SettingsWindow.hpp"
-
 #include "HedgehogContext/Context/Context.hpp"
 #include "HedgehogContext/Context/VulkanContext.hpp"
 #include "HedgehogContext/Context/ThreadContext.hpp"
@@ -170,10 +165,10 @@ namespace Renderer
 
 	void GuiPass::DrawGui(Context::Context& context)
 	{
-		Inspector::Draw(context);
-		SceneInspector::Draw(context);
-		MainMenu::Draw(context);
-		SettingsWindow::Draw(context);
+		DrawInspector(context);
+		DrawSceneInspector(context);
+		DrawMainMenu(context);
+		DrawSettingsWindow(context);
 		// TODO remove
 		ImGui::ShowDemoWindow();
 	}

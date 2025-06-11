@@ -1,4 +1,4 @@
-#include "Inspector.hpp"
+#include "HedgehogRenderer/RenderPasses/GuiPass/GuiPass.hpp"
 
 #include "HedgehogContext/Context/Context.hpp"
 #include "HedgehogContext/Context/VulkanContext.hpp"
@@ -24,16 +24,18 @@
 #include "backends/imgui_impl_vulkan.h"
 #include "backends/imgui_impl_glfw.h"
 
+#include <stdexcept>
+
 namespace Renderer
 {
 
 
-	void DrawTitle(Context::Context& context)
+	void GuiPass::DrawTitle(Context::Context& context)
 	{
 		auto& scene = context.GetEngineContext().GetScene();
-		if (scene.IsGameObjectSelected())
+		if (m_SelectedObject.has_value())
 		{
-			auto entity = scene.GetSelectedGameObject();
+			auto entity = m_SelectedObject.value();
 			auto& hierarchy = scene.GetHierarchyComponent(entity);
 			auto name = hierarchy.mName;
 			if (ImGui::CollapsingHeader("Name", ImGuiTreeNodeFlags_DefaultOpen))
@@ -46,13 +48,13 @@ namespace Renderer
 		}
 	}
 
-	void DrawTransform(Context::Context& context)
+	void GuiPass::DrawTransform(Context::Context& context)
 	{
 		auto& scene = context.GetEngineContext().GetScene();
 
-		if (scene.IsGameObjectSelected())
+		if (m_SelectedObject.has_value())
 		{
-			auto entity = scene.GetSelectedGameObject();
+			auto entity = m_SelectedObject.value();
 
 			if (ImGui::CollapsingHeader("Transform Component", ImGuiTreeNodeFlags_DefaultOpen))
 			{
@@ -76,24 +78,24 @@ namespace Renderer
 		}
 	}
 
-	void DrawMesh(Context::Context& context)
+	void GuiPass::DrawMesh(Context::Context& context)
 	{
 		auto& scene = context.GetEngineContext().GetScene();
 
-		if (scene.IsGameObjectSelected())
+		if (m_SelectedObject.has_value())
 		{
-			auto entity = scene.GetSelectedGameObject();
+			auto entity = m_SelectedObject.value();
 			if (scene.HasMeshComponent(entity))
 			{
 				if (ImGui::CollapsingHeader("Mesh Component", ImGuiTreeNodeFlags_DefaultOpen))
 				{
 					auto& mesh = scene.GetMeshComponent(entity);
 					auto& meshes = scene.GetMeshes();
-					int selectedIndex = static_cast<int>(mesh.mMeshIndex.value());
+					uint64_t selectedIndex = mesh.mMeshIndex.value();
 
 					if (ImGui::BeginCombo("mesh", mesh.mMeshPath.c_str()))
 					{
-						for (int i = 0; i < meshes.size(); ++i)
+						for (uint64_t i = 0; i < meshes.size(); ++i)
 						{
 							const bool isSelected = (selectedIndex == i);
 							if (ImGui::Selectable(meshes[i].c_str(), isSelected))
@@ -124,13 +126,13 @@ namespace Renderer
 		}
 	}
 
-	void DrawRender(Context::Context& context)
+	void GuiPass::DrawRender(Context::Context& context)
 	{
 		auto& scene = context.GetEngineContext().GetScene();
 
-		if (scene.IsGameObjectSelected())
+		if (m_SelectedObject.has_value())
 		{
-			auto entity = scene.GetSelectedGameObject();
+			auto entity = m_SelectedObject.value();
 
 			if (scene.HasRenderComponent(entity))
 			{
@@ -138,9 +140,11 @@ namespace Renderer
 				{
 					auto& render = scene.GetRenderComponent(entity);
 
-					static bool enabled = render.mIsVisible;
-					ImGui::Checkbox("Visible", &enabled);
-					render.mIsVisible = enabled;
+					bool enabled = render.mIsVisible;
+					if (ImGui::Checkbox("Visible", &enabled))
+					{
+						render.mIsVisible = enabled;
+					}
 
 					auto& materials = scene.GetMaterials();
 
@@ -148,9 +152,9 @@ namespace Renderer
 					{
 						if (ImGui::BeginCombo("material", render.mMaterial.c_str()))
 						{
-							int selectedIndex = static_cast<int>(render.mMaterialIndex.has_value() ? render.mMaterialIndex.value() : 0);
+							uint64_t selectedIndex = render.mMaterialIndex.has_value() ? render.mMaterialIndex.value() : 0;
 
-							for (int i = 0; i < materials.size(); ++i)
+							for (uint64_t i = 0; i < materials.size(); ++i)
 							{
 								const bool isSelected = (selectedIndex == i);
 								if (ImGui::Selectable(materials[i].c_str(), isSelected))
@@ -226,7 +230,7 @@ namespace Renderer
 
 						if (materialData.type == Context::MaterialType::Transparent)
 						{
-							static float materialTransparency = materialData.transparency;
+							float materialTransparency = materialData.transparency;
 							ImGui::SliderFloat("slider float", &materialTransparency, 0.0f, 1.0f, "ratio = %.3f");
 							if (materialData.transparency != materialTransparency)
 							{
@@ -240,13 +244,36 @@ namespace Renderer
 		}
 	}
 
-	void DrawLight(Context::Context& context)
+	Scene::LightType LightIndexToLightType(int index)
+	{
+		if (index == 0) return Scene::LightType::DirectionLight;
+		if (index == 1) return Scene::LightType::PointLight;
+		if (index == 2) return Scene::LightType::SpotLight;
+		throw std::runtime_error("Wrong light index");
+	}
+
+	int LightTypeToLightIndex(Scene::LightType type)
+	{
+		switch (type)
+		{
+		case Scene::LightType::DirectionLight: return 0;
+			break;
+		case Scene::LightType::PointLight: return 1;
+			break;
+		case Scene::LightType::SpotLight: return 2;
+			break;
+		default: throw std::runtime_error("Wrong light type");
+			break;
+		}
+	}
+
+	void GuiPass::DrawLight(Context::Context& context)
 	{
 		auto& scene = context.GetEngineContext().GetScene();
 
-		if (scene.IsGameObjectSelected())
+		if (m_SelectedObject.has_value())
 		{
-			auto entity = scene.GetSelectedGameObject();
+			auto entity = m_SelectedObject.value();
 
 			if (scene.HasLightComponent(entity))
 			{
@@ -254,33 +281,55 @@ namespace Renderer
 				{
 					auto& light = scene.GetLightComponent(entity);
 
-					static bool enabled = light.mEnable;
-					ImGui::Checkbox("Enabled", &enabled);
-					light.mEnable = enabled;
+					bool enabled = light.m_Enable;
+					if (ImGui::Checkbox("Enabled", &enabled))
+					{
+						light.m_Enable = enabled;
+					}
 
 					const char* types[] = { "Direction Light", "Point Light", "Spot Light" };
-					static int lightType = static_cast<int>(light.mLightType);
-					ImGui::Combo("Type", &lightType, types, IM_ARRAYSIZE(types));
-					light.mLightType = static_cast<Scene::LightType>(lightType);
+					int lightType = LightTypeToLightIndex(light.m_LightType);
+					if (ImGui::Combo("Type", &lightType, types, IM_ARRAYSIZE(types)))
+					{
+						light.m_LightType = LightIndexToLightType(lightType);
+					}
 
-					static float color[3] = { light.mColor.r(), light.mColor.g(), light.mColor.b() };
-					ImGui::ColorEdit3("Color", color);
-					light.mColor = { color[0], color[1], color[2] };
+					float color[3] = { light.m_Color.r(), light.m_Color.g(), light.m_Color.b() };
+					if (ImGui::ColorEdit3("Color", color))
+					{
+						light.m_Color = { color[0], color[1], color[2] };
+					}
 
-					static float intencity = light.mIntencity;
-					ImGui::SliderFloat("Intencity", &intencity, 0.0f, 3.0f, "ratio = %.03f");
-					light.mIntencity = intencity;
+					float intencity = light.m_Intencity;
+					if (ImGui::SliderFloat("Intencity", &intencity, 0.0f, 3.0f, "ratio = %.03f"))
+					{
+						light.m_Intencity = intencity;
+					}
 
 					if (lightType > 0)
 					{
-						static float radius = light.mRadius;
-						ImGui::SliderFloat("Radius", &radius, 0.0f, 100.0f, "ratio = %.3f");
-						light.mRadius = radius;
+						float radius = light.m_Radius;
+						if (ImGui::SliderFloat("Radius", &radius, 0.0f, 100.0f, "ratio = %.3f"))
+						{
+							light.m_Radius = radius;
+						}
+
 						if (lightType > 1)
 						{
-							static float coneAngle = light.mConeAngle;
-							ImGui::SliderFloat("Cone angle", &coneAngle, 0.1f, 179.9f, "ratio = %.3f");
-							light.mConeAngle = coneAngle;
+							float coneAngle = light.m_ConeAngle;
+							if (ImGui::SliderFloat("Cone angle", &coneAngle, 0.1f, 179.9f, "ratio = %.3f"))
+							{
+								light.m_ConeAngle = coneAngle;
+							}
+						}
+					}
+
+					if (lightType == 0)
+					{
+						bool castShadows = light.m_CastShadows;
+						if (ImGui::Checkbox("Cast shadows", &castShadows))
+						{
+							scene.UpdateShadowCastin(entity, castShadows);
 						}
 					}
 
@@ -293,7 +342,7 @@ namespace Renderer
 		}
 	}
 
-	void Inspector::Draw(Context::Context& context)
+	void GuiPass::DrawInspector(Context::Context& context)
 	{
 		float sizeX, sizeY, paddingY;
 

@@ -36,11 +36,12 @@ namespace Scene
 		void RenameScene();
 
 		std::string GetSceneName() const;
-		void SetSceneName(std::string& str);
 
-		ECS::Entity CreateGameObject();
+		ECS::Entity CreateGameObject(std::optional <ECS::Entity> parentEntity);
 		void CreateGameObject(ECS::Entity entity);
 		void DeleteGameObject();
+		void DeleteGameObject(ECS::Entity entity);
+		void DeleteGameObjectAndChildren(ECS::Entity entity);
 
 		void TryToAddMeshComponent();
 		void AddMeshComponent(ECS::Entity entity);
@@ -63,6 +64,7 @@ namespace Scene
 
 		size_t GetLightCount() const;
 		const LightComponent& GetLightComponentByIndex(size_t index) const;
+		void UpdateShadowCastin(ECS::Entity entity, bool isCast);
 
 		ECS::Entity GetRoot() const;
 		HierarchyComponent& GetHierarchyComponent(ECS::Entity entity) const;

@@ -72,25 +72,25 @@ namespace Context
 		return mTransparentList;
 	}
 
-	void DrawListContainer::AddObjectToOpaqueList(DrawObject object, size_t materialIndex)
+	void DrawListContainer::AddObjectToOpaqueList(DrawObject object, uint64_t materialIndex)
 	{
 		auto& drawList = mOpaqueList;
 		AddObjectToList(drawList, object, materialIndex);
 	}
 
-	void DrawListContainer::AddObjectToCutoffList(DrawObject object, size_t materialIndex)
+	void DrawListContainer::AddObjectToCutoffList(DrawObject object, uint64_t materialIndex)
 	{
 		auto& drawList = mCutoffList;
 		AddObjectToList(drawList, object, materialIndex);
 	}
 
-	void DrawListContainer::AddObjectToTransparentList(DrawObject object, size_t materialIndex)
+	void DrawListContainer::AddObjectToTransparentList(DrawObject object, uint64_t materialIndex)
 	{
 		auto& drawList = mTransparentList;
 		AddObjectToList(drawList, object, materialIndex);
 	}
 
-	void DrawListContainer::AddObjectToList(DrawList& drawList, DrawObject object, size_t materialIndex)
+	void DrawListContainer::AddObjectToList(DrawList& drawList, DrawObject object, uint64_t materialIndex)
 	{
 		auto it = std::find_if(drawList.begin(), drawList.end(), [materialIndex](DrawNode  node) { return node.materialIndex == materialIndex; });
 		if (it == drawList.end())

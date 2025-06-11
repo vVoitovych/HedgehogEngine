@@ -20,6 +20,7 @@ namespace Scene
 	Scene::Scene()
 	{
 		mSceneName = "Default";
+		mRoot = 0;
 	}
 
 	Scene::~Scene()
@@ -60,11 +61,8 @@ namespace Scene
 		signature.set(mSceneCoordinator.GetComponentType<RenderComponent>());
 		mSceneCoordinator.SetSystemSignature<RenderSystem>(signature);
 
-		// TODO: remove all bellow and add loating instead
 		CreateSceneRoot();
-		mMeshSystem->AddMeshPath("Models\\viking_room.obj");
-		mMeshSystem->AddMeshPath("Models\\Default\\cube.obj");
-		mMeshSystem->AddMeshPath("Models\\Default\\sphere.obj");
+
 
 	}
 
@@ -132,29 +130,32 @@ namespace Scene
 		return mSceneName;
 	}
 
-	void Scene::SetSceneName(std::string& str)
+	ECS::Entity Scene::CreateGameObject(std::optional<ECS::Entity> parentEntity)
 	{
-		mSceneName = str;
-	}
-
-	ECS::Entity Scene::CreateGameObject()
-	{
-		ECS::Entity parentEntity;
-		if (IsGameObjectSelected())
+		ECS::Entity realParentEntity;
+		if (parentEntity.has_value())
 		{
-			parentEntity = mSelectedEntity.value();
+			realParentEntity = parentEntity.value();
 		}
 		else
 		{
-			parentEntity = mRoot;
+			realParentEntity = mRoot;
 		}
-		auto& rootHierarchy = mSceneCoordinator.GetComponent<HierarchyComponent>(parentEntity);
+		auto& rootHierarchy = mSceneCoordinator.GetComponent<HierarchyComponent>(realParentEntity);
 		ECS::Entity entity = mSceneCoordinator.CreateEntity();
 		mSceneCoordinator.AddComponent(entity, TransformComponent{});
-		mSceneCoordinator.AddComponent(entity, HierarchyComponent{ GetNewGameObjectName(), parentEntity, {} });
+		mSceneCoordinator.AddComponent(entity, HierarchyComponent{ GetNewGameObjectName(), realParentEntity, {} });
 		rootHierarchy.mChildren.push_back(entity);
 
 		return entity;
+	}
+
+	void Scene::CreateGameObject(ECS::Entity entity)
+	{
+		mSceneCoordinator.CreateEntity(entity);
+		mSceneCoordinator.AddComponent(entity, TransformComponent{});
+		mSceneCoordinator.AddComponent(entity, HierarchyComponent{});
+
 	}
 
 	void Scene::DeleteGameObject()
@@ -181,6 +182,34 @@ namespace Scene
 			UnselectGameObject();
 		}
 
+	}
+
+	void Scene::DeleteGameObject(ECS::Entity entity)
+	{
+		auto& hierarchy = mSceneCoordinator.GetComponent<HierarchyComponent>(entity);
+		auto& parentHierarchy = mSceneCoordinator.GetComponent<HierarchyComponent>(hierarchy.mParent);
+		auto it = std::find(parentHierarchy.mChildren.begin(), parentHierarchy.mChildren.end(), entity);
+		if (it != parentHierarchy.mChildren.end())
+		{
+			parentHierarchy.mChildren.erase(it);
+			for (size_t i = 0; i < hierarchy.mChildren.size(); ++i)
+			{
+				auto& childHierarchy = mSceneCoordinator.GetComponent<HierarchyComponent>(hierarchy.mChildren[i]);
+				childHierarchy.mParent = hierarchy.mParent;
+				parentHierarchy.mChildren.push_back(hierarchy.mChildren[i]);
+			}
+		}
+		mSceneCoordinator.DestroyEntity(entity);
+	}
+
+	void Scene::DeleteGameObjectAndChildren(ECS::Entity entity)
+	{
+		auto& hierarchy = mSceneCoordinator.GetComponent<HierarchyComponent>(entity);
+		for (size_t i = 0; i < hierarchy.mChildren.size(); ++i)
+		{
+			DeleteGameObjectAndChildren(hierarchy.mChildren[i]);
+		}		
+		mSceneCoordinator.DestroyEntity(entity);
 	}
 
 	void Scene::TryToAddMeshComponent()
@@ -315,6 +344,11 @@ namespace Scene
 		return mLightSystem->GetLightComponentByIndex(mSceneCoordinator, index);
 	}
 
+	void Scene::UpdateShadowCastin(ECS::Entity entity, bool isCast)
+	{
+		mLightSystem->SetShadowCasting(mSceneCoordinator, entity, isCast);
+	}
+
 
 	ECS::Entity Scene::GetRoot() const
 	{
@@ -416,13 +450,6 @@ namespace Scene
 		return result;
 	}
 
-	void Scene::CreateGameObject(ECS::Entity entity)
-	{
-		mSceneCoordinator.CreateEntity(entity);
-		mSceneCoordinator.AddComponent(entity, TransformComponent{});
-		mSceneCoordinator.AddComponent(entity, HierarchyComponent{});
-
-	}
 
 
 }

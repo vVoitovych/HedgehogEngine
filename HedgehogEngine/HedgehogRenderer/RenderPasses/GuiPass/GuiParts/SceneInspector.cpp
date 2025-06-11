@@ -1,4 +1,4 @@
-#include "SceneInspector.hpp"
+#include "HedgehogRenderer/RenderPasses/GuiPass/GuiPass.hpp"
 
 #include "HedgehogContext/Context/Context.hpp"
 #include "HedgehogContext/Context/EngineContext.hpp"
@@ -12,13 +12,13 @@
 
 namespace Renderer
 {
-	void DrawHierarchyNode(Context::Context& context, ECS::Entity entity, int& index)
+	void GuiPass::DrawHierarchyNode(Context::Context& context, ECS::Entity entity, int& index)
 	{
 		auto& scene = context.GetEngineContext().GetScene();
 		auto& component = scene.GetHierarchyComponent(entity);
 		ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen;
 		bool isSelected = false;
-		if (scene.IsGameObjectSelected() && entity == scene.GetSelectedGameObject())
+		if (m_SelectedObject.has_value() && entity == m_SelectedObject.value())
 		{
 			isSelected = true;
 		}
@@ -28,9 +28,19 @@ namespace Renderer
 		if (component.mChildren.size() > 0)
 		{
 			bool node_open = ImGui::TreeNodeEx((void*)(intptr_t)index, nodeFlags, component.mName.c_str());
-			if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
+			if (ImGui::IsItemClicked())
 			{
-				scene.SelectGameObject(entity);
+				if (m_SelectedObject.has_value())
+				{
+					if (m_SelectedObject.value() == entity)
+						m_SelectedObject.reset();
+					else
+						m_SelectedObject = entity;
+				}
+				else
+				{
+					m_SelectedObject = entity;
+				}
 			}
 			++index;
 			if (node_open)
@@ -48,13 +58,23 @@ namespace Renderer
 			ImGui::TreeNodeEx((void*)(intptr_t)index, nodeFlags, component.mName.c_str());
 			if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
 			{
-				scene.SelectGameObject(entity);
+				if (m_SelectedObject.has_value())
+				{
+					if (m_SelectedObject.value() == entity)
+						m_SelectedObject.reset();
+					else
+						m_SelectedObject = entity;
+				}
+				else
+				{
+					m_SelectedObject = entity;
+				}
 			}
 			++index;
 		}
 	}
 
-	void SceneInspector::Draw(Context::Context& context)
+	void GuiPass::DrawSceneInspector(Context::Context& context)
 	{
 		float sizeX, sizeY, paddingY;
 
@@ -74,11 +94,14 @@ namespace Renderer
 
 			if (ImGui::Button("Create object", sz))
 			{
-				scene.CreateGameObject();
+				scene.CreateGameObject(m_SelectedObject);
 			}
 			if (ImGui::Button("Delete object", sz))
 			{
-				scene.DeleteGameObject();
+				if (m_SelectedObject.has_value())
+				{
+					scene.DeleteGameObject(m_SelectedObject.value());
+				}
 			}
 
 			DrawHierarchyNode(context, scene.GetRoot(), index);

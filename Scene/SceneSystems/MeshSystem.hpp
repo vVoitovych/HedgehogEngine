@@ -11,6 +11,7 @@ namespace Scene
 	class MeshSystem : public ECS::System
 	{
 	public:
+		MeshSystem();
 		void Update(ECS::Coordinator& coordinator, ECS::Entity entity);
 		void Update(ECS::Coordinator& coordinator);
 

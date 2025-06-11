@@ -15,13 +15,13 @@ namespace Context
 
 	struct DrawObject
 	{
-		size_t meshIndex;
+		uint64_t meshIndex;
 		HM::Matrix4x4 objMatrix;
 	};
 
 	struct DrawNode
 	{
-		size_t materialIndex;
+		uint64_t materialIndex;
 		std::vector<DrawObject> objects;
 	};
 
@@ -36,11 +36,11 @@ namespace Context
 		const DrawList& GetCutoffList() const;
 		const DrawList& GetTransparentList() const;
 	private:
-		void AddObjectToOpaqueList(DrawObject object, size_t materialIndex);
-		void AddObjectToCutoffList(DrawObject object, size_t materialIndex);
-		void AddObjectToTransparentList(DrawObject object, size_t materialIndex);
+		void AddObjectToOpaqueList(DrawObject object, uint64_t materialIndex);
+		void AddObjectToCutoffList(DrawObject object, uint64_t materialIndex);
+		void AddObjectToTransparentList(DrawObject object, uint64_t materialIndex);
 
-		void AddObjectToList(DrawList& drawList, DrawObject object, size_t materialIndex);
+		void AddObjectToList(DrawList& drawList, DrawObject object, uint64_t materialIndex);
 
 	private:
 		DrawList mOpaqueList;

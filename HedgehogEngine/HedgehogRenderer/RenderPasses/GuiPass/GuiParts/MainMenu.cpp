@@ -1,5 +1,4 @@
-#include "MainMenu.hpp"
-#include "SettingsWindow.hpp"
+#include "HedgehogRenderer/RenderPasses/GuiPass/GuiPass.hpp"
 
 #include "HedgehogContext/Context/Context.hpp"
 #include "HedgehogContext/Context/EngineContext.hpp"
@@ -14,7 +13,7 @@
 
 namespace Renderer
 {
-	void MainMenu::Draw(Context::Context& context)
+	void GuiPass::DrawMainMenu(Context::Context& context)
 	{
 		auto& scene = context.GetEngineContext().GetScene();
 		if (ImGui::BeginMainMenuBar())
@@ -33,14 +32,26 @@ namespace Renderer
 
 			if (ImGui::BeginMenu("Create"))
 			{
-				if (ImGui::MenuItem("Create game object")) { scene.CreateGameObject(); }
+				if (ImGui::MenuItem("Create game object")) { scene.CreateGameObject(m_SelectedObject); }
 
 				ImGui::Separator();
 				if (ImGui::BeginMenu("Add component"))
 				{
-					if (ImGui::MenuItem("Mesh component")) { scene.TryToAddMeshComponent(); }
-					if (ImGui::MenuItem("Render component")) { scene.TryToAddRenderComponent(); }
-					if (ImGui::MenuItem("Light component")) { scene.TryToAddLightComponent(); }
+					if (ImGui::MenuItem("Mesh component")) 
+					{
+						if (m_SelectedObject.has_value())
+							scene.AddMeshComponent(m_SelectedObject.value());
+					}
+					if (ImGui::MenuItem("Render component")) 
+					{ 
+						if (m_SelectedObject.has_value())
+						scene.AddRenderComponent(m_SelectedObject.value()); 
+					}
+					if (ImGui::MenuItem("Light component")) 
+					{ 
+						if (m_SelectedObject.has_value())
+						scene.AddLightComponent(m_SelectedObject.value()); 
+					}
 					if (ImGui::MenuItem("Script component")) {}
 					ImGui::EndMenu();
 				}
@@ -52,7 +63,7 @@ namespace Renderer
 
 			if (ImGui::BeginMenu("Settings"))
 			{
-				if (ImGui::MenuItem("Settings")) { SettingsWindow::ShowMaterialWindow(); }
+				if (ImGui::MenuItem("Settings")) { ShowMaterialWindow(); }
 
 				ImGui::EndMenu();
 			}

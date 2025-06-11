@@ -9,10 +9,10 @@ namespace Scene
 		for (auto const& entity : entities)
 		{
 			auto& light = coordinator.GetComponent<LightComponent>(entity);
-			mLightComponents[index++] = light;
+			m_LightComponents[index++] = light;
 
 		}
-		return mLightComponents;
+		return m_LightComponents;
 	}
 
 	void LightSystem::Update(ECS::Coordinator& coordinator)
@@ -22,9 +22,9 @@ namespace Scene
 			auto& light = coordinator.GetComponent<LightComponent>(entity);
 			auto& transform = coordinator.GetComponent<TransformComponent>(entity);
 			auto& transformMatrix = transform.mObjMatrix;
-			light.mPosition = transform.mPososition;
+			light.m_Position = transform.mPososition;
 			HM::Vector3 dir = { transformMatrix[0][0], transformMatrix[0][1], transformMatrix[0][2] };
-			light.mDirection = dir;
+			light.m_Direction = dir;
 		}
 	}
 
@@ -37,6 +37,30 @@ namespace Scene
 	{
 		auto& entity = entities[index];
 		return coordinator.GetComponent<LightComponent>(entity);
+	}
+
+	void LightSystem::SetShadowCasting(const ECS::Coordinator& coordinator, ECS::Entity inEntity, bool isCast)
+	{
+		m_ShadowDirection.reset();
+		for (auto const& entity : entities)
+		{
+			auto& light = coordinator.GetComponent<LightComponent>(entity);
+			light.m_CastShadows = false;
+			if (entity == inEntity)
+			{
+				if (isCast)
+				{
+					light.m_CastShadows = isCast;
+					m_ShadowDirection = light.m_Direction;
+				}
+			}
+
+		}
+	}
+
+	const std::optional< HM::Vector3>& LightSystem::GetShadowDir() const
+	{
+		return m_ShadowDirection;
 	}
 
 }
