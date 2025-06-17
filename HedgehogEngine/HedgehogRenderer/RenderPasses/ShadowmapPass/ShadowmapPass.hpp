@@ -53,15 +53,26 @@ namespace Renderer
         void CreatePipeline(const Wrappers::Device& device);
 
         void UpdateShadowmapMatricies(const Context::Context& context);
+        void UpdateViewports(const Context::Context& context);
 
     private:
-        struct FrameUniform
+        struct ShadowCascadeUniform
         {
             alignas(16) HM::Matrix4x4 shadowMatrix;
         };
 
     private:
-        std::array<HM::Matrix4x4, 4> m_ShadowmapMatricies;
+        struct ShadowViewport
+        {
+            float x;
+            float y;
+            float width;
+            float height;
+        };
+
+        static constexpr size_t MaxShadowCascades = 4;
+        std::array<HM::Matrix4x4, MaxShadowCascades> m_ShadowmapMatricies;
+        std::vector<std::vector<ShadowViewport>> m_ShadowViewports;
 
         std::unique_ptr<Wrappers::RenderPass> m_RenderPass;
         std::unique_ptr<Wrappers::FrameBuffer> m_FrameBuffer;
@@ -70,8 +81,9 @@ namespace Renderer
         std::unique_ptr<Wrappers::DescriptorSetLayout> m_ShadowmapLayout;
         std::unique_ptr<Wrappers::DescriptorAllocator> m_ShadowmapAllocator;
 
-        std::vector<Wrappers::UBO<FrameUniform>> m_ShadowmapUniforms;
-        std::vector<Wrappers::DescriptorSet> m_ShadowmapSets;
+        std::vector< std::vector<Wrappers::UBO<ShadowCascadeUniform> > > m_ShadowmapUniforms;
+        std::vector< std::vector<Wrappers::DescriptorSet> > m_ShadowmapSets;
+
 	};
 
 }

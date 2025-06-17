@@ -7,7 +7,6 @@
 #include "HedgehogContext/Context/EngineContext.hpp"
 #include "HedgehogContext/Context/ThreadContext.hpp"
 #include "HedgehogContext/Context/VulkanContext.hpp"
-#include "HedgehogContext/Context/FrameContext.hpp"
 
 #include "HedgehogCommon/Camera/Camera.hpp"
 
@@ -45,55 +44,54 @@ namespace Renderer
 {
 	void ShadowmapPass::Render(Context::Context& context, const ResourceManager& resourceManager)
 	{
-		auto& frameContext = context.GetFrameContext();
 		auto& threadContext = context.GetThreadContext();
-		auto& vulkanContext = context.GetVulkanContext();
 		auto& engineContext = context.GetEngineContext();
+		auto& settings = context.GetEngineContext().GetSettings().GetShadowmapSettings();
+		uint32_t frameIndex = threadContext.GetFrameIndex();
 
-		auto& materialContainer = engineContext.GetMaterialContainer();
 		auto& drawListContainer = engineContext.GetDrawListContainer();
-
 		auto& commandBuffer = threadContext.GetCommandBuffer();
-		auto extend = vulkanContext.GetSwapChain().GetSwapChainExtent();
-		auto backBufferIndex = frameContext.GetBackBufferIndex();
 
-		std::array<VkClearValue, 2> clearValues{};
-		clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
-		clearValues[1].depthStencil = { 1.0f, 0 };
+		std::array<VkClearValue, 1> clearValues{};
+		clearValues[0].depthStencil = { 1.0f, 0 };
 
 		VkRenderPassBeginInfo renderPassInfo{};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 		renderPassInfo.renderPass = m_RenderPass->GetNativeRenderPass();
 		renderPassInfo.framebuffer = m_FrameBuffer->GetNativeFrameBuffer();
 		renderPassInfo.renderArea.offset = { 0, 0 };
+		VkExtent2D extend = {settings->GetShadowmapSize(), settings->GetShadowmapSize()};
 		renderPassInfo.renderArea.extent = extend;
-		VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
 		renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
 		renderPassInfo.pClearValues = clearValues.data();
 				
 		commandBuffer.BeginRenderPass(renderPassInfo);
 		commandBuffer.BindPipeline(*m_Pipeline, VK_PIPELINE_BIND_POINT_GRAPHICS);
-		commandBuffer.SetViewport(0.0f, 0.0f, (float)extend.width, (float)extend.height, 0.0f, 1.0f);
-		commandBuffer.SetScissor({ 0, 0 }, extend);
+		auto cascadesCount = settings->GetCascadesCount();
 
-		auto& meshContainer = engineContext.GetMeshContainer();
-		VkDeviceSize offsets[] = { 0, 0, 0 };
-		VkBuffer buffers[] = { meshContainer.GetPositionsBuffer(), meshContainer.GetTexCoordsBuffer(), meshContainer.GetNormalsBuffer() };
+		for (size_t i = 0; i < cascadesCount; ++i)
+		{
+			auto& view = m_ShadowViewports[cascadesCount - 1][i];
+			commandBuffer.SetViewport(view.x, view.y, view.width, view.height, 0.0f, 1.0f);
+			commandBuffer.SetScissor({ 0, 0 }, extend);
 
-		commandBuffer.BindVertexBuffers(0, 3, buffers, offsets);
-		commandBuffer.BindIndexBuffer(meshContainer.GetIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+			auto& meshContainer = engineContext.GetMeshContainer();
+			VkDeviceSize offsets[] = { 0, 0, 0 };
+			VkBuffer buffers[] = { meshContainer.GetPositionsBuffer(), meshContainer.GetTexCoordsBuffer(), meshContainer.GetNormalsBuffer() };
 
-		commandBuffer.BindDescriptorSers(VK_PIPELINE_BIND_POINT_GRAPHICS, *m_Pipeline, 0, 1, threadContext.GetDescriptorSet().GetNativeSet(), 0, nullptr);
-		auto& opaqueDrawList = drawListContainer.GetOpaqueList();
-		for(auto& drawNode : opaqueDrawList)
-		{ 
-			auto& descriptorSet = materialContainer.GetDescriptorSet(drawNode.materialIndex);
-			commandBuffer.BindDescriptorSers(VK_PIPELINE_BIND_POINT_GRAPHICS, *m_Pipeline, 1, 1, descriptorSet.GetNativeSet(), 0, nullptr);
-			for (auto& object : drawNode.objects)
+			commandBuffer.BindVertexBuffers(0, 3, buffers, offsets);
+			commandBuffer.BindIndexBuffer(meshContainer.GetIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+
+			commandBuffer.BindDescriptorSers(VK_PIPELINE_BIND_POINT_GRAPHICS, *m_Pipeline, 0, 1, m_ShadowmapSets[frameIndex][i].GetNativeSet(), 0, nullptr);
+			auto& opaqueDrawList = drawListContainer.GetOpaqueList();
+			for (auto& drawNode : opaqueDrawList)
 			{
-				commandBuffer.PushConstants(m_Pipeline->GetNativePipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ShadowmapPassPushConstants), &object.objMatrix);
-				auto& mesh = meshContainer.GetMesh(object.meshIndex);
-				commandBuffer.DrawIndexed(mesh.GetIndexCount(), 1, mesh.GetFirstIndex(), mesh.GetVertexOffset(), 0);
+				for (auto& object : drawNode.objects)
+				{
+					commandBuffer.PushConstants(m_Pipeline->GetNativePipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(ShadowmapPassPushConstants), &object.objMatrix);
+					auto& mesh = meshContainer.GetMesh(object.meshIndex);
+					commandBuffer.DrawIndexed(mesh.GetIndexCount(), 1, mesh.GetFirstIndex(), mesh.GetVertexOffset(), 0);
+				}
 			}
 		}
 		commandBuffer.EndRenderPass();
@@ -112,6 +110,7 @@ namespace Renderer
 		CreateSets(device);
 		CreatePipeline(device);
 		UpdateFrameBuffer(context, resourceManager);
+		UpdateViewports(context);
 
 	}
 
@@ -127,15 +126,17 @@ namespace Renderer
 		m_FrameBuffer->Cleanup(vulkanContext.GetDevice());
 		m_RenderPass->Cleanup(vulkanContext.GetDevice());
 
-		for (auto& uniform : m_ShadowmapUniforms)
+		for (auto& uniforms : m_ShadowmapUniforms)
 		{
-			uniform.Cleanup(vulkanContext.GetDevice());
+			for (auto& uniform : uniforms)
+				uniform.Cleanup(vulkanContext.GetDevice());
 		}
 		m_ShadowmapUniforms.clear();
 
-		for (auto& descSet : m_ShadowmapSets)
+		for (auto& descSets : m_ShadowmapSets)
 		{
-			descSet.Cleanup(vulkanContext.GetDevice(), *m_ShadowmapAllocator);
+			for (auto& descSet :descSets)
+				descSet.Cleanup(vulkanContext.GetDevice(), *m_ShadowmapAllocator);
 		}
 		m_ShadowmapSets.clear();
 
@@ -146,7 +147,17 @@ namespace Renderer
 
 	void ShadowmapPass::UpdateData(const Context::Context& context)
 	{
-		// TODO calculate shadowmap matricies
+		UpdateShadowmapMatricies(context);
+
+		auto& settings = context.GetEngineContext().GetSettings().GetShadowmapSettings();
+		auto index = context.GetThreadContext().GetFrameIndex();
+
+		for (size_t i = 0; i < settings->GetCascadesCount(); ++i)
+		{
+			ShadowCascadeUniform ubo;
+			ubo.shadowMatrix = m_ShadowmapMatricies[i];
+			m_ShadowmapUniforms[index][i].UpdateUniformBuffer(ubo);
+		}
 	}
 
 	void ShadowmapPass::UpdateResources(const Context::Context& context, const ResourceManager& resourceManager)
@@ -156,6 +167,7 @@ namespace Renderer
 			return;
 
 		UpdateFrameBuffer(context, resourceManager);
+		UpdateViewports(context);
 	}
 
 	void ShadowmapPass::UpdateFrameBuffer(const Context::Context& context, const ResourceManager& resourceManager)
@@ -190,7 +202,7 @@ namespace Renderer
 			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 }
 		};
 
-		m_ShadowmapAllocator = std::make_unique<Wrappers::DescriptorAllocator>(device, MAX_FRAMES_IN_FLIGHT, sizes);
+		m_ShadowmapAllocator = std::make_unique<Wrappers::DescriptorAllocator>(device, MAX_FRAMES_IN_FLIGHT * MaxShadowCascades, sizes);
 	}
 
 	void ShadowmapPass::CreateLayout(const Wrappers::Device& device)
@@ -203,37 +215,43 @@ namespace Renderer
 	void ShadowmapPass::CreateUniforms(const Wrappers::Device& device)
 	{
 		m_ShadowmapUniforms.clear();
+		m_ShadowmapUniforms.resize(MAX_FRAMES_IN_FLIGHT);
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
-			Wrappers::UBO<FrameUniform> frameUniformBuffer(device);
-			m_ShadowmapUniforms.push_back(std::move(frameUniformBuffer));
+			for (size_t j = 0; j < MaxShadowCascades; ++j)
+			{
+				Wrappers::UBO<ShadowCascadeUniform> frameUniformBuffer(device);
+				m_ShadowmapUniforms[i].push_back(std::move(frameUniformBuffer));
+			}
 		}
 	}
 
 	void ShadowmapPass::CreateSets(const Wrappers::Device& device)
 	{
 		m_ShadowmapSets.clear();
+		m_ShadowmapSets.resize(MAX_FRAMES_IN_FLIGHT);
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
-		{
-			VkDescriptorBufferInfo bufferInfo{};
-			bufferInfo.buffer = m_ShadowmapUniforms[i].GetNativeBuffer();
-			bufferInfo.offset = 0;
-			bufferInfo.range = m_ShadowmapUniforms[i].GetBufferSize();
+			for (size_t j = 0; j < MaxShadowCascades; ++j)
+			{
+				VkDescriptorBufferInfo bufferInfo{};
+				bufferInfo.buffer = m_ShadowmapUniforms[i][j].GetNativeBuffer();
+				bufferInfo.offset = 0;
+				bufferInfo.range = m_ShadowmapUniforms[i][j].GetBufferSize();
 
-			Wrappers::DescriptorWrites write{};
-			write.dstBinding = 0;
-			write.dstArrayElement = 0;
-			write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			write.descriptorCount = 1;
-			write.pBufferInfo = &bufferInfo;
-			write.pNext = nullptr;
-			std::vector<Wrappers::DescriptorWrites> writes;
-			writes.push_back(write);
+				Wrappers::DescriptorWrites write{};
+				write.dstBinding = 0;
+				write.dstArrayElement = 0;
+				write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+				write.descriptorCount = 1;
+				write.pBufferInfo = &bufferInfo;
+				write.pNext = nullptr;
+				std::vector<Wrappers::DescriptorWrites> writes;
+				writes.push_back(write);
 
-			Wrappers::DescriptorSet descriptorSet(device, *m_ShadowmapAllocator, *m_ShadowmapLayout);
-			descriptorSet.Update(device, writes);
-			m_ShadowmapSets.push_back(std::move(descriptorSet));
-		}
+				Wrappers::DescriptorSet descriptorSet(device, *m_ShadowmapAllocator, *m_ShadowmapLayout);
+				descriptorSet.Update(device, writes);
+				m_ShadowmapSets[i].push_back(std::move(descriptorSet));
+			}
 	}
 
 	void ShadowmapPass::CreatePipeline(const Wrappers::Device& device)
@@ -281,7 +299,7 @@ namespace Renderer
 		}
 
 		float lastSplitDist = 0.0;
-		HM::Matrix4x4 camMatrix = camera.GetProjectionMatrix() * camera.GetViewMatrix();
+		HM::Matrix4x4 camMatrix =  camera.GetViewMatrix() * camera.GetProjectionMatrix();
 		bool succes = true;
 		HM::Matrix4x4 invCam = camMatrix.Inverse(succes);
 
@@ -334,15 +352,42 @@ namespace Renderer
 			HM::Vector3 maxExtents = HM::Vector3({ radius, radius, radius });
 			HM::Vector3 minExtents = -maxExtents;
 
-			HM::Vector3 lightDir = HM::Vector3(1.0f, 0.0f, 0.0f); // TODO: add light dir
+			HM::Vector3 lightDir = HM::Vector3(1.0f, 0.0f, 0.0f); 
+			const auto & shadowDir= context.GetEngineContext().GetScene().GetShadowLightDirection();
+			if (shadowDir.has_value())
+				lightDir = shadowDir.value();
 
-			HM::Matrix4x4 lightViewMatrix = HM::Matrix4x4::LookAt(frustumCenter - lightDir * -minExtents.z(), frustumCenter, HM::Vector3(0.0f, 1.0f, 0.0f));
+			HM::Matrix4x4 lightViewMatrix = HM::Matrix4x4::LookAt(frustumCenter - lightDir * radius, frustumCenter, HM::Vector3(0.0f, 0.0f, 1.0f));
 			HM::Matrix4x4 lightOrthoMatrix = HM::Matrix4x4::Ortho(minExtents.x(), maxExtents.x(), minExtents.y(), maxExtents.y(), 0.0f, maxExtents.z() - minExtents.z());
 
 			m_ShadowmapMatricies[i] = lightOrthoMatrix * lightViewMatrix;
 
 			lastSplitDist = cascadeSplits[i];
 		}
+	}
+
+	void ShadowmapPass::UpdateViewports(const Context::Context& context)
+	{
+		auto& settings = context.GetEngineContext().GetSettings().GetShadowmapSettings();
+		float shadowMapSize = static_cast<float>(settings->GetShadowmapSize());
+		m_ShadowViewports.clear();
+		m_ShadowViewports.resize(MaxShadowCascades);
+		
+		m_ShadowViewports[0].push_back({ 0.0f, 0.0f, shadowMapSize , shadowMapSize });
+
+		m_ShadowViewports[1].push_back({ 0.0f, 0.0f, shadowMapSize / 2.0f, shadowMapSize });
+		m_ShadowViewports[1].push_back({ shadowMapSize / 2.0f, 0.0f, shadowMapSize / 2.0f, shadowMapSize });
+
+
+		m_ShadowViewports[2].push_back({ 0.0f, 0.0f, shadowMapSize / 2.0f, shadowMapSize });
+		m_ShadowViewports[2].push_back({ shadowMapSize / 2.0f, 0.0f, shadowMapSize / 2.0f, shadowMapSize / 2.0f });
+		m_ShadowViewports[2].push_back({ shadowMapSize / 2.0f, shadowMapSize / 2.0f, shadowMapSize / 2.0f, shadowMapSize / 2.0f });
+
+		m_ShadowViewports[3].push_back({ 0.0f, 0.0f, shadowMapSize / 2.0f, shadowMapSize / 2.0f });
+		m_ShadowViewports[3].push_back({ 0.0f, shadowMapSize / 2.0f, shadowMapSize / 2.0f, shadowMapSize / 2.0f });
+		m_ShadowViewports[3].push_back({ shadowMapSize / 2.0f, 0.0f, shadowMapSize / 2.0f, shadowMapSize / 2.0f });
+		m_ShadowViewports[3].push_back({ shadowMapSize / 2.0f, shadowMapSize / 2.0f, shadowMapSize / 2.0f, shadowMapSize / 2.0f });
+
 	}
 
 

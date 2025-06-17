@@ -5,6 +5,8 @@
 #include "HedgehogSettings/Settings/HedgehogSettings.hpp"
 #include "HedgehogSettings/Settings/ShadowmapingSettings.hpp"
 
+#include "Scene/Scene.hpp"
+
 #include "imgui.h"
 #include "backends/imgui_impl_vulkan.h"
 #include "backends/imgui_impl_glfw.h"
@@ -51,6 +53,12 @@ namespace Renderer
 						shadowmapSize = originalSize;
 				}
 
+				float shadowLambda = shadowmapSettings->GetCascadeSplitLambda();
+				if (ImGui::SliderFloat("Shadowmap lambda", &shadowLambda, 0.0f, 1.0f))
+				{
+					shadowmapSettings->SetCascadeSplitLambda(shadowLambda);
+				}
+
 				int cascatesCount = shadowmapSettings->GetCascadesCount();
 				if (ImGui::SliderInt("Cascades count", &cascatesCount, 1, 4))
 				{
@@ -85,6 +93,22 @@ namespace Renderer
 						shadowmapSettings->SetSplit3(split3);
 					}
 				}
+
+
+				ImGui::SeparatorText("Debug");
+				auto& shadowDir = context.GetEngineContext().GetScene().GetShadowLightDirection();
+				if (shadowDir.has_value())
+				{
+					float x = shadowDir.value().x();
+					float y = shadowDir.value().y();
+					float z = shadowDir.value().z();
+
+					ImGui::SeparatorText("Shadow direction");
+					ImGui::DragFloat("dir x", &x, 0.5f);
+					ImGui::DragFloat("dir y", &y, 0.5f);
+					ImGui::DragFloat("dir z", &z, 0.5f);
+				}
+
 			}
 
 

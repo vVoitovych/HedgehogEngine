@@ -323,6 +323,11 @@ namespace Scene
 		return mRenderSystem->GetEntities();
 	}
 
+	const std::optional<HM::Vector3>& Scene::GetShadowLightDirection() const
+	{
+		return mLightSystem->GetShadowDir();
+	}
+
 	void Scene::CreateSceneRoot()
 	{
 		mRoot = mSceneCoordinator.CreateEntity();

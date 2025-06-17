@@ -131,6 +131,11 @@ namespace Context
 		m_FrameIndex = (m_FrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
 	}
 
+	uint32_t ThreadContext::GetFrameIndex() const
+	{
+		return m_FrameIndex;
+	}
+
 	Wrappers::CommandBuffer& ThreadContext::GetCommandBuffer()
 	{
 		return m_CommandBuffers[m_FrameIndex];

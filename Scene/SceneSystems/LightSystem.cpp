@@ -25,6 +25,10 @@ namespace Scene
 			light.m_Position = transform.mPososition;
 			HM::Vector3 dir = { transformMatrix[0][0], transformMatrix[0][1], transformMatrix[0][2] };
 			light.m_Direction = dir;
+			if (light.m_CastShadows)
+			{
+				m_ShadowDirection = dir;
+			}
 		}
 	}
 

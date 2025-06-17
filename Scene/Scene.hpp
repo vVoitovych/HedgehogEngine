@@ -8,6 +8,7 @@
 #include "Scene/SceneSystems/RenderSystem.hpp"
 
 #include <vector>
+#include <optional>
 #include <string>
 
 namespace Scene
@@ -71,7 +72,7 @@ namespace Scene
 		const std::vector<std::string>& GetMeshes() const;
 		const std::vector<std::string>& GetMaterials() const;
 		const std::vector<ECS::Entity>& GetRenderableEntities() const;
-
+		const std::optional<HM::Vector3>& GetShadowLightDirection() const;
 	private:
 		void CreateSceneRoot();
 		std::string GetNewGameObjectName();

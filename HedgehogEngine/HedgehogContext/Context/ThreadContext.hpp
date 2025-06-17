@@ -42,6 +42,7 @@ namespace Context
 		void Update(const EngineContext& engineContext, const FrameContext& frameContext);
 
 		void NextFrame();
+		uint32_t GetFrameIndex() const;
 
 		Wrappers::CommandBuffer& GetCommandBuffer();
 		Wrappers::SyncObject& GetSyncObject();

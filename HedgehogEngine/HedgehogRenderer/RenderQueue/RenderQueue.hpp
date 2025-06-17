@@ -13,6 +13,7 @@ namespace Renderer
 
 	class InitPass;
 	class DepthPrePass;
+	class ShadowmapPass;
 	class ForwardPass;
 	class PresentPass;
 	class GuiPass;
@@ -38,6 +39,7 @@ namespace Renderer
 	private:
 		std::unique_ptr<InitPass> m_InitPass;
 		std::unique_ptr<DepthPrePass> m_DepthPrePass;
+		std::unique_ptr<ShadowmapPass> m_ShadowmapPass;
 		std::unique_ptr<ForwardPass> m_ForwardPass;
 		std::unique_ptr<PresentPass> m_PresentPass;
 		std::unique_ptr<GuiPass> m_GuiPass;

@@ -6,15 +6,15 @@ namespace Renderer
 	{
 		m_DepthAttachment.format = depthFormat;
 		m_DepthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-		m_DepthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+		m_DepthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		m_DepthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		m_DepthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		m_DepthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		m_DepthAttachment.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+		m_DepthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 		m_DepthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 
-		m_DepthAttachmentRef.attachment = 1;
-		m_DepthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+		m_DepthAttachmentRef.attachment = 0;
+		m_DepthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
 		m_Subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 		m_Subpass.colorAttachmentCount = 0;
