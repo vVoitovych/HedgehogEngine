@@ -355,7 +355,7 @@ namespace HM
     template <size_t componentCount, typename elementType>
     elementType Vector<componentCount, elementType>::LengthSlow() const
     {
-        return ::sqrtf(LengthSqr());
+        return sqrtf(LengthSqr());
     }
 
     template <size_t componentCount, typename elementType>
@@ -380,7 +380,7 @@ namespace HM
     elementType Vector<componentCount, elementType>::Length3Slow() const
     {
         static_assert(componentCount >= 3);
-        return ::sqrt(Length3Sqr());
+        return sqrtf(Length3Sqr());
     }
 
     template <size_t componentCount, typename elementType>

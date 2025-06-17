@@ -22,8 +22,7 @@ namespace HM
         Vector4& operator[](size_t i);
         const Vector4& operator[](size_t i) const;
 
-        static_assert(sizeof(Vector4) == (sizeof(float) * 4),
-            "GetBuffer assumes contiguous Vector4's form contiguous array of floats");
+        static_assert(sizeof(Vector4) == (sizeof(float) * 4), "GetBuffer assumes contiguous Vector4's form contiguous array of floats");
          float* GetBuffer();
          const float* GetBuffer() const;
 
@@ -40,6 +39,7 @@ namespace HM
          Matrix4x4 operator/(float other) const;
 
          Matrix4x4 operator*(const Matrix4x4& other) const;
+         Vector4 operator*(const Vector4& other) const;
 
          bool operator==(const Matrix4x4& other) const;
          bool operator!=(const Matrix4x4& other) const;
@@ -59,6 +59,7 @@ namespace HM
 
          static Matrix4x4 LookAt(const Vector4& eye, const Vector4& center, const Vector4& up);
          static Matrix4x4 Perspective(float fov, float aspect, float zNear, float zFar);
+         static Matrix4x4 Ortho(float left, float right, float top, float bottom, float zNear, float zFar);
 
          static Matrix4x4 CalculateView(const Vector4& right, const Vector4& up,
             const Vector4& forward,

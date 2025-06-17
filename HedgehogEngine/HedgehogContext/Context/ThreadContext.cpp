@@ -1,5 +1,7 @@
 #include "ThreadContext.hpp"
 #include "VulkanContext.hpp"
+#include "EngineContext.hpp"
+#include "FrameContext.hpp"
 
 #include "HedgehogWrappers/Wrappeers/Commands/CommandBuffer.hpp"
 #include "HedgehogWrappers/Wrappeers/SyncObjects/SyncObject.hpp"
@@ -9,9 +11,7 @@
 #include "HedgehogWrappers/Wrappeers/Resources/Buffer/Buffer.hpp"
 #include "HedgehogWrappers/Wrappeers/Descriptors/DescriptorSet.hpp"
 #include "HedgehogWrappers/Wrappeers/Descriptors/DescriptorLayoutBuilder.hpp"
-#include "HedgehogContext/Context/VulkanContext.hpp"
-#include "HedgehogContext/Context/EngineContext.hpp"
-#include "HedgehogContext/Context/FrameContext.hpp"
+
 #include "HedgehogContext/Containers/LightContainer/LightContainer.hpp"
 #include "HedgehogCommon/Common/EngineDebugBreak.hpp"
 #include "HedgehogCommon/Common/RendererSettings.hpp"
@@ -24,41 +24,41 @@ namespace Context
 {
 	ThreadContext::ThreadContext(const VulkanContext& vulkanContext)
 	{
-		mCommandBuffers.clear();
-		mSyncObjects.clear();
+		m_CommandBuffers.clear();
+		m_SyncObjects.clear();
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
 			Wrappers::CommandBuffer commandBuffer(vulkanContext.GetDevice());
-			mCommandBuffers.push_back(std::move(commandBuffer));
+			m_CommandBuffers.push_back(std::move(commandBuffer));
 			Wrappers::SyncObject syncObject(vulkanContext.GetDevice());
-			mSyncObjects.push_back(std::move(syncObject));
+			m_SyncObjects.push_back(std::move(syncObject));
 		}
-		uint32_t materialCount = 1;
+
 		std::vector<Wrappers::PoolSizeRatio> sizes =
 		{
 			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 }
 		};
 
-		mFrameAllocator = std::make_unique<Wrappers::DescriptorAllocator>(vulkanContext.GetDevice(), MAX_FRAMES_IN_FLIGHT, sizes);
+		m_FrameAllocator = std::make_unique<Wrappers::DescriptorAllocator>(vulkanContext.GetDevice(), MAX_FRAMES_IN_FLIGHT, sizes);
 
 		Wrappers::DescriptorLayoutBuilder builder;
 		builder.AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-		mFrameLayout = std::make_unique<Wrappers::DescriptorSetLayout>(vulkanContext.GetDevice(), builder, VK_SHADER_STAGE_VERTEX_BIT  | VK_SHADER_STAGE_FRAGMENT_BIT);
+		m_FrameLayout = std::make_unique<Wrappers::DescriptorSetLayout>(vulkanContext.GetDevice(), builder, VK_SHADER_STAGE_VERTEX_BIT  | VK_SHADER_STAGE_FRAGMENT_BIT);
 
-		mFrameUniforms.clear();
-		mFrameSets.clear();
+		m_FrameUniforms.clear();
+		m_FrameSets.clear();
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
 			Wrappers::UBO<FrameUniform> frameUniformBuffer(vulkanContext.GetDevice());
-			mFrameUniforms.push_back(std::move(frameUniformBuffer));
+			m_FrameUniforms.push_back(std::move(frameUniformBuffer));
 		}
 
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
 			VkDescriptorBufferInfo bufferInfo{};
-			bufferInfo.buffer = mFrameUniforms[i].GetNativeBuffer();
+			bufferInfo.buffer = m_FrameUniforms[i].GetNativeBuffer();
 			bufferInfo.offset = 0;
-			bufferInfo.range = mFrameUniforms[i].GetBufferSize();
+			bufferInfo.range = m_FrameUniforms[i].GetBufferSize();
 
 			Wrappers::DescriptorWrites write{};
 			write.dstBinding = 0;
@@ -70,9 +70,9 @@ namespace Context
 			std::vector<Wrappers::DescriptorWrites> writes;
 			writes.push_back(write);
 
-			Wrappers::DescriptorSet descriptorSet(vulkanContext.GetDevice(), *mFrameAllocator, *mFrameLayout);
+			Wrappers::DescriptorSet descriptorSet(vulkanContext.GetDevice(), *m_FrameAllocator, *m_FrameLayout);
 			descriptorSet.Update(vulkanContext.GetDevice(), writes);
-			mFrameSets.push_back(std::move(descriptorSet));
+			m_FrameSets.push_back(std::move(descriptorSet));
 		}
 		LOGINFO("Thread context Initialized");
 	}
@@ -85,26 +85,26 @@ namespace Context
 	{
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
-			mCommandBuffers[i].Cleanup(vulkanContext.GetDevice());
-			mSyncObjects[i].Cleanup(vulkanContext.GetDevice());
+			m_CommandBuffers[i].Cleanup(vulkanContext.GetDevice());
+			m_SyncObjects[i].Cleanup(vulkanContext.GetDevice());
 		}
-		mCommandBuffers.clear();
-		mSyncObjects.clear();
+		m_CommandBuffers.clear();
+		m_SyncObjects.clear();
 
-		for (auto& frameUniform : mFrameUniforms)
+		for (auto& frameUniform : m_FrameUniforms)
 		{
 			frameUniform.Cleanup(vulkanContext.GetDevice());
 		}
-		mFrameUniforms.clear();
+		m_FrameUniforms.clear();
 
-		for (auto& frameSet : mFrameSets)
+		for (auto& frameSet : m_FrameSets)
 		{
-			frameSet.Cleanup(vulkanContext.GetDevice(), *mFrameAllocator);
+			frameSet.Cleanup(vulkanContext.GetDevice(), *m_FrameAllocator);
 		}
-		mFrameSets.clear();
+		m_FrameSets.clear();
 
-		mFrameLayout->Cleanup(vulkanContext.GetDevice());
-		mFrameAllocator->Cleanup(vulkanContext.GetDevice());
+		m_FrameLayout->Cleanup(vulkanContext.GetDevice());
+		m_FrameAllocator->Cleanup(vulkanContext.GetDevice());
 
 		LOGINFO("Thread context cleaned");
 	}
@@ -123,37 +123,42 @@ namespace Context
 		{
 			ubo.lights[i] = lights[i];
 		}
-		mFrameUniforms[mFrameIndex].UpdateUniformBuffer(ubo);
+		m_FrameUniforms[m_FrameIndex].UpdateUniformBuffer(ubo);
 	}
 
 	void ThreadContext::NextFrame()
 	{
-		mFrameIndex = (mFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
+		m_FrameIndex = (m_FrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
+	}
+
+	uint32_t ThreadContext::GetFrameIndex() const
+	{
+		return m_FrameIndex;
 	}
 
 	Wrappers::CommandBuffer& ThreadContext::GetCommandBuffer()
 	{
-		return mCommandBuffers[mFrameIndex];
+		return m_CommandBuffers[m_FrameIndex];
 	}
 
 	Wrappers::SyncObject& ThreadContext::GetSyncObject()
 	{
-		return mSyncObjects[mFrameIndex];
+		return m_SyncObjects[m_FrameIndex];
 	}
 
 	const Wrappers::DescriptorSetLayout& ThreadContext::GetLayout() const
 	{
-		return *mFrameLayout;
+		return *m_FrameLayout;
 	}
 
 	const Wrappers::DescriptorSet& ThreadContext::GetDescriptorSet() const
 	{
-		return mFrameSets[mFrameIndex];
+		return m_FrameSets[m_FrameIndex];
 	}
 
 	Wrappers::DescriptorSet& ThreadContext::GetDescriptorSet()
 	{
-		return mFrameSets[mFrameIndex];
+		return m_FrameSets[m_FrameIndex];
 	}
 
 }

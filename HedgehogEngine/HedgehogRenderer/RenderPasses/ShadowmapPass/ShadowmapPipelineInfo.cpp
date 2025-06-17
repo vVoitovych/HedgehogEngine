@@ -1,13 +1,15 @@
-#include "DepthPrePassPipelineInfo.hpp"
+#include "ShadowmapPipelineInfo.hpp"
 
 #include "HedgehogWrappers/Wrappeers/Shaders/VertexShader.hpp"
 
+#include "Logger/Logger.hpp"
+
 namespace Renderer
 {
-	DepthPrePassPipelineInfo::DepthPrePassPipelineInfo(const Wrappers::Device& device)
+	ShadowmapPipelineInfo::ShadowmapPipelineInfo(const Wrappers::Device& device)
 		: Wrappers::PipelineInfo(device)
 	{
-		m_VertexShader = std::make_unique<Wrappers::VertexShader>(device, "DepthPrepass/Base.vert");
+		m_VertexShader = std::make_unique<Wrappers::VertexShader>(device, "ShadowmapPass/Shadowmap.vert");
 		m_Stages = { m_VertexShader->GetCreateInfo() };
 
 		m_BindingDesc[0].binding = 0;
@@ -16,7 +18,7 @@ namespace Renderer
 
 		m_AttributeDesc[0].binding = 0;
 		m_AttributeDesc[0].location = 0;
-		m_AttributeDesc[0].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+		m_AttributeDesc[0].format = VK_FORMAT_R32G32B32_SFLOAT;
 		m_AttributeDesc[0].offset = 0;
 
 		m_VertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -47,7 +49,7 @@ namespace Renderer
 		m_RasterizerInfo.rasterizerDiscardEnable = VK_FALSE;
 		m_RasterizerInfo.polygonMode = VK_POLYGON_MODE_FILL;
 		m_RasterizerInfo.lineWidth = 1.0f;
-		m_RasterizerInfo.cullMode = VK_CULL_MODE_FRONT_BIT;
+		m_RasterizerInfo.cullMode = VK_CULL_MODE_BACK_BIT;
 		m_RasterizerInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
 		m_RasterizerInfo.depthBiasEnable = VK_FALSE;
 		m_RasterizerInfo.flags = 0;
@@ -66,7 +68,7 @@ namespace Renderer
 		m_DepthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 		m_DepthStencil.depthTestEnable = VK_TRUE;
 		m_DepthStencil.depthWriteEnable = VK_TRUE;
-		m_DepthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+		m_DepthStencil.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
 		m_DepthStencil.depthBoundsTestEnable = VK_FALSE;
 		m_DepthStencil.stencilTestEnable = VK_FALSE;
 		m_DepthStencil.front.failOp = VK_STENCIL_OP_KEEP;
@@ -86,52 +88,52 @@ namespace Renderer
 		m_DynamicStateInfo.flags = 0;
 	}
 
-	DepthPrePassPipelineInfo::~DepthPrePassPipelineInfo()
+	ShadowmapPipelineInfo::~ShadowmapPipelineInfo()
 	{
 	}
 
-	void DepthPrePassPipelineInfo::Cleanup(const Wrappers::Device& device)
+	void ShadowmapPipelineInfo::Cleanup(const Wrappers::Device& device)
 	{
 		m_VertexShader->Cleanup(device);
 	}
 
-	const uint32_t DepthPrePassPipelineInfo::GetStagesCount() const
+	const uint32_t ShadowmapPipelineInfo::GetStagesCount() const
 	{
 		return static_cast<uint32_t>(m_Stages.size());
 	}
-	const VkPipelineShaderStageCreateInfo* DepthPrePassPipelineInfo::GetStages() const
+	const VkPipelineShaderStageCreateInfo* ShadowmapPipelineInfo::GetStages() const
 	{
 		return m_Stages.data();
 	}
-	const VkPipelineVertexInputStateCreateInfo* DepthPrePassPipelineInfo::GetVertexInputInfo() const
+	const VkPipelineVertexInputStateCreateInfo* ShadowmapPipelineInfo::GetVertexInputInfo() const
 	{
 		return &m_VertexInputInfo;
 	}
-	const VkPipelineInputAssemblyStateCreateInfo* DepthPrePassPipelineInfo::GetInputAssemblyInfo() const
+	const VkPipelineInputAssemblyStateCreateInfo* ShadowmapPipelineInfo::GetInputAssemblyInfo() const
 	{
 		return &m_InputAssembly;
 	}
-	const VkPipelineViewportStateCreateInfo* DepthPrePassPipelineInfo::GetViewportInfo() const
+	const VkPipelineViewportStateCreateInfo* ShadowmapPipelineInfo::GetViewportInfo() const
 	{
 		return &m_ViewportInfo;
 	}
-	const VkPipelineRasterizationStateCreateInfo* DepthPrePassPipelineInfo::GetRasterizationInfo() const
+	const VkPipelineRasterizationStateCreateInfo* ShadowmapPipelineInfo::GetRasterizationInfo() const
 	{
 		return &m_RasterizerInfo;
 	}
-	const VkPipelineMultisampleStateCreateInfo* DepthPrePassPipelineInfo::GetMultisamplingInfo() const
+	const VkPipelineMultisampleStateCreateInfo* ShadowmapPipelineInfo::GetMultisamplingInfo() const
 	{
 		return &m_Multisampling;
 	}
-	const VkPipelineDepthStencilStateCreateInfo* DepthPrePassPipelineInfo::GetDepthStencilInfo() const
+	const VkPipelineDepthStencilStateCreateInfo* ShadowmapPipelineInfo::GetDepthStencilInfo() const
 	{
 		return &m_DepthStencil;
 	}
-	const VkPipelineColorBlendStateCreateInfo* DepthPrePassPipelineInfo::GetColorBlendingInfo() const
+	const VkPipelineColorBlendStateCreateInfo* ShadowmapPipelineInfo::GetColorBlendingInfo() const
 	{
 		return nullptr;
 	}
-	const VkPipelineDynamicStateCreateInfo* DepthPrePassPipelineInfo::GetDynamicStateInfo() const
+	const VkPipelineDynamicStateCreateInfo* ShadowmapPipelineInfo::GetDynamicStateInfo() const
 	{
 		return &m_DynamicStateInfo;
 	}

@@ -136,12 +136,12 @@ namespace Scene
 			out << YAML::Key << "LightComponent";
 			out << YAML::BeginMap;
 
-			out << YAML::Key << "LightEnabled" << YAML::Value << light.mEnable;
-			out << YAML::Key << "LightType" << YAML::Value << static_cast<size_t>(light.mLightType);
-			out << YAML::Key << "LightColor" << YAML::Value << light.mColor;
-			out << YAML::Key << "LightIntencity" << YAML::Value << light.mIntencity;
-			out << YAML::Key << "LightRadius" << YAML::Value << light.mRadius;
-			out << YAML::Key << "LightConeAngle" << YAML::Value << light.mConeAngle;
+			out << YAML::Key << "LightEnabled" << YAML::Value << light.m_Enable;
+			out << YAML::Key << "LightType" << YAML::Value << static_cast<size_t>(light.m_LightType);
+			out << YAML::Key << "LightColor" << YAML::Value << light.m_Color;
+			out << YAML::Key << "LightIntencity" << YAML::Value << light.m_Intencity;
+			out << YAML::Key << "LightRadius" << YAML::Value << light.m_Radius;
+			out << YAML::Key << "LightConeAngle" << YAML::Value << light.m_ConeAngle;
 
 			out << YAML::EndMap;
 		}
@@ -218,12 +218,12 @@ namespace Scene
 		{
 			scene.AddLightComponent(entity);
 			auto& lightComponent = scene.GetLightComponent(entity);
-			lightComponent.mEnable = light["LightEnabled"].as<bool>();
-			lightComponent.mLightType = static_cast<LightType>(light["LightType"].as<size_t>());
-			lightComponent.mColor = light["LightColor"].as<HM::Vector3>();
-			lightComponent.mIntencity = light["LightIntencity"].as<float>();
-			lightComponent.mRadius = light["LightRadius"].as<float>();
-			lightComponent.mConeAngle = light["LightConeAngle"].as<float>();
+			lightComponent.m_Enable = light["LightEnabled"].as<bool>();
+			lightComponent.m_LightType = static_cast<LightType>(light["LightType"].as<size_t>());
+			lightComponent.m_Color = light["LightColor"].as<HM::Vector3>();
+			lightComponent.m_Intencity = light["LightIntencity"].as<float>();
+			lightComponent.m_Radius = light["LightRadius"].as<float>();
+			lightComponent.m_ConeAngle = light["LightConeAngle"].as<float>();
 
 		}
 

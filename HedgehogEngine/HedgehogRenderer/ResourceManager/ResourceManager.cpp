@@ -2,6 +2,9 @@
 
 #include "HedgehogContext/Context/Context.hpp"
 #include "HedgehogContext/Context/VulkanContext.hpp"
+#include "HedgehogContext/Context/EngineContext.hpp"
+#include "HedgehogSettings/Settings/HedgehogSettings.hpp"
+#include "HedgehogSettings/Settings/ShadowmapingSettings.hpp"
 
 #include "HedgehogWrappers/Wrappeers/Device/Device.hpp"
 #include "HedgehogWrappers/Wrappeers/SwapChain/SwapChain.hpp"
@@ -17,6 +20,9 @@ namespace Renderer
 	{
 		CreateColorBuffer(context);
 		CreateDepthBuffer(context);
+
+		CreateShadowMap(context);
+		CreateShadowMask(context);
 	}
 
 	ResourceManager::~ResourceManager()
@@ -28,16 +34,36 @@ namespace Renderer
 		auto& vulkanContext = context.GetVulkanContext();
 		m_ColorBuffer->Cleanup(vulkanContext.GetDevice());
 		m_DepthBuffer->Cleanup(vulkanContext.GetDevice());
+
+		m_ShadowMap->Cleanup(vulkanContext.GetDevice());
+		m_ShadowMask->Cleanup(vulkanContext.GetDevice());
 	}
 
-	void ResourceManager::ResizeResources(const Context::Context& context)
+	void ResourceManager::ResizeFrameBufferSizeDependenteResources(const Context::Context& context)
 	{
 		auto& vulkanContext = context.GetVulkanContext();
 		m_ColorBuffer->Cleanup(vulkanContext.GetDevice());
 		m_DepthBuffer->Cleanup(vulkanContext.GetDevice());
+		m_ShadowMask->Cleanup(vulkanContext.GetDevice());
 
 		CreateColorBuffer(context);
 		CreateDepthBuffer(context);
+
+		CreateShadowMask(context);
+	}
+
+	void ResourceManager::ResizeSettingsDependenteResources(const Context::Context& context)
+	{
+		auto& settings = context.GetEngineContext().GetSettings();
+		auto& shadowmapSettings = settings.GetShadowmapSettings();
+
+		if (shadowmapSettings->IsDirty())
+		{
+			m_ShadowMap->Cleanup(context.GetVulkanContext().GetDevice());
+
+			CreateShadowMap(context);
+			shadowmapSettings->CleanDirtyState();
+		}
 	}
 
 	const Wrappers::Image& ResourceManager::GetColorBuffer() const
@@ -48,6 +74,16 @@ namespace Renderer
 	const Wrappers::Image& ResourceManager::GetDepthBuffer() const
 	{
 		return *m_DepthBuffer;
+	}
+
+	const Wrappers::Image& ResourceManager::GetShadowMap() const
+	{
+		return *m_ShadowMap;
+	}
+
+	const Wrappers::Image& ResourceManager::GetShadowMask() const
+	{
+		return *m_ShadowMask;
 	}
 
 	void ResourceManager::CreateDepthBuffer(const Context::Context& context)
@@ -89,6 +125,49 @@ namespace Renderer
 
 		vulkanContext.GetDevice().SetObjectName(reinterpret_cast<uint64_t>(m_ColorBuffer->GetNativeImage()), VK_OBJECT_TYPE_IMAGE, "ColorBuffer");
 		LOGINFO("Color buffer created");
+	}
+
+	void ResourceManager::CreateShadowMap(const Context::Context& context)
+	{
+		auto& vulkanContext = context.GetVulkanContext();
+		auto depthFormat = vulkanContext.GetDevice().FindDepthFormat();
+		auto& settings = context.GetEngineContext().GetSettings();
+		auto& shadowmapSettings = settings.GetShadowmapSettings();
+		auto shadowmapSize = shadowmapSettings->GetShadowmapSize();
+
+		m_ShadowMap = std::make_unique<Wrappers::Image>(
+			vulkanContext.GetDevice(),
+			shadowmapSize,
+			shadowmapSize,
+			depthFormat,
+			VK_IMAGE_TILING_OPTIMAL,
+			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+		m_ShadowMap->CreateImageView(vulkanContext.GetDevice(), depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+		vulkanContext.GetDevice().SetObjectName(reinterpret_cast<uint64_t>(m_ShadowMap->GetNativeImage()), VK_OBJECT_TYPE_IMAGE, "ShadowMap");
+		LOGINFO("Shadow map created");
+	}
+
+	void ResourceManager::CreateShadowMask(const Context::Context& context)
+	{
+		auto& vulkanContext = context.GetVulkanContext();
+		auto colorFormat = VK_FORMAT_R16_SFLOAT;
+		auto extend = vulkanContext.GetSwapChain().GetSwapChainExtent();
+
+		m_ShadowMask = std::make_unique<Wrappers::Image>(
+			vulkanContext.GetDevice(),
+			extend.width,
+			extend.height,
+			colorFormat,
+			VK_IMAGE_TILING_OPTIMAL,
+			VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+		m_ShadowMask->CreateImageView(vulkanContext.GetDevice(), colorFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+
+		vulkanContext.GetDevice().SetObjectName(reinterpret_cast<uint64_t>(m_ShadowMask->GetNativeImage()), VK_OBJECT_TYPE_IMAGE, "ShadowMask");
+		LOGINFO("Shadow mask created");
 	}
 
 }

@@ -11,10 +11,10 @@ namespace Context
 {
     Context::Context()
     {
-        mVulkanContext = std::make_unique<VulkanContext>();
-        mEngineContext = std::make_unique<EngineContext>(*mVulkanContext);
-        mFrameContext = std::make_unique<FrameContext>();
-        mThreadContext = std::make_unique<ThreadContext>(*mVulkanContext);
+        m_VulkanContext = std::make_unique<VulkanContext>();
+        m_EngineContext = std::make_unique<EngineContext>(*m_VulkanContext);
+        m_FrameContext = std::make_unique<FrameContext>();
+        m_ThreadContext = std::make_unique<ThreadContext>(*m_VulkanContext);
     }
 
     Context::~Context()
@@ -23,56 +23,56 @@ namespace Context
 
     void Context::UpdateContext(float dt)
     {
-        mEngineContext->UpdateContext(*mVulkanContext, dt);
-        mFrameContext->UpdateContext(mEngineContext->GetCamera());
-        mThreadContext->Update(*mEngineContext, *mFrameContext);
+        m_EngineContext->UpdateContext(*m_VulkanContext, dt);
+        m_FrameContext->UpdateContext(m_EngineContext->GetCamera());
+        m_ThreadContext->Update(*m_EngineContext, *m_FrameContext);
     }
 
     void Context::Cleanup()
     {
-        mEngineContext->Cleanup(*mVulkanContext);
-        mThreadContext->Cleanup(*mVulkanContext);
-        mVulkanContext->Cleanup();
+        m_EngineContext->Cleanup(*m_VulkanContext);
+        m_ThreadContext->Cleanup(*m_VulkanContext);
+        m_VulkanContext->Cleanup();
     }
 
     VulkanContext& Context::GetVulkanContext()
     {
-        return *mVulkanContext;
+        return *m_VulkanContext;
     }
 
     EngineContext& Context::GetEngineContext()
     {
-        return *mEngineContext;
+        return *m_EngineContext;
     }
 
     FrameContext& Context::GetFrameContext()
     {
-        return *mFrameContext;
+        return *m_FrameContext;
     }
 
     ThreadContext& Context::GetThreadContext()
     {
-        return *mThreadContext;
+        return *m_ThreadContext;
     }
 
     const VulkanContext& Context::GetVulkanContext() const
     {
-        return *mVulkanContext;
+        return *m_VulkanContext;
     }
 
     const EngineContext& Context::GetEngineContext() const
     {
-        return *mEngineContext;
+        return *m_EngineContext;
     }
 
     const FrameContext& Context::GetFrameContext() const
     {
-        return *mFrameContext;
+        return *m_FrameContext;
     }
 
     const ThreadContext& Context::GetThreadContext() const
     {
-        return *mThreadContext;
+        return *m_ThreadContext;
     }
 
 

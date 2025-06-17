@@ -25,8 +25,6 @@ namespace Renderer
 
 		void DrawFrame(Context::Context& context);
 
-		void RecreateSwapChain(Context::Context& context);
-
 	private:
 		std::unique_ptr< ResourceManager> m_ResourceManager;
 		std::unique_ptr<RenderQueue> m_RenderQueue;

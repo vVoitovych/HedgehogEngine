@@ -41,31 +41,33 @@ namespace Context
 		HM::Matrix4x4 GetProjectionMatrix() const;
 		HM::Vector3 GetPosition() const;
 
+		float GetNearPlane() const;
+		float GetFarPlane() const;
 
 	private:
 		void UpdateMatricies();
 
 	private:
-		float mFOV = HM::ToRadians(45.0f);
-		float mAspect = 1.0f;
-		float mNearPlane = 0.1f;
-		float mFarPlane = 1000.0f;
+		float m_FOV = HM::ToRadians(45.0f);
+		float m_Aspect = 1.0f;
+		float m_NearPlane = 0.1f;
+		float m_FarPlane = 1000.0f;
 
-		float mCameraSpeed = 10.0f;
+		float m_CameraSpeed = 10.0f;
 
-		float mMouseSensitivity = 0.01f;
-		float mYaw = 0.0f;
-		float mPitch = 0.0f;
+		float m_MouseSensitivity = 0.01f;
+		float m_Yaw = 0.0f;
+		float m_Pitch = 0.0f;
 
-		CameraType mCameraType = CameraType::PerspectiveCamera;
+		CameraType m_CameraType = CameraType::PerspectiveCamera;
 
-		HM::Vector3 mPos = HM::Vector3(-10.0f, 0.0f, 0.0f);
-		HM::Vector3 mDirection = HM::Vector3(1.0f, 0.0f, 0.0f);
-		HM::Vector3 mUpVector = HM::Vector3(0.0f, 0.0f, 1.0f);
-		HM::Vector3 mRightVector = (Cross(mDirection, mUpVector)).Normalize();
+		HM::Vector3 m_Pos = HM::Vector3(-10.0f, 0.0f, 0.0f);
+		HM::Vector3 m_Direction = HM::Vector3(1.0f, 0.0f, 0.0f);
+		HM::Vector3 m_UpVector = HM::Vector3(0.0f, 0.0f, 1.0f);
+		HM::Vector3 m_RightVector = (Cross(m_Direction, m_UpVector)).Normalize();
 
-		HM::Matrix4x4 mViewMatrix;
-		HM::Matrix4x4 mProjMatrix;
+		HM::Matrix4x4 m_ViewMatrix;
+		HM::Matrix4x4 m_ProjMatrix;
 	};
 
 }

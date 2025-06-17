@@ -8,6 +8,11 @@ namespace Scene
 	class Scene;
 }
 
+namespace HedgehogSettings
+{
+	class Settings;
+}
+
 namespace Context
 {
 	class VulkanContext;
@@ -34,19 +39,26 @@ namespace Context
 		MaterialContainer& GetMaterialContainer();
 		const DrawListContainer& GetDrawListContainer() const;
 
+		HedgehogSettings::Settings& GetSettings();
+		const HedgehogSettings::Settings& GetSettings() const;
 		const Camera& GetCamera() const;
 		Scene::Scene& GetScene();
 		const Scene::Scene& GetScene() const;
+
 	private:
+		void UpdateCamera(VulkanContext& vulkanContext, float dt);
 
-		std::unique_ptr<Camera> mCamera;
-		std::unique_ptr<Scene::Scene> mScene;
+	private:
+		std::unique_ptr<Camera> m_Camera;
+		std::unique_ptr<Scene::Scene> m_Scene;
 
-		std::unique_ptr<MeshContainer> mMeshContainer;
-		std::unique_ptr<TextureContainer> mTextureContainer;
-		std::unique_ptr<LightContainer> mLightContainer;
-		std::unique_ptr<MaterialContainer> mMaterialContainer;
-		std::unique_ptr<DrawListContainer> mDrawListContainer;
+		std::unique_ptr<MeshContainer> m_MeshContainer;
+		std::unique_ptr<TextureContainer> m_TextureContainer;
+		std::unique_ptr<LightContainer> m_LightContainer;
+		std::unique_ptr<MaterialContainer> m_MaterialContainer;
+		std::unique_ptr<DrawListContainer> m_DrawListContainer;
+
+		std::unique_ptr<HedgehogSettings::Settings> m_Settings;
 	};
 
 }

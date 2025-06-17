@@ -42,6 +42,7 @@ namespace Context
 		void Update(const EngineContext& engineContext, const FrameContext& frameContext);
 
 		void NextFrame();
+		uint32_t GetFrameIndex() const;
 
 		Wrappers::CommandBuffer& GetCommandBuffer();
 		Wrappers::SyncObject& GetSyncObject();
@@ -61,16 +62,16 @@ namespace Context
 		};
 
 	private:
-		std::vector<Wrappers::CommandBuffer> mCommandBuffers;
-		std::vector<Wrappers::SyncObject> mSyncObjects;
+		std::vector<Wrappers::CommandBuffer> m_CommandBuffers;
+		std::vector<Wrappers::SyncObject> m_SyncObjects;
 
-		std::unique_ptr<Wrappers::DescriptorSetLayout> mFrameLayout;
-		std::unique_ptr<Wrappers::DescriptorAllocator> mFrameAllocator;
+		std::unique_ptr<Wrappers::DescriptorSetLayout> m_FrameLayout;
+		std::unique_ptr<Wrappers::DescriptorAllocator> m_FrameAllocator;
 
-		std::vector<Wrappers::UBO<FrameUniform>> mFrameUniforms;
-		std::vector<Wrappers::DescriptorSet> mFrameSets;
+		std::vector<Wrappers::UBO<FrameUniform>> m_FrameUniforms;
+		std::vector<Wrappers::DescriptorSet> m_FrameSets;
 
-		uint32_t mFrameIndex = 0;
+		uint32_t m_FrameIndex = 0;
 	};
 
 }

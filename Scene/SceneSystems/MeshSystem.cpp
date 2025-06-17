@@ -15,6 +15,12 @@ namespace Scene
 		return std::filesystem::exists(ContentLoader::GetAssetsDirectory() + path);
 	}
 
+	MeshSystem::MeshSystem()
+	{
+		AddMeshPath("Models\\Default\\cube.obj");
+		AddMeshPath("Models\\Default\\sphere.obj");
+	}
+
 	void MeshSystem::Update(ECS::Coordinator& coordinator, ECS::Entity entity)
 	{
 	auto& meshComponent = coordinator.GetComponent<MeshComponent>(entity);
@@ -98,7 +104,7 @@ namespace Scene
 		auto it = std::find(mMeshPathes.begin(), mMeshPathes.end(), meshComponent.mMeshPath);
 		if (it != mMeshPathes.end())
 		{
-			size_t newIndex = it - mMeshPathes.begin();
+			uint64_t newIndex = it - mMeshPathes.begin();
 			meshComponent.mMeshIndex = newIndex;
 			meshComponent.mCachedMeshPath = meshComponent.mMeshPath;
 		}

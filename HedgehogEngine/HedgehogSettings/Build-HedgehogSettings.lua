@@ -1,4 +1,4 @@
-project "HedgehogContext"
+project "HedgehogSettings"
    kind "StaticLib"
    language "C++"
    cppdialect "C++20"
@@ -12,29 +12,16 @@ project "HedgehogContext"
 
     includedirs
     {
-        "%{IncludeDir.VulkanSDK}",
-        "%{IncludeDir.yaml_cpp}",
-        "../..",
-        ".."
+
     }
 
     libdirs
     {
-        "%{LibraryDir.VulkanSDK}"
+
     }
 
     links { 
-        "HedgehogCommon",
-        "HedgehogSettings",
-        "HedgehogWrappers",
-        "ContentLoader",
-        "DialogueWindows",
-        "HedgehogMath",
-        "Logger",
-        "Scene",
-        "imgui",
-        "yaml-cpp",
-        "vulkan-1"
+
     }
 
 

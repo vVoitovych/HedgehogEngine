@@ -35,10 +35,10 @@ namespace Context
 		const ThreadContext& GetThreadContext() const;
 
 	private:
-		std::unique_ptr<VulkanContext> mVulkanContext;
-		std::unique_ptr<EngineContext> mEngineContext;
-		std::unique_ptr<FrameContext> mFrameContext;
-		std::unique_ptr<ThreadContext> mThreadContext;
+		std::unique_ptr<VulkanContext> m_VulkanContext;
+		std::unique_ptr<EngineContext> m_EngineContext;
+		std::unique_ptr<FrameContext> m_FrameContext;
+		std::unique_ptr<ThreadContext> m_ThreadContext;
 
 	};
 

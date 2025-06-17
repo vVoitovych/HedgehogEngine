@@ -43,11 +43,11 @@ namespace Context
 		Wrappers::SwapChain& GetSwapChain();
 
 	private:
-		std::unique_ptr<WinManager::WindowManager> mWindowManager;
-		bool mWindowResized = false;
+		std::unique_ptr<WinManager::WindowManager> m_WindowManager;
+		bool m_WindowResized = false;
 
-		std::unique_ptr<Wrappers::Device> mDevice;
-		std::unique_ptr<Wrappers::SwapChain> mSwapChain;
+		std::unique_ptr<Wrappers::Device> m_Device;
+		std::unique_ptr<Wrappers::SwapChain> m_SwapChain;
 	};
 
 }

@@ -29,17 +29,17 @@ namespace Context
 		for (size_t i = 0; i < lightComponentsCount; ++i)
 		{
 			const auto& lightComponent = scene.GetLightComponentByIndex(i);
-			if (lightComponent.mEnable)
+			if (lightComponent.m_Enable)
 			{
 				auto& light = mLights[counter];
-				light.mPosition = lightComponent.mPosition;
-				light.mDirection = lightComponent.mDirection;
-				light.mColor = lightComponent.mColor;
+				light.mPosition = lightComponent.m_Position;
+				light.mDirection = lightComponent.m_Direction;
+				light.mColor = lightComponent.m_Color;
 				light.mData = { 
-					(float)lightComponent.mLightType, 
-					lightComponent.mIntencity, 
-					lightComponent.mRadius, 
-					cos(HM::ToRadians(lightComponent.mConeAngle))};
+					(float)lightComponent.m_LightType, 
+					lightComponent.m_Intencity, 
+					lightComponent.m_Radius, 
+					cos(HM::ToRadians(lightComponent.m_ConeAngle))};
 				++counter;
 			}
 		}
