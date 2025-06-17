@@ -10,3 +10,6 @@
 [submodule "ThirdParty/tinygltf"]
 	path = ThirdParty/tinygltf
 	url = https://github.com/syoyo/tinygltf.git
+[submodule "ThirdParty/doctest"]
+	path = ThirdParty/doctest
+	url = https://github.com/doctest/doctest.git
