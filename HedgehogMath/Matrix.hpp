@@ -45,6 +45,7 @@ namespace HM
          bool operator!=(const Matrix4x4& other) const;
 
          Matrix4x4 Inverse(bool& isSuccessfull) const;
+         Matrix4x4 Inverse() const;
          Matrix4x4 Transpose() const;
 
          static Matrix4x4 GetIdentity();

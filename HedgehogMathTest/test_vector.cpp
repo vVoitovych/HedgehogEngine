@@ -1,30 +1,6 @@
 #include "doctest/doctest/doctest.h"
 
-#include "HedgehogMath/Vector.hpp"
-
-#include <cmath>
-
-const float EPSILON = 1e-5f;
-
-bool NearlyEqual(float a, float b, float epsilon = EPSILON) 
-{
-    return std::abs(a - b) < epsilon;
-}
-
-bool NearlyEqual(const HM::Vector3& a, const HM::Vector3& b, float epsilon = EPSILON) 
-{
-    return  NearlyEqual(a.x(), b.x(), epsilon) &&
-            NearlyEqual(a.y(), b.y(), epsilon) &&
-            NearlyEqual(a.z(), b.z(), epsilon);
-}
-
-bool NearlyEqual(const HM::Vector4& a, const HM::Vector4& b, float epsilon = EPSILON)
-{
-    return  NearlyEqual(a.x(), b.x(), epsilon) &&
-            NearlyEqual(a.y(), b.y(), epsilon) &&
-            NearlyEqual(a.z(), b.z(), epsilon) &&
-            NearlyEqual(a.w(), b.w(), epsilon);
-}
+#include "test_common.hpp"
 
 TEST_CASE("Vector2 construction and access") {
     HM::Vector2 v(1.0f, 2.0f);
@@ -208,37 +184,19 @@ TEST_CASE("Vector3 length and normalization")
 {
     HM::Vector3 a(3.0f, 4.0f, 0.0f);
 
-    CHECK(NearlyEqual(a.LengthSlow(), 5.0f));
-    CHECK(NearlyEqual(a.LengthSqr(), 25.0f));
+    CHECK(HedgehogTest::NearlyEqual(a.LengthSlow(), 5.0f));
+    CHECK(HedgehogTest::NearlyEqual(a.LengthSqr(), 25.0f));
 
     HM::Vector3 n = a.Normalize();
-    CHECK(NearlyEqual(n.LengthSlow(), 1.0f));
-    CHECK(NearlyEqual(n, HM::Vector3(0.6f, 0.8f, 0.0f)));
+    CHECK(HedgehogTest::NearlyEqual(n.LengthSlow(), 1.0f));
+    CHECK(HedgehogTest::NearlyEqual(n, HM::Vector3(0.6f, 0.8f, 0.0f)));
 }
 
 TEST_CASE("Vector3 distance") {
     HM::Vector3 a(1.0f, 0.0f, 0.0f);
     HM::Vector3 b(4.0f, 0.0f, 0.0f);
 
-    CHECK(NearlyEqual((a - b).LengthSlow(), 3.0f));
+    CHECK(HedgehogTest::NearlyEqual((a - b).LengthSlow(), 3.0f));
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
