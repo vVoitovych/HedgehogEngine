@@ -544,7 +544,7 @@ namespace HM
 
     Matrix4x4 Matrix4x4::Perspective(float fov, float aspect, float zNear, float zFar)
     {
-        assert(abs(aspect - std::numeric_limits<float>::epsilon()) > static_cast<float>(0));
+        assert(abs(aspect) >  std::numeric_limits<float>::epsilon());
 
         const float tanHalfFov = tanf(fov / 2.0f);
 
@@ -552,8 +552,8 @@ namespace HM
         result[0][0] = 1.0f / (aspect * tanHalfFov);
         result[1][1] = 1.0f / (tanHalfFov);
         result[2][2] = -zFar / (zFar - zNear);
-        result[2][3] = -1.0f;
-        result[3][2] = -(zFar * zNear) / (zFar - zNear);
+        result[3][2] = -1.0f;
+        result[2][3] = -(zFar * zNear) / (zFar - zNear);
         return result;
     }
 
@@ -564,9 +564,10 @@ namespace HM
         result[0][0] = 2.0f / (right - left);
         result[1][1] = 2.0f / (top - bottom);
         result[2][2] = -2.0f / (zFar - zNear);
-        result[3][0] = -(right + left) / (right - left);
-        result[3][1] = -(top + bottom) / (top - bottom);
-        result[3][2] = -(zFar + zNear) / (zFar - zNear);
+        result[0][3] = -(right + left) / (right - left);
+        result[1][3] = -(top + bottom) / (top - bottom);
+        result[2][3] = -(zFar + zNear) / (zFar - zNear);
+        result[3][3] = 1.0f;
 
         return result;
     }
