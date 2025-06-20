@@ -115,13 +115,13 @@ namespace HM
     {
         Matrix4x4 result;
 
-        for (size_t i = 0; i < 4; i++)
-        {
-            for (size_t j = 0; j < 4; j++)
+        for (size_t i = 0; i < 4; ++i)        
+            for (size_t j = 0; j < 4; ++j)
             {
-                result[i] += other[j] * (*this)[i][j];
+                result[i][j] = 0.0f;
+                for (size_t k = 0; k < 4; ++k)
+                    result[i][j] += (*this)[i][k] * other[k][j];
             }
-        }
 
         return result;
     }
@@ -130,11 +130,12 @@ namespace HM
     {
         Vector4 result;
 
-        for (size_t i = 0; i < 4; i++)
+        for (size_t i = 0; i < 4; ++i)
         {
-            for (size_t j = 0; j < 4; j++)
+            result[i] = 0.0f;
+            for (size_t j = 0; j < 4; ++j)
             {
-                result[i] = other[j] * (*this)[i][j];
+                result[i] += other[j] * (*this)[j][i];
             }
         }
 
@@ -282,6 +283,140 @@ namespace HM
 
         return result;
     }
+
+    Matrix4x4 Matrix4x4::Inverse() const
+    {
+        Matrix4x4 result;
+        bool isSuccessfull = true;
+
+        result[0][0] = (*this)[1][1] * (*this)[2][2] * (*this)[3][3] -
+            (*this)[1][1] * (*this)[2][3] * (*this)[3][2] -
+            (*this)[2][1] * (*this)[1][2] * (*this)[3][3] +
+            (*this)[2][1] * (*this)[1][3] * (*this)[3][2] +
+            (*this)[3][1] * (*this)[1][2] * (*this)[2][3] -
+            (*this)[3][1] * (*this)[1][3] * (*this)[2][2];
+
+        result[1][0] = -(*this)[1][0] * (*this)[2][2] * (*this)[3][3] +
+            (*this)[1][0] * (*this)[2][3] * (*this)[3][2] +
+            (*this)[2][0] * (*this)[1][2] * (*this)[3][3] -
+            (*this)[2][0] * (*this)[1][3] * (*this)[3][2] -
+            (*this)[3][0] * (*this)[1][2] * (*this)[2][3] +
+            (*this)[3][0] * (*this)[1][3] * (*this)[2][2];
+
+        result[2][0] = (*this)[1][0] * (*this)[2][1] * (*this)[3][3] -
+            (*this)[1][0] * (*this)[2][3] * (*this)[3][1] -
+            (*this)[2][0] * (*this)[1][1] * (*this)[3][3] +
+            (*this)[2][0] * (*this)[1][3] * (*this)[3][1] +
+            (*this)[3][0] * (*this)[1][1] * (*this)[2][3] -
+            (*this)[3][0] * (*this)[1][3] * (*this)[2][1];
+
+        result[3][0] = -(*this)[1][0] * (*this)[2][1] * (*this)[3][2] +
+            (*this)[1][0] * (*this)[2][2] * (*this)[3][1] +
+            (*this)[2][0] * (*this)[1][1] * (*this)[3][2] -
+            (*this)[2][0] * (*this)[1][2] * (*this)[3][1] -
+            (*this)[3][0] * (*this)[1][1] * (*this)[2][2] +
+            (*this)[3][0] * (*this)[1][2] * (*this)[2][1];
+
+        result[0][1] = -(*this)[0][1] * (*this)[2][2] * (*this)[3][3] +
+            (*this)[0][1] * (*this)[2][3] * (*this)[3][2] +
+            (*this)[2][1] * (*this)[0][2] * (*this)[3][3] -
+            (*this)[2][1] * (*this)[0][3] * (*this)[3][2] -
+            (*this)[3][1] * (*this)[0][2] * (*this)[2][3] +
+            (*this)[3][1] * (*this)[0][3] * (*this)[2][2];
+
+        result[1][1] = (*this)[0][0] * (*this)[2][2] * (*this)[3][3] -
+            (*this)[0][0] * (*this)[2][3] * (*this)[3][2] -
+            (*this)[2][0] * (*this)[0][2] * (*this)[3][3] +
+            (*this)[2][0] * (*this)[0][3] * (*this)[3][2] +
+            (*this)[3][0] * (*this)[0][2] * (*this)[2][3] -
+            (*this)[3][0] * (*this)[0][3] * (*this)[2][2];
+
+        result[2][1] = -(*this)[0][0] * (*this)[2][1] * (*this)[3][3] +
+            (*this)[0][0] * (*this)[2][3] * (*this)[3][1] +
+            (*this)[2][0] * (*this)[0][1] * (*this)[3][3] -
+            (*this)[2][0] * (*this)[0][3] * (*this)[3][1] -
+            (*this)[3][0] * (*this)[0][1] * (*this)[2][3] +
+            (*this)[3][0] * (*this)[0][3] * (*this)[2][1];
+
+        result[3][1] = (*this)[0][0] * (*this)[2][1] * (*this)[3][2] -
+            (*this)[0][0] * (*this)[2][2] * (*this)[3][1] -
+            (*this)[2][0] * (*this)[0][1] * (*this)[3][2] +
+            (*this)[2][0] * (*this)[0][2] * (*this)[3][1] +
+            (*this)[3][0] * (*this)[0][1] * (*this)[2][2] -
+            (*this)[3][0] * (*this)[0][2] * (*this)[2][1];
+
+        result[0][2] = (*this)[0][1] * (*this)[1][2] * (*this)[3][3] -
+            (*this)[0][1] * (*this)[1][3] * (*this)[3][2] -
+            (*this)[1][1] * (*this)[0][2] * (*this)[3][3] +
+            (*this)[1][1] * (*this)[0][3] * (*this)[3][2] +
+            (*this)[3][1] * (*this)[0][2] * (*this)[1][3] -
+            (*this)[3][1] * (*this)[0][3] * (*this)[1][2];
+
+        result[1][2] = -(*this)[0][0] * (*this)[1][2] * (*this)[3][3] +
+            (*this)[0][0] * (*this)[1][3] * (*this)[3][2] +
+            (*this)[1][0] * (*this)[0][2] * (*this)[3][3] -
+            (*this)[1][0] * (*this)[0][3] * (*this)[3][2] -
+            (*this)[3][0] * (*this)[0][2] * (*this)[1][3] +
+            (*this)[3][0] * (*this)[0][3] * (*this)[1][2];
+
+        result[2][2] = (*this)[0][0] * (*this)[1][1] * (*this)[3][3] -
+            (*this)[0][0] * (*this)[1][3] * (*this)[3][1] -
+            (*this)[1][0] * (*this)[0][1] * (*this)[3][3] +
+            (*this)[1][0] * (*this)[0][3] * (*this)[3][1] +
+            (*this)[3][0] * (*this)[0][1] * (*this)[1][3] -
+            (*this)[3][0] * (*this)[0][3] * (*this)[1][1];
+
+        result[3][2] = -(*this)[0][0] * (*this)[1][1] * (*this)[3][2] +
+            (*this)[0][0] * (*this)[1][2] * (*this)[3][1] +
+            (*this)[1][0] * (*this)[0][1] * (*this)[3][2] -
+            (*this)[1][0] * (*this)[0][2] * (*this)[3][1] -
+            (*this)[3][0] * (*this)[0][1] * (*this)[1][2] +
+            (*this)[3][0] * (*this)[0][2] * (*this)[1][1];
+
+        result[0][3] = -(*this)[0][1] * (*this)[1][2] * (*this)[2][3] +
+            (*this)[0][1] * (*this)[1][3] * (*this)[2][2] +
+            (*this)[1][1] * (*this)[0][2] * (*this)[2][3] -
+            (*this)[1][1] * (*this)[0][3] * (*this)[2][2] -
+            (*this)[2][1] * (*this)[0][2] * (*this)[1][3] +
+            (*this)[2][1] * (*this)[0][3] * (*this)[1][2];
+
+        result[1][3] = (*this)[0][0] * (*this)[1][2] * (*this)[2][3] -
+            (*this)[0][0] * (*this)[1][3] * (*this)[2][2] -
+            (*this)[1][0] * (*this)[0][2] * (*this)[2][3] +
+            (*this)[1][0] * (*this)[0][3] * (*this)[2][2] +
+            (*this)[2][0] * (*this)[0][2] * (*this)[1][3] -
+            (*this)[2][0] * (*this)[0][3] * (*this)[1][2];
+
+        result[2][3] = -(*this)[0][0] * (*this)[1][1] * (*this)[2][3] +
+            (*this)[0][0] * (*this)[1][3] * (*this)[2][1] +
+            (*this)[1][0] * (*this)[0][1] * (*this)[2][3] -
+            (*this)[1][0] * (*this)[0][3] * (*this)[2][1] -
+            (*this)[2][0] * (*this)[0][1] * (*this)[1][3] +
+            (*this)[2][0] * (*this)[0][3] * (*this)[1][1];
+
+        result[3][3] = (*this)[0][0] * (*this)[1][1] * (*this)[2][2] -
+            (*this)[0][0] * (*this)[1][2] * (*this)[2][1] -
+            (*this)[1][0] * (*this)[0][1] * (*this)[2][2] +
+            (*this)[1][0] * (*this)[0][2] * (*this)[2][1] +
+            (*this)[2][0] * (*this)[0][1] * (*this)[1][2] -
+            (*this)[2][0] * (*this)[0][2] * (*this)[1][1];
+
+        float det = (*this)[0][0] * result[0][0] + (*this)[0][1] * result[1][0] +
+            (*this)[0][2] * result[2][0] + (*this)[0][3] * result[3][0];
+
+        if (::abs(det) < FLT_EPSILON)
+        {
+            isSuccessfull = false;
+            return result;
+        }
+
+        isSuccessfull = true;
+
+        result /= det;
+
+        return result;
+    }
+
     Matrix4x4 Matrix4x4::Transpose() const
     {
         return Matrix4x4{
@@ -315,20 +450,20 @@ namespace HM
     Matrix4x4 Matrix4x4::GetTranslation(float x, float y, float z)
     {
         return Matrix4x4{
-            {1.0f, 0.0f, 0.0f, x},
-            {0.0f, 1.0f, 0.0f, y},
-            {0.0f, 0.0f, 1.0f, z},
-            {0.0f, 0.0f, 0.0f, 1.0f},
+            {1.0f, 0.0f, 0.0f, 0.0f},
+            {0.0f, 1.0f, 0.0f, 0.0f},
+            {0.0f, 0.0f, 1.0f, 0.0f},
+            {x, y, z, 1.0f},
         };
     }
 
     Matrix4x4 Matrix4x4::GetTranslation(const Vector4& xyz)
     {
         return Matrix4x4{
-            {1.0f, 0.0f, 0.0f, xyz[0]},
-            {0.0f, 1.0f, 0.0f, xyz[1]},
-            {0.0f, 0.0f, 1.0f, xyz[2]},
-            {0.0f, 0.0f, 0.0f, 1.0f},
+            {1.0f, 0.0f, 0.0f, 0.0f},
+            {0.0f, 1.0f, 0.0f, 0.0f},
+            {0.0f, 0.0f, 1.0f, 0.0f},
+            {xyz[0], xyz[1], xyz[2], 1.0f},
         };
     }
 
@@ -356,8 +491,8 @@ namespace HM
     {
         return Matrix4x4{
             {1.0f, 0.0f, 0.0f, 0.0f},
-            {0.0f, cosf(angle), -sinf(angle), 0.0f},
-            {0.0f, sinf(angle), cosf(angle), 0.0f},
+            {0.0f, cosf(angle), sinf(angle), 0.0f},
+            {0.0f, -sinf(angle), cosf(angle), 0.0f},
             {0.0f, 0.0f, 0.0f, 1.0f},
         };
     }
@@ -365,9 +500,9 @@ namespace HM
     Matrix4x4 Matrix4x4::GetRotationY(float angle)
     {
         return Matrix4x4{
-            {cosf(angle), 0.0f, sinf(angle), 0.0f},
+            {cosf(angle), 0.0f, -sinf(angle), 0.0f},
             {0.0f, 1.0f, 0.0f, 0.0f},
-            {-sinf(angle), 0.0f, cosf(angle), 0.0f},
+            {sinf(angle), 0.0f, cosf(angle), 0.0f},
             {0.0f, 0.0f, 0.0f, 1.0f},
         };
     }
@@ -375,8 +510,8 @@ namespace HM
     Matrix4x4 Matrix4x4::GetRotationZ(float angle)
     {
         return Matrix4x4{
-            {cosf(angle), -sinf(angle), 0.0f, 0.0f},
-            {sinf(angle), cosf(angle), 0.0f, 0.0f},
+            {cosf(angle), sinf(angle), 0.0f, 0.0f},
+            {-sinf(angle), cosf(angle), 0.0f, 0.0f},
             {0.0f, 0.0f, 1.0f, 0.0f},
             {0.0f, 0.0f, 0.0f, 1.0f},
         };
@@ -409,7 +544,7 @@ namespace HM
 
     Matrix4x4 Matrix4x4::Perspective(float fov, float aspect, float zNear, float zFar)
     {
-        assert(abs(aspect - std::numeric_limits<float>::epsilon()) > static_cast<float>(0));
+        assert(abs(aspect) >  std::numeric_limits<float>::epsilon());
 
         const float tanHalfFov = tanf(fov / 2.0f);
 
@@ -429,9 +564,10 @@ namespace HM
         result[0][0] = 2.0f / (right - left);
         result[1][1] = 2.0f / (top - bottom);
         result[2][2] = -2.0f / (zFar - zNear);
-        result[3][0] = -(right + left) / (right - left);
+        result[0][3] = -(right + left) / (right - left);
         result[3][1] = -(top + bottom) / (top - bottom);
         result[3][2] = -(zFar + zNear) / (zFar - zNear);
+        result[3][3] = 1.0f;
 
         return result;
     }
@@ -504,53 +640,6 @@ namespace HM
         };
 
         return projMatrix;
-    }
-
-    Matrix4x4 Matrix4x4::Translate(const Matrix4x4& mat, const Vector3& vec)
-    {
-        Matrix4x4 result(mat);
-        result[3] = mat[0] * vec[0] + mat[1] * vec[1] + mat[2] * vec[2] + mat[3];
-        return result;
-    }
-
-    Matrix4x4 Matrix4x4::Rotate(const Matrix4x4& mat, float angle, const Vector3& vec)
-    {
-        const float a = angle;
-        const float c = cosf(a);
-        const float s = sinf(a);
-
-        Vector3 axis(vec.Normalize());
-        Vector3 temp(axis * (1.0f - c));
-
-        Matrix4x4 rotate;
-        rotate[0][0] = c + temp[0] * axis[0];
-        rotate[0][1] = temp[0] * axis[1] + s * axis[2];
-        rotate[0][2] = temp[0] * axis[2] - s * axis[1];
-
-        rotate[1][0] = temp[1] * axis[0] - s * axis[2];
-        rotate[1][1] = c + temp[1] * axis[1];
-        rotate[1][2] = temp[1] * axis[2] + s * axis[0];
-
-        rotate[2][0] = temp[2] * axis[0] + s * axis[1];
-        rotate[2][1] = temp[2] * axis[1] - s * axis[0];
-        rotate[2][2] = c + temp[2] * axis[2];
-
-        Matrix4x4 Result;
-        Result[0] = mat[0] * rotate[0][0] + mat[1] * rotate[0][1] + mat[2] * rotate[0][2];
-        Result[1] = mat[0] * rotate[1][0] + mat[1] * rotate[1][1] + mat[2] * rotate[1][2];
-        Result[2] = mat[0] * rotate[2][0] + mat[1] * rotate[2][1] + mat[2] * rotate[2][2];
-        Result[3] = mat[3];
-        return Result;
-    }
-
-    Matrix4x4 Matrix4x4::Scale(const Matrix4x4& mat, const Vector3& vec)
-    {
-        Matrix4x4 rotate;
-        rotate[0] = mat[0] * vec[0];
-        rotate[1] = mat[1] * vec[1];
-        rotate[2] = mat[2] * vec[2];
-        rotate[3] = mat[3];
-        return rotate;
     }
 
     Matrix4x4 Matrix4x4::GetUVToTexCoord()

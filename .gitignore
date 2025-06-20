@@ -578,3 +578,5 @@ Binaries
 /HedgehogEngine/HedgehogRenderer/HedgehogRenderer.vcxproj.user
 /HedgehogEngine/HedgehogSettings/HedgehogSettings.vcxproj
 /HedgehogMath/HedgehogMath.vcxproj.user
+/HedgehogMathTest/HedgehogMathTest.vcxproj
+/HedgehogMathTest/HedgehogMathTest.vcxproj.user
