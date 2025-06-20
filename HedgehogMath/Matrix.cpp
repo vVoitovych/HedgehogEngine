@@ -642,53 +642,6 @@ namespace HM
         return projMatrix;
     }
 
-    Matrix4x4 Matrix4x4::Translate(const Matrix4x4& mat, const Vector3& vec)
-    {
-        Matrix4x4 result(mat);
-        result[3] = mat[0] * vec[0] + mat[1] * vec[1] + mat[2] * vec[2] + mat[3];
-        return result;
-    }
-
-    Matrix4x4 Matrix4x4::Rotate(const Matrix4x4& mat, float angle, const Vector3& vec)
-    {
-        const float a = angle;
-        const float c = cosf(a);
-        const float s = sinf(a);
-
-        Vector3 axis(vec.Normalize());
-        Vector3 temp(axis * (1.0f - c));
-
-        Matrix4x4 rotate;
-        rotate[0][0] = c + temp[0] * axis[0];
-        rotate[0][1] = temp[0] * axis[1] + s * axis[2];
-        rotate[0][2] = temp[0] * axis[2] - s * axis[1];
-
-        rotate[1][0] = temp[1] * axis[0] - s * axis[2];
-        rotate[1][1] = c + temp[1] * axis[1];
-        rotate[1][2] = temp[1] * axis[2] + s * axis[0];
-
-        rotate[2][0] = temp[2] * axis[0] + s * axis[1];
-        rotate[2][1] = temp[2] * axis[1] - s * axis[0];
-        rotate[2][2] = c + temp[2] * axis[2];
-
-        Matrix4x4 Result;
-        Result[0] = mat[0] * rotate[0][0] + mat[1] * rotate[0][1] + mat[2] * rotate[0][2];
-        Result[1] = mat[0] * rotate[1][0] + mat[1] * rotate[1][1] + mat[2] * rotate[1][2];
-        Result[2] = mat[0] * rotate[2][0] + mat[1] * rotate[2][1] + mat[2] * rotate[2][2];
-        Result[3] = mat[3];
-        return Result;
-    }
-
-    Matrix4x4 Matrix4x4::Scale(const Matrix4x4& mat, const Vector3& vec)
-    {
-        Matrix4x4 rotate;
-        rotate[0] = mat[0] * vec[0];
-        rotate[1] = mat[1] * vec[1];
-        rotate[2] = mat[2] * vec[2];
-        rotate[3] = mat[3];
-        return rotate;
-    }
-
     Matrix4x4 Matrix4x4::GetUVToTexCoord()
     {
         return Matrix4x4{

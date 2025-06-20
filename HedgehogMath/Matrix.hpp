@@ -69,12 +69,6 @@ namespace HM
          static Matrix4x4 CalculateProjOrtographic(float nearZ, float farZ,
             float width, float height);
 
-         static Matrix4x4 Translate(const Matrix4x4& mat, const Vector3& vec);
-         static Matrix4x4 Rotate(const Matrix4x4& mat, float angle, const Vector3& vec);
-         static Matrix4x4 Scale(const Matrix4x4& mat, const Vector3& vec);
-
-
-
         // Matrix that transforms UV (-1..1 range) to texcoords(0..1 range) and backwards
          static Matrix4x4 GetUVToTexCoord();
          static Matrix4x4 GetTexCoordToUV();
