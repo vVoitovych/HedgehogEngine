@@ -57,7 +57,7 @@ TEST_CASE("Matrix4x4 multiplication (composition)")
 {
     HM::Matrix4x4 S = HM::Matrix4x4::GetScale(2.0f, 2.0f, 2.0f);
     HM::Matrix4x4 T = HM::Matrix4x4::GetTranslation(1.0f, 2.0f, 3.0f);
-    HM::Matrix4x4 M = T * S;
+    HM::Matrix4x4 M = S * T;
 
     HM::Vector4 v(1.0f, 1.0f, 1.0f, 1.0f);
     HM::Vector4 result = M * v;
@@ -105,7 +105,7 @@ TEST_CASE("Matrix4x4 inverse of scale")
 
 TEST_CASE("Matrix4x4 vector transform (composite)") 
 {
-    HM::Matrix4x4 M = HM::Matrix4x4::GetTranslation(1.0f, 2.0f, 3.0f) * HM::Matrix4x4::GetScale(2.0f, 2.0f, 2.0f);
+    HM::Matrix4x4 M = HM::Matrix4x4::GetScale(2.0f, 2.0f, 2.0f) * HM::Matrix4x4::GetTranslation(1.0f, 2.0f, 3.0f);
     HM::Vector4 v(1.0f, 1.0f, 1.0f, 1.0f);
     HM::Vector4 result = M * v;
 

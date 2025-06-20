@@ -135,7 +135,7 @@ namespace HM
             result[i] = 0.0f;
             for (size_t j = 0; j < 4; ++j)
             {
-                result[i] += other[j] * (*this)[i][j];
+                result[i] += other[j] * (*this)[j][i];
             }
         }
 
@@ -450,20 +450,20 @@ namespace HM
     Matrix4x4 Matrix4x4::GetTranslation(float x, float y, float z)
     {
         return Matrix4x4{
-            {1.0f, 0.0f, 0.0f, x},
-            {0.0f, 1.0f, 0.0f, y},
-            {0.0f, 0.0f, 1.0f, z},
-            {0.0f, 0.0f, 0.0f, 1.0f},
+            {1.0f, 0.0f, 0.0f, 0.0f},
+            {0.0f, 1.0f, 0.0f, 0.0f},
+            {0.0f, 0.0f, 1.0f, 0.0f},
+            {x, y, z, 1.0f},
         };
     }
 
     Matrix4x4 Matrix4x4::GetTranslation(const Vector4& xyz)
     {
         return Matrix4x4{
-            {1.0f, 0.0f, 0.0f, xyz[0]},
-            {0.0f, 1.0f, 0.0f, xyz[1]},
-            {0.0f, 0.0f, 1.0f, xyz[2]},
-            {0.0f, 0.0f, 0.0f, 1.0f},
+            {1.0f, 0.0f, 0.0f, 0.0f},
+            {0.0f, 1.0f, 0.0f, 0.0f},
+            {0.0f, 0.0f, 1.0f, 0.0f},
+            {xyz[0], xyz[1], xyz[2], 1.0f},
         };
     }
 
@@ -491,8 +491,8 @@ namespace HM
     {
         return Matrix4x4{
             {1.0f, 0.0f, 0.0f, 0.0f},
-            {0.0f, cosf(angle), -sinf(angle), 0.0f},
-            {0.0f, sinf(angle), cosf(angle), 0.0f},
+            {0.0f, cosf(angle), sinf(angle), 0.0f},
+            {0.0f, -sinf(angle), cosf(angle), 0.0f},
             {0.0f, 0.0f, 0.0f, 1.0f},
         };
     }
@@ -500,9 +500,9 @@ namespace HM
     Matrix4x4 Matrix4x4::GetRotationY(float angle)
     {
         return Matrix4x4{
-            {cosf(angle), 0.0f, sinf(angle), 0.0f},
+            {cosf(angle), 0.0f, -sinf(angle), 0.0f},
             {0.0f, 1.0f, 0.0f, 0.0f},
-            {-sinf(angle), 0.0f, cosf(angle), 0.0f},
+            {sinf(angle), 0.0f, cosf(angle), 0.0f},
             {0.0f, 0.0f, 0.0f, 1.0f},
         };
     }
@@ -510,8 +510,8 @@ namespace HM
     Matrix4x4 Matrix4x4::GetRotationZ(float angle)
     {
         return Matrix4x4{
-            {cosf(angle), -sinf(angle), 0.0f, 0.0f},
-            {sinf(angle), cosf(angle), 0.0f, 0.0f},
+            {cosf(angle), sinf(angle), 0.0f, 0.0f},
+            {-sinf(angle), cosf(angle), 0.0f, 0.0f},
             {0.0f, 0.0f, 1.0f, 0.0f},
             {0.0f, 0.0f, 0.0f, 1.0f},
         };
@@ -552,8 +552,8 @@ namespace HM
         result[0][0] = 1.0f / (aspect * tanHalfFov);
         result[1][1] = 1.0f / (tanHalfFov);
         result[2][2] = -zFar / (zFar - zNear);
-        result[3][2] = -1.0f;
-        result[2][3] = -(zFar * zNear) / (zFar - zNear);
+        result[2][3] = -1.0f;
+        result[3][2] = -(zFar * zNear) / (zFar - zNear);
         return result;
     }
 
@@ -565,8 +565,8 @@ namespace HM
         result[1][1] = 2.0f / (top - bottom);
         result[2][2] = -2.0f / (zFar - zNear);
         result[0][3] = -(right + left) / (right - left);
-        result[1][3] = -(top + bottom) / (top - bottom);
-        result[2][3] = -(zFar + zNear) / (zFar - zNear);
+        result[3][1] = -(top + bottom) / (top - bottom);
+        result[3][2] = -(zFar + zNear) / (zFar - zNear);
         result[3][3] = 1.0f;
 
         return result;
