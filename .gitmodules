@@ -13,3 +13,6 @@
 [submodule "ThirdParty/doctest"]
 	path = ThirdParty/doctest
 	url = https://github.com/doctest/doctest.git
+[submodule "ThirdParty/Lua/lua"]
+	path = ThirdParty/Lua/lua
+	url = https://github.com/lua/lua.git
