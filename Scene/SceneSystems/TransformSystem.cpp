@@ -21,7 +21,7 @@ namespace Scene
 			HM::Matrix4x4 rotationZ = HM::Matrix4x4::GetRotationZ(HM::ToRadians(transform.mRotation.z()));
 			HM::Matrix4x4 scale = HM::Matrix4x4::GetScale(transform.mScale.x(), transform.mScale.y(), transform.mScale.z());
 			
-			transform.mObjMatrix = scale * rotationZ * rotationY * rotationX * translation;
+			transform.mObjMatrix = translation * rotationX * rotationY * rotationZ * scale;
 
 		}
 	}
