@@ -120,7 +120,7 @@ namespace HM
             {
                 result[i][j] = 0.0f;
                 for (size_t k = 0; k < 4; ++k)
-                    result[i][j] += (*this)[i][k] * other[k][j];
+                    result[i][j] += (*this)[k][j] * other[i][k];
             }
 
         return result;
