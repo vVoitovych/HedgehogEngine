@@ -8,7 +8,7 @@ end
 
 function OnUpdate(dt) 
     local rotation = GetRotation()
-    rotation.z = rottation.z + 0.1 * dt
+    rotation.z = rotation.z + 0.1 * dt
     SetRotation(rotation)
 end
 

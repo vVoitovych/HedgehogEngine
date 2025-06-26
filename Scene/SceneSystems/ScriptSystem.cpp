@@ -197,11 +197,23 @@ namespace Scene
 	{
 		for (auto const& entity : entities)
 		{
-			auto& transform = coordinator.GetComponent<TransformComponent>(entity);
+			auto& script = coordinator.GetComponent<ScriptComponent>(entity);
+			if (script.m_Enable && script.m_HasOnUpdate)
+			{
+				auto& transform = coordinator.GetComponent<TransformComponent>(entity);
 
-			auto& position = transform.mPosition;
-			auto& rotation = transform.mRotation;
+				RegisterLuaBindings(script.m_LuaState, &transform);
 
+				lua_getglobal(script.m_LuaState, "OnUpdate");
+				lua_pushnumber(script.m_LuaState, dt);
+				if (lua_pcall(script.m_LuaState, 1, 0, 0) != LUA_OK)
+				{
+					LOGERROR("[Lua OnUpdate Error] ", lua_tostring(script.m_LuaState, -1));
+					lua_pop(script.m_LuaState, 1);
+					script.m_NewEnable = false;
+				}
+				
+			}
 		}
 	}
 
