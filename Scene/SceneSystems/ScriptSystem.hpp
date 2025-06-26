@@ -10,11 +10,15 @@ namespace Scene
 	class ScriptSystem : public ECS::System 
 	{
 	public:
-		void Update(ECS::Coordinator& coordinator);
-		void ChangeEnable(ScriptComponent& component, bool val);
+		void Update(ECS::Coordinator& coordinator, float dt);
 
 		void ClearScriptComponent(ECS::Entity entity, ECS::Coordinator& coordinator);
-		void ChangeScript(ECS::Entity entity, std::string scriptPath, ECS::Coordinator& coordinator);
+		void ChangeScript(ECS::Entity entity, ECS::Coordinator& coordinator);
+
+	private:
+		void CallOnEnable(ECS::Coordinator& coordinator);
+		void CallUpdate(ECS::Coordinator& coordinator, float dt);
+		void CallOnDisable(ECS::Coordinator& coordinator);
 
 	};
 }

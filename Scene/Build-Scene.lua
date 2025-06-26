@@ -20,7 +20,8 @@ project "Scene"
         "ECS",
         "HedgehogMath", 
         "yaml-cpp",
-        "Logger"
+        "Logger",
+        "Lua"
     }
 
     targetdir ("../Binaries/" .. OutputDir .. "/%{prj.name}")

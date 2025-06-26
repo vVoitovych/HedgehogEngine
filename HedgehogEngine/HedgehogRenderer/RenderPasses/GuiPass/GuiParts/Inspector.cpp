@@ -19,6 +19,7 @@
 #include "Scene/SceneComponents/MeshComponent.hpp"
 #include "Scene/SceneComponents/LightComponent.hpp"
 #include "Scene/SceneComponents/RenderComponent.hpp"
+#include "Scene/SceneComponents/ScriptComponent.hpp"
 
 #include "imgui.h"
 #include "backends/imgui_impl_vulkan.h"
@@ -33,48 +34,43 @@ namespace Renderer
 	void GuiPass::DrawTitle(Context::Context& context)
 	{
 		auto& scene = context.GetEngineContext().GetScene();
-		if (m_SelectedObject.has_value())
+
+		auto entity = m_SelectedObject.value();
+		auto& hierarchy = scene.GetHierarchyComponent(entity);
+		auto name = hierarchy.mName;
+		if (ImGui::CollapsingHeader("Name", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			auto entity = m_SelectedObject.value();
-			auto& hierarchy = scene.GetHierarchyComponent(entity);
-			auto name = hierarchy.mName;
-			if (ImGui::CollapsingHeader("Name", ImGuiTreeNodeFlags_DefaultOpen))
+			if (ImGui::InputText("Name", &name[0], name.capacity() + 1))
 			{
-				if (ImGui::InputText("input text", &name[0], name.capacity() + 1))
-				{
-					hierarchy.mName = name;
-				}
+				hierarchy.mName = name;
 			}
 		}
+		
 	}
 
 	void GuiPass::DrawTransform(Context::Context& context)
 	{
 		auto& scene = context.GetEngineContext().GetScene();
+		auto entity = m_SelectedObject.value();
 
-		if (m_SelectedObject.has_value())
+		if (ImGui::CollapsingHeader("Transform Component", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			auto entity = m_SelectedObject.value();
 
-			if (ImGui::CollapsingHeader("Transform Component", ImGuiTreeNodeFlags_DefaultOpen))
-			{
+			auto& transform = scene.GetTransformComponent(entity);
+			ImGui::SeparatorText("Position");
+			ImGui::DragFloat("pos x", &transform.mPosition.x(), 0.5f);
+			ImGui::DragFloat("pos y", &transform.mPosition.y(), 0.5f);
+			ImGui::DragFloat("pos z", &transform.mPosition.z(), 0.5f);
 
-				auto& transform = scene.GetTransformComponent(entity);
-				ImGui::SeparatorText("Position");
-				ImGui::DragFloat("pos x", &transform.mPosition.x(), 0.5f);
-				ImGui::DragFloat("pos y", &transform.mPosition.y(), 0.5f);
-				ImGui::DragFloat("pos z", &transform.mPosition.z(), 0.5f);
+			ImGui::SeparatorText("Rotation");
+			ImGui::DragFloat("rot x", &transform.mRotation.x(), 0.5f);
+			ImGui::DragFloat("rot y", &transform.mRotation.y(), 0.5f);
+			ImGui::DragFloat("rot z", &transform.mRotation.z(), 0.5f);
 
-				ImGui::SeparatorText("Rotation");
-				ImGui::DragFloat("rot x", &transform.mRotation.x(), 0.5f);
-				ImGui::DragFloat("rot y", &transform.mRotation.y(), 0.5f);
-				ImGui::DragFloat("rot z", &transform.mRotation.z(), 0.5f);
-
-				ImGui::SeparatorText("Scale");
-				ImGui::DragFloat("scale x", &transform.mScale.x(), 0.5f);
-				ImGui::DragFloat("scale y", &transform.mScale.y(), 0.5f);
-				ImGui::DragFloat("scale z", &transform.mScale.z(), 0.5f);
-			}
+			ImGui::SeparatorText("Scale");
+			ImGui::DragFloat("scale x", &transform.mScale.x(), 0.5f);
+			ImGui::DragFloat("scale y", &transform.mScale.y(), 0.5f);
+			ImGui::DragFloat("scale z", &transform.mScale.z(), 0.5f);
 		}
 	}
 
@@ -82,26 +78,81 @@ namespace Renderer
 	{
 		auto& scene = context.GetEngineContext().GetScene();
 
-		if (m_SelectedObject.has_value())
+		auto entity = m_SelectedObject.value();
+		if (scene.HasMeshComponent(entity))
 		{
-			auto entity = m_SelectedObject.value();
-			if (scene.HasMeshComponent(entity))
+			if (ImGui::CollapsingHeader("Mesh Component", ImGuiTreeNodeFlags_DefaultOpen))
 			{
-				if (ImGui::CollapsingHeader("Mesh Component", ImGuiTreeNodeFlags_DefaultOpen))
-				{
-					auto& mesh = scene.GetMeshComponent(entity);
-					auto& meshes = scene.GetMeshes();
-					uint64_t selectedIndex = mesh.mMeshIndex.value();
+				auto& mesh = scene.GetMeshComponent(entity);
+				auto& meshes = scene.GetMeshes();
+				uint64_t selectedIndex = mesh.mMeshIndex.value();
 
-					if (ImGui::BeginCombo("mesh", mesh.mMeshPath.c_str()))
+				if (ImGui::BeginCombo("mesh", mesh.mMeshPath.c_str()))
+				{
+					for (uint64_t i = 0; i < meshes.size(); ++i)
 					{
-						for (uint64_t i = 0; i < meshes.size(); ++i)
+						const bool isSelected = (selectedIndex == i);
+						if (ImGui::Selectable(meshes[i].c_str(), isSelected))
+						{
+							selectedIndex = i;
+							scene.ChangeMeshComponent(entity, meshes[i]);
+						}
+
+						if (isSelected)
+						{
+							ImGui::SetItemDefaultFocus();
+						}
+					}
+					ImGui::EndCombo();
+				}
+				if (ImGui::Button("Load mesh"))
+				{
+					scene.LoadMesh(entity);
+				}
+
+				if (ImGui::Button("Remove mesh component"))
+				{
+					scene.RemoveMeshComponent(entity);
+				}
+
+			}
+		}
+	}
+
+	void GuiPass::DrawRender(Context::Context& context)
+	{
+		auto& scene = context.GetEngineContext().GetScene();
+
+		auto entity = m_SelectedObject.value();
+
+		if (scene.HasRenderComponent(entity))
+		{
+			if (ImGui::CollapsingHeader("Rendering  Component", ImGuiTreeNodeFlags_DefaultOpen))
+			{
+				auto& render = scene.GetRenderComponent(entity);
+
+				bool enabled = render.mIsVisible;
+				if (ImGui::Checkbox("Visible", &enabled))
+				{
+					render.mIsVisible = enabled;
+				}
+
+				auto& materials = scene.GetMaterials();
+
+				if (!materials.empty())
+				{
+					if (ImGui::BeginCombo("material", render.mMaterial.c_str()))
+					{
+						uint64_t selectedIndex = render.mMaterialIndex.has_value() ? render.mMaterialIndex.value() : 0;
+
+						for (uint64_t i = 0; i < materials.size(); ++i)
 						{
 							const bool isSelected = (selectedIndex == i);
-							if (ImGui::Selectable(meshes[i].c_str(), isSelected))
+							if (ImGui::Selectable(materials[i].c_str(), isSelected))
 							{
 								selectedIndex = i;
-								scene.ChangeMeshComponent(entity, meshes[i]);
+								render.mMaterial = materials[i];
+								scene.UpdateMaterialComponent(entity);
 							}
 
 							if (isSelected)
@@ -111,132 +162,71 @@ namespace Renderer
 						}
 						ImGui::EndCombo();
 					}
-					if (ImGui::Button("Load mesh"))
-					{
-						scene.LoadMesh(entity);
-					}
-
-					if (ImGui::Button("Remove component"))
-					{
-						scene.RemoveMeshComponent(entity);
-					}
-
 				}
-			}
-		}
-	}
-
-	void GuiPass::DrawRender(Context::Context& context)
-	{
-		auto& scene = context.GetEngineContext().GetScene();
-
-		if (m_SelectedObject.has_value())
-		{
-			auto entity = m_SelectedObject.value();
-
-			if (scene.HasRenderComponent(entity))
-			{
-				if (ImGui::CollapsingHeader("Rendering  Component", ImGuiTreeNodeFlags_DefaultOpen))
+				if (ImGui::Button("Load material"))
 				{
-					auto& render = scene.GetRenderComponent(entity);
-
-					bool enabled = render.mIsVisible;
-					if (ImGui::Checkbox("Visible", &enabled))
+					scene.LoadMaterial(entity);
+				}
+				if (!materials.empty())
+				{
+					if (ImGui::Button("Save material"))
 					{
-						render.mIsVisible = enabled;
+						context.GetEngineContext().GetMaterialContainer().SaveMaterial(render.mMaterialIndex.value());
 					}
+				}
+				if (ImGui::Button("Remove render component"))
+				{
+					scene.RemoveRenderComponent(entity);
+				}
+				if (!materials.empty() && render.mMaterialIndex.has_value())
+				{
+					ImGui::SeparatorText("Material");
+					auto& materialContainer = context.GetEngineContext().GetMaterialContainer();
+					auto& textuteContainer = context.GetEngineContext().GetTextureContainer();
 
-					auto& materials = scene.GetMaterials();
+					auto& materialData = materialContainer.GetMaterialDataByIndex(render.mMaterialIndex.value());
 
-					if (!materials.empty())
+					const char* types[] = { "Opaque", "Cutoff", "Transparent" };
+					int materialType = static_cast<int>(materialData.type);
+					ImGui::Combo("Type", &materialType, types, IM_ARRAYSIZE(types));
+					materialData.type = static_cast<Context::MaterialType>(materialType);
+
+					auto& textures = textuteContainer.GetTexturePathes();
+					int selectedIndex = static_cast<int>(textuteContainer.GetTextureIndex(materialData.baseColor));
+
+					if (ImGui::BeginCombo("baseColor", materialData.baseColor.c_str()))
 					{
-						if (ImGui::BeginCombo("material", render.mMaterial.c_str()))
+						for (int i = 0; i < textures.size(); ++i)
 						{
-							uint64_t selectedIndex = render.mMaterialIndex.has_value() ? render.mMaterialIndex.value() : 0;
-
-							for (uint64_t i = 0; i < materials.size(); ++i)
+							const bool isSelected = (selectedIndex == i);
+							if (ImGui::Selectable(textures[i].c_str(), isSelected))
 							{
-								const bool isSelected = (selectedIndex == i);
-								if (ImGui::Selectable(materials[i].c_str(), isSelected))
-								{
-									selectedIndex = i;
-									render.mMaterial = materials[i];
-									scene.UpdateMaterialComponent(entity);
-								}
-
-								if (isSelected)
-								{
-									ImGui::SetItemDefaultFocus();
-								}
-							}
-							ImGui::EndCombo();
-						}
-					}
-					if (ImGui::Button("Load material"))
-					{
-						scene.LoadMaterial(entity);
-					}
-					if (!materials.empty())
-					{
-						if (ImGui::Button("Save material"))
-						{
-							context.GetEngineContext().GetMaterialContainer().SaveMaterial(render.mMaterialIndex.value());
-						}
-					}
-					if (ImGui::Button("Remove component"))
-					{
-						scene.RemoveRenderComponent(entity);
-					}
-					if (!materials.empty() && render.mMaterialIndex.has_value())
-					{
-						ImGui::SeparatorText("Material");
-						auto& materialContainer = context.GetEngineContext().GetMaterialContainer();
-						auto& textuteContainer = context.GetEngineContext().GetTextureContainer();
-
-						auto& materialData = materialContainer.GetMaterialDataByIndex(render.mMaterialIndex.value());
-
-						const char* types[] = { "Opaque", "Cutoff", "Transparent" };
-						int materialType = static_cast<int>(materialData.type);
-						ImGui::Combo("Type", &materialType, types, IM_ARRAYSIZE(types));
-						materialData.type = static_cast<Context::MaterialType>(materialType);
-
-						auto& textures = textuteContainer.GetTexturePathes();
-						int selectedIndex = static_cast<int>(textuteContainer.GetTextureIndex(materialData.baseColor));
-
-						if (ImGui::BeginCombo("baseColor", materialData.baseColor.c_str()))
-						{
-							for (int i = 0; i < textures.size(); ++i)
-							{
-								const bool isSelected = (selectedIndex == i);
-								if (ImGui::Selectable(textures[i].c_str(), isSelected))
-								{
-									selectedIndex = i;
-									materialData.baseColor = textures[i];
-									materialContainer.SetMaterialDirty(render.mMaterialIndex.value());
-								}
-
-								if (isSelected)
-								{
-									ImGui::SetItemDefaultFocus();
-								}
-							}
-							ImGui::EndCombo();
-						}
-						if (ImGui::Button("Load texture"))
-						{
-							materialContainer.LoadBaseTexture(render.mMaterialIndex.value(), context.GetVulkanContext(), textuteContainer);
-						}
-
-
-						if (materialData.type == Context::MaterialType::Transparent)
-						{
-							float materialTransparency = materialData.transparency;
-							ImGui::SliderFloat("slider float", &materialTransparency, 0.0f, 1.0f, "ratio = %.3f");
-							if (materialData.transparency != materialTransparency)
-							{
-								materialData.transparency = materialTransparency;
+								selectedIndex = i;
+								materialData.baseColor = textures[i];
 								materialContainer.SetMaterialDirty(render.mMaterialIndex.value());
 							}
+
+							if (isSelected)
+							{
+								ImGui::SetItemDefaultFocus();
+							}
+						}
+						ImGui::EndCombo();
+					}
+					if (ImGui::Button("Load texture"))
+					{
+						materialContainer.LoadBaseTexture(render.mMaterialIndex.value(), context.GetVulkanContext(), textuteContainer);
+					}
+
+
+					if (materialData.type == Context::MaterialType::Transparent)
+					{
+						float materialTransparency = materialData.transparency;
+						ImGui::SliderFloat("slider float", &materialTransparency, 0.0f, 1.0f, "ratio = %.3f");
+						if (materialData.transparency != materialTransparency)
+						{
+							materialData.transparency = materialTransparency;
+							materialContainer.SetMaterialDirty(render.mMaterialIndex.value());
 						}
 					}
 				}
@@ -271,72 +261,105 @@ namespace Renderer
 	{
 		auto& scene = context.GetEngineContext().GetScene();
 
-		if (m_SelectedObject.has_value())
+		auto entity = m_SelectedObject.value();
+
+		if (scene.HasLightComponent(entity))
 		{
-			auto entity = m_SelectedObject.value();
-
-			if (scene.HasLightComponent(entity))
+			if (ImGui::CollapsingHeader("Light Component", ImGuiTreeNodeFlags_DefaultOpen))
 			{
-				if (ImGui::CollapsingHeader("Light Component", ImGuiTreeNodeFlags_DefaultOpen))
+				auto& light = scene.GetLightComponent(entity);
+
+				bool enabled = light.m_Enable;
+				if (ImGui::Checkbox("Enabled", &enabled))
 				{
-					auto& light = scene.GetLightComponent(entity);
+					light.m_Enable = enabled;
+				}
 
-					bool enabled = light.m_Enable;
-					if (ImGui::Checkbox("Enabled", &enabled))
+				const char* types[] = { "Direction Light", "Point Light", "Spot Light" };
+				int lightType = LightTypeToLightIndex(light.m_LightType);
+				if (ImGui::Combo("Type", &lightType, types, IM_ARRAYSIZE(types)))
+				{
+					light.m_LightType = LightIndexToLightType(lightType);
+				}
+
+				float color[3] = { light.m_Color.r(), light.m_Color.g(), light.m_Color.b() };
+				if (ImGui::ColorEdit3("Color", color))
+				{
+					light.m_Color = { color[0], color[1], color[2] };
+				}
+
+				float intencity = light.m_Intencity;
+				if (ImGui::SliderFloat("Intencity", &intencity, 0.0f, 3.0f, "ratio = %.03f"))
+				{
+					light.m_Intencity = intencity;
+				}
+
+				if (lightType > 0)
+				{
+					float radius = light.m_Radius;
+					if (ImGui::SliderFloat("Radius", &radius, 0.0f, 100.0f, "ratio = %.3f"))
 					{
-						light.m_Enable = enabled;
+						light.m_Radius = radius;
 					}
 
-					const char* types[] = { "Direction Light", "Point Light", "Spot Light" };
-					int lightType = LightTypeToLightIndex(light.m_LightType);
-					if (ImGui::Combo("Type", &lightType, types, IM_ARRAYSIZE(types)))
+					if (lightType > 1)
 					{
-						light.m_LightType = LightIndexToLightType(lightType);
-					}
-
-					float color[3] = { light.m_Color.r(), light.m_Color.g(), light.m_Color.b() };
-					if (ImGui::ColorEdit3("Color", color))
-					{
-						light.m_Color = { color[0], color[1], color[2] };
-					}
-
-					float intencity = light.m_Intencity;
-					if (ImGui::SliderFloat("Intencity", &intencity, 0.0f, 3.0f, "ratio = %.03f"))
-					{
-						light.m_Intencity = intencity;
-					}
-
-					if (lightType > 0)
-					{
-						float radius = light.m_Radius;
-						if (ImGui::SliderFloat("Radius", &radius, 0.0f, 100.0f, "ratio = %.3f"))
+						float coneAngle = light.m_ConeAngle;
+						if (ImGui::SliderFloat("Cone angle", &coneAngle, 0.1f, 179.9f, "ratio = %.3f"))
 						{
-							light.m_Radius = radius;
-						}
-
-						if (lightType > 1)
-						{
-							float coneAngle = light.m_ConeAngle;
-							if (ImGui::SliderFloat("Cone angle", &coneAngle, 0.1f, 179.9f, "ratio = %.3f"))
-							{
-								light.m_ConeAngle = coneAngle;
-							}
+							light.m_ConeAngle = coneAngle;
 						}
 					}
+				}
 
-					if (lightType == 0)
+				if (lightType == 0)
+				{
+					bool castShadows = light.m_CastShadows;
+					if (ImGui::Checkbox("Cast shadows", &castShadows))
 					{
-						bool castShadows = light.m_CastShadows;
-						if (ImGui::Checkbox("Cast shadows", &castShadows))
-						{
-							scene.UpdateShadowCastin(entity, castShadows);
-						}
+						scene.UpdateShadowCastin(entity, castShadows);
 					}
+				}
 
-					if (ImGui::Button("Remove component"))
-					{
-						scene.RemoveLightComponent(entity);
-					}
+				if (ImGui::Button("Remove light component"))
+				{
+					scene.RemoveLightComponent(entity);
+				}
+			}
+		}
+	}
+
+	void GuiPass::DrawScript(Context::Context& context)
+	{
+		auto& scene = context.GetEngineContext().GetScene();
+
+		auto entity = m_SelectedObject.value();
+
+		if (scene.HasScriptComponent(entity))
+		{
+			if (ImGui::CollapsingHeader("Script Component", ImGuiTreeNodeFlags_DefaultOpen))
+			{
+				auto& script = scene.GetScriptComponent(entity);
+
+				bool enabled = script.m_Enable;
+				if (ImGui::Checkbox("Enabled", &enabled))
+				{
+					script.m_NewEnable = enabled;
+				}
+				std::string name = "No scripts selected";
+				if (script.m_ScriptPath != "")
+					name = script.m_ScriptPath;
+
+				ImGui::InputText("Selected script:", &name[0], name.capacity() + 1);
+
+				if (ImGui::Button("Load Script"))
+				{
+					scene.ChangeScript(entity);
+				}
+
+				if (ImGui::Button("Remove script component"))
+				{
+					scene.RemoveScriptComponent(entity);
 				}
 			}
 		}
@@ -357,12 +380,15 @@ namespace Renderer
 			NULL,
 			ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove
 		);
-		DrawTitle(context);
-		DrawTransform(context);
-		DrawLight(context);
-		DrawMesh(context);
-		DrawRender(context);
-
+		if (m_SelectedObject.has_value())
+		{
+			DrawTitle(context);
+			DrawTransform(context);
+			DrawLight(context);
+			DrawMesh(context);
+			DrawRender(context);
+			DrawScript(context);
+		}
 		ImGui::End();
 	}
 }

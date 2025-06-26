@@ -22,7 +22,7 @@ namespace Scene
 			auto& light = coordinator.GetComponent<LightComponent>(entity);
 			auto& transform = coordinator.GetComponent<TransformComponent>(entity);
 			auto& transformMatrix = transform.mObjMatrix;
-			light.m_Position = transform.mPososition;
+			light.m_Position = transform.mPosition;
 			HM::Vector3 dir = { transformMatrix[0][0], transformMatrix[0][1], transformMatrix[0][2] };
 			light.m_Direction = dir;
 			if (light.m_CastShadows)

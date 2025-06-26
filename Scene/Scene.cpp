@@ -72,6 +72,7 @@ namespace Scene
 
 	void Scene::UpdateScene(float dt)
 	{
+		m_ScriptSystem->Update(m_SceneCoordinator, dt);
 		m_TransformSystem->Update(m_SceneCoordinator);
 		m_HierarchySystem->Update(m_SceneCoordinator);
 		m_LightSystem->Update(m_SceneCoordinator);
@@ -270,9 +271,9 @@ namespace Scene
 		}
 	}
 
-	void Scene::ChangeScript(ECS::Entity entity, std::string scriptPath)
+	void Scene::ChangeScript(ECS::Entity entity)
 	{
-		m_ScriptSystem->ChangeScript(entity, scriptPath, m_SceneCoordinator);
+		m_ScriptSystem->ChangeScript(entity, m_SceneCoordinator);
 	}
 
 	bool Scene::HasScriptComponent(ECS::Entity entity)
@@ -345,6 +346,11 @@ namespace Scene
 	RenderComponent& Scene::GetRenderComponent(ECS::Entity entity) const
 	{
 		return m_SceneCoordinator.GetComponent<RenderComponent>(entity);
+	}
+
+	ScriptComponent& Scene::GetScriptComponent(ECS::Entity entity) const
+	{
+		return m_SceneCoordinator.GetComponent<ScriptComponent>(entity);
 	}
 
 	const std::vector<std::string>& Scene::GetMeshes() const 

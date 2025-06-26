@@ -114,7 +114,7 @@ namespace Scene
 			out << YAML::Key << "TransformComponent";
 			out << YAML::BeginMap; 
 
-			out << YAML::Key << "Position" << YAML::Value << transform.mPososition;
+			out << YAML::Key << "Position" << YAML::Value << transform.mPosition;
 			out << YAML::Key << "Rotation" << YAML::Value << transform.mRotation;
 			out << YAML::Key << "Scale" << YAML::Value << transform.mScale;
 
@@ -175,7 +175,7 @@ namespace Scene
 	{
 		LOGINFO("SerializeScene: ", scenePath);
 		std::string sceneName = GetSceneName(scenePath);
-		scene.mSceneName = sceneName;
+		scene.m_SceneName = sceneName;
 		YAML::Emitter out;
 		out << YAML::BeginMap;
 		out << YAML::Key << "Scene name" << YAML::Value << sceneName;
@@ -200,7 +200,7 @@ namespace Scene
 		auto transformData = node["TransformComponent"];
 		if (transformData)
 		{
-			transform.mPososition = transformData["Position"].as<HM::Vector3>();
+			transform.mPosition = transformData["Position"].as<HM::Vector3>();
 			transform.mRotation = transformData["Rotation"].as<HM::Vector3>();
 			transform.mScale = transformData["Scale"].as<HM::Vector3>();
 		}
@@ -263,7 +263,7 @@ namespace Scene
 			return;
 		}
 
-		scene.mSceneName = data["Scene name"].as<std::string>();
+		scene.m_SceneName = data["Scene name"].as<std::string>();
 
 		auto sceneData = data["Scene"];
 		if (sceneData)

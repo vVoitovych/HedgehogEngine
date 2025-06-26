@@ -2,7 +2,9 @@
 
 #include "ECS/Entity.h"
 
-class lua_State;
+#include <optional>
+
+struct lua_State;
 
 namespace Scene
 {
@@ -18,12 +20,12 @@ namespace Scene
 
 	public:
 		std::string m_ScriptPath;
+		std::optional<bool> m_NewEnable;
 
 		friend class ScriptSystem;
 
 	private:
 		lua_State* m_LuaState = nullptr;
-		
 	};
 
 }

@@ -4,6 +4,8 @@
 #include "Scene/SceneComponents/TransformComponent.hpp"
 #include "Logger/Logger.hpp"
 
+#include "DialogueWindows/ScriptDialogue/ScriptDialogue.hpp"
+
 #include "HedgehogMath/Vector.hpp"
 
 extern "C" 
@@ -99,34 +101,12 @@ namespace Scene
 	}
 
 
-	void ScriptSystem::Update(ECS::Coordinator& coordinator)
+	void ScriptSystem::Update(ECS::Coordinator& coordinator, float dt)
 	{
-		for (auto const& entity : entities)
-		{
-			auto& transform = coordinator.GetComponent<TransformComponent>(entity);
+		CallOnEnable(coordinator);
+		CallUpdate(coordinator, dt);
+		CallOnDisable(coordinator);
 
-			auto& position = transform.mPosition;
-			auto& rotation = transform.mRotation;
-
-		}
-	}
-
-	void ScriptSystem::ChangeEnable(ScriptComponent& component, bool val)
-	{
-		if (val)
-		{
-			if (component.m_HasOnEnable)
-			{
-				CallFunction(component.m_LuaState, "OnEnable");
-			}
-		}
-		else
-		{
-			if (component.m_HasOnDisable)
-			{
-				CallFunction(component.m_LuaState, "OnDisable");
-			}
-		}
 	}
 
 	void ScriptSystem::ClearScriptComponent(ECS::Entity entity, ECS::Coordinator& coordinator)
@@ -139,8 +119,12 @@ namespace Scene
 		}
 	}
 
-	void ScriptSystem::ChangeScript(ECS::Entity entity, std::string scriptPath, ECS::Coordinator& coordinator)
+	void ScriptSystem::ChangeScript(ECS::Entity entity, ECS::Coordinator& coordinator)
 	{
+		std::string scriptPath = DialogueWindows::ScriptChooseDialogue();
+		if (scriptPath == "")
+			return;
+
 		auto& component = coordinator.GetComponent<ScriptComponent>(entity);
 		auto& transform = coordinator.GetComponent<TransformComponent>(entity);
 		if (component.m_LuaState != nullptr)
@@ -172,6 +156,52 @@ namespace Scene
 		if (component.m_Enable && component.m_HasOnEnable)
 		{
 			CallFunction(component.m_LuaState, "OnEnable");
+		}
+	}
+
+	void ScriptSystem::CallOnEnable(ECS::Coordinator& coordinator)
+	{
+		for (auto const& entity : entities)
+		{
+			auto& script = coordinator.GetComponent<ScriptComponent>(entity);
+			if (script.m_NewEnable.has_value() && script.m_NewEnable.value())
+			{
+				script.m_Enable = true;
+				script.m_NewEnable.reset();
+				if (script.m_HasOnEnable)
+				{
+					CallFunction(script.m_LuaState, "OnEnable");
+				}
+			}
+		}
+	}
+
+	void ScriptSystem::CallOnDisable(ECS::Coordinator& coordinator)
+	{
+		for (auto const& entity : entities)
+		{
+			auto& script = coordinator.GetComponent<ScriptComponent>(entity);
+			if (script.m_NewEnable.has_value() && !script.m_NewEnable.value())
+			{
+				script.m_Enable = false;
+				script.m_NewEnable.reset();
+				if (script.m_HasOnEnable)
+				{
+					CallFunction(script.m_LuaState, "OnDisable");
+				}
+			}
+		}
+	}
+
+	void ScriptSystem::CallUpdate(ECS::Coordinator& coordinator, float dt)
+	{
+		for (auto const& entity : entities)
+		{
+			auto& transform = coordinator.GetComponent<TransformComponent>(entity);
+
+			auto& position = transform.mPosition;
+			auto& rotation = transform.mRotation;
+
 		}
 	}
 
