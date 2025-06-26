@@ -6,6 +6,7 @@
 #include "Scene/SceneSystems/MeshSystem.hpp"
 #include "Scene/SceneSystems/LightSystem.hpp"
 #include "Scene/SceneSystems/RenderSystem.hpp"
+#include "Scene/SceneSystems/ScriptSystem.hpp"
 
 #include <vector>
 #include <optional>
@@ -54,6 +55,11 @@ namespace Scene
 		void LoadMaterial(ECS::Entity entity);
 		void UpdateMaterialComponent(ECS::Entity entity);
 
+		void AddScriptComponent(ECS::Entity entity);
+		void RemoveScriptComponent(ECS::Entity entity);
+		void ChangeScript(ECS::Entity entity, std::string scriptPath);
+		bool HasScriptComponent(ECS::Entity entity);
+
 		void AddLightComponent(ECS::Entity entity);
 		void RemoveLightComponent(ECS::Entity entity);
 		bool HasLightComponent(ECS::Entity entity) const;
@@ -79,18 +85,18 @@ namespace Scene
 		std::string GetScenePath() const;
 
 	private:
-		std::string mSceneName;
+		std::string m_SceneName;
 
-		ECS::Coordinator mSceneCoordinator;
-		ECS::Entity mRoot;
+		ECS::Coordinator m_SceneCoordinator;
+		ECS::Entity m_Root;
 
 		// systems
-		std::shared_ptr<TransformSystem> mTransformSystem;
-		std::shared_ptr<HierarchySystem> mHierarchySystem;
-		std::shared_ptr<MeshSystem> mMeshSystem;
-		std::shared_ptr<LightSystem> mLightSystem;
-		std::shared_ptr<RenderSystem> mRenderSystem;
-
+		std::shared_ptr<TransformSystem> m_TransformSystem;
+		std::shared_ptr<HierarchySystem> m_HierarchySystem;
+		std::shared_ptr<MeshSystem> m_MeshSystem;
+		std::shared_ptr<LightSystem> m_LightSystem;
+		std::shared_ptr<RenderSystem> m_RenderSystem;
+		std::shared_ptr<ScriptSystem> m_ScriptSystem;
 	private:
 		friend class SceneSerializer;
 	};

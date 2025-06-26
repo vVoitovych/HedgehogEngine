@@ -61,9 +61,9 @@ namespace Renderer
 
 				auto& transform = scene.GetTransformComponent(entity);
 				ImGui::SeparatorText("Position");
-				ImGui::DragFloat("pos x", &transform.mPososition.x(), 0.5f);
-				ImGui::DragFloat("pos y", &transform.mPososition.y(), 0.5f);
-				ImGui::DragFloat("pos z", &transform.mPososition.z(), 0.5f);
+				ImGui::DragFloat("pos x", &transform.mPosition.x(), 0.5f);
+				ImGui::DragFloat("pos y", &transform.mPosition.y(), 0.5f);
+				ImGui::DragFloat("pos z", &transform.mPosition.z(), 0.5f);
 
 				ImGui::SeparatorText("Rotation");
 				ImGui::DragFloat("rot x", &transform.mRotation.x(), 0.5f);

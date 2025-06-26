@@ -8,7 +8,7 @@ namespace Scene
 	class TransformComponent
 	{
 	public:
-		HM::Vector3 mPososition = HM::Vector3(0.0f, 0.0f, 0.0f);
+		HM::Vector3 mPosition = HM::Vector3(0.0f, 0.0f, 0.0f);
 		HM::Vector3 mRotation = HM::Vector3(0.0f, 0.0f, 0.0f);
 		HM::Vector3 mScale = HM::Vector3(1.0f, 1.0f, 1.0f);
 
