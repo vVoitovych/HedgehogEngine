@@ -5,6 +5,7 @@
 #include "Logger/Logger.hpp"
 
 #include "DialogueWindows/ScriptDialogue/ScriptDialogue.hpp"
+#include "ContentLoader/CommonFunctions.hpp"
 
 #include "HedgehogMath/Vector.hpp"
 
@@ -15,9 +16,20 @@ extern "C"
 #include "ThirdParty/Lua/lua/lauxlib.h"
 }
 
+#include <filesystem>
+#include <functional>
 
 namespace Scene
 {
+	static std::string baseActorScript = "Scripts/Base/ActorScript.lua";
+
+	std::string GetFileNameWithoutExtension(const std::string& path)
+	{
+		std::filesystem::path filePath = path;
+		std::string result = filePath.stem().string();
+		return result;
+	}
+
 	void RegisterLuaBindings(lua_State* L, TransformComponent* transform) 
 	{
 		lua_pushlightuserdata(L, transform);
@@ -74,15 +86,6 @@ namespace Scene
 		);
 	}
 
-
-	bool CheckFunctionExists(lua_State* L, const char* func)
-	{
-		lua_getglobal(L, func);
-		bool exists = lua_isfunction(L, -1);
-		lua_pop(L, 1);
-		return exists;
-	}
-
 	void CallFunction(lua_State* L, const char* func)
 	{
 		lua_getglobal(L, func);
@@ -100,6 +103,35 @@ namespace Scene
 		}
 	}
 
+	bool CallMethod(lua_State* L, int instanceRef, const std::string& methodName, int numArgs = 0, std::function<void()> pushArgs = nullptr) 
+	{
+		if (L == nullptr)
+			return false;
+
+		lua_rawgeti(L, LUA_REGISTRYINDEX, instanceRef); 
+
+		lua_getfield(L, -1, methodName.c_str());      
+		if (!lua_isfunction(L, -1)) 
+		{
+			lua_pop(L, 2); 
+			return false;
+		}
+
+		lua_pushvalue(L, -2); 
+		if (pushArgs) 
+		{
+			pushArgs();      
+		}
+
+		if (lua_pcall(L, 1 + numArgs, 0, 0) != LUA_OK) 
+		{
+			LOGERROR("[Lua Call Error] ", lua_tostring(L, -1));
+			lua_pop(L, 1); 
+		}
+
+		lua_pop(L, 1); 
+		return true;
+	}
 
 	void ScriptSystem::Update(ECS::Coordinator& coordinator, float dt)
 	{
@@ -126,17 +158,30 @@ namespace Scene
 			return;
 
 		auto& component = coordinator.GetComponent<ScriptComponent>(entity);
-		auto& transform = coordinator.GetComponent<TransformComponent>(entity);
 		if (component.m_LuaState != nullptr)
 		{
 			lua_close(component.m_LuaState);
 			component.m_LuaState = nullptr;
 		}
 
-		component.m_ScriptPath = scriptPath;
+		component.m_ScriptPath = ContentLoader::GetAssetRelativetlyPath(scriptPath);
 		component.m_LuaState = luaL_newstate();
 		luaL_openlibs(component.m_LuaState);
+
+		auto& transform = coordinator.GetComponent<TransformComponent>(entity);
 		RegisterLuaBindings(component.m_LuaState, &transform);
+
+		std::string basePath = ContentLoader::GetAssetsDirectory() + baseActorScript;
+
+		if (luaL_dofile(component.m_LuaState, basePath.c_str()) != LUA_OK)
+		{
+			LOGERROR("[Lua Error] ", lua_tostring(component.m_LuaState, -1));
+			lua_pop(component.m_LuaState, 1);
+			lua_close(component.m_LuaState);
+			component.m_LuaState = nullptr;
+			component.m_ScriptPath = "";
+			return;
+		}
 
 		if (luaL_dofile(component.m_LuaState, scriptPath.c_str()) != LUA_OK)
 		{
@@ -148,12 +193,15 @@ namespace Scene
 			return;
 		}
 
-		// Cache function presence
-		component.m_HasOnEnable = CheckFunctionExists(component.m_LuaState, "OnEnable");
-		component.m_HasOnDisable = CheckFunctionExists(component.m_LuaState, "OnDisable");
-		component.m_HasOnUpdate = CheckFunctionExists(component.m_LuaState, "OnUpdate");
+		std::string className = GetFileNameWithoutExtension(scriptPath);
+		lua_getglobal(component.m_LuaState, className.c_str()); 
+		lua_getfield(component.m_LuaState, -1, "new");   
+		lua_pushvalue(component.m_LuaState, -2);         
+		lua_call(component.m_LuaState, 1, 1);            
+		component.m_InstanceRef = luaL_ref(component.m_LuaState, LUA_REGISTRYINDEX); 
 
-		if (component.m_Enable && component.m_HasOnEnable)
+
+		if (component.m_Enable)
 		{
 			CallFunction(component.m_LuaState, "OnEnable");
 		}
@@ -168,10 +216,7 @@ namespace Scene
 			{
 				script.m_Enable = true;
 				script.m_NewEnable.reset();
-				if (script.m_HasOnEnable)
-				{
-					CallFunction(script.m_LuaState, "OnEnable");
-				}
+				CallMethod(script.m_LuaState, script.m_InstanceRef, "OnEnable");
 			}
 		}
 	}
@@ -185,10 +230,7 @@ namespace Scene
 			{
 				script.m_Enable = false;
 				script.m_NewEnable.reset();
-				if (script.m_HasOnEnable)
-				{
-					CallFunction(script.m_LuaState, "OnDisable");
-				}
+				CallMethod(script.m_LuaState, script.m_InstanceRef, "OnDisable");
 			}
 		}
 	}
@@ -198,21 +240,19 @@ namespace Scene
 		for (auto const& entity : entities)
 		{
 			auto& script = coordinator.GetComponent<ScriptComponent>(entity);
-			if (script.m_Enable && script.m_HasOnUpdate)
+			if (script.m_Enable && script.m_LuaState != nullptr)
 			{
 				auto& transform = coordinator.GetComponent<TransformComponent>(entity);
 
 				RegisterLuaBindings(script.m_LuaState, &transform);
-
-				lua_getglobal(script.m_LuaState, "OnUpdate");
-				lua_pushnumber(script.m_LuaState, dt);
-				if (lua_pcall(script.m_LuaState, 1, 0, 0) != LUA_OK)
-				{
-					LOGERROR("[Lua OnUpdate Error] ", lua_tostring(script.m_LuaState, -1));
-					lua_pop(script.m_LuaState, 1);
-					script.m_NewEnable = false;
-				}
 				
+				CallMethod(script.m_LuaState, script.m_InstanceRef, "OnUpdate", 1, 
+					[&]() 
+					{
+						lua_pushnumber(script.m_LuaState, dt);
+					}
+				);
+
 			}
 		}
 	}

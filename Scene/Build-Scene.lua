@@ -21,7 +21,8 @@ project "Scene"
         "HedgehogMath", 
         "yaml-cpp",
         "Logger",
-        "Lua"
+        "Lua",
+        "ContentLoader"
     }
 
     targetdir ("../Binaries/" .. OutputDir .. "/%{prj.name}")

@@ -13,19 +13,14 @@ namespace Scene
 	public:
 		bool m_Enable = true;
 	
-	private:
-		bool m_HasOnEnable = false;
-		bool m_HasOnDisable = false;
-		bool m_HasOnUpdate = false;
-
-	public:
-		std::string m_ScriptPath;
 		std::optional<bool> m_NewEnable;
+		std::string m_ScriptPath;
 
 		friend class ScriptSystem;
 
 	private:
 		lua_State* m_LuaState = nullptr;
+		int m_InstanceRef;
 	};
 
 }
