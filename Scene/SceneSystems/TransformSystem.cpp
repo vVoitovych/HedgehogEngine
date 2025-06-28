@@ -15,7 +15,7 @@ namespace Scene
 		{
 			auto& transform = coordinator.GetComponent<TransformComponent>(entity);
 
-			HM::Matrix4x4 translation = HM::Matrix4x4::GetTranslation(transform.mPososition);
+			HM::Matrix4x4 translation = HM::Matrix4x4::GetTranslation(transform.mPosition);
 			HM::Matrix4x4 rotationX = HM::Matrix4x4::GetRotationX(HM::ToRadians(transform.mRotation.x()));
 			HM::Matrix4x4 rotationY = HM::Matrix4x4::GetRotationY(HM::ToRadians(transform.mRotation.y()));
 			HM::Matrix4x4 rotationZ = HM::Matrix4x4::GetRotationZ(HM::ToRadians(transform.mRotation.z()));

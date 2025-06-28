@@ -6,6 +6,7 @@
 #include "Scene/SceneSystems/MeshSystem.hpp"
 #include "Scene/SceneSystems/LightSystem.hpp"
 #include "Scene/SceneSystems/RenderSystem.hpp"
+#include "Scene/SceneSystems/ScriptSystem.hpp"
 
 #include <vector>
 #include <optional>
@@ -41,19 +42,31 @@ namespace Scene
 		void CreateGameObject(ECS::Entity entity);
 		void DeleteGameObject(ECS::Entity entity);
 		void DeleteGameObjectAndChildren(ECS::Entity entity);
+		HierarchyComponent& GetHierarchyComponent(ECS::Entity entity) const;
+		TransformComponent& GetTransformComponent(ECS::Entity entity) const;
 
+		MeshComponent& GetMeshComponent(ECS::Entity entity) const;
 		void AddMeshComponent(ECS::Entity entity);
 		void RemoveMeshComponent(ECS::Entity entity);
 		void ChangeMeshComponent(ECS::Entity entity, std::string meshPath);
 		bool HasMeshComponent(ECS::Entity entity) const;
 		void LoadMesh(ECS::Entity entity);
 
+		RenderComponent& GetRenderComponent(ECS::Entity entity) const;
 		void AddRenderComponent(ECS::Entity entity);
 		void RemoveRenderComponent(ECS::Entity entity);
 		bool HasRenderComponent(ECS::Entity entity) const;
 		void LoadMaterial(ECS::Entity entity);
 		void UpdateMaterialComponent(ECS::Entity entity);
 
+		ScriptComponent& GetScriptComponent(ECS::Entity entity) const;
+		void AddScriptComponent(ECS::Entity entity);
+		void RemoveScriptComponent(ECS::Entity entity);
+		void ChangeScript(ECS::Entity entity);
+		bool HasScriptComponent(ECS::Entity entity);
+		void InitScriptComponent(ECS::Entity entity);
+
+		LightComponent& GetLightComponent(ECS::Entity entity) const;
 		void AddLightComponent(ECS::Entity entity);
 		void RemoveLightComponent(ECS::Entity entity);
 		bool HasLightComponent(ECS::Entity entity) const;
@@ -63,11 +76,6 @@ namespace Scene
 		void UpdateShadowCastin(ECS::Entity entity, bool isCast);
 
 		ECS::Entity GetRoot() const;
-		HierarchyComponent& GetHierarchyComponent(ECS::Entity entity) const;
-		TransformComponent& GetTransformComponent(ECS::Entity entity) const;
-		MeshComponent& GetMeshComponent(ECS::Entity entity) const;
-		LightComponent& GetLightComponent(ECS::Entity entity) const;
-		RenderComponent& GetRenderComponent(ECS::Entity entity) const;
 
 		const std::vector<std::string>& GetMeshes() const;
 		const std::vector<std::string>& GetMaterials() const;
@@ -79,18 +87,18 @@ namespace Scene
 		std::string GetScenePath() const;
 
 	private:
-		std::string mSceneName;
+		std::string m_SceneName;
 
-		ECS::Coordinator mSceneCoordinator;
-		ECS::Entity mRoot;
+		ECS::Coordinator m_SceneCoordinator;
+		ECS::Entity m_Root;
 
 		// systems
-		std::shared_ptr<TransformSystem> mTransformSystem;
-		std::shared_ptr<HierarchySystem> mHierarchySystem;
-		std::shared_ptr<MeshSystem> mMeshSystem;
-		std::shared_ptr<LightSystem> mLightSystem;
-		std::shared_ptr<RenderSystem> mRenderSystem;
-
+		std::shared_ptr<TransformSystem> m_TransformSystem;
+		std::shared_ptr<HierarchySystem> m_HierarchySystem;
+		std::shared_ptr<MeshSystem> m_MeshSystem;
+		std::shared_ptr<LightSystem> m_LightSystem;
+		std::shared_ptr<RenderSystem> m_RenderSystem;
+		std::shared_ptr<ScriptSystem> m_ScriptSystem;
 	private:
 		friend class SceneSerializer;
 	};

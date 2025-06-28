@@ -45,14 +45,18 @@ namespace Renderer
 					if (ImGui::MenuItem("Render component")) 
 					{ 
 						if (m_SelectedObject.has_value())
-						scene.AddRenderComponent(m_SelectedObject.value()); 
+							scene.AddRenderComponent(m_SelectedObject.value()); 
 					}
 					if (ImGui::MenuItem("Light component")) 
 					{ 
 						if (m_SelectedObject.has_value())
-						scene.AddLightComponent(m_SelectedObject.value()); 
+							scene.AddLightComponent(m_SelectedObject.value()); 
 					}
-					if (ImGui::MenuItem("Script component")) {}
+					if (ImGui::MenuItem("Script component")) 
+					{
+						if (m_SelectedObject.has_value())
+							scene.AddScriptComponent(m_SelectedObject.value());
+					}
 					ImGui::EndMenu();
 				}
 

@@ -45,6 +45,7 @@ namespace Renderer
 		void DrawMesh(Context::Context& context);
 		void DrawRender(Context::Context& context);
 		void DrawLight(Context::Context& context);
+		void DrawScript(Context::Context& context);
 
 		void DrawMainMenu(Context::Context& context);
 		void DrawSceneInspector(Context::Context& context);

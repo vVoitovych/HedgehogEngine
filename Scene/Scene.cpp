@@ -6,6 +6,7 @@
 #include "Scene/SceneComponents/MeshComponent.hpp"
 #include "Scene/SceneComponents/LightComponent.hpp"
 #include "Scene/SceneComponents/RenderComponent.hpp"
+#include "Scene/SceneComponents/ScriptComponent.hpp"
 #include "ContentLoader/CommonFunctions.hpp"
 #include "Logger/Logger.hpp"
 #include "DialogueWindows/SceneDialogue/SceneDialogue.hpp"
@@ -19,8 +20,8 @@ namespace Scene
 {
 	Scene::Scene()
 	{
-		mSceneName = "Default";
-		mRoot = 0;
+		m_SceneName = "Default";
+		m_Root = 0;
 	}
 
 	Scene::~Scene()
@@ -29,53 +30,57 @@ namespace Scene
 
 	void Scene::InitScene()
 	{
-		mSceneCoordinator.Init();
+		m_SceneCoordinator.Init();
 		//register components
-		mSceneCoordinator.RegisterComponent<TransformComponent>();
-		mSceneCoordinator.RegisterComponent<HierarchyComponent>();
-		mSceneCoordinator.RegisterComponent<MeshComponent>();
-		mSceneCoordinator.RegisterComponent<LightComponent>();
-		mSceneCoordinator.RegisterComponent<RenderComponent>();
+		m_SceneCoordinator.RegisterComponent<TransformComponent>();
+		m_SceneCoordinator.RegisterComponent<HierarchyComponent>();
+		m_SceneCoordinator.RegisterComponent<MeshComponent>();
+		m_SceneCoordinator.RegisterComponent<LightComponent>();
+		m_SceneCoordinator.RegisterComponent<RenderComponent>();
+		m_SceneCoordinator.RegisterComponent<ScriptComponent>();
 
 		//register systems
-		mTransformSystem = mSceneCoordinator.RegisterSystem<TransformSystem>();
-		mHierarchySystem = mSceneCoordinator.RegisterSystem<HierarchySystem>();
-		mMeshSystem = mSceneCoordinator.RegisterSystem<MeshSystem>();
-		mLightSystem = mSceneCoordinator.RegisterSystem<LightSystem>();
-		mRenderSystem = mSceneCoordinator.RegisterSystem<RenderSystem>();
+		m_TransformSystem = m_SceneCoordinator.RegisterSystem<TransformSystem>();
+		m_HierarchySystem = m_SceneCoordinator.RegisterSystem<HierarchySystem>();
+		m_MeshSystem = m_SceneCoordinator.RegisterSystem<MeshSystem>();
+		m_LightSystem = m_SceneCoordinator.RegisterSystem<LightSystem>();
+		m_RenderSystem = m_SceneCoordinator.RegisterSystem<RenderSystem>();
+		m_ScriptSystem = m_SceneCoordinator.RegisterSystem<ScriptSystem>();
 
 		//bind systems and components
 		ECS::Signature signature;
-		signature.set(mSceneCoordinator.GetComponentType<TransformComponent>());
-		mSceneCoordinator.SetSystemSignature<TransformSystem>(signature);
+		signature.set(m_SceneCoordinator.GetComponentType<TransformComponent>());
+		m_SceneCoordinator.SetSystemSignature<TransformSystem>(signature);
 		signature.reset();
-		signature.set(mSceneCoordinator.GetComponentType<HierarchyComponent>());
-		mSceneCoordinator.SetSystemSignature<HierarchySystem>(signature);
+		signature.set(m_SceneCoordinator.GetComponentType<HierarchyComponent>());
+		m_SceneCoordinator.SetSystemSignature<HierarchySystem>(signature);
 		signature.reset();
-		signature.set(mSceneCoordinator.GetComponentType<MeshComponent>());
-		mSceneCoordinator.SetSystemSignature<MeshSystem>(signature);
+		signature.set(m_SceneCoordinator.GetComponentType<MeshComponent>());
+		m_SceneCoordinator.SetSystemSignature<MeshSystem>(signature);
 		signature.reset();
-		signature.set(mSceneCoordinator.GetComponentType<LightComponent>());
-		mSceneCoordinator.SetSystemSignature<LightSystem>(signature);
+		signature.set(m_SceneCoordinator.GetComponentType<LightComponent>());
+		m_SceneCoordinator.SetSystemSignature<LightSystem>(signature);
 		signature.reset();
-		signature.set(mSceneCoordinator.GetComponentType<RenderComponent>());
-		mSceneCoordinator.SetSystemSignature<RenderSystem>(signature);
+		signature.set(m_SceneCoordinator.GetComponentType<RenderComponent>());
+		m_SceneCoordinator.SetSystemSignature<RenderSystem>(signature);
+		signature.reset();
+		signature.set(m_SceneCoordinator.GetComponentType<ScriptComponent>());
+		m_SceneCoordinator.SetSystemSignature<ScriptSystem>(signature);
 
 		CreateSceneRoot();
-
-
 	}
 
 	void Scene::UpdateScene(float dt)
 	{
-		mTransformSystem->Update(mSceneCoordinator);
-		mHierarchySystem->Update(mSceneCoordinator);
-		mLightSystem->Update(mSceneCoordinator);
+		m_ScriptSystem->Update(m_SceneCoordinator, dt);
+		m_TransformSystem->Update(m_SceneCoordinator);
+		m_HierarchySystem->Update(m_SceneCoordinator);
+		m_LightSystem->Update(m_SceneCoordinator);
 	}
 
 	void Scene::ResetScene()
 	{
-		DeleteGameObjectAndChildren(mRoot);
+		DeleteGameObjectAndChildren(m_Root);
 	}
 
 	void Scene::Load()
@@ -88,8 +93,8 @@ namespace Scene
 		ResetScene();
 		SceneSerializer::DeserializeScene(*this, path);
 
-		mMeshSystem->Update(mSceneCoordinator);
-		mRenderSystem->UpdataSystem(mSceneCoordinator);
+		m_MeshSystem->Update(m_SceneCoordinator);
+		m_RenderSystem->UpdataSystem(m_SceneCoordinator);
 	}
 
 	void Scene::Save()
@@ -107,12 +112,12 @@ namespace Scene
 	{
 		char* newName = DialogueWindows::SceneRenameDialogue();
 		if (newName != nullptr)
-			mSceneName = newName;
+			m_SceneName = newName;
 	}
 
 	std::string Scene::GetSceneName() const
 	{
-		return mSceneName;
+		return m_SceneName;
 	}
 
 	ECS::Entity Scene::CreateGameObject(std::optional<ECS::Entity> parentEntity)
@@ -124,12 +129,12 @@ namespace Scene
 		}
 		else
 		{
-			realParentEntity = mRoot;
+			realParentEntity = m_Root;
 		}
-		auto& rootHierarchy = mSceneCoordinator.GetComponent<HierarchyComponent>(realParentEntity);
-		ECS::Entity entity = mSceneCoordinator.CreateEntity();
-		mSceneCoordinator.AddComponent(entity, TransformComponent{});
-		mSceneCoordinator.AddComponent(entity, HierarchyComponent{ GetNewGameObjectName(), realParentEntity, {} });
+		auto& rootHierarchy = m_SceneCoordinator.GetComponent<HierarchyComponent>(realParentEntity);
+		ECS::Entity entity = m_SceneCoordinator.CreateEntity();
+		m_SceneCoordinator.AddComponent(entity, TransformComponent{});
+		m_SceneCoordinator.AddComponent(entity, HierarchyComponent{ GetNewGameObjectName(), realParentEntity, {} });
 		rootHierarchy.mChildren.push_back(entity);
 
 		return entity;
@@ -137,38 +142,38 @@ namespace Scene
 
 	void Scene::CreateGameObject(ECS::Entity entity)
 	{
-		mSceneCoordinator.CreateEntity(entity);
-		mSceneCoordinator.AddComponent(entity, TransformComponent{});
-		mSceneCoordinator.AddComponent(entity, HierarchyComponent{});
+		m_SceneCoordinator.CreateEntity(entity);
+		m_SceneCoordinator.AddComponent(entity, TransformComponent{});
+		m_SceneCoordinator.AddComponent(entity, HierarchyComponent{});
 
 	}
 
 	void Scene::DeleteGameObject(ECS::Entity entity)
 	{
-		auto& hierarchy = mSceneCoordinator.GetComponent<HierarchyComponent>(entity);
-		auto& parentHierarchy = mSceneCoordinator.GetComponent<HierarchyComponent>(hierarchy.mParent);
+		auto& hierarchy = m_SceneCoordinator.GetComponent<HierarchyComponent>(entity);
+		auto& parentHierarchy = m_SceneCoordinator.GetComponent<HierarchyComponent>(hierarchy.mParent);
 		auto it = std::find(parentHierarchy.mChildren.begin(), parentHierarchy.mChildren.end(), entity);
 		if (it != parentHierarchy.mChildren.end())
 		{
 			parentHierarchy.mChildren.erase(it);
 			for (size_t i = 0; i < hierarchy.mChildren.size(); ++i)
 			{
-				auto& childHierarchy = mSceneCoordinator.GetComponent<HierarchyComponent>(hierarchy.mChildren[i]);
+				auto& childHierarchy = m_SceneCoordinator.GetComponent<HierarchyComponent>(hierarchy.mChildren[i]);
 				childHierarchy.mParent = hierarchy.mParent;
 				parentHierarchy.mChildren.push_back(hierarchy.mChildren[i]);
 			}
 		}
-		mSceneCoordinator.DestroyEntity(entity);
+		m_SceneCoordinator.DestroyEntity(entity);
 	}
 
 	void Scene::DeleteGameObjectAndChildren(ECS::Entity entity)
 	{
-		auto& hierarchy = mSceneCoordinator.GetComponent<HierarchyComponent>(entity);
+		auto& hierarchy = m_SceneCoordinator.GetComponent<HierarchyComponent>(entity);
 		for (size_t i = 0; i < hierarchy.mChildren.size(); ++i)
 		{
 			DeleteGameObjectAndChildren(hierarchy.mChildren[i]);
 		}		
-		mSceneCoordinator.DestroyEntity(entity);
+		m_SceneCoordinator.DestroyEntity(entity);
 	}
 
 
@@ -176,8 +181,8 @@ namespace Scene
 	{
 		if (!HasMeshComponent(entity))
 		{
-			mSceneCoordinator.AddComponent(entity, MeshComponent{ MeshSystem::sDefaultMeshPath });
-			mMeshSystem->Update(mSceneCoordinator, entity);
+			m_SceneCoordinator.AddComponent(entity, MeshComponent{ MeshSystem::sDefaultMeshPath });
+			m_MeshSystem->Update(m_SceneCoordinator, entity);
 			auto& meshComponent = GetMeshComponent(entity);
 
 			auto& transform = GetTransformComponent(entity);
@@ -186,43 +191,49 @@ namespace Scene
 
 	void Scene::RemoveMeshComponent(ECS::Entity entity)
 	{
-		mSceneCoordinator.RemoveComponent<MeshComponent>(entity);
+		if (HasMeshComponent(entity))
+		{
+			m_SceneCoordinator.RemoveComponent<MeshComponent>(entity);
+		}
 	}
 
 	void Scene::ChangeMeshComponent(ECS::Entity entity, std::string meshPath)
 	{
-		auto& meshComponent = mSceneCoordinator.GetComponent<MeshComponent>(entity);
+		auto& meshComponent = m_SceneCoordinator.GetComponent<MeshComponent>(entity);
 		meshComponent.mMeshPath = meshPath;
-		mMeshSystem->Update(mSceneCoordinator, entity);
+		m_MeshSystem->Update(m_SceneCoordinator, entity);
 	}
 
 	bool Scene::HasMeshComponent(ECS::Entity entity) const
 	{
-		return mSceneCoordinator.HasComponent<MeshComponent>(entity);
+		return m_SceneCoordinator.HasComponent<MeshComponent>(entity);
 	}
 
 	void Scene::LoadMesh(ECS::Entity entity)
 	{
-		mMeshSystem->LoadMesh(mSceneCoordinator, entity);
+		m_MeshSystem->LoadMesh(m_SceneCoordinator, entity);
 	}
 
 	void Scene::AddRenderComponent(ECS::Entity entity)
 	{
 		if (!HasRenderComponent(entity))
 		{
-			mSceneCoordinator.AddComponent(entity, RenderComponent());
-			mRenderSystem->Update(mSceneCoordinator, entity);
+			m_SceneCoordinator.AddComponent(entity, RenderComponent());
+			m_RenderSystem->Update(m_SceneCoordinator, entity);
 		}
 	}
 
 	void Scene::RemoveRenderComponent(ECS::Entity entity)
 	{
-		mSceneCoordinator.RemoveComponent<RenderComponent>(entity);
+		if (HasRenderComponent(entity))
+		{
+			m_SceneCoordinator.RemoveComponent<RenderComponent>(entity);
+		}
 	}
 
 	bool Scene::HasRenderComponent(ECS::Entity entity) const
 	{
-		return mSceneCoordinator.HasComponent<RenderComponent>(entity);;
+		return m_SceneCoordinator.HasComponent<RenderComponent>(entity);;
 	}
 
 	void Scene::LoadMaterial(ECS::Entity entity)
@@ -233,107 +244,146 @@ namespace Scene
 			return;
 		}
 		std::string relatedPath = ContentLoader::GetAssetRelativetlyPath(path);
-		auto& component = mSceneCoordinator.GetComponent<RenderComponent>(entity);
+		auto& component = m_SceneCoordinator.GetComponent<RenderComponent>(entity);
 		component.mMaterial = relatedPath;		
 
-		mRenderSystem->Update(mSceneCoordinator, entity);
+		m_RenderSystem->Update(m_SceneCoordinator, entity);
 	}
 
 	void Scene::UpdateMaterialComponent(ECS::Entity entity)
 	{
-		mRenderSystem->Update(mSceneCoordinator, entity);
+		m_RenderSystem->Update(m_SceneCoordinator, entity);
+	}
+
+	void Scene::AddScriptComponent(ECS::Entity entity)
+	{
+		if (!HasScriptComponent(entity))
+		{
+			m_SceneCoordinator.AddComponent(entity, ScriptComponent());
+		}
+	}
+
+	void Scene::RemoveScriptComponent(ECS::Entity entity)
+	{
+		if (HasScriptComponent(entity))
+		{
+			m_SceneCoordinator.RemoveComponent<ScriptComponent>(entity);
+		}
+	}
+
+	void Scene::ChangeScript(ECS::Entity entity)
+	{
+		m_ScriptSystem->ChangeScript(entity, m_SceneCoordinator);
+	}
+
+	bool Scene::HasScriptComponent(ECS::Entity entity)
+	{
+		return m_SceneCoordinator.HasComponent<ScriptComponent>(entity);
+	}
+
+	void Scene::InitScriptComponent(ECS::Entity entity)
+	{
+		m_ScriptSystem->InitScript(entity, m_SceneCoordinator);
 	}
 
 	void Scene::AddLightComponent(ECS::Entity entity)
 	{
 		if (!HasLightComponent(entity))
 		{
-			mSceneCoordinator.AddComponent(entity, LightComponent());
+			m_SceneCoordinator.AddComponent(entity, LightComponent());
 		}
 	}
 
 	void Scene::RemoveLightComponent(ECS::Entity entity)
 	{
-		mSceneCoordinator.RemoveComponent<LightComponent>(entity);
+		if (HasLightComponent(entity))
+		{
+			m_SceneCoordinator.RemoveComponent<LightComponent>(entity);
+		}
 	}
 
 	bool Scene::HasLightComponent(ECS::Entity entity) const
 	{
-		return mSceneCoordinator.HasComponent<LightComponent>(entity);
+		return m_SceneCoordinator.HasComponent<LightComponent>(entity);
 	}
 
 	size_t Scene::GetLightCount() const
 	{
-		return mLightSystem->GetLightComponentsCount();
+		return m_LightSystem->GetLightComponentsCount();
 	}
 
 	const LightComponent& Scene::GetLightComponentByIndex(size_t index) const
 	{
-		return mLightSystem->GetLightComponentByIndex(mSceneCoordinator, index);
+		return m_LightSystem->GetLightComponentByIndex(m_SceneCoordinator, index);
 	}
 
 	void Scene::UpdateShadowCastin(ECS::Entity entity, bool isCast)
 	{
-		mLightSystem->SetShadowCasting(mSceneCoordinator, entity, isCast);
+		m_LightSystem->SetShadowCasting(m_SceneCoordinator, entity, isCast);
 	}
 
 
 	ECS::Entity Scene::GetRoot() const
 	{
-		return mRoot;
+		return m_Root;
 	}
 
 	HierarchyComponent& Scene::GetHierarchyComponent(ECS::Entity entity) const
 	{
-		return mSceneCoordinator.GetComponent<HierarchyComponent>(entity);
+		return m_SceneCoordinator.GetComponent<HierarchyComponent>(entity);
 	}
 
 	TransformComponent& Scene::GetTransformComponent(ECS::Entity entity) const
 	{
-		return mSceneCoordinator.GetComponent<TransformComponent>(entity);
+		return m_SceneCoordinator.GetComponent<TransformComponent>(entity);
 	}
 
 	MeshComponent& Scene::GetMeshComponent(ECS::Entity entity) const
 	{
-		return mSceneCoordinator.GetComponent<MeshComponent>(entity);
+		return m_SceneCoordinator.GetComponent<MeshComponent>(entity);
 	}
 
 	LightComponent& Scene::GetLightComponent(ECS::Entity entity) const
 	{
-		return mSceneCoordinator.GetComponent<LightComponent>(entity);
+		return m_SceneCoordinator.GetComponent<LightComponent>(entity);
 	}
 
 	RenderComponent& Scene::GetRenderComponent(ECS::Entity entity) const
 	{
-		return mSceneCoordinator.GetComponent<RenderComponent>(entity);
+		return m_SceneCoordinator.GetComponent<RenderComponent>(entity);
+	}
+
+	ScriptComponent& Scene::GetScriptComponent(ECS::Entity entity) const
+	{
+		return m_SceneCoordinator.GetComponent<ScriptComponent>(entity);
 	}
 
 	const std::vector<std::string>& Scene::GetMeshes() const 
 	{
-		return mMeshSystem->GetMeshes();
+		return m_MeshSystem->GetMeshes();
 	}
 
 	const std::vector<std::string>& Scene::GetMaterials() const
 	{
-		return mRenderSystem->GetMaterials();
+		return m_RenderSystem->GetMaterials();
 	}
 
 	const std::vector<ECS::Entity>& Scene::GetRenderableEntities() const
 	{
-		return mRenderSystem->GetEntities();
+		return m_RenderSystem->GetEntities();
 	}
 
 	const std::optional<HM::Vector3>& Scene::GetShadowLightDirection() const
 	{
-		return mLightSystem->GetShadowDir();
+		return m_LightSystem->GetShadowDir();
 	}
 
 	void Scene::CreateSceneRoot()
 	{
-		mRoot = mSceneCoordinator.CreateEntity();
-		mSceneCoordinator.AddComponent(mRoot, TransformComponent{});
-		mSceneCoordinator.AddComponent(mRoot, HierarchyComponent{ "Root", mRoot, {} });
-		mHierarchySystem->SetRoot(mRoot);
+		m_Root = m_SceneCoordinator.CreateEntity();
+		m_SceneCoordinator.AddComponent(m_Root, TransformComponent{});
+		m_SceneCoordinator.AddComponent(m_Root, HierarchyComponent{ "Root", m_Root, {} });
+		m_HierarchySystem->SetRoot(m_Root);
 
 	}
 
@@ -347,7 +397,7 @@ namespace Scene
 
 	std::string Scene::GetScenePath() const
 	{
-		std::string result = ContentLoader::GetAssetsDirectory() + "Scenes\\" + mSceneName;
+		std::string result = ContentLoader::GetAssetsDirectory() + "Scenes\\" + m_SceneName;
 
 		return result;
 	}
