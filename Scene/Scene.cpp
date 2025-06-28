@@ -281,6 +281,11 @@ namespace Scene
 		return m_SceneCoordinator.HasComponent<ScriptComponent>(entity);
 	}
 
+	void Scene::InitScriptComponent(ECS::Entity entity)
+	{
+		m_ScriptSystem->InitScript(entity, m_SceneCoordinator);
+	}
+
 	void Scene::AddLightComponent(ECS::Entity entity)
 	{
 		if (!HasLightComponent(entity))

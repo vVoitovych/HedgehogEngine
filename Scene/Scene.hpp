@@ -64,6 +64,7 @@ namespace Scene
 		void RemoveScriptComponent(ECS::Entity entity);
 		void ChangeScript(ECS::Entity entity);
 		bool HasScriptComponent(ECS::Entity entity);
+		void InitScriptComponent(ECS::Entity entity);
 
 		LightComponent& GetLightComponent(ECS::Entity entity) const;
 		void AddLightComponent(ECS::Entity entity);

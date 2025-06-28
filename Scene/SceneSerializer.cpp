@@ -3,6 +3,7 @@
 #include "SceneComponents/TransformComponent.hpp"
 #include "SceneComponents/HierarchyComponent.hpp"
 #include "Scene/SceneComponents/LightComponent.hpp"
+#include "Scene/SceneComponents/ScriptComponent.hpp"
 
 #include "HedgehogMath/Vector.hpp"
 
@@ -156,6 +157,40 @@ namespace Scene
 
 			out << YAML::EndMap;
 		}
+		if (scene.HasScriptComponent(entity))
+		{ // script component
+			auto& scriptComponent = scene.GetScriptComponent(entity);
+			out << YAML::Key << "ScriptComponent";
+			out << YAML::BeginMap;
+			out << YAML::Key << "ScriptEnable" << YAML::Value << scriptComponent.m_Enable;
+			out << YAML::Key << "ScriptFile" << YAML::Value << scriptComponent.m_ScriptPath;
+			if (!scriptComponent.m_Params.empty())
+			{
+				out << YAML::Key << "ScriptParams";
+				out << YAML::BeginMap;
+				for (auto& param : scriptComponent.m_Params)
+				{
+					out << YAML::Key << param.first;
+					out << YAML::BeginMap;
+					out << YAML::Key << "ParamType" << YAML::Value << static_cast<size_t>(param.second.type);
+					switch (param.second.type)
+					{
+					case ParamType::Boolean:
+						out << YAML::Key << "ParamValue" << YAML::Value << std::get<bool>(param.second.value);
+						break;
+					case ParamType::Number:
+						out << YAML::Key << "ParamValue" << YAML::Value << std::get<float>(param.second.value);
+						break;
+					default:
+						break;
+					}
+					out << YAML::EndMap;
+				}
+				out << YAML::EndMap;
+			}
+			out << YAML::EndMap;
+		}
+
 		// annd other components here
 		out << YAML::Key << "Children" << YAML::Value << YAML::BeginSeq;
 		for (auto child : hierarchy.mChildren)
@@ -235,6 +270,42 @@ namespace Scene
 			renderComponent.mIsVisible = renderComponentData["Visible"].as<bool>();
 			renderComponent.mMaterial = renderComponentData["Material"].as<std::string>();
 
+		}
+
+		auto scriptComponentData = node["ScriptComponent"];
+		if (scriptComponentData)
+		{
+			scene.AddScriptComponent(entity);
+			auto& scriptComponent = scene.GetScriptComponent(entity);
+			scriptComponent.m_Enable = scriptComponentData["ScriptEnable"].as<bool>();
+			scriptComponent.m_ScriptPath = scriptComponentData["ScriptFile"].as<std::string>();
+			auto parameters = scriptComponentData["ScriptParams"];
+			if (parameters)
+			{
+				if (parameters.IsMap())
+				{
+					for (const auto& param : parameters)
+					{
+						std::string paramName = param.first.as<std::string>();
+						auto data = param.second;
+						ParamType type = static_cast<ParamType>(data["ParamType"].as<size_t>());
+						std::variant<bool, float> value;
+						switch (type)
+						{
+						case ParamType::Boolean:
+							value = data["ParamValue"].as<bool>();
+							break;
+						case ParamType::Number:
+							value = data["ParamValue"].as<float>();
+							break;
+						default:
+							break;
+						}
+						scriptComponent.m_Params[paramName] = { type, value, false };
+					}
+				}
+			}
+			scene.InitScriptComponent(entity);
 		}
 
 		hierarchy.mName = node["Name"].as<std::string>();

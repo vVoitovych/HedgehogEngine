@@ -14,6 +14,7 @@ namespace Scene
 
 		void ClearScriptComponent(ECS::Entity entity, ECS::Coordinator& coordinator);
 		void ChangeScript(ECS::Entity entity, ECS::Coordinator& coordinator);
+		void InitScript(ECS::Entity entity, ECS::Coordinator& coordinator);
 
 	private:
 		void CallOnEnable(ECS::Coordinator& coordinator);

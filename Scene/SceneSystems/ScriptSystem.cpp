@@ -164,6 +164,71 @@ namespace Scene
 		}
 	}
 
+	void ScriptSystem::InitScript(ECS::Entity entity, ECS::Coordinator& coordinator)
+	{
+		auto& component = coordinator.GetComponent<ScriptComponent>(entity);
+
+		if (component.m_LuaState != nullptr)
+		{
+			lua_close(component.m_LuaState);
+			component.m_LuaState = nullptr;
+		}
+		if (component.m_Enable)
+		{
+			component.m_NewEnable = true;
+		}
+		component.m_LuaState = luaL_newstate();
+		luaL_openlibs(component.m_LuaState);
+
+		auto& transform = coordinator.GetComponent<TransformComponent>(entity);
+		RegisterLuaBindings(component.m_LuaState, &transform);
+
+		std::string basePath = ContentLoader::GetAssetsDirectory() + baseActorScript;
+
+		if (luaL_dofile(component.m_LuaState, basePath.c_str()) != LUA_OK)
+		{
+			LOGERROR("[Lua Error] ", lua_tostring(component.m_LuaState, -1));
+			lua_pop(component.m_LuaState, 1);
+			lua_close(component.m_LuaState);
+			component.m_LuaState = nullptr;
+			component.m_ScriptPath = "";
+			return;
+		}
+
+		std::string scriptPath = ContentLoader::GetAssetsDirectory() + component.m_ScriptPath;
+		if (luaL_dofile(component.m_LuaState, scriptPath.c_str()) != LUA_OK)
+		{
+			LOGERROR("[Lua Error] ", lua_tostring(component.m_LuaState, -1));
+			lua_pop(component.m_LuaState, 1);
+			lua_close(component.m_LuaState);
+			component.m_LuaState = nullptr;
+			component.m_ScriptPath = "";
+			return;
+		}
+
+		std::string className = GetFileNameWithoutExtension(scriptPath);
+		lua_getglobal(component.m_LuaState, className.c_str());
+		lua_getfield(component.m_LuaState, -1, "new");
+		lua_pushvalue(component.m_LuaState, -2);
+		lua_call(component.m_LuaState, 1, 1);
+		component.m_InstanceRef = luaL_ref(component.m_LuaState, LUA_REGISTRYINDEX);
+
+		for (const auto& param : component.m_Params)
+		{
+			switch (param.second.type)
+			{
+			case ParamType::Boolean:
+				SetGlobalBool(component.m_LuaState, param.first, std::get<bool>(param.second.value));
+				break;
+			case ParamType::Number:
+				SetGlobalNumber(component.m_LuaState, param.first, std::get<float>(param.second.value));
+				break;
+			default:
+				break;
+			}
+		}
+	}
+
 	void ScriptSystem::CallOnEnable(ECS::Coordinator& coordinator)
 	{
 		for (auto const& entity : entities)

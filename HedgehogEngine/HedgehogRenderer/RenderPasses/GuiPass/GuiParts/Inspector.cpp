@@ -356,8 +356,8 @@ namespace Renderer
 				{
 					scene.ChangeScript(entity);
 				}
-
-				ImGui::SeparatorText("Script parameters");
+				if (!component.m_Params.empty())
+					ImGui::SeparatorText("Script parameters");
 
 				for (auto& param : component.m_Params)
 				{

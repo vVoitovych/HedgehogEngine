@@ -13,13 +13,23 @@ Scene:
         Parent: 0
         TransformComponent:
           Position: [4.5, -0.5, 0.5]
-          Rotation: [-3, -16, 150]
+          Rotation: [-3, -16, 151.65215]
           Scale: [1, 1, 1]
         MeshComponent:
           MeshPath: Models\viking_room.obj
         RenderComponent:
           Visible: true
           Material: Materials\test1.material
+        ScriptComponent:
+          ScriptEnable: true
+          ScriptFile: Scripts\PlayerScript.lua
+          ScriptParams:
+            speed:
+              ParamType: 1
+              ParamValue: 7.45
+            clockWise:
+              ParamType: 0
+              ParamValue: false
         Children:
           - Entity: 2
             Name: "sub_room\x00t_0"
