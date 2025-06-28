@@ -1,4 +1,5 @@
 #include "ScriptSystem.hpp"
+#include "LuaHelpers.hpp"
 
 #include "Scene/SceneComponents/ScriptComponent.hpp"
 #include "Scene/SceneComponents/TransformComponent.hpp"
@@ -86,52 +87,6 @@ namespace Scene
 		);
 	}
 
-	void CallFunction(lua_State* L, const char* func)
-	{
-		lua_getglobal(L, func);
-		if (lua_isfunction(L, -1)) 
-		{
-			if (lua_pcall(L, 0, 0, 0) != LUA_OK) 
-			{
-				LOGERROR("[Lua Call Error] ", lua_tostring(L, -1));
-				lua_pop(L, 1);
-			}
-		}
-		else 
-		{
-			lua_pop(L, 1);
-		}
-	}
-
-	bool CallMethod(lua_State* L, int instanceRef, const std::string& methodName, int numArgs = 0, std::function<void()> pushArgs = nullptr) 
-	{
-		if (L == nullptr)
-			return false;
-
-		lua_rawgeti(L, LUA_REGISTRYINDEX, instanceRef); 
-
-		lua_getfield(L, -1, methodName.c_str());      
-		if (!lua_isfunction(L, -1)) 
-		{
-			lua_pop(L, 2); 
-			return false;
-		}
-
-		lua_pushvalue(L, -2); 
-		if (pushArgs) 
-		{
-			pushArgs();      
-		}
-
-		if (lua_pcall(L, 1 + numArgs, 0, 0) != LUA_OK) 
-		{
-			LOGERROR("[Lua Call Error] ", lua_tostring(L, -1));
-			lua_pop(L, 1); 
-		}
-
-		lua_pop(L, 1); 
-		return true;
-	}
 
 	void ScriptSystem::Update(ECS::Coordinator& coordinator, float dt)
 	{
@@ -200,10 +155,12 @@ namespace Scene
 		lua_call(component.m_LuaState, 1, 1);            
 		component.m_InstanceRef = luaL_ref(component.m_LuaState, LUA_REGISTRYINDEX); 
 
+		component.m_Params.clear();
+		component.m_Params = ParseParameters(component.m_LuaState);
 
 		if (component.m_Enable)
 		{
-			CallFunction(component.m_LuaState, "OnEnable");
+			CallMethod(component.m_LuaState, component.m_InstanceRef, "OnEnable");
 		}
 	}
 
@@ -211,12 +168,12 @@ namespace Scene
 	{
 		for (auto const& entity : entities)
 		{
-			auto& script = coordinator.GetComponent<ScriptComponent>(entity);
-			if (script.m_NewEnable.has_value() && script.m_NewEnable.value())
+			auto& component = coordinator.GetComponent<ScriptComponent>(entity);
+			if (component.m_NewEnable.has_value() && component.m_NewEnable.value())
 			{
-				script.m_Enable = true;
-				script.m_NewEnable.reset();
-				CallMethod(script.m_LuaState, script.m_InstanceRef, "OnEnable");
+				component.m_Enable = true;
+				component.m_NewEnable.reset();
+				CallMethod(component.m_LuaState, component.m_InstanceRef, "OnEnable");
 			}
 		}
 	}
@@ -225,12 +182,12 @@ namespace Scene
 	{
 		for (auto const& entity : entities)
 		{
-			auto& script = coordinator.GetComponent<ScriptComponent>(entity);
-			if (script.m_NewEnable.has_value() && !script.m_NewEnable.value())
+			auto& component = coordinator.GetComponent<ScriptComponent>(entity);
+			if (component.m_NewEnable.has_value() && !component.m_NewEnable.value())
 			{
-				script.m_Enable = false;
-				script.m_NewEnable.reset();
-				CallMethod(script.m_LuaState, script.m_InstanceRef, "OnDisable");
+				component.m_Enable = false;
+				component.m_NewEnable.reset();
+				CallMethod(component.m_LuaState, component.m_InstanceRef, "OnDisable");
 			}
 		}
 	}
@@ -239,17 +196,42 @@ namespace Scene
 	{
 		for (auto const& entity : entities)
 		{
-			auto& script = coordinator.GetComponent<ScriptComponent>(entity);
-			if (script.m_Enable && script.m_LuaState != nullptr)
+			auto& component = coordinator.GetComponent<ScriptComponent>(entity);
+
+			for (auto& param : component.m_Params)
+			{
+				if (param.second.dirty)
+				{
+					bool bVal;
+					float nVal;
+
+					param.second.dirty = false;
+					switch (param.second.type)
+					{
+					case ParamType::Boolean:
+						bVal = std::get<bool>(param.second.value);
+						SetGlobalBool(component.m_LuaState, param.first, bVal);
+						break;
+					case ParamType::Number:
+						nVal = std::get<float>(param.second.value);
+						SetGlobalNumber(component.m_LuaState, param.first, nVal);
+						break;
+					default:
+						break;
+					}
+				}
+			}
+
+			if (component.m_Enable && component.m_LuaState != nullptr)
 			{
 				auto& transform = coordinator.GetComponent<TransformComponent>(entity);
 
-				RegisterLuaBindings(script.m_LuaState, &transform);
+				RegisterLuaBindings(component.m_LuaState, &transform);
 				
-				CallMethod(script.m_LuaState, script.m_InstanceRef, "OnUpdate", 1, 
+				CallMethod(component.m_LuaState, component.m_InstanceRef, "OnUpdate", 1,
 					[&]() 
 					{
-						lua_pushnumber(script.m_LuaState, dt);
+						lua_pushnumber(component.m_LuaState, dt);
 					}
 				);
 

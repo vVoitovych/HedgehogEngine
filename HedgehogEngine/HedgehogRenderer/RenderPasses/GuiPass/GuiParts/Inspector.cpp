@@ -339,22 +339,50 @@ namespace Renderer
 		{
 			if (ImGui::CollapsingHeader("Script Component", ImGuiTreeNodeFlags_DefaultOpen))
 			{
-				auto& script = scene.GetScriptComponent(entity);
+				auto& component = scene.GetScriptComponent(entity);
 
-				bool enabled = script.m_Enable;
+				bool enabled = component.m_Enable;
 				if (ImGui::Checkbox("Enabled", &enabled))
 				{
-					script.m_NewEnable = enabled;
+					component.m_NewEnable = enabled;
 				}
 				std::string name = "No scripts selected";
-				if (script.m_ScriptPath != "")
-					name = script.m_ScriptPath;
+				if (component.m_ScriptPath != "")
+					name = component.m_ScriptPath;
 
 				ImGui::InputText("Selected script:", &name[0], name.capacity() + 1);
 
 				if (ImGui::Button("Load Script"))
 				{
 					scene.ChangeScript(entity);
+				}
+
+				ImGui::SeparatorText("Script parameters");
+
+				for (auto& param : component.m_Params)
+				{
+					bool bVal;
+					float nVal;
+					switch (param.second.type)
+					{
+					case Scene::ParamType::Boolean:
+						bVal = std::get<bool>(param.second.value);
+						if (ImGui::Checkbox(param.first.c_str(), &bVal))
+						{
+							param.second.value = bVal;
+							param.second.dirty = true;
+						}
+						break;
+					case Scene::ParamType::Number:
+						nVal = std::get<float>(param.second.value);
+						if (ImGui::DragFloat(param.first.c_str(), &nVal, 0.05f))
+						{
+							param.second.value = nVal;
+							param.second.dirty = true;
+						}
+					default:
+						break;
+					}
 				}
 
 				if (ImGui::Button("Remove script component"))
