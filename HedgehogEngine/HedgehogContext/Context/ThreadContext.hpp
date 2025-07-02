@@ -55,7 +55,7 @@ namespace Context
 		struct FrameUniform
 		{
 			alignas(16) HM::Matrix4x4 view;
-			alignas(16) HM::Matrix4x4 proj;
+			alignas(16) HM::Matrix4x4 viewProj;
 			alignas(16) HM::Vector3 eyePosition;
 			alignas(16) Light lights[MAX_LIGHTS_COUNT];
 			size_t lightCount;

@@ -115,7 +115,7 @@ namespace Context
 
 		FrameUniform ubo{};
 		ubo.view = frameContext.GetCameraViewMatrix();
-		ubo.proj = frameContext.GetCameraProjMatrix();
+		ubo.viewProj = frameContext.GetCameraProjMatrix() * frameContext.GetCameraViewMatrix();
 		ubo.eyePosition = HM::Vector4(frameContext.GetCameraPosition(), 1.0f);
 		ubo.lightCount = lightContainer.GetLightCount();
 		const auto& lights = lightContainer.GetLights();
