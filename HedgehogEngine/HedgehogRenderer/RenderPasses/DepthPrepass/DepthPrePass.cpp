@@ -43,12 +43,16 @@ namespace Renderer
 		auto& vulkanContext = context.GetVulkanContext();
 		auto& engineContext = context.GetEngineContext();
 
-		auto& materialContainer = engineContext.GetMaterialContainer();
 		auto& drawListContainer = engineContext.GetDrawListContainer();
 
 		auto& commandBuffer = threadContext.GetCommandBuffer();
+		auto frameIndex = threadContext.GetFrameIndex();
 		auto extend = vulkanContext.GetSwapChain().GetSwapChainExtent();
 		auto backBufferIndex = frameContext.GetBackBufferIndex();
+
+		DepthPrepassFrameUniform ubo{};
+		ubo.viewProj = frameContext.GetCameraProjMatrix() * frameContext.GetCameraViewMatrix();
+		m_FrameUniforms[frameIndex].UpdateUniformBuffer(ubo);
 
 		std::array<VkClearValue, 1> clearValues{};
 		clearValues[0].depthStencil = { 1.0f, 0 };
@@ -75,12 +79,10 @@ namespace Renderer
 		commandBuffer.BindVertexBuffers(0, 1, positionBuffers, offsets);
 		commandBuffer.BindIndexBuffer(meshContainer.GetIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
-		commandBuffer.BindDescriptorSers(VK_PIPELINE_BIND_POINT_GRAPHICS, *m_Pipeline, 0, 1, threadContext.GetDescriptorSet().GetNativeSet(), 0, nullptr);
+		commandBuffer.BindDescriptorSers(VK_PIPELINE_BIND_POINT_GRAPHICS, *m_Pipeline, 0, 1, m_FrameSets[frameIndex].GetNativeSet(), 0, nullptr);
 		auto& opaqueDrawList = drawListContainer.GetOpaqueList();
 		for(auto& drawNode : opaqueDrawList)
 		{ 
-			auto& descriptorSet = materialContainer.GetDescriptorSet(drawNode.materialIndex);
-			commandBuffer.BindDescriptorSers(VK_PIPELINE_BIND_POINT_GRAPHICS, *m_Pipeline, 1, 1, descriptorSet.GetNativeSet(), 0, nullptr);
 			for (auto& object : drawNode.objects)
 			{
 				commandBuffer.PushConstants(m_Pipeline->GetNativePipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(DepthPrePassPushConstants), &object.objMatrix);
@@ -95,17 +97,53 @@ namespace Renderer
 	DepthPrePass::DepthPrePass(const Context::Context& context, const ResourceManager& resourceManager)
 	{
 		auto& vulkanContext = context.GetVulkanContext();
-		auto& threadContext = context.GetThreadContext();
-		auto& engineContext = context.GetEngineContext();
-
-		auto& materialContainer = engineContext.GetMaterialContainer();
-
 		auto& device = vulkanContext.GetDevice();
+
+		std::vector<Wrappers::PoolSizeRatio> sizes =
+		{
+			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 }
+		};
+		m_FrameAllocator = std::make_unique<Wrappers::DescriptorAllocator>(device, MAX_FRAMES_IN_FLIGHT, sizes);
+
+		Wrappers::DescriptorLayoutBuilder builder;
+		builder.AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+		m_FrameLayout = std::make_unique<Wrappers::DescriptorSetLayout>(device, builder, VK_SHADER_STAGE_VERTEX_BIT);
+
+		m_FrameUniforms.clear();
+		m_FrameSets.clear();
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+		{
+			Wrappers::UBO<DepthPrepassFrameUniform> frameUniformBuffer(device);
+			m_FrameUniforms.push_back(std::move(frameUniformBuffer));
+		}
+
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+		{
+			VkDescriptorBufferInfo bufferInfo{};
+			bufferInfo.buffer = m_FrameUniforms[i].GetNativeBuffer();
+			bufferInfo.offset = 0;
+			bufferInfo.range = m_FrameUniforms[i].GetBufferSize();
+
+			Wrappers::DescriptorWrites write{};
+			write.dstBinding = 0;
+			write.dstArrayElement = 0;
+			write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			write.descriptorCount = 1;
+			write.pBufferInfo = &bufferInfo;
+			write.pNext = nullptr;
+			std::vector<Wrappers::DescriptorWrites> writes;
+			writes.push_back(write);
+
+			Wrappers::DescriptorSet descriptorSet(vulkanContext.GetDevice(), *m_FrameAllocator, *m_FrameLayout);
+			descriptorSet.Update(vulkanContext.GetDevice(), writes);
+			m_FrameSets.push_back(std::move(descriptorSet));
+		}
+
 		DepthPrePassInfo info{ resourceManager.GetDepthBuffer().GetFormat()};
 		m_RenderPass = std::make_unique<Wrappers::RenderPass>(device, info.GetInfo());
 
 		std::unique_ptr<Wrappers::PipelineInfo> pipelineInfo = std::make_unique<DepthPrePassPipelineInfo>(device);
-		std::vector<VkDescriptorSetLayout> descriptorLayouts = { threadContext.GetLayout().GetNativeLayout(), materialContainer.GetDescriptorSetLayout().GetNativeLayout()};
+		std::vector<VkDescriptorSetLayout> descriptorLayouts = { m_FrameLayout->GetNativeLayout() };
 
 		VkPushConstantRange pushConstant;
 		pushConstant.offset = 0;
@@ -131,10 +169,26 @@ namespace Renderer
 	void DepthPrePass::Cleanup(const Context::Context& context)
 	{
 		auto& vulkanContext = context.GetVulkanContext();
+		auto& device = vulkanContext.GetDevice();
 
-		m_Pipeline->Cleanup(vulkanContext.GetDevice());
-		m_FrameBuffer->Cleanup(vulkanContext.GetDevice());
-		m_RenderPass->Cleanup(vulkanContext.GetDevice());
+		m_Pipeline->Cleanup(device);
+		m_FrameBuffer->Cleanup(device);
+		m_RenderPass->Cleanup(device);
+
+		for (auto& frameUniform : m_FrameUniforms)
+		{
+			frameUniform.Cleanup(device);
+		}
+		m_FrameUniforms.clear();
+
+		for (auto& frameSet : m_FrameSets)
+		{
+			frameSet.Cleanup(device, *m_FrameAllocator);
+		}
+		m_FrameSets.clear();
+
+		m_FrameLayout->Cleanup(device);
+		m_FrameAllocator->Cleanup(device);
 
 	}
 

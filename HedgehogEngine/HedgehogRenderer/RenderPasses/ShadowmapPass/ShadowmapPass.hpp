@@ -70,7 +70,7 @@ namespace Renderer
             float height;
         };
 
-        static constexpr size_t MaxShadowCascades = 4;
+        static constexpr uint32_t MaxShadowCascades = 4;
         std::array<HM::Matrix4x4, MaxShadowCascades> m_ShadowmapMatricies;
         std::vector<std::vector<ShadowViewport>> m_ShadowViewports;
 

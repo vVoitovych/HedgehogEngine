@@ -11,7 +11,7 @@ layout(location = 2) in vec4 inWorldPosition;
 layout(set = 0, binding = 0) uniform UniformBufferObject 
 {
     mat4 view;
-    mat4 proj;
+    mat4 viewProj;
     vec4 eyePos;
     Light lights[MAX_LIGHTS_COUNT];
     int lightCount;

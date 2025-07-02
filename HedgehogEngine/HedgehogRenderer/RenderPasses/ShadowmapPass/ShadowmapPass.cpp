@@ -202,7 +202,7 @@ namespace Renderer
 			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 }
 		};
 
-		m_ShadowmapAllocator = std::make_unique<Wrappers::DescriptorAllocator>(device, MAX_FRAMES_IN_FLIGHT * MaxShadowCascades, sizes);
+		m_ShadowmapAllocator = std::make_unique<Wrappers::DescriptorAllocator>(device, MaxShadowCascades * MAX_FRAMES_IN_FLIGHT, sizes);
 	}
 
 	void ShadowmapPass::CreateLayout(const Wrappers::Device& device)
