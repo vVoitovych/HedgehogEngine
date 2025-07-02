@@ -28,6 +28,8 @@
 #include "HedgehogContext/Containers/MeshContainer/Mesh.hpp"
 #include "HedgehogContext/Containers/MaterialContainer/MaterialContainer.hpp"
 #include "HedgehogContext/Containers/DrawListContrainer/DrawListContainer.hpp"
+#include "HedgehogContext/Containers/LightContainer/LightContainer.hpp"
+
 #include "HedgehogCommon/Common/RendererSettings.hpp"
 
 #include "Scene/Scene.hpp"
@@ -49,6 +51,21 @@ namespace Renderer
 		auto& commandBuffer = threadContext.GetCommandBuffer();
 		auto extend = vulkanContext.GetSwapChain().GetSwapChainExtent();
 		auto backBufferIndex = frameContext.GetBackBufferIndex();
+		auto frameIndex = threadContext.GetFrameIndex();
+
+		const auto& lightContainer = engineContext.GetLightContainer();
+
+		ForwardPassFrameUniform ubo{};
+		ubo.view = frameContext.GetCameraViewMatrix();
+		ubo.viewProj = frameContext.GetCameraProjMatrix() * frameContext.GetCameraViewMatrix();
+		ubo.eyePosition = HM::Vector4(frameContext.GetCameraPosition(), 1.0f);
+		ubo.lightCount = lightContainer.GetLightCount();
+		const auto& lights = lightContainer.GetLights();
+		for (size_t i = 0; i < ubo.lightCount; ++i)
+		{
+			ubo.lights[i] = lights[i];
+		}
+		m_FrameUniforms[frameIndex].UpdateUniformBuffer(ubo);
 
 		std::array<VkClearValue, 2> clearValues{};
 		clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
@@ -76,7 +93,7 @@ namespace Renderer
 		commandBuffer.BindVertexBuffers(0, 3, buffers, offsets);
 		commandBuffer.BindIndexBuffer(meshContainer.GetIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
-		commandBuffer.BindDescriptorSers(VK_PIPELINE_BIND_POINT_GRAPHICS, *m_Pipeline, 0, 1, threadContext.GetDescriptorSet().GetNativeSet(), 0, nullptr);
+		commandBuffer.BindDescriptorSers(VK_PIPELINE_BIND_POINT_GRAPHICS, *m_Pipeline, 0, 1, m_FrameSets[frameIndex].GetNativeSet(), 0, nullptr);
 		auto& opaqueDrawList = drawListContainer.GetOpaqueList();
 		for(auto& drawNode : opaqueDrawList)
 		{ 
@@ -96,17 +113,57 @@ namespace Renderer
 	ForwardPass::ForwardPass(const Context::Context& context, const ResourceManager& resourceManager)
 	{
 		auto& vulkanContext = context.GetVulkanContext();
-		auto& threadContext = context.GetThreadContext();
 		auto& engineContext = context.GetEngineContext();
 
 		auto& materialContainer = engineContext.GetMaterialContainer();
-
 		auto& device = vulkanContext.GetDevice();
+
+		std::vector<Wrappers::PoolSizeRatio> sizes =
+		{
+			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 }
+		};
+
+		m_FrameAllocator = std::make_unique<Wrappers::DescriptorAllocator>(device, MAX_FRAMES_IN_FLIGHT, sizes);
+
+		Wrappers::DescriptorLayoutBuilder builder;
+		builder.AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+		m_FrameLayout = std::make_unique<Wrappers::DescriptorSetLayout>(device, builder, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
+
+		m_FrameUniforms.clear();
+		m_FrameSets.clear();
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+		{
+			Wrappers::UBO<ForwardPassFrameUniform> frameUniformBuffer(device);
+			m_FrameUniforms.push_back(std::move(frameUniformBuffer));
+		}
+
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+		{
+			VkDescriptorBufferInfo bufferInfo{};
+			bufferInfo.buffer = m_FrameUniforms[i].GetNativeBuffer();
+			bufferInfo.offset = 0;
+			bufferInfo.range = m_FrameUniforms[i].GetBufferSize();
+
+			Wrappers::DescriptorWrites write{};
+			write.dstBinding = 0;
+			write.dstArrayElement = 0;
+			write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			write.descriptorCount = 1;
+			write.pBufferInfo = &bufferInfo;
+			write.pNext = nullptr;
+			std::vector<Wrappers::DescriptorWrites> writes;
+			writes.push_back(write);
+
+			Wrappers::DescriptorSet descriptorSet(device, *m_FrameAllocator, *m_FrameLayout);
+			descriptorSet.Update(device, writes);
+			m_FrameSets.push_back(std::move(descriptorSet));
+		}
+
 		ForwardPassInfo info{ resourceManager.GetColorBuffer().GetFormat(), resourceManager.GetDepthBuffer().GetFormat()};
 		m_RenderPass = std::make_unique<Wrappers::RenderPass>(device, info.GetInfo());
 
 		std::unique_ptr<Wrappers::PipelineInfo> pipelineInfo = std::make_unique<ForwardPipelineInfo>(device);
-		std::vector<VkDescriptorSetLayout> descriptorLayouts = { threadContext.GetLayout().GetNativeLayout(), materialContainer.GetDescriptorSetLayout().GetNativeLayout()};
+		std::vector<VkDescriptorSetLayout> descriptorLayouts = { m_FrameLayout->GetNativeLayout(), materialContainer.GetDescriptorSetLayout().GetNativeLayout()};
 
 		VkPushConstantRange pushConstant;
 		pushConstant.offset = 0;
@@ -132,10 +189,25 @@ namespace Renderer
 	void ForwardPass::Cleanup(const Context::Context& context)
 	{
 		auto& vulkanContext = context.GetVulkanContext();
+		auto& device = vulkanContext.GetDevice();
 
-		m_Pipeline->Cleanup(vulkanContext.GetDevice());
-		m_FrameBuffer->Cleanup(vulkanContext.GetDevice());
-		m_RenderPass->Cleanup(vulkanContext.GetDevice());
+		m_Pipeline->Cleanup(device);
+		m_FrameBuffer->Cleanup(device);
+		m_RenderPass->Cleanup(device);
+		for (auto& frameUniform : m_FrameUniforms)
+		{
+			frameUniform.Cleanup(device);
+		}
+		m_FrameUniforms.clear();
+
+		for (auto& frameSet : m_FrameSets)
+		{
+			frameSet.Cleanup(device, *m_FrameAllocator);
+		}
+		m_FrameSets.clear();
+
+		m_FrameLayout->Cleanup(device);
+		m_FrameAllocator->Cleanup(device);
 
 	}
 
