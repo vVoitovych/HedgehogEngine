@@ -39,41 +39,6 @@ namespace Context
 			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 }
 		};
 
-		m_FrameAllocator = std::make_unique<Wrappers::DescriptorAllocator>(vulkanContext.GetDevice(), MAX_FRAMES_IN_FLIGHT, sizes);
-
-		Wrappers::DescriptorLayoutBuilder builder;
-		builder.AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-		m_FrameLayout = std::make_unique<Wrappers::DescriptorSetLayout>(vulkanContext.GetDevice(), builder, VK_SHADER_STAGE_VERTEX_BIT  | VK_SHADER_STAGE_FRAGMENT_BIT);
-
-		m_FrameUniforms.clear();
-		m_FrameSets.clear();
-		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
-		{
-			Wrappers::UBO<FrameUniform> frameUniformBuffer(vulkanContext.GetDevice());
-			m_FrameUniforms.push_back(std::move(frameUniformBuffer));
-		}
-
-		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
-		{
-			VkDescriptorBufferInfo bufferInfo{};
-			bufferInfo.buffer = m_FrameUniforms[i].GetNativeBuffer();
-			bufferInfo.offset = 0;
-			bufferInfo.range = m_FrameUniforms[i].GetBufferSize();
-
-			Wrappers::DescriptorWrites write{};
-			write.dstBinding = 0;
-			write.dstArrayElement = 0;
-			write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			write.descriptorCount = 1;
-			write.pBufferInfo = &bufferInfo;
-			write.pNext = nullptr;
-			std::vector<Wrappers::DescriptorWrites> writes;
-			writes.push_back(write);
-
-			Wrappers::DescriptorSet descriptorSet(vulkanContext.GetDevice(), *m_FrameAllocator, *m_FrameLayout);
-			descriptorSet.Update(vulkanContext.GetDevice(), writes);
-			m_FrameSets.push_back(std::move(descriptorSet));
-		}
 		LOGINFO("Thread context Initialized");
 	}
 
@@ -91,39 +56,7 @@ namespace Context
 		m_CommandBuffers.clear();
 		m_SyncObjects.clear();
 
-		for (auto& frameUniform : m_FrameUniforms)
-		{
-			frameUniform.Cleanup(vulkanContext.GetDevice());
-		}
-		m_FrameUniforms.clear();
-
-		for (auto& frameSet : m_FrameSets)
-		{
-			frameSet.Cleanup(vulkanContext.GetDevice(), *m_FrameAllocator);
-		}
-		m_FrameSets.clear();
-
-		m_FrameLayout->Cleanup(vulkanContext.GetDevice());
-		m_FrameAllocator->Cleanup(vulkanContext.GetDevice());
-
 		LOGINFO("Thread context cleaned");
-	}
-
-	void ThreadContext::Update(const EngineContext& engineContext, const FrameContext& frameContext)
-	{
-		const auto& lightContainer = engineContext.GetLightContainer();
-
-		FrameUniform ubo{};
-		ubo.view = frameContext.GetCameraViewMatrix();
-		ubo.viewProj = frameContext.GetCameraProjMatrix() * frameContext.GetCameraViewMatrix();
-		ubo.eyePosition = HM::Vector4(frameContext.GetCameraPosition(), 1.0f);
-		ubo.lightCount = lightContainer.GetLightCount();
-		const auto& lights = lightContainer.GetLights();
-		for (size_t i = 0; i < ubo.lightCount; ++i)
-		{
-			ubo.lights[i] = lights[i];
-		}
-		m_FrameUniforms[m_FrameIndex].UpdateUniformBuffer(ubo);
 	}
 
 	void ThreadContext::NextFrame()
@@ -144,21 +77,6 @@ namespace Context
 	Wrappers::SyncObject& ThreadContext::GetSyncObject()
 	{
 		return m_SyncObjects[m_FrameIndex];
-	}
-
-	const Wrappers::DescriptorSetLayout& ThreadContext::GetLayout() const
-	{
-		return *m_FrameLayout;
-	}
-
-	const Wrappers::DescriptorSet& ThreadContext::GetDescriptorSet() const
-	{
-		return m_FrameSets[m_FrameIndex];
-	}
-
-	Wrappers::DescriptorSet& ThreadContext::GetDescriptorSet()
-	{
-		return m_FrameSets[m_FrameIndex];
 	}
 
 }

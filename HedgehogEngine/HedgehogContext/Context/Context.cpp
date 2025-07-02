@@ -25,7 +25,6 @@ namespace Context
     {
         m_EngineContext->UpdateContext(*m_VulkanContext, dt);
         m_FrameContext->UpdateContext(m_EngineContext->GetCamera());
-        m_ThreadContext->Update(*m_EngineContext, *m_FrameContext);
     }
 
     void Context::Cleanup()
