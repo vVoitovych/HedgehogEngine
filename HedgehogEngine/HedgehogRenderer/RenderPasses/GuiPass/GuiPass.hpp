@@ -35,6 +35,7 @@ namespace Renderer
 
 		static bool IsCursorPositionInGUI();
 		void ShowMaterialWindow();
+		void ShowCpuProfilingWindow();
 
 	private:
 		void DrawGui(Context::Context& context);
@@ -52,7 +53,7 @@ namespace Renderer
 		void DrawHierarchyNode(Context::Context& context, ECS::Entity entity, int& index);
 
 		void DrawSettingsWindow(Context::Context& context);
-
+		void DrawCpuProfilingWindow(Context::Context& context);
 		void UploadFonts();
 
 	private:
@@ -63,6 +64,7 @@ namespace Renderer
 		std::optional<ECS::Entity> m_SelectedObject;
 
 		bool m_MaterialWindowShow = false;
+		bool m_CpuProfilingWindow = false;
 	};
 }
 

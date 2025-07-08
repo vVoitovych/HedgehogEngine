@@ -11,6 +11,8 @@
 #include "HedgehogWrappers/Wrappeers/SwapChain/SwapChain.hpp"
 #include "HedgehogSettings/Settings/HedgehogSettings.hpp"
 
+#include "HedgehogEngine/HedgehogCommon/CpuProfiler/CpuProfiler.hpp"
+
 #include "Logger/Logger.hpp"
 
 namespace Renderer
@@ -36,6 +38,7 @@ namespace Renderer
 
 	void Renderer::DrawFrame(Context::Context& context)
 	{		
+		START_TIME_STAMP("Render frame");
 		auto& vulkanContext = context.GetVulkanContext();
 		auto& settings = context.GetEngineContext().GetSettings();
 		m_RenderQueue->UpdateData(context);
@@ -58,6 +61,8 @@ namespace Renderer
 		}
 
 		m_RenderQueue->Render(context, *m_ResourceManager);
+
+		END_TIME_STAMP("Render frame");
 	}
 
 }

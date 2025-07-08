@@ -10,6 +10,9 @@
 #include "HedgehogRenderer/RenderPasses/PresentPass/PresentPass.hpp"
 #include "HedgehogRenderer/RenderPasses/GuiPass/GuiPass.hpp"
 
+#include "HedgehogEngine/HedgehogCommon/CpuProfiler/CpuProfiler.hpp"
+
+
 namespace Renderer
 {
 	RenderQueue::RenderQueue(const Context::Context& context, const ResourceManager& resourceManager)
@@ -42,12 +45,29 @@ namespace Renderer
 		if (vulkanContext.IsWindowResized())
 			return;
 
+		START_TIME_STAMP("Init pass");
 		m_InitPass->Render(context);
+		END_TIME_STAMP("Init pass");
+
+		START_TIME_STAMP("Shadowmap pass");
 		m_ShadowmapPass->Render(context, resourceManager);
+		END_TIME_STAMP("Shadowmap pass");
+
+		START_TIME_STAMP("Depth pre pass");
 		m_DepthPrePass->Render(context, resourceManager);
+		END_TIME_STAMP("Depth pre pass");
+
+		START_TIME_STAMP("Forward pass");
 		m_ForwardPass->Render(context, resourceManager);
+		END_TIME_STAMP("Forward pass");
+
+		START_TIME_STAMP("GUI pass");
 		m_GuiPass->Render(context, resourceManager);
+		END_TIME_STAMP("GUI pass");
+
+		START_TIME_STAMP("Present pass");
 		m_PresentPass->Render(context, resourceManager);
+		END_TIME_STAMP("Present pass");
 
 	}
 

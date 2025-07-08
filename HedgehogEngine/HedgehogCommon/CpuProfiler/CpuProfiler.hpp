@@ -20,7 +20,7 @@ namespace Context
 
 		void FinalizeTimeStamps();
 
-		std::vector<std::unique_ptr<CpuTimeStampNode>>& GetTimeStamps();
+		std::vector<std::unique_ptr<CpuTimeStampNode>> GetTimeStamps();
 
 	private:
 		CpuProfiler() = default;
@@ -44,6 +44,6 @@ namespace Context
 void START_TIME_STAMP(const std::string& name);
 void END_TIME_STAMP(const std::string& name);
 void FINALIZE_TIME_STAMP();
-std::vector<std::unique_ptr<Context::CpuTimeStampNode>>& GET_TIME_STAMP();
+std::vector<std::unique_ptr<Context::CpuTimeStampNode>> GET_TIME_STAMP();
 
 

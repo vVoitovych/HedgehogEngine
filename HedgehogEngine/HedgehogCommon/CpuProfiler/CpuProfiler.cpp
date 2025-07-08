@@ -25,7 +25,8 @@ namespace Context
 			return;
 		}
 
-		auto& node = m_NodesStack.top();
+		auto node = std::move(m_NodesStack.top());
+		m_NodesStack.pop();
 		if (node->GetName() != name) 
 		{
 			LOGERROR("Mismatched EndTimeStamp! Expected '", node->GetName(), "', got '", name);
@@ -41,32 +42,20 @@ namespace Context
 		{
 			m_NodesStack.top()->AddChild(std::move(node));
 		}
-		m_NodesStack.pop();
 	}
 
 	void CpuProfiler::FinalizeTimeStamps()
 	{
-		while (!m_NodesStack.empty())
+		if (!m_NodesStack.empty())
 		{
-			auto& node = m_NodesStack.top();
-			node->End();
-			if (m_NodesStack.empty())
-			{
-				m_Nodes.push_back(std::move(node));
-			}
-			else
-			{
-				m_NodesStack.top()->AddChild(std::move(node));
-			}
-			m_NodesStack.pop();
+			LOGERROR("Not all time stamps were ended!");
 		}
 		m_ReadyNodes = std::move(m_Nodes);
 	}
 
-	std::vector<std::unique_ptr<CpuTimeStampNode>>& CpuProfiler::GetTimeStamps()
+	std::vector<std::unique_ptr<CpuTimeStampNode>> CpuProfiler::GetTimeStamps()
 	{
-		std::vector<std::unique_ptr<CpuTimeStampNode>>&& result = std::move(m_ReadyNodes);
-		return result;
+		return std::move(m_ReadyNodes);
 	}
 }
 
@@ -91,11 +80,11 @@ void FINALIZE_TIME_STAMP()
 #endif
 }
 
-std::vector<std::unique_ptr<Context::CpuTimeStampNode>>& GET_TIME_STAMP()
+std::vector<std::unique_ptr<Context::CpuTimeStampNode>> GET_TIME_STAMP()
 {
-	std::vector<std::unique_ptr<Context::CpuTimeStampNode>> result;
 #ifdef DEBUG
-	result = std::move(Context::CpuProfiler::Instance().GetTimeStamps());
+	return Context::CpuProfiler::Instance().GetTimeStamps();
+#else
+	return std::vector<std::unique_ptr<Context::CpuTimeStampNode>>();
 #endif
-	return result;
 }

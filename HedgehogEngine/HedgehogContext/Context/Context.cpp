@@ -5,6 +5,8 @@
 #include "FrameContext.hpp"
 #include "ThreadContext.hpp"
 
+#include "HedgehogEngine/HedgehogCommon/CpuProfiler/CpuProfiler.hpp"
+
 #include <stdexcept>
 
 namespace Context
@@ -23,8 +25,10 @@ namespace Context
 
     void Context::UpdateContext(float dt)
     {
+        START_TIME_STAMP("Context update");
         m_EngineContext->UpdateContext(*m_VulkanContext, dt);
         m_FrameContext->UpdateContext(m_EngineContext->GetCamera());
+        END_TIME_STAMP("Context update");
     }
 
     void Context::Cleanup()

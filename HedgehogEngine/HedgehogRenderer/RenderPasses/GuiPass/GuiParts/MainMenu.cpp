@@ -72,6 +72,12 @@ namespace Renderer
 				ImGui::EndMenu();
 			}
 
+			if (ImGui::BeginMenu("Debug"))
+			{
+				if (ImGui::MenuItem("Cpu Profiling")) { ShowCpuProfilingWindow(); }
+
+				ImGui::EndMenu();
+			}
 
 			ImGui::EndMainMenuBar();
 		}

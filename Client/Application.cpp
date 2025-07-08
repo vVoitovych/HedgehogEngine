@@ -2,6 +2,7 @@
 
 #include "HedgehogEngine/HedgehogContext/Context/Context.hpp"
 #include "HedgehogEngine/HedgehogContext/Context/VulkanContext.hpp"
+#include "HedgehogEngine/HedgehogCommon/CpuProfiler/CpuProfiler.hpp"
 
 #include "HedgehogEngine/HedgehogRenderer/Renderer/Renderer.hpp"
 
@@ -37,10 +38,13 @@ namespace HedgehogClient
 
 		while (!mContext->GetVulkanContext().ShouldClose())
 		{
+			START_TIME_STAMP("Frame");
 			float dt = GetFrameTime();
 			mContext->GetVulkanContext().HandleInput();
 			mContext->UpdateContext(dt);
 			mRenderer->DrawFrame(*mContext);
+			END_TIME_STAMP("Frame");
+			FINALIZE_TIME_STAMP();
 		}
 
 		Cleanup();

@@ -581,3 +581,4 @@ Binaries
 /HedgehogMathTest/HedgehogMathTest.vcxproj
 /HedgehogMathTest/HedgehogMathTest.vcxproj.user
 /ThirdParty/Lua/Lua.vcxproj
+/HedgehogEngine/HedgehogCommon/HedgehogCommon.vcxproj.user

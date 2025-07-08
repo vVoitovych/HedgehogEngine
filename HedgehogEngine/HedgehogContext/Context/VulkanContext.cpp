@@ -6,6 +6,7 @@
 #include "HedgehogCommon/Common/RendererSettings.hpp"
 #include "HedgehogRenderer/RenderPasses/GuiPass/GuiPass.hpp"
 
+#include "HedgehogEngine/HedgehogCommon/CpuProfiler/CpuProfiler.hpp"
 #include "ContentLoader/TextureLoader.hpp"
 
 #include <vector>
@@ -37,7 +38,9 @@ namespace Context
 
 	void VulkanContext::HandleInput()
 	{
+		START_TIME_STAMP("Handle input");
 		m_WindowManager->HandleInput();
+		END_TIME_STAMP("Handle input");
 	}
 
 	WinManager::WindowManager& VulkanContext::GetWindowManager()

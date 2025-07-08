@@ -169,6 +169,7 @@ namespace Renderer
 		DrawSceneInspector(context);
 		DrawMainMenu(context);
 		DrawSettingsWindow(context);
+		DrawCpuProfilingWindow(context);
 		// TODO remove
 		ImGui::ShowDemoWindow();
 	}
