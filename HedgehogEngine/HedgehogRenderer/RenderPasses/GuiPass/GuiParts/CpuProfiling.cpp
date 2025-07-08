@@ -16,10 +16,13 @@ namespace Renderer
 		{
 			std::string stamp = node->GetName() + ": " + std::to_string(node->DurationMs());
 
-			ImGui::TreeNodeEx((void*)(intptr_t)index, nodeFlags, stamp.c_str());
+			bool node_open = ImGui::TreeNodeEx((void*)(intptr_t)index, nodeFlags, stamp.c_str());
 			++index;
-			DrawTimeStamps(node->GetChildren(), index);
-			ImGui::TreePop();
+			if (node_open)
+			{
+				DrawTimeStamps(node->GetChildren(), index);
+				ImGui::TreePop();
+			}
 		}
 	}
 
