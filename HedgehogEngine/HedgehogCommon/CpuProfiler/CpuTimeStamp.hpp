@@ -17,6 +17,7 @@ namespace Context
         double DurationMs() const;
 
         void AddChild(std::unique_ptr<CpuTimeStampNode>&& node);
+        void AccumulateDuration(double val);
 
         const std::string& GetName() const;
         const  std::vector<std::unique_ptr<CpuTimeStampNode>>& GetChildren() const;
@@ -24,7 +25,7 @@ namespace Context
     private:
         std::string m_Name;
         std::chrono::high_resolution_clock::time_point m_StartTime;
-        std::chrono::high_resolution_clock::time_point m_EndTime;
+        double m_Duration;
         std::vector<std::unique_ptr<CpuTimeStampNode>> m_Children;
 
 

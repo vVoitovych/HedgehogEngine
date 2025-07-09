@@ -50,12 +50,23 @@ namespace Context
 		{
 			LOGERROR("Not all time stamps were ended!");
 		}
-		m_ReadyNodes = std::move(m_Nodes);
+		if (m_Counter == 0)
+		{
+			m_ReadyNodes = std::move(m_Nodes);
+		}
+		++m_Counter;
+		const uint16_t MaxFramesToAccumulate = 50;
+		if (m_Counter > MaxFramesToAccumulate)
+		{
+			m_Counter = 0;
+		}
+		m_Nodes.clear();
 	}
 
-	std::vector<std::unique_ptr<CpuTimeStampNode>> CpuProfiler::GetTimeStamps()
+
+	const std::vector<std::unique_ptr<CpuTimeStampNode>>& CpuProfiler::GetTimeStamps() const
 	{
-		return std::move(m_ReadyNodes);
+		return m_ReadyNodes;
 	}
 }
 
@@ -80,7 +91,7 @@ void FINALIZE_TIME_STAMP()
 #endif
 }
 
-std::vector<std::unique_ptr<Context::CpuTimeStampNode>> GET_TIME_STAMP()
+const std::vector<std::unique_ptr<Context::CpuTimeStampNode>>& GET_TIME_STAMP()
 {
 #ifdef DEBUG
 	return Context::CpuProfiler::Instance().GetTimeStamps();

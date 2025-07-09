@@ -48,7 +48,7 @@ namespace Renderer
 				ImGui::EndMenuBar();
 			}
 
-			auto timeStamps = GET_TIME_STAMP();
+			auto& timeStamps = GET_TIME_STAMP();
 			int index = 0;
 			DrawTimeStamps(timeStamps, index);
 
