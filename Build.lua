@@ -27,6 +27,7 @@ include "HedgehogEngine/HedgehogWrappers/Build-HedgehogWrappers.lua"
 include "HedgehogEngine/HedgehogSettings/Build-HedgehogSettings.lua"
 
 include "Client/Build-Client.lua"
+include "HedgehogEditor/Build-HedgehogEditor.lua"
 include "ContentLoader/Build-ContentLoader.lua"
 include "DialogueWindows/Build-DialogueWindows.lua"
 include "ECS/Build-ECS.lua"
