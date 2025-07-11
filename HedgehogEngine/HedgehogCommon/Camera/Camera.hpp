@@ -39,6 +39,7 @@ namespace Context
 
 		HM::Matrix4x4 GetViewMatrix() const;
 		HM::Matrix4x4 GetProjectionMatrix() const;
+		HM::Matrix4x4 GetViewProjectionMatrix() const;
 		HM::Vector3 GetPosition() const;
 
 		float GetNearPlane() const;
@@ -68,6 +69,7 @@ namespace Context
 
 		HM::Matrix4x4 m_ViewMatrix;
 		HM::Matrix4x4 m_ProjMatrix;
+		HM::Matrix4x4 m_ViewProjMatrix;
 	};
 
 }

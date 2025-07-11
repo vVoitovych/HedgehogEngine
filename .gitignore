@@ -583,3 +583,4 @@ Binaries
 /ThirdParty/Lua/Lua.vcxproj
 /HedgehogEditor/HedgehogEditor.vcxproj
 /HedgehogEngine/HedgehogCommon/HedgehogCommon.vcxproj.user
+/HedgehogEngine/HedgehogContext/HedgehogContext.vcxproj.user

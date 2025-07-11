@@ -1,8 +1,5 @@
 #pragma once
 
-#include "HedgehogCommon/Common/RendererSettings.hpp"
-#include "HedgehogContext/Containers/LightContainer/Light.hpp"
-
 #include <vector>
 
 namespace Wrappers
@@ -15,22 +12,23 @@ namespace Wrappers
 namespace Context
 {
 	class VulkanContext;
-	class EngineContext;
-	class FrameContext;
 
-	class ThreadContext
+	class RendererContext
 	{
 	public:
-		ThreadContext(const VulkanContext& vulkanContext);
-		~ThreadContext();
+		RendererContext(const VulkanContext& vulkanContext);
+		~RendererContext();
 
-		ThreadContext(const ThreadContext&) = delete;
-		ThreadContext& operator=(const ThreadContext&) = delete;
+		RendererContext(const RendererContext&) = delete;
+		RendererContext& operator=(const RendererContext&) = delete;
 
 		void Cleanup(const VulkanContext& vulkanContext);
 
 		void NextFrame();
 		uint32_t GetFrameIndex() const;
+
+		void SetBackBufferIndex(uint32_t index);
+		uint32_t GetBackBufferIndex() const;
 
 		Wrappers::CommandBuffer& GetCommandBuffer();
 		Wrappers::SyncObject& GetSyncObject();
@@ -40,6 +38,7 @@ namespace Context
 		std::vector<Wrappers::SyncObject> m_SyncObjects;
 
 		uint32_t m_FrameIndex = 0;
+		uint32_t m_BackBufferIndex = 0;
 	};
 
 }

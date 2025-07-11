@@ -3,8 +3,7 @@
 
 #include "HedgehogContext/Context/Context.hpp"
 #include "HedgehogContext/Context/VulkanContext.hpp"
-#include "HedgehogContext/Context/ThreadContext.hpp"
-#include "HedgehogContext/Context/FrameContext.hpp"
+#include "HedgehogContext/Context/RendererContext.hpp"
 #include "HedgehogContext/Context/EngineContext.hpp"
 
 #include "HedgehogRenderer/ResourceManager/ResourceManager.hpp"
@@ -96,8 +95,8 @@ namespace Renderer
 
 	void GuiPass::Render(Context::Context& context, const ResourceManager& resourceManager)
 	{
-		auto& threadContext = context.GetThreadContext();
-		auto& commandBuffer = threadContext.GetCommandBuffer();
+		auto& rendererContext = context.GetRendererContext();
+		auto& commandBuffer = rendererContext.GetCommandBuffer();
 
 		auto& vulkanContext = context.GetVulkanContext();
 		auto& swapChain = vulkanContext.GetSwapChain();

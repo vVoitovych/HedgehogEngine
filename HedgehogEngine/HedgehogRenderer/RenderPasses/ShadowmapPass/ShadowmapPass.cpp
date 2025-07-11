@@ -5,7 +5,7 @@
 
 #include "HedgehogContext/Context/Context.hpp"
 #include "HedgehogContext/Context/EngineContext.hpp"
-#include "HedgehogContext/Context/ThreadContext.hpp"
+#include "HedgehogContext/Context/RendererContext.hpp"
 #include "HedgehogContext/Context/VulkanContext.hpp"
 
 #include "HedgehogCommon/Camera/Camera.hpp"
@@ -44,13 +44,13 @@ namespace Renderer
 {
 	void ShadowmapPass::Render(Context::Context& context, const ResourceManager& resourceManager)
 	{
-		auto& threadContext = context.GetThreadContext();
+		auto& rendererContext = context.GetRendererContext();
 		auto& engineContext = context.GetEngineContext();
 		auto& settings = context.GetEngineContext().GetSettings().GetShadowmapSettings();
-		uint32_t frameIndex = threadContext.GetFrameIndex();
+		uint32_t frameIndex = rendererContext.GetFrameIndex();
 
 		auto& drawListContainer = engineContext.GetDrawListContainer();
-		auto& commandBuffer = threadContext.GetCommandBuffer();
+		auto& commandBuffer = rendererContext.GetCommandBuffer();
 
 		std::array<VkClearValue, 1> clearValues{};
 		clearValues[0].depthStencil = { 1.0f, 0 };
@@ -150,7 +150,7 @@ namespace Renderer
 		UpdateShadowmapMatricies(context);
 
 		auto& settings = context.GetEngineContext().GetSettings().GetShadowmapSettings();
-		auto index = context.GetThreadContext().GetFrameIndex();
+		auto index = context.GetRendererContext().GetFrameIndex();
 
 		for (size_t i = 0; i < settings->GetCascadesCount(); ++i)
 		{

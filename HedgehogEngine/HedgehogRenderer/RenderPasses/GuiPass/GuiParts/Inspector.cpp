@@ -2,8 +2,6 @@
 
 #include "HedgehogContext/Context/Context.hpp"
 #include "HedgehogContext/Context/VulkanContext.hpp"
-#include "HedgehogContext/Context/ThreadContext.hpp"
-#include "HedgehogContext/Context/FrameContext.hpp"
 #include "HedgehogContext/Context/EngineContext.hpp"
 
 #include "HedgehogRenderer/ResourceManager/ResourceManager.hpp"

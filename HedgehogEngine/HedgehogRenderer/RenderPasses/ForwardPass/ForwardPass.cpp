@@ -5,9 +5,9 @@
 
 #include "HedgehogContext/Context/Context.hpp"
 #include "HedgehogContext/Context/EngineContext.hpp"
-#include "HedgehogContext/Context/ThreadContext.hpp"
+#include "HedgehogContext/Context/RendererContext.hpp"
 #include "HedgehogContext/Context/VulkanContext.hpp"
-#include "HedgehogContext/Context/FrameContext.hpp"
+#include "HedgehogEngine/HedgehogCommon/Camera/Camera.hpp"
 
 #include "HedgehogRenderer/ResourceManager/ResourceManager.hpp"
 #include "HedgehogWrappers/Wrappeers/Device/Device.hpp"
@@ -40,25 +40,25 @@ namespace Renderer
 {
 	void ForwardPass::Render(Context::Context& context, const ResourceManager& resourceManager)
 	{
-		auto& frameContext = context.GetFrameContext();
-		auto& threadContext = context.GetThreadContext();
+		auto& rendererContext = context.GetRendererContext();
 		auto& vulkanContext = context.GetVulkanContext();
 		auto& engineContext = context.GetEngineContext();
 
 		auto& materialContainer = engineContext.GetMaterialContainer();
 		auto& drawListContainer = engineContext.GetDrawListContainer();
 
-		auto& commandBuffer = threadContext.GetCommandBuffer();
+		auto& commandBuffer = rendererContext.GetCommandBuffer();
 		auto extend = vulkanContext.GetSwapChain().GetSwapChainExtent();
-		auto backBufferIndex = frameContext.GetBackBufferIndex();
-		auto frameIndex = threadContext.GetFrameIndex();
+		auto backBufferIndex = rendererContext.GetBackBufferIndex();
+		auto frameIndex = rendererContext.GetFrameIndex();
 
 		const auto& lightContainer = engineContext.GetLightContainer();
 
+		const auto& camera = engineContext.GetCamera();
 		ForwardPassFrameUniform ubo{};
-		ubo.view = frameContext.GetCameraViewMatrix();
-		ubo.viewProj = frameContext.GetCameraProjMatrix() * frameContext.GetCameraViewMatrix();
-		ubo.eyePosition = HM::Vector4(frameContext.GetCameraPosition(), 1.0f);
+		ubo.view = camera.GetViewMatrix();
+		ubo.viewProj = camera.GetViewProjectionMatrix();
+		ubo.eyePosition = HM::Vector4(camera.GetPosition(), 1.0f);
 		ubo.lightCount = lightContainer.GetLightCount();
 		const auto& lights = lightContainer.GetLights();
 		for (size_t i = 0; i < ubo.lightCount; ++i)

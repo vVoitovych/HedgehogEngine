@@ -6,8 +6,7 @@ namespace Context
 {
 	class VulkanContext;
 	class EngineContext;
-	class FrameContext;
-	class ThreadContext;
+	class RendererContext;
 
 	class Context
 	{
@@ -26,19 +25,16 @@ namespace Context
 
 		VulkanContext& GetVulkanContext();
 		EngineContext& GetEngineContext();
-		FrameContext& GetFrameContext();
-		ThreadContext& GetThreadContext();
+		RendererContext& GetRendererContext();
 
 		const VulkanContext& GetVulkanContext() const;
 		const EngineContext& GetEngineContext() const;
-		const FrameContext& GetFrameContext() const;
-		const ThreadContext& GetThreadContext() const;
+		const RendererContext& GetRendererContext() const;
 
 	private:
 		std::unique_ptr<VulkanContext> m_VulkanContext;
 		std::unique_ptr<EngineContext> m_EngineContext;
-		std::unique_ptr<FrameContext> m_FrameContext;
-		std::unique_ptr<ThreadContext> m_ThreadContext;
+		std::unique_ptr<RendererContext> m_RendererContext;
 
 	};
 

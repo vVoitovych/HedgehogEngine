@@ -3,8 +3,6 @@
 #include "HedgehogContext/Context/Context.hpp"
 #include "HedgehogContext/Context/VulkanContext.hpp"
 #include "HedgehogContext/Context/EngineContext.hpp"
-#include "HedgehogContext/Context/FrameContext.hpp"
-#include "HedgehogContext/Context/ThreadContext.hpp"
 #include "HedgehogRenderer/RenderQueue/RenderQueue.hpp"
 #include "HedgehogRenderer/ResourceManager/ResourceManager.hpp"
 #include "HedgehogWrappers/Wrappeers/Device/Device.hpp"

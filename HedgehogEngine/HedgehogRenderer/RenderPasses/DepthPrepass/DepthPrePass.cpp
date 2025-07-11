@@ -5,9 +5,9 @@
 
 #include "HedgehogContext/Context/Context.hpp"
 #include "HedgehogContext/Context/EngineContext.hpp"
-#include "HedgehogContext/Context/ThreadContext.hpp"
+#include "HedgehogContext/Context/RendererContext.hpp"
 #include "HedgehogContext/Context/VulkanContext.hpp"
-#include "HedgehogContext/Context/FrameContext.hpp"
+#include "HedgehogEngine/HedgehogCommon/Camera/Camera.hpp"
 
 #include "HedgehogRenderer/ResourceManager/ResourceManager.hpp"
 #include "HedgehogWrappers/Wrappeers/Device/Device.hpp"
@@ -38,20 +38,19 @@ namespace Renderer
 {
 	void DepthPrePass::Render(Context::Context& context, const ResourceManager& resourceManager)
 	{
-		auto& frameContext = context.GetFrameContext();
-		auto& threadContext = context.GetThreadContext();
+		auto& rendererContext = context.GetRendererContext();
 		auto& vulkanContext = context.GetVulkanContext();
 		auto& engineContext = context.GetEngineContext();
 
 		auto& drawListContainer = engineContext.GetDrawListContainer();
 
-		auto& commandBuffer = threadContext.GetCommandBuffer();
-		auto frameIndex = threadContext.GetFrameIndex();
+		auto& commandBuffer = rendererContext.GetCommandBuffer();
+		auto frameIndex = rendererContext.GetFrameIndex();
 		auto extend = vulkanContext.GetSwapChain().GetSwapChainExtent();
-		auto backBufferIndex = frameContext.GetBackBufferIndex();
+		auto backBufferIndex = rendererContext.GetBackBufferIndex();
 
 		DepthPrepassFrameUniform ubo{};
-		ubo.viewProj = frameContext.GetCameraProjMatrix() * frameContext.GetCameraViewMatrix();
+		ubo.viewProj = engineContext.GetCamera().GetViewProjectionMatrix();
 		m_FrameUniforms[frameIndex].UpdateUniformBuffer(ubo);
 
 		std::array<VkClearValue, 1> clearValues{};

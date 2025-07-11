@@ -1,9 +1,8 @@
 #include "InitPass.hpp"
 #include "HedgehogContext/Context/VulkanContext.hpp"
 #include "HedgehogContext/Context/Context.hpp"
-#include "HedgehogContext/Context/ThreadContext.hpp"
+#include "HedgehogContext/Context/RendererContext.hpp"
 #include "HedgehogContext/Context/EngineContext.hpp"
-#include "HedgehogContext/Context/FrameContext.hpp"
 
 #include "HedgehogWrappers/Wrappeers/Device/Device.hpp"
 #include "HedgehogWrappers/Wrappeers/SwapChain/SwapChain.hpp"
@@ -21,10 +20,9 @@ namespace Renderer
 	void InitPass::Render(Context::Context& context)
 	{
 		auto& vulkanContext = context.GetVulkanContext();
-		auto& frameContext = context.GetFrameContext();
-		auto& threadContext = context.GetThreadContext();
+		auto& rendererContext = context.GetRendererContext();
 
-		auto& syncObject = threadContext.GetSyncObject();
+		auto& syncObject = rendererContext.GetSyncObject();
 		syncObject.WaitforInFlightFence(vulkanContext.GetDevice());
 
 		uint32_t imageIndex;
@@ -35,7 +33,7 @@ namespace Renderer
 			syncObject.GetImageAvailableSemaphore(), 
 			VK_NULL_HANDLE, 
 			&imageIndex);
-		frameContext.SetBackBufferIndex(imageIndex);
+		rendererContext.SetBackBufferIndex(imageIndex);
 
 		if (result == VK_ERROR_OUT_OF_DATE_KHR)
 		{
@@ -48,7 +46,7 @@ namespace Renderer
 		}
 
 		syncObject.ResetInFlightFence(vulkanContext.GetDevice());
-		auto& commandBuffer = threadContext.GetCommandBuffer();
+		auto& commandBuffer = rendererContext.GetCommandBuffer();
 		commandBuffer.BeginCommandBuffer(0);
 	}
 

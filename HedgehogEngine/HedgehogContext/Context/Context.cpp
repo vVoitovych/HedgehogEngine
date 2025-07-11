@@ -2,8 +2,7 @@
 
 #include "VulkanContext.hpp"
 #include "EngineContext.hpp"
-#include "FrameContext.hpp"
-#include "ThreadContext.hpp"
+#include "RendererContext.hpp"
 
 #include <stdexcept>
 
@@ -13,8 +12,7 @@ namespace Context
     {
         m_VulkanContext = std::make_unique<VulkanContext>();
         m_EngineContext = std::make_unique<EngineContext>(*m_VulkanContext);
-        m_FrameContext = std::make_unique<FrameContext>();
-        m_ThreadContext = std::make_unique<ThreadContext>(*m_VulkanContext);
+        m_RendererContext = std::make_unique<RendererContext>(*m_VulkanContext);
     }
 
     Context::~Context()
@@ -24,13 +22,12 @@ namespace Context
     void Context::UpdateContext(float dt)
     {
         m_EngineContext->UpdateContext(*m_VulkanContext, dt);
-        m_FrameContext->UpdateContext(m_EngineContext->GetCamera());
     }
 
     void Context::Cleanup()
     {
         m_EngineContext->Cleanup(*m_VulkanContext);
-        m_ThreadContext->Cleanup(*m_VulkanContext);
+        m_RendererContext->Cleanup(*m_VulkanContext);
         m_VulkanContext->Cleanup();
     }
 
@@ -44,14 +41,10 @@ namespace Context
         return *m_EngineContext;
     }
 
-    FrameContext& Context::GetFrameContext()
-    {
-        return *m_FrameContext;
-    }
 
-    ThreadContext& Context::GetThreadContext()
+    RendererContext& Context::GetRendererContext()
     {
-        return *m_ThreadContext;
+        return *m_RendererContext;
     }
 
     const VulkanContext& Context::GetVulkanContext() const
@@ -64,14 +57,9 @@ namespace Context
         return *m_EngineContext;
     }
 
-    const FrameContext& Context::GetFrameContext() const
+    const RendererContext& Context::GetRendererContext() const
     {
-        return *m_FrameContext;
-    }
-
-    const ThreadContext& Context::GetThreadContext() const
-    {
-        return *m_ThreadContext;
+        return *m_RendererContext;
     }
 
 

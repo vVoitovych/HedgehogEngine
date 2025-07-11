@@ -66,6 +66,11 @@ namespace Context
         return m_ProjMatrix;
     }
 
+    HM::Matrix4x4 Camera::GetViewProjectionMatrix() const
+    {
+        return m_ViewProjMatrix;;
+    }
+
     HM::Vector3 Camera::GetPosition() const
     {
         return m_Pos;
@@ -86,6 +91,7 @@ namespace Context
         m_ViewMatrix = HM::Matrix4x4::LookAt(m_Pos, m_Pos + m_Direction, m_UpVector);
         m_ProjMatrix = HM::Matrix4x4::Perspective(m_FOV / m_Aspect, m_Aspect, m_NearPlane, m_FarPlane);
         m_ProjMatrix[1][1] *= -1;
+        m_ViewProjMatrix = m_ProjMatrix * m_ViewMatrix;
     }
 
 }

@@ -1,7 +1,6 @@
-#include "ThreadContext.hpp"
+#include "RendererContext.hpp"
 #include "VulkanContext.hpp"
 #include "EngineContext.hpp"
-#include "FrameContext.hpp"
 
 #include "HedgehogWrappers/Wrappeers/Commands/CommandBuffer.hpp"
 #include "HedgehogWrappers/Wrappeers/SyncObjects/SyncObject.hpp"
@@ -22,7 +21,7 @@
 
 namespace Context
 {
-	ThreadContext::ThreadContext(const VulkanContext& vulkanContext)
+	RendererContext::RendererContext(const VulkanContext& vulkanContext)
 	{
 		m_CommandBuffers.clear();
 		m_SyncObjects.clear();
@@ -42,11 +41,11 @@ namespace Context
 		LOGINFO("Thread context Initialized");
 	}
 
-	ThreadContext::~ThreadContext()
+	RendererContext::~RendererContext()
 	{
 	}
 
-	void ThreadContext::Cleanup(const VulkanContext& vulkanContext)
+	void RendererContext::Cleanup(const VulkanContext& vulkanContext)
 	{
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
 		{
@@ -59,22 +58,32 @@ namespace Context
 		LOGINFO("Thread context cleaned");
 	}
 
-	void ThreadContext::NextFrame()
+	void RendererContext::NextFrame()
 	{
 		m_FrameIndex = (m_FrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
 	}
 
-	uint32_t ThreadContext::GetFrameIndex() const
+	uint32_t RendererContext::GetFrameIndex() const
 	{
 		return m_FrameIndex;
 	}
 
-	Wrappers::CommandBuffer& ThreadContext::GetCommandBuffer()
+	void RendererContext::SetBackBufferIndex(uint32_t index)
+	{
+		m_BackBufferIndex = index;
+	}
+
+	uint32_t RendererContext::GetBackBufferIndex() const
+	{
+		return m_BackBufferIndex;
+	}
+
+	Wrappers::CommandBuffer& RendererContext::GetCommandBuffer()
 	{
 		return m_CommandBuffers[m_FrameIndex];
 	}
 
-	Wrappers::SyncObject& ThreadContext::GetSyncObject()
+	Wrappers::SyncObject& RendererContext::GetSyncObject()
 	{
 		return m_SyncObjects[m_FrameIndex];
 	}

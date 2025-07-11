@@ -3,9 +3,8 @@
 #include "HedgehogWrappers/Wrappeers/Device/Device.hpp"
 #include "HedgehogWrappers/Wrappeers/SwapChain/SwapChain.hpp"
 #include "HedgehogContext/Context/Context.hpp"
-#include "HedgehogContext/Context/ThreadContext.hpp"
+#include "HedgehogContext/Context/RendererContext.hpp"
 #include "HedgehogContext/Context/EngineContext.hpp"
-#include "HedgehogContext/Context/FrameContext.hpp"
 #include "HedgehogContext/Context/VulkanContext.hpp"
 #include "HedgehogRenderer/ResourceManager/ResourceManager.hpp"
 
@@ -26,14 +25,13 @@ namespace Renderer
 	{
 
 		auto& engineContext = context.GetEngineContext();
-		auto& frameContext = context.GetFrameContext();
-		auto& threadContext = context.GetThreadContext();
+		auto& rendererContext = context.GetRendererContext();
 		auto& vulkanContext = context.GetVulkanContext();
 
-		auto& syncObject = threadContext.GetSyncObject();
-		auto& commandBuffer = threadContext.GetCommandBuffer();
+		auto& syncObject = rendererContext.GetSyncObject();
+		auto& commandBuffer = rendererContext.GetCommandBuffer();
 
-		auto backBufferIndex = frameContext.GetBackBufferIndex();
+		auto backBufferIndex = rendererContext.GetBackBufferIndex();
 		auto& colorBuffer = resourceManager.GetColorBuffer();
 
 		commandBuffer.TransitionImage(
@@ -79,7 +77,7 @@ namespace Renderer
 			
 			throw std::runtime_error("failed to submit draw command buffer!");
 		}
-		auto index = frameContext.GetBackBufferIndex();
+		auto index = rendererContext.GetBackBufferIndex();
 		VkPresentInfoKHR presentInfo{};
 		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 		presentInfo.waitSemaphoreCount = 1;
@@ -102,7 +100,7 @@ namespace Renderer
 		{
 			throw std::runtime_error("failed to present swap chain image!");
 		}
-		threadContext.NextFrame();
+		rendererContext.NextFrame();
 	}
 
 	void PresentPass::Cleanup(const Context::Context& context)
