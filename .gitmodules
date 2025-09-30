@@ -1,18 +1,18 @@
 [submodule "ThirdParty/glfw/glfw"]
 	path = ThirdParty/glfw/glfw
-	url = https://github.com/glfw/glfw.git
+	url = https://github.com/vVoitovych/glfw.git
 [submodule "ThirdParty/ImGui/imgui"]
 	path = ThirdParty/ImGui/imgui
-	url = https://github.com/ocornut/imgui.git
+	url = https://github.com/vVoitovych/imgui.git
 [submodule "ThirdParty/YamlCpp/yaml-cpp"]
 	path = ThirdParty/YamlCpp/yaml-cpp
-	url = https://github.com/jbeder/yaml-cpp
+	url = https://github.com/vVoitovych/yaml-cpp.git
 [submodule "ThirdParty/tinygltf"]
 	path = ThirdParty/tinygltf
-	url = https://github.com/syoyo/tinygltf.git
+	url = https://github.com/vVoitovych/tinygltf.git
 [submodule "ThirdParty/doctest"]
 	path = ThirdParty/doctest
-	url = https://github.com/doctest/doctest.git
+	url = https://github.com/vVoitovych/doctest.git
 [submodule "ThirdParty/Lua/lua"]
 	path = ThirdParty/Lua/lua
-	url = https://github.com/lua/lua.git
+	url = https://github.com/vVoitovych/lua.git

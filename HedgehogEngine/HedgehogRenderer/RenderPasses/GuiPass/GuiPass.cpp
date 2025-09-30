@@ -76,7 +76,7 @@ namespace Renderer
 		initInfo.MinImageCount = swapChain.GetMinImagesCount();
 		initInfo.ImageCount = static_cast<uint32_t>(swapChain.GetSwapChainImagesSize());
 		initInfo.CheckVkResultFn = nullptr;
-		initInfo.RenderPass = m_RenderPass->GetNativeRenderPass();
+		initInfo.PipelineInfoMain.RenderPass = m_RenderPass->GetNativeRenderPass();
 		ImGui_ImplVulkan_Init(&initInfo);
 
 		UploadFonts();
@@ -159,7 +159,7 @@ namespace Renderer
 
 	void GuiPass::UploadFonts()
 	{
-		ImGui_ImplVulkan_CreateFontsTexture();
+		//ImGuiBackendFlags_RendererHasTextures();
 
 	}
 
