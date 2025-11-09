@@ -5,6 +5,7 @@
 #include <vulkan/vulkan.h>
 #include <optional>
 #include <vector>
+#include <memory>
 
 namespace WinManager
 {
@@ -30,6 +31,9 @@ namespace Wrappers
 		std::vector<VkSurfaceFormatKHR> formats;
 		std::vector<VkPresentModeKHR> precentModes;
 	};
+
+	class Instance;
+	class DebugMessager;
 
 	class Device
 	{
@@ -70,19 +74,10 @@ namespace Wrappers
 		void UpdateDescriptorSets(std::vector<VkWriteDescriptorSet>& descriptorWrites) const;
 	private:
 		void InitLayersAndExtentions();
-		void InitializeInstance();
-		void InitializeDebugMessanger();
-		void CleanupDebugMessanger();
 		void PickPhysicalDevice();
 		void CreateLogicalDevice();
 		void InitializeAllocator();
 		void InitializeCommandPool();
-
-		bool IsEnableValidationLayers() const;
-		void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) const;
-		bool CheckValidationLayerSupport() const;
-		std::vector<const char*> GetRequiredExtensions() const;
-		void HasGflwRequiredInstanceExtensions() const;
 
 		bool CheckDeviceExtensionSupport(VkPhysicalDevice device) const;
 		int GetDeviceScore(VkPhysicalDevice device) const;
@@ -91,8 +86,8 @@ namespace Wrappers
 		VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const;
 
 	private:
-		VkInstance m_Instance;
-		VkDebugUtilsMessengerEXT m_DebugMessenger;
+		std::unique_ptr<Instance> m_Instance;
+		std::unique_ptr<DebugMessager> m_DebugMessenger;
 		VkSurfaceKHR m_Surface;
 		VkPhysicalDevice m_PhysicalDevice;
 		VkDevice m_Device;
@@ -105,7 +100,6 @@ namespace Wrappers
 		VmaAllocator m_Allocator;
 		VkCommandPool m_CommandPool;
 
-		std::vector<const char*> m_ValidationLayers;
 		std::vector<const char*> m_DeviceExtensions;
 	};
 }
