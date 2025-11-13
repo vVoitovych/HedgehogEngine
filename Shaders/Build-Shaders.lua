@@ -11,6 +11,7 @@ project "Shaders"
         "**.cpp",
         "**.vert",
         "**.frag",
+        "**.comp",
         "**.glsl"  
     }
 
@@ -29,18 +30,12 @@ project "Shaders"
    targetdir ("../Binaries/" .. OutputDir .. "/%{prj.name}")
    objdir ("../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")
 
-    filter { "files:**.vert" }
-        buildaction "None"
-
-    filter { "files:**.frag" }
-        buildaction "None"
-
-    filter { "files:**.glsl" }
-        buildaction "None"
-
-   filter "system:windows"
-       systemversion "latest"
-       defines { }
+    filter "system:windows"
+        systemversion "latest"
+        prebuildmessage "Compiling shaders..."
+        prebuildcommands {
+            'call "%{wks.location}\\ThirdParty\\glslc\\CompileShaders.bat" "%{wks.location}/Shaders/Shaders"'
+        }
 
    filter "configurations:Debug"
        links { "shaderc_combinedd.lib" }
