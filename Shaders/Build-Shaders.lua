@@ -1,18 +1,20 @@
 project "Shaders"
-   kind "StaticLib"
-   language "C++"
-   cppdialect "C++20"
-   targetdir "Binaries/%{cfg.buildcfg}"
-   staticruntime "off"
+    kind "StaticLib"
+    language "C++"
+    cppdialect "C++20"
+    targetdir "Binaries/%{cfg.buildcfg}"
+    staticruntime "off"
+    fastuptodate "false"
 
-   files 
-   { 
+    files 
+    { 
         "**.hpp", 
         "**.cpp",
         "**.vert",
         "**.frag",
         "**.comp",
-        "**.glsl"  
+        "**.glsl",
+        "**.shader"  
     }
 
    includedirs 
@@ -34,7 +36,8 @@ project "Shaders"
         systemversion "latest"
         prebuildmessage "Compiling shaders..."
         prebuildcommands {
-            'call "%{wks.location}\\ThirdParty\\glslc\\CompileShaders.bat" "%{wks.location}/Shaders/Shaders"'
+            'echo Forcing shader build at %time% > "%{wks.location}\\force_prebuild.txt"',
+            'call "%{wks.location}\\ThirdParty\\glslc\\CompileShaders.bat" "%{wks.location}\\Shaders\\Shaders"'
         }
 
    filter "configurations:Debug"
