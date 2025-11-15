@@ -27,7 +27,7 @@ project "HedgehogWrappers"
         "HedgehogCommon",
         "HedgehogMath",
         "Logger",
-        "Shaders",
+        "ContentLoader",
         "glfw",
         "vulkan-1"
     }
