@@ -9,7 +9,7 @@ namespace Renderer
 	ShadowmapPipelineInfo::ShadowmapPipelineInfo(const Wrappers::Device& device)
 		: Wrappers::PipelineInfo(device)
 	{
-		m_VertexShader = std::make_unique<Wrappers::VertexShader>(device, "ShadowmapPass/Shadowmap.vert");
+		m_VertexShader = std::make_unique<Wrappers::VertexShader>(device, "/Shaders/Shaders/ShadowmapPass/Shadowmap.vert.spv");
 		m_Stages = { m_VertexShader->GetCreateInfo() };
 
 		m_BindingDesc[0].binding = 0;

@@ -12,6 +12,8 @@ namespace ContentLoader
 
 	std::string GetShadersDirectory();
 
+	std::string ReadFile(const std::string& filepath);
+
 }
 
 

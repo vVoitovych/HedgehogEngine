@@ -27,6 +27,7 @@ project "HedgehogRenderer"
         "HedgehogMath",
         "HedgehogContext",
         "HedgehogWrappers",
+        "Shaders",
         "Logger",
         "imgui",
         "vulkan-1"
