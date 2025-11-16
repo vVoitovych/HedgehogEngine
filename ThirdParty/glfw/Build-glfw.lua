@@ -1,6 +1,7 @@
 project "glfw"
     kind "StaticLib"
     language "C"
+    staticruntime "off"
 
     targetdir ("../../Binaries/" .. OutputDir .. "/%{prj.name}")
     objdir ("../../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")

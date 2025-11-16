@@ -1,7 +1,6 @@
 project "Lua"
     kind "StaticLib"
     language "C"
-    targetdir "Binaries/%{cfg.buildcfg}"
     staticruntime "off"
 
     files 
