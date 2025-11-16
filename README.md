@@ -14,7 +14,6 @@ Requirements
 
 To build Hedgehog Engine you'll also need:
 * Visual Studio 2022
-* Python
 
 Quick Start
 --------
