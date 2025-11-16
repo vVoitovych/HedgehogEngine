@@ -3,6 +3,7 @@
 #include <Windows.h>
 #include <stdexcept>
 #include <filesystem>
+#include <fstream>
 
 namespace ContentLoader
 {
@@ -41,6 +42,23 @@ namespace ContentLoader
 		std::string path = GetRootDirectory();
 		path += "\\Shaders\\Shaders\\";
 		return path;
+	}
+
+	std::string ReadFile(const std::string& filepath)
+	{
+		std::string path = GetRootDirectory();
+		path += filepath;
+		std::ifstream file(path, std::ios::ate | std::ios::binary);
+		if (!file.is_open())
+		{
+			throw std::runtime_error("Failed to open file: " + path);
+		}
+
+		size_t fileSize = (size_t)file.tellg();
+		std::string buffer(fileSize, '\0');
+		file.seekg(0);
+		file.read(buffer.data(), fileSize);
+		return buffer;
 	}
 
 }

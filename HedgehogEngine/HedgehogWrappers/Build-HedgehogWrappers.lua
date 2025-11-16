@@ -2,8 +2,6 @@ project "HedgehogWrappers"
    kind "StaticLib"
    language "C++"
    cppdialect "C++20"
-   targetdir "Binaries/%{cfg.buildcfg}"
-   staticruntime "off"
 
     files 
     { 
@@ -27,7 +25,7 @@ project "HedgehogWrappers"
         "HedgehogCommon",
         "HedgehogMath",
         "Logger",
-        "Shaders",
+        "ContentLoader",
         "glfw",
         "vulkan-1"
     }

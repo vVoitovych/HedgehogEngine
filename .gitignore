@@ -581,3 +581,8 @@ Binaries
 /HedgehogMathTest/HedgehogMathTest.vcxproj
 /HedgehogMathTest/HedgehogMathTest.vcxproj.user
 /ThirdParty/Lua/Lua.vcxproj
+/Shaders/Shaders/DepthPrepass/*.spv
+/Shaders/Shaders/ForwardPass/*.spv
+/Shaders/Shaders/ShadowmapPass/*.spv
+/always_run.txt
+/force_prebuild.txt
