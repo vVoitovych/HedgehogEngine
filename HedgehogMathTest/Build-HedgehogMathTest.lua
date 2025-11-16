@@ -2,7 +2,6 @@ project "HedgehogMathTest"
     kind "ConsoleApp"
     language "C++"
     cppdialect "C++20"
-    targetdir "Binaries/%{cfg.buildcfg}"
 
     files { "**.hpp", "**.cpp" }
 

@@ -1,16 +1,14 @@
 -- Dependencies
 
-VULKAN_SDK = os.getenv("VULKAN_SDK")
-
 IncludeDir = {}
 IncludeDir["stb_image"] = "%{wks.location}/ThirdParty/stb"
 IncludeDir["yaml_cpp"] = "%{wks.location}/ThirdParty/YamlCpp/yaml-cpp/include"
 IncludeDir["GLFW"] = "%{wks.location}/ThirdParty/glfw/glfw/include"
 IncludeDir["ImGui"] = "%{wks.location}/ThirdParty/ImGui"
-IncludeDir["VulkanSDK"] = "%{VULKAN_SDK}/Include"
+IncludeDir["VulkanSDK"] = "%{wks.location}/ThirdParty/vulkan/Include"
 
 LibraryDir = {}
-LibraryDir["VulkanSDK"] = "%{VULKAN_SDK}/Lib"
+LibraryDir["VulkanSDK"] = "%{wks.location}/ThirdParty/vulkan"
 LibraryDir["yaml_cpp"] = "%{wks.location}/ThirdParty/yaml-cpp"
 
 Library = {}

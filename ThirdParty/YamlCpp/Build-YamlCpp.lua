@@ -2,8 +2,6 @@ project "yaml-cpp"
    kind "StaticLib"
    language "C++"
    cppdialect "C++20"
-   targetdir "Binaries/%{cfg.buildcfg}"
-   staticruntime "off"
 
    files    { 
         "yaml-cpp/include/**.h",
