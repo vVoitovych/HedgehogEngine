@@ -18,12 +18,6 @@ To build Hedgehog Engine you'll also need:
 
 Quick Start
 --------
-First of all you need Vulkan SDK. You have to run script ***Scripts/SetupVulkan.py***
+To update sobmodules and generate solution run script ***Scriprs/SetupWindows.bat***
 
-After it update git submodeles with script ***Scripts/UpdateSubmodules.py***
 
-Now you can generate solution with script ***Scriprs/Setup-Windows.py***
-
-Building
---------
-You can just build HedgehogEngine.sln solution
