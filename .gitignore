@@ -585,3 +585,4 @@ Binaries
 /Shaders/Shaders/ForwardPass/*.spv
 /Shaders/Shaders/ShadowmapPass/*.spv
 /always_run.txt
+/force_prebuild.txt

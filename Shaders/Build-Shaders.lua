@@ -2,13 +2,11 @@ project "Shaders"
     kind "StaticLib"
     language "C++"
     cppdialect "C++20"
-    targetdir "Binaries/%{cfg.buildcfg}"
     staticruntime "off"
     fastuptodate "false"
 
     files 
     { 
-        "**.hpp", 
         "**.cpp",
         "**.vert",
         "**.frag",
@@ -16,18 +14,6 @@ project "Shaders"
         "**.glsl",
         "**.shader"  
     }
-
-   includedirs 
-   { 
-        "%{IncludeDir.VulkanSDK}",
-        ".." 
-   } 
-   libdirs { "%{LibraryDir.VulkanSDK}" }   
-
-   links 
-   { 
-       "ContentLoader"
-   }
 
    targetdir ("../Binaries/" .. OutputDir .. "/%{prj.name}")
    objdir ("../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")
@@ -41,13 +27,11 @@ project "Shaders"
         }
 
    filter "configurations:Debug"
-       links { "shaderc_combinedd.lib" }
        defines { "DEBUG" }
        runtime "Debug"
        symbols "On"
 
    filter "configurations:Release"
-       links { "shaderc_combined.lib" }
        defines { "RELEASE" }
        runtime "Release"
        optimize "On"

@@ -1,2 +1,2 @@
 #include <ctime>
-volatile int forceRebuild = std::time(nullptr);
+volatile time_t forceRebuild = std::time(nullptr);
