@@ -2,7 +2,6 @@ project "Shaders"
     kind "StaticLib"
     language "C++"
     cppdialect "C++20"
-    staticruntime "off"
     fastuptodate "false"
 
     files 

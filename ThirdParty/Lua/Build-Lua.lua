@@ -1,7 +1,6 @@
 project "Lua"
     kind "StaticLib"
     language "C"
-    staticruntime "off"
 
     files 
     { 

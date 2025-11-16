@@ -2,8 +2,7 @@ project "Scene"
     kind "StaticLib"
     language "C++"
     cppdialect "C++20"
-    staticruntime "off"
-
+    
     files    { 
         "**.hpp", "**.cpp"
     }

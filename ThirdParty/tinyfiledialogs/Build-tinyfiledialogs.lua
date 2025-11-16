@@ -2,7 +2,6 @@ project "tinyfiledialogs"
    kind "StaticLib"
    language "C++"
    cppdialect "C++20"
-   staticruntime "off"
 
    files { "**.h", "**.cpp" }
 

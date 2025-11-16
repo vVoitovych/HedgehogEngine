@@ -2,7 +2,6 @@ project "yaml-cpp"
    kind "StaticLib"
    language "C++"
    cppdialect "C++20"
-   staticruntime "off"
 
    files    { 
         "yaml-cpp/include/**.h",
