@@ -1,6 +1,6 @@
 #include "Image.hpp"
 #include "HedgehogWrappers/Wrappeers/Device/Device.hpp"
-#include "HedgehogCommon/Common/EngineDebugBreak.hpp"
+#include "HedgehogCore/Common/EngineDebugBreak.hpp"
 
 #include "Logger/Logger.hpp"
 

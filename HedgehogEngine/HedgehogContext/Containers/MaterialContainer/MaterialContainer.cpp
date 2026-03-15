@@ -12,7 +12,7 @@
 #include "HedgehogWrappers/Wrappeers/Device/Device.hpp"
 #include "HedgehogContext/Containers/TextureContainer/TextureContainer.hpp"
 #include "HedgehogContext/Context/VulkanContext.hpp"
-#include "HedgehogCommon/Common/RendererSettings.hpp"
+#include "HedgehogCore/Common/RendererSettings.hpp"
 
 #include "DialogueWindows/MaterialDialogue/MaterialDialogue.hpp"
 #include "DialogueWindows/TextureDialogue/TextureDialogue.hpp"

@@ -3,8 +3,8 @@
 #include "Scene/Scene.hpp"
 #include "Scene/SceneComponents/LightComponent.hpp"
 
-#include "HedgehogCommon/Common/RendererSettings.hpp"
-#include "HedgehogCommon/Common/EngineDebugBreak.hpp"
+#include "HedgehogCore/Common/RendererSettings.hpp"
+#include "HedgehogCore/Common/EngineDebugBreak.hpp"
 
 #include "HedgehogMath/Common.hpp"
 #include "HedgehogMath/Vector.hpp"

@@ -22,7 +22,7 @@ project "HedgehogContext"
     }
 
     links { 
-        "HedgehogCommon",
+        "HedgehogCore",
         "HedgehogSettings",
         "HedgehogWrappers",
         "ContentLoader",

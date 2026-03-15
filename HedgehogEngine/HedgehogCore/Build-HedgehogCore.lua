@@ -1,4 +1,4 @@
-project "HedgehogCommon"
+project "HedgehogCore"
    kind "StaticLib"
    language "C++"
    cppdialect "C++20"

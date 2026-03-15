@@ -30,7 +30,7 @@
 #include "HedgehogContext/Containers/DrawListContrainer/DrawListContainer.hpp"
 #include "HedgehogContext/Containers/LightContainer/LightContainer.hpp"
 
-#include "HedgehogCommon/Common/RendererSettings.hpp"
+#include "HedgehogCore/Common/RendererSettings.hpp"
 
 #include "Scene/Scene.hpp"
 

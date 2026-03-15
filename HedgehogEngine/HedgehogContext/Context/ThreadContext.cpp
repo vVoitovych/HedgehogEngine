@@ -13,8 +13,8 @@
 #include "HedgehogWrappers/Wrappeers/Descriptors/DescriptorLayoutBuilder.hpp"
 
 #include "HedgehogContext/Containers/LightContainer/LightContainer.hpp"
-#include "HedgehogCommon/Common/EngineDebugBreak.hpp"
-#include "HedgehogCommon/Common/RendererSettings.hpp"
+#include "HedgehogCore/Common/EngineDebugBreak.hpp"
+#include "HedgehogCore/Common/RendererSettings.hpp"
 
 #include "Logger/Logger.hpp"
 

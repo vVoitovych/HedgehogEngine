@@ -5,7 +5,7 @@
 #include "HedgehogWrappers/Wrappeers/RenderPass/RenderPass.hpp"
 #include "HedgehogWrappers/Wrappeers/Descriptors/DescriptorSetLayout.hpp"
 
-#include "HedgehogCommon/Common/EngineDebugBreak.hpp"
+#include "HedgehogCore/Common/EngineDebugBreak.hpp"
 
 #include "Logger/Logger.hpp"
 
