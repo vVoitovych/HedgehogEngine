@@ -10,7 +10,9 @@ namespace EngineLogger
 
 		void SetLogColor(uint16_t color);
 	private:
+#ifdef _WIN32
 		void* mConsole;
+#endif
 	};
 }
 
