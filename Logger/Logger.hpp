@@ -6,31 +6,25 @@
 
 #include <iostream>
 #include <ctime>
+#include "LoggerApi.hpp"
 #include "LogColorized.hpp"
 
 namespace EngineLogger
 {
-    class Logger 
+    class LOGGER_API Logger
     {
     public:
-        static Logger& Instance() 
-        {
-            static Logger instance;
-            return instance;
-        }
+        static Logger& Instance();
 
     private:
-        Logger()
-        {
-
-        }
+        Logger();
         Logger(const Logger&) = delete;
         Logger& operator=(const Logger&) = delete;
         ~Logger() = default;
 
     public:
         template <typename... Args>
-        void Info(Args... args) 
+        void Info(Args... args)
         {
             mColoriser.SetLogColor(7);
             std::cout << "[INFO]";
@@ -48,7 +42,7 @@ namespace EngineLogger
             mColoriser.SetLogColor(7);
         }
         template <typename... Args>
-        void Warning(Args... args) 
+        void Warning(Args... args)
         {
             mColoriser.SetLogColor(14);
             std::cout << "[WARNING]";
@@ -56,9 +50,8 @@ namespace EngineLogger
             std::cout << std::endl;
             mColoriser.SetLogColor(7);
         }
-
         template <typename... Args>
-        void Error(Args... args) 
+        void Error(Args... args)
         {
             mColoriser.SetLogColor(12);
             std::cout << "[ERROR]";
@@ -66,10 +59,10 @@ namespace EngineLogger
             std::cout << std::endl;
             mColoriser.SetLogColor(7);
         }
-    private:
 
+    private:
         template <typename T, typename... Args>
-        void LogHelper(T first, Args... args) 
+        void LogHelper(T first, Args... args)
         {
             std::cout << first << ' ';
             LogHelper(args...);
@@ -78,11 +71,10 @@ namespace EngineLogger
         void LogHelper()
         {
         }
+
     private:
         LogColorized mColoriser;
     };
-
-
 }
 
 template<class... Args>
@@ -105,9 +97,3 @@ void  LOGERROR(Args... args)
 {
     EngineLogger::Logger::Instance().Error(args...);
 }
-
-
-
-
-
-
