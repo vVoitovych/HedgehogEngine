@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ECS/ECS.h"
+#include "ECS/ECS.hpp"
 #include "Scene/SceneSystems/TransformSystem.hpp"
 #include "Scene/SceneSystems/HierarchySystem.hpp"
 #include "Scene/SceneSystems/MeshSystem.hpp"
@@ -14,102 +14,92 @@
 
 namespace Scene
 {
-	class HierarchyComponent;
-	class TransformComponent;
+    class HierarchyComponent;
+    class TransformComponent;
 
-	class Scene
-	{
+    class Scene
+    {
+    public:
+        Scene();
+        ~Scene() = default;
 
-	public:
-		Scene();
-		~Scene();
+        Scene(const Scene&)            = delete;
+        Scene(Scene&&)                 = delete;
+        Scene& operator=(const Scene&) = delete;
+        Scene& operator=(Scene&&)      = delete;
 
-		Scene(const Scene&) = delete;
-		Scene(Scene&&) = delete;
-		Scene& operator=(const Scene&) = delete;
-		Scene& operator=(Scene&&) = delete;
+        void InitScene();
+        void UpdateScene(float dt);
+        void ResetScene();
+        void Load();
+        void Save();
+        void RenameScene();
 
-		void InitScene();
-		void UpdateScene(float dt);
-		void ResetScene();
-		void Load();
-		void Save();
-		void RenameScene();
+        std::string GetSceneName() const;
 
-		std::string GetSceneName() const;
+        ECS::Entity CreateGameObject(std::optional<ECS::Entity> parentEntity);
+        void        CreateGameObject(ECS::Entity entity);
+        void        DeleteGameObject(ECS::Entity entity);
+        void        DeleteGameObjectAndChildren(ECS::Entity entity);
 
-		ECS::Entity CreateGameObject(std::optional <ECS::Entity> parentEntity);
-		void CreateGameObject(ECS::Entity entity);
-		void DeleteGameObject(ECS::Entity entity);
-		void DeleteGameObjectAndChildren(ECS::Entity entity);
-		HierarchyComponent& GetHierarchyComponent(ECS::Entity entity) const;
-		TransformComponent& GetTransformComponent(ECS::Entity entity) const;
+        HierarchyComponent& GetHierarchyComponent(ECS::Entity entity) const;
+        TransformComponent& GetTransformComponent(ECS::Entity entity) const;
 
-		MeshComponent& GetMeshComponent(ECS::Entity entity) const;
-		void AddMeshComponent(ECS::Entity entity);
-		void RemoveMeshComponent(ECS::Entity entity);
-		void ChangeMeshComponent(ECS::Entity entity, std::string meshPath);
-		bool HasMeshComponent(ECS::Entity entity) const;
-		void LoadMesh(ECS::Entity entity);
+        MeshComponent& GetMeshComponent(ECS::Entity entity) const;
+        void           AddMeshComponent(ECS::Entity entity);
+        void           RemoveMeshComponent(ECS::Entity entity);
+        void           ChangeMeshComponent(ECS::Entity entity, const std::string& meshPath);
+        bool           HasMeshComponent(ECS::Entity entity) const;
+        void           LoadMesh(ECS::Entity entity);
 
-		RenderComponent& GetRenderComponent(ECS::Entity entity) const;
-		void AddRenderComponent(ECS::Entity entity);
-		void RemoveRenderComponent(ECS::Entity entity);
-		bool HasRenderComponent(ECS::Entity entity) const;
-		void LoadMaterial(ECS::Entity entity);
-		void UpdateMaterialComponent(ECS::Entity entity);
+        RenderComponent& GetRenderComponent(ECS::Entity entity) const;
+        void             AddRenderComponent(ECS::Entity entity);
+        void             RemoveRenderComponent(ECS::Entity entity);
+        bool             HasRenderComponent(ECS::Entity entity) const;
+        void             LoadMaterial(ECS::Entity entity);
+        void             UpdateMaterialComponent(ECS::Entity entity);
 
-		ScriptComponent& GetScriptComponent(ECS::Entity entity) const;
-		void AddScriptComponent(ECS::Entity entity);
-		void RemoveScriptComponent(ECS::Entity entity);
-		void ChangeScript(ECS::Entity entity);
-		bool HasScriptComponent(ECS::Entity entity);
-		void InitScriptComponent(ECS::Entity entity);
+        ScriptComponent& GetScriptComponent(ECS::Entity entity) const;
+        void             AddScriptComponent(ECS::Entity entity);
+        void             RemoveScriptComponent(ECS::Entity entity);
+        void             ChangeScript(ECS::Entity entity);
+        bool             HasScriptComponent(ECS::Entity entity);
+        void             InitScriptComponent(ECS::Entity entity);
 
-		LightComponent& GetLightComponent(ECS::Entity entity) const;
-		void AddLightComponent(ECS::Entity entity);
-		void RemoveLightComponent(ECS::Entity entity);
-		bool HasLightComponent(ECS::Entity entity) const;
+        LightComponent& GetLightComponent(ECS::Entity entity) const;
+        void            AddLightComponent(ECS::Entity entity);
+        void            RemoveLightComponent(ECS::Entity entity);
+        bool            HasLightComponent(ECS::Entity entity) const;
 
-		size_t GetLightCount() const;
-		const LightComponent& GetLightComponentByIndex(size_t index) const;
-		void UpdateShadowCastin(ECS::Entity entity, bool isCast);
+        size_t               GetLightCount() const;
+        const LightComponent& GetLightComponentByIndex(size_t index) const;
+        void                 UpdateShadowCasting(ECS::Entity entity, bool isCast);
 
-		ECS::Entity GetRoot() const;
+        ECS::Entity GetRoot() const;
 
-		const std::vector<std::string>& GetMeshes() const;
-		const std::vector<std::string>& GetMaterials() const;
-		const std::vector<ECS::Entity>& GetRenderableEntities() const;
-		const std::optional<HM::Vector3>& GetShadowLightDirection() const;
-	private:
-		void CreateSceneRoot();
-		std::string GetNewGameObjectName();
-		std::string GetScenePath() const;
+        const std::vector<std::string>&  GetMeshes() const;
+        const std::vector<std::string>&  GetMaterials() const;
+        const std::vector<ECS::Entity>&  GetRenderableEntities() const;
+        const std::optional<HM::Vector3>& GetShadowLightDirection() const;
 
-	private:
-		std::string m_SceneName;
+    private:
+        void        CreateSceneRoot();
+        std::string GetNewGameObjectName();
+        std::string GetScenePath() const;
 
-		ECS::ECS m_SceneECS;
-		ECS::Entity m_Root;
+    private:
+        std::string m_SceneName;
 
-		// systems
-		std::shared_ptr<TransformSystem> m_TransformSystem;
-		std::shared_ptr<HierarchySystem> m_HierarchySystem;
-		std::shared_ptr<MeshSystem> m_MeshSystem;
-		std::shared_ptr<LightSystem> m_LightSystem;
-		std::shared_ptr<RenderSystem> m_RenderSystem;
-		std::shared_ptr<ScriptSystem> m_ScriptSystem;
-	private:
-		friend class SceneSerializer;
-	};
+        ECS::ECS    m_SceneECS;
+        ECS::Entity m_Root;
+
+        std::shared_ptr<TransformSystem>  m_TransformSystem;
+        std::shared_ptr<HierarchySystem>  m_HierarchySystem;
+        std::shared_ptr<MeshSystem>       m_MeshSystem;
+        std::shared_ptr<LightSystem>      m_LightSystem;
+        std::shared_ptr<RenderSystem>     m_RenderSystem;
+        std::shared_ptr<ScriptSystem>     m_ScriptSystem;
+
+        friend class SceneSerializer;
+    };
 }
-
-
-
-
-
-
-
-
-
-

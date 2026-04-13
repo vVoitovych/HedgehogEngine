@@ -28,7 +28,7 @@ namespace Wrappers
 	{
 		VkSurfaceCapabilitiesKHR capabilities;
 		std::vector<VkSurfaceFormatKHR> formats;
-		std::vector<VkPresentModeKHR> precentModes;
+		std::vector<VkPresentModeKHR> presentModes;
 	};
 
 	class Device
@@ -71,8 +71,8 @@ namespace Wrappers
 	private:
 		void InitLayersAndExtentions();
 		void InitializeInstance();
-		void InitializeDebugMessanger();
-		void CleanupDebugMessanger();
+		void InitializeDebugMessenger();
+		void CleanupDebugMessenger();
 		void PickPhysicalDevice();
 		void CreateLogicalDevice();
 		void InitializeAllocator();
@@ -82,7 +82,7 @@ namespace Wrappers
 		void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) const;
 		bool CheckValidationLayerSupport() const;
 		std::vector<const char*> GetRequiredExtensions() const;
-		void HasGflwRequiredInstanceExtensions() const;
+		void HasGlfwRequiredInstanceExtensions() const;
 
 		bool CheckDeviceExtensionSupport(VkPhysicalDevice device) const;
 		int GetDeviceScore(VkPhysicalDevice device) const;

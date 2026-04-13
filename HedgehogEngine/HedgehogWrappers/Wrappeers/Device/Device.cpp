@@ -128,8 +128,8 @@ namespace Wrappers
 		vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
 		if (presentModeCount != 0)
 		{
-			details.precentModes.resize(presentModeCount);
-			vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.precentModes.data());
+			details.presentModes.resize(presentModeCount);
+			vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
 		}
 		return details;
 	}
@@ -147,7 +147,7 @@ namespace Wrappers
 	{
 		InitLayersAndExtentions();
 		InitializeInstance();
-		InitializeDebugMessanger();
+		InitializeDebugMessenger();
 		windowManager.CreateWindowSurface(m_Instance, &m_Surface);
 		PickPhysicalDevice();
 		CreateLogicalDevice();
@@ -240,12 +240,12 @@ namespace Wrappers
 			throw std::runtime_error("failed to create instance!");
 		}
 
-		HasGflwRequiredInstanceExtensions();
+		HasGlfwRequiredInstanceExtensions();
 
 		LOGINFO("Vulkan instance created");
 	}
 
-	void Device::InitializeDebugMessanger()
+	void Device::InitializeDebugMessenger()
 	{
 #ifdef DEBUG
 		VkDebugUtilsMessengerCreateInfoEXT createInfo;
@@ -385,7 +385,7 @@ namespace Wrappers
 		vmaDestroyAllocator(m_Allocator);
 		vkDestroyDevice(m_Device, nullptr);
 		vkDestroySurfaceKHR(m_Instance, m_Surface, nullptr);
-		CleanupDebugMessanger();
+		CleanupDebugMessenger();
 		vkDestroyInstance(m_Instance, nullptr);
 
 		m_Instance = nullptr;
@@ -397,7 +397,7 @@ namespace Wrappers
 		LOGINFO("Device cleaned");
 	}
 
-	void Device::CleanupDebugMessanger()
+	void Device::CleanupDebugMessenger()
 	{
 #ifdef DEBUG
 		DestroyDebugUtilsMessengerEXT(m_Instance, m_DebugMessenger, nullptr);
@@ -635,7 +635,7 @@ namespace Wrappers
 		return extensions;
 	}
 
-	void Device::HasGflwRequiredInstanceExtensions() const
+	void Device::HasGlfwRequiredInstanceExtensions() const
 	{
 		uint32_t extensionCount = 0;
 		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
@@ -684,7 +684,7 @@ namespace Wrappers
 		if (extensionsSupported)
 		{
 			auto swapChainSupport = GetSwapChainSupport(device, m_Surface);
-			swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.precentModes.empty();
+			swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
 		}
 		int score = 1;
 

@@ -12,103 +12,83 @@
 
 namespace Renderer
 {
-	void GuiPass::DrawHierarchyNode(Context::Context& context, ECS::Entity entity, int& index)
-	{
-		auto& scene = context.GetEngineContext().GetScene();
-		auto& component = scene.GetHierarchyComponent(entity);
-		ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen;
-		bool isSelected = false;
-		if (m_SelectedObject.has_value() && entity == m_SelectedObject.value())
-		{
-			isSelected = true;
-		}
-		if (isSelected)
-			nodeFlags |= ImGuiTreeNodeFlags_Selected;
+    void GuiPass::DrawHierarchyNode(Context::Context& context, ECS::Entity entity, int& index)
+    {
+        auto& scene     = context.GetEngineContext().GetScene();
+        auto& component = scene.GetHierarchyComponent(entity);
 
-		if (component.mChildren.size() > 0)
-		{
-			bool node_open = ImGui::TreeNodeEx((void*)(intptr_t)index, nodeFlags, component.mName.c_str());
-			if (ImGui::IsItemClicked())
-			{
-				if (m_SelectedObject.has_value())
-				{
-					if (m_SelectedObject.value() == entity)
-						m_SelectedObject.reset();
-					else
-						m_SelectedObject = entity;
-				}
-				else
-				{
-					m_SelectedObject = entity;
-				}
-			}
-			++index;
-			if (node_open)
-			{
-				for (auto entity : component.mChildren)
-				{
-					DrawHierarchyNode(context, entity, index);
-				}
-				ImGui::TreePop();
-			}
-		}
-		else
-		{
-			nodeFlags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-			ImGui::TreeNodeEx((void*)(intptr_t)index, nodeFlags, component.mName.c_str());
-			if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
-			{
-				if (m_SelectedObject.has_value())
-				{
-					if (m_SelectedObject.value() == entity)
-						m_SelectedObject.reset();
-					else
-						m_SelectedObject = entity;
-				}
-				else
-				{
-					m_SelectedObject = entity;
-				}
-			}
-			++index;
-		}
-	}
+        ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen;
+        bool isSelected = m_SelectedObject.has_value() && entity == m_SelectedObject.value();
+        if (isSelected)
+            nodeFlags |= ImGuiTreeNodeFlags_Selected;
 
-	void GuiPass::DrawSceneInspector(Context::Context& context)
-	{
-		float sizeX, sizeY, paddingY;
+        auto toggleSelection = [&]()
+        {
+            if (m_SelectedObject.has_value() && m_SelectedObject.value() == entity)
+                m_SelectedObject.reset();
+            else
+                m_SelectedObject = entity;
+        };
 
-		sizeX = 300.0f;
-		sizeY = float(ImGui::GetIO().DisplaySize.y);
-		paddingY = 0.05f;
-		ImGui::SetNextWindowSize(ImVec2(sizeX, sizeY), ImGuiCond_Always);
-		ImGui::SetNextWindowPos(ImVec2(sizeX, 20.0f), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
+        if (!component.m_Children.empty())
+        {
+            bool node_open = ImGui::TreeNodeEx(reinterpret_cast<void*>(static_cast<intptr_t>(index)),
+                nodeFlags, "%s", component.m_Name.c_str());
+            if (ImGui::IsItemClicked())
+                toggleSelection();
+            ++index;
+            if (node_open)
+            {
+                for (auto child : component.m_Children)
+                {
+                    DrawHierarchyNode(context, child, index);
+                }
+                ImGui::TreePop();
+            }
+        }
+        else
+        {
+            nodeFlags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+            ImGui::TreeNodeEx(reinterpret_cast<void*>(static_cast<intptr_t>(index)),
+                nodeFlags, "%s", component.m_Name.c_str());
+            if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
+                toggleSelection();
+            ++index;
+        }
+    }
 
-		auto& scene = context.GetEngineContext().GetScene();
-		ImGui::Begin(scene.GetSceneName().c_str(), NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove);
+    void GuiPass::DrawSceneInspector(Context::Context& context)
+    {
+        const float sizeX = 300.0f;
+        const float sizeY = static_cast<float>(ImGui::GetIO().DisplaySize.y);
 
-		{
-			int index = 0;
+        ImGui::SetNextWindowSize(ImVec2(sizeX, sizeY), ImGuiCond_Always);
+        ImGui::SetNextWindowPos(ImVec2(sizeX, 20.0f), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
 
-			ImVec2 sz = ImVec2(-FLT_MIN, 0.0f);
+        auto& scene = context.GetEngineContext().GetScene();
+        ImGui::Begin(scene.GetSceneName().c_str(), nullptr,
+            ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove);
 
-			if (ImGui::Button("Create object", sz))
-			{
-				scene.CreateGameObject(m_SelectedObject);
-			}
-			if (ImGui::Button("Delete object", sz))
-			{
-				if (m_SelectedObject.has_value() && m_SelectedObject.value() != scene.GetRoot())
-				{
-					scene.DeleteGameObject(m_SelectedObject.value());
-					m_SelectedObject.reset();
-				}
-			}
+        {
+            int index = 0;
+            ImVec2 sz = ImVec2(-FLT_MIN, 0.0f);
 
-			DrawHierarchyNode(context, scene.GetRoot(), index);
+            if (ImGui::Button("Create object", sz))
+            {
+                scene.CreateGameObject(m_SelectedObject);
+            }
+            if (ImGui::Button("Delete object", sz))
+            {
+                if (m_SelectedObject.has_value() && m_SelectedObject.value() != scene.GetRoot())
+                {
+                    scene.DeleteGameObject(m_SelectedObject.value());
+                    m_SelectedObject.reset();
+                }
+            }
 
-		}
-		ImGui::End();
-	}
+            DrawHierarchyNode(context, scene.GetRoot(), index);
+        }
 
+        ImGui::End();
+    }
 }

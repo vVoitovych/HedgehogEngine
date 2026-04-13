@@ -93,7 +93,7 @@ namespace Wrappers
 		SwapChainSupportDetails swapChainSupport = device.QuerySwapChainSupport();
 
 		VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.formats);
-		VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapChainSupport.precentModes);
+		VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapChainSupport.presentModes);
 		VkExtent2D extent = ChooseSwapExtend(swapChainSupport.capabilities);
 
 		m_MinImageCount = swapChainSupport.capabilities.minImageCount;

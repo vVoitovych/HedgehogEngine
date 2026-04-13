@@ -5,15 +5,13 @@
 
 namespace Scene
 {
-	class TransformComponent
-	{
-	public:
-		HM::Vector3 mPosition = HM::Vector3(0.0f, 0.0f, 0.0f);
-		HM::Vector3 mRotation = HM::Vector3(0.0f, 0.0f, 0.0f);
-		HM::Vector3 mScale = HM::Vector3(1.0f, 1.0f, 1.0f);
+    class TransformComponent
+    {
+    public:
+        HM::Vector3  m_Position  = HM::Vector3(0.0f, 0.0f, 0.0f);
+        HM::Vector3  m_Rotation  = HM::Vector3(0.0f, 0.0f, 0.0f);
+        HM::Vector3  m_Scale     = HM::Vector3(1.0f, 1.0f, 1.0f);
 
-		HM::Matrix4x4 mObjMatrix = HM::Matrix4x4();
-
-	};
+        HM::Matrix4x4 m_ObjMatrix = HM::Matrix4x4();
+    };
 }
-

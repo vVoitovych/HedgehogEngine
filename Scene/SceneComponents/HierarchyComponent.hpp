@@ -1,23 +1,16 @@
 #pragma once
 
-#include "ECS/Entity.h"
+#include "ECS/Entity.hpp"
 #include <vector>
 #include <string>
 
 namespace Scene
 {
-	class HierarchyComponent
-	{
-	public:
-		std::string mName;
-
-		ECS::Entity mParent = 0;
-		std::vector<ECS::Entity> mChildren;
-
-	};
-
+    class HierarchyComponent
+    {
+    public:
+        std::string              m_Name;
+        ECS::Entity              m_Parent = 0;
+        std::vector<ECS::Entity> m_Children;
+    };
 }
-
-
-
-
