@@ -2,40 +2,27 @@
 
 #include <memory>
 
+#include "EcsApi.hpp"
 #include "ComponentManager.h"
 #include "EntityManager.h"
 #include "SystemManager.h"
 
 namespace ECS
 {
-	class Coordinator
+#pragma warning(push)
+#pragma warning(disable: 4251) // unique_ptr members of non-exported template types are safe across DLL boundary
+	class ECS_API ECS
 	{
 	public:
-		void Init()
-		{
-			componentManager = std::make_unique<ComponentManager>();
-			entityManager = std::make_unique<EntityManager>();
-			systemManager = std::make_unique<SystemManager>();
-		}
+		void Init();
+
 		// Entity methods
-		Entity CreateEntity()
-		{
-			return  entityManager->CreateEntity();
-		}
+		Entity CreateEntity();
+		void CreateEntity(Entity entity);
+		void DestroyEntity(Entity entity);
 
-		void CreateEntity(Entity entity)
-		{
-			entityManager->CreateEntity(entity);
-		}
-
-		void DestroyEntity(Entity entity)
-		{
-			entityManager->DestroyEntity(entity);
-			componentManager->EntityDestroyed(entity);
-			systemManager->EntityDestroyed(entity);
-		}
 		// Component methods
-		template<typename  T>
+		template<typename T>
 		void RegisterComponent()
 		{
 			componentManager->RegisterComponent<T>();
@@ -52,7 +39,6 @@ namespace ECS
 
 			systemManager->EntityChangedSignature(entity, signature);
 		}
-
 
 		template<typename T>
 		void RemoveComponent(Entity entity)
@@ -102,4 +88,5 @@ namespace ECS
 		std::unique_ptr<EntityManager> entityManager;
 		std::unique_ptr<SystemManager> systemManager;
 	};
+#pragma warning(pop)
 }

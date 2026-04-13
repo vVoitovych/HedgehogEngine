@@ -4,9 +4,9 @@
 
 namespace Scene
 {
-	void HierarchySystem::Update(ECS::Coordinator& coordinator)
+	void HierarchySystem::Update(ECS::ECS& ecs)
 	{
-		UpdateChildrenMatricies(coordinator, mRoot);
+		UpdateChildrenMatricies(ecs, mRoot);
 	}
 
 	void HierarchySystem::SetRoot(ECS::Entity entity)
@@ -14,15 +14,15 @@ namespace Scene
 		mRoot = entity;
 	}
 
-	void HierarchySystem::UpdateChildrenMatricies(ECS::Coordinator& coordinator, ECS::Entity parent)
+	void HierarchySystem::UpdateChildrenMatricies(ECS::ECS& ecs, ECS::Entity parent)
 	{
-		auto& transform = coordinator.GetComponent<TransformComponent>(parent);
-		auto& hierarchy = coordinator.GetComponent<HierarchyComponent>(parent);
+		auto& transform = ecs.GetComponent<TransformComponent>(parent);
+		auto& hierarchy = ecs.GetComponent<HierarchyComponent>(parent);
 		for (auto const& entity : hierarchy.mChildren)
 		{
-			auto& childTransform = coordinator.GetComponent<TransformComponent>(entity);
+			auto& childTransform = ecs.GetComponent<TransformComponent>(entity);
 			childTransform.mObjMatrix = transform.mObjMatrix * childTransform.mObjMatrix;
-			UpdateChildrenMatricies(coordinator, entity);
+			UpdateChildrenMatricies(ecs, entity);
 
 		}
 

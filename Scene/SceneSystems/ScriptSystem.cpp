@@ -88,17 +88,17 @@ namespace Scene
 	}
 
 
-	void ScriptSystem::Update(ECS::Coordinator& coordinator, float dt)
+	void ScriptSystem::Update(ECS::ECS& ecs, float dt)
 	{
-		CallOnEnable(coordinator);
-		CallUpdate(coordinator, dt);
-		CallOnDisable(coordinator);
+		CallOnEnable(ecs);
+		CallUpdate(ecs, dt);
+		CallOnDisable(ecs);
 
 	}
 
-	void ScriptSystem::ClearScriptComponent(ECS::Entity entity, ECS::Coordinator& coordinator)
+	void ScriptSystem::ClearScriptComponent(ECS::Entity entity, ECS::ECS& ecs)
 	{
-		auto& component = coordinator.GetComponent<ScriptComponent>(entity);
+		auto& component = ecs.GetComponent<ScriptComponent>(entity);
 		if (component.m_LuaState != nullptr)
 		{
 			lua_close(component.m_LuaState);
@@ -106,13 +106,13 @@ namespace Scene
 		}
 	}
 
-	void ScriptSystem::ChangeScript(ECS::Entity entity, ECS::Coordinator& coordinator)
+	void ScriptSystem::ChangeScript(ECS::Entity entity, ECS::ECS& ecs)
 	{
 		std::string scriptPath = DialogueWindows::ScriptChooseDialogue();
 		if (scriptPath == "")
 			return;
 
-		auto& component = coordinator.GetComponent<ScriptComponent>(entity);
+		auto& component = ecs.GetComponent<ScriptComponent>(entity);
 		if (component.m_LuaState != nullptr)
 		{
 			lua_close(component.m_LuaState);
@@ -123,7 +123,7 @@ namespace Scene
 		component.m_LuaState = luaL_newstate();
 		luaL_openlibs(component.m_LuaState);
 
-		auto& transform = coordinator.GetComponent<TransformComponent>(entity);
+		auto& transform = ecs.GetComponent<TransformComponent>(entity);
 		RegisterLuaBindings(component.m_LuaState, &transform);
 
 		std::string basePath = ContentLoader::GetAssetsDirectory() + baseActorScript;
@@ -164,9 +164,9 @@ namespace Scene
 		}
 	}
 
-	void ScriptSystem::InitScript(ECS::Entity entity, ECS::Coordinator& coordinator)
+	void ScriptSystem::InitScript(ECS::Entity entity, ECS::ECS& ecs)
 	{
-		auto& component = coordinator.GetComponent<ScriptComponent>(entity);
+		auto& component = ecs.GetComponent<ScriptComponent>(entity);
 
 		if (component.m_LuaState != nullptr)
 		{
@@ -180,7 +180,7 @@ namespace Scene
 		component.m_LuaState = luaL_newstate();
 		luaL_openlibs(component.m_LuaState);
 
-		auto& transform = coordinator.GetComponent<TransformComponent>(entity);
+		auto& transform = ecs.GetComponent<TransformComponent>(entity);
 		RegisterLuaBindings(component.m_LuaState, &transform);
 
 		std::string basePath = ContentLoader::GetAssetsDirectory() + baseActorScript;
@@ -229,11 +229,11 @@ namespace Scene
 		}
 	}
 
-	void ScriptSystem::CallOnEnable(ECS::Coordinator& coordinator)
+	void ScriptSystem::CallOnEnable(ECS::ECS& ecs)
 	{
 		for (auto const& entity : entities)
 		{
-			auto& component = coordinator.GetComponent<ScriptComponent>(entity);
+			auto& component = ecs.GetComponent<ScriptComponent>(entity);
 			if (component.m_NewEnable.has_value() && component.m_NewEnable.value())
 			{
 				component.m_Enable = true;
@@ -243,11 +243,11 @@ namespace Scene
 		}
 	}
 
-	void ScriptSystem::CallOnDisable(ECS::Coordinator& coordinator)
+	void ScriptSystem::CallOnDisable(ECS::ECS& ecs)
 	{
 		for (auto const& entity : entities)
 		{
-			auto& component = coordinator.GetComponent<ScriptComponent>(entity);
+			auto& component = ecs.GetComponent<ScriptComponent>(entity);
 			if (component.m_NewEnable.has_value() && !component.m_NewEnable.value())
 			{
 				component.m_Enable = false;
@@ -257,11 +257,11 @@ namespace Scene
 		}
 	}
 
-	void ScriptSystem::CallUpdate(ECS::Coordinator& coordinator, float dt)
+	void ScriptSystem::CallUpdate(ECS::ECS& ecs, float dt)
 	{
 		for (auto const& entity : entities)
 		{
-			auto& component = coordinator.GetComponent<ScriptComponent>(entity);
+			auto& component = ecs.GetComponent<ScriptComponent>(entity);
 
 			for (auto& param : component.m_Params)
 			{
@@ -289,7 +289,7 @@ namespace Scene
 
 			if (component.m_Enable && component.m_LuaState != nullptr)
 			{
-				auto& transform = coordinator.GetComponent<TransformComponent>(entity);
+				auto& transform = ecs.GetComponent<TransformComponent>(entity);
 
 				RegisterLuaBindings(component.m_LuaState, &transform);
 				

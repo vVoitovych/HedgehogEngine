@@ -1,14 +1,14 @@
 #pragma once
 
 #include "ECS/System.h"
-#include "ECS/Coordinator.h"
+#include "ECS/ECS.h"
 
 namespace Scene
 {
-	class TransformSystem : public ECS::System 
+	class TransformSystem : public ECS::System
 	{
 	public:
-		void Update(ECS::Coordinator& coordinator);
+		void Update(ECS::ECS& ecs);
 	};
 }
 

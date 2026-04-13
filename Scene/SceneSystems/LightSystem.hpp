@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ECS/Coordinator.h"
+#include "ECS/ECS.h"
 #include "ECS/Entity.h"
 #include "Scene/SceneComponents/LightComponent.hpp"
 
@@ -12,12 +12,12 @@ namespace Scene
 	class LightSystem : public ECS::System
 	{
 	public:
-		const std::vector<LightComponent>& GetLightComponents(ECS::Coordinator& coordinator);
-		void Update(ECS::Coordinator& coordinator);
+		const std::vector<LightComponent>& GetLightComponents(ECS::ECS& ecs);
+		void Update(ECS::ECS& ecs);
 		size_t GetLightComponentsCount() const;
-		const LightComponent& GetLightComponentByIndex(const ECS::Coordinator& coordinator, size_t index) const;
+		const LightComponent& GetLightComponentByIndex(const ECS::ECS& ecs, size_t index) const;
 
-		void SetShadowCasting(const ECS::Coordinator& coordinator, ECS::Entity inEntity, bool isCast);
+		void SetShadowCasting(const ECS::ECS& ecs, ECS::Entity inEntity, bool isCast);
 		const std::optional< HM::Vector3>& GetShadowDir() const;
 
 	private:
