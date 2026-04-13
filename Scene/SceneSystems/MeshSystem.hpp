@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ECS/Coordinator.h"
+#include "ECS/ECS.h"
 #include "ECS/Entity.h"
 #include "Scene/SceneComponents/MeshComponent.hpp"
 
@@ -12,17 +12,17 @@ namespace Scene
 	{
 	public:
 		MeshSystem();
-		void Update(ECS::Coordinator& coordinator, ECS::Entity entity);
-		void Update(ECS::Coordinator& coordinator);
+		void Update(ECS::ECS& ecs, ECS::Entity entity);
+		void Update(ECS::ECS& ecs);
 
 		bool ShouldUpdateMeshContainer() const;
 		void MeshContainerUpdated();
-		const std::vector<std::string>& GetMeshes() const; 
+		const std::vector<std::string>& GetMeshes() const;
 		std::vector<ECS::Entity> GetEntities();
 
 		void AddMeshPath(std::string meshPath);
 
-		void LoadMesh(ECS::Coordinator& coordinator, ECS::Entity entity);
+		void LoadMesh(ECS::ECS& ecs, ECS::Entity entity);
 
 	private:
 		void CheckMeshPath(MeshComponent& meshComponent, std::string fallbackPath);

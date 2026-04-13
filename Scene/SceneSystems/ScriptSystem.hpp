@@ -1,25 +1,25 @@
 #pragma once
 
 #include "ECS/System.h"
-#include "ECS/Coordinator.h"
+#include "ECS/ECS.h"
 
 namespace Scene
 {
 	class ScriptComponent;
 
-	class ScriptSystem : public ECS::System 
+	class ScriptSystem : public ECS::System
 	{
 	public:
-		void Update(ECS::Coordinator& coordinator, float dt);
+		void Update(ECS::ECS& ecs, float dt);
 
-		void ClearScriptComponent(ECS::Entity entity, ECS::Coordinator& coordinator);
-		void ChangeScript(ECS::Entity entity, ECS::Coordinator& coordinator);
-		void InitScript(ECS::Entity entity, ECS::Coordinator& coordinator);
+		void ClearScriptComponent(ECS::Entity entity, ECS::ECS& ecs);
+		void ChangeScript(ECS::Entity entity, ECS::ECS& ecs);
+		void InitScript(ECS::Entity entity, ECS::ECS& ecs);
 
 	private:
-		void CallOnEnable(ECS::Coordinator& coordinator);
-		void CallUpdate(ECS::Coordinator& coordinator, float dt);
-		void CallOnDisable(ECS::Coordinator& coordinator);
+		void CallOnEnable(ECS::ECS& ecs);
+		void CallUpdate(ECS::ECS& ecs, float dt);
+		void CallOnDisable(ECS::ECS& ecs);
 
 	};
 }

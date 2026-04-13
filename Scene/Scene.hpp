@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ECS/Coordinator.h"
+#include "ECS/ECS.h"
 #include "Scene/SceneSystems/TransformSystem.hpp"
 #include "Scene/SceneSystems/HierarchySystem.hpp"
 #include "Scene/SceneSystems/MeshSystem.hpp"
@@ -89,7 +89,7 @@ namespace Scene
 	private:
 		std::string m_SceneName;
 
-		ECS::Coordinator m_SceneCoordinator;
+		ECS::ECS m_SceneECS;
 		ECS::Entity m_Root;
 
 		// systems

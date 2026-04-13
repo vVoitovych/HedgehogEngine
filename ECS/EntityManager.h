@@ -3,10 +3,13 @@
 #include <vector>
 #include <array>
 #include "Entity.h"
+#include "EcsApi.hpp"
 
 namespace ECS
 {
-	class EntityManager
+#pragma warning(push)
+#pragma warning(disable: 4251) // private STL members are safe across DLL boundary when using the same runtime
+	class ECS_API EntityManager
 	{
 	public:
 		EntityManager();
@@ -24,5 +27,6 @@ namespace ECS
 
 		size_t entityCount;
 	};
+#pragma warning(pop)
 }
 

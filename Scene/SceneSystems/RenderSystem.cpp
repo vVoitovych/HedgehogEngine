@@ -2,27 +2,27 @@
 
 namespace Scene
 {
-	void RenderSystem::Update(ECS::Coordinator& coordinator, ECS::Entity entity)
+	void RenderSystem::Update(ECS::ECS& ecs, ECS::Entity entity)
 	{
-		auto& render = coordinator.GetComponent<RenderComponent>(entity);
+		auto& render = ecs.GetComponent<RenderComponent>(entity);
 		if (render.mMaterialIndex.has_value())
 		{
 			if (mMaterialPathes[render.mMaterialIndex.value()] != render.mMaterial)
 			{
-				UpdateMaterialPath(coordinator, entity);
+				UpdateMaterialPath(ecs, entity);
 			}
 		}
 		else
 		{
-			UpdateMaterialPath(coordinator, entity);
+			UpdateMaterialPath(ecs, entity);
 		}
 	}
 
-	void RenderSystem::UpdataSystem(ECS::Coordinator& coordinator)
+	void RenderSystem::UpdataSystem(ECS::ECS& ecs)
 	{
 		for (auto entity : entities)
 		{
-			Update(coordinator, entity);
+			Update(ecs, entity);
 		}
 	}
 
@@ -41,15 +41,15 @@ namespace Scene
 		return entities;
 	}
 
-	RenderComponent& RenderSystem::GetRenderComponentByIndex(ECS::Coordinator& coordinator, size_t index) const
+	RenderComponent& RenderSystem::GetRenderComponentByIndex(ECS::ECS& ecs, size_t index) const
 	{
 		auto entity = entities[index];
-		return coordinator.GetComponent<RenderComponent>(entity);
+		return ecs.GetComponent<RenderComponent>(entity);
 	}
 
-	void RenderSystem::UpdateMaterialPath(ECS::Coordinator& coordinator, ECS::Entity entity)
+	void RenderSystem::UpdateMaterialPath(ECS::ECS& ecs, ECS::Entity entity)
 	{
-		auto& component = coordinator.GetComponent<RenderComponent>(entity);
+		auto& component = ecs.GetComponent<RenderComponent>(entity);
 
 		if (!component.mMaterial.empty())
 		{

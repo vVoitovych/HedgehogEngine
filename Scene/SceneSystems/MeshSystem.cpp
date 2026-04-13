@@ -21,9 +21,9 @@ namespace Scene
 		AddMeshPath("Models\\Default\\sphere.obj");
 	}
 
-	void MeshSystem::Update(ECS::Coordinator& coordinator, ECS::Entity entity)
+	void MeshSystem::Update(ECS::ECS& ecs, ECS::Entity entity)
 	{
-	auto& meshComponent = coordinator.GetComponent<MeshComponent>(entity);
+	auto& meshComponent = ecs.GetComponent<MeshComponent>(entity);
 		if (meshComponent.mMeshIndex.has_value())
 		{
 			size_t index = meshComponent.mMeshIndex.value();
@@ -38,11 +38,11 @@ namespace Scene
 		}
 	}
 
-	void MeshSystem::Update(ECS::Coordinator& coordinator)
+	void MeshSystem::Update(ECS::ECS& ecs)
 	{
 		for (auto& entity : entities)
 		{
-			auto& meshComponent = coordinator.GetComponent<MeshComponent>(entity);
+			auto& meshComponent = ecs.GetComponent<MeshComponent>(entity);
 			if (meshComponent.mMeshIndex.has_value())
 			{
 				size_t index = meshComponent.mMeshIndex.value();
@@ -83,7 +83,7 @@ namespace Scene
 		mMeshPathes.push_back(meshPath);
 	}
 
-	void MeshSystem::LoadMesh(ECS::Coordinator& coordinator, ECS::Entity entity)
+	void MeshSystem::LoadMesh(ECS::ECS& ecs, ECS::Entity entity)
 	{
 		char* path = DialogueWindows::MeshOpenDialogue();
 		if (path == nullptr)
@@ -92,7 +92,7 @@ namespace Scene
 		}
 
 		std::string relatedPath = ContentLoader::GetAssetRelativetlyPath(path);
-		auto& meshComponent = coordinator.GetComponent<MeshComponent>(entity);
+		auto& meshComponent = ecs.GetComponent<MeshComponent>(entity);
 		auto prevMeshPath = meshComponent.mMeshPath;
 		meshComponent.mMeshPath = relatedPath;
 		AddMeshPath(relatedPath);

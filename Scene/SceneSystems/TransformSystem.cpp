@@ -9,11 +9,11 @@
 
 namespace Scene
 {
-	void TransformSystem::Update(ECS::Coordinator& coordinator)
+	void TransformSystem::Update(ECS::ECS& ecs)
 	{
 		for (auto const& entity : entities)
 		{
-			auto& transform = coordinator.GetComponent<TransformComponent>(entity);
+			auto& transform = ecs.GetComponent<TransformComponent>(entity);
 
 			HM::Matrix4x4 translation = HM::Matrix4x4::GetTranslation(transform.mPosition);
 			HM::Matrix4x4 rotationX = HM::Matrix4x4::GetRotationX(HM::ToRadians(transform.mRotation.x()));

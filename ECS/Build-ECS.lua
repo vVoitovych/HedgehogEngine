@@ -1,18 +1,21 @@
 project "ECS"
-   kind "StaticLib"
+   kind "SharedLib"
    language "C++"
    cppdialect "C++20"
 
-   files { "**.h", "**.cpp" }
+   files { "**.h", "**.hpp", "**.cpp" }
 
-   includedirs  {   }
+   includedirs { }
 
    targetdir ("../Binaries/" .. OutputDir .. "/%{prj.name}")
    objdir ("../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")
 
    filter "system:windows"
        systemversion "latest"
-       defines { }
+       defines { "ECS_EXPORT" }
+       postbuildcommands {
+           "{COPYFILE} %{cfg.targetdir}/ECS.dll ../Binaries/" .. OutputDir .. "/Client/ECS.dll"
+       }
 
    filter "configurations:Debug"
        defines { "DEBUG" }
@@ -23,4 +26,3 @@ project "ECS"
        defines { "RELEASE" }
        runtime "Release"
        optimize "On"
-
