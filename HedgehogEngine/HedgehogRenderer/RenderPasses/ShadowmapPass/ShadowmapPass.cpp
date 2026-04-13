@@ -8,6 +8,8 @@
 #include "HedgehogContext/Context/ThreadContext.hpp"
 #include "HedgehogContext/Context/VulkanContext.hpp"
 
+#include "HedgehogCommon/Camera/Camera.hpp"
+
 #include "HedgehogSettings/Settings/HedgehogSettings.hpp"
 #include "HedgehogSettings/Settings/ShadowmapingSettings.hpp"
 
@@ -30,9 +32,7 @@
 #include "HedgehogContext/Containers/MeshContainer/Mesh.hpp"
 #include "HedgehogContext/Containers/MaterialContainer/MaterialContainer.hpp"
 #include "HedgehogContext/Containers/DrawListContrainer/DrawListContainer.hpp"
-#include "HedgehogCore/Common/RendererSettings.hpp"
-#include "HedgehogCore/Camera/Camera.hpp"
-
+#include "HedgehogCommon/Common/RendererSettings.hpp"
 
 #include "Scene/Scene.hpp"
 

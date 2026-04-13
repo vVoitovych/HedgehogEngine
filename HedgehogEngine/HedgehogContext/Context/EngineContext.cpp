@@ -10,7 +10,7 @@
 #include "HedgehogWrappers/WindowManagment/WindowManager.hpp"
 #include "HedgehogWrappers/Wrappeers/SwapChain/SwapChain.hpp"
 
-#include "HedgehogCore/Camera/Camera.hpp"
+#include "HedgehogCommon/Camera/Camera.hpp"
 
 #include "HedgehogSettings/Settings/HedgehogSettings.hpp"
 

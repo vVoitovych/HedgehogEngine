@@ -565,6 +565,8 @@ Binaries
 /ThirdParty/YamlCpp/*.filters
 /Client/Client.vcxproj.user
 /HedgehogEngine.sln
+/HedgehogEngine/HedgehogCommon/HedgehogCommon.vcxproj
+/HedgehogEngine/HedgehogCommon/HedgehogCommon.vcxproj.filters
 /HedgehogEngine/HedgehogContext/HedgehogContext.vcxproj
 /HedgehogEngine/HedgehogContext/HedgehogContext.vcxproj.filters
 /HedgehogEngine/HedgehogRenderer/HedgehogRenderer.vcxproj

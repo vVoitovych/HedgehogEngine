@@ -1,5 +1,5 @@
 #include "FrameContext.hpp"
-#include "HedgehogCore/Camera/Camera.hpp"
+#include "HedgehogCommon/Camera/Camera.hpp"
 
 namespace Context
 {

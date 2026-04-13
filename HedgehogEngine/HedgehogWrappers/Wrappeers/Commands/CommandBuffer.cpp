@@ -2,7 +2,7 @@
 #include "HedgehogWrappers/Wrappeers/Device/Device.hpp"
 #include "HedgehogWrappers/Wrappeers/RenderPass/RenderPass.hpp"
 #include "HedgehogWrappers/Wrappeers/Pipeline/Pipeline.hpp"
-#include "HedgehogCore/Common/EngineDebugBreak.hpp"
+#include "HedgehogCommon/Common/EngineDebugBreak.hpp"
 
 #include "Logger/Logger.hpp"
 

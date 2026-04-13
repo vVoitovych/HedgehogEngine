@@ -3,7 +3,7 @@
 #include "HedgehogWrappers/WindowManagment/WindowManager.hpp"
 #include "HedgehogWrappers/Wrappeers/Device/Device.hpp"
 #include "HedgehogWrappers/Wrappeers/SwapChain/SwapChain.hpp"
-#include "HedgehogCore/Common/RendererSettings.hpp"
+#include "HedgehogCommon/Common/RendererSettings.hpp"
 #include "HedgehogRenderer/RenderPasses/GuiPass/GuiPass.hpp"
 
 #include "ContentLoader/TextureLoader.hpp"

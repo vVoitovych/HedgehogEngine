@@ -3,7 +3,7 @@
 
 #include "HedgehogWrappers/Wrappeers/Device/Device.hpp"
 
-#include "HedgehogCore/Common/EngineDebugBreak.hpp"
+#include "HedgehogCommon/Common/EngineDebugBreak.hpp"
 
 #include "Logger/Logger.hpp"
 

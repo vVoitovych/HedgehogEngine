@@ -22,7 +22,7 @@ project "HedgehogWrappers"
     }
 
     links { 
-        "HedgehogCore",
+        "HedgehogCommon",
         "HedgehogMath",
         "Logger",
         "ContentLoader",
