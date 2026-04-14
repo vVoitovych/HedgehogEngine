@@ -31,8 +31,8 @@ namespace Renderer
 {
     class ResourceManager;
 
-	class ForwardPass
-	{
+    class ForwardPass
+    {
     public:
         ForwardPass(const Context::Context& context, const ResourceManager& resourceManager);
         ~ForwardPass();
@@ -63,7 +63,7 @@ namespace Renderer
         std::vector<Wrappers::UBO<ForwardPassFrameUniform>> m_FrameUniforms;
         std::vector<Wrappers::DescriptorSet> m_FrameSets;
 
-	};
+    };
 
 }
 

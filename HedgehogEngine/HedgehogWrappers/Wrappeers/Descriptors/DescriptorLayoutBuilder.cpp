@@ -33,11 +33,12 @@ namespace Wrappers
         info.pNext = pNext;
 
         info.pBindings = m_Bindings.data();
-        info.bindingCount = (uint32_t)m_Bindings.size();
+        info.bindingCount = static_cast<uint32_t>(m_Bindings.size());
         info.flags = flags;
 
         VkDescriptorSetLayout result;
-        if (vkCreateDescriptorSetLayout(device.GetNativeDevice(), &info, nullptr, &result) != VK_SUCCESS) {
+        if (vkCreateDescriptorSetLayout(device.GetNativeDevice(), &info, nullptr, &result) != VK_SUCCESS)
+        {
             throw std::runtime_error("failed to create descriptor set layout!");
         }
         return result;

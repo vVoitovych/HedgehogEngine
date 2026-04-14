@@ -92,14 +92,21 @@ namespace YAML {
 
 namespace Scene
 {
-    static YAML::Emitter& operator<<(YAML::Emitter& out, const HM::Vector3& v)
+namespace
+{
+    YAML::Emitter& operator<<(YAML::Emitter& out, const HM::Vector3& v)
     {
         out << YAML::Flow;
         out << YAML::BeginSeq << v.x() << v.y() << v.z() << YAML::EndSeq;
         return out;
     }
 
-    static void SerializeEntity(YAML::Emitter& out, Scene& scene, ECS::Entity entity)
+    std::string GetSceneName(const std::string& inPath)
+    {
+        return std::filesystem::path(inPath).stem().string();
+    }
+
+    void SerializeEntity(YAML::Emitter& out, Scene& scene, ECS::Entity entity)
     {
         auto& hierarchy = scene.GetHierarchyComponent(entity);
         auto& transform = scene.GetTransformComponent(entity);
@@ -194,30 +201,7 @@ namespace Scene
         out << YAML::EndMap;
     }
 
-    static std::string GetSceneName(const std::string& inPath)
-    {
-        return std::filesystem::path(inPath).stem().string();
-    }
-
-    void SceneSerializer::SerializeScene(Scene& scene, std::string scenePath)
-    {
-        LOGINFO("SerializeScene: ", scenePath);
-        const std::string sceneName = GetSceneName(scenePath);
-        scene.m_SceneName = sceneName;
-
-        YAML::Emitter out;
-        out << YAML::BeginMap;
-        out << YAML::Key << "Scene name" << YAML::Value << sceneName;
-        out << YAML::Key << "Scene"      << YAML::Value << YAML::BeginSeq;
-        SerializeEntity(out, scene, scene.GetRoot());
-        out << YAML::EndSeq;
-        out << YAML::EndMap;
-
-        std::ofstream fout(scenePath);
-        fout << out.c_str();
-    }
-
-    static void DeserializeEntity(Scene& scene, YAML::Node node)
+    void DeserializeEntity(Scene& scene, YAML::Node node)
     {
         ECS::Entity entity = node["Entity"].as<ECS::Entity>();
         scene.CreateGameObject(entity);
@@ -311,6 +295,25 @@ namespace Scene
             hierarchy.m_Children.push_back(childEntity);
             DeserializeEntity(scene, child);
         }
+    }
+}
+
+    void SceneSerializer::SerializeScene(Scene& scene, std::string scenePath)
+    {
+        LOGINFO("SerializeScene: ", scenePath);
+        const std::string sceneName = GetSceneName(scenePath);
+        scene.m_SceneName = sceneName;
+
+        YAML::Emitter out;
+        out << YAML::BeginMap;
+        out << YAML::Key << "Scene name" << YAML::Value << sceneName;
+        out << YAML::Key << "Scene"      << YAML::Value << YAML::BeginSeq;
+        SerializeEntity(out, scene, scene.GetRoot());
+        out << YAML::EndSeq;
+        out << YAML::EndMap;
+
+        std::ofstream fout(scenePath);
+        fout << out.c_str();
     }
 
     void SceneSerializer::DeserializeScene(Scene& scene, std::string scenePath)

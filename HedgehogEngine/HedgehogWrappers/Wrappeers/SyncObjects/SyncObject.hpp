@@ -28,7 +28,7 @@ namespace Wrappers
         void ResetInFlightFence(const Device& device);
     private:
         VkSemaphore m_ImageAvailableSemaphore;
-        VkSemaphore m_RendeerFinishedSemaphore;
+        VkSemaphore m_RenderFinishedSemaphore;
         VkFence m_InFlightFence;
 
     };

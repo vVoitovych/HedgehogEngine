@@ -22,14 +22,16 @@ extern "C"
 
 namespace Scene
 {
-    static const std::string s_BaseActorScript = "Scripts/Base/ActorScript.lua";
+namespace
+{
+    const std::string s_BaseActorScript = "Scripts/Base/ActorScript.lua";
 
-    static std::string GetFileNameWithoutExtension(const std::string& path)
+    std::string GetFileNameWithoutExtension(const std::string& path)
     {
         return std::filesystem::path(path).stem().string();
     }
 
-    static void RegisterLuaBindings(lua_State* L, TransformComponent* transform)
+    void RegisterLuaBindings(lua_State* L, TransformComponent* transform)
     {
         lua_pushlightuserdata(L, transform);
         lua_setglobal(L, "__transform_ptr");
@@ -84,6 +86,7 @@ namespace Scene
             }
         );
     }
+}
 
     void ScriptSystem::Update(ECS::ECS& ecs, float dt)
     {

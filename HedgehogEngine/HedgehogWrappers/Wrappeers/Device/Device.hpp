@@ -50,7 +50,7 @@ namespace Wrappers
         VkSurfaceKHR GetNativeSurface() const ;
         VkDevice GetNativeDevice() const;
         VkPhysicalDevice GetNativePhysicalDevice() const;
-        QueueFamilyIndices GetIndicies() const;
+        QueueFamilyIndices GetIndices() const;
         const VmaAllocator& GetAllocator() const;
 
         void SetObjectName(uint64_t objectHandle, VkObjectType objectType, const char* name) const;
@@ -69,7 +69,7 @@ namespace Wrappers
 
         void UpdateDescriptorSets(std::vector<VkWriteDescriptorSet>& descriptorWrites) const;
     private:
-        void InitLayersAndExtentions();
+        void InitLayersAndExtensions();
         void InitializeInstance();
         void InitializeDebugMessenger();
         void CleanupDebugMessenger();

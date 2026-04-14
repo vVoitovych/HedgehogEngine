@@ -17,7 +17,7 @@ namespace Context
 {
     LightContainer::LightContainer()
     {
-        mLights.resize(MAX_LIGHTS_COUNT);
+        m_Lights.resize(MAX_LIGHTS_COUNT);
     }
 
     void LightContainer::UpdateLights(const Scene::Scene& scene)
@@ -35,7 +35,7 @@ namespace Context
             const auto& lightComponent = scene.GetLightComponentByIndex(i);
             if (lightComponent.m_Enable)
             {
-                auto& light        = mLights[counter];
+                auto& light        = m_Lights[counter];
                 light.m_Position   = lightComponent.m_Position;
                 light.m_Direction  = lightComponent.m_Direction;
                 light.m_Color      = lightComponent.m_Color;
@@ -48,16 +48,16 @@ namespace Context
                 ++counter;
             }
         }
-        mLightCont = counter;
+        m_LightCount = counter;
     }
 
     size_t LightContainer::GetLightCount() const
     {
-        return mLightCont;
+        return m_LightCount;
     }
 
     const std::vector<Light>& LightContainer::GetLights() const
     {
-        return mLights;
+        return m_Lights;
     }
 }

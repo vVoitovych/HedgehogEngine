@@ -2,6 +2,6 @@
 
 namespace DialogueWindows
 {
-	char* MeshOpenDialogue();
+    char* MeshOpenDialogue();
 }
 

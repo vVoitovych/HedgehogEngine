@@ -14,76 +14,76 @@
 
 namespace Context
 {
-	VulkanContext::VulkanContext()
-	{
-		m_WindowManager = std::make_unique<WinManager::WindowManager>(WinManager::WindowState::GetDefaultState());
-		ContentLoader::TextureLoader texLoader;
-		texLoader.LoadTexture("Textures\\Logo\\logo1.png");
-		m_WindowManager->SetIcon(texLoader.GetWidth(), texLoader.GetHeight(), static_cast<unsigned char*>(texLoader.GetData()));
+    VulkanContext::VulkanContext()
+    {
+        m_WindowManager = std::make_unique<WinManager::WindowManager>(WinManager::WindowState::GetDefaultState());
+        ContentLoader::TextureLoader texLoader;
+        texLoader.LoadTexture("Textures\\Logo\\logo1.png");
+        m_WindowManager->SetIcon(texLoader.GetWidth(), texLoader.GetHeight(), static_cast<unsigned char*>(texLoader.GetData()));
 
-		m_Device = std::make_unique<Wrappers::Device>(*m_WindowManager);
-		m_SwapChain = std::make_unique<Wrappers::SwapChain>(*m_Device, *m_WindowManager);
-	}
+        m_Device = std::make_unique<Wrappers::Device>(*m_WindowManager);
+        m_SwapChain = std::make_unique<Wrappers::SwapChain>(*m_Device, *m_WindowManager);
+    }
 
-	VulkanContext::~VulkanContext()
-	{
-	}
+    VulkanContext::~VulkanContext()
+    {
+    }
 
-	void VulkanContext::Cleanup()
-	{
-		m_SwapChain->Cleanup(*m_Device);
-		m_Device->Cleanup();
-	}
+    void VulkanContext::Cleanup()
+    {
+        m_SwapChain->Cleanup(*m_Device);
+        m_Device->Cleanup();
+    }
 
-	void VulkanContext::HandleInput()
-	{
-		m_WindowManager->HandleInput();
-	}
+    void VulkanContext::HandleInput()
+    {
+        m_WindowManager->HandleInput();
+    }
 
-	WinManager::WindowManager& VulkanContext::GetWindowManager()
-	{
-		return *m_WindowManager;
-	}
+    WinManager::WindowManager& VulkanContext::GetWindowManager()
+    {
+        return *m_WindowManager;
+    }
 
-	const WinManager::WindowManager& VulkanContext::GetWindowManager() const
-	{
-		return *m_WindowManager;
-	}
+    const WinManager::WindowManager& VulkanContext::GetWindowManager() const
+    {
+        return *m_WindowManager;
+    }
 
-	const Wrappers::Device& VulkanContext::GetDevice() const
-	{
-		return *m_Device;
-	}
+    const Wrappers::Device& VulkanContext::GetDevice() const
+    {
+        return *m_Device;
+    }
 
-	const Wrappers::SwapChain& VulkanContext::GetSwapChain() const
-	{
-		return *m_SwapChain;
-	}
+    const Wrappers::SwapChain& VulkanContext::GetSwapChain() const
+    {
+        return *m_SwapChain;
+    }
 
-	Wrappers::SwapChain& VulkanContext::GetSwapChain()
-	{
-		return *m_SwapChain;
-	}
+    Wrappers::SwapChain& VulkanContext::GetSwapChain()
+    {
+        return *m_SwapChain;
+    }
 
-	bool VulkanContext::ShouldClose() const
-	{
-		return m_WindowManager->ShouldClose();
-	}
+    bool VulkanContext::ShouldClose() const
+    {
+        return m_WindowManager->ShouldClose();
+    }
 
-	void VulkanContext::ResizeWindow()
-	{
-		m_WindowResized = true;
-	}
+    void VulkanContext::ResizeWindow()
+    {
+        m_WindowResized = true;
+    }
 
-	bool VulkanContext::IsWindowResized()
-	{
-		return m_WindowResized;
-	}
+    bool VulkanContext::IsWindowResized()
+    {
+        return m_WindowResized;
+    }
 
-	void VulkanContext::ResetWindowResizeState()
-	{
-		m_WindowResized = false;
-	}
+    void VulkanContext::ResetWindowResizeState()
+    {
+        m_WindowResized = false;
+    }
 
 }
 

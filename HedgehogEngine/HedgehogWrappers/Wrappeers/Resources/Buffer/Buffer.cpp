@@ -41,12 +41,12 @@ namespace Wrappers
     {
         if (m_Buffer != nullptr)
         {
-            LOGERROR("Vulkan buffer should be cleanedup before destruction!");
+            LOGERROR("Vulkan buffer should be cleaned up before destruction!");
             ENGINE_DEBUG_BREAK();
         }
         if (m_Allocation != nullptr)
         {
-            LOGERROR("Vulkan buffer allocation should be cleanedup before destruction!");
+            LOGERROR("Vulkan buffer allocation should be cleaned up before destruction!");
             ENGINE_DEBUG_BREAK();
         }
     }

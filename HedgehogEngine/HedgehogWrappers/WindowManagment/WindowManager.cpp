@@ -169,7 +169,7 @@ namespace WinManager
                 {
                     double x, y;
                     glfwGetCursorPos(window, &x, &y);
-                    controls.MousePos = HM::Vector2((float)x, (float)y);
+                    controls.MousePos = HM::Vector2(static_cast<float>(x), static_cast<float>(y));
                     controls.MouseDelta = HM::Vector2(0.0f, 0.0f);
                 }
                 controls.IsLeftMouseButton = true;
@@ -188,7 +188,7 @@ namespace WinManager
                 {
                     double x, y;
                     glfwGetCursorPos(window, &x, &y);
-                    controls.MousePos = HM::Vector2((float)x, (float)y);
+                    controls.MousePos = HM::Vector2(static_cast<float>(x), static_cast<float>(y));
                     controls.MouseDelta = HM::Vector2(0.0f, 0.0f);
                 }
                 controls.IsRightMouseButton = true;
@@ -207,7 +207,7 @@ namespace WinManager
                 {
                     double x, y;
                     glfwGetCursorPos(window, &x, &y);
-                    controls.MousePos = HM::Vector2((float)x, (float)y);
+                    controls.MousePos = HM::Vector2(static_cast<float>(x), static_cast<float>(y));
                     controls.MouseDelta = HM::Vector2(0.0f, 0.0f);
                 }
                 controls.IsMiddleMouseButton = true;
@@ -227,8 +227,8 @@ namespace WinManager
         Controls& controls = app->GetControls();
         if (controls.IsLeftMouseButton || controls.IsMiddleMouseButton || controls.IsRightMouseButton)
         {
-            controls.MouseDelta = HM::Vector2((float)x, (float)y) - controls.MousePos;
-            controls.MousePos = HM::Vector2((float)x, (float)y);
+            controls.MouseDelta = HM::Vector2(static_cast<float>(x), static_cast<float>(y)) - controls.MousePos;
+            controls.MousePos = HM::Vector2(static_cast<float>(x), static_cast<float>(y));
 
             if (abs(controls.MouseDelta.x()) < 2)
             {
@@ -246,7 +246,7 @@ namespace WinManager
         auto app = reinterpret_cast<WindowManager*>(glfwGetWindowUserPointer(window));
 
         Controls& controls = app->GetControls();
-        controls.ScrollDelta = HM::Vector2((float)x, (float)y);
+        controls.ScrollDelta = HM::Vector2(static_cast<float>(x), static_cast<float>(y));
     }
 
     

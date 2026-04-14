@@ -10,8 +10,23 @@
 
 namespace Wrappers
 {
+
+namespace
+{
+    VkImageSubresourceRange ImageSubresourceRange(VkImageAspectFlags aspectMask)
+    {
+        VkImageSubresourceRange subImage{};
+        subImage.aspectMask = aspectMask;
+        subImage.baseMipLevel = 0;
+        subImage.levelCount = VK_REMAINING_MIP_LEVELS;
+        subImage.baseArrayLayer = 0;
+        subImage.layerCount = VK_REMAINING_ARRAY_LAYERS;
+        return subImage;
+    }
+}
+
     CommandBuffer::CommandBuffer(const Device& device)
-        :m_CommandBuffer(nullptr)
+        : m_CommandBuffer(nullptr)
     {
         device.AllocateCommandBuffer(&m_CommandBuffer);
         LOGINFO("Command buffer created");
@@ -21,7 +36,7 @@ namespace Wrappers
     {
         if (m_CommandBuffer != nullptr)
         {
-            LOGERROR("Vulkan command buffer should be cleanedup before destruction!");
+            LOGERROR("Vulkan command buffer should be cleaned up before destruction!");
             ENGINE_DEBUG_BREAK();
         }
     }
@@ -47,10 +62,10 @@ namespace Wrappers
     {
         device.FreeCommandBuffer(&m_CommandBuffer);
         m_CommandBuffer = nullptr;
-        LOGINFO("Command  buffer cleaned");
+        LOGINFO("Command buffer cleaned");
     }
 
-    VkCommandBuffer& CommandBuffer::GetNativeCommandBuffer() 
+    VkCommandBuffer& CommandBuffer::GetNativeCommandBuffer()
     {
         return m_CommandBuffer;
     }
@@ -96,7 +111,6 @@ namespace Wrappers
 
         vkQueueSubmit(device.GetNativeGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE);
         vkQueueWaitIdle(device.GetNativeGraphicsQueue());
-
     }
 
     void CommandBuffer::BeginRenderPass(VkExtent2D extend, const RenderPass& renderPass, VkFramebuffer frameBuffer)
@@ -105,14 +119,12 @@ namespace Wrappers
         clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
         clearValues[1].depthStencil = { 1.0f, 0 };
 
-
         VkRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         renderPassInfo.renderPass = renderPass.GetNativeRenderPass();
         renderPassInfo.framebuffer = frameBuffer;
         renderPassInfo.renderArea.offset = { 0, 0 };
         renderPassInfo.renderArea.extent = extend;
-        VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
         renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
         renderPassInfo.pClearValues = clearValues.data();
 
@@ -165,11 +177,11 @@ namespace Wrappers
     }
 
     void CommandBuffer::BindDescriptorSers(
-        VkPipelineBindPoint bindPoint, 
-        const Pipeline& pipeline, 
+        VkPipelineBindPoint bindPoint,
+        const Pipeline& pipeline,
         uint32_t firstSet, uint32_t setsCount,
-        VkDescriptorSet* descriptorSets, 
-        uint32_t dynamicOffsetCount, 
+        VkDescriptorSet* descriptorSets,
+        uint32_t dynamicOffsetCount,
         uint32_t* pDynamicOffsets)
     {
         vkCmdBindDescriptorSets(m_CommandBuffer, bindPoint, pipeline.GetNativePipelineLayout(), firstSet, setsCount, descriptorSets, dynamicOffsetCount, pDynamicOffsets);
@@ -192,7 +204,7 @@ namespace Wrappers
 
     void CommandBuffer::CopyImageToImage(VkImage source, VkImage destination, VkExtent2D srcSize, VkExtent2D dstSize)
     {
-        VkImageBlit2 blitRegion{ };
+        VkImageBlit2 blitRegion{};
         blitRegion.sType = VK_STRUCTURE_TYPE_IMAGE_BLIT_2;
         blitRegion.pNext = nullptr;
 
@@ -214,7 +226,7 @@ namespace Wrappers
         blitRegion.dstSubresource.layerCount = 1;
         blitRegion.dstSubresource.mipLevel = 0;
 
-        VkBlitImageInfo2 blitInfo{ };
+        VkBlitImageInfo2 blitInfo{};
         blitInfo.sType = VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2;
         blitInfo.pNext = nullptr;
         blitInfo.dstImage = destination;
@@ -256,24 +268,12 @@ namespace Wrappers
         vkCmdClearColorImage(m_CommandBuffer, image, imageLayout, pColor, rangeCount, pRanges);
     }
 
-    void CommandBuffer::ClearDepthStencilImage(VkImage image, VkImageLayout imageLayout, const VkClearDepthStencilValue* pDepthStencil, 
-                                                    uint32_t rangeCount, const VkImageSubresourceRange* pRanges)
+    void CommandBuffer::ClearDepthStencilImage(VkImage image, VkImageLayout imageLayout, const VkClearDepthStencilValue* pDepthStencil,
+        uint32_t rangeCount, const VkImageSubresourceRange* pRanges)
     {
         vkCmdClearDepthStencilImage(m_CommandBuffer, image, imageLayout, pDepthStencil, rangeCount, pRanges);
     }
 
-    VkImageSubresourceRange ImageSubresourceRange(VkImageAspectFlags aspectMask)
-    {
-        VkImageSubresourceRange subImage{};
-        subImage.aspectMask = aspectMask;
-        subImage.baseMipLevel = 0;
-        subImage.levelCount = VK_REMAINING_MIP_LEVELS;
-        subImage.baseArrayLayer = 0;
-        subImage.layerCount = VK_REMAINING_ARRAY_LAYERS;
-
-        return subImage;
-
-    }
     void CommandBuffer::TransitionImage(VkImage image, VkImageLayout currentLayout, VkImageLayout newLayout)
     {
         VkImageMemoryBarrier2 imageBarrier = {};
@@ -288,14 +288,15 @@ namespace Wrappers
         imageBarrier.oldLayout = currentLayout;
         imageBarrier.newLayout = newLayout;
 
-        VkImageAspectFlags aspectMask = (newLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL) ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+        const VkImageAspectFlags aspectMask = (newLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL)
+            ? VK_IMAGE_ASPECT_DEPTH_BIT
+            : VK_IMAGE_ASPECT_COLOR_BIT;
         imageBarrier.subresourceRange = ImageSubresourceRange(aspectMask);
         imageBarrier.image = image;
 
         VkDependencyInfo depInfo{};
         depInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
         depInfo.pNext = nullptr;
-
         depInfo.imageMemoryBarrierCount = 1;
         depInfo.pImageMemoryBarriers = &imageBarrier;
 
@@ -303,5 +304,3 @@ namespace Wrappers
     }
 
 }
-
-

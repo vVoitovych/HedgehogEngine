@@ -51,17 +51,17 @@ namespace Wrappers
     {
         if (m_Image != nullptr)
         {
-            LOGERROR("Vulkan image should be cleanedup before destruction!");
+            LOGERROR("Vulkan image should be cleaned up before destruction!");
             ENGINE_DEBUG_BREAK();
         }
         if (m_Allocation != nullptr)
         {
-            LOGERROR("Vulkan image allocation should be cleanedup before destruction!");
+            LOGERROR("Vulkan image allocation should be cleaned up before destruction!");
             ENGINE_DEBUG_BREAK();
         }
         if (m_ImageView != nullptr)
         {
-            LOGERROR("Vulkan image view should be cleanedup before destruction!");
+            LOGERROR("Vulkan image view should be cleaned up before destruction!");
             ENGINE_DEBUG_BREAK();
         }
     }

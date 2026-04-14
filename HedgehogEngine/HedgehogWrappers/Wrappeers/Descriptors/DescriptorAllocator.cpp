@@ -18,7 +18,7 @@ namespace Wrappers
         {
             VkDescriptorPoolSize poolSize{};
             poolSize.type = ratio.type;
-            poolSize.descriptorCount = uint32_t(ratio.ratio * maxSets);
+            poolSize.descriptorCount = static_cast<uint32_t>(ratio.ratio * maxSets);
             poolSizes.push_back(poolSize);
         }
 
@@ -26,7 +26,7 @@ namespace Wrappers
         info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
         info.maxSets = maxSets;
-        info.poolSizeCount = (uint32_t)poolSizes.size();
+        info.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
         info.pPoolSizes = poolSizes.data();
 
         vkCreateDescriptorPool(device.GetNativeDevice(), &info, nullptr, &m_Pool);
@@ -37,7 +37,7 @@ namespace Wrappers
     {
         if (m_Pool != nullptr)
         {
-            LOGERROR("Vulkan descriptor pool should be cleanedup before destruction!");
+            LOGERROR("Vulkan descriptor pool should be cleaned up before destruction!");
             ENGINE_DEBUG_BREAK();
         }
     }

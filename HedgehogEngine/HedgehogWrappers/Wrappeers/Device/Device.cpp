@@ -21,10 +21,14 @@
 
 namespace Wrappers
 {
-    static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
+
+namespace
+{
+    VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
         VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
         VkDebugUtilsMessageTypeFlagsEXT messageType,
-        const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
+        const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+        void* pUserData)
     {
         switch (messageSeverity)
         {
@@ -53,7 +57,8 @@ namespace Wrappers
         const VkAllocationCallbacks* pAllocator,
         VkDebugUtilsMessengerEXT* pDebugMessenger)
     {
-        auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+        auto func = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
+            vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT"));
         if (func != nullptr)
         {
             return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
@@ -69,7 +74,8 @@ namespace Wrappers
         VkDebugUtilsMessengerEXT debugMessenger,
         const VkAllocationCallbacks* pAllocator)
     {
-        auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+        auto func = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
+            vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT"));
         if (func != nullptr)
         {
             func(instance, debugMessenger, pAllocator);
@@ -133,6 +139,7 @@ namespace Wrappers
         }
         return details;
     }
+}
 
     // Device methods
 
@@ -145,7 +152,7 @@ namespace Wrappers
         , m_GraphicsQueue(nullptr)
         , m_PresentQueue(nullptr)
     {
-        InitLayersAndExtentions();
+        InitLayersAndExtensions();
         InitializeInstance();
         InitializeDebugMessenger();
         windowManager.CreateWindowSurface(m_Instance, &m_Surface);
@@ -159,42 +166,42 @@ namespace Wrappers
     {
         if (m_Instance != nullptr)
         {
-            LOGERROR("Vulkan instance should be cleanedup before destruction!");
+            LOGERROR("Vulkan instance should be cleaned up before destruction!");
             ENGINE_DEBUG_BREAK();
         }
         if (m_DebugMessenger != nullptr)
         {
-            LOGERROR("Vulkan debug messenger should be cleanedup before destruction!");
+            LOGERROR("Vulkan debug messenger should be cleaned up before destruction!");
             ENGINE_DEBUG_BREAK();
         }
         if (m_PhysicalDevice != nullptr)
         {
-            LOGERROR("Vulkan physical device should be cleanedup before destruction!");
+            LOGERROR("Vulkan physical device should be cleaned up before destruction!");
             ENGINE_DEBUG_BREAK();
         }
         if (m_Device != nullptr)
         {
-            LOGERROR("Vulkan device should be cleanedup before destruction!");
+            LOGERROR("Vulkan device should be cleaned up before destruction!");
             ENGINE_DEBUG_BREAK();
         }
         if (m_Allocator != nullptr)
         {
-            LOGERROR("Vulkan allocator should be cleanedup before destruction!");
+            LOGERROR("Vulkan allocator should be cleaned up before destruction!");
             ENGINE_DEBUG_BREAK();
         }
         if (m_CommandPool != nullptr)
         {
-            LOGERROR("Vulkan command pool should be cleanedup before destruction!");
+            LOGERROR("Vulkan command pool should be cleaned up before destruction!");
             ENGINE_DEBUG_BREAK();
         }
     }
 
-    void Device::InitLayersAndExtentions()
+    void Device::InitLayersAndExtensions()
     {
         m_ValidationLayers.clear();
         m_DeviceExtensions.clear();
 
-        m_ValidationLayers.push_back("VK_LAYER_KHRONOS_validation"); 
+        m_ValidationLayers.push_back("VK_LAYER_KHRONOS_validation");
 
         m_DeviceExtensions.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
         m_DeviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
@@ -229,7 +236,7 @@ namespace Wrappers
         createInfo.enabledLayerCount = static_cast<uint32_t>(m_ValidationLayers.size());
         createInfo.ppEnabledLayerNames = m_ValidationLayers.data();
         PopulateDebugMessengerCreateInfo(debugCreateInfo);
-        createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
+        createInfo.pNext = reinterpret_cast<VkDebugUtilsMessengerCreateInfoEXT*>(&debugCreateInfo);
 #else
         createInfo.enabledLayerCount = 0;
         createInfo.pNext = nullptr;
@@ -271,7 +278,7 @@ namespace Wrappers
 
         std::vector<VkPhysicalDevice> devices(deviceCount);
         vkEnumeratePhysicalDevices(m_Instance, &deviceCount, devices.data());
-        
+
         int maxScore = 0;
         for (const auto& device : devices)
         {
@@ -291,7 +298,6 @@ namespace Wrappers
         VkPhysicalDeviceProperties properties;
         vkGetPhysicalDeviceProperties(m_PhysicalDevice, &properties);
         LOGINFO("Physical device: ", properties.deviceName);
-
         LOGINFO("Physical device picked");
     }
 
@@ -318,7 +324,6 @@ namespace Wrappers
         VkPhysicalDeviceSynchronization2FeaturesKHR synchronization2Features = {};
         synchronization2Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR;
         synchronization2Features.synchronization2 = VK_TRUE;
-
 
         VkDeviceCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -404,7 +409,7 @@ namespace Wrappers
 #endif
     }
 
-    ////////////////////////////////////////////////////// 
+    //////////////////////////////////////////////////////
 
     VkInstance Device::GetNativeInstance() const
     {
@@ -421,7 +426,7 @@ namespace Wrappers
         return m_PresentQueue;
     }
 
-    VkSurfaceKHR Device::GetNativeSurface() const 
+    VkSurfaceKHR Device::GetNativeSurface() const
     {
         return m_Surface;
     }
@@ -436,7 +441,7 @@ namespace Wrappers
         return m_PhysicalDevice;
     }
 
-    QueueFamilyIndices Device::GetIndicies() const
+    QueueFamilyIndices Device::GetIndices() const
     {
         return m_Indices;
     }
@@ -464,10 +469,11 @@ namespace Wrappers
     void Device::SetObjectName(uint64_t objectHandle, VkObjectType objectType, const char* name) const
     {
 #ifdef DEBUG
-        PFN_vkSetDebugUtilsObjectNameEXT vkSetDebugUtilsObjectNameEXT =
-            (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(m_Instance, "vkSetDebugUtilsObjectNameEXT");
+        auto vkSetDebugUtilsObjectNameEXT = reinterpret_cast<PFN_vkSetDebugUtilsObjectNameEXT>(
+            vkGetInstanceProcAddr(m_Instance, "vkSetDebugUtilsObjectNameEXT"));
 
-        if (!vkSetDebugUtilsObjectNameEXT) {
+        if (!vkSetDebugUtilsObjectNameEXT)
+        {
             throw std::runtime_error("failed to load vkSetDebugUtilsObjectNameEXT");
         }
 
@@ -498,16 +504,16 @@ namespace Wrappers
 
     VkFormat Device::FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const
     {
-        for (VkFormat format : candidates) 
+        for (VkFormat format : candidates)
         {
             VkFormatProperties props;
             vkGetPhysicalDeviceFormatProperties(m_PhysicalDevice, format, &props);
 
-            if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) 
+            if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features)
             {
                 return format;
             }
-            else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) 
+            else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features)
             {
                 return format;
             }
@@ -518,7 +524,8 @@ namespace Wrappers
 
     VkFormat Device::FindDepthFormat() const
     {
-        return FindSupportedFormat({ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
+        return FindSupportedFormat(
+            { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
             VK_IMAGE_TILING_OPTIMAL,
             VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
     }
@@ -590,7 +597,7 @@ namespace Wrappers
         createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
         createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
         createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-        createInfo.pfnUserCallback = debugCallback;
+        createInfo.pfnUserCallback = DebugCallback;
     }
 
     bool Device::CheckValidationLayerSupport() const
@@ -663,23 +670,23 @@ namespace Wrappers
         uint32_t extensionsCount;
         vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionsCount, nullptr);
 
-        std::vector<VkExtensionProperties> availableExtensions(extensionsCount); 
+        std::vector<VkExtensionProperties> availableExtensions(extensionsCount);
         vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionsCount, availableExtensions.data());
 
-        std::set<std::string> requiredExtensins(m_DeviceExtensions.begin(), m_DeviceExtensions.end());
+        std::set<std::string> requiredExtensions(m_DeviceExtensions.begin(), m_DeviceExtensions.end());
 
         for (const auto& extension : availableExtensions)
         {
-            requiredExtensins.erase(extension.extensionName);
+            requiredExtensions.erase(extension.extensionName);
         }
 
-        return requiredExtensins.empty();
+        return requiredExtensions.empty();
     }
 
     int Device::GetDeviceScore(VkPhysicalDevice device) const
     {
         QueueFamilyIndices indices = FindQueueFamilies(device, m_Surface);
-        bool extensionsSupported = CheckDeviceExtensionSupport(device);
+        const bool extensionsSupported = CheckDeviceExtensionSupport(device);
         bool swapChainAdequate = false;
         if (extensionsSupported)
         {
@@ -688,13 +695,15 @@ namespace Wrappers
         }
         int score = 1;
 
-        bool conditions = indices.IsComplete() && extensionsSupported && swapChainAdequate;
+        const bool conditions = indices.IsComplete() && extensionsSupported && swapChainAdequate;
         if (!conditions)
+        {
             return 0;
+        }
 
         VkPhysicalDeviceProperties deviceProperties;
         vkGetPhysicalDeviceProperties(device, &deviceProperties);
-        if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) 
+        if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
         {
             score += 1000;
         }
@@ -704,5 +713,3 @@ namespace Wrappers
 
 
 }
-
-

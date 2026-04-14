@@ -39,7 +39,7 @@ namespace Wrappers
     {
         if (m_FrameBuffer != nullptr)
         {
-            LOGERROR("Vulkan frame buffer should be cleanedup before destruction!");
+            LOGERROR("Vulkan frame buffer should be cleaned up before destruction!");
             ENGINE_DEBUG_BREAK();
         }
     }

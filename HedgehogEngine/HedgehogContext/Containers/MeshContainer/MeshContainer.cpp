@@ -14,14 +14,16 @@
 
 namespace Context
 {
+namespace
+{
     template<typename T>
     void CreateBuffer(const VulkanContext& context, const std::vector<T> data, std::unique_ptr<Wrappers::Buffer>& buffer)
     {
         auto& device = context.GetDevice();
         VkDeviceSize size = sizeof(T) * data.size();
 
-        Wrappers::Buffer staginBuffer(device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
-        staginBuffer.CopyDataToBufferMemory(device, data.data(), (size_t)size);
+        Wrappers::Buffer stagingBuffer(device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+        stagingBuffer.CopyDataToBufferMemory(device, data.data(), static_cast<size_t>(size));
 
         VkBufferUsageFlags flags = 0;
         if (std::is_same<T, uint32_t>::value)
@@ -33,11 +35,11 @@ namespace Context
             flags = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
         }
         buffer = std::make_unique<Wrappers::Buffer>(device, size, flags, VMA_MEMORY_USAGE_GPU_ONLY);
-        device.CopyBufferToBuffer(staginBuffer.GetNativeBuffer(), buffer->GetNativeBuffer(), size);
+        device.CopyBufferToBuffer(stagingBuffer.GetNativeBuffer(), buffer->GetNativeBuffer(), size);
 
-        staginBuffer.DestroyBuffer(device);
+        stagingBuffer.DestroyBuffer(device);
     }
-
+}
 
     MeshContainer::MeshContainer()
     {
@@ -49,10 +51,10 @@ namespace Context
 
     void MeshContainer::AddFilePath(std::string filePath)
     {
-        auto it = std::find(m_FilePathes.begin(), m_FilePathes.end(), filePath);
-        if (it == m_FilePathes.end())
+        auto it = std::find(m_FilePaths.begin(), m_FilePaths.end(), filePath);
+        if (it == m_FilePaths.end())
         {
-            m_FilePathes.push_back(filePath);
+            m_FilePaths.push_back(filePath);
         }
         else
         {
@@ -62,19 +64,18 @@ namespace Context
 
     void MeshContainer::ClearFileList()
     {
-        m_FilePathes.clear();
+        m_FilePaths.clear();
     }
 
     void MeshContainer::LoadMeshData()
     {
         m_Meshes.clear();
-        for (size_t i = m_Meshes.size(); i < m_FilePathes.size(); ++i)
+        for (size_t i = m_Meshes.size(); i < m_FilePaths.size(); ++i)
         {
             Mesh mesh;
-            mesh.LoadData(m_FilePathes[i]);
-            LOGINFO("Loaded mesh data: ", m_FilePathes[i]);
+            mesh.LoadData(m_FilePaths[i]);
+            LOGINFO("Loaded mesh data: ", m_FilePaths[i]);
             m_Meshes.push_back(mesh);
-
         }
     }
 
@@ -83,17 +84,17 @@ namespace Context
         std::vector<HM::Vector3> positions;
         std::vector<HM::Vector2> texCoords;
         std::vector<HM::Vector3> normals;
-        std::vector<uint32_t> indicies;
+        std::vector<uint32_t> indices;
         positions.clear();
         texCoords.clear();
         normals.clear();
-        indicies.clear();
+        indices.clear();
 
         for (size_t i = 0; i < m_Meshes.size(); ++i)
         {
             auto& mesh = m_Meshes[i];
             mesh.SetVertexOffset(static_cast<uint32_t>(positions.size()));
-            mesh.SetFirstIndex(static_cast<uint32_t>(indicies.size()));
+            mesh.SetFirstIndex(static_cast<uint32_t>(indices.size()));
 
             auto meshPositions = mesh.GetPositions();
             auto meshUV = mesh.GetTexCoords();
@@ -108,24 +109,24 @@ namespace Context
                 texCoords.push_back(meshUV[j]);
                 normals.push_back(meshNormals[j]);
             }
-            auto meshIndicies = mesh.GetIndicies();
-            for (size_t j = 0; j < meshIndicies.size(); ++j)
+            auto meshIndices = mesh.GetIndices();
+            for (size_t j = 0; j < meshIndices.size(); ++j)
             {
-                indicies.push_back(meshIndicies[j]);
+                indices.push_back(meshIndices[j]);
             }
         }
 
         CreateBuffer(context, positions, m_AdditionalPositionsBuffer);
         CreateBuffer(context, texCoords, m_AdditionalTexCoordsBuffer);
         CreateBuffer(context, normals, m_AdditionalNormalsBuffer);
-        CreateBuffer(context, indicies, m_AdditionalIndexBuffer);
+        CreateBuffer(context, indices, m_AdditionalIndexBuffer);
 
-        m_IsSwaped = true;
+        m_IsSwapped = true;
     }
 
     void MeshContainer::Update(const VulkanContext& context, Scene::Scene& scene)
     {
-        if (m_IsSwaped)
+        if (m_IsSwapped)
         {
             if (m_AdditionalPositionsBuffer != nullptr)
             {
@@ -163,7 +164,7 @@ namespace Context
                 m_IndexBuffer = std::move(m_AdditionalIndexBuffer);
                 m_AdditionalIndexBuffer = nullptr;
             }
-            m_IsSwaped = false;
+            m_IsSwapped = false;
         }
         auto& meshes = scene.GetMeshes();
         if (meshes.size() <= m_Meshes.size())
@@ -199,28 +200,28 @@ namespace Context
 
     const VkBuffer& MeshContainer::GetPositionsBuffer() const
     {
-        if (!m_IsSwaped)
+        if (!m_IsSwapped)
             return m_PositionsBuffer->GetNativeBuffer();
         return m_AdditionalPositionsBuffer->GetNativeBuffer();
     }
 
     const VkBuffer& MeshContainer::GetTexCoordsBuffer() const
     {
-        if (!m_IsSwaped)
+        if (!m_IsSwapped)
             return m_TexCoordsBuffer->GetNativeBuffer();
         return m_AdditionalTexCoordsBuffer->GetNativeBuffer();
     }
 
     const VkBuffer& MeshContainer::GetNormalsBuffer() const
     {
-        if (!m_IsSwaped)
+        if (!m_IsSwapped)
             return m_NormalsBuffer->GetNativeBuffer();
         return m_AdditionalNormalsBuffer->GetNativeBuffer();
     }
 
     const VkBuffer& MeshContainer::GetIndexBuffer() const
     {
-        if (!m_IsSwaped)
+        if (!m_IsSwapped)
             return m_IndexBuffer->GetNativeBuffer();
         return m_AdditionalIndexBuffer->GetNativeBuffer();
     }
@@ -232,7 +233,6 @@ namespace Context
 
 
 }
-
 
 
 

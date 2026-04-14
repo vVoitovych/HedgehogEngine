@@ -27,7 +27,7 @@ namespace Wrappers
     {
         if (m_SwapChain != nullptr)
         {
-            LOGERROR("Vulkan swap chain should be cleanedup before destruction!");
+            LOGERROR("Vulkan swap chain should be cleaned up before destruction!");
             ENGINE_DEBUG_BREAK();
         }
     }
@@ -113,7 +113,7 @@ namespace Wrappers
         createInfo.imageArrayLayers = 1;
         createInfo.imageUsage =  VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-        QueueFamilyIndices indices = device.GetIndicies();
+        QueueFamilyIndices indices = device.GetIndices();
         uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
         if (indices.graphicsFamily != indices.presentFamily)
         {

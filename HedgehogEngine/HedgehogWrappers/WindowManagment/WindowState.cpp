@@ -6,7 +6,7 @@ namespace WinManager
     WindowState WindowState::GetDefaultState()
     {
         WindowState result{};
-        result.windowName = "Hengehog Engine";
+        result.windowName = "Hedgehog Engine";
         result.x = 100;
         result.y = 100;
         result.width = 1366;

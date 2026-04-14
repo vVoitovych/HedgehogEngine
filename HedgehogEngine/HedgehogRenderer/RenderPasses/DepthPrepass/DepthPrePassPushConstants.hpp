@@ -4,10 +4,10 @@
 
 namespace Renderer
 {
-	struct DepthPrePassPushConstants
-	{
-		HM::Matrix4x4 objToWorld;
-	};
+    struct DepthPrePassPushConstants
+    {
+        HM::Matrix4x4 objToWorld;
+    };
 
 }
 

@@ -2,9 +2,9 @@
 
 namespace DialogueWindows
 {
-	char* MaterialCreationDialogue();
-	char* MaterialOpenDialogue();
-	char* MaterioalSaveDialogue();
+    char* MaterialCreationDialogue();
+    char* MaterialOpenDialogue();
+    char* MaterioalSaveDialogue();
 }
 
 

@@ -4,15 +4,15 @@
 
 namespace ContentLoader
 {
-	std::string GetRootDirectory();
+    std::string GetRootDirectory();
 
-	std::string GetAssetsDirectory();
+    std::string GetAssetsDirectory();
 
-	std::string GetAssetRelativetlyPath(const std::string path);
+    std::string GetAssetRelativetlyPath(const std::string path);
 
-	std::string GetShadersDirectory();
+    std::string GetShadersDirectory();
 
-	std::string ReadFile(const std::string& filepath);
+    std::string ReadFile(const std::string& filepath);
 
 }
 

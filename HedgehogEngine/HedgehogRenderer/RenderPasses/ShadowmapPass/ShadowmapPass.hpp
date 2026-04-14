@@ -31,8 +31,8 @@ namespace Renderer
 {
     class ResourceManager;
 
-	class ShadowmapPass
-	{
+    class ShadowmapPass
+    {
     public:
         ShadowmapPass(const Context::Context& context, const ResourceManager& resourceManager);
         ~ShadowmapPass();
@@ -52,7 +52,7 @@ namespace Renderer
         void CreateSets(const Wrappers::Device& device);
         void CreatePipeline(const Wrappers::Device& device);
 
-        void UpdateShadowmapMatricies(const Context::Context& context);
+        void UpdateShadowmapMatrices(const Context::Context& context);
         void UpdateViewports(const Context::Context& context);
 
     private:
@@ -71,7 +71,7 @@ namespace Renderer
         };
 
         static constexpr uint32_t MaxShadowCascades = 4;
-        std::array<HM::Matrix4x4, MaxShadowCascades> m_ShadowmapMatricies;
+        std::array<HM::Matrix4x4, MaxShadowCascades> m_ShadowmapMatrices;
         std::vector<std::vector<ShadowViewport>> m_ShadowViewports;
 
         std::unique_ptr<Wrappers::RenderPass> m_RenderPass;
@@ -84,7 +84,7 @@ namespace Renderer
         std::vector< std::vector<Wrappers::UBO<ShadowCascadeUniform> > > m_ShadowmapUniforms;
         std::vector< std::vector<Wrappers::DescriptorSet> > m_ShadowmapSets;
 
-	};
+    };
 
 }
 

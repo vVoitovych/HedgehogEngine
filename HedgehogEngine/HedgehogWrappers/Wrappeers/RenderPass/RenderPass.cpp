@@ -23,7 +23,7 @@ namespace Wrappers
     {
         if (m_RenderPass != nullptr)
         {
-            LOGERROR("Vulkan rendere pass should be cleanedup before destruction!");
+            LOGERROR("Vulkan render pass should be cleaned up before destruction!");
             ENGINE_DEBUG_BREAK();
         }
     }

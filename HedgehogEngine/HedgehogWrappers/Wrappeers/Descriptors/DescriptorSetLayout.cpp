@@ -27,7 +27,7 @@ namespace Wrappers
     {
         if (m_DescriptorSetLayout != nullptr)
         {
-            LOGERROR("Vulkan description set layout should be cleanedup before destruction!");
+            LOGERROR("Vulkan descriptor set layout should be cleaned up before destruction!");
             ENGINE_DEBUG_BREAK();
         }
     }

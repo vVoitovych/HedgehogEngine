@@ -6,7 +6,7 @@
 
 namespace ContentLoader
 {
-	LoadedMesh LoadMesh(const std::string& fileName);
+    LoadedMesh LoadMesh(const std::string& fileName);
 
 }
 

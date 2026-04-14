@@ -6,7 +6,7 @@
 
 namespace ContentLoader
 {
-	LoadedMesh LoadObj(const std::string& path);
+    LoadedMesh LoadObj(const std::string& path);
 
 }
 

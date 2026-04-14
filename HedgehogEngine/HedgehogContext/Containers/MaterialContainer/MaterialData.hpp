@@ -4,23 +4,23 @@
 
 namespace Context
 {
-	enum class MaterialType
-	{
-		Opaque,
-		Cutoff,
-		Transparent
-	};
+    enum class MaterialType
+    {
+        Opaque,
+        Cutoff,
+        Transparent
+    };
 
-	struct MaterialData
-	{
-		std::string path;
+    struct MaterialData
+    {
+        std::string path;
 
-		MaterialType type;
-		std::string baseColor;
-		float transparency;
+        MaterialType type;
+        std::string baseColor;
+        float transparency;
 
-		bool isDirty;
-	};
+        bool isDirty;
+    };
 
 }
 

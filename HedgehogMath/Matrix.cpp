@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 
 namespace HM
 {
@@ -491,8 +492,8 @@ namespace HM
     {
         return Matrix4x4{
             {1.0f, 0.0f, 0.0f, 0.0f},
-            {0.0f, cosf(angle), sinf(angle), 0.0f},
-            {0.0f, -sinf(angle), cosf(angle), 0.0f},
+            {0.0f, std::cos(angle), std::sin(angle), 0.0f},
+            {0.0f, -std::sin(angle), std::cos(angle), 0.0f},
             {0.0f, 0.0f, 0.0f, 1.0f},
         };
     }
@@ -500,9 +501,9 @@ namespace HM
     Matrix4x4 Matrix4x4::GetRotationY(float angle)
     {
         return Matrix4x4{
-            {cosf(angle), 0.0f, -sinf(angle), 0.0f},
+            {std::cos(angle), 0.0f, -std::sin(angle), 0.0f},
             {0.0f, 1.0f, 0.0f, 0.0f},
-            {sinf(angle), 0.0f, cosf(angle), 0.0f},
+            {std::sin(angle), 0.0f, std::cos(angle), 0.0f},
             {0.0f, 0.0f, 0.0f, 1.0f},
         };
     }
@@ -510,8 +511,8 @@ namespace HM
     Matrix4x4 Matrix4x4::GetRotationZ(float angle)
     {
         return Matrix4x4{
-            {cosf(angle), sinf(angle), 0.0f, 0.0f},
-            {-sinf(angle), cosf(angle), 0.0f, 0.0f},
+            {std::cos(angle), std::sin(angle), 0.0f, 0.0f},
+            {-std::sin(angle), std::cos(angle), 0.0f, 0.0f},
             {0.0f, 0.0f, 1.0f, 0.0f},
             {0.0f, 0.0f, 0.0f, 1.0f},
         };
@@ -546,7 +547,7 @@ namespace HM
     {
         assert(abs(aspect) >  std::numeric_limits<float>::epsilon());
 
-        const float tanHalfFov = tanf(fov / 2.0f);
+        const float tanHalfFov = std::tan(fov / 2.0f);
 
         Matrix4x4 result = GetZero();
         result[0][0] = 1.0f / (aspect * tanHalfFov);
@@ -609,7 +610,7 @@ namespace HM
 
     Matrix4x4 Matrix4x4::CalculateProjPerspective(float aspectRatio, float fovY, float nearZ, float farZ)
     {
-        float h = 1.0f / tanf(fovY * 0.5f);
+        float h = 1.0f / std::tan(fovY * 0.5f);
         float w = h / aspectRatio;
         float a = farZ / (farZ - nearZ);
         float b = (-nearZ * farZ) / (farZ - nearZ);

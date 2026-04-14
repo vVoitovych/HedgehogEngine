@@ -38,7 +38,7 @@ namespace Wrappers
     {
         if (m_Sampler != nullptr)
         {
-            LOGERROR("Vulkan texture sampler should be cleanedup before destruction!");
+            LOGERROR("Vulkan texture sampler should be cleaned up before destruction!");
             ENGINE_DEBUG_BREAK();
         }
     }

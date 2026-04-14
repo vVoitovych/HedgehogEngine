@@ -4,10 +4,10 @@
 
 namespace Renderer
 {
-	struct ForwardPassPushConstants
-	{
-		HM::Matrix4x4 objToWorld;
-	};
+    struct ForwardPassPushConstants
+    {
+        HM::Matrix4x4 objToWorld;
+    };
 
 }
 

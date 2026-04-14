@@ -9,7 +9,7 @@ namespace Wrappers
 {
     SyncObject::SyncObject(const Device& device)
         : m_ImageAvailableSemaphore(nullptr)
-        , m_RendeerFinishedSemaphore(nullptr)
+        , m_RenderFinishedSemaphore(nullptr)
         , m_InFlightFence(nullptr)
     {
         VkSemaphoreCreateInfo semaphoreInfo{};
@@ -24,7 +24,7 @@ namespace Wrappers
             throw std::runtime_error("failed to create image available semaphore!");
         }
 
-        if (vkCreateSemaphore(device.GetNativeDevice(), &semaphoreInfo, nullptr, &m_RendeerFinishedSemaphore) != VK_SUCCESS)
+        if (vkCreateSemaphore(device.GetNativeDevice(), &semaphoreInfo, nullptr, &m_RenderFinishedSemaphore) != VK_SUCCESS)
         {
             throw std::runtime_error("failed to create render finished semaphore!");
         }
@@ -41,28 +41,28 @@ namespace Wrappers
     {
         if (m_ImageAvailableSemaphore != nullptr)
         {
-            LOGERROR("Vulkan image available semaphore should be cleanedup before destruction!");
+            LOGERROR("Vulkan image available semaphore should be cleaned up before destruction!");
             ENGINE_DEBUG_BREAK();
         }
-        if (m_RendeerFinishedSemaphore != nullptr)
+        if (m_RenderFinishedSemaphore != nullptr)
         {
-            LOGERROR("Vulkan render finished semaphore should be cleanedup before destruction!");
+            LOGERROR("Vulkan render finished semaphore should be cleaned up before destruction!");
             ENGINE_DEBUG_BREAK();
         }
         if (m_InFlightFence != nullptr)
         {
-            LOGERROR("Vulkan in flight fence should be cleanedup before destruction!");
+            LOGERROR("Vulkan in flight fence should be cleaned up before destruction!");
             ENGINE_DEBUG_BREAK();
         }
     }
 
     SyncObject::SyncObject(SyncObject&& other) noexcept
         : m_ImageAvailableSemaphore(other.m_ImageAvailableSemaphore)
-        , m_RendeerFinishedSemaphore(other.m_RendeerFinishedSemaphore)
+        , m_RenderFinishedSemaphore(other.m_RenderFinishedSemaphore)
         , m_InFlightFence(other.m_InFlightFence)
     {
         other.m_ImageAvailableSemaphore = nullptr;
-        other.m_RendeerFinishedSemaphore = nullptr;
+        other.m_RenderFinishedSemaphore = nullptr;
         other.m_InFlightFence = nullptr;
     }
 
@@ -71,11 +71,11 @@ namespace Wrappers
         if (this != &other)
         {
             m_ImageAvailableSemaphore = other.m_ImageAvailableSemaphore;
-            m_RendeerFinishedSemaphore = other.m_RendeerFinishedSemaphore;
+            m_RenderFinishedSemaphore = other.m_RenderFinishedSemaphore;
             m_InFlightFence = other.m_InFlightFence;
 
             other.m_ImageAvailableSemaphore = nullptr;
-            other.m_RendeerFinishedSemaphore = nullptr;
+            other.m_RenderFinishedSemaphore = nullptr;
             other.m_InFlightFence = nullptr;
         }
         return *this;
@@ -84,11 +84,11 @@ namespace Wrappers
     void SyncObject::Cleanup(const Device& device)
     {
         vkDestroySemaphore(device.GetNativeDevice(), m_ImageAvailableSemaphore, nullptr);
-        vkDestroySemaphore(device.GetNativeDevice(), m_RendeerFinishedSemaphore, nullptr);
+        vkDestroySemaphore(device.GetNativeDevice(), m_RenderFinishedSemaphore, nullptr);
         vkDestroyFence(device.GetNativeDevice(), m_InFlightFence, nullptr);
 
         m_ImageAvailableSemaphore = nullptr;
-        m_RendeerFinishedSemaphore = nullptr;
+        m_RenderFinishedSemaphore = nullptr;
         m_InFlightFence = nullptr;
         LOGINFO("Sync objects cleaned");
     }
@@ -100,7 +100,7 @@ namespace Wrappers
 
     VkSemaphore SyncObject::GetRenderFinishedSemaphore()
     {
-        return m_RendeerFinishedSemaphore;
+        return m_RenderFinishedSemaphore;
     }
 
     VkFence SyncObject::GetInFlightFence()
@@ -119,7 +119,3 @@ namespace Wrappers
     }
 
 }
-
-
-
-

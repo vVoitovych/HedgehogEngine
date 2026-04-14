@@ -7,40 +7,40 @@
 
 namespace Wrappers
 {
-	class CommandBuffer;
-	class SyncObject;
+    class CommandBuffer;
+    class SyncObject;
 
 }
 
 namespace Context
 {
-	class VulkanContext;
-	class EngineContext;
-	class FrameContext;
+    class VulkanContext;
+    class EngineContext;
+    class FrameContext;
 
-	class ThreadContext
-	{
-	public:
-		ThreadContext(const VulkanContext& vulkanContext);
-		~ThreadContext();
+    class ThreadContext
+    {
+    public:
+        ThreadContext(const VulkanContext& vulkanContext);
+        ~ThreadContext();
 
-		ThreadContext(const ThreadContext&) = delete;
-		ThreadContext& operator=(const ThreadContext&) = delete;
+        ThreadContext(const ThreadContext&) = delete;
+        ThreadContext& operator=(const ThreadContext&) = delete;
 
-		void Cleanup(const VulkanContext& vulkanContext);
+        void Cleanup(const VulkanContext& vulkanContext);
 
-		void NextFrame();
-		uint32_t GetFrameIndex() const;
+        void NextFrame();
+        uint32_t GetFrameIndex() const;
 
-		Wrappers::CommandBuffer& GetCommandBuffer();
-		Wrappers::SyncObject& GetSyncObject();
+        Wrappers::CommandBuffer& GetCommandBuffer();
+        Wrappers::SyncObject& GetSyncObject();
 
-	private:
-		std::vector<Wrappers::CommandBuffer> m_CommandBuffers;
-		std::vector<Wrappers::SyncObject> m_SyncObjects;
+    private:
+        std::vector<Wrappers::CommandBuffer> m_CommandBuffers;
+        std::vector<Wrappers::SyncObject> m_SyncObjects;
 
-		uint32_t m_FrameIndex = 0;
-	};
+        uint32_t m_FrameIndex = 0;
+    };
 
 }
 

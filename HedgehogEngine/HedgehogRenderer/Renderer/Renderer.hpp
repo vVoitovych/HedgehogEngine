@@ -4,32 +4,32 @@
 
 namespace Context
 {
-	class Context;
+    class Context;
 }
 
 namespace Renderer
 {
-	class ResourceManager;
-	class RenderQueue;
+    class ResourceManager;
+    class RenderQueue;
 
-	class Renderer
-	{
-	public:
-		Renderer(const Context::Context& context);
-		~Renderer();
+    class Renderer
+    {
+    public:
+        Renderer(const Context::Context& context);
+        ~Renderer();
 
-		Renderer(const Renderer&) = delete;
-		Renderer& operator=(const Renderer&) = delete;
+        Renderer(const Renderer&) = delete;
+        Renderer& operator=(const Renderer&) = delete;
 
-		void Cleanup(const Context::Context& context);
+        void Cleanup(const Context::Context& context);
 
-		void DrawFrame(Context::Context& context);
+        void DrawFrame(Context::Context& context);
 
-	private:
-		std::unique_ptr< ResourceManager> m_ResourceManager;
-		std::unique_ptr<RenderQueue> m_RenderQueue;
+    private:
+        std::unique_ptr< ResourceManager> m_ResourceManager;
+        std::unique_ptr<RenderQueue> m_RenderQueue;
 
-	};
+    };
 }
 
 
