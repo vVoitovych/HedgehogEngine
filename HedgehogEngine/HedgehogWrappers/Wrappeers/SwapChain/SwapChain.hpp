@@ -7,56 +7,56 @@ struct GLFWwindow;
 
 namespace WinManager
 {
-	class WindowManager;
+    class WindowManager;
 }
 
 namespace Wrappers
 {
-	class Device;
+    class Device;
 
-	class SwapChain
-	{
-	public:
-		SwapChain(const Device& device, WinManager::WindowManager& windowManager);
-		~SwapChain();
+    class SwapChain
+    {
+    public:
+        SwapChain(const Device& device, WinManager::WindowManager& windowManager);
+        ~SwapChain();
 
-		SwapChain(const SwapChain&) = delete;
-		SwapChain& operator=(const SwapChain&) = delete;
-		SwapChain(SwapChain&&) = delete;
-		SwapChain& operator=(SwapChain&&) = delete;
+        SwapChain(const SwapChain&) = delete;
+        SwapChain& operator=(const SwapChain&) = delete;
+        SwapChain(SwapChain&&) = delete;
+        SwapChain& operator=(SwapChain&&) = delete;
 
-		void Cleanup(const Device& device);
-		void Recreate(const Device& device);
+        void Cleanup(const Device& device);
+        void Recreate(const Device& device);
 
-		VkSwapchainKHR GetNativeSwapChain() const;
+        VkSwapchainKHR GetNativeSwapChain() const;
 
-		VkFormat GetFormat() const;
-		VkExtent2D GetSwapChainExtent() const;
-		uint32_t GetMinImagesCount() const;
-		size_t GetSwapChainImagesSize() const;
+        VkFormat GetFormat() const;
+        VkExtent2D GetSwapChainExtent() const;
+        uint32_t GetMinImagesCount() const;
+        size_t GetSwapChainImagesSize() const;
 
-		VkImageView GetNativeSwapChainImageView(size_t index) const;
+        VkImageView GetNativeSwapChainImageView(size_t index) const;
 
-		VkImage GetSwapChainImage(size_t index) const;
+        VkImage GetSwapChainImage(size_t index) const;
 
-	private:
-		void CreateSwapChain(const Device& device);
-		void CreateImageViews(const Device& device);
+    private:
+        void CreateSwapChain(const Device& device);
+        void CreateImageViews(const Device& device);
 
-		VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) const;
-		VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) const;
-		VkExtent2D ChooseSwapExtend(const VkSurfaceCapabilitiesKHR& capabilities) const;
+        VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) const;
+        VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) const;
+        VkExtent2D ChooseSwapExtend(const VkSurfaceCapabilitiesKHR& capabilities) const;
 
-	private:
-		GLFWwindow* m_Window;
+    private:
+        GLFWwindow* m_Window;
 
-		VkSwapchainKHR m_SwapChain;
+        VkSwapchainKHR m_SwapChain;
 
-		std::vector<VkImage> m_SwapChainImages;
-		VkFormat m_SwapChainImageFormat;
-		VkExtent2D m_SwapChainExtent;
-		uint32_t m_MinImageCount;
-		std::vector<VkImageView> m_SwapChainImageViews;
+        std::vector<VkImage> m_SwapChainImages;
+        VkFormat m_SwapChainImageFormat;
+        VkExtent2D m_SwapChainExtent;
+        uint32_t m_MinImageCount;
+        std::vector<VkImageView> m_SwapChainImageViews;
 
-	};
+    };
 }

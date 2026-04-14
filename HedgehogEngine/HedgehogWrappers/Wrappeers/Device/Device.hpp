@@ -8,105 +8,105 @@
 
 namespace WinManager
 {
-	class WindowManager;
+    class WindowManager;
 }
 
 namespace Wrappers
 {
-	struct QueueFamilyIndices
-	{
-		std::optional<uint32_t> graphicsFamily;
-		std::optional<uint32_t> presentFamily;
+    struct QueueFamilyIndices
+    {
+        std::optional<uint32_t> graphicsFamily;
+        std::optional<uint32_t> presentFamily;
 
-		bool IsComplete()
-		{
-			return graphicsFamily.has_value() && presentFamily.has_value();
-		}
-	};
+        bool IsComplete()
+        {
+            return graphicsFamily.has_value() && presentFamily.has_value();
+        }
+    };
 
-	struct SwapChainSupportDetails
-	{
-		VkSurfaceCapabilitiesKHR capabilities;
-		std::vector<VkSurfaceFormatKHR> formats;
-		std::vector<VkPresentModeKHR> presentModes;
-	};
+    struct SwapChainSupportDetails
+    {
+        VkSurfaceCapabilitiesKHR capabilities;
+        std::vector<VkSurfaceFormatKHR> formats;
+        std::vector<VkPresentModeKHR> presentModes;
+    };
 
-	class Device
-	{
-	public:
-		Device(const WinManager::WindowManager& windowManager);
-		~Device();
+    class Device
+    {
+    public:
+        Device(const WinManager::WindowManager& windowManager);
+        ~Device();
 
-		Device(const Device&) = delete;
-		Device& operator=(const Device&) = delete;
-		Device(Device&&) = delete;
-		Device& operator=(Device&&) = delete;
+        Device(const Device&) = delete;
+        Device& operator=(const Device&) = delete;
+        Device(Device&&) = delete;
+        Device& operator=(Device&&) = delete;
 
-		void Cleanup();
+        void Cleanup();
 
-		VkInstance GetNativeInstance() const;
-		VkQueue GetNativeGraphicsQueue() const;
-		VkQueue GetNativePresentQueue() const;
-		VkSurfaceKHR GetNativeSurface() const ;
-		VkDevice GetNativeDevice() const;
-		VkPhysicalDevice GetNativePhysicalDevice() const;
-		QueueFamilyIndices GetIndicies() const;
-		const VmaAllocator& GetAllocator() const;
+        VkInstance GetNativeInstance() const;
+        VkQueue GetNativeGraphicsQueue() const;
+        VkQueue GetNativePresentQueue() const;
+        VkSurfaceKHR GetNativeSurface() const ;
+        VkDevice GetNativeDevice() const;
+        VkPhysicalDevice GetNativePhysicalDevice() const;
+        QueueFamilyIndices GetIndicies() const;
+        const VmaAllocator& GetAllocator() const;
 
-		void SetObjectName(uint64_t objectHandle, VkObjectType objectType, const char* name) const;
+        void SetObjectName(uint64_t objectHandle, VkObjectType objectType, const char* name) const;
 
-	public:
-		SwapChainSupportDetails QuerySwapChainSupport() const;
-		VkPhysicalDeviceProperties GetPhysicalDeviceProperties() const;
-		VkFormat FindDepthFormat() const;
+    public:
+        SwapChainSupportDetails QuerySwapChainSupport() const;
+        VkPhysicalDeviceProperties GetPhysicalDeviceProperties() const;
+        VkFormat FindDepthFormat() const;
 
-		void AllocateCommandBuffer(VkCommandBuffer* pCommandBuffer) const;
-		void FreeCommandBuffer(VkCommandBuffer* pCommandBuffer) const;
+        void AllocateCommandBuffer(VkCommandBuffer* pCommandBuffer) const;
+        void FreeCommandBuffer(VkCommandBuffer* pCommandBuffer) const;
 
-		void CopyBufferToBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) const;
-		void CopyBufferToImage(VkBuffer srcBuffer, VkImage image, uint32_t width, uint32_t height) const;
-		void TransitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout) const;
+        void CopyBufferToBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) const;
+        void CopyBufferToImage(VkBuffer srcBuffer, VkImage image, uint32_t width, uint32_t height) const;
+        void TransitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout) const;
 
-		void UpdateDescriptorSets(std::vector<VkWriteDescriptorSet>& descriptorWrites) const;
-	private:
-		void InitLayersAndExtentions();
-		void InitializeInstance();
-		void InitializeDebugMessenger();
-		void CleanupDebugMessenger();
-		void PickPhysicalDevice();
-		void CreateLogicalDevice();
-		void InitializeAllocator();
-		void InitializeCommandPool();
+        void UpdateDescriptorSets(std::vector<VkWriteDescriptorSet>& descriptorWrites) const;
+    private:
+        void InitLayersAndExtentions();
+        void InitializeInstance();
+        void InitializeDebugMessenger();
+        void CleanupDebugMessenger();
+        void PickPhysicalDevice();
+        void CreateLogicalDevice();
+        void InitializeAllocator();
+        void InitializeCommandPool();
 
-		bool IsEnableValidationLayers() const;
-		void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) const;
-		bool CheckValidationLayerSupport() const;
-		std::vector<const char*> GetRequiredExtensions() const;
-		void HasGlfwRequiredInstanceExtensions() const;
+        bool IsEnableValidationLayers() const;
+        void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) const;
+        bool CheckValidationLayerSupport() const;
+        std::vector<const char*> GetRequiredExtensions() const;
+        void HasGlfwRequiredInstanceExtensions() const;
 
-		bool CheckDeviceExtensionSupport(VkPhysicalDevice device) const;
-		int GetDeviceScore(VkPhysicalDevice device) const;
+        bool CheckDeviceExtensionSupport(VkPhysicalDevice device) const;
+        int GetDeviceScore(VkPhysicalDevice device) const;
 
-		uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const;
-		VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const;
+        uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const;
+        VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const;
 
-	private:
-		VkInstance m_Instance;
-		VkDebugUtilsMessengerEXT m_DebugMessenger;
-		VkSurfaceKHR m_Surface;
-		VkPhysicalDevice m_PhysicalDevice;
-		VkDevice m_Device;
+    private:
+        VkInstance m_Instance;
+        VkDebugUtilsMessengerEXT m_DebugMessenger;
+        VkSurfaceKHR m_Surface;
+        VkPhysicalDevice m_PhysicalDevice;
+        VkDevice m_Device;
 
-		VkQueue m_GraphicsQueue;
-		VkQueue m_PresentQueue;
+        VkQueue m_GraphicsQueue;
+        VkQueue m_PresentQueue;
 
-		QueueFamilyIndices m_Indices;
+        QueueFamilyIndices m_Indices;
 
-		VmaAllocator m_Allocator;
-		VkCommandPool m_CommandPool;
+        VmaAllocator m_Allocator;
+        VkCommandPool m_CommandPool;
 
-		std::vector<const char*> m_ValidationLayers;
-		std::vector<const char*> m_DeviceExtensions;
-	};
+        std::vector<const char*> m_ValidationLayers;
+        std::vector<const char*> m_DeviceExtensions;
+    };
 }
 
