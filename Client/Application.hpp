@@ -4,36 +4,36 @@
 
 namespace Context
 {
-	class Context;
+    class Context;
 }
 
 namespace Renderer
 {
-	class Renderer;
-	class RenderContext;
+    class Renderer;
+    class RenderContext;
 }
 
 namespace HedgehogClient
 {
-	class HedgehogClient
-	{
-	public:
-		HedgehogClient();
-		~HedgehogClient();
+    class HedgehogClient
+    {
+    public:
+        HedgehogClient();
+        ~HedgehogClient();
 
-		void Run();
+        void Run();
 
-	private:
-		void InitVulkan();
-		void MainLoop();
-		void Cleanup();
+    private:
+        void InitVulkan();
+        void MainLoop();
+        void Cleanup();
 
-		float GetFrameTime();
+        float GetFrameTime();
 
-	private:
-		std::unique_ptr<Context::Context> mContext;
-		std::unique_ptr<Renderer::Renderer> mRenderer;
-	};
+    private:
+        std::unique_ptr<Context::Context> mContext;
+        std::unique_ptr<Renderer::Renderer> mRenderer;
+    };
 }
 
 

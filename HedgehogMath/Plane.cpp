@@ -2,10 +2,10 @@
 
 namespace HM
 {
-	float Plane::GetSignedDistanceToPlane(const Vector3& point) const
-	{
-		return Dot(normal, point) + distance;
-	}
+    float Plane::GetSignedDistanceToPlane(const Vector3& point) const
+    {
+        return Dot(normal, point) + distance;
+    }
 
 }
 

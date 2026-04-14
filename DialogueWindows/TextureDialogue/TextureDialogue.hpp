@@ -2,7 +2,7 @@
 
 namespace DialogueWindows
 {
-	char* TextureOpenDialogue();
+    char* TextureOpenDialogue();
 }
 
 

@@ -1,28 +1,28 @@
-#include "ECS.h"
+#include "ECS.hpp"
 
 namespace ECS
 {
-	void ECS::Init()
-	{
-		componentManager = std::make_unique<ComponentManager>();
-		entityManager = std::make_unique<EntityManager>();
-		systemManager = std::make_unique<SystemManager>();
-	}
+    void ECS::Init()
+    {
+        m_ComponentManager = std::make_unique<ComponentManager>();
+        m_EntityManager    = std::make_unique<EntityManager>();
+        m_SystemManager    = std::make_unique<SystemManager>();
+    }
 
-	Entity ECS::CreateEntity()
-	{
-		return entityManager->CreateEntity();
-	}
+    Entity ECS::CreateEntity()
+    {
+        return m_EntityManager->CreateEntity();
+    }
 
-	void ECS::CreateEntity(Entity entity)
-	{
-		entityManager->CreateEntity(entity);
-	}
+    void ECS::CreateEntity(Entity entity)
+    {
+        m_EntityManager->CreateEntity(entity);
+    }
 
-	void ECS::DestroyEntity(Entity entity)
-	{
-		entityManager->DestroyEntity(entity);
-		componentManager->EntityDestroyed(entity);
-		systemManager->EntityDestroyed(entity);
-	}
+    void ECS::DestroyEntity(Entity entity)
+    {
+        m_EntityManager->DestroyEntity(entity);
+        m_ComponentManager->EntityDestroyed(entity);
+        m_SystemManager->EntityDestroyed(entity);
+    }
 }

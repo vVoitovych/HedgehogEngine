@@ -5,22 +5,22 @@
 
 namespace Wrappers
 {
-	class Device;
+    class Device;
 
-	class DescriptorLayoutBuilder
-	{
-		friend class DescriptorSetLayout;
+    class DescriptorLayoutBuilder
+    {
+        friend class DescriptorSetLayout;
 
-	public:
-		void AddBinding(uint32_t binding, VkDescriptorType type);
-		void ClearBindings();
+    public:
+        void AddBinding(uint32_t binding, VkDescriptorType type);
+        void ClearBindings();
 
-	private:
-		VkDescriptorSetLayout Build(const Device& device, VkShaderStageFlags shaderStages, void* pNext = nullptr, VkDescriptorSetLayoutCreateFlags flags = 0);
+    private:
+        VkDescriptorSetLayout Build(const Device& device, VkShaderStageFlags shaderStages, void* pNext = nullptr, VkDescriptorSetLayoutCreateFlags flags = 0);
 
-	private:
-		std::vector<VkDescriptorSetLayoutBinding> m_Bindings;
-	};
+    private:
+        std::vector<VkDescriptorSetLayoutBinding> m_Bindings;
+    };
 }
 
 

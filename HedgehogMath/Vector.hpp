@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <cmath>
 #include <initializer_list>
 #include <algorithm>
 
@@ -355,7 +356,7 @@ namespace HM
     template <size_t componentCount, typename elementType>
     elementType Vector<componentCount, elementType>::LengthSlow() const
     {
-        return sqrtf(LengthSqr());
+        return std::sqrt(LengthSqr());
     }
 
     template <size_t componentCount, typename elementType>
@@ -380,7 +381,7 @@ namespace HM
     elementType Vector<componentCount, elementType>::Length3Slow() const
     {
         static_assert(componentCount >= 3);
-        return sqrtf(Length3Sqr());
+        return std::sqrt(Length3Sqr());
     }
 
     template <size_t componentCount, typename elementType>
@@ -681,7 +682,7 @@ namespace HM
     using Vector3u = Vector<3, uint32_t>;
     using Vector4u = Vector<4, uint32_t>;
 
-} // namespace Boolka
+} // namespace HM
 
 
 namespace std

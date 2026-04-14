@@ -150,7 +150,7 @@ namespace Context
         {
             posOffset.y() = 1.0f;
         }
-        m_Camera->UpdateCamera(dt, extend.width / (float)extend.height, posOffset, dirOffset);
+        m_Camera->UpdateCamera(dt, extend.width / static_cast<float>(extend.height), posOffset, dirOffset);
     }
 
 }

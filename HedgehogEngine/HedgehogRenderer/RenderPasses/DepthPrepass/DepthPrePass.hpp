@@ -28,8 +28,8 @@ namespace Renderer
 {
     class ResourceManager;
 
-	class DepthPrePass
-	{
+    class DepthPrePass
+    {
     public:
         DepthPrePass(const Context::Context& context, const ResourceManager& resourceManager);
         ~DepthPrePass();
@@ -56,7 +56,7 @@ namespace Renderer
         std::vector<Wrappers::UBO<DepthPrepassFrameUniform>> m_FrameUniforms;
         std::vector<Wrappers::DescriptorSet> m_FrameSets;
 
-	};
+    };
 
 }
 

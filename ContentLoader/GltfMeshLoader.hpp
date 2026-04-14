@@ -6,7 +6,7 @@
 
 namespace ContentLoader
 {
-	LoadedMesh LoadGltfMesh(const std::string& path);
+    LoadedMesh LoadGltfMesh(const std::string& path);
 
 }
 

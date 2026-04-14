@@ -1,5 +1,7 @@
 #include "Camera.hpp"
 
+#include <cmath>
+
 namespace Context
 {
     void Camera::UpdateCamera(
@@ -27,13 +29,13 @@ namespace Context
         if (m_Pitch < -80.0f)
             m_Pitch = -80.0f;
 
-        m_Direction.x() = cosf(HM::ToRadians(m_Yaw)) * cosf(HM::ToRadians(m_Pitch));
-        m_Direction.y() = sinf(HM::ToRadians(m_Yaw)) * cosf(HM::ToRadians(m_Pitch));
-        m_Direction.z() = sinf(HM::ToRadians(m_Pitch));
+        m_Direction.x() = std::cos(HM::ToRadians(m_Yaw)) * std::cos(HM::ToRadians(m_Pitch));
+        m_Direction.y() = std::sin(HM::ToRadians(m_Yaw)) * std::cos(HM::ToRadians(m_Pitch));
+        m_Direction.z() = std::sin(HM::ToRadians(m_Pitch));
 
         m_RightVector = (Cross(m_Direction, m_UpVector)).Normalize();
 
-        UpdateMatricies();
+        UpdateMatrices();
     }
 
     void Camera::SetFov(float fov)
@@ -81,7 +83,7 @@ namespace Context
         return m_FarPlane;
     }
 
-    void Camera::UpdateMatricies()
+    void Camera::UpdateMatrices()
     {
         m_ViewMatrix = HM::Matrix4x4::LookAt(m_Pos, m_Pos + m_Direction, m_UpVector);
         m_ProjMatrix = HM::Matrix4x4::Perspective(m_FOV / m_Aspect, m_Aspect, m_NearPlane, m_FarPlane);

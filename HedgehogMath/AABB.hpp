@@ -5,9 +5,9 @@
 
 namespace HM
 {
-	class AABB
-	{
-	public:
+    class AABB
+    {
+    public:
         AABB();
         AABB(const Vector3& min, const Vector3& max);
 
@@ -20,10 +20,10 @@ namespace HM
 
         void ExpandToInclude(const Vector3& point);
 
-	private:
+    private:
         Vector3 m_Min;
         Vector3 m_Max;
-	};
+    };
 
 }
 

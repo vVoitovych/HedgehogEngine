@@ -4,16 +4,16 @@
 
 namespace Context
 {
-	struct MaterialData;
+    struct MaterialData;
 
-	class MaterialSerializer
-	{
-	public:
-		static void Serialize(MaterialData& material, std::string materialPath);
+    class MaterialSerializer
+    {
+    public:
+        static void Serialize(MaterialData& material, std::string materialPath);
 
-		static void Deserialize(MaterialData& material, std::string materialPath);
+        static void Deserialize(MaterialData& material, std::string materialPath);
 
-	};
+    };
 
 }
 

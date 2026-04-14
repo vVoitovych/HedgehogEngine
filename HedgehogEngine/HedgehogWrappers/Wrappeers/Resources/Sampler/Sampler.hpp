@@ -4,27 +4,27 @@
 
 namespace Wrappers
 {
-	class Device;
+    class Device;
 
-	class Sampler
-	{
-	public:
-		Sampler(const Device& device);
-		~Sampler();
+    class Sampler
+    {
+    public:
+        Sampler(const Device& device);
+        ~Sampler();
 
-		Sampler(const Sampler&) = delete;
-		Sampler& operator=(const Sampler&) = delete;
+        Sampler(const Sampler&) = delete;
+        Sampler& operator=(const Sampler&) = delete;
 
-		Sampler(Sampler&& other) noexcept;
-		Sampler& operator=(Sampler&& other) noexcept;
+        Sampler(Sampler&& other) noexcept;
+        Sampler& operator=(Sampler&& other) noexcept;
 
-		void Cleanup(const Device& device);
+        void Cleanup(const Device& device);
 
-		VkSampler GetNativeSampler() const;
+        VkSampler GetNativeSampler() const;
 
-	private:
-		VkSampler m_Sampler;
-	};
+    private:
+        VkSampler m_Sampler;
+    };
 
 }
 

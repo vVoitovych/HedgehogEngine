@@ -4,26 +4,26 @@
 
 namespace WinManager
 {
-	struct WindowState
-	{
-		enum class WindowMode
-		{
-			Windowed,
-			Fullscreen
-		};
+    struct WindowState
+    {
+        enum class WindowMode
+        {
+            Windowed,
+            Fullscreen
+        };
 
-		std::string windowName;
+        std::string windowName;
 
-		int x;
-		int y;
+        int x;
+        int y;
 
-		int width;
-		int height;
+        int width;
+        int height;
 
-		WindowMode windowMode;
+        WindowMode windowMode;
 
-		static WindowState GetDefaultState();
-	};
+        static WindowState GetDefaultState();
+    };
 
 }
 

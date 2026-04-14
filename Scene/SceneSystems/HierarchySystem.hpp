@@ -1,23 +1,20 @@
 #pragma once
 
-#include "ECS/System.h"
-#include "ECS/ECS.h"
+#include "ECS/System.hpp"
+#include "ECS/ECS.hpp"
 
 namespace Scene
 {
-	class HierarchySystem : public ECS::System
-	{
-	public:
-		void Update(ECS::ECS& ecs);
-		void SetRoot(ECS::Entity entity);
+    class HierarchySystem : public ECS::System
+    {
+    public:
+        void Update(ECS::ECS& ecs);
+        void SetRoot(ECS::Entity entity);
 
-	private:
-		void UpdateChildrenMatricies(ECS::ECS& ecs, ECS::Entity parent);
+    private:
+        void UpdateChildrenMatrices(ECS::ECS& ecs, ECS::Entity parent);
 
-	private:
-		ECS::Entity mRoot = 0;
-	};
+    private:
+        ECS::Entity m_Root = 0;
+    };
 }
-
-
-

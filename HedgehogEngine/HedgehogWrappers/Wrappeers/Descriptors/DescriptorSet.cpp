@@ -13,24 +13,24 @@
 
 namespace Wrappers
 {
-	DescriptorSet::DescriptorSet(
+    DescriptorSet::DescriptorSet(
         const Device& device,
         const DescriptorAllocator& allocator,
         const DescriptorSetLayout& descriptorSetLayout)
-		: m_DescriptorSet(nullptr)
-	{
+        : m_DescriptorSet(nullptr)
+    {
         m_DescriptorSet = allocator.Allocate(device, descriptorSetLayout);
         LOGINFO("Vulkan descriptor set created");
-	}
+    }
 
-	DescriptorSet::~DescriptorSet()
-	{
+    DescriptorSet::~DescriptorSet()
+    {
         if (m_DescriptorSet != nullptr)
         {
-            LOGERROR("Vulkan description set should be cleanedup before destruction!");
+            LOGERROR("Vulkan descriptor set should be cleaned up before destruction!");
             ENGINE_DEBUG_BREAK();
         }
-	}
+    }
 
     DescriptorSet::DescriptorSet(DescriptorSet&& other) noexcept
         : m_DescriptorSet(other.m_DescriptorSet)
@@ -71,11 +71,11 @@ namespace Wrappers
     }
 
     void DescriptorSet::Cleanup(const Device& device, const DescriptorAllocator& allocator)
-	{        
+    {        
         allocator.FreeDescriptorSet(device, &m_DescriptorSet);
         m_DescriptorSet = nullptr;
         LOGINFO("Vulkan descriptor set cleaned");
-	}
+    }
 
     const VkDescriptorSet* DescriptorSet::GetNativeSet() const
     {

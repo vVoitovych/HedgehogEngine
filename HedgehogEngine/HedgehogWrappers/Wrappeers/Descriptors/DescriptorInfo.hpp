@@ -4,11 +4,11 @@
 
 namespace Wrappers
 {
-	struct DescriptorInfo
-	{
-		int						bindingNumber;
-		VkDescriptorType		descriptorType;
-		VkShaderStageFlagBits	shaderStage;
-	};
+    struct DescriptorInfo
+    {
+        int                        bindingNumber;
+        VkDescriptorType        descriptorType;
+        VkShaderStageFlagBits    shaderStage;
+    };
 }
 

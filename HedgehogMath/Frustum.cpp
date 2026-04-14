@@ -6,8 +6,8 @@
 
 namespace HM
 {
-	void Frustum::ExtractPlanes(const Matrix4x4& m, bool normalize)
-	{
+    void Frustum::ExtractPlanes(const Matrix4x4& m, bool normalize)
+    {
         // Left
         m_Planes[Left].normal.x() = m[0][3] + m[0][0];
         m_Planes[Left].normal.y() = m[1][3] + m[1][0];
@@ -53,10 +53,10 @@ namespace HM
                 m_Planes[i].distance /= length;
             }
         }
-	}
+    }
 
-	bool Frustum::IsAABBVisible(const AABB& box) const
-	{
+    bool Frustum::IsAABBVisible(const AABB& box) const
+    {
         for (int i = 0; i < Planes::Count; ++i)
         {
             const auto& plane = m_Planes[i];
@@ -71,7 +71,7 @@ namespace HM
                 return false;
         }
         return true;
-	}
+    }
 
     bool Frustum::IsOBBVisible(const OBB& obb) const
     {

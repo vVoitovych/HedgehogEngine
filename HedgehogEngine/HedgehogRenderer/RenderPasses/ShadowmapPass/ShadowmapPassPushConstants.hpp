@@ -4,10 +4,10 @@
 
 namespace Renderer
 {
-	struct ShadowmapPassPushConstants
-	{
-		HM::Matrix4x4 objToWorld;
-	};
+    struct ShadowmapPassPushConstants
+    {
+        HM::Matrix4x4 objToWorld;
+    };
 
 }
 

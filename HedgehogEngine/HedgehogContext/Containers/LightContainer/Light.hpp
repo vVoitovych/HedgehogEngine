@@ -4,14 +4,11 @@
 
 namespace Context
 {
-	struct Light
-	{
-		alignas(16) HM::Vector3 mPosition;
-		alignas(16) HM::Vector3 mDirection;
-		alignas(16) HM::Vector3 mColor;
-		alignas(16) HM::Vector4 mData;		// type, intencity, radius, coneAngle
-	};
+    struct Light
+    {
+        alignas(16) HM::Vector3 m_Position;
+        alignas(16) HM::Vector3 m_Direction;
+        alignas(16) HM::Vector3 m_Color;
+        alignas(16) HM::Vector4 m_Data;  // (type, intensity, radius, cos(coneAngle))
+    };
 }
-
-
-	
