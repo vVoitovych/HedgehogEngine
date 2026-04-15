@@ -1,7 +1,7 @@
 #include "SyncObject.hpp"
 #include "HedgehogWrappers/Wrappeers/Device/Device.hpp"
-#include "HedgehogCommon/Common/EngineDebugBreak.hpp"
-#include "HedgehogCommon/Common/RendererSettings.hpp"
+#include "HedgehogCommon/api/EngineDebugBreak.hpp"
+#include "HedgehogCommon/api/RendererSettings.hpp"
 
 #include "Logger/api/Logger.hpp"
 

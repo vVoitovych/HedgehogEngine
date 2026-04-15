@@ -28,7 +28,7 @@
 #include "HedgehogContext/Containers/MeshContainer/Mesh.hpp"
 #include "HedgehogContext/Containers/MaterialContainer/MaterialContainer.hpp"
 #include "HedgehogContext/Containers/DrawListContrainer/DrawListContainer.hpp"
-#include "HedgehogCommon/Common/RendererSettings.hpp"
+#include "HedgehogCommon/api/RendererSettings.hpp"
 
 #include "Scene/Scene.hpp"
 

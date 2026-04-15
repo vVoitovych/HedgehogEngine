@@ -10,7 +10,7 @@
 #include "HedgehogWrappers/Wrappeers/SwapChain/SwapChain.hpp"
 #include "HedgehogWrappers/Wrappeers/Resources/Image/Image.hpp"
 
-#include "HedgehogCommon/Common/RendererSettings.hpp"
+#include "HedgehogCommon/api/RendererSettings.hpp"
 
 #include "Logger/api/Logger.hpp"
 

@@ -3,8 +3,8 @@
 #include "HedgehogWrappers/WindowManagment/WindowManager.hpp"
 #include "HedgehogWrappers/Wrappeers/Commands/CommandBuffer.hpp"
 
-#include "HedgehogCommon/Common/EngineDebugBreak.hpp"
-#include "HedgehogCommon/Common/RendererSettings.hpp"
+#include "HedgehogCommon/api/EngineDebugBreak.hpp"
+#include "HedgehogCommon/api/RendererSettings.hpp"
 
 #include "Logger/api/Logger.hpp"
 

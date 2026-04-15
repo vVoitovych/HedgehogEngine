@@ -2,7 +2,7 @@
 
 #include "HedgehogWrappers/Wrappeers/Device/Device.hpp"
 #include "HedgehogWrappers/WindowManagment/WindowManager.hpp"
-#include "HedgehogCommon/Common/EngineDebugBreak.hpp"
+#include "HedgehogCommon/api/EngineDebugBreak.hpp"
 
 #include "Logger/api/Logger.hpp"
 

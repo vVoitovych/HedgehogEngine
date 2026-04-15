@@ -590,3 +590,4 @@ Binaries
 /HedgehogMath/*.filters
 /Logger/*.filters
 /ContentLoader/*.filters
+/HedgehogEngine/HedgehogCommon/*.user

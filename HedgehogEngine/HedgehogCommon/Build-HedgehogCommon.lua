@@ -1,34 +1,33 @@
 project "HedgehogCommon"
-   kind "StaticLib"
+   kind "SharedLib"
    language "C++"
    cppdialect "C++20"
 
-    files 
-    { 
-        "**.hpp", "**.cpp"
-    }
+   files { "api/**.hpp", "src/**.cpp" }
 
-    includedirs
-    {
-        "../.."
-    }
+   includedirs
+   {
+      ".",
+      "../.."
+   }
 
-    libdirs
-    {
-    }
-
-    links 
-    { 
-        "HedgehogMath"
-    }
-
+   links
+   {
+      "HedgehogMath"
+   }
 
    targetdir ("../../Binaries/" .. OutputDir .. "/%{prj.name}")
    objdir ("../../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")
 
+   postbuildcommands
+   {
+      ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/Client"),
+      ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/Client/")
+   }
+
    filter "system:windows"
        systemversion "latest"
-       defines {  }
+       defines { "HEDGEHOG_COMMON_EXPORT" }
 
    filter "configurations:Debug"
        defines { "DEBUG" }
@@ -39,6 +38,3 @@ project "HedgehogCommon"
        defines { "RELEASE" }
        runtime "Release"
        optimize "On"
-
-
-

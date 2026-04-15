@@ -7,7 +7,7 @@
 #include "HedgehogWrappers/Wrappeers/Resources/Sampler/Sampler.hpp"
 #include "HedgehogWrappers/Wrappeers/Resources/Buffer/Buffer.hpp"
 
-#include "HedgehogCommon/Common/EngineDebugBreak.hpp"
+#include "HedgehogCommon/api/EngineDebugBreak.hpp"
 
 #include "Logger/api/Logger.hpp"
 
