@@ -5,7 +5,7 @@
 
 #include "HedgehogCommon/Common/EngineDebugBreak.hpp"
 
-#include "Logger/Logger.hpp"
+#include "Logger/api/Logger.hpp"
 
 #include <array>
 

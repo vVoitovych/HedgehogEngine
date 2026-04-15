@@ -2,7 +2,7 @@
 
 #include "HedgehogMath/api/Vector.hpp"
 
-#include "Logger/Logger.hpp"
+#include "Logger/api/Logger.hpp"
 
 #include "ThirdParty/tinyfiledialogs/tinyfiledialogs.h"
 

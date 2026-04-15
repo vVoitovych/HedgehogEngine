@@ -3,7 +3,7 @@
 #include "HedgehogWrappers/Wrappeers/Shaders/VertexShader.hpp"
 #include "HedgehogWrappers/Wrappeers/Shaders/FragmentShader.hpp"
 
-#include "Logger/Logger.hpp"
+#include "Logger/api/Logger.hpp"
 
 namespace Renderer
 {

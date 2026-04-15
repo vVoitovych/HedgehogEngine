@@ -4,7 +4,7 @@
 #include "HedgehogWrappers/WindowManagment/WindowManager.hpp"
 #include "HedgehogCommon/Common/EngineDebugBreak.hpp"
 
-#include "Logger/Logger.hpp"
+#include "Logger/api/Logger.hpp"
 
 #include "GLFW/glfw3.h"
 

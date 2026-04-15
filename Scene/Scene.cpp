@@ -8,7 +8,7 @@
 #include "Scene/SceneComponents/RenderComponent.hpp"
 #include "Scene/SceneComponents/ScriptComponent.hpp"
 #include "ContentLoader/CommonFunctions.hpp"
-#include "Logger/Logger.hpp"
+#include "Logger/api/Logger.hpp"
 #include "DialogueWindows/SceneDialogue/SceneDialogue.hpp"
 #include "DialogueWindows/MaterialDialogue/MaterialDialogue.hpp"
 

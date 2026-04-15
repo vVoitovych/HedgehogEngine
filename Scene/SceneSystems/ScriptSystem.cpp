@@ -3,7 +3,7 @@
 
 #include "Scene/SceneComponents/ScriptComponent.hpp"
 #include "Scene/SceneComponents/TransformComponent.hpp"
-#include "Logger/Logger.hpp"
+#include "Logger/api/Logger.hpp"
 
 #include "DialogueWindows/ScriptDialogue/ScriptDialogue.hpp"
 #include "ContentLoader/CommonFunctions.hpp"

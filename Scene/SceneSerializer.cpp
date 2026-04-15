@@ -7,7 +7,7 @@
 
 #include "HedgehogMath/api/Vector.hpp"
 
-#include "Logger/Logger.hpp"
+#include "Logger/api/Logger.hpp"
 
 #define YAML_CPP_STATIC_DEFINE
 #include "yaml-cpp/yaml.h"

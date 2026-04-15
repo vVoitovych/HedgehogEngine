@@ -2,7 +2,7 @@
 
 #include "HedgehogWrappers/Wrappeers/Shaders/VertexShader.hpp"
 
-#include "Logger/Logger.hpp"
+#include "Logger/api/Logger.hpp"
 
 namespace Renderer
 {

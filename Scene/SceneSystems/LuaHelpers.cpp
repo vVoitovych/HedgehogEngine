@@ -1,7 +1,7 @@
 #include "LuaHelpers.hpp"
 #include "Scene/SceneComponents/ScriptComponent.hpp"
 
-#include "Logger/Logger.hpp"
+#include "Logger/api/Logger.hpp"
 
 namespace Scene
 {

@@ -5,12 +5,13 @@
 #endif
 
 #include <iostream>
-#include <ctime>
+#include <cstdint>
 #include "LoggerApi.hpp"
-#include "LogColorized.hpp"
 
 namespace EngineLogger
 {
+    class LogColorized;
+
     class LOGGER_API Logger
     {
     public:
@@ -20,44 +21,47 @@ namespace EngineLogger
         Logger();
         Logger(const Logger&) = delete;
         Logger& operator=(const Logger&) = delete;
-        ~Logger() = default;
+        ~Logger();
 
     public:
         template <typename... Args>
         void Info(Args... args)
         {
-            mColoriser.SetLogColor(7);
+            SetColor(7);
             std::cout << "[INFO]";
             LogHelper(args...);
             std::cout << std::endl;
-            mColoriser.SetLogColor(7);
+            SetColor(7);
         }
+
         template <typename... Args>
         void Verbose(Args... args)
         {
-            mColoriser.SetLogColor(10);
+            SetColor(10);
             std::cout << "[VERBOSE]";
             LogHelper(args...);
             std::cout << std::endl;
-            mColoriser.SetLogColor(7);
+            SetColor(7);
         }
+
         template <typename... Args>
         void Warning(Args... args)
         {
-            mColoriser.SetLogColor(14);
+            SetColor(14);
             std::cout << "[WARNING]";
             LogHelper(args...);
             std::cout << std::endl;
-            mColoriser.SetLogColor(7);
+            SetColor(7);
         }
+
         template <typename... Args>
         void Error(Args... args)
         {
-            mColoriser.SetLogColor(12);
+            SetColor(12);
             std::cout << "[ERROR]";
             LogHelper(args...);
             std::cout << std::endl;
-            mColoriser.SetLogColor(7);
+            SetColor(7);
         }
 
     private:
@@ -68,12 +72,12 @@ namespace EngineLogger
             LogHelper(args...);
         }
 
-        void LogHelper()
-        {
-        }
+        void LogHelper() {}
+
+        void SetColor(uint16_t color);
 
     private:
-        LogColorized mColoriser;
+        LogColorized* mColoriser;
     };
 }
 
@@ -88,12 +92,12 @@ void LOGVERBOSE(Args... args)
     EngineLogger::Logger::Instance().Verbose(args...);
 }
 template<class... Args>
-void  LOGWARNING(Args... args)
+void LOGWARNING(Args... args)
 {
     EngineLogger::Logger::Instance().Warning(args...);
 }
 template<class... Args>
-void  LOGERROR(Args... args)
+void LOGERROR(Args... args)
 {
     EngineLogger::Logger::Instance().Error(args...);
 }

@@ -1,5 +1,5 @@
 #include "ObjLoader.hpp"
-#include "Logger/Logger.hpp"
+#include "Logger/api/Logger.hpp"
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "ThirdParty/TinyObjectLoader/tiny_obj_loader.h"

@@ -11,7 +11,7 @@
 #include "HedgehogWrappers/Wrappeers/SwapChain/SwapChain.hpp"
 #include "HedgehogSettings/Settings/HedgehogSettings.hpp"
 
-#include "Logger/Logger.hpp"
+#include "Logger/api/Logger.hpp"
 
 namespace Renderer
 {
