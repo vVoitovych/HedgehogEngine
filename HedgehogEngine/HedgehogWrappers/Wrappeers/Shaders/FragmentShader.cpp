@@ -1,7 +1,7 @@
 #include "FragmentShader.hpp"
 #include "HedgehogWrappers/Wrappeers/Device/Device.hpp"
 
-#include "ContentLoader/CommonFunctions.hpp"
+#include "ContentLoader/api/CommonFunctions.hpp"
 
 #include <stdexcept>
 

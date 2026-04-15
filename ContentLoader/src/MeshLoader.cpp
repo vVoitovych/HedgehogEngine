@@ -1,5 +1,5 @@
-#include "MeshLoader.hpp"
-#include "CommonFunctions.hpp"
+#include "api/MeshLoader.hpp"
+#include "api/CommonFunctions.hpp"
 
 #include "ObjLoader.hpp"
 #include "GltfMeshLoader.hpp"
@@ -9,7 +9,6 @@
 
 namespace ContentLoader
 {
-
     LoadedMesh LoadMesh(const std::string& fileName)
     {
         std::string path = GetAssetsDirectory() + fileName;
@@ -26,11 +25,5 @@ namespace ContentLoader
         {
             throw std::runtime_error("unsuported file format");
         }
-
     }
-
-
 }
-
-
-

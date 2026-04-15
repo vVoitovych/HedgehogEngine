@@ -1,4 +1,4 @@
-#pragma once 
+#pragma once
 
 #include "HedgehogMath/api/Vector.hpp"
 
@@ -6,26 +6,25 @@
 
 namespace ContentLoader
 {
-
     struct LoadedVertexData
     {
         HM::Vector3 position;
         HM::Vector2 uv;
         HM::Vector3 normal;
 
-        bool operator==(const LoadedVertexData& other) const {
+        bool operator==(const LoadedVertexData& other) const
+        {
             return position == other.position &&
-                normal == other.normal &&
-                uv == other.uv;
+                   normal   == other.normal   &&
+                   uv       == other.uv;
         }
     };
 
     struct LoadedMesh
     {
         std::vector<LoadedVertexData> vertices;
-        std::vector<uint32_t> indices;
+        std::vector<uint32_t>         indices;
     };
-
 }
 
 namespace std
@@ -42,6 +41,3 @@ namespace std
         }
     };
 }
-
-
-

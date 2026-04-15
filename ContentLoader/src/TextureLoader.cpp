@@ -1,5 +1,5 @@
-#include "TextureLoader.hpp"
-#include "CommonFunctions.hpp"
+#include "api/TextureLoader.hpp"
+#include "api/CommonFunctions.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.hpp"
@@ -8,7 +8,6 @@
 
 namespace ContentLoader
 {
-
     TextureLoader::TextureLoader()
         : mData(nullptr)
         , mWidth(0)
@@ -54,6 +53,4 @@ namespace ContentLoader
     {
         return mData;
     }
-
 }
-
