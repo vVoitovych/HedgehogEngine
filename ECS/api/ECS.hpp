@@ -3,25 +3,23 @@
 #include <memory>
 
 #include "EcsApi.hpp"
+#include "Entity.hpp"
+#include "System.hpp"
 #include "ComponentManager.hpp"
 #include "EntityManager.hpp"
 #include "SystemManager.hpp"
 
 namespace ECS
 {
-#pragma warning(push)
-#pragma warning(disable: 4251) // unique_ptr members of non-exported template types are safe across DLL boundary
-    class ECS_API ECS
+    class ECS
     {
     public:
-        void Init();
+        ECS_API void Init();
 
-        // Entity methods
-        Entity CreateEntity();
-        void   CreateEntity(Entity entity);
-        void   DestroyEntity(Entity entity);
+        ECS_API Entity CreateEntity();
+        ECS_API void   CreateEntity(Entity entity);
+        ECS_API void   DestroyEntity(Entity entity);
 
-        // Component methods
         template<typename T>
         void RegisterComponent()
         {
@@ -70,7 +68,6 @@ namespace ECS
             return m_ComponentManager->GetComponentType<T>();
         }
 
-        // System methods
         template<typename T>
         std::shared_ptr<T> RegisterSystem()
         {
@@ -88,5 +85,4 @@ namespace ECS
         std::unique_ptr<EntityManager>    m_EntityManager;
         std::unique_ptr<SystemManager>    m_SystemManager;
     };
-#pragma warning(pop)
 }

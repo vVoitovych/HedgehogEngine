@@ -586,3 +586,6 @@ Binaries
 /Shaders/Shaders/ShadowmapPass/*.spv
 /always_run.txt
 /force_prebuild.txt
+/ECS/*.filters
+/HedgehogMath/*.filters
+/Logger/*.filters

@@ -3,19 +3,22 @@ project "ECS"
    language "C++"
    cppdialect "C++20"
 
-   files { "**.h", "**.hpp", "**.cpp" }
+   files { "api/**.hpp", "src/**.cpp" }
 
-   includedirs { }
+   includedirs { "." }
 
    targetdir ("../Binaries/" .. OutputDir .. "/%{prj.name}")
    objdir ("../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")
 
+   postbuildcommands
+   {
+      ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/Client"),
+      ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/Client/")
+   }
+
    filter "system:windows"
        systemversion "latest"
        defines { "ECS_EXPORT" }
-       postbuildcommands {
-           "{COPYFILE} %{cfg.targetdir}/ECS.dll ../Binaries/" .. OutputDir .. "/Client/ECS.dll"
-       }
 
    filter "configurations:Debug"
        defines { "DEBUG" }

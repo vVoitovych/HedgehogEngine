@@ -10,8 +10,6 @@
 
 namespace ECS
 {
-    using ComponentType = size_t;
-
     class ComponentManager
     {
     public:
@@ -70,7 +68,7 @@ namespace ECS
         }
 
     private:
-        std::unordered_map<std::type_index, ComponentType>                  m_ComponentTypes{};
+        std::unordered_map<std::type_index, ComponentType>                    m_ComponentTypes{};
         std::unordered_map<std::type_index, std::shared_ptr<IComponentArray>> m_ComponentArrays{};
 
         ComponentType m_NextComponentType{};

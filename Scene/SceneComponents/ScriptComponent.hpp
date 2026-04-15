@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ECS/Entity.hpp"
+#include "ECS/api/Entity.hpp"
 
 #include <optional>
 #include <unordered_map>

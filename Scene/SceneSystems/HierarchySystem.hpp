@@ -1,7 +1,7 @@
 #pragma once
 
-#include "ECS/System.hpp"
-#include "ECS/ECS.hpp"
+#include "ECS/api/System.hpp"
+#include "ECS/api/ECS.hpp"
 
 namespace Scene
 {
