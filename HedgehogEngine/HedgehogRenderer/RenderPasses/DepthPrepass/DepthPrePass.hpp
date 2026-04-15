@@ -1,6 +1,6 @@
 #pragma once
 
-#include <HedgehogMath/Matrix.hpp>
+#include <HedgehogMath/api/Matrix.hpp>
 
 #include <memory>
 #include <string>

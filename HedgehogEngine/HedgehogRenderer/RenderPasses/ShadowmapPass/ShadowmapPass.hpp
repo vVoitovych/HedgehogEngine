@@ -5,7 +5,7 @@
 #include <memory>
 #include <string>
 
-#include "HedgehogMath/Matrix.hpp"
+#include "HedgehogMath/api/Matrix.hpp"
 
 namespace Wrappers
 {

@@ -1,8 +1,8 @@
-#include "Frustum.hpp"
+#include "api/Frustum.hpp"
 
-#include "Matrix.hpp"
-#include "AABB.hpp"
-#include "OBB.hpp"
+#include "api/Matrix.hpp"
+#include "api/AABB.hpp"
+#include "api/OBB.hpp"
 
 namespace HM
 {

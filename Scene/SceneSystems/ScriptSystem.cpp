@@ -8,7 +8,7 @@
 #include "DialogueWindows/ScriptDialogue/ScriptDialogue.hpp"
 #include "ContentLoader/CommonFunctions.hpp"
 
-#include "HedgehogMath/Vector.hpp"
+#include "HedgehogMath/api/Vector.hpp"
 
 extern "C"
 {

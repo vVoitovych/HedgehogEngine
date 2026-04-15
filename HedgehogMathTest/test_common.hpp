@@ -1,7 +1,7 @@
 #pragma once
 
-#include "HedgehogMath/Vector.hpp"
-#include "HedgehogMath/Matrix.hpp"
+#include "HedgehogMath/api/Vector.hpp"
+#include "HedgehogMath/api/Matrix.hpp"
 
 namespace HedgehogTest
 {

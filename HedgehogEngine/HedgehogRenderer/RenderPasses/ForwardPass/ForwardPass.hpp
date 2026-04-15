@@ -2,7 +2,7 @@
 
 #include "HedgehogCommon/Common/RendererSettings.hpp"
 #include "HedgehogContext/Containers/LightContainer/Light.hpp"
-#include "HedgehogMath/Matrix.hpp"
+#include "HedgehogMath/api/Matrix.hpp"
 
 #include <vector>
 #include <memory>
