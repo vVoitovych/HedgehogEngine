@@ -5,7 +5,7 @@
 #include "Scene/SceneComponents/LightComponent.hpp"
 #include "Scene/SceneComponents/ScriptComponent.hpp"
 
-#include "HedgehogMath/Vector.hpp"
+#include "HedgehogMath/api/Vector.hpp"
 
 #include "Logger/Logger.hpp"
 

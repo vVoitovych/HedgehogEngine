@@ -1,6 +1,6 @@
 #pragma once
 
-#include "HedgehogMath/Vector.hpp"
+#include "HedgehogMath/api/Vector.hpp"
 
 namespace Scene
 {

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "HedgehogMath/Vector.hpp"
-#include "HedgehogMath/Matrix.hpp"
-#include "HedgehogMath/Common.hpp"
+#include "HedgehogMath/api/Vector.hpp"
+#include "HedgehogMath/api/Matrix.hpp"
+#include "HedgehogMath/api/Common.hpp"
 
 namespace WinManager
 {

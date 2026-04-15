@@ -6,8 +6,8 @@
 #include "HedgehogCommon/Common/RendererSettings.hpp"
 #include "HedgehogCommon/Common/EngineDebugBreak.hpp"
 
-#include "HedgehogMath/Common.hpp"
-#include "HedgehogMath/Vector.hpp"
+#include "HedgehogMath/api/Common.hpp"
+#include "HedgehogMath/api/Vector.hpp"
 #include "Logger/Logger.hpp"
 
 #include <cmath>

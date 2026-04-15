@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Plane.hpp"
+#include "HedgehogMathAPI.hpp"
 
 namespace HM
 {
@@ -8,10 +9,10 @@ namespace HM
     class AABB;
     class OBB;
 
-    class Frustum 
+    class Frustum
     {
     public:
-        enum Planes 
+        enum Planes
         {
             Near = 0,
             Far,
@@ -22,14 +23,13 @@ namespace HM
             Count
         };
 
-        void ExtractPlanes(const Matrix4x4& m, bool normalize = true);
+        HEDGEHOG_MATH_API void ExtractPlanes(const Matrix4x4& m, bool normalize = true);
 
-        bool IsAABBVisible(const AABB& box) const;
-        bool IsOBBVisible(const OBB& obb) const;
+        HEDGEHOG_MATH_API bool IsAABBVisible(const AABB& box) const;
+        HEDGEHOG_MATH_API bool IsOBBVisible(const OBB& obb) const;
 
     private:
         Plane m_Planes[Count];
 
     };
 }
-

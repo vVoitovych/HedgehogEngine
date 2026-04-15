@@ -1,6 +1,6 @@
 #include "WindowManager.hpp"
 
-#include "HedgehogMath/Vector.hpp"
+#include "HedgehogMath/api/Vector.hpp"
 
 #include "Logger/Logger.hpp"
 
