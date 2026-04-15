@@ -1,19 +1,18 @@
-#include "Camera.hpp"
+#include "api/Camera.hpp"
 
 #include <cmath>
 
 namespace Context
 {
     void Camera::UpdateCamera(
-        float dt, 
-        float ratio, 
+        float dt,
+        float ratio,
         const HM::Vector3& posOffset,
         const HM::Vector2& dirOffset)
     {
         m_Aspect = ratio;
 
         m_Pos += posOffset * m_CameraSpeed * dt;
-        
 
         float xoffset = dirOffset.x();
         float yoffset = dirOffset.y();
@@ -21,7 +20,7 @@ namespace Context
         xoffset *= m_MouseSensitivity;
         yoffset *= m_MouseSensitivity;
 
-        m_Yaw -= xoffset;
+        m_Yaw   -= xoffset;
         m_Pitch -= yoffset;
 
         if (m_Pitch > 80.0f)
@@ -29,8 +28,8 @@ namespace Context
         if (m_Pitch < -80.0f)
             m_Pitch = -80.0f;
 
-        m_Direction.x() = std::cos(HM::ToRadians(m_Yaw)) * std::cos(HM::ToRadians(m_Pitch));
-        m_Direction.y() = std::sin(HM::ToRadians(m_Yaw)) * std::cos(HM::ToRadians(m_Pitch));
+        m_Direction.x() = std::cos(HM::ToRadians(m_Yaw))   * std::cos(HM::ToRadians(m_Pitch));
+        m_Direction.y() = std::sin(HM::ToRadians(m_Yaw))   * std::cos(HM::ToRadians(m_Pitch));
         m_Direction.z() = std::sin(HM::ToRadians(m_Pitch));
 
         m_RightVector = (Cross(m_Direction, m_UpVector)).Normalize();
@@ -89,6 +88,4 @@ namespace Context
         m_ProjMatrix = HM::Matrix4x4::Perspective(m_FOV / m_Aspect, m_Aspect, m_NearPlane, m_FarPlane);
         m_ProjMatrix[1][1] *= -1;
     }
-
 }
-

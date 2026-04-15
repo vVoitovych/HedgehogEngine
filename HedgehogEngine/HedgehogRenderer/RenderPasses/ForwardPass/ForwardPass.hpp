@@ -1,6 +1,6 @@
 #pragma once
 
-#include "HedgehogCommon/Common/RendererSettings.hpp"
+#include "HedgehogCommon/api/RendererSettings.hpp"
 #include "HedgehogContext/Containers/LightContainer/Light.hpp"
 #include "HedgehogMath/api/Matrix.hpp"
 
