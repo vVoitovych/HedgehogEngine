@@ -4,15 +4,11 @@
 namespace EngineLogger
 {
     Logger::Logger()
-        : mColoriser(new LogColorized())
+        : mColoriser(std::make_unique<LogColorized>())
     {
     }
 
-    Logger::~Logger()
-    {
-        delete mColoriser;
-        mColoriser = nullptr;
-    }
+    Logger::~Logger() = default;
 
     Logger& Logger::Instance()
     {

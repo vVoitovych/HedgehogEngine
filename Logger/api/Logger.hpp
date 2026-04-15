@@ -6,22 +6,23 @@
 
 #include <iostream>
 #include <cstdint>
+#include <memory>
 #include "LoggerApi.hpp"
 
 namespace EngineLogger
 {
     class LogColorized;
 
-    class LOGGER_API Logger
+    class Logger
     {
     public:
-        static Logger& Instance();
+        LOGGER_API static Logger& Instance();
 
     private:
-        Logger();
+        LOGGER_API Logger();
         Logger(const Logger&) = delete;
         Logger& operator=(const Logger&) = delete;
-        ~Logger();
+        LOGGER_API ~Logger();
 
     public:
         template <typename... Args>
@@ -74,10 +75,10 @@ namespace EngineLogger
 
         void LogHelper() {}
 
-        void SetColor(uint16_t color);
+        LOGGER_API void SetColor(uint16_t color);
 
     private:
-        LogColorized* mColoriser;
+        std::unique_ptr<LogColorized> mColoriser;
     };
 }
 
