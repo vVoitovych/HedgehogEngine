@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ECS/ECS.hpp"
+#include "ECS/api/ECS.hpp"
 #include "Scene/SceneSystems/TransformSystem.hpp"
 #include "Scene/SceneSystems/HierarchySystem.hpp"
 #include "Scene/SceneSystems/MeshSystem.hpp"

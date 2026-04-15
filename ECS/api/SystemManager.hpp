@@ -1,13 +1,13 @@
 #pragma once
 
+#include "Entity.hpp"
+#include "System.hpp"
+
 #include <unordered_map>
 #include <memory>
 #include <cassert>
 #include <algorithm>
 #include <typeindex>
-
-#include "Entity.hpp"
-#include "System.hpp"
 
 namespace ECS
 {
@@ -53,8 +53,8 @@ namespace ECS
         {
             for (auto const& pair : m_Systems)
             {
-                auto const& typeId        = pair.first;
-                auto const& system        = pair.second;
+                auto const& typeId          = pair.first;
+                auto const& system          = pair.second;
                 auto const& systemSignature = m_Signatures[typeId];
 
                 if ((systemSignature & signature) == systemSignature)
@@ -77,7 +77,7 @@ namespace ECS
         }
 
     private:
-        std::unordered_map<std::type_index, Signature>             m_Signatures{};
+        std::unordered_map<std::type_index, Signature>              m_Signatures{};
         std::unordered_map<std::type_index, std::shared_ptr<System>> m_Systems{};
     };
 }

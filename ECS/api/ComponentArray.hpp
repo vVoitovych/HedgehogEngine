@@ -15,7 +15,6 @@ namespace ECS
         virtual void EntityDestroyed(Entity entity) = 0;
     };
 
-
     template<typename T>
     class ComponentArray : public IComponentArray
     {
@@ -38,7 +37,7 @@ namespace ECS
                 "Tried to remove a non-existing component.");
 
             size_t indexOfRemovedEntity = m_EntityToIndexMap[entity];
-            size_t indexOfLastElement = m_Size - 1;
+            size_t indexOfLastElement   = m_Size - 1;
             m_ComponentsArray[indexOfRemovedEntity] = m_ComponentsArray[indexOfLastElement];
 
             const Entity entityOfLastElement = m_IndexToEntityMap[indexOfLastElement];
@@ -73,7 +72,7 @@ namespace ECS
         }
 
     private:
-        std::array<T, MAX_ENTITIES>       m_ComponentsArray{};
+        std::array<T, MAX_ENTITIES>        m_ComponentsArray{};
         std::unordered_map<Entity, size_t> m_EntityToIndexMap{};
         std::unordered_map<size_t, Entity> m_IndexToEntityMap{};
 

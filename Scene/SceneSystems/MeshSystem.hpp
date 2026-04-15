@@ -1,7 +1,7 @@
 #pragma once
 
-#include "ECS/ECS.hpp"
-#include "ECS/Entity.hpp"
+#include "ECS/api/ECS.hpp"
+#include "ECS/api/Entity.hpp"
 #include "Scene/SceneComponents/MeshComponent.hpp"
 
 #include <vector>

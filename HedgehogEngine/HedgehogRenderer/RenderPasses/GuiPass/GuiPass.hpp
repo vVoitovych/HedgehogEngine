@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ECS/Entity.h"
+#include "ECS/api/Entity.hpp"
 
 #include <memory>
 #include <optional>
