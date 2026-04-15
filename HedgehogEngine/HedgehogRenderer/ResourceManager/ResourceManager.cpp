@@ -12,7 +12,7 @@
 
 #include "HedgehogCommon/Common/RendererSettings.hpp"
 
-#include "Logger/Logger.hpp"
+#include "Logger/api/Logger.hpp"
 
 namespace Renderer
 {

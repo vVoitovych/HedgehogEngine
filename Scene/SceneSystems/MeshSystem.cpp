@@ -1,6 +1,6 @@
 #include "MeshSystem.hpp"
 #include "ContentLoader/CommonFunctions.hpp"
-#include "Logger/Logger.hpp"
+#include "Logger/api/Logger.hpp"
 #include "DialogueWindows/MeshDialogue/MeshDialogue.hpp"
 
 #include <algorithm>

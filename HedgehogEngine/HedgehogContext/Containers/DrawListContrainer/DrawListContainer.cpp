@@ -6,7 +6,7 @@
 #include "Scene/Scene.hpp"
 #include "Scene/SceneComponents/TransformComponent.hpp"
 
-#include "Logger/Logger.hpp"
+#include "Logger/api/Logger.hpp"
 
 #include <algorithm>
 

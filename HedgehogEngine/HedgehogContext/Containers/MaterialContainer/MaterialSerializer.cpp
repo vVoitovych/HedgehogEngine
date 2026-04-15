@@ -1,7 +1,7 @@
 #include "MaterialSerializer.hpp"
 
 #include "MaterialData.hpp"
-#include "Logger/Logger.hpp"
+#include "Logger/api/Logger.hpp"
 #include "ContentLoader/CommonFunctions.hpp"
 
 #define YAML_CPP_STATIC_DEFINE

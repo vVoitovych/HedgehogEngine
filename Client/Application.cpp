@@ -5,7 +5,7 @@
 
 #include "HedgehogEngine/HedgehogRenderer/Renderer/Renderer.hpp"
 
-#include "Logger/Logger.hpp"
+#include "Logger/api/Logger.hpp"
 
 #include <chrono>
 

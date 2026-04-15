@@ -6,7 +6,7 @@
 #include "HedgehogWrappers/Wrappeers/Resources/Sampler/Sampler.hpp"
 #include "ContentLoader/TextureLoader.hpp"
 
-#include "Logger/Logger.hpp"
+#include "Logger/api/Logger.hpp"
 
 #include <stdexcept>
 

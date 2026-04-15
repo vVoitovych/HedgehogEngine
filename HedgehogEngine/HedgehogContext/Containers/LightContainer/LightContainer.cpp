@@ -8,7 +8,7 @@
 
 #include "HedgehogMath/api/Common.hpp"
 #include "HedgehogMath/api/Vector.hpp"
-#include "Logger/Logger.hpp"
+#include "Logger/api/Logger.hpp"
 
 #include <cmath>
 #include <algorithm>

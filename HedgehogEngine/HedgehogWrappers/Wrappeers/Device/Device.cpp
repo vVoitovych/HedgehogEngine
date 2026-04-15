@@ -6,7 +6,7 @@
 #include "HedgehogCommon/Common/EngineDebugBreak.hpp"
 #include "HedgehogCommon/Common/RendererSettings.hpp"
 
-#include "Logger/Logger.hpp"
+#include "Logger/api/Logger.hpp"
 
 #define VMA_IMPLEMENTATION
 #include "vma/vk_mem_alloc.h"

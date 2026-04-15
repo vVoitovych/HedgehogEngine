@@ -3,7 +3,7 @@
 #include "HedgehogWrappers/Wrappeers/Device/Device.hpp"
 #include "HedgehogWrappers/Wrappeers/Resources/Buffer/Buffer.hpp"
 
-#include "Logger/Logger.hpp"
+#include "Logger/api/Logger.hpp"
 
 #include <vulkan/vulkan.h>
 #include <memory>

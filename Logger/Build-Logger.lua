@@ -3,9 +3,9 @@ project "Logger"
    language "C++"
    cppdialect "C++20"
 
-   files { "**.hpp", "**.cpp" }
+   files { "api/**.hpp", "src/**.hpp", "src/**.cpp" }
 
-   includedirs { }
+   includedirs { "." }
 
    targetdir ("../Binaries/" .. OutputDir .. "/%{prj.name}")
    objdir ("../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")

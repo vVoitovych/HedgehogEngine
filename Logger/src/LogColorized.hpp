@@ -1,10 +1,9 @@
 #pragma once
 #include <stdint.h>
-#include "LoggerApi.hpp"
 
 namespace EngineLogger
 {
-    class LOGGER_API LogColorized
+    class LogColorized
     {
     public:
         LogColorized();
@@ -16,8 +15,3 @@ namespace EngineLogger
 #endif
     };
 }
-
-
-
-
-

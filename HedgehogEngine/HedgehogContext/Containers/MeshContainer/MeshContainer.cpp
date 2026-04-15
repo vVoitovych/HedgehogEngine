@@ -7,7 +7,7 @@
 
 #include "Scene/Scene.hpp"
 
-#include "Logger/Logger.hpp"
+#include "Logger/api/Logger.hpp"
 
 #include <algorithm>
 #include <stdexcept>

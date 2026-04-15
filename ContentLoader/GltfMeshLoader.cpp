@@ -1,5 +1,5 @@
 #include "GltfMeshLoader.hpp"
-#include "Logger/Logger.hpp"
+#include "Logger/api/Logger.hpp"
 
 #define TINYGLTF_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
