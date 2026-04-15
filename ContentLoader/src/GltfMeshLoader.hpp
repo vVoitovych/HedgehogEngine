@@ -1,12 +1,10 @@
 #pragma once
 
-#include "LoadedData.hpp"
+#include "api/LoadedData.hpp"
 
 #include <string>
 
 namespace ContentLoader
 {
     LoadedMesh LoadGltfMesh(const std::string& path);
-
 }
-

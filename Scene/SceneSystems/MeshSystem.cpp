@@ -1,5 +1,5 @@
 #include "MeshSystem.hpp"
-#include "ContentLoader/CommonFunctions.hpp"
+#include "ContentLoader/api/CommonFunctions.hpp"
 #include "Logger/api/Logger.hpp"
 #include "DialogueWindows/MeshDialogue/MeshDialogue.hpp"
 

@@ -2,7 +2,7 @@
 
 #include "MaterialData.hpp"
 #include "Logger/api/Logger.hpp"
-#include "ContentLoader/CommonFunctions.hpp"
+#include "ContentLoader/api/CommonFunctions.hpp"
 
 #define YAML_CPP_STATIC_DEFINE
 #include "yaml-cpp/yaml.h"

@@ -1,4 +1,4 @@
-#include "CommonFunctions.hpp"
+#include "api/CommonFunctions.hpp"
 
 #include <Windows.h>
 #include <stdexcept>
@@ -13,7 +13,7 @@ namespace ContentLoader
         GetModuleFileNameA(NULL, buffer, MAX_PATH);
         std::string::size_type pos = std::string(buffer).find_last_of("\\/");
 
-        std::string programPath =  std::string(buffer).substr(0, pos);
+        std::string programPath = std::string(buffer).substr(0, pos);
         std::filesystem::path fsPath(programPath);
         std::string rootPath = fsPath.parent_path().parent_path().parent_path().parent_path().string();
         return rootPath;
@@ -60,7 +60,4 @@ namespace ContentLoader
         file.read(buffer.data(), fileSize);
         return buffer;
     }
-
 }
-
-

@@ -17,7 +17,7 @@
 #include "DialogueWindows/MaterialDialogue/MaterialDialogue.hpp"
 #include "DialogueWindows/TextureDialogue/TextureDialogue.hpp"
 
-#include "ContentLoader/CommonFunctions.hpp"
+#include "ContentLoader/api/CommonFunctions.hpp"
 
 #include "Scene/Scene.hpp"
 

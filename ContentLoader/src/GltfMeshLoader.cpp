@@ -20,11 +20,11 @@ namespace
         if (primitive.attributes.find("POSITION") == primitive.attributes.end())
             return;
 
-        const tinygltf::Accessor& accessor = model.accessors[primitive.attributes.at("POSITION")];
+        const tinygltf::Accessor&   accessor   = model.accessors[primitive.attributes.at("POSITION")];
         const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
-        const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
+        const tinygltf::Buffer&     buffer     = model.buffers[bufferView.buffer];
 
-        const float* data = reinterpret_cast<const float*>(&buffer.data[bufferView.byteOffset + accessor.byteOffset]);
+        const float* data  = reinterpret_cast<const float*>(&buffer.data[bufferView.byteOffset + accessor.byteOffset]);
         const size_t count = accessor.count;
 
         for (size_t i = 0; i < count; ++i)
@@ -41,11 +41,11 @@ namespace
         if (primitive.attributes.find("NORMAL") == primitive.attributes.end())
             return;
 
-        const tinygltf::Accessor& accessor = model.accessors[primitive.attributes.at("NORMAL")];
+        const tinygltf::Accessor&   accessor   = model.accessors[primitive.attributes.at("NORMAL")];
         const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
-        const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
+        const tinygltf::Buffer&     buffer     = model.buffers[bufferView.buffer];
 
-        const float* data = reinterpret_cast<const float*>(&buffer.data[bufferView.byteOffset + accessor.byteOffset]);
+        const float* data  = reinterpret_cast<const float*>(&buffer.data[bufferView.byteOffset + accessor.byteOffset]);
         const size_t count = accessor.count;
 
         for (size_t i = 0; i < count; ++i)
@@ -62,11 +62,11 @@ namespace
         if (primitive.attributes.find("TEXCOORD_0") == primitive.attributes.end())
             return;
 
-        const tinygltf::Accessor& accessor = model.accessors[primitive.attributes.at("TEXCOORD_0")];
+        const tinygltf::Accessor&   accessor   = model.accessors[primitive.attributes.at("TEXCOORD_0")];
         const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
-        const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
+        const tinygltf::Buffer&     buffer     = model.buffers[bufferView.buffer];
 
-        const float* data = reinterpret_cast<const float*>(&buffer.data[bufferView.byteOffset + accessor.byteOffset]);
+        const float* data  = reinterpret_cast<const float*>(&buffer.data[bufferView.byteOffset + accessor.byteOffset]);
         const size_t count = accessor.count;
 
         for (size_t i = 0; i < count; ++i)
@@ -83,12 +83,12 @@ namespace
         if (primitive.attributes.find("JOINTS_0") == primitive.attributes.end())
             return;
 
-        const tinygltf::Accessor& accessor = model.accessors[primitive.attributes.at("JOINTS_0")];
+        const tinygltf::Accessor&   accessor   = model.accessors[primitive.attributes.at("JOINTS_0")];
         const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
-        const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
+        const tinygltf::Buffer&     buffer     = model.buffers[bufferView.buffer];
 
-        const uint32_t* data = reinterpret_cast<const uint32_t*>(&buffer.data[bufferView.byteOffset + accessor.byteOffset]);
-        const size_t count = accessor.count;
+        const uint32_t* data  = reinterpret_cast<const uint32_t*>(&buffer.data[bufferView.byteOffset + accessor.byteOffset]);
+        const size_t    count = accessor.count;
 
         for (size_t i = 0; i < count; ++i)
         {
@@ -104,11 +104,11 @@ namespace
         if (primitive.attributes.find("WEIGHTS_0") == primitive.attributes.end())
             return;
 
-        const tinygltf::Accessor& accessor = model.accessors[primitive.attributes.at("WEIGHTS_0")];
+        const tinygltf::Accessor&   accessor   = model.accessors[primitive.attributes.at("WEIGHTS_0")];
         const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
-        const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
+        const tinygltf::Buffer&     buffer     = model.buffers[bufferView.buffer];
 
-        const float* data = reinterpret_cast<const float*>(&buffer.data[bufferView.byteOffset + accessor.byteOffset]);
+        const float* data  = reinterpret_cast<const float*>(&buffer.data[bufferView.byteOffset + accessor.byteOffset]);
         const size_t count = accessor.count;
 
         for (size_t i = 0; i < count; ++i)
@@ -120,7 +120,7 @@ namespace
 
     LoadedMesh LoadGltfMesh(const std::string& path)
     {
-        tinygltf::Model model;
+        tinygltf::Model    model;
         tinygltf::TinyGLTF loader;
         std::string err, warn;
 
@@ -150,41 +150,34 @@ namespace
                 {
                     LoadedVertexData vertex;
                     vertex.position = positions[i];
-                    vertex.normal = normals[i];
-                    vertex.uv = texCoords[i];
+                    vertex.normal   = normals[i];
+                    vertex.uv       = texCoords[i];
 
                     meshData.vertices.push_back(vertex);
                 }
 
-                // Extract indices
                 if (primitive.indices >= 0)
                 {
-                    const tinygltf::Accessor& accessor = model.accessors[primitive.indices];
+                    const tinygltf::Accessor&   accessor   = model.accessors[primitive.indices];
                     const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
-                    const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
+                    const tinygltf::Buffer&     buffer     = model.buffers[bufferView.buffer];
 
-                    const void* dataPtr = &buffer.data[bufferView.byteOffset + accessor.byteOffset];
+                    const void*  dataPtr    = &buffer.data[bufferView.byteOffset + accessor.byteOffset];
                     const size_t indexCount = accessor.count;
 
                     switch (accessor.componentType)
                     {
                     case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
                         for (size_t i = 0; i < indexCount; ++i)
-                        {
                             meshData.indices.push_back(static_cast<uint32_t>(reinterpret_cast<const uint8_t*>(dataPtr)[i]));
-                        }
                         break;
                     case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
                         for (size_t i = 0; i < indexCount; ++i)
-                        {
                             meshData.indices.push_back(static_cast<uint32_t>(reinterpret_cast<const uint16_t*>(dataPtr)[i]));
-                        }
                         break;
                     case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
                         for (size_t i = 0; i < indexCount; ++i)
-                        {
                             meshData.indices.push_back(reinterpret_cast<const uint32_t*>(dataPtr)[i]);
-                        }
                         break;
                     default:
                         throw std::runtime_error("Unsupported index component type.");
@@ -197,6 +190,5 @@ namespace
 
         return meshData;
     }
-
 
 }

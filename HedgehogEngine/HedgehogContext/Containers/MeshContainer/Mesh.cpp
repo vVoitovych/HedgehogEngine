@@ -1,5 +1,5 @@
 #include "Mesh.hpp"
-#include "ContentLoader/MeshLoader.hpp"
+#include "ContentLoader/api/MeshLoader.hpp"
 #include "Logger/api/Logger.hpp"
 
 #include <unordered_map>

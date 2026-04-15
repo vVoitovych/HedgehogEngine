@@ -6,7 +6,7 @@
 #include "HedgehogCommon/Common/RendererSettings.hpp"
 #include "HedgehogRenderer/RenderPasses/GuiPass/GuiPass.hpp"
 
-#include "ContentLoader/TextureLoader.hpp"
+#include "ContentLoader/api/TextureLoader.hpp"
 
 #include <vector>
 #include <vulkan/vulkan.h>
