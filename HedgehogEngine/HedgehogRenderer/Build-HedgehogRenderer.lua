@@ -13,13 +13,7 @@ project "HedgehogRenderer"
         "%{IncludeDir.VulkanSDK}",
         "%{IncludeDir.ImGui}".."/imgui",
         "../..",
-        "..",
-
-        -- RHI Vulkan backend (merged into HedgehogRenderer)
-        "%{IncludeDir.VulkanHeaders}",
-        "%{IncludeDir.Volk}",
-        "%{IncludeDir.VMA}",
-        "%{IncludeDir.GLFW}",
+        ".."
     }
 
     libdirs

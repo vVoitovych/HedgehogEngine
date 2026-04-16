@@ -1,6 +1,6 @@
 #pragma once
 
-#include "HedgehogRenderer/api/RHI/IRHISwapchain.hpp"
+#include "../RHI/IRHISwapchain.hpp"
 #include "VulkanTexture.hpp"
 
 #include "volk.h"

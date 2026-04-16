@@ -2,7 +2,7 @@
 
 #include "VulkanDevice.hpp"
 
-#include "Logger/api/Logger.hpp"
+#include "Logger/Logger.hpp"
 
 #include <cassert>
 #include <fstream>

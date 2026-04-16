@@ -1,7 +1,7 @@
 #pragma once
 
-#include "HedgehogRenderer/api/RHI/IRHISampler.hpp"
-#include "HedgehogRenderer/api/RHI/RHITypes.hpp"
+#include "../RHI/IRHISampler.hpp"
+#include "../RHI/RHITypes.hpp"
 
 #include "volk.h"
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "HedgehogRenderer/api/RHI/RHITypes.hpp"
+#include "../RHI/RHITypes.hpp"
 
 #include "volk.h"
 #include "vk_mem_alloc.h"
