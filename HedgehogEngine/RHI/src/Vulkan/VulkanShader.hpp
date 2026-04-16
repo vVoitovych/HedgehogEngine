@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../RHI/IRHIShader.hpp"
+#include "api/IRHIShader.hpp"
 
-#include "volk.h"
+#include <Volk/volk.h>
 
 #include <string>
 

@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../RHI/IRHISampler.hpp"
-#include "../RHI/RHITypes.hpp"
+#include "api/IRHISampler.hpp"
+#include "api/RHITypes.hpp"
 
-#include "volk.h"
+#include <Volk/volk.h>
 
 namespace RHI
 {

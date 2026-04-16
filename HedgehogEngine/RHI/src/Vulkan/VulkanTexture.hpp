@@ -1,10 +1,10 @@
 #pragma once
 
-#include "../RHI/IRHITexture.hpp"
-#include "../RHI/RHITypes.hpp"
+#include "api/IRHITexture.hpp"
+#include "api/RHITypes.hpp"
 
-#include "volk.h"
-#include "vk_mem_alloc.h"
+#include <Volk/volk.h>
+#include <vma/vk_mem_alloc.h>
 
 #include <cstdint>
 

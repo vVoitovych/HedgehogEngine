@@ -9,11 +9,6 @@ IncludeDir["ImGui"]     = "%{wks.location}/ThirdParty/ImGui"
 -- Legacy SDK paths (used by HedgehogWrappers until full RHI migration)
 IncludeDir["VulkanSDK"] = "%{wks.location}/ThirdParty/vulkan/Include"
 
--- New submodule-based Vulkan dependencies (used by the RHI module)
-IncludeDir["VulkanHeaders"] = "%{wks.location}/ThirdParty/Vulkan-Headers/include"
-IncludeDir["Volk"]          = "%{wks.location}/ThirdParty/volk"
-IncludeDir["VMA"]           = "%{wks.location}/ThirdParty/VulkanMemoryAllocator/include"
-
 LibraryDir = {}
 LibraryDir["VulkanSDK"] = "%{wks.location}/ThirdParty/vulkan"
 LibraryDir["yaml_cpp"]  = "%{wks.location}/ThirdParty/yaml-cpp"

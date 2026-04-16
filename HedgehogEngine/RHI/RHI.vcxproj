@@ -57,7 +57,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..;..;..\..\ThirdParty\Vulkan-Headers\include;..\..\ThirdParty\volk;..\..\ThirdParty\VulkanMemoryAllocator\include;..\..\ThirdParty\glfw\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;..\..;..\..\ThirdParty\vulkan\Include;..\..\ThirdParty\glfw\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -74,7 +74,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..;..;..\..\ThirdParty\Vulkan-Headers\include;..\..\ThirdParty\volk;..\..\ThirdParty\VulkanMemoryAllocator\include;..\..\ThirdParty\glfw\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;..\..;..\..\ThirdParty\vulkan\Include;..\..\ThirdParty\glfw\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -91,47 +91,47 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="RHI\IRHIBuffer.hpp" />
-    <ClInclude Include="RHI\IRHICommandList.hpp" />
-    <ClInclude Include="RHI\IRHIDescriptor.hpp" />
-    <ClInclude Include="RHI\IRHIDevice.hpp" />
-    <ClInclude Include="RHI\IRHIFramebuffer.hpp" />
-    <ClInclude Include="RHI\IRHIPipeline.hpp" />
-    <ClInclude Include="RHI\IRHIRenderPass.hpp" />
-    <ClInclude Include="RHI\IRHISampler.hpp" />
-    <ClInclude Include="RHI\IRHIShader.hpp" />
-    <ClInclude Include="RHI\IRHISwapchain.hpp" />
-    <ClInclude Include="RHI\IRHISyncPrimitive.hpp" />
-    <ClInclude Include="RHI\IRHITexture.hpp" />
-    <ClInclude Include="RHI\RHI.hpp" />
-    <ClInclude Include="RHI\RHITypes.hpp" />
-    <ClInclude Include="Vulkan\VulkanBuffer.hpp" />
-    <ClInclude Include="Vulkan\VulkanCommandList.hpp" />
-    <ClInclude Include="Vulkan\VulkanDescriptor.hpp" />
-    <ClInclude Include="Vulkan\VulkanDevice.hpp" />
-    <ClInclude Include="Vulkan\VulkanFramebuffer.hpp" />
-    <ClInclude Include="Vulkan\VulkanPipeline.hpp" />
-    <ClInclude Include="Vulkan\VulkanRenderPass.hpp" />
-    <ClInclude Include="Vulkan\VulkanSampler.hpp" />
-    <ClInclude Include="Vulkan\VulkanShader.hpp" />
-    <ClInclude Include="Vulkan\VulkanSwapchain.hpp" />
-    <ClInclude Include="Vulkan\VulkanSyncPrimitive.hpp" />
-    <ClInclude Include="Vulkan\VulkanTexture.hpp" />
-    <ClInclude Include="Vulkan\VulkanTypes.hpp" />
+    <ClInclude Include="api\IRHIBuffer.hpp" />
+    <ClInclude Include="api\IRHICommandList.hpp" />
+    <ClInclude Include="api\IRHIDescriptor.hpp" />
+    <ClInclude Include="api\IRHIDevice.hpp" />
+    <ClInclude Include="api\IRHIFramebuffer.hpp" />
+    <ClInclude Include="api\IRHIPipeline.hpp" />
+    <ClInclude Include="api\IRHIRenderPass.hpp" />
+    <ClInclude Include="api\IRHISampler.hpp" />
+    <ClInclude Include="api\IRHIShader.hpp" />
+    <ClInclude Include="api\IRHISwapchain.hpp" />
+    <ClInclude Include="api\IRHISyncPrimitive.hpp" />
+    <ClInclude Include="api\IRHITexture.hpp" />
+    <ClInclude Include="api\RHI.hpp" />
+    <ClInclude Include="api\RHITypes.hpp" />
+    <ClInclude Include="src\Vulkan\VulkanBuffer.hpp" />
+    <ClInclude Include="src\Vulkan\VulkanCommandList.hpp" />
+    <ClInclude Include="src\Vulkan\VulkanDescriptor.hpp" />
+    <ClInclude Include="src\Vulkan\VulkanDevice.hpp" />
+    <ClInclude Include="src\Vulkan\VulkanFramebuffer.hpp" />
+    <ClInclude Include="src\Vulkan\VulkanPipeline.hpp" />
+    <ClInclude Include="src\Vulkan\VulkanRenderPass.hpp" />
+    <ClInclude Include="src\Vulkan\VulkanSampler.hpp" />
+    <ClInclude Include="src\Vulkan\VulkanShader.hpp" />
+    <ClInclude Include="src\Vulkan\VulkanSwapchain.hpp" />
+    <ClInclude Include="src\Vulkan\VulkanSyncPrimitive.hpp" />
+    <ClInclude Include="src\Vulkan\VulkanTexture.hpp" />
+    <ClInclude Include="src\Vulkan\VulkanTypes.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Vulkan\VulkanBuffer.cpp" />
-    <ClCompile Include="Vulkan\VulkanCommandList.cpp" />
-    <ClCompile Include="Vulkan\VulkanDescriptor.cpp" />
-    <ClCompile Include="Vulkan\VulkanDevice.cpp" />
-    <ClCompile Include="Vulkan\VulkanFramebuffer.cpp" />
-    <ClCompile Include="Vulkan\VulkanPipeline.cpp" />
-    <ClCompile Include="Vulkan\VulkanRenderPass.cpp" />
-    <ClCompile Include="Vulkan\VulkanSampler.cpp" />
-    <ClCompile Include="Vulkan\VulkanShader.cpp" />
-    <ClCompile Include="Vulkan\VulkanSwapchain.cpp" />
-    <ClCompile Include="Vulkan\VulkanSyncPrimitive.cpp" />
-    <ClCompile Include="Vulkan\VulkanTexture.cpp" />
+    <ClCompile Include="src\Vulkan\VulkanBuffer.cpp" />
+    <ClCompile Include="src\Vulkan\VulkanCommandList.cpp" />
+    <ClCompile Include="src\Vulkan\VulkanDescriptor.cpp" />
+    <ClCompile Include="src\Vulkan\VulkanDevice.cpp" />
+    <ClCompile Include="src\Vulkan\VulkanFramebuffer.cpp" />
+    <ClCompile Include="src\Vulkan\VulkanPipeline.cpp" />
+    <ClCompile Include="src\Vulkan\VulkanRenderPass.cpp" />
+    <ClCompile Include="src\Vulkan\VulkanSampler.cpp" />
+    <ClCompile Include="src\Vulkan\VulkanShader.cpp" />
+    <ClCompile Include="src\Vulkan\VulkanSwapchain.cpp" />
+    <ClCompile Include="src\Vulkan\VulkanSyncPrimitive.cpp" />
+    <ClCompile Include="src\Vulkan\VulkanTexture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\ThirdParty\glfw\glfw.vcxproj">

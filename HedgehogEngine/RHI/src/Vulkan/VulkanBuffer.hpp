@@ -1,10 +1,11 @@
 #pragma once
 
-#include "../RHI/IRHIBuffer.hpp"
-#include "../RHI/RHITypes.hpp"
+#include "api/IRHIBuffer.hpp"
+#include "api/RHITypes.hpp"
 
-#include "volk.h"
-#include "vk_mem_alloc.h"
+#include <Volk/volk.h>
+#include <vma/vk_mem_alloc.h>
+#include <vulkan/vulkan.h>
 
 #include <cstddef>
 

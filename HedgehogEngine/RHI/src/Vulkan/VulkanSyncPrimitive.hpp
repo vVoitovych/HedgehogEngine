@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../RHI/IRHISyncPrimitive.hpp"
+#include "api/IRHISyncPrimitive.hpp"
 
-#include "volk.h"
+#include <Volk/volk.h>
 
 namespace RHI
 {

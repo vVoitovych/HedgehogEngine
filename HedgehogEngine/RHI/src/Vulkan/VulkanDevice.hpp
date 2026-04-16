@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../RHI/IRHIDevice.hpp"
+#include "api/IRHIDevice.hpp"
 
-#include "volk.h"
-#include "vk_mem_alloc.h"
+#include <Volk/volk.h>
+#include <vma/vk_mem_alloc.h>
 
 #include <functional>
 #include <memory>

@@ -10,16 +10,9 @@ project "RHI"
 
    includedirs
    {
-       -- Own root (so #include "RHI/RHITypes.hpp" resolves from HedgehogEngine/)
+       ".",
        "../..",
-       "..",
-
-       -- New submodule-based Vulkan dependencies
-       "%{IncludeDir.VulkanHeaders}",
-       "%{IncludeDir.Volk}",
-       "%{IncludeDir.VMA}",
-
-       -- GLFW (for surface creation in VulkanDevice)
+       "%{IncludeDir.VulkanSDK}",
        "%{IncludeDir.GLFW}",
    }
 
