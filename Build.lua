@@ -21,8 +21,6 @@ group "ThirdParty"
    include "ThirdParty/Lua/Build-Lua.lua"
 group ""
 
-include "HedgehogEngine/RHI/Build-RHI.lua"
-
 include "HedgehogEngine/HedgehogCommon/Build-HedgehogCommon.lua"
 include "HedgehogEngine/HedgehogContext/Build-HedgehogContext.lua"
 include "HedgehogEngine/HedgehogRenderer/Build-HedgehogRenderer.lua"

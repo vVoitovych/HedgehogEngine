@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../RHI/IRHISyncPrimitive.hpp"
+#include "HedgehogRenderer/api/RHI/IRHISyncPrimitive.hpp"
 
 #include "volk.h"
 

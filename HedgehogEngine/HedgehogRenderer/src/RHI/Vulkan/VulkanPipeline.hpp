@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../RHI/IRHIPipeline.hpp"
+#include "HedgehogRenderer/api/RHI/IRHIPipeline.hpp"
 
 #include "volk.h"
 

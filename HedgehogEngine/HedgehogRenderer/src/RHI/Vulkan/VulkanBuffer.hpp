@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../RHI/IRHIBuffer.hpp"
-#include "../RHI/RHITypes.hpp"
+#include "HedgehogRenderer/api/RHI/IRHIBuffer.hpp"
+#include "HedgehogRenderer/api/RHI/RHITypes.hpp"
 
 #include "volk.h"
 #include "vk_mem_alloc.h"

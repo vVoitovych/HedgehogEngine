@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../RHI/IRHIRenderPass.hpp"
+#include "HedgehogRenderer/api/RHI/IRHIRenderPass.hpp"
 
 #include "volk.h"
 

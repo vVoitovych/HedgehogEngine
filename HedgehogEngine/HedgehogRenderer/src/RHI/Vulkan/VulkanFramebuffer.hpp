@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../RHI/IRHIFramebuffer.hpp"
+#include "HedgehogRenderer/api/RHI/IRHIFramebuffer.hpp"
 
 #include "volk.h"
 

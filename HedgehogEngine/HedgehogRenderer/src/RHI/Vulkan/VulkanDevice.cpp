@@ -25,7 +25,7 @@
 #include "VulkanSyncPrimitive.hpp"
 #include "VulkanTexture.hpp"
 
-#include "Logger/Logger.hpp"
+#include "Logger/api/Logger.hpp"
 
 #include <GLFW/glfw3.h>
 

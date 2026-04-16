@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../RHI/IRHIDevice.hpp"
+#include "HedgehogRenderer/api/RHI/IRHIDevice.hpp"
 
 #include "volk.h"
 #include "vk_mem_alloc.h"
