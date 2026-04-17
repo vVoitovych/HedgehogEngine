@@ -22,6 +22,7 @@ enum class Format : uint32_t
     R16G16B16A16Unorm,
     R16G16B16A16Float,
     R32Float,
+    R32G32Float,
     R32G32B32Float,
     R32G32B32A32Float,
     D16Unorm,
