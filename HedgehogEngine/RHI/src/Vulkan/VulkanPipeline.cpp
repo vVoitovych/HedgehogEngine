@@ -15,25 +15,33 @@ namespace RHI
 VulkanPipeline::VulkanPipeline(VulkanDevice& device, const GraphicsPipelineDesc& desc)
     : m_Device(device)
 {
-    assert(desc.m_VertexShader   && "GraphicsPipelineDesc::m_VertexShader must not be null.");
-    assert(desc.m_FragmentShader && "GraphicsPipelineDesc::m_FragmentShader must not be null.");
-    assert(desc.m_RenderPass     && "GraphicsPipelineDesc::m_RenderPass must not be null.");
+    assert(desc.m_VertexShader && "GraphicsPipelineDesc::m_VertexShader must not be null.");
+    assert(desc.m_RenderPass   && "GraphicsPipelineDesc::m_RenderPass must not be null.");
 
     // ── Shader stages ─────────────────────────────────────────────────────────
 
     const auto& vertShader = static_cast<const VulkanShader&>(*desc.m_VertexShader);
-    const auto& fragShader = static_cast<const VulkanShader&>(*desc.m_FragmentShader);
 
-    VkPipelineShaderStageCreateInfo stages[2] = {};
-    stages[0].sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    stages[0].stage  = VK_SHADER_STAGE_VERTEX_BIT;
-    stages[0].module = vertShader.GetHandle();
-    stages[0].pName  = "main";
+    std::vector<VkPipelineShaderStageCreateInfo> stages;
+    stages.reserve(2);
 
-    stages[1].sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    stages[1].stage  = VK_SHADER_STAGE_FRAGMENT_BIT;
-    stages[1].module = fragShader.GetHandle();
-    stages[1].pName  = "main";
+    {
+        VkPipelineShaderStageCreateInfo stage{ VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
+        stage.stage  = VK_SHADER_STAGE_VERTEX_BIT;
+        stage.module = vertShader.GetHandle();
+        stage.pName  = "main";
+        stages.push_back(stage);
+    }
+
+    if (desc.m_FragmentShader)
+    {
+        const auto& fragShader = static_cast<const VulkanShader&>(*desc.m_FragmentShader);
+        VkPipelineShaderStageCreateInfo stage{ VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
+        stage.stage  = VK_SHADER_STAGE_FRAGMENT_BIT;
+        stage.module = fragShader.GetHandle();
+        stage.pName  = "main";
+        stages.push_back(stage);
+    }
 
     // ── Vertex input ──────────────────────────────────────────────────────────
 
@@ -154,8 +162,8 @@ VulkanPipeline::VulkanPipeline(VulkanDevice& device, const GraphicsPipelineDesc&
     const auto& vkPass = static_cast<const VulkanRenderPass&>(*desc.m_RenderPass);
 
     VkGraphicsPipelineCreateInfo pipelineInfo{ VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO };
-    pipelineInfo.stageCount          = 2;
-    pipelineInfo.pStages             = stages;
+    pipelineInfo.stageCount          = static_cast<uint32_t>(stages.size());
+    pipelineInfo.pStages             = stages.data();
     pipelineInfo.pVertexInputState   = &vertexInput;
     pipelineInfo.pInputAssemblyState = &inputAssembly;
     pipelineInfo.pViewportState      = &viewportState;

@@ -1,210 +1,202 @@
 #include "DepthPrePass.hpp"
-#include "DepthPrePassInfo.hpp"
-#include "DepthPrePassPipelineInfo.hpp"
 #include "DepthPrePassPushConstants.hpp"
 
 #include "HedgehogContext/Context/Context.hpp"
-#include "HedgehogContext/Context/EngineContext.hpp"
 #include "HedgehogContext/Context/ThreadContext.hpp"
 #include "HedgehogContext/Context/VulkanContext.hpp"
 #include "HedgehogContext/Context/FrameContext.hpp"
-
-#include "HedgehogRenderer/ResourceManager/ResourceManager.hpp"
-#include "HedgehogWrappers/Wrappeers/Device/Device.hpp"
-#include "HedgehogWrappers/Wrappeers/SwapChain/SwapChain.hpp"
-#include "HedgehogWrappers/Wrappeers/RenderPass/RenderPass.hpp"
-#include "HedgehogWrappers/Wrappeers/Commands/CommandBuffer.hpp"
-#include "HedgehogWrappers/Wrappeers/FrameBuffer/FrameBuffer.hpp"
-#include "HedgehogWrappers/Wrappeers/Descriptors/DescriptorLayoutBuilder.hpp"
-#include "HedgehogWrappers/Wrappeers/Descriptors/DescriptorSetLayout.hpp"
-#include "HedgehogWrappers/Wrappeers/Descriptors/DescriptorAllocator.hpp"
-#include "HedgehogWrappers/Wrappeers/Pipeline/Pipeline.hpp"
-#include "HedgehogWrappers/Wrappeers/Descriptors/DescriptorSet.hpp"
-#include "HedgehogWrappers/Wrappeers/Descriptors/UBO.hpp"
-#include "HedgehogWrappers/Wrappeers/Resources/Image/Image.hpp"
-#include "HedgehogWrappers/Wrappeers/Resources/Sampler/Sampler.hpp"
+#include "HedgehogContext/Context/EngineContext.hpp"
 
 #include "HedgehogContext/Containers/MeshContainer/MeshContainer.hpp"
 #include "HedgehogContext/Containers/MeshContainer/Mesh.hpp"
-#include "HedgehogContext/Containers/MaterialContainer/MaterialContainer.hpp"
 #include "HedgehogContext/Containers/DrawListContrainer/DrawListContainer.hpp"
+
+#include "HedgehogRenderer/ResourceManager/ResourceManager.hpp"
+
 #include "HedgehogCommon/api/RendererSettings.hpp"
 
-#include "Scene/Scene.hpp"
-
-#include "Logger/api/Logger.hpp"
+#include "RHI/api/IRHIDevice.hpp"
+#include "RHI/api/IRHICommandList.hpp"
+#include "RHI/api/IRHIRenderPass.hpp"
+#include "RHI/api/IRHIFramebuffer.hpp"
+#include "RHI/api/IRHIPipeline.hpp"
+#include "RHI/api/IRHIDescriptor.hpp"
+#include "RHI/api/IRHIBuffer.hpp"
+#include "RHI/api/IRHITexture.hpp"
+#include "RHI/api/IRHIShader.hpp"
 
 namespace Renderer
 {
-    void DepthPrePass::Render(Context::Context& context, const ResourceManager& resourceManager)
-    {
-        auto& frameContext = context.GetFrameContext();
-        auto& threadContext = context.GetThreadContext();
-        auto& vulkanContext = context.GetVulkanContext();
-        auto& engineContext = context.GetEngineContext();
-
-        auto& drawListContainer = engineContext.GetDrawListContainer();
-
-        auto& commandBuffer = threadContext.GetCommandBuffer();
-        auto frameIndex = threadContext.GetFrameIndex();
-        auto extend = vulkanContext.GetSwapChain().GetSwapChainExtent();
-        auto backBufferIndex = frameContext.GetBackBufferIndex();
-
-        DepthPrepassFrameUniform ubo{};
-        ubo.viewProj = frameContext.GetCameraProjMatrix() * frameContext.GetCameraViewMatrix();
-        m_FrameUniforms[frameIndex].UpdateUniformBuffer(ubo);
-
-        std::array<VkClearValue, 1> clearValues{};
-        clearValues[0].depthStencil = { 1.0f, 0 };
-
-        VkRenderPassBeginInfo renderPassInfo{};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = m_RenderPass->GetNativeRenderPass();
-        renderPassInfo.framebuffer = m_FrameBuffer->GetNativeFrameBuffer();
-        renderPassInfo.renderArea.offset = { 0, 0 };
-        renderPassInfo.renderArea.extent = extend;
-        VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
-        renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-        renderPassInfo.pClearValues = clearValues.data();
-                
-        commandBuffer.BeginRenderPass(renderPassInfo);
-        commandBuffer.BindPipeline(*m_Pipeline, VK_PIPELINE_BIND_POINT_GRAPHICS);
-        commandBuffer.SetViewport(0.0f, 0.0f, static_cast<float>(extend.width), static_cast<float>(extend.height), 0.0f, 1.0f);
-        commandBuffer.SetScissor({ 0, 0 }, extend);
-
-        auto& meshContainer = engineContext.GetMeshContainer();
-        VkDeviceSize offsets[] = { 0 };
-        VkBuffer positionBuffers[] = { meshContainer.GetPositionsBuffer() };
-
-        commandBuffer.BindVertexBuffers(0, 1, positionBuffers, offsets);
-        commandBuffer.BindIndexBuffer(meshContainer.GetIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
-
-        commandBuffer.BindDescriptorSers(VK_PIPELINE_BIND_POINT_GRAPHICS, *m_Pipeline, 0, 1, m_FrameSets[frameIndex].GetNativeSet(), 0, nullptr);
-        auto& opaqueDrawList = drawListContainer.GetOpaqueList();
-        for(auto& drawNode : opaqueDrawList)
-        { 
-            for (auto& object : drawNode.objects)
-            {
-                commandBuffer.PushConstants(m_Pipeline->GetNativePipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(DepthPrePassPushConstants), &object.objMatrix);
-                auto& mesh = meshContainer.GetMesh(object.meshIndex);
-                commandBuffer.DrawIndexed(mesh.GetIndexCount(), 1, mesh.GetFirstIndex(), mesh.GetVertexOffset(), 0);
-            }
-        }
-        commandBuffer.EndRenderPass();
-        
-    }
 
     DepthPrePass::DepthPrePass(const Context::Context& context, const ResourceManager& resourceManager)
     {
-        auto& vulkanContext = context.GetVulkanContext();
-        auto& device = vulkanContext.GetDevice();
+        auto& rhiDevice = context.GetVulkanContext().GetRHIDevice();
 
-        std::vector<Wrappers::PoolSizeRatio> sizes =
+        // Descriptor set layout: binding 0 = uniform buffer (vertex stage)
+        m_FrameLayout = rhiDevice.CreateDescriptorSetLayout({
+            { 0, RHI::DescriptorType::UniformBuffer, 1, RHI::ShaderStage::Vertex }
+        });
+
+        // Descriptor pool: one UB per frame
+        m_FramePool = rhiDevice.CreateDescriptorPool(
+            MAX_FRAMES_IN_FLIGHT,
+            { { RHI::DescriptorType::UniformBuffer, MAX_FRAMES_IN_FLIGHT } });
+
+        // Per-frame uniform buffers and descriptor sets
+        m_FrameUniforms.reserve(MAX_FRAMES_IN_FLIGHT);
+        m_FrameSets.reserve(MAX_FRAMES_IN_FLIGHT);
+        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
         {
-            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 }
+            auto ubo = rhiDevice.CreateBuffer(
+                sizeof(DepthPrepassFrameUniform),
+                RHI::BufferUsage::UniformBuffer,
+                RHI::MemoryUsage::CpuToGpu);
+
+            auto set = rhiDevice.AllocateDescriptorSet(*m_FramePool, *m_FrameLayout);
+            set->WriteUniformBuffer(0, *ubo);
+            set->Flush();
+
+            m_FrameUniforms.push_back(std::move(ubo));
+            m_FrameSets.push_back(std::move(set));
+        }
+
+        // Render pass: depth-only (no color attachments)
+        RHI::RenderPassDesc rpDesc;
+        rpDesc.m_DepthAttachment = RHI::AttachmentDesc{
+            resourceManager.GetRHIDepthBuffer().GetFormat(),
+            RHI::LoadOp::Clear,
+            RHI::StoreOp::Store,
+            RHI::LoadOp::DontCare,
+            RHI::StoreOp::DontCare,
+            RHI::ImageLayout::Undefined,
+            RHI::ImageLayout::DepthStencilReadOnly
         };
-        m_FrameAllocator = std::make_unique<Wrappers::DescriptorAllocator>(device, MAX_FRAMES_IN_FLIGHT, sizes);
+        m_RenderPass = rhiDevice.CreateRenderPass(rpDesc);
 
-        Wrappers::DescriptorLayoutBuilder builder;
-        builder.AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-        m_FrameLayout = std::make_unique<Wrappers::DescriptorSetLayout>(device, builder, VK_SHADER_STAGE_VERTEX_BIT);
+        // Shaders
+        auto vertexShader = rhiDevice.CreateShader(
+            "/Shaders/Shaders/DepthPrepass/Base.vert.spv",
+            RHI::ShaderStage::Vertex);
 
-        m_FrameUniforms.clear();
-        m_FrameSets.clear();
-        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
-        {
-            Wrappers::UBO<DepthPrepassFrameUniform> frameUniformBuffer(device);
-            m_FrameUniforms.push_back(std::move(frameUniformBuffer));
-        }
+        // Pipeline
+        RHI::GraphicsPipelineDesc pipelineDesc;
+        pipelineDesc.m_VertexShader   = vertexShader.get();
+        pipelineDesc.m_FragmentShader = nullptr; // depth-only pass
 
-        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
-        {
-            VkDescriptorBufferInfo bufferInfo{};
-            bufferInfo.buffer = m_FrameUniforms[i].GetNativeBuffer();
-            bufferInfo.offset = 0;
-            bufferInfo.range = m_FrameUniforms[i].GetBufferSize();
+        pipelineDesc.m_VertexBindings  = { { 0, 3 * sizeof(float), RHI::VertexInputRate::PerVertex } };
+        pipelineDesc.m_VertexAttributes = { { 0, 0, RHI::Format::R32G32B32Float, 0 } };
 
-            Wrappers::DescriptorWrites write{};
-            write.dstBinding = 0;
-            write.dstArrayElement = 0;
-            write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            write.descriptorCount = 1;
-            write.pBufferInfo = &bufferInfo;
-            write.pNext = nullptr;
-            std::vector<Wrappers::DescriptorWrites> writes;
-            writes.push_back(write);
+        pipelineDesc.m_Topology          = RHI::PrimitiveTopology::TriangleList;
+        pipelineDesc.m_CullMode          = RHI::CullMode::Front;
+        pipelineDesc.m_FillMode          = RHI::FillMode::Solid;
+        pipelineDesc.m_DepthTestEnable   = true;
+        pipelineDesc.m_DepthWriteEnable  = true;
+        pipelineDesc.m_DepthCompareOp    = RHI::CompareOp::Less;
 
-            Wrappers::DescriptorSet descriptorSet(vulkanContext.GetDevice(), *m_FrameAllocator, *m_FrameLayout);
-            descriptorSet.Update(vulkanContext.GetDevice(), writes);
-            m_FrameSets.push_back(std::move(descriptorSet));
-        }
+        pipelineDesc.m_DescriptorSetLayouts = { m_FrameLayout.get() };
+        pipelineDesc.m_PushConstantRanges   = {
+            { RHI::ShaderStage::Vertex, 0, static_cast<uint32_t>(sizeof(DepthPrePassPushConstants)) }
+        };
+        pipelineDesc.m_RenderPass = m_RenderPass.get();
 
-        DepthPrePassInfo info{ resourceManager.GetDepthBuffer().GetFormat()};
-        m_RenderPass = std::make_unique<Wrappers::RenderPass>(device, info.GetInfo());
+        m_Pipeline = rhiDevice.CreateGraphicsPipeline(pipelineDesc);
 
-        std::unique_ptr<Wrappers::PipelineInfo> pipelineInfo = std::make_unique<DepthPrePassPipelineInfo>(device);
-        std::vector<VkDescriptorSetLayout> descriptorLayouts = { m_FrameLayout->GetNativeLayout() };
-
-        VkPushConstantRange pushConstant;
-        pushConstant.offset = 0;
-        pushConstant.size = sizeof(DepthPrePassPushConstants);
-        pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-        std::vector<VkPushConstantRange> pushConstants = { pushConstant };
-        m_Pipeline = std::make_unique<Wrappers::Pipeline>(device, *m_RenderPass, descriptorLayouts, pushConstants, *pipelineInfo);
-
-        std::vector<VkImageView> attacments = { resourceManager.GetDepthBuffer().GetNativeView()};
-        m_FrameBuffer = std::make_unique<Wrappers::FrameBuffer>(
-            device,
-            attacments,
-            vulkanContext.GetSwapChain().GetSwapChainExtent(),
-            *m_RenderPass);
-
-        pipelineInfo->Cleanup(vulkanContext.GetDevice());
+        // Framebuffer
+        const auto& depthBuffer = resourceManager.GetRHIDepthBuffer();
+        RHI::FramebufferDesc fbDesc;
+        fbDesc.m_RenderPass      = m_RenderPass.get();
+        fbDesc.m_DepthAttachment = &depthBuffer;
+        fbDesc.m_Width           = depthBuffer.GetWidth();
+        fbDesc.m_Height          = depthBuffer.GetHeight();
+        m_FrameBuffer = rhiDevice.CreateFramebuffer(fbDesc);
     }
 
     DepthPrePass::~DepthPrePass()
     {
     }
 
+    void DepthPrePass::Render(Context::Context& context, const ResourceManager& resourceManager)
+    {
+        auto& frameContext  = context.GetFrameContext();
+        auto& threadContext = context.GetThreadContext();
+        auto& engineContext = context.GetEngineContext();
+
+        auto& commandList = threadContext.GetCommandList();
+        const uint32_t frameIndex = threadContext.GetFrameIndex();
+
+        // Update frame uniform
+        DepthPrepassFrameUniform ubo{};
+        ubo.m_ViewProj = frameContext.GetCameraProjMatrix() * frameContext.GetCameraViewMatrix();
+        m_FrameUniforms[frameIndex]->CopyData(&ubo, sizeof(ubo));
+
+        // Begin render pass
+        RHI::ClearValue depthClear;
+        depthClear.m_DepthStencil = { 1.0f, 0 };
+
+        commandList.BeginRenderPass(*m_RenderPass, *m_FrameBuffer, { depthClear });
+
+        const uint32_t width  = m_FrameBuffer->GetWidth();
+        const uint32_t height = m_FrameBuffer->GetHeight();
+
+        commandList.BindPipeline(*m_Pipeline);
+        commandList.SetViewport({ 0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height), 0.0f, 1.0f });
+        commandList.SetScissor({ 0, 0, width, height });
+
+        auto& meshContainer = engineContext.GetMeshContainer();
+        auto& posBuffer = const_cast<RHI::IRHIBuffer&>(meshContainer.GetRHIPositionsBuffer());
+        commandList.BindVertexBuffers(0, { &posBuffer }, { 0 });
+
+        auto& idxBuffer = const_cast<RHI::IRHIBuffer&>(meshContainer.GetRHIIndexBuffer());
+        commandList.BindIndexBuffer(idxBuffer, RHI::IndexType::Uint32);
+
+        commandList.BindDescriptorSet(*m_Pipeline, 0, *m_FrameSets[frameIndex]);
+
+        auto& drawListContainer = engineContext.GetDrawListContainer();
+        for (const auto& drawNode : drawListContainer.GetOpaqueList())
+        {
+            for (const auto& object : drawNode.objects)
+            {
+                commandList.PushConstants(
+                    *m_Pipeline,
+                    RHI::ShaderStage::Vertex,
+                    0,
+                    static_cast<uint32_t>(sizeof(DepthPrePassPushConstants)),
+                    &object.objMatrix);
+
+                const auto& mesh = meshContainer.GetMesh(object.meshIndex);
+                commandList.DrawIndexed(mesh.GetIndexCount(), 1, mesh.GetFirstIndex(), mesh.GetVertexOffset(), 0);
+            }
+        }
+
+        commandList.EndRenderPass();
+    }
+
     void DepthPrePass::Cleanup(const Context::Context& context)
     {
-        auto& vulkanContext = context.GetVulkanContext();
-        auto& device = vulkanContext.GetDevice();
+        context.GetVulkanContext().GetRHIDevice().WaitIdle();
 
-        m_Pipeline->Cleanup(device);
-        m_FrameBuffer->Cleanup(device);
-        m_RenderPass->Cleanup(device);
-
-        for (auto& frameUniform : m_FrameUniforms)
-        {
-            frameUniform.Cleanup(device);
-        }
-        m_FrameUniforms.clear();
-
-        for (auto& frameSet : m_FrameSets)
-        {
-            frameSet.Cleanup(device, *m_FrameAllocator);
-        }
         m_FrameSets.clear();
-
-        m_FrameLayout->Cleanup(device);
-        m_FrameAllocator->Cleanup(device);
-
+        m_FrameUniforms.clear();
+        m_Pipeline.reset();
+        m_FrameBuffer.reset();
+        m_RenderPass.reset();
+        m_FramePool.reset();
+        m_FrameLayout.reset();
     }
 
     void DepthPrePass::ResizeResources(const Context::Context& context, const ResourceManager& resourceManager)
     {
-        auto& vulkanContext = context.GetVulkanContext();
-        m_FrameBuffer->Cleanup(vulkanContext.GetDevice());
+        auto& rhiDevice = context.GetVulkanContext().GetRHIDevice();
+        const auto& depthBuffer = resourceManager.GetRHIDepthBuffer();
 
-        std::vector<VkImageView> attacments = { resourceManager.GetDepthBuffer().GetNativeView() };
-        m_FrameBuffer = std::make_unique<Wrappers::FrameBuffer>(
-            vulkanContext.GetDevice(),
-            attacments,
-            vulkanContext.GetSwapChain().GetSwapChainExtent(),
-            *m_RenderPass);
+        m_FrameBuffer.reset();
+
+        RHI::FramebufferDesc fbDesc;
+        fbDesc.m_RenderPass      = m_RenderPass.get();
+        fbDesc.m_DepthAttachment = &depthBuffer;
+        fbDesc.m_Width           = depthBuffer.GetWidth();
+        fbDesc.m_Height          = depthBuffer.GetHeight();
+        m_FrameBuffer = rhiDevice.CreateFramebuffer(fbDesc);
     }
 
-
 }
-

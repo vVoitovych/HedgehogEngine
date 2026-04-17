@@ -13,7 +13,7 @@ class IRHIRenderPass;
 
 struct GraphicsPipelineDesc
 {
-    // Shader stages (both required for a graphics pipeline)
+    // Vertex shader is required. Fragment shader may be null for depth-only passes.
     IRHIShader*                           m_VertexShader   = nullptr;
     IRHIShader*                           m_FragmentShader = nullptr;
 
