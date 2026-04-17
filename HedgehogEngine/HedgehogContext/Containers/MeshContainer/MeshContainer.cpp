@@ -5,6 +5,9 @@
 #include "HedgehogWrappers/Wrappeers/Device/Device.hpp"
 #include "HedgehogWrappers/Wrappeers/Resources/Buffer/Buffer.hpp"
 
+#include "RHI/api/IRHIDevice.hpp"
+#include "RHI/api/IRHICommandList.hpp"
+
 #include "Scene/Scene.hpp"
 
 #include "Logger/api/Logger.hpp"
@@ -16,8 +19,9 @@ namespace Context
 {
 namespace
 {
+    // Legacy: upload data via Wrappers staging buffer.
     template<typename T>
-    void CreateBuffer(const VulkanContext& context, const std::vector<T> data, std::unique_ptr<Wrappers::Buffer>& buffer)
+    void CreateBuffer(const VulkanContext& context, const std::vector<T>& data, std::unique_ptr<Wrappers::Buffer>& buffer)
     {
         auto& device = context.GetDevice();
         VkDeviceSize size = sizeof(T) * data.size();
@@ -38,6 +42,30 @@ namespace
         device.CopyBufferToBuffer(stagingBuffer.GetNativeBuffer(), buffer->GetNativeBuffer(), size);
 
         stagingBuffer.DestroyBuffer(device);
+    }
+
+    // New RHI path: upload data via RHI staging buffer.
+    template<typename T>
+    void CreateRHIBuffer(const VulkanContext& context, const std::vector<T>& data,
+                         bool isIndex, std::unique_ptr<RHI::IRHIBuffer>& outBuffer)
+    {
+        auto& rhiDevice = context.GetRHIDevice();
+        size_t size = sizeof(T) * data.size();
+
+        auto stagingBuffer = rhiDevice.CreateBuffer(
+            size, RHI::BufferUsage::TransferSrc, RHI::MemoryUsage::CpuToGpu);
+        stagingBuffer->CopyData(data.data(), size);
+
+        RHI::BufferUsage gpuUsage = isIndex
+            ? (RHI::BufferUsage::TransferDst | RHI::BufferUsage::IndexBuffer)
+            : (RHI::BufferUsage::TransferDst | RHI::BufferUsage::VertexBuffer);
+
+        outBuffer = rhiDevice.CreateBuffer(size, gpuUsage, RHI::MemoryUsage::GpuOnly);
+
+        rhiDevice.ExecuteImmediately([&](RHI::IRHICommandList& cmd)
+        {
+            cmd.CopyBufferToBuffer(*stagingBuffer, *outBuffer, 0, 0, size);
+        });
     }
 }
 
@@ -121,6 +149,11 @@ namespace
         CreateBuffer(context, normals, m_AdditionalNormalsBuffer);
         CreateBuffer(context, indices, m_AdditionalIndexBuffer);
 
+        CreateRHIBuffer(context, positions, /*isIndex=*/false, m_AdditionalRHIPositionsBuffer);
+        CreateRHIBuffer(context, texCoords, /*isIndex=*/false, m_AdditionalRHITexCoordsBuffer);
+        CreateRHIBuffer(context, normals,   /*isIndex=*/false, m_AdditionalRHINormalsBuffer);
+        CreateRHIBuffer(context, indices,   /*isIndex=*/true,  m_AdditionalRHIIndexBuffer);
+
         m_IsSwapped = true;
     }
 
@@ -164,6 +197,29 @@ namespace
                 m_IndexBuffer = std::move(m_AdditionalIndexBuffer);
                 m_AdditionalIndexBuffer = nullptr;
             }
+
+            // Swap RHI buffers (unique_ptr reset releases the old GPU allocation).
+            if (m_AdditionalRHIPositionsBuffer != nullptr)
+            {
+                m_RHIPositionsBuffer = std::move(m_AdditionalRHIPositionsBuffer);
+                m_AdditionalRHIPositionsBuffer = nullptr;
+            }
+            if (m_AdditionalRHITexCoordsBuffer != nullptr)
+            {
+                m_RHITexCoordsBuffer = std::move(m_AdditionalRHITexCoordsBuffer);
+                m_AdditionalRHITexCoordsBuffer = nullptr;
+            }
+            if (m_AdditionalRHINormalsBuffer != nullptr)
+            {
+                m_RHINormalsBuffer = std::move(m_AdditionalRHINormalsBuffer);
+                m_AdditionalRHINormalsBuffer = nullptr;
+            }
+            if (m_AdditionalRHIIndexBuffer != nullptr)
+            {
+                m_RHIIndexBuffer = std::move(m_AdditionalRHIIndexBuffer);
+                m_AdditionalRHIIndexBuffer = nullptr;
+            }
+
             m_IsSwapped = false;
         }
         auto& meshes = scene.GetMeshes();
@@ -196,6 +252,18 @@ namespace
             m_AdditionalNormalsBuffer->DestroyBuffer(device);
         if (m_AdditionalIndexBuffer != nullptr)
             m_AdditionalIndexBuffer->DestroyBuffer(device);
+
+        // RHI buffers are destroyed when unique_ptrs go out of scope.
+        // Reset explicitly here so the device is still alive when destructors run.
+        context.GetRHIDevice().WaitIdle();
+        m_RHIPositionsBuffer.reset();
+        m_RHITexCoordsBuffer.reset();
+        m_RHINormalsBuffer.reset();
+        m_RHIIndexBuffer.reset();
+        m_AdditionalRHIPositionsBuffer.reset();
+        m_AdditionalRHITexCoordsBuffer.reset();
+        m_AdditionalRHINormalsBuffer.reset();
+        m_AdditionalRHIIndexBuffer.reset();
     }
 
     const VkBuffer& MeshContainer::GetPositionsBuffer() const
@@ -224,6 +292,34 @@ namespace
         if (!m_IsSwapped)
             return m_IndexBuffer->GetNativeBuffer();
         return m_AdditionalIndexBuffer->GetNativeBuffer();
+    }
+
+    const RHI::IRHIBuffer& MeshContainer::GetRHIPositionsBuffer() const
+    {
+        if (!m_IsSwapped)
+            return *m_RHIPositionsBuffer;
+        return *m_AdditionalRHIPositionsBuffer;
+    }
+
+    const RHI::IRHIBuffer& MeshContainer::GetRHITexCoordsBuffer() const
+    {
+        if (!m_IsSwapped)
+            return *m_RHITexCoordsBuffer;
+        return *m_AdditionalRHITexCoordsBuffer;
+    }
+
+    const RHI::IRHIBuffer& MeshContainer::GetRHINormalsBuffer() const
+    {
+        if (!m_IsSwapped)
+            return *m_RHINormalsBuffer;
+        return *m_AdditionalRHINormalsBuffer;
+    }
+
+    const RHI::IRHIBuffer& MeshContainer::GetRHIIndexBuffer() const
+    {
+        if (!m_IsSwapped)
+            return *m_RHIIndexBuffer;
+        return *m_AdditionalRHIIndexBuffer;
     }
 
     const Mesh& MeshContainer::GetMesh(size_t index) const

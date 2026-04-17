@@ -269,4 +269,39 @@ void VulkanCommandList::CopyBufferToTexture(const IRHIBuffer& src, IRHITexture& 
         1, &region);
 }
 
+void VulkanCommandList::CopyTextureToTexture(const IRHITexture& src, IRHITexture& dst)
+{
+    const auto& vkSrc = static_cast<const VulkanTexture&>(src);
+    auto&       vkDst = static_cast<VulkanTexture&>(dst);
+
+    VkImageBlit2 region{ VK_STRUCTURE_TYPE_IMAGE_BLIT_2 };
+
+    region.srcSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.srcSubresource.mipLevel       = 0;
+    region.srcSubresource.baseArrayLayer = 0;
+    region.srcSubresource.layerCount     = 1;
+    region.srcOffsets[0]                 = { 0, 0, 0 };
+    region.srcOffsets[1]                 = { static_cast<int32_t>(vkSrc.GetWidth()),
+                                             static_cast<int32_t>(vkSrc.GetHeight()), 1 };
+
+    region.dstSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.dstSubresource.mipLevel       = 0;
+    region.dstSubresource.baseArrayLayer = 0;
+    region.dstSubresource.layerCount     = 1;
+    region.dstOffsets[0]                 = { 0, 0, 0 };
+    region.dstOffsets[1]                 = { static_cast<int32_t>(vkDst.GetWidth()),
+                                             static_cast<int32_t>(vkDst.GetHeight()), 1 };
+
+    VkBlitImageInfo2 blitInfo{ VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2 };
+    blitInfo.srcImage       = vkSrc.GetHandle();
+    blitInfo.srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    blitInfo.dstImage       = vkDst.GetHandle();
+    blitInfo.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    blitInfo.regionCount    = 1;
+    blitInfo.pRegions       = &region;
+    blitInfo.filter         = VK_FILTER_LINEAR;
+
+    vkCmdBlitImage2(m_CommandBuffer, &blitInfo);
+}
+
 } // namespace RHI

@@ -17,6 +17,14 @@ namespace Wrappers
     class Buffer;
 }
 
+namespace RHI
+{
+    class IRHIDescriptorSetLayout;
+    class IRHIDescriptorPool;
+    class IRHIDescriptorSet;
+    class IRHIBuffer;
+}
+
 namespace Context
 {
     struct MaterialData;
@@ -47,9 +55,14 @@ namespace Context
 
         void LoadBaseTexture(size_t index, const VulkanContext& context, const TextureContainer& textureContainer);
 
+        // Legacy Wrappers API (kept until ForwardPass is migrated).
         const Wrappers::DescriptorSetLayout& GetDescriptorSetLayout() const;
-        const Wrappers::DescriptorSet& GetDescriptorSet(size_t index) const;
-        Wrappers::DescriptorSet& GetDescriptorSet(size_t index);
+        const Wrappers::DescriptorSet&       GetDescriptorSet(size_t index) const;
+        Wrappers::DescriptorSet&             GetDescriptorSet(size_t index);
+
+        // New RHI API.
+        const RHI::IRHIDescriptorSetLayout& GetRHIDescriptorSetLayout() const;
+        const RHI::IRHIDescriptorSet&       GetRHIDescriptorSet(size_t index) const;
 
         MaterialData& GetMaterialDataByIndex(size_t index);
         const MaterialData& GetMaterialDataByIndex(size_t index) const;
@@ -68,11 +81,17 @@ namespace Context
 
         std::vector<MaterialData> m_Materials;
 
+        // Legacy Wrappers objects (removed once ForwardPass is migrated).
         std::unique_ptr<Wrappers::DescriptorSetLayout> m_Layout;
         std::unique_ptr<Wrappers::DescriptorAllocator> m_DescriptorAllocator;
-        std::vector<Wrappers::Buffer> m_MaterialUniforms;
-        std::vector<Wrappers::DescriptorSet> m_DescriptorSets;
+        std::vector<Wrappers::Buffer>                  m_MaterialUniforms;
+        std::vector<Wrappers::DescriptorSet>           m_DescriptorSets;
 
+        // RHI objects — authoritative going forward.
+        std::unique_ptr<RHI::IRHIDescriptorSetLayout>        m_RHILayout;
+        std::unique_ptr<RHI::IRHIDescriptorPool>             m_RHIDescriptorPool;
+        std::vector<std::unique_ptr<RHI::IRHIBuffer>>        m_RHIMaterialUniforms;
+        std::vector<std::unique_ptr<RHI::IRHIDescriptorSet>> m_RHIDescriptorSets;
     };
 
 }

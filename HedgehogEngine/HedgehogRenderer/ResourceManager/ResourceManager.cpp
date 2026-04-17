@@ -10,6 +10,8 @@
 #include "HedgehogWrappers/Wrappeers/SwapChain/SwapChain.hpp"
 #include "HedgehogWrappers/Wrappeers/Resources/Image/Image.hpp"
 
+#include "RHI/api/IRHIDevice.hpp"
+
 #include "HedgehogCommon/api/RendererSettings.hpp"
 
 #include "Logger/api/Logger.hpp"
@@ -20,9 +22,13 @@ namespace Renderer
     {
         CreateColorBuffer(context);
         CreateDepthBuffer(context);
-
         CreateShadowMap(context);
         CreateShadowMask(context);
+
+        CreateRHIColorBuffer(context);
+        CreateRHIDepthBuffer(context);
+        CreateRHIShadowMap(context);
+        CreateRHIShadowMask(context);
     }
 
     ResourceManager::~ResourceManager()
@@ -34,9 +40,15 @@ namespace Renderer
         auto& vulkanContext = context.GetVulkanContext();
         m_ColorBuffer->Cleanup(vulkanContext.GetDevice());
         m_DepthBuffer->Cleanup(vulkanContext.GetDevice());
-
         m_ShadowMap->Cleanup(vulkanContext.GetDevice());
         m_ShadowMask->Cleanup(vulkanContext.GetDevice());
+
+        // RHI textures self-destruct via unique_ptr; wait for idle first.
+        vulkanContext.GetRHIDevice().WaitIdle();
+        m_RHIColorBuffer.reset();
+        m_RHIDepthBuffer.reset();
+        m_RHIShadowMap.reset();
+        m_RHIShadowMask.reset();
     }
 
     void ResourceManager::ResizeFrameBufferSizeDependenteResources(const Context::Context& context)
@@ -48,8 +60,16 @@ namespace Renderer
 
         CreateColorBuffer(context);
         CreateDepthBuffer(context);
-
         CreateShadowMask(context);
+
+        vulkanContext.GetRHIDevice().WaitIdle();
+        m_RHIColorBuffer.reset();
+        m_RHIDepthBuffer.reset();
+        m_RHIShadowMask.reset();
+
+        CreateRHIColorBuffer(context);
+        CreateRHIDepthBuffer(context);
+        CreateRHIShadowMask(context);
     }
 
     void ResourceManager::ResizeSettingsDependenteResources(const Context::Context& context)
@@ -60,8 +80,12 @@ namespace Renderer
         if (shadowmapSettings->IsDirty())
         {
             m_ShadowMap->Cleanup(context.GetVulkanContext().GetDevice());
-
             CreateShadowMap(context);
+
+            context.GetVulkanContext().GetRHIDevice().WaitIdle();
+            m_RHIShadowMap.reset();
+            CreateRHIShadowMap(context);
+
             shadowmapSettings->CleanDirtyState();
         }
     }
@@ -168,6 +192,95 @@ namespace Renderer
 
         vulkanContext.GetDevice().SetObjectName(reinterpret_cast<uint64_t>(m_ShadowMask->GetNativeImage()), VK_OBJECT_TYPE_IMAGE, "ShadowMask");
         LOGINFO("Shadow mask created");
+    }
+
+    // ── RHI creation helpers ──────────────────────────────────────────────────
+
+    void ResourceManager::CreateRHIColorBuffer(const Context::Context& context)
+    {
+        auto& vulkanContext = context.GetVulkanContext();
+        auto extend = vulkanContext.GetSwapChain().GetSwapChainExtent();
+
+        RHI::TextureDesc desc;
+        desc.m_Width  = extend.width;
+        desc.m_Height = extend.height;
+        desc.m_Format = RHI::Format::R16G16B16A16Unorm;
+        desc.m_Usage  = RHI::TextureUsage::ColorAttachment
+                      | RHI::TextureUsage::TransferSrc
+                      | RHI::TextureUsage::TransferDst
+                      | RHI::TextureUsage::Storage;
+
+        m_RHIColorBuffer = vulkanContext.GetRHIDevice().CreateTexture(desc);
+        LOGINFO("RHI color buffer created");
+    }
+
+    void ResourceManager::CreateRHIDepthBuffer(const Context::Context& context)
+    {
+        auto& vulkanContext = context.GetVulkanContext();
+        auto extend = vulkanContext.GetSwapChain().GetSwapChainExtent();
+
+        RHI::TextureDesc desc;
+        desc.m_Width  = extend.width;
+        desc.m_Height = extend.height;
+        desc.m_Format = vulkanContext.GetRHIDevice().GetPreferredDepthFormat();
+        desc.m_Usage  = RHI::TextureUsage::DepthStencil;
+
+        m_RHIDepthBuffer = vulkanContext.GetRHIDevice().CreateTexture(desc);
+        LOGINFO("RHI depth buffer created");
+    }
+
+    void ResourceManager::CreateRHIShadowMap(const Context::Context& context)
+    {
+        auto& vulkanContext = context.GetVulkanContext();
+        auto& settings = context.GetEngineContext().GetSettings();
+        auto& shadowmapSettings = settings.GetShadowmapSettings();
+        auto shadowmapSize = shadowmapSettings->GetShadowmapSize();
+
+        RHI::TextureDesc desc;
+        desc.m_Width  = shadowmapSize;
+        desc.m_Height = shadowmapSize;
+        desc.m_Format = vulkanContext.GetRHIDevice().GetPreferredDepthFormat();
+        desc.m_Usage  = RHI::TextureUsage::DepthStencil;
+
+        m_RHIShadowMap = vulkanContext.GetRHIDevice().CreateTexture(desc);
+        LOGINFO("RHI shadow map created");
+    }
+
+    void ResourceManager::CreateRHIShadowMask(const Context::Context& context)
+    {
+        auto& vulkanContext = context.GetVulkanContext();
+        auto extend = vulkanContext.GetSwapChain().GetSwapChainExtent();
+
+        RHI::TextureDesc desc;
+        desc.m_Width  = extend.width;
+        desc.m_Height = extend.height;
+        desc.m_Format = RHI::Format::R16Float;
+        desc.m_Usage  = RHI::TextureUsage::Sampled | RHI::TextureUsage::Storage;
+
+        m_RHIShadowMask = vulkanContext.GetRHIDevice().CreateTexture(desc);
+        LOGINFO("RHI shadow mask created");
+    }
+
+    // ── RHI accessors ────────────────────────────────────────────────────────
+
+    const RHI::IRHITexture& ResourceManager::GetRHIColorBuffer() const
+    {
+        return *m_RHIColorBuffer;
+    }
+
+    const RHI::IRHITexture& ResourceManager::GetRHIDepthBuffer() const
+    {
+        return *m_RHIDepthBuffer;
+    }
+
+    const RHI::IRHITexture& ResourceManager::GetRHIShadowMap() const
+    {
+        return *m_RHIShadowMap;
+    }
+
+    const RHI::IRHITexture& ResourceManager::GetRHIShadowMask() const
+    {
+        return *m_RHIShadowMask;
     }
 
 }

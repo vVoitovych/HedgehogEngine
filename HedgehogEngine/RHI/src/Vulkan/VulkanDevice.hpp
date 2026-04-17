@@ -76,6 +76,8 @@ public:
         const std::vector<IRHISemaphore*>& signalSemaphores,
         IRHIFence*                         signalFence) override;
 
+    Format GetPreferredDepthFormat() const override;
+
     void ExecuteImmediately(std::function<void(IRHICommandList&)> func) override;
 
     void WaitIdle() override;

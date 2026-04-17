@@ -99,6 +99,10 @@ public:
 
     virtual void WaitIdle() = 0;
 
+    // Returns the best depth format supported by the device.
+    // Preference order: D32Float → D24UnormS8Uint → D16Unorm.
+    virtual Format GetPreferredDepthFormat() const = 0;
+
     // ── Backend factory ───────────────────────────────────────────────────────
 
     // nativeWindowHandle: GLFWwindow* on GLFW-based platforms.

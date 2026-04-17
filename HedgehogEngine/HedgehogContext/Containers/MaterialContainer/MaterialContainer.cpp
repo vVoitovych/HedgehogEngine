@@ -14,6 +14,9 @@
 #include "HedgehogContext/Context/VulkanContext.hpp"
 #include "HedgehogCommon/api/RendererSettings.hpp"
 
+#include "RHI/api/IRHIDevice.hpp"
+#include "RHI/api/IRHIDescriptor.hpp"
+
 #include "DialogueWindows/MaterialDialogue/MaterialDialogue.hpp"
 #include "DialogueWindows/TextureDialogue/TextureDialogue.hpp"
 
@@ -26,18 +29,33 @@ namespace Context
     MaterialContainer::MaterialContainer(const VulkanContext& context)
     {
         uint32_t materialCount = MAX_MATERIAL_COUNT;
+
+        // Legacy Wrappers descriptor objects.
         std::vector<Wrappers::PoolSizeRatio> sizes =
         {
             { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1},
             { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_TEXTURES_PER_MATERIAL }
         };
-
         m_DescriptorAllocator = std::make_unique<Wrappers::DescriptorAllocator>(context.GetDevice(), materialCount, sizes);
 
         Wrappers::DescriptorLayoutBuilder builder;
         builder.AddBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
         builder.AddBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
         m_Layout = std::make_unique<Wrappers::DescriptorSetLayout>(context.GetDevice(), builder, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+        // New RHI descriptor objects.
+        auto& rhiDevice = context.GetRHIDevice();
+        std::vector<RHI::DescriptorBinding> rhiBindings = {
+            { 0, RHI::DescriptorType::UniformBuffer,         1, RHI::ShaderStage::Fragment },
+            { 1, RHI::DescriptorType::CombinedImageSampler,  1, RHI::ShaderStage::Fragment },
+        };
+        m_RHILayout = rhiDevice.CreateDescriptorSetLayout(rhiBindings);
+
+        std::vector<RHI::PoolSize> poolSizes = {
+            { RHI::DescriptorType::UniformBuffer,        materialCount },
+            { RHI::DescriptorType::CombinedImageSampler, materialCount * MAX_TEXTURES_PER_MATERIAL },
+        };
+        m_RHIDescriptorPool = rhiDevice.CreateDescriptorPool(materialCount, poolSizes);
     }
 
     MaterialContainer::~MaterialContainer()
@@ -116,6 +134,14 @@ namespace Context
         writes[1].pImageInfo = &imageInfo;
 
         m_DescriptorSets[index].Update(context.GetDevice(), writes);
+
+        // Update RHI UBO and re-write the RHI descriptor set.
+        m_RHIMaterialUniforms[index]->CopyData(&materialData, sizeof(materialData));
+        m_RHIDescriptorSets[index]->WriteUniformBuffer(0, *m_RHIMaterialUniforms[index]);
+        m_RHIDescriptorSets[index]->WriteTexture(1,
+            textureContainer.GetRHITexture(context, m_Materials[index].baseColor),
+            textureContainer.GetRHISampler(context, SamplerType::Linear));
+        m_RHIDescriptorSets[index]->Flush();
     }
 
     void MaterialContainer::CreateMaterialResources(MaterialData& data, const VulkanContext& context, const TextureContainer& textureContainer)
@@ -160,8 +186,22 @@ namespace Context
 
         Wrappers::DescriptorSet descriptorSet(context.GetDevice(), *m_DescriptorAllocator, *m_Layout);
         descriptorSet.Update(context.GetDevice(), writes);
-
         m_DescriptorSets.push_back(std::move(descriptorSet));
+
+        // New RHI path — CpuToGpu uniform avoids a staging copy for the tiny MaterialUniform struct.
+        auto& rhiDevice = context.GetRHIDevice();
+        auto rhiUniform = rhiDevice.CreateBuffer(
+            sizeof(MaterialUniform), RHI::BufferUsage::UniformBuffer, RHI::MemoryUsage::CpuToGpu);
+        rhiUniform->CopyData(&materialData, sizeof(materialData));
+        m_RHIMaterialUniforms.push_back(std::move(rhiUniform));
+
+        auto rhiSet = rhiDevice.AllocateDescriptorSet(*m_RHIDescriptorPool, *m_RHILayout);
+        rhiSet->WriteUniformBuffer(0, *m_RHIMaterialUniforms.back());
+        rhiSet->WriteTexture(1,
+            textureContainer.GetRHITexture(context, data.baseColor),
+            textureContainer.GetRHISampler(context, SamplerType::Linear));
+        rhiSet->Flush();
+        m_RHIDescriptorSets.push_back(std::move(rhiSet));
 
         data.isDirty = false;
     }
@@ -180,6 +220,13 @@ namespace Context
         m_MaterialUniforms.clear();
         m_Layout->Cleanup(context.GetDevice());
         m_DescriptorAllocator->Cleanup(context.GetDevice());
+
+        // RHI resources self-destruct via unique_ptr; wait for idle first.
+        context.GetRHIDevice().WaitIdle();
+        m_RHIDescriptorSets.clear();
+        m_RHIMaterialUniforms.clear();
+        m_RHIDescriptorPool.reset();
+        m_RHILayout.reset();
     }
 
     void MaterialContainer::ClearMaterials()
@@ -234,6 +281,16 @@ namespace Context
     Wrappers::DescriptorSet& MaterialContainer::GetDescriptorSet(size_t index)
     {
         return m_DescriptorSets[index];
+    }
+
+    const RHI::IRHIDescriptorSetLayout& MaterialContainer::GetRHIDescriptorSetLayout() const
+    {
+        return *m_RHILayout;
+    }
+
+    const RHI::IRHIDescriptorSet& MaterialContainer::GetRHIDescriptorSet(size_t index) const
+    {
+        return *m_RHIDescriptorSets[index];
     }
 
     MaterialData& MaterialContainer::GetMaterialDataByIndex(size_t index)

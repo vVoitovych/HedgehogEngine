@@ -21,7 +21,8 @@ project "HedgehogRenderer"
         "%{LibraryDir.VulkanSDK}"
     }
 
-    links { 
+    links {
+        "RHI",
         "HedgehogMath",
         "HedgehogContext",
         "HedgehogWrappers",

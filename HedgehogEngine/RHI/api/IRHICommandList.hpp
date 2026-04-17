@@ -103,6 +103,11 @@ public:
     virtual void CopyBufferToTexture(const IRHIBuffer& src,
                                      IRHITexture&      dst) = 0;
 
+    // Blits src into dst using linear filtering (handles size mismatch).
+    // Both textures must already be in TransferSrc / TransferDst layout respectively.
+    virtual void CopyTextureToTexture(const IRHITexture& src,
+                                      IRHITexture&       dst) = 0;
+
 protected:
     IRHICommandList() = default;
 };

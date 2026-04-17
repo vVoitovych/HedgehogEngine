@@ -44,7 +44,7 @@ namespace Context
     void EngineContext::Cleanup(const VulkanContext& vulkanContext)
     {
         m_MeshContainer->Cleanup(vulkanContext);
-        m_TextureContainer->Cleanup(vulkanContext.GetDevice());
+        m_TextureContainer->Cleanup(vulkanContext);
         m_MaterialContainer->Cleanup(vulkanContext);
     }
 

@@ -72,6 +72,8 @@ public:
 
     void CopyBufferToTexture(const IRHIBuffer& src, IRHITexture& dst) override;
 
+    void CopyTextureToTexture(const IRHITexture& src, IRHITexture& dst) override;
+
     // Internal accessor
     VkCommandBuffer GetHandle() const { return m_CommandBuffer; }
 

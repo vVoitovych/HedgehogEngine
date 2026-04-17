@@ -12,6 +12,7 @@
 #include <vma/vk_mem_alloc.h>
 
 #include "VulkanDevice.hpp"
+#include "VulkanTypes.hpp"
 
 #include "VulkanBuffer.hpp"
 #include "VulkanCommandList.hpp"
@@ -25,7 +26,7 @@
 #include "VulkanSyncPrimitive.hpp"
 #include "VulkanTexture.hpp"
 
-#include "Logger/Logger.hpp"
+#include "Logger/api/Logger.hpp"
 
 #include <GLFW/glfw3.h>
 
@@ -544,6 +545,27 @@ void VulkanDevice::ExecuteImmediately(std::function<void(IRHICommandList&)> func
 void VulkanDevice::WaitIdle()
 {
     vkDeviceWaitIdle(m_Device);
+}
+
+Format VulkanDevice::GetPreferredDepthFormat() const
+{
+    // Candidates in preference order.
+    const VkFormat candidates[] = {
+        VK_FORMAT_D32_SFLOAT,
+        VK_FORMAT_D24_UNORM_S8_UINT,
+        VK_FORMAT_D16_UNORM,
+    };
+
+    for (VkFormat fmt : candidates)
+    {
+        VkFormatProperties props;
+        vkGetPhysicalDeviceFormatProperties(m_PhysicalDevice, fmt, &props);
+        if (props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
+            return VulkanTypes::FromVkFormat(fmt);
+    }
+
+    assert(false && "No suitable depth format found.");
+    return Format::D32Float;
 }
 
 } // namespace RHI

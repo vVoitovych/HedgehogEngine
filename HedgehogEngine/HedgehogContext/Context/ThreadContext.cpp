@@ -12,6 +12,10 @@
 #include "HedgehogWrappers/Wrappeers/Descriptors/DescriptorSet.hpp"
 #include "HedgehogWrappers/Wrappeers/Descriptors/DescriptorLayoutBuilder.hpp"
 
+#include "RHI/api/IRHIDevice.hpp"
+#include "RHI/api/IRHICommandList.hpp"
+#include "RHI/api/IRHISyncPrimitive.hpp"
+
 #include "HedgehogContext/Containers/LightContainer/LightContainer.hpp"
 #include "HedgehogCommon/api/EngineDebugBreak.hpp"
 #include "HedgehogCommon/api/RendererSettings.hpp"
@@ -24,6 +28,7 @@ namespace Context
 {
     ThreadContext::ThreadContext(const VulkanContext& vulkanContext)
     {
+        // Legacy Wrappers command buffers and sync objects.
         m_CommandBuffers.clear();
         m_SyncObjects.clear();
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
@@ -34,10 +39,15 @@ namespace Context
             m_SyncObjects.push_back(std::move(syncObject));
         }
 
-        std::vector<Wrappers::PoolSizeRatio> sizes =
+        // New RHI command lists and sync primitives.
+        auto& rhiDevice = vulkanContext.GetRHIDevice();
+        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
         {
-            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 }
-        };
+            m_CommandLists.push_back(rhiDevice.CreateCommandList());
+            m_Fences.push_back(rhiDevice.CreateFence(/*signaled=*/true));
+            m_ImageAvailableSemaphores.push_back(rhiDevice.CreateSemaphore());
+            m_RenderFinishedSemaphores.push_back(rhiDevice.CreateSemaphore());
+        }
 
         LOGINFO("Thread context Initialized");
     }
@@ -48,6 +58,14 @@ namespace Context
 
     void ThreadContext::Cleanup(const VulkanContext& vulkanContext)
     {
+        // Destroy RHI objects first (device must be idle before destruction).
+        vulkanContext.GetRHIDevice().WaitIdle();
+        m_CommandLists.clear();
+        m_Fences.clear();
+        m_ImageAvailableSemaphores.clear();
+        m_RenderFinishedSemaphores.clear();
+
+        // Destroy legacy Wrappers objects.
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
         {
             m_CommandBuffers[i].Cleanup(vulkanContext.GetDevice());
@@ -77,6 +95,26 @@ namespace Context
     Wrappers::SyncObject& ThreadContext::GetSyncObject()
     {
         return m_SyncObjects[m_FrameIndex];
+    }
+
+    RHI::IRHICommandList& ThreadContext::GetCommandList()
+    {
+        return *m_CommandLists[m_FrameIndex];
+    }
+
+    RHI::IRHIFence& ThreadContext::GetFence()
+    {
+        return *m_Fences[m_FrameIndex];
+    }
+
+    RHI::IRHISemaphore& ThreadContext::GetImageAvailableSemaphore()
+    {
+        return *m_ImageAvailableSemaphores[m_FrameIndex];
+    }
+
+    RHI::IRHISemaphore& ThreadContext::GetRenderFinishedSemaphore()
+    {
+        return *m_RenderFinishedSemaphores[m_FrameIndex];
     }
 
 }

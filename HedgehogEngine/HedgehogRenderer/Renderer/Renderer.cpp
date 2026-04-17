@@ -10,6 +10,7 @@
 #include "HedgehogWrappers/Wrappeers/Device/Device.hpp"
 #include "HedgehogWrappers/Wrappeers/SwapChain/SwapChain.hpp"
 #include "HedgehogSettings/Settings/HedgehogSettings.hpp"
+#include "RHI/api/IRHISwapchain.hpp"
 
 #include "Logger/api/Logger.hpp"
 
@@ -25,7 +26,7 @@ namespace Renderer
     Renderer::~Renderer()
     {
     }
-     
+
     void Renderer::Cleanup(const Context::Context& context)
     {
         vkQueueWaitIdle(context.GetVulkanContext().GetDevice().GetNativeGraphicsQueue());
@@ -35,7 +36,7 @@ namespace Renderer
     }
 
     void Renderer::DrawFrame(Context::Context& context)
-    {        
+    {
         auto& vulkanContext = context.GetVulkanContext();
         auto& settings = context.GetEngineContext().GetSettings();
         m_RenderQueue->UpdateData(context);
@@ -43,6 +44,11 @@ namespace Renderer
         {
             vkDeviceWaitIdle(vulkanContext.GetDevice().GetNativeDevice());
             vulkanContext.GetSwapChain().Recreate(vulkanContext.GetDevice());
+
+            // Also resize the RHI swapchain to keep both paths in sync.
+            const auto& swapChain = vulkanContext.GetSwapChain();
+            const auto extent = swapChain.GetSwapChainExtent();
+            vulkanContext.GetRHISwapchain().Resize(extent.width, extent.height);
 
             m_ResourceManager->ResizeFrameBufferSizeDependenteResources(context);
             m_RenderQueue->ResizeResources(context, *m_ResourceManager);
