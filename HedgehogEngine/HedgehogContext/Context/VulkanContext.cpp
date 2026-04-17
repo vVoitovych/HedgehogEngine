@@ -1,10 +1,6 @@
 #include "VulkanContext.hpp"
 
 #include "HedgehogWrappers/WindowManagment/WindowManager.hpp"
-#include "HedgehogWrappers/Wrappeers/Device/Device.hpp"
-#include "HedgehogWrappers/Wrappeers/SwapChain/SwapChain.hpp"
-#include "HedgehogCommon/api/RendererSettings.hpp"
-#include "HedgehogRenderer/RenderPasses/GuiPass/GuiPass.hpp"
 
 #include "RHI/api/IRHIDevice.hpp"
 #include "RHI/api/IRHISwapchain.hpp"
@@ -12,8 +8,6 @@
 #include "ContentLoader/api/TextureLoader.hpp"
 
 #include <GLFW/glfw3.h>
-#include <vector>
-
 
 namespace Context
 {
@@ -24,11 +18,6 @@ namespace Context
         texLoader.LoadTexture("Textures\\Logo\\logo1.png");
         m_WindowManager->SetIcon(texLoader.GetWidth(), texLoader.GetHeight(), static_cast<unsigned char*>(texLoader.GetData()));
 
-        // Legacy Wrappers device + swapchain (used by un-migrated render passes).
-        m_Device = std::make_unique<Wrappers::Device>(*m_WindowManager);
-        m_SwapChain = std::make_unique<Wrappers::SwapChain>(*m_Device, *m_WindowManager);
-
-        // New RHI device + swapchain (used by migrated render passes).
         m_RHIDevice = RHI::IRHIDevice::Create(m_WindowManager->GetGlfwWindow());
         int fbWidth = 0, fbHeight = 0;
         glfwGetFramebufferSize(m_WindowManager->GetGlfwWindow(), &fbWidth, &fbHeight);
@@ -43,14 +32,9 @@ namespace Context
 
     void VulkanContext::Cleanup()
     {
-        // Destroy RHI resources first (they are independent of legacy Wrappers objects).
         m_RHIDevice->WaitIdle();
         m_RHISwapchain.reset();
         m_RHIDevice.reset();
-
-        // Then destroy legacy Wrappers resources.
-        m_SwapChain->Cleanup(*m_Device);
-        m_Device->Cleanup();
     }
 
     void VulkanContext::HandleInput()
@@ -66,21 +50,6 @@ namespace Context
     const WinManager::WindowManager& VulkanContext::GetWindowManager() const
     {
         return *m_WindowManager;
-    }
-
-    const Wrappers::Device& VulkanContext::GetDevice() const
-    {
-        return *m_Device;
-    }
-
-    const Wrappers::SwapChain& VulkanContext::GetSwapChain() const
-    {
-        return *m_SwapChain;
-    }
-
-    Wrappers::SwapChain& VulkanContext::GetSwapChain()
-    {
-        return *m_SwapChain;
     }
 
     RHI::IRHIDevice& VulkanContext::GetRHIDevice()
@@ -123,5 +92,17 @@ namespace Context
         m_WindowResized = false;
     }
 
-}
+    void VulkanContext::RecreateSwapchain()
+    {
+        int fbWidth = 0, fbHeight = 0;
+        glfwGetFramebufferSize(m_WindowManager->GetGlfwWindow(), &fbWidth, &fbHeight);
+        while (fbWidth == 0 || fbHeight == 0)
+        {
+            glfwGetFramebufferSize(m_WindowManager->GetGlfwWindow(), &fbWidth, &fbHeight);
+            glfwWaitEvents();
+        }
+        m_RHIDevice->WaitIdle();
+        m_RHISwapchain->Resize(static_cast<uint32_t>(fbWidth), static_cast<uint32_t>(fbHeight));
+    }
 
+}

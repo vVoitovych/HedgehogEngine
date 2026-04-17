@@ -33,8 +33,7 @@ project "HedgehogContext"
         "Logger",
         "Scene",
         "imgui",
-        "yaml-cpp",
-        "vulkan-1"
+        "yaml-cpp"
     }
 
 
