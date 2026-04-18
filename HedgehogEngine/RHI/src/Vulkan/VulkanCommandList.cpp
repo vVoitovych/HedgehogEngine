@@ -72,9 +72,10 @@ void VulkanCommandList::BeginRenderPass(
     for (const auto& cv : clearValues)
     {
         VkClearValue vkCv{};
-        vkCv.color        = { cv.m_Color.m_R, cv.m_Color.m_G,
-                               cv.m_Color.m_B, cv.m_Color.m_A };
-        vkCv.depthStencil = { cv.m_DepthStencil.m_Depth, cv.m_DepthStencil.m_Stencil };
+        if (cv.m_IsDepth)
+            vkCv.depthStencil = { cv.m_DepthStencil.m_Depth, cv.m_DepthStencil.m_Stencil };
+        else
+            vkCv.color = { cv.m_Color.m_R, cv.m_Color.m_G, cv.m_Color.m_B, cv.m_Color.m_A };
         vkClearValues.push_back(vkCv);
     }
 

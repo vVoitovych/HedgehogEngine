@@ -87,7 +87,7 @@ namespace Renderer
         pipelineDesc.m_VertexAttributes = { { 0, 0, RHI::Format::R32G32B32Float, 0 } };
 
         pipelineDesc.m_Topology          = RHI::PrimitiveTopology::TriangleList;
-        pipelineDesc.m_CullMode          = RHI::CullMode::Front;
+        pipelineDesc.m_CullMode          = RHI::CullMode::Back;
         pipelineDesc.m_FillMode          = RHI::FillMode::Solid;
         pipelineDesc.m_DepthTestEnable   = true;
         pipelineDesc.m_DepthWriteEnable  = true;
@@ -131,6 +131,7 @@ namespace Renderer
 
         // Begin render pass
         RHI::ClearValue depthClear;
+        depthClear.m_IsDepth      = true;
         depthClear.m_DepthStencil = { 1.0f, 0 };
 
         commandList.BeginRenderPass(*m_RenderPass, *m_FrameBuffer, { depthClear });

@@ -248,9 +248,9 @@ struct ClearDepthStencilValue
     uint32_t m_Stencil = 0;
 };
 
-// A single clear value; fill m_Color or m_DepthStencil depending on attachment type.
 struct ClearValue
 {
+    bool                   m_IsDepth      = false;
     ClearColorValue        m_Color        = {};
     ClearDepthStencilValue m_DepthStencil = {};
 };

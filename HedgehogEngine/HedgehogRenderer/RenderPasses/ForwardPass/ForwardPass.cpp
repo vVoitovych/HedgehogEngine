@@ -104,7 +104,7 @@ namespace Renderer
         };
 
         pipelineDesc.m_Topology         = RHI::PrimitiveTopology::TriangleList;
-        pipelineDesc.m_CullMode         = RHI::CullMode::Front;
+        pipelineDesc.m_CullMode         = RHI::CullMode::Back;
         pipelineDesc.m_FillMode         = RHI::FillMode::Solid;
         pipelineDesc.m_DepthTestEnable  = true;
         pipelineDesc.m_DepthWriteEnable = false;   // depth pre-pass already wrote
@@ -172,6 +172,7 @@ namespace Renderer
         RHI::ClearValue colorClear;
         colorClear.m_Color = { 0.0f, 0.0f, 0.0f, 1.0f };
         RHI::ClearValue depthClear;
+        depthClear.m_IsDepth      = true;
         depthClear.m_DepthStencil = { 1.0f, 0 };
 
         commandList.BeginRenderPass(*m_RenderPass, *m_FrameBuffer, { colorClear, depthClear });

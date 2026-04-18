@@ -134,6 +134,7 @@ namespace Renderer
         auto& commandList = threadContext.GetCommandList();
 
         RHI::ClearValue depthClear;
+        depthClear.m_IsDepth      = true;
         depthClear.m_DepthStencil = { 1.0f, 0 };
 
         commandList.BeginRenderPass(*m_RenderPass, *m_FrameBuffer, { depthClear });
