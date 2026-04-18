@@ -1,6 +1,6 @@
 #pragma once
 
-#include "api/IRHIPipeline.hpp"
+#include "RHI/api/IRHIPipeline.hpp"
 
 #include <Volk/volk.h>
 

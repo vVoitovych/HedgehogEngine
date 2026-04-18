@@ -20,6 +20,8 @@
 #include "RHI/src/Vulkan/VulkanRenderPass.hpp"
 #include "RHI/src/Vulkan/VulkanCommandList.hpp"
 
+#include "HedgehogWrappers/WindowManagment/WindowManager.hpp"
+
 #include "imgui.h"
 #include "backends/imgui_impl_vulkan.h"
 #include "backends/imgui_impl_glfw.h"
@@ -37,7 +39,7 @@ namespace Renderer
 
         auto& vulkanContext = context.GetVulkanContext();
         auto& rhiDevice     = vulkanContext.GetRHIDevice();
-        auto& vkDevice      = static_cast<RHI::VulkanDevice&>(rhiDevice);
+        auto& vkDevice      = static_cast<const RHI::VulkanDevice&>(rhiDevice);
 
         // Raw VkDescriptorPool for ImGui (imgui_impl_vulkan requires a native pool)
         VkDescriptorPoolSize poolSizes[] = {
@@ -151,7 +153,7 @@ namespace Renderer
         ImGui_ImplGlfw_Shutdown();
         ImGui::DestroyContext();
 
-        auto& vkDevice = static_cast<RHI::VulkanDevice&>(context.GetVulkanContext().GetRHIDevice());
+        auto& vkDevice = static_cast<const RHI::VulkanDevice&>(context.GetVulkanContext().GetRHIDevice());
         vkDestroyDescriptorPool(vkDevice.GetHandle(), m_ImGuiPool, nullptr);
         m_ImGuiPool = VK_NULL_HANDLE;
 

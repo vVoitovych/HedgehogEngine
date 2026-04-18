@@ -1,10 +1,11 @@
 #pragma once
 
-#include "api/IRHISwapchain.hpp"
+#include "RHI/api/IRHISwapchain.hpp"
 #include "VulkanTexture.hpp"
 
 #include <Volk/volk.h>
 
+#include <memory>
 #include <vector>
 
 namespace RHI
@@ -48,8 +49,8 @@ private:
     uint32_t                   m_Width  = 0;
     uint32_t                   m_Height = 0;
 
-    std::vector<VkImageView>   m_ImageViews;
-    std::vector<VulkanTexture> m_Textures;
+    std::vector<VkImageView>                    m_ImageViews;
+    std::vector<std::unique_ptr<VulkanTexture>> m_Textures;
 };
 
 } // namespace RHI

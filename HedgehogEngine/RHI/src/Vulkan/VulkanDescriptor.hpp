@@ -1,6 +1,6 @@
 #pragma once
 
-#include "api/IRHIDescriptor.hpp"
+#include "RHI/api/IRHIDescriptor.hpp"
 
 #include <Volk/volk.h>
 

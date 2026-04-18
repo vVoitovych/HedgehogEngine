@@ -1,6 +1,6 @@
 #pragma once
 
-#include "api/IRHIShader.hpp"
+#include "RHI/api/IRHIShader.hpp"
 
 #include <Volk/volk.h>
 

@@ -36,54 +36,54 @@ public:
     virtual std::unique_ptr<IRHIBuffer> CreateBuffer(
         size_t      size,
         BufferUsage usage,
-        MemoryUsage memUsage) = 0;
+        MemoryUsage memUsage) const = 0;
 
-    virtual std::unique_ptr<IRHITexture> CreateTexture(const TextureDesc& desc) = 0;
+    virtual std::unique_ptr<IRHITexture> CreateTexture(const TextureDesc& desc) const = 0;
 
-    virtual std::unique_ptr<IRHISampler> CreateSampler(const SamplerDesc& desc) = 0;
+    virtual std::unique_ptr<IRHISampler> CreateSampler(const SamplerDesc& desc) const = 0;
 
     virtual std::unique_ptr<IRHIShader>  CreateShader(
         const std::string& filePath,
-        ShaderStage        stage) = 0;
+        ShaderStage        stage) const = 0;
 
     // ── Descriptor resources ─────────────────────────────────────────────────
 
     virtual std::unique_ptr<IRHIDescriptorSetLayout> CreateDescriptorSetLayout(
-        const std::vector<DescriptorBinding>& bindings) = 0;
+        const std::vector<DescriptorBinding>& bindings) const = 0;
 
     virtual std::unique_ptr<IRHIDescriptorPool> CreateDescriptorPool(
         uint32_t                     maxSets,
-        const std::vector<PoolSize>& poolSizes) = 0;
+        const std::vector<PoolSize>& poolSizes) const = 0;
 
     // Allocates a descriptor set from pool conforming to layout.
     virtual std::unique_ptr<IRHIDescriptorSet> AllocateDescriptorSet(
         const IRHIDescriptorPool&      pool,
-        const IRHIDescriptorSetLayout& layout) = 0;
+        const IRHIDescriptorSetLayout& layout) const = 0;
 
     // ── Render pipeline ───────────────────────────────────────────────────────
 
-    virtual std::unique_ptr<IRHIRenderPass>  CreateRenderPass(const RenderPassDesc& desc) = 0;
+    virtual std::unique_ptr<IRHIRenderPass>  CreateRenderPass(const RenderPassDesc& desc) const = 0;
 
-    virtual std::unique_ptr<IRHIFramebuffer> CreateFramebuffer(const FramebufferDesc& desc) = 0;
+    virtual std::unique_ptr<IRHIFramebuffer> CreateFramebuffer(const FramebufferDesc& desc) const = 0;
 
     virtual std::unique_ptr<IRHIPipeline>    CreateGraphicsPipeline(
-        const GraphicsPipelineDesc& desc) = 0;
+        const GraphicsPipelineDesc& desc) const = 0;
 
     // ── Command recording ─────────────────────────────────────────────────────
 
-    virtual std::unique_ptr<IRHICommandList> CreateCommandList() = 0;
+    virtual std::unique_ptr<IRHICommandList> CreateCommandList() const = 0;
 
     // ── Presentation ─────────────────────────────────────────────────────────
 
     // Creates a swapchain for the window that was passed to Create().
     virtual std::unique_ptr<IRHISwapchain> CreateSwapchain(
         uint32_t width,
-        uint32_t height) = 0;
+        uint32_t height) const = 0;
 
     // ── Synchronisation ───────────────────────────────────────────────────────
 
-    virtual std::unique_ptr<IRHIFence>     CreateFence(bool signaled = false) = 0;
-    virtual std::unique_ptr<IRHISemaphore> CreateSemaphore() = 0;
+    virtual std::unique_ptr<IRHIFence>     CreateFence(bool signaled = false) const = 0;
+    virtual std::unique_ptr<IRHISemaphore> CreateSemaphore() const = 0;
 
     // ── Submission ────────────────────────────────────────────────────────────
 
@@ -95,9 +95,9 @@ public:
 
     // Record, submit, and wait for a one-shot command list.
     // Convenience wrapper for texture uploads / layout transitions.
-    virtual void ExecuteImmediately(std::function<void(IRHICommandList&)> func) = 0;
+    virtual void ExecuteImmediately(std::function<void(IRHICommandList&)> func) const = 0;
 
-    virtual void WaitIdle() = 0;
+    virtual void WaitIdle() const = 0;
 
     // Returns the best depth format supported by the device.
     // Preference order: D32Float → D24UnormS8Uint → D16Unorm.

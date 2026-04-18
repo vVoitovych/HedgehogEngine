@@ -1,7 +1,7 @@
 #pragma once
 
-#include "api/IRHIBuffer.hpp"
-#include "api/RHITypes.hpp"
+#include "RHI/api/IRHIBuffer.hpp"
+#include "RHI/api/RHITypes.hpp"
 
 #include <Volk/volk.h>
 #include <vma/vk_mem_alloc.h>

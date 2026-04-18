@@ -398,81 +398,81 @@ bool VulkanDevice::CheckValidationLayerSupport() const
 // ── IRHIDevice resource creation ─────────────────────────────────────────────
 
 std::unique_ptr<IRHIBuffer> VulkanDevice::CreateBuffer(
-    size_t size, BufferUsage usage, MemoryUsage memUsage)
+    size_t size, BufferUsage usage, MemoryUsage memUsage) const
 {
-    return std::make_unique<VulkanBuffer>(*this, size, usage, memUsage);
+    return std::make_unique<VulkanBuffer>(const_cast<VulkanDevice&>(*this), size, usage, memUsage);
 }
 
-std::unique_ptr<IRHITexture> VulkanDevice::CreateTexture(const TextureDesc& desc)
+std::unique_ptr<IRHITexture> VulkanDevice::CreateTexture(const TextureDesc& desc) const
 {
-    return std::make_unique<VulkanTexture>(*this, desc);
+    return std::make_unique<VulkanTexture>(const_cast<VulkanDevice&>(*this), desc);
 }
 
-std::unique_ptr<IRHISampler> VulkanDevice::CreateSampler(const SamplerDesc& desc)
+std::unique_ptr<IRHISampler> VulkanDevice::CreateSampler(const SamplerDesc& desc) const
 {
-    return std::make_unique<VulkanSampler>(*this, desc);
+    return std::make_unique<VulkanSampler>(const_cast<VulkanDevice&>(*this), desc);
 }
 
 std::unique_ptr<IRHIShader> VulkanDevice::CreateShader(
-    const std::string& filePath, ShaderStage stage)
+    const std::string& filePath, ShaderStage stage) const
 {
-    return std::make_unique<VulkanShader>(*this, filePath, stage);
+    return std::make_unique<VulkanShader>(const_cast<VulkanDevice&>(*this), filePath, stage);
 }
 
 std::unique_ptr<IRHIDescriptorSetLayout> VulkanDevice::CreateDescriptorSetLayout(
-    const std::vector<DescriptorBinding>& bindings)
+    const std::vector<DescriptorBinding>& bindings) const
 {
-    return std::make_unique<VulkanDescriptorSetLayout>(*this, bindings);
+    return std::make_unique<VulkanDescriptorSetLayout>(const_cast<VulkanDevice&>(*this), bindings);
 }
 
 std::unique_ptr<IRHIDescriptorPool> VulkanDevice::CreateDescriptorPool(
-    uint32_t maxSets, const std::vector<PoolSize>& poolSizes)
+    uint32_t maxSets, const std::vector<PoolSize>& poolSizes) const
 {
-    return std::make_unique<VulkanDescriptorPool>(*this, maxSets, poolSizes);
+    return std::make_unique<VulkanDescriptorPool>(const_cast<VulkanDevice&>(*this), maxSets, poolSizes);
 }
 
 std::unique_ptr<IRHIDescriptorSet> VulkanDevice::AllocateDescriptorSet(
-    const IRHIDescriptorPool& pool, const IRHIDescriptorSetLayout& layout)
+    const IRHIDescriptorPool& pool, const IRHIDescriptorSetLayout& layout) const
 {
     const auto& vkPool   = static_cast<const VulkanDescriptorPool&>(pool);
     const auto& vkLayout = static_cast<const VulkanDescriptorSetLayout&>(layout);
-    return std::make_unique<VulkanDescriptorSet>(*this, vkPool, vkLayout);
+    return std::make_unique<VulkanDescriptorSet>(const_cast<VulkanDevice&>(*this), vkPool, vkLayout);
 }
 
-std::unique_ptr<IRHIRenderPass> VulkanDevice::CreateRenderPass(const RenderPassDesc& desc)
+std::unique_ptr<IRHIRenderPass> VulkanDevice::CreateRenderPass(const RenderPassDesc& desc) const
 {
-    return std::make_unique<VulkanRenderPass>(*this, desc);
+    return std::make_unique<VulkanRenderPass>(const_cast<VulkanDevice&>(*this), desc);
 }
 
-std::unique_ptr<IRHIFramebuffer> VulkanDevice::CreateFramebuffer(const FramebufferDesc& desc)
+std::unique_ptr<IRHIFramebuffer> VulkanDevice::CreateFramebuffer(const FramebufferDesc& desc) const
 {
-    return std::make_unique<VulkanFramebuffer>(*this, desc);
+    return std::make_unique<VulkanFramebuffer>(const_cast<VulkanDevice&>(*this), desc);
 }
 
 std::unique_ptr<IRHIPipeline> VulkanDevice::CreateGraphicsPipeline(
-    const GraphicsPipelineDesc& desc)
+    const GraphicsPipelineDesc& desc) const
 {
-    return std::make_unique<VulkanPipeline>(*this, desc);
+    return std::make_unique<VulkanPipeline>(const_cast<VulkanDevice&>(*this), desc);
 }
 
-std::unique_ptr<IRHICommandList> VulkanDevice::CreateCommandList()
+std::unique_ptr<IRHICommandList> VulkanDevice::CreateCommandList() const
 {
-    return std::make_unique<VulkanCommandList>(*this);
+    return std::make_unique<VulkanCommandList>(const_cast<VulkanDevice&>(*this));
 }
 
-std::unique_ptr<IRHISwapchain> VulkanDevice::CreateSwapchain(uint32_t width, uint32_t height)
+std::unique_ptr<IRHISwapchain> VulkanDevice::CreateSwapchain(uint32_t width, uint32_t height) const
 {
-    return std::make_unique<VulkanSwapchain>(*this, width, height);
+    return std::make_unique<VulkanSwapchain>(const_cast<VulkanDevice&>(*this), width, height);
 }
 
-std::unique_ptr<IRHIFence> VulkanDevice::CreateFence(bool signaled)
+std::unique_ptr<IRHIFence> VulkanDevice::CreateFence(bool signaled) const
 {
-    return std::make_unique<VulkanFence>(*this, signaled);
+    return std::make_unique<VulkanFence>(const_cast<VulkanDevice&>(*this), signaled);
 }
 
-std::unique_ptr<IRHISemaphore> VulkanDevice::CreateSemaphore()
+std::unique_ptr<IRHISemaphore> VulkanDevice::CreateSemaphore() const
 {
-    return std::make_unique<VulkanSemaphore>(*this);
+    return std::make_unique<VulkanSemaphore>(const_cast<VulkanDevice&>(*this));
 }
 
 // ── Submission ────────────────────────────────────────────────────────────────
@@ -524,7 +524,7 @@ void VulkanDevice::SubmitCommandList(
     assert(result == VK_SUCCESS && "vkQueueSubmit2 failed.");
 }
 
-void VulkanDevice::ExecuteImmediately(std::function<void(IRHICommandList&)> func)
+void VulkanDevice::ExecuteImmediately(std::function<void(IRHICommandList&)> func) const
 {
     auto cmdList = CreateCommandList();
     cmdList->Begin(true /* oneTimeSubmit */);
@@ -542,7 +542,7 @@ void VulkanDevice::ExecuteImmediately(std::function<void(IRHICommandList&)> func
     vkQueueWaitIdle(m_GraphicsQueue);
 }
 
-void VulkanDevice::WaitIdle()
+void VulkanDevice::WaitIdle() const
 {
     vkDeviceWaitIdle(m_Device);
 }

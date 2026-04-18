@@ -132,7 +132,7 @@ void VulkanSwapchain::Create(uint32_t width, uint32_t height)
         assert(result == VK_SUCCESS && "Failed to create swapchain image view.");
 
         m_ImageViews.push_back(view);
-        m_Textures.emplace_back(img, view, m_Format, m_Width, m_Height);
+        m_Textures.push_back(std::make_unique<VulkanTexture>(img, view, m_Format, m_Width, m_Height));
     }
 }
 
@@ -155,7 +155,7 @@ void VulkanSwapchain::Destroy()
 IRHITexture& VulkanSwapchain::GetTexture(uint32_t index)
 {
     assert(index < m_Textures.size());
-    return m_Textures[index];
+    return *m_Textures[index];
 }
 
 uint32_t VulkanSwapchain::AcquireNextImage(IRHISemaphore& signalSemaphore)

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "api/IRHISampler.hpp"
-#include "api/RHITypes.hpp"
+#include "RHI/api/IRHISampler.hpp"
+#include "RHI/api/RHITypes.hpp"
 
 #include <Volk/volk.h>
 

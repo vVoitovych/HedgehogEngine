@@ -1,6 +1,6 @@
 #pragma once
 
-#include "api/IRHISyncPrimitive.hpp"
+#include "RHI/api/IRHISyncPrimitive.hpp"
 
 #include <Volk/volk.h>
 

@@ -11,6 +11,7 @@ project "RHI"
    includedirs
    {
        ".",
+       "..",
        "../..",
        "%{IncludeDir.VulkanSDK}",
        "%{IncludeDir.GLFW}",

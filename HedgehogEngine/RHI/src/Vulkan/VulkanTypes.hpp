@@ -1,6 +1,6 @@
 #pragma once
 
-#include "api/RHITypes.hpp"
+#include "RHI/api/RHITypes.hpp"
 
 #include <Volk/volk.h>
 #include <vma/vk_mem_alloc.h>

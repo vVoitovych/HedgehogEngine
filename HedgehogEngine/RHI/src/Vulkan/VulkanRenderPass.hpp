@@ -1,6 +1,6 @@
 #pragma once
 
-#include "api/IRHIRenderPass.hpp"
+#include "RHI/api/IRHIRenderPass.hpp"
 
 #include <Volk/volk.h>
 

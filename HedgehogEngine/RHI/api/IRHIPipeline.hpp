@@ -39,7 +39,7 @@ struct GraphicsPipelineDesc
     std::vector<ColorBlendAttachment>     m_ColorBlendAttachments;
 
     // Resource binding layout
-    std::vector<IRHIDescriptorSetLayout*> m_DescriptorSetLayouts;
+    std::vector<const IRHIDescriptorSetLayout*> m_DescriptorSetLayouts;
     std::vector<PushConstantRange>        m_PushConstantRanges;
 
     // Render pass this pipeline is compatible with

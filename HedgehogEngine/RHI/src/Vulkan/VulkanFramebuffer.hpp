@@ -1,6 +1,6 @@
 #pragma once
 
-#include "api/IRHIFramebuffer.hpp"
+#include "RHI/api/IRHIFramebuffer.hpp"
 
 #include <Volk/volk.h>
 

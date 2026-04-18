@@ -1,6 +1,6 @@
 #pragma once
 
-#include "api/IRHIDevice.hpp"
+#include "RHI/api/IRHIDevice.hpp"
 
 #include <Volk/volk.h>
 #include <vma/vk_mem_alloc.h>
@@ -42,33 +42,33 @@ public:
     // ── IRHIDevice ────────────────────────────────────────────────────────────
 
     std::unique_ptr<IRHIBuffer> CreateBuffer(
-        size_t size, BufferUsage usage, MemoryUsage memUsage) override;
+        size_t size, BufferUsage usage, MemoryUsage memUsage) const override;
 
-    std::unique_ptr<IRHITexture> CreateTexture(const TextureDesc& desc) override;
+    std::unique_ptr<IRHITexture> CreateTexture(const TextureDesc& desc) const override;
 
-    std::unique_ptr<IRHISampler> CreateSampler(const SamplerDesc& desc) override;
+    std::unique_ptr<IRHISampler> CreateSampler(const SamplerDesc& desc) const override;
 
     std::unique_ptr<IRHIShader> CreateShader(
-        const std::string& filePath, ShaderStage stage) override;
+        const std::string& filePath, ShaderStage stage) const override;
 
     std::unique_ptr<IRHIDescriptorSetLayout> CreateDescriptorSetLayout(
-        const std::vector<DescriptorBinding>& bindings) override;
+        const std::vector<DescriptorBinding>& bindings) const override;
 
     std::unique_ptr<IRHIDescriptorPool> CreateDescriptorPool(
-        uint32_t maxSets, const std::vector<PoolSize>& poolSizes) override;
+        uint32_t maxSets, const std::vector<PoolSize>& poolSizes) const override;
 
     std::unique_ptr<IRHIDescriptorSet> AllocateDescriptorSet(
-        const IRHIDescriptorPool& pool, const IRHIDescriptorSetLayout& layout) override;
+        const IRHIDescriptorPool& pool, const IRHIDescriptorSetLayout& layout) const override;
 
-    std::unique_ptr<IRHIRenderPass>  CreateRenderPass(const RenderPassDesc& desc) override;
-    std::unique_ptr<IRHIFramebuffer> CreateFramebuffer(const FramebufferDesc& desc) override;
-    std::unique_ptr<IRHIPipeline>    CreateGraphicsPipeline(const GraphicsPipelineDesc& desc) override;
+    std::unique_ptr<IRHIRenderPass>  CreateRenderPass(const RenderPassDesc& desc) const override;
+    std::unique_ptr<IRHIFramebuffer> CreateFramebuffer(const FramebufferDesc& desc) const override;
+    std::unique_ptr<IRHIPipeline>    CreateGraphicsPipeline(const GraphicsPipelineDesc& desc) const override;
 
-    std::unique_ptr<IRHICommandList> CreateCommandList() override;
-    std::unique_ptr<IRHISwapchain>   CreateSwapchain(uint32_t width, uint32_t height) override;
+    std::unique_ptr<IRHICommandList> CreateCommandList() const override;
+    std::unique_ptr<IRHISwapchain>   CreateSwapchain(uint32_t width, uint32_t height) const override;
 
-    std::unique_ptr<IRHIFence>     CreateFence(bool signaled = false) override;
-    std::unique_ptr<IRHISemaphore> CreateSemaphore() override;
+    std::unique_ptr<IRHIFence>     CreateFence(bool signaled = false) const override;
+    std::unique_ptr<IRHISemaphore> CreateSemaphore() const override;
 
     void SubmitCommandList(
         const IRHICommandList&             commandList,
@@ -78,9 +78,9 @@ public:
 
     Format GetPreferredDepthFormat() const override;
 
-    void ExecuteImmediately(std::function<void(IRHICommandList&)> func) override;
+    void ExecuteImmediately(std::function<void(IRHICommandList&)> func) const override;
 
-    void WaitIdle() override;
+    void WaitIdle() const override;
 
     // ── Internal accessors (Vulkan backend only) ──────────────────────────────
 
