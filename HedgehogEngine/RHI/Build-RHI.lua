@@ -17,7 +17,6 @@ project "RHI"
        "%{IncludeDir.GLFW}",
    }
 
-   -- No lib link for Vulkan: Volk loads vulkan-1.dll at runtime.
    links
    {
        "glfw",

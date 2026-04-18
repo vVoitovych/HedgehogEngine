@@ -6,7 +6,6 @@ workspace "HedgehogEngine"
    startproject "Client"
    staticruntime "off"
 
-   -- Workspace-wide build options for MSVC
    filter "system:windows"
       buildoptions {  }
 
