@@ -4,9 +4,24 @@
 
 #include "Logger/api/Logger.hpp"
 
+#include <Windows.h>
 #include <cassert>
+#include <filesystem>
 #include <fstream>
 #include <vector>
+
+namespace
+{
+// Mirrors ContentLoader::GetRootDirectory(): exe path up 4 levels.
+std::string ResolveAssetPath(const std::string& relativePath)
+{
+    char buffer[MAX_PATH];
+    GetModuleFileNameA(nullptr, buffer, MAX_PATH);
+    std::filesystem::path root = std::filesystem::path(buffer)
+        .parent_path().parent_path().parent_path().parent_path().parent_path();
+    return root.string() + relativePath;
+}
+} // namespace
 
 namespace RHI
 {
@@ -14,10 +29,11 @@ namespace RHI
 VulkanShader::VulkanShader(VulkanDevice& device, const std::string& filePath, ShaderStage stage)
     : m_Device(device), m_Stage(stage)
 {
-    std::ifstream file(filePath, std::ios::ate | std::ios::binary);
+    const std::string fullPath = ResolveAssetPath(filePath);
+    std::ifstream file(fullPath, std::ios::ate | std::ios::binary);
     if (!file.is_open())
     {
-        LOGERROR("VulkanShader: cannot open SPIR-V file: ", filePath);
+        LOGERROR("VulkanShader: cannot open SPIR-V file: ", fullPath);
         assert(false && "Shader file not found.");
     }
 
