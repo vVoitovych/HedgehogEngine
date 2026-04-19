@@ -10,23 +10,16 @@ project "HedgehogWindow"
 
     includedirs
     {
-        "%{IncludeDir.VulkanSDK}",
         "%{IncludeDir.GLFW}",
         "../..",
         ".."
-    }
-
-    libdirs
-    {
-        "%{LibraryDir.VulkanSDK}"
     }
 
     links
     {
         "HedgehogMath",
         "Logger",
-        "glfw",
-        "vulkan-1"
+        "glfw"
     }
 
    targetdir ("../../Binaries/" .. OutputDir .. "/%{prj.name}")

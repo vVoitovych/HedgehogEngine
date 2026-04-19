@@ -5,7 +5,6 @@
 
 #include "Logger/api/Logger.hpp"
 
-#define GLFW_INCLUDE_VULKAN
 #include "GLFW/glfw3.h"
 
 #include <algorithm>
