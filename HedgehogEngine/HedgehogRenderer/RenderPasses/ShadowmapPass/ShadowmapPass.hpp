@@ -1,25 +1,20 @@
 #pragma once
 
-#include <vector>
+#include <HedgehogMath/api/Matrix.hpp>
+
 #include <array>
 #include <memory>
-#include <string>
+#include <vector>
 
-#include "HedgehogMath/api/Matrix.hpp"
-
-namespace Wrappers
+namespace RHI
 {
-    class Device;
-    class RenderPass;
-    class Pipeline;
-    class FrameBuffer;
-
-    class DescriptorSetLayout;
-    class DescriptorAllocator;
-    class DescriptorSet;
-
-    template<typename T>
-    class UBO;
+    class IRHIRenderPass;
+    class IRHIPipeline;
+    class IRHIFramebuffer;
+    class IRHIDescriptorSetLayout;
+    class IRHIDescriptorPool;
+    class IRHIDescriptorSet;
+    class IRHIBuffer;
 }
 
 namespace Context
@@ -45,47 +40,38 @@ namespace Renderer
 
     private:
         void UpdateFrameBuffer(const Context::Context& context, const ResourceManager& resourceManager);
-        void CreateRenderPass(const Wrappers::Device& device, const ResourceManager& resourceManager);
-        void CreateAllocator(const Wrappers::Device& device);
-        void CreateLayout(const Wrappers::Device& device);
-        void CreateUniforms(const Wrappers::Device& device);
-        void CreateSets(const Wrappers::Device& device);
-        void CreatePipeline(const Wrappers::Device& device);
-
-        void UpdateShadowmapMatrices(const Context::Context& context);
         void UpdateViewports(const Context::Context& context);
+        void UpdateShadowmapMatrices(const Context::Context& context);
 
     private:
         struct ShadowCascadeUniform
         {
-            alignas(16) HM::Matrix4x4 shadowMatrix;
+            alignas(16) HM::Matrix4x4 m_ShadowMatrix;
         };
 
-    private:
         struct ShadowViewport
         {
-            float x;
-            float y;
-            float width;
-            float height;
+            float m_X      = 0.0f;
+            float m_Y      = 0.0f;
+            float m_Width  = 0.0f;
+            float m_Height = 0.0f;
         };
 
         static constexpr uint32_t MaxShadowCascades = 4;
+
         std::array<HM::Matrix4x4, MaxShadowCascades> m_ShadowmapMatrices;
-        std::vector<std::vector<ShadowViewport>> m_ShadowViewports;
+        std::vector<std::vector<ShadowViewport>>      m_ShadowViewports;
 
-        std::unique_ptr<Wrappers::RenderPass> m_RenderPass;
-        std::unique_ptr<Wrappers::FrameBuffer> m_FrameBuffer;
-        std::unique_ptr<Wrappers::Pipeline> m_Pipeline;
-             
-        std::unique_ptr<Wrappers::DescriptorSetLayout> m_ShadowmapLayout;
-        std::unique_ptr<Wrappers::DescriptorAllocator> m_ShadowmapAllocator;
+        std::unique_ptr<RHI::IRHIRenderPass>         m_RenderPass;
+        std::unique_ptr<RHI::IRHIFramebuffer>         m_FrameBuffer;
+        std::unique_ptr<RHI::IRHIPipeline>            m_Pipeline;
 
-        std::vector< std::vector<Wrappers::UBO<ShadowCascadeUniform> > > m_ShadowmapUniforms;
-        std::vector< std::vector<Wrappers::DescriptorSet> > m_ShadowmapSets;
+        std::unique_ptr<RHI::IRHIDescriptorSetLayout> m_ShadowmapLayout;
+        std::unique_ptr<RHI::IRHIDescriptorPool>      m_ShadowmapPool;
 
+        // [frame][cascade]
+        std::vector<std::vector<std::unique_ptr<RHI::IRHIBuffer>>>        m_ShadowmapUniforms;
+        std::vector<std::vector<std::unique_ptr<RHI::IRHIDescriptorSet>>> m_ShadowmapSets;
     };
 
 }
-
-

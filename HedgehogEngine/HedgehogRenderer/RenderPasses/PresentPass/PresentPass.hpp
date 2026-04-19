@@ -1,7 +1,5 @@
 #pragma once
 
-#include <vulkan/vulkan.h>
-
 namespace Context
 {
     class Context;
@@ -22,7 +20,6 @@ namespace Renderer
         void Cleanup(const Context::Context& context);
 
     };
-
 
 }
 

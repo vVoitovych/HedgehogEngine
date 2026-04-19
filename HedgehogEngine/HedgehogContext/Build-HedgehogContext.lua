@@ -11,6 +11,7 @@ project "HedgehogContext"
     includedirs
     {
         "%{IncludeDir.VulkanSDK}",
+        "%{IncludeDir.GLFW}",
         "%{IncludeDir.yaml_cpp}",
         "../..",
         ".."
@@ -21,7 +22,8 @@ project "HedgehogContext"
         "%{LibraryDir.VulkanSDK}"
     }
 
-    links { 
+    links {
+        "RHI",
         "HedgehogCommon",
         "HedgehogSettings",
         "HedgehogWrappers",
@@ -31,8 +33,7 @@ project "HedgehogContext"
         "Logger",
         "Scene",
         "imgui",
-        "yaml-cpp",
-        "vulkan-1"
+        "yaml-cpp"
     }
 
 

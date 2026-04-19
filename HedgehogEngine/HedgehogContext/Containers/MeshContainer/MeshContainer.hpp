@@ -1,14 +1,12 @@
 #pragma once
 
-#include <vulkan/vulkan.h>
-
 #include <vector>
 #include <string>
 #include <memory>
 
-namespace Wrappers
+namespace RHI
 {
-    class Buffer;
+    class IRHIBuffer;
 }
 
 namespace Scene
@@ -36,10 +34,10 @@ namespace Context
 
         void Cleanup(const VulkanContext& context);
 
-        const VkBuffer& GetPositionsBuffer() const;
-        const VkBuffer& GetTexCoordsBuffer() const;
-        const VkBuffer& GetNormalsBuffer() const;
-        const VkBuffer& GetIndexBuffer() const;
+        const RHI::IRHIBuffer& GetRHIPositionsBuffer() const;
+        const RHI::IRHIBuffer& GetRHITexCoordsBuffer() const;
+        const RHI::IRHIBuffer& GetRHINormalsBuffer() const;
+        const RHI::IRHIBuffer& GetRHIIndexBuffer() const;
 
         const Mesh& GetMesh(size_t index) const;
 
@@ -57,21 +55,15 @@ namespace Context
 
         bool m_IsSwapped = false;
 
-        std::unique_ptr<Wrappers::Buffer> m_PositionsBuffer;
-        std::unique_ptr<Wrappers::Buffer> m_TexCoordsBuffer;
-        std::unique_ptr<Wrappers::Buffer> m_NormalsBuffer;
-        std::unique_ptr<Wrappers::Buffer> m_IndexBuffer;
+        std::unique_ptr<RHI::IRHIBuffer> m_RHIPositionsBuffer;
+        std::unique_ptr<RHI::IRHIBuffer> m_RHITexCoordsBuffer;
+        std::unique_ptr<RHI::IRHIBuffer> m_RHINormalsBuffer;
+        std::unique_ptr<RHI::IRHIBuffer> m_RHIIndexBuffer;
 
-        std::unique_ptr<Wrappers::Buffer> m_AdditionalPositionsBuffer;
-        std::unique_ptr<Wrappers::Buffer> m_AdditionalTexCoordsBuffer;
-        std::unique_ptr<Wrappers::Buffer> m_AdditionalNormalsBuffer;
-        std::unique_ptr<Wrappers::Buffer> m_AdditionalIndexBuffer;
-
+        std::unique_ptr<RHI::IRHIBuffer> m_AdditionalRHIPositionsBuffer;
+        std::unique_ptr<RHI::IRHIBuffer> m_AdditionalRHITexCoordsBuffer;
+        std::unique_ptr<RHI::IRHIBuffer> m_AdditionalRHINormalsBuffer;
+        std::unique_ptr<RHI::IRHIBuffer> m_AdditionalRHIIndexBuffer;
     };
 
 }
-
-
-
-
-

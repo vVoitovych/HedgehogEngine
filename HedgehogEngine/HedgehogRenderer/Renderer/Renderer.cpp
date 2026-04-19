@@ -7,9 +7,9 @@
 #include "HedgehogContext/Context/ThreadContext.hpp"
 #include "HedgehogRenderer/RenderQueue/RenderQueue.hpp"
 #include "HedgehogRenderer/ResourceManager/ResourceManager.hpp"
-#include "HedgehogWrappers/Wrappeers/Device/Device.hpp"
-#include "HedgehogWrappers/Wrappeers/SwapChain/SwapChain.hpp"
 #include "HedgehogSettings/Settings/HedgehogSettings.hpp"
+
+#include "RHI/api/IRHIDevice.hpp"
 
 #include "Logger/api/Logger.hpp"
 
@@ -19,30 +19,28 @@ namespace Renderer
     {
         m_ResourceManager = std::make_unique<ResourceManager>(context);
         m_RenderQueue = std::make_unique<RenderQueue>(context, *m_ResourceManager);
-
     }
 
     Renderer::~Renderer()
     {
     }
-     
+
     void Renderer::Cleanup(const Context::Context& context)
     {
-        vkQueueWaitIdle(context.GetVulkanContext().GetDevice().GetNativeGraphicsQueue());
+        context.GetVulkanContext().GetRHIDevice().WaitIdle();
 
         m_RenderQueue->Cleanup(context);
         m_ResourceManager->Cleanup(context);
     }
 
     void Renderer::DrawFrame(Context::Context& context)
-    {        
+    {
         auto& vulkanContext = context.GetVulkanContext();
         auto& settings = context.GetEngineContext().GetSettings();
         m_RenderQueue->UpdateData(context);
         if (vulkanContext.IsWindowResized())
         {
-            vkDeviceWaitIdle(vulkanContext.GetDevice().GetNativeDevice());
-            vulkanContext.GetSwapChain().Recreate(vulkanContext.GetDevice());
+            vulkanContext.RecreateSwapchain();
 
             m_ResourceManager->ResizeFrameBufferSizeDependenteResources(context);
             m_RenderQueue->ResizeResources(context, *m_ResourceManager);
@@ -61,6 +59,3 @@ namespace Renderer
     }
 
 }
-
-
-

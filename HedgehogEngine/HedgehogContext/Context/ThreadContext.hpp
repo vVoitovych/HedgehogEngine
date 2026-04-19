@@ -1,22 +1,20 @@
 #pragma once
 
 #include "HedgehogCommon/api/RendererSettings.hpp"
-#include "HedgehogContext/Containers/LightContainer/Light.hpp"
 
+#include <memory>
 #include <vector>
 
-namespace Wrappers
+namespace RHI
 {
-    class CommandBuffer;
-    class SyncObject;
-
+    class IRHICommandList;
+    class IRHIFence;
+    class IRHISemaphore;
 }
 
 namespace Context
 {
     class VulkanContext;
-    class EngineContext;
-    class FrameContext;
 
     class ThreadContext
     {
@@ -32,17 +30,18 @@ namespace Context
         void NextFrame();
         uint32_t GetFrameIndex() const;
 
-        Wrappers::CommandBuffer& GetCommandBuffer();
-        Wrappers::SyncObject& GetSyncObject();
+        RHI::IRHICommandList& GetCommandList();
+        RHI::IRHIFence&       GetFence();
+        RHI::IRHISemaphore&   GetImageAvailableSemaphore();
+        RHI::IRHISemaphore&   GetRenderFinishedSemaphore();
 
     private:
-        std::vector<Wrappers::CommandBuffer> m_CommandBuffers;
-        std::vector<Wrappers::SyncObject> m_SyncObjects;
+        std::vector<std::unique_ptr<RHI::IRHICommandList>> m_CommandLists;
+        std::vector<std::unique_ptr<RHI::IRHIFence>>       m_Fences;
+        std::vector<std::unique_ptr<RHI::IRHISemaphore>>   m_ImageAvailableSemaphores;
+        std::vector<std::unique_ptr<RHI::IRHISemaphore>>   m_RenderFinishedSemaphores;
 
         uint32_t m_FrameIndex = 0;
     };
 
 }
-
-
-

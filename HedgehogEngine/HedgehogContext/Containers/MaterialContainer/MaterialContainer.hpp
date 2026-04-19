@@ -9,12 +9,12 @@ namespace Scene
     class Scene;
 }
 
-namespace Wrappers
+namespace RHI
 {
-    class DescriptorSetLayout;
-    class DescriptorAllocator;
-    class DescriptorSet;
-    class Buffer;
+    class IRHIDescriptorSetLayout;
+    class IRHIDescriptorPool;
+    class IRHIDescriptorSet;
+    class IRHIBuffer;
 }
 
 namespace Context
@@ -47,12 +47,12 @@ namespace Context
 
         void LoadBaseTexture(size_t index, const VulkanContext& context, const TextureContainer& textureContainer);
 
-        const Wrappers::DescriptorSetLayout& GetDescriptorSetLayout() const;
-        const Wrappers::DescriptorSet& GetDescriptorSet(size_t index) const;
-        Wrappers::DescriptorSet& GetDescriptorSet(size_t index);
+        const RHI::IRHIDescriptorSetLayout& GetRHIDescriptorSetLayout() const;
+        const RHI::IRHIDescriptorSet&       GetRHIDescriptorSet(size_t index) const;
 
         MaterialData& GetMaterialDataByIndex(size_t index);
         const MaterialData& GetMaterialDataByIndex(size_t index) const;
+
     private:
         void UpdateMaterialByIndex(size_t index, const VulkanContext& context, const TextureContainer& textureContainer);
         void CreateMaterialResources(MaterialData& data, const VulkanContext& context, const TextureContainer& textureContainer);
@@ -62,20 +62,17 @@ namespace Context
         {
             float transparency;
         };
+
     private:
         const std::string m_DefaultWhiteTexture = "Textures\\Default\\white.png";
         const std::string m_DefaultCellTexture = "Textures\\Default\\cells.png";
 
         std::vector<MaterialData> m_Materials;
 
-        std::unique_ptr<Wrappers::DescriptorSetLayout> m_Layout;
-        std::unique_ptr<Wrappers::DescriptorAllocator> m_DescriptorAllocator;
-        std::vector<Wrappers::Buffer> m_MaterialUniforms;
-        std::vector<Wrappers::DescriptorSet> m_DescriptorSets;
-
+        std::unique_ptr<RHI::IRHIDescriptorSetLayout>        m_RHILayout;
+        std::unique_ptr<RHI::IRHIDescriptorPool>             m_RHIDescriptorPool;
+        std::vector<std::unique_ptr<RHI::IRHIBuffer>>        m_RHIMaterialUniforms;
+        std::vector<std::unique_ptr<RHI::IRHIDescriptorSet>> m_RHIDescriptorSets;
     };
 
 }
-
-
-

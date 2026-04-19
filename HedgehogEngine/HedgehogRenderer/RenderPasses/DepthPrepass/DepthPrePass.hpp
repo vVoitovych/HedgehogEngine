@@ -3,20 +3,17 @@
 #include <HedgehogMath/api/Matrix.hpp>
 
 #include <memory>
-#include <string>
 #include <vector>
 
-namespace Wrappers
+namespace RHI
 {
-    class RenderPass;
-    class Pipeline;
-    class FrameBuffer;
-    class DescriptorSetLayout;
-    class DescriptorAllocator;
-    class DescriptorSet;
-
-    template<typename T>
-    class UBO;
+    class IRHIRenderPass;
+    class IRHIPipeline;
+    class IRHIFramebuffer;
+    class IRHIDescriptorSetLayout;
+    class IRHIDescriptorPool;
+    class IRHIDescriptorSet;
+    class IRHIBuffer;
 }
 
 namespace Context
@@ -42,22 +39,19 @@ namespace Renderer
     private:
         struct DepthPrepassFrameUniform
         {
-            alignas(16) HM::Matrix4x4 viewProj;
+            alignas(16) HM::Matrix4x4 m_ViewProj;
         };
 
     private:
-        std::unique_ptr<Wrappers::RenderPass> m_RenderPass;
-        std::unique_ptr<Wrappers::FrameBuffer> m_FrameBuffer;
-        std::unique_ptr<Wrappers::Pipeline> m_Pipeline;
-            
-        std::unique_ptr<Wrappers::DescriptorSetLayout> m_FrameLayout;
-        std::unique_ptr<Wrappers::DescriptorAllocator> m_FrameAllocator;
+        std::unique_ptr<RHI::IRHIRenderPass>         m_RenderPass;
+        std::unique_ptr<RHI::IRHIFramebuffer>         m_FrameBuffer;
+        std::unique_ptr<RHI::IRHIPipeline>            m_Pipeline;
 
-        std::vector<Wrappers::UBO<DepthPrepassFrameUniform>> m_FrameUniforms;
-        std::vector<Wrappers::DescriptorSet> m_FrameSets;
+        std::unique_ptr<RHI::IRHIDescriptorSetLayout> m_FrameLayout;
+        std::unique_ptr<RHI::IRHIDescriptorPool>      m_FramePool;
 
+        std::vector<std::unique_ptr<RHI::IRHIBuffer>>        m_FrameUniforms;
+        std::vector<std::unique_ptr<RHI::IRHIDescriptorSet>> m_FrameSets;
     };
 
 }
-
-

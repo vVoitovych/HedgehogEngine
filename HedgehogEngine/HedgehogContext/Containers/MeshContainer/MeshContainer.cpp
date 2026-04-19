@@ -2,8 +2,9 @@
 #include "Mesh.hpp"
 
 #include "HedgehogContext/Context/VulkanContext.hpp"
-#include "HedgehogWrappers/Wrappeers/Device/Device.hpp"
-#include "HedgehogWrappers/Wrappeers/Resources/Buffer/Buffer.hpp"
+
+#include "RHI/api/IRHIDevice.hpp"
+#include "RHI/api/IRHICommandList.hpp"
 
 #include "Scene/Scene.hpp"
 
@@ -17,27 +18,26 @@ namespace Context
 namespace
 {
     template<typename T>
-    void CreateBuffer(const VulkanContext& context, const std::vector<T> data, std::unique_ptr<Wrappers::Buffer>& buffer)
+    void CreateRHIBuffer(const VulkanContext& context, const std::vector<T>& data,
+                         bool isIndex, std::unique_ptr<RHI::IRHIBuffer>& outBuffer)
     {
-        auto& device = context.GetDevice();
-        VkDeviceSize size = sizeof(T) * data.size();
+        auto& rhiDevice = context.GetRHIDevice();
+        size_t size = sizeof(T) * data.size();
 
-        Wrappers::Buffer stagingBuffer(device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
-        stagingBuffer.CopyDataToBufferMemory(device, data.data(), static_cast<size_t>(size));
+        auto stagingBuffer = rhiDevice.CreateBuffer(
+            size, RHI::BufferUsage::TransferSrc, RHI::MemoryUsage::CpuToGpu);
+        stagingBuffer->CopyData(data.data(), size);
 
-        VkBufferUsageFlags flags = 0;
-        if (std::is_same<T, uint32_t>::value)
+        RHI::BufferUsage gpuUsage = isIndex
+            ? (RHI::BufferUsage::TransferDst | RHI::BufferUsage::IndexBuffer)
+            : (RHI::BufferUsage::TransferDst | RHI::BufferUsage::VertexBuffer);
+
+        outBuffer = rhiDevice.CreateBuffer(size, gpuUsage, RHI::MemoryUsage::GpuOnly);
+
+        rhiDevice.ExecuteImmediately([&](RHI::IRHICommandList& cmd)
         {
-            flags = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-        }
-        else
-        {
-            flags = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-        }
-        buffer = std::make_unique<Wrappers::Buffer>(device, size, flags, VMA_MEMORY_USAGE_GPU_ONLY);
-        device.CopyBufferToBuffer(stagingBuffer.GetNativeBuffer(), buffer->GetNativeBuffer(), size);
-
-        stagingBuffer.DestroyBuffer(device);
+            cmd.CopyBufferToBuffer(*stagingBuffer, *outBuffer, 0, 0, size);
+        });
     }
 }
 
@@ -85,10 +85,6 @@ namespace
         std::vector<HM::Vector2> texCoords;
         std::vector<HM::Vector3> normals;
         std::vector<uint32_t> indices;
-        positions.clear();
-        texCoords.clear();
-        normals.clear();
-        indices.clear();
 
         for (size_t i = 0; i < m_Meshes.size(); ++i)
         {
@@ -116,10 +112,10 @@ namespace
             }
         }
 
-        CreateBuffer(context, positions, m_AdditionalPositionsBuffer);
-        CreateBuffer(context, texCoords, m_AdditionalTexCoordsBuffer);
-        CreateBuffer(context, normals, m_AdditionalNormalsBuffer);
-        CreateBuffer(context, indices, m_AdditionalIndexBuffer);
+        CreateRHIBuffer(context, positions, false, m_AdditionalRHIPositionsBuffer);
+        CreateRHIBuffer(context, texCoords, false, m_AdditionalRHITexCoordsBuffer);
+        CreateRHIBuffer(context, normals,   false, m_AdditionalRHINormalsBuffer);
+        CreateRHIBuffer(context, indices,   true,  m_AdditionalRHIIndexBuffer);
 
         m_IsSwapped = true;
     }
@@ -128,42 +124,15 @@ namespace
     {
         if (m_IsSwapped)
         {
-            if (m_AdditionalPositionsBuffer != nullptr)
-            {
-                if (m_PositionsBuffer != nullptr)
-                {
-                    m_PositionsBuffer->DestroyBuffer(context.GetDevice());
-                }
-                m_PositionsBuffer = std::move(m_AdditionalPositionsBuffer);
-                m_AdditionalPositionsBuffer = nullptr;
-            }
-            if (m_AdditionalTexCoordsBuffer != nullptr)
-            {
-                if (m_TexCoordsBuffer != nullptr)
-                {
-                    m_TexCoordsBuffer->DestroyBuffer(context.GetDevice());
-                }
-                m_TexCoordsBuffer = std::move(m_AdditionalTexCoordsBuffer);
-                m_AdditionalTexCoordsBuffer = nullptr;
-            }
-            if (m_AdditionalNormalsBuffer != nullptr)
-            {
-                if (m_NormalsBuffer != nullptr)
-                {
-                    m_NormalsBuffer->DestroyBuffer(context.GetDevice());
-                }
-                m_NormalsBuffer = std::move(m_AdditionalNormalsBuffer);
-                m_AdditionalNormalsBuffer = nullptr;
-            }
-            if (m_AdditionalIndexBuffer != nullptr)
-            {
-                if (m_IndexBuffer != nullptr)
-                {
-                    m_IndexBuffer->DestroyBuffer(context.GetDevice());
-                }
-                m_IndexBuffer = std::move(m_AdditionalIndexBuffer);
-                m_AdditionalIndexBuffer = nullptr;
-            }
+            if (m_AdditionalRHIPositionsBuffer)
+                m_RHIPositionsBuffer = std::move(m_AdditionalRHIPositionsBuffer);
+            if (m_AdditionalRHITexCoordsBuffer)
+                m_RHITexCoordsBuffer = std::move(m_AdditionalRHITexCoordsBuffer);
+            if (m_AdditionalRHINormalsBuffer)
+                m_RHINormalsBuffer = std::move(m_AdditionalRHINormalsBuffer);
+            if (m_AdditionalRHIIndexBuffer)
+                m_RHIIndexBuffer = std::move(m_AdditionalRHIIndexBuffer);
+
             m_IsSwapped = false;
         }
         auto& meshes = scene.GetMeshes();
@@ -179,51 +148,43 @@ namespace
 
     void MeshContainer::Cleanup(const VulkanContext& context)
     {
-        auto& device = context.GetDevice();
-        if (m_PositionsBuffer != nullptr)
-            m_PositionsBuffer->DestroyBuffer(device);
-        if (m_TexCoordsBuffer != nullptr)
-            m_TexCoordsBuffer->DestroyBuffer(device);
-        if (m_NormalsBuffer != nullptr)
-            m_NormalsBuffer->DestroyBuffer(device);
-        if (m_IndexBuffer != nullptr)
-            m_IndexBuffer->DestroyBuffer(device);
-        if (m_AdditionalPositionsBuffer != nullptr)
-            m_AdditionalPositionsBuffer->DestroyBuffer(device);
-        if (m_AdditionalTexCoordsBuffer != nullptr)
-            m_AdditionalTexCoordsBuffer->DestroyBuffer(device);
-        if (m_AdditionalNormalsBuffer != nullptr)
-            m_AdditionalNormalsBuffer->DestroyBuffer(device);
-        if (m_AdditionalIndexBuffer != nullptr)
-            m_AdditionalIndexBuffer->DestroyBuffer(device);
+        context.GetRHIDevice().WaitIdle();
+        m_RHIPositionsBuffer.reset();
+        m_RHITexCoordsBuffer.reset();
+        m_RHINormalsBuffer.reset();
+        m_RHIIndexBuffer.reset();
+        m_AdditionalRHIPositionsBuffer.reset();
+        m_AdditionalRHITexCoordsBuffer.reset();
+        m_AdditionalRHINormalsBuffer.reset();
+        m_AdditionalRHIIndexBuffer.reset();
     }
 
-    const VkBuffer& MeshContainer::GetPositionsBuffer() const
+    const RHI::IRHIBuffer& MeshContainer::GetRHIPositionsBuffer() const
     {
         if (!m_IsSwapped)
-            return m_PositionsBuffer->GetNativeBuffer();
-        return m_AdditionalPositionsBuffer->GetNativeBuffer();
+            return *m_RHIPositionsBuffer;
+        return *m_AdditionalRHIPositionsBuffer;
     }
 
-    const VkBuffer& MeshContainer::GetTexCoordsBuffer() const
+    const RHI::IRHIBuffer& MeshContainer::GetRHITexCoordsBuffer() const
     {
         if (!m_IsSwapped)
-            return m_TexCoordsBuffer->GetNativeBuffer();
-        return m_AdditionalTexCoordsBuffer->GetNativeBuffer();
+            return *m_RHITexCoordsBuffer;
+        return *m_AdditionalRHITexCoordsBuffer;
     }
 
-    const VkBuffer& MeshContainer::GetNormalsBuffer() const
+    const RHI::IRHIBuffer& MeshContainer::GetRHINormalsBuffer() const
     {
         if (!m_IsSwapped)
-            return m_NormalsBuffer->GetNativeBuffer();
-        return m_AdditionalNormalsBuffer->GetNativeBuffer();
+            return *m_RHINormalsBuffer;
+        return *m_AdditionalRHINormalsBuffer;
     }
 
-    const VkBuffer& MeshContainer::GetIndexBuffer() const
+    const RHI::IRHIBuffer& MeshContainer::GetRHIIndexBuffer() const
     {
         if (!m_IsSwapped)
-            return m_IndexBuffer->GetNativeBuffer();
-        return m_AdditionalIndexBuffer->GetNativeBuffer();
+            return *m_RHIIndexBuffer;
+        return *m_AdditionalRHIIndexBuffer;
     }
 
     const Mesh& MeshContainer::GetMesh(size_t index) const
@@ -231,8 +192,4 @@ namespace
         return m_Meshes[index];
     }
 
-
 }
-
-
-

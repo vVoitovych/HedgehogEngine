@@ -1,5 +1,4 @@
 #include "GuiPass.hpp"
-#include "GuiPassInfo.hpp"
 
 #include "HedgehogContext/Context/Context.hpp"
 #include "HedgehogContext/Context/VulkanContext.hpp"
@@ -9,13 +8,17 @@
 
 #include "HedgehogRenderer/ResourceManager/ResourceManager.hpp"
 
-#include "HedgehogWrappers/Wrappeers/RenderPass/RenderPass.hpp"
-#include "HedgehogWrappers/Wrappeers/Commands/CommandBuffer.hpp"
-#include "HedgehogWrappers/Wrappeers/Descriptors/DescriptorAllocator.hpp"
-#include "HedgehogWrappers/Wrappeers/SwapChain/SwapChain.hpp"
-#include "HedgehogWrappers/Wrappeers/Device/Device.hpp"
-#include "HedgehogWrappers/Wrappeers/FrameBuffer/FrameBuffer.hpp"
-#include "HedgehogWrappers/Wrappeers/Resources/Image/Image.hpp"
+#include "HedgehogCommon/api/RendererSettings.hpp"
+
+#include "RHI/api/IRHIDevice.hpp"
+#include "RHI/api/IRHICommandList.hpp"
+#include "RHI/api/IRHIRenderPass.hpp"
+#include "RHI/api/IRHIFramebuffer.hpp"
+#include "RHI/api/IRHITexture.hpp"
+#include "RHI/api/RHITypes.hpp"
+#include "RHI/src/Vulkan/VulkanDevice.hpp"
+#include "RHI/src/Vulkan/VulkanRenderPass.hpp"
+#include "RHI/src/Vulkan/VulkanCommandList.hpp"
 
 #include "HedgehogWrappers/WindowManagment/WindowManager.hpp"
 
@@ -32,63 +35,85 @@ namespace Renderer
     {
         WinManager::WindowManager::SetOnGuiCallback([]() {
             return GuiPass::IsCursorPositionInGUI();
-            });
+        });
+
         auto& vulkanContext = context.GetVulkanContext();
-        auto& device = vulkanContext.GetDevice();
-        std::vector<Wrappers::PoolSizeRatio> sizes =
-        {
-            { VK_DESCRIPTOR_TYPE_SAMPLER, 1 },
-            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1 },
-            { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1 },
-            { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1 },
-            { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1 },
-            { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1 },
-            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 },
-            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1 },
-            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1 },
-            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1 },
-            { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1 }
+        auto& rhiDevice     = vulkanContext.GetRHIDevice();
+        auto& vkDevice      = static_cast<const RHI::VulkanDevice&>(rhiDevice);
+
+        // Raw VkDescriptorPool for ImGui (imgui_impl_vulkan requires a native pool)
+        VkDescriptorPoolSize poolSizes[] = {
+            { VK_DESCRIPTOR_TYPE_SAMPLER,                1000 },
+            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+            { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,          1000 },
+            { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,          1000 },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,   1000 },
+            { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,   1000 },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         1000 },
+            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,         1000 },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+            { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,       1000 },
         };
+        VkDescriptorPoolCreateInfo poolInfo{};
+        poolInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        poolInfo.flags         = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+        poolInfo.maxSets       = 1000;
+        poolInfo.poolSizeCount = static_cast<uint32_t>(std::size(poolSizes));
+        poolInfo.pPoolSizes    = poolSizes;
+        vkCreateDescriptorPool(vkDevice.GetHandle(), &poolInfo, nullptr, &m_ImGuiPool);
 
-        m_DescriptorAllocator = std::make_unique<Wrappers::DescriptorAllocator>(device, 1000, sizes);
-        auto& swapChain = context.GetVulkanContext().GetSwapChain();
-        GuiPassInfo passInfo(resourceManager.GetColorBuffer().GetFormat());
-        m_RenderPass = std::make_unique<Wrappers::RenderPass>(context.GetVulkanContext().GetDevice(), passInfo.GetInfo());
+        // Render pass: color-only, load/store, ColorAttachment → ColorAttachment
+        RHI::RenderPassDesc rpDesc;
+        rpDesc.m_ColorAttachments.push_back(RHI::AttachmentDesc{
+            resourceManager.GetRHIColorBuffer().GetFormat(),
+            RHI::LoadOp::Load,
+            RHI::StoreOp::Store,
+            RHI::LoadOp::DontCare,
+            RHI::StoreOp::DontCare,
+            RHI::ImageLayout::ColorAttachment,
+            RHI::ImageLayout::ColorAttachment
+        });
+        m_RenderPass = rhiDevice.CreateRenderPass(rpDesc);
 
-        // - Imgui init
+        // Framebuffer
+        const auto& colorBuffer = resourceManager.GetRHIColorBuffer();
+        RHI::FramebufferDesc fbDesc;
+        fbDesc.m_RenderPass       = m_RenderPass.get();
+        fbDesc.m_ColorAttachments = { &colorBuffer };
+        fbDesc.m_Width            = colorBuffer.GetWidth();
+        fbDesc.m_Height           = colorBuffer.GetHeight();
+        m_FrameBuffer = rhiDevice.CreateFramebuffer(fbDesc);
+
+        // ImGui init
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
         ImGuiIO& io = ImGui::GetIO();
         (void)io;
-
         ImGui::StyleColorsDark();
 
-        ImGui_ImplGlfw_InitForVulkan(const_cast<GLFWwindow*>(vulkanContext.GetWindowManager().GetGlfwWindow()), true);
+        ImGui_ImplGlfw_InitForVulkan(
+            const_cast<GLFWwindow*>(vulkanContext.GetWindowManager().GetGlfwWindow()), true);
+
+        auto& vkRenderPass = static_cast<RHI::VulkanRenderPass&>(*m_RenderPass);
+
         ImGui_ImplVulkan_InitInfo initInfo = {};
-        initInfo.Instance = device.GetNativeInstance();
-        initInfo.PhysicalDevice = device.GetNativePhysicalDevice();
-        initInfo.Device = device.GetNativeDevice();
-        initInfo.QueueFamily = device.GetIndices().graphicsFamily.value();
-        initInfo.Queue = device.GetNativeGraphicsQueue();
-        initInfo.PipelineCache = VK_NULL_HANDLE;
-        initInfo.DescriptorPool = m_DescriptorAllocator->GetNativeDescriptoPool();
-        initInfo.Allocator = nullptr;
-        initInfo.MinImageCount = swapChain.GetMinImagesCount();
-        initInfo.ImageCount = static_cast<uint32_t>(swapChain.GetSwapChainImagesSize());
+        initInfo.Instance        = vkDevice.GetInstance();
+        initInfo.PhysicalDevice  = vkDevice.GetPhysicalDevice();
+        initInfo.Device          = vkDevice.GetHandle();
+        initInfo.QueueFamily     = vkDevice.GetQueueFamilyIndices().m_GraphicsFamily.value();
+        initInfo.Queue           = vkDevice.GetGraphicsQueue();
+        initInfo.PipelineCache   = VK_NULL_HANDLE;
+        initInfo.DescriptorPool  = m_ImGuiPool;
+        initInfo.Allocator       = nullptr;
+        initInfo.MinImageCount   = MAX_FRAMES_IN_FLIGHT;
+        initInfo.ImageCount      = MAX_FRAMES_IN_FLIGHT;
         initInfo.CheckVkResultFn = nullptr;
-        initInfo.PipelineInfoMain.RenderPass = m_RenderPass->GetNativeRenderPass();
+        initInfo.PipelineInfoMain.RenderPass = vkRenderPass.GetHandle();
         ImGui_ImplVulkan_Init(&initInfo);
 
         UploadFonts();
-
-        std::vector<VkImageView> attacments = { resourceManager.GetColorBuffer().GetNativeView()};
-        m_FrameBuffer = std::make_unique<Wrappers::FrameBuffer>(
-            device,
-            attacments,
-            resourceManager.GetColorBuffer().GetExtent(),
-            *m_RenderPass);
-
-    }    
+    }
 
     GuiPass::~GuiPass()
     {
@@ -97,16 +122,13 @@ namespace Renderer
     void GuiPass::Render(Context::Context& context, const ResourceManager& resourceManager)
     {
         auto& threadContext = context.GetThreadContext();
-        auto& commandBuffer = threadContext.GetCommandBuffer();
+        auto& commandList   = threadContext.GetCommandList();
 
-        auto& vulkanContext = context.GetVulkanContext();
-        auto& swapChain = vulkanContext.GetSwapChain();
-        auto extent = swapChain.GetSwapChainExtent();
-
-        commandBuffer.TransitionImage(
-            resourceManager.GetColorBuffer().GetNativeImage(),
-            VK_IMAGE_LAYOUT_UNDEFINED, 
-            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+        // Transition color buffer from Present (left by ForwardPass) to ColorAttachment
+        auto& colorBuffer = const_cast<RHI::IRHITexture&>(resourceManager.GetRHIColorBuffer());
+        commandList.TransitionTexture(colorBuffer,
+            RHI::ImageLayout::Present,
+            RHI::ImageLayout::ColorAttachment);
 
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -115,10 +137,14 @@ namespace Renderer
         DrawGui(context);
         ImGui::Render();
 
-        commandBuffer.BeginRenderPass(extent, *m_RenderPass, m_FrameBuffer->GetNativeFrameBuffer());
-        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer.GetNativeCommandBuffer());
-        commandBuffer.EndRenderPass();
+        RHI::ClearValue colorClear;
+        colorClear.m_Color = { 0.0f, 0.0f, 0.0f, 1.0f };
+        commandList.BeginRenderPass(*m_RenderPass, *m_FrameBuffer, { colorClear });
 
+        auto& vkCmdList = static_cast<RHI::VulkanCommandList&>(commandList);
+        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), vkCmdList.GetHandle());
+
+        commandList.EndRenderPass();
     }
 
     void GuiPass::Cleanup(const Context::Context& context)
@@ -127,24 +153,27 @@ namespace Renderer
         ImGui_ImplGlfw_Shutdown();
         ImGui::DestroyContext();
 
-        auto& device = context.GetVulkanContext().GetDevice();
-        m_FrameBuffer->Cleanup(device);
-        m_RenderPass->Cleanup(device);
-        m_DescriptorAllocator->Cleanup(device);
+        auto& vkDevice = static_cast<const RHI::VulkanDevice&>(context.GetVulkanContext().GetRHIDevice());
+        vkDestroyDescriptorPool(vkDevice.GetHandle(), m_ImGuiPool, nullptr);
+        m_ImGuiPool = VK_NULL_HANDLE;
+
+        m_FrameBuffer.reset();
+        m_RenderPass.reset();
     }
 
     void GuiPass::ResizeResources(const Context::Context& context, const ResourceManager& resourceManager)
     {
-        auto& device = context.GetVulkanContext().GetDevice();
-        m_FrameBuffer->Cleanup(device);
+        auto& rhiDevice         = context.GetVulkanContext().GetRHIDevice();
+        const auto& colorBuffer = resourceManager.GetRHIColorBuffer();
 
-        auto& swapChain = context.GetVulkanContext().GetSwapChain();
-        std::vector<VkImageView> attacments = { resourceManager.GetColorBuffer().GetNativeView() };
-        m_FrameBuffer = std::make_unique<Wrappers::FrameBuffer>(
-            device,
-            attacments,
-            swapChain.GetSwapChainExtent(),
-            *m_RenderPass);
+        m_FrameBuffer.reset();
+
+        RHI::FramebufferDesc fbDesc;
+        fbDesc.m_RenderPass       = m_RenderPass.get();
+        fbDesc.m_ColorAttachments = { &colorBuffer };
+        fbDesc.m_Width            = colorBuffer.GetWidth();
+        fbDesc.m_Height           = colorBuffer.GetHeight();
+        m_FrameBuffer = rhiDevice.CreateFramebuffer(fbDesc);
     }
 
     bool GuiPass::IsCursorPositionInGUI()
@@ -159,8 +188,6 @@ namespace Renderer
 
     void GuiPass::UploadFonts()
     {
-        //ImGuiBackendFlags_RendererHasTextures();
-
     }
 
     void GuiPass::DrawGui(Context::Context& context)
@@ -173,10 +200,4 @@ namespace Renderer
         ImGui::ShowDemoWindow();
     }
 
-
-
 }
-
-
-
-

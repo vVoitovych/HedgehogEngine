@@ -29,14 +29,14 @@ project "imgui"
         "imgui"
     }
 
-    libdirs
+    defines
     {
-        "%{LibraryDir.VulkanSDK}"
+        "IMGUI_IMPL_VULKAN_USE_VOLK",
+        "IMGUI_IMPL_VULKAN_VOLK_FILENAME=<Volk/volk.h>"
     }
 
-    links { 
-        "glfw",
-        "vulkan-1"
+    links {
+        "glfw"
     }
 
    targetdir ("../../Binaries/" .. OutputDir .. "/%{prj.name}")

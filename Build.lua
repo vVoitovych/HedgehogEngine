@@ -6,7 +6,6 @@ workspace "HedgehogEngine"
    startproject "Client"
    staticruntime "off"
 
-   -- Workspace-wide build options for MSVC
    filter "system:windows"
       buildoptions {  }
 
@@ -20,6 +19,8 @@ group "ThirdParty"
    include "ThirdParty/YamlCpp/Build-YamlCpp.lua"
    include "ThirdParty/Lua/Build-Lua.lua"
 group ""
+
+include "HedgehogEngine/RHI/Build-RHI.lua"
 
 include "HedgehogEngine/HedgehogCommon/Build-HedgehogCommon.lua"
 include "HedgehogEngine/HedgehogContext/Build-HedgehogContext.lua"

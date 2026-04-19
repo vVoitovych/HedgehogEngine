@@ -2,15 +2,15 @@
 
 #include "ECS/api/Entity.hpp"
 
+#include <Volk/volk.h>
 #include <memory>
 #include <optional>
 #include <string>
 
-namespace Wrappers
+namespace RHI
 {
-    class RenderPass;
-    class DescriptorAllocator;
-    class FrameBuffer;
+    class IRHIRenderPass;
+    class IRHIFramebuffer;
 }
 
 namespace Context
@@ -56,14 +56,12 @@ namespace Renderer
         void UploadFonts();
 
     private:
-        std::unique_ptr<Wrappers::RenderPass> m_RenderPass;
-        std::unique_ptr<Wrappers::FrameBuffer> m_FrameBuffer;
-        std::unique_ptr<Wrappers::DescriptorAllocator> m_DescriptorAllocator;
+        std::unique_ptr<RHI::IRHIRenderPass>  m_RenderPass;
+        std::unique_ptr<RHI::IRHIFramebuffer> m_FrameBuffer;
+        VkDescriptorPool                      m_ImGuiPool = VK_NULL_HANDLE;
 
         std::optional<ECS::Entity> m_SelectedObject;
 
         bool m_MaterialWindowShow = false;
     };
 }
-
-

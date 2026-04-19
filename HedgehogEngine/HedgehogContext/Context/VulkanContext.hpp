@@ -2,15 +2,15 @@
 
 #include <memory>
 
-namespace Wrappers
-{
-    class Device;
-    class SwapChain;
-}
-
 namespace WinManager
 {
     class WindowManager;
+}
+
+namespace RHI
+{
+    class IRHIDevice;
+    class IRHISwapchain;
 }
 
 namespace Context
@@ -37,21 +37,19 @@ namespace Context
         void ResizeWindow();
         bool IsWindowResized();
         void ResetWindowResizeState();
+        void RecreateSwapchain();
 
-        const Wrappers::Device& GetDevice() const;
-        const Wrappers::SwapChain& GetSwapChain() const;
-        Wrappers::SwapChain& GetSwapChain();
+        RHI::IRHIDevice&          GetRHIDevice();
+        const RHI::IRHIDevice&    GetRHIDevice() const;
+        RHI::IRHISwapchain&       GetRHISwapchain();
+        const RHI::IRHISwapchain& GetRHISwapchain() const;
 
     private:
         std::unique_ptr<WinManager::WindowManager> m_WindowManager;
         bool m_WindowResized = false;
 
-        std::unique_ptr<Wrappers::Device> m_Device;
-        std::unique_ptr<Wrappers::SwapChain> m_SwapChain;
+        std::unique_ptr<RHI::IRHIDevice>    m_RHIDevice;
+        std::unique_ptr<RHI::IRHISwapchain> m_RHISwapchain;
     };
 
 }
-
-
-
-

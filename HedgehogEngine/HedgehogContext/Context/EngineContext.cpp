@@ -8,7 +8,7 @@
 #include "HedgehogContext/Containers/DrawListContrainer/DrawListContainer.hpp"
 
 #include "HedgehogWrappers/WindowManagment/WindowManager.hpp"
-#include "HedgehogWrappers/Wrappeers/SwapChain/SwapChain.hpp"
+#include "RHI/api/IRHISwapchain.hpp"
 
 #include "HedgehogCommon/api/Camera.hpp"
 
@@ -44,7 +44,7 @@ namespace Context
     void EngineContext::Cleanup(const VulkanContext& vulkanContext)
     {
         m_MeshContainer->Cleanup(vulkanContext);
-        m_TextureContainer->Cleanup(vulkanContext.GetDevice());
+        m_TextureContainer->Cleanup(vulkanContext);
         m_MaterialContainer->Cleanup(vulkanContext);
     }
 
@@ -118,9 +118,8 @@ namespace Context
     {
         auto& windowManager = vulkanContext.GetWindowManager();
         auto& controls = windowManager.GetControls();
-        const auto& swapChain = vulkanContext.GetSwapChain();
+        const auto& swapchain = vulkanContext.GetRHISwapchain();
 
-        auto extend = swapChain.GetSwapChainExtent();
         HM::Vector3 posOffset(0.0f, 0.0f, 0.0f);
         HM::Vector2 dirOffset(controls.MouseDelta.x(), controls.MouseDelta.y());
 
@@ -150,7 +149,7 @@ namespace Context
         {
             posOffset.y() = 1.0f;
         }
-        m_Camera->UpdateCamera(dt, extend.width / static_cast<float>(extend.height), posOffset, dirOffset);
+        m_Camera->UpdateCamera(dt, swapchain.GetWidth() / static_cast<float>(swapchain.GetHeight()), posOffset, dirOffset);
     }
 
 }
