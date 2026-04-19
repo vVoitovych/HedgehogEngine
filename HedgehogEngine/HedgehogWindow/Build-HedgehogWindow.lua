@@ -1,10 +1,10 @@
-project "HedgehogWrappers"
+project "HedgehogWindow"
    kind "StaticLib"
    language "C++"
    cppdialect "C++20"
 
-    files 
-    { 
+    files
+    {
         "**.hpp", "**.cpp"
     }
 
@@ -21,15 +21,13 @@ project "HedgehogWrappers"
         "%{LibraryDir.VulkanSDK}"
     }
 
-    links { 
-        "HedgehogCommon",
+    links
+    {
         "HedgehogMath",
         "Logger",
-        "ContentLoader",
         "glfw",
         "vulkan-1"
     }
-
 
    targetdir ("../../Binaries/" .. OutputDir .. "/%{prj.name}")
    objdir ("../../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")
@@ -47,6 +45,3 @@ project "HedgehogWrappers"
        defines { "RELEASE" }
        runtime "Release"
        optimize "On"
-
-
-

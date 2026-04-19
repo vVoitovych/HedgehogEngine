@@ -26,7 +26,7 @@ project "HedgehogContext"
         "RHI",
         "HedgehogCommon",
         "HedgehogSettings",
-        "HedgehogWrappers",
+        "HedgehogWindow",
         "ContentLoader",
         "DialogueWindows",
         "HedgehogMath",

@@ -591,3 +591,7 @@ Binaries
 /Logger/*.filters
 /ContentLoader/*.filters
 /HedgehogEngine/HedgehogCommon/*.user
+/HedgehogEngine/HedgehogWindow/*.vcxproj
+/HedgehogEngine/HedgehogWindow/*.filters
+/HedgehogEngine/RHI/*.vcxproj
+/HedgehogEngine/RHI/*.filters

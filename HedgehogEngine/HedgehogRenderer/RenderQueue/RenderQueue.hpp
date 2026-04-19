@@ -21,7 +21,7 @@ namespace Renderer
     class RenderQueue
     {
     public:
-        RenderQueue(const Context::Context& context, const ResourceManager& resourceManager);
+        RenderQueue(Context::Context& context, const ResourceManager& resourceManager);
         ~RenderQueue();
 
         RenderQueue(const RenderQueue&) = delete;

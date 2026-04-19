@@ -6,11 +6,6 @@
 #include "HedgehogMath/api/Matrix.hpp"
 #include "HedgehogMath/api/Common.hpp"
 
-namespace WinManager
-{
-    struct Controls;
-}
-
 namespace Context
 {
     enum class CameraType

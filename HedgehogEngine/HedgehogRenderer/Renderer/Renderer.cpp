@@ -15,7 +15,7 @@
 
 namespace Renderer
 {
-    Renderer::Renderer(const Context::Context& context)
+    Renderer::Renderer(Context::Context& context)
     {
         m_ResourceManager = std::make_unique<ResourceManager>(context);
         m_RenderQueue = std::make_unique<RenderQueue>(context, *m_ResourceManager);

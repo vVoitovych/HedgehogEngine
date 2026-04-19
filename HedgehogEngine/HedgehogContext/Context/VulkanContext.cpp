@@ -1,26 +1,37 @@
 #include "VulkanContext.hpp"
 
-#include "HedgehogWrappers/WindowManagment/WindowManager.hpp"
+#include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
+#include "HedgehogEngine/HedgehogWindow/api/WindowDesc.hpp"
+#include "HedgehogEngine/HedgehogWindow/api/WindowManager.hpp"
 
 #include "RHI/api/IRHIDevice.hpp"
 #include "RHI/api/IRHISwapchain.hpp"
 
 #include "ContentLoader/api/TextureLoader.hpp"
 
-#include <GLFW/glfw3.h>
-
 namespace Context
 {
     VulkanContext::VulkanContext()
     {
-        m_WindowManager = std::make_unique<WinManager::WindowManager>(WinManager::WindowState::GetDefaultState());
+        m_WindowManager = std::make_unique<HW::WindowManager>();
+
+        HW::WindowDesc desc;
+        desc.m_Title  = "Hedgehog Engine";
+        desc.m_X      = 100;
+        desc.m_Y      = 100;
+        desc.m_Width  = 1366;
+        desc.m_Height = 768;
+        m_Window = &m_WindowManager->CreateWindow(desc);
+
         ContentLoader::TextureLoader texLoader;
         texLoader.LoadTexture("Textures\\Logo\\logo1.png");
-        m_WindowManager->SetIcon(texLoader.GetWidth(), texLoader.GetHeight(), static_cast<unsigned char*>(texLoader.GetData()));
+        m_Window->SetIcon(texLoader.GetWidth(), texLoader.GetHeight(),
+            static_cast<unsigned char*>(texLoader.GetData()));
 
-        m_RHIDevice = RHI::IRHIDevice::Create(m_WindowManager->GetGlfwWindow());
+        m_RHIDevice = RHI::IRHIDevice::Create(m_Window->GetNativeHandle());
+
         int fbWidth = 0, fbHeight = 0;
-        glfwGetFramebufferSize(m_WindowManager->GetGlfwWindow(), &fbWidth, &fbHeight);
+        m_Window->GetFramebufferSize(fbWidth, fbHeight);
         m_RHISwapchain = m_RHIDevice->CreateSwapchain(
             static_cast<uint32_t>(fbWidth),
             static_cast<uint32_t>(fbHeight));
@@ -39,17 +50,17 @@ namespace Context
 
     void VulkanContext::HandleInput()
     {
-        m_WindowManager->HandleInput();
+        m_WindowManager->PollEvents();
     }
 
-    WinManager::WindowManager& VulkanContext::GetWindowManager()
+    HW::Window& VulkanContext::GetWindow()
     {
-        return *m_WindowManager;
+        return *m_Window;
     }
 
-    const WinManager::WindowManager& VulkanContext::GetWindowManager() const
+    const HW::Window& VulkanContext::GetWindow() const
     {
-        return *m_WindowManager;
+        return *m_Window;
     }
 
     RHI::IRHIDevice& VulkanContext::GetRHIDevice()
@@ -74,7 +85,7 @@ namespace Context
 
     bool VulkanContext::ShouldClose() const
     {
-        return m_WindowManager->ShouldClose();
+        return m_Window->ShouldClose();
     }
 
     void VulkanContext::ResizeWindow()
@@ -82,7 +93,7 @@ namespace Context
         m_WindowResized = true;
     }
 
-    bool VulkanContext::IsWindowResized()
+    bool VulkanContext::IsWindowResized() const
     {
         return m_WindowResized;
     }
@@ -95,11 +106,11 @@ namespace Context
     void VulkanContext::RecreateSwapchain()
     {
         int fbWidth = 0, fbHeight = 0;
-        glfwGetFramebufferSize(m_WindowManager->GetGlfwWindow(), &fbWidth, &fbHeight);
+        m_Window->GetFramebufferSize(fbWidth, fbHeight);
         while (fbWidth == 0 || fbHeight == 0)
         {
-            glfwGetFramebufferSize(m_WindowManager->GetGlfwWindow(), &fbWidth, &fbHeight);
-            glfwWaitEvents();
+            m_Window->GetFramebufferSize(fbWidth, fbHeight);
+            m_WindowManager->WaitEvents();
         }
         m_RHIDevice->WaitIdle();
         m_RHISwapchain->Resize(static_cast<uint32_t>(fbWidth), static_cast<uint32_t>(fbHeight));
