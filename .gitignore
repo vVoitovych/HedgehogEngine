@@ -595,3 +595,4 @@ Binaries
 /HedgehogEngine/HedgehogWindow/*.filters
 /HedgehogEngine/RHI/*.vcxproj
 /HedgehogEngine/RHI/*.filters
+/HedgehogEngine/HedgehogWindow/HedgehogWindow.vcxproj.user

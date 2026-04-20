@@ -14,12 +14,10 @@ project "RHI"
        "..",
        "../..",
        "%{IncludeDir.VulkanSDK}",
-       "%{IncludeDir.GLFW}",
    }
 
    links
    {
-       "glfw",
        "Logger",
    }
 

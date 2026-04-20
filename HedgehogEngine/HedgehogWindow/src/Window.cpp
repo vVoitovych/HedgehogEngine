@@ -6,67 +6,86 @@
 
 #include "GLFW/glfw3.h"
 
+#ifdef _WIN32
+    #define GLFW_EXPOSE_NATIVE_WIN32
+    #include "GLFW/glfw3native.h"
+#endif
+
+#include <cassert>
 #include <cmath>
+#include <functional>
 
 namespace HW
 {
+    struct Window::Impl
+    {
+        GLFWwindow*           m_Handle    = nullptr;
+        InputState            m_InputState;
+        bool                  m_Resized   = false;
+        std::function<bool()> m_GuiCallback;
+    };
+
     Window::Window(const WindowDesc& desc)
+        : m_Impl(new Impl())
     {
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
         GLFWmonitor* monitor = desc.m_Fullscreen ? glfwGetPrimaryMonitor() : nullptr;
-        m_Handle = glfwCreateWindow(desc.m_Width, desc.m_Height, desc.m_Title.c_str(), monitor, nullptr);
+        m_Impl->m_Handle = glfwCreateWindow(desc.m_Width, desc.m_Height, desc.m_Title.c_str(), monitor, nullptr);
+        assert(m_Impl->m_Handle != nullptr && "glfwCreateWindow() failed");
 
-        glfwSetWindowPos(m_Handle, desc.m_X, desc.m_Y);
-        glfwSetWindowUserPointer(m_Handle, this);
+        glfwSetWindowPos(m_Impl->m_Handle, desc.m_X, desc.m_Y);
+        glfwSetWindowUserPointer(m_Impl->m_Handle, this);
 
-        glfwSetFramebufferSizeCallback(m_Handle, OnFramebufferResize);
-        glfwSetKeyCallback(m_Handle, OnKey);
-        glfwSetMouseButtonCallback(m_Handle, OnMouseButton);
-        glfwSetCursorPosCallback(m_Handle, OnMouseMove);
-        glfwSetScrollCallback(m_Handle, OnMouseScroll);
+        glfwSetFramebufferSizeCallback(m_Impl->m_Handle, OnFramebufferResize);
+        glfwSetKeyCallback(m_Impl->m_Handle, OnKey);
+        glfwSetMouseButtonCallback(m_Impl->m_Handle, OnMouseButton);
+        glfwSetCursorPosCallback(m_Impl->m_Handle, OnMouseMove);
+        glfwSetScrollCallback(m_Impl->m_Handle, OnMouseScroll);
 
         LOGINFO("Window created: ", desc.m_Title);
     }
 
     Window::~Window()
     {
-        if (m_Handle)
+        if (m_Impl->m_Handle)
         {
-            glfwDestroyWindow(m_Handle);
-            m_Handle = nullptr;
+            glfwDestroyWindow(m_Impl->m_Handle);
+            m_Impl->m_Handle = nullptr;
         }
+        delete m_Impl;
+        m_Impl = nullptr;
         LOGINFO("Window destroyed");
     }
 
     bool Window::ShouldClose() const
     {
-        return glfwWindowShouldClose(m_Handle) != 0;
+        return glfwWindowShouldClose(m_Impl->m_Handle) != 0;
     }
 
     bool Window::IsResized() const
     {
-        return m_Resized;
+        return m_Impl->m_Resized;
     }
 
     void Window::ResetResizedFlag()
     {
-        m_Resized = false;
+        m_Impl->m_Resized = false;
     }
 
     void Window::GetFramebufferSize(int& outWidth, int& outHeight) const
     {
-        glfwGetFramebufferSize(m_Handle, &outWidth, &outHeight);
+        glfwGetFramebufferSize(m_Impl->m_Handle, &outWidth, &outHeight);
     }
 
     const InputState& Window::GetInputState() const
     {
-        return m_InputState;
+        return m_Impl->m_InputState;
     }
 
     InputState& Window::GetInputState()
     {
-        return m_InputState;
+        return m_Impl->m_InputState;
     }
 
     void Window::SetIcon(int width, int height, unsigned char* data)
@@ -75,34 +94,48 @@ namespace HW
         image.width  = width;
         image.height = height;
         image.pixels = data;
-        glfwSetWindowIcon(m_Handle, 1, &image);
+        glfwSetWindowIcon(m_Impl->m_Handle, 1, &image);
     }
 
     void Window::SetGuiCallback(std::function<bool()> callback)
     {
-        m_GuiCallback = std::move(callback);
+        m_Impl->m_GuiCallback = std::move(callback);
     }
 
     GLFWwindow* Window::GetNativeHandle()
     {
-        return m_Handle;
+        return m_Impl->m_Handle;
     }
 
     const GLFWwindow* Window::GetNativeHandle() const
     {
-        return m_Handle;
+        return m_Impl->m_Handle;
+    }
+
+    void* Window::GetNativeOsHandle() const
+    {
+#ifdef _WIN32
+        return static_cast<void*>(glfwGetWin32Window(m_Impl->m_Handle));
+#else
+        return nullptr;
+#endif
+    }
+
+    const char** Window::GetVulkanExtensions(uint32_t& outCount) const
+    {
+        return glfwGetRequiredInstanceExtensions(&outCount);
     }
 
     void Window::OnFramebufferResize(GLFWwindow* handle, int /*width*/, int /*height*/)
     {
         auto* self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(handle));
-        self->m_Resized = true;
+        self->m_Impl->m_Resized = true;
     }
 
     void Window::OnKey(GLFWwindow* handle, int key, int /*scancode*/, int action, int mods)
     {
         auto* self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(handle));
-        InputState& state = self->m_InputState;
+        InputState& state = self->m_Impl->m_InputState;
 
         const bool pressOrRepeat = (action == GLFW_PRESS || action == GLFW_REPEAT);
         state.m_CtrlHeld = (mods & GLFW_MOD_CONTROL) != 0;
@@ -122,10 +155,10 @@ namespace HW
     void Window::OnMouseButton(GLFWwindow* handle, int button, int action, int /*mods*/)
     {
         auto* self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(handle));
-        if (self->m_GuiCallback && self->m_GuiCallback())
+        if (self->m_Impl->m_GuiCallback && self->m_Impl->m_GuiCallback())
             return;
 
-        InputState& state = self->m_InputState;
+        InputState& state = self->m_Impl->m_InputState;
         const bool anyButtonDown = state.m_MouseLeft || state.m_MouseMiddle || state.m_MouseRight;
 
         if (action == GLFW_PRESS && !anyButtonDown)
@@ -159,7 +192,7 @@ namespace HW
     void Window::OnMouseMove(GLFWwindow* handle, double x, double y)
     {
         auto* self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(handle));
-        InputState& state = self->m_InputState;
+        InputState& state = self->m_Impl->m_InputState;
 
         if (state.m_MouseLeft || state.m_MouseMiddle || state.m_MouseRight)
         {
@@ -177,6 +210,6 @@ namespace HW
     void Window::OnMouseScroll(GLFWwindow* handle, double x, double y)
     {
         auto* self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(handle));
-        self->m_InputState.m_ScrollDelta = HM::Vector2(static_cast<float>(x), static_cast<float>(y));
+        self->m_Impl->m_InputState.m_ScrollDelta = HM::Vector2(static_cast<float>(x), static_cast<float>(y));
     }
 }

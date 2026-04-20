@@ -3,6 +3,9 @@
 // and VMA_IMPLEMENTATION.  Every other Vulkan backend .cpp just includes
 // the headers without those defines.
 
+#ifdef _WIN32
+    #define VK_USE_PLATFORM_WIN32_KHR
+#endif
 #define VOLK_IMPLEMENTATION
 #include <Volk/volk.h>
 
@@ -27,8 +30,6 @@
 #include "VulkanTexture.hpp"
 
 #include "Logger/api/Logger.hpp"
-
-#include <GLFW/glfw3.h>
 
 #include <algorithm>
 #include <cassert>
@@ -79,15 +80,16 @@ namespace RHI
 
 // ── Factory (IRHIDevice::Create) ──────────────────────────────────────────────
 
-std::unique_ptr<IRHIDevice> IRHIDevice::Create(void* nativeWindowHandle)
+std::unique_ptr<IRHIDevice> IRHIDevice::Create(const NativeWindowDesc& desc)
 {
-    return std::make_unique<VulkanDevice>(static_cast<GLFWwindow*>(nativeWindowHandle));
+    return std::make_unique<VulkanDevice>(desc);
 }
 
 // ── Constructor / Destructor ─────────────────────────────────────────────────
 
-VulkanDevice::VulkanDevice(GLFWwindow* window)
-    : m_Window(window)
+VulkanDevice::VulkanDevice(const NativeWindowDesc& desc)
+    : m_VkExtensions(desc.m_VkExtensions)
+    , m_VkExtensionCount(desc.m_VkExtensionCount)
 {
     VkResult result = volkInitialize();
     assert(result == VK_SUCCESS && "Failed to initialize Volk (is a Vulkan runtime installed?)");
@@ -99,7 +101,7 @@ VulkanDevice::VulkanDevice(GLFWwindow* window)
     volkLoadInstance(m_Instance);
 
     SetupDebugMessenger();
-    CreateSurface(window);
+    CreateSurface(desc.m_NativeHandle);
     PickPhysicalDevice();
     CreateLogicalDevice();
     volkLoadDevice(m_Device);
@@ -178,10 +180,19 @@ void VulkanDevice::SetupDebugMessenger()
     createFn(m_Instance, &createInfo, nullptr, &m_DebugMessenger);
 }
 
-void VulkanDevice::CreateSurface(GLFWwindow* window)
+void VulkanDevice::CreateSurface(void* nativeHandle)
 {
-    VkResult result = glfwCreateWindowSurface(m_Instance, window, nullptr, &m_Surface);
-    assert(result == VK_SUCCESS && "Failed to create window surface.");
+#ifdef _WIN32
+    VkWin32SurfaceCreateInfoKHR createInfo{};
+    createInfo.sType     = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+    createInfo.hwnd      = static_cast<HWND>(nativeHandle);
+    createInfo.hinstance = GetModuleHandle(nullptr);
+
+    VkResult result = vkCreateWin32SurfaceKHR(m_Instance, &createInfo, nullptr, &m_Surface);
+    assert(result == VK_SUCCESS && "Failed to create Win32 surface.");
+#else
+    assert(false && "CreateSurface: unsupported platform.");
+#endif
 }
 
 void VulkanDevice::PickPhysicalDevice()
@@ -360,10 +371,7 @@ QueueFamilyIndices VulkanDevice::FindQueueFamilies(VkPhysicalDevice device) cons
 
 std::vector<const char*> VulkanDevice::GetRequiredExtensions() const
 {
-    uint32_t     glfwCount     = 0;
-    const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwCount);
-
-    std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwCount);
+    std::vector<const char*> extensions(m_VkExtensions, m_VkExtensions + m_VkExtensionCount);
 
     if (ENABLE_VALIDATION_LAYERS)
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);

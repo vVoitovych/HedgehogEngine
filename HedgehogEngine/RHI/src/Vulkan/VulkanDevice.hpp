@@ -11,8 +11,6 @@
 #include <string>
 #include <vector>
 
-struct GLFWwindow;
-
 namespace RHI
 {
 
@@ -31,7 +29,7 @@ struct QueueFamilyIndices
 class VulkanDevice final : public IRHIDevice
 {
 public:
-    explicit VulkanDevice(GLFWwindow* window);
+    explicit VulkanDevice(const NativeWindowDesc& desc);
     ~VulkanDevice() override;
 
     VulkanDevice(const VulkanDevice&)            = delete;
@@ -98,7 +96,7 @@ public:
 private:
     void CreateInstance();
     void SetupDebugMessenger();
-    void CreateSurface(GLFWwindow* window);
+    void CreateSurface(void* nativeHandle);
     void PickPhysicalDevice();
     void CreateLogicalDevice();
     void CreateAllocator();
@@ -125,7 +123,8 @@ private:
     VmaAllocator             m_Allocator      = VK_NULL_HANDLE;
     VkCommandPool            m_CommandPool    = VK_NULL_HANDLE;
 
-    GLFWwindow*              m_Window         = nullptr;
+    const char**             m_VkExtensions      = nullptr;
+    uint32_t                 m_VkExtensionCount  = 0;
 
     std::vector<const char*> m_ValidationLayers;
     std::vector<const char*> m_DeviceExtensions;

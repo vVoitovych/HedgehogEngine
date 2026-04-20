@@ -28,7 +28,10 @@ namespace Context
         m_Window->SetIcon(texLoader.GetWidth(), texLoader.GetHeight(),
             static_cast<unsigned char*>(texLoader.GetData()));
 
-        m_RHIDevice = RHI::IRHIDevice::Create(m_Window->GetNativeHandle());
+        RHI::NativeWindowDesc nativeDesc{};
+        nativeDesc.m_NativeHandle    = m_Window->GetNativeOsHandle();
+        nativeDesc.m_VkExtensions    = m_Window->GetVulkanExtensions(nativeDesc.m_VkExtensionCount);
+        m_RHIDevice = RHI::IRHIDevice::Create(nativeDesc);
 
         int fbWidth = 0, fbHeight = 0;
         m_Window->GetFramebufferSize(fbWidth, fbHeight);

@@ -1,14 +1,13 @@
 #pragma once
 
-#include <memory>
-#include <vector>
+#include "HedgehogEngine/HedgehogWindow/api/HedgehogWindowApi.hpp"
 
 namespace HW
 {
     class Window;
     struct WindowDesc;
 
-    class WindowManager
+    class HEDGEHOG_WINDOW_API WindowManager
     {
     public:
         WindowManager();
@@ -26,6 +25,7 @@ namespace HW
         void WaitEvents() const;
 
     private:
-        std::vector<std::unique_ptr<Window>> m_Windows;
+        struct Impl;
+        Impl* m_Impl = nullptr;
     };
 }

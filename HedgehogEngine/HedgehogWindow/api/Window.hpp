@@ -1,5 +1,6 @@
 #pragma once
 
+#include "HedgehogEngine/HedgehogWindow/api/HedgehogWindowApi.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/InputState.hpp"
 
 #include <functional>
@@ -10,7 +11,7 @@ namespace HW
 {
     struct WindowDesc;
 
-    class Window
+    class HEDGEHOG_WINDOW_API Window
     {
     public:
         explicit Window(const WindowDesc& desc);
@@ -37,6 +38,13 @@ namespace HW
         GLFWwindow*       GetNativeHandle();
         const GLFWwindow* GetNativeHandle() const;
 
+        // Returns the native OS window handle (HWND on Win32).
+        void* GetNativeOsHandle() const;
+
+        // Returns the Vulkan instance extensions required by the windowing system.
+        // Pointer is valid for the lifetime of the process.
+        const char** GetVulkanExtensions(uint32_t& outCount) const;
+
     private:
         static void OnFramebufferResize(GLFWwindow* handle, int width, int height);
         static void OnKey(GLFWwindow* handle, int key, int scancode, int action, int mods);
@@ -45,9 +53,7 @@ namespace HW
         static void OnMouseScroll(GLFWwindow* handle, double x, double y);
 
     private:
-        GLFWwindow*           m_Handle    = nullptr;
-        InputState            m_InputState;
-        bool                  m_Resized   = false;
-        std::function<bool()> m_GuiCallback;
+        struct Impl;
+        Impl* m_Impl = nullptr;
     };
 }

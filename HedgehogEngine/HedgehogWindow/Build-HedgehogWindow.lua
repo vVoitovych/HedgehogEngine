@@ -1,11 +1,11 @@
 project "HedgehogWindow"
-   kind "StaticLib"
+   kind "SharedLib"
    language "C++"
    cppdialect "C++20"
 
     files
     {
-        "**.hpp", "**.cpp"
+        "api/**.hpp", "src/**.cpp"
     }
 
     includedirs
@@ -25,9 +25,15 @@ project "HedgehogWindow"
    targetdir ("../../Binaries/" .. OutputDir .. "/%{prj.name}")
    objdir ("../../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")
 
+   postbuildcommands
+   {
+      ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/Client"),
+      ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/Client/")
+   }
+
    filter "system:windows"
        systemversion "latest"
-       defines {  }
+       defines { "HEDGEHOG_WINDOW_EXPORT" }
 
    filter "configurations:Debug"
        defines { "DEBUG" }

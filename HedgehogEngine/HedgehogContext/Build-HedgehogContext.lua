@@ -11,7 +11,6 @@ project "HedgehogContext"
     includedirs
     {
         "%{IncludeDir.VulkanSDK}",
-        "%{IncludeDir.GLFW}",
         "%{IncludeDir.yaml_cpp}",
         "../..",
         ".."
