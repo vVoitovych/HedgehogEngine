@@ -1,42 +1,39 @@
-project "HedgehogWrappers"
-   kind "StaticLib"
+project "HedgehogWindow"
+   kind "SharedLib"
    language "C++"
    cppdialect "C++20"
 
-    files 
-    { 
-        "**.hpp", "**.cpp"
+    files
+    {
+        "api/**.hpp", "src/**.cpp"
     }
 
     includedirs
     {
-        "%{IncludeDir.VulkanSDK}",
         "%{IncludeDir.GLFW}",
         "../..",
         ".."
     }
 
-    libdirs
+    links
     {
-        "%{LibraryDir.VulkanSDK}"
-    }
-
-    links { 
-        "HedgehogCommon",
         "HedgehogMath",
         "Logger",
-        "ContentLoader",
-        "glfw",
-        "vulkan-1"
+        "glfw"
     }
-
 
    targetdir ("../../Binaries/" .. OutputDir .. "/%{prj.name}")
    objdir ("../../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")
 
+   postbuildcommands
+   {
+      ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/Client"),
+      ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/Client/")
+   }
+
    filter "system:windows"
        systemversion "latest"
-       defines {  }
+       defines { "HEDGEHOG_WINDOW_EXPORT" }
 
    filter "configurations:Debug"
        defines { "DEBUG" }
@@ -47,6 +44,3 @@ project "HedgehogWrappers"
        defines { "RELEASE" }
        runtime "Release"
        optimize "On"
-
-
-

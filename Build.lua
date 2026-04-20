@@ -25,7 +25,7 @@ include "HedgehogEngine/RHI/Build-RHI.lua"
 include "HedgehogEngine/HedgehogCommon/Build-HedgehogCommon.lua"
 include "HedgehogEngine/HedgehogContext/Build-HedgehogContext.lua"
 include "HedgehogEngine/HedgehogRenderer/Build-HedgehogRenderer.lua"
-include "HedgehogEngine/HedgehogWrappers/Build-HedgehogWrappers.lua"
+include "HedgehogEngine/HedgehogWindow/Build-HedgehogWindow.lua"
 include "HedgehogEngine/HedgehogSettings/Build-HedgehogSettings.lua"
 
 include "Client/Build-Client.lua"

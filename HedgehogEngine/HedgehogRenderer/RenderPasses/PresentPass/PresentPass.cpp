@@ -5,7 +5,7 @@
 #include "HedgehogContext/Context/FrameContext.hpp"
 #include "HedgehogContext/Context/VulkanContext.hpp"
 #include "HedgehogRenderer/ResourceManager/ResourceManager.hpp"
-#include "HedgehogWrappers/WindowManagment/WindowManager.hpp"
+#include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
 
 #include "RHI/api/IRHIDevice.hpp"
 #include "RHI/api/IRHISwapchain.hpp"
@@ -53,9 +53,9 @@ namespace Renderer
 
         rhiSwapchain.Present(backBufferIndex, renderFinishedSemaphore);
 
-        if (vulkanContext.GetWindowManager().IsWindowResized())
+        if (vulkanContext.GetWindow().IsResized())
         {
-            vulkanContext.GetWindowManager().ResetResizedState();
+            vulkanContext.GetWindow().ResetResizedFlag();
             vulkanContext.ResizeWindow();
         }
 

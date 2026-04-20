@@ -12,7 +12,7 @@
 
 namespace Renderer
 {
-    RenderQueue::RenderQueue(const Context::Context& context, const ResourceManager& resourceManager)
+    RenderQueue::RenderQueue(Context::Context& context, const ResourceManager& resourceManager)
     {
         m_InitPass = std::make_unique<InitPass>(context);
         m_DepthPrePass = std::make_unique<DepthPrePass>(context, resourceManager);

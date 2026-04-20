@@ -7,7 +7,9 @@
 #include "HedgehogContext/Containers/MaterialContainer/MaterialContainer.hpp"
 #include "HedgehogContext/Containers/DrawListContrainer/DrawListContainer.hpp"
 
-#include "HedgehogWrappers/WindowManagment/WindowManager.hpp"
+#include "HedgehogEngine/HedgehogWindow/api/InputState.hpp"
+#include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
+
 #include "RHI/api/IRHISwapchain.hpp"
 
 #include "HedgehogCommon/api/Camera.hpp"
@@ -116,39 +118,25 @@ namespace Context
 
     void EngineContext::UpdateCamera(VulkanContext& vulkanContext, float dt)
     {
-        auto& windowManager = vulkanContext.GetWindowManager();
-        auto& controls = windowManager.GetControls();
-        const auto& swapchain = vulkanContext.GetRHISwapchain();
+        const auto& inputState = vulkanContext.GetWindow().GetInputState();
+        const auto& swapchain  = vulkanContext.GetRHISwapchain();
 
         HM::Vector3 posOffset(0.0f, 0.0f, 0.0f);
-        HM::Vector2 dirOffset(controls.MouseDelta.x(), controls.MouseDelta.y());
+        HM::Vector2 dirOffset(inputState.m_MouseDelta.x(), inputState.m_MouseDelta.y());
 
-        if (controls.IsPressedQ)
-        {
+        if (inputState.m_KeyQ)
             posOffset.z() = -1.0f;
-        }
-        if (controls.IsPressedE)
-        {
+        if (inputState.m_KeyE)
             posOffset.z() = 1.0f;
-        }
-
-        if (controls.IsPressedW)
-        {
+        if (inputState.m_KeyW)
             posOffset.x() = 1.0f;
-        }
-        if (controls.IsPressedS)
-        {
+        if (inputState.m_KeyS)
             posOffset.x() = -1.0f;
-        }
-
-        if (controls.IsPressedD)
-        {
+        if (inputState.m_KeyD)
             posOffset.y() = -1.0f;
-        }
-        if (controls.IsPressedA)
-        {
+        if (inputState.m_KeyA)
             posOffset.y() = 1.0f;
-        }
+
         m_Camera->UpdateCamera(dt, swapchain.GetWidth() / static_cast<float>(swapchain.GetHeight()), posOffset, dirOffset);
     }
 

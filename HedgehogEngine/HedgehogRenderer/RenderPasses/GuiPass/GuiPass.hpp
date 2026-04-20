@@ -25,7 +25,7 @@ namespace Renderer
     class GuiPass
     {
     public:
-        GuiPass(const Context::Context& context, const ResourceManager& resourceManager);
+        GuiPass(Context::Context& context, const ResourceManager& resourceManager);
         ~GuiPass();
 
         void Render(Context::Context& context, const ResourceManager& resourceManager);

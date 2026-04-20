@@ -2,8 +2,9 @@
 
 #include <memory>
 
-namespace WinManager
+namespace HW
 {
+    class Window;
     class WindowManager;
 }
 
@@ -22,20 +23,20 @@ namespace Context
         VulkanContext();
         ~VulkanContext();
 
-        VulkanContext(const VulkanContext&) = delete;
-        VulkanContext(VulkanContext&&) = delete;
+        VulkanContext(const VulkanContext&)            = delete;
+        VulkanContext(VulkanContext&&)                 = delete;
         VulkanContext& operator=(const VulkanContext&) = delete;
-        VulkanContext& operator=(VulkanContext&&) = delete;
+        VulkanContext& operator=(VulkanContext&&)      = delete;
 
         void Cleanup();
 
         void HandleInput();
-        WinManager::WindowManager& GetWindowManager();
-        const WinManager::WindowManager& GetWindowManager() const;
+        HW::Window&       GetWindow();
+        const HW::Window& GetWindow() const;
 
         bool ShouldClose() const;
         void ResizeWindow();
-        bool IsWindowResized();
+        bool IsWindowResized() const;
         void ResetWindowResizeState();
         void RecreateSwapchain();
 
@@ -45,8 +46,9 @@ namespace Context
         const RHI::IRHISwapchain& GetRHISwapchain() const;
 
     private:
-        std::unique_ptr<WinManager::WindowManager> m_WindowManager;
-        bool m_WindowResized = false;
+        std::unique_ptr<HW::WindowManager> m_WindowManager;
+        HW::Window*                        m_Window        = nullptr;
+        bool                               m_WindowResized = false;
 
         std::unique_ptr<RHI::IRHIDevice>    m_RHIDevice;
         std::unique_ptr<RHI::IRHISwapchain> m_RHISwapchain;

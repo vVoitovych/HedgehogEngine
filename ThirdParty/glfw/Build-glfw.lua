@@ -1,5 +1,5 @@
 project "glfw"
-    kind "StaticLib"
+    kind "SharedLib"
     language "C"
 
     targetdir ("../../Binaries/" .. OutputDir .. "/%{prj.name}")
@@ -24,7 +24,6 @@ project "glfw"
         "glfw/src/null_platform.h",
         "glfw/src/null_joystick.h",
         "glfw/src/null_init.c",
-
         "glfw/src/null_monitor.c",
         "glfw/src/null_window.c",
         "glfw/src/null_joystick.c"
@@ -49,10 +48,24 @@ project "glfw"
             "glfw/src/osmesa_context.c"
         }
 
-        defines 
-        { 
+        defines
+        {
             "_GLFW_WIN32",
+            "_GLFW_BUILD_DLL",
             "_CRT_SECURE_NO_WARNINGS"
+        }
+
+        links
+        {
+            "gdi32",
+            "user32",
+            "shell32"
+        }
+
+        postbuildcommands
+        {
+            ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/Client"),
+            ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/Client/")
         }
 
    filter "configurations:Debug"
@@ -64,5 +77,3 @@ project "glfw"
        defines { "RELEASE" }
        runtime "Release"
        optimize "On"
-
-        

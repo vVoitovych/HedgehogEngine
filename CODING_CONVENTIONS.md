@@ -325,8 +325,7 @@ Separate each group with a blank line.
 | HedgehogMath | `HM` |
 | Context | `Context` |
 | Renderer | `Renderer` |
-| Wrappers | `Wrappers` |
-| WindowManager | `WinManager` |
+| HedgehogWindow | `HW` |
 | Settings | `HedgehogSettings` |
 | Logger | `EngineLogger` |
 | ContentLoader | `ContentLoader` |

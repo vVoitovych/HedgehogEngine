@@ -20,7 +20,7 @@
 #include "RHI/src/Vulkan/VulkanRenderPass.hpp"
 #include "RHI/src/Vulkan/VulkanCommandList.hpp"
 
-#include "HedgehogWrappers/WindowManagment/WindowManager.hpp"
+#include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
 
 #include "imgui.h"
 #include "backends/imgui_impl_vulkan.h"
@@ -31,14 +31,15 @@
 
 namespace Renderer
 {
-    GuiPass::GuiPass(const Context::Context& context, const ResourceManager& resourceManager)
+    GuiPass::GuiPass(Context::Context& context, const ResourceManager& resourceManager)
     {
-        WinManager::WindowManager::SetOnGuiCallback([]() {
+        auto& vulkanContext = context.GetVulkanContext();
+
+        vulkanContext.GetWindow().SetGuiCallback([]() {
             return GuiPass::IsCursorPositionInGUI();
         });
 
-        auto& vulkanContext = context.GetVulkanContext();
-        auto& rhiDevice     = vulkanContext.GetRHIDevice();
+        auto& rhiDevice = vulkanContext.GetRHIDevice();
         auto& vkDevice      = static_cast<const RHI::VulkanDevice&>(rhiDevice);
 
         // Raw VkDescriptorPool for ImGui (imgui_impl_vulkan requires a native pool)
@@ -92,8 +93,7 @@ namespace Renderer
         (void)io;
         ImGui::StyleColorsDark();
 
-        ImGui_ImplGlfw_InitForVulkan(
-            const_cast<GLFWwindow*>(vulkanContext.GetWindowManager().GetGlfwWindow()), true);
+        ImGui_ImplGlfw_InitForVulkan(vulkanContext.GetWindow().GetNativeHandle(), true);
 
         auto& vkRenderPass = static_cast<RHI::VulkanRenderPass&>(*m_RenderPass);
 

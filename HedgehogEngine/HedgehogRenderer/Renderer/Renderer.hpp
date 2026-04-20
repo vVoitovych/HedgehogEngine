@@ -15,7 +15,7 @@ namespace Renderer
     class Renderer
     {
     public:
-        Renderer(const Context::Context& context);
+        Renderer(Context::Context& context);
         ~Renderer();
 
         Renderer(const Renderer&) = delete;
