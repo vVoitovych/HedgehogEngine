@@ -78,6 +78,8 @@ namespace Renderer
 
         if (windowContext.IsWindowResized() || window.IsResized())
         {
+            m_RenderQueue->DiscardGui();
+
             if (window.IsResized())
                 window.ResetResizedFlag();
             windowContext.ResetWindowResizeState();

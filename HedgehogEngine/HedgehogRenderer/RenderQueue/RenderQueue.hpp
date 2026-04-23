@@ -54,6 +54,7 @@ namespace Renderer
         void Cleanup(RHI::IRHIDevice& device);
 
         void BeginGui();
+        void DiscardGui();
 
         void Render(const FD::FrameData& frame,
                     RHI::IRHIDevice&     device,

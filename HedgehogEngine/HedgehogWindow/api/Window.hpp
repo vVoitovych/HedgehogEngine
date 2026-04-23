@@ -27,6 +27,9 @@ namespace HW
         bool IsResized() const;
         void ResetResizedFlag();
 
+        void ToggleFullscreen();
+        bool IsFullscreen() const;
+
         void GetFramebufferSize(int& outWidth, int& outHeight) const;
 
         const InputState& GetInputState() const;
