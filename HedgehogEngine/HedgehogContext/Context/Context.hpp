@@ -4,10 +4,9 @@
 
 namespace Context
 {
-    class VulkanContext;
+    class WindowContext;
     class EngineContext;
     class FrameContext;
-    class ThreadContext;
 
     class Context
     {
@@ -15,33 +14,26 @@ namespace Context
         Context();
         ~Context();
 
-        void UpdateContext(float dt);
+        Context(const Context&)            = delete;
+        Context& operator=(const Context&) = delete;
+        Context(Context&&)                 = delete;
+        Context& operator=(Context&&)      = delete;
 
+        void UpdateContext(float dt, float aspectRatio);
         void Cleanup();
 
-        Context(const Context&) = delete;
-        Context& operator=(const Context&) = delete;
-        Context(Context&&) = delete;
-        Context& operator=(Context&&) = delete;
+        WindowContext&       GetWindowContext();
+        const WindowContext& GetWindowContext() const;
 
-        VulkanContext& GetVulkanContext();
-        EngineContext& GetEngineContext();
-        FrameContext& GetFrameContext();
-        ThreadContext& GetThreadContext();
-
-        const VulkanContext& GetVulkanContext() const;
+        EngineContext&       GetEngineContext();
         const EngineContext& GetEngineContext() const;
-        const FrameContext& GetFrameContext() const;
-        const ThreadContext& GetThreadContext() const;
+
+        FrameContext&        GetFrameContext();
+        const FrameContext&  GetFrameContext() const;
 
     private:
-        std::unique_ptr<VulkanContext> m_VulkanContext;
+        std::unique_ptr<WindowContext> m_WindowContext;
         std::unique_ptr<EngineContext> m_EngineContext;
-        std::unique_ptr<FrameContext> m_FrameContext;
-        std::unique_ptr<ThreadContext> m_ThreadContext;
-
+        std::unique_ptr<FrameContext>  m_FrameContext;
     };
-
 }
-
-

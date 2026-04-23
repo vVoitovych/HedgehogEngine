@@ -4,13 +4,9 @@
 #include "Scene/SceneComponents/LightComponent.hpp"
 
 #include "HedgehogCommon/api/RendererSettings.hpp"
-#include "HedgehogCommon/api/EngineDebugBreak.hpp"
 
-#include "HedgehogMath/api/Common.hpp"
-#include "HedgehogMath/api/Vector.hpp"
 #include "Logger/api/Logger.hpp"
 
-#include <cmath>
 #include <algorithm>
 
 namespace Context
@@ -32,21 +28,19 @@ namespace Context
         size_t counter = 0;
         for (size_t i = 0; i < lightComponentsCount; ++i)
         {
-            const auto& lightComponent = scene.GetLightComponentByIndex(i);
-            if (lightComponent.m_Enable)
-            {
-                auto& light        = m_Lights[counter];
-                light.m_Position   = lightComponent.m_Position;
-                light.m_Direction  = lightComponent.m_Direction;
-                light.m_Color      = lightComponent.m_Color;
-                light.m_Data       = {
-                    static_cast<float>(lightComponent.m_LightType),
-                    lightComponent.m_Intensity,
-                    lightComponent.m_Radius,
-                    std::cos(HM::ToRadians(lightComponent.m_ConeAngle))
-                };
-                ++counter;
-            }
+            const auto& lc = scene.GetLightComponentByIndex(i);
+            if (!lc.m_Enable)
+                continue;
+
+            auto& light      = m_Lights[counter];
+            light.m_Position  = lc.m_Position;
+            light.m_Direction = lc.m_Direction;
+            light.m_Color     = lc.m_Color;
+            light.m_Type      = static_cast<int>(lc.m_LightType);
+            light.m_Intensity = lc.m_Intensity;
+            light.m_Radius    = lc.m_Radius;
+            light.m_ConeAngle = lc.m_ConeAngle;
+            ++counter;
         }
         m_LightCount = counter;
     }
@@ -56,7 +50,7 @@ namespace Context
         return m_LightCount;
     }
 
-    const std::vector<Light>& LightContainer::GetLights() const
+    const std::vector<FD::LightData>& LightContainer::GetLights() const
     {
         return m_Lights;
     }

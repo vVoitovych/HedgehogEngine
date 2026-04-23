@@ -1,12 +1,5 @@
 #include "PresentPass.hpp"
 
-#include "HedgehogContext/Context/Context.hpp"
-#include "HedgehogContext/Context/ThreadContext.hpp"
-#include "HedgehogContext/Context/FrameContext.hpp"
-#include "HedgehogContext/Context/VulkanContext.hpp"
-#include "HedgehogRenderer/ResourceManager/ResourceManager.hpp"
-#include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
-
 #include "RHI/api/IRHIDevice.hpp"
 #include "RHI/api/IRHISwapchain.hpp"
 #include "RHI/api/IRHICommandList.hpp"
@@ -15,58 +8,34 @@
 
 namespace Renderer
 {
-    PresentPass::PresentPass(const Context::Context& context)
+    void PresentPass::Render(RHI::IRHICommandList& cmd,
+                             RHI::IRHIDevice&      device,
+                             RHI::IRHISwapchain&   swapchain,
+                             RHI::IRHITexture&     colorBuffer,
+                             uint32_t              backBufferIndex,
+                             RHI::IRHISemaphore&   imageAvailableSemaphore,
+                             RHI::IRHISemaphore&   renderFinishedSemaphore,
+                             RHI::IRHIFence&       fence)
     {
-    }
+        auto& swapchainImage = swapchain.GetTexture(backBufferIndex);
 
-    void PresentPass::Render(Context::Context& context, const ResourceManager& resourceManager)
-    {
-        auto& frameContext  = context.GetFrameContext();
-        auto& threadContext = context.GetThreadContext();
-        auto& vulkanContext = context.GetVulkanContext();
+        cmd.TransitionTexture(colorBuffer,    RHI::ImageLayout::ColorAttachment, RHI::ImageLayout::TransferSrc);
+        cmd.TransitionTexture(swapchainImage, RHI::ImageLayout::Undefined, RHI::ImageLayout::TransferDst);
+        cmd.CopyTextureToTexture(colorBuffer, swapchainImage);
+        cmd.TransitionTexture(swapchainImage, RHI::ImageLayout::TransferDst, RHI::ImageLayout::Present);
 
-        auto& commandList  = threadContext.GetCommandList();
-        auto& rhiDevice    = vulkanContext.GetRHIDevice();
-        auto& rhiSwapchain = vulkanContext.GetRHISwapchain();
+        cmd.End();
 
-        const uint32_t backBufferIndex = frameContext.GetBackBufferIndex();
-
-        auto& colorBuffer    = const_cast<RHI::IRHITexture&>(resourceManager.GetRHIColorBuffer());
-        auto& swapchainImage = rhiSwapchain.GetTexture(backBufferIndex);
-
-        commandList.TransitionTexture(colorBuffer,    RHI::ImageLayout::Undefined, RHI::ImageLayout::TransferSrc);
-        commandList.TransitionTexture(swapchainImage, RHI::ImageLayout::Undefined, RHI::ImageLayout::TransferDst);
-        commandList.CopyTextureToTexture(colorBuffer, swapchainImage);
-        commandList.TransitionTexture(swapchainImage, RHI::ImageLayout::TransferDst, RHI::ImageLayout::Present);
-
-        commandList.End();
-
-        auto& imageAvailableSemaphore = threadContext.GetImageAvailableSemaphore();
-        auto& renderFinishedSemaphore = threadContext.GetRenderFinishedSemaphore();
-        auto& fence                   = threadContext.GetFence();
-
-        rhiDevice.SubmitCommandList(
-            commandList,
+        device.SubmitCommandList(
+            cmd,
             { &imageAvailableSemaphore },
             { &renderFinishedSemaphore },
             &fence);
 
-        rhiSwapchain.Present(backBufferIndex, renderFinishedSemaphore);
-
-        if (vulkanContext.GetWindow().IsResized())
-        {
-            vulkanContext.GetWindow().ResetResizedFlag();
-            vulkanContext.ResizeWindow();
-        }
-
-        threadContext.NextFrame();
+        swapchain.Present(backBufferIndex, renderFinishedSemaphore);
     }
 
-    void PresentPass::Cleanup(const Context::Context& context)
+    void PresentPass::Cleanup()
     {
     }
-
 }
-
-
-

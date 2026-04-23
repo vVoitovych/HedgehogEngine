@@ -1,45 +1,48 @@
 #include "Context.hpp"
 
-#include "VulkanContext.hpp"
+#include "WindowContext.hpp"
 #include "EngineContext.hpp"
 #include "FrameContext.hpp"
-#include "ThreadContext.hpp"
-
-#include <stdexcept>
 
 namespace Context
 {
     Context::Context()
     {
-        m_VulkanContext = std::make_unique<VulkanContext>();
-        m_EngineContext = std::make_unique<EngineContext>(*m_VulkanContext);
-        m_FrameContext = std::make_unique<FrameContext>();
-        m_ThreadContext = std::make_unique<ThreadContext>(*m_VulkanContext);
+        m_WindowContext = std::make_unique<WindowContext>();
+        m_EngineContext = std::make_unique<EngineContext>();
+        m_FrameContext  = std::make_unique<FrameContext>();
     }
 
     Context::~Context()
     {
     }
 
-    void Context::UpdateContext(float dt)
+    void Context::UpdateContext(float dt, float aspectRatio)
     {
-        m_EngineContext->UpdateContext(*m_VulkanContext, dt);
+        m_EngineContext->UpdateContext(*m_WindowContext, aspectRatio, dt);
         m_FrameContext->UpdateContext(m_EngineContext->GetCamera());
     }
 
     void Context::Cleanup()
     {
-        m_EngineContext->Cleanup(*m_VulkanContext);
-        m_ThreadContext->Cleanup(*m_VulkanContext);
-        m_VulkanContext->Cleanup();
     }
 
-    VulkanContext& Context::GetVulkanContext()
+    WindowContext& Context::GetWindowContext()
     {
-        return *m_VulkanContext;
+        return *m_WindowContext;
+    }
+
+    const WindowContext& Context::GetWindowContext() const
+    {
+        return *m_WindowContext;
     }
 
     EngineContext& Context::GetEngineContext()
+    {
+        return *m_EngineContext;
+    }
+
+    const EngineContext& Context::GetEngineContext() const
     {
         return *m_EngineContext;
     }
@@ -49,31 +52,8 @@ namespace Context
         return *m_FrameContext;
     }
 
-    ThreadContext& Context::GetThreadContext()
-    {
-        return *m_ThreadContext;
-    }
-
-    const VulkanContext& Context::GetVulkanContext() const
-    {
-        return *m_VulkanContext;
-    }
-
-    const EngineContext& Context::GetEngineContext() const
-    {
-        return *m_EngineContext;
-    }
-
     const FrameContext& Context::GetFrameContext() const
     {
         return *m_FrameContext;
     }
-
-    const ThreadContext& Context::GetThreadContext() const
-    {
-        return *m_ThreadContext;
-    }
-
-
 }
-

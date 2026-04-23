@@ -7,6 +7,8 @@
 
 namespace RHI
 {
+    class IRHIDevice;
+    class IRHICommandList;
     class IRHIRenderPass;
     class IRHIPipeline;
     class IRHIFramebuffer;
@@ -16,9 +18,9 @@ namespace RHI
     class IRHIBuffer;
 }
 
-namespace Context
+namespace FD
 {
-    class Context;
+    struct FrameData;
 }
 
 namespace Renderer
@@ -28,13 +30,14 @@ namespace Renderer
     class DepthPrePass
     {
     public:
-        DepthPrePass(const Context::Context& context, const ResourceManager& resourceManager);
+        DepthPrePass(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
         ~DepthPrePass();
 
-        void Render(Context::Context& context, const ResourceManager& resourceManager);
-        void Cleanup(const Context::Context& context);
+        void Render(const FD::FrameData& frame, const ResourceManager& resourceManager,
+                    RHI::IRHICommandList& cmd, uint32_t frameIndex);
+        void Cleanup(RHI::IRHIDevice& device);
 
-        void ResizeResources(const Context::Context& context, const ResourceManager& resourceManager);
+        void ResizeResources(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
 
     private:
         struct DepthPrepassFrameUniform

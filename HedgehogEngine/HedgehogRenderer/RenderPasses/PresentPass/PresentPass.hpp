@@ -1,26 +1,37 @@
 #pragma once
 
-namespace Context
+#include <cstdint>
+
+namespace RHI
 {
-    class Context;
+    class IRHIDevice;
+    class IRHISwapchain;
+    class IRHICommandList;
+    class IRHITexture;
+    class IRHIFence;
+    class IRHISemaphore;
 }
 
 namespace Renderer
 {
-    class ResourceManager;
-
     class PresentPass
     {
     public:
-        PresentPass(const Context::Context& context);
+        PresentPass()  = default;
         ~PresentPass() = default;
 
-        void Render(Context::Context& context, const ResourceManager& resourceManager);
+        PresentPass(const PresentPass&)            = delete;
+        PresentPass& operator=(const PresentPass&) = delete;
 
-        void Cleanup(const Context::Context& context);
+        void Render(RHI::IRHICommandList& cmd,
+                    RHI::IRHIDevice&      device,
+                    RHI::IRHISwapchain&   swapchain,
+                    RHI::IRHITexture&     colorBuffer,
+                    uint32_t              backBufferIndex,
+                    RHI::IRHISemaphore&   imageAvailableSemaphore,
+                    RHI::IRHISemaphore&   renderFinishedSemaphore,
+                    RHI::IRHIFence&       fence);
 
+        void Cleanup();
     };
-
 }
-
-

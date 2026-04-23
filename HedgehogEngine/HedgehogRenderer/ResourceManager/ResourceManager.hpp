@@ -4,12 +4,24 @@
 
 namespace RHI
 {
+    class IRHIDevice;
+    class IRHISwapchain;
     class IRHITexture;
+}
+
+namespace HedgehogSettings
+{
+    class Settings;
 }
 
 namespace Context
 {
-    class Context;
+    class EngineContext;
+}
+
+namespace HR
+{
+    class ResourceRegistry;
 }
 
 namespace Renderer
@@ -17,29 +29,40 @@ namespace Renderer
     class ResourceManager
     {
     public:
-        ResourceManager(const Context::Context& context);
+        ResourceManager(RHI::IRHIDevice& device,
+                        const RHI::IRHISwapchain& swapchain,
+                        const HedgehogSettings::Settings& settings);
         ~ResourceManager();
 
-        void Cleanup(const Context::Context& context);
+        void Cleanup(RHI::IRHIDevice& device);
 
-        void ResizeFrameBufferSizeDependenteResources(const Context::Context& context);
-        void ResizeSettingsDependenteResources(const Context::Context& context);
+        void SyncResources(RHI::IRHIDevice& device, Context::EngineContext& engine);
+
+        void ResizeFrameBufferSizeDependenteResources(RHI::IRHIDevice& device,
+                                                      const RHI::IRHISwapchain& swapchain);
+        void ResizeSettingsDependenteResources(RHI::IRHIDevice& device,
+                                               HedgehogSettings::Settings& settings);
 
         const RHI::IRHITexture& GetRHIColorBuffer() const;
         const RHI::IRHITexture& GetRHIDepthBuffer() const;
         const RHI::IRHITexture& GetRHIShadowMap() const;
         const RHI::IRHITexture& GetRHIShadowMask() const;
 
+              HR::ResourceRegistry& GetResourceRegistry();
+        const HR::ResourceRegistry& GetResourceRegistry() const;
+
     private:
-        void CreateRHIDepthBuffer(const Context::Context& context);
-        void CreateRHIColorBuffer(const Context::Context& context);
-        void CreateRHIShadowMap(const Context::Context& context);
-        void CreateRHIShadowMask(const Context::Context& context);
+        void CreateRHIColorBuffer(RHI::IRHIDevice& device, const RHI::IRHISwapchain& swapchain);
+        void CreateRHIDepthBuffer(RHI::IRHIDevice& device, const RHI::IRHISwapchain& swapchain);
+        void CreateRHIShadowMap(RHI::IRHIDevice& device, uint32_t shadowmapSize);
+        void CreateRHIShadowMask(RHI::IRHIDevice& device, const RHI::IRHISwapchain& swapchain);
 
     private:
         std::unique_ptr<RHI::IRHITexture> m_RHIDepthBuffer;
         std::unique_ptr<RHI::IRHITexture> m_RHIColorBuffer;
         std::unique_ptr<RHI::IRHITexture> m_RHIShadowMap;
         std::unique_ptr<RHI::IRHITexture> m_RHIShadowMask;
+
+        std::unique_ptr<HR::ResourceRegistry> m_ResourceRegistry;
     };
 }

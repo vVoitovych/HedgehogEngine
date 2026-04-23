@@ -1,11 +1,5 @@
 #include "GuiPass.hpp"
 
-#include "HedgehogContext/Context/Context.hpp"
-#include "HedgehogContext/Context/VulkanContext.hpp"
-#include "HedgehogContext/Context/ThreadContext.hpp"
-#include "HedgehogContext/Context/FrameContext.hpp"
-#include "HedgehogContext/Context/EngineContext.hpp"
-
 #include "HedgehogRenderer/ResourceManager/ResourceManager.hpp"
 
 #include "HedgehogCommon/api/RendererSettings.hpp"
@@ -26,23 +20,18 @@
 #include "backends/imgui_impl_vulkan.h"
 #include "backends/imgui_impl_glfw.h"
 
-#include <vector>
 #include <algorithm>
+#include <vector>
 
 namespace Renderer
 {
-    GuiPass::GuiPass(Context::Context& context, const ResourceManager& resourceManager)
+    GuiPass::GuiPass(HW::Window& window, RHI::IRHIDevice& device, const ResourceManager& resourceManager)
     {
-        auto& vulkanContext = context.GetVulkanContext();
+        window.SetGuiCallback([]() { return GuiPass::IsCursorPositionInGUI(); });
 
-        vulkanContext.GetWindow().SetGuiCallback([]() {
-            return GuiPass::IsCursorPositionInGUI();
-        });
+        auto& vkDevice = static_cast<const RHI::VulkanDevice&>(device);
 
-        auto& rhiDevice = vulkanContext.GetRHIDevice();
-        auto& vkDevice      = static_cast<const RHI::VulkanDevice&>(rhiDevice);
-
-        // Raw VkDescriptorPool for ImGui (imgui_impl_vulkan requires a native pool)
+        // Raw VkDescriptorPool for ImGui
         VkDescriptorPoolSize poolSizes[] = {
             { VK_DESCRIPTOR_TYPE_SAMPLER,                1000 },
             { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
@@ -64,7 +53,7 @@ namespace Renderer
         poolInfo.pPoolSizes    = poolSizes;
         vkCreateDescriptorPool(vkDevice.GetHandle(), &poolInfo, nullptr, &m_ImGuiPool);
 
-        // Render pass: color-only, load/store, ColorAttachment → ColorAttachment
+        // Render pass: color-only, load/store
         RHI::RenderPassDesc rpDesc;
         rpDesc.m_ColorAttachments.push_back(RHI::AttachmentDesc{
             resourceManager.GetRHIColorBuffer().GetFormat(),
@@ -75,25 +64,23 @@ namespace Renderer
             RHI::ImageLayout::ColorAttachment,
             RHI::ImageLayout::ColorAttachment
         });
-        m_RenderPass = rhiDevice.CreateRenderPass(rpDesc);
+        m_RenderPass = device.CreateRenderPass(rpDesc);
 
-        // Framebuffer
         const auto& colorBuffer = resourceManager.GetRHIColorBuffer();
         RHI::FramebufferDesc fbDesc;
         fbDesc.m_RenderPass       = m_RenderPass.get();
         fbDesc.m_ColorAttachments = { &colorBuffer };
         fbDesc.m_Width            = colorBuffer.GetWidth();
         fbDesc.m_Height           = colorBuffer.GetHeight();
-        m_FrameBuffer = rhiDevice.CreateFramebuffer(fbDesc);
+        m_FrameBuffer = device.CreateFramebuffer(fbDesc);
 
-        // ImGui init
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
         ImGuiIO& io = ImGui::GetIO();
         (void)io;
         ImGui::StyleColorsDark();
 
-        ImGui_ImplGlfw_InitForVulkan(vulkanContext.GetWindow().GetNativeHandle(), true);
+        ImGui_ImplGlfw_InitForVulkan(window.GetNativeHandle(), true);
 
         auto& vkRenderPass = static_cast<RHI::VulkanRenderPass&>(*m_RenderPass);
 
@@ -119,41 +106,34 @@ namespace Renderer
     {
     }
 
-    void GuiPass::Render(Context::Context& context, const ResourceManager& resourceManager)
+    void GuiPass::BeginFrame()
     {
-        auto& threadContext = context.GetThreadContext();
-        auto& commandList   = threadContext.GetCommandList();
-
-        // Transition color buffer from Present (left by ForwardPass) to ColorAttachment
-        auto& colorBuffer = const_cast<RHI::IRHITexture&>(resourceManager.GetRHIColorBuffer());
-        commandList.TransitionTexture(colorBuffer,
-            RHI::ImageLayout::Present,
-            RHI::ImageLayout::ColorAttachment);
-
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+    }
 
-        DrawGui(context);
+    void GuiPass::Render(RHI::IRHICommandList& cmd, const ResourceManager& resourceManager)
+    {
         ImGui::Render();
 
         RHI::ClearValue colorClear;
         colorClear.m_Color = { 0.0f, 0.0f, 0.0f, 1.0f };
-        commandList.BeginRenderPass(*m_RenderPass, *m_FrameBuffer, { colorClear });
+        cmd.BeginRenderPass(*m_RenderPass, *m_FrameBuffer, { colorClear });
 
-        auto& vkCmdList = static_cast<RHI::VulkanCommandList&>(commandList);
+        auto& vkCmdList = static_cast<RHI::VulkanCommandList&>(cmd);
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), vkCmdList.GetHandle());
 
-        commandList.EndRenderPass();
+        cmd.EndRenderPass();
     }
 
-    void GuiPass::Cleanup(const Context::Context& context)
+    void GuiPass::Cleanup(RHI::IRHIDevice& device)
     {
         ImGui_ImplVulkan_Shutdown();
         ImGui_ImplGlfw_Shutdown();
         ImGui::DestroyContext();
 
-        auto& vkDevice = static_cast<const RHI::VulkanDevice&>(context.GetVulkanContext().GetRHIDevice());
+        auto& vkDevice = static_cast<const RHI::VulkanDevice&>(device);
         vkDestroyDescriptorPool(vkDevice.GetHandle(), m_ImGuiPool, nullptr);
         m_ImGuiPool = VK_NULL_HANDLE;
 
@@ -161,9 +141,8 @@ namespace Renderer
         m_RenderPass.reset();
     }
 
-    void GuiPass::ResizeResources(const Context::Context& context, const ResourceManager& resourceManager)
+    void GuiPass::ResizeResources(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
     {
-        auto& rhiDevice         = context.GetVulkanContext().GetRHIDevice();
         const auto& colorBuffer = resourceManager.GetRHIColorBuffer();
 
         m_FrameBuffer.reset();
@@ -173,31 +152,15 @@ namespace Renderer
         fbDesc.m_ColorAttachments = { &colorBuffer };
         fbDesc.m_Width            = colorBuffer.GetWidth();
         fbDesc.m_Height           = colorBuffer.GetHeight();
-        m_FrameBuffer = rhiDevice.CreateFramebuffer(fbDesc);
+        m_FrameBuffer = device.CreateFramebuffer(fbDesc);
     }
 
     bool GuiPass::IsCursorPositionInGUI()
     {
-        ImGuiIO& io = ImGui::GetIO();
-
-        if (io.WantCaptureMouse)
-            return true;
-
-        return false;
+        return ImGui::GetIO().WantCaptureMouse;
     }
 
     void GuiPass::UploadFonts()
     {
     }
-
-    void GuiPass::DrawGui(Context::Context& context)
-    {
-        DrawInspector(context);
-        DrawSceneInspector(context);
-        DrawMainMenu(context);
-        DrawSettingsWindow(context);
-        // TODO remove
-        ImGui::ShowDemoWindow();
-    }
-
 }

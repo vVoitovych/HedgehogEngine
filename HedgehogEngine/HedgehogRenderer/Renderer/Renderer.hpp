@@ -9,29 +9,30 @@ namespace Context
 
 namespace Renderer
 {
+    class RHIContext;
+    class ThreadContext;
     class ResourceManager;
     class RenderQueue;
 
     class Renderer
     {
     public:
-        Renderer(Context::Context& context);
+        explicit Renderer(Context::Context& context);
         ~Renderer();
 
-        Renderer(const Renderer&) = delete;
+        Renderer(const Renderer&)            = delete;
         Renderer& operator=(const Renderer&) = delete;
 
-        void Cleanup(const Context::Context& context);
+        void Cleanup(Context::Context& context);
 
-        void DrawFrame(Context::Context& context);
+        void  BeginGui();
+        void  DrawFrame(Context::Context& context);
+        float GetAspectRatio() const;
 
     private:
-        std::unique_ptr< ResourceManager> m_ResourceManager;
-        std::unique_ptr<RenderQueue> m_RenderQueue;
-
+        std::unique_ptr<RHIContext>      m_RHIContext;
+        std::unique_ptr<ThreadContext>   m_ThreadContext;
+        std::unique_ptr<ResourceManager> m_ResourceManager;
+        std::unique_ptr<RenderQueue>     m_RenderQueue;
     };
 }
-
-
-
-

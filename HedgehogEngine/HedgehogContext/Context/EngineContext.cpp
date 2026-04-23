@@ -1,16 +1,14 @@
 #include "EngineContext.hpp"
-#include "VulkanContext.hpp"
+#include "WindowContext.hpp"
 
 #include "HedgehogContext/Containers/MeshContainer/MeshContainer.hpp"
 #include "HedgehogContext/Containers/TextureContainer/TextureContainer.hpp"
 #include "HedgehogContext/Containers/LightContainer/LightContainer.hpp"
 #include "HedgehogContext/Containers/MaterialContainer/MaterialContainer.hpp"
-#include "HedgehogContext/Containers/DrawListContrainer/DrawListContainer.hpp"
+#include "HedgehogContext/Containers/MaterialContainer/MaterialData.hpp"
 
 #include "HedgehogEngine/HedgehogWindow/api/InputState.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
-
-#include "RHI/api/IRHISwapchain.hpp"
 
 #include "HedgehogCommon/api/Camera.hpp"
 
@@ -18,23 +16,24 @@
 
 #include "Scene/Scene.hpp"
 
+#include "FrameData/FrameDataBuilder.hpp"
+
 namespace Context
 {
-    EngineContext::EngineContext(const VulkanContext& vulkanContext)
+    EngineContext::EngineContext()
     {
         m_Camera = std::make_unique<Camera>();
-        m_Scene = std::make_unique<Scene::Scene>();
+        m_Scene  = std::make_unique<Scene::Scene>();
         m_Scene->InitScene();
 
         m_MeshContainer = std::make_unique<MeshContainer>();
-        m_MeshContainer->Update(vulkanContext, *m_Scene);
+        m_MeshContainer->Update(*m_Scene);
 
-        m_TextureContainer = std::make_unique<TextureContainer>();
-        m_LightContainer = std::make_unique<LightContainer>();
+        m_TextureContainer  = std::make_unique<TextureContainer>();
+        m_LightContainer    = std::make_unique<LightContainer>();
         m_LightContainer->UpdateLights(*m_Scene);
 
-        m_MaterialContainer = std::make_unique<MaterialContainer>(vulkanContext);
-        m_DrawListContainer = std::make_unique<DrawListContainer>();
+        m_MaterialContainer = std::make_unique<MaterialContainer>();
 
         m_Settings = std::make_unique<HedgehogSettings::Settings>();
     }
@@ -43,22 +42,22 @@ namespace Context
     {
     }
 
-    void EngineContext::Cleanup(const VulkanContext& vulkanContext)
+    void EngineContext::UpdateContext(WindowContext& windowContext, float aspectRatio, float dt)
     {
-        m_MeshContainer->Cleanup(vulkanContext);
-        m_TextureContainer->Cleanup(vulkanContext);
-        m_MaterialContainer->Cleanup(vulkanContext);
-    }
-
-    void EngineContext::UpdateContext(VulkanContext& vulkanContext, float dt)
-    {
-        UpdateCamera(vulkanContext, dt);
+        UpdateCamera(windowContext, aspectRatio, dt);
         m_Scene->UpdateScene(dt);
         m_LightContainer->UpdateLights(*m_Scene);
         m_MaterialContainer->Update(*m_Scene);
-        m_MeshContainer->Update(vulkanContext, *m_Scene); 
-        m_MaterialContainer->UpdateResources(vulkanContext, *m_TextureContainer);
-        m_DrawListContainer->Update(*m_Scene, *m_MaterialContainer);
+        m_MeshContainer->Update(*m_Scene);
+
+        auto materialTypeLookup = [this](uint64_t index) -> FD::MaterialType
+        {
+            const auto& data = m_MaterialContainer->GetMaterialDataByIndex(index);
+            return static_cast<FD::MaterialType>(static_cast<int>(data.type));
+        };
+
+        FD::FrameDataBuilder builder;
+        m_FrameData = builder.Build(*m_Scene, *m_Camera, dt, materialTypeLookup);
     }
 
     const MeshContainer& EngineContext::GetMeshContainer() const
@@ -67,6 +66,11 @@ namespace Context
     }
 
     const TextureContainer& EngineContext::GetTextureContainer() const
+    {
+        return *m_TextureContainer;
+    }
+
+    TextureContainer& EngineContext::GetTextureContainer()
     {
         return *m_TextureContainer;
     }
@@ -86,9 +90,9 @@ namespace Context
         return *m_MaterialContainer;
     }
 
-    const DrawListContainer& EngineContext::GetDrawListContainer() const
+    const FD::FrameData& EngineContext::GetFrameData() const
     {
-        return *m_DrawListContainer;
+        return m_FrameData;
     }
 
     HedgehogSettings::Settings& EngineContext::GetSettings()
@@ -116,10 +120,9 @@ namespace Context
         return *m_Scene;
     }
 
-    void EngineContext::UpdateCamera(VulkanContext& vulkanContext, float dt)
+    void EngineContext::UpdateCamera(WindowContext& windowContext, float aspectRatio, float dt)
     {
-        const auto& inputState = vulkanContext.GetWindow().GetInputState();
-        const auto& swapchain  = vulkanContext.GetRHISwapchain();
+        const auto& inputState = windowContext.GetWindow().GetInputState();
 
         HM::Vector3 posOffset(0.0f, 0.0f, 0.0f);
         HM::Vector2 dirOffset(inputState.m_MouseDelta.x(), inputState.m_MouseDelta.y());
@@ -137,8 +140,6 @@ namespace Context
         if (inputState.m_KeyA)
             posOffset.y() = 1.0f;
 
-        m_Camera->UpdateCamera(dt, swapchain.GetWidth() / static_cast<float>(swapchain.GetHeight()), posOffset, dirOffset);
+        m_Camera->UpdateCamera(dt, aspectRatio, posOffset, dirOffset);
     }
-
 }
-

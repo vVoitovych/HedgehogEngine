@@ -1,14 +1,16 @@
 #pragma once
 
 #include "HedgehogCommon/api/RendererSettings.hpp"
-#include "HedgehogContext/Containers/LightContainer/Light.hpp"
 #include "HedgehogMath/api/Matrix.hpp"
+#include "HedgehogMath/api/Vector.hpp"
 
 #include <memory>
 #include <vector>
 
 namespace RHI
 {
+    class IRHIDevice;
+    class IRHICommandList;
     class IRHIRenderPass;
     class IRHIPipeline;
     class IRHIFramebuffer;
@@ -18,9 +20,10 @@ namespace RHI
     class IRHIBuffer;
 }
 
-namespace Context
+namespace FD
 {
-    class Context;
+    struct FrameData;
+    struct LightData;
 }
 
 namespace Renderer
@@ -30,28 +33,40 @@ namespace Renderer
     class ForwardPass
     {
     public:
-        ForwardPass(const Context::Context& context, const ResourceManager& resourceManager);
+        ForwardPass(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
         ~ForwardPass();
 
-        void Render(Context::Context& context, const ResourceManager& resourceManager);
-        void Cleanup(const Context::Context& context);
+        void Render(const FD::FrameData& frame, const ResourceManager& resourceManager,
+                    RHI::IRHICommandList& cmd, uint32_t frameIndex);
+        void Cleanup(RHI::IRHIDevice& device);
 
-        void ResizeResources(const Context::Context& context, const ResourceManager& resourceManager);
+        void ResizeResources(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
 
     private:
-        struct ForwardPassFrameUniform
+        // GPU-layout light struct; alignas matches std140/std430 UBO packing expected by the shader.
+        struct GpuLight
         {
-            alignas(16) HM::Matrix4x4  m_View;
-            alignas(16) HM::Matrix4x4  m_ViewProj;
-            alignas(16) HM::Vector3    m_EyePosition;
-            alignas(16) Context::Light m_Lights[MAX_LIGHTS_COUNT];
-            size_t                     m_LightCount;
+            alignas(16) HM::Vector3 m_Position;
+            alignas(16) HM::Vector3 m_Direction;
+            alignas(16) HM::Vector3 m_Color;
+            alignas(16) HM::Vector4 m_Data;  // (type, intensity, radius, cos(coneAngle))
         };
 
+        struct ForwardPassFrameUniform
+        {
+            alignas(16) HM::Matrix4x4 m_View;
+            alignas(16) HM::Matrix4x4 m_ViewProj;
+            alignas(16) HM::Vector3   m_EyePosition;
+            alignas(16) GpuLight      m_Lights[MAX_LIGHTS_COUNT];
+            size_t                    m_LightCount;
+        };
+
+        static GpuLight ToGpuLight(const FD::LightData& fd);
+
     private:
-        std::unique_ptr<RHI::IRHIRenderPass>         m_RenderPass;
-        std::unique_ptr<RHI::IRHIFramebuffer>         m_FrameBuffer;
-        std::unique_ptr<RHI::IRHIPipeline>            m_Pipeline;
+        std::unique_ptr<RHI::IRHIRenderPass>  m_RenderPass;
+        std::unique_ptr<RHI::IRHIFramebuffer> m_FrameBuffer;
+        std::unique_ptr<RHI::IRHIPipeline>    m_Pipeline;
 
         std::unique_ptr<RHI::IRHIDescriptorSetLayout> m_FrameLayout;
         std::unique_ptr<RHI::IRHIDescriptorPool>      m_FramePool;
@@ -59,5 +74,4 @@ namespace Renderer
         std::vector<std::unique_ptr<RHI::IRHIBuffer>>        m_FrameUniforms;
         std::vector<std::unique_ptr<RHI::IRHIDescriptorSet>> m_FrameSets;
     };
-
 }

@@ -1,21 +1,19 @@
 #pragma once
 
-#include "ECS/api/Entity.hpp"
-
 #include <Volk/volk.h>
 #include <memory>
-#include <optional>
-#include <string>
+
+namespace HW
+{
+    class Window;
+}
 
 namespace RHI
 {
+    class IRHIDevice;
     class IRHIRenderPass;
     class IRHIFramebuffer;
-}
-
-namespace Context
-{
-    class Context;
+    class IRHICommandList;
 }
 
 namespace Renderer
@@ -25,43 +23,26 @@ namespace Renderer
     class GuiPass
     {
     public:
-        GuiPass(Context::Context& context, const ResourceManager& resourceManager);
+        GuiPass(HW::Window& window, RHI::IRHIDevice& device, const ResourceManager& resourceManager);
         ~GuiPass();
 
-        void Render(Context::Context& context, const ResourceManager& resourceManager);
-        void Cleanup(const Context::Context& context);
+        GuiPass(const GuiPass&)            = delete;
+        GuiPass& operator=(const GuiPass&) = delete;
 
-        void ResizeResources(const Context::Context& context, const ResourceManager& resourceManager);
+        void BeginFrame();
+        void Render(RHI::IRHICommandList& cmd, const ResourceManager& resourceManager);
+        void Cleanup(RHI::IRHIDevice& device);
+
+        void ResizeResources(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
 
         static bool IsCursorPositionInGUI();
-        void ShowMaterialWindow();
 
     private:
-        void DrawGui(Context::Context& context);
-
-        void DrawInspector(Context::Context& context);
-        void DrawTitle(Context::Context& context);
-        void DrawTransform(Context::Context& context);
-        void DrawMesh(Context::Context& context);
-        void DrawRender(Context::Context& context);
-        void DrawLight(Context::Context& context);
-        void DrawScript(Context::Context& context);
-
-        void DrawMainMenu(Context::Context& context);
-        void DrawSceneInspector(Context::Context& context);
-        void DrawHierarchyNode(Context::Context& context, ECS::Entity entity, int& index);
-
-        void DrawSettingsWindow(Context::Context& context);
-
         void UploadFonts();
 
     private:
         std::unique_ptr<RHI::IRHIRenderPass>  m_RenderPass;
         std::unique_ptr<RHI::IRHIFramebuffer> m_FrameBuffer;
         VkDescriptorPool                      m_ImGuiPool = VK_NULL_HANDLE;
-
-        std::optional<ECS::Entity> m_SelectedObject;
-
-        bool m_MaterialWindowShow = false;
     };
 }

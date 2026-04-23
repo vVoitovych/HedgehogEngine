@@ -1,5 +1,4 @@
-#include "ThreadContext.hpp"
-#include "VulkanContext.hpp"
+#include "HedgehogRenderer/ThreadContext/ThreadContext.hpp"
 
 #include "RHI/api/IRHIDevice.hpp"
 #include "RHI/api/IRHICommandList.hpp"
@@ -9,29 +8,28 @@
 
 #include "Logger/api/Logger.hpp"
 
-namespace Context
+namespace Renderer
 {
-    ThreadContext::ThreadContext(const VulkanContext& vulkanContext)
+    ThreadContext::ThreadContext(RHI::IRHIDevice& device)
     {
-        auto& rhiDevice = vulkanContext.GetRHIDevice();
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
         {
-            m_CommandLists.push_back(rhiDevice.CreateCommandList());
-            m_Fences.push_back(rhiDevice.CreateFence(/*signaled=*/true));
-            m_ImageAvailableSemaphores.push_back(rhiDevice.CreateSemaphore());
-            m_RenderFinishedSemaphores.push_back(rhiDevice.CreateSemaphore());
+            m_CommandLists.push_back(device.CreateCommandList());
+            m_Fences.push_back(device.CreateFence(/*signaled=*/true));
+            m_ImageAvailableSemaphores.push_back(device.CreateSemaphore());
+            m_RenderFinishedSemaphores.push_back(device.CreateSemaphore());
         }
 
-        LOGINFO("Thread context Initialized");
+        LOGINFO("Thread context initialized");
     }
 
     ThreadContext::~ThreadContext()
     {
     }
 
-    void ThreadContext::Cleanup(const VulkanContext& vulkanContext)
+    void ThreadContext::Cleanup(RHI::IRHIDevice& device)
     {
-        vulkanContext.GetRHIDevice().WaitIdle();
+        device.WaitIdle();
         m_CommandLists.clear();
         m_Fences.clear();
         m_ImageAvailableSemaphores.clear();
@@ -69,5 +67,4 @@ namespace Context
     {
         return *m_RenderFinishedSemaphores[m_FrameIndex];
     }
-
 }

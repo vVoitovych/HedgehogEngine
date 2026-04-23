@@ -7,10 +7,12 @@ project "Client"
 
    includedirs
    {
-      ".."
+      "..",
+      "../HedgehogEngine",
+      "%{IncludeDir.ImGui}".."/imgui"
    }
 
-   links { 
+   links {
     "HedgehogContext",
     "HedgehogRenderer",
     "Logger"

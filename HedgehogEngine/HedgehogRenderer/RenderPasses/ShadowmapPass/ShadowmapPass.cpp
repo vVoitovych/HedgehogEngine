@@ -1,22 +1,16 @@
 #include "ShadowmapPass.hpp"
 #include "ShadowmapPassPushConstants.hpp"
 
-#include "HedgehogContext/Context/Context.hpp"
-#include "HedgehogContext/Context/EngineContext.hpp"
-#include "HedgehogContext/Context/ThreadContext.hpp"
-#include "HedgehogContext/Context/VulkanContext.hpp"
+#include "FrameData/FrameData.hpp"
 
-#include "HedgehogCommon/api/Camera.hpp"
 #include "HedgehogCommon/api/RendererSettings.hpp"
 
 #include "HedgehogSettings/Settings/HedgehogSettings.hpp"
 #include "HedgehogSettings/Settings/ShadowmapingSettings.hpp"
 
 #include "HedgehogRenderer/ResourceManager/ResourceManager.hpp"
-
-#include "HedgehogContext/Containers/MeshContainer/MeshContainer.hpp"
-#include "HedgehogContext/Containers/MeshContainer/Mesh.hpp"
-#include "HedgehogContext/Containers/DrawListContrainer/DrawListContainer.hpp"
+#include "HedgehogRenderer/ResourceRegistry/ResourceRegistry.hpp"
+#include "HedgehogRenderer/ResourceRegistry/MeshGpuData.hpp"
 
 #include "RHI/api/IRHIDevice.hpp"
 #include "RHI/api/IRHICommandList.hpp"
@@ -28,26 +22,23 @@
 #include "RHI/api/IRHITexture.hpp"
 #include "RHI/api/IRHIShader.hpp"
 
-#include "Scene/Scene.hpp"
-
 #include <algorithm>
 #include <cmath>
 
 namespace Renderer
 {
 
-    ShadowmapPass::ShadowmapPass(const Context::Context& context, const ResourceManager& resourceManager)
+    ShadowmapPass::ShadowmapPass(RHI::IRHIDevice& device, const HedgehogSettings::Settings& settings,
+                                  const ResourceManager& resourceManager)
     {
-        auto& rhiDevice = context.GetVulkanContext().GetRHIDevice();
-
         // Descriptor set layout: binding 0 = uniform buffer (vertex stage)
-        m_ShadowmapLayout = rhiDevice.CreateDescriptorSetLayout({
+        m_ShadowmapLayout = device.CreateDescriptorSetLayout({
             { 0, RHI::DescriptorType::UniformBuffer, 1, RHI::ShaderStage::Vertex }
         });
 
         // Pool: one UB per cascade per frame
         const uint32_t totalSets = MaxShadowCascades * MAX_FRAMES_IN_FLIGHT;
-        m_ShadowmapPool = rhiDevice.CreateDescriptorPool(
+        m_ShadowmapPool = device.CreateDescriptorPool(
             totalSets,
             { { RHI::DescriptorType::UniformBuffer, totalSets } });
 
@@ -58,12 +49,12 @@ namespace Renderer
         {
             for (size_t j = 0; j < MaxShadowCascades; ++j)
             {
-                auto ubo = rhiDevice.CreateBuffer(
+                auto ubo = device.CreateBuffer(
                     sizeof(ShadowCascadeUniform),
                     RHI::BufferUsage::UniformBuffer,
                     RHI::MemoryUsage::CpuToGpu);
 
-                auto set = rhiDevice.AllocateDescriptorSet(*m_ShadowmapPool, *m_ShadowmapLayout);
+                auto set = device.AllocateDescriptorSet(*m_ShadowmapPool, *m_ShadowmapLayout);
                 set->WriteUniformBuffer(0, *ubo);
                 set->Flush();
 
@@ -83,10 +74,10 @@ namespace Renderer
             RHI::ImageLayout::Undefined,
             RHI::ImageLayout::DepthStencilReadOnly
         };
-        m_RenderPass = rhiDevice.CreateRenderPass(rpDesc);
+        m_RenderPass = device.CreateRenderPass(rpDesc);
 
         // Vertex shader (depth/shadow pass — no fragment shader)
-        auto vertexShader = rhiDevice.CreateShader(
+        auto vertexShader = device.CreateShader(
             "/Shaders/Shaders/ShadowmapPass/Shadowmap.vert.spv",
             RHI::ShaderStage::Vertex);
 
@@ -111,75 +102,64 @@ namespace Renderer
         };
         pipelineDesc.m_RenderPass = m_RenderPass.get();
 
-        m_Pipeline = rhiDevice.CreateGraphicsPipeline(pipelineDesc);
+        m_Pipeline = device.CreateGraphicsPipeline(pipelineDesc);
 
-        UpdateFrameBuffer(context, resourceManager);
-        UpdateViewports(context);
+        UpdateFrameBuffer(device, resourceManager);
+        UpdateViewports(settings);
     }
 
     ShadowmapPass::~ShadowmapPass()
     {
     }
 
-    void ShadowmapPass::Render(Context::Context& context, const ResourceManager& resourceManager)
+    void ShadowmapPass::Render(const FD::FrameData& frame, const ResourceManager& resourceManager,
+                                RHI::IRHICommandList& cmd, uint32_t frameIndex)
     {
-        auto& threadContext = context.GetThreadContext();
-        auto& engineContext = context.GetEngineContext();
-        auto& settings      = engineContext.GetSettings().GetShadowmapSettings();
-
-        const uint32_t frameIndex    = threadContext.GetFrameIndex();
-        const uint32_t cascadesCount = settings->GetCascadesCount();
-        const uint32_t shadowmapSize = settings->GetShadowmapSize();
-
-        auto& commandList = threadContext.GetCommandList();
-
         RHI::ClearValue depthClear;
         depthClear.m_IsDepth      = true;
         depthClear.m_DepthStencil = { 1.0f, 0 };
 
-        commandList.BeginRenderPass(*m_RenderPass, *m_FrameBuffer, { depthClear });
-        commandList.BindPipeline(*m_Pipeline);
+        cmd.BeginRenderPass(*m_RenderPass, *m_FrameBuffer, { depthClear });
+        cmd.BindPipeline(*m_Pipeline);
 
-        auto& meshContainer = engineContext.GetMeshContainer();
-        auto& posBuffer = const_cast<RHI::IRHIBuffer&>(meshContainer.GetRHIPositionsBuffer());
-        auto& idxBuffer = const_cast<RHI::IRHIBuffer&>(meshContainer.GetRHIIndexBuffer());
+        auto& registry  = resourceManager.GetResourceRegistry();
+        auto& posBuffer = const_cast<RHI::IRHIBuffer&>(registry.GetPositionsBuffer());
+        auto& idxBuffer = const_cast<RHI::IRHIBuffer&>(registry.GetIndexBuffer());
 
-        commandList.BindVertexBuffers(0, { &posBuffer }, { 0 });
-        commandList.BindIndexBuffer(idxBuffer, RHI::IndexType::Uint32);
+        cmd.BindVertexBuffers(0, { &posBuffer }, { 0 });
+        cmd.BindIndexBuffer(idxBuffer, RHI::IndexType::Uint32);
 
-        auto& drawListContainer = engineContext.GetDrawListContainer();
-
-        for (size_t i = 0; i < cascadesCount; ++i)
+        for (size_t i = 0; i < m_CascadesCount; ++i)
         {
-            const auto& view = m_ShadowViewports[cascadesCount - 1][i];
-            commandList.SetViewport({ view.m_X, view.m_Y, view.m_Width, view.m_Height, 0.0f, 1.0f });
-            commandList.SetScissor({ 0, 0, shadowmapSize, shadowmapSize });
+            const auto& view = m_ShadowViewports[m_CascadesCount - 1][i];
+            cmd.SetViewport({ view.m_X, view.m_Y, view.m_Width, view.m_Height, 0.0f, 1.0f });
+            cmd.SetScissor({ 0, 0, m_ShadowmapSize, m_ShadowmapSize });
 
-            commandList.BindDescriptorSet(*m_Pipeline, 0, *m_ShadowmapSets[frameIndex][i]);
+            cmd.BindDescriptorSet(*m_Pipeline, 0, *m_ShadowmapSets[frameIndex][i]);
 
-            for (const auto& drawNode : drawListContainer.GetOpaqueList())
+            for (const auto& drawNode : frame.m_DrawList.m_Opaque)
             {
-                for (const auto& object : drawNode.objects)
+                for (const auto& object : drawNode.m_Objects)
                 {
-                    commandList.PushConstants(
+                    cmd.PushConstants(
                         *m_Pipeline,
                         RHI::ShaderStage::Vertex,
                         0,
                         static_cast<uint32_t>(sizeof(ShadowmapPassPushConstants)),
-                        &object.objMatrix);
+                        &object.m_Transform);
 
-                    const auto& mesh = meshContainer.GetMesh(object.meshIndex);
-                    commandList.DrawIndexed(mesh.GetIndexCount(), 1, mesh.GetFirstIndex(), mesh.GetVertexOffset(), 0);
+                    const auto& geom = registry.GetMeshGeometryInfo(object.m_MeshIndex);
+                    cmd.DrawIndexed(geom.m_IndexCount, 1, geom.m_FirstIndex, geom.m_VertexOffset, 0);
                 }
             }
         }
 
-        commandList.EndRenderPass();
+        cmd.EndRenderPass();
     }
 
-    void ShadowmapPass::Cleanup(const Context::Context& context)
+    void ShadowmapPass::Cleanup(RHI::IRHIDevice& device)
     {
-        context.GetVulkanContext().GetRHIDevice().WaitIdle();
+        device.WaitIdle();
 
         m_ShadowmapSets.clear();
         m_ShadowmapUniforms.clear();
@@ -190,34 +170,33 @@ namespace Renderer
         m_ShadowmapLayout.reset();
     }
 
-    void ShadowmapPass::UpdateData(const Context::Context& context)
+    void ShadowmapPass::UpdateData(const FD::FrameData& frame, uint32_t frameIndex,
+                                    const HedgehogSettings::Settings& settings)
     {
-        UpdateShadowmapMatrices(context);
+        UpdateShadowmapMatrices(frame.m_Camera, settings, frame.m_ShadowLightDirection);
 
-        const auto& settings   = context.GetEngineContext().GetSettings().GetShadowmapSettings();
-        const uint32_t frame   = context.GetThreadContext().GetFrameIndex();
-        const uint32_t cascades = settings->GetCascadesCount();
+        const uint32_t cascades = settings.GetShadowmapSettings()->GetCascadesCount();
 
         for (size_t i = 0; i < cascades; ++i)
         {
             ShadowCascadeUniform ubo;
             ubo.m_ShadowMatrix = m_ShadowmapMatrices[i];
-            m_ShadowmapUniforms[frame][i]->CopyData(&ubo, sizeof(ubo));
+            m_ShadowmapUniforms[frameIndex][i]->CopyData(&ubo, sizeof(ubo));
         }
     }
 
-    void ShadowmapPass::UpdateResources(const Context::Context& context, const ResourceManager& resourceManager)
+    void ShadowmapPass::UpdateResources(RHI::IRHIDevice& device, const HedgehogSettings::Settings& settings,
+                                         const ResourceManager& resourceManager)
     {
-        if (!context.GetEngineContext().GetSettings().GetShadowmapSettings()->IsDirty())
+        if (!settings.GetShadowmapSettings()->IsDirty())
             return;
 
-        UpdateFrameBuffer(context, resourceManager);
-        UpdateViewports(context);
+        UpdateFrameBuffer(device, resourceManager);
+        UpdateViewports(settings);
     }
 
-    void ShadowmapPass::UpdateFrameBuffer(const Context::Context& context, const ResourceManager& resourceManager)
+    void ShadowmapPass::UpdateFrameBuffer(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
     {
-        auto& rhiDevice = context.GetVulkanContext().GetRHIDevice();
         const auto& shadowMap = resourceManager.GetRHIShadowMap();
 
         m_FrameBuffer.reset();
@@ -227,13 +206,15 @@ namespace Renderer
         fbDesc.m_DepthAttachment = &shadowMap;
         fbDesc.m_Width           = shadowMap.GetWidth();
         fbDesc.m_Height          = shadowMap.GetHeight();
-        m_FrameBuffer = rhiDevice.CreateFramebuffer(fbDesc);
+        m_FrameBuffer = device.CreateFramebuffer(fbDesc);
     }
 
-    void ShadowmapPass::UpdateViewports(const Context::Context& context)
+    void ShadowmapPass::UpdateViewports(const HedgehogSettings::Settings& settings)
     {
-        const auto& settings = context.GetEngineContext().GetSettings().GetShadowmapSettings();
-        const float sz = static_cast<float>(settings->GetShadowmapSize());
+        const auto& shadowmapSettings = settings.GetShadowmapSettings();
+        m_CascadesCount = shadowmapSettings->GetCascadesCount();
+        m_ShadowmapSize = shadowmapSettings->GetShadowmapSize();
+        const float sz  = static_cast<float>(m_ShadowmapSize);
 
         m_ShadowViewports.clear();
         m_ShadowViewports.resize(MaxShadowCascades);
@@ -253,23 +234,24 @@ namespace Renderer
         m_ShadowViewports[3].push_back({ sz / 2.0f, sz / 2.0f, sz / 2.0f, sz / 2.0f });
     }
 
-    void ShadowmapPass::UpdateShadowmapMatrices(const Context::Context& context)
+    void ShadowmapPass::UpdateShadowmapMatrices(const FD::CameraData& camera,
+                                                 const HedgehogSettings::Settings& settings,
+                                                 const std::optional<HM::Vector3>& shadowLightDir)
     {
-        const auto& settings = context.GetEngineContext().GetSettings().GetShadowmapSettings();
+        const auto& shadowmapSettings  = settings.GetShadowmapSettings();
+        const uint32_t cascadesCount  = shadowmapSettings->GetCascadesCount();
+        const float cascadeSplitLambda = shadowmapSettings->GetCascadeSplitLambda();
+
         std::vector<float> cascadeSplits;
 
-        const auto& camera = context.GetEngineContext().GetCamera();
-        const float nearClip  = camera.GetNearPlane();
-        const float farClip   = camera.GetFarPlane();
+        const float nearClip  = camera.m_Near;
+        const float farClip   = camera.m_Far;
         const float clipRange = farClip - nearClip;
 
         const float minZ  = nearClip;
         const float maxZ  = nearClip + clipRange;
         const float range = maxZ - minZ;
         const float ratio = maxZ / minZ;
-
-        const uint32_t cascadesCount      = settings->GetCascadesCount();
-        const float    cascadeSplitLambda = settings->GetCascadeSplitLambda();
 
         for (uint32_t i = 0; i < cascadesCount; ++i)
         {
@@ -281,7 +263,7 @@ namespace Renderer
         }
 
         float lastSplitDist = 0.0f;
-        HM::Matrix4x4 camMatrix = camera.GetViewMatrix() * camera.GetProjectionMatrix();
+        HM::Matrix4x4 camMatrix = camera.m_View * camera.m_Proj;
         bool success = true;
         HM::Matrix4x4 invCam = camMatrix.Inverse(success);
 
@@ -331,9 +313,8 @@ namespace Renderer
             const HM::Vector3 minExtents = -maxExtents;
 
             HM::Vector3 lightDir = HM::Vector3(1.0f, 0.0f, 0.0f);
-            const auto& shadowDir = context.GetEngineContext().GetScene().GetShadowLightDirection();
-            if (shadowDir.has_value())
-                lightDir = shadowDir.value();
+            if (shadowLightDir.has_value())
+                lightDir = shadowLightDir.value();
 
             const HM::Matrix4x4 lightViewMatrix  = HM::Matrix4x4::LookAt(
                 frustumCenter - lightDir * radius, frustumCenter, HM::Vector3(0.0f, 0.0f, 1.0f));

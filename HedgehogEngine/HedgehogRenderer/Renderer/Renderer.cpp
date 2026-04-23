@@ -1,15 +1,20 @@
 #include "Renderer.hpp"
 
 #include "HedgehogContext/Context/Context.hpp"
-#include "HedgehogContext/Context/VulkanContext.hpp"
+#include "HedgehogContext/Context/WindowContext.hpp"
 #include "HedgehogContext/Context/EngineContext.hpp"
-#include "HedgehogContext/Context/FrameContext.hpp"
-#include "HedgehogContext/Context/ThreadContext.hpp"
+
+#include "HedgehogRenderer/RHIContext/RHIContext.hpp"
+#include "HedgehogRenderer/ThreadContext/ThreadContext.hpp"
 #include "HedgehogRenderer/RenderQueue/RenderQueue.hpp"
 #include "HedgehogRenderer/ResourceManager/ResourceManager.hpp"
+
+#include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
+
 #include "HedgehogSettings/Settings/HedgehogSettings.hpp"
 
 #include "RHI/api/IRHIDevice.hpp"
+#include "RHI/api/IRHISwapchain.hpp"
 
 #include "Logger/api/Logger.hpp"
 
@@ -17,45 +22,93 @@ namespace Renderer
 {
     Renderer::Renderer(Context::Context& context)
     {
-        m_ResourceManager = std::make_unique<ResourceManager>(context);
-        m_RenderQueue = std::make_unique<RenderQueue>(context, *m_ResourceManager);
+        auto& windowContext = context.GetWindowContext();
+        m_RHIContext    = std::make_unique<RHIContext>(windowContext);
+        m_ThreadContext = std::make_unique<ThreadContext>(m_RHIContext->GetRHIDevice());
+        m_ResourceManager = std::make_unique<ResourceManager>(
+            m_RHIContext->GetRHIDevice(),
+            m_RHIContext->GetRHISwapchain(),
+            context.GetEngineContext().GetSettings());
+        m_RenderQueue = std::make_unique<RenderQueue>(
+            m_RHIContext->GetRHIDevice(),
+            windowContext.GetWindow(),
+            context.GetEngineContext().GetSettings(),
+            *m_ResourceManager);
     }
 
     Renderer::~Renderer()
     {
     }
 
-    void Renderer::Cleanup(const Context::Context& context)
+    void Renderer::Cleanup(Context::Context& context)
     {
-        context.GetVulkanContext().GetRHIDevice().WaitIdle();
+        auto& device = m_RHIContext->GetRHIDevice();
+        device.WaitIdle();
+        m_RenderQueue->Cleanup(device);
+        m_ResourceManager->Cleanup(device);
+        m_ThreadContext->Cleanup(device);
+        m_RHIContext->Cleanup();
+    }
 
-        m_RenderQueue->Cleanup(context);
-        m_ResourceManager->Cleanup(context);
+    void Renderer::BeginGui()
+    {
+        m_RenderQueue->BeginGui();
+    }
+
+    float Renderer::GetAspectRatio() const
+    {
+        auto& sc = m_RHIContext->GetRHISwapchain();
+        return static_cast<float>(sc.GetWidth()) / static_cast<float>(sc.GetHeight());
     }
 
     void Renderer::DrawFrame(Context::Context& context)
     {
-        auto& vulkanContext = context.GetVulkanContext();
-        auto& settings = context.GetEngineContext().GetSettings();
-        m_RenderQueue->UpdateData(context);
-        if (vulkanContext.IsWindowResized())
+        auto& windowContext = context.GetWindowContext();
+        auto& engineContext = context.GetEngineContext();
+        auto& window        = windowContext.GetWindow();
+        auto& device        = m_RHIContext->GetRHIDevice();
+        auto& swapchain     = m_RHIContext->GetRHISwapchain();
+
+        m_ResourceManager->SyncResources(device, engineContext);
+
+        const auto&    frameData  = engineContext.GetFrameData();
+        const uint32_t frameIndex = m_ThreadContext->GetFrameIndex();
+
+        m_RenderQueue->UpdateData(frameData, frameIndex, engineContext.GetSettings());
+
+        if (windowContext.IsWindowResized() || window.IsResized())
         {
-            vulkanContext.RecreateSwapchain();
+            if (window.IsResized())
+                window.ResetResizedFlag();
+            windowContext.ResetWindowResizeState();
 
-            m_ResourceManager->ResizeFrameBufferSizeDependenteResources(context);
-            m_RenderQueue->ResizeResources(context, *m_ResourceManager);
+            device.WaitIdle();
+            m_RHIContext->RecreateSwapchain(windowContext);
 
-            vulkanContext.ResetWindowResizeState();
+            m_ResourceManager->ResizeFrameBufferSizeDependenteResources(device, swapchain);
+            m_RenderQueue->ResizeResources(device, *m_ResourceManager);
+
+            return;
         }
-        if (settings.IsDirty())
+
+        if (engineContext.GetSettings().IsDirty())
         {
-            m_ResourceManager->ResizeSettingsDependenteResources(context);
-            m_RenderQueue->UpdateResources(context, *m_ResourceManager);
-
-            settings.CleanDirtyState();
+            m_ResourceManager->ResizeSettingsDependenteResources(device, engineContext.GetSettings());
+            m_RenderQueue->UpdateResources(device, engineContext.GetSettings(), *m_ResourceManager);
+            engineContext.GetSettings().CleanDirtyState();
         }
 
-        m_RenderQueue->Render(context, *m_ResourceManager);
+        m_RenderQueue->Render(
+            frameData,
+            device,
+            swapchain,
+            m_ThreadContext->GetCommandList(),
+            m_ThreadContext->GetFence(),
+            m_ThreadContext->GetImageAvailableSemaphore(),
+            m_ThreadContext->GetRenderFinishedSemaphore(),
+            frameIndex,
+            *m_ResourceManager);
+
+        m_ThreadContext->NextFrame();
     }
-
 }

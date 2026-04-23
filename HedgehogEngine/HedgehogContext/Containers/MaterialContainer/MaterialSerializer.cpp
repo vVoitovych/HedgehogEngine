@@ -12,7 +12,7 @@
 
 namespace Context
 {
-    void MaterialSerializer::Serialize(MaterialData& material, std::string materialPath)
+    void MaterialSerializer::Serialize(const MaterialData& material, std::string materialPath)
     {
         LOGINFO("Serialize material: ", materialPath);
 

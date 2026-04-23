@@ -10,19 +10,13 @@ project "HedgehogContext"
 
     includedirs
     {
-        "%{IncludeDir.VulkanSDK}",
         "%{IncludeDir.yaml_cpp}",
         "../..",
         ".."
     }
 
-    libdirs
-    {
-        "%{LibraryDir.VulkanSDK}"
-    }
-
     links {
-        "RHI",
+        "FrameData",
         "HedgehogCommon",
         "HedgehogSettings",
         "HedgehogWindow",

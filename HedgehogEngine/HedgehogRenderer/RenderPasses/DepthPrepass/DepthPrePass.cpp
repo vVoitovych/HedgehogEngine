@@ -1,17 +1,11 @@
 #include "DepthPrePass.hpp"
 #include "DepthPrePassPushConstants.hpp"
 
-#include "HedgehogContext/Context/Context.hpp"
-#include "HedgehogContext/Context/ThreadContext.hpp"
-#include "HedgehogContext/Context/VulkanContext.hpp"
-#include "HedgehogContext/Context/FrameContext.hpp"
-#include "HedgehogContext/Context/EngineContext.hpp"
-
-#include "HedgehogContext/Containers/MeshContainer/MeshContainer.hpp"
-#include "HedgehogContext/Containers/MeshContainer/Mesh.hpp"
-#include "HedgehogContext/Containers/DrawListContrainer/DrawListContainer.hpp"
+#include "FrameData/FrameData.hpp"
 
 #include "HedgehogRenderer/ResourceManager/ResourceManager.hpp"
+#include "HedgehogRenderer/ResourceRegistry/ResourceRegistry.hpp"
+#include "HedgehogRenderer/ResourceRegistry/MeshGpuData.hpp"
 
 #include "HedgehogCommon/api/RendererSettings.hpp"
 
@@ -28,17 +22,15 @@
 namespace Renderer
 {
 
-    DepthPrePass::DepthPrePass(const Context::Context& context, const ResourceManager& resourceManager)
+    DepthPrePass::DepthPrePass(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
     {
-        auto& rhiDevice = context.GetVulkanContext().GetRHIDevice();
-
         // Descriptor set layout: binding 0 = uniform buffer (vertex stage)
-        m_FrameLayout = rhiDevice.CreateDescriptorSetLayout({
+        m_FrameLayout = device.CreateDescriptorSetLayout({
             { 0, RHI::DescriptorType::UniformBuffer, 1, RHI::ShaderStage::Vertex }
         });
 
         // Descriptor pool: one UB per frame
-        m_FramePool = rhiDevice.CreateDescriptorPool(
+        m_FramePool = device.CreateDescriptorPool(
             MAX_FRAMES_IN_FLIGHT,
             { { RHI::DescriptorType::UniformBuffer, MAX_FRAMES_IN_FLIGHT } });
 
@@ -47,12 +39,12 @@ namespace Renderer
         m_FrameSets.reserve(MAX_FRAMES_IN_FLIGHT);
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
         {
-            auto ubo = rhiDevice.CreateBuffer(
+            auto ubo = device.CreateBuffer(
                 sizeof(DepthPrepassFrameUniform),
                 RHI::BufferUsage::UniformBuffer,
                 RHI::MemoryUsage::CpuToGpu);
 
-            auto set = rhiDevice.AllocateDescriptorSet(*m_FramePool, *m_FrameLayout);
+            auto set = device.AllocateDescriptorSet(*m_FramePool, *m_FrameLayout);
             set->WriteUniformBuffer(0, *ubo);
             set->Flush();
 
@@ -71,10 +63,10 @@ namespace Renderer
             RHI::ImageLayout::Undefined,
             RHI::ImageLayout::DepthStencilReadOnly
         };
-        m_RenderPass = rhiDevice.CreateRenderPass(rpDesc);
+        m_RenderPass = device.CreateRenderPass(rpDesc);
 
         // Shaders
-        auto vertexShader = rhiDevice.CreateShader(
+        auto vertexShader = device.CreateShader(
             "/Shaders/Shaders/DepthPrepass/Base.vert.spv",
             RHI::ShaderStage::Vertex);
 
@@ -99,7 +91,7 @@ namespace Renderer
         };
         pipelineDesc.m_RenderPass = m_RenderPass.get();
 
-        m_Pipeline = rhiDevice.CreateGraphicsPipeline(pipelineDesc);
+        m_Pipeline = device.CreateGraphicsPipeline(pipelineDesc);
 
         // Framebuffer
         const auto& depthBuffer = resourceManager.GetRHIDepthBuffer();
@@ -108,25 +100,19 @@ namespace Renderer
         fbDesc.m_DepthAttachment = &depthBuffer;
         fbDesc.m_Width           = depthBuffer.GetWidth();
         fbDesc.m_Height          = depthBuffer.GetHeight();
-        m_FrameBuffer = rhiDevice.CreateFramebuffer(fbDesc);
+        m_FrameBuffer = device.CreateFramebuffer(fbDesc);
     }
 
     DepthPrePass::~DepthPrePass()
     {
     }
 
-    void DepthPrePass::Render(Context::Context& context, const ResourceManager& resourceManager)
+    void DepthPrePass::Render(const FD::FrameData& frame, const ResourceManager& resourceManager,
+                               RHI::IRHICommandList& cmd, uint32_t frameIndex)
     {
-        auto& frameContext  = context.GetFrameContext();
-        auto& threadContext = context.GetThreadContext();
-        auto& engineContext = context.GetEngineContext();
-
-        auto& commandList = threadContext.GetCommandList();
-        const uint32_t frameIndex = threadContext.GetFrameIndex();
-
         // Update frame uniform
         DepthPrepassFrameUniform ubo{};
-        ubo.m_ViewProj = frameContext.GetCameraProjMatrix() * frameContext.GetCameraViewMatrix();
+        ubo.m_ViewProj = frame.m_Camera.m_Proj * frame.m_Camera.m_View;
         m_FrameUniforms[frameIndex]->CopyData(&ubo, sizeof(ubo));
 
         // Begin render pass
@@ -134,47 +120,46 @@ namespace Renderer
         depthClear.m_IsDepth      = true;
         depthClear.m_DepthStencil = { 1.0f, 0 };
 
-        commandList.BeginRenderPass(*m_RenderPass, *m_FrameBuffer, { depthClear });
+        cmd.BeginRenderPass(*m_RenderPass, *m_FrameBuffer, { depthClear });
 
         const uint32_t width  = m_FrameBuffer->GetWidth();
         const uint32_t height = m_FrameBuffer->GetHeight();
 
-        commandList.BindPipeline(*m_Pipeline);
-        commandList.SetViewport({ 0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height), 0.0f, 1.0f });
-        commandList.SetScissor({ 0, 0, width, height });
+        cmd.BindPipeline(*m_Pipeline);
+        cmd.SetViewport({ 0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height), 0.0f, 1.0f });
+        cmd.SetScissor({ 0, 0, width, height });
 
-        auto& meshContainer = engineContext.GetMeshContainer();
-        auto& posBuffer = const_cast<RHI::IRHIBuffer&>(meshContainer.GetRHIPositionsBuffer());
-        commandList.BindVertexBuffers(0, { &posBuffer }, { 0 });
+        auto& registry  = resourceManager.GetResourceRegistry();
+        auto& posBuffer = const_cast<RHI::IRHIBuffer&>(registry.GetPositionsBuffer());
+        cmd.BindVertexBuffers(0, { &posBuffer }, { 0 });
 
-        auto& idxBuffer = const_cast<RHI::IRHIBuffer&>(meshContainer.GetRHIIndexBuffer());
-        commandList.BindIndexBuffer(idxBuffer, RHI::IndexType::Uint32);
+        auto& idxBuffer = const_cast<RHI::IRHIBuffer&>(registry.GetIndexBuffer());
+        cmd.BindIndexBuffer(idxBuffer, RHI::IndexType::Uint32);
 
-        commandList.BindDescriptorSet(*m_Pipeline, 0, *m_FrameSets[frameIndex]);
+        cmd.BindDescriptorSet(*m_Pipeline, 0, *m_FrameSets[frameIndex]);
 
-        auto& drawListContainer = engineContext.GetDrawListContainer();
-        for (const auto& drawNode : drawListContainer.GetOpaqueList())
+        for (const auto& drawNode : frame.m_DrawList.m_Opaque)
         {
-            for (const auto& object : drawNode.objects)
+            for (const auto& object : drawNode.m_Objects)
             {
-                commandList.PushConstants(
+                cmd.PushConstants(
                     *m_Pipeline,
                     RHI::ShaderStage::Vertex,
                     0,
                     static_cast<uint32_t>(sizeof(DepthPrePassPushConstants)),
-                    &object.objMatrix);
+                    &object.m_Transform);
 
-                const auto& mesh = meshContainer.GetMesh(object.meshIndex);
-                commandList.DrawIndexed(mesh.GetIndexCount(), 1, mesh.GetFirstIndex(), mesh.GetVertexOffset(), 0);
+                const auto& geom = registry.GetMeshGeometryInfo(object.m_MeshIndex);
+                cmd.DrawIndexed(geom.m_IndexCount, 1, geom.m_FirstIndex, geom.m_VertexOffset, 0);
             }
         }
 
-        commandList.EndRenderPass();
+        cmd.EndRenderPass();
     }
 
-    void DepthPrePass::Cleanup(const Context::Context& context)
+    void DepthPrePass::Cleanup(RHI::IRHIDevice& device)
     {
-        context.GetVulkanContext().GetRHIDevice().WaitIdle();
+        device.WaitIdle();
 
         m_FrameSets.clear();
         m_FrameUniforms.clear();
@@ -185,9 +170,8 @@ namespace Renderer
         m_FrameLayout.reset();
     }
 
-    void DepthPrePass::ResizeResources(const Context::Context& context, const ResourceManager& resourceManager)
+    void DepthPrePass::ResizeResources(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
     {
-        auto& rhiDevice = context.GetVulkanContext().GetRHIDevice();
         const auto& depthBuffer = resourceManager.GetRHIDepthBuffer();
 
         m_FrameBuffer.reset();
@@ -197,7 +181,7 @@ namespace Renderer
         fbDesc.m_DepthAttachment = &depthBuffer;
         fbDesc.m_Width           = depthBuffer.GetWidth();
         fbDesc.m_Height          = depthBuffer.GetHeight();
-        m_FrameBuffer = rhiDevice.CreateFramebuffer(fbDesc);
+        m_FrameBuffer = device.CreateFramebuffer(fbDesc);
     }
 
 }

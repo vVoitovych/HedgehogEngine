@@ -7,27 +7,26 @@
 
 namespace RHI
 {
+    class IRHIDevice;
     class IRHICommandList;
     class IRHIFence;
     class IRHISemaphore;
 }
 
-namespace Context
+namespace Renderer
 {
-    class VulkanContext;
-
     class ThreadContext
     {
     public:
-        ThreadContext(const VulkanContext& vulkanContext);
+        explicit ThreadContext(RHI::IRHIDevice& device);
         ~ThreadContext();
 
-        ThreadContext(const ThreadContext&) = delete;
+        ThreadContext(const ThreadContext&)            = delete;
         ThreadContext& operator=(const ThreadContext&) = delete;
 
-        void Cleanup(const VulkanContext& vulkanContext);
+        void Cleanup(RHI::IRHIDevice& device);
 
-        void NextFrame();
+        void     NextFrame();
         uint32_t GetFrameIndex() const;
 
         RHI::IRHICommandList& GetCommandList();
@@ -43,5 +42,4 @@ namespace Context
 
         uint32_t m_FrameIndex = 0;
     };
-
 }
