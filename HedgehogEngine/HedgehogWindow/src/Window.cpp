@@ -19,9 +19,14 @@ namespace HW
 {
     struct Window::Impl
     {
-        GLFWwindow*           m_Handle    = nullptr;
+        GLFWwindow*           m_Handle       = nullptr;
         InputState            m_InputState;
-        bool                  m_Resized   = false;
+        bool                  m_Resized      = false;
+        bool                  m_IsFullscreen = false;
+        int                   m_SavedX       = 0;
+        int                   m_SavedY       = 0;
+        int                   m_SavedWidth   = 1366;
+        int                   m_SavedHeight  = 768;
         std::function<bool()> m_GuiCallback;
     };
 
@@ -30,11 +35,18 @@ namespace HW
     {
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
+        m_Impl->m_IsFullscreen = desc.m_Fullscreen;
+        m_Impl->m_SavedX       = desc.m_X;
+        m_Impl->m_SavedY       = desc.m_Y;
+        m_Impl->m_SavedWidth   = desc.m_Width;
+        m_Impl->m_SavedHeight  = desc.m_Height;
+
         GLFWmonitor* monitor = desc.m_Fullscreen ? glfwGetPrimaryMonitor() : nullptr;
         m_Impl->m_Handle = glfwCreateWindow(desc.m_Width, desc.m_Height, desc.m_Title.c_str(), monitor, nullptr);
         assert(m_Impl->m_Handle != nullptr && "glfwCreateWindow() failed");
 
-        glfwSetWindowPos(m_Impl->m_Handle, desc.m_X, desc.m_Y);
+        if (!desc.m_Fullscreen)
+            glfwSetWindowPos(m_Impl->m_Handle, desc.m_X, desc.m_Y);
         glfwSetWindowUserPointer(m_Impl->m_Handle, this);
 
         glfwSetFramebufferSizeCallback(m_Impl->m_Handle, OnFramebufferResize);
@@ -71,6 +83,33 @@ namespace HW
     void Window::ResetResizedFlag()
     {
         m_Impl->m_Resized = false;
+    }
+
+    void Window::ToggleFullscreen()
+    {
+        if (!m_Impl->m_IsFullscreen)
+        {
+            glfwGetWindowPos(m_Impl->m_Handle, &m_Impl->m_SavedX, &m_Impl->m_SavedY);
+            glfwGetWindowSize(m_Impl->m_Handle, &m_Impl->m_SavedWidth, &m_Impl->m_SavedHeight);
+
+            GLFWmonitor*       monitor = glfwGetPrimaryMonitor();
+            const GLFWvidmode* mode    = glfwGetVideoMode(monitor);
+            glfwSetWindowMonitor(m_Impl->m_Handle, monitor,
+                                 0, 0, mode->width, mode->height, mode->refreshRate);
+            m_Impl->m_IsFullscreen = true;
+        }
+        else
+        {
+            glfwSetWindowMonitor(m_Impl->m_Handle, nullptr,
+                                 m_Impl->m_SavedX, m_Impl->m_SavedY,
+                                 m_Impl->m_SavedWidth, m_Impl->m_SavedHeight, 0);
+            m_Impl->m_IsFullscreen = false;
+        }
+    }
+
+    bool Window::IsFullscreen() const
+    {
+        return m_Impl->m_IsFullscreen;
     }
 
     void Window::GetFramebufferSize(int& outWidth, int& outHeight) const
@@ -148,6 +187,10 @@ namespace HW
         case GLFW_KEY_D: state.m_KeyD = pressOrRepeat; break;
         case GLFW_KEY_Q: state.m_KeyQ = pressOrRepeat; break;
         case GLFW_KEY_E: state.m_KeyE = pressOrRepeat; break;
+        case GLFW_KEY_F11:
+            if (action == GLFW_PRESS)
+                self->ToggleFullscreen();
+            break;
         default: break;
         }
     }

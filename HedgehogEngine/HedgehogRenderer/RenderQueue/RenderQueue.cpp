@@ -52,6 +52,11 @@ namespace Renderer
         m_GuiPass->BeginFrame();
     }
 
+    void RenderQueue::DiscardGui()
+    {
+        m_GuiPass->DiscardFrame();
+    }
+
     void RenderQueue::Render(const FD::FrameData& frame,
                              RHI::IRHIDevice&     device,
                              RHI::IRHISwapchain&  swapchain,

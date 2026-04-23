@@ -113,6 +113,11 @@ namespace Renderer
         ImGui::NewFrame();
     }
 
+    void GuiPass::DiscardFrame()
+    {
+        ImGui::EndFrame();
+    }
+
     void GuiPass::Render(RHI::IRHICommandList& cmd, const ResourceManager& resourceManager)
     {
         ImGui::Render();

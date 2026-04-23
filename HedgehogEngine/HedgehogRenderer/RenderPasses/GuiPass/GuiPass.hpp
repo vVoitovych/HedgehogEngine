@@ -30,6 +30,7 @@ namespace Renderer
         GuiPass& operator=(const GuiPass&) = delete;
 
         void BeginFrame();
+        void DiscardFrame();
         void Render(RHI::IRHICommandList& cmd, const ResourceManager& resourceManager);
         void Cleanup(RHI::IRHIDevice& device);
 
