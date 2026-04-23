@@ -1,8 +1,13 @@
 #pragma once
 
-namespace Context
+#include <cstdint>
+
+namespace RHI
 {
-    class Context;
+    class IRHISwapchain;
+    class IRHIFence;
+    class IRHISemaphore;
+    class IRHICommandList;
 }
 
 namespace Renderer
@@ -10,14 +15,17 @@ namespace Renderer
     class InitPass
     {
     public:
-        InitPass(const Context::Context& context);
+        InitPass()  = default;
         ~InitPass() = default;
 
-        void Render(Context::Context& context);
+        InitPass(const InitPass&)            = delete;
+        InitPass& operator=(const InitPass&) = delete;
 
-        void Cleanup(const Context::Context& context);
+        uint32_t Render(RHI::IRHISwapchain&  swapchain,
+                        RHI::IRHIFence&      fence,
+                        RHI::IRHISemaphore&  imageAvailableSemaphore,
+                        RHI::IRHICommandList& cmd);
 
+        void Cleanup();
     };
-
 }
-

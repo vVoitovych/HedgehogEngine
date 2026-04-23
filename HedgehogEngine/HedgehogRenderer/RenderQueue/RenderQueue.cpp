@@ -1,7 +1,5 @@
 #include "RenderQueue.hpp"
 
-#include "HedgehogContext/Context/Context.hpp"
-#include "HedgehogContext/Context/VulkanContext.hpp"
 #include "HedgehogRenderer/ResourceManager/ResourceManager.hpp"
 #include "HedgehogRenderer/RenderPasses/InitPass/InitPass.hpp"
 #include "HedgehogRenderer/RenderPasses/DepthPrepass/DepthPrePass.hpp"
@@ -10,68 +8,91 @@
 #include "HedgehogRenderer/RenderPasses/PresentPass/PresentPass.hpp"
 #include "HedgehogRenderer/RenderPasses/GuiPass/GuiPass.hpp"
 
+#include "HedgehogSettings/Settings/HedgehogSettings.hpp"
+
+#include "FrameData/FrameData.hpp"
+
+#include "RHI/api/IRHIDevice.hpp"
+#include "RHI/api/IRHISwapchain.hpp"
+#include "RHI/api/IRHICommandList.hpp"
+#include "RHI/api/IRHISyncPrimitive.hpp"
+#include "RHI/api/IRHITexture.hpp"
+
 namespace Renderer
 {
-    RenderQueue::RenderQueue(Context::Context& context, const ResourceManager& resourceManager)
+    RenderQueue::RenderQueue(RHI::IRHIDevice&                 device,
+                             HW::Window&                      window,
+                             const HedgehogSettings::Settings& settings,
+                             const ResourceManager&           resourceManager)
     {
-        m_InitPass = std::make_unique<InitPass>(context);
-        m_DepthPrePass = std::make_unique<DepthPrePass>(context, resourceManager);
-        m_ShadowmapPass = std::make_unique<ShadowmapPass>(context, resourceManager);
-        m_ForwardPass = std::make_unique<ForwardPass>(context, resourceManager);
-        m_GuiPass = std::make_unique<GuiPass>(context, resourceManager);
-        m_PresentPass = std::make_unique<PresentPass>(context);
+        m_InitPass      = std::make_unique<InitPass>();
+        m_DepthPrePass  = std::make_unique<DepthPrePass>(device, resourceManager);
+        m_ShadowmapPass = std::make_unique<ShadowmapPass>(device, settings, resourceManager);
+        m_ForwardPass   = std::make_unique<ForwardPass>(device, resourceManager);
+        m_GuiPass       = std::make_unique<GuiPass>(window, device, resourceManager);
+        m_PresentPass   = std::make_unique<PresentPass>();
     }
 
     RenderQueue::~RenderQueue()
     {
     }
 
-    void RenderQueue::Cleanup(const Context::Context& context)
+    void RenderQueue::Cleanup(RHI::IRHIDevice& device)
     {
-        m_InitPass->Cleanup(context);
-        m_DepthPrePass->Cleanup(context);
-        m_ShadowmapPass->Cleanup(context);
-        m_ForwardPass->Cleanup(context);
-        m_GuiPass->Cleanup(context);
-        m_PresentPass->Cleanup(context);
+        m_InitPass->Cleanup();
+        m_DepthPrePass->Cleanup(device);
+        m_ShadowmapPass->Cleanup(device);
+        m_ForwardPass->Cleanup(device);
+        m_GuiPass->Cleanup(device);
+        m_PresentPass->Cleanup();
     }
 
-    void RenderQueue::Render(Context::Context& context, const ResourceManager& resourceManager)
+    void RenderQueue::BeginGui()
     {
-        auto& vulkanContext = context.GetVulkanContext();
-        if (vulkanContext.IsWindowResized())
-            return;
-
-        m_InitPass->Render(context);
-        m_ShadowmapPass->Render(context, resourceManager);
-        m_DepthPrePass->Render(context, resourceManager);
-        m_ForwardPass->Render(context, resourceManager);
-        m_GuiPass->Render(context, resourceManager);
-        m_PresentPass->Render(context, resourceManager);
-
+        m_GuiPass->BeginFrame();
     }
 
-    void RenderQueue::UpdateData(const Context::Context& context)
+    void RenderQueue::Render(const FD::FrameData& frame,
+                             RHI::IRHIDevice&     device,
+                             RHI::IRHISwapchain&  swapchain,
+                             RHI::IRHICommandList& cmd,
+                             RHI::IRHIFence&      fence,
+                             RHI::IRHISemaphore&  imageAvailableSemaphore,
+                             RHI::IRHISemaphore&  renderFinishedSemaphore,
+                             uint32_t             frameIndex,
+                             const ResourceManager& resourceManager)
     {
-        m_ShadowmapPass->UpdateData(context);
+        const uint32_t backBufferIndex = m_InitPass->Render(
+            swapchain, fence, imageAvailableSemaphore, cmd);
+
+        m_ShadowmapPass->Render(frame, resourceManager, cmd, frameIndex);
+        m_DepthPrePass->Render(frame, resourceManager, cmd, frameIndex);
+        m_ForwardPass->Render(frame, resourceManager, cmd, frameIndex);
+        m_GuiPass->Render(cmd, resourceManager);
+
+        auto& colorBuffer = const_cast<RHI::IRHITexture&>(resourceManager.GetRHIColorBuffer());
+        m_PresentPass->Render(cmd, device, swapchain, colorBuffer, backBufferIndex,
+                              imageAvailableSemaphore, renderFinishedSemaphore, fence);
     }
 
-    void RenderQueue::ResizeResources(const Context::Context& context, const ResourceManager& resourceManager)
+    void RenderQueue::UpdateData(const FD::FrameData&             frame,
+                                 uint32_t                          frameIndex,
+                                 const HedgehogSettings::Settings& settings)
     {
-        m_DepthPrePass->ResizeResources(context, resourceManager);
-        m_ForwardPass->ResizeResources(context, resourceManager);
-        m_GuiPass->ResizeResources(context, resourceManager);
+        m_ShadowmapPass->UpdateData(frame, frameIndex, settings);
     }
 
-    void RenderQueue::UpdateResources(const Context::Context& context, const ResourceManager& resourceManager)
+    void RenderQueue::ResizeResources(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
     {
-        m_ShadowmapPass->UpdateResources(context, resourceManager);
+        m_DepthPrePass->ResizeResources(device, resourceManager);
+        m_ForwardPass->ResizeResources(device, resourceManager);
+        m_GuiPass->ResizeResources(device, resourceManager);
     }
 
-
-
+    void RenderQueue::UpdateResources(RHI::IRHIDevice&                  device,
+                                      const HedgehogSettings::Settings&  settings,
+                                      const ResourceManager&             resourceManager)
+    {
+        m_ShadowmapPass->UpdateResources(device, settings, resourceManager);
+    }
 }
-
-
-
-

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "FrameData/FrameData.hpp"
+
 #include <memory>
 
 namespace Scene
@@ -14,54 +16,51 @@ namespace HedgehogSettings
 
 namespace Context
 {
-    class VulkanContext;
+    class WindowContext;
     class Camera;
     class MeshContainer;
     class TextureContainer;
     class LightContainer;
     class MaterialContainer;
-    class DrawListContainer;
 
     class EngineContext
     {
     public:
-        EngineContext(const VulkanContext& vulkanContext);
+        EngineContext();
         ~EngineContext();
-        void Cleanup(const VulkanContext& vulkanContext);
 
-        void UpdateContext(VulkanContext& vulkanContext, float dt);
+        void UpdateContext(WindowContext& windowContext, float aspectRatio, float dt);
 
-        const MeshContainer& GetMeshContainer() const;
-        const TextureContainer& GetTextureContainer() const;
-        const LightContainer& GetLightContainer() const;
+        const MeshContainer&     GetMeshContainer()     const;
+        const TextureContainer&  GetTextureContainer()  const;
+        TextureContainer&        GetTextureContainer();
+        const LightContainer&    GetLightContainer()    const;
         const MaterialContainer& GetMaterialContainer() const;
-        MaterialContainer& GetMaterialContainer();
-        const DrawListContainer& GetDrawListContainer() const;
+        MaterialContainer&       GetMaterialContainer();
 
-        HedgehogSettings::Settings& GetSettings();
+        const FD::FrameData&     GetFrameData()         const;
+
+        HedgehogSettings::Settings&       GetSettings();
         const HedgehogSettings::Settings& GetSettings() const;
-        const Camera& GetCamera() const;
-        Scene::Scene& GetScene();
+
+        const Camera&       GetCamera() const;
+        Scene::Scene&       GetScene();
         const Scene::Scene& GetScene() const;
 
     private:
-        void UpdateCamera(VulkanContext& vulkanContext, float dt);
+        void UpdateCamera(WindowContext& windowContext, float aspectRatio, float dt);
 
     private:
-        std::unique_ptr<Camera> m_Camera;
+        std::unique_ptr<Camera>       m_Camera;
         std::unique_ptr<Scene::Scene> m_Scene;
 
-        std::unique_ptr<MeshContainer> m_MeshContainer;
-        std::unique_ptr<TextureContainer> m_TextureContainer;
-        std::unique_ptr<LightContainer> m_LightContainer;
+        std::unique_ptr<MeshContainer>     m_MeshContainer;
+        std::unique_ptr<TextureContainer>  m_TextureContainer;
+        std::unique_ptr<LightContainer>    m_LightContainer;
         std::unique_ptr<MaterialContainer> m_MaterialContainer;
-        std::unique_ptr<DrawListContainer> m_DrawListContainer;
+
+        FD::FrameData m_FrameData;
 
         std::unique_ptr<HedgehogSettings::Settings> m_Settings;
     };
-
 }
-
-
-
-

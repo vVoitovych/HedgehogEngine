@@ -1,8 +1,4 @@
 #include "InitPass.hpp"
-#include "HedgehogContext/Context/VulkanContext.hpp"
-#include "HedgehogContext/Context/Context.hpp"
-#include "HedgehogContext/Context/ThreadContext.hpp"
-#include "HedgehogContext/Context/FrameContext.hpp"
 
 #include "RHI/api/IRHISwapchain.hpp"
 #include "RHI/api/IRHISyncPrimitive.hpp"
@@ -10,33 +6,24 @@
 
 namespace Renderer
 {
-    InitPass::InitPass(const Context::Context& context)
+    uint32_t InitPass::Render(RHI::IRHISwapchain&  swapchain,
+                              RHI::IRHIFence&      fence,
+                              RHI::IRHISemaphore&  imageAvailableSemaphore,
+                              RHI::IRHICommandList& cmd)
     {
-    }
-
-    void InitPass::Render(Context::Context& context)
-    {
-        auto& vulkanContext = context.GetVulkanContext();
-        auto& frameContext  = context.GetFrameContext();
-        auto& threadContext = context.GetThreadContext();
-
-        auto& fence = threadContext.GetFence();
         fence.Wait();
 
-        auto& imageAvailableSemaphore = threadContext.GetImageAvailableSemaphore();
-        uint32_t imageIndex = vulkanContext.GetRHISwapchain().AcquireNextImage(imageAvailableSemaphore);
-        frameContext.SetBackBufferIndex(imageIndex);
+        const uint32_t imageIndex = swapchain.AcquireNextImage(imageAvailableSemaphore);
 
         fence.Reset();
 
-        auto& commandList = threadContext.GetCommandList();
-        commandList.Reset();
-        commandList.Begin();
+        cmd.Reset();
+        cmd.Begin();
+
+        return imageIndex;
     }
 
-    void InitPass::Cleanup(const Context::Context& context)
+    void InitPass::Cleanup()
     {
     }
-
 }
-

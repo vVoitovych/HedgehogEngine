@@ -1,7 +1,8 @@
 #include "Application.hpp"
+#include "EditorGui.hpp"
 
 #include "HedgehogEngine/HedgehogContext/Context/Context.hpp"
-#include "HedgehogEngine/HedgehogContext/Context/VulkanContext.hpp"
+#include "HedgehogEngine/HedgehogContext/Context/WindowContext.hpp"
 
 #include "HedgehogEngine/HedgehogRenderer/Renderer/Renderer.hpp"
 
@@ -27,19 +28,24 @@ namespace HedgehogClient
 
     void HedgehogClient::InitVulkan()
     {
-        mContext = std::make_unique<Context::Context>();
-        mRenderer = std::make_unique<Renderer::Renderer>(*mContext);
+        mContext   = std::make_unique<Context::Context>();
+        mRenderer  = std::make_unique<Renderer::Renderer>(*mContext);
+        mEditorGui = std::make_unique<EditorGui>();
         LOGINFO("Vulkan initialized");
     }
 
     void HedgehogClient::MainLoop()
     {
-
-        while (!mContext->GetVulkanContext().ShouldClose())
+        while (!mContext->GetWindowContext().ShouldClose())
         {
-            float dt = GetFrameTime();
-            mContext->GetVulkanContext().HandleInput();
-            mContext->UpdateContext(dt);
+            const float dt = GetFrameTime();
+            mContext->GetWindowContext().HandleInput();
+            mContext->UpdateContext(dt, mRenderer->GetAspectRatio());
+
+            // GUI preparation: NewFrame + editor panels + draw data generation
+            mRenderer->BeginGui();
+            mEditorGui->Draw(*mContext);
+
             mRenderer->DrawFrame(*mContext);
         }
 
@@ -56,12 +62,10 @@ namespace HedgehogClient
     {
         static auto prevTime = std::chrono::high_resolution_clock::now();
 
-        auto currentTime = std::chrono::high_resolution_clock::now();
-        float deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - prevTime).count();
+        const auto  currentTime = std::chrono::high_resolution_clock::now();
+        const float deltaTime   = std::chrono::duration<float, std::chrono::seconds::period>(
+            currentTime - prevTime).count();
         prevTime = currentTime;
         return deltaTime;
-
     }
-
 }
-

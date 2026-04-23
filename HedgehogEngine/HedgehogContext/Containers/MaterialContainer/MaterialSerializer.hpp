@@ -9,7 +9,7 @@ namespace Context
     class MaterialSerializer
     {
     public:
-        static void Serialize(MaterialData& material, std::string materialPath);
+        static void Serialize(const MaterialData& material, std::string materialPath);
 
         static void Deserialize(MaterialData& material, std::string materialPath);
 
