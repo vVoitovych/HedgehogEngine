@@ -28,25 +28,25 @@ namespace HedgehogClient
 
     void HedgehogClient::InitVulkan()
     {
-        mContext   = std::make_unique<Context::Context>();
-        mRenderer  = std::make_unique<Renderer::Renderer>(*mContext);
-        mEditorGui = std::make_unique<EditorGui>();
+        m_Context   = std::make_unique<Context::Context>();
+        m_Renderer  = std::make_unique<Renderer::Renderer>(*m_Context);
+        m_EditorGui = std::make_unique<EditorGui>();
         LOGINFO("Vulkan initialized");
     }
 
     void HedgehogClient::MainLoop()
     {
-        while (!mContext->GetWindowContext().ShouldClose())
+        while (!m_Context->GetWindowContext().ShouldClose())
         {
             const float dt = GetFrameTime();
-            mContext->GetWindowContext().HandleInput();
-            mContext->UpdateContext(dt, mRenderer->GetAspectRatio());
+            m_Context->GetWindowContext().HandleInput();
+            m_Context->UpdateContext(dt, m_Renderer->GetAspectRatio());
 
             // GUI preparation: NewFrame + editor panels + draw data generation
-            mRenderer->BeginGui();
-            mEditorGui->Draw(*mContext);
+            m_Renderer->BeginGui();
+            m_EditorGui->Draw(*m_Context);
 
-            mRenderer->DrawFrame(*mContext);
+            m_Renderer->DrawFrame(*m_Context);
         }
 
         Cleanup();
@@ -54,8 +54,8 @@ namespace HedgehogClient
 
     void HedgehogClient::Cleanup()
     {
-        mRenderer->Cleanup(*mContext);
-        mContext->Cleanup();
+        m_Renderer->Cleanup(*m_Context);
+        m_Context->Cleanup();
     }
 
     float HedgehogClient::GetFrameTime()

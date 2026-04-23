@@ -32,8 +32,8 @@ namespace HedgehogClient
         float GetFrameTime();
 
     private:
-        std::unique_ptr<Context::Context>   mContext;
-        std::unique_ptr<Renderer::Renderer> mRenderer;
-        std::unique_ptr<EditorGui>          mEditorGui;
+        std::unique_ptr<Context::Context>   m_Context;
+        std::unique_ptr<Renderer::Renderer> m_Renderer;
+        std::unique_ptr<EditorGui>          m_EditorGui;
     };
 }
