@@ -596,3 +596,8 @@ Binaries
 /HedgehogEngine/RHI/*.vcxproj
 /HedgehogEngine/RHI/*.filters
 /HedgehogEngine/HedgehogWindow/HedgehogWindow.vcxproj.user
+/Editor/Editor.vcxproj
+/Editor/Editor.vcxproj.filters
+/Editor/Editor.vcxproj.user
+/Editor/imgui.ini
+/HedgehogEngine/FrameData/FrameData.vcxproj
