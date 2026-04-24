@@ -30,14 +30,19 @@ namespace Editor
         void Draw(Context::Context& context);
 
     private:
+        // ── Layout ───────────────────────────────────────────────────────────
+        void DrawEditorLayout(Context::Context& context, float W, float H, float menuH);
+        void DrawLeftSplitter(float availH, float W);
+        void DrawRightSplitter(float availH, float W);
+        void DrawCenterColumn(Context::Context& context, float centerW, float availH);
+        void DrawConsoleSplitter(float centerW, float availH);
+
+        // ── Panel content (draw into the active child window) ────────────────
         void DrawMainMenu(Context::Context& context);
         void DrawSceneHierarchy(Context::Context& context);
         void DrawHierarchyNode(Context::Context& context, ECS::Entity entity, int& index);
         void DrawToolbar();
-        void DrawConsolePanel();
         void DrawInspector(Context::Context& context);
-
-        // Inspector component sections
         void DrawEntityTitle(Context::Context& context);
         void DrawTransformComponent(Context::Context& context);
         void DrawMeshComponent(Context::Context& context);
@@ -45,13 +50,19 @@ namespace Editor
         void DrawLightComponent(Context::Context& context);
         void DrawScriptComponent(Context::Context& context);
 
+        // ── Floating dialogs (own Begin/End) ─────────────────────────────────
         void DrawSettingsWindow(Context::Context& context);
 
     private:
-        static constexpr float k_LeftPanelWidth     = 300.0f;
-        static constexpr float k_RightPanelWidth    = 300.0f;
-        static constexpr float k_ToolbarHeight      = 35.0f;
-        static constexpr float k_ConsolePanelHeight = 200.0f;
+        // Layout constants
+        static constexpr float k_SplitterThickness = 5.0f;
+        static constexpr float k_ToolbarHeight     = 36.0f;
+        static constexpr float k_MinPanelSize      = 100.0f;
+
+        // Runtime-resizable panel sizes
+        float m_LeftPanelWidth     = 300.0f;
+        float m_RightPanelWidth    = 300.0f;
+        float m_ConsolePanelHeight = 200.0f;
 
         std::optional<ECS::Entity>    m_SelectedEntity;
         EditorMode                    m_EditorMode         = EditorMode::Edit;
