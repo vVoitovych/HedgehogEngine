@@ -5,12 +5,19 @@
 
 #include <fstream>
 #include <filesystem>
+#include <string>
 
 namespace Editor
 {
     namespace
     {
-        constexpr const char* k_DockAreaKeys[] = { "left", "top_center", "center", "bottom", "right" };
+        // Must match DockArea enum order; index 5 = Floating
+        constexpr const char* k_DockAreaKeys[] =
+            { "left", "top_center", "center", "bottom", "right", "floating" };
+
+        // Areas that are fully serialised (Left/Right/Bottom/Floating)
+        constexpr DockArea k_SavedAreas[] =
+            { DockArea::Left, DockArea::Right, DockArea::Bottom, DockArea::Floating };
     }
 
     void EditorSettings::Save(const std::string& path) const
@@ -18,6 +25,7 @@ namespace Editor
         YAML::Emitter out;
         out << YAML::BeginMap;
 
+        // Panel background colour
         out << YAML::Key << "panel_bg_color" << YAML::Value
             << YAML::Flow << YAML::BeginSeq
             << panelBgColor[0] << panelBgColor[1] << panelBgColor[2]
@@ -28,19 +36,40 @@ namespace Editor
         out << YAML::Key << "right_width"   << YAML::Value << dockLayout.m_RightWidth;
         out << YAML::Key << "bottom_height" << YAML::Value << dockLayout.m_BottomHeight;
 
+        // Area → panel lists and active tab indices
         out << YAML::Key << "areas" << YAML::Value << YAML::BeginMap;
-        constexpr DockArea k_SavedAreas[] = { DockArea::Left, DockArea::Right, DockArea::Bottom };
         for (const DockArea area : k_SavedAreas)
         {
             const int areaIdx = static_cast<int>(area);
-            out << YAML::Key << k_DockAreaKeys[areaIdx] << YAML::Value << YAML::Flow << YAML::BeginSeq;
+            out << YAML::Key << k_DockAreaKeys[areaIdx]
+                << YAML::Value << YAML::Flow << YAML::BeginSeq;
             for (const PanelId pid : dockLayout.m_AreaPanels[areaIdx])
                 out << PanelIdToString(pid);
             out << YAML::EndSeq;
+
             out << YAML::Key << (std::string(k_DockAreaKeys[areaIdx]) + "_active")
                 << YAML::Value << dockLayout.m_ActiveTab[areaIdx];
         }
         out << YAML::EndMap; // areas
+
+        // Per-panel visibility
+        out << YAML::Key << "panel_visible" << YAML::Value << YAML::BeginMap;
+        for (int i = 0; i < PANEL_ID_COUNT; ++i)
+            out << YAML::Key << PanelIdToString(static_cast<PanelId>(i))
+                << YAML::Value << dockLayout.m_PanelVisible[i];
+        out << YAML::EndMap; // panel_visible
+
+        // Floating panel last-known positions
+        out << YAML::Key << "floating_positions" << YAML::Value << YAML::BeginMap;
+        for (int i = 0; i < PANEL_ID_COUNT; ++i)
+        {
+            const auto& p = dockLayout.m_FloatingPositions[i];
+            out << YAML::Key << PanelIdToString(static_cast<PanelId>(i))
+                << YAML::Value << YAML::Flow << YAML::BeginSeq
+                << p.x << p.y
+                << YAML::EndSeq;
+        }
+        out << YAML::EndMap; // floating_positions
 
         out << YAML::EndMap; // dock_layout
         out << YAML::EndMap; // root
@@ -77,7 +106,6 @@ namespace Editor
 
                 if (auto areas = dock["areas"])
                 {
-                    constexpr DockArea k_SavedAreas[] = { DockArea::Left, DockArea::Right, DockArea::Bottom };
                     for (const DockArea area : k_SavedAreas)
                     {
                         const int areaIdx = static_cast<int>(area);
@@ -90,9 +118,36 @@ namespace Editor
                                     dockLayout.m_AreaPanels[areaIdx].push_back(pid.value());
                             }
                         }
-                        const std::string activeKey = std::string(k_DockAreaKeys[areaIdx]) + "_active";
+                        const std::string activeKey =
+                            std::string(k_DockAreaKeys[areaIdx]) + "_active";
                         if (auto n = areas[activeKey])
                             dockLayout.m_ActiveTab[areaIdx] = n.as<int>();
+                    }
+                }
+
+                if (auto vis = dock["panel_visible"])
+                {
+                    for (int i = 0; i < PANEL_ID_COUNT; ++i)
+                    {
+                        const char* key = PanelIdToString(static_cast<PanelId>(i));
+                        if (auto n = vis[key])
+                            dockLayout.m_PanelVisible[i] = n.as<bool>();
+                    }
+                }
+
+                if (auto fp = dock["floating_positions"])
+                {
+                    for (int i = 0; i < PANEL_ID_COUNT; ++i)
+                    {
+                        const char* key = PanelIdToString(static_cast<PanelId>(i));
+                        if (auto seq = fp[key])
+                        {
+                            if (seq.IsSequence() && seq.size() == 2)
+                            {
+                                dockLayout.m_FloatingPositions[i].x = seq[0].as<float>();
+                                dockLayout.m_FloatingPositions[i].y = seq[1].as<float>();
+                            }
+                        }
                     }
                 }
             }

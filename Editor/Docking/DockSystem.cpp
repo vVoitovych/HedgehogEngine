@@ -20,12 +20,11 @@ namespace Editor
         const ImVec2   display = io.DisplaySize;
         const float    H       = display.y - menuBarHeight;
 
-        // Handle drag completion before drawing (avoids one-frame flicker)
+        // Resolve pending drag-drop before any window is rendered this frame
         if (m_DraggingPanel.has_value() && ImGui::IsMouseReleased(ImGuiMouseButton_Left))
         {
             const DockArea target = HitTestAreas(io.MousePos, display, menuBarHeight);
-            // Only move to dockable areas
-            if (target == DockArea::Left || target == DockArea::Right || target == DockArea::Bottom)
+            if (target != m_DraggingFromArea)
                 m_Layout.MovePanel(m_DraggingPanel.value(), target);
             m_DraggingPanel.reset();
         }
@@ -35,7 +34,8 @@ namespace Editor
         const float centerW = std::max(k_MinCenterWidth,
                                        display.x - leftW - rightW - 2.0f * k_SplitterThickness);
         const float bottomH = m_Layout.m_BottomHeight;
-        const float sceneH  = std::max(k_MinAreaSize, H - k_ToolbarHeight - bottomH - k_SplitterThickness);
+        const float sceneH  = std::max(k_MinAreaSize,
+                                       H - k_ToolbarHeight - bottomH - k_SplitterThickness);
 
         // ── Full-workspace host window ────────────────────────────────────────
         ImGui::SetNextWindowPos({ 0.0f, menuBarHeight }, ImGuiCond_Always);
@@ -43,9 +43,9 @@ namespace Editor
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 0.0f, 0.0f });
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,   { 0.0f, 0.0f });
         constexpr ImGuiWindowFlags k_HostFlags =
-            ImGuiWindowFlags_NoTitleBar        | ImGuiWindowFlags_NoResize         |
-            ImGuiWindowFlags_NoMove            | ImGuiWindowFlags_NoScrollbar      |
-            ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoSavedSettings  |
+            ImGuiWindowFlags_NoTitleBar        | ImGuiWindowFlags_NoResize          |
+            ImGuiWindowFlags_NoMove            | ImGuiWindowFlags_NoScrollbar       |
+            ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoSavedSettings   |
             ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoFocusOnAppearing;
         ImGui::Begin("##DockHost", nullptr, k_HostFlags);
         ImGui::PopStyleVar(2);
@@ -71,10 +71,9 @@ namespace Editor
         if (ImGui::IsItemHovered() || ImGui::IsItemActive())
             ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
         {
-            const ImVec2 p0 = ImGui::GetItemRectMin();
-            const ImVec2 p1 = ImGui::GetItemRectMax();
-            const ImU32  col = ImGui::GetColorU32(ImGuiCol_Separator);
-            ImGui::GetWindowDrawList()->AddRectFilled(p0, p1, col);
+            const ImVec2 p0  = ImGui::GetItemRectMin();
+            const ImVec2 p1  = ImGui::GetItemRectMax();
+            ImGui::GetWindowDrawList()->AddRectFilled(p0, p1, ImGui::GetColorU32(ImGuiCol_Separator));
         }
 
         // ── CENTER COLUMN ────────────────────────────────────────────────────
@@ -93,7 +92,7 @@ namespace Editor
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 0.0f, 0.0f });
         ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
         ImGui::BeginChild("##AreaCenter", { centerW, sceneH }, ImGuiChildFlags_None);
-        drawFn(PanelId::Count); // sentinel: scene view content
+        drawFn(PanelId::Count); // sentinel: scene view
         ImGui::EndChild();
         ImGui::PopStyleColor();
         ImGui::PopStyleVar();
@@ -117,7 +116,7 @@ namespace Editor
         }
 
         // Bottom area
-        const float bottomY = k_ToolbarHeight + sceneH + k_SplitterThickness;
+        const float bottomY       = k_ToolbarHeight + sceneH + k_SplitterThickness;
         const float actualBottomH = H - bottomY;
         ImGui::SetCursorPos({ centerX, bottomY });
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 4.0f, 4.0f });
@@ -155,7 +154,10 @@ namespace Editor
 
         ImGui::End(); // ##DockHost
 
-        // ── Drop zone overlay (drawn over everything) ─────────────────────────
+        // ── Floating panels (rendered above the host) ─────────────────────────
+        DrawFloatingPanels(drawFn);
+
+        // ── Drop zone overlays (on top of everything) ─────────────────────────
         if (m_DraggingPanel.has_value())
             DrawDropZones(display, menuBarHeight);
     }
@@ -171,7 +173,8 @@ namespace Editor
                                        display.x - leftW - rightW - 2.0f * k_SplitterThickness);
         const float centerX = leftW + k_SplitterThickness;
         const float bottomH = m_Layout.m_BottomHeight;
-        const float sceneH  = std::max(k_MinAreaSize, H - k_ToolbarHeight - bottomH - k_SplitterThickness);
+        const float sceneH  = std::max(k_MinAreaSize,
+                                       H - k_ToolbarHeight - bottomH - k_SplitterThickness);
         const float bottomY = menuH + k_ToolbarHeight + sceneH + k_SplitterThickness;
 
         switch (area)
@@ -193,22 +196,19 @@ namespace Editor
 
     void DockSystem::DrawDockableArea(DockArea area, ImVec2 size, const DrawFn& drawFn)
     {
-        auto& panels = m_Layout.m_AreaPanels[static_cast<int>(area)];
+        const auto& panels = m_Layout.m_AreaPanels[static_cast<int>(area)];
         if (panels.empty())
             return;
 
         if (panels.size() == 1)
         {
-            // Single panel: show a slim draggable title bar then the content
-            const PanelId   pid  = panels[0];
-            const char*     name = PanelName(pid);
-            const ImVec2    titleSize { size.x, k_TabBarHeight };
+            const PanelId pid      = panels[0];
+            const ImVec2  titleSz  = { size.x, k_TabBarHeight };
 
-            // Title bar button acts as drag handle
             ImGui::PushStyleColor(ImGuiCol_Button,        ImGui::GetStyleColorVec4(ImGuiCol_TitleBg));
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGui::GetStyleColorVec4(ImGuiCol_TitleBgActive));
             ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImGui::GetStyleColorVec4(ImGuiCol_TitleBgActive));
-            ImGui::Button(name, titleSize);
+            ImGui::Button(PanelName(pid), titleSz);
             ImGui::PopStyleColor(3);
 
             if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
@@ -226,7 +226,7 @@ namespace Editor
         {
             for (PanelId pid : panels)
             {
-                const bool visible = ImGui::BeginTabItem(PanelName(pid));
+                const bool open = ImGui::BeginTabItem(PanelName(pid));
 
                 if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
                 {
@@ -234,13 +234,52 @@ namespace Editor
                     m_DraggingFromArea = area;
                 }
 
-                if (visible)
+                if (open)
                 {
                     drawFn(pid);
                     ImGui::EndTabItem();
                 }
             }
             ImGui::EndTabBar();
+        }
+    }
+
+    void DockSystem::DrawFloatingPanels(const DrawFn& drawFn)
+    {
+        auto& floatingPanels = m_Layout.m_AreaPanels[static_cast<int>(DockArea::Floating)];
+
+        // Iterate backwards so erasing at index i doesn't affect lower indices
+        for (int i = static_cast<int>(floatingPanels.size()) - 1; i >= 0; --i)
+        {
+            const PanelId pid    = floatingPanels[i];
+            auto&         pos    = m_Layout.m_FloatingPositions[static_cast<int>(pid)];
+
+            ImGui::SetNextWindowPos({ pos.x, pos.y }, ImGuiCond_Appearing);
+            ImGui::SetNextWindowSize({ 420.0f, 320.0f }, ImGuiCond_Appearing);
+
+            bool open = true;
+            const bool visible = ImGui::Begin(PanelName(pid), &open,
+                ImGuiWindowFlags_NoSavedSettings);
+
+            // Track position: window only moves when user drags the title bar
+            const ImVec2 newPos    = ImGui::GetWindowPos();
+            const bool   posChanged = (newPos.x != pos.x || newPos.y != pos.y);
+            pos.x = newPos.x;
+            pos.y = newPos.y;
+
+            if (posChanged && ImGui::IsMouseDown(ImGuiMouseButton_Left))
+            {
+                m_DraggingPanel    = pid;
+                m_DraggingFromArea = DockArea::Floating;
+            }
+
+            if (visible)
+                drawFn(pid);
+
+            ImGui::End();
+
+            if (!open)
+                m_Layout.HidePanel(pid);
         }
     }
 
@@ -257,15 +296,15 @@ namespace Editor
             PanelName(m_DraggingPanel.value()));
 
         constexpr DockArea k_DockableAreas[] = { DockArea::Left, DockArea::Right, DockArea::Bottom };
-
         for (const DockArea targetArea : k_DockableAreas)
         {
+            // Don't highlight the area the panel is already docked in
             if (targetArea == m_DraggingFromArea)
                 continue;
 
-            const AreaBounds b       = ComputeBounds(targetArea, display, menuH);
-            const ImVec2     bMax    = { b.m_Pos.x + b.m_Size.x, b.m_Pos.y + b.m_Size.y };
-            const bool       hovered = IsPointInRect(mousePos, b.m_Pos, bMax);
+            const AreaBounds b    = ComputeBounds(targetArea, display, menuH);
+            const ImVec2 bMax     = { b.m_Pos.x + b.m_Size.x, b.m_Pos.y + b.m_Size.y };
+            const bool   hovered  = IsPointInRect(mousePos, b.m_Pos, bMax);
 
             const ImU32 fill    = hovered ? IM_COL32(60, 180, 60, 100) : IM_COL32(255, 255, 255, 30);
             const ImU32 outline = hovered ? IM_COL32(60, 255, 60, 220) : IM_COL32(200, 200, 200, 80);
@@ -284,7 +323,8 @@ namespace Editor
             if (IsPointInRect(mouse, b.m_Pos, { b.m_Pos.x + b.m_Size.x, b.m_Pos.y + b.m_Size.y }))
                 return area;
         }
-        return m_DraggingFromArea;
+        // Not over any dock area — release goes to floating
+        return DockArea::Floating;
     }
 
     bool DockSystem::IsPointInRect(ImVec2 point, ImVec2 rectMin, ImVec2 rectMax)

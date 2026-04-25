@@ -133,6 +133,24 @@ namespace Editor
             ImGui::EndMenu();
         }
 
+        if (ImGui::BeginMenu("Windows"))
+        {
+            auto& layout = m_DockSystem.GetLayout();
+            for (int i = 0; i < PANEL_ID_COUNT; ++i)
+            {
+                const PanelId pid     = static_cast<PanelId>(i);
+                const bool    visible = layout.m_PanelVisible[i];
+                if (ImGui::MenuItem(PanelName(pid), nullptr, visible))
+                {
+                    if (visible)
+                        layout.HidePanel(pid);
+                    else
+                        layout.ShowPanel(pid);
+                }
+            }
+            ImGui::EndMenu();
+        }
+
         if (ImGui::BeginMenu("Settings"))
         {
             if (ImGui::MenuItem("Settings")) { m_SettingsWindowOpen = true; }

@@ -39,6 +39,7 @@ namespace Editor
         AreaBounds ComputeBounds(DockArea area, ImVec2 display, float menuH) const;
 
         void DrawDockableArea(DockArea area, ImVec2 size, const DrawFn& drawFn);
+        void DrawFloatingPanels(const DrawFn& drawFn);
         void DrawDropZones(ImVec2 display, float menuH);
         DockArea HitTestAreas(ImVec2 mouse, ImVec2 display, float menuH) const;
 
