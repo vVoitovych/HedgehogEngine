@@ -28,11 +28,15 @@ namespace Editor
     EditorGui::EditorGui()
         : m_ConsolePanel(std::make_unique<ConsolePanel>())
     {
-        m_Settings.Load(k_SettingsPath);
+        // DockSystem ctor already seeds defaults; only overwrite when the file
+        // contained a valid (non-empty) dock section.
+        if (m_Settings.Load(k_SettingsPath) && m_Settings.dockLayout.IsValid())
+            m_DockSystem.GetLayout() = m_Settings.dockLayout;
     }
 
     EditorGui::~EditorGui()
     {
+        m_Settings.dockLayout = m_DockSystem.GetLayout();
         m_Settings.Save(k_SettingsPath);
     }
 
@@ -41,173 +45,48 @@ namespace Editor
     void EditorGui::Draw(Context::Context& context, void* sceneViewTextureId)
     {
         ImVec4* styleColors = ImGui::GetStyle().Colors;
-        const ImVec4 panelBg(m_Settings.panelBgColor[0], m_Settings.panelBgColor[1], m_Settings.panelBgColor[2], 1.0f);
+        const ImVec4 panelBg(m_Settings.panelBgColor[0], m_Settings.panelBgColor[1],
+                             m_Settings.panelBgColor[2], 1.0f);
         styleColors[ImGuiCol_WindowBg]  = panelBg;
         styleColors[ImGuiCol_ChildBg]   = panelBg;
         styleColors[ImGuiCol_PopupBg]   = panelBg;
         styleColors[ImGuiCol_MenuBarBg] = panelBg;
 
-        const ImGuiIO& io    = ImGui::GetIO();
-        const float    W     = io.DisplaySize.x;
-        const float    H     = io.DisplaySize.y;
-        const float    menuH = ImGui::GetFrameHeight();
+        m_SceneViewTextureId = sceneViewTextureId;
 
         DrawMainMenu(context);
-        DrawEditorLayout(context, W, H, menuH, sceneViewTextureId);
+
+        const float menuH = ImGui::GetFrameHeight();
+
+        m_DockSystem.Draw(
+            [this]() { DrawToolbarContent(); },
+            [this, &context](PanelId panel) { DrawPanelContent(panel, context, m_SceneViewTextureId); },
+            menuH);
+
         DrawSettingsWindow(context);
     }
 
-    // ─── Layout ──────────────────────────────────────────────────────────────
+    // ─── Panel dispatch ───────────────────────────────────────────────────────
 
-    void EditorGui::DrawEditorLayout(Context::Context& context, float W, float H, float menuH, void* sceneViewTextureId)
+    void EditorGui::DrawPanelContent(PanelId panel, Context::Context& context, void* sceneViewTextureId)
     {
-        const float availH = H - menuH;
-
-        // Clamp panel sizes every frame so window resizing stays coherent
-        const float minCenterW = k_MinPanelSize;
-        m_Settings.leftPanelWidth  = std::clamp(m_Settings.leftPanelWidth,  k_MinPanelSize,
-            W - m_Settings.rightPanelWidth - minCenterW - 2.0f * k_SplitterThickness);
-        m_Settings.rightPanelWidth = std::clamp(m_Settings.rightPanelWidth, k_MinPanelSize,
-            W - m_Settings.leftPanelWidth  - minCenterW - 2.0f * k_SplitterThickness);
-        m_Settings.consolePanelHeight = std::clamp(m_Settings.consolePanelHeight, k_MinPanelSize,
-            availH - k_ToolbarHeight - k_SplitterThickness - k_MinPanelSize);
-
-        const float centerW = W - m_Settings.leftPanelWidth - m_Settings.rightPanelWidth - 2.0f * k_SplitterThickness;
-
-        // Transparent, decoration-free fullscreen container
-        ImGui::SetNextWindowPos(ImVec2(0.0f, menuH), ImGuiCond_Always);
-        ImGui::SetNextWindowSize(ImVec2(W, availH), ImGuiCond_Always);
-        ImGui::SetNextWindowBgAlpha(0.0f);
-
-        constexpr ImGuiWindowFlags k_LayoutFlags =
-            ImGuiWindowFlags_NoDecoration          |
-            ImGuiWindowFlags_NoMove                |
-            ImGuiWindowFlags_NoBringToFrontOnFocus |
-            ImGuiWindowFlags_NoSavedSettings       |
-            ImGuiWindowFlags_NoScrollbar           |
-            ImGuiWindowFlags_NoScrollWithMouse;
-
-        ImGui::Begin("##editor_layout", nullptr, k_LayoutFlags);
-
-        // ── Left panel ───────────────────────────────────────────────────────
-        ImGui::BeginChild("##left_panel", ImVec2(m_Settings.leftPanelWidth, availH), true);
-        DrawSceneHierarchy(context);
-        ImGui::EndChild();
-
-        // ── Left vertical splitter ───────────────────────────────────────────
-        ImGui::SameLine(0.0f, 0.0f);
-        DrawLeftSplitter(availH, W);
-
-        // ── Center column ────────────────────────────────────────────────────
-        ImGui::SameLine(0.0f, 0.0f);
-        DrawCenterColumn(context, centerW, availH, sceneViewTextureId);
-
-        // ── Right vertical splitter ──────────────────────────────────────────
-        ImGui::SameLine(0.0f, 0.0f);
-        DrawRightSplitter(availH, W);
-
-        // ── Right panel ──────────────────────────────────────────────────────
-        ImGui::SameLine(0.0f, 0.0f);
-        ImGui::BeginChild("##right_panel", ImVec2(-1.0f, availH), true);
-        DrawInspector(context);
-        ImGui::EndChild();
-
-        ImGui::End();
-    }
-
-    void EditorGui::DrawLeftSplitter(float availH, float W)
-    {
-        ImGui::InvisibleButton("##left_vsplit", ImVec2(k_SplitterThickness, availH));
-        if (ImGui::IsItemActive())
+        switch (panel)
         {
-            m_Settings.leftPanelWidth = std::clamp(
-                m_Settings.leftPanelWidth + ImGui::GetIO().MouseDelta.x,
-                k_MinPanelSize,
-                W - m_Settings.rightPanelWidth - k_MinPanelSize - 2.0f * k_SplitterThickness);
+        case PanelId::SceneHierarchy: DrawSceneHierarchy(context);          break;
+        case PanelId::Inspector:      DrawInspector(context);                break;
+        case PanelId::Console:        m_ConsolePanel->Draw();                break;
+        default:                      DrawSceneViewContent(sceneViewTextureId); break; // sentinel for scene view
         }
-        if (ImGui::IsItemHovered() || ImGui::IsItemActive())
-            ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
     }
 
-    void EditorGui::DrawRightSplitter(float availH, float W)
+    void EditorGui::DrawSceneViewContent(void* sceneViewTextureId)
     {
-        ImGui::InvisibleButton("##right_vsplit", ImVec2(k_SplitterThickness, availH));
-        if (ImGui::IsItemActive())
-        {
-            m_Settings.rightPanelWidth = std::clamp(
-                m_Settings.rightPanelWidth - ImGui::GetIO().MouseDelta.x,
-                k_MinPanelSize,
-                W - m_Settings.leftPanelWidth - k_MinPanelSize - 2.0f * k_SplitterThickness);
-        }
-        if (ImGui::IsItemHovered() || ImGui::IsItemActive())
-            ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
-    }
+        const ImVec2 avail = ImGui::GetContentRegionAvail();
+        m_SceneViewWidth  = static_cast<uint32_t>(std::max(1.0f, avail.x));
+        m_SceneViewHeight = static_cast<uint32_t>(std::max(1.0f, avail.y));
 
-    void EditorGui::DrawCenterColumn(Context::Context& context, float centerW, float availH, void* sceneViewTextureId)
-    {
-        const float sceneViewH = availH - k_ToolbarHeight - k_SplitterThickness - m_Settings.consolePanelHeight;
-
-        m_SceneViewWidth  = static_cast<uint32_t>(std::max(1.0f, centerW));
-        m_SceneViewHeight = static_cast<uint32_t>(std::max(1.0f, sceneViewH));
-
-        // Zero window padding so children tile with no internal gaps
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-        ImGui::BeginChild("##center_col", ImVec2(centerW, availH), false,
-            ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-        ImGui::PopStyleVar();
-
-        float cursorY = 0.0f;
-
-        // Toolbar
-        ImGui::SetCursorPosY(cursorY);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8.0f, 4.0f));
-        ImGui::BeginChild("##toolbar_child", ImVec2(centerW, k_ToolbarHeight), true);
-        ImGui::PopStyleVar();
-        DrawToolbar();
-        ImGui::EndChild();
-        cursorY += k_ToolbarHeight;
-
-        // Scene view — renders the offscreen scene texture into this panel
-        ImGui::SetCursorPosY(cursorY);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-        ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
-        ImGui::BeginChild("##scene_view_child", ImVec2(centerW, sceneViewH), false,
-            ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-        ImGui::PopStyleColor();
-        ImGui::PopStyleVar();
         if (sceneViewTextureId)
-            ImGui::Image(sceneViewTextureId, ImVec2(centerW, sceneViewH));
-        ImGui::EndChild();
-        cursorY += sceneViewH;
-
-        // Console resize splitter
-        ImGui::SetCursorPosY(cursorY);
-        DrawConsoleSplitter(centerW, availH);
-        cursorY += k_SplitterThickness;
-
-        // Console
-        ImGui::SetCursorPosY(cursorY);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8.0f, 4.0f));
-        ImGui::BeginChild("##console_child", ImVec2(centerW, m_Settings.consolePanelHeight), true);
-        ImGui::PopStyleVar();
-        m_ConsolePanel->Draw();
-        ImGui::EndChild();
-
-        ImGui::EndChild(); // center_col
-    }
-
-    void EditorGui::DrawConsoleSplitter(float centerW, float availH)
-    {
-        ImGui::InvisibleButton("##h_split", ImVec2(centerW, k_SplitterThickness));
-        if (ImGui::IsItemActive())
-        {
-            m_Settings.consolePanelHeight = std::clamp(
-                m_Settings.consolePanelHeight - ImGui::GetIO().MouseDelta.y,
-                k_MinPanelSize,
-                availH - k_ToolbarHeight - k_SplitterThickness - k_MinPanelSize);
-        }
-        if (ImGui::IsItemHovered() || ImGui::IsItemActive())
-            ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeNS);
+            ImGui::Image(sceneViewTextureId, avail);
     }
 
     // ─── Main menu ───────────────────────────────────────────────────────────
@@ -265,7 +144,7 @@ namespace Editor
 
     // ─── Toolbar ─────────────────────────────────────────────────────────────
 
-    void EditorGui::DrawToolbar()
+    void EditorGui::DrawToolbarContent()
     {
         const bool isEdit  = (m_EditorMode == EditorMode::Edit);
         const bool isPlay  = (m_EditorMode == EditorMode::Play);
@@ -390,8 +269,6 @@ namespace Editor
 
     void EditorGui::DrawInspector(Context::Context& context)
     {
-        ImGui::SeparatorText("Inspector");
-
         if (m_SelectedEntity.has_value())
         {
             DrawEntityTitle(context);

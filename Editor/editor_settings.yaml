@@ -1,4 +1,12 @@
 panel_bg_color: [0.007843138, 0.047058824, 0.11764706]
-left_panel_width: 300
-right_panel_width: 300
-console_panel_height: 200
+dock_layout:
+  left_width: 280
+  right_width: 280
+  bottom_height: 200
+  areas:
+    left: [scene_hierarchy]
+    left_active: 0
+    right: [inspector]
+    right_active: 0
+    bottom: [console]
+    bottom_active: 0

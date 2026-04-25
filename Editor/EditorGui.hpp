@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Docking/DockSystem.hpp"
 #include "EditorSettings.hpp"
 #include "ECS/api/Entity.hpp"
 
@@ -34,18 +35,13 @@ namespace Editor
         uint32_t GetSceneViewHeight() const { return m_SceneViewHeight; }
 
     private:
-        // ── Layout ───────────────────────────────────────────────────────────
-        void DrawEditorLayout(Context::Context& context, float W, float H, float menuH, void* sceneViewTextureId);
-        void DrawLeftSplitter(float availH, float W);
-        void DrawRightSplitter(float availH, float W);
-        void DrawCenterColumn(Context::Context& context, float centerW, float availH, void* sceneViewTextureId);
-        void DrawConsoleSplitter(float centerW, float availH);
-
-        // ── Panel content (draw into the active child window) ────────────────
+        // ── Panel content (drawn into dock areas) ────────────────────────────
+        void DrawPanelContent(PanelId panel, Context::Context& context, void* sceneViewTextureId);
         void DrawMainMenu(Context::Context& context);
+        void DrawToolbarContent();
+        void DrawSceneViewContent(void* sceneViewTextureId);
         void DrawSceneHierarchy(Context::Context& context);
         void DrawHierarchyNode(Context::Context& context, ECS::Entity entity, int& index);
-        void DrawToolbar();
         void DrawInspector(Context::Context& context);
         void DrawEntityTitle(Context::Context& context);
         void DrawTransformComponent(Context::Context& context);
@@ -54,17 +50,14 @@ namespace Editor
         void DrawLightComponent(Context::Context& context);
         void DrawScriptComponent(Context::Context& context);
 
-        // ── Floating dialogs (own Begin/End) ─────────────────────────────────
+        // ── Floating dialogs ─────────────────────────────────────────────────
         void DrawSettingsWindow(Context::Context& context);
 
     private:
-        // Layout constants
-        static constexpr float      k_SplitterThickness   = 5.0f;
-        static constexpr float      k_ToolbarHeight       = 36.0f;
-        static constexpr float      k_MinPanelSize        = 100.0f;
-        static constexpr const char k_SettingsPath[]      = "editor_settings.yaml";
+        static constexpr const char k_SettingsPath[] = "editor_settings.yaml";
 
         EditorSettings m_Settings;
+        DockSystem     m_DockSystem;
 
         uint32_t m_SceneViewWidth  = 0;
         uint32_t m_SceneViewHeight = 0;
@@ -73,5 +66,8 @@ namespace Editor
         EditorMode                    m_EditorMode         = EditorMode::Edit;
         bool                          m_SettingsWindowOpen = false;
         std::unique_ptr<ConsolePanel> m_ConsolePanel;
+
+        // Non-owning pointer valid only during Draw(); used by DrawPanelContent lambdas
+        void* m_SceneViewTextureId = nullptr;
     };
 }

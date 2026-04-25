@@ -8,18 +8,42 @@
 
 namespace Editor
 {
+    namespace
+    {
+        constexpr const char* k_DockAreaKeys[] = { "left", "top_center", "center", "bottom", "right" };
+    }
+
     void EditorSettings::Save(const std::string& path) const
     {
         YAML::Emitter out;
         out << YAML::BeginMap;
+
         out << YAML::Key << "panel_bg_color" << YAML::Value
             << YAML::Flow << YAML::BeginSeq
             << panelBgColor[0] << panelBgColor[1] << panelBgColor[2]
             << YAML::EndSeq;
-        out << YAML::Key << "left_panel_width"     << YAML::Value << leftPanelWidth;
-        out << YAML::Key << "right_panel_width"    << YAML::Value << rightPanelWidth;
-        out << YAML::Key << "console_panel_height" << YAML::Value << consolePanelHeight;
-        out << YAML::EndMap;
+
+        out << YAML::Key << "dock_layout" << YAML::Value << YAML::BeginMap;
+        out << YAML::Key << "left_width"    << YAML::Value << dockLayout.m_LeftWidth;
+        out << YAML::Key << "right_width"   << YAML::Value << dockLayout.m_RightWidth;
+        out << YAML::Key << "bottom_height" << YAML::Value << dockLayout.m_BottomHeight;
+
+        out << YAML::Key << "areas" << YAML::Value << YAML::BeginMap;
+        constexpr DockArea k_SavedAreas[] = { DockArea::Left, DockArea::Right, DockArea::Bottom };
+        for (const DockArea area : k_SavedAreas)
+        {
+            const int areaIdx = static_cast<int>(area);
+            out << YAML::Key << k_DockAreaKeys[areaIdx] << YAML::Value << YAML::Flow << YAML::BeginSeq;
+            for (const PanelId pid : dockLayout.m_AreaPanels[areaIdx])
+                out << PanelIdToString(pid);
+            out << YAML::EndSeq;
+            out << YAML::Key << (std::string(k_DockAreaKeys[areaIdx]) + "_active")
+                << YAML::Value << dockLayout.m_ActiveTab[areaIdx];
+        }
+        out << YAML::EndMap; // areas
+
+        out << YAML::EndMap; // dock_layout
+        out << YAML::EndMap; // root
 
         std::ofstream file(path);
         if (file.is_open())
@@ -44,9 +68,38 @@ namespace Editor
                     panelBgColor[2] = n[2].as<float>();
                 }
             }
-            if (auto n = root["left_panel_width"])     leftPanelWidth     = n.as<float>();
-            if (auto n = root["right_panel_width"])    rightPanelWidth    = n.as<float>();
-            if (auto n = root["console_panel_height"]) consolePanelHeight = n.as<float>();
+
+            if (auto dock = root["dock_layout"])
+            {
+                if (auto n = dock["left_width"])    dockLayout.m_LeftWidth    = n.as<float>();
+                if (auto n = dock["right_width"])   dockLayout.m_RightWidth   = n.as<float>();
+                if (auto n = dock["bottom_height"]) dockLayout.m_BottomHeight = n.as<float>();
+
+                if (auto areas = dock["areas"])
+                {
+                    constexpr DockArea k_SavedAreas[] = { DockArea::Left, DockArea::Right, DockArea::Bottom };
+                    for (const DockArea area : k_SavedAreas)
+                    {
+                        const int areaIdx = static_cast<int>(area);
+                        if (auto seq = areas[k_DockAreaKeys[areaIdx]])
+                        {
+                            dockLayout.m_AreaPanels[areaIdx].clear();
+                            for (const auto& node : seq)
+                            {
+                                if (auto pid = StringToPanelId(node.as<std::string>()))
+                                    dockLayout.m_AreaPanels[areaIdx].push_back(pid.value());
+                            }
+                        }
+                        const std::string activeKey = std::string(k_DockAreaKeys[areaIdx]) + "_active";
+                        if (auto n = areas[activeKey])
+                            dockLayout.m_ActiveTab[areaIdx] = n.as<int>();
+                    }
+                }
+            }
+            else
+            {
+                dockLayout.InitDefaults();
+            }
 
             return true;
         }
