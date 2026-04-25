@@ -27,14 +27,14 @@ namespace Editor
         EditorGui(EditorGui&&)                 = delete;
         EditorGui& operator=(EditorGui&&)      = delete;
 
-        void Draw(Context::Context& context);
+        void Draw(Context::Context& context, void* sceneViewTextureId);
 
     private:
         // ── Layout ───────────────────────────────────────────────────────────
-        void DrawEditorLayout(Context::Context& context, float W, float H, float menuH);
+        void DrawEditorLayout(Context::Context& context, float W, float H, float menuH, void* sceneViewTextureId);
         void DrawLeftSplitter(float availH, float W);
         void DrawRightSplitter(float availH, float W);
-        void DrawCenterColumn(Context::Context& context, float centerW, float availH);
+        void DrawCenterColumn(Context::Context& context, float centerW, float availH, void* sceneViewTextureId);
         void DrawConsoleSplitter(float centerW, float availH);
 
         // ── Panel content (draw into the active child window) ────────────────

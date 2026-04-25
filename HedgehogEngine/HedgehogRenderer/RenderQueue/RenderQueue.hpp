@@ -53,8 +53,9 @@ namespace Renderer
 
         void Cleanup(RHI::IRHIDevice& device);
 
-        void BeginGui();
-        void DiscardGui();
+        void  BeginGui();
+        void  DiscardGui();
+        void* GetSceneViewTextureId() const;
 
         void Render(const FD::FrameData& frame,
                     RHI::IRHIDevice&     device,

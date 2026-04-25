@@ -37,7 +37,7 @@ namespace Editor
             m_Context->UpdateContext(dt, m_Renderer->GetAspectRatio());
 
             m_Renderer->BeginGui();
-            m_EditorGui->Draw(*m_Context);
+            m_EditorGui->Draw(*m_Context, m_Renderer->GetSceneViewTextureId());
 
             m_Renderer->DrawFrame(*m_Context);
         }

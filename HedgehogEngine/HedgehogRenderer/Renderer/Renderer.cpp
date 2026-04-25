@@ -55,6 +55,11 @@ namespace Renderer
         m_RenderQueue->BeginGui();
     }
 
+    void* Renderer::GetSceneViewTextureId() const
+    {
+        return m_RenderQueue->GetSceneViewTextureId();
+    }
+
     float Renderer::GetAspectRatio() const
     {
         auto& sc = m_RHIContext->GetRHISwapchain();

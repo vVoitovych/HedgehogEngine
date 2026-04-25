@@ -13,6 +13,7 @@
 #include "RHI/src/Vulkan/VulkanDevice.hpp"
 #include "RHI/src/Vulkan/VulkanRenderPass.hpp"
 #include "RHI/src/Vulkan/VulkanCommandList.hpp"
+#include "RHI/src/Vulkan/VulkanTexture.hpp"
 
 #include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
 
@@ -53,15 +54,15 @@ namespace Renderer
         poolInfo.pPoolSizes    = poolSizes;
         vkCreateDescriptorPool(vkDevice.GetHandle(), &poolInfo, nullptr, &m_ImGuiPool);
 
-        // Render pass: color-only, load/store
+        // Render pass: color-only, clear+store (scene is in a separate texture)
         RHI::RenderPassDesc rpDesc;
         rpDesc.m_ColorAttachments.push_back(RHI::AttachmentDesc{
             resourceManager.GetRHIColorBuffer().GetFormat(),
-            RHI::LoadOp::Load,
+            RHI::LoadOp::Clear,
             RHI::StoreOp::Store,
             RHI::LoadOp::DontCare,
             RHI::StoreOp::DontCare,
-            RHI::ImageLayout::ColorAttachment,
+            RHI::ImageLayout::Undefined,
             RHI::ImageLayout::ColorAttachment
         });
         m_RenderPass = device.CreateRenderPass(rpDesc);
@@ -100,6 +101,17 @@ namespace Renderer
         ImGui_ImplVulkan_Init(&initInfo);
 
         UploadFonts();
+
+        VkSamplerCreateInfo samplerInfo{};
+        samplerInfo.sType        = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+        samplerInfo.magFilter    = VK_FILTER_LINEAR;
+        samplerInfo.minFilter    = VK_FILTER_LINEAR;
+        samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        vkCreateSampler(vkDevice.GetHandle(), &samplerInfo, nullptr, &m_SceneSampler);
+
+        CreateSceneViewDescSet(resourceManager);
     }
 
     GuiPass::~GuiPass()
@@ -134,11 +146,24 @@ namespace Renderer
 
     void GuiPass::Cleanup(RHI::IRHIDevice& device)
     {
+        if (m_SceneViewDescSet != VK_NULL_HANDLE)
+        {
+            ImGui_ImplVulkan_RemoveTexture(m_SceneViewDescSet);
+            m_SceneViewDescSet = VK_NULL_HANDLE;
+        }
+
         ImGui_ImplVulkan_Shutdown();
         ImGui_ImplGlfw_Shutdown();
         ImGui::DestroyContext();
 
         auto& vkDevice = static_cast<const RHI::VulkanDevice&>(device);
+
+        if (m_SceneSampler != VK_NULL_HANDLE)
+        {
+            vkDestroySampler(vkDevice.GetHandle(), m_SceneSampler, nullptr);
+            m_SceneSampler = VK_NULL_HANDLE;
+        }
+
         vkDestroyDescriptorPool(vkDevice.GetHandle(), m_ImGuiPool, nullptr);
         m_ImGuiPool = VK_NULL_HANDLE;
 
@@ -158,6 +183,13 @@ namespace Renderer
         fbDesc.m_Width            = colorBuffer.GetWidth();
         fbDesc.m_Height           = colorBuffer.GetHeight();
         m_FrameBuffer = device.CreateFramebuffer(fbDesc);
+
+        if (m_SceneViewDescSet != VK_NULL_HANDLE)
+        {
+            ImGui_ImplVulkan_RemoveTexture(m_SceneViewDescSet);
+            m_SceneViewDescSet = VK_NULL_HANDLE;
+        }
+        CreateSceneViewDescSet(resourceManager);
     }
 
     bool GuiPass::IsCursorPositionInGUI()
@@ -165,7 +197,22 @@ namespace Renderer
         return ImGui::GetIO().WantCaptureMouse;
     }
 
+    void* GuiPass::GetSceneViewTextureId() const
+    {
+        return static_cast<void*>(m_SceneViewDescSet);
+    }
+
     void GuiPass::UploadFonts()
     {
+    }
+
+    void GuiPass::CreateSceneViewDescSet(const ResourceManager& resourceManager)
+    {
+        const auto& sceneBuffer = static_cast<const RHI::VulkanTexture&>(
+            resourceManager.GetSceneColorBuffer());
+        m_SceneViewDescSet = ImGui_ImplVulkan_AddTexture(
+            m_SceneSampler,
+            sceneBuffer.GetViewHandle(),
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     }
 }

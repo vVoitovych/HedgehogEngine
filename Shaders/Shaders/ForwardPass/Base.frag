@@ -38,5 +38,6 @@ void main()
     {
         outColor += CalculateLight(ubo.lights[i], data, ubo.eyePos);
     }
+    outColor.a = 1.0f;
 }
 

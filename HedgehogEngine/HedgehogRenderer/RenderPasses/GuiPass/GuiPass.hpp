@@ -36,14 +36,19 @@ namespace Renderer
 
         void ResizeResources(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
 
+        void* GetSceneViewTextureId() const;
+
         static bool IsCursorPositionInGUI();
 
     private:
         void UploadFonts();
+        void CreateSceneViewDescSet(const ResourceManager& resourceManager);
 
     private:
         std::unique_ptr<RHI::IRHIRenderPass>  m_RenderPass;
         std::unique_ptr<RHI::IRHIFramebuffer> m_FrameBuffer;
-        VkDescriptorPool                      m_ImGuiPool = VK_NULL_HANDLE;
+        VkDescriptorPool                      m_ImGuiPool       = VK_NULL_HANDLE;
+        VkSampler                             m_SceneSampler    = VK_NULL_HANDLE;
+        VkDescriptorSet                       m_SceneViewDescSet = VK_NULL_HANDLE;
     };
 }

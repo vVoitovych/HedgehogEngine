@@ -28,6 +28,7 @@ namespace Renderer
         void  BeginGui();
         void  DrawFrame(Context::Context& context);
         float GetAspectRatio() const;
+        void* GetSceneViewTextureId() const;
 
     private:
         std::unique_ptr<RHIContext>      m_RHIContext;

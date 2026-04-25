@@ -29,6 +29,7 @@ namespace Renderer
         CreateRHIDepthBuffer(device, swapchain);
         CreateRHIShadowMap(device, settings.GetShadowmapSettings()->GetShadowmapSize());
         CreateRHIShadowMask(device, swapchain);
+        CreateSceneColorBuffer(device, swapchain);
     }
 
     ResourceManager::~ResourceManager()
@@ -43,6 +44,7 @@ namespace Renderer
         m_RHIDepthBuffer.reset();
         m_RHIShadowMap.reset();
         m_RHIShadowMask.reset();
+        m_SceneColorBuffer.reset();
         m_ResourceRegistry->Cleanup(device);
     }
 
@@ -59,10 +61,12 @@ namespace Renderer
         m_RHIColorBuffer.reset();
         m_RHIDepthBuffer.reset();
         m_RHIShadowMask.reset();
+        m_SceneColorBuffer.reset();
 
         CreateRHIColorBuffer(device, swapchain);
         CreateRHIDepthBuffer(device, swapchain);
         CreateRHIShadowMask(device, swapchain);
+        CreateSceneColorBuffer(device, swapchain);
     }
 
     void ResourceManager::ResizeSettingsDependenteResources(RHI::IRHIDevice& device,
@@ -149,6 +153,24 @@ namespace Renderer
     const RHI::IRHITexture& ResourceManager::GetRHIShadowMask() const
     {
         return *m_RHIShadowMask;
+    }
+
+    const RHI::IRHITexture& ResourceManager::GetSceneColorBuffer() const
+    {
+        return *m_SceneColorBuffer;
+    }
+
+    void ResourceManager::CreateSceneColorBuffer(RHI::IRHIDevice& device, const RHI::IRHISwapchain& swapchain)
+    {
+        RHI::TextureDesc desc;
+        desc.m_Width  = swapchain.GetWidth();
+        desc.m_Height = swapchain.GetHeight();
+        desc.m_Format = RHI::Format::R16G16B16A16Unorm;
+        desc.m_Usage  = RHI::TextureUsage::ColorAttachment
+                      | RHI::TextureUsage::Sampled;
+
+        m_SceneColorBuffer = device.CreateTexture(desc);
+        LOGINFO("Scene color buffer created");
     }
 
     HR::ResourceRegistry& ResourceManager::GetResourceRegistry()

@@ -34,7 +34,7 @@ namespace Editor
 
     // ─── Top-level entry ─────────────────────────────────────────────────────
 
-    void EditorGui::Draw(Context::Context& context)
+    void EditorGui::Draw(Context::Context& context, void* sceneViewTextureId)
     {
         const ImGuiIO& io    = ImGui::GetIO();
         const float    W     = io.DisplaySize.x;
@@ -42,13 +42,13 @@ namespace Editor
         const float    menuH = ImGui::GetFrameHeight();
 
         DrawMainMenu(context);
-        DrawEditorLayout(context, W, H, menuH);
+        DrawEditorLayout(context, W, H, menuH, sceneViewTextureId);
         DrawSettingsWindow(context);
     }
 
     // ─── Layout ──────────────────────────────────────────────────────────────
 
-    void EditorGui::DrawEditorLayout(Context::Context& context, float W, float H, float menuH)
+    void EditorGui::DrawEditorLayout(Context::Context& context, float W, float H, float menuH, void* sceneViewTextureId)
     {
         const float availH = H - menuH;
 
@@ -89,7 +89,7 @@ namespace Editor
 
         // ── Center column ────────────────────────────────────────────────────
         ImGui::SameLine(0.0f, 0.0f);
-        DrawCenterColumn(context, centerW, availH);
+        DrawCenterColumn(context, centerW, availH, sceneViewTextureId);
 
         // ── Right vertical splitter ──────────────────────────────────────────
         ImGui::SameLine(0.0f, 0.0f);
@@ -132,7 +132,7 @@ namespace Editor
             ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
     }
 
-    void EditorGui::DrawCenterColumn(Context::Context& context, float centerW, float availH)
+    void EditorGui::DrawCenterColumn(Context::Context& context, float centerW, float availH, void* sceneViewTextureId)
     {
         const float sceneViewH = availH - k_ToolbarHeight - k_SplitterThickness - m_ConsolePanelHeight;
 
@@ -153,12 +153,16 @@ namespace Editor
         ImGui::EndChild();
         cursorY += k_ToolbarHeight;
 
-        // Scene view — transparent so the 3D scene shows through
+        // Scene view — renders the offscreen scene texture into this panel
         ImGui::SetCursorPosY(cursorY);
-        ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-        ImGui::BeginChild("##scene_view_child", ImVec2(centerW, sceneViewH), true,
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+        ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+        ImGui::BeginChild("##scene_view_child", ImVec2(centerW, sceneViewH), false,
             ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
         ImGui::PopStyleColor();
+        ImGui::PopStyleVar();
+        if (sceneViewTextureId)
+            ImGui::Image(sceneViewTextureId, ImVec2(centerW, sceneViewH));
         ImGui::EndChild();
         cursorY += sceneViewH;
 
