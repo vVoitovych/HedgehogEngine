@@ -28,16 +28,20 @@ namespace Editor
     EditorGui::EditorGui()
         : m_ConsolePanel(std::make_unique<ConsolePanel>())
     {
+        m_Settings.Load(k_SettingsPath);
     }
 
-    EditorGui::~EditorGui() = default;
+    EditorGui::~EditorGui()
+    {
+        m_Settings.Save(k_SettingsPath);
+    }
 
     // ─── Top-level entry ─────────────────────────────────────────────────────
 
     void EditorGui::Draw(Context::Context& context, void* sceneViewTextureId)
     {
         ImVec4* styleColors = ImGui::GetStyle().Colors;
-        const ImVec4 panelBg(m_PanelBgColor[0], m_PanelBgColor[1], m_PanelBgColor[2], 1.0f);
+        const ImVec4 panelBg(m_Settings.panelBgColor[0], m_Settings.panelBgColor[1], m_Settings.panelBgColor[2], 1.0f);
         styleColors[ImGuiCol_WindowBg]  = panelBg;
         styleColors[ImGuiCol_ChildBg]   = panelBg;
         styleColors[ImGuiCol_PopupBg]   = panelBg;
@@ -61,14 +65,14 @@ namespace Editor
 
         // Clamp panel sizes every frame so window resizing stays coherent
         const float minCenterW = k_MinPanelSize;
-        m_LeftPanelWidth  = std::clamp(m_LeftPanelWidth,  k_MinPanelSize,
-            W - m_RightPanelWidth - minCenterW - 2.0f * k_SplitterThickness);
-        m_RightPanelWidth = std::clamp(m_RightPanelWidth, k_MinPanelSize,
-            W - m_LeftPanelWidth  - minCenterW - 2.0f * k_SplitterThickness);
-        m_ConsolePanelHeight = std::clamp(m_ConsolePanelHeight, k_MinPanelSize,
+        m_Settings.leftPanelWidth  = std::clamp(m_Settings.leftPanelWidth,  k_MinPanelSize,
+            W - m_Settings.rightPanelWidth - minCenterW - 2.0f * k_SplitterThickness);
+        m_Settings.rightPanelWidth = std::clamp(m_Settings.rightPanelWidth, k_MinPanelSize,
+            W - m_Settings.leftPanelWidth  - minCenterW - 2.0f * k_SplitterThickness);
+        m_Settings.consolePanelHeight = std::clamp(m_Settings.consolePanelHeight, k_MinPanelSize,
             availH - k_ToolbarHeight - k_SplitterThickness - k_MinPanelSize);
 
-        const float centerW = W - m_LeftPanelWidth - m_RightPanelWidth - 2.0f * k_SplitterThickness;
+        const float centerW = W - m_Settings.leftPanelWidth - m_Settings.rightPanelWidth - 2.0f * k_SplitterThickness;
 
         // Transparent, decoration-free fullscreen container
         ImGui::SetNextWindowPos(ImVec2(0.0f, menuH), ImGuiCond_Always);
@@ -86,7 +90,7 @@ namespace Editor
         ImGui::Begin("##editor_layout", nullptr, k_LayoutFlags);
 
         // ── Left panel ───────────────────────────────────────────────────────
-        ImGui::BeginChild("##left_panel", ImVec2(m_LeftPanelWidth, availH), true);
+        ImGui::BeginChild("##left_panel", ImVec2(m_Settings.leftPanelWidth, availH), true);
         DrawSceneHierarchy(context);
         ImGui::EndChild();
 
@@ -116,10 +120,10 @@ namespace Editor
         ImGui::InvisibleButton("##left_vsplit", ImVec2(k_SplitterThickness, availH));
         if (ImGui::IsItemActive())
         {
-            m_LeftPanelWidth = std::clamp(
-                m_LeftPanelWidth + ImGui::GetIO().MouseDelta.x,
+            m_Settings.leftPanelWidth = std::clamp(
+                m_Settings.leftPanelWidth + ImGui::GetIO().MouseDelta.x,
                 k_MinPanelSize,
-                W - m_RightPanelWidth - k_MinPanelSize - 2.0f * k_SplitterThickness);
+                W - m_Settings.rightPanelWidth - k_MinPanelSize - 2.0f * k_SplitterThickness);
         }
         if (ImGui::IsItemHovered() || ImGui::IsItemActive())
             ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
@@ -130,10 +134,10 @@ namespace Editor
         ImGui::InvisibleButton("##right_vsplit", ImVec2(k_SplitterThickness, availH));
         if (ImGui::IsItemActive())
         {
-            m_RightPanelWidth = std::clamp(
-                m_RightPanelWidth - ImGui::GetIO().MouseDelta.x,
+            m_Settings.rightPanelWidth = std::clamp(
+                m_Settings.rightPanelWidth - ImGui::GetIO().MouseDelta.x,
                 k_MinPanelSize,
-                W - m_LeftPanelWidth - k_MinPanelSize - 2.0f * k_SplitterThickness);
+                W - m_Settings.leftPanelWidth - k_MinPanelSize - 2.0f * k_SplitterThickness);
         }
         if (ImGui::IsItemHovered() || ImGui::IsItemActive())
             ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
@@ -141,7 +145,7 @@ namespace Editor
 
     void EditorGui::DrawCenterColumn(Context::Context& context, float centerW, float availH, void* sceneViewTextureId)
     {
-        const float sceneViewH = availH - k_ToolbarHeight - k_SplitterThickness - m_ConsolePanelHeight;
+        const float sceneViewH = availH - k_ToolbarHeight - k_SplitterThickness - m_Settings.consolePanelHeight;
 
         m_SceneViewWidth  = static_cast<uint32_t>(std::max(1.0f, centerW));
         m_SceneViewHeight = static_cast<uint32_t>(std::max(1.0f, sceneViewH));
@@ -184,7 +188,7 @@ namespace Editor
         // Console
         ImGui::SetCursorPosY(cursorY);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8.0f, 4.0f));
-        ImGui::BeginChild("##console_child", ImVec2(centerW, m_ConsolePanelHeight), true);
+        ImGui::BeginChild("##console_child", ImVec2(centerW, m_Settings.consolePanelHeight), true);
         ImGui::PopStyleVar();
         m_ConsolePanel->Draw();
         ImGui::EndChild();
@@ -197,8 +201,8 @@ namespace Editor
         ImGui::InvisibleButton("##h_split", ImVec2(centerW, k_SplitterThickness));
         if (ImGui::IsItemActive())
         {
-            m_ConsolePanelHeight = std::clamp(
-                m_ConsolePanelHeight - ImGui::GetIO().MouseDelta.y,
+            m_Settings.consolePanelHeight = std::clamp(
+                m_Settings.consolePanelHeight - ImGui::GetIO().MouseDelta.y,
                 k_MinPanelSize,
                 availH - k_ToolbarHeight - k_SplitterThickness - k_MinPanelSize);
         }
@@ -737,7 +741,14 @@ namespace Editor
 
         if (ImGui::CollapsingHeader("Editor"))
         {
-            ImGui::ColorEdit3("Panel background", m_PanelBgColor);
+            ImGui::ColorEdit3("Panel background", m_Settings.panelBgColor);
+
+            ImGui::Spacing();
+            if (ImGui::Button("Save settings"))
+                m_Settings.Save(k_SettingsPath);
+            ImGui::SameLine();
+            if (ImGui::Button("Load settings"))
+                m_Settings.Load(k_SettingsPath);
         }
 
         auto& settings = context.GetEngineContext().GetSettings();

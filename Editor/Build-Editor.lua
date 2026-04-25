@@ -9,13 +9,17 @@ project "Editor"
    {
       "..",
       "../HedgehogEngine",
-      "%{IncludeDir.ImGui}".."/imgui"
+      "%{IncludeDir.ImGui}".."/imgui",
+      "%{IncludeDir.yaml_cpp}"
    }
+
+   defines { "YAML_CPP_STATIC_DEFINE" }
 
    links {
       "HedgehogContext",
       "HedgehogRenderer",
-      "Logger"
+      "Logger",
+      "yaml-cpp"
    }
 
    targetdir ("../Binaries/" .. OutputDir .. "/%{prj.name}")

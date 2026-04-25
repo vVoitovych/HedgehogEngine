@@ -1,5 +1,6 @@
 #pragma once
 
+#include "EditorSettings.hpp"
 #include "ECS/api/Entity.hpp"
 
 #include <memory>
@@ -58,20 +59,15 @@ namespace Editor
 
     private:
         // Layout constants
-        static constexpr float k_SplitterThickness = 5.0f;
-        static constexpr float k_ToolbarHeight     = 36.0f;
-        static constexpr float k_MinPanelSize      = 100.0f;
+        static constexpr float      k_SplitterThickness   = 5.0f;
+        static constexpr float      k_ToolbarHeight       = 36.0f;
+        static constexpr float      k_MinPanelSize        = 100.0f;
+        static constexpr const char k_SettingsPath[]      = "editor_settings.yaml";
 
-        // Runtime-resizable panel sizes
-        float    m_LeftPanelWidth     = 300.0f;
-        float    m_RightPanelWidth    = 300.0f;
-        float    m_ConsolePanelHeight = 200.0f;
+        EditorSettings m_Settings;
 
         uint32_t m_SceneViewWidth  = 0;
         uint32_t m_SceneViewHeight = 0;
-
-        // Editor appearance — matches the initial color set in GuiPass
-        float m_PanelBgColor[3] = { 2.0f / 255.0f, 12.0f / 255.0f, 30.0f / 255.0f };
 
         std::optional<ECS::Entity>    m_SelectedEntity;
         EditorMode                    m_EditorMode         = EditorMode::Edit;
