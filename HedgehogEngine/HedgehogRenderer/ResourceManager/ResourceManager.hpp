@@ -40,6 +40,7 @@ namespace Renderer
 
         void ResizeFrameBufferSizeDependenteResources(RHI::IRHIDevice& device,
                                                       const RHI::IRHISwapchain& swapchain);
+        void ResizeSceneView(RHI::IRHIDevice& device, uint32_t width, uint32_t height);
         void ResizeSettingsDependenteResources(RHI::IRHIDevice& device,
                                                HedgehogSettings::Settings& settings);
 

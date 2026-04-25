@@ -72,6 +72,7 @@ namespace Renderer
                         const HedgehogSettings::Settings& settings);
 
         void ResizeResources(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
+        void ResizeSceneView(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
 
         void UpdateResources(RHI::IRHIDevice&                 device,
                              const HedgehogSettings::Settings& settings,

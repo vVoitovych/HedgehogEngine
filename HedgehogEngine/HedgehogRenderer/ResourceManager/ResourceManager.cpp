@@ -59,14 +59,31 @@ namespace Renderer
     {
         device.WaitIdle();
         m_RHIColorBuffer.reset();
-        m_RHIDepthBuffer.reset();
         m_RHIShadowMask.reset();
-        m_SceneColorBuffer.reset();
 
         CreateRHIColorBuffer(device, swapchain);
-        CreateRHIDepthBuffer(device, swapchain);
         CreateRHIShadowMask(device, swapchain);
-        CreateSceneColorBuffer(device, swapchain);
+        // SceneColorBuffer and DepthBuffer are panel-size driven; resized via ResizeSceneView.
+    }
+
+    void ResourceManager::ResizeSceneView(RHI::IRHIDevice& device, uint32_t width, uint32_t height)
+    {
+        m_RHIDepthBuffer.reset();
+        m_SceneColorBuffer.reset();
+
+        RHI::TextureDesc depthDesc;
+        depthDesc.m_Width  = width;
+        depthDesc.m_Height = height;
+        depthDesc.m_Format = device.GetPreferredDepthFormat();
+        depthDesc.m_Usage  = RHI::TextureUsage::DepthStencil;
+        m_RHIDepthBuffer = device.CreateTexture(depthDesc);
+
+        RHI::TextureDesc colorDesc;
+        colorDesc.m_Width  = width;
+        colorDesc.m_Height = height;
+        colorDesc.m_Format = RHI::Format::R16G16B16A16Unorm;
+        colorDesc.m_Usage  = RHI::TextureUsage::ColorAttachment | RHI::TextureUsage::Sampled;
+        m_SceneColorBuffer = device.CreateTexture(colorDesc);
     }
 
     void ResourceManager::ResizeSettingsDependenteResources(RHI::IRHIDevice& device,

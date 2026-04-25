@@ -62,8 +62,14 @@ namespace Renderer
 
     float Renderer::GetAspectRatio() const
     {
-        auto& sc = m_RHIContext->GetRHISwapchain();
-        return static_cast<float>(sc.GetWidth()) / static_cast<float>(sc.GetHeight());
+        const auto& scene = m_ResourceManager->GetSceneColorBuffer();
+        return static_cast<float>(scene.GetWidth()) / static_cast<float>(scene.GetHeight());
+    }
+
+    void Renderer::SetSceneViewSize(uint32_t width, uint32_t height)
+    {
+        m_DesiredSceneW = width;
+        m_DesiredSceneH = height;
     }
 
     void Renderer::DrawFrame(Context::Context& context)
@@ -117,5 +123,18 @@ namespace Renderer
             *m_ResourceManager);
 
         m_ThreadContext->NextFrame();
+
+        // Apply pending scene view resize at end of frame so the current frame's
+        // ImGui draw data (which references the old descriptor) has already been submitted.
+        if (m_DesiredSceneW > 0 && m_DesiredSceneH > 0)
+        {
+            const auto& sceneBuffer = m_ResourceManager->GetSceneColorBuffer();
+            if (sceneBuffer.GetWidth() != m_DesiredSceneW || sceneBuffer.GetHeight() != m_DesiredSceneH)
+            {
+                device.WaitIdle();
+                m_ResourceManager->ResizeSceneView(device, m_DesiredSceneW, m_DesiredSceneH);
+                m_RenderQueue->ResizeSceneView(device, *m_ResourceManager);
+            }
+        }
     }
 }

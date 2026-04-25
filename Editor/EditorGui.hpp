@@ -29,6 +29,9 @@ namespace Editor
 
         void Draw(Context::Context& context, void* sceneViewTextureId);
 
+        uint32_t GetSceneViewWidth()  const { return m_SceneViewWidth; }
+        uint32_t GetSceneViewHeight() const { return m_SceneViewHeight; }
+
     private:
         // ── Layout ───────────────────────────────────────────────────────────
         void DrawEditorLayout(Context::Context& context, float W, float H, float menuH, void* sceneViewTextureId);
@@ -60,9 +63,12 @@ namespace Editor
         static constexpr float k_MinPanelSize      = 100.0f;
 
         // Runtime-resizable panel sizes
-        float m_LeftPanelWidth     = 300.0f;
-        float m_RightPanelWidth    = 300.0f;
-        float m_ConsolePanelHeight = 200.0f;
+        float    m_LeftPanelWidth     = 300.0f;
+        float    m_RightPanelWidth    = 300.0f;
+        float    m_ConsolePanelHeight = 200.0f;
+
+        uint32_t m_SceneViewWidth  = 0;
+        uint32_t m_SceneViewHeight = 0;
 
         std::optional<ECS::Entity>    m_SelectedEntity;
         EditorMode                    m_EditorMode         = EditorMode::Edit;

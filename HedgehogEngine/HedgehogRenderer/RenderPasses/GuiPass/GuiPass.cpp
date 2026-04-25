@@ -206,6 +206,16 @@ namespace Renderer
     {
     }
 
+    void GuiPass::RecreateSceneDescriptor(const ResourceManager& resourceManager)
+    {
+        if (m_SceneViewDescSet != VK_NULL_HANDLE)
+        {
+            ImGui_ImplVulkan_RemoveTexture(m_SceneViewDescSet);
+            m_SceneViewDescSet = VK_NULL_HANDLE;
+        }
+        CreateSceneViewDescSet(resourceManager);
+    }
+
     void GuiPass::CreateSceneViewDescSet(const ResourceManager& resourceManager)
     {
         const auto& sceneBuffer = static_cast<const RHI::VulkanTexture&>(

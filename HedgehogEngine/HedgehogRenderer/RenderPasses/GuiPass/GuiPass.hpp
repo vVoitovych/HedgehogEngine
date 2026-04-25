@@ -35,6 +35,7 @@ namespace Renderer
         void Cleanup(RHI::IRHIDevice& device);
 
         void ResizeResources(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
+        void RecreateSceneDescriptor(const ResourceManager& resourceManager);
 
         void* GetSceneViewTextureId() const;
 

@@ -38,6 +38,8 @@ namespace Editor
 
             m_Renderer->BeginGui();
             m_EditorGui->Draw(*m_Context, m_Renderer->GetSceneViewTextureId());
+            m_Renderer->SetSceneViewSize(m_EditorGui->GetSceneViewWidth(),
+                                         m_EditorGui->GetSceneViewHeight());
 
             m_Renderer->DrawFrame(*m_Context);
         }

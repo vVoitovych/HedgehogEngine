@@ -95,9 +95,16 @@ namespace Renderer
 
     void RenderQueue::ResizeResources(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
     {
+        // Window resize: only GuiPass framebuffer depends on swapchain/RHIColorBuffer size.
+        // DepthPrePass and ForwardPass are resized by ResizeSceneView when the panel size changes.
+        m_GuiPass->ResizeResources(device, resourceManager);
+    }
+
+    void RenderQueue::ResizeSceneView(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
+    {
         m_DepthPrePass->ResizeResources(device, resourceManager);
         m_ForwardPass->ResizeResources(device, resourceManager);
-        m_GuiPass->ResizeResources(device, resourceManager);
+        m_GuiPass->RecreateSceneDescriptor(resourceManager);
     }
 
     void* RenderQueue::GetSceneViewTextureId() const

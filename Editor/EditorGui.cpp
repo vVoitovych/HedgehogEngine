@@ -136,6 +136,9 @@ namespace Editor
     {
         const float sceneViewH = availH - k_ToolbarHeight - k_SplitterThickness - m_ConsolePanelHeight;
 
+        m_SceneViewWidth  = static_cast<uint32_t>(std::max(1.0f, centerW));
+        m_SceneViewHeight = static_cast<uint32_t>(std::max(1.0f, sceneViewH));
+
         // Zero window padding so children tile with no internal gaps
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
         ImGui::BeginChild("##center_col", ImVec2(centerW, availH), false,
