@@ -81,6 +81,15 @@ namespace Renderer
         (void)io;
         ImGui::StyleColorsDark();
 
+        {
+            constexpr ImVec4 k_PanelBg(2.0f / 255.0f, 12.0f / 255.0f, 30.0f / 255.0f, 1.0f);  
+            ImVec4* colors = ImGui::GetStyle().Colors;
+            colors[ImGuiCol_WindowBg]  = k_PanelBg;
+            colors[ImGuiCol_ChildBg]   = k_PanelBg;
+            colors[ImGuiCol_PopupBg]   = k_PanelBg;
+            colors[ImGuiCol_MenuBarBg] = k_PanelBg;
+        }
+
         ImGui_ImplGlfw_InitForVulkan(window.GetNativeHandle(), true);
 
         auto& vkRenderPass = static_cast<RHI::VulkanRenderPass&>(*m_RenderPass);

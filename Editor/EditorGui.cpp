@@ -36,6 +36,13 @@ namespace Editor
 
     void EditorGui::Draw(Context::Context& context, void* sceneViewTextureId)
     {
+        ImVec4* styleColors = ImGui::GetStyle().Colors;
+        const ImVec4 panelBg(m_PanelBgColor[0], m_PanelBgColor[1], m_PanelBgColor[2], 1.0f);
+        styleColors[ImGuiCol_WindowBg]  = panelBg;
+        styleColors[ImGuiCol_ChildBg]   = panelBg;
+        styleColors[ImGuiCol_PopupBg]   = panelBg;
+        styleColors[ImGuiCol_MenuBarBg] = panelBg;
+
         const ImGuiIO& io    = ImGui::GetIO();
         const float    W     = io.DisplaySize.x;
         const float    H     = io.DisplaySize.y;
@@ -726,6 +733,11 @@ namespace Editor
                 ImGui::EndMenu();
             }
             ImGui::EndMenuBar();
+        }
+
+        if (ImGui::CollapsingHeader("Editor"))
+        {
+            ImGui::ColorEdit3("Panel background", m_PanelBgColor);
         }
 
         auto& settings = context.GetEngineContext().GetSettings();

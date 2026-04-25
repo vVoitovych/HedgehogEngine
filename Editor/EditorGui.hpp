@@ -70,6 +70,9 @@ namespace Editor
         uint32_t m_SceneViewWidth  = 0;
         uint32_t m_SceneViewHeight = 0;
 
+        // Editor appearance — matches the initial color set in GuiPass
+        float m_PanelBgColor[3] = { 2.0f / 255.0f, 12.0f / 255.0f, 30.0f / 255.0f };
+
         std::optional<ECS::Entity>    m_SelectedEntity;
         EditorMode                    m_EditorMode         = EditorMode::Edit;
         bool                          m_SettingsWindowOpen = false;
