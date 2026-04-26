@@ -601,3 +601,6 @@ Binaries
 /Editor/Editor.vcxproj.user
 /Editor/imgui.ini
 /HedgehogEngine/FrameData/FrameData.vcxproj
+/HedgehogEngine/FrameData/FrameData.vcxproj.user
+/HedgehogEngine/HedgehogContext/HedgehogContext.vcxproj.user
+/HedgehogEngine/RHI/RHI.vcxproj.user

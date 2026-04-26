@@ -2,8 +2,8 @@
 #include "MaterialData.hpp"
 #include "MaterialSerializer.hpp"
 
-#include "DialogueWindows/MaterialDialogue/MaterialDialogue.hpp"
-#include "DialogueWindows/TextureDialogue/TextureDialogue.hpp"
+#include "DialogueWindows/api/MaterialDialogue.hpp"
+#include "DialogueWindows/api/TextureDialogue.hpp"
 
 #include "ContentLoader/api/CommonFunctions.hpp"
 
