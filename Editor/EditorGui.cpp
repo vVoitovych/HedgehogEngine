@@ -81,12 +81,27 @@ namespace Editor
 
     void EditorGui::DrawSceneViewContent(void* sceneViewTextureId)
     {
-        const ImVec2 avail = ImGui::GetContentRegionAvail();
-        m_SceneViewWidth  = static_cast<uint32_t>(std::max(1.0f, avail.x));
-        m_SceneViewHeight = static_cast<uint32_t>(std::max(1.0f, avail.y));
+        if (!ImGui::BeginTabBar("##SceneGameTabs"))
+            return;
 
-        if (sceneViewTextureId)
-            ImGui::Image(sceneViewTextureId, avail);
+        if (ImGui::BeginTabItem("Scene"))
+        {
+            const ImVec2 avail = ImGui::GetContentRegionAvail();
+            m_SceneViewWidth  = static_cast<uint32_t>(std::max(1.0f, avail.x));
+            m_SceneViewHeight = static_cast<uint32_t>(std::max(1.0f, avail.y));
+
+            if (sceneViewTextureId)
+                ImGui::Image(sceneViewTextureId, avail);
+
+            ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem("Game"))
+        {
+            ImGui::EndTabItem();
+        }
+
+        ImGui::EndTabBar();
     }
 
     // ─── Main menu ───────────────────────────────────────────────────────────
