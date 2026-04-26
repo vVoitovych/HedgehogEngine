@@ -125,6 +125,9 @@ namespace HR
         if (!m_MeshDataDirty)
             return;
 
+        if (m_PositionsBuffer)
+            device.WaitIdle();
+
         const size_t posSize = m_CpuPositions.size() * sizeof(float);
         const size_t uvSize  = m_CpuTexCoords.size() * sizeof(float);
         const size_t nrmSize = m_CpuNormals.size()   * sizeof(float);

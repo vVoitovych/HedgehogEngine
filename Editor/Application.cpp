@@ -3,38 +3,32 @@
 
 #include "HedgehogEngine/HedgehogContext/Context/Context.hpp"
 #include "HedgehogEngine/HedgehogContext/Context/WindowContext.hpp"
-
 #include "HedgehogEngine/HedgehogRenderer/Renderer/Renderer.hpp"
 
 #include "Logger/api/Logger.hpp"
 
 #include <chrono>
 
-namespace HedgehogClient
+namespace Editor
 {
-    HedgehogClient::HedgehogClient()
-    {
-    }
+    EditorApplication::EditorApplication()  = default;
+    EditorApplication::~EditorApplication() = default;
 
-    HedgehogClient::~HedgehogClient()
+    void EditorApplication::Run()
     {
-    }
-
-    void HedgehogClient::Run()
-    {
-        InitVulkan();
+        Init();
         MainLoop();
     }
 
-    void HedgehogClient::InitVulkan()
+    void EditorApplication::Init()
     {
         m_Context   = std::make_unique<Context::Context>();
         m_Renderer  = std::make_unique<Renderer::Renderer>(*m_Context);
         m_EditorGui = std::make_unique<EditorGui>();
-        LOGINFO("Vulkan initialized");
+        LOGINFO("Editor initialized");
     }
 
-    void HedgehogClient::MainLoop()
+    void EditorApplication::MainLoop()
     {
         while (!m_Context->GetWindowContext().ShouldClose())
         {
@@ -42,9 +36,10 @@ namespace HedgehogClient
             m_Context->GetWindowContext().HandleInput();
             m_Context->UpdateContext(dt, m_Renderer->GetAspectRatio());
 
-            // GUI preparation: NewFrame + editor panels + draw data generation
             m_Renderer->BeginGui();
-            m_EditorGui->Draw(*m_Context);
+            m_EditorGui->Draw(*m_Context, m_Renderer->GetSceneViewTextureId());
+            m_Renderer->SetSceneViewSize(m_EditorGui->GetSceneViewWidth(),
+                                         m_EditorGui->GetSceneViewHeight());
 
             m_Renderer->DrawFrame(*m_Context);
         }
@@ -52,20 +47,20 @@ namespace HedgehogClient
         Cleanup();
     }
 
-    void HedgehogClient::Cleanup()
+    void EditorApplication::Cleanup()
     {
         m_Renderer->Cleanup(*m_Context);
         m_Context->Cleanup();
     }
 
-    float HedgehogClient::GetFrameTime()
+    float EditorApplication::GetFrameTime()
     {
-        static auto prevTime = std::chrono::high_resolution_clock::now();
+        static auto s_PrevTime = std::chrono::high_resolution_clock::now();
 
         const auto  currentTime = std::chrono::high_resolution_clock::now();
         const float deltaTime   = std::chrono::duration<float, std::chrono::seconds::period>(
-            currentTime - prevTime).count();
-        prevTime = currentTime;
+            currentTime - s_PrevTime).count();
+        s_PrevTime = currentTime;
         return deltaTime;
     }
 }

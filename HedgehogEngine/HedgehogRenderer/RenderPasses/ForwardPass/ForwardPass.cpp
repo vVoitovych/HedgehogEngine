@@ -73,7 +73,7 @@ namespace Renderer
         // Render pass: one color + depth (loaded from DepthPrePass)
         RHI::RenderPassDesc rpDesc;
         rpDesc.m_ColorAttachments.push_back(RHI::AttachmentDesc{
-            resourceManager.GetRHIColorBuffer().GetFormat(),
+            resourceManager.GetSceneColorBuffer().GetFormat(),
             RHI::LoadOp::Clear,
             RHI::StoreOp::Store,
             RHI::LoadOp::DontCare,
@@ -137,8 +137,8 @@ namespace Renderer
 
         m_Pipeline = device.CreateGraphicsPipeline(pipelineDesc);
 
-        // Framebuffer: color + depth
-        const auto& colorBuffer = resourceManager.GetRHIColorBuffer();
+        // Framebuffer: scene color + depth
+        const auto& colorBuffer = resourceManager.GetSceneColorBuffer();
         const auto& depthBuffer = resourceManager.GetRHIDepthBuffer();
         RHI::FramebufferDesc fbDesc;
         fbDesc.m_RenderPass        = m_RenderPass.get();
@@ -229,7 +229,7 @@ namespace Renderer
 
     void ForwardPass::ResizeResources(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
     {
-        const auto& colorBuffer = resourceManager.GetRHIColorBuffer();
+        const auto& colorBuffer = resourceManager.GetSceneColorBuffer();
         const auto& depthBuffer = resourceManager.GetRHIDepthBuffer();
 
         m_FrameBuffer.reset();

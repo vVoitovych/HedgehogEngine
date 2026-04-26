@@ -29,6 +29,7 @@ namespace Renderer
         CreateRHIDepthBuffer(device, swapchain);
         CreateRHIShadowMap(device, settings.GetShadowmapSettings()->GetShadowmapSize());
         CreateRHIShadowMask(device, swapchain);
+        CreateSceneColorBuffer(device, swapchain);
     }
 
     ResourceManager::~ResourceManager()
@@ -43,6 +44,7 @@ namespace Renderer
         m_RHIDepthBuffer.reset();
         m_RHIShadowMap.reset();
         m_RHIShadowMask.reset();
+        m_SceneColorBuffer.reset();
         m_ResourceRegistry->Cleanup(device);
     }
 
@@ -57,12 +59,31 @@ namespace Renderer
     {
         device.WaitIdle();
         m_RHIColorBuffer.reset();
-        m_RHIDepthBuffer.reset();
         m_RHIShadowMask.reset();
 
         CreateRHIColorBuffer(device, swapchain);
-        CreateRHIDepthBuffer(device, swapchain);
         CreateRHIShadowMask(device, swapchain);
+        // SceneColorBuffer and DepthBuffer are panel-size driven; resized via ResizeSceneView.
+    }
+
+    void ResourceManager::ResizeSceneView(RHI::IRHIDevice& device, uint32_t width, uint32_t height)
+    {
+        m_RHIDepthBuffer.reset();
+        m_SceneColorBuffer.reset();
+
+        RHI::TextureDesc depthDesc;
+        depthDesc.m_Width  = width;
+        depthDesc.m_Height = height;
+        depthDesc.m_Format = device.GetPreferredDepthFormat();
+        depthDesc.m_Usage  = RHI::TextureUsage::DepthStencil;
+        m_RHIDepthBuffer = device.CreateTexture(depthDesc);
+
+        RHI::TextureDesc colorDesc;
+        colorDesc.m_Width  = width;
+        colorDesc.m_Height = height;
+        colorDesc.m_Format = RHI::Format::R16G16B16A16Unorm;
+        colorDesc.m_Usage  = RHI::TextureUsage::ColorAttachment | RHI::TextureUsage::Sampled;
+        m_SceneColorBuffer = device.CreateTexture(colorDesc);
     }
 
     void ResourceManager::ResizeSettingsDependenteResources(RHI::IRHIDevice& device,
@@ -149,6 +170,24 @@ namespace Renderer
     const RHI::IRHITexture& ResourceManager::GetRHIShadowMask() const
     {
         return *m_RHIShadowMask;
+    }
+
+    const RHI::IRHITexture& ResourceManager::GetSceneColorBuffer() const
+    {
+        return *m_SceneColorBuffer;
+    }
+
+    void ResourceManager::CreateSceneColorBuffer(RHI::IRHIDevice& device, const RHI::IRHISwapchain& swapchain)
+    {
+        RHI::TextureDesc desc;
+        desc.m_Width  = swapchain.GetWidth();
+        desc.m_Height = swapchain.GetHeight();
+        desc.m_Format = RHI::Format::R16G16B16A16Unorm;
+        desc.m_Usage  = RHI::TextureUsage::ColorAttachment
+                      | RHI::TextureUsage::Sampled;
+
+        m_SceneColorBuffer = device.CreateTexture(desc);
+        LOGINFO("Scene color buffer created");
     }
 
     HR::ResourceRegistry& ResourceManager::GetResourceRegistry()

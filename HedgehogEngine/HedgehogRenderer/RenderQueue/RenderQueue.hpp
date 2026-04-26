@@ -53,8 +53,9 @@ namespace Renderer
 
         void Cleanup(RHI::IRHIDevice& device);
 
-        void BeginGui();
-        void DiscardGui();
+        void  BeginGui();
+        void  DiscardGui();
+        void* GetSceneViewTextureId() const;
 
         void Render(const FD::FrameData& frame,
                     RHI::IRHIDevice&     device,
@@ -71,6 +72,7 @@ namespace Renderer
                         const HedgehogSettings::Settings& settings);
 
         void ResizeResources(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
+        void ResizeSceneView(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
 
         void UpdateResources(RHI::IRHIDevice&                 device,
                              const HedgehogSettings::Settings& settings,

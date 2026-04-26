@@ -1,4 +1,4 @@
-project "Client"
+project "Editor"
    kind "ConsoleApp"
    language "C++"
    cppdialect "C++20"
@@ -9,28 +9,32 @@ project "Client"
    {
       "..",
       "../HedgehogEngine",
-      "%{IncludeDir.ImGui}".."/imgui"
+      "%{IncludeDir.ImGui}".."/imgui",
+      "%{IncludeDir.yaml_cpp}"
    }
 
+   defines { "YAML_CPP_STATIC_DEFINE" }
+
    links {
-    "HedgehogContext",
-    "HedgehogRenderer",
-    "Logger"
-    }
+      "HedgehogContext",
+      "HedgehogRenderer",
+      "Logger",
+      "yaml-cpp"
+   }
 
    targetdir ("../Binaries/" .. OutputDir .. "/%{prj.name}")
    objdir ("../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")
 
    filter "system:windows"
-       systemversion "latest"
-       defines { }
+      systemversion "latest"
+      defines { }
 
    filter "configurations:Debug"
-       defines { "DEBUG" }
-       runtime "Debug"
-       symbols "On"
+      defines { "DEBUG" }
+      runtime "Debug"
+      symbols "On"
 
    filter "configurations:Release"
-       defines { "RELEASE" }
-       runtime "Release"
-       optimize "On"
+      defines { "RELEASE" }
+      runtime "Release"
+      optimize "On"

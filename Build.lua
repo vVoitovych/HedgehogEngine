@@ -3,7 +3,7 @@ include "Dependencies.lua"
 workspace "HedgehogEngine"
    architecture "x64"
    configurations { "Debug", "Release" }
-   startproject "Client"
+   startproject "Editor"
    staticruntime "off"
 
    filter "system:windows"
@@ -29,7 +29,7 @@ include "HedgehogEngine/HedgehogRenderer/Build-HedgehogRenderer.lua"
 include "HedgehogEngine/HedgehogWindow/Build-HedgehogWindow.lua"
 include "HedgehogEngine/HedgehogSettings/Build-HedgehogSettings.lua"
 
-include "Client/Build-Client.lua"
+include "Editor/Build-Editor.lua"
 include "ContentLoader/Build-ContentLoader.lua"
 include "DialogueWindows/Build-DialogueWindows.lua"
 include "ECS/Build-ECS.lua"

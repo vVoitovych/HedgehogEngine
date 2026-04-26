@@ -73,6 +73,12 @@ namespace Renderer
         m_ShadowmapPass->Render(frame, resourceManager, cmd, frameIndex);
         m_DepthPrePass->Render(frame, resourceManager, cmd, frameIndex);
         m_ForwardPass->Render(frame, resourceManager, cmd, frameIndex);
+
+        auto& sceneBuffer = const_cast<RHI::IRHITexture&>(resourceManager.GetSceneColorBuffer());
+        cmd.TransitionTexture(sceneBuffer,
+            RHI::ImageLayout::ColorAttachment,
+            RHI::ImageLayout::ShaderReadOnly);
+
         m_GuiPass->Render(cmd, resourceManager);
 
         auto& colorBuffer = const_cast<RHI::IRHITexture&>(resourceManager.GetRHIColorBuffer());
@@ -89,9 +95,21 @@ namespace Renderer
 
     void RenderQueue::ResizeResources(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
     {
+        // Window resize: only GuiPass framebuffer depends on swapchain/RHIColorBuffer size.
+        // DepthPrePass and ForwardPass are resized by ResizeSceneView when the panel size changes.
+        m_GuiPass->ResizeResources(device, resourceManager);
+    }
+
+    void RenderQueue::ResizeSceneView(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
+    {
         m_DepthPrePass->ResizeResources(device, resourceManager);
         m_ForwardPass->ResizeResources(device, resourceManager);
-        m_GuiPass->ResizeResources(device, resourceManager);
+        m_GuiPass->RecreateSceneDescriptor(resourceManager);
+    }
+
+    void* RenderQueue::GetSceneViewTextureId() const
+    {
+        return m_GuiPass->GetSceneViewTextureId();
     }
 
     void RenderQueue::UpdateResources(RHI::IRHIDevice&                  device,
