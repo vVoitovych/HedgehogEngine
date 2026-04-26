@@ -9,8 +9,8 @@
 #include "Scene/SceneComponents/ScriptComponent.hpp"
 #include "ContentLoader/api/CommonFunctions.hpp"
 #include "Logger/api/Logger.hpp"
-#include "DialogueWindows/SceneDialogue/SceneDialogue.hpp"
-#include "DialogueWindows/MaterialDialogue/MaterialDialogue.hpp"
+#include "DialogueWindows/api/SceneDialogue.hpp"
+#include "DialogueWindows/api/MaterialDialogue.hpp"
 
 #include <sstream>
 #include <fstream>

@@ -5,7 +5,7 @@
 #include "Scene/SceneComponents/TransformComponent.hpp"
 #include "Logger/api/Logger.hpp"
 
-#include "DialogueWindows/ScriptDialogue/ScriptDialogue.hpp"
+#include "DialogueWindows/api/ScriptDialogue.hpp"
 #include "ContentLoader/api/CommonFunctions.hpp"
 
 #include "HedgehogMath/api/Vector.hpp"

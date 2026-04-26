@@ -1,14 +1,22 @@
 project "DialogueWindows"
-   kind "StaticLib"
+   kind "SharedLib"
    language "C++"
    cppdialect "C++20"
 
-   files { "**.hpp", "**.cpp" }
+   files
+   {
+      "api/**.hpp",
+      "src/**.hpp",
+      "src/**.cpp"
+   }
 
    includedirs
    {
-    "../ThirdParty"
+      ".",             -- allows src/ files to #include "api/..."
+      "../ThirdParty"
    }
+
+   defines { "DIALOGUE_WINDOWS_EXPORT" }
 
    links
    {
@@ -18,17 +26,22 @@ project "DialogueWindows"
    targetdir ("../Binaries/" .. OutputDir .. "/%{prj.name}")
    objdir ("../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")
 
+   -- Copy the DLL next to the Editor executable so it is found at runtime.
+   postbuildcommands
+   {
+      "{MKDIR} %{wks.location}Binaries/%{cfg.system}-%{cfg.architecture}/%{cfg.buildcfg}/Editor",
+      "{COPYFILE} %{cfg.buildtarget.abspath} %{wks.location}Binaries/%{cfg.system}-%{cfg.architecture}/%{cfg.buildcfg}/Editor/%{cfg.buildtarget.name}"
+   }
+
    filter "system:windows"
-       systemversion "latest"
-       defines { }
+      systemversion "latest"
 
    filter "configurations:Debug"
-       defines { "DEBUG" }
-       runtime "Debug"
-       symbols "On"
+      defines { "DEBUG" }
+      runtime "Debug"
+      symbols "On"
 
    filter "configurations:Release"
-       defines { "RELEASE" }
-       runtime "Release"
-       optimize "On"
-
+      defines { "RELEASE" }
+      runtime "Release"
+      optimize "On"

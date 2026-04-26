@@ -1,4 +1,4 @@
-#include "MaterialDialogue.hpp"
+#include "api/MaterialDialogue.hpp"
 
 #include "tinyfiledialogs/tinyfiledialogs.h"
 
@@ -17,6 +17,7 @@ namespace DialogueWindows
             materialFilterPatterns,
             materialFilterDescription);
     }
+
     char* MaterialOpenDialogue()
     {
         return tinyfd_openFileDialog(
@@ -38,4 +39,3 @@ namespace DialogueWindows
             materialFilterDescription);
     }
 }
-

@@ -1,4 +1,4 @@
-#include "ScriptDialogue.hpp"
+#include "api/ScriptDialogue.hpp"
 
 #include "tinyfiledialogs/tinyfiledialogs.h"
 
@@ -19,4 +19,3 @@ namespace DialogueWindows
             1);
     }
 }
-

@@ -1,4 +1,4 @@
-#include "TextureDialogue.hpp"
+#include "api/TextureDialogue.hpp"
 
 #include "tinyfiledialogs/tinyfiledialogs.h"
 
@@ -18,5 +18,4 @@ namespace DialogueWindows
             textureFilterDescription,
             1);
     }
-
 }

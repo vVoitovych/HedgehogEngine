@@ -1,11 +1,11 @@
-#include "MeshDialogue.hpp"
+#include "api/MeshDialogue.hpp"
 
 #include "tinyfiledialogs/tinyfiledialogs.h"
 
 namespace DialogueWindows
 {
     constexpr int meshFilterNum = 2;
-    char const* meshFilterPatterns[meshFilterNum] = { "*.obj", "*.gltf"};
+    char const* meshFilterPatterns[meshFilterNum] = { "*.obj", "*.gltf" };
 
     char* MeshOpenDialogue()
     {
@@ -18,7 +18,3 @@ namespace DialogueWindows
             1);
     }
 }
-
-
-
-
