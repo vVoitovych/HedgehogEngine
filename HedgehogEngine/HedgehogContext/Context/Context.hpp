@@ -1,5 +1,7 @@
 #pragma once
 
+#include "HedgehogContext/api/HedgehogContextApi.hpp"
+
 #include <memory>
 
 namespace Context
@@ -11,25 +13,25 @@ namespace Context
     class Context
     {
     public:
-        Context();
-        ~Context();
+        HEDGEHOG_CONTEXT_API Context();
+        HEDGEHOG_CONTEXT_API ~Context();
 
         Context(const Context&)            = delete;
         Context& operator=(const Context&) = delete;
         Context(Context&&)                 = delete;
         Context& operator=(Context&&)      = delete;
 
-        void UpdateContext(float dt, float aspectRatio);
-        void Cleanup();
+        HEDGEHOG_CONTEXT_API void UpdateContext(float dt, float aspectRatio);
+        HEDGEHOG_CONTEXT_API void Cleanup();
 
-        WindowContext&       GetWindowContext();
-        const WindowContext& GetWindowContext() const;
+        HEDGEHOG_CONTEXT_API WindowContext&       GetWindowContext();
+        HEDGEHOG_CONTEXT_API const WindowContext& GetWindowContext() const;
 
-        EngineContext&       GetEngineContext();
-        const EngineContext& GetEngineContext() const;
+        HEDGEHOG_CONTEXT_API EngineContext&       GetEngineContext();
+        HEDGEHOG_CONTEXT_API const EngineContext& GetEngineContext() const;
 
-        FrameContext&        GetFrameContext();
-        const FrameContext&  GetFrameContext() const;
+        HEDGEHOG_CONTEXT_API FrameContext&        GetFrameContext();
+        HEDGEHOG_CONTEXT_API const FrameContext&  GetFrameContext() const;
 
     private:
         std::unique_ptr<WindowContext> m_WindowContext;

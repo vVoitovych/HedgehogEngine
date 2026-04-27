@@ -1,5 +1,7 @@
 #pragma once
 
+#include "HedgehogContext/api/HedgehogContextApi.hpp"
+
 #include <string>
 #include <vector>
 
@@ -16,10 +18,10 @@ namespace Context
         TextureContainer& operator=(const TextureContainer&) = delete;
         TextureContainer& operator=(TextureContainer&&)      = delete;
 
-        void RegisterTexturePath(const std::string& path);
+        HEDGEHOG_CONTEXT_API void RegisterTexturePath(const std::string& path);
 
-        const std::vector<std::string>& GetTexturePathes() const;
-        size_t                          GetTextureIndex(const std::string& name) const;
+        HEDGEHOG_CONTEXT_API const std::vector<std::string>& GetTexturePathes() const;
+        HEDGEHOG_CONTEXT_API size_t                          GetTextureIndex(const std::string& name) const;
 
     private:
         std::vector<std::string> m_TexturePathes;

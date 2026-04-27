@@ -1,5 +1,7 @@
 #pragma once
 
+#include "HedgehogContext/api/HedgehogContextApi.hpp"
+
 #include <memory>
 
 namespace HW
@@ -13,25 +15,25 @@ namespace Context
     class WindowContext
     {
     public:
-        WindowContext();
-        ~WindowContext();
+        HEDGEHOG_CONTEXT_API WindowContext();
+        HEDGEHOG_CONTEXT_API ~WindowContext();
 
         WindowContext(const WindowContext&)            = delete;
         WindowContext(WindowContext&&)                 = delete;
         WindowContext& operator=(const WindowContext&) = delete;
         WindowContext& operator=(WindowContext&&)      = delete;
 
-        void HandleInput();
-        void WaitEvents();
+        HEDGEHOG_CONTEXT_API void HandleInput();
+        HEDGEHOG_CONTEXT_API void WaitEvents();
 
-        bool ShouldClose() const;
+        HEDGEHOG_CONTEXT_API bool ShouldClose() const;
 
-        void ResizeWindow();
-        bool IsWindowResized() const;
-        void ResetWindowResizeState();
+        HEDGEHOG_CONTEXT_API void ResizeWindow();
+        HEDGEHOG_CONTEXT_API bool IsWindowResized() const;
+        HEDGEHOG_CONTEXT_API void ResetWindowResizeState();
 
-        HW::Window&       GetWindow();
-        const HW::Window& GetWindow() const;
+        HEDGEHOG_CONTEXT_API HW::Window&       GetWindow();
+        HEDGEHOG_CONTEXT_API const HW::Window& GetWindow() const;
 
     private:
         std::unique_ptr<HW::WindowManager> m_WindowManager;

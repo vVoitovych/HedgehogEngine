@@ -1,5 +1,7 @@
 #pragma once
 
+#include "HedgehogContext/api/HedgehogContextApi.hpp"
+
 #include <string>
 
 namespace Context
@@ -9,9 +11,9 @@ namespace Context
     class MaterialSerializer
     {
     public:
-        static void Serialize(const MaterialData& material, std::string materialPath);
+        HEDGEHOG_CONTEXT_API static void Serialize(const MaterialData& material, std::string materialPath);
 
-        static void Deserialize(MaterialData& material, std::string materialPath);
+        HEDGEHOG_CONTEXT_API static void Deserialize(MaterialData& material, std::string materialPath);
 
     };
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "HedgehogContext/api/HedgehogContextApi.hpp"
+
 #include <vector>
 #include <string>
 #include <cstddef>
@@ -16,18 +18,18 @@ namespace Context
     class MeshContainer
     {
     public:
-        MeshContainer();
-        ~MeshContainer();
+        HEDGEHOG_CONTEXT_API MeshContainer();
+        HEDGEHOG_CONTEXT_API ~MeshContainer();
 
         MeshContainer(const MeshContainer&)            = delete;
         MeshContainer(MeshContainer&&)                 = delete;
         MeshContainer& operator=(const MeshContainer&) = delete;
         MeshContainer& operator=(MeshContainer&&)      = delete;
 
-        void Update(const Scene::Scene& scene);
+        HEDGEHOG_CONTEXT_API void Update(const Scene::Scene& scene);
 
-        size_t      GetMeshCount() const;
-        const Mesh& GetMesh(size_t index) const;
+        HEDGEHOG_CONTEXT_API size_t      GetMeshCount() const;
+        HEDGEHOG_CONTEXT_API const Mesh& GetMesh(size_t index) const;
 
     private:
         std::vector<std::string> m_FilePaths;

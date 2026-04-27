@@ -1,5 +1,7 @@
 #pragma once
 
+#include "HedgehogContext/api/HedgehogContextApi.hpp"
+
 #include "FrameData/FrameData.hpp"
 
 #include <memory>
@@ -26,26 +28,26 @@ namespace Context
     class EngineContext
     {
     public:
-        EngineContext();
-        ~EngineContext();
+        HEDGEHOG_CONTEXT_API EngineContext();
+        HEDGEHOG_CONTEXT_API ~EngineContext();
 
-        void UpdateContext(WindowContext& windowContext, float aspectRatio, float dt);
+        HEDGEHOG_CONTEXT_API void UpdateContext(WindowContext& windowContext, float aspectRatio, float dt);
 
-        const MeshContainer&     GetMeshContainer()     const;
-        const TextureContainer&  GetTextureContainer()  const;
-        TextureContainer&        GetTextureContainer();
-        const LightContainer&    GetLightContainer()    const;
-        const MaterialContainer& GetMaterialContainer() const;
-        MaterialContainer&       GetMaterialContainer();
+        HEDGEHOG_CONTEXT_API const MeshContainer&     GetMeshContainer()     const;
+        HEDGEHOG_CONTEXT_API const TextureContainer&  GetTextureContainer()  const;
+        HEDGEHOG_CONTEXT_API TextureContainer&        GetTextureContainer();
+        HEDGEHOG_CONTEXT_API const LightContainer&    GetLightContainer()    const;
+        HEDGEHOG_CONTEXT_API const MaterialContainer& GetMaterialContainer() const;
+        HEDGEHOG_CONTEXT_API MaterialContainer&       GetMaterialContainer();
 
-        const FD::FrameData&     GetFrameData()         const;
+        HEDGEHOG_CONTEXT_API const FD::FrameData&     GetFrameData()         const;
 
-        HedgehogSettings::Settings&       GetSettings();
-        const HedgehogSettings::Settings& GetSettings() const;
+        HEDGEHOG_CONTEXT_API HedgehogSettings::Settings&       GetSettings();
+        HEDGEHOG_CONTEXT_API const HedgehogSettings::Settings& GetSettings() const;
 
-        const Camera&       GetCamera() const;
-        Scene::Scene&       GetScene();
-        const Scene::Scene& GetScene() const;
+        HEDGEHOG_CONTEXT_API const Camera&       GetCamera() const;
+        HEDGEHOG_CONTEXT_API Scene::Scene&       GetScene();
+        HEDGEHOG_CONTEXT_API const Scene::Scene& GetScene() const;
 
     private:
         void UpdateCamera(WindowContext& windowContext, float aspectRatio, float dt);

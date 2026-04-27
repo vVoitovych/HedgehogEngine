@@ -1,5 +1,7 @@
 #pragma once
 
+#include "HedgehogContext/api/HedgehogContextApi.hpp"
+
 #include "HedgehogMath/api/Vector.hpp"
 #include "HedgehogMath/api/Matrix.hpp"
 
@@ -16,22 +18,22 @@ namespace Context
         FrameContext(const FrameContext&) = delete;
         FrameContext& operator=(const FrameContext&) = delete;
 
-        void UpdateContext(const Camera& camera);
+        HEDGEHOG_CONTEXT_API void UpdateContext(const Camera& camera);
 
-        HM::Matrix4x4 GetCameraViewMatrix() const;
-        HM::Matrix4x4 GetCameraProjMatrix() const;
-        HM::Matrix4x4 GetCameraViewProjMatrix() const;
+        HEDGEHOG_CONTEXT_API HM::Matrix4x4 GetCameraViewMatrix() const;
+        HEDGEHOG_CONTEXT_API HM::Matrix4x4 GetCameraProjMatrix() const;
+        HEDGEHOG_CONTEXT_API HM::Matrix4x4 GetCameraViewProjMatrix() const;
 
-        HM::Matrix4x4 GetCameraInvViewMatrix() const;
-        HM::Matrix4x4 GetCameraInvProjMatrix() const;
-        HM::Matrix4x4 GetCameraInvViewProjMatrix() const;
+        HEDGEHOG_CONTEXT_API HM::Matrix4x4 GetCameraInvViewMatrix() const;
+        HEDGEHOG_CONTEXT_API HM::Matrix4x4 GetCameraInvProjMatrix() const;
+        HEDGEHOG_CONTEXT_API HM::Matrix4x4 GetCameraInvViewProjMatrix() const;
 
-        HM::Vector3 GetCameraPosition() const;
+        HEDGEHOG_CONTEXT_API HM::Vector3 GetCameraPosition() const;
 
-        float GetDeltaTime() const;
+        HEDGEHOG_CONTEXT_API float GetDeltaTime() const;
 
-        void SetBackBufferIndex(uint32_t index);
-        uint32_t GetBackBufferIndex() const;
+        HEDGEHOG_CONTEXT_API void     SetBackBufferIndex(uint32_t index);
+        HEDGEHOG_CONTEXT_API uint32_t GetBackBufferIndex() const;
 
     private:
         HM::Matrix4x4 m_CameraViewMatrix;
@@ -44,7 +46,7 @@ namespace Context
 
         HM::Vector3 m_CameraPosition;
 
-        float m_DeltaTime;
+        float    m_DeltaTime;
         uint32_t m_BackBufferIndex;
 
     };
