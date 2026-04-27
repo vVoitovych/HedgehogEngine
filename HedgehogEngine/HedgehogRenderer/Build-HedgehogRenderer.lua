@@ -25,6 +25,7 @@ project "HedgehogRenderer"
         "RHI",
         "HedgehogMath",
         "HedgehogContext",
+        "HedgehogSettings",
         "HedgehogWindow",
         "ContentLoader",
         "Shaders",

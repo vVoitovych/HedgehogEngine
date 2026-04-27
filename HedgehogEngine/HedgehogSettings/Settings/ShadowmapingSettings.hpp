@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../api/HedgehogSettingsApi.hpp"
+
 #include <cstdint>
 
 namespace HedgehogSettings
@@ -7,36 +9,36 @@ namespace HedgehogSettings
     class ShadowmapSettings
     {
     public:
-        ShadowmapSettings();
-        
+        HEDGEHOG_SETTINGS_API ShadowmapSettings();
+
         ~ShadowmapSettings() = default;
         ShadowmapSettings(const ShadowmapSettings&) = delete;
         ShadowmapSettings(ShadowmapSettings&&) = delete;
         ShadowmapSettings& operator=(const ShadowmapSettings&) = delete;
         ShadowmapSettings& operator=(ShadowmapSettings&&) = delete;
 
-        uint32_t GetShadowmapSize() const;
-        void SetShadowmapSize(uint32_t size);
+        HEDGEHOG_SETTINGS_API uint32_t GetShadowmapSize() const;
+        HEDGEHOG_SETTINGS_API void SetShadowmapSize(uint32_t size);
 
-        uint32_t GetCascadesCount() const;
-        void SetCascadesCount(uint32_t cascadesCount);
+        HEDGEHOG_SETTINGS_API uint32_t GetCascadesCount() const;
+        HEDGEHOG_SETTINGS_API void SetCascadesCount(uint32_t cascadesCount);
 
-        float GetCascadeSplitLambda() const;
-        void SetCascadeSplitLambda(float val);
+        HEDGEHOG_SETTINGS_API float GetCascadeSplitLambda() const;
+        HEDGEHOG_SETTINGS_API void SetCascadeSplitLambda(float val);
 
-        float GetSplit1() const;
-        void SetSplit1(float val);
+        HEDGEHOG_SETTINGS_API float GetSplit1() const;
+        HEDGEHOG_SETTINGS_API void SetSplit1(float val);
 
-        float GetSplit2() const;
-        void SetSplit2(float val);
+        HEDGEHOG_SETTINGS_API float GetSplit2() const;
+        HEDGEHOG_SETTINGS_API void SetSplit2(float val);
 
-        float GetSplit3() const;
-        void SetSplit3(float val);
+        HEDGEHOG_SETTINGS_API float GetSplit3() const;
+        HEDGEHOG_SETTINGS_API void SetSplit3(float val);
 
-        void SetDefaultSplits();
+        HEDGEHOG_SETTINGS_API void SetDefaultSplits();
 
-        bool IsDirty() const;
-        void CleanDirtyState();
+        HEDGEHOG_SETTINGS_API bool IsDirty() const;
+        HEDGEHOG_SETTINGS_API void CleanDirtyState();
 
     private:
         uint32_t m_ShadowmapSize = 2048;

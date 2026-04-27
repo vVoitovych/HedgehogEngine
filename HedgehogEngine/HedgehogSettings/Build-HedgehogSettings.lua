@@ -1,34 +1,32 @@
 project "HedgehogSettings"
-   kind "StaticLib"
+   kind "SharedLib"
    language "C++"
    cppdialect "C++20"
 
-    files 
-    { 
+    files
+    {
         "**.hpp", "**.cpp"
     }
 
     includedirs
     {
-
+        ".."
     }
 
-    libdirs
-    {
-
-    }
-
-    links { 
-
-    }
-
+    links { }
 
    targetdir ("../../Binaries/" .. OutputDir .. "/%{prj.name}")
    objdir ("../../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")
 
+   postbuildcommands
+   {
+       ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/Editor"),
+       ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/Editor/")
+   }
+
    filter "system:windows"
        systemversion "latest"
-       defines {  }
+       defines { "HEDGEHOG_SETTINGS_EXPORT" }
 
    filter "configurations:Debug"
        defines { "DEBUG" }

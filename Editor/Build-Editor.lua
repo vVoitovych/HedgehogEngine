@@ -19,6 +19,7 @@ project "Editor"
       "HedgehogContext",
       "HedgehogRenderer",
       "Scene",
+      "HedgehogSettings",
       "Logger",
       "yaml-cpp"
    }

@@ -604,3 +604,5 @@ Binaries
 /HedgehogEngine/FrameData/FrameData.vcxproj.user
 /HedgehogEngine/HedgehogContext/HedgehogContext.vcxproj.user
 /HedgehogEngine/RHI/RHI.vcxproj.user
+/HedgehogEngine/HedgehogSettings/HedgehogSettings.vcxproj.filters
+/Scene/Scene.vcxproj.user
