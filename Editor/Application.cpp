@@ -4,8 +4,11 @@
 #include "HedgehogEngine/HedgehogContext/Context/Context.hpp"
 #include "HedgehogEngine/HedgehogContext/Context/WindowContext.hpp"
 #include "HedgehogEngine/HedgehogRenderer/Renderer/Renderer.hpp"
+#include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
 
 #include "Logger/api/Logger.hpp"
+
+#include "imgui.h"
 
 #include <chrono>
 
@@ -25,6 +28,13 @@ namespace Editor
         m_Context   = std::make_unique<Context::Context>();
         m_Renderer  = std::make_unique<Renderer::Renderer>(*m_Context);
         m_EditorGui = std::make_unique<EditorGui>();
+
+        // WantCaptureMouse is true even over the scene image (it's an ImGui window); exempt it.
+        m_Context->GetWindowContext().GetWindow().SetGuiCallback([this]()
+        {
+            return ImGui::GetIO().WantCaptureMouse && !m_EditorGui->IsSceneViewHovered();
+        });
+
         LOGINFO("Editor initialized");
     }
 

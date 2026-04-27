@@ -31,8 +31,9 @@ namespace Editor
 
         void Draw(Context::Context& context, void* sceneViewTextureId);
 
-        uint32_t GetSceneViewWidth()  const { return m_SceneViewWidth; }
-        uint32_t GetSceneViewHeight() const { return m_SceneViewHeight; }
+        uint32_t GetSceneViewWidth()    const { return m_SceneViewWidth; }
+        uint32_t GetSceneViewHeight()   const { return m_SceneViewHeight; }
+        bool     IsSceneViewHovered()   const { return m_SceneViewHovered; }
 
     private:
         // ── Panel content (drawn into dock areas) ────────────────────────────
@@ -59,8 +60,9 @@ namespace Editor
         EditorSettings m_Settings;
         DockSystem     m_DockSystem;
 
-        uint32_t m_SceneViewWidth  = 0;
-        uint32_t m_SceneViewHeight = 0;
+        uint32_t m_SceneViewWidth   = 0;
+        uint32_t m_SceneViewHeight  = 0;
+        bool     m_SceneViewHovered = false;
 
         std::optional<ECS::Entity>    m_SelectedEntity;
         EditorMode                    m_EditorMode         = EditorMode::Edit;

@@ -44,6 +44,8 @@ namespace Editor
 
     void EditorGui::Draw(Context::Context& context, void* sceneViewTextureId)
     {
+        m_SceneViewHovered = false;
+
         ImVec4* styleColors = ImGui::GetStyle().Colors;
         const ImVec4 panelBg(m_Settings.panelBgColor[0], m_Settings.panelBgColor[1],
                              m_Settings.panelBgColor[2], 1.0f);
@@ -91,7 +93,10 @@ namespace Editor
             m_SceneViewHeight = static_cast<uint32_t>(std::max(1.0f, avail.y));
 
             if (sceneViewTextureId)
+            {
                 ImGui::Image(sceneViewTextureId, avail);
+                m_SceneViewHovered = ImGui::IsItemHovered();
+            }
 
             ImGui::EndTabItem();
         }
