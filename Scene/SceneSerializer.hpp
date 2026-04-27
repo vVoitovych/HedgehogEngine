@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Scene/api/SceneApi.hpp"
+
 #include <string>
 
 namespace Scene
@@ -9,9 +11,9 @@ namespace Scene
     class SceneSerializer
     {
     public:
-        static void SerializeScene(Scene& scene, std::string scenePath);
+        SCENE_API static void SerializeScene(Scene& scene, std::string scenePath);
 
-        static void DeserializeScene(Scene& scene, std::string scenePath);
+        SCENE_API static void DeserializeScene(Scene& scene, std::string scenePath);
 
     };
 }

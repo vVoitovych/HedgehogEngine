@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Scene/api/SceneApi.hpp"
+
 #include "ECS/api/ECS.hpp"
 #include "Scene/SceneSystems/TransformSystem.hpp"
 #include "Scene/SceneSystems/HierarchySystem.hpp"
@@ -20,7 +22,7 @@ namespace Scene
     class Scene
     {
     public:
-        Scene();
+        SCENE_API Scene();
         ~Scene() = default;
 
         Scene(const Scene&)            = delete;
@@ -28,59 +30,59 @@ namespace Scene
         Scene& operator=(const Scene&) = delete;
         Scene& operator=(Scene&&)      = delete;
 
-        void InitScene();
-        void UpdateScene(float dt);
-        void ResetScene();
-        void Load();
-        void Save();
-        void RenameScene();
+        SCENE_API void InitScene();
+        SCENE_API void UpdateScene(float dt);
+        SCENE_API void ResetScene();
+        SCENE_API void Load();
+        SCENE_API void Save();
+        SCENE_API void RenameScene();
 
-        std::string GetSceneName() const;
+        SCENE_API std::string GetSceneName() const;
 
-        ECS::Entity CreateGameObject(std::optional<ECS::Entity> parentEntity);
-        void        CreateGameObject(ECS::Entity entity);
-        void        DeleteGameObject(ECS::Entity entity);
-        void        DeleteGameObjectAndChildren(ECS::Entity entity);
+        SCENE_API ECS::Entity CreateGameObject(std::optional<ECS::Entity> parentEntity);
+        SCENE_API void        CreateGameObject(ECS::Entity entity);
+        SCENE_API void        DeleteGameObject(ECS::Entity entity);
+        SCENE_API void        DeleteGameObjectAndChildren(ECS::Entity entity);
 
-        HierarchyComponent& GetHierarchyComponent(ECS::Entity entity) const;
-        TransformComponent& GetTransformComponent(ECS::Entity entity) const;
+        SCENE_API HierarchyComponent& GetHierarchyComponent(ECS::Entity entity) const;
+        SCENE_API TransformComponent& GetTransformComponent(ECS::Entity entity) const;
 
-        MeshComponent& GetMeshComponent(ECS::Entity entity) const;
-        void           AddMeshComponent(ECS::Entity entity);
-        void           RemoveMeshComponent(ECS::Entity entity);
-        void           ChangeMeshComponent(ECS::Entity entity, const std::string& meshPath);
-        bool           HasMeshComponent(ECS::Entity entity) const;
-        void           LoadMesh(ECS::Entity entity);
+        SCENE_API MeshComponent& GetMeshComponent(ECS::Entity entity) const;
+        SCENE_API void           AddMeshComponent(ECS::Entity entity);
+        SCENE_API void           RemoveMeshComponent(ECS::Entity entity);
+        SCENE_API void           ChangeMeshComponent(ECS::Entity entity, const std::string& meshPath);
+        SCENE_API bool           HasMeshComponent(ECS::Entity entity) const;
+        SCENE_API void           LoadMesh(ECS::Entity entity);
 
-        RenderComponent& GetRenderComponent(ECS::Entity entity) const;
-        void             AddRenderComponent(ECS::Entity entity);
-        void             RemoveRenderComponent(ECS::Entity entity);
-        bool             HasRenderComponent(ECS::Entity entity) const;
-        void             LoadMaterial(ECS::Entity entity);
-        void             UpdateMaterialComponent(ECS::Entity entity);
+        SCENE_API RenderComponent& GetRenderComponent(ECS::Entity entity) const;
+        SCENE_API void             AddRenderComponent(ECS::Entity entity);
+        SCENE_API void             RemoveRenderComponent(ECS::Entity entity);
+        SCENE_API bool             HasRenderComponent(ECS::Entity entity) const;
+        SCENE_API void             LoadMaterial(ECS::Entity entity);
+        SCENE_API void             UpdateMaterialComponent(ECS::Entity entity);
 
-        ScriptComponent& GetScriptComponent(ECS::Entity entity) const;
-        void             AddScriptComponent(ECS::Entity entity);
-        void             RemoveScriptComponent(ECS::Entity entity);
-        void             ChangeScript(ECS::Entity entity);
-        bool             HasScriptComponent(ECS::Entity entity);
-        void             InitScriptComponent(ECS::Entity entity);
+        SCENE_API ScriptComponent& GetScriptComponent(ECS::Entity entity) const;
+        SCENE_API void             AddScriptComponent(ECS::Entity entity);
+        SCENE_API void             RemoveScriptComponent(ECS::Entity entity);
+        SCENE_API void             ChangeScript(ECS::Entity entity);
+        SCENE_API bool             HasScriptComponent(ECS::Entity entity);
+        SCENE_API void             InitScriptComponent(ECS::Entity entity);
 
-        LightComponent& GetLightComponent(ECS::Entity entity) const;
-        void            AddLightComponent(ECS::Entity entity);
-        void            RemoveLightComponent(ECS::Entity entity);
-        bool            HasLightComponent(ECS::Entity entity) const;
+        SCENE_API LightComponent& GetLightComponent(ECS::Entity entity) const;
+        SCENE_API void            AddLightComponent(ECS::Entity entity);
+        SCENE_API void            RemoveLightComponent(ECS::Entity entity);
+        SCENE_API bool            HasLightComponent(ECS::Entity entity) const;
 
-        size_t               GetLightCount() const;
-        const LightComponent& GetLightComponentByIndex(size_t index) const;
-        void                 UpdateShadowCasting(ECS::Entity entity, bool isCast);
+        SCENE_API size_t               GetLightCount() const;
+        SCENE_API const LightComponent& GetLightComponentByIndex(size_t index) const;
+        SCENE_API void                 UpdateShadowCasting(ECS::Entity entity, bool isCast);
 
-        ECS::Entity GetRoot() const;
+        SCENE_API ECS::Entity GetRoot() const;
 
-        const std::vector<std::string>&  GetMeshes() const;
-        const std::vector<std::string>&  GetMaterials() const;
-        const std::vector<ECS::Entity>&  GetRenderableEntities() const;
-        const std::optional<HM::Vector3>& GetShadowLightDirection() const;
+        SCENE_API const std::vector<std::string>&  GetMeshes() const;
+        SCENE_API const std::vector<std::string>&  GetMaterials() const;
+        SCENE_API const std::vector<ECS::Entity>&  GetRenderableEntities() const;
+        SCENE_API const std::optional<HM::Vector3>& GetShadowLightDirection() const;
 
     private:
         void        CreateSceneRoot();

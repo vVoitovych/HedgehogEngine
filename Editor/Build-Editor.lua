@@ -18,6 +18,7 @@ project "Editor"
    links {
       "HedgehogContext",
       "HedgehogRenderer",
+      "Scene",
       "Logger",
       "yaml-cpp"
    }
