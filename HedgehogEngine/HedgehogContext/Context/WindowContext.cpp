@@ -4,7 +4,7 @@
 #include "HedgehogEngine/HedgehogWindow/api/WindowDesc.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/WindowManager.hpp"
 
-#include "ContentLoader/api/TextureLoader.hpp"
+#include "Logger/api/Logger.hpp"
 
 namespace Context
 {
@@ -19,11 +19,6 @@ namespace Context
         desc.m_Width  = 1366;
         desc.m_Height = 768;
         m_Window = &m_WindowManager->CreateWindow(desc);
-
-        ContentLoader::TextureLoader texLoader;
-        texLoader.LoadTexture("Textures\\Logo\\logo1.png");
-        m_Window->SetIcon(texLoader.GetWidth(), texLoader.GetHeight(),
-            static_cast<unsigned char*>(texLoader.GetData()));
     }
 
     WindowContext::~WindowContext()

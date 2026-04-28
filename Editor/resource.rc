@@ -1,0 +1,4 @@
+// Resource ID 1 — Windows shell (File Explorer) uses the lowest numeric ID
+1          ICON  "editor.ico"
+// GLFW_ICON — GLFW looks for this named resource when registering the window class
+GLFW_ICON  ICON  "editor.ico"

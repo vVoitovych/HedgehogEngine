@@ -18,7 +18,7 @@ namespace ContentLoader
 
     TextureLoader::~TextureLoader()
     {
-        if (!mData)
+        if (mData)
         {
             stbi_image_free(mData);
         }

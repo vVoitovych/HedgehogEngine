@@ -3,7 +3,7 @@ project "Editor"
    language "C++"
    cppdialect "C++20"
 
-   files { "**.hpp", "**.cpp" }
+   files { "**.hpp", "**.cpp", "**.rc" }
 
    includedirs
    {
