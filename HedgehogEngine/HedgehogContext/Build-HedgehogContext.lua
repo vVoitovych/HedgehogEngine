@@ -24,7 +24,7 @@ project "HedgehogContext"
         "DialogueWindows",
         "HedgehogMath",
         "Logger",
-        "Scene",
+        "Components",
         "imgui",
         "yaml-cpp"
     }

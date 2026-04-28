@@ -1,5 +1,5 @@
-#include "LightSystem.hpp"
-#include "Scene/SceneComponents/TransformComponent.hpp"
+#include "Components/api/LightSystem.hpp"
+#include "Components/api/TransformComponent.hpp"
 
 namespace Scene
 {
@@ -17,8 +17,8 @@ namespace Scene
     {
         for (auto const& entity : m_Entities)
         {
-            auto& light          = ecs.GetComponent<LightComponent>(entity);
-            auto& transform      = ecs.GetComponent<TransformComponent>(entity);
+            auto& light           = ecs.GetComponent<LightComponent>(entity);
+            auto& transform       = ecs.GetComponent<TransformComponent>(entity);
             auto& transformMatrix = transform.m_ObjMatrix;
 
             light.m_Position  = transform.m_Position;
@@ -47,7 +47,7 @@ namespace Scene
         m_ShadowDirection.reset();
         for (auto const& entity : m_Entities)
         {
-            auto& light        = ecs.GetComponent<LightComponent>(entity);
+            auto& light         = ecs.GetComponent<LightComponent>(entity);
             light.m_CastShadows = false;
             if (entity == inEntity && isCast)
             {

@@ -7,13 +7,13 @@
 
 #include "ContentLoader/api/CommonFunctions.hpp"
 
-#include "Scene/Scene.hpp"
+#include "Components/api/RenderSystem.hpp"
 
 namespace Context
 {
-    void MaterialContainer::Update(const Scene::Scene& scene)
+    void MaterialContainer::Update(const Scene::RenderSystem& renderSystem)
     {
-        const auto& materialsInScene = scene.GetMaterials();
+        const auto& materialsInScene = renderSystem.GetMaterials();
         for (size_t i = m_Materials.size(); i < materialsInScene.size(); ++i)
         {
             MaterialData data;

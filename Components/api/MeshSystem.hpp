@@ -2,7 +2,7 @@
 
 #include "ECS/api/ECS.hpp"
 #include "ECS/api/Entity.hpp"
-#include "Scene/SceneComponents/MeshComponent.hpp"
+#include "Components/api/MeshComponent.hpp"
 
 #include <vector>
 #include <string>

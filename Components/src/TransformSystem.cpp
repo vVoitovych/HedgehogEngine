@@ -1,6 +1,6 @@
-#include "TransformSystem.hpp"
+#include "Components/api/TransformSystem.hpp"
 
-#include "Scene/SceneComponents/TransformComponent.hpp"
+#include "Components/api/TransformComponent.hpp"
 
 #include "HedgehogMath/api/Vector.hpp"
 #include "HedgehogMath/api/Matrix.hpp"

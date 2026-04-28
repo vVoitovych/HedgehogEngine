@@ -1,8 +1,8 @@
-#include "ScriptSystem.hpp"
-#include "LuaHelpers.hpp"
+#include "Components/api/ScriptSystem.hpp"
+#include "Components/api/LuaHelpers.hpp"
 
-#include "Scene/SceneComponents/ScriptComponent.hpp"
-#include "Scene/SceneComponents/TransformComponent.hpp"
+#include "Components/api/ScriptComponent.hpp"
+#include "Components/api/TransformComponent.hpp"
 #include "Logger/api/Logger.hpp"
 
 #include "DialogueWindows/api/ScriptDialogue.hpp"
@@ -101,7 +101,7 @@ namespace
         if (component.m_LuaState != nullptr)
         {
             lua_close(component.m_LuaState);
-            component.m_LuaState   = nullptr;
+            component.m_LuaState    = nullptr;
             component.m_InstanceRef = 0;
         }
     }
@@ -159,9 +159,7 @@ namespace
         component.m_Params = ParseParameters(component.m_LuaState);
 
         if (component.m_Enable)
-        {
             CallMethod(component.m_LuaState, component.m_InstanceRef, "OnEnable");
-        }
     }
 
     void ScriptSystem::InitScript(ECS::Entity entity, ECS::ECS& ecs)
@@ -174,9 +172,8 @@ namespace
             component.m_LuaState = nullptr;
         }
         if (component.m_Enable)
-        {
             component.m_NewEnable = true;
-        }
+
         component.m_LuaState = luaL_newstate();
         luaL_openlibs(component.m_LuaState);
 
@@ -290,10 +287,7 @@ namespace
                 RegisterLuaBindings(component.m_LuaState, &transform);
 
                 CallMethod(component.m_LuaState, component.m_InstanceRef, "OnUpdate", 1,
-                    [&]()
-                    {
-                        lua_pushnumber(component.m_LuaState, dt);
-                    }
+                    [&]() { lua_pushnumber(component.m_LuaState, dt); }
                 );
             }
         }

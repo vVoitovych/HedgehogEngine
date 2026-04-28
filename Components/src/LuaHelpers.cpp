@@ -1,12 +1,12 @@
-#include "LuaHelpers.hpp"
-#include "Scene/SceneComponents/ScriptComponent.hpp"
+#include "Components/api/LuaHelpers.hpp"
+#include "Components/api/ScriptComponent.hpp"
 
 #include "Logger/api/Logger.hpp"
 
 namespace Scene
 {
-
-    bool CallMethod(lua_State* L, int instanceRef, const std::string& methodName, int numArgs , std::function<void()> pushArgs)
+    bool CallMethod(lua_State* L, int instanceRef, const std::string& methodName,
+                    int numArgs, std::function<void()> pushArgs)
     {
         if (L == nullptr)
             return false;
@@ -22,9 +22,7 @@ namespace Scene
 
         lua_pushvalue(L, -2);
         if (pushArgs)
-        {
             pushArgs();
-        }
 
         if (lua_pcall(L, 1 + numArgs, 0, 0) != LUA_OK)
         {
@@ -45,14 +43,15 @@ namespace Scene
         while (lua_next(L, -2) != 0)
         {
             const char* name = lua_tostring(L, -2);
-            int type = lua_type(L, -1);
+            int         type = lua_type(L, -1);
 
-            if (type == LUA_TNUMBER || type == LUA_TBOOLEAN || type == LUA_TSTRING)
+            if (type == LUA_TNUMBER || type == LUA_TBOOLEAN)
             {
                 float bVal;
-                bool nVal;
+                bool  nVal;
 
-                switch (type) {
+                switch (type)
+                {
                 case LUA_TNUMBER:
                     bVal = static_cast<float>(lua_tonumber(L, -1));
                     result[name] = { ParamType::Number, bVal, false };
@@ -62,14 +61,12 @@ namespace Scene
                     result[name] = { ParamType::Boolean, nVal, false };
                     break;
                 }
-
             }
 
             lua_pop(L, 1);
         }
 
         lua_pop(L, 1);
-
         return result;
     }
 
@@ -100,7 +97,4 @@ namespace Scene
         lua_pushboolean(L, val);
         lua_setglobal(L, name.c_str());
     }
-
 }
-
-

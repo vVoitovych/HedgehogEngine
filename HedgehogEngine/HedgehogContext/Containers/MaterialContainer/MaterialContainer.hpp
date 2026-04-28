@@ -7,7 +7,7 @@
 
 namespace Scene
 {
-    class Scene;
+    class RenderSystem;
 }
 
 namespace Context
@@ -25,7 +25,7 @@ namespace Context
         MaterialContainer& operator=(const MaterialContainer&) = delete;
         MaterialContainer& operator=(MaterialContainer&&)      = delete;
 
-        HEDGEHOG_CONTEXT_API void Update(const Scene::Scene& scene);
+        HEDGEHOG_CONTEXT_API void Update(const Scene::RenderSystem& renderSystem);
         HEDGEHOG_CONTEXT_API void SetMaterialDirty(size_t index);
 
         HEDGEHOG_CONTEXT_API void ClearMaterials();

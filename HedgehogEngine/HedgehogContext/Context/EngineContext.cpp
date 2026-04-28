@@ -14,24 +14,41 @@
 
 #include "HedgehogSettings/Settings/HedgehogSettings.hpp"
 
-#include "Scene/Scene.hpp"
+#include "Components/api/TransformSystem.hpp"
+#include "Components/api/HierarchySystem.hpp"
+#include "Components/api/MeshSystem.hpp"
+#include "Components/api/LightSystem.hpp"
+#include "Components/api/RenderSystem.hpp"
+#include "Components/api/ScriptSystem.hpp"
+#include "Components/api/TransformComponent.hpp"
+#include "Components/api/HierarchyComponent.hpp"
+#include "Components/api/MeshComponent.hpp"
+#include "Components/api/LightComponent.hpp"
+#include "Components/api/RenderComponent.hpp"
+#include "Components/api/ScriptComponent.hpp"
+
+#include "Components/api/GameObjectHelpers.hpp"
+#include "Components/api/SceneSerializer.hpp"
 
 #include "FrameData/FrameDataBuilder.hpp"
+
+#include <filesystem>
 
 namespace Context
 {
     EngineContext::EngineContext()
+        : m_RootEntity(0)
+        , m_SceneName("Default")
     {
         m_Camera = std::make_unique<Camera>();
-        m_Scene  = std::make_unique<Scene::Scene>();
-        m_Scene->InitScene();
+        InitECS();
 
         m_MeshContainer = std::make_unique<MeshContainer>();
-        m_MeshContainer->Update(*m_Scene);
+        m_MeshContainer->Update(*m_MeshSystem);
 
         m_TextureContainer  = std::make_unique<TextureContainer>();
         m_LightContainer    = std::make_unique<LightContainer>();
-        m_LightContainer->UpdateLights(*m_Scene);
+        m_LightContainer->UpdateLights(m_ECS, *m_LightSystem);
 
         m_MaterialContainer = std::make_unique<MaterialContainer>();
 
@@ -42,13 +59,65 @@ namespace Context
     {
     }
 
+    void EngineContext::InitECS()
+    {
+        m_ECS.Init();
+
+        m_ECS.RegisterComponent<Scene::TransformComponent>();
+        m_ECS.RegisterComponent<Scene::HierarchyComponent>();
+        m_ECS.RegisterComponent<Scene::MeshComponent>();
+        m_ECS.RegisterComponent<Scene::LightComponent>();
+        m_ECS.RegisterComponent<Scene::RenderComponent>();
+        m_ECS.RegisterComponent<Scene::ScriptComponent>();
+
+        m_TransformSystem = m_ECS.RegisterSystem<Scene::TransformSystem>();
+        m_HierarchySystem = m_ECS.RegisterSystem<Scene::HierarchySystem>();
+        m_MeshSystem      = m_ECS.RegisterSystem<Scene::MeshSystem>();
+        m_LightSystem     = m_ECS.RegisterSystem<Scene::LightSystem>();
+        m_RenderSystem    = m_ECS.RegisterSystem<Scene::RenderSystem>();
+        m_ScriptSystem    = m_ECS.RegisterSystem<Scene::ScriptSystem>();
+
+        ECS::Signature signature;
+
+        signature.set(m_ECS.GetComponentType<Scene::TransformComponent>());
+        m_ECS.SetSystemSignature<Scene::TransformSystem>(signature);
+        signature.reset();
+
+        signature.set(m_ECS.GetComponentType<Scene::HierarchyComponent>());
+        m_ECS.SetSystemSignature<Scene::HierarchySystem>(signature);
+        signature.reset();
+
+        signature.set(m_ECS.GetComponentType<Scene::MeshComponent>());
+        m_ECS.SetSystemSignature<Scene::MeshSystem>(signature);
+        signature.reset();
+
+        signature.set(m_ECS.GetComponentType<Scene::LightComponent>());
+        m_ECS.SetSystemSignature<Scene::LightSystem>(signature);
+        signature.reset();
+
+        signature.set(m_ECS.GetComponentType<Scene::RenderComponent>());
+        m_ECS.SetSystemSignature<Scene::RenderSystem>(signature);
+        signature.reset();
+
+        signature.set(m_ECS.GetComponentType<Scene::ScriptComponent>());
+        m_ECS.SetSystemSignature<Scene::ScriptSystem>(signature);
+
+        m_RootEntity = Components::CreateSceneRoot(m_ECS, *m_HierarchySystem);
+    }
+
     void EngineContext::UpdateContext(WindowContext& windowContext, float aspectRatio, float dt)
     {
         UpdateCamera(windowContext, aspectRatio, dt);
-        m_Scene->UpdateScene(dt);
-        m_LightContainer->UpdateLights(*m_Scene);
-        m_MaterialContainer->Update(*m_Scene);
-        m_MeshContainer->Update(*m_Scene);
+
+        // Update order is load-bearing: Script → Transform → Hierarchy → Light
+        m_ScriptSystem->Update(m_ECS, dt);
+        m_TransformSystem->Update(m_ECS);
+        m_HierarchySystem->Update(m_ECS);
+        m_LightSystem->Update(m_ECS);
+
+        m_LightContainer->UpdateLights(m_ECS, *m_LightSystem);
+        m_MaterialContainer->Update(*m_RenderSystem);
+        m_MeshContainer->Update(*m_MeshSystem);
 
         auto materialTypeLookup = [this](uint64_t index) -> FD::MaterialType
         {
@@ -57,7 +126,9 @@ namespace Context
         };
 
         FD::FrameDataBuilder builder;
-        m_FrameData = builder.Build(*m_Scene, *m_Camera, dt, materialTypeLookup);
+        m_FrameData = builder.Build(
+            m_ECS, *m_LightSystem, *m_RenderSystem,
+            *m_Camera, dt, materialTypeLookup);
     }
 
     const MeshContainer& EngineContext::GetMeshContainer() const
@@ -110,14 +181,77 @@ namespace Context
         return *m_Camera;
     }
 
-    Scene::Scene& EngineContext::GetScene()
+    ECS::ECS& EngineContext::GetECS()
     {
-        return *m_Scene;
+        return m_ECS;
     }
 
-    const Scene::Scene& EngineContext::GetScene() const
+    ECS::Entity EngineContext::GetRootEntity() const
     {
-        return *m_Scene;
+        return m_RootEntity;
+    }
+
+    std::string EngineContext::GetSceneName() const
+    {
+        return m_SceneName;
+    }
+
+    Scene::TransformSystem* EngineContext::GetTransformSystem() const
+    {
+        return m_TransformSystem.get();
+    }
+
+    Scene::HierarchySystem* EngineContext::GetHierarchySystem() const
+    {
+        return m_HierarchySystem.get();
+    }
+
+    Scene::MeshSystem* EngineContext::GetMeshSystem() const
+    {
+        return m_MeshSystem.get();
+    }
+
+    Scene::LightSystem* EngineContext::GetLightSystem() const
+    {
+        return m_LightSystem.get();
+    }
+
+    Scene::RenderSystem* EngineContext::GetRenderSystem() const
+    {
+        return m_RenderSystem.get();
+    }
+
+    Scene::ScriptSystem* EngineContext::GetScriptSystem() const
+    {
+        return m_ScriptSystem.get();
+    }
+
+    void EngineContext::LoadScene(const std::string& filePath)
+    {
+        Components::DeleteGameObjectAndChildren(m_ECS, m_RootEntity);
+        Components::SceneSerializer::DeserializeScene(m_ECS, m_RootEntity, m_SceneName, filePath,
+            *m_HierarchySystem, *m_ScriptSystem);
+        m_MeshSystem->Update(m_ECS);
+        m_RenderSystem->UpdateSystem(m_ECS);
+    }
+
+    void EngineContext::SaveScene(const std::string& filePath)
+    {
+        const std::string sceneName = std::filesystem::path(filePath).stem().string();
+        m_SceneName = sceneName;
+        Components::SceneSerializer::SerializeScene(m_ECS, m_RootEntity, m_SceneName, filePath);
+    }
+
+    void EngineContext::ResetScene()
+    {
+        Components::DeleteGameObjectAndChildren(m_ECS, m_RootEntity);
+        m_RootEntity = Components::CreateSceneRoot(m_ECS, *m_HierarchySystem);
+        m_SceneName  = "Default";
+    }
+
+    void EngineContext::SetSceneName(const std::string& name)
+    {
+        m_SceneName = name;
     }
 
     void EngineContext::UpdateCamera(WindowContext& windowContext, float aspectRatio, float dt)

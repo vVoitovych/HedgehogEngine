@@ -1,7 +1,7 @@
 #include "MeshContainer.hpp"
 #include "Mesh.hpp"
 
-#include "Scene/Scene.hpp"
+#include "Components/api/MeshSystem.hpp"
 
 #include "Logger/api/Logger.hpp"
 
@@ -17,9 +17,9 @@ namespace Context
     {
     }
 
-    void MeshContainer::Update(const Scene::Scene& scene)
+    void MeshContainer::Update(const Scene::MeshSystem& meshSystem)
     {
-        const auto& meshPaths = scene.GetMeshes();
+        const auto& meshPaths = meshSystem.GetMeshes();
         if (meshPaths.size() <= m_Meshes.size())
             return;
 

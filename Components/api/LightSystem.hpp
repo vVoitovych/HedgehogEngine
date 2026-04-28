@@ -2,7 +2,7 @@
 
 #include "ECS/api/ECS.hpp"
 #include "ECS/api/Entity.hpp"
-#include "Scene/SceneComponents/LightComponent.hpp"
+#include "Components/api/LightComponent.hpp"
 
 #include <vector>
 #include <optional>

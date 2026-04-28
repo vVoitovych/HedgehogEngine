@@ -33,10 +33,9 @@ include "Editor/Build-Editor.lua"
 include "ContentLoader/Build-ContentLoader.lua"
 include "DialogueWindows/Build-DialogueWindows.lua"
 include "ECS/Build-ECS.lua"
-
+include "Components/Build-Components.lua"
 
 include "HedgehogMath/Build-HedgehogMath.lua"
 include "HedgehogMathTest/Build-HedgehogMathTest.lua"
 include "Logger/Build-Logger.lua"
-include "Scene/Build-Scene.lua"
 include "Shaders/Build-Shaders.lua"

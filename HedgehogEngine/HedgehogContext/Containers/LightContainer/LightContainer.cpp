@@ -1,7 +1,6 @@
 #include "LightContainer.hpp"
 
-#include "Scene/Scene.hpp"
-#include "Scene/SceneComponents/LightComponent.hpp"
+#include "Components/api/LightSystem.hpp"
 
 #include "HedgehogCommon/api/RendererSettings.hpp"
 
@@ -16,9 +15,9 @@ namespace Context
         m_Lights.resize(MAX_LIGHTS_COUNT);
     }
 
-    void LightContainer::UpdateLights(const Scene::Scene& scene)
+    void LightContainer::UpdateLights(const ECS::ECS& ecs, const Scene::LightSystem& lightSystem)
     {
-        auto lightComponentsCount = scene.GetLightCount();
+        auto lightComponentsCount = lightSystem.GetLightComponentsCount();
         if (lightComponentsCount > MAX_LIGHTS_COUNT)
         {
             LOGWARNING("Too many light components. Some of them will not be processed!");
@@ -28,7 +27,7 @@ namespace Context
         size_t counter = 0;
         for (size_t i = 0; i < lightComponentsCount; ++i)
         {
-            const auto& lc = scene.GetLightComponentByIndex(i);
+            const auto& lc = lightSystem.GetLightComponentByIndex(ecs, i);
             if (!lc.m_Enable)
                 continue;
 

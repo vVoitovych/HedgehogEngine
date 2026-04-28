@@ -1,6 +1,6 @@
-#include "HierarchySystem.hpp"
-#include "Scene/SceneComponents/HierarchyComponent.hpp"
-#include "Scene/SceneComponents/TransformComponent.hpp"
+#include "Components/api/HierarchySystem.hpp"
+#include "Components/api/HierarchyComponent.hpp"
+#include "Components/api/TransformComponent.hpp"
 
 namespace Scene
 {
@@ -16,8 +16,8 @@ namespace Scene
 
     void HierarchySystem::UpdateChildrenMatrices(ECS::ECS& ecs, ECS::Entity parent)
     {
-        auto& transform  = ecs.GetComponent<TransformComponent>(parent);
-        auto& hierarchy  = ecs.GetComponent<HierarchyComponent>(parent);
+        auto& transform = ecs.GetComponent<TransformComponent>(parent);
+        auto& hierarchy = ecs.GetComponent<HierarchyComponent>(parent);
 
         for (auto const& entity : hierarchy.m_Children)
         {

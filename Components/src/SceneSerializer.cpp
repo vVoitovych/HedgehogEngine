@@ -1,22 +1,24 @@
-#include "SceneSerializer.hpp"
-#include "Scene.hpp"
-#include "SceneComponents/TransformComponent.hpp"
-#include "SceneComponents/HierarchyComponent.hpp"
-#include "Scene/SceneComponents/LightComponent.hpp"
-#include "Scene/SceneComponents/ScriptComponent.hpp"
+#include "Components/api/SceneSerializer.hpp"
+
+#include "Components/api/HierarchySystem.hpp"
+#include "Components/api/ScriptSystem.hpp"
+#include "Components/api/TransformComponent.hpp"
+#include "Components/api/HierarchyComponent.hpp"
+#include "Components/api/MeshComponent.hpp"
+#include "Components/api/LightComponent.hpp"
+#include "Components/api/RenderComponent.hpp"
+#include "Components/api/ScriptComponent.hpp"
 
 #include "HedgehogMath/api/Vector.hpp"
-
 #include "Logger/api/Logger.hpp"
 
-#define YAML_CPP_STATIC_DEFINE
 #include "yaml-cpp/yaml.h"
 
 #include <fstream>
 #include <filesystem>
 
-namespace YAML {
-
+namespace YAML
+{
     template<>
     struct convert<HM::Vector2>
     {
@@ -90,7 +92,7 @@ namespace YAML {
     };
 }
 
-namespace Scene
+namespace Components
 {
 namespace
 {
@@ -101,22 +103,22 @@ namespace
         return out;
     }
 
-    std::string GetSceneName(const std::string& inPath)
+    std::string GetSceneNameFromPath(const std::string& inPath)
     {
         return std::filesystem::path(inPath).stem().string();
     }
 
-    void SerializeEntity(YAML::Emitter& out, Scene& scene, ECS::Entity entity)
+    void SerializeEntity(YAML::Emitter& out, const ECS::ECS& ecs, ECS::Entity entity)
     {
-        auto& hierarchy = scene.GetHierarchyComponent(entity);
-        auto& transform = scene.GetTransformComponent(entity);
+        auto& hierarchy = ecs.GetComponent<Scene::HierarchyComponent>(entity);
+        auto& transform = ecs.GetComponent<Scene::TransformComponent>(entity);
 
         out << YAML::BeginMap;
         out << YAML::Key << "Entity"  << YAML::Value << entity;
         out << YAML::Key << "Name"    << YAML::Value << hierarchy.m_Name;
         out << YAML::Key << "Parent"  << YAML::Value << hierarchy.m_Parent;
 
-        { // TransformComponent
+        {
             out << YAML::Key << "TransformComponent";
             out << YAML::BeginMap;
             out << YAML::Key << "Position" << YAML::Value << transform.m_Position;
@@ -125,18 +127,18 @@ namespace
             out << YAML::EndMap;
         }
 
-        if (scene.HasMeshComponent(entity))
+        if (ecs.HasComponent<Scene::MeshComponent>(entity))
         {
-            auto& mesh = scene.GetMeshComponent(entity);
+            auto& mesh = ecs.GetComponent<Scene::MeshComponent>(entity);
             out << YAML::Key << "MeshComponent";
             out << YAML::BeginMap;
             out << YAML::Key << "MeshPath" << YAML::Value << mesh.m_MeshPath;
             out << YAML::EndMap;
         }
 
-        if (scene.HasLightComponent(entity))
+        if (ecs.HasComponent<Scene::LightComponent>(entity))
         {
-            auto& light = scene.GetLightComponent(entity);
+            auto& light = ecs.GetComponent<Scene::LightComponent>(entity);
             out << YAML::Key << "LightComponent";
             out << YAML::BeginMap;
             out << YAML::Key << "LightEnabled"   << YAML::Value << light.m_Enable;
@@ -148,9 +150,9 @@ namespace
             out << YAML::EndMap;
         }
 
-        if (scene.HasRenderComponent(entity))
+        if (ecs.HasComponent<Scene::RenderComponent>(entity))
         {
-            auto& renderComponent = scene.GetRenderComponent(entity);
+            auto& renderComponent = ecs.GetComponent<Scene::RenderComponent>(entity);
             out << YAML::Key << "RenderComponent";
             out << YAML::BeginMap;
             out << YAML::Key << "Visible"  << YAML::Value << renderComponent.m_IsVisible;
@@ -158,9 +160,9 @@ namespace
             out << YAML::EndMap;
         }
 
-        if (scene.HasScriptComponent(entity))
+        if (ecs.HasComponent<Scene::ScriptComponent>(entity))
         {
-            auto& scriptComponent = scene.GetScriptComponent(entity);
+            auto& scriptComponent = ecs.GetComponent<Scene::ScriptComponent>(entity);
             out << YAML::Key << "ScriptComponent";
             out << YAML::BeginMap;
             out << YAML::Key << "ScriptEnable" << YAML::Value << scriptComponent.m_Enable;
@@ -176,10 +178,10 @@ namespace
                     out << YAML::Key << "ParamType" << YAML::Value << static_cast<size_t>(param.second.type);
                     switch (param.second.type)
                     {
-                    case ParamType::Boolean:
+                    case Scene::ParamType::Boolean:
                         out << YAML::Key << "ParamValue" << YAML::Value << std::get<bool>(param.second.value);
                         break;
-                    case ParamType::Number:
+                    case Scene::ParamType::Number:
                         out << YAML::Key << "ParamValue" << YAML::Value << std::get<float>(param.second.value);
                         break;
                     default:
@@ -195,19 +197,21 @@ namespace
         out << YAML::Key << "Children" << YAML::Value << YAML::BeginSeq;
         for (auto child : hierarchy.m_Children)
         {
-            SerializeEntity(out, scene, child);
+            SerializeEntity(out, ecs, child);
         }
         out << YAML::EndSeq;
         out << YAML::EndMap;
     }
 
-    void DeserializeEntity(Scene& scene, YAML::Node node)
+    void DeserializeEntity(ECS::ECS& ecs, YAML::Node node, Scene::ScriptSystem& scriptSystem)
     {
         ECS::Entity entity = node["Entity"].as<ECS::Entity>();
-        scene.CreateGameObject(entity);
+        ecs.CreateEntity(entity);
+        ecs.AddComponent(entity, Scene::TransformComponent{});
+        ecs.AddComponent(entity, Scene::HierarchyComponent{});
 
-        auto& transform  = scene.GetTransformComponent(entity);
-        auto& hierarchy  = scene.GetHierarchyComponent(entity);
+        auto& transform = ecs.GetComponent<Scene::TransformComponent>(entity);
+        auto& hierarchy = ecs.GetComponent<Scene::HierarchyComponent>(entity);
 
         auto transformData = node["TransformComponent"];
         if (transformData)
@@ -220,20 +224,19 @@ namespace
         auto meshNode = node["MeshComponent"];
         if (meshNode)
         {
-            scene.AddMeshComponent(entity);
-            auto& meshComponent       = scene.GetMeshComponent(entity);
-            meshComponent.m_MeshPath  = meshNode["MeshPath"].as<std::string>();
+            ecs.AddComponent(entity, Scene::MeshComponent{});
+            auto& meshComponent      = ecs.GetComponent<Scene::MeshComponent>(entity);
+            meshComponent.m_MeshPath = meshNode["MeshPath"].as<std::string>();
         }
 
         auto lightNode = node["LightComponent"];
         if (lightNode)
         {
-            scene.AddLightComponent(entity);
-            auto& lightComponent      = scene.GetLightComponent(entity);
-            lightComponent.m_Enable   = lightNode["LightEnabled"].as<bool>();
-            lightComponent.m_LightType = static_cast<LightType>(lightNode["LightType"].as<size_t>());
-            lightComponent.m_Color    = lightNode["LightColor"].as<HM::Vector3>();
-            // Support both the old key ("LightIntencity") and the new key ("LightIntensity")
+            ecs.AddComponent(entity, Scene::LightComponent{});
+            auto& lightComponent       = ecs.GetComponent<Scene::LightComponent>(entity);
+            lightComponent.m_Enable    = lightNode["LightEnabled"].as<bool>();
+            lightComponent.m_LightType = static_cast<Scene::LightType>(lightNode["LightType"].as<size_t>());
+            lightComponent.m_Color     = lightNode["LightColor"].as<HM::Vector3>();
             if (lightNode["LightIntensity"])
                 lightComponent.m_Intensity = lightNode["LightIntensity"].as<float>();
             else if (lightNode["LightIntencity"])
@@ -245,35 +248,35 @@ namespace
         auto renderNode = node["RenderComponent"];
         if (renderNode)
         {
-            scene.AddRenderComponent(entity);
-            auto& renderComponent         = scene.GetRenderComponent(entity);
-            renderComponent.m_IsVisible   = renderNode["Visible"].as<bool>();
-            renderComponent.m_Material    = renderNode["Material"].as<std::string>();
+            ecs.AddComponent(entity, Scene::RenderComponent{});
+            auto& renderComponent       = ecs.GetComponent<Scene::RenderComponent>(entity);
+            renderComponent.m_IsVisible = renderNode["Visible"].as<bool>();
+            renderComponent.m_Material  = renderNode["Material"].as<std::string>();
         }
 
         auto scriptNode = node["ScriptComponent"];
         if (scriptNode)
         {
-            scene.AddScriptComponent(entity);
-            auto& scriptComponent         = scene.GetScriptComponent(entity);
-            scriptComponent.m_Enable      = scriptNode["ScriptEnable"].as<bool>();
-            scriptComponent.m_ScriptPath  = scriptNode["ScriptFile"].as<std::string>();
+            ecs.AddComponent(entity, Scene::ScriptComponent{});
+            auto& scriptComponent        = ecs.GetComponent<Scene::ScriptComponent>(entity);
+            scriptComponent.m_Enable     = scriptNode["ScriptEnable"].as<bool>();
+            scriptComponent.m_ScriptPath = scriptNode["ScriptFile"].as<std::string>();
 
             auto parameters = scriptNode["ScriptParams"];
             if (parameters && parameters.IsMap())
             {
                 for (const auto& param : parameters)
                 {
-                    std::string paramName = param.first.as<std::string>();
-                    auto        data      = param.second;
-                    ParamType   type      = static_cast<ParamType>(data["ParamType"].as<size_t>());
+                    std::string           paramName = param.first.as<std::string>();
+                    auto                  data      = param.second;
+                    Scene::ParamType      type      = static_cast<Scene::ParamType>(data["ParamType"].as<size_t>());
                     std::variant<bool, float> value;
                     switch (type)
                     {
-                    case ParamType::Boolean:
+                    case Scene::ParamType::Boolean:
                         value = data["ParamValue"].as<bool>();
                         break;
-                    case ParamType::Number:
+                    case Scene::ParamType::Number:
                         value = data["ParamValue"].as<float>();
                         break;
                     default:
@@ -282,7 +285,7 @@ namespace
                     scriptComponent.m_Params[paramName] = { type, value, false };
                 }
             }
-            scene.InitScriptComponent(entity);
+            scriptSystem.InitScript(entity, ecs);
         }
 
         hierarchy.m_Name   = node["Name"].as<std::string>();
@@ -293,53 +296,56 @@ namespace
         {
             auto childEntity = child["Entity"].as<ECS::Entity>();
             hierarchy.m_Children.push_back(childEntity);
-            DeserializeEntity(scene, child);
+            DeserializeEntity(ecs, child, scriptSystem);
         }
     }
 }
 
-    void SceneSerializer::SerializeScene(Scene& scene, std::string scenePath)
+    void SceneSerializer::SerializeScene(const ECS::ECS& ecs, ECS::Entity root,
+                                        const std::string& sceneName, const std::string& filePath)
     {
-        LOGINFO("SerializeScene: ", scenePath);
-        const std::string sceneName = GetSceneName(scenePath);
-        scene.m_SceneName = sceneName;
+        LOGINFO("SerializeScene: ", filePath);
 
         YAML::Emitter out;
         out << YAML::BeginMap;
         out << YAML::Key << "Scene name" << YAML::Value << sceneName;
         out << YAML::Key << "Scene"      << YAML::Value << YAML::BeginSeq;
-        SerializeEntity(out, scene, scene.GetRoot());
+        SerializeEntity(out, ecs, root);
         out << YAML::EndSeq;
         out << YAML::EndMap;
 
-        std::ofstream fout(scenePath);
+        std::ofstream fout(filePath);
         fout << out.c_str();
     }
 
-    void SceneSerializer::DeserializeScene(Scene& scene, std::string scenePath)
+    void SceneSerializer::DeserializeScene(ECS::ECS& ecs, ECS::Entity& outRoot,
+                                           std::string& outSceneName, const std::string& filePath,
+                                           Scene::HierarchySystem& hierarchySystem,
+                                           Scene::ScriptSystem& scriptSystem)
     {
-        LOGINFO("DeserializeScene: ", scenePath);
+        LOGINFO("DeserializeScene: ", filePath);
 
         YAML::Node data;
         try
         {
-            data = YAML::LoadFile(scenePath);
+            data = YAML::LoadFile(filePath);
         }
         catch (const YAML::ParserException& e)
         {
-            LOGERROR("Failed to load scene: ", scenePath, " with error: ", e.what());
+            LOGERROR("Failed to load scene: ", filePath, " with error: ", e.what());
             return;
         }
 
-        scene.m_SceneName = data["Scene name"].as<std::string>();
+        outSceneName = data["Scene name"].as<std::string>();
 
         auto sceneData = data["Scene"];
-        if (sceneData)
+        if (sceneData && sceneData.size() > 0)
         {
-            for (auto entity : sceneData)
-            {
-                DeserializeEntity(scene, entity);
-            }
+            outRoot = sceneData[0]["Entity"].as<ECS::Entity>();
+            for (auto node : sceneData)
+                DeserializeEntity(ecs, node, scriptSystem);
         }
+
+        hierarchySystem.SetRoot(outRoot);
     }
 }

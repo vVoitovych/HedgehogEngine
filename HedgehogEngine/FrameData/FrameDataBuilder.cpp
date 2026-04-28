@@ -3,11 +3,11 @@
 #include "HedgehogCommon/api/Camera.hpp"
 #include "HedgehogCommon/api/RendererSettings.hpp"
 
-#include "Scene/Scene.hpp"
-#include "Scene/SceneComponents/MeshComponent.hpp"
-#include "Scene/SceneComponents/RenderComponent.hpp"
-#include "Scene/SceneComponents/TransformComponent.hpp"
-#include "Scene/SceneComponents/LightComponent.hpp"
+#include "ECS/api/ECS.hpp"
+#include "Components/api/LightSystem.hpp"
+#include "Components/api/RenderSystem.hpp"
+#include "Components/api/MeshComponent.hpp"
+#include "Components/api/TransformComponent.hpp"
 
 #include "Logger/api/Logger.hpp"
 
@@ -37,7 +37,9 @@ namespace
 namespace FD
 {
     FrameData FrameDataBuilder::Build(
-        const Scene::Scene&                          scene,
+        const ECS::ECS&                              ecs,
+        const Scene::LightSystem&                    lightSystem,
+        const Scene::RenderSystem&                   renderSystem,
         const Context::Camera&                       camera,
         float                                        deltaTime,
         const std::function<MaterialType(uint64_t)>& materialTypeLookup) const
@@ -52,14 +54,14 @@ namespace FD
         frame.m_Camera.m_Far      = camera.GetFarPlane();
 
         const size_t lightCount = std::min(
-            scene.GetLightCount(),
+            lightSystem.GetLightComponentsCount(),
             static_cast<size_t>(MAX_LIGHTS_COUNT));
 
         frame.m_Lights.reserve(lightCount);
 
         for (size_t i = 0; i < lightCount; ++i)
         {
-            const auto& lc = scene.GetLightComponentByIndex(i);
+            const auto& lc = lightSystem.GetLightComponentByIndex(ecs, i);
             if (!lc.m_Enable)
                 continue;
 
@@ -73,25 +75,26 @@ namespace FD
             ld.m_Type      = static_cast<int>(lc.m_LightType);
         }
 
-        frame.m_ShadowLightDirection = scene.GetShadowLightDirection();
+        frame.m_ShadowLightDirection = lightSystem.GetShadowDir();
 
-        BuildDrawList(scene, materialTypeLookup, frame.m_DrawList);
+        BuildDrawList(ecs, renderSystem, materialTypeLookup, frame.m_DrawList);
 
         return frame;
     }
 
     void FrameDataBuilder::BuildDrawList(
-        const Scene::Scene&                          scene,
+        const ECS::ECS&                              ecs,
+        const Scene::RenderSystem&                   renderSystem,
         const std::function<MaterialType(uint64_t)>& materialTypeLookup,
         DrawList&                                    outDrawList) const
     {
-        for (auto entity : scene.GetRenderableEntities())
+        for (auto entity : renderSystem.GetEntities())
         {
-            const auto& renderComponent = scene.GetRenderComponent(entity);
+            const auto& renderComponent = ecs.GetComponent<Scene::RenderComponent>(entity);
             if (!renderComponent.m_IsVisible || !renderComponent.m_MaterialIndex.has_value())
                 continue;
 
-            const auto& meshComponent = scene.GetMeshComponent(entity);
+            const auto& meshComponent = ecs.GetComponent<Scene::MeshComponent>(entity);
             if (!meshComponent.m_MeshIndex.has_value())
             {
                 LOGERROR("Entity ", entity, " has a render component but no mesh index.");
@@ -100,7 +103,7 @@ namespace FD
 
             const uint64_t materialIndex = renderComponent.m_MaterialIndex.value();
             const uint64_t meshIndex     = meshComponent.m_MeshIndex.value();
-            const auto&    transform     = scene.GetTransformComponent(entity);
+            const auto&    transform     = ecs.GetComponent<Scene::TransformComponent>(entity);
 
             DrawObject object;
             object.m_MeshIndex = meshIndex;

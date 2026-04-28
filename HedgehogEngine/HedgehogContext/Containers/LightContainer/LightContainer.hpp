@@ -6,9 +6,14 @@
 
 #include <vector>
 
+namespace ECS
+{
+    class ECS;
+}
+
 namespace Scene
 {
-    class Scene;
+    class LightSystem;
 }
 
 namespace Context
@@ -17,7 +22,7 @@ namespace Context
     {
     public:
         HEDGEHOG_CONTEXT_API LightContainer();
-        HEDGEHOG_CONTEXT_API void UpdateLights(const Scene::Scene& scene);
+        HEDGEHOG_CONTEXT_API void UpdateLights(const ECS::ECS& ecs, const Scene::LightSystem& lightSystem);
         HEDGEHOG_CONTEXT_API size_t GetLightCount() const;
         HEDGEHOG_CONTEXT_API const std::vector<FD::LightData>& GetLights() const;
 

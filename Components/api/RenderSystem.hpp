@@ -3,7 +3,7 @@
 #include "ECS/api/System.hpp"
 #include "ECS/api/ECS.hpp"
 
-#include "Scene/SceneComponents/RenderComponent.hpp"
+#include "Components/api/RenderComponent.hpp"
 
 #include <vector>
 #include <string>

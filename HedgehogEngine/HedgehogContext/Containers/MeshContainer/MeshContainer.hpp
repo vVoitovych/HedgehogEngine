@@ -8,7 +8,7 @@
 
 namespace Scene
 {
-    class Scene;
+    class MeshSystem;
 }
 
 namespace Context
@@ -26,7 +26,7 @@ namespace Context
         MeshContainer& operator=(const MeshContainer&) = delete;
         MeshContainer& operator=(MeshContainer&&)      = delete;
 
-        HEDGEHOG_CONTEXT_API void Update(const Scene::Scene& scene);
+        HEDGEHOG_CONTEXT_API void Update(const Scene::MeshSystem& meshSystem);
 
         HEDGEHOG_CONTEXT_API size_t      GetMeshCount() const;
         HEDGEHOG_CONTEXT_API const Mesh& GetMesh(size_t index) const;

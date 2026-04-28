@@ -10,26 +10,33 @@
 #include "HedgehogEngine/HedgehogSettings/Settings/HedgehogSettings.hpp"
 #include "HedgehogEngine/HedgehogSettings/Settings/ShadowmapingSettings.hpp"
 
-#include "Scene/Scene.hpp"
-#include "Scene/SceneComponents/HierarchyComponent.hpp"
-#include "Scene/SceneComponents/LightComponent.hpp"
-#include "Scene/SceneComponents/MeshComponent.hpp"
-#include "Scene/SceneComponents/RenderComponent.hpp"
-#include "Scene/SceneComponents/ScriptComponent.hpp"
-#include "Scene/SceneComponents/TransformComponent.hpp"
+#include "ECS/api/ECS.hpp"
+#include "Components/api/GameObjectHelpers.hpp"
+#include "Components/api/MeshSystem.hpp"
+#include "Components/api/RenderSystem.hpp"
+#include "Components/api/LightSystem.hpp"
+#include "Components/api/ScriptSystem.hpp"
+#include "Components/api/LightComponent.hpp"
+#include "Components/api/MeshComponent.hpp"
+#include "Components/api/RenderComponent.hpp"
+#include "Components/api/ScriptComponent.hpp"
+
+#include "ContentLoader/api/CommonFunctions.hpp"
+#include "DialogueWindows/api/MaterialDialogue.hpp"
+#include "DialogueWindows/api/SceneDialogue.hpp"
 
 #include "imgui.h"
 
 #include <algorithm>
 #include <stdexcept>
 
+using namespace Scene;
+
 namespace Editor
 {
     EditorGui::EditorGui()
         : m_ConsolePanel(std::make_unique<ConsolePanel>())
     {
-        // DockSystem ctor already seeds defaults; only overwrite when the file
-        // contained a valid (non-empty) dock section.
         if (m_Settings.Load(k_SettingsPath) && m_Settings.dockLayout.IsValid())
             m_DockSystem.GetLayout() = m_Settings.dockLayout;
     }
@@ -77,7 +84,7 @@ namespace Editor
         case PanelId::SceneHierarchy: DrawSceneHierarchy(context);          break;
         case PanelId::Inspector:      DrawInspector(context);                break;
         case PanelId::Console:        m_ConsolePanel->Draw();                break;
-        default:                      DrawSceneViewContent(sceneViewTextureId); break; // sentinel for scene view
+        default:                      DrawSceneViewContent(sceneViewTextureId); break;
         }
     }
 
@@ -113,16 +120,43 @@ namespace Editor
 
     void EditorGui::DrawMainMenu(Context::Context& context)
     {
-        auto& scene = context.GetEngineContext().GetScene();
+        auto& engineContext = context.GetEngineContext();
+        auto& ecs           = engineContext.GetECS();
+        auto* meshSystem    = engineContext.GetMeshSystem();
+        auto* renderSystem  = engineContext.GetRenderSystem();
+        ECS::Entity root    = engineContext.GetRootEntity();
+
         if (!ImGui::BeginMainMenuBar())
             return;
 
         if (ImGui::BeginMenu("File"))
         {
-            if (ImGui::MenuItem("New"))    { scene.ResetScene(); }
-            if (ImGui::MenuItem("Rename")) { scene.RenameScene(); }
-            if (ImGui::MenuItem("Open"))   { scene.Load(); }
-            if (ImGui::MenuItem("Save"))   { scene.Save(); }
+            if (ImGui::MenuItem("New"))
+            {
+                engineContext.ResetScene();
+                m_SelectedEntity.reset();
+            }
+            if (ImGui::MenuItem("Rename"))
+            {
+                char* newName = DialogueWindows::SceneRenameDialogue();
+                if (newName != nullptr)
+                    engineContext.SetSceneName(newName);
+            }
+            if (ImGui::MenuItem("Open"))
+            {
+                char* path = DialogueWindows::SceneOpenDialogue();
+                if (path != nullptr)
+                {
+                    engineContext.LoadScene(path);
+                    m_SelectedEntity.reset();
+                }
+            }
+            if (ImGui::MenuItem("Save"))
+            {
+                char* path = DialogueWindows::SceneSaveDialogue();
+                if (path != nullptr)
+                    engineContext.SaveScene(path);
+            }
             ImGui::Separator();
             if (ImGui::MenuItem("Quit", "Alt+F4")) {}
             ImGui::EndMenu();
@@ -131,25 +165,47 @@ namespace Editor
         if (ImGui::BeginMenu("Create"))
         {
             if (ImGui::MenuItem("Create game object"))
-                scene.CreateGameObject(m_SelectedEntity);
+                Components::CreateGameObject(ecs, root, m_SelectedEntity);
 
             ImGui::Separator();
             if (ImGui::BeginMenu("Add component"))
             {
                 if (ImGui::MenuItem("Mesh component") && m_SelectedEntity.has_value())
-                    scene.AddMeshComponent(m_SelectedEntity.value());
+                {
+                    ECS::Entity e = m_SelectedEntity.value();
+                    if (!ecs.HasComponent<MeshComponent>(e))
+                    {
+                        ecs.AddComponent(e, MeshComponent{ Scene::MeshSystem::sDefaultMeshPath });
+                        meshSystem->Update(ecs, e);
+                    }
+                }
                 if (ImGui::MenuItem("Render component") && m_SelectedEntity.has_value())
-                    scene.AddRenderComponent(m_SelectedEntity.value());
+                {
+                    ECS::Entity e = m_SelectedEntity.value();
+                    if (!ecs.HasComponent<RenderComponent>(e))
+                    {
+                        ecs.AddComponent(e, RenderComponent{});
+                        renderSystem->Update(ecs, e);
+                    }
+                }
                 if (ImGui::MenuItem("Light component") && m_SelectedEntity.has_value())
-                    scene.AddLightComponent(m_SelectedEntity.value());
+                {
+                    ECS::Entity e = m_SelectedEntity.value();
+                    if (!ecs.HasComponent<LightComponent>(e))
+                        ecs.AddComponent(e, LightComponent{});
+                }
                 if (ImGui::MenuItem("Script component") && m_SelectedEntity.has_value())
-                    scene.AddScriptComponent(m_SelectedEntity.value());
+                {
+                    ECS::Entity e = m_SelectedEntity.value();
+                    if (!ecs.HasComponent<ScriptComponent>(e))
+                        ecs.AddComponent(e, ScriptComponent{});
+                }
                 ImGui::EndMenu();
             }
 
             ImGui::Separator();
             if (ImGui::MenuItem("Create material"))
-                context.GetEngineContext().GetMaterialContainer().CreateNewMaterial();
+                engineContext.GetMaterialContainer().CreateNewMaterial();
             ImGui::EndMenu();
         }
 
@@ -227,20 +283,21 @@ namespace Editor
 
     void EditorGui::DrawSceneHierarchy(Context::Context& context)
     {
-        auto& scene = context.GetEngineContext().GetScene();
+        auto& engineContext = context.GetEngineContext();
+        auto& ecs           = engineContext.GetECS();
+        ECS::Entity root    = engineContext.GetRootEntity();
 
-        ImGui::SeparatorText(scene.GetSceneName().c_str());
+        ImGui::SeparatorText(engineContext.GetSceneName().c_str());
 
         const ImVec2 fullWidth = ImVec2(-FLT_MIN, 0.0f);
         if (ImGui::Button("Create object", fullWidth))
-            scene.CreateGameObject(m_SelectedEntity);
+            Components::CreateGameObject(ecs, root, m_SelectedEntity);
 
         if (ImGui::Button("Delete object", fullWidth))
         {
-            if (m_SelectedEntity.has_value() &&
-                m_SelectedEntity.value() != scene.GetRoot())
+            if (m_SelectedEntity.has_value() && m_SelectedEntity.value() != root)
             {
-                scene.DeleteGameObject(m_SelectedEntity.value());
+                Components::DeleteGameObject(ecs, m_SelectedEntity.value());
                 m_SelectedEntity.reset();
             }
         }
@@ -248,13 +305,13 @@ namespace Editor
         ImGui::Separator();
 
         int index = 0;
-        DrawHierarchyNode(context, scene.GetRoot(), index);
+        DrawHierarchyNode(context, root, index);
     }
 
     void EditorGui::DrawHierarchyNode(Context::Context& context, ECS::Entity entity, int& index)
     {
-        auto& scene     = context.GetEngineContext().GetScene();
-        auto& component = scene.GetHierarchyComponent(entity);
+        auto& ecs       = context.GetEngineContext().GetECS();
+        auto& component = ecs.GetComponent<HierarchyComponent>(entity);
 
         ImGuiTreeNodeFlags nodeFlags =
             ImGuiTreeNodeFlags_OpenOnArrow |
@@ -324,9 +381,9 @@ namespace Editor
 
     void EditorGui::DrawEntityTitle(Context::Context& context)
     {
-        auto& scene     = context.GetEngineContext().GetScene();
+        auto& ecs       = context.GetEngineContext().GetECS();
         auto  entity    = m_SelectedEntity.value();
-        auto& hierarchy = scene.GetHierarchyComponent(entity);
+        auto& hierarchy = ecs.GetComponent<HierarchyComponent>(entity);
         auto  name      = hierarchy.m_Name;
 
         if (ImGui::CollapsingHeader("Name", ImGuiTreeNodeFlags_DefaultOpen))
@@ -338,13 +395,13 @@ namespace Editor
 
     void EditorGui::DrawTransformComponent(Context::Context& context)
     {
-        auto& scene  = context.GetEngineContext().GetScene();
+        auto& ecs    = context.GetEngineContext().GetECS();
         auto  entity = m_SelectedEntity.value();
 
         if (!ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
             return;
 
-        auto& transform = scene.GetTransformComponent(entity);
+        auto& transform = ecs.GetComponent<TransformComponent>(entity);
 
         ImGui::SeparatorText("Position");
         ImGui::DragFloat("pos x", &transform.m_Position.x(), 0.5f);
@@ -364,16 +421,18 @@ namespace Editor
 
     void EditorGui::DrawMeshComponent(Context::Context& context)
     {
-        auto& scene  = context.GetEngineContext().GetScene();
-        auto  entity = m_SelectedEntity.value();
+        auto& engineContext = context.GetEngineContext();
+        auto& ecs           = engineContext.GetECS();
+        auto* meshSystem    = engineContext.GetMeshSystem();
+        auto  entity        = m_SelectedEntity.value();
 
-        if (!scene.HasMeshComponent(entity))
+        if (!ecs.HasComponent<MeshComponent>(entity))
             return;
         if (!ImGui::CollapsingHeader("Mesh", ImGuiTreeNodeFlags_DefaultOpen))
             return;
 
-        auto&    mesh          = scene.GetMeshComponent(entity);
-        auto&    meshPaths     = scene.GetMeshes();
+        auto&    mesh          = ecs.GetComponent<MeshComponent>(entity);
+        const auto& meshPaths  = meshSystem->GetMeshes();
         uint64_t selectedIndex = mesh.m_MeshIndex.value_or(0);
 
         if (ImGui::BeginCombo("mesh", mesh.m_MeshPath.c_str()))
@@ -382,7 +441,10 @@ namespace Editor
             {
                 const bool isSelected = (selectedIndex == i);
                 if (ImGui::Selectable(meshPaths[i].c_str(), isSelected))
-                    scene.ChangeMeshComponent(entity, meshPaths[i]);
+                {
+                    mesh.m_MeshPath = meshPaths[i];
+                    meshSystem->Update(ecs, entity);
+                }
                 if (isSelected)
                     ImGui::SetItemDefaultFocus();
             }
@@ -390,23 +452,28 @@ namespace Editor
         }
 
         if (ImGui::Button("Load mesh"))
-            scene.LoadMesh(entity);
+            meshSystem->LoadMesh(ecs, entity);
         if (ImGui::Button("Remove mesh"))
-            scene.RemoveMeshComponent(entity);
+        {
+            if (ecs.HasComponent<MeshComponent>(entity))
+                ecs.RemoveComponent<MeshComponent>(entity);
+        }
     }
 
     void EditorGui::DrawRenderComponent(Context::Context& context)
     {
-        auto& scene  = context.GetEngineContext().GetScene();
-        auto  entity = m_SelectedEntity.value();
+        auto& engineContext = context.GetEngineContext();
+        auto& ecs           = engineContext.GetECS();
+        auto* renderSystem  = engineContext.GetRenderSystem();
+        auto  entity        = m_SelectedEntity.value();
 
-        if (!scene.HasRenderComponent(entity))
+        if (!ecs.HasComponent<RenderComponent>(entity))
             return;
         if (!ImGui::CollapsingHeader("Rendering", ImGuiTreeNodeFlags_DefaultOpen))
             return;
 
-        auto& render    = scene.GetRenderComponent(entity);
-        auto& materials = scene.GetMaterials();
+        auto& render        = ecs.GetComponent<RenderComponent>(entity);
+        const auto& materials = renderSystem->GetMaterials();
 
         bool visible = render.m_IsVisible;
         if (ImGui::Checkbox("Visible", &visible))
@@ -423,7 +490,7 @@ namespace Editor
                     if (ImGui::Selectable(materials[i].c_str(), isSelected))
                     {
                         render.m_Material = materials[i];
-                        scene.UpdateMaterialComponent(entity);
+                        renderSystem->Update(ecs, entity);
                     }
                     if (isSelected)
                         ImGui::SetItemDefaultFocus();
@@ -433,23 +500,32 @@ namespace Editor
         }
 
         if (ImGui::Button("Load material"))
-            scene.LoadMaterial(entity);
+        {
+            char* path = DialogueWindows::MaterialOpenDialogue();
+            if (path != nullptr)
+            {
+                render.m_Material = ContentLoader::GetAssetRelativetlyPath(path);
+                renderSystem->Update(ecs, entity);
+            }
+        }
 
         if (!materials.empty() && render.m_MaterialIndex.has_value())
         {
             if (ImGui::Button("Save material"))
-                context.GetEngineContext().GetMaterialContainer().SaveMaterial(
-                    render.m_MaterialIndex.value());
+                engineContext.GetMaterialContainer().SaveMaterial(render.m_MaterialIndex.value());
         }
 
         if (ImGui::Button("Remove render"))
-            scene.RemoveRenderComponent(entity);
+        {
+            if (ecs.HasComponent<RenderComponent>(entity))
+                ecs.RemoveComponent<RenderComponent>(entity);
+        }
 
         if (!materials.empty() && render.m_MaterialIndex.has_value())
         {
             ImGui::SeparatorText("Material");
-            auto& materialContainer = context.GetEngineContext().GetMaterialContainer();
-            auto& textureContainer  = context.GetEngineContext().GetTextureContainer();
+            auto& materialContainer = engineContext.GetMaterialContainer();
+            auto& textureContainer  = engineContext.GetTextureContainer();
             auto& materialData      = materialContainer.GetMaterialDataByIndex(
                 render.m_MaterialIndex.value());
 
@@ -523,15 +599,17 @@ namespace Editor
 
     void EditorGui::DrawLightComponent(Context::Context& context)
     {
-        auto& scene  = context.GetEngineContext().GetScene();
-        auto  entity = m_SelectedEntity.value();
+        auto& engineContext = context.GetEngineContext();
+        auto& ecs           = engineContext.GetECS();
+        auto* lightSystem   = engineContext.GetLightSystem();
+        auto  entity        = m_SelectedEntity.value();
 
-        if (!scene.HasLightComponent(entity))
+        if (!ecs.HasComponent<LightComponent>(entity))
             return;
         if (!ImGui::CollapsingHeader("Light", ImGuiTreeNodeFlags_DefaultOpen))
             return;
 
-        auto& light = scene.GetLightComponent(entity);
+        auto& light = ecs.GetComponent<LightComponent>(entity);
 
         bool enabled = light.m_Enable;
         if (ImGui::Checkbox("Enabled", &enabled))
@@ -568,24 +646,29 @@ namespace Editor
         {
             bool castShadows = light.m_CastShadows;
             if (ImGui::Checkbox("Cast shadows", &castShadows))
-                scene.UpdateShadowCasting(entity, castShadows);
+                lightSystem->SetShadowCasting(ecs, entity, castShadows);
         }
 
         if (ImGui::Button("Remove light"))
-            scene.RemoveLightComponent(entity);
+        {
+            if (ecs.HasComponent<LightComponent>(entity))
+                ecs.RemoveComponent<LightComponent>(entity);
+        }
     }
 
     void EditorGui::DrawScriptComponent(Context::Context& context)
     {
-        auto& scene  = context.GetEngineContext().GetScene();
-        auto  entity = m_SelectedEntity.value();
+        auto& engineContext = context.GetEngineContext();
+        auto& ecs           = engineContext.GetECS();
+        auto* scriptSystem  = engineContext.GetScriptSystem();
+        auto  entity        = m_SelectedEntity.value();
 
-        if (!scene.HasScriptComponent(entity))
+        if (!ecs.HasComponent<ScriptComponent>(entity))
             return;
         if (!ImGui::CollapsingHeader("Script", ImGuiTreeNodeFlags_DefaultOpen))
             return;
 
-        auto& component = scene.GetScriptComponent(entity);
+        auto& component = ecs.GetComponent<ScriptComponent>(entity);
 
         bool enabled = component.m_Enable;
         if (ImGui::Checkbox("Enabled", &enabled))
@@ -596,7 +679,7 @@ namespace Editor
         ImGui::InputText("Script", &scriptName[0], scriptName.capacity() + 1);
 
         if (ImGui::Button("Load script"))
-            scene.ChangeScript(entity);
+            scriptSystem->ChangeScript(entity, ecs);
 
         if (!component.m_Params.empty())
             ImGui::SeparatorText("Parameters");
@@ -631,7 +714,10 @@ namespace Editor
         }
 
         if (ImGui::Button("Remove script"))
-            scene.RemoveScriptComponent(entity);
+        {
+            if (ecs.HasComponent<ScriptComponent>(entity))
+                ecs.RemoveComponent<ScriptComponent>(entity);
+        }
     }
 
     // ─── Settings window ─────────────────────────────────────────────────────
@@ -666,7 +752,8 @@ namespace Editor
                 m_Settings.Load(k_SettingsPath);
         }
 
-        auto& settings = context.GetEngineContext().GetSettings();
+        auto& engineContext = context.GetEngineContext();
+        auto& settings      = engineContext.GetSettings();
 
         if (ImGui::CollapsingHeader("Shadows"))
         {
@@ -708,7 +795,7 @@ namespace Editor
                     shadow->SetSplit3(split3);
 
             ImGui::SeparatorText("Debug");
-            const auto& shadowDir = context.GetEngineContext().GetScene().GetShadowLightDirection();
+            const auto& shadowDir = engineContext.GetLightSystem()->GetShadowDir();
             if (shadowDir.has_value())
             {
                 float x = shadowDir.value().x();

@@ -1,4 +1,4 @@
-#include "MeshSystem.hpp"
+#include "Components/api/MeshSystem.hpp"
 #include "ContentLoader/api/CommonFunctions.hpp"
 #include "Logger/api/Logger.hpp"
 #include "DialogueWindows/api/MeshDialogue.hpp"
@@ -90,13 +90,11 @@ namespace Scene
     {
         char* path = DialogueWindows::MeshOpenDialogue();
         if (path == nullptr)
-        {
             return;
-        }
 
-        std::string relatedPath = ContentLoader::GetAssetRelativetlyPath(path);
-        auto& meshComponent     = ecs.GetComponent<MeshComponent>(entity);
-        auto prevMeshPath       = meshComponent.m_MeshPath;
+        std::string relatedPath  = ContentLoader::GetAssetRelativetlyPath(path);
+        auto& meshComponent      = ecs.GetComponent<MeshComponent>(entity);
+        auto  prevMeshPath       = meshComponent.m_MeshPath;
         meshComponent.m_MeshPath = relatedPath;
         AddMeshPath(relatedPath);
         CheckMeshPath(meshComponent, prevMeshPath);
@@ -107,8 +105,8 @@ namespace Scene
         auto it = std::find(m_MeshPaths.begin(), m_MeshPaths.end(), meshComponent.m_MeshPath);
         if (it != m_MeshPaths.end())
         {
-            uint64_t newIndex         = static_cast<uint64_t>(it - m_MeshPaths.begin());
-            meshComponent.m_MeshIndex = newIndex;
+            uint64_t newIndex              = static_cast<uint64_t>(it - m_MeshPaths.begin());
+            meshComponent.m_MeshIndex      = newIndex;
             meshComponent.m_CachedMeshPath = meshComponent.m_MeshPath;
         }
         else

@@ -18,7 +18,7 @@ project "FrameData"
     {
         "HedgehogMath",
         "HedgehogCommon",
-        "Scene",
+        "Components",
         "Logger"
     }
 
