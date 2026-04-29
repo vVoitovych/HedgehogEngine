@@ -1,7 +1,7 @@
 #include "MeshContainer.hpp"
 #include "Mesh.hpp"
 
-#include "Components/api/MeshSystem.hpp"
+#include "HedgehogEngine/api/ECS/systems/MeshSystem.hpp"
 
 #include "Logger/api/Logger.hpp"
 

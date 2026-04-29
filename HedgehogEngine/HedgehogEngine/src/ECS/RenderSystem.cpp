@@ -1,4 +1,4 @@
-#include "Components/api/RenderSystem.hpp"
+#include "HedgehogEngine/api/ECS/systems/RenderSystem.hpp"
 
 #include <algorithm>
 
@@ -10,9 +10,7 @@ namespace Scene
         if (render.m_MaterialIndex.has_value())
         {
             if (m_MaterialPaths[render.m_MaterialIndex.value()] != render.m_Material)
-            {
                 UpdateMaterialPath(ecs, entity);
-            }
         }
         else
         {
@@ -23,9 +21,7 @@ namespace Scene
     void RenderSystem::UpdateSystem(ECS::ECS& ecs)
     {
         for (auto entity : m_Entities)
-        {
             Update(ecs, entity);
-        }
     }
 
     size_t RenderSystem::GetMaterialsCount() const
@@ -45,8 +41,7 @@ namespace Scene
 
     RenderComponent& RenderSystem::GetRenderComponentByIndex(ECS::ECS& ecs, size_t index) const
     {
-        auto entity = m_Entities[index];
-        return ecs.GetComponent<RenderComponent>(entity);
+        return ecs.GetComponent<RenderComponent>(m_Entities[index]);
     }
 
     void RenderSystem::UpdateMaterialPath(ECS::ECS& ecs, ECS::Entity entity)

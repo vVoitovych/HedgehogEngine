@@ -1,6 +1,6 @@
-#include "Components/api/HierarchySystem.hpp"
-#include "Components/api/HierarchyComponent.hpp"
-#include "Components/api/TransformComponent.hpp"
+#include "HedgehogEngine/api/ECS/systems/HierarchySystem.hpp"
+#include "HedgehogEngine/api/ECS/components/HierarchyComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
 
 namespace Scene
 {

@@ -1,13 +1,13 @@
-#include "Components/api/SceneSerializer.hpp"
+#include "HedgehogEngine/api/ECS/SceneSerializer.hpp"
 
-#include "Components/api/HierarchySystem.hpp"
-#include "Components/api/ScriptSystem.hpp"
-#include "Components/api/TransformComponent.hpp"
-#include "Components/api/HierarchyComponent.hpp"
-#include "Components/api/MeshComponent.hpp"
-#include "Components/api/LightComponent.hpp"
-#include "Components/api/RenderComponent.hpp"
-#include "Components/api/ScriptComponent.hpp"
+#include "HedgehogEngine/api/ECS/systems/HierarchySystem.hpp"
+#include "HedgehogEngine/api/ECS/systems/ScriptSystem.hpp"
+#include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/HierarchyComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/LightComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/RenderComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
 
 #include "HedgehogMath/api/Vector.hpp"
 #include "Logger/api/Logger.hpp"
@@ -196,9 +196,7 @@ namespace
 
         out << YAML::Key << "Children" << YAML::Value << YAML::BeginSeq;
         for (auto child : hierarchy.m_Children)
-        {
             SerializeEntity(out, ecs, child);
-        }
         out << YAML::EndSeq;
         out << YAML::EndMap;
     }
@@ -267,9 +265,9 @@ namespace
             {
                 for (const auto& param : parameters)
                 {
-                    std::string           paramName = param.first.as<std::string>();
-                    auto                  data      = param.second;
-                    Scene::ParamType      type      = static_cast<Scene::ParamType>(data["ParamType"].as<size_t>());
+                    std::string               paramName = param.first.as<std::string>();
+                    auto                      data      = param.second;
+                    Scene::ParamType          type      = static_cast<Scene::ParamType>(data["ParamType"].as<size_t>());
                     std::variant<bool, float> value;
                     switch (type)
                     {
@@ -302,7 +300,7 @@ namespace
 }
 
     void SceneSerializer::SerializeScene(const ECS::ECS& ecs, ECS::Entity root,
-                                        const std::string& sceneName, const std::string& filePath)
+                                         const std::string& sceneName, const std::string& filePath)
     {
         LOGINFO("SerializeScene: ", filePath);
 
@@ -319,9 +317,9 @@ namespace
     }
 
     void SceneSerializer::DeserializeScene(ECS::ECS& ecs, ECS::Entity& outRoot,
-                                           std::string& outSceneName, const std::string& filePath,
-                                           Scene::HierarchySystem& hierarchySystem,
-                                           Scene::ScriptSystem& scriptSystem)
+                                            std::string& outSceneName, const std::string& filePath,
+                                            Scene::HierarchySystem& hierarchySystem,
+                                            Scene::ScriptSystem& scriptSystem)
     {
         LOGINFO("DeserializeScene: ", filePath);
 

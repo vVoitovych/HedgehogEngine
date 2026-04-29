@@ -1,5 +1,5 @@
-#include "Components/api/LightSystem.hpp"
-#include "Components/api/TransformComponent.hpp"
+#include "HedgehogEngine/api/ECS/systems/LightSystem.hpp"
+#include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
 
 namespace Scene
 {
@@ -7,9 +7,7 @@ namespace Scene
     {
         m_LightComponents.resize(m_Entities.size());
         for (size_t i = 0; i < m_Entities.size(); ++i)
-        {
             m_LightComponents[i] = ecs.GetComponent<LightComponent>(m_Entities[i]);
-        }
         return m_LightComponents;
     }
 
@@ -26,9 +24,7 @@ namespace Scene
             light.m_Direction = dir;
 
             if (light.m_CastShadows)
-            {
                 m_ShadowDirection = dir;
-            }
         }
     }
 

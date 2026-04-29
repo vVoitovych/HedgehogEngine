@@ -20,10 +20,11 @@ project "Editor"
       "HedgehogEngine",
       "HedgehogRenderer",
       "HedgehogWindow",
-      "Components",
       "HedgehogSettings",
       "Logger",
-      "yaml-cpp"
+      "yaml-cpp",
+      "ECS",
+      "DialogueWindows"
    }
 
    targetdir ("../Binaries/" .. OutputDir .. "/%{prj.name}")

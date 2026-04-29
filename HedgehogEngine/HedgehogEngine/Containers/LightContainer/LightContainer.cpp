@@ -1,6 +1,6 @@
 #include "LightContainer.hpp"
 
-#include "Components/api/LightSystem.hpp"
+#include "HedgehogEngine/api/ECS/systems/LightSystem.hpp"
 
 #include "HedgehogCommon/api/RendererSettings.hpp"
 

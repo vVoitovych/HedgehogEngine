@@ -1,4 +1,4 @@
-#include "Components/api/MeshSystem.hpp"
+#include "HedgehogEngine/api/ECS/systems/MeshSystem.hpp"
 #include "ContentLoader/api/CommonFunctions.hpp"
 #include "Logger/api/Logger.hpp"
 #include "DialogueWindows/api/MeshDialogue.hpp"
@@ -31,9 +31,7 @@ namespace Scene
         {
             size_t index = meshComponent.m_MeshIndex.value();
             if (m_MeshPaths[index] != meshComponent.m_MeshPath)
-            {
                 CheckMeshPath(meshComponent, meshComponent.m_CachedMeshPath);
-            }
         }
         else
         {
@@ -50,9 +48,7 @@ namespace Scene
             {
                 size_t index = meshComponent.m_MeshIndex.value();
                 if (m_MeshPaths[index] != meshComponent.m_MeshPath)
-                {
                     CheckMeshPath(meshComponent, meshComponent.m_CachedMeshPath);
-                }
             }
             else
             {

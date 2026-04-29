@@ -58,7 +58,7 @@
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>HEDGEHOG_ENGINE_EXPORT;DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>HEDGEHOG_ENGINE_EXPORT;YAML_CPP_STATIC_DEFINE;DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..\ThirdParty\YamlCpp\yaml-cpp\include;..\..;..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
@@ -80,7 +80,7 @@ IF EXIST ..\..\Binaries\windows-x86_64\Debug\HedgehogEngine\HedgehogEngine.dll\ 
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>HEDGEHOG_ENGINE_EXPORT;RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>HEDGEHOG_ENGINE_EXPORT;YAML_CPP_STATIC_DEFINE;RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..\ThirdParty\YamlCpp\yaml-cpp\include;..\..;..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -114,6 +114,21 @@ IF EXIST ..\..\Binaries\windows-x86_64\Release\HedgehogEngine\HedgehogEngine.dll
     <ClInclude Include="Context\FrameContext.hpp" />
     <ClInclude Include="Context\HedgehogEngine.hpp" />
     <ClInclude Include="Context\WindowContext.hpp" />
+    <ClInclude Include="api\ECS\GameObjectHelpers.hpp" />
+    <ClInclude Include="api\ECS\SceneSerializer.hpp" />
+    <ClInclude Include="api\ECS\components\HierarchyComponent.hpp" />
+    <ClInclude Include="api\ECS\components\LightComponent.hpp" />
+    <ClInclude Include="api\ECS\components\MeshComponent.hpp" />
+    <ClInclude Include="api\ECS\components\RenderComponent.hpp" />
+    <ClInclude Include="api\ECS\components\ScriptComponent.hpp" />
+    <ClInclude Include="api\ECS\components\TransformComponent.hpp" />
+    <ClInclude Include="api\ECS\systems\HierarchySystem.hpp" />
+    <ClInclude Include="api\ECS\systems\LightSystem.hpp" />
+    <ClInclude Include="api\ECS\systems\LuaHelpers.hpp" />
+    <ClInclude Include="api\ECS\systems\MeshSystem.hpp" />
+    <ClInclude Include="api\ECS\systems\RenderSystem.hpp" />
+    <ClInclude Include="api\ECS\systems\ScriptSystem.hpp" />
+    <ClInclude Include="api\ECS\systems\TransformSystem.hpp" />
     <ClInclude Include="api\HedgehogEngineApi.hpp" />
   </ItemGroup>
   <ItemGroup>
@@ -127,6 +142,15 @@ IF EXIST ..\..\Binaries\windows-x86_64\Release\HedgehogEngine\HedgehogEngine.dll
     <ClCompile Include="Context\FrameContext.cpp" />
     <ClCompile Include="Context\HedgehogEngine.cpp" />
     <ClCompile Include="Context\WindowContext.cpp" />
+    <ClCompile Include="src\ECS\GameObjectHelpers.cpp" />
+    <ClCompile Include="src\ECS\HierarchySystem.cpp" />
+    <ClCompile Include="src\ECS\LightSystem.cpp" />
+    <ClCompile Include="src\ECS\LuaHelpers.cpp" />
+    <ClCompile Include="src\ECS\MeshSystem.cpp" />
+    <ClCompile Include="src\ECS\RenderSystem.cpp" />
+    <ClCompile Include="src\ECS\SceneSerializer.cpp" />
+    <ClCompile Include="src\ECS\ScriptSystem.cpp" />
+    <ClCompile Include="src\ECS\TransformSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\FrameData\FrameData.vcxproj">
@@ -153,8 +177,11 @@ IF EXIST ..\..\Binaries\windows-x86_64\Release\HedgehogEngine\HedgehogEngine.dll
     <ProjectReference Include="..\..\Logger\Logger.vcxproj">
       <Project>{25F339C1-1195-6497-FA4F-78EBE690EBE7}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\Components\Components.vcxproj">
-      <Project>{6B7DD516-5735-1764-C03C-F0BFAC13B254}</Project>
+    <ProjectReference Include="..\..\ECS\ECS.vcxproj">
+      <Project>{60E1870B-CCEA-877C-5566-9E7CC16E937C}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ThirdParty\Lua\Lua.vcxproj">
+      <Project>{A705880B-130F-887C-9C8A-9E7C0893937C}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\ThirdParty\ImGui\imgui.vcxproj">
       <Project>{0098A80F-6CAC-D0C0-352E-7420A101CDF1}</Project>

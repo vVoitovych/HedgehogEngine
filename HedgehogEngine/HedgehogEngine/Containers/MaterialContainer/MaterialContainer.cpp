@@ -7,7 +7,7 @@
 
 #include "ContentLoader/api/CommonFunctions.hpp"
 
-#include "Components/api/RenderSystem.hpp"
+#include "HedgehogEngine/api/ECS/systems/RenderSystem.hpp"
 
 namespace HedgehogEngine
 {

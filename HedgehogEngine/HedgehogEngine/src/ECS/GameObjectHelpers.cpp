@@ -1,6 +1,5 @@
-#include "Components/api/GameObjectHelpers.hpp"
-
-#include "Components/api/HierarchySystem.hpp"
+#include "HedgehogEngine/api/ECS/GameObjectHelpers.hpp"
+#include "HedgehogEngine/api/ECS/systems/HierarchySystem.hpp"
 
 #include <algorithm>
 #include <sstream>
@@ -54,9 +53,7 @@ namespace Components
     {
         auto& hierarchy = ecs.GetComponent<Scene::HierarchyComponent>(entity);
         for (ECS::Entity child : hierarchy.m_Children)
-        {
             DeleteGameObjectAndChildren(ecs, child);
-        }
         ecs.DestroyEntity(entity);
     }
 

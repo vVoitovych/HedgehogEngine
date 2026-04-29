@@ -27,21 +27,15 @@ namespace Scene
     class ScriptComponent
     {
     public:
-        bool m_Enable = true;
-        std::optional<bool> m_NewEnable;
-        std::string m_ScriptPath;
+        bool                                         m_Enable = true;
+        std::optional<bool>                          m_NewEnable;
+        std::string                                  m_ScriptPath;
         std::unordered_map<std::string, ScriptParam> m_Params;
 
         friend class ScriptSystem;
 
     private:
-        lua_State* m_LuaState = nullptr;
-        int m_InstanceRef;
-
+        lua_State* m_LuaState    = nullptr;
+        int        m_InstanceRef = 0;
     };
-
 }
-
-
-
-

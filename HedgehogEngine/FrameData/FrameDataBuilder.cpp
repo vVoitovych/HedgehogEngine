@@ -4,10 +4,10 @@
 #include "HedgehogCommon/api/RendererSettings.hpp"
 
 #include "ECS/api/ECS.hpp"
-#include "Components/api/LightSystem.hpp"
-#include "Components/api/RenderSystem.hpp"
-#include "Components/api/MeshComponent.hpp"
-#include "Components/api/TransformComponent.hpp"
+#include "HedgehogEngine/api/ECS/systems/LightSystem.hpp"
+#include "HedgehogEngine/api/ECS/systems/RenderSystem.hpp"
+#include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
 
 #include "Logger/api/Logger.hpp"
 

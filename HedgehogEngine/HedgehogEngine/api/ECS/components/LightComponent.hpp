@@ -14,12 +14,12 @@ namespace Scene
     class LightComponent
     {
     public:
-        bool      m_Enable    = true;
-        LightType m_LightType = LightType::DirectionLight;
-        HM::Vector3 m_Color   = { 1.0f, 1.0f, 1.0f };
-        float     m_Intensity = 1.0f;
-        float     m_Radius    = 1.0f;
-        float     m_ConeAngle = 1.0f;
+        bool        m_Enable    = true;
+        LightType   m_LightType = LightType::DirectionLight;
+        HM::Vector3 m_Color     = { 1.0f, 1.0f, 1.0f };
+        float       m_Intensity = 1.0f;
+        float       m_Radius    = 1.0f;
+        float       m_ConeAngle = 1.0f;
 
         bool m_CastShadows = false;
 

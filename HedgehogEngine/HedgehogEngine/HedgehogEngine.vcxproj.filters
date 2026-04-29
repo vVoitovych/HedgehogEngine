@@ -22,6 +22,21 @@
     <Filter Include="api">
       <UniqueIdentifier>{5F5E880B-CB67-887C-54E3-9E7CC0EB937C}</UniqueIdentifier>
     </Filter>
+    <Filter Include="api\ECS">
+      <UniqueIdentifier>{296A593B-9549-D8D6-9E61-63AD0AC03E38}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="api\ECS\components">
+      <UniqueIdentifier>{BE27DC4B-AA0B-9DA1-136C-97F4FF6E8723}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="api\ECS\systems">
+      <UniqueIdentifier>{507133CA-BCFC-A08E-C50D-24833118FD8E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{2DAB880B-99B4-887C-2230-9F7C8E38947C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\ECS">
+      <UniqueIdentifier>{F76D2FA9-634D-AE44-6C65-391BD8C314A6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Containers\LightContainer\LightContainer.hpp">
@@ -57,6 +72,51 @@
     <ClInclude Include="Context\WindowContext.hpp">
       <Filter>Context</Filter>
     </ClInclude>
+    <ClInclude Include="api\ECS\GameObjectHelpers.hpp">
+      <Filter>api\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="api\ECS\SceneSerializer.hpp">
+      <Filter>api\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="api\ECS\components\HierarchyComponent.hpp">
+      <Filter>api\ECS\components</Filter>
+    </ClInclude>
+    <ClInclude Include="api\ECS\components\LightComponent.hpp">
+      <Filter>api\ECS\components</Filter>
+    </ClInclude>
+    <ClInclude Include="api\ECS\components\MeshComponent.hpp">
+      <Filter>api\ECS\components</Filter>
+    </ClInclude>
+    <ClInclude Include="api\ECS\components\RenderComponent.hpp">
+      <Filter>api\ECS\components</Filter>
+    </ClInclude>
+    <ClInclude Include="api\ECS\components\ScriptComponent.hpp">
+      <Filter>api\ECS\components</Filter>
+    </ClInclude>
+    <ClInclude Include="api\ECS\components\TransformComponent.hpp">
+      <Filter>api\ECS\components</Filter>
+    </ClInclude>
+    <ClInclude Include="api\ECS\systems\HierarchySystem.hpp">
+      <Filter>api\ECS\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="api\ECS\systems\LightSystem.hpp">
+      <Filter>api\ECS\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="api\ECS\systems\LuaHelpers.hpp">
+      <Filter>api\ECS\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="api\ECS\systems\MeshSystem.hpp">
+      <Filter>api\ECS\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="api\ECS\systems\RenderSystem.hpp">
+      <Filter>api\ECS\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="api\ECS\systems\ScriptSystem.hpp">
+      <Filter>api\ECS\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="api\ECS\systems\TransformSystem.hpp">
+      <Filter>api\ECS\systems</Filter>
+    </ClInclude>
     <ClInclude Include="api\HedgehogEngineApi.hpp">
       <Filter>api</Filter>
     </ClInclude>
@@ -91,6 +151,33 @@
     </ClCompile>
     <ClCompile Include="Context\WindowContext.cpp">
       <Filter>Context</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ECS\GameObjectHelpers.cpp">
+      <Filter>src\ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ECS\HierarchySystem.cpp">
+      <Filter>src\ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ECS\LightSystem.cpp">
+      <Filter>src\ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ECS\LuaHelpers.cpp">
+      <Filter>src\ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ECS\MeshSystem.cpp">
+      <Filter>src\ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ECS\RenderSystem.cpp">
+      <Filter>src\ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ECS\SceneSerializer.cpp">
+      <Filter>src\ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ECS\ScriptSystem.cpp">
+      <Filter>src\ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ECS\TransformSystem.cpp">
+      <Filter>src\ECS</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

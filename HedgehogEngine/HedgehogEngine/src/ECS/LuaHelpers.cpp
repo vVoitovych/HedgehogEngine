@@ -1,5 +1,5 @@
-#include "Components/api/LuaHelpers.hpp"
-#include "Components/api/ScriptComponent.hpp"
+#include "HedgehogEngine/api/ECS/systems/LuaHelpers.hpp"
+#include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
 
 #include "Logger/api/Logger.hpp"
 

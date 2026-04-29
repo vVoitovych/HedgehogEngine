@@ -1,10 +1,10 @@
-#include "Components/api/ScriptSystem.hpp"
-#include "Components/api/LuaHelpers.hpp"
+#include "HedgehogEngine/api/ECS/systems/ScriptSystem.hpp"
+#include "HedgehogEngine/api/ECS/systems/LuaHelpers.hpp"
 
-#include "Components/api/ScriptComponent.hpp"
-#include "Components/api/TransformComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
+
 #include "Logger/api/Logger.hpp"
-
 #include "DialogueWindows/api/ScriptDialogue.hpp"
 #include "ContentLoader/api/CommonFunctions.hpp"
 

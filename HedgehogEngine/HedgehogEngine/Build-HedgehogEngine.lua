@@ -24,7 +24,8 @@ project "HedgehogEngine"
         "DialogueWindows",
         "HedgehogMath",
         "Logger",
-        "Components",
+        "ECS",
+        "Lua",
         "imgui",
         "yaml-cpp"
     }
@@ -40,7 +41,7 @@ project "HedgehogEngine"
 
    filter "system:windows"
        systemversion "latest"
-       defines { "HEDGEHOG_ENGINE_EXPORT" }
+       defines { "HEDGEHOG_ENGINE_EXPORT", "YAML_CPP_STATIC_DEFINE" }
 
    filter "configurations:Debug"
        defines { "DEBUG" }

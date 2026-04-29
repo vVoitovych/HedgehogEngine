@@ -18,7 +18,7 @@ project "FrameData"
     {
         "HedgehogMath",
         "HedgehogCommon",
-        "Components",
+        "ECS",
         "Logger"
     }
 
