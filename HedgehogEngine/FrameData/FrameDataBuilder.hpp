@@ -17,7 +17,7 @@ namespace Scene
     class RenderSystem;
 }
 
-namespace Context
+namespace HedgehogEngine
 {
     class Camera;
 }
@@ -31,7 +31,7 @@ namespace FD
             const ECS::ECS&                              ecs,
             const Scene::LightSystem&                    lightSystem,
             const Scene::RenderSystem&                   renderSystem,
-            const Context::Camera&                       camera,
+            const HedgehogEngine::Camera&                       camera,
             float                                        deltaTime,
             const std::function<MaterialType(uint64_t)>& materialTypeLookup) const;
 

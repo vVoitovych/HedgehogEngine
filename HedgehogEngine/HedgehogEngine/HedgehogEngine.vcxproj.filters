@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Containers">
+      <UniqueIdentifier>{DB5A0216-C712-4463-301A-1DBF1CF1DE53}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Containers\LightContainer">
+      <UniqueIdentifier>{C5C361AC-3186-9536-7A36-24C3E6376E14}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Containers\MaterialContainer">
+      <UniqueIdentifier>{BCF6C412-A8B1-B4BE-5169-2D093D03FF4E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Containers\MeshContainer">
+      <UniqueIdentifier>{1A8AD7EF-06AF-2670-2FFA-0B001B7E258E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Containers\TextureContainer">
+      <UniqueIdentifier>{5E20F91F-CA2D-2706-5314-23F1BF20F3BC}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Context">
+      <UniqueIdentifier>{AA023234-16E2-B0CF-1FFA-3BA68B581731}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="api">
+      <UniqueIdentifier>{5F5E880B-CB67-887C-54E3-9E7CC0EB937C}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Containers\LightContainer\LightContainer.hpp">
+      <Filter>Containers\LightContainer</Filter>
+    </ClInclude>
+    <ClInclude Include="Containers\MaterialContainer\MaterialContainer.hpp">
+      <Filter>Containers\MaterialContainer</Filter>
+    </ClInclude>
+    <ClInclude Include="Containers\MaterialContainer\MaterialData.hpp">
+      <Filter>Containers\MaterialContainer</Filter>
+    </ClInclude>
+    <ClInclude Include="Containers\MaterialContainer\MaterialSerializer.hpp">
+      <Filter>Containers\MaterialContainer</Filter>
+    </ClInclude>
+    <ClInclude Include="Containers\MeshContainer\Mesh.hpp">
+      <Filter>Containers\MeshContainer</Filter>
+    </ClInclude>
+    <ClInclude Include="Containers\MeshContainer\MeshContainer.hpp">
+      <Filter>Containers\MeshContainer</Filter>
+    </ClInclude>
+    <ClInclude Include="Containers\TextureContainer\TextureContainer.hpp">
+      <Filter>Containers\TextureContainer</Filter>
+    </ClInclude>
+    <ClInclude Include="Context\EngineContext.hpp">
+      <Filter>Context</Filter>
+    </ClInclude>
+    <ClInclude Include="Context\FrameContext.hpp">
+      <Filter>Context</Filter>
+    </ClInclude>
+    <ClInclude Include="Context\HedgehogEngine.hpp">
+      <Filter>Context</Filter>
+    </ClInclude>
+    <ClInclude Include="Context\WindowContext.hpp">
+      <Filter>Context</Filter>
+    </ClInclude>
+    <ClInclude Include="api\HedgehogEngineApi.hpp">
+      <Filter>api</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Containers\LightContainer\LightContainer.cpp">
+      <Filter>Containers\LightContainer</Filter>
+    </ClCompile>
+    <ClCompile Include="Containers\MaterialContainer\MaterialContainer.cpp">
+      <Filter>Containers\MaterialContainer</Filter>
+    </ClCompile>
+    <ClCompile Include="Containers\MaterialContainer\MaterialSerializer.cpp">
+      <Filter>Containers\MaterialContainer</Filter>
+    </ClCompile>
+    <ClCompile Include="Containers\MeshContainer\Mesh.cpp">
+      <Filter>Containers\MeshContainer</Filter>
+    </ClCompile>
+    <ClCompile Include="Containers\MeshContainer\MeshContainer.cpp">
+      <Filter>Containers\MeshContainer</Filter>
+    </ClCompile>
+    <ClCompile Include="Containers\TextureContainer\TextureContainer.cpp">
+      <Filter>Containers\TextureContainer</Filter>
+    </ClCompile>
+    <ClCompile Include="Context\EngineContext.cpp">
+      <Filter>Context</Filter>
+    </ClCompile>
+    <ClCompile Include="Context\FrameContext.cpp">
+      <Filter>Context</Filter>
+    </ClCompile>
+    <ClCompile Include="Context\HedgehogEngine.cpp">
+      <Filter>Context</Filter>
+    </ClCompile>
+    <ClCompile Include="Context\WindowContext.cpp">
+      <Filter>Context</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

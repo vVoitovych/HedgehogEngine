@@ -2,7 +2,7 @@
 
 #include <cmath>
 
-namespace Context
+namespace HedgehogEngine
 {
     void Camera::UpdateCamera(
         float dt,

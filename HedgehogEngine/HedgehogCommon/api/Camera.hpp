@@ -6,7 +6,7 @@
 #include "HedgehogMath/api/Matrix.hpp"
 #include "HedgehogMath/api/Common.hpp"
 
-namespace Context
+namespace HedgehogEngine
 {
     enum class CameraType
     {

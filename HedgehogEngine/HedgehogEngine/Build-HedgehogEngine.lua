@@ -1,45 +1,46 @@
-project "HedgehogRenderer"
-   kind "StaticLib"
+project "HedgehogEngine"
+   kind "SharedLib"
    language "C++"
    cppdialect "C++20"
 
-    files 
-    { 
+    files
+    {
         "**.hpp", "**.cpp"
     }
 
     includedirs
     {
-        "%{IncludeDir.VulkanSDK}",
-        "%{IncludeDir.ImGui}".."/imgui",
+        "%{IncludeDir.yaml_cpp}",
         "../..",
         ".."
     }
 
-    libdirs
-    {
-        "%{LibraryDir.VulkanSDK}"
-    }
-
     links {
-        "RHI",
-        "HedgehogMath",
-        "HedgehogEngine",
+        "FrameData",
+        "HedgehogCommon",
         "HedgehogSettings",
         "HedgehogWindow",
         "ContentLoader",
-        "Shaders",
+        "DialogueWindows",
+        "HedgehogMath",
         "Logger",
-        "imgui"
+        "Components",
+        "imgui",
+        "yaml-cpp"
     }
-
 
    targetdir ("../../Binaries/" .. OutputDir .. "/%{prj.name}")
    objdir ("../../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")
 
+   postbuildcommands
+   {
+       ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/Editor"),
+       ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/Editor/")
+   }
+
    filter "system:windows"
        systemversion "latest"
-       defines {  }
+       defines { "HEDGEHOG_ENGINE_EXPORT" }
 
    filter "configurations:Debug"
        defines { "DEBUG" }

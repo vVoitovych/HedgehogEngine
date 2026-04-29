@@ -1,12 +1,12 @@
 #include "EditorGui.hpp"
 #include "Panels/ConsolePanel.hpp"
 
-#include "HedgehogEngine/HedgehogContext/Context/Context.hpp"
-#include "HedgehogEngine/HedgehogContext/Context/EngineContext.hpp"
-#include "HedgehogEngine/HedgehogContext/Containers/MaterialContainer/MaterialContainer.hpp"
-#include "HedgehogEngine/HedgehogContext/Containers/MaterialContainer/MaterialData.hpp"
-#include "HedgehogEngine/HedgehogContext/Containers/MeshContainer/MeshContainer.hpp"
-#include "HedgehogEngine/HedgehogContext/Containers/TextureContainer/TextureContainer.hpp"
+#include "HedgehogEngine/HedgehogEngine/Context/HedgehogEngine.hpp"
+#include "HedgehogEngine/HedgehogEngine/Context/EngineContext.hpp"
+#include "HedgehogEngine/HedgehogEngine/Containers/MaterialContainer/MaterialContainer.hpp"
+#include "HedgehogEngine/HedgehogEngine/Containers/MaterialContainer/MaterialData.hpp"
+#include "HedgehogEngine/HedgehogEngine/Containers/MeshContainer/MeshContainer.hpp"
+#include "HedgehogEngine/HedgehogEngine/Containers/TextureContainer/TextureContainer.hpp"
 #include "HedgehogEngine/HedgehogSettings/Settings/HedgehogSettings.hpp"
 #include "HedgehogEngine/HedgehogSettings/Settings/ShadowmapingSettings.hpp"
 
@@ -49,7 +49,7 @@ namespace Editor
 
     // ─── Top-level entry ─────────────────────────────────────────────────────
 
-    void EditorGui::Draw(Context::Context& context, void* sceneViewTextureId)
+    void EditorGui::Draw(HedgehogEngine::HedgehogEngine& context, void* sceneViewTextureId)
     {
         m_SceneViewHovered = false;
 
@@ -77,7 +77,7 @@ namespace Editor
 
     // ─── Panel dispatch ───────────────────────────────────────────────────────
 
-    void EditorGui::DrawPanelContent(PanelId panel, Context::Context& context, void* sceneViewTextureId)
+    void EditorGui::DrawPanelContent(PanelId panel, HedgehogEngine::HedgehogEngine& context, void* sceneViewTextureId)
     {
         switch (panel)
         {
@@ -118,7 +118,7 @@ namespace Editor
 
     // ─── Main menu ───────────────────────────────────────────────────────────
 
-    void EditorGui::DrawMainMenu(Context::Context& context)
+    void EditorGui::DrawMainMenu(HedgehogEngine::HedgehogEngine& context)
     {
         auto& engineContext = context.GetEngineContext();
         auto& ecs           = engineContext.GetECS();
@@ -281,7 +281,7 @@ namespace Editor
 
     // ─── Scene hierarchy ─────────────────────────────────────────────────────
 
-    void EditorGui::DrawSceneHierarchy(Context::Context& context)
+    void EditorGui::DrawSceneHierarchy(HedgehogEngine::HedgehogEngine& context)
     {
         auto& engineContext = context.GetEngineContext();
         auto& ecs           = engineContext.GetECS();
@@ -308,7 +308,7 @@ namespace Editor
         DrawHierarchyNode(context, root, index);
     }
 
-    void EditorGui::DrawHierarchyNode(Context::Context& context, ECS::Entity entity, int& index)
+    void EditorGui::DrawHierarchyNode(HedgehogEngine::HedgehogEngine& context, ECS::Entity entity, int& index)
     {
         auto& ecs       = context.GetEngineContext().GetECS();
         auto& component = ecs.GetComponent<HierarchyComponent>(entity);
@@ -362,7 +362,7 @@ namespace Editor
 
     // ─── Inspector ───────────────────────────────────────────────────────────
 
-    void EditorGui::DrawInspector(Context::Context& context)
+    void EditorGui::DrawInspector(HedgehogEngine::HedgehogEngine& context)
     {
         if (m_SelectedEntity.has_value())
         {
@@ -379,7 +379,7 @@ namespace Editor
         }
     }
 
-    void EditorGui::DrawEntityTitle(Context::Context& context)
+    void EditorGui::DrawEntityTitle(HedgehogEngine::HedgehogEngine& context)
     {
         auto& ecs       = context.GetEngineContext().GetECS();
         auto  entity    = m_SelectedEntity.value();
@@ -393,7 +393,7 @@ namespace Editor
         }
     }
 
-    void EditorGui::DrawTransformComponent(Context::Context& context)
+    void EditorGui::DrawTransformComponent(HedgehogEngine::HedgehogEngine& context)
     {
         auto& ecs    = context.GetEngineContext().GetECS();
         auto  entity = m_SelectedEntity.value();
@@ -419,7 +419,7 @@ namespace Editor
         ImGui::DragFloat("scale z", &transform.m_Scale.z(), 0.5f);
     }
 
-    void EditorGui::DrawMeshComponent(Context::Context& context)
+    void EditorGui::DrawMeshComponent(HedgehogEngine::HedgehogEngine& context)
     {
         auto& engineContext = context.GetEngineContext();
         auto& ecs           = engineContext.GetECS();
@@ -460,7 +460,7 @@ namespace Editor
         }
     }
 
-    void EditorGui::DrawRenderComponent(Context::Context& context)
+    void EditorGui::DrawRenderComponent(HedgehogEngine::HedgehogEngine& context)
     {
         auto& engineContext = context.GetEngineContext();
         auto& ecs           = engineContext.GetECS();
@@ -532,7 +532,7 @@ namespace Editor
             const char* typeNames[] = { "Opaque", "Cutoff", "Transparent" };
             int materialType = static_cast<int>(materialData.type);
             if (ImGui::Combo("Type", &materialType, typeNames, IM_ARRAYSIZE(typeNames)))
-                materialData.type = static_cast<Context::MaterialType>(materialType);
+                materialData.type = static_cast<HedgehogEngine::MaterialType>(materialType);
 
             const auto& texturePaths = textureContainer.GetTexturePathes();
             int selectedTexture      = static_cast<int>(
@@ -557,7 +557,7 @@ namespace Editor
             if (ImGui::Button("Load texture"))
                 materialContainer.LoadBaseTexture(render.m_MaterialIndex.value());
 
-            if (materialData.type == Context::MaterialType::Transparent)
+            if (materialData.type == HedgehogEngine::MaterialType::Transparent)
             {
                 float transparency = materialData.transparency;
                 if (ImGui::SliderFloat("Transparency", &transparency, 0.0f, 1.0f))
@@ -597,7 +597,7 @@ namespace Editor
         }
     }
 
-    void EditorGui::DrawLightComponent(Context::Context& context)
+    void EditorGui::DrawLightComponent(HedgehogEngine::HedgehogEngine& context)
     {
         auto& engineContext = context.GetEngineContext();
         auto& ecs           = engineContext.GetECS();
@@ -656,7 +656,7 @@ namespace Editor
         }
     }
 
-    void EditorGui::DrawScriptComponent(Context::Context& context)
+    void EditorGui::DrawScriptComponent(HedgehogEngine::HedgehogEngine& context)
     {
         auto& engineContext = context.GetEngineContext();
         auto& ecs           = engineContext.GetECS();
@@ -722,7 +722,7 @@ namespace Editor
 
     // ─── Settings window ─────────────────────────────────────────────────────
 
-    void EditorGui::DrawSettingsWindow(Context::Context& context)
+    void EditorGui::DrawSettingsWindow(HedgehogEngine::HedgehogEngine& context)
     {
         if (!m_SettingsWindowOpen)
             return;

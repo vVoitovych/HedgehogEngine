@@ -1,6 +1,6 @@
 #include "HedgehogRenderer/RHIContext/RHIContext.hpp"
 
-#include "HedgehogContext/Context/WindowContext.hpp"
+#include "HedgehogEngine/Context/WindowContext.hpp"
 
 #include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
 
@@ -9,7 +9,7 @@
 
 namespace Renderer
 {
-    RHIContext::RHIContext(Context::WindowContext& windowContext)
+    RHIContext::RHIContext(HedgehogEngine::WindowContext& windowContext)
     {
         auto& window = windowContext.GetWindow();
 
@@ -36,7 +36,7 @@ namespace Renderer
         m_RHIDevice.reset();
     }
 
-    void RHIContext::RecreateSwapchain(Context::WindowContext& windowContext)
+    void RHIContext::RecreateSwapchain(HedgehogEngine::WindowContext& windowContext)
     {
         auto& window = windowContext.GetWindow();
 

@@ -2,10 +2,10 @@
 
 #include "HedgehogRenderer/ResourceRegistry/ResourceRegistry.hpp"
 
-#include "HedgehogContext/Context/EngineContext.hpp"
-#include "HedgehogContext/Containers/MeshContainer/MeshContainer.hpp"
-#include "HedgehogContext/Containers/MaterialContainer/MaterialContainer.hpp"
-#include "HedgehogContext/Containers/TextureContainer/TextureContainer.hpp"
+#include "HedgehogEngine/Context/EngineContext.hpp"
+#include "HedgehogEngine/Containers/MeshContainer/MeshContainer.hpp"
+#include "HedgehogEngine/Containers/MaterialContainer/MaterialContainer.hpp"
+#include "HedgehogEngine/Containers/TextureContainer/TextureContainer.hpp"
 #include "HedgehogSettings/Settings/HedgehogSettings.hpp"
 #include "HedgehogSettings/Settings/ShadowmapingSettings.hpp"
 
@@ -48,7 +48,7 @@ namespace Renderer
         m_ResourceRegistry->Cleanup(device);
     }
 
-    void ResourceManager::SyncResources(RHI::IRHIDevice& device, Context::EngineContext& engine)
+    void ResourceManager::SyncResources(RHI::IRHIDevice& device, HedgehogEngine::EngineContext& engine)
     {
         m_ResourceRegistry->SyncMeshes(engine.GetMeshContainer(), device);
         m_ResourceRegistry->SyncMaterials(engine.GetMaterialContainer(), engine.GetTextureContainer(), device);

@@ -9,6 +9,7 @@ project "Editor"
    {
       "..",
       "../HedgehogEngine",
+      "../HedgehogEngine/HedgehogEngine/api",
       "%{IncludeDir.ImGui}".."/imgui",
       "%{IncludeDir.yaml_cpp}"
    }
@@ -16,7 +17,7 @@ project "Editor"
    defines { "YAML_CPP_STATIC_DEFINE" }
 
    links {
-      "HedgehogContext",
+      "HedgehogEngine",
       "HedgehogRenderer",
       "HedgehogWindow",
       "Components",
