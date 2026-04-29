@@ -1,7 +1,7 @@
 #include "ForwardPass.hpp"
 #include "ForwardPassPushConstants.hpp"
 
-#include "FrameData/FrameData.hpp"
+#include "HedgehogEngine/api/Frame/FrameData.hpp"
 
 #include "HedgehogRenderer/ResourceManager/ResourceManager.hpp"
 #include "HedgehogRenderer/ResourceRegistry/ResourceRegistry.hpp"

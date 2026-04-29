@@ -16,7 +16,6 @@ project "HedgehogEngine"
     }
 
     links {
-        "FrameData",
         "HedgehogCommon",
         "HedgehogSettings",
         "HedgehogWindow",

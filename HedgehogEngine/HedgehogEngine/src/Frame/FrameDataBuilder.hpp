@@ -1,6 +1,6 @@
 #pragma once
 
-#include "FrameData.hpp"
+#include "HedgehogEngine/api/Frame/FrameData.hpp"
 #include "MaterialDef.hpp"
 
 #include <functional>
@@ -31,7 +31,7 @@ namespace FD
             const ECS::ECS&                              ecs,
             const Scene::LightSystem&                    lightSystem,
             const Scene::RenderSystem&                   renderSystem,
-            const HedgehogEngine::Camera&                       camera,
+            const HedgehogEngine::Camera&                camera,
             float                                        deltaTime,
             const std::function<MaterialType(uint64_t)>& materialTypeLookup) const;
 

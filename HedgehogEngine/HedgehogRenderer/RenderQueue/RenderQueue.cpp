@@ -10,7 +10,7 @@
 
 #include "HedgehogSettings/Settings/HedgehogSettings.hpp"
 
-#include "FrameData/FrameData.hpp"
+#include "HedgehogEngine/api/Frame/FrameData.hpp"
 
 #include "RHI/api/IRHIDevice.hpp"
 #include "RHI/api/IRHISwapchain.hpp"

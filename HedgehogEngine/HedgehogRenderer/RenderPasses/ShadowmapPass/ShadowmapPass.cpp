@@ -1,7 +1,7 @@
 #include "ShadowmapPass.hpp"
 #include "ShadowmapPassPushConstants.hpp"
 
-#include "FrameData/FrameData.hpp"
+#include "HedgehogEngine/api/Frame/FrameData.hpp"
 
 #include "HedgehogCommon/api/RendererSettings.hpp"
 

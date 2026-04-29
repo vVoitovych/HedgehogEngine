@@ -31,11 +31,17 @@
     <Filter Include="api\ECS\systems">
       <UniqueIdentifier>{507133CA-BCFC-A08E-C50D-24833118FD8E}</UniqueIdentifier>
     </Filter>
+    <Filter Include="api\Frame">
+      <UniqueIdentifier>{B9C08877-252B-3DEE-6E69-EE93DA121B43}</UniqueIdentifier>
+    </Filter>
     <Filter Include="src">
       <UniqueIdentifier>{2DAB880B-99B4-887C-2230-9F7C8E38947C}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\ECS">
       <UniqueIdentifier>{F76D2FA9-634D-AE44-6C65-391BD8C314A6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Frame">
+      <UniqueIdentifier>{07F0EEB2-735A-A329-BC98-54CF2842817E}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -117,8 +123,17 @@
     <ClInclude Include="api\ECS\systems\TransformSystem.hpp">
       <Filter>api\ECS\systems</Filter>
     </ClInclude>
+    <ClInclude Include="api\Frame\FrameData.hpp">
+      <Filter>api\Frame</Filter>
+    </ClInclude>
     <ClInclude Include="api\HedgehogEngineApi.hpp">
       <Filter>api</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Frame\FrameDataBuilder.hpp">
+      <Filter>src\Frame</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Frame\MaterialDef.hpp">
+      <Filter>src\Frame</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -178,6 +193,9 @@
     </ClCompile>
     <ClCompile Include="src\ECS\TransformSystem.cpp">
       <Filter>src\ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Frame\FrameDataBuilder.cpp">
+      <Filter>src\Frame</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

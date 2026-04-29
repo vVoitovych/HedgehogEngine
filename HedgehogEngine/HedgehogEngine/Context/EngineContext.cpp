@@ -30,7 +30,7 @@
 #include "HedgehogEngine/api/ECS/GameObjectHelpers.hpp"
 #include "HedgehogEngine/api/ECS/SceneSerializer.hpp"
 
-#include "FrameData/FrameDataBuilder.hpp"
+#include "HedgehogEngine/src/Frame/FrameDataBuilder.hpp"
 
 #include <filesystem>
 

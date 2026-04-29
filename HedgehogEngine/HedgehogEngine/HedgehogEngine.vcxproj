@@ -129,7 +129,10 @@ IF EXIST ..\..\Binaries\windows-x86_64\Release\HedgehogEngine\HedgehogEngine.dll
     <ClInclude Include="api\ECS\systems\RenderSystem.hpp" />
     <ClInclude Include="api\ECS\systems\ScriptSystem.hpp" />
     <ClInclude Include="api\ECS\systems\TransformSystem.hpp" />
+    <ClInclude Include="api\Frame\FrameData.hpp" />
     <ClInclude Include="api\HedgehogEngineApi.hpp" />
+    <ClInclude Include="src\Frame\FrameDataBuilder.hpp" />
+    <ClInclude Include="src\Frame\MaterialDef.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Containers\LightContainer\LightContainer.cpp" />
@@ -151,11 +154,9 @@ IF EXIST ..\..\Binaries\windows-x86_64\Release\HedgehogEngine\HedgehogEngine.dll
     <ClCompile Include="src\ECS\SceneSerializer.cpp" />
     <ClCompile Include="src\ECS\ScriptSystem.cpp" />
     <ClCompile Include="src\ECS\TransformSystem.cpp" />
+    <ClCompile Include="src\Frame\FrameDataBuilder.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\FrameData\FrameData.vcxproj">
-      <Project>{6A2FD231-D699-86A8-1FD8-374E8B8164FD}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\HedgehogCommon\HedgehogCommon.vcxproj">
       <Project>{6925A5C6-55F3-98CC-3E87-09F32AF47431}</Project>
     </ProjectReference>

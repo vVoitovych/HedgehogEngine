@@ -4,7 +4,7 @@
 
 #include "ECS/api/ECS.hpp"
 #include "ECS/api/Entity.hpp"
-#include "FrameData/FrameData.hpp"
+#include "HedgehogEngine/api/Frame/FrameData.hpp"
 
 #include <memory>
 #include <string>
