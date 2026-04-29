@@ -32,6 +32,7 @@ namespace HedgehogEngine
     class TextureContainer;
     class LightContainer;
     class MaterialContainer;
+    class ComponentSerializerRegistry;
 
     class EngineContext
     {
@@ -72,6 +73,7 @@ namespace HedgehogEngine
 
     private:
         void InitECS();
+        void RegisterComponents();
         void UpdateCamera(WindowContext& windowContext, float aspectRatio, float dt);
 
     private:
@@ -95,6 +97,7 @@ namespace HedgehogEngine
 
         FD::FrameData m_FrameData;
 
-        std::unique_ptr<HedgehogSettings::Settings> m_Settings;
+        std::unique_ptr<HedgehogSettings::Settings>      m_Settings;
+        std::unique_ptr<ComponentSerializerRegistry>      m_ComponentRegistry;
     };
 }

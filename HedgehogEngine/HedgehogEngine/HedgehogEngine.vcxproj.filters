@@ -120,6 +120,9 @@
     <ClInclude Include="src\Containers\MaterialSerializer.hpp">
       <Filter>src\Containers</Filter>
     </ClInclude>
+    <ClInclude Include="src\ECS\ComponentSerializerRegistry.hpp">
+      <Filter>src\ECS</Filter>
+    </ClInclude>
     <ClInclude Include="src\Frame\FrameDataBuilder.hpp">
       <Filter>src\Frame</Filter>
     </ClInclude>

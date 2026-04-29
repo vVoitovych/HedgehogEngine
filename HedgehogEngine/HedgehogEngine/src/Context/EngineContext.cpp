@@ -29,6 +29,7 @@
 
 #include "HedgehogEngine/api/ECS/GameObjectHelpers.hpp"
 #include "HedgehogEngine/api/ECS/EcsSerializer.hpp"
+#include "HedgehogEngine/src/ECS/ComponentSerializerRegistry.hpp"
 
 #include "HedgehogEngine/src/Frame/FrameDataBuilder.hpp"
 
@@ -103,6 +104,92 @@ namespace HedgehogEngine
         m_ECS.SetSystemSignature<Scene::ScriptSystem>(signature);
 
         m_RootEntity = Components::CreateSceneRoot(m_ECS, *m_HierarchySystem);
+
+        RegisterComponents();
+    }
+
+    void EngineContext::RegisterComponents()
+    {
+        m_ComponentRegistry = std::make_unique<ComponentSerializerRegistry>();
+
+        m_ComponentRegistry->RegisterVisitable<Scene::TransformComponent>("TransformComponent");
+        m_ComponentRegistry->RegisterVisitable<Scene::MeshComponent>("MeshComponent");
+        m_ComponentRegistry->RegisterVisitable<Scene::RenderComponent>("RenderComponent");
+
+        // LightComponent: RegisterCustom to handle the "LightIntencity" backward-compat typo
+        m_ComponentRegistry->RegisterCustom("LightComponent",
+            [](YAML::Emitter& out, const ECS::ECS& ecs, ECS::Entity e)
+            {
+                ComponentSerializerRegistry::SerializeWithVisit<Scene::LightComponent>(out, ecs, e, "LightComponent");
+            },
+            [](ECS::ECS& ecs, ECS::Entity e, const YAML::Node& node)
+            {
+                ComponentSerializerRegistry::DeserializeWithVisit<Scene::LightComponent>(ecs, e, node);
+                auto& comp = ecs.GetComponent<Scene::LightComponent>(e);
+                if (!node["LightIntensity"] && node["LightIntencity"])
+                    comp.m_Intensity = node["LightIntencity"].as<float>();
+            },
+            [](const ECS::ECS& ecs, ECS::Entity e) { return ecs.HasComponent<Scene::LightComponent>(e); }
+        );
+
+        // ScriptComponent: RegisterCustom to handle m_Params and InitScript
+        Scene::ScriptSystem* scriptSys = m_ScriptSystem.get();
+        m_ComponentRegistry->RegisterCustom("ScriptComponent",
+            [](YAML::Emitter& out, const ECS::ECS& ecs, ECS::Entity e)
+            {
+                Scene::ScriptComponent& script = ecs.GetComponent<Scene::ScriptComponent>(e);
+                out << YAML::Key << "ScriptComponent" << YAML::BeginMap;
+                YamlWriter w{out};
+                script.Visit(w);
+                if (!script.m_Params.empty())
+                {
+                    out << YAML::Key << "ScriptParams" << YAML::BeginMap;
+                    for (const auto& [name, param] : script.m_Params)
+                    {
+                        out << YAML::Key << name << YAML::BeginMap;
+                        out << YAML::Key << "ParamType" << YAML::Value << static_cast<size_t>(param.type);
+                        switch (param.type)
+                        {
+                        case Scene::ParamType::Boolean:
+                            out << YAML::Key << "ParamValue" << YAML::Value << std::get<bool>(param.value);
+                            break;
+                        case Scene::ParamType::Number:
+                            out << YAML::Key << "ParamValue" << YAML::Value << std::get<float>(param.value);
+                            break;
+                        default: break;
+                        }
+                        out << YAML::EndMap;
+                    }
+                    out << YAML::EndMap;
+                }
+                out << YAML::EndMap;
+            },
+            [scriptSys](ECS::ECS& ecs, ECS::Entity e, const YAML::Node& node)
+            {
+                ComponentSerializerRegistry::DeserializeWithVisit<Scene::ScriptComponent>(ecs, e, node);
+                Scene::ScriptComponent& script = ecs.GetComponent<Scene::ScriptComponent>(e);
+                const YAML::Node params = node["ScriptParams"];
+                if (params && params.IsMap())
+                {
+                    for (const auto& param : params)
+                    {
+                        std::string               paramName = param.first.as<std::string>();
+                        const YAML::Node          data      = param.second;
+                        Scene::ParamType          type      = static_cast<Scene::ParamType>(data["ParamType"].as<size_t>());
+                        std::variant<bool, float> value;
+                        switch (type)
+                        {
+                        case Scene::ParamType::Boolean: value = data["ParamValue"].as<bool>();  break;
+                        case Scene::ParamType::Number:  value = data["ParamValue"].as<float>(); break;
+                        default: break;
+                        }
+                        script.m_Params[paramName] = { type, value, false };
+                    }
+                }
+                scriptSys->InitScript(e, ecs);
+            },
+            [](const ECS::ECS& ecs, ECS::Entity e) { return ecs.HasComponent<Scene::ScriptComponent>(e); }
+        );
     }
 
     void EngineContext::UpdateContext(WindowContext& windowContext, float aspectRatio, float dt)
@@ -159,8 +246,8 @@ namespace HedgehogEngine
     void EngineContext::LoadScene(const std::string& filePath)
     {
         Components::DeleteGameObjectAndChildren(m_ECS, m_RootEntity);
-        EcsSerializer::Deserialize(m_ECS, m_RootEntity, m_SceneName, filePath,
-            *m_HierarchySystem, *m_ScriptSystem);
+        EcsSerializer::Deserialize(*m_ComponentRegistry, m_ECS, m_RootEntity, m_SceneName, filePath);
+        m_HierarchySystem->SetRoot(m_RootEntity);
         m_MeshSystem->Update(m_ECS);
         m_RenderSystem->UpdateSystem(m_ECS);
     }
@@ -169,7 +256,7 @@ namespace HedgehogEngine
     {
         const std::string sceneName = std::filesystem::path(filePath).stem().string();
         m_SceneName = sceneName;
-        EcsSerializer::Serialize(m_ECS, m_RootEntity, m_SceneName, filePath);
+        EcsSerializer::Serialize(*m_ComponentRegistry, m_ECS, m_RootEntity, m_SceneName, filePath);
     }
 
     void EngineContext::ResetScene()

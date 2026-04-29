@@ -131,6 +131,7 @@ IF EXIST ..\..\Binaries\windows-x86_64\Release\HedgehogEngine\HedgehogEngine.dll
     <ClInclude Include="api\HedgehogEngineApi.hpp" />
     <ClInclude Include="api\WindowContext.hpp" />
     <ClInclude Include="src\Containers\MaterialSerializer.hpp" />
+    <ClInclude Include="src\ECS\ComponentSerializerRegistry.hpp" />
     <ClInclude Include="src\Frame\FrameDataBuilder.hpp" />
     <ClInclude Include="src\Frame\MaterialDef.hpp" />
   </ItemGroup>
