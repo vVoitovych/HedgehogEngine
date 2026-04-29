@@ -23,7 +23,18 @@ namespace Scene
 
         bool m_CastShadows = false;
 
-        HM::Vector3 m_Position  = HM::Vector3(0.0f, 0.0f, 0.0f);
-        HM::Vector3 m_Direction = HM::Vector3(0.0f, 0.0f, 0.0f);
+        HM::Vector3 m_Position  = HM::Vector3(0.0f, 0.0f, 0.0f); // runtime: filled by LightSystem
+        HM::Vector3 m_Direction = HM::Vector3(0.0f, 0.0f, 0.0f); // runtime: filled by LightSystem
+
+        template<typename V>
+        void Visit(V& v)
+        {
+            v("LightEnabled",   m_Enable);
+            v("LightType",      m_LightType);
+            v("LightColor",     m_Color);
+            v("LightIntensity", m_Intensity);
+            v("LightRadius",    m_Radius);
+            v("LightConeAngle", m_ConeAngle);
+        }
     };
 }

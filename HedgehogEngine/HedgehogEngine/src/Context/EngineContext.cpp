@@ -28,7 +28,7 @@
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
 
 #include "HedgehogEngine/api/ECS/GameObjectHelpers.hpp"
-#include "HedgehogEngine/api/ECS/SceneSerializer.hpp"
+#include "HedgehogEngine/api/ECS/EcsSerializer.hpp"
 
 #include "HedgehogEngine/src/Frame/FrameDataBuilder.hpp"
 
@@ -159,7 +159,7 @@ namespace HedgehogEngine
     void EngineContext::LoadScene(const std::string& filePath)
     {
         Components::DeleteGameObjectAndChildren(m_ECS, m_RootEntity);
-        Components::SceneSerializer::DeserializeScene(m_ECS, m_RootEntity, m_SceneName, filePath,
+        EcsSerializer::DeserializeScene(m_ECS, m_RootEntity, m_SceneName, filePath,
             *m_HierarchySystem, *m_ScriptSystem);
         m_MeshSystem->Update(m_ECS);
         m_RenderSystem->UpdateSystem(m_ECS);
@@ -169,7 +169,7 @@ namespace HedgehogEngine
     {
         const std::string sceneName = std::filesystem::path(filePath).stem().string();
         m_SceneName = sceneName;
-        Components::SceneSerializer::SerializeScene(m_ECS, m_RootEntity, m_SceneName, filePath);
+        EcsSerializer::SerializeScene(m_ECS, m_RootEntity, m_SceneName, filePath);
     }
 
     void EngineContext::ResetScene()

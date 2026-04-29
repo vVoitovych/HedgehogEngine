@@ -1,4 +1,4 @@
-#include "HedgehogEngine/api/ECS/SceneSerializer.hpp"
+#include "HedgehogEngine/api/ECS/EcsSerializer.hpp"
 
 #include "HedgehogEngine/api/ECS/systems/HierarchySystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/ScriptSystem.hpp"
@@ -92,7 +92,7 @@ namespace YAML
     };
 }
 
-namespace Components
+namespace HedgehogEngine
 {
 namespace
 {
@@ -103,78 +103,91 @@ namespace
         return out;
     }
 
-    std::string GetSceneNameFromPath(const std::string& inPath)
+    struct YamlWriter
     {
-        return std::filesystem::path(inPath).stem().string();
-    }
+        YAML::Emitter& m_Out;
+
+        template<typename T>
+        void operator()(const char* key, T& val)
+        {
+            if constexpr (std::is_enum_v<T>)
+                m_Out << YAML::Key << key << YAML::Value << static_cast<size_t>(val);
+            else
+                m_Out << YAML::Key << key << YAML::Value << val;
+        }
+    };
+
+    struct YamlReader
+    {
+        const YAML::Node& m_Node;
+
+        template<typename T>
+        void operator()(const char* key, T& val)
+        {
+            if (!m_Node[key]) return;
+            if constexpr (std::is_enum_v<T>)
+                val = static_cast<T>(m_Node[key].as<size_t>());
+            else
+                val = m_Node[key].as<T>();
+        }
+    };
 
     void SerializeEntity(YAML::Emitter& out, const ECS::ECS& ecs, ECS::Entity entity)
     {
         auto& hierarchy = ecs.GetComponent<Scene::HierarchyComponent>(entity);
-        auto& transform = ecs.GetComponent<Scene::TransformComponent>(entity);
 
         out << YAML::BeginMap;
-        out << YAML::Key << "Entity"  << YAML::Value << entity;
-        out << YAML::Key << "Name"    << YAML::Value << hierarchy.m_Name;
-        out << YAML::Key << "Parent"  << YAML::Value << hierarchy.m_Parent;
+        out << YAML::Key << "Entity" << YAML::Value << entity;
+        out << YAML::Key << "Name"   << YAML::Value << hierarchy.m_Name;
+        out << YAML::Key << "Parent" << YAML::Value << hierarchy.m_Parent;
 
         {
-            out << YAML::Key << "TransformComponent";
-            out << YAML::BeginMap;
-            out << YAML::Key << "Position" << YAML::Value << transform.m_Position;
-            out << YAML::Key << "Rotation" << YAML::Value << transform.m_Rotation;
-            out << YAML::Key << "Scale"    << YAML::Value << transform.m_Scale;
+            auto& transform = ecs.GetComponent<Scene::TransformComponent>(entity);
+            out << YAML::Key << "TransformComponent" << YAML::BeginMap;
+            YamlWriter w{out};
+            const_cast<Scene::TransformComponent&>(transform).Visit(w);
             out << YAML::EndMap;
         }
 
         if (ecs.HasComponent<Scene::MeshComponent>(entity))
         {
             auto& mesh = ecs.GetComponent<Scene::MeshComponent>(entity);
-            out << YAML::Key << "MeshComponent";
-            out << YAML::BeginMap;
-            out << YAML::Key << "MeshPath" << YAML::Value << mesh.m_MeshPath;
+            out << YAML::Key << "MeshComponent" << YAML::BeginMap;
+            YamlWriter w{out};
+            const_cast<Scene::MeshComponent&>(mesh).Visit(w);
             out << YAML::EndMap;
         }
 
         if (ecs.HasComponent<Scene::LightComponent>(entity))
         {
             auto& light = ecs.GetComponent<Scene::LightComponent>(entity);
-            out << YAML::Key << "LightComponent";
-            out << YAML::BeginMap;
-            out << YAML::Key << "LightEnabled"   << YAML::Value << light.m_Enable;
-            out << YAML::Key << "LightType"      << YAML::Value << static_cast<size_t>(light.m_LightType);
-            out << YAML::Key << "LightColor"     << YAML::Value << light.m_Color;
-            out << YAML::Key << "LightIntensity" << YAML::Value << light.m_Intensity;
-            out << YAML::Key << "LightRadius"    << YAML::Value << light.m_Radius;
-            out << YAML::Key << "LightConeAngle" << YAML::Value << light.m_ConeAngle;
+            out << YAML::Key << "LightComponent" << YAML::BeginMap;
+            YamlWriter w{out};
+            const_cast<Scene::LightComponent&>(light).Visit(w);
             out << YAML::EndMap;
         }
 
         if (ecs.HasComponent<Scene::RenderComponent>(entity))
         {
-            auto& renderComponent = ecs.GetComponent<Scene::RenderComponent>(entity);
-            out << YAML::Key << "RenderComponent";
-            out << YAML::BeginMap;
-            out << YAML::Key << "Visible"  << YAML::Value << renderComponent.m_IsVisible;
-            out << YAML::Key << "Material" << YAML::Value << renderComponent.m_Material;
+            auto& render = ecs.GetComponent<Scene::RenderComponent>(entity);
+            out << YAML::Key << "RenderComponent" << YAML::BeginMap;
+            YamlWriter w{out};
+            const_cast<Scene::RenderComponent&>(render).Visit(w);
             out << YAML::EndMap;
         }
 
         if (ecs.HasComponent<Scene::ScriptComponent>(entity))
         {
-            auto& scriptComponent = ecs.GetComponent<Scene::ScriptComponent>(entity);
-            out << YAML::Key << "ScriptComponent";
-            out << YAML::BeginMap;
-            out << YAML::Key << "ScriptEnable" << YAML::Value << scriptComponent.m_Enable;
-            out << YAML::Key << "ScriptFile"   << YAML::Value << scriptComponent.m_ScriptPath;
-            if (!scriptComponent.m_Params.empty())
+            auto& script = ecs.GetComponent<Scene::ScriptComponent>(entity);
+            out << YAML::Key << "ScriptComponent" << YAML::BeginMap;
+            YamlWriter w{out};
+            const_cast<Scene::ScriptComponent&>(script).Visit(w);
+            if (!script.m_Params.empty())
             {
-                out << YAML::Key << "ScriptParams";
-                out << YAML::BeginMap;
-                for (auto& param : scriptComponent.m_Params)
+                out << YAML::Key << "ScriptParams" << YAML::BeginMap;
+                for (auto& param : script.m_Params)
                 {
-                    out << YAML::Key << param.first;
-                    out << YAML::BeginMap;
+                    out << YAML::Key << param.first << YAML::BeginMap;
                     out << YAML::Key << "ParamType" << YAML::Value << static_cast<size_t>(param.second.type);
                     switch (param.second.type)
                     {
@@ -214,51 +227,47 @@ namespace
         auto transformData = node["TransformComponent"];
         if (transformData)
         {
-            transform.m_Position = transformData["Position"].as<HM::Vector3>();
-            transform.m_Rotation = transformData["Rotation"].as<HM::Vector3>();
-            transform.m_Scale    = transformData["Scale"].as<HM::Vector3>();
+            YamlReader r{transformData};
+            transform.Visit(r);
         }
 
         auto meshNode = node["MeshComponent"];
         if (meshNode)
         {
             ecs.AddComponent(entity, Scene::MeshComponent{});
-            auto& meshComponent      = ecs.GetComponent<Scene::MeshComponent>(entity);
-            meshComponent.m_MeshPath = meshNode["MeshPath"].as<std::string>();
+            auto& mesh = ecs.GetComponent<Scene::MeshComponent>(entity);
+            YamlReader r{meshNode};
+            mesh.Visit(r);
         }
 
         auto lightNode = node["LightComponent"];
         if (lightNode)
         {
             ecs.AddComponent(entity, Scene::LightComponent{});
-            auto& lightComponent       = ecs.GetComponent<Scene::LightComponent>(entity);
-            lightComponent.m_Enable    = lightNode["LightEnabled"].as<bool>();
-            lightComponent.m_LightType = static_cast<Scene::LightType>(lightNode["LightType"].as<size_t>());
-            lightComponent.m_Color     = lightNode["LightColor"].as<HM::Vector3>();
-            if (lightNode["LightIntensity"])
-                lightComponent.m_Intensity = lightNode["LightIntensity"].as<float>();
-            else if (lightNode["LightIntencity"])
-                lightComponent.m_Intensity = lightNode["LightIntencity"].as<float>();
-            lightComponent.m_Radius    = lightNode["LightRadius"].as<float>();
-            lightComponent.m_ConeAngle = lightNode["LightConeAngle"].as<float>();
+            auto& light = ecs.GetComponent<Scene::LightComponent>(entity);
+            YamlReader r{lightNode};
+            light.Visit(r);
+            // Backward-compat: old files used "LightIntencity" (typo)
+            if (!lightNode["LightIntensity"] && lightNode["LightIntencity"])
+                light.m_Intensity = lightNode["LightIntencity"].as<float>();
         }
 
         auto renderNode = node["RenderComponent"];
         if (renderNode)
         {
             ecs.AddComponent(entity, Scene::RenderComponent{});
-            auto& renderComponent       = ecs.GetComponent<Scene::RenderComponent>(entity);
-            renderComponent.m_IsVisible = renderNode["Visible"].as<bool>();
-            renderComponent.m_Material  = renderNode["Material"].as<std::string>();
+            auto& render = ecs.GetComponent<Scene::RenderComponent>(entity);
+            YamlReader r{renderNode};
+            render.Visit(r);
         }
 
         auto scriptNode = node["ScriptComponent"];
         if (scriptNode)
         {
             ecs.AddComponent(entity, Scene::ScriptComponent{});
-            auto& scriptComponent        = ecs.GetComponent<Scene::ScriptComponent>(entity);
-            scriptComponent.m_Enable     = scriptNode["ScriptEnable"].as<bool>();
-            scriptComponent.m_ScriptPath = scriptNode["ScriptFile"].as<std::string>();
+            auto& script = ecs.GetComponent<Scene::ScriptComponent>(entity);
+            YamlReader r{scriptNode};
+            script.Visit(r);
 
             auto parameters = scriptNode["ScriptParams"];
             if (parameters && parameters.IsMap())
@@ -280,7 +289,7 @@ namespace
                     default:
                         break;
                     }
-                    scriptComponent.m_Params[paramName] = { type, value, false };
+                    script.m_Params[paramName] = { type, value, false };
                 }
             }
             scriptSystem.InitScript(entity, ecs);
@@ -292,15 +301,14 @@ namespace
         auto children = node["Children"];
         for (auto child : children)
         {
-            auto childEntity = child["Entity"].as<ECS::Entity>();
-            hierarchy.m_Children.push_back(childEntity);
+            hierarchy.m_Children.push_back(child["Entity"].as<ECS::Entity>());
             DeserializeEntity(ecs, child, scriptSystem);
         }
     }
 }
 
-    void SceneSerializer::SerializeScene(const ECS::ECS& ecs, ECS::Entity root,
-                                         const std::string& sceneName, const std::string& filePath)
+    void EcsSerializer::SerializeScene(const ECS::ECS& ecs, ECS::Entity root,
+                                        const std::string& sceneName, const std::string& filePath)
     {
         LOGINFO("SerializeScene: ", filePath);
 
@@ -316,10 +324,10 @@ namespace
         fout << out.c_str();
     }
 
-    void SceneSerializer::DeserializeScene(ECS::ECS& ecs, ECS::Entity& outRoot,
-                                            std::string& outSceneName, const std::string& filePath,
-                                            Scene::HierarchySystem& hierarchySystem,
-                                            Scene::ScriptSystem& scriptSystem)
+    void EcsSerializer::DeserializeScene(ECS::ECS& ecs, ECS::Entity& outRoot,
+                                          std::string& outSceneName, const std::string& filePath,
+                                          Scene::HierarchySystem& hierarchySystem,
+                                          Scene::ScriptSystem& scriptSystem)
     {
         LOGINFO("DeserializeScene: ", filePath);
 

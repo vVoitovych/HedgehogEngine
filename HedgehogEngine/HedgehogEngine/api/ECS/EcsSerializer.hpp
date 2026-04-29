@@ -13,9 +13,9 @@ namespace Scene
     class ScriptSystem;
 }
 
-namespace Components
+namespace HedgehogEngine
 {
-    class SceneSerializer
+    class EcsSerializer
     {
     public:
         HEDGEHOG_ENGINE_API static void SerializeScene(const ECS::ECS& ecs, ECS::Entity root,

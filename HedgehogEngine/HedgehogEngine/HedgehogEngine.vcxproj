@@ -109,8 +109,8 @@ IF EXIST ..\..\Binaries\windows-x86_64\Release\HedgehogEngine\HedgehogEngine.dll
     <ClInclude Include="api\Containers\Mesh.hpp" />
     <ClInclude Include="api\Containers\MeshContainer.hpp" />
     <ClInclude Include="api\Containers\TextureContainer.hpp" />
+    <ClInclude Include="api\ECS\EcsSerializer.hpp" />
     <ClInclude Include="api\ECS\GameObjectHelpers.hpp" />
-    <ClInclude Include="api\ECS\SceneSerializer.hpp" />
     <ClInclude Include="api\ECS\components\HierarchyComponent.hpp" />
     <ClInclude Include="api\ECS\components\LightComponent.hpp" />
     <ClInclude Include="api\ECS\components\MeshComponent.hpp" />
@@ -145,13 +145,13 @@ IF EXIST ..\..\Binaries\windows-x86_64\Release\HedgehogEngine\HedgehogEngine.dll
     <ClCompile Include="src\Context\FrameContext.cpp" />
     <ClCompile Include="src\Context\HedgehogEngine.cpp" />
     <ClCompile Include="src\Context\WindowContext.cpp" />
+    <ClCompile Include="src\ECS\EcsSerializer.cpp" />
     <ClCompile Include="src\ECS\GameObjectHelpers.cpp" />
     <ClCompile Include="src\ECS\HierarchySystem.cpp" />
     <ClCompile Include="src\ECS\LightSystem.cpp" />
     <ClCompile Include="src\ECS\LuaHelpers.cpp" />
     <ClCompile Include="src\ECS\MeshSystem.cpp" />
     <ClCompile Include="src\ECS\RenderSystem.cpp" />
-    <ClCompile Include="src\ECS\SceneSerializer.cpp" />
     <ClCompile Include="src\ECS\ScriptSystem.cpp" />
     <ClCompile Include="src\ECS\TransformSystem.cpp" />
     <ClCompile Include="src\Frame\FrameDataBuilder.cpp" />
