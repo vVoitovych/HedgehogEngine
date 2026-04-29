@@ -17,11 +17,11 @@ namespace HedgehogEngine
 
         HEDGEHOG_ENGINE_API std::vector<HM::Vector3> GetPositions() const;
         HEDGEHOG_ENGINE_API std::vector<HM::Vector2> GetTexCoords() const;
-        HEDGEHOG_ENGINE_API std::vector<HM::Vector3> GetNormals() const;
-        HEDGEHOG_ENGINE_API std::vector<uint32_t>    GetIndices() const;
+        HEDGEHOG_ENGINE_API std::vector<HM::Vector3> GetNormals()   const;
+        HEDGEHOG_ENGINE_API std::vector<uint32_t>    GetIndices()   const;
 
-        HEDGEHOG_ENGINE_API uint32_t GetIndexCount() const;
-        HEDGEHOG_ENGINE_API uint32_t GetFirstIndex() const;
+        HEDGEHOG_ENGINE_API uint32_t GetIndexCount()   const;
+        HEDGEHOG_ENGINE_API uint32_t GetFirstIndex()   const;
         HEDGEHOG_ENGINE_API uint32_t GetVertexOffset() const;
 
         HEDGEHOG_ENGINE_API void SetFirstIndex(uint32_t firstIndex);
@@ -34,11 +34,8 @@ namespace HedgehogEngine
 
         std::vector<uint32_t> m_IndicesData;
 
-        uint32_t m_IndexCount;
-        uint32_t m_FirstIndex;
-        uint32_t m_VertexOffset;
-
+        uint32_t m_IndexCount    = 0;
+        uint32_t m_FirstIndex    = 0;
+        uint32_t m_VertexOffset  = 0;
     };
 }
-
-

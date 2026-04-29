@@ -1,11 +1,11 @@
-#include "EngineContext.hpp"
-#include "WindowContext.hpp"
+#include "HedgehogEngine/api/EngineContext.hpp"
+#include "HedgehogEngine/api/WindowContext.hpp"
 
-#include "HedgehogEngine/Containers/MeshContainer/MeshContainer.hpp"
-#include "HedgehogEngine/Containers/TextureContainer/TextureContainer.hpp"
-#include "HedgehogEngine/Containers/LightContainer/LightContainer.hpp"
-#include "HedgehogEngine/Containers/MaterialContainer/MaterialContainer.hpp"
-#include "HedgehogEngine/Containers/MaterialContainer/MaterialData.hpp"
+#include "HedgehogEngine/api/Containers/MeshContainer.hpp"
+#include "HedgehogEngine/api/Containers/TextureContainer.hpp"
+#include "HedgehogEngine/api/Containers/LightContainer.hpp"
+#include "HedgehogEngine/api/Containers/MaterialContainer.hpp"
+#include "HedgehogEngine/api/Containers/MaterialData.hpp"
 
 #include "HedgehogEngine/HedgehogWindow/api/InputState.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
@@ -131,100 +131,30 @@ namespace HedgehogEngine
             *m_Camera, dt, materialTypeLookup);
     }
 
-    const MeshContainer& EngineContext::GetMeshContainer() const
-    {
-        return *m_MeshContainer;
-    }
+    const MeshContainer& EngineContext::GetMeshContainer() const     { return *m_MeshContainer; }
+    const TextureContainer& EngineContext::GetTextureContainer() const { return *m_TextureContainer; }
+    TextureContainer& EngineContext::GetTextureContainer()             { return *m_TextureContainer; }
+    const LightContainer& EngineContext::GetLightContainer() const     { return *m_LightContainer; }
+    const MaterialContainer& EngineContext::GetMaterialContainer() const { return *m_MaterialContainer; }
+    MaterialContainer& EngineContext::GetMaterialContainer()             { return *m_MaterialContainer; }
 
-    const TextureContainer& EngineContext::GetTextureContainer() const
-    {
-        return *m_TextureContainer;
-    }
+    const FD::FrameData& EngineContext::GetFrameData() const { return m_FrameData; }
 
-    TextureContainer& EngineContext::GetTextureContainer()
-    {
-        return *m_TextureContainer;
-    }
+    HedgehogSettings::Settings& EngineContext::GetSettings()             { return *m_Settings; }
+    const HedgehogSettings::Settings& EngineContext::GetSettings() const { return *m_Settings; }
 
-    const LightContainer& EngineContext::GetLightContainer() const
-    {
-        return *m_LightContainer;
-    }
+    const Camera& EngineContext::GetCamera() const { return *m_Camera; }
 
-    const MaterialContainer& EngineContext::GetMaterialContainer() const
-    {
-        return *m_MaterialContainer;
-    }
+    ECS::ECS&   EngineContext::GetECS()            { return m_ECS; }
+    ECS::Entity EngineContext::GetRootEntity() const { return m_RootEntity; }
+    std::string EngineContext::GetSceneName()  const { return m_SceneName; }
 
-    MaterialContainer& EngineContext::GetMaterialContainer()
-    {
-        return *m_MaterialContainer;
-    }
-
-    const FD::FrameData& EngineContext::GetFrameData() const
-    {
-        return m_FrameData;
-    }
-
-    HedgehogSettings::Settings& EngineContext::GetSettings()
-    {
-        return *m_Settings;
-    }
-
-    const HedgehogSettings::Settings& EngineContext::GetSettings() const
-    {
-        return *m_Settings;
-    }
-
-    const Camera& EngineContext::GetCamera() const
-    {
-        return *m_Camera;
-    }
-
-    ECS::ECS& EngineContext::GetECS()
-    {
-        return m_ECS;
-    }
-
-    ECS::Entity EngineContext::GetRootEntity() const
-    {
-        return m_RootEntity;
-    }
-
-    std::string EngineContext::GetSceneName() const
-    {
-        return m_SceneName;
-    }
-
-    Scene::TransformSystem* EngineContext::GetTransformSystem() const
-    {
-        return m_TransformSystem.get();
-    }
-
-    Scene::HierarchySystem* EngineContext::GetHierarchySystem() const
-    {
-        return m_HierarchySystem.get();
-    }
-
-    Scene::MeshSystem* EngineContext::GetMeshSystem() const
-    {
-        return m_MeshSystem.get();
-    }
-
-    Scene::LightSystem* EngineContext::GetLightSystem() const
-    {
-        return m_LightSystem.get();
-    }
-
-    Scene::RenderSystem* EngineContext::GetRenderSystem() const
-    {
-        return m_RenderSystem.get();
-    }
-
-    Scene::ScriptSystem* EngineContext::GetScriptSystem() const
-    {
-        return m_ScriptSystem.get();
-    }
+    Scene::TransformSystem*  EngineContext::GetTransformSystem()  const { return m_TransformSystem.get(); }
+    Scene::HierarchySystem*  EngineContext::GetHierarchySystem()  const { return m_HierarchySystem.get(); }
+    Scene::MeshSystem*       EngineContext::GetMeshSystem()       const { return m_MeshSystem.get(); }
+    Scene::LightSystem*      EngineContext::GetLightSystem()      const { return m_LightSystem.get(); }
+    Scene::RenderSystem*     EngineContext::GetRenderSystem()     const { return m_RenderSystem.get(); }
+    Scene::ScriptSystem*     EngineContext::GetScriptSystem()     const { return m_ScriptSystem.get(); }
 
     void EngineContext::LoadScene(const std::string& filePath)
     {
@@ -261,18 +191,12 @@ namespace HedgehogEngine
         HM::Vector3 posOffset(0.0f, 0.0f, 0.0f);
         HM::Vector2 dirOffset(inputState.m_MouseDelta.x(), inputState.m_MouseDelta.y());
 
-        if (inputState.m_KeyQ)
-            posOffset.z() = -1.0f;
-        if (inputState.m_KeyE)
-            posOffset.z() = 1.0f;
-        if (inputState.m_KeyW)
-            posOffset.x() = 1.0f;
-        if (inputState.m_KeyS)
-            posOffset.x() = -1.0f;
-        if (inputState.m_KeyD)
-            posOffset.y() = -1.0f;
-        if (inputState.m_KeyA)
-            posOffset.y() = 1.0f;
+        if (inputState.m_KeyQ) posOffset.z() = -1.0f;
+        if (inputState.m_KeyE) posOffset.z() =  1.0f;
+        if (inputState.m_KeyW) posOffset.x() =  1.0f;
+        if (inputState.m_KeyS) posOffset.x() = -1.0f;
+        if (inputState.m_KeyD) posOffset.y() = -1.0f;
+        if (inputState.m_KeyA) posOffset.y() =  1.0f;
 
         m_Camera->UpdateCamera(dt, aspectRatio, posOffset, dirOffset);
     }

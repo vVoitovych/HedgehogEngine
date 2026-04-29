@@ -1,5 +1,5 @@
-#include "MaterialContainer.hpp"
-#include "MaterialData.hpp"
+#include "HedgehogEngine/api/Containers/MaterialContainer.hpp"
+#include "HedgehogEngine/api/Containers/MaterialData.hpp"
 #include "MaterialSerializer.hpp"
 
 #include "DialogueWindows/api/MaterialDialogue.hpp"

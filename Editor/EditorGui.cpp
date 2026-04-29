@@ -1,12 +1,12 @@
 #include "EditorGui.hpp"
 #include "Panels/ConsolePanel.hpp"
 
-#include "HedgehogEngine/HedgehogEngine/Context/HedgehogEngine.hpp"
-#include "HedgehogEngine/HedgehogEngine/Context/EngineContext.hpp"
-#include "HedgehogEngine/HedgehogEngine/Containers/MaterialContainer/MaterialContainer.hpp"
-#include "HedgehogEngine/HedgehogEngine/Containers/MaterialContainer/MaterialData.hpp"
-#include "HedgehogEngine/HedgehogEngine/Containers/MeshContainer/MeshContainer.hpp"
-#include "HedgehogEngine/HedgehogEngine/Containers/TextureContainer/TextureContainer.hpp"
+#include "HedgehogEngine/api/HedgehogEngine.hpp"
+#include "HedgehogEngine/api/EngineContext.hpp"
+#include "HedgehogEngine/api/Containers/MaterialContainer.hpp"
+#include "HedgehogEngine/api/Containers/MaterialData.hpp"
+#include "HedgehogEngine/api/Containers/MeshContainer.hpp"
+#include "HedgehogEngine/api/Containers/TextureContainer.hpp"
 #include "HedgehogEngine/HedgehogSettings/Settings/HedgehogSettings.hpp"
 #include "HedgehogEngine/HedgehogSettings/Settings/ShadowmapingSettings.hpp"
 

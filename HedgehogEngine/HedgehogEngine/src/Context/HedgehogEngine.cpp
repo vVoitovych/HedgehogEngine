@@ -1,8 +1,8 @@
-#include "HedgehogEngine.hpp"
+#include "HedgehogEngine/api/HedgehogEngine.hpp"
 
-#include "WindowContext.hpp"
-#include "EngineContext.hpp"
-#include "FrameContext.hpp"
+#include "HedgehogEngine/api/WindowContext.hpp"
+#include "HedgehogEngine/api/EngineContext.hpp"
+#include "HedgehogEngine/api/FrameContext.hpp"
 
 namespace HedgehogEngine
 {

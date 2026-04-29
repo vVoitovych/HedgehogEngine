@@ -103,17 +103,12 @@ IF EXIST ..\..\Binaries\windows-x86_64\Release\HedgehogEngine\HedgehogEngine.dll
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Containers\LightContainer\LightContainer.hpp" />
-    <ClInclude Include="Containers\MaterialContainer\MaterialContainer.hpp" />
-    <ClInclude Include="Containers\MaterialContainer\MaterialData.hpp" />
-    <ClInclude Include="Containers\MaterialContainer\MaterialSerializer.hpp" />
-    <ClInclude Include="Containers\MeshContainer\Mesh.hpp" />
-    <ClInclude Include="Containers\MeshContainer\MeshContainer.hpp" />
-    <ClInclude Include="Containers\TextureContainer\TextureContainer.hpp" />
-    <ClInclude Include="Context\EngineContext.hpp" />
-    <ClInclude Include="Context\FrameContext.hpp" />
-    <ClInclude Include="Context\HedgehogEngine.hpp" />
-    <ClInclude Include="Context\WindowContext.hpp" />
+    <ClInclude Include="api\Containers\LightContainer.hpp" />
+    <ClInclude Include="api\Containers\MaterialContainer.hpp" />
+    <ClInclude Include="api\Containers\MaterialData.hpp" />
+    <ClInclude Include="api\Containers\Mesh.hpp" />
+    <ClInclude Include="api\Containers\MeshContainer.hpp" />
+    <ClInclude Include="api\Containers\TextureContainer.hpp" />
     <ClInclude Include="api\ECS\GameObjectHelpers.hpp" />
     <ClInclude Include="api\ECS\SceneSerializer.hpp" />
     <ClInclude Include="api\ECS\components\HierarchyComponent.hpp" />
@@ -129,22 +124,27 @@ IF EXIST ..\..\Binaries\windows-x86_64\Release\HedgehogEngine\HedgehogEngine.dll
     <ClInclude Include="api\ECS\systems\RenderSystem.hpp" />
     <ClInclude Include="api\ECS\systems\ScriptSystem.hpp" />
     <ClInclude Include="api\ECS\systems\TransformSystem.hpp" />
+    <ClInclude Include="api\EngineContext.hpp" />
     <ClInclude Include="api\Frame\FrameData.hpp" />
+    <ClInclude Include="api\FrameContext.hpp" />
+    <ClInclude Include="api\HedgehogEngine.hpp" />
     <ClInclude Include="api\HedgehogEngineApi.hpp" />
+    <ClInclude Include="api\WindowContext.hpp" />
+    <ClInclude Include="src\Containers\MaterialSerializer.hpp" />
     <ClInclude Include="src\Frame\FrameDataBuilder.hpp" />
     <ClInclude Include="src\Frame\MaterialDef.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Containers\LightContainer\LightContainer.cpp" />
-    <ClCompile Include="Containers\MaterialContainer\MaterialContainer.cpp" />
-    <ClCompile Include="Containers\MaterialContainer\MaterialSerializer.cpp" />
-    <ClCompile Include="Containers\MeshContainer\Mesh.cpp" />
-    <ClCompile Include="Containers\MeshContainer\MeshContainer.cpp" />
-    <ClCompile Include="Containers\TextureContainer\TextureContainer.cpp" />
-    <ClCompile Include="Context\EngineContext.cpp" />
-    <ClCompile Include="Context\FrameContext.cpp" />
-    <ClCompile Include="Context\HedgehogEngine.cpp" />
-    <ClCompile Include="Context\WindowContext.cpp" />
+    <ClCompile Include="src\Containers\LightContainer.cpp" />
+    <ClCompile Include="src\Containers\MaterialContainer.cpp" />
+    <ClCompile Include="src\Containers\MaterialSerializer.cpp" />
+    <ClCompile Include="src\Containers\Mesh.cpp" />
+    <ClCompile Include="src\Containers\MeshContainer.cpp" />
+    <ClCompile Include="src\Containers\TextureContainer.cpp" />
+    <ClCompile Include="src\Context\EngineContext.cpp" />
+    <ClCompile Include="src\Context\FrameContext.cpp" />
+    <ClCompile Include="src\Context\HedgehogEngine.cpp" />
+    <ClCompile Include="src\Context\WindowContext.cpp" />
     <ClCompile Include="src\ECS\GameObjectHelpers.cpp" />
     <ClCompile Include="src\ECS\HierarchySystem.cpp" />
     <ClCompile Include="src\ECS\LightSystem.cpp" />

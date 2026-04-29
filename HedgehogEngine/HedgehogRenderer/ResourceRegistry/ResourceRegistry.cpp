@@ -2,11 +2,11 @@
 
 #include "ContentLoader/api/TextureLoader.hpp"
 
-#include "HedgehogEngine/Containers/MeshContainer/MeshContainer.hpp"
-#include "HedgehogEngine/Containers/MeshContainer/Mesh.hpp"
-#include "HedgehogEngine/Containers/MaterialContainer/MaterialContainer.hpp"
-#include "HedgehogEngine/Containers/MaterialContainer/MaterialData.hpp"
-#include "HedgehogEngine/Containers/TextureContainer/TextureContainer.hpp"
+#include "HedgehogEngine/api/Containers/MeshContainer.hpp"
+#include "HedgehogEngine/api/Containers/Mesh.hpp"
+#include "HedgehogEngine/api/Containers/MaterialContainer.hpp"
+#include "HedgehogEngine/api/Containers/MaterialData.hpp"
+#include "HedgehogEngine/api/Containers/TextureContainer.hpp"
 
 #include "HedgehogCommon/api/RendererSettings.hpp"
 

@@ -1,6 +1,7 @@
 #include "MaterialSerializer.hpp"
 
-#include "MaterialData.hpp"
+#include "HedgehogEngine/api/Containers/MaterialData.hpp"
+
 #include "Logger/api/Logger.hpp"
 #include "ContentLoader/api/CommonFunctions.hpp"
 
@@ -17,8 +18,8 @@ namespace HedgehogEngine
 
         YAML::Emitter out;
         out << YAML::BeginMap;
-        out << YAML::Key << "Type" << YAML::Value << static_cast<size_t>(material.type);
-        out << YAML::Key << "BaseColor" << YAML::Value << material.baseColor;
+        out << YAML::Key << "Type"         << YAML::Value << static_cast<size_t>(material.type);
+        out << YAML::Key << "BaseColor"    << YAML::Value << material.baseColor;
         out << YAML::Key << "Transparency" << YAML::Value << material.transparency;
         out << YAML::EndMap;
 
@@ -37,18 +38,12 @@ namespace HedgehogEngine
         }
         catch (YAML::ParserException e)
         {
-            LOGERROR("Failed to load scene: ", materialPath, " with error: ", e.what());
+            LOGERROR("Failed to load material: ", materialPath, " with error: ", e.what());
             return;
         }
-        material.path = ContentLoader::GetAssetRelativetlyPath(materialPath);
-        material.type =    static_cast<MaterialType>(data["Type"].as<size_t>());
-        material.baseColor = data["BaseColor"].as<std::string>();
-        material.transparency = data["Transparency"].as<float>();;
+        material.path         = ContentLoader::GetAssetRelativetlyPath(materialPath);
+        material.type         = static_cast<MaterialType>(data["Type"].as<size_t>());
+        material.baseColor    = data["BaseColor"].as<std::string>();
+        material.transparency = data["Transparency"].as<float>();
     }
-
 }
-
-
-
-
-

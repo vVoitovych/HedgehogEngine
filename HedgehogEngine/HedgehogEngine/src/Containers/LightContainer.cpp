@@ -1,4 +1,4 @@
-#include "LightContainer.hpp"
+#include "HedgehogEngine/api/Containers/LightContainer.hpp"
 
 #include "HedgehogEngine/api/ECS/systems/LightSystem.hpp"
 
@@ -31,7 +31,7 @@ namespace HedgehogEngine
             if (!lc.m_Enable)
                 continue;
 
-            auto& light      = m_Lights[counter];
+            auto& light       = m_Lights[counter];
             light.m_Position  = lc.m_Position;
             light.m_Direction = lc.m_Direction;
             light.m_Color     = lc.m_Color;

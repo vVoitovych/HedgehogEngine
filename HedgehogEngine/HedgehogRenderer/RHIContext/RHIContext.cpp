@@ -1,6 +1,6 @@
 #include "HedgehogRenderer/RHIContext/RHIContext.hpp"
 
-#include "HedgehogEngine/Context/WindowContext.hpp"
+#include "HedgehogEngine/api/WindowContext.hpp"
 
 #include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
 

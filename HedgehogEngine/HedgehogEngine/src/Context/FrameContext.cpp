@@ -1,21 +1,21 @@
-#include "FrameContext.hpp"
+#include "HedgehogEngine/api/FrameContext.hpp"
+
 #include "HedgehogCommon/api/Camera.hpp"
 
 namespace HedgehogEngine
 {
     void FrameContext::UpdateContext(const Camera& camera)
     {
-        m_CameraViewMatrix = camera.GetViewMatrix();
-        m_CameraProjMatrix = camera.GetProjectionMatrix();
+        m_CameraViewMatrix    = camera.GetViewMatrix();
+        m_CameraProjMatrix    = camera.GetProjectionMatrix();
         m_CameraViewProjMatrix = m_CameraProjMatrix * m_CameraViewMatrix;
 
-        bool succes = true;
-        m_CameraInvViewMatrix = m_CameraViewMatrix.Inverse(succes);
-        m_CameraInvProjMatrix = m_CameraProjMatrix.Inverse(succes);
-        m_CameraInvViewProjMatrix = m_CameraViewProjMatrix.Inverse(succes);
+        bool success = true;
+        m_CameraInvViewMatrix     = m_CameraViewMatrix.Inverse(success);
+        m_CameraInvProjMatrix     = m_CameraProjMatrix.Inverse(success);
+        m_CameraInvViewProjMatrix = m_CameraViewProjMatrix.Inverse(success);
 
         m_CameraPosition = camera.GetPosition();
-
     }
 
     HM::Matrix4x4 FrameContext::GetCameraViewMatrix() const
@@ -67,7 +67,4 @@ namespace HedgehogEngine
     {
         return m_BackBufferIndex;
     }
-
 }
-
-

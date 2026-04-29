@@ -1,8 +1,8 @@
 #include "Renderer.hpp"
 
-#include "HedgehogEngine/Context/HedgehogEngine.hpp"
-#include "HedgehogEngine/Context/WindowContext.hpp"
-#include "HedgehogEngine/Context/EngineContext.hpp"
+#include "HedgehogEngine/api/HedgehogEngine.hpp"
+#include "HedgehogEngine/api/WindowContext.hpp"
+#include "HedgehogEngine/api/EngineContext.hpp"
 
 #include "HedgehogRenderer/RHIContext/RHIContext.hpp"
 #include "HedgehogRenderer/ThreadContext/ThreadContext.hpp"

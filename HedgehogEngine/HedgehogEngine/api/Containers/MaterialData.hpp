@@ -16,14 +16,9 @@ namespace HedgehogEngine
         std::string path;
 
         MaterialType type;
-        std::string baseColor;
-        float transparency;
+        std::string  baseColor;
+        float        transparency;
 
         bool isDirty;
     };
-
 }
-
-
-
-

@@ -1,5 +1,5 @@
-#include "MeshContainer.hpp"
-#include "Mesh.hpp"
+#include "HedgehogEngine/api/Containers/MeshContainer.hpp"
+#include "HedgehogEngine/api/Containers/Mesh.hpp"
 
 #include "HedgehogEngine/api/ECS/systems/MeshSystem.hpp"
 

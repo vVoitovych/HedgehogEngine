@@ -1,8 +1,8 @@
 #include "Application.hpp"
 #include "EditorGui.hpp"
 
-#include "HedgehogEngine/HedgehogEngine/Context/HedgehogEngine.hpp"
-#include "HedgehogEngine/HedgehogEngine/Context/WindowContext.hpp"
+#include "HedgehogEngine/api/HedgehogEngine.hpp"
+#include "HedgehogEngine/api/WindowContext.hpp"
 #include "HedgehogEngine/HedgehogRenderer/Renderer/Renderer.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
 

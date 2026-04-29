@@ -2,10 +2,10 @@
 
 #include "HedgehogRenderer/ResourceRegistry/ResourceRegistry.hpp"
 
-#include "HedgehogEngine/Context/EngineContext.hpp"
-#include "HedgehogEngine/Containers/MeshContainer/MeshContainer.hpp"
-#include "HedgehogEngine/Containers/MaterialContainer/MaterialContainer.hpp"
-#include "HedgehogEngine/Containers/TextureContainer/TextureContainer.hpp"
+#include "HedgehogEngine/api/EngineContext.hpp"
+#include "HedgehogEngine/api/Containers/MeshContainer.hpp"
+#include "HedgehogEngine/api/Containers/MaterialContainer.hpp"
+#include "HedgehogEngine/api/Containers/TextureContainer.hpp"
 #include "HedgehogSettings/Settings/HedgehogSettings.hpp"
 #include "HedgehogSettings/Settings/ShadowmapingSettings.hpp"
 
