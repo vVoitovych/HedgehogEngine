@@ -307,10 +307,10 @@ namespace
     }
 }
 
-    void EcsSerializer::SerializeScene(const ECS::ECS& ecs, ECS::Entity root,
-                                        const std::string& sceneName, const std::string& filePath)
+    void EcsSerializer::Serialize(const ECS::ECS& ecs, ECS::Entity root,
+                                   const std::string& sceneName, const std::string& filePath)
     {
-        LOGINFO("SerializeScene: ", filePath);
+        LOGINFO("EcsSerializer::Serialize: ", filePath);
 
         YAML::Emitter out;
         out << YAML::BeginMap;
@@ -324,12 +324,12 @@ namespace
         fout << out.c_str();
     }
 
-    void EcsSerializer::DeserializeScene(ECS::ECS& ecs, ECS::Entity& outRoot,
-                                          std::string& outSceneName, const std::string& filePath,
-                                          Scene::HierarchySystem& hierarchySystem,
-                                          Scene::ScriptSystem& scriptSystem)
+    void EcsSerializer::Deserialize(ECS::ECS& ecs, ECS::Entity& outRoot,
+                                     std::string& outSceneName, const std::string& filePath,
+                                     Scene::HierarchySystem& hierarchySystem,
+                                     Scene::ScriptSystem& scriptSystem)
     {
-        LOGINFO("DeserializeScene: ", filePath);
+        LOGINFO("EcsSerializer::Deserialize: ", filePath);
 
         YAML::Node data;
         try

@@ -18,14 +18,14 @@ namespace HedgehogEngine
     class EcsSerializer
     {
     public:
-        HEDGEHOG_ENGINE_API static void SerializeScene(const ECS::ECS& ecs, ECS::Entity root,
-                                                        const std::string& sceneName,
-                                                        const std::string& filePath);
+        HEDGEHOG_ENGINE_API static void Serialize(const ECS::ECS& ecs, ECS::Entity root,
+                                                   const std::string& sceneName,
+                                                   const std::string& filePath);
 
-        HEDGEHOG_ENGINE_API static void DeserializeScene(ECS::ECS& ecs, ECS::Entity& outRoot,
-                                                          std::string& outSceneName,
-                                                          const std::string& filePath,
-                                                          Scene::HierarchySystem& hierarchySystem,
-                                                          Scene::ScriptSystem& scriptSystem);
+        HEDGEHOG_ENGINE_API static void Deserialize(ECS::ECS& ecs, ECS::Entity& outRoot,
+                                                     std::string& outSceneName,
+                                                     const std::string& filePath,
+                                                     Scene::HierarchySystem& hierarchySystem,
+                                                     Scene::ScriptSystem& scriptSystem);
     };
 }
