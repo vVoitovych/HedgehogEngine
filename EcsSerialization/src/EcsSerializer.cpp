@@ -1,23 +1,22 @@
-#include "HedgehogEngine/api/ECS/EcsSerializer.hpp"
-#include "HedgehogEngine/src/ECS/ComponentSerializerRegistry.hpp"
+#include "api/EcsSerializer.hpp"
+#include "api/ComponentSerializerRegistry.hpp"
 
-#include "HedgehogEngine/api/ECS/components/HierarchyComponent.hpp"
+#include "ECS/api/components/Hierarchy.hpp"
 
 #include "Logger/api/Logger.hpp"
 
 #include "yaml-cpp/yaml.h"
 
 #include <fstream>
-#include <filesystem>
 
-namespace HedgehogEngine
+namespace EcsSerialization
 {
 namespace
 {
     void SerializeEntity(YAML::Emitter& out, const ECS::ECS& ecs, ECS::Entity entity,
                          const ComponentSerializerRegistry& registry)
     {
-        auto& hierarchy = ecs.GetComponent<Scene::HierarchyComponent>(entity);
+        const auto& hierarchy = ecs.GetComponent<ECS::HierarchyComponent>(entity);
 
         out << YAML::BeginMap;
         out << YAML::Key << "Entity" << YAML::Value << entity;
@@ -42,7 +41,7 @@ namespace
     {
         ECS::Entity entity = node["Entity"].as<ECS::Entity>();
         ecs.CreateEntity(entity);
-        ecs.AddComponent(entity, Scene::HierarchyComponent{});
+        ecs.AddComponent(entity, ECS::HierarchyComponent{});
 
         for (const auto& handler : registry.GetHandlers())
         {
@@ -51,7 +50,7 @@ namespace
                 handler.m_Deserialize(ecs, entity, componentNode);
         }
 
-        auto& hierarchy    = ecs.GetComponent<Scene::HierarchyComponent>(entity);
+        auto& hierarchy    = ecs.GetComponent<ECS::HierarchyComponent>(entity);
         hierarchy.m_Name   = node["Name"].as<std::string>();
         hierarchy.m_Parent = node["Parent"].as<ECS::Entity>();
 

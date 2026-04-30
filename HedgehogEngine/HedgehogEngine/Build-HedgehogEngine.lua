@@ -24,6 +24,7 @@ project "HedgehogEngine"
         "HedgehogMath",
         "Logger",
         "ECS",
+        "EcsSerialization",
         "Lua",
         "imgui",
         "yaml-cpp"

@@ -13,7 +13,7 @@ Scene:
         Parent: 0
         TransformComponent:
           Position: [4.5, -0.5, 0.5]
-          Rotation: [-3, -16, 81.52986]
+          Rotation: [-3, -16, 143.55739]
           Scale: [1, 1, 1]
         MeshComponent:
           MeshPath: Models\viking_room.obj
@@ -29,7 +29,7 @@ Scene:
               ParamValue: 7.45
             clockWise:
               ParamType: 0
-              ParamValue: true
+              ParamValue: false
         Children:
           - Entity: 2
             Name: "sub_room\x00t_0"

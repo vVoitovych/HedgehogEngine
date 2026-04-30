@@ -4,7 +4,7 @@
 
 #include "ECS/api/ECS.hpp"
 #include "ECS/api/Entity.hpp"
-#include "HedgehogEngine/api/ECS/components/HierarchyComponent.hpp"
+#include "ECS/api/components/Hierarchy.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
 
 #include <optional>

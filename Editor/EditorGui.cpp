@@ -311,7 +311,7 @@ namespace Editor
     void EditorGui::DrawHierarchyNode(HedgehogEngine::HedgehogEngine& context, ECS::Entity entity, int& index)
     {
         auto& ecs       = context.GetEngineContext().GetECS();
-        auto& component = ecs.GetComponent<HierarchyComponent>(entity);
+        auto& component = ecs.GetComponent<ECS::HierarchyComponent>(entity);
 
         ImGuiTreeNodeFlags nodeFlags =
             ImGuiTreeNodeFlags_OpenOnArrow |
@@ -383,7 +383,7 @@ namespace Editor
     {
         auto& ecs       = context.GetEngineContext().GetECS();
         auto  entity    = m_SelectedEntity.value();
-        auto& hierarchy = ecs.GetComponent<HierarchyComponent>(entity);
+        auto& hierarchy = ecs.GetComponent<ECS::HierarchyComponent>(entity);
         auto  name      = hierarchy.m_Name;
 
         if (ImGui::CollapsingHeader("Name", ImGuiTreeNodeFlags_DefaultOpen))

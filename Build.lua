@@ -32,6 +32,7 @@ include "Editor/Build-Editor.lua"
 include "ContentLoader/Build-ContentLoader.lua"
 include "DialogueWindows/Build-DialogueWindows.lua"
 include "ECS/Build-ECS.lua"
+include "EcsSerialization/Build-EcsSerialization.lua"
 
 include "HedgehogMath/Build-HedgehogMath.lua"
 include "HedgehogMathTest/Build-HedgehogMathTest.lua"

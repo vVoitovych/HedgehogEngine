@@ -608,3 +608,5 @@ Binaries
 /Scene/Scene.vcxproj.user
 /Components/Components.vcxproj
 /Components/Components.vcxproj.filters
+/EcsSerialization/EcsSerialization.vcxproj
+/EcsSerialization/EcsSerialization.vcxproj.filters

@@ -10,7 +10,7 @@ namespace Components
     {
         ECS::Entity root = ecs.CreateEntity();
         ecs.AddComponent(root, Scene::TransformComponent{});
-        ecs.AddComponent(root, Scene::HierarchyComponent{ "Root", root, {} });
+        ecs.AddComponent(root, ECS::HierarchyComponent{ "Root", root, {} });
         hierarchySystem.SetRoot(root);
         return root;
     }
@@ -20,10 +20,10 @@ namespace Components
     {
         ECS::Entity realParent = parent.value_or(root);
 
-        auto& parentHierarchy = ecs.GetComponent<Scene::HierarchyComponent>(realParent);
+        auto& parentHierarchy = ecs.GetComponent<ECS::HierarchyComponent>(realParent);
         ECS::Entity entity    = ecs.CreateEntity();
         ecs.AddComponent(entity, Scene::TransformComponent{});
-        ecs.AddComponent(entity, Scene::HierarchyComponent{ GetUniqueGameObjectName(), realParent, {} });
+        ecs.AddComponent(entity, ECS::HierarchyComponent{ GetUniqueGameObjectName(), realParent, {} });
         parentHierarchy.m_Children.push_back(entity);
 
         return entity;
@@ -31,8 +31,8 @@ namespace Components
 
     void DeleteGameObject(ECS::ECS& ecs, ECS::Entity entity)
     {
-        auto& hierarchy       = ecs.GetComponent<Scene::HierarchyComponent>(entity);
-        auto& parentHierarchy = ecs.GetComponent<Scene::HierarchyComponent>(hierarchy.m_Parent);
+        auto& hierarchy       = ecs.GetComponent<ECS::HierarchyComponent>(entity);
+        auto& parentHierarchy = ecs.GetComponent<ECS::HierarchyComponent>(hierarchy.m_Parent);
 
         auto it = std::find(parentHierarchy.m_Children.begin(),
                              parentHierarchy.m_Children.end(), entity);
@@ -41,7 +41,7 @@ namespace Components
             parentHierarchy.m_Children.erase(it);
             for (ECS::Entity child : hierarchy.m_Children)
             {
-                auto& childHierarchy    = ecs.GetComponent<Scene::HierarchyComponent>(child);
+                auto& childHierarchy    = ecs.GetComponent<ECS::HierarchyComponent>(child);
                 childHierarchy.m_Parent = hierarchy.m_Parent;
                 parentHierarchy.m_Children.push_back(child);
             }
@@ -51,7 +51,7 @@ namespace Components
 
     void DeleteGameObjectAndChildren(ECS::ECS& ecs, ECS::Entity entity)
     {
-        auto& hierarchy = ecs.GetComponent<Scene::HierarchyComponent>(entity);
+        auto& hierarchy = ecs.GetComponent<ECS::HierarchyComponent>(entity);
         for (ECS::Entity child : hierarchy.m_Children)
             DeleteGameObjectAndChildren(ecs, child);
         ecs.DestroyEntity(entity);

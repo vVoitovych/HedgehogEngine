@@ -54,14 +54,8 @@
     <ClInclude Include="api\Containers\TextureContainer.hpp">
       <Filter>api\Containers</Filter>
     </ClInclude>
-    <ClInclude Include="api\ECS\EcsSerializer.hpp">
-      <Filter>api\ECS</Filter>
-    </ClInclude>
     <ClInclude Include="api\ECS\GameObjectHelpers.hpp">
       <Filter>api\ECS</Filter>
-    </ClInclude>
-    <ClInclude Include="api\ECS\components\HierarchyComponent.hpp">
-      <Filter>api\ECS\components</Filter>
     </ClInclude>
     <ClInclude Include="api\ECS\components\LightComponent.hpp">
       <Filter>api\ECS\components</Filter>
@@ -120,9 +114,6 @@
     <ClInclude Include="src\Containers\MaterialSerializer.hpp">
       <Filter>src\Containers</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\ComponentSerializerRegistry.hpp">
-      <Filter>src\ECS</Filter>
-    </ClInclude>
     <ClInclude Include="src\Frame\FrameDataBuilder.hpp">
       <Filter>src\Frame</Filter>
     </ClInclude>
@@ -160,9 +151,6 @@
     </ClCompile>
     <ClCompile Include="src\Context\WindowContext.cpp">
       <Filter>src\Context</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ECS\EcsSerializer.cpp">
-      <Filter>src\ECS</Filter>
     </ClCompile>
     <ClCompile Include="src\ECS\GameObjectHelpers.cpp">
       <Filter>src\ECS</Filter>

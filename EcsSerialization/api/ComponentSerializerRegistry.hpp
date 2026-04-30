@@ -82,9 +82,8 @@ namespace YAML
     };
 }
 
-namespace HedgehogEngine
+namespace EcsSerialization
 {
-    // Emitter overload for Vector3 used by YamlWriter
     inline YAML::Emitter& operator<<(YAML::Emitter& out, const HM::Vector3& v)
     {
         out << YAML::Flow;
@@ -92,7 +91,6 @@ namespace HedgehogEngine
         return out;
     }
 
-    // Visitor that writes component fields to a YAML emitter
     struct YamlWriter
     {
         YAML::Emitter& m_Out;
@@ -107,7 +105,6 @@ namespace HedgehogEngine
         }
     };
 
-    // Visitor that reads component fields from a YAML node (skips missing keys)
     struct YamlReader
     {
         const YAML::Node& m_Node;
@@ -134,7 +131,6 @@ namespace HedgehogEngine
     class ComponentSerializerRegistry
     {
     public:
-        // Register a component that exposes all serializable fields through Visit()
         template<typename T>
         void RegisterVisitable(const char* yamlKey)
         {
@@ -156,7 +152,6 @@ namespace HedgehogEngine
             });
         }
 
-        // Register a component with hand-written serialize/deserialize logic
         void RegisterCustom(
             const char*                                                        yamlKey,
             std::function<void(YAML::Emitter&, const ECS::ECS&, ECS::Entity)> serialize,
@@ -168,7 +163,6 @@ namespace HedgehogEngine
 
         const std::vector<ComponentHandler>& GetHandlers() const { return m_Handlers; }
 
-        // Helpers available to custom lambda bodies
         template<typename T>
         static void SerializeWithVisit(YAML::Emitter& out, const ECS::ECS& ecs, ECS::Entity e, const char* key)
         {

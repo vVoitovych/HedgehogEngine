@@ -1,5 +1,5 @@
 #include "HedgehogEngine/api/ECS/systems/HierarchySystem.hpp"
-#include "HedgehogEngine/api/ECS/components/HierarchyComponent.hpp"
+#include "ECS/api/components/Hierarchy.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
 
 namespace Scene
@@ -17,7 +17,7 @@ namespace Scene
     void HierarchySystem::UpdateChildrenMatrices(ECS::ECS& ecs, ECS::Entity parent)
     {
         auto& transform = ecs.GetComponent<TransformComponent>(parent);
-        auto& hierarchy = ecs.GetComponent<HierarchyComponent>(parent);
+        auto& hierarchy = ecs.GetComponent<ECS::HierarchyComponent>(parent);
 
         for (auto const& entity : hierarchy.m_Children)
         {
