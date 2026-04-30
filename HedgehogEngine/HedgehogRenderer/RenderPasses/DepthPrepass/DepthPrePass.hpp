@@ -18,7 +18,7 @@ namespace RHI
     class IRHIBuffer;
 }
 
-namespace FD
+namespace HedgehogEngine
 {
     struct FrameData;
 }
@@ -33,7 +33,7 @@ namespace Renderer
         DepthPrePass(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
         ~DepthPrePass();
 
-        void Render(const FD::FrameData& frame, const ResourceManager& resourceManager,
+        void Render(const HedgehogEngine::FrameData& frame, const ResourceManager& resourceManager,
                     RHI::IRHICommandList& cmd, uint32_t frameIndex);
         void Cleanup(RHI::IRHIDevice& device);
 

@@ -2,11 +2,11 @@
 
 #include "ContentLoader/api/TextureLoader.hpp"
 
-#include "HedgehogContext/Containers/MeshContainer/MeshContainer.hpp"
-#include "HedgehogContext/Containers/MeshContainer/Mesh.hpp"
-#include "HedgehogContext/Containers/MaterialContainer/MaterialContainer.hpp"
-#include "HedgehogContext/Containers/MaterialContainer/MaterialData.hpp"
-#include "HedgehogContext/Containers/TextureContainer/TextureContainer.hpp"
+#include "HedgehogEngine/api/Containers/MeshContainer.hpp"
+#include "HedgehogEngine/api/Containers/Mesh.hpp"
+#include "HedgehogEngine/api/Containers/MaterialContainer.hpp"
+#include "HedgehogEngine/api/Containers/MaterialData.hpp"
+#include "HedgehogEngine/api/Containers/TextureContainer.hpp"
 
 #include "HedgehogCommon/api/RendererSettings.hpp"
 
@@ -46,7 +46,7 @@ namespace HR
     {
     }
 
-    void ResourceRegistry::SyncMeshes(const Context::MeshContainer& container, RHI::IRHIDevice& device)
+    void ResourceRegistry::SyncMeshes(const HedgehogEngine::MeshContainer& container, RHI::IRHIDevice& device)
     {
         const size_t totalMeshes = container.GetMeshCount();
         if (totalMeshes <= m_RegisteredMeshCount)
@@ -92,8 +92,8 @@ namespace HR
         FlushMeshUploads(device);
     }
 
-    void ResourceRegistry::SyncMaterials(Context::MaterialContainer& container,
-                                          Context::TextureContainer&  texContainer,
+    void ResourceRegistry::SyncMaterials(HedgehogEngine::MaterialContainer& container,
+                                          HedgehogEngine::TextureContainer&  texContainer,
                                           RHI::IRHIDevice&            device)
     {
         const size_t total = container.GetMaterialCount();

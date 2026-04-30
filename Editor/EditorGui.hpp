@@ -7,9 +7,9 @@
 #include <memory>
 #include <optional>
 
-namespace Context
+namespace HedgehogEngine
 {
-    class Context;
+    class HedgehogEngine;
 }
 
 namespace Editor
@@ -29,7 +29,7 @@ namespace Editor
         EditorGui(EditorGui&&)                 = delete;
         EditorGui& operator=(EditorGui&&)      = delete;
 
-        void Draw(Context::Context& context, void* sceneViewTextureId);
+        void Draw(HedgehogEngine::HedgehogEngine& context, void* sceneViewTextureId);
 
         uint32_t GetSceneViewWidth()    const { return m_SceneViewWidth; }
         uint32_t GetSceneViewHeight()   const { return m_SceneViewHeight; }
@@ -37,22 +37,22 @@ namespace Editor
 
     private:
         // ── Panel content (drawn into dock areas) ────────────────────────────
-        void DrawPanelContent(PanelId panel, Context::Context& context, void* sceneViewTextureId);
-        void DrawMainMenu(Context::Context& context);
+        void DrawPanelContent(PanelId panel, HedgehogEngine::HedgehogEngine& context, void* sceneViewTextureId);
+        void DrawMainMenu(HedgehogEngine::HedgehogEngine& context);
         void DrawToolbarContent();
         void DrawSceneViewContent(void* sceneViewTextureId);
-        void DrawSceneHierarchy(Context::Context& context);
-        void DrawHierarchyNode(Context::Context& context, ECS::Entity entity, int& index);
-        void DrawInspector(Context::Context& context);
-        void DrawEntityTitle(Context::Context& context);
-        void DrawTransformComponent(Context::Context& context);
-        void DrawMeshComponent(Context::Context& context);
-        void DrawRenderComponent(Context::Context& context);
-        void DrawLightComponent(Context::Context& context);
-        void DrawScriptComponent(Context::Context& context);
+        void DrawSceneHierarchy(HedgehogEngine::HedgehogEngine& context);
+        void DrawHierarchyNode(HedgehogEngine::HedgehogEngine& context, ECS::Entity entity, int& index);
+        void DrawInspector(HedgehogEngine::HedgehogEngine& context);
+        void DrawEntityTitle(HedgehogEngine::HedgehogEngine& context);
+        void DrawTransformComponent(HedgehogEngine::HedgehogEngine& context);
+        void DrawMeshComponent(HedgehogEngine::HedgehogEngine& context);
+        void DrawRenderComponent(HedgehogEngine::HedgehogEngine& context);
+        void DrawLightComponent(HedgehogEngine::HedgehogEngine& context);
+        void DrawScriptComponent(HedgehogEngine::HedgehogEngine& context);
 
         // ── Floating dialogs ─────────────────────────────────────────────────
-        void DrawSettingsWindow(Context::Context& context);
+        void DrawSettingsWindow(HedgehogEngine::HedgehogEngine& context);
 
     private:
         static constexpr const char k_SettingsPath[] = "editor_settings.yaml";

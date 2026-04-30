@@ -1,8 +1,8 @@
 #include "Application.hpp"
 #include "EditorGui.hpp"
 
-#include "HedgehogEngine/HedgehogContext/Context/Context.hpp"
-#include "HedgehogEngine/HedgehogContext/Context/WindowContext.hpp"
+#include "HedgehogEngine/api/HedgehogEngine.hpp"
+#include "HedgehogEngine/api/WindowContext.hpp"
 #include "HedgehogEngine/HedgehogRenderer/Renderer/Renderer.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
 
@@ -25,7 +25,7 @@ namespace Editor
 
     void EditorApplication::Init()
     {
-        m_Context   = std::make_unique<Context::Context>();
+        m_Context   = std::make_unique<HedgehogEngine::HedgehogEngine>();
         m_Renderer  = std::make_unique<Renderer::Renderer>(*m_Context);
         m_EditorGui = std::make_unique<EditorGui>();
 

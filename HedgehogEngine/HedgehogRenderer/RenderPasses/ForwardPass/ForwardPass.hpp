@@ -20,7 +20,7 @@ namespace RHI
     class IRHIBuffer;
 }
 
-namespace FD
+namespace HedgehogEngine
 {
     struct FrameData;
     struct LightData;
@@ -36,7 +36,7 @@ namespace Renderer
         ForwardPass(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
         ~ForwardPass();
 
-        void Render(const FD::FrameData& frame, const ResourceManager& resourceManager,
+        void Render(const HedgehogEngine::FrameData& frame, const ResourceManager& resourceManager,
                     RHI::IRHICommandList& cmd, uint32_t frameIndex);
         void Cleanup(RHI::IRHIDevice& device);
 
@@ -61,7 +61,7 @@ namespace Renderer
             size_t                    m_LightCount;
         };
 
-        static GpuLight ToGpuLight(const FD::LightData& fd);
+        static GpuLight ToGpuLight(const HedgehogEngine::LightData& fd);
 
     private:
         std::unique_ptr<RHI::IRHIRenderPass>  m_RenderPass;

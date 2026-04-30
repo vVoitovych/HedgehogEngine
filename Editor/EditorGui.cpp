@@ -1,22 +1,30 @@
 #include "EditorGui.hpp"
 #include "Panels/ConsolePanel.hpp"
 
-#include "HedgehogEngine/HedgehogContext/Context/Context.hpp"
-#include "HedgehogEngine/HedgehogContext/Context/EngineContext.hpp"
-#include "HedgehogEngine/HedgehogContext/Containers/MaterialContainer/MaterialContainer.hpp"
-#include "HedgehogEngine/HedgehogContext/Containers/MaterialContainer/MaterialData.hpp"
-#include "HedgehogEngine/HedgehogContext/Containers/MeshContainer/MeshContainer.hpp"
-#include "HedgehogEngine/HedgehogContext/Containers/TextureContainer/TextureContainer.hpp"
+#include "HedgehogEngine/api/HedgehogEngine.hpp"
+#include "HedgehogEngine/api/EngineContext.hpp"
+#include "HedgehogEngine/api/Containers/MaterialContainer.hpp"
+#include "HedgehogEngine/api/Containers/MaterialData.hpp"
+#include "HedgehogEngine/api/Containers/MeshContainer.hpp"
+#include "HedgehogEngine/api/Containers/TextureContainer.hpp"
 #include "HedgehogEngine/HedgehogSettings/Settings/HedgehogSettings.hpp"
 #include "HedgehogEngine/HedgehogSettings/Settings/ShadowmapingSettings.hpp"
 
-#include "Scene/Scene.hpp"
-#include "Scene/SceneComponents/HierarchyComponent.hpp"
-#include "Scene/SceneComponents/LightComponent.hpp"
-#include "Scene/SceneComponents/MeshComponent.hpp"
-#include "Scene/SceneComponents/RenderComponent.hpp"
-#include "Scene/SceneComponents/ScriptComponent.hpp"
-#include "Scene/SceneComponents/TransformComponent.hpp"
+#include "ECS/api/ECS.hpp"
+#include "ECS/api/components/Hierarchy.hpp"
+#include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
+#include "HedgehogEngine/api/ECS/systems/MeshSystem.hpp"
+#include "HedgehogEngine/api/ECS/systems/RenderSystem.hpp"
+#include "HedgehogEngine/api/ECS/systems/LightSystem.hpp"
+#include "HedgehogEngine/api/ECS/systems/ScriptSystem.hpp"
+#include "HedgehogEngine/api/ECS/components/LightComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/RenderComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
+
+#include "ContentLoader/api/CommonFunctions.hpp"
+#include "DialogueWindows/api/MaterialDialogue.hpp"
+#include "DialogueWindows/api/SceneDialogue.hpp"
 
 #include "imgui.h"
 
@@ -28,8 +36,6 @@ namespace Editor
     EditorGui::EditorGui()
         : m_ConsolePanel(std::make_unique<ConsolePanel>())
     {
-        // DockSystem ctor already seeds defaults; only overwrite when the file
-        // contained a valid (non-empty) dock section.
         if (m_Settings.Load(k_SettingsPath) && m_Settings.dockLayout.IsValid())
             m_DockSystem.GetLayout() = m_Settings.dockLayout;
     }
@@ -42,7 +48,7 @@ namespace Editor
 
     // ─── Top-level entry ─────────────────────────────────────────────────────
 
-    void EditorGui::Draw(Context::Context& context, void* sceneViewTextureId)
+    void EditorGui::Draw(HedgehogEngine::HedgehogEngine& context, void* sceneViewTextureId)
     {
         m_SceneViewHovered = false;
 
@@ -70,14 +76,14 @@ namespace Editor
 
     // ─── Panel dispatch ───────────────────────────────────────────────────────
 
-    void EditorGui::DrawPanelContent(PanelId panel, Context::Context& context, void* sceneViewTextureId)
+    void EditorGui::DrawPanelContent(PanelId panel, HedgehogEngine::HedgehogEngine& context, void* sceneViewTextureId)
     {
         switch (panel)
         {
         case PanelId::SceneHierarchy: DrawSceneHierarchy(context);          break;
         case PanelId::Inspector:      DrawInspector(context);                break;
         case PanelId::Console:        m_ConsolePanel->Draw();                break;
-        default:                      DrawSceneViewContent(sceneViewTextureId); break; // sentinel for scene view
+        default:                      DrawSceneViewContent(sceneViewTextureId); break;
         }
     }
 
@@ -111,18 +117,44 @@ namespace Editor
 
     // ─── Main menu ───────────────────────────────────────────────────────────
 
-    void EditorGui::DrawMainMenu(Context::Context& context)
+    void EditorGui::DrawMainMenu(HedgehogEngine::HedgehogEngine& context)
     {
-        auto& scene = context.GetEngineContext().GetScene();
+        auto& engineContext = context.GetEngineContext();
+        auto& ecs           = engineContext.GetECS();
+        auto* meshSystem    = engineContext.GetMeshSystem();
+        auto* renderSystem  = engineContext.GetRenderSystem();
+
         if (!ImGui::BeginMainMenuBar())
             return;
 
         if (ImGui::BeginMenu("File"))
         {
-            if (ImGui::MenuItem("New"))    { scene.ResetScene(); }
-            if (ImGui::MenuItem("Rename")) { scene.RenameScene(); }
-            if (ImGui::MenuItem("Open"))   { scene.Load(); }
-            if (ImGui::MenuItem("Save"))   { scene.Save(); }
+            if (ImGui::MenuItem("New"))
+            {
+                engineContext.ResetScene();
+                m_SelectedEntity.reset();
+            }
+            if (ImGui::MenuItem("Rename"))
+            {
+                char* newName = DialogueWindows::SceneRenameDialogue();
+                if (newName != nullptr)
+                    engineContext.SetSceneName(newName);
+            }
+            if (ImGui::MenuItem("Open"))
+            {
+                char* path = DialogueWindows::SceneOpenDialogue();
+                if (path != nullptr)
+                {
+                    engineContext.LoadScene(path);
+                    m_SelectedEntity.reset();
+                }
+            }
+            if (ImGui::MenuItem("Save"))
+            {
+                char* path = DialogueWindows::SceneSaveDialogue();
+                if (path != nullptr)
+                    engineContext.SaveScene(path);
+            }
             ImGui::Separator();
             if (ImGui::MenuItem("Quit", "Alt+F4")) {}
             ImGui::EndMenu();
@@ -131,25 +163,47 @@ namespace Editor
         if (ImGui::BeginMenu("Create"))
         {
             if (ImGui::MenuItem("Create game object"))
-                scene.CreateGameObject(m_SelectedEntity);
+                engineContext.CreateGameObject(m_SelectedEntity);
 
             ImGui::Separator();
             if (ImGui::BeginMenu("Add component"))
             {
                 if (ImGui::MenuItem("Mesh component") && m_SelectedEntity.has_value())
-                    scene.AddMeshComponent(m_SelectedEntity.value());
+                {
+                    ECS::Entity e = m_SelectedEntity.value();
+                    if (!ecs.HasComponent<HedgehogEngine::MeshComponent>(e))
+                    {
+                        ecs.AddComponent(e, HedgehogEngine::MeshComponent{ HedgehogEngine::MeshSystem::sDefaultMeshPath });
+                        meshSystem->Update(ecs, e);
+                    }
+                }
                 if (ImGui::MenuItem("Render component") && m_SelectedEntity.has_value())
-                    scene.AddRenderComponent(m_SelectedEntity.value());
+                {
+                    ECS::Entity e = m_SelectedEntity.value();
+                    if (!ecs.HasComponent<HedgehogEngine::RenderComponent>(e))
+                    {
+                        ecs.AddComponent(e, HedgehogEngine::RenderComponent{});
+                        renderSystem->Update(ecs, e);
+                    }
+                }
                 if (ImGui::MenuItem("Light component") && m_SelectedEntity.has_value())
-                    scene.AddLightComponent(m_SelectedEntity.value());
+                {
+                    ECS::Entity e = m_SelectedEntity.value();
+                    if (!ecs.HasComponent<HedgehogEngine::LightComponent>(e))
+                        ecs.AddComponent(e, HedgehogEngine::LightComponent{});
+                }
                 if (ImGui::MenuItem("Script component") && m_SelectedEntity.has_value())
-                    scene.AddScriptComponent(m_SelectedEntity.value());
+                {
+                    ECS::Entity e = m_SelectedEntity.value();
+                    if (!ecs.HasComponent<HedgehogEngine::ScriptComponent>(e))
+                        ecs.AddComponent(e, HedgehogEngine::ScriptComponent{});
+                }
                 ImGui::EndMenu();
             }
 
             ImGui::Separator();
             if (ImGui::MenuItem("Create material"))
-                context.GetEngineContext().GetMaterialContainer().CreateNewMaterial();
+                engineContext.GetMaterialContainer().CreateNewMaterial();
             ImGui::EndMenu();
         }
 
@@ -225,22 +279,21 @@ namespace Editor
 
     // ─── Scene hierarchy ─────────────────────────────────────────────────────
 
-    void EditorGui::DrawSceneHierarchy(Context::Context& context)
+    void EditorGui::DrawSceneHierarchy(HedgehogEngine::HedgehogEngine& context)
     {
-        auto& scene = context.GetEngineContext().GetScene();
+        auto& engineContext = context.GetEngineContext();
 
-        ImGui::SeparatorText(scene.GetSceneName().c_str());
+        ImGui::SeparatorText(engineContext.GetSceneName().c_str());
 
         const ImVec2 fullWidth = ImVec2(-FLT_MIN, 0.0f);
         if (ImGui::Button("Create object", fullWidth))
-            scene.CreateGameObject(m_SelectedEntity);
+            engineContext.CreateGameObject(m_SelectedEntity);
 
         if (ImGui::Button("Delete object", fullWidth))
         {
-            if (m_SelectedEntity.has_value() &&
-                m_SelectedEntity.value() != scene.GetRoot())
+            if (m_SelectedEntity.has_value() && m_SelectedEntity.value() != engineContext.GetRootEntity())
             {
-                scene.DeleteGameObject(m_SelectedEntity.value());
+                engineContext.DeleteGameObject(m_SelectedEntity.value());
                 m_SelectedEntity.reset();
             }
         }
@@ -248,13 +301,13 @@ namespace Editor
         ImGui::Separator();
 
         int index = 0;
-        DrawHierarchyNode(context, scene.GetRoot(), index);
+        DrawHierarchyNode(context, engineContext.GetRootEntity(), index);
     }
 
-    void EditorGui::DrawHierarchyNode(Context::Context& context, ECS::Entity entity, int& index)
+    void EditorGui::DrawHierarchyNode(HedgehogEngine::HedgehogEngine& context, ECS::Entity entity, int& index)
     {
-        auto& scene     = context.GetEngineContext().GetScene();
-        auto& component = scene.GetHierarchyComponent(entity);
+        auto& ecs       = context.GetEngineContext().GetECS();
+        auto& component = ecs.GetComponent<ECS::HierarchyComponent>(entity);
 
         ImGuiTreeNodeFlags nodeFlags =
             ImGuiTreeNodeFlags_OpenOnArrow |
@@ -305,7 +358,7 @@ namespace Editor
 
     // ─── Inspector ───────────────────────────────────────────────────────────
 
-    void EditorGui::DrawInspector(Context::Context& context)
+    void EditorGui::DrawInspector(HedgehogEngine::HedgehogEngine& context)
     {
         if (m_SelectedEntity.has_value())
         {
@@ -322,11 +375,11 @@ namespace Editor
         }
     }
 
-    void EditorGui::DrawEntityTitle(Context::Context& context)
+    void EditorGui::DrawEntityTitle(HedgehogEngine::HedgehogEngine& context)
     {
-        auto& scene     = context.GetEngineContext().GetScene();
+        auto& ecs       = context.GetEngineContext().GetECS();
         auto  entity    = m_SelectedEntity.value();
-        auto& hierarchy = scene.GetHierarchyComponent(entity);
+        auto& hierarchy = ecs.GetComponent<ECS::HierarchyComponent>(entity);
         auto  name      = hierarchy.m_Name;
 
         if (ImGui::CollapsingHeader("Name", ImGuiTreeNodeFlags_DefaultOpen))
@@ -336,15 +389,15 @@ namespace Editor
         }
     }
 
-    void EditorGui::DrawTransformComponent(Context::Context& context)
+    void EditorGui::DrawTransformComponent(HedgehogEngine::HedgehogEngine& context)
     {
-        auto& scene  = context.GetEngineContext().GetScene();
+        auto& ecs    = context.GetEngineContext().GetECS();
         auto  entity = m_SelectedEntity.value();
 
         if (!ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
             return;
 
-        auto& transform = scene.GetTransformComponent(entity);
+        auto& transform = ecs.GetComponent<HedgehogEngine::TransformComponent>(entity);
 
         ImGui::SeparatorText("Position");
         ImGui::DragFloat("pos x", &transform.m_Position.x(), 0.5f);
@@ -362,18 +415,20 @@ namespace Editor
         ImGui::DragFloat("scale z", &transform.m_Scale.z(), 0.5f);
     }
 
-    void EditorGui::DrawMeshComponent(Context::Context& context)
+    void EditorGui::DrawMeshComponent(HedgehogEngine::HedgehogEngine& context)
     {
-        auto& scene  = context.GetEngineContext().GetScene();
-        auto  entity = m_SelectedEntity.value();
+        auto& engineContext = context.GetEngineContext();
+        auto& ecs           = engineContext.GetECS();
+        auto* meshSystem    = engineContext.GetMeshSystem();
+        auto  entity        = m_SelectedEntity.value();
 
-        if (!scene.HasMeshComponent(entity))
+        if (!ecs.HasComponent<HedgehogEngine::MeshComponent>(entity))
             return;
         if (!ImGui::CollapsingHeader("Mesh", ImGuiTreeNodeFlags_DefaultOpen))
             return;
 
-        auto&    mesh          = scene.GetMeshComponent(entity);
-        auto&    meshPaths     = scene.GetMeshes();
+        auto&    mesh          = ecs.GetComponent<HedgehogEngine::MeshComponent>(entity);
+        const auto& meshPaths  = meshSystem->GetMeshes();
         uint64_t selectedIndex = mesh.m_MeshIndex.value_or(0);
 
         if (ImGui::BeginCombo("mesh", mesh.m_MeshPath.c_str()))
@@ -382,7 +437,10 @@ namespace Editor
             {
                 const bool isSelected = (selectedIndex == i);
                 if (ImGui::Selectable(meshPaths[i].c_str(), isSelected))
-                    scene.ChangeMeshComponent(entity, meshPaths[i]);
+                {
+                    mesh.m_MeshPath = meshPaths[i];
+                    meshSystem->Update(ecs, entity);
+                }
                 if (isSelected)
                     ImGui::SetItemDefaultFocus();
             }
@@ -390,23 +448,28 @@ namespace Editor
         }
 
         if (ImGui::Button("Load mesh"))
-            scene.LoadMesh(entity);
+            meshSystem->LoadMesh(ecs, entity);
         if (ImGui::Button("Remove mesh"))
-            scene.RemoveMeshComponent(entity);
+        {
+            if (ecs.HasComponent<HedgehogEngine::MeshComponent>(entity))
+                ecs.RemoveComponent<HedgehogEngine::MeshComponent>(entity);
+        }
     }
 
-    void EditorGui::DrawRenderComponent(Context::Context& context)
+    void EditorGui::DrawRenderComponent(HedgehogEngine::HedgehogEngine& context)
     {
-        auto& scene  = context.GetEngineContext().GetScene();
-        auto  entity = m_SelectedEntity.value();
+        auto& engineContext = context.GetEngineContext();
+        auto& ecs           = engineContext.GetECS();
+        auto* renderSystem  = engineContext.GetRenderSystem();
+        auto  entity        = m_SelectedEntity.value();
 
-        if (!scene.HasRenderComponent(entity))
+        if (!ecs.HasComponent<HedgehogEngine::RenderComponent>(entity))
             return;
         if (!ImGui::CollapsingHeader("Rendering", ImGuiTreeNodeFlags_DefaultOpen))
             return;
 
-        auto& render    = scene.GetRenderComponent(entity);
-        auto& materials = scene.GetMaterials();
+        auto& render        = ecs.GetComponent<HedgehogEngine::RenderComponent>(entity);
+        const auto& materials = renderSystem->GetMaterials();
 
         bool visible = render.m_IsVisible;
         if (ImGui::Checkbox("Visible", &visible))
@@ -423,7 +486,7 @@ namespace Editor
                     if (ImGui::Selectable(materials[i].c_str(), isSelected))
                     {
                         render.m_Material = materials[i];
-                        scene.UpdateMaterialComponent(entity);
+                        renderSystem->Update(ecs, entity);
                     }
                     if (isSelected)
                         ImGui::SetItemDefaultFocus();
@@ -433,30 +496,39 @@ namespace Editor
         }
 
         if (ImGui::Button("Load material"))
-            scene.LoadMaterial(entity);
+        {
+            char* path = DialogueWindows::MaterialOpenDialogue();
+            if (path != nullptr)
+            {
+                render.m_Material = ContentLoader::GetAssetRelativetlyPath(path);
+                renderSystem->Update(ecs, entity);
+            }
+        }
 
         if (!materials.empty() && render.m_MaterialIndex.has_value())
         {
             if (ImGui::Button("Save material"))
-                context.GetEngineContext().GetMaterialContainer().SaveMaterial(
-                    render.m_MaterialIndex.value());
+                engineContext.GetMaterialContainer().SaveMaterial(render.m_MaterialIndex.value());
         }
 
         if (ImGui::Button("Remove render"))
-            scene.RemoveRenderComponent(entity);
+        {
+            if (ecs.HasComponent<HedgehogEngine::RenderComponent>(entity))
+                ecs.RemoveComponent<HedgehogEngine::RenderComponent>(entity);
+        }
 
         if (!materials.empty() && render.m_MaterialIndex.has_value())
         {
             ImGui::SeparatorText("Material");
-            auto& materialContainer = context.GetEngineContext().GetMaterialContainer();
-            auto& textureContainer  = context.GetEngineContext().GetTextureContainer();
+            auto& materialContainer = engineContext.GetMaterialContainer();
+            auto& textureContainer  = engineContext.GetTextureContainer();
             auto& materialData      = materialContainer.GetMaterialDataByIndex(
                 render.m_MaterialIndex.value());
 
             const char* typeNames[] = { "Opaque", "Cutoff", "Transparent" };
             int materialType = static_cast<int>(materialData.type);
             if (ImGui::Combo("Type", &materialType, typeNames, IM_ARRAYSIZE(typeNames)))
-                materialData.type = static_cast<Context::MaterialType>(materialType);
+                materialData.type = static_cast<HedgehogEngine::MaterialType>(materialType);
 
             const auto& texturePaths = textureContainer.GetTexturePathes();
             int selectedTexture      = static_cast<int>(
@@ -481,7 +553,7 @@ namespace Editor
             if (ImGui::Button("Load texture"))
                 materialContainer.LoadBaseTexture(render.m_MaterialIndex.value());
 
-            if (materialData.type == Context::MaterialType::Transparent)
+            if (materialData.type == HedgehogEngine::MaterialType::Transparent)
             {
                 float transparency = materialData.transparency;
                 if (ImGui::SliderFloat("Transparency", &transparency, 0.0f, 1.0f))
@@ -498,40 +570,42 @@ namespace Editor
 
     namespace
     {
-        Scene::LightType IndexToLightType(int index)
+        HedgehogEngine::LightType IndexToLightType(int index)
         {
             switch (index)
             {
-            case 0: return Scene::LightType::DirectionLight;
-            case 1: return Scene::LightType::PointLight;
-            case 2: return Scene::LightType::SpotLight;
+            case 0: return HedgehogEngine::LightType::DirectionLight;
+            case 1: return HedgehogEngine::LightType::PointLight;
+            case 2: return HedgehogEngine::LightType::SpotLight;
             default: throw std::runtime_error("Invalid light type index");
             }
         }
 
-        int LightTypeToIndex(Scene::LightType type)
+        int LightTypeToIndex(HedgehogEngine::LightType type)
         {
             switch (type)
             {
-            case Scene::LightType::DirectionLight: return 0;
-            case Scene::LightType::PointLight:     return 1;
-            case Scene::LightType::SpotLight:      return 2;
+            case HedgehogEngine::LightType::DirectionLight: return 0;
+            case HedgehogEngine::LightType::PointLight:     return 1;
+            case HedgehogEngine::LightType::SpotLight:      return 2;
             default: throw std::runtime_error("Invalid light type");
             }
         }
     }
 
-    void EditorGui::DrawLightComponent(Context::Context& context)
+    void EditorGui::DrawLightComponent(HedgehogEngine::HedgehogEngine& context)
     {
-        auto& scene  = context.GetEngineContext().GetScene();
-        auto  entity = m_SelectedEntity.value();
+        auto& engineContext = context.GetEngineContext();
+        auto& ecs           = engineContext.GetECS();
+        auto* lightSystem   = engineContext.GetLightSystem();
+        auto  entity        = m_SelectedEntity.value();
 
-        if (!scene.HasLightComponent(entity))
+        if (!ecs.HasComponent<HedgehogEngine::LightComponent>(entity))
             return;
         if (!ImGui::CollapsingHeader("Light", ImGuiTreeNodeFlags_DefaultOpen))
             return;
 
-        auto& light = scene.GetLightComponent(entity);
+        auto& light = ecs.GetComponent<HedgehogEngine::LightComponent>(entity);
 
         bool enabled = light.m_Enable;
         if (ImGui::Checkbox("Enabled", &enabled))
@@ -568,24 +642,29 @@ namespace Editor
         {
             bool castShadows = light.m_CastShadows;
             if (ImGui::Checkbox("Cast shadows", &castShadows))
-                scene.UpdateShadowCasting(entity, castShadows);
+                lightSystem->SetShadowCasting(ecs, entity, castShadows);
         }
 
         if (ImGui::Button("Remove light"))
-            scene.RemoveLightComponent(entity);
+        {
+            if (ecs.HasComponent<HedgehogEngine::LightComponent>(entity))
+                ecs.RemoveComponent<HedgehogEngine::LightComponent>(entity);
+        }
     }
 
-    void EditorGui::DrawScriptComponent(Context::Context& context)
+    void EditorGui::DrawScriptComponent(HedgehogEngine::HedgehogEngine& context)
     {
-        auto& scene  = context.GetEngineContext().GetScene();
-        auto  entity = m_SelectedEntity.value();
+        auto& engineContext = context.GetEngineContext();
+        auto& ecs           = engineContext.GetECS();
+        auto* scriptSystem  = engineContext.GetScriptSystem();
+        auto  entity        = m_SelectedEntity.value();
 
-        if (!scene.HasScriptComponent(entity))
+        if (!ecs.HasComponent<HedgehogEngine::ScriptComponent>(entity))
             return;
         if (!ImGui::CollapsingHeader("Script", ImGuiTreeNodeFlags_DefaultOpen))
             return;
 
-        auto& component = scene.GetScriptComponent(entity);
+        auto& component = ecs.GetComponent<HedgehogEngine::ScriptComponent>(entity);
 
         bool enabled = component.m_Enable;
         if (ImGui::Checkbox("Enabled", &enabled))
@@ -596,7 +675,7 @@ namespace Editor
         ImGui::InputText("Script", &scriptName[0], scriptName.capacity() + 1);
 
         if (ImGui::Button("Load script"))
-            scene.ChangeScript(entity);
+            scriptSystem->ChangeScript(entity, ecs);
 
         if (!component.m_Params.empty())
             ImGui::SeparatorText("Parameters");
@@ -605,7 +684,7 @@ namespace Editor
         {
             switch (param.type)
             {
-            case Scene::ParamType::Boolean:
+            case HedgehogEngine::ParamType::Boolean:
             {
                 bool bVal = std::get<bool>(param.value);
                 if (ImGui::Checkbox(name.c_str(), &bVal))
@@ -615,7 +694,7 @@ namespace Editor
                 }
                 break;
             }
-            case Scene::ParamType::Number:
+            case HedgehogEngine::ParamType::Number:
             {
                 float nVal = std::get<float>(param.value);
                 if (ImGui::DragFloat(name.c_str(), &nVal, 0.05f))
@@ -631,12 +710,15 @@ namespace Editor
         }
 
         if (ImGui::Button("Remove script"))
-            scene.RemoveScriptComponent(entity);
+        {
+            if (ecs.HasComponent<HedgehogEngine::ScriptComponent>(entity))
+                ecs.RemoveComponent<HedgehogEngine::ScriptComponent>(entity);
+        }
     }
 
     // ─── Settings window ─────────────────────────────────────────────────────
 
-    void EditorGui::DrawSettingsWindow(Context::Context& context)
+    void EditorGui::DrawSettingsWindow(HedgehogEngine::HedgehogEngine& context)
     {
         if (!m_SettingsWindowOpen)
             return;
@@ -666,7 +748,8 @@ namespace Editor
                 m_Settings.Load(k_SettingsPath);
         }
 
-        auto& settings = context.GetEngineContext().GetSettings();
+        auto& engineContext = context.GetEngineContext();
+        auto& settings      = engineContext.GetSettings();
 
         if (ImGui::CollapsingHeader("Shadows"))
         {
@@ -708,7 +791,7 @@ namespace Editor
                     shadow->SetSplit3(split3);
 
             ImGui::SeparatorText("Debug");
-            const auto& shadowDir = context.GetEngineContext().GetScene().GetShadowLightDirection();
+            const auto& shadowDir = engineContext.GetLightSystem()->GetShadowDir();
             if (shadowDir.has_value())
             {
                 float x = shadowDir.value().x();

@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="api">
+      <UniqueIdentifier>{5F5E880B-CB67-887C-54E3-9E7CC0EB937C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="api\Containers">
+      <UniqueIdentifier>{84077BA9-70D5-6EAF-5969-DFD545D64A14}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="api\ECS">
+      <UniqueIdentifier>{296A593B-9549-D8D6-9E61-63AD0AC03E38}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="api\ECS\components">
+      <UniqueIdentifier>{BE27DC4B-AA0B-9DA1-136C-97F4FF6E8723}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="api\ECS\systems">
+      <UniqueIdentifier>{507133CA-BCFC-A08E-C50D-24833118FD8E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="api\Frame">
+      <UniqueIdentifier>{B9C08877-252B-3DEE-6E69-EE93DA121B43}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{2DAB880B-99B4-887C-2230-9F7C8E38947C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Containers">
+      <UniqueIdentifier>{92F7084D-7EC5-FC52-6759-6D7953C6D8B7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Context">
+      <UniqueIdentifier>{C1026C3D-2DB8-E432-B6AC-DE092261DB36}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\ECS">
+      <UniqueIdentifier>{F76D2FA9-634D-AE44-6C65-391BD8C314A6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Frame">
+      <UniqueIdentifier>{07F0EEB2-735A-A329-BC98-54CF2842817E}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="api\Containers\LightContainer.hpp">
+      <Filter>api\Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="api\Containers\MaterialContainer.hpp">
+      <Filter>api\Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="api\Containers\MaterialData.hpp">
+      <Filter>api\Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="api\Containers\Mesh.hpp">
+      <Filter>api\Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="api\Containers\MeshContainer.hpp">
+      <Filter>api\Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="api\Containers\TextureContainer.hpp">
+      <Filter>api\Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="api\ECS\components\LightComponent.hpp">
+      <Filter>api\ECS\components</Filter>
+    </ClInclude>
+    <ClInclude Include="api\ECS\components\MeshComponent.hpp">
+      <Filter>api\ECS\components</Filter>
+    </ClInclude>
+    <ClInclude Include="api\ECS\components\RenderComponent.hpp">
+      <Filter>api\ECS\components</Filter>
+    </ClInclude>
+    <ClInclude Include="api\ECS\components\ScriptComponent.hpp">
+      <Filter>api\ECS\components</Filter>
+    </ClInclude>
+    <ClInclude Include="api\ECS\components\TransformComponent.hpp">
+      <Filter>api\ECS\components</Filter>
+    </ClInclude>
+    <ClInclude Include="api\ECS\systems\HierarchySystem.hpp">
+      <Filter>api\ECS\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="api\ECS\systems\LightSystem.hpp">
+      <Filter>api\ECS\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="api\ECS\systems\LuaHelpers.hpp">
+      <Filter>api\ECS\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="api\ECS\systems\MeshSystem.hpp">
+      <Filter>api\ECS\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="api\ECS\systems\RenderSystem.hpp">
+      <Filter>api\ECS\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="api\ECS\systems\ScriptSystem.hpp">
+      <Filter>api\ECS\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="api\ECS\systems\TransformSystem.hpp">
+      <Filter>api\ECS\systems</Filter>
+    </ClInclude>
+    <ClInclude Include="api\EngineContext.hpp">
+      <Filter>api</Filter>
+    </ClInclude>
+    <ClInclude Include="api\Frame\FrameData.hpp">
+      <Filter>api\Frame</Filter>
+    </ClInclude>
+    <ClInclude Include="api\FrameContext.hpp">
+      <Filter>api</Filter>
+    </ClInclude>
+    <ClInclude Include="api\HedgehogEngine.hpp">
+      <Filter>api</Filter>
+    </ClInclude>
+    <ClInclude Include="api\HedgehogEngineApi.hpp">
+      <Filter>api</Filter>
+    </ClInclude>
+    <ClInclude Include="api\WindowContext.hpp">
+      <Filter>api</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Containers\MaterialSerializer.hpp">
+      <Filter>src\Containers</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Frame\FrameDataBuilder.hpp">
+      <Filter>src\Frame</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Frame\MaterialDef.hpp">
+      <Filter>src\Frame</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\Containers\LightContainer.cpp">
+      <Filter>src\Containers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Containers\MaterialContainer.cpp">
+      <Filter>src\Containers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Containers\MaterialSerializer.cpp">
+      <Filter>src\Containers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Containers\Mesh.cpp">
+      <Filter>src\Containers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Containers\MeshContainer.cpp">
+      <Filter>src\Containers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Containers\TextureContainer.cpp">
+      <Filter>src\Containers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Context\EngineContext.cpp">
+      <Filter>src\Context</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Context\FrameContext.cpp">
+      <Filter>src\Context</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Context\HedgehogEngine.cpp">
+      <Filter>src\Context</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Context\WindowContext.cpp">
+      <Filter>src\Context</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ECS\HierarchySystem.cpp">
+      <Filter>src\ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ECS\LightSystem.cpp">
+      <Filter>src\ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ECS\LuaHelpers.cpp">
+      <Filter>src\ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ECS\MeshSystem.cpp">
+      <Filter>src\ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ECS\RenderSystem.cpp">
+      <Filter>src\ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ECS\ScriptSystem.cpp">
+      <Filter>src\ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ECS\TransformSystem.cpp">
+      <Filter>src\ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Frame\FrameDataBuilder.cpp">
+      <Filter>src\Frame</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

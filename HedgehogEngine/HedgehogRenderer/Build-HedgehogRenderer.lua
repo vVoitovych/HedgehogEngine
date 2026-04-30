@@ -24,7 +24,7 @@ project "HedgehogRenderer"
     links {
         "RHI",
         "HedgehogMath",
-        "HedgehogContext",
+        "HedgehogEngine",
         "HedgehogSettings",
         "HedgehogWindow",
         "ContentLoader",

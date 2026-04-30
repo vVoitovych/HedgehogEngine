@@ -9,7 +9,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace Context
+namespace HedgehogEngine
 {
     class MeshContainer;
     class MaterialContainer;
@@ -39,9 +39,9 @@ namespace HR
         ResourceRegistry(ResourceRegistry&&)                 = delete;
         ResourceRegistry& operator=(ResourceRegistry&&)      = delete;
 
-        void SyncMeshes(const Context::MeshContainer& container, RHI::IRHIDevice& device);
-        void SyncMaterials(Context::MaterialContainer& container,
-                           Context::TextureContainer&  texContainer,
+        void SyncMeshes(const HedgehogEngine::MeshContainer& container, RHI::IRHIDevice& device);
+        void SyncMaterials(HedgehogEngine::MaterialContainer& container,
+                           HedgehogEngine::TextureContainer&  texContainer,
                            RHI::IRHIDevice&            device);
 
         const RHI::IRHIBuffer& GetPositionsBuffer()  const;

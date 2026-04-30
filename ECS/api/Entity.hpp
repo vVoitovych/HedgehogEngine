@@ -2,6 +2,7 @@
 
 #include <bitset>
 #include <cstddef>
+#include <limits>
 
 namespace ECS
 {
@@ -11,4 +12,6 @@ namespace ECS
     using Entity        = size_t;
     using Signature     = std::bitset<MAX_COMPONENTS>;
     using ComponentType = size_t;
+
+    inline constexpr Entity INVALID_ENTITY = std::numeric_limits<Entity>::max();
 }

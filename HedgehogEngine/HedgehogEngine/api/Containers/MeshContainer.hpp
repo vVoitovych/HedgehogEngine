@@ -1,0 +1,36 @@
+#pragma once
+
+#include "HedgehogEngine/api/HedgehogEngineApi.hpp"
+
+#include <vector>
+#include <string>
+#include <cstddef>
+
+namespace HedgehogEngine
+{
+    class MeshSystem;
+    class Mesh;
+
+    class MeshContainer
+    {
+    public:
+        HEDGEHOG_ENGINE_API MeshContainer();
+        HEDGEHOG_ENGINE_API ~MeshContainer();
+
+        MeshContainer(const MeshContainer&)            = delete;
+        MeshContainer(MeshContainer&&)                 = delete;
+        MeshContainer& operator=(const MeshContainer&) = delete;
+        MeshContainer& operator=(MeshContainer&&)      = delete;
+
+        HEDGEHOG_ENGINE_API void Update(const MeshSystem& meshSystem);
+
+        HEDGEHOG_ENGINE_API size_t      GetMeshCount() const;
+        HEDGEHOG_ENGINE_API const Mesh& GetMesh(size_t index) const;
+
+    private:
+        std::vector<std::string> m_FilePaths;
+        std::vector<Mesh>        m_Meshes;
+        uint32_t                 m_TotalVertexCount = 0;
+        uint32_t                 m_TotalIndexCount  = 0;
+    };
+}

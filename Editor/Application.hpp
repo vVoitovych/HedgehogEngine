@@ -2,9 +2,9 @@
 
 #include <memory>
 
-namespace Context
+namespace HedgehogEngine
 {
-    class Context;
+    class HedgehogEngine;
 }
 
 namespace Renderer
@@ -36,7 +36,7 @@ namespace Editor
         float GetFrameTime();
 
     private:
-        std::unique_ptr<Context::Context>   m_Context;
+        std::unique_ptr<HedgehogEngine::HedgehogEngine>   m_Context;
         std::unique_ptr<Renderer::Renderer> m_Renderer;
         std::unique_ptr<EditorGui>          m_EditorGui;
     };

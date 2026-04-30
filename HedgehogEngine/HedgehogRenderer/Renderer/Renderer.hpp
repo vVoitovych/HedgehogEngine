@@ -2,9 +2,9 @@
 
 #include <memory>
 
-namespace Context
+namespace HedgehogEngine
 {
-    class Context;
+    class HedgehogEngine;
 }
 
 namespace Renderer
@@ -17,16 +17,16 @@ namespace Renderer
     class Renderer
     {
     public:
-        explicit Renderer(Context::Context& context);
+        explicit Renderer(HedgehogEngine::HedgehogEngine& context);
         ~Renderer();
 
         Renderer(const Renderer&)            = delete;
         Renderer& operator=(const Renderer&) = delete;
 
-        void Cleanup(Context::Context& context);
+        void Cleanup(HedgehogEngine::HedgehogEngine& context);
 
         void  BeginGui();
-        void  DrawFrame(Context::Context& context);
+        void  DrawFrame(HedgehogEngine::HedgehogEngine& context);
         float GetAspectRatio() const;
         void* GetSceneViewTextureId() const;
         void  SetSceneViewSize(uint32_t width, uint32_t height);

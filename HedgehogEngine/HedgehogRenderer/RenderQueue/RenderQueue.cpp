@@ -10,7 +10,7 @@
 
 #include "HedgehogSettings/Settings/HedgehogSettings.hpp"
 
-#include "FrameData/FrameData.hpp"
+#include "HedgehogEngine/api/Frame/FrameData.hpp"
 
 #include "RHI/api/IRHIDevice.hpp"
 #include "RHI/api/IRHISwapchain.hpp"
@@ -57,7 +57,7 @@ namespace Renderer
         m_GuiPass->DiscardFrame();
     }
 
-    void RenderQueue::Render(const FD::FrameData& frame,
+    void RenderQueue::Render(const HedgehogEngine::FrameData& frame,
                              RHI::IRHIDevice&     device,
                              RHI::IRHISwapchain&  swapchain,
                              RHI::IRHICommandList& cmd,
@@ -86,7 +86,7 @@ namespace Renderer
                               imageAvailableSemaphore, renderFinishedSemaphore, fence);
     }
 
-    void RenderQueue::UpdateData(const FD::FrameData&             frame,
+    void RenderQueue::UpdateData(const HedgehogEngine::FrameData&             frame,
                                  uint32_t                          frameIndex,
                                  const HedgehogSettings::Settings& settings)
     {

@@ -13,7 +13,7 @@ Scene:
         Parent: 0
         TransformComponent:
           Position: [4.5, -0.5, 0.5]
-          Rotation: [-3, -16, 151.65215]
+          Rotation: [-3, -16, 143.55739]
           Scale: [1, 1, 1]
         MeshComponent:
           MeshPath: Models\viking_room.obj
@@ -56,7 +56,7 @@ Scene:
           LightEnabled: true
           LightType: 0
           LightColor: [0.9804642, 0.99509805, 0.9864899]
-          LightIntencity: 0.838
+          LightIntensity: 0.838
           LightRadius: 1
           LightConeAngle: 2
         Children:

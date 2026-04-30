@@ -1,7 +1,7 @@
 #include "DepthPrePass.hpp"
 #include "DepthPrePassPushConstants.hpp"
 
-#include "FrameData/FrameData.hpp"
+#include "HedgehogEngine/api/Frame/FrameData.hpp"
 
 #include "HedgehogRenderer/ResourceManager/ResourceManager.hpp"
 #include "HedgehogRenderer/ResourceRegistry/ResourceRegistry.hpp"
@@ -107,7 +107,7 @@ namespace Renderer
     {
     }
 
-    void DepthPrePass::Render(const FD::FrameData& frame, const ResourceManager& resourceManager,
+    void DepthPrePass::Render(const HedgehogEngine::FrameData& frame, const ResourceManager& resourceManager,
                                RHI::IRHICommandList& cmd, uint32_t frameIndex)
     {
         // Update frame uniform

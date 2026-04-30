@@ -1,8 +1,8 @@
 #include "Renderer.hpp"
 
-#include "HedgehogContext/Context/Context.hpp"
-#include "HedgehogContext/Context/WindowContext.hpp"
-#include "HedgehogContext/Context/EngineContext.hpp"
+#include "HedgehogEngine/api/HedgehogEngine.hpp"
+#include "HedgehogEngine/api/WindowContext.hpp"
+#include "HedgehogEngine/api/EngineContext.hpp"
 
 #include "HedgehogRenderer/RHIContext/RHIContext.hpp"
 #include "HedgehogRenderer/ThreadContext/ThreadContext.hpp"
@@ -20,7 +20,7 @@
 
 namespace Renderer
 {
-    Renderer::Renderer(Context::Context& context)
+    Renderer::Renderer(HedgehogEngine::HedgehogEngine& context)
     {
         auto& windowContext = context.GetWindowContext();
         m_RHIContext    = std::make_unique<RHIContext>(windowContext);
@@ -40,7 +40,7 @@ namespace Renderer
     {
     }
 
-    void Renderer::Cleanup(Context::Context& context)
+    void Renderer::Cleanup(HedgehogEngine::HedgehogEngine& context)
     {
         auto& device = m_RHIContext->GetRHIDevice();
         device.WaitIdle();
@@ -72,7 +72,7 @@ namespace Renderer
         m_DesiredSceneH = height;
     }
 
-    void Renderer::DrawFrame(Context::Context& context)
+    void Renderer::DrawFrame(HedgehogEngine::HedgehogEngine& context)
     {
         auto& windowContext = context.GetWindowContext();
         auto& engineContext = context.GetEngineContext();
