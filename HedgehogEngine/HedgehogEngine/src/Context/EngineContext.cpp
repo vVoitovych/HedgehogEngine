@@ -27,19 +27,20 @@
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
 #include "ECS/api/components/Hierarchy.hpp"
 
-#include "HedgehogEngine/api/ECS/GameObjectHelpers.hpp"
 #include "EcsSerialization/api/EcsSerializer.hpp"
 #include "EcsSerialization/api/ComponentSerializerRegistry.hpp"
 
 #include "HedgehogEngine/src/Frame/FrameDataBuilder.hpp"
 
+#include <algorithm>
+#include <cassert>
 #include <filesystem>
+#include <sstream>
 
 namespace HedgehogEngine
 {
     EngineContext::EngineContext()
-        : m_RootEntity(0)
-        , m_SceneName("Default")
+        : m_SceneName("Default")
     {
         m_Camera = std::make_unique<Camera>();
         InitECS();
@@ -103,7 +104,7 @@ namespace HedgehogEngine
         signature.set(m_ECS.GetComponentType<ScriptComponent>());
         m_ECS.SetSystemSignature<ScriptSystem>(signature);
 
-        m_RootEntity = CreateSceneRoot(m_ECS, *m_HierarchySystem);
+        CreateSceneRoot();
 
         RegisterComponents();
     }
@@ -233,7 +234,7 @@ namespace HedgehogEngine
     const Camera& EngineContext::GetCamera() const { return *m_Camera; }
 
     ECS::ECS&   EngineContext::GetECS()            { return m_ECS; }
-    ECS::Entity EngineContext::GetRootEntity() const { return m_RootEntity; }
+    ECS::Entity EngineContext::GetRootEntity() const { return m_ECS.GetRoot(); }
     std::string EngineContext::GetSceneName()  const { return m_SceneName; }
 
     TransformSystem*  EngineContext::GetTransformSystem()  const { return m_TransformSystem.get(); }
@@ -245,9 +246,8 @@ namespace HedgehogEngine
 
     void EngineContext::LoadScene(const std::string& filePath)
     {
-        DeleteGameObjectAndChildren(m_ECS, m_RootEntity);
-        EcsSerialization::EcsSerializer::Deserialize(*m_ComponentRegistry, m_ECS, m_RootEntity, m_SceneName, filePath);
-        m_HierarchySystem->SetRoot(m_RootEntity);
+        DeleteGameObjectAndChildren(m_ECS.GetRoot());
+        EcsSerialization::EcsSerializer::Deserialize(*m_ComponentRegistry, m_ECS, m_SceneName, filePath);
         m_MeshSystem->Update(m_ECS);
         m_RenderSystem->UpdateSystem(m_ECS);
     }
@@ -256,19 +256,78 @@ namespace HedgehogEngine
     {
         const std::string sceneName = std::filesystem::path(filePath).stem().string();
         m_SceneName = sceneName;
-        EcsSerialization::EcsSerializer::Serialize(*m_ComponentRegistry, m_ECS, m_RootEntity, m_SceneName, filePath);
+        EcsSerialization::EcsSerializer::Serialize(*m_ComponentRegistry, m_ECS, m_SceneName, filePath);
     }
 
     void EngineContext::ResetScene()
     {
-        DeleteGameObjectAndChildren(m_ECS, m_RootEntity);
-        m_RootEntity = CreateSceneRoot(m_ECS, *m_HierarchySystem);
-        m_SceneName  = "Default";
+        DeleteGameObjectAndChildren(m_ECS.GetRoot());
+        CreateSceneRoot();
+        m_SceneName = "Default";
     }
 
     void EngineContext::SetSceneName(const std::string& name)
     {
         m_SceneName = name;
+    }
+
+    ECS::Entity EngineContext::CreateGameObject(std::optional<ECS::Entity> parent)
+    {
+        ECS::Entity realParent = parent.value_or(m_ECS.GetRoot());
+
+        auto& parentHierarchy = m_ECS.GetComponent<ECS::HierarchyComponent>(realParent);
+        ECS::Entity entity    = m_ECS.CreateEntity();
+        m_ECS.AddComponent(entity, TransformComponent{});
+        m_ECS.AddComponent(entity, ECS::HierarchyComponent{ GetUniqueGameObjectName(), realParent, {} });
+        parentHierarchy.m_Children.push_back(entity);
+
+        return entity;
+    }
+
+    void EngineContext::DeleteGameObject(ECS::Entity entity)
+    {
+        assert(entity != m_ECS.GetRoot() && "Cannot delete the root entity.");
+
+        auto& hierarchy       = m_ECS.GetComponent<ECS::HierarchyComponent>(entity);
+        auto& parentHierarchy = m_ECS.GetComponent<ECS::HierarchyComponent>(hierarchy.m_Parent);
+
+        auto it = std::find(parentHierarchy.m_Children.begin(),
+                             parentHierarchy.m_Children.end(), entity);
+        if (it != parentHierarchy.m_Children.end())
+        {
+            parentHierarchy.m_Children.erase(it);
+            for (ECS::Entity child : hierarchy.m_Children)
+            {
+                auto& childHierarchy    = m_ECS.GetComponent<ECS::HierarchyComponent>(child);
+                childHierarchy.m_Parent = hierarchy.m_Parent;
+                parentHierarchy.m_Children.push_back(child);
+            }
+        }
+        m_ECS.DestroyEntity(entity);
+    }
+
+    void EngineContext::CreateSceneRoot()
+    {
+        ECS::Entity root = m_ECS.CreateEntity();
+        m_ECS.AddComponent(root, TransformComponent{});
+        m_ECS.AddComponent(root, ECS::HierarchyComponent{ "Root", root, {} });
+        m_ECS.SetRoot(root);
+    }
+
+    void EngineContext::DeleteGameObjectAndChildren(ECS::Entity entity)
+    {
+        auto& hierarchy = m_ECS.GetComponent<ECS::HierarchyComponent>(entity);
+        for (ECS::Entity child : hierarchy.m_Children)
+            DeleteGameObjectAndChildren(child);
+        m_ECS.DestroyEntity(entity);
+    }
+
+    std::string EngineContext::GetUniqueGameObjectName()
+    {
+        static size_t s_Index = 0;
+        std::ostringstream ss;
+        ss << "GameObject_" << s_Index++;
+        return ss.str();
     }
 
     void EngineContext::UpdateCamera(WindowContext& windowContext, float aspectRatio, float dt)

@@ -6,12 +6,7 @@ namespace HedgehogEngine
 {
     void HierarchySystem::Update(ECS::ECS& ecs)
     {
-        UpdateChildrenMatrices(ecs, m_Root);
-    }
-
-    void HierarchySystem::SetRoot(ECS::Entity entity)
-    {
-        m_Root = entity;
+        UpdateChildrenMatrices(ecs, ecs.GetRoot());
     }
 
     void HierarchySystem::UpdateChildrenMatrices(ECS::ECS& ecs, ECS::Entity parent)

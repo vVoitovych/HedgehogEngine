@@ -7,6 +7,7 @@
 #include "HedgehogEngine/api/Frame/FrameData.hpp"
 
 #include <memory>
+#include <optional>
 #include <string>
 
 namespace HedgehogSettings
@@ -67,6 +68,9 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API RenderSystem*       GetRenderSystem()    const;
         HEDGEHOG_ENGINE_API ScriptSystem*       GetScriptSystem()    const;
 
+        HEDGEHOG_ENGINE_API ECS::Entity CreateGameObject(std::optional<ECS::Entity> parent = std::nullopt);
+        HEDGEHOG_ENGINE_API void        DeleteGameObject(ECS::Entity entity);
+
         HEDGEHOG_ENGINE_API void LoadScene(const std::string& filePath);
         HEDGEHOG_ENGINE_API void SaveScene(const std::string& filePath);
         HEDGEHOG_ENGINE_API void ResetScene();
@@ -77,11 +81,14 @@ namespace HedgehogEngine
         void RegisterComponents();
         void UpdateCamera(WindowContext& windowContext, float aspectRatio, float dt);
 
+        void        CreateSceneRoot();
+        void        DeleteGameObjectAndChildren(ECS::Entity entity);
+        static std::string GetUniqueGameObjectName();
+
     private:
         std::unique_ptr<Camera> m_Camera;
 
         ECS::ECS    m_ECS;
-        ECS::Entity m_RootEntity;
         std::string m_SceneName;
 
         std::shared_ptr<TransformSystem>  m_TransformSystem;

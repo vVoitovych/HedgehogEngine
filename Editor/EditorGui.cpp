@@ -11,7 +11,8 @@
 #include "HedgehogEngine/HedgehogSettings/Settings/ShadowmapingSettings.hpp"
 
 #include "ECS/api/ECS.hpp"
-#include "HedgehogEngine/api/ECS/GameObjectHelpers.hpp"
+#include "ECS/api/components/Hierarchy.hpp"
+#include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
 #include "HedgehogEngine/api/ECS/systems/MeshSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/RenderSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/LightSystem.hpp"
@@ -122,7 +123,6 @@ namespace Editor
         auto& ecs           = engineContext.GetECS();
         auto* meshSystem    = engineContext.GetMeshSystem();
         auto* renderSystem  = engineContext.GetRenderSystem();
-        ECS::Entity root    = engineContext.GetRootEntity();
 
         if (!ImGui::BeginMainMenuBar())
             return;
@@ -163,7 +163,7 @@ namespace Editor
         if (ImGui::BeginMenu("Create"))
         {
             if (ImGui::MenuItem("Create game object"))
-                HedgehogEngine::CreateGameObject(ecs, root, m_SelectedEntity);
+                engineContext.CreateGameObject(m_SelectedEntity);
 
             ImGui::Separator();
             if (ImGui::BeginMenu("Add component"))
@@ -282,20 +282,18 @@ namespace Editor
     void EditorGui::DrawSceneHierarchy(HedgehogEngine::HedgehogEngine& context)
     {
         auto& engineContext = context.GetEngineContext();
-        auto& ecs           = engineContext.GetECS();
-        ECS::Entity root    = engineContext.GetRootEntity();
 
         ImGui::SeparatorText(engineContext.GetSceneName().c_str());
 
         const ImVec2 fullWidth = ImVec2(-FLT_MIN, 0.0f);
         if (ImGui::Button("Create object", fullWidth))
-            HedgehogEngine::CreateGameObject(ecs, root, m_SelectedEntity);
+            engineContext.CreateGameObject(m_SelectedEntity);
 
         if (ImGui::Button("Delete object", fullWidth))
         {
-            if (m_SelectedEntity.has_value() && m_SelectedEntity.value() != root)
+            if (m_SelectedEntity.has_value() && m_SelectedEntity.value() != engineContext.GetRootEntity())
             {
-                HedgehogEngine::DeleteGameObject(ecs, m_SelectedEntity.value());
+                engineContext.DeleteGameObject(m_SelectedEntity.value());
                 m_SelectedEntity.reset();
             }
         }
@@ -303,7 +301,7 @@ namespace Editor
         ImGui::Separator();
 
         int index = 0;
-        DrawHierarchyNode(context, root, index);
+        DrawHierarchyNode(context, engineContext.GetRootEntity(), index);
     }
 
     void EditorGui::DrawHierarchyNode(HedgehogEngine::HedgehogEngine& context, ECS::Entity entity, int& index)

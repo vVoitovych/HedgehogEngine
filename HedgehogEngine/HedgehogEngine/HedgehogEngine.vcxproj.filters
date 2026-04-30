@@ -54,9 +54,6 @@
     <ClInclude Include="api\Containers\TextureContainer.hpp">
       <Filter>api\Containers</Filter>
     </ClInclude>
-    <ClInclude Include="api\ECS\GameObjectHelpers.hpp">
-      <Filter>api\ECS</Filter>
-    </ClInclude>
     <ClInclude Include="api\ECS\components\LightComponent.hpp">
       <Filter>api\ECS\components</Filter>
     </ClInclude>
@@ -151,9 +148,6 @@
     </ClCompile>
     <ClCompile Include="src\Context\WindowContext.cpp">
       <Filter>src\Context</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ECS\GameObjectHelpers.cpp">
-      <Filter>src\ECS</Filter>
     </ClCompile>
     <ClCompile Include="src\ECS\HierarchySystem.cpp">
       <Filter>src\ECS</Filter>

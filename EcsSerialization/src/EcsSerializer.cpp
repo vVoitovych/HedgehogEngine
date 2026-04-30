@@ -63,7 +63,7 @@ namespace
 }
 
     void EcsSerializer::Serialize(const ComponentSerializerRegistry& registry,
-                                   const ECS::ECS& ecs, ECS::Entity root,
+                                   const ECS::ECS& ecs,
                                    const std::string& sceneName, const std::string& filePath)
     {
         LOGINFO("EcsSerializer::Serialize: ", filePath);
@@ -72,7 +72,7 @@ namespace
         out << YAML::BeginMap;
         out << YAML::Key << "Scene name" << YAML::Value << sceneName;
         out << YAML::Key << "Scene"      << YAML::Value << YAML::BeginSeq;
-        SerializeEntity(out, ecs, root, registry);
+        SerializeEntity(out, ecs, ecs.GetRoot(), registry);
         out << YAML::EndSeq;
         out << YAML::EndMap;
 
@@ -81,7 +81,7 @@ namespace
     }
 
     void EcsSerializer::Deserialize(const ComponentSerializerRegistry& registry,
-                                     ECS::ECS& ecs, ECS::Entity& outRoot,
+                                     ECS::ECS& ecs,
                                      std::string& outSceneName, const std::string& filePath)
     {
         LOGINFO("EcsSerializer::Deserialize: ", filePath);
@@ -102,9 +102,11 @@ namespace
         const YAML::Node sceneData = data["Scene"];
         if (sceneData && sceneData.size() > 0)
         {
-            outRoot = sceneData[0]["Entity"].as<ECS::Entity>();
             for (const auto& node : sceneData)
                 DeserializeEntity(ecs, node, registry);
+
+            // The first node in the scene sequence is the root entity.
+            ecs.SetRoot(sceneData[0]["Entity"].as<ECS::Entity>());
         }
     }
 }

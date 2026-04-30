@@ -20,6 +20,9 @@ namespace ECS
         ECS_API void   CreateEntity(Entity entity);
         ECS_API void   DestroyEntity(Entity entity);
 
+        ECS_API Entity GetRoot()             const;
+        ECS_API void   SetRoot(Entity entity);
+
         template<typename T>
         void RegisterComponent()
         {
@@ -84,5 +87,7 @@ namespace ECS
         std::unique_ptr<ComponentManager> m_ComponentManager;
         std::unique_ptr<EntityManager>    m_EntityManager;
         std::unique_ptr<SystemManager>    m_SystemManager;
+
+        Entity m_RootEntity{INVALID_ENTITY};
     };
 }

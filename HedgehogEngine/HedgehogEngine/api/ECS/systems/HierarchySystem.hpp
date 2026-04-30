@@ -11,12 +11,8 @@ namespace HedgehogEngine
     {
     public:
         HEDGEHOG_ENGINE_API void Update(ECS::ECS& ecs);
-        HEDGEHOG_ENGINE_API void SetRoot(ECS::Entity entity);
 
     private:
         void UpdateChildrenMatrices(ECS::ECS& ecs, ECS::Entity parent);
-
-    private:
-        ECS::Entity m_Root = 0;
     };
 }
