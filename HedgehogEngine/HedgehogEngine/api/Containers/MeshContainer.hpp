@@ -6,13 +6,9 @@
 #include <string>
 #include <cstddef>
 
-namespace Scene
-{
-    class MeshSystem;
-}
-
 namespace HedgehogEngine
 {
+    class MeshSystem;
     class Mesh;
 
     class MeshContainer
@@ -26,7 +22,7 @@ namespace HedgehogEngine
         MeshContainer& operator=(const MeshContainer&) = delete;
         MeshContainer& operator=(MeshContainer&&)      = delete;
 
-        HEDGEHOG_ENGINE_API void Update(const Scene::MeshSystem& meshSystem);
+        HEDGEHOG_ENGINE_API void Update(const MeshSystem& meshSystem);
 
         HEDGEHOG_ENGINE_API size_t      GetMeshCount() const;
         HEDGEHOG_ENGINE_API const Mesh& GetMesh(size_t index) const;

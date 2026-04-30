@@ -4,12 +4,12 @@
 #include <algorithm>
 #include <sstream>
 
-namespace Components
+namespace HedgehogEngine
 {
-    ECS::Entity CreateSceneRoot(ECS::ECS& ecs, Scene::HierarchySystem& hierarchySystem)
+    ECS::Entity CreateSceneRoot(ECS::ECS& ecs, HierarchySystem& hierarchySystem)
     {
         ECS::Entity root = ecs.CreateEntity();
-        ecs.AddComponent(root, Scene::TransformComponent{});
+        ecs.AddComponent(root, TransformComponent{});
         ecs.AddComponent(root, ECS::HierarchyComponent{ "Root", root, {} });
         hierarchySystem.SetRoot(root);
         return root;
@@ -22,7 +22,7 @@ namespace Components
 
         auto& parentHierarchy = ecs.GetComponent<ECS::HierarchyComponent>(realParent);
         ECS::Entity entity    = ecs.CreateEntity();
-        ecs.AddComponent(entity, Scene::TransformComponent{});
+        ecs.AddComponent(entity, TransformComponent{});
         ecs.AddComponent(entity, ECS::HierarchyComponent{ GetUniqueGameObjectName(), realParent, {} });
         parentHierarchy.m_Children.push_back(entity);
 

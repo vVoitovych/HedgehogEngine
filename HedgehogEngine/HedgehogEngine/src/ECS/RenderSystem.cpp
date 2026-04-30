@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-namespace Scene
+namespace HedgehogEngine
 {
     void RenderSystem::Update(ECS::ECS& ecs, ECS::Entity entity)
     {

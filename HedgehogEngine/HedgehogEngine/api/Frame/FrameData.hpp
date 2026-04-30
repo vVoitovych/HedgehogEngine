@@ -7,7 +7,7 @@
 #include <vector>
 #include <cstdint>
 
-namespace FD
+namespace HedgehogEngine
 {
     struct DrawObject
     {

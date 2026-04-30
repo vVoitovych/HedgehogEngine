@@ -11,7 +11,7 @@
 
 namespace HedgehogEngine
 {
-    void MaterialContainer::Update(const Scene::RenderSystem& renderSystem)
+    void MaterialContainer::Update(const RenderSystem& renderSystem)
     {
         const auto& materialsInScene = renderSystem.GetMaterials();
         for (size_t i = m_Materials.size(); i < materialsInScene.size(); ++i)

@@ -15,7 +15,7 @@ namespace HedgehogEngine
         m_Lights.resize(MAX_LIGHTS_COUNT);
     }
 
-    void LightContainer::UpdateLights(const ECS::ECS& ecs, const Scene::LightSystem& lightSystem)
+    void LightContainer::UpdateLights(const ECS::ECS& ecs, const LightSystem& lightSystem)
     {
         auto lightComponentsCount = lightSystem.GetLightComponentsCount();
         if (lightComponentsCount > MAX_LIGHTS_COUNT)
@@ -49,7 +49,7 @@ namespace HedgehogEngine
         return m_LightCount;
     }
 
-    const std::vector<FD::LightData>& LightContainer::GetLights() const
+    const std::vector<LightData>& LightContainer::GetLights() const
     {
         return m_Lights;
     }

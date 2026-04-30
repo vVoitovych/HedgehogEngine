@@ -2,7 +2,7 @@
 
 #include "HedgehogMath/api/Vector.hpp"
 
-namespace Scene
+namespace HedgehogEngine
 {
     enum class LightType
     {

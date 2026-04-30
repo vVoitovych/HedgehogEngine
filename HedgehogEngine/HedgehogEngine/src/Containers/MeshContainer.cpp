@@ -17,7 +17,7 @@ namespace HedgehogEngine
     {
     }
 
-    void MeshContainer::Update(const Scene::MeshSystem& meshSystem)
+    void MeshContainer::Update(const MeshSystem& meshSystem)
     {
         const auto& meshPaths = meshSystem.GetMeshes();
         if (meshPaths.size() <= m_Meshes.size())

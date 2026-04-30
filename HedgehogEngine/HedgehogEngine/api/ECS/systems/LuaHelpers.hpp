@@ -11,7 +11,7 @@ extern "C"
 #include <string>
 #include <unordered_map>
 
-namespace Scene
+namespace HedgehogEngine
 {
     struct ScriptParam;
 

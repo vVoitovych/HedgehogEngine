@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <filesystem>
 
-namespace Scene
+namespace HedgehogEngine
 {
     const std::string MeshSystem::sDefaultMeshPath = "Models/Default/cube.obj";
 

@@ -10,14 +10,11 @@
 #include <optional>
 #include <string>
 
-namespace Scene
+namespace HedgehogEngine
 {
     class HierarchySystem;
-}
 
-namespace Components
-{
-    HEDGEHOG_ENGINE_API ECS::Entity CreateSceneRoot(ECS::ECS& ecs, Scene::HierarchySystem& hierarchySystem);
+    HEDGEHOG_ENGINE_API ECS::Entity CreateSceneRoot(ECS::ECS& ecs, HierarchySystem& hierarchySystem);
 
     HEDGEHOG_ENGINE_API ECS::Entity CreateGameObject(ECS::ECS& ecs, ECS::Entity root,
                                                       std::optional<ECS::Entity> parent = std::nullopt);

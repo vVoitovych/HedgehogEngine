@@ -9,7 +9,7 @@
 
 struct lua_State;
 
-namespace Scene
+namespace HedgehogEngine
 {
     enum class ParamType
     {

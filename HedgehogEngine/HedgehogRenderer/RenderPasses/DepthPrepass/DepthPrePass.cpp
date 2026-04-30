@@ -107,7 +107,7 @@ namespace Renderer
     {
     }
 
-    void DepthPrePass::Render(const FD::FrameData& frame, const ResourceManager& resourceManager,
+    void DepthPrePass::Render(const HedgehogEngine::FrameData& frame, const ResourceManager& resourceManager,
                                RHI::IRHICommandList& cmd, uint32_t frameIndex)
     {
         // Update frame uniform

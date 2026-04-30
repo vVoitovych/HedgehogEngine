@@ -10,7 +10,7 @@
 #include <vector>
 #include <string>
 
-namespace Scene
+namespace HedgehogEngine
 {
     class RenderSystem : public ECS::System
     {

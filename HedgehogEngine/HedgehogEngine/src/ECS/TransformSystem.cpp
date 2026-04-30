@@ -5,7 +5,7 @@
 #include "HedgehogMath/api/Matrix.hpp"
 #include "HedgehogMath/api/Common.hpp"
 
-namespace Scene
+namespace HedgehogEngine
 {
     void TransformSystem::Update(ECS::ECS& ecs)
     {

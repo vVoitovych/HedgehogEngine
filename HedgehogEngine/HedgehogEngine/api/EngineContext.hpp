@@ -9,16 +9,6 @@
 #include <memory>
 #include <string>
 
-namespace Scene
-{
-    class TransformSystem;
-    class HierarchySystem;
-    class MeshSystem;
-    class LightSystem;
-    class RenderSystem;
-    class ScriptSystem;
-}
-
 namespace HedgehogSettings
 {
     class Settings;
@@ -38,6 +28,13 @@ namespace HedgehogEngine
     class LightContainer;
     class MaterialContainer;
 
+    class TransformSystem;
+    class HierarchySystem;
+    class MeshSystem;
+    class LightSystem;
+    class RenderSystem;
+    class ScriptSystem;
+
     class EngineContext
     {
     public:
@@ -53,22 +50,22 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API const MaterialContainer& GetMaterialContainer() const;
         HEDGEHOG_ENGINE_API MaterialContainer&       GetMaterialContainer();
 
-        HEDGEHOG_ENGINE_API const FD::FrameData&     GetFrameData()         const;
+        HEDGEHOG_ENGINE_API const FrameData&         GetFrameData()         const;
 
         HEDGEHOG_ENGINE_API HedgehogSettings::Settings&       GetSettings();
         HEDGEHOG_ENGINE_API const HedgehogSettings::Settings& GetSettings() const;
 
         HEDGEHOG_ENGINE_API const Camera& GetCamera() const;
 
-        HEDGEHOG_ENGINE_API ECS::ECS&                GetECS();
-        HEDGEHOG_ENGINE_API ECS::Entity              GetRootEntity()      const;
-        HEDGEHOG_ENGINE_API std::string              GetSceneName()       const;
-        HEDGEHOG_ENGINE_API Scene::TransformSystem*  GetTransformSystem() const;
-        HEDGEHOG_ENGINE_API Scene::HierarchySystem*  GetHierarchySystem() const;
-        HEDGEHOG_ENGINE_API Scene::MeshSystem*       GetMeshSystem()      const;
-        HEDGEHOG_ENGINE_API Scene::LightSystem*      GetLightSystem()     const;
-        HEDGEHOG_ENGINE_API Scene::RenderSystem*     GetRenderSystem()    const;
-        HEDGEHOG_ENGINE_API Scene::ScriptSystem*     GetScriptSystem()    const;
+        HEDGEHOG_ENGINE_API ECS::ECS&           GetECS();
+        HEDGEHOG_ENGINE_API ECS::Entity         GetRootEntity()      const;
+        HEDGEHOG_ENGINE_API std::string         GetSceneName()       const;
+        HEDGEHOG_ENGINE_API TransformSystem*    GetTransformSystem() const;
+        HEDGEHOG_ENGINE_API HierarchySystem*    GetHierarchySystem() const;
+        HEDGEHOG_ENGINE_API MeshSystem*         GetMeshSystem()      const;
+        HEDGEHOG_ENGINE_API LightSystem*        GetLightSystem()     const;
+        HEDGEHOG_ENGINE_API RenderSystem*       GetRenderSystem()    const;
+        HEDGEHOG_ENGINE_API ScriptSystem*       GetScriptSystem()    const;
 
         HEDGEHOG_ENGINE_API void LoadScene(const std::string& filePath);
         HEDGEHOG_ENGINE_API void SaveScene(const std::string& filePath);
@@ -87,19 +84,19 @@ namespace HedgehogEngine
         ECS::Entity m_RootEntity;
         std::string m_SceneName;
 
-        std::shared_ptr<Scene::TransformSystem>  m_TransformSystem;
-        std::shared_ptr<Scene::HierarchySystem>  m_HierarchySystem;
-        std::shared_ptr<Scene::MeshSystem>       m_MeshSystem;
-        std::shared_ptr<Scene::LightSystem>      m_LightSystem;
-        std::shared_ptr<Scene::RenderSystem>     m_RenderSystem;
-        std::shared_ptr<Scene::ScriptSystem>     m_ScriptSystem;
+        std::shared_ptr<TransformSystem>  m_TransformSystem;
+        std::shared_ptr<HierarchySystem>  m_HierarchySystem;
+        std::shared_ptr<MeshSystem>       m_MeshSystem;
+        std::shared_ptr<LightSystem>      m_LightSystem;
+        std::shared_ptr<RenderSystem>     m_RenderSystem;
+        std::shared_ptr<ScriptSystem>     m_ScriptSystem;
 
         std::unique_ptr<MeshContainer>     m_MeshContainer;
         std::unique_ptr<TextureContainer>  m_TextureContainer;
         std::unique_ptr<LightContainer>    m_LightContainer;
         std::unique_ptr<MaterialContainer> m_MaterialContainer;
 
-        FD::FrameData m_FrameData;
+        FrameData m_FrameData;
 
         std::unique_ptr<HedgehogSettings::Settings>                  m_Settings;
         std::unique_ptr<EcsSerialization::ComponentSerializerRegistry> m_ComponentRegistry;

@@ -3,7 +3,7 @@
 #include "HedgehogMath/api/Vector.hpp"
 #include "HedgehogMath/api/Matrix.hpp"
 
-namespace Scene
+namespace HedgehogEngine
 {
     class TransformComponent
     {

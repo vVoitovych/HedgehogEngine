@@ -5,13 +5,9 @@
 #include <string>
 #include <vector>
 
-namespace Scene
-{
-    class RenderSystem;
-}
-
 namespace HedgehogEngine
 {
+    class RenderSystem;
     struct MaterialData;
 
     class MaterialContainer
@@ -25,7 +21,7 @@ namespace HedgehogEngine
         MaterialContainer& operator=(const MaterialContainer&) = delete;
         MaterialContainer& operator=(MaterialContainer&&)      = delete;
 
-        HEDGEHOG_ENGINE_API void Update(const Scene::RenderSystem& renderSystem);
+        HEDGEHOG_ENGINE_API void Update(const RenderSystem& renderSystem);
         HEDGEHOG_ENGINE_API void SetMaterialDirty(size_t index);
 
         HEDGEHOG_ENGINE_API void ClearMaterials();

@@ -6,7 +6,7 @@
 #include "ECS/api/ECS.hpp"
 #include "ECS/api/Entity.hpp"
 
-namespace Scene
+namespace HedgehogEngine
 {
     class ScriptComponent;
 

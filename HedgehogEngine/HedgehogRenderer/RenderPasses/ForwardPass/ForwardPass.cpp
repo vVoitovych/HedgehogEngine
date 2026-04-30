@@ -25,7 +25,7 @@
 
 namespace Renderer
 {
-    ForwardPass::GpuLight ForwardPass::ToGpuLight(const FD::LightData& fd)
+    ForwardPass::GpuLight ForwardPass::ToGpuLight(const HedgehogEngine::LightData& fd)
     {
         GpuLight gpu;
         gpu.m_Position  = fd.m_Position;
@@ -153,7 +153,7 @@ namespace Renderer
     {
     }
 
-    void ForwardPass::Render(const FD::FrameData& frame, const ResourceManager& resourceManager,
+    void ForwardPass::Render(const HedgehogEngine::FrameData& frame, const ResourceManager& resourceManager,
                               RHI::IRHICommandList& cmd, uint32_t frameIndex)
     {
         // Update frame uniform

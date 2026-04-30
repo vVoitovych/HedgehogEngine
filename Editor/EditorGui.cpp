@@ -30,8 +30,6 @@
 #include <algorithm>
 #include <stdexcept>
 
-using namespace Scene;
-
 namespace Editor
 {
     EditorGui::EditorGui()
@@ -165,7 +163,7 @@ namespace Editor
         if (ImGui::BeginMenu("Create"))
         {
             if (ImGui::MenuItem("Create game object"))
-                Components::CreateGameObject(ecs, root, m_SelectedEntity);
+                HedgehogEngine::CreateGameObject(ecs, root, m_SelectedEntity);
 
             ImGui::Separator();
             if (ImGui::BeginMenu("Add component"))
@@ -173,32 +171,32 @@ namespace Editor
                 if (ImGui::MenuItem("Mesh component") && m_SelectedEntity.has_value())
                 {
                     ECS::Entity e = m_SelectedEntity.value();
-                    if (!ecs.HasComponent<MeshComponent>(e))
+                    if (!ecs.HasComponent<HedgehogEngine::MeshComponent>(e))
                     {
-                        ecs.AddComponent(e, MeshComponent{ Scene::MeshSystem::sDefaultMeshPath });
+                        ecs.AddComponent(e, HedgehogEngine::MeshComponent{ HedgehogEngine::MeshSystem::sDefaultMeshPath });
                         meshSystem->Update(ecs, e);
                     }
                 }
                 if (ImGui::MenuItem("Render component") && m_SelectedEntity.has_value())
                 {
                     ECS::Entity e = m_SelectedEntity.value();
-                    if (!ecs.HasComponent<RenderComponent>(e))
+                    if (!ecs.HasComponent<HedgehogEngine::RenderComponent>(e))
                     {
-                        ecs.AddComponent(e, RenderComponent{});
+                        ecs.AddComponent(e, HedgehogEngine::RenderComponent{});
                         renderSystem->Update(ecs, e);
                     }
                 }
                 if (ImGui::MenuItem("Light component") && m_SelectedEntity.has_value())
                 {
                     ECS::Entity e = m_SelectedEntity.value();
-                    if (!ecs.HasComponent<LightComponent>(e))
-                        ecs.AddComponent(e, LightComponent{});
+                    if (!ecs.HasComponent<HedgehogEngine::LightComponent>(e))
+                        ecs.AddComponent(e, HedgehogEngine::LightComponent{});
                 }
                 if (ImGui::MenuItem("Script component") && m_SelectedEntity.has_value())
                 {
                     ECS::Entity e = m_SelectedEntity.value();
-                    if (!ecs.HasComponent<ScriptComponent>(e))
-                        ecs.AddComponent(e, ScriptComponent{});
+                    if (!ecs.HasComponent<HedgehogEngine::ScriptComponent>(e))
+                        ecs.AddComponent(e, HedgehogEngine::ScriptComponent{});
                 }
                 ImGui::EndMenu();
             }
@@ -291,13 +289,13 @@ namespace Editor
 
         const ImVec2 fullWidth = ImVec2(-FLT_MIN, 0.0f);
         if (ImGui::Button("Create object", fullWidth))
-            Components::CreateGameObject(ecs, root, m_SelectedEntity);
+            HedgehogEngine::CreateGameObject(ecs, root, m_SelectedEntity);
 
         if (ImGui::Button("Delete object", fullWidth))
         {
             if (m_SelectedEntity.has_value() && m_SelectedEntity.value() != root)
             {
-                Components::DeleteGameObject(ecs, m_SelectedEntity.value());
+                HedgehogEngine::DeleteGameObject(ecs, m_SelectedEntity.value());
                 m_SelectedEntity.reset();
             }
         }
@@ -401,7 +399,7 @@ namespace Editor
         if (!ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
             return;
 
-        auto& transform = ecs.GetComponent<TransformComponent>(entity);
+        auto& transform = ecs.GetComponent<HedgehogEngine::TransformComponent>(entity);
 
         ImGui::SeparatorText("Position");
         ImGui::DragFloat("pos x", &transform.m_Position.x(), 0.5f);
@@ -426,12 +424,12 @@ namespace Editor
         auto* meshSystem    = engineContext.GetMeshSystem();
         auto  entity        = m_SelectedEntity.value();
 
-        if (!ecs.HasComponent<MeshComponent>(entity))
+        if (!ecs.HasComponent<HedgehogEngine::MeshComponent>(entity))
             return;
         if (!ImGui::CollapsingHeader("Mesh", ImGuiTreeNodeFlags_DefaultOpen))
             return;
 
-        auto&    mesh          = ecs.GetComponent<MeshComponent>(entity);
+        auto&    mesh          = ecs.GetComponent<HedgehogEngine::MeshComponent>(entity);
         const auto& meshPaths  = meshSystem->GetMeshes();
         uint64_t selectedIndex = mesh.m_MeshIndex.value_or(0);
 
@@ -455,8 +453,8 @@ namespace Editor
             meshSystem->LoadMesh(ecs, entity);
         if (ImGui::Button("Remove mesh"))
         {
-            if (ecs.HasComponent<MeshComponent>(entity))
-                ecs.RemoveComponent<MeshComponent>(entity);
+            if (ecs.HasComponent<HedgehogEngine::MeshComponent>(entity))
+                ecs.RemoveComponent<HedgehogEngine::MeshComponent>(entity);
         }
     }
 
@@ -467,12 +465,12 @@ namespace Editor
         auto* renderSystem  = engineContext.GetRenderSystem();
         auto  entity        = m_SelectedEntity.value();
 
-        if (!ecs.HasComponent<RenderComponent>(entity))
+        if (!ecs.HasComponent<HedgehogEngine::RenderComponent>(entity))
             return;
         if (!ImGui::CollapsingHeader("Rendering", ImGuiTreeNodeFlags_DefaultOpen))
             return;
 
-        auto& render        = ecs.GetComponent<RenderComponent>(entity);
+        auto& render        = ecs.GetComponent<HedgehogEngine::RenderComponent>(entity);
         const auto& materials = renderSystem->GetMaterials();
 
         bool visible = render.m_IsVisible;
@@ -517,8 +515,8 @@ namespace Editor
 
         if (ImGui::Button("Remove render"))
         {
-            if (ecs.HasComponent<RenderComponent>(entity))
-                ecs.RemoveComponent<RenderComponent>(entity);
+            if (ecs.HasComponent<HedgehogEngine::RenderComponent>(entity))
+                ecs.RemoveComponent<HedgehogEngine::RenderComponent>(entity);
         }
 
         if (!materials.empty() && render.m_MaterialIndex.has_value())
@@ -574,24 +572,24 @@ namespace Editor
 
     namespace
     {
-        Scene::LightType IndexToLightType(int index)
+        HedgehogEngine::LightType IndexToLightType(int index)
         {
             switch (index)
             {
-            case 0: return Scene::LightType::DirectionLight;
-            case 1: return Scene::LightType::PointLight;
-            case 2: return Scene::LightType::SpotLight;
+            case 0: return HedgehogEngine::LightType::DirectionLight;
+            case 1: return HedgehogEngine::LightType::PointLight;
+            case 2: return HedgehogEngine::LightType::SpotLight;
             default: throw std::runtime_error("Invalid light type index");
             }
         }
 
-        int LightTypeToIndex(Scene::LightType type)
+        int LightTypeToIndex(HedgehogEngine::LightType type)
         {
             switch (type)
             {
-            case Scene::LightType::DirectionLight: return 0;
-            case Scene::LightType::PointLight:     return 1;
-            case Scene::LightType::SpotLight:      return 2;
+            case HedgehogEngine::LightType::DirectionLight: return 0;
+            case HedgehogEngine::LightType::PointLight:     return 1;
+            case HedgehogEngine::LightType::SpotLight:      return 2;
             default: throw std::runtime_error("Invalid light type");
             }
         }
@@ -604,12 +602,12 @@ namespace Editor
         auto* lightSystem   = engineContext.GetLightSystem();
         auto  entity        = m_SelectedEntity.value();
 
-        if (!ecs.HasComponent<LightComponent>(entity))
+        if (!ecs.HasComponent<HedgehogEngine::LightComponent>(entity))
             return;
         if (!ImGui::CollapsingHeader("Light", ImGuiTreeNodeFlags_DefaultOpen))
             return;
 
-        auto& light = ecs.GetComponent<LightComponent>(entity);
+        auto& light = ecs.GetComponent<HedgehogEngine::LightComponent>(entity);
 
         bool enabled = light.m_Enable;
         if (ImGui::Checkbox("Enabled", &enabled))
@@ -651,8 +649,8 @@ namespace Editor
 
         if (ImGui::Button("Remove light"))
         {
-            if (ecs.HasComponent<LightComponent>(entity))
-                ecs.RemoveComponent<LightComponent>(entity);
+            if (ecs.HasComponent<HedgehogEngine::LightComponent>(entity))
+                ecs.RemoveComponent<HedgehogEngine::LightComponent>(entity);
         }
     }
 
@@ -663,12 +661,12 @@ namespace Editor
         auto* scriptSystem  = engineContext.GetScriptSystem();
         auto  entity        = m_SelectedEntity.value();
 
-        if (!ecs.HasComponent<ScriptComponent>(entity))
+        if (!ecs.HasComponent<HedgehogEngine::ScriptComponent>(entity))
             return;
         if (!ImGui::CollapsingHeader("Script", ImGuiTreeNodeFlags_DefaultOpen))
             return;
 
-        auto& component = ecs.GetComponent<ScriptComponent>(entity);
+        auto& component = ecs.GetComponent<HedgehogEngine::ScriptComponent>(entity);
 
         bool enabled = component.m_Enable;
         if (ImGui::Checkbox("Enabled", &enabled))
@@ -688,7 +686,7 @@ namespace Editor
         {
             switch (param.type)
             {
-            case Scene::ParamType::Boolean:
+            case HedgehogEngine::ParamType::Boolean:
             {
                 bool bVal = std::get<bool>(param.value);
                 if (ImGui::Checkbox(name.c_str(), &bVal))
@@ -698,7 +696,7 @@ namespace Editor
                 }
                 break;
             }
-            case Scene::ParamType::Number:
+            case HedgehogEngine::ParamType::Number:
             {
                 float nVal = std::get<float>(param.value);
                 if (ImGui::DragFloat(name.c_str(), &nVal, 0.05f))
@@ -715,8 +713,8 @@ namespace Editor
 
         if (ImGui::Button("Remove script"))
         {
-            if (ecs.HasComponent<ScriptComponent>(entity))
-                ecs.RemoveComponent<ScriptComponent>(entity);
+            if (ecs.HasComponent<HedgehogEngine::ScriptComponent>(entity))
+                ecs.RemoveComponent<HedgehogEngine::ScriptComponent>(entity);
         }
     }
 

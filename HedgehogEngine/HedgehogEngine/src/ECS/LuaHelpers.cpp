@@ -3,7 +3,7 @@
 
 #include "Logger/api/Logger.hpp"
 
-namespace Scene
+namespace HedgehogEngine
 {
     bool CallMethod(lua_State* L, int instanceRef, const std::string& methodName,
                     int numArgs, std::function<void()> pushArgs)

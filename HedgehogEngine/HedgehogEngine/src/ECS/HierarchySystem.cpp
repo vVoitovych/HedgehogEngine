@@ -2,7 +2,7 @@
 #include "ECS/api/components/Hierarchy.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
 
-namespace Scene
+namespace HedgehogEngine
 {
     void HierarchySystem::Update(ECS::ECS& ecs)
     {

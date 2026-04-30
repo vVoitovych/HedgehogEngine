@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <memory>
 
-namespace FD
+namespace HedgehogEngine
 {
     struct FrameData;
 }
@@ -57,7 +57,7 @@ namespace Renderer
         void  DiscardGui();
         void* GetSceneViewTextureId() const;
 
-        void Render(const FD::FrameData& frame,
+        void Render(const HedgehogEngine::FrameData& frame,
                     RHI::IRHIDevice&     device,
                     RHI::IRHISwapchain&  swapchain,
                     RHI::IRHICommandList& cmd,
@@ -67,7 +67,7 @@ namespace Renderer
                     uint32_t             frameIndex,
                     const ResourceManager& resourceManager);
 
-        void UpdateData(const FD::FrameData&             frame,
+        void UpdateData(const HedgehogEngine::FrameData&             frame,
                         uint32_t                          frameIndex,
                         const HedgehogSettings::Settings& settings);
 

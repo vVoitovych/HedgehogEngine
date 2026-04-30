@@ -1,7 +1,7 @@
 #include "HedgehogEngine/api/ECS/systems/LightSystem.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
 
-namespace Scene
+namespace HedgehogEngine
 {
     const std::vector<LightComponent>& LightSystem::GetLightComponents(ECS::ECS& ecs)
     {

@@ -112,7 +112,7 @@ namespace Renderer
     {
     }
 
-    void ShadowmapPass::Render(const FD::FrameData& frame, const ResourceManager& resourceManager,
+    void ShadowmapPass::Render(const HedgehogEngine::FrameData& frame, const ResourceManager& resourceManager,
                                 RHI::IRHICommandList& cmd, uint32_t frameIndex)
     {
         RHI::ClearValue depthClear;
@@ -170,7 +170,7 @@ namespace Renderer
         m_ShadowmapLayout.reset();
     }
 
-    void ShadowmapPass::UpdateData(const FD::FrameData& frame, uint32_t frameIndex,
+    void ShadowmapPass::UpdateData(const HedgehogEngine::FrameData& frame, uint32_t frameIndex,
                                     const HedgehogSettings::Settings& settings)
     {
         UpdateShadowmapMatrices(frame.m_Camera, settings, frame.m_ShadowLightDirection);
@@ -234,7 +234,7 @@ namespace Renderer
         m_ShadowViewports[3].push_back({ sz / 2.0f, sz / 2.0f, sz / 2.0f, sz / 2.0f });
     }
 
-    void ShadowmapPass::UpdateShadowmapMatrices(const FD::CameraData& camera,
+    void ShadowmapPass::UpdateShadowmapMatrices(const HedgehogEngine::CameraData& camera,
                                                  const HedgehogSettings::Settings& settings,
                                                  const std::optional<HM::Vector3>& shadowLightDir)
     {

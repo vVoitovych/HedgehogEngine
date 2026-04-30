@@ -5,7 +5,7 @@
 #include "ECS/api/System.hpp"
 #include "ECS/api/ECS.hpp"
 
-namespace Scene
+namespace HedgehogEngine
 {
     class HierarchySystem : public ECS::System
     {

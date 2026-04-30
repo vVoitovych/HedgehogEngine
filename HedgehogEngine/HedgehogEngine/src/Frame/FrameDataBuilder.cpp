@@ -15,14 +15,14 @@
 
 namespace
 {
-    void AddToDrawBucket(FD::DrawBucket& bucket, FD::DrawObject object, uint64_t materialIndex)
+    void AddToDrawBucket(HedgehogEngine::DrawBucket& bucket, HedgehogEngine::DrawObject object, uint64_t materialIndex)
     {
         auto it = std::find_if(bucket.begin(), bucket.end(),
-            [materialIndex](const FD::DrawNode& node) { return node.m_MaterialIndex == materialIndex; });
+            [materialIndex](const HedgehogEngine::DrawNode& node) { return node.m_MaterialIndex == materialIndex; });
 
         if (it == bucket.end())
         {
-            FD::DrawNode node;
+            HedgehogEngine::DrawNode node;
             node.m_MaterialIndex = materialIndex;
             node.m_Objects.push_back(object);
             bucket.push_back(std::move(node));
@@ -34,13 +34,13 @@ namespace
     }
 }
 
-namespace FD
+namespace HedgehogEngine
 {
     FrameData FrameDataBuilder::Build(
         const ECS::ECS&                              ecs,
-        const Scene::LightSystem&                    lightSystem,
-        const Scene::RenderSystem&                   renderSystem,
-        const HedgehogEngine::Camera&                camera,
+        const LightSystem&                           lightSystem,
+        const RenderSystem&                          renderSystem,
+        const Camera&                                camera,
         float                                        deltaTime,
         const std::function<MaterialType(uint64_t)>& materialTypeLookup) const
     {
@@ -84,17 +84,17 @@ namespace FD
 
     void FrameDataBuilder::BuildDrawList(
         const ECS::ECS&                              ecs,
-        const Scene::RenderSystem&                   renderSystem,
+        const RenderSystem&                          renderSystem,
         const std::function<MaterialType(uint64_t)>& materialTypeLookup,
         DrawList&                                    outDrawList) const
     {
         for (auto entity : renderSystem.GetEntities())
         {
-            const auto& renderComponent = ecs.GetComponent<Scene::RenderComponent>(entity);
+            const auto& renderComponent = ecs.GetComponent<RenderComponent>(entity);
             if (!renderComponent.m_IsVisible || !renderComponent.m_MaterialIndex.has_value())
                 continue;
 
-            const auto& meshComponent = ecs.GetComponent<Scene::MeshComponent>(entity);
+            const auto& meshComponent = ecs.GetComponent<MeshComponent>(entity);
             if (!meshComponent.m_MeshIndex.has_value())
             {
                 LOGERROR("Entity ", entity, " has a render component but no mesh index.");
@@ -103,7 +103,7 @@ namespace FD
 
             const uint64_t materialIndex = renderComponent.m_MaterialIndex.value();
             const uint64_t meshIndex     = meshComponent.m_MeshIndex.value();
-            const auto&    transform     = ecs.GetComponent<Scene::TransformComponent>(entity);
+            const auto&    transform     = ecs.GetComponent<TransformComponent>(entity);
 
             DrawObject object;
             object.m_MeshIndex = meshIndex;

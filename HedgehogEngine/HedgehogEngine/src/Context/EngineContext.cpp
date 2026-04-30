@@ -64,46 +64,46 @@ namespace HedgehogEngine
     {
         m_ECS.Init();
 
-        m_ECS.RegisterComponent<Scene::TransformComponent>();
+        m_ECS.RegisterComponent<TransformComponent>();
         m_ECS.RegisterComponent<ECS::HierarchyComponent>();
-        m_ECS.RegisterComponent<Scene::MeshComponent>();
-        m_ECS.RegisterComponent<Scene::LightComponent>();
-        m_ECS.RegisterComponent<Scene::RenderComponent>();
-        m_ECS.RegisterComponent<Scene::ScriptComponent>();
+        m_ECS.RegisterComponent<MeshComponent>();
+        m_ECS.RegisterComponent<LightComponent>();
+        m_ECS.RegisterComponent<RenderComponent>();
+        m_ECS.RegisterComponent<ScriptComponent>();
 
-        m_TransformSystem = m_ECS.RegisterSystem<Scene::TransformSystem>();
-        m_HierarchySystem = m_ECS.RegisterSystem<Scene::HierarchySystem>();
-        m_MeshSystem      = m_ECS.RegisterSystem<Scene::MeshSystem>();
-        m_LightSystem     = m_ECS.RegisterSystem<Scene::LightSystem>();
-        m_RenderSystem    = m_ECS.RegisterSystem<Scene::RenderSystem>();
-        m_ScriptSystem    = m_ECS.RegisterSystem<Scene::ScriptSystem>();
+        m_TransformSystem = m_ECS.RegisterSystem<TransformSystem>();
+        m_HierarchySystem = m_ECS.RegisterSystem<HierarchySystem>();
+        m_MeshSystem      = m_ECS.RegisterSystem<MeshSystem>();
+        m_LightSystem     = m_ECS.RegisterSystem<LightSystem>();
+        m_RenderSystem    = m_ECS.RegisterSystem<RenderSystem>();
+        m_ScriptSystem    = m_ECS.RegisterSystem<ScriptSystem>();
 
         ECS::Signature signature;
 
-        signature.set(m_ECS.GetComponentType<Scene::TransformComponent>());
-        m_ECS.SetSystemSignature<Scene::TransformSystem>(signature);
+        signature.set(m_ECS.GetComponentType<TransformComponent>());
+        m_ECS.SetSystemSignature<TransformSystem>(signature);
         signature.reset();
 
         signature.set(m_ECS.GetComponentType<ECS::HierarchyComponent>());
-        m_ECS.SetSystemSignature<Scene::HierarchySystem>(signature);
+        m_ECS.SetSystemSignature<HierarchySystem>(signature);
         signature.reset();
 
-        signature.set(m_ECS.GetComponentType<Scene::MeshComponent>());
-        m_ECS.SetSystemSignature<Scene::MeshSystem>(signature);
+        signature.set(m_ECS.GetComponentType<MeshComponent>());
+        m_ECS.SetSystemSignature<MeshSystem>(signature);
         signature.reset();
 
-        signature.set(m_ECS.GetComponentType<Scene::LightComponent>());
-        m_ECS.SetSystemSignature<Scene::LightSystem>(signature);
+        signature.set(m_ECS.GetComponentType<LightComponent>());
+        m_ECS.SetSystemSignature<LightSystem>(signature);
         signature.reset();
 
-        signature.set(m_ECS.GetComponentType<Scene::RenderComponent>());
-        m_ECS.SetSystemSignature<Scene::RenderSystem>(signature);
+        signature.set(m_ECS.GetComponentType<RenderComponent>());
+        m_ECS.SetSystemSignature<RenderSystem>(signature);
         signature.reset();
 
-        signature.set(m_ECS.GetComponentType<Scene::ScriptComponent>());
-        m_ECS.SetSystemSignature<Scene::ScriptSystem>(signature);
+        signature.set(m_ECS.GetComponentType<ScriptComponent>());
+        m_ECS.SetSystemSignature<ScriptSystem>(signature);
 
-        m_RootEntity = Components::CreateSceneRoot(m_ECS, *m_HierarchySystem);
+        m_RootEntity = CreateSceneRoot(m_ECS, *m_HierarchySystem);
 
         RegisterComponents();
     }
@@ -112,32 +112,32 @@ namespace HedgehogEngine
     {
         m_ComponentRegistry = std::make_unique<EcsSerialization::ComponentSerializerRegistry>();
 
-        m_ComponentRegistry->RegisterVisitable<Scene::TransformComponent>("TransformComponent");
-        m_ComponentRegistry->RegisterVisitable<Scene::MeshComponent>("MeshComponent");
-        m_ComponentRegistry->RegisterVisitable<Scene::RenderComponent>("RenderComponent");
+        m_ComponentRegistry->RegisterVisitable<TransformComponent>("TransformComponent");
+        m_ComponentRegistry->RegisterVisitable<MeshComponent>("MeshComponent");
+        m_ComponentRegistry->RegisterVisitable<RenderComponent>("RenderComponent");
 
         // LightComponent: RegisterCustom to handle the "LightIntencity" backward-compat typo
         m_ComponentRegistry->RegisterCustom("LightComponent",
             [](YAML::Emitter& out, const ECS::ECS& ecs, ECS::Entity e)
             {
-                EcsSerialization::ComponentSerializerRegistry::SerializeWithVisit<Scene::LightComponent>(out, ecs, e, "LightComponent");
+                EcsSerialization::ComponentSerializerRegistry::SerializeWithVisit<LightComponent>(out, ecs, e, "LightComponent");
             },
             [](ECS::ECS& ecs, ECS::Entity e, const YAML::Node& node)
             {
-                EcsSerialization::ComponentSerializerRegistry::DeserializeWithVisit<Scene::LightComponent>(ecs, e, node);
-                auto& comp = ecs.GetComponent<Scene::LightComponent>(e);
+                EcsSerialization::ComponentSerializerRegistry::DeserializeWithVisit<LightComponent>(ecs, e, node);
+                auto& comp = ecs.GetComponent<LightComponent>(e);
                 if (!node["LightIntensity"] && node["LightIntencity"])
                     comp.m_Intensity = node["LightIntencity"].as<float>();
             },
-            [](const ECS::ECS& ecs, ECS::Entity e) { return ecs.HasComponent<Scene::LightComponent>(e); }
+            [](const ECS::ECS& ecs, ECS::Entity e) { return ecs.HasComponent<LightComponent>(e); }
         );
 
         // ScriptComponent: RegisterCustom to handle m_Params and InitScript
-        Scene::ScriptSystem* scriptSys = m_ScriptSystem.get();
+        ScriptSystem* scriptSys = m_ScriptSystem.get();
         m_ComponentRegistry->RegisterCustom("ScriptComponent",
             [](YAML::Emitter& out, const ECS::ECS& ecs, ECS::Entity e)
             {
-                Scene::ScriptComponent& script = ecs.GetComponent<Scene::ScriptComponent>(e);
+                ScriptComponent& script = ecs.GetComponent<ScriptComponent>(e);
                 out << YAML::Key << "ScriptComponent" << YAML::BeginMap;
                 EcsSerialization::YamlWriter w{out};
                 script.Visit(w);
@@ -150,10 +150,10 @@ namespace HedgehogEngine
                         out << YAML::Key << "ParamType" << YAML::Value << static_cast<size_t>(param.type);
                         switch (param.type)
                         {
-                        case Scene::ParamType::Boolean:
+                        case ParamType::Boolean:
                             out << YAML::Key << "ParamValue" << YAML::Value << std::get<bool>(param.value);
                             break;
-                        case Scene::ParamType::Number:
+                        case ParamType::Number:
                             out << YAML::Key << "ParamValue" << YAML::Value << std::get<float>(param.value);
                             break;
                         default: break;
@@ -166,8 +166,8 @@ namespace HedgehogEngine
             },
             [scriptSys](ECS::ECS& ecs, ECS::Entity e, const YAML::Node& node)
             {
-                EcsSerialization::ComponentSerializerRegistry::DeserializeWithVisit<Scene::ScriptComponent>(ecs, e, node);
-                Scene::ScriptComponent& script = ecs.GetComponent<Scene::ScriptComponent>(e);
+                EcsSerialization::ComponentSerializerRegistry::DeserializeWithVisit<ScriptComponent>(ecs, e, node);
+                ScriptComponent& script = ecs.GetComponent<ScriptComponent>(e);
                 const YAML::Node params = node["ScriptParams"];
                 if (params && params.IsMap())
                 {
@@ -175,12 +175,12 @@ namespace HedgehogEngine
                     {
                         std::string               paramName = param.first.as<std::string>();
                         const YAML::Node          data      = param.second;
-                        Scene::ParamType          type      = static_cast<Scene::ParamType>(data["ParamType"].as<size_t>());
+                        ParamType                 type      = static_cast<ParamType>(data["ParamType"].as<size_t>());
                         std::variant<bool, float> value;
                         switch (type)
                         {
-                        case Scene::ParamType::Boolean: value = data["ParamValue"].as<bool>();  break;
-                        case Scene::ParamType::Number:  value = data["ParamValue"].as<float>(); break;
+                        case ParamType::Boolean: value = data["ParamValue"].as<bool>();  break;
+                        case ParamType::Number:  value = data["ParamValue"].as<float>(); break;
                         default: break;
                         }
                         script.m_Params[paramName] = { type, value, false };
@@ -188,7 +188,7 @@ namespace HedgehogEngine
                 }
                 scriptSys->InitScript(e, ecs);
             },
-            [](const ECS::ECS& ecs, ECS::Entity e) { return ecs.HasComponent<Scene::ScriptComponent>(e); }
+            [](const ECS::ECS& ecs, ECS::Entity e) { return ecs.HasComponent<ScriptComponent>(e); }
         );
     }
 
@@ -206,13 +206,13 @@ namespace HedgehogEngine
         m_MaterialContainer->Update(*m_RenderSystem);
         m_MeshContainer->Update(*m_MeshSystem);
 
-        auto materialTypeLookup = [this](uint64_t index) -> FD::MaterialType
+        auto materialTypeLookup = [this](uint64_t index) -> MaterialType
         {
             const auto& data = m_MaterialContainer->GetMaterialDataByIndex(index);
-            return static_cast<FD::MaterialType>(static_cast<int>(data.type));
+            return data.type;
         };
 
-        FD::FrameDataBuilder builder;
+        FrameDataBuilder builder;
         m_FrameData = builder.Build(
             m_ECS, *m_LightSystem, *m_RenderSystem,
             *m_Camera, dt, materialTypeLookup);
@@ -225,7 +225,7 @@ namespace HedgehogEngine
     const MaterialContainer& EngineContext::GetMaterialContainer() const { return *m_MaterialContainer; }
     MaterialContainer& EngineContext::GetMaterialContainer()             { return *m_MaterialContainer; }
 
-    const FD::FrameData& EngineContext::GetFrameData() const { return m_FrameData; }
+    const FrameData& EngineContext::GetFrameData() const { return m_FrameData; }
 
     HedgehogSettings::Settings& EngineContext::GetSettings()             { return *m_Settings; }
     const HedgehogSettings::Settings& EngineContext::GetSettings() const { return *m_Settings; }
@@ -236,16 +236,16 @@ namespace HedgehogEngine
     ECS::Entity EngineContext::GetRootEntity() const { return m_RootEntity; }
     std::string EngineContext::GetSceneName()  const { return m_SceneName; }
 
-    Scene::TransformSystem*  EngineContext::GetTransformSystem()  const { return m_TransformSystem.get(); }
-    Scene::HierarchySystem*  EngineContext::GetHierarchySystem()  const { return m_HierarchySystem.get(); }
-    Scene::MeshSystem*       EngineContext::GetMeshSystem()       const { return m_MeshSystem.get(); }
-    Scene::LightSystem*      EngineContext::GetLightSystem()      const { return m_LightSystem.get(); }
-    Scene::RenderSystem*     EngineContext::GetRenderSystem()     const { return m_RenderSystem.get(); }
-    Scene::ScriptSystem*     EngineContext::GetScriptSystem()     const { return m_ScriptSystem.get(); }
+    TransformSystem*  EngineContext::GetTransformSystem()  const { return m_TransformSystem.get(); }
+    HierarchySystem*  EngineContext::GetHierarchySystem()  const { return m_HierarchySystem.get(); }
+    MeshSystem*       EngineContext::GetMeshSystem()       const { return m_MeshSystem.get(); }
+    LightSystem*      EngineContext::GetLightSystem()      const { return m_LightSystem.get(); }
+    RenderSystem*     EngineContext::GetRenderSystem()     const { return m_RenderSystem.get(); }
+    ScriptSystem*     EngineContext::GetScriptSystem()     const { return m_ScriptSystem.get(); }
 
     void EngineContext::LoadScene(const std::string& filePath)
     {
-        Components::DeleteGameObjectAndChildren(m_ECS, m_RootEntity);
+        DeleteGameObjectAndChildren(m_ECS, m_RootEntity);
         EcsSerialization::EcsSerializer::Deserialize(*m_ComponentRegistry, m_ECS, m_RootEntity, m_SceneName, filePath);
         m_HierarchySystem->SetRoot(m_RootEntity);
         m_MeshSystem->Update(m_ECS);
@@ -261,8 +261,8 @@ namespace HedgehogEngine
 
     void EngineContext::ResetScene()
     {
-        Components::DeleteGameObjectAndChildren(m_ECS, m_RootEntity);
-        m_RootEntity = Components::CreateSceneRoot(m_ECS, *m_HierarchySystem);
+        DeleteGameObjectAndChildren(m_ECS, m_RootEntity);
+        m_RootEntity = CreateSceneRoot(m_ECS, *m_HierarchySystem);
         m_SceneName  = "Default";
     }
 

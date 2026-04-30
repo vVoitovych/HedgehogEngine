@@ -10,7 +10,7 @@
 #include <vector>
 #include <optional>
 
-namespace Scene
+namespace HedgehogEngine
 {
     class LightSystem : public ECS::System
     {

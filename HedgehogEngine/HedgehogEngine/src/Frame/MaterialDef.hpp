@@ -1,16 +1,9 @@
 #pragma once
 
-#include <string>
+#include "HedgehogEngine/api/Containers/MaterialData.hpp"
 
-namespace FD
+namespace HedgehogEngine
 {
-    enum class MaterialType
-    {
-        Opaque,
-        Cutoff,
-        Transparent
-    };
-
     struct MaterialDef
     {
         std::string  m_AlbedoPath;

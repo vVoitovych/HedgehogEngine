@@ -20,7 +20,7 @@ namespace RHI
     class IRHIBuffer;
 }
 
-namespace FD
+namespace HedgehogEngine
 {
     struct FrameData;
     struct CameraData;
@@ -42,11 +42,11 @@ namespace Renderer
                       const ResourceManager& resourceManager);
         ~ShadowmapPass();
 
-        void Render(const FD::FrameData& frame, const ResourceManager& resourceManager,
+        void Render(const HedgehogEngine::FrameData& frame, const ResourceManager& resourceManager,
                     RHI::IRHICommandList& cmd, uint32_t frameIndex);
         void Cleanup(RHI::IRHIDevice& device);
 
-        void UpdateData(const FD::FrameData& frame, uint32_t frameIndex,
+        void UpdateData(const HedgehogEngine::FrameData& frame, uint32_t frameIndex,
                         const HedgehogSettings::Settings& settings);
         void UpdateResources(RHI::IRHIDevice& device, const HedgehogSettings::Settings& settings,
                              const ResourceManager& resourceManager);
@@ -54,7 +54,7 @@ namespace Renderer
     private:
         void UpdateFrameBuffer(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
         void UpdateViewports(const HedgehogSettings::Settings& settings);
-        void UpdateShadowmapMatrices(const FD::CameraData& camera,
+        void UpdateShadowmapMatrices(const HedgehogEngine::CameraData& camera,
                                      const HedgehogSettings::Settings& settings,
                                      const std::optional<HM::Vector3>& shadowLightDir);
 

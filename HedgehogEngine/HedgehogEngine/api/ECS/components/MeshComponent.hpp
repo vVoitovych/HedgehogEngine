@@ -3,7 +3,7 @@
 #include <string>
 #include <optional>
 
-namespace Scene
+namespace HedgehogEngine
 {
     class MeshComponent
     {

@@ -20,7 +20,7 @@ extern "C"
 #include <filesystem>
 #include <functional>
 
-namespace Scene
+namespace HedgehogEngine
 {
 namespace
 {
