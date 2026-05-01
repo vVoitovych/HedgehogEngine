@@ -10,8 +10,8 @@
 #include "HedgehogCommon/api/RendererSettings.hpp"
 #include "HedgehogMath/api/Common.hpp"
 
+#include "Pipeline/ShaderLoader.hpp"
 #include "Pipeline/PipelineLoader.hpp"
-#include "Pipeline/VertexDescLoader.hpp"
 
 #include <cassert>
 #include "HedgehogMath/api/Vector.hpp"
@@ -26,7 +26,6 @@
 #include "RHI/api/IRHIDescriptor.hpp"
 #include "RHI/api/IRHIBuffer.hpp"
 #include "RHI/api/IRHITexture.hpp"
-#include "RHI/api/IRHIShader.hpp"
 
 namespace Renderer
 {
@@ -47,15 +46,15 @@ namespace Renderer
 
     ForwardPass::ForwardPass(RHI::IRHIDevice& device, ResourceManager& resourceManager)
     {
-        const auto pl = PipelineLoader::Load(
-            "/HedgehogEngine/HedgehogRenderer/Assets/Pipelines/ForwardPass.pl");
-        assert(pl.m_DescriptorSets.size() >= 2);
+        const auto sd = ShaderLoader::Load(device,
+            "/HedgehogEngine/HedgehogRenderer/Assets/Shaders/ForwardPass.shader");
+        assert(sd.m_Layout.m_DescriptorSets.size() >= 2);
 
         // Set 0: per-frame data (camera, lights)
-        m_FrameLayout = device.CreateDescriptorSetLayout(pl.m_DescriptorSets[0]);
+        m_FrameLayout = device.CreateDescriptorSetLayout(sd.m_Layout.m_DescriptorSets[0]);
         m_FramePool = device.CreateDescriptorPool(
             MAX_FRAMES_IN_FLIGHT,
-            PipelineLoader::MakePoolSizes(pl.m_DescriptorSets[0], MAX_FRAMES_IN_FLIGHT));
+            PipelineLoader::MakePoolSizes(sd.m_Layout.m_DescriptorSets[0], MAX_FRAMES_IN_FLIGHT));
 
         m_FrameUniforms.reserve(MAX_FRAMES_IN_FLIGHT);
         m_FrameSets.reserve(MAX_FRAMES_IN_FLIGHT);
@@ -76,12 +75,12 @@ namespace Renderer
 
         // Set 1: per-material data — ForwardPass defines and owns this layout.
         // The layout is injected into ResourceRegistry so it can allocate material descriptor sets.
-        m_MaterialLayout = device.CreateDescriptorSetLayout(pl.m_DescriptorSets[1]);
+        m_MaterialLayout = device.CreateDescriptorSetLayout(sd.m_Layout.m_DescriptorSets[1]);
         resourceManager.GetResourceRegistry().SetMaterialLayout(
             device,
             *m_MaterialLayout,
             MAX_MATERIAL_COUNT,
-            PipelineLoader::MakePoolSizes(pl.m_DescriptorSets[1], MAX_MATERIAL_COUNT));
+            PipelineLoader::MakePoolSizes(sd.m_Layout.m_DescriptorSets[1], MAX_MATERIAL_COUNT));
 
         // Render pass: one color + depth (loaded from DepthPrePass)
         RHI::RenderPassDesc rpDesc;
@@ -105,19 +104,13 @@ namespace Renderer
         };
         m_RenderPass = device.CreateRenderPass(rpDesc);
 
-        // Shaders
-        auto vertexShader   = device.CreateShader("/HedgehogEngine/HedgehogRenderer/Assets/Shaders/ForwardPass/Base.vert.spv", RHI::ShaderStage::Vertex);
-        auto fragmentShader = device.CreateShader("/HedgehogEngine/HedgehogRenderer/Assets/Shaders/ForwardPass/Base.frag.spv", RHI::ShaderStage::Fragment);
-
         // Pipeline
         RHI::GraphicsPipelineDesc pipelineDesc;
-        pipelineDesc.m_VertexShader   = vertexShader.get();
-        pipelineDesc.m_FragmentShader = fragmentShader.get();
+        pipelineDesc.m_VertexShader   = sd.m_VertexShader.get();
+        pipelineDesc.m_FragmentShader = sd.m_FragmentShader.get();
 
-        const auto vd = VertexDescLoader::Load(
-            "/HedgehogEngine/HedgehogRenderer/Assets/VertexDescriptions/FullMesh.vdes");
-        pipelineDesc.m_VertexBindings   = vd.m_Bindings;
-        pipelineDesc.m_VertexAttributes = vd.m_Attributes;
+        pipelineDesc.m_VertexBindings   = sd.m_VertexDesc.m_Bindings;
+        pipelineDesc.m_VertexAttributes = sd.m_VertexDesc.m_Attributes;
 
         pipelineDesc.m_Topology         = RHI::PrimitiveTopology::TriangleList;
         pipelineDesc.m_CullMode         = RHI::CullMode::Back;
@@ -133,7 +126,7 @@ namespace Renderer
         });
 
         pipelineDesc.m_DescriptorSetLayouts = { m_FrameLayout.get(), m_MaterialLayout.get() };
-        pipelineDesc.m_PushConstantRanges   = pl.m_PushConstants;
+        pipelineDesc.m_PushConstantRanges   = sd.m_Layout.m_PushConstants;
         pipelineDesc.m_RenderPass           = m_RenderPass.get();
 
         m_Pipeline = device.CreateGraphicsPipeline(pipelineDesc);

@@ -5,8 +5,8 @@
 
 #include "HedgehogCommon/api/RendererSettings.hpp"
 
+#include "Pipeline/ShaderLoader.hpp"
 #include "Pipeline/PipelineLoader.hpp"
-#include "Pipeline/VertexDescLoader.hpp"
 
 #include <cassert>
 
@@ -25,7 +25,6 @@
 #include "RHI/api/IRHIDescriptor.hpp"
 #include "RHI/api/IRHIBuffer.hpp"
 #include "RHI/api/IRHITexture.hpp"
-#include "RHI/api/IRHIShader.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -36,17 +35,17 @@ namespace Renderer
     ShadowmapPass::ShadowmapPass(RHI::IRHIDevice& device, const HedgehogSettings::Settings& settings,
                                   const ResourceManager& resourceManager)
     {
-        const auto pl = PipelineLoader::Load(
-            "/HedgehogEngine/HedgehogRenderer/Assets/Pipelines/ShadowmapPass.pl");
-        assert(!pl.m_DescriptorSets.empty());
+        const auto sd = ShaderLoader::Load(device,
+            "/HedgehogEngine/HedgehogRenderer/Assets/Shaders/ShadowmapPass.shader");
+        assert(!sd.m_Layout.m_DescriptorSets.empty());
 
-        m_ShadowmapLayout = device.CreateDescriptorSetLayout(pl.m_DescriptorSets[0]);
+        m_ShadowmapLayout = device.CreateDescriptorSetLayout(sd.m_Layout.m_DescriptorSets[0]);
 
-        // Pool: one UB per cascade per frame
+        // Pool: one UBO per cascade per frame
         const uint32_t totalSets = MaxShadowCascades * MAX_FRAMES_IN_FLIGHT;
         m_ShadowmapPool = device.CreateDescriptorPool(
             totalSets,
-            PipelineLoader::MakePoolSizes(pl.m_DescriptorSets[0], totalSets));
+            PipelineLoader::MakePoolSizes(sd.m_Layout.m_DescriptorSets[0], totalSets));
 
         // Per-frame per-cascade uniform buffers and descriptor sets
         m_ShadowmapUniforms.resize(MAX_FRAMES_IN_FLIGHT);
@@ -82,20 +81,13 @@ namespace Renderer
         };
         m_RenderPass = device.CreateRenderPass(rpDesc);
 
-        // Vertex shader (depth/shadow pass — no fragment shader)
-        auto vertexShader = device.CreateShader(
-            "/HedgehogEngine/HedgehogRenderer/Assets/Shaders/ShadowmapPass/Shadowmap.vert.spv",
-            RHI::ShaderStage::Vertex);
-
         // Pipeline: positions only, CullBack, DepthCompare LessOrEqual
         RHI::GraphicsPipelineDesc pipelineDesc;
-        pipelineDesc.m_VertexShader   = vertexShader.get();
-        pipelineDesc.m_FragmentShader = nullptr;
+        pipelineDesc.m_VertexShader   = sd.m_VertexShader.get();
+        pipelineDesc.m_FragmentShader = sd.m_FragmentShader.get();
 
-        const auto vd = VertexDescLoader::Load(
-            "/HedgehogEngine/HedgehogRenderer/Assets/VertexDescriptions/PositionOnly.vdes");
-        pipelineDesc.m_VertexBindings   = vd.m_Bindings;
-        pipelineDesc.m_VertexAttributes = vd.m_Attributes;
+        pipelineDesc.m_VertexBindings   = sd.m_VertexDesc.m_Bindings;
+        pipelineDesc.m_VertexAttributes = sd.m_VertexDesc.m_Attributes;
 
         pipelineDesc.m_Topology         = RHI::PrimitiveTopology::TriangleList;
         pipelineDesc.m_CullMode         = RHI::CullMode::Back;
@@ -105,8 +97,8 @@ namespace Renderer
         pipelineDesc.m_DepthCompareOp   = RHI::CompareOp::LessOrEqual;
 
         pipelineDesc.m_DescriptorSetLayouts = { m_ShadowmapLayout.get() };
-        pipelineDesc.m_PushConstantRanges   = pl.m_PushConstants;
-        pipelineDesc.m_RenderPass = m_RenderPass.get();
+        pipelineDesc.m_PushConstantRanges   = sd.m_Layout.m_PushConstants;
+        pipelineDesc.m_RenderPass           = m_RenderPass.get();
 
         m_Pipeline = device.CreateGraphicsPipeline(pipelineDesc);
 
@@ -227,16 +219,16 @@ namespace Renderer
 
         m_ShadowViewports[0].push_back({ 0.0f, 0.0f, sz, sz });
 
-        m_ShadowViewports[1].push_back({ 0.0f,    0.0f, sz / 2.0f, sz });
+        m_ShadowViewports[1].push_back({ 0.0f,      0.0f, sz / 2.0f, sz });
         m_ShadowViewports[1].push_back({ sz / 2.0f, 0.0f, sz / 2.0f, sz });
 
-        m_ShadowViewports[2].push_back({ 0.0f,    0.0f,    sz / 2.0f, sz });
-        m_ShadowViewports[2].push_back({ sz / 2.0f, 0.0f,    sz / 2.0f, sz / 2.0f });
+        m_ShadowViewports[2].push_back({ 0.0f,      0.0f,      sz / 2.0f, sz });
+        m_ShadowViewports[2].push_back({ sz / 2.0f, 0.0f,      sz / 2.0f, sz / 2.0f });
         m_ShadowViewports[2].push_back({ sz / 2.0f, sz / 2.0f, sz / 2.0f, sz / 2.0f });
 
-        m_ShadowViewports[3].push_back({ 0.0f,    0.0f,    sz / 2.0f, sz / 2.0f });
-        m_ShadowViewports[3].push_back({ 0.0f,    sz / 2.0f, sz / 2.0f, sz / 2.0f });
-        m_ShadowViewports[3].push_back({ sz / 2.0f, 0.0f,    sz / 2.0f, sz / 2.0f });
+        m_ShadowViewports[3].push_back({ 0.0f,      0.0f,      sz / 2.0f, sz / 2.0f });
+        m_ShadowViewports[3].push_back({ 0.0f,      sz / 2.0f, sz / 2.0f, sz / 2.0f });
+        m_ShadowViewports[3].push_back({ sz / 2.0f, 0.0f,      sz / 2.0f, sz / 2.0f });
         m_ShadowViewports[3].push_back({ sz / 2.0f, sz / 2.0f, sz / 2.0f, sz / 2.0f });
     }
 
@@ -245,7 +237,7 @@ namespace Renderer
                                                  const std::optional<HM::Vector3>& shadowLightDir)
     {
         const auto& shadowmapSettings  = settings.GetShadowmapSettings();
-        const uint32_t cascadesCount  = shadowmapSettings->GetCascadesCount();
+        const uint32_t cascadesCount   = shadowmapSettings->GetCascadesCount();
         const float cascadeSplitLambda = shadowmapSettings->GetCascadeSplitLambda();
 
         std::vector<float> cascadeSplits;
