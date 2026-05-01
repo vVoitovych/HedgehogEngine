@@ -9,6 +9,10 @@
 
 #include "HedgehogCommon/api/RendererSettings.hpp"
 
+#include "Pipeline/PipelineLoader.hpp"
+
+#include <cassert>
+
 #include "RHI/api/IRHIDevice.hpp"
 #include "RHI/api/IRHICommandList.hpp"
 #include "RHI/api/IRHIRenderPass.hpp"
@@ -24,15 +28,15 @@ namespace Renderer
 
     DepthPrePass::DepthPrePass(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
     {
-        // Descriptor set layout: binding 0 = uniform buffer (vertex stage)
-        m_FrameLayout = device.CreateDescriptorSetLayout({
-            { 0, RHI::DescriptorType::UniformBuffer, 1, RHI::ShaderStage::Vertex }
-        });
+        const auto pl = PipelineLoader::Load(
+            "/HedgehogEngine/HedgehogRenderer/Assets/Pipelines/DepthPrepass.pl");
+        assert(!pl.m_DescriptorSets.empty());
 
-        // Descriptor pool: one UB per frame
+        m_FrameLayout = device.CreateDescriptorSetLayout(pl.m_DescriptorSets[0]);
+
         m_FramePool = device.CreateDescriptorPool(
             MAX_FRAMES_IN_FLIGHT,
-            { { RHI::DescriptorType::UniformBuffer, MAX_FRAMES_IN_FLIGHT } });
+            PipelineLoader::MakePoolSizes(pl.m_DescriptorSets[0], MAX_FRAMES_IN_FLIGHT));
 
         // Per-frame uniform buffers and descriptor sets
         m_FrameUniforms.reserve(MAX_FRAMES_IN_FLIGHT);
@@ -86,9 +90,7 @@ namespace Renderer
         pipelineDesc.m_DepthCompareOp    = RHI::CompareOp::Less;
 
         pipelineDesc.m_DescriptorSetLayouts = { m_FrameLayout.get() };
-        pipelineDesc.m_PushConstantRanges   = {
-            { RHI::ShaderStage::Vertex, 0, static_cast<uint32_t>(sizeof(DepthPrePassPushConstants)) }
-        };
+        pipelineDesc.m_PushConstantRanges   = pl.m_PushConstants;
         pipelineDesc.m_RenderPass = m_RenderPass.get();
 
         m_Pipeline = device.CreateGraphicsPipeline(pipelineDesc);

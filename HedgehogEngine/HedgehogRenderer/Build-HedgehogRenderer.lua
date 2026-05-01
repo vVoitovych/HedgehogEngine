@@ -13,10 +13,13 @@ project "HedgehogRenderer"
         "Assets/Shaders/**.glsl"
     }
 
+    defines { "YAML_CPP_STATIC_DEFINE" }
+
     includedirs
     {
         "%{IncludeDir.VulkanSDK}",
         "%{IncludeDir.ImGui}".."/imgui",
+        "%{IncludeDir.yaml_cpp}",
         "../..",
         "..",
         "api",
@@ -36,7 +39,8 @@ project "HedgehogRenderer"
         "HedgehogWindow",
         "ContentLoader",
         "Logger",
-        "imgui"
+        "imgui",
+        "yaml-cpp"
     }
 
 

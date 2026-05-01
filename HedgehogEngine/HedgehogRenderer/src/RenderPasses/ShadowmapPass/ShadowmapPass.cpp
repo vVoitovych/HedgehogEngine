@@ -5,6 +5,10 @@
 
 #include "HedgehogCommon/api/RendererSettings.hpp"
 
+#include "Pipeline/PipelineLoader.hpp"
+
+#include <cassert>
+
 #include "HedgehogSettings/Settings/HedgehogSettings.hpp"
 #include "HedgehogSettings/Settings/ShadowmapingSettings.hpp"
 
@@ -31,16 +35,17 @@ namespace Renderer
     ShadowmapPass::ShadowmapPass(RHI::IRHIDevice& device, const HedgehogSettings::Settings& settings,
                                   const ResourceManager& resourceManager)
     {
-        // Descriptor set layout: binding 0 = uniform buffer (vertex stage)
-        m_ShadowmapLayout = device.CreateDescriptorSetLayout({
-            { 0, RHI::DescriptorType::UniformBuffer, 1, RHI::ShaderStage::Vertex }
-        });
+        const auto pl = PipelineLoader::Load(
+            "/HedgehogEngine/HedgehogRenderer/Assets/Pipelines/ShadowmapPass.pl");
+        assert(!pl.m_DescriptorSets.empty());
+
+        m_ShadowmapLayout = device.CreateDescriptorSetLayout(pl.m_DescriptorSets[0]);
 
         // Pool: one UB per cascade per frame
         const uint32_t totalSets = MaxShadowCascades * MAX_FRAMES_IN_FLIGHT;
         m_ShadowmapPool = device.CreateDescriptorPool(
             totalSets,
-            { { RHI::DescriptorType::UniformBuffer, totalSets } });
+            PipelineLoader::MakePoolSizes(pl.m_DescriptorSets[0], totalSets));
 
         // Per-frame per-cascade uniform buffers and descriptor sets
         m_ShadowmapUniforms.resize(MAX_FRAMES_IN_FLIGHT);
@@ -97,9 +102,7 @@ namespace Renderer
         pipelineDesc.m_DepthCompareOp   = RHI::CompareOp::LessOrEqual;
 
         pipelineDesc.m_DescriptorSetLayouts = { m_ShadowmapLayout.get() };
-        pipelineDesc.m_PushConstantRanges   = {
-            { RHI::ShaderStage::Vertex, 0, static_cast<uint32_t>(sizeof(ShadowmapPassPushConstants)) }
-        };
+        pipelineDesc.m_PushConstantRanges   = pl.m_PushConstants;
         pipelineDesc.m_RenderPass = m_RenderPass.get();
 
         m_Pipeline = device.CreateGraphicsPipeline(pipelineDesc);

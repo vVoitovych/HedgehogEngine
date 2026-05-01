@@ -9,6 +9,10 @@
 
 #include "HedgehogCommon/api/RendererSettings.hpp"
 #include "HedgehogMath/api/Common.hpp"
+
+#include "Pipeline/PipelineLoader.hpp"
+
+#include <cassert>
 #include "HedgehogMath/api/Vector.hpp"
 
 #include <cmath>
@@ -44,14 +48,15 @@ namespace Renderer
     {
         auto& registry  = resourceManager.GetResourceRegistry();
 
-        // Frame descriptor set layout: binding 0 = UB (vertex + fragment)
-        m_FrameLayout = device.CreateDescriptorSetLayout({
-            { 0, RHI::DescriptorType::UniformBuffer, 1, RHI::ShaderStage::Vertex | RHI::ShaderStage::Fragment }
-        });
+        const auto pl = PipelineLoader::Load(
+            "/HedgehogEngine/HedgehogRenderer/Assets/Pipelines/ForwardPass.pl");
+        assert(!pl.m_DescriptorSets.empty());
+
+        m_FrameLayout = device.CreateDescriptorSetLayout(pl.m_DescriptorSets[0]);
 
         m_FramePool = device.CreateDescriptorPool(
             MAX_FRAMES_IN_FLIGHT,
-            { { RHI::DescriptorType::UniformBuffer, MAX_FRAMES_IN_FLIGHT } });
+            PipelineLoader::MakePoolSizes(pl.m_DescriptorSets[0], MAX_FRAMES_IN_FLIGHT));
 
         m_FrameUniforms.reserve(MAX_FRAMES_IN_FLIGHT);
         m_FrameSets.reserve(MAX_FRAMES_IN_FLIGHT);
@@ -128,11 +133,9 @@ namespace Renderer
 
         pipelineDesc.m_DescriptorSetLayouts = {
             m_FrameLayout.get(),
-            &registry.GetMaterialDescriptorSetLayout()
+            &registry.GetMaterialDescriptorSetLayout()  // set 1 stays code-driven (owned by ResourceRegistry)
         };
-        pipelineDesc.m_PushConstantRanges = {
-            { RHI::ShaderStage::Vertex, 0, static_cast<uint32_t>(sizeof(ForwardPassPushConstants)) }
-        };
+        pipelineDesc.m_PushConstantRanges = pl.m_PushConstants;
         pipelineDesc.m_RenderPass = m_RenderPass.get();
 
         m_Pipeline = device.CreateGraphicsPipeline(pipelineDesc);
