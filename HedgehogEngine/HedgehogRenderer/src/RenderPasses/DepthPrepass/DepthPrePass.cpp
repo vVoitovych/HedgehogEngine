@@ -3,9 +3,9 @@
 
 #include "HedgehogEngine/api/Frame/FrameData.hpp"
 
-#include "HedgehogRenderer/ResourceManager/ResourceManager.hpp"
-#include "HedgehogRenderer/ResourceRegistry/ResourceRegistry.hpp"
-#include "HedgehogRenderer/ResourceRegistry/MeshGpuData.hpp"
+#include "ResourceManager/ResourceManager.hpp"
+#include "ResourceRegistry/ResourceRegistry.hpp"
+#include "ResourceRegistry/MeshGpuData.hpp"
 
 #include "HedgehogCommon/api/RendererSettings.hpp"
 

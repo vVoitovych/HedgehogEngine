@@ -1,6 +1,6 @@
 #include "GuiPass.hpp"
 
-#include "HedgehogRenderer/ResourceManager/ResourceManager.hpp"
+#include "ResourceManager/ResourceManager.hpp"
 
 #include "HedgehogCommon/api/RendererSettings.hpp"
 
@@ -82,7 +82,7 @@ namespace Renderer
         ImGui::StyleColorsDark();
 
         {
-            constexpr ImVec4 k_PanelBg(2.0f / 255.0f, 12.0f / 255.0f, 30.0f / 255.0f, 1.0f);  
+            constexpr ImVec4 k_PanelBg(2.0f / 255.0f, 12.0f / 255.0f, 30.0f / 255.0f, 1.0f);
             ImVec4* colors = ImGui::GetStyle().Colors;
             colors[ImGuiCol_WindowBg]  = k_PanelBg;
             colors[ImGuiCol_ChildBg]   = k_PanelBg;

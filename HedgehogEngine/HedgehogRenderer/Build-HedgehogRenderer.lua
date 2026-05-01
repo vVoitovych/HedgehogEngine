@@ -13,7 +13,9 @@ project "HedgehogRenderer"
         "%{IncludeDir.VulkanSDK}",
         "%{IncludeDir.ImGui}".."/imgui",
         "../..",
-        ".."
+        "..",
+        "api",
+        "src"
     }
 
     libdirs

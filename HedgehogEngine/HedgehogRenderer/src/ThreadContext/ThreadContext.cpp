@@ -1,4 +1,4 @@
-#include "HedgehogRenderer/ThreadContext/ThreadContext.hpp"
+#include "ThreadContext.hpp"
 
 #include "RHI/api/IRHIDevice.hpp"
 #include "RHI/api/IRHICommandList.hpp"

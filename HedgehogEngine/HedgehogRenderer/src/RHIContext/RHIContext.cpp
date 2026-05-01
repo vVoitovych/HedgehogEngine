@@ -1,4 +1,4 @@
-#include "HedgehogRenderer/RHIContext/RHIContext.hpp"
+#include "RHIContext.hpp"
 
 #include "HedgehogEngine/api/WindowContext.hpp"
 

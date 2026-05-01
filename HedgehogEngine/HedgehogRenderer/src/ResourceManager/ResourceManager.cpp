@@ -1,6 +1,6 @@
 #include "ResourceManager.hpp"
 
-#include "HedgehogRenderer/ResourceRegistry/ResourceRegistry.hpp"
+#include "ResourceRegistry/ResourceRegistry.hpp"
 
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogEngine/api/Containers/MeshContainer.hpp"

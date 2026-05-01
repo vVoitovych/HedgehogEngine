@@ -8,9 +8,9 @@
 #include "HedgehogSettings/Settings/HedgehogSettings.hpp"
 #include "HedgehogSettings/Settings/ShadowmapingSettings.hpp"
 
-#include "HedgehogRenderer/ResourceManager/ResourceManager.hpp"
-#include "HedgehogRenderer/ResourceRegistry/ResourceRegistry.hpp"
-#include "HedgehogRenderer/ResourceRegistry/MeshGpuData.hpp"
+#include "ResourceManager/ResourceManager.hpp"
+#include "ResourceRegistry/ResourceRegistry.hpp"
+#include "ResourceRegistry/MeshGpuData.hpp"
 
 #include "RHI/api/IRHIDevice.hpp"
 #include "RHI/api/IRHICommandList.hpp"

@@ -1,13 +1,13 @@
-#include "Renderer.hpp"
+#include "HedgehogRenderer/Renderer.hpp"
 
 #include "HedgehogEngine/api/HedgehogEngine.hpp"
 #include "HedgehogEngine/api/WindowContext.hpp"
 #include "HedgehogEngine/api/EngineContext.hpp"
 
-#include "HedgehogRenderer/RHIContext/RHIContext.hpp"
-#include "HedgehogRenderer/ThreadContext/ThreadContext.hpp"
-#include "HedgehogRenderer/RenderQueue/RenderQueue.hpp"
-#include "HedgehogRenderer/ResourceManager/ResourceManager.hpp"
+#include "RHIContext/RHIContext.hpp"
+#include "ThreadContext/ThreadContext.hpp"
+#include "RenderQueue/RenderQueue.hpp"
+#include "ResourceManager/ResourceManager.hpp"
 
 #include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
 

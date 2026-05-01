@@ -1,12 +1,12 @@
 #include "RenderQueue.hpp"
 
-#include "HedgehogRenderer/ResourceManager/ResourceManager.hpp"
-#include "HedgehogRenderer/RenderPasses/InitPass/InitPass.hpp"
-#include "HedgehogRenderer/RenderPasses/DepthPrepass/DepthPrePass.hpp"
-#include "HedgehogRenderer/RenderPasses/ShadowmapPass/ShadowmapPass.hpp"
-#include "HedgehogRenderer/RenderPasses/ForwardPass/ForwardPass.hpp"
-#include "HedgehogRenderer/RenderPasses/PresentPass/PresentPass.hpp"
-#include "HedgehogRenderer/RenderPasses/GuiPass/GuiPass.hpp"
+#include "ResourceManager/ResourceManager.hpp"
+#include "RenderPasses/InitPass/InitPass.hpp"
+#include "RenderPasses/DepthPrepass/DepthPrePass.hpp"
+#include "RenderPasses/ShadowmapPass/ShadowmapPass.hpp"
+#include "RenderPasses/ForwardPass/ForwardPass.hpp"
+#include "RenderPasses/PresentPass/PresentPass.hpp"
+#include "RenderPasses/GuiPass/GuiPass.hpp"
 
 #include "HedgehogSettings/Settings/HedgehogSettings.hpp"
 
