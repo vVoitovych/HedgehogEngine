@@ -20,10 +20,10 @@
 
 namespace Renderer
 {
-    RenderQueue::RenderQueue(RHI::IRHIDevice&                 device,
-                             HW::Window&                      window,
+    RenderQueue::RenderQueue(RHI::IRHIDevice&                  device,
+                             HW::Window&                       window,
                              const HedgehogSettings::Settings& settings,
-                             const ResourceManager&           resourceManager)
+                             ResourceManager&                  resourceManager)
     {
         m_InitPass      = std::make_unique<InitPass>();
         m_DepthPrePass  = std::make_unique<DepthPrePass>(device, resourceManager);
