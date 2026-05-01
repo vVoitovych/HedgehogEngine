@@ -3,7 +3,7 @@
 
 #include "HedgehogEngine/api/HedgehogEngine.hpp"
 #include "HedgehogEngine/api/WindowContext.hpp"
-#include "HedgehogEngine/HedgehogRenderer/Renderer/Renderer.hpp"
+#include "HedgehogRenderer/Renderer.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
 
 #include "Logger/api/Logger.hpp"

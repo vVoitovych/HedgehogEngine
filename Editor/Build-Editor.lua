@@ -10,6 +10,7 @@ project "Editor"
       "..",
       "../HedgehogEngine",
       "../HedgehogEngine/HedgehogEngine/api",
+      "../HedgehogEngine/HedgehogRenderer/api",
       "%{IncludeDir.ImGui}".."/imgui",
       "%{IncludeDir.yaml_cpp}"
    }
