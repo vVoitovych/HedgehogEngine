@@ -70,24 +70,9 @@ namespace Renderer
         m_RenderPass = device.CreateRenderPass(rpDesc);
 
         // Pipeline
-        RHI::GraphicsPipelineDesc pipelineDesc;
-        pipelineDesc.m_VertexShader   = sd.m_VertexShader.get();
-        pipelineDesc.m_FragmentShader = sd.m_FragmentShader.get();
-
-        pipelineDesc.m_VertexBindings   = sd.m_VertexDesc.m_Bindings;
-        pipelineDesc.m_VertexAttributes = sd.m_VertexDesc.m_Attributes;
-
-        pipelineDesc.m_Topology          = RHI::PrimitiveTopology::TriangleList;
-        pipelineDesc.m_CullMode          = RHI::CullMode::Back;
-        pipelineDesc.m_FillMode          = RHI::FillMode::Solid;
-        pipelineDesc.m_DepthTestEnable   = true;
-        pipelineDesc.m_DepthWriteEnable  = true;
-        pipelineDesc.m_DepthCompareOp    = RHI::CompareOp::Less;
-
+        auto pipelineDesc                   = sd.m_Pipeline;
         pipelineDesc.m_DescriptorSetLayouts = { m_FrameLayout.get() };
-        pipelineDesc.m_PushConstantRanges   = sd.m_Layout.m_PushConstants;
         pipelineDesc.m_RenderPass           = m_RenderPass.get();
-
         m_Pipeline = device.CreateGraphicsPipeline(pipelineDesc);
 
         // Framebuffer
