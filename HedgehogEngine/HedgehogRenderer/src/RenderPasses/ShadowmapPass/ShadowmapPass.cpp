@@ -78,7 +78,7 @@ namespace Renderer
 
         // Vertex shader (depth/shadow pass — no fragment shader)
         auto vertexShader = device.CreateShader(
-            "/Shaders/Shaders/ShadowmapPass/Shadowmap.vert.spv",
+            "/HedgehogEngine/HedgehogRenderer/Assets/Shaders/ShadowmapPass/Shadowmap.vert.spv",
             RHI::ShaderStage::Vertex);
 
         // Pipeline: positions only, CullBack, DepthCompare LessOrEqual

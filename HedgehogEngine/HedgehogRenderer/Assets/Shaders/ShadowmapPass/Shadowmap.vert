@@ -1,6 +1,6 @@
 #version 450
 
-layout(set = 0, binding = 0) uniform UniformBufferObject 
+layout(set = 0, binding = 0) uniform UniformBufferObject
 {
     mat4 viewProj;
 } ubo;
@@ -17,5 +17,4 @@ void main()
 {
 	gl_Position = ubo.viewProj * PushConstants.model * vec4(inPosition, 1.0f);
 }
-
 

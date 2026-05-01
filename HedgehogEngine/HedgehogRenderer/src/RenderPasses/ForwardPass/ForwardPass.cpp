@@ -93,8 +93,8 @@ namespace Renderer
         m_RenderPass = device.CreateRenderPass(rpDesc);
 
         // Shaders
-        auto vertexShader   = device.CreateShader("/Shaders/Shaders/ForwardPass/Base.vert.spv", RHI::ShaderStage::Vertex);
-        auto fragmentShader = device.CreateShader("/Shaders/Shaders/ForwardPass/Base.frag.spv", RHI::ShaderStage::Fragment);
+        auto vertexShader   = device.CreateShader("/HedgehogEngine/HedgehogRenderer/Assets/Shaders/ForwardPass/Base.vert.spv", RHI::ShaderStage::Vertex);
+        auto fragmentShader = device.CreateShader("/HedgehogEngine/HedgehogRenderer/Assets/Shaders/ForwardPass/Base.frag.spv", RHI::ShaderStage::Fragment);
 
         // Pipeline: 3 vertex streams (pos / texcoord / normal), CullFront, depth test read-only
         RHI::GraphicsPipelineDesc pipelineDesc;

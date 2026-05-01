@@ -8,7 +8,7 @@ layout(location = 2) in vec4 inWorldPosition;
 
 #include "Common/Lighting.glsl"
 
-layout(set = 0, binding = 0) uniform UniformBufferObject 
+layout(set = 0, binding = 0) uniform UniformBufferObject
 {
     mat4 view;
     mat4 viewProj;
@@ -17,7 +17,7 @@ layout(set = 0, binding = 0) uniform UniformBufferObject
     int lightCount;
 } ubo;
 
-layout(set = 1, binding = 0) uniform MaterialData 
+layout(set = 1, binding = 0) uniform MaterialData
 {
     float transparency;
 } materialData;
@@ -40,4 +40,3 @@ void main()
     }
     outColor.a = 1.0f;
 }
-

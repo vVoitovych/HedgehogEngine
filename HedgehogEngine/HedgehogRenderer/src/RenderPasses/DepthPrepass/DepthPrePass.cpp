@@ -67,7 +67,7 @@ namespace Renderer
 
         // Shaders
         auto vertexShader = device.CreateShader(
-            "/Shaders/Shaders/DepthPrepass/Base.vert.spv",
+            "/HedgehogEngine/HedgehogRenderer/Assets/Shaders/DepthPrepass/Base.vert.spv",
             RHI::ShaderStage::Vertex);
 
         // Pipeline

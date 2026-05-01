@@ -2,10 +2,15 @@ project "HedgehogRenderer"
    kind "StaticLib"
    language "C++"
    cppdialect "C++20"
+   fastuptodate "false"
 
-    files 
-    { 
-        "**.hpp", "**.cpp"
+    files
+    {
+        "**.hpp", "**.cpp",
+        "Assets/Shaders/**.vert",
+        "Assets/Shaders/**.frag",
+        "Assets/Shaders/**.comp",
+        "Assets/Shaders/**.glsl"
     }
 
     includedirs
@@ -30,7 +35,6 @@ project "HedgehogRenderer"
         "HedgehogSettings",
         "HedgehogWindow",
         "ContentLoader",
-        "Shaders",
         "Logger",
         "imgui"
     }
@@ -42,6 +46,10 @@ project "HedgehogRenderer"
    filter "system:windows"
        systemversion "latest"
        defines {  }
+       prebuildmessage "Compiling shaders..."
+       prebuildcommands {
+           'call "%{wks.location}\\ThirdParty\\glslc\\CompileShaders.bat" "%{wks.location}\\HedgehogEngine\\HedgehogRenderer\\Assets\\Shaders"'
+       }
 
    filter "configurations:Debug"
        defines { "DEBUG" }

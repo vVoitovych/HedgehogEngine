@@ -15,4 +15,3 @@ vec3 GammaToLinear(vec3 colorGamma)
 
 
 #endif
-

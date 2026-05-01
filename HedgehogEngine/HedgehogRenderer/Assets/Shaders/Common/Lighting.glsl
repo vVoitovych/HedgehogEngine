@@ -56,4 +56,3 @@ vec4 CalculateLight(Light light, SurfaceData data, vec4 eyePos)
 
 
 #endif
-
