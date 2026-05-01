@@ -62,7 +62,6 @@ Editor (ConsoleApp)
 | `ContentLoader` | static lib | glTF/glb, OBJ, and texture loading (stb_image) |
 | `DialogueWindows` | static lib | ImGui-based dialogs for materials, meshes, scenes, textures |
 | `Logger` | static lib | Colorized console logging, no dependencies |
-| `Shaders` | static lib | GLSL sources; compiled to SPIR-V by pre-build step |
 | `Editor` | executable | H-form 5-panel editor; Play/Pause/Stop mode; ConsolePanel captures Logger |
 
 ### HedgehogRenderer Structure

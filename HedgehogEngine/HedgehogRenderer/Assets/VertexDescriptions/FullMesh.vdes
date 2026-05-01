@@ -1,0 +1,24 @@
+bindings:
+  - binding: 0
+    stride: 12
+    input_rate: per_vertex
+  - binding: 1
+    stride: 8
+    input_rate: per_vertex
+  - binding: 2
+    stride: 12
+    input_rate: per_vertex
+
+attributes:
+  - location: 0
+    binding: 0
+    format: r32g32b32_float
+    offset: 0
+  - location: 1
+    binding: 1
+    format: r32g32_float
+    offset: 0
+  - location: 2
+    binding: 2
+    format: r32g32b32_float
+    offset: 0

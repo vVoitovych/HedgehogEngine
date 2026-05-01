@@ -11,6 +11,7 @@
 #include "HedgehogMath/api/Common.hpp"
 
 #include "Pipeline/PipelineLoader.hpp"
+#include "Pipeline/VertexDescLoader.hpp"
 
 #include <cassert>
 #include "HedgehogMath/api/Vector.hpp"
@@ -106,16 +107,10 @@ namespace Renderer
         pipelineDesc.m_VertexShader   = vertexShader.get();
         pipelineDesc.m_FragmentShader = fragmentShader.get();
 
-        pipelineDesc.m_VertexBindings = {
-            { 0, 3 * sizeof(float), RHI::VertexInputRate::PerVertex },   // positions
-            { 1, 2 * sizeof(float), RHI::VertexInputRate::PerVertex },   // texcoords
-            { 2, 3 * sizeof(float), RHI::VertexInputRate::PerVertex },   // normals
-        };
-        pipelineDesc.m_VertexAttributes = {
-            { 0, 0, RHI::Format::R32G32B32Float, 0 },   // position
-            { 1, 1, RHI::Format::R32G32Float,    0 },   // texcoord
-            { 2, 2, RHI::Format::R32G32B32Float, 0 },   // normal
-        };
+        const auto vd = VertexDescLoader::Load(
+            "/HedgehogEngine/HedgehogRenderer/Assets/VertexDescriptions/FullMesh.vdes");
+        pipelineDesc.m_VertexBindings   = vd.m_Bindings;
+        pipelineDesc.m_VertexAttributes = vd.m_Attributes;
 
         pipelineDesc.m_Topology         = RHI::PrimitiveTopology::TriangleList;
         pipelineDesc.m_CullMode         = RHI::CullMode::Back;

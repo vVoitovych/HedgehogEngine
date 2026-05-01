@@ -1,0 +1,10 @@
+bindings:
+  - binding: 0
+    stride: 12
+    input_rate: per_vertex
+
+attributes:
+  - location: 0
+    binding: 0
+    format: r32g32b32_float
+    offset: 0

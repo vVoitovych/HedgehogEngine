@@ -10,7 +10,9 @@ project "HedgehogRenderer"
         "Assets/Shaders/**.vert",
         "Assets/Shaders/**.frag",
         "Assets/Shaders/**.comp",
-        "Assets/Shaders/**.glsl"
+        "Assets/Shaders/**.glsl",
+        "Assets/Pipelines/**.pl",
+        "Assets/VertexDescriptions/**.vdes"
     }
 
     defines { "YAML_CPP_STATIC_DEFINE" }
