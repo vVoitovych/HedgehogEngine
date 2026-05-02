@@ -1,121 +1,118 @@
 #include "RenderQueue.hpp"
 
+#include "IRenderNode.hpp"
+#include "RenderContext.hpp"
+#include "Nodes/GuiNode.hpp"
+#include "NodeFactory/RenderQueueLoader.hpp"
+#include "NodeFactory/NodeFactory.hpp"
+
 #include "ResourceManager/ResourceManager.hpp"
-#include "RenderPasses/InitPass/InitPass.hpp"
-#include "RenderPasses/DepthPrepass/DepthPrePass.hpp"
-#include "RenderPasses/ShadowmapPass/ShadowmapPass.hpp"
-#include "RenderPasses/ForwardPass/ForwardPass.hpp"
-#include "RenderPasses/PresentPass/PresentPass.hpp"
-#include "RenderPasses/GuiPass/GuiPass.hpp"
 
 #include "HedgehogSettings/Settings/HedgehogSettings.hpp"
 
 #include "HedgehogEngine/api/Frame/FrameData.hpp"
 
-#include "RHI/api/IRHIDevice.hpp"
-#include "RHI/api/IRHISwapchain.hpp"
-#include "RHI/api/IRHICommandList.hpp"
-#include "RHI/api/IRHISyncPrimitive.hpp"
-#include "RHI/api/IRHITexture.hpp"
+#include <cassert>
 
 namespace Renderer
 {
     RenderQueue::RenderQueue(RHI::IRHIDevice&                  device,
-                             HW::Window&                       window,
-                             const HedgehogSettings::Settings& settings,
-                             ResourceManager&                  resourceManager)
+                              HW::Window&                       window,
+                              const HedgehogSettings::Settings& settings,
+                              ResourceManager&                  resourceManager)
     {
-        m_InitPass      = std::make_unique<InitPass>();
-        m_DepthPrePass  = std::make_unique<DepthPrePass>(device, resourceManager);
-        m_ShadowmapPass = std::make_unique<ShadowmapPass>(device, settings, resourceManager);
-        m_ForwardPass   = std::make_unique<ForwardPass>(device, resourceManager);
-        m_GuiPass       = std::make_unique<GuiPass>(window, device, resourceManager);
-        m_PresentPass   = std::make_unique<PresentPass>();
+        const auto configs = RenderQueueLoader::Load(MAIN_RENDER_QUEUE_PATH);
+        assert(!configs.empty() && "Main.rq failed to parse or is empty");
+
+        NodeFactory factory(device, window, settings, resourceManager);
+        for (const auto& cfg : configs)
+            m_Nodes.push_back(factory.Create(cfg));
+
+        for (auto& node : m_Nodes)
+        {
+            if (auto* gui = dynamic_cast<GuiNode*>(node.get()))
+            {
+                m_GuiNode = gui;
+                break;
+            }
+        }
+        assert(m_GuiNode && "Main.rq must contain a Gui node");
     }
 
-    RenderQueue::~RenderQueue()
-    {
-    }
+    RenderQueue::~RenderQueue() = default;
 
     void RenderQueue::Cleanup(RHI::IRHIDevice& device)
     {
-        m_InitPass->Cleanup();
-        m_DepthPrePass->Cleanup(device);
-        m_ShadowmapPass->Cleanup(device);
-        m_ForwardPass->Cleanup(device);
-        m_GuiPass->Cleanup(device);
-        m_PresentPass->Cleanup();
+        for (auto& node : m_Nodes)
+            node->Cleanup(device);
     }
 
     void RenderQueue::BeginGui()
     {
-        m_GuiPass->BeginFrame();
+        m_GuiNode->BeginFrame();
     }
 
     void RenderQueue::DiscardGui()
     {
-        m_GuiPass->DiscardFrame();
-    }
-
-    void RenderQueue::Render(const HedgehogEngine::FrameData& frame,
-                             RHI::IRHIDevice&     device,
-                             RHI::IRHISwapchain&  swapchain,
-                             RHI::IRHICommandList& cmd,
-                             RHI::IRHIFence&      fence,
-                             RHI::IRHISemaphore&  imageAvailableSemaphore,
-                             RHI::IRHISemaphore&  renderFinishedSemaphore,
-                             uint32_t             frameIndex,
-                             const ResourceManager& resourceManager)
-    {
-        const uint32_t backBufferIndex = m_InitPass->Render(
-            swapchain, fence, imageAvailableSemaphore, cmd);
-
-        m_ShadowmapPass->Render(frame, resourceManager, cmd, frameIndex);
-        m_DepthPrePass->Render(frame, resourceManager, cmd, frameIndex);
-        m_ForwardPass->Render(frame, resourceManager, cmd, frameIndex);
-
-        auto& sceneBuffer = const_cast<RHI::IRHITexture&>(resourceManager.GetSceneColorBuffer());
-        cmd.TransitionTexture(sceneBuffer,
-            RHI::ImageLayout::ColorAttachment,
-            RHI::ImageLayout::ShaderReadOnly);
-
-        m_GuiPass->Render(cmd, resourceManager);
-
-        auto& colorBuffer = const_cast<RHI::IRHITexture&>(resourceManager.GetRHIColorBuffer());
-        m_PresentPass->Render(cmd, device, swapchain, colorBuffer, backBufferIndex,
-                              imageAvailableSemaphore, renderFinishedSemaphore, fence);
-    }
-
-    void RenderQueue::UpdateData(const HedgehogEngine::FrameData&             frame,
-                                 uint32_t                          frameIndex,
-                                 const HedgehogSettings::Settings& settings)
-    {
-        m_ShadowmapPass->UpdateData(frame, frameIndex, settings);
-    }
-
-    void RenderQueue::ResizeResources(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
-    {
-        // Window resize: only GuiPass framebuffer depends on swapchain/RHIColorBuffer size.
-        // DepthPrePass and ForwardPass are resized by ResizeSceneView when the panel size changes.
-        m_GuiPass->ResizeResources(device, resourceManager);
-    }
-
-    void RenderQueue::ResizeSceneView(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
-    {
-        m_DepthPrePass->ResizeResources(device, resourceManager);
-        m_ForwardPass->ResizeResources(device, resourceManager);
-        m_GuiPass->RecreateSceneDescriptor(resourceManager);
+        m_GuiNode->DiscardFrame();
     }
 
     void* RenderQueue::GetSceneViewTextureId() const
     {
-        return m_GuiPass->GetSceneViewTextureId();
+        return m_GuiNode->GetSceneViewTextureId();
+    }
+
+    void RenderQueue::Render(const HedgehogEngine::FrameData& frame,
+                              RHI::IRHIDevice&      device,
+                              RHI::IRHISwapchain&   swapchain,
+                              RHI::IRHICommandList& cmd,
+                              RHI::IRHIFence&       fence,
+                              RHI::IRHISemaphore&   imageAvailableSemaphore,
+                              RHI::IRHISemaphore&   renderFinishedSemaphore,
+                              uint32_t              frameIndex,
+                              const ResourceManager& resourceManager)
+    {
+        RenderContext ctx;
+        ctx.m_FrameData       = &frame;
+        ctx.m_Device          = &device;
+        ctx.m_Swapchain       = &swapchain;
+        ctx.m_Cmd             = &cmd;
+        ctx.m_Fence           = &fence;
+        ctx.m_ImageAvailable  = &imageAvailableSemaphore;
+        ctx.m_RenderFinished  = &renderFinishedSemaphore;
+        ctx.m_ResourceManager = &resourceManager;
+        ctx.m_FrameIndex      = frameIndex;
+
+        for (auto& node : m_Nodes)
+            node->Render(ctx);
+    }
+
+    void RenderQueue::UpdateData(const HedgehogEngine::FrameData&  frame,
+                                  uint32_t                          frameIndex,
+                                  const HedgehogSettings::Settings& settings)
+    {
+        for (auto& node : m_Nodes)
+            node->UpdateData(frame, frameIndex, settings);
+    }
+
+    void RenderQueue::ResizeResources(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
+    {
+        for (auto& node : m_Nodes)
+            node->OnResizeFramebuffer(device, resourceManager);
+    }
+
+    void RenderQueue::ResizeSceneView(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
+    {
+        for (auto& node : m_Nodes)
+            node->OnResizeSceneView(device, resourceManager);
     }
 
     void RenderQueue::UpdateResources(RHI::IRHIDevice&                  device,
-                                      const HedgehogSettings::Settings&  settings,
-                                      const ResourceManager&             resourceManager)
+                                       const HedgehogSettings::Settings& settings,
+                                       const ResourceManager&            resourceManager)
     {
-        m_ShadowmapPass->UpdateResources(device, settings, resourceManager);
+        for (auto& node : m_Nodes)
+            node->OnUpdateResources(device, settings, resourceManager);
     }
-}
+
+} // namespace Renderer

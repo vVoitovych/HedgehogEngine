@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <vector>
 
 namespace HedgehogEngine
 {
@@ -29,13 +30,9 @@ namespace HedgehogSettings
 
 namespace Renderer
 {
+    class IRenderNode;
+    class GuiNode;
     class ResourceManager;
-    class InitPass;
-    class DepthPrePass;
-    class ShadowmapPass;
-    class ForwardPass;
-    class PresentPass;
-    class GuiPass;
 
     class RenderQueue
     {
@@ -58,32 +55,29 @@ namespace Renderer
         void* GetSceneViewTextureId() const;
 
         void Render(const HedgehogEngine::FrameData& frame,
-                    RHI::IRHIDevice&     device,
-                    RHI::IRHISwapchain&  swapchain,
+                    RHI::IRHIDevice&      device,
+                    RHI::IRHISwapchain&   swapchain,
                     RHI::IRHICommandList& cmd,
-                    RHI::IRHIFence&      fence,
-                    RHI::IRHISemaphore&  imageAvailableSemaphore,
-                    RHI::IRHISemaphore&  renderFinishedSemaphore,
-                    uint32_t             frameIndex,
+                    RHI::IRHIFence&       fence,
+                    RHI::IRHISemaphore&   imageAvailableSemaphore,
+                    RHI::IRHISemaphore&   renderFinishedSemaphore,
+                    uint32_t              frameIndex,
                     const ResourceManager& resourceManager);
 
-        void UpdateData(const HedgehogEngine::FrameData&             frame,
-                        uint32_t                          frameIndex,
-                        const HedgehogSettings::Settings& settings);
+        void UpdateData(const HedgehogEngine::FrameData&   frame,
+                        uint32_t                           frameIndex,
+                        const HedgehogSettings::Settings&  settings);
 
         void ResizeResources(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
         void ResizeSceneView(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
 
-        void UpdateResources(RHI::IRHIDevice&                 device,
+        void UpdateResources(RHI::IRHIDevice&                  device,
                              const HedgehogSettings::Settings& settings,
                              const ResourceManager&            resourceManager);
 
     private:
-        std::unique_ptr<InitPass>     m_InitPass;
-        std::unique_ptr<DepthPrePass> m_DepthPrePass;
-        std::unique_ptr<ShadowmapPass> m_ShadowmapPass;
-        std::unique_ptr<ForwardPass>  m_ForwardPass;
-        std::unique_ptr<PresentPass>  m_PresentPass;
-        std::unique_ptr<GuiPass>      m_GuiPass;
+        std::vector<std::unique_ptr<IRenderNode>> m_Nodes;
+        GuiNode*                                  m_GuiNode = nullptr; // non-owning alias
     };
-}
+
+} // namespace Renderer

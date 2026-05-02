@@ -1,0 +1,27 @@
+passes:
+  - name: Init
+    type: Acquire
+
+  - name: ShadowmapPass
+    type: RenderPass
+    shader: ../Shaders/ShadowmapPass.shader
+
+  - name: DepthPrepass
+    type: RenderPass
+    shader: ../Shaders/DepthPrepass.shader
+
+  - name: ForwardPass
+    type: RenderPass
+    shader: ../Shaders/ForwardPass.shader
+
+  - name: SceneColorToShaderRead
+    type: Transition
+    resource: SceneColorBuffer
+    from: ColorAttachment
+    to: ShaderReadOnly
+
+  - name: Gui
+    type: Gui
+
+  - name: Present
+    type: Present
