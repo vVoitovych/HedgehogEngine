@@ -17,6 +17,7 @@ namespace Editor
     class ConsolePanel;
     class VertexDescriptionWindow;
     class PipelineWindow;
+    class ShaderWindow;
 
     enum class EditorMode { Edit, Play, Pause };
 
@@ -72,6 +73,7 @@ namespace Editor
         std::unique_ptr<ConsolePanel>            m_ConsolePanel;
         std::unique_ptr<VertexDescriptionWindow> m_VertexDescWindow;
         std::unique_ptr<PipelineWindow>          m_PipelineWindow;
+        std::unique_ptr<ShaderWindow>            m_ShaderWindow;
 
         // Non-owning pointer valid only during Draw(); used by DrawPanelContent lambdas
         void* m_SceneViewTextureId = nullptr;

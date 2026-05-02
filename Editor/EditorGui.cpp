@@ -2,6 +2,7 @@
 #include "Panels/ConsolePanel.hpp"
 #include "Tools/VertexDescriptionWindow.hpp"
 #include "Tools/PipelineWindow.hpp"
+#include "Tools/ShaderWindow.hpp"
 
 #include "HedgehogEngine/api/HedgehogEngine.hpp"
 #include "HedgehogEngine/api/EngineContext.hpp"
@@ -39,6 +40,7 @@ namespace Editor
         : m_ConsolePanel(std::make_unique<ConsolePanel>())
         , m_VertexDescWindow(std::make_unique<VertexDescriptionWindow>())
         , m_PipelineWindow(std::make_unique<PipelineWindow>())
+        , m_ShaderWindow(std::make_unique<ShaderWindow>())
     {
         if (m_Settings.Load(k_SettingsPath) && m_Settings.dockLayout.IsValid())
             m_DockSystem.GetLayout() = m_Settings.dockLayout;
@@ -78,6 +80,7 @@ namespace Editor
         DrawSettingsWindow(context);
         m_VertexDescWindow->Draw();
         m_PipelineWindow->Draw();
+        m_ShaderWindow->Draw();
     }
 
     // ─── Panel dispatch ───────────────────────────────────────────────────────
@@ -237,6 +240,8 @@ namespace Editor
                 m_VertexDescWindow->m_Open = !m_VertexDescWindow->m_Open;
             if (ImGui::MenuItem("Pipeline", nullptr, m_PipelineWindow->m_Open))
                 m_PipelineWindow->m_Open = !m_PipelineWindow->m_Open;
+            if (ImGui::MenuItem("Shader", nullptr, m_ShaderWindow->m_Open))
+                m_ShaderWindow->m_Open = !m_ShaderWindow->m_Open;
             ImGui::EndMenu();
         }
 

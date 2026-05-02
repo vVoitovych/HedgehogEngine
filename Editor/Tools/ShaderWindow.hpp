@@ -1,0 +1,94 @@
+#pragma once
+
+#include <string>
+#include <vector>
+
+namespace Editor
+{
+
+class ShaderWindow
+{
+public:
+    bool m_Open = false;
+
+    void Draw();
+
+private:
+    enum class PipelineType { Graphics = 0, Compute = 1 };
+
+    struct StageEntry
+    {
+        std::string m_Stage;   // "vertex" | "fragment" | "compute"
+        std::string m_Path;    // relative path to .spv
+    };
+
+    struct BlendAttachment
+    {
+        bool m_Enabled   = false;
+        int  m_SrcColor  = 1;   // "one"
+        int  m_DstColor  = 0;   // "zero"
+        int  m_ColorOp   = 0;   // "add"
+        int  m_SrcAlpha  = 1;   // "one"
+        int  m_DstAlpha  = 0;   // "zero"
+        int  m_AlphaOp   = 0;   // "add"
+    };
+
+    // ── Sub-sections ──────────────────────────────────────────────────────────
+    void DrawFileControls();
+    void DrawPipelineType();
+    void DrawReferences();
+    void DrawShaderStages();
+    void DrawPipelineState();
+    void DrawValidation();
+
+    // ── File I/O ──────────────────────────────────────────────────────────────
+    void NewFile();
+    void OpenFile();
+    void SaveFile();
+    void SaveAsFile();
+    bool LoadFromPath(const std::string& path);
+    bool SaveToPath(const std::string& path);
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+    std::string MakeRelativePath(const std::string& absPath) const;
+    static bool InputPath(const char* label, std::string& path, float width = -FLT_MIN);
+    bool HasDuplicateStage(const std::string& stage, int skipRow) const;
+
+    // ── Enum string tables (names = YAML tokens, indices are array positions) ─
+    static int         TopologyToIndex(const std::string& s);
+    static const char* IndexToTopology(int i);
+    static int         CullModeToIndex(const std::string& s);
+    static const char* IndexToCullMode(int i);
+    static int         FillModeToIndex(const std::string& s);
+    static const char* IndexToFillMode(int i);
+    static int         CompareOpToIndex(const std::string& s);
+    static const char* IndexToCompareOp(int i);
+    static int         BlendFactorToIndex(const std::string& s);
+    static const char* IndexToBlendFactor(int i);
+    static int         BlendOpToIndex(const std::string& s);
+    static const char* IndexToBlendOp(int i);
+    static int         StageToIndex(const std::string& s);
+    static const char* IndexToStage(int i);
+
+    // ── State ─────────────────────────────────────────────────────────────────
+    std::string  m_FilePath;
+    bool         m_Dirty = false;
+
+    PipelineType m_PipelineType = PipelineType::Graphics;
+
+    std::string  m_PipelineLayout;       // relative path to .pl
+    std::string  m_VertexDescription;    // relative path to .vdes
+
+    // Graphics pipeline state
+    int  m_Topology     = 0;    // triangle_list
+    int  m_CullMode     = 2;    // back
+    int  m_FillMode     = 0;    // solid
+    bool m_DepthTest    = true;
+    bool m_DepthWrite   = true;
+    int  m_DepthCompare = 1;    // less
+
+    std::vector<BlendAttachment> m_BlendAttachments;
+    std::vector<StageEntry>      m_Stages;
+};
+
+} // namespace Editor
