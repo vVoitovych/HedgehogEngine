@@ -40,10 +40,10 @@ namespace Renderer
     class RenderQueue
     {
     public:
-        RenderQueue(RHI::IRHIDevice&                device,
-                    HW::Window&                     window,
+        RenderQueue(RHI::IRHIDevice&                  device,
+                    HW::Window&                       window,
                     const HedgehogSettings::Settings& settings,
-                    const ResourceManager&          resourceManager);
+                    ResourceManager&                  resourceManager);
         ~RenderQueue();
 
         RenderQueue(const RenderQueue&)            = delete;

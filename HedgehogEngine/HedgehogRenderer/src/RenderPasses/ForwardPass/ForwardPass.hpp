@@ -33,7 +33,7 @@ namespace Renderer
     class ForwardPass
     {
     public:
-        ForwardPass(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
+        ForwardPass(RHI::IRHIDevice& device, ResourceManager& resourceManager);
         ~ForwardPass();
 
         void Render(const HedgehogEngine::FrameData& frame, const ResourceManager& resourceManager,
@@ -70,6 +70,7 @@ namespace Renderer
 
         std::unique_ptr<RHI::IRHIDescriptorSetLayout> m_FrameLayout;
         std::unique_ptr<RHI::IRHIDescriptorPool>      m_FramePool;
+        std::unique_ptr<RHI::IRHIDescriptorSetLayout> m_MaterialLayout;
 
         std::vector<std::unique_ptr<RHI::IRHIBuffer>>        m_FrameUniforms;
         std::vector<std::unique_ptr<RHI::IRHIDescriptorSet>> m_FrameSets;

@@ -3,6 +3,8 @@
 #include "MeshGpuData.hpp"
 #include "MaterialGpuData.hpp"
 
+#include "RHI/api/RHITypes.hpp"
+
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -39,20 +41,25 @@ namespace HR
         ResourceRegistry(ResourceRegistry&&)                 = delete;
         ResourceRegistry& operator=(ResourceRegistry&&)      = delete;
 
+        // Called once by the render pass that owns the material pipeline layout,
+        // before any SyncMaterials call. maxSets must cover the full material budget.
+        void SetMaterialLayout(RHI::IRHIDevice&                    device,
+                               const RHI::IRHIDescriptorSetLayout& layout,
+                               uint32_t                            maxSets,
+                               const std::vector<RHI::PoolSize>&   poolSizes);
+
         void SyncMeshes(const HedgehogEngine::MeshContainer& container, RHI::IRHIDevice& device);
         void SyncMaterials(HedgehogEngine::MaterialContainer& container,
                            HedgehogEngine::TextureContainer&  texContainer,
-                           RHI::IRHIDevice&            device);
+                           RHI::IRHIDevice&                   device);
 
-        const RHI::IRHIBuffer& GetPositionsBuffer()  const;
-        const RHI::IRHIBuffer& GetTexCoordsBuffer()  const;
-        const RHI::IRHIBuffer& GetNormalsBuffer()    const;
-        const RHI::IRHIBuffer& GetIndexBuffer()      const;
+        const RHI::IRHIBuffer& GetPositionsBuffer() const;
+        const RHI::IRHIBuffer& GetTexCoordsBuffer() const;
+        const RHI::IRHIBuffer& GetNormalsBuffer()   const;
+        const RHI::IRHIBuffer& GetIndexBuffer()     const;
 
-        const MeshGeometryInfo& GetMeshGeometryInfo(size_t meshIndex) const;
-
-        const RHI::IRHIDescriptorSetLayout& GetMaterialDescriptorSetLayout() const;
-        const RHI::IRHIDescriptorSet&       GetMaterialDescriptorSet(uint32_t index) const;
+        const MeshGeometryInfo&       GetMeshGeometryInfo(size_t meshIndex) const;
+        const RHI::IRHIDescriptorSet& GetMaterialDescriptorSet(uint32_t index) const;
 
         void Cleanup(RHI::IRHIDevice& device);
 
@@ -89,11 +96,11 @@ namespace HR
         std::unique_ptr<RHI::IRHIBuffer> m_NormalsBuffer;
         std::unique_ptr<RHI::IRHIBuffer> m_IndexBuffer;
 
-        // Material GPU resources
-        std::unique_ptr<RHI::IRHIDescriptorSetLayout> m_MaterialLayout;
-        std::unique_ptr<RHI::IRHIDescriptorPool>      m_MaterialPool;
-        std::vector<MaterialGpuData>                   m_Materials;
-        size_t                                         m_RegisteredMaterialCount = 0;
+        // Material GPU resources — layout is non-owning (owned by the render pass that defined it)
+        const RHI::IRHIDescriptorSetLayout*      m_MaterialLayout = nullptr;
+        std::unique_ptr<RHI::IRHIDescriptorPool> m_MaterialPool;
+        std::vector<MaterialGpuData>             m_Materials;
+        size_t                                   m_RegisteredMaterialCount = 0;
 
         // Shared texture cache and sampler
         std::unordered_map<std::string, std::unique_ptr<RHI::IRHITexture>> m_TextureCache;

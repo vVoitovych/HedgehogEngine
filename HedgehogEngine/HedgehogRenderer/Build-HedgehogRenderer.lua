@@ -10,13 +10,19 @@ project "HedgehogRenderer"
         "Assets/Shaders/**.vert",
         "Assets/Shaders/**.frag",
         "Assets/Shaders/**.comp",
-        "Assets/Shaders/**.glsl"
+        "Assets/Shaders/**.glsl",
+        "Assets/Pipelines/**.pl",
+        "Assets/VertexDescriptions/**.vdes",
+        "Assets/Shaders/**.shader"
     }
+
+    defines { "YAML_CPP_STATIC_DEFINE" }
 
     includedirs
     {
         "%{IncludeDir.VulkanSDK}",
         "%{IncludeDir.ImGui}".."/imgui",
+        "%{IncludeDir.yaml_cpp}",
         "../..",
         "..",
         "api",
@@ -36,7 +42,8 @@ project "HedgehogRenderer"
         "HedgehogWindow",
         "ContentLoader",
         "Logger",
-        "imgui"
+        "imgui",
+        "yaml-cpp"
     }
 
 

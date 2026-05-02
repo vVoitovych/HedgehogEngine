@@ -8,8 +8,6 @@
 #include "HedgehogEngine/api/Containers/MaterialData.hpp"
 #include "HedgehogEngine/api/Containers/TextureContainer.hpp"
 
-#include "HedgehogCommon/api/RendererSettings.hpp"
-
 #include "RHI/api/IRHIDevice.hpp"
 #include "RHI/api/IRHIBuffer.hpp"
 #include "RHI/api/IRHITexture.hpp"
@@ -17,22 +15,12 @@
 #include "RHI/api/IRHIDescriptor.hpp"
 #include "RHI/api/IRHICommandList.hpp"
 
+#include <cassert>
+
 namespace HR
 {
     ResourceRegistry::ResourceRegistry(RHI::IRHIDevice& device)
     {
-        m_MaterialLayout = device.CreateDescriptorSetLayout({
-            { 0, RHI::DescriptorType::UniformBuffer,        1, RHI::ShaderStage::Fragment },
-            { 1, RHI::DescriptorType::CombinedImageSampler, 1, RHI::ShaderStage::Fragment },
-        });
-
-        m_MaterialPool = device.CreateDescriptorPool(
-            MAX_MATERIAL_COUNT,
-            {
-                { RHI::DescriptorType::UniformBuffer,        MAX_MATERIAL_COUNT },
-                { RHI::DescriptorType::CombinedImageSampler, MAX_MATERIAL_COUNT },
-            });
-
         RHI::SamplerDesc samplerDesc;
         samplerDesc.m_MinFilter    = RHI::Filter::Linear;
         samplerDesc.m_MagFilter    = RHI::Filter::Linear;
@@ -44,6 +32,16 @@ namespace HR
 
     ResourceRegistry::~ResourceRegistry()
     {
+    }
+
+    void ResourceRegistry::SetMaterialLayout(RHI::IRHIDevice&                    device,
+                                              const RHI::IRHIDescriptorSetLayout& layout,
+                                              uint32_t                            maxSets,
+                                              const std::vector<RHI::PoolSize>&   poolSizes)
+    {
+        assert(m_Materials.empty() && "SetMaterialLayout must be called before any materials are registered");
+        m_MaterialLayout = &layout;
+        m_MaterialPool   = device.CreateDescriptorPool(maxSets, poolSizes);
     }
 
     void ResourceRegistry::SyncMeshes(const HedgehogEngine::MeshContainer& container, RHI::IRHIDevice& device)
@@ -94,8 +92,10 @@ namespace HR
 
     void ResourceRegistry::SyncMaterials(HedgehogEngine::MaterialContainer& container,
                                           HedgehogEngine::TextureContainer&  texContainer,
-                                          RHI::IRHIDevice&            device)
+                                          RHI::IRHIDevice&                   device)
     {
+        assert(m_MaterialLayout && "SetMaterialLayout must be called before SyncMaterials");
+
         const size_t total = container.GetMaterialCount();
 
         for (size_t i = 0; i < m_RegisteredMaterialCount && i < total; ++i)
@@ -217,30 +217,10 @@ namespace HR
         return m_MeshGeometryInfos[meshIndex];
     }
 
-    const RHI::IRHIBuffer& ResourceRegistry::GetPositionsBuffer() const
-    {
-        return *m_PositionsBuffer;
-    }
-
-    const RHI::IRHIBuffer& ResourceRegistry::GetTexCoordsBuffer() const
-    {
-        return *m_TexCoordsBuffer;
-    }
-
-    const RHI::IRHIBuffer& ResourceRegistry::GetNormalsBuffer() const
-    {
-        return *m_NormalsBuffer;
-    }
-
-    const RHI::IRHIBuffer& ResourceRegistry::GetIndexBuffer() const
-    {
-        return *m_IndexBuffer;
-    }
-
-    const RHI::IRHIDescriptorSetLayout& ResourceRegistry::GetMaterialDescriptorSetLayout() const
-    {
-        return *m_MaterialLayout;
-    }
+    const RHI::IRHIBuffer& ResourceRegistry::GetPositionsBuffer() const { return *m_PositionsBuffer; }
+    const RHI::IRHIBuffer& ResourceRegistry::GetTexCoordsBuffer() const { return *m_TexCoordsBuffer; }
+    const RHI::IRHIBuffer& ResourceRegistry::GetNormalsBuffer()   const { return *m_NormalsBuffer;   }
+    const RHI::IRHIBuffer& ResourceRegistry::GetIndexBuffer()     const { return *m_IndexBuffer;     }
 
     const RHI::IRHIDescriptorSet& ResourceRegistry::GetMaterialDescriptorSet(uint32_t index) const
     {
@@ -251,11 +231,11 @@ namespace HR
     {
         device.WaitIdle();
 
-        m_Materials.clear();
+        m_Materials.clear();       // descriptor sets freed before pool
         m_TextureCache.clear();
         m_LinearSampler.reset();
         m_MaterialPool.reset();
-        m_MaterialLayout.reset();
+        m_MaterialLayout = nullptr;
 
         m_IndexBuffer.reset();
         m_NormalsBuffer.reset();

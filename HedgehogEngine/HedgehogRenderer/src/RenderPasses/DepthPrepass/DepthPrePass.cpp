@@ -9,6 +9,11 @@
 
 #include "HedgehogCommon/api/RendererSettings.hpp"
 
+#include "Pipeline/ShaderLoader.hpp"
+#include "Pipeline/PipelineLoader.hpp"
+
+#include <cassert>
+
 #include "RHI/api/IRHIDevice.hpp"
 #include "RHI/api/IRHICommandList.hpp"
 #include "RHI/api/IRHIRenderPass.hpp"
@@ -17,22 +22,21 @@
 #include "RHI/api/IRHIDescriptor.hpp"
 #include "RHI/api/IRHIBuffer.hpp"
 #include "RHI/api/IRHITexture.hpp"
-#include "RHI/api/IRHIShader.hpp"
 
 namespace Renderer
 {
 
     DepthPrePass::DepthPrePass(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
     {
-        // Descriptor set layout: binding 0 = uniform buffer (vertex stage)
-        m_FrameLayout = device.CreateDescriptorSetLayout({
-            { 0, RHI::DescriptorType::UniformBuffer, 1, RHI::ShaderStage::Vertex }
-        });
+        const auto sd = ShaderLoader::Load(device,
+            "/HedgehogEngine/HedgehogRenderer/Assets/Shaders/DepthPrepass.shader");
+        assert(!sd.m_Layout.m_DescriptorSets.empty());
 
-        // Descriptor pool: one UB per frame
+        m_FrameLayout = device.CreateDescriptorSetLayout(sd.m_Layout.m_DescriptorSets[0]);
+
         m_FramePool = device.CreateDescriptorPool(
             MAX_FRAMES_IN_FLIGHT,
-            { { RHI::DescriptorType::UniformBuffer, MAX_FRAMES_IN_FLIGHT } });
+            PipelineLoader::MakePoolSizes(sd.m_Layout.m_DescriptorSets[0], MAX_FRAMES_IN_FLIGHT));
 
         // Per-frame uniform buffers and descriptor sets
         m_FrameUniforms.reserve(MAX_FRAMES_IN_FLIGHT);
@@ -65,32 +69,10 @@ namespace Renderer
         };
         m_RenderPass = device.CreateRenderPass(rpDesc);
 
-        // Shaders
-        auto vertexShader = device.CreateShader(
-            "/HedgehogEngine/HedgehogRenderer/Assets/Shaders/DepthPrepass/Base.vert.spv",
-            RHI::ShaderStage::Vertex);
-
         // Pipeline
-        RHI::GraphicsPipelineDesc pipelineDesc;
-        pipelineDesc.m_VertexShader   = vertexShader.get();
-        pipelineDesc.m_FragmentShader = nullptr; // depth-only pass
-
-        pipelineDesc.m_VertexBindings  = { { 0, 3 * sizeof(float), RHI::VertexInputRate::PerVertex } };
-        pipelineDesc.m_VertexAttributes = { { 0, 0, RHI::Format::R32G32B32Float, 0 } };
-
-        pipelineDesc.m_Topology          = RHI::PrimitiveTopology::TriangleList;
-        pipelineDesc.m_CullMode          = RHI::CullMode::Back;
-        pipelineDesc.m_FillMode          = RHI::FillMode::Solid;
-        pipelineDesc.m_DepthTestEnable   = true;
-        pipelineDesc.m_DepthWriteEnable  = true;
-        pipelineDesc.m_DepthCompareOp    = RHI::CompareOp::Less;
-
+        auto pipelineDesc                   = sd.m_Pipeline;
         pipelineDesc.m_DescriptorSetLayouts = { m_FrameLayout.get() };
-        pipelineDesc.m_PushConstantRanges   = {
-            { RHI::ShaderStage::Vertex, 0, static_cast<uint32_t>(sizeof(DepthPrePassPushConstants)) }
-        };
-        pipelineDesc.m_RenderPass = m_RenderPass.get();
-
+        pipelineDesc.m_RenderPass           = m_RenderPass.get();
         m_Pipeline = device.CreateGraphicsPipeline(pipelineDesc);
 
         // Framebuffer
@@ -110,12 +92,10 @@ namespace Renderer
     void DepthPrePass::Render(const HedgehogEngine::FrameData& frame, const ResourceManager& resourceManager,
                                RHI::IRHICommandList& cmd, uint32_t frameIndex)
     {
-        // Update frame uniform
         DepthPrepassFrameUniform ubo{};
         ubo.m_ViewProj = frame.m_Camera.m_Proj * frame.m_Camera.m_View;
         m_FrameUniforms[frameIndex]->CopyData(&ubo, sizeof(ubo));
 
-        // Begin render pass
         RHI::ClearValue depthClear;
         depthClear.m_IsDepth      = true;
         depthClear.m_DepthStencil = { 1.0f, 0 };

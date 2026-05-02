@@ -9,6 +9,11 @@
 
 #include "HedgehogCommon/api/RendererSettings.hpp"
 #include "HedgehogMath/api/Common.hpp"
+
+#include "Pipeline/ShaderLoader.hpp"
+#include "Pipeline/PipelineLoader.hpp"
+
+#include <cassert>
 #include "HedgehogMath/api/Vector.hpp"
 
 #include <cmath>
@@ -21,7 +26,6 @@
 #include "RHI/api/IRHIDescriptor.hpp"
 #include "RHI/api/IRHIBuffer.hpp"
 #include "RHI/api/IRHITexture.hpp"
-#include "RHI/api/IRHIShader.hpp"
 
 namespace Renderer
 {
@@ -40,18 +44,17 @@ namespace Renderer
     }
 
 
-    ForwardPass::ForwardPass(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
+    ForwardPass::ForwardPass(RHI::IRHIDevice& device, ResourceManager& resourceManager)
     {
-        auto& registry  = resourceManager.GetResourceRegistry();
+        const auto sd = ShaderLoader::Load(device,
+            "/HedgehogEngine/HedgehogRenderer/Assets/Shaders/ForwardPass.shader");
+        assert(sd.m_Layout.m_DescriptorSets.size() >= 2);
 
-        // Frame descriptor set layout: binding 0 = UB (vertex + fragment)
-        m_FrameLayout = device.CreateDescriptorSetLayout({
-            { 0, RHI::DescriptorType::UniformBuffer, 1, RHI::ShaderStage::Vertex | RHI::ShaderStage::Fragment }
-        });
-
+        // Set 0: per-frame data (camera, lights)
+        m_FrameLayout = device.CreateDescriptorSetLayout(sd.m_Layout.m_DescriptorSets[0]);
         m_FramePool = device.CreateDescriptorPool(
             MAX_FRAMES_IN_FLIGHT,
-            { { RHI::DescriptorType::UniformBuffer, MAX_FRAMES_IN_FLIGHT } });
+            PipelineLoader::MakePoolSizes(sd.m_Layout.m_DescriptorSets[0], MAX_FRAMES_IN_FLIGHT));
 
         m_FrameUniforms.reserve(MAX_FRAMES_IN_FLIGHT);
         m_FrameSets.reserve(MAX_FRAMES_IN_FLIGHT);
@@ -69,6 +72,15 @@ namespace Renderer
             m_FrameUniforms.push_back(std::move(ubo));
             m_FrameSets.push_back(std::move(set));
         }
+
+        // Set 1: per-material data — ForwardPass defines and owns this layout.
+        // The layout is injected into ResourceRegistry so it can allocate material descriptor sets.
+        m_MaterialLayout = device.CreateDescriptorSetLayout(sd.m_Layout.m_DescriptorSets[1]);
+        resourceManager.GetResourceRegistry().SetMaterialLayout(
+            device,
+            *m_MaterialLayout,
+            MAX_MATERIAL_COUNT,
+            PipelineLoader::MakePoolSizes(sd.m_Layout.m_DescriptorSets[1], MAX_MATERIAL_COUNT));
 
         // Render pass: one color + depth (loaded from DepthPrePass)
         RHI::RenderPassDesc rpDesc;
@@ -92,52 +104,13 @@ namespace Renderer
         };
         m_RenderPass = device.CreateRenderPass(rpDesc);
 
-        // Shaders
-        auto vertexShader   = device.CreateShader("/HedgehogEngine/HedgehogRenderer/Assets/Shaders/ForwardPass/Base.vert.spv", RHI::ShaderStage::Vertex);
-        auto fragmentShader = device.CreateShader("/HedgehogEngine/HedgehogRenderer/Assets/Shaders/ForwardPass/Base.frag.spv", RHI::ShaderStage::Fragment);
-
-        // Pipeline: 3 vertex streams (pos / texcoord / normal), CullFront, depth test read-only
-        RHI::GraphicsPipelineDesc pipelineDesc;
-        pipelineDesc.m_VertexShader   = vertexShader.get();
-        pipelineDesc.m_FragmentShader = fragmentShader.get();
-
-        pipelineDesc.m_VertexBindings = {
-            { 0, 3 * sizeof(float), RHI::VertexInputRate::PerVertex },   // positions
-            { 1, 2 * sizeof(float), RHI::VertexInputRate::PerVertex },   // texcoords
-            { 2, 3 * sizeof(float), RHI::VertexInputRate::PerVertex },   // normals
-        };
-        pipelineDesc.m_VertexAttributes = {
-            { 0, 0, RHI::Format::R32G32B32Float, 0 },   // position
-            { 1, 1, RHI::Format::R32G32Float,    0 },   // texcoord
-            { 2, 2, RHI::Format::R32G32B32Float, 0 },   // normal
-        };
-
-        pipelineDesc.m_Topology         = RHI::PrimitiveTopology::TriangleList;
-        pipelineDesc.m_CullMode         = RHI::CullMode::Back;
-        pipelineDesc.m_FillMode         = RHI::FillMode::Solid;
-        pipelineDesc.m_DepthTestEnable  = true;
-        pipelineDesc.m_DepthWriteEnable = false;   // depth pre-pass already wrote
-        pipelineDesc.m_DepthCompareOp   = RHI::CompareOp::LessOrEqual;
-
-        // One color blend attachment: blending disabled
-        pipelineDesc.m_ColorBlendAttachments.push_back(RHI::ColorBlendAttachment{
-            false,
-            RHI::BlendFactor::One, RHI::BlendFactor::Zero, RHI::BlendOp::Add,
-            RHI::BlendFactor::One, RHI::BlendFactor::Zero, RHI::BlendOp::Add
-        });
-
-        pipelineDesc.m_DescriptorSetLayouts = {
-            m_FrameLayout.get(),
-            &registry.GetMaterialDescriptorSetLayout()
-        };
-        pipelineDesc.m_PushConstantRanges = {
-            { RHI::ShaderStage::Vertex, 0, static_cast<uint32_t>(sizeof(ForwardPassPushConstants)) }
-        };
-        pipelineDesc.m_RenderPass = m_RenderPass.get();
-
+        // Pipeline
+        auto pipelineDesc                   = sd.m_Pipeline;
+        pipelineDesc.m_DescriptorSetLayouts = { m_FrameLayout.get(), m_MaterialLayout.get() };
+        pipelineDesc.m_RenderPass           = m_RenderPass.get();
         m_Pipeline = device.CreateGraphicsPipeline(pipelineDesc);
 
-        // Framebuffer: scene color + depth
+        // Framebuffer
         const auto& colorBuffer = resourceManager.GetSceneColorBuffer();
         const auto& depthBuffer = resourceManager.GetRHIDepthBuffer();
         RHI::FramebufferDesc fbDesc;
@@ -156,12 +129,11 @@ namespace Renderer
     void ForwardPass::Render(const HedgehogEngine::FrameData& frame, const ResourceManager& resourceManager,
                               RHI::IRHICommandList& cmd, uint32_t frameIndex)
     {
-        // Update frame uniform
         ForwardPassFrameUniform ubo{};
-        ubo.m_View       = frame.m_Camera.m_View;
-        ubo.m_ViewProj   = frame.m_Camera.m_Proj * frame.m_Camera.m_View;
+        ubo.m_View        = frame.m_Camera.m_View;
+        ubo.m_ViewProj    = frame.m_Camera.m_Proj * frame.m_Camera.m_View;
         ubo.m_EyePosition = HM::Vector4(frame.m_Camera.m_Position, 1.0f);
-        ubo.m_LightCount = frame.m_Lights.size();
+        ubo.m_LightCount  = frame.m_Lights.size();
         for (size_t i = 0; i < ubo.m_LightCount; ++i)
             ubo.m_Lights[i] = ToGpuLight(frame.m_Lights[i]);
         m_FrameUniforms[frameIndex]->CopyData(&ubo, sizeof(ubo));
@@ -225,6 +197,7 @@ namespace Renderer
         m_RenderPass.reset();
         m_FramePool.reset();
         m_FrameLayout.reset();
+        m_MaterialLayout.reset();
     }
 
     void ForwardPass::ResizeResources(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
