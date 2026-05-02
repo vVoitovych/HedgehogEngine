@@ -15,6 +15,7 @@ namespace HedgehogEngine
 namespace Editor
 {
     class ConsolePanel;
+    class VertexDescriptionWindow;
 
     enum class EditorMode { Edit, Play, Pause };
 
@@ -64,10 +65,11 @@ namespace Editor
         uint32_t m_SceneViewHeight  = 0;
         bool     m_SceneViewHovered = false;
 
-        std::optional<ECS::Entity>    m_SelectedEntity;
-        EditorMode                    m_EditorMode         = EditorMode::Edit;
-        bool                          m_SettingsWindowOpen = false;
-        std::unique_ptr<ConsolePanel> m_ConsolePanel;
+        std::optional<ECS::Entity>             m_SelectedEntity;
+        EditorMode                             m_EditorMode         = EditorMode::Edit;
+        bool                                   m_SettingsWindowOpen = false;
+        std::unique_ptr<ConsolePanel>          m_ConsolePanel;
+        std::unique_ptr<VertexDescriptionWindow> m_VertexDescWindow;
 
         // Non-owning pointer valid only during Draw(); used by DrawPanelContent lambdas
         void* m_SceneViewTextureId = nullptr;

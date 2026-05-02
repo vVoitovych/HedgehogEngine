@@ -1,5 +1,6 @@
 #include "EditorGui.hpp"
 #include "Panels/ConsolePanel.hpp"
+#include "Tools/VertexDescriptionWindow.hpp"
 
 #include "HedgehogEngine/api/HedgehogEngine.hpp"
 #include "HedgehogEngine/api/EngineContext.hpp"
@@ -35,6 +36,7 @@ namespace Editor
 {
     EditorGui::EditorGui()
         : m_ConsolePanel(std::make_unique<ConsolePanel>())
+        , m_VertexDescWindow(std::make_unique<VertexDescriptionWindow>())
     {
         if (m_Settings.Load(k_SettingsPath) && m_Settings.dockLayout.IsValid())
             m_DockSystem.GetLayout() = m_Settings.dockLayout;
@@ -72,6 +74,7 @@ namespace Editor
             menuH);
 
         DrawSettingsWindow(context);
+        m_VertexDescWindow->Draw();
     }
 
     // ─── Panel dispatch ───────────────────────────────────────────────────────
@@ -222,6 +225,13 @@ namespace Editor
                         layout.ShowPanel(pid);
                 }
             }
+            ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("Tools"))
+        {
+            if (ImGui::MenuItem("Vertex Descriptions", nullptr, m_VertexDescWindow->m_Open))
+                m_VertexDescWindow->m_Open = !m_VertexDescWindow->m_Open;
             ImGui::EndMenu();
         }
 
