@@ -22,7 +22,7 @@ namespace ContentLoader
     std::string GetAssetsDirectory()
     {
         std::string path = GetRootDirectory();
-        path += "\\Assets\\";
+        path += "\\Editor\\assets\\";
         return path;
     }
 

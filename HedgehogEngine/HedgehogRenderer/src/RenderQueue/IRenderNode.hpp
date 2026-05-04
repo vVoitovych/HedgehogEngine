@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 namespace HedgehogEngine
 {
     struct FrameData;

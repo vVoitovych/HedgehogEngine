@@ -2,6 +2,7 @@
 #include "EditorGui.hpp"
 
 #include "HedgehogEngine/api/HedgehogEngine.hpp"
+#include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogEngine/api/WindowContext.hpp"
 #include "HedgehogRenderer/Renderer.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
@@ -34,6 +35,8 @@ namespace Editor
         {
             return ImGui::GetIO().WantCaptureMouse && !m_EditorGui->IsSceneViewHovered();
         });
+
+        m_Context->GetEngineContext().LoadDefaultScene();
 
         LOGINFO("Editor initialized");
     }

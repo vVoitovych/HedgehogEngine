@@ -2,7 +2,9 @@
 
 #include "../RenderContext.hpp"
 #include "../../RenderPasses/PresentPass/PresentPass.hpp"
+#include "../../ResourceManager/ResourceManager.hpp"
 
+#include "RHI/api/IRHISwapchain.hpp"
 #include "RHI/api/IRHITexture.hpp"
 
 #include <cassert>

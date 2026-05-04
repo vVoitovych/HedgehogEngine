@@ -32,6 +32,9 @@
 
 #include "HedgehogEngine/src/Frame/FrameDataBuilder.hpp"
 
+#include "ContentLoader/api/CommonFunctions.hpp"
+#include "Logger/api/Logger.hpp"
+
 #include <algorithm>
 #include <cassert>
 #include <filesystem>
@@ -250,6 +253,17 @@ namespace HedgehogEngine
         EcsSerialization::EcsSerializer::Deserialize(*m_ComponentRegistry, m_ECS, m_SceneName, filePath);
         m_MeshSystem->Update(m_ECS);
         m_RenderSystem->UpdateSystem(m_ECS);
+    }
+
+    void EngineContext::LoadDefaultScene()
+    {
+        const std::string path = ContentLoader::GetAssetsDirectory() + "Scenes\\Default.yaml";
+        if (!std::filesystem::exists(path))
+        {
+            LOGWARNING("Default scene not found: ", path);
+            return;
+        }
+        LoadScene(path);
     }
 
     void EngineContext::SaveScene(const std::string& filePath)

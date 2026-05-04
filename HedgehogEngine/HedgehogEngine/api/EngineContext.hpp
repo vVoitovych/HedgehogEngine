@@ -72,6 +72,7 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API void        DeleteGameObject(ECS::Entity entity);
 
         HEDGEHOG_ENGINE_API void LoadScene(const std::string& filePath);
+        HEDGEHOG_ENGINE_API void LoadDefaultScene();
         HEDGEHOG_ENGINE_API void SaveScene(const std::string& filePath);
         HEDGEHOG_ENGINE_API void ResetScene();
         HEDGEHOG_ENGINE_API void SetSceneName(const std::string& name);
