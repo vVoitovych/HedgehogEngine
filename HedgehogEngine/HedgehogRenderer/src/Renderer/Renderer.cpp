@@ -8,6 +8,7 @@
 #include "ThreadContext/ThreadContext.hpp"
 #include "RenderQueue/RenderQueue.hpp"
 #include "ResourceManager/ResourceManager.hpp"
+#include "ResourceManager/ResourceNames.hpp"
 
 #include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
 
@@ -15,8 +16,10 @@
 
 #include "RHI/api/IRHIDevice.hpp"
 #include "RHI/api/IRHISwapchain.hpp"
-
-#include "Logger/api/Logger.hpp"
+#include "RHI/api/IRHICommandList.hpp"
+#include "RHI/api/IRHISyncPrimitive.hpp"
+#include "RHI/api/IRHITexture.hpp"
+#include "RHI/api/RHITypes.hpp"
 
 namespace Renderer
 {
@@ -62,7 +65,7 @@ namespace Renderer
 
     float Renderer::GetAspectRatio() const
     {
-        const auto& scene = m_ResourceManager->GetSceneColorBuffer();
+        const auto& scene = m_ResourceManager->GetTexture(ResourceNames::SceneColorBuffer);
         return static_cast<float>(scene.GetWidth()) / static_cast<float>(scene.GetHeight());
     }
 
@@ -85,7 +88,7 @@ namespace Renderer
         const auto&    frameData  = engineContext.GetFrameData();
         const uint32_t frameIndex = m_ThreadContext->GetFrameIndex();
 
-        m_RenderQueue->UpdateData(frameData, frameIndex, engineContext.GetSettings());
+        m_RenderQueue->PreExecuteFrame(frameData, frameIndex, engineContext.GetSettings());
 
         if (windowContext.IsWindowResized() || window.IsResized())
         {
@@ -99,7 +102,6 @@ namespace Renderer
             m_RHIContext->RecreateSwapchain(windowContext);
 
             m_ResourceManager->ResizeFrameBufferSizeDependenteResources(device, swapchain);
-            m_RenderQueue->ResizeResources(device, *m_ResourceManager);
 
             return;
         }
@@ -107,20 +109,35 @@ namespace Renderer
         if (engineContext.GetSettings().IsDirty())
         {
             m_ResourceManager->ResizeSettingsDependenteResources(device, engineContext.GetSettings());
-            m_RenderQueue->UpdateResources(device, engineContext.GetSettings(), *m_ResourceManager);
             engineContext.GetSettings().CleanDirtyState();
         }
 
-        m_RenderQueue->Render(
-            frameData,
-            device,
-            swapchain,
-            m_ThreadContext->GetCommandList(),
-            m_ThreadContext->GetFence(),
-            m_ThreadContext->GetImageAvailableSemaphore(),
-            m_ThreadContext->GetRenderFinishedSemaphore(),
-            frameIndex,
-            *m_ResourceManager);
+        // Pre-frame: wait for GPU, acquire swapchain image, begin recording.
+        auto& cmd            = m_ThreadContext->GetCommandList();
+        auto& fence          = m_ThreadContext->GetFence();
+        auto& imageAvailable = m_ThreadContext->GetImageAvailableSemaphore();
+        auto& renderFinished = m_ThreadContext->GetRenderFinishedSemaphore();
+
+        fence.Wait();
+        const uint32_t backBufferIndex = swapchain.AcquireNextImage(imageAvailable);
+        fence.Reset();
+        cmd.Reset();
+        cmd.Begin();
+
+        m_RenderQueue->Render(frameData, device, cmd, frameIndex, *m_ResourceManager);
+
+        // Post-frame: blit color buffer to swapchain, submit, present.
+        auto& colorBuffer    = m_ResourceManager->GetTexture(ResourceNames::RHIColorBuffer);
+        auto& swapchainImage = swapchain.GetTexture(backBufferIndex);
+
+        cmd.TransitionTexture(colorBuffer,    RHI::ImageLayout::ColorAttachment, RHI::ImageLayout::TransferSrc);
+        cmd.TransitionTexture(swapchainImage, RHI::ImageLayout::Undefined,       RHI::ImageLayout::TransferDst);
+        cmd.CopyTextureToTexture(colorBuffer, swapchainImage);
+        cmd.TransitionTexture(swapchainImage, RHI::ImageLayout::TransferDst,     RHI::ImageLayout::Present);
+        cmd.End();
+
+        device.SubmitCommandList(cmd, {&imageAvailable}, {&renderFinished}, &fence);
+        swapchain.Present(backBufferIndex, renderFinished);
 
         m_ThreadContext->NextFrame();
 
@@ -128,12 +145,11 @@ namespace Renderer
         // ImGui draw data (which references the old descriptor) has already been submitted.
         if (m_DesiredSceneW > 0 && m_DesiredSceneH > 0)
         {
-            const auto& sceneBuffer = m_ResourceManager->GetSceneColorBuffer();
+            const auto& sceneBuffer = m_ResourceManager->GetTexture(ResourceNames::SceneColorBuffer);
             if (sceneBuffer.GetWidth() != m_DesiredSceneW || sceneBuffer.GetHeight() != m_DesiredSceneH)
             {
                 device.WaitIdle();
                 m_ResourceManager->ResizeSceneView(device, m_DesiredSceneW, m_DesiredSceneH);
-                m_RenderQueue->ResizeSceneView(device, *m_ResourceManager);
             }
         }
     }

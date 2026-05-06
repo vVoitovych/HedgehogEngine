@@ -1,6 +1,10 @@
 #pragma once
 
+#include "RHI/api/RHITypes.hpp"
+
 #include <memory>
+#include <string>
+#include <unordered_map>
 
 namespace RHI
 {
@@ -44,29 +48,18 @@ namespace Renderer
         void ResizeSettingsDependenteResources(RHI::IRHIDevice& device,
                                                HedgehogSettings::Settings& settings);
 
-        const RHI::IRHITexture& GetRHIColorBuffer() const;
-        const RHI::IRHITexture& GetRHIDepthBuffer() const;
-        const RHI::IRHITexture& GetRHIShadowMap() const;
-        const RHI::IRHITexture& GetRHIShadowMask() const;
-        const RHI::IRHITexture& GetSceneColorBuffer() const;
+        void                  CreateTexture(const std::string& name, const RHI::TextureDesc& desc,
+                                            RHI::IRHIDevice& device);
+        void                  DestroyTexture(const std::string& name);
+        RHI::IRHITexture&     GetTexture(const std::string& name);
+        const RHI::IRHITexture& GetTexture(const std::string& name) const;
+        bool                  HasTexture(const std::string& name) const;
 
               HR::ResourceRegistry& GetResourceRegistry();
         const HR::ResourceRegistry& GetResourceRegistry() const;
 
     private:
-        void CreateRHIColorBuffer(RHI::IRHIDevice& device, const RHI::IRHISwapchain& swapchain);
-        void CreateRHIDepthBuffer(RHI::IRHIDevice& device, const RHI::IRHISwapchain& swapchain);
-        void CreateRHIShadowMap(RHI::IRHIDevice& device, uint32_t shadowmapSize);
-        void CreateRHIShadowMask(RHI::IRHIDevice& device, const RHI::IRHISwapchain& swapchain);
-        void CreateSceneColorBuffer(RHI::IRHIDevice& device, const RHI::IRHISwapchain& swapchain);
-
-    private:
-        std::unique_ptr<RHI::IRHITexture> m_RHIDepthBuffer;
-        std::unique_ptr<RHI::IRHITexture> m_RHIColorBuffer;
-        std::unique_ptr<RHI::IRHITexture> m_RHIShadowMap;
-        std::unique_ptr<RHI::IRHITexture> m_RHIShadowMask;
-        std::unique_ptr<RHI::IRHITexture> m_SceneColorBuffer;
-
-        std::unique_ptr<HR::ResourceRegistry> m_ResourceRegistry;
+        std::unordered_map<std::string, std::unique_ptr<RHI::IRHITexture>> m_Textures;
+        std::unique_ptr<HR::ResourceRegistry>                               m_ResourceRegistry;
     };
 }

@@ -1,18 +1,14 @@
 #include "NodeFactory.hpp"
 
 #include "../IRenderNode.hpp"
-#include "../Nodes/AcquireNode.hpp"
 #include "../Nodes/ShadowmapNode.hpp"
 #include "../Nodes/DepthPrepassNode.hpp"
 #include "../Nodes/ForwardPassNode.hpp"
 #include "../Nodes/TransitionNode.hpp"
 #include "../Nodes/GuiNode.hpp"
-#include "../Nodes/PresentNode.hpp"
 #include "../../ResourceManager/ResourceManager.hpp"
 
 #include "Logger/api/Logger.hpp"
-
-#include "RHI/api/IRHITexture.hpp"
 
 #include <cassert>
 #include <filesystem>
@@ -31,9 +27,6 @@ namespace Renderer
 
     std::unique_ptr<IRenderNode> NodeFactory::Create(const NodeConfig& config) const
     {
-        if (config.m_Type == "Acquire")
-            return std::make_unique<AcquireNode>();
-
         if (config.m_Type == "RenderPass")
             return CreateRenderPassNode(config);
 
@@ -42,9 +35,6 @@ namespace Renderer
 
         if (config.m_Type == "Gui")
             return std::make_unique<GuiNode>(m_Window, m_Device, m_ResourceManager);
-
-        if (config.m_Type == "Present")
-            return std::make_unique<PresentNode>();
 
         LOGERROR("NodeFactory: unknown node type '", config.m_Type, "' in pass '", config.m_Name, "'");
         assert(false && "Unknown node type in .rq file");
@@ -72,44 +62,14 @@ namespace Renderer
 
     std::unique_ptr<IRenderNode> NodeFactory::CreateTransitionNode(const NodeConfig& config) const
     {
-        TransitionNode::ResourceAccessor accessor;
+        if (config.m_Resource.empty())
+        {
+            LOGERROR("NodeFactory: Transition pass '", config.m_Name, "' has no resource field");
+            assert(false && "Transition node missing resource name");
+            return nullptr;
+        }
 
-        if (config.m_Resource == "SceneColorBuffer")
-        {
-            accessor = [](const ResourceManager& rm) -> RHI::IRHITexture&
-            {
-                return const_cast<RHI::IRHITexture&>(rm.GetSceneColorBuffer());
-            };
-        }
-        else if (config.m_Resource == "RHIColorBuffer")
-        {
-            accessor = [](const ResourceManager& rm) -> RHI::IRHITexture&
-            {
-                return const_cast<RHI::IRHITexture&>(rm.GetRHIColorBuffer());
-            };
-        }
-        else if (config.m_Resource == "RHIDepthBuffer")
-        {
-            accessor = [](const ResourceManager& rm) -> RHI::IRHITexture&
-            {
-                return const_cast<RHI::IRHITexture&>(rm.GetRHIDepthBuffer());
-            };
-        }
-        else if (config.m_Resource == "RHIShadowMap")
-        {
-            accessor = [](const ResourceManager& rm) -> RHI::IRHITexture&
-            {
-                return const_cast<RHI::IRHITexture&>(rm.GetRHIShadowMap());
-            };
-        }
-        else if (config.m_Resource == "RHIShadowMask")
-        {
-            accessor = [](const ResourceManager& rm) -> RHI::IRHITexture&
-            {
-                return const_cast<RHI::IRHITexture&>(rm.GetRHIShadowMask());
-            };
-        }
-        else
+        if (!m_ResourceManager.HasTexture(config.m_Resource))
         {
             LOGERROR("NodeFactory: unknown resource '", config.m_Resource,
                      "' in Transition pass '", config.m_Name, "'");
@@ -120,7 +80,7 @@ namespace Renderer
         const RHI::ImageLayout fromLayout = ParseImageLayout(config.m_FromLayout);
         const RHI::ImageLayout toLayout   = ParseImageLayout(config.m_ToLayout);
 
-        return std::make_unique<TransitionNode>(std::move(accessor), fromLayout, toLayout);
+        return std::make_unique<TransitionNode>(config.m_Resource, fromLayout, toLayout);
     }
 
     RHI::ImageLayout NodeFactory::ParseImageLayout(const std::string& s)

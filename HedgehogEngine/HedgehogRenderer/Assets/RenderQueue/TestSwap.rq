@@ -1,7 +1,4 @@
 passes:
-  - name: Init
-    type: Acquire
-
   - name: DepthPrepass
     type: RenderPass
     shader: ../Shaders/DepthPrepass.shader
@@ -22,6 +19,3 @@ passes:
 
   - name: Gui
     type: Gui
-
-  - name: Present
-    type: Present

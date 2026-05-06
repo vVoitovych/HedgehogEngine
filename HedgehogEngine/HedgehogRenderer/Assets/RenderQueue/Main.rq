@@ -1,7 +1,4 @@
 passes:
-  - name: Init
-    type: Acquire
-
   - name: ShadowmapPass
     type: RenderPass
     shader: ../Shaders/ShadowmapPass.shader
@@ -22,6 +19,3 @@ passes:
 
   - name: Gui
     type: Gui
-
-  - name: Present
-    type: Present

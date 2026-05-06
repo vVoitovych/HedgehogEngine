@@ -1,4 +1,5 @@
 #include "ResourceManager.hpp"
+#include "ResourceNames.hpp"
 
 #include "ResourceRegistry/ResourceRegistry.hpp"
 
@@ -13,9 +14,9 @@
 #include "RHI/api/IRHISwapchain.hpp"
 #include "RHI/api/IRHITexture.hpp"
 
-#include "HedgehogCommon/api/RendererSettings.hpp"
-
 #include "Logger/api/Logger.hpp"
+
+#include <cassert>
 
 namespace Renderer
 {
@@ -25,26 +26,56 @@ namespace Renderer
     {
         m_ResourceRegistry = std::make_unique<HR::ResourceRegistry>(device);
 
-        CreateRHIColorBuffer(device, swapchain);
-        CreateRHIDepthBuffer(device, swapchain);
-        CreateRHIShadowMap(device, settings.GetShadowmapSettings()->GetShadowmapSize());
-        CreateRHIShadowMask(device, swapchain);
-        CreateSceneColorBuffer(device, swapchain);
+        {
+            RHI::TextureDesc desc;
+            desc.m_Width  = swapchain.GetWidth();
+            desc.m_Height = swapchain.GetHeight();
+            desc.m_Format = RHI::Format::R16G16B16A16Unorm;
+            desc.m_Usage  = RHI::TextureUsage::ColorAttachment | RHI::TextureUsage::TransferSrc
+                          | RHI::TextureUsage::TransferDst     | RHI::TextureUsage::Storage;
+            CreateTexture(ResourceNames::RHIColorBuffer, desc, device);
+        }
+        {
+            RHI::TextureDesc desc;
+            desc.m_Width  = swapchain.GetWidth();
+            desc.m_Height = swapchain.GetHeight();
+            desc.m_Format = device.GetPreferredDepthFormat();
+            desc.m_Usage  = RHI::TextureUsage::DepthStencil;
+            CreateTexture(ResourceNames::RHIDepthBuffer, desc, device);
+        }
+        {
+            const uint32_t sz = settings.GetShadowmapSettings()->GetShadowmapSize();
+            RHI::TextureDesc desc;
+            desc.m_Width  = sz;
+            desc.m_Height = sz;
+            desc.m_Format = device.GetPreferredDepthFormat();
+            desc.m_Usage  = RHI::TextureUsage::DepthStencil;
+            CreateTexture(ResourceNames::RHIShadowMap, desc, device);
+        }
+        {
+            RHI::TextureDesc desc;
+            desc.m_Width  = swapchain.GetWidth();
+            desc.m_Height = swapchain.GetHeight();
+            desc.m_Format = RHI::Format::R16Float;
+            desc.m_Usage  = RHI::TextureUsage::Sampled | RHI::TextureUsage::Storage;
+            CreateTexture(ResourceNames::RHIShadowMask, desc, device);
+        }
+        {
+            RHI::TextureDesc desc;
+            desc.m_Width  = swapchain.GetWidth();
+            desc.m_Height = swapchain.GetHeight();
+            desc.m_Format = RHI::Format::R16G16B16A16Unorm;
+            desc.m_Usage  = RHI::TextureUsage::ColorAttachment | RHI::TextureUsage::Sampled;
+            CreateTexture(ResourceNames::SceneColorBuffer, desc, device);
+        }
     }
 
-    ResourceManager::~ResourceManager()
-    {
-    }
+    ResourceManager::~ResourceManager() = default;
 
     void ResourceManager::Cleanup(RHI::IRHIDevice& device)
     {
         device.WaitIdle();
-
-        m_RHIColorBuffer.reset();
-        m_RHIDepthBuffer.reset();
-        m_RHIShadowMap.reset();
-        m_RHIShadowMask.reset();
-        m_SceneColorBuffer.reset();
+        m_Textures.clear();
         m_ResourceRegistry->Cleanup(device);
     }
 
@@ -58,136 +89,106 @@ namespace Renderer
                                                                     const RHI::IRHISwapchain& swapchain)
     {
         device.WaitIdle();
-        m_RHIColorBuffer.reset();
-        m_RHIShadowMask.reset();
 
-        CreateRHIColorBuffer(device, swapchain);
-        CreateRHIShadowMask(device, swapchain);
-        // SceneColorBuffer and DepthBuffer are panel-size driven; resized via ResizeSceneView.
+        DestroyTexture(ResourceNames::RHIColorBuffer);
+        DestroyTexture(ResourceNames::RHIShadowMask);
+
+        {
+            RHI::TextureDesc desc;
+            desc.m_Width  = swapchain.GetWidth();
+            desc.m_Height = swapchain.GetHeight();
+            desc.m_Format = RHI::Format::R16G16B16A16Unorm;
+            desc.m_Usage  = RHI::TextureUsage::ColorAttachment | RHI::TextureUsage::TransferSrc
+                          | RHI::TextureUsage::TransferDst     | RHI::TextureUsage::Storage;
+            CreateTexture(ResourceNames::RHIColorBuffer, desc, device);
+        }
+        {
+            RHI::TextureDesc desc;
+            desc.m_Width  = swapchain.GetWidth();
+            desc.m_Height = swapchain.GetHeight();
+            desc.m_Format = RHI::Format::R16Float;
+            desc.m_Usage  = RHI::TextureUsage::Sampled | RHI::TextureUsage::Storage;
+            CreateTexture(ResourceNames::RHIShadowMask, desc, device);
+        }
     }
 
     void ResourceManager::ResizeSceneView(RHI::IRHIDevice& device, uint32_t width, uint32_t height)
     {
-        m_RHIDepthBuffer.reset();
-        m_SceneColorBuffer.reset();
+        DestroyTexture(ResourceNames::RHIDepthBuffer);
+        DestroyTexture(ResourceNames::SceneColorBuffer);
 
-        RHI::TextureDesc depthDesc;
-        depthDesc.m_Width  = width;
-        depthDesc.m_Height = height;
-        depthDesc.m_Format = device.GetPreferredDepthFormat();
-        depthDesc.m_Usage  = RHI::TextureUsage::DepthStencil;
-        m_RHIDepthBuffer = device.CreateTexture(depthDesc);
-
-        RHI::TextureDesc colorDesc;
-        colorDesc.m_Width  = width;
-        colorDesc.m_Height = height;
-        colorDesc.m_Format = RHI::Format::R16G16B16A16Unorm;
-        colorDesc.m_Usage  = RHI::TextureUsage::ColorAttachment | RHI::TextureUsage::Sampled;
-        m_SceneColorBuffer = device.CreateTexture(colorDesc);
+        {
+            RHI::TextureDesc desc;
+            desc.m_Width  = width;
+            desc.m_Height = height;
+            desc.m_Format = device.GetPreferredDepthFormat();
+            desc.m_Usage  = RHI::TextureUsage::DepthStencil;
+            CreateTexture(ResourceNames::RHIDepthBuffer, desc, device);
+        }
+        {
+            RHI::TextureDesc desc;
+            desc.m_Width  = width;
+            desc.m_Height = height;
+            desc.m_Format = RHI::Format::R16G16B16A16Unorm;
+            desc.m_Usage  = RHI::TextureUsage::ColorAttachment | RHI::TextureUsage::Sampled;
+            CreateTexture(ResourceNames::SceneColorBuffer, desc, device);
+        }
     }
 
     void ResourceManager::ResizeSettingsDependenteResources(RHI::IRHIDevice& device,
                                                              HedgehogSettings::Settings& settings)
     {
         auto& shadowmapSettings = settings.GetShadowmapSettings();
+        if (!shadowmapSettings->IsDirty())
+            return;
 
-        if (shadowmapSettings->IsDirty())
-        {
-            device.WaitIdle();
-            m_RHIShadowMap.reset();
-            CreateRHIShadowMap(device, shadowmapSettings->GetShadowmapSize());
+        device.WaitIdle();
 
-            shadowmapSettings->CleanDirtyState();
-        }
-    }
+        DestroyTexture(ResourceNames::RHIShadowMap);
 
-    void ResourceManager::CreateRHIColorBuffer(RHI::IRHIDevice& device, const RHI::IRHISwapchain& swapchain)
-    {
+        const uint32_t sz = shadowmapSettings->GetShadowmapSize();
         RHI::TextureDesc desc;
-        desc.m_Width  = swapchain.GetWidth();
-        desc.m_Height = swapchain.GetHeight();
-        desc.m_Format = RHI::Format::R16G16B16A16Unorm;
-        desc.m_Usage  = RHI::TextureUsage::ColorAttachment
-                      | RHI::TextureUsage::TransferSrc
-                      | RHI::TextureUsage::TransferDst
-                      | RHI::TextureUsage::Storage;
-
-        m_RHIColorBuffer = device.CreateTexture(desc);
-        LOGINFO("RHI color buffer created");
-    }
-
-    void ResourceManager::CreateRHIDepthBuffer(RHI::IRHIDevice& device, const RHI::IRHISwapchain& swapchain)
-    {
-        RHI::TextureDesc desc;
-        desc.m_Width  = swapchain.GetWidth();
-        desc.m_Height = swapchain.GetHeight();
+        desc.m_Width  = sz;
+        desc.m_Height = sz;
         desc.m_Format = device.GetPreferredDepthFormat();
         desc.m_Usage  = RHI::TextureUsage::DepthStencil;
+        CreateTexture(ResourceNames::RHIShadowMap, desc, device);
 
-        m_RHIDepthBuffer = device.CreateTexture(desc);
-        LOGINFO("RHI depth buffer created");
+        shadowmapSettings->CleanDirtyState();
     }
 
-    void ResourceManager::CreateRHIShadowMap(RHI::IRHIDevice& device, uint32_t shadowmapSize)
+    void ResourceManager::CreateTexture(const std::string& name, const RHI::TextureDesc& desc,
+                                         RHI::IRHIDevice& device)
     {
-        RHI::TextureDesc desc;
-        desc.m_Width  = shadowmapSize;
-        desc.m_Height = shadowmapSize;
-        desc.m_Format = device.GetPreferredDepthFormat();
-        desc.m_Usage  = RHI::TextureUsage::DepthStencil;
-
-        m_RHIShadowMap = device.CreateTexture(desc);
-        LOGINFO("RHI shadow map created");
+        assert(m_Textures.find(name) == m_Textures.end() && "Texture already registered");
+        m_Textures[name] = device.CreateTexture(desc);
+        LOGINFO("Texture created: ", name);
     }
 
-    void ResourceManager::CreateRHIShadowMask(RHI::IRHIDevice& device, const RHI::IRHISwapchain& swapchain)
+    void ResourceManager::DestroyTexture(const std::string& name)
     {
-        RHI::TextureDesc desc;
-        desc.m_Width  = swapchain.GetWidth();
-        desc.m_Height = swapchain.GetHeight();
-        desc.m_Format = RHI::Format::R16Float;
-        desc.m_Usage  = RHI::TextureUsage::Sampled | RHI::TextureUsage::Storage;
-
-        m_RHIShadowMask = device.CreateTexture(desc);
-        LOGINFO("RHI shadow mask created");
+        auto it = m_Textures.find(name);
+        assert(it != m_Textures.end() && "Texture not found");
+        m_Textures.erase(it);
     }
 
-    const RHI::IRHITexture& ResourceManager::GetRHIColorBuffer() const
+    RHI::IRHITexture& ResourceManager::GetTexture(const std::string& name)
     {
-        return *m_RHIColorBuffer;
+        auto it = m_Textures.find(name);
+        assert(it != m_Textures.end() && "Texture not found");
+        return *it->second;
     }
 
-    const RHI::IRHITexture& ResourceManager::GetRHIDepthBuffer() const
+    const RHI::IRHITexture& ResourceManager::GetTexture(const std::string& name) const
     {
-        return *m_RHIDepthBuffer;
+        auto it = m_Textures.find(name);
+        assert(it != m_Textures.end() && "Texture not found");
+        return *it->second;
     }
 
-    const RHI::IRHITexture& ResourceManager::GetRHIShadowMap() const
+    bool ResourceManager::HasTexture(const std::string& name) const
     {
-        return *m_RHIShadowMap;
-    }
-
-    const RHI::IRHITexture& ResourceManager::GetRHIShadowMask() const
-    {
-        return *m_RHIShadowMask;
-    }
-
-    const RHI::IRHITexture& ResourceManager::GetSceneColorBuffer() const
-    {
-        return *m_SceneColorBuffer;
-    }
-
-    void ResourceManager::CreateSceneColorBuffer(RHI::IRHIDevice& device, const RHI::IRHISwapchain& swapchain)
-    {
-        RHI::TextureDesc desc;
-        desc.m_Width  = swapchain.GetWidth();
-        desc.m_Height = swapchain.GetHeight();
-        desc.m_Format = RHI::Format::R16G16B16A16Unorm;
-        desc.m_Usage  = RHI::TextureUsage::ColorAttachment
-                      | RHI::TextureUsage::Sampled;
-
-        m_SceneColorBuffer = device.CreateTexture(desc);
-        LOGINFO("Scene color buffer created");
+        return m_Textures.find(name) != m_Textures.end();
     }
 
     HR::ResourceRegistry& ResourceManager::GetResourceRegistry()

@@ -31,19 +31,14 @@ namespace Renderer
         virtual void Render(RenderContext& ctx) = 0;
 
         // Called once per frame before Render() for CPU-side state updates.
-        // Default: no-op. Override in passes that maintain per-frame computed state
-        // (e.g. ShadowmapPass cascade matrices).
-        virtual void UpdateData(const HedgehogEngine::FrameData& frame,
-                                uint32_t frameIndex,
-                                const HedgehogSettings::Settings& settings) {}
+        // Default: no-op. Override in nodes that maintain per-frame computed state
+        // (e.g. ShadowmapNode cascade matrices).
+        virtual void PreExecuteFrame(const HedgehogEngine::FrameData& frame,
+                                     uint32_t frameIndex,
+                                     const HedgehogSettings::Settings& settings) {}
 
-        // Lifecycle and resize callbacks — default no-op.
+        // Called on shutdown or queue reload.
         virtual void Cleanup(RHI::IRHIDevice& device) {}
-        virtual void OnResizeFramebuffer(RHI::IRHIDevice& device, const ResourceManager& rm) {}
-        virtual void OnResizeSceneView(RHI::IRHIDevice& device, const ResourceManager& rm) {}
-        virtual void OnUpdateResources(RHI::IRHIDevice& device,
-                                       const HedgehogSettings::Settings& settings,
-                                       const ResourceManager& rm) {}
 
     protected:
         IRenderNode() = default;

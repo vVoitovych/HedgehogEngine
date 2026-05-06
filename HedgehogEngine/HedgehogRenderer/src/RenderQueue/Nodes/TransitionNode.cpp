@@ -1,24 +1,25 @@
 #include "TransitionNode.hpp"
 
 #include "../RenderContext.hpp"
+#include "../../ResourceManager/ResourceManager.hpp"
 
 #include "RHI/api/IRHICommandList.hpp"
 #include "RHI/api/IRHITexture.hpp"
 
 namespace Renderer
 {
-    TransitionNode::TransitionNode(ResourceAccessor accessor,
+    TransitionNode::TransitionNode(std::string resourceName,
                                     RHI::ImageLayout fromLayout,
                                     RHI::ImageLayout toLayout)
-        : m_Accessor(std::move(accessor))
+        : m_Name(std::move(resourceName))
         , m_FromLayout(fromLayout)
         , m_ToLayout(toLayout)
     {}
 
     void TransitionNode::Render(RenderContext& ctx)
     {
-        RHI::IRHITexture& texture = m_Accessor(*ctx.m_ResourceManager);
-        ctx.m_Cmd->TransitionTexture(texture, m_FromLayout, m_ToLayout);
+        auto& texture = const_cast<RHI::IRHITexture&>(ctx.m_ResourceManager.get().GetTexture(m_Name));
+        ctx.m_Cmd.get().TransitionTexture(texture, m_FromLayout, m_ToLayout);
     }
 
 } // namespace Renderer

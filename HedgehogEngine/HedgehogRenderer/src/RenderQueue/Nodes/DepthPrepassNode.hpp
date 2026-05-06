@@ -2,16 +2,27 @@
 
 #include "../IRenderNode.hpp"
 
+#include "HedgehogMath/api/Matrix.hpp"
+
+#include <cstdint>
 #include <memory>
+#include <vector>
 
 namespace RHI
 {
     class IRHIDevice;
+    class IRHIRenderPass;
+    class IRHIPipeline;
+    class IRHIFramebuffer;
+    class IRHIDescriptorSetLayout;
+    class IRHIDescriptorPool;
+    class IRHIDescriptorSet;
+    class IRHIBuffer;
 }
 
 namespace Renderer
 {
-    class DepthPrePass;
+    class ResourceManager;
 
     class DepthPrepassNode final : public IRenderNode
     {
@@ -21,10 +32,25 @@ namespace Renderer
 
         void Render(RenderContext& ctx) override;
         void Cleanup(RHI::IRHIDevice& device) override;
-        void OnResizeSceneView(RHI::IRHIDevice& device, const ResourceManager& rm) override;
 
     private:
-        std::unique_ptr<DepthPrePass> m_Pass;
+        void RebuildFramebufferIfNeeded(RHI::IRHIDevice& device, const ResourceManager& rm);
+
+        struct FrameUniform
+        {
+            alignas(16) HM::Matrix4x4 m_ViewProj;
+        };
+
+        std::unique_ptr<RHI::IRHIRenderPass>          m_RenderPass;
+        std::unique_ptr<RHI::IRHIFramebuffer>          m_FrameBuffer;
+        std::unique_ptr<RHI::IRHIPipeline>             m_Pipeline;
+        std::unique_ptr<RHI::IRHIDescriptorSetLayout>  m_FrameLayout;
+        std::unique_ptr<RHI::IRHIDescriptorPool>       m_FramePool;
+        std::vector<std::unique_ptr<RHI::IRHIBuffer>>        m_FrameUniforms;
+        std::vector<std::unique_ptr<RHI::IRHIDescriptorSet>> m_FrameSets;
+
+        uint32_t m_CachedWidth  = 0;
+        uint32_t m_CachedHeight = 0;
     };
 
 } // namespace Renderer

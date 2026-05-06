@@ -12,10 +12,7 @@ namespace HedgehogEngine
 namespace RHI
 {
     class IRHIDevice;
-    class IRHISwapchain;
     class IRHICommandList;
-    class IRHIFence;
-    class IRHISemaphore;
 }
 
 namespace HW
@@ -55,25 +52,14 @@ namespace Renderer
         void* GetSceneViewTextureId() const;
 
         void Render(const HedgehogEngine::FrameData& frame,
-                    RHI::IRHIDevice&      device,
-                    RHI::IRHISwapchain&   swapchain,
-                    RHI::IRHICommandList& cmd,
-                    RHI::IRHIFence&       fence,
-                    RHI::IRHISemaphore&   imageAvailableSemaphore,
-                    RHI::IRHISemaphore&   renderFinishedSemaphore,
-                    uint32_t              frameIndex,
-                    const ResourceManager& resourceManager);
+                    RHI::IRHIDevice&                 device,
+                    RHI::IRHICommandList&            cmd,
+                    uint32_t                         frameIndex,
+                    const ResourceManager&           resourceManager);
 
-        void UpdateData(const HedgehogEngine::FrameData&   frame,
-                        uint32_t                           frameIndex,
-                        const HedgehogSettings::Settings&  settings);
-
-        void ResizeResources(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
-        void ResizeSceneView(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
-
-        void UpdateResources(RHI::IRHIDevice&                  device,
-                             const HedgehogSettings::Settings& settings,
-                             const ResourceManager&            resourceManager);
+        void PreExecuteFrame(const HedgehogEngine::FrameData&   frame,
+                             uint32_t                           frameIndex,
+                             const HedgehogSettings::Settings&  settings);
 
     private:
         std::vector<std::unique_ptr<IRenderNode>> m_Nodes;

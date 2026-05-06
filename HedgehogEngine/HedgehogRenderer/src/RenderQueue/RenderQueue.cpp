@@ -63,56 +63,23 @@ namespace Renderer
     }
 
     void RenderQueue::Render(const HedgehogEngine::FrameData& frame,
-                              RHI::IRHIDevice&      device,
-                              RHI::IRHISwapchain&   swapchain,
-                              RHI::IRHICommandList& cmd,
-                              RHI::IRHIFence&       fence,
-                              RHI::IRHISemaphore&   imageAvailableSemaphore,
-                              RHI::IRHISemaphore&   renderFinishedSemaphore,
-                              uint32_t              frameIndex,
-                              const ResourceManager& resourceManager)
+                              RHI::IRHIDevice&                 device,
+                              RHI::IRHICommandList&            cmd,
+                              uint32_t                         frameIndex,
+                              const ResourceManager&           resourceManager)
     {
-        RenderContext ctx;
-        ctx.m_FrameData       = &frame;
-        ctx.m_Device          = &device;
-        ctx.m_Swapchain       = &swapchain;
-        ctx.m_Cmd             = &cmd;
-        ctx.m_Fence           = &fence;
-        ctx.m_ImageAvailable  = &imageAvailableSemaphore;
-        ctx.m_RenderFinished  = &renderFinishedSemaphore;
-        ctx.m_ResourceManager = &resourceManager;
-        ctx.m_FrameIndex      = frameIndex;
+        RenderContext ctx{frame, device, cmd, resourceManager, frameIndex};
 
         for (auto& node : m_Nodes)
             node->Render(ctx);
     }
 
-    void RenderQueue::UpdateData(const HedgehogEngine::FrameData&  frame,
-                                  uint32_t                          frameIndex,
-                                  const HedgehogSettings::Settings& settings)
+    void RenderQueue::PreExecuteFrame(const HedgehogEngine::FrameData&  frame,
+                                       uint32_t                          frameIndex,
+                                       const HedgehogSettings::Settings& settings)
     {
         for (auto& node : m_Nodes)
-            node->UpdateData(frame, frameIndex, settings);
-    }
-
-    void RenderQueue::ResizeResources(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
-    {
-        for (auto& node : m_Nodes)
-            node->OnResizeFramebuffer(device, resourceManager);
-    }
-
-    void RenderQueue::ResizeSceneView(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
-    {
-        for (auto& node : m_Nodes)
-            node->OnResizeSceneView(device, resourceManager);
-    }
-
-    void RenderQueue::UpdateResources(RHI::IRHIDevice&                  device,
-                                       const HedgehogSettings::Settings& settings,
-                                       const ResourceManager&            resourceManager)
-    {
-        for (auto& node : m_Nodes)
-            node->OnUpdateResources(device, settings, resourceManager);
+            node->PreExecuteFrame(frame, frameIndex, settings);
     }
 
 } // namespace Renderer
