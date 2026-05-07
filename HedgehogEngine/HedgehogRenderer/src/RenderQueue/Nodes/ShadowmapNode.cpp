@@ -145,7 +145,7 @@ namespace Renderer
         m_ShadowmapLayout.reset();
     }
 
-    void ShadowmapNode::PreExecuteFrame(const HedgehogEngine::FrameData& frame,
+    void ShadowmapNode::PreRender(const HedgehogEngine::FrameData& frame,
                                          uint32_t frameIndex,
                                          const HedgehogSettings::Settings& settings)
     {

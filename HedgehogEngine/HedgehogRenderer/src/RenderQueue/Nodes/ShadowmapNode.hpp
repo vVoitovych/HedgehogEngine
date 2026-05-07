@@ -47,7 +47,7 @@ namespace Renderer
         void Render(RenderContext& ctx) override;
         void Cleanup(RHI::IRHIDevice& device) override;
 
-        void PreExecuteFrame(const HedgehogEngine::FrameData& frame,
+        void PreRender(const HedgehogEngine::FrameData& frame,
                              uint32_t frameIndex,
                              const HedgehogSettings::Settings& settings) override;
 

@@ -74,12 +74,12 @@ namespace Renderer
             node->Render(ctx);
     }
 
-    void RenderQueue::PreExecuteFrame(const HedgehogEngine::FrameData&  frame,
+    void RenderQueue::PreRender(const HedgehogEngine::FrameData&  frame,
                                        uint32_t                          frameIndex,
                                        const HedgehogSettings::Settings& settings)
     {
         for (auto& node : m_Nodes)
-            node->PreExecuteFrame(frame, frameIndex, settings);
+            node->PreRender(frame, frameIndex, settings);
     }
 
 } // namespace Renderer

@@ -57,7 +57,7 @@ namespace Renderer
                     uint32_t                         frameIndex,
                     const ResourceManager&           resourceManager);
 
-        void PreExecuteFrame(const HedgehogEngine::FrameData&   frame,
+        void PreRender(const HedgehogEngine::FrameData&   frame,
                              uint32_t                           frameIndex,
                              const HedgehogSettings::Settings&  settings);
 

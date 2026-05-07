@@ -33,7 +33,7 @@ namespace Renderer
         // Called once per frame before Render() for CPU-side state updates.
         // Default: no-op. Override in nodes that maintain per-frame computed state
         // (e.g. ShadowmapNode cascade matrices).
-        virtual void PreExecuteFrame(const HedgehogEngine::FrameData& frame,
+        virtual void PreRender(const HedgehogEngine::FrameData& frame,
                                      uint32_t frameIndex,
                                      const HedgehogSettings::Settings& settings) {}
 

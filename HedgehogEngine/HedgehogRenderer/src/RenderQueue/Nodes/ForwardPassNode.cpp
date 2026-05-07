@@ -45,11 +45,11 @@ namespace Renderer
         return gpu;
     }
 
-    ForwardPassNode::ForwardPassNode(RHI::IRHIDevice& device, ResourceManager& resourceManager)
+    ForwardPassNode::ForwardPassNode(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
     {
         const auto sd = ShaderLoader::Load(device,
             "/HedgehogEngine/HedgehogRenderer/Assets/Shaders/ForwardPass.shader");
-        assert(sd.m_Layout.m_DescriptorSets.size() >= 2);
+        assert(sd.m_Layout.m_DescriptorSets.size() >= 1);
 
         m_FrameLayout = device.CreateDescriptorSetLayout(sd.m_Layout.m_DescriptorSets[0]);
         m_FramePool   = device.CreateDescriptorPool(
@@ -69,12 +69,7 @@ namespace Renderer
             m_FrameSets.push_back(std::move(set));
         }
 
-        m_MaterialLayout = device.CreateDescriptorSetLayout(sd.m_Layout.m_DescriptorSets[1]);
-        resourceManager.GetResourceRegistry().SetMaterialLayout(
-            device,
-            *m_MaterialLayout,
-            MAX_MATERIAL_COUNT,
-            PipelineLoader::MakePoolSizes(sd.m_Layout.m_DescriptorSets[1], MAX_MATERIAL_COUNT));
+        const auto& matLayout = resourceManager.GetResourceRegistry().GetMaterialLayout();
 
         RHI::RenderPassDesc rpDesc;
         rpDesc.m_ColorAttachments.push_back(RHI::AttachmentDesc{
@@ -92,7 +87,7 @@ namespace Renderer
         m_RenderPass = device.CreateRenderPass(rpDesc);
 
         auto pipelineDesc                   = sd.m_Pipeline;
-        pipelineDesc.m_DescriptorSetLayouts = { m_FrameLayout.get(), m_MaterialLayout.get() };
+        pipelineDesc.m_DescriptorSetLayouts = { m_FrameLayout.get(), &matLayout };
         pipelineDesc.m_RenderPass           = m_RenderPass.get();
         m_Pipeline = device.CreateGraphicsPipeline(pipelineDesc);
 
@@ -183,7 +178,6 @@ namespace Renderer
         m_RenderPass.reset();
         m_FramePool.reset();
         m_FrameLayout.reset();
-        m_MaterialLayout.reset();
     }
 
     void ForwardPassNode::RebuildFramebufferIfNeeded(RHI::IRHIDevice& device, const ResourceManager& rm)

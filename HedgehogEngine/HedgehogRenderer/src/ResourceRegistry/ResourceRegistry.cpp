@@ -1,5 +1,7 @@
 #include "ResourceRegistry.hpp"
 
+#include "HedgehogCommon/api/RendererSettings.hpp"
+
 #include "ContentLoader/api/TextureLoader.hpp"
 
 #include "HedgehogEngine/api/Containers/MeshContainer.hpp"
@@ -21,6 +23,8 @@ namespace HR
 {
     ResourceRegistry::ResourceRegistry(RHI::IRHIDevice& device)
     {
+        InitMaterialLayout(device);
+
         RHI::SamplerDesc samplerDesc;
         samplerDesc.m_MinFilter    = RHI::Filter::Linear;
         samplerDesc.m_MagFilter    = RHI::Filter::Linear;
@@ -34,14 +38,24 @@ namespace HR
     {
     }
 
-    void ResourceRegistry::SetMaterialLayout(RHI::IRHIDevice&                    device,
-                                              const RHI::IRHIDescriptorSetLayout& layout,
-                                              uint32_t                            maxSets,
-                                              const std::vector<RHI::PoolSize>&   poolSizes)
+    void ResourceRegistry::InitMaterialLayout(RHI::IRHIDevice& device)
     {
-        assert(m_Materials.empty() && "SetMaterialLayout must be called before any materials are registered");
-        m_MaterialLayout = &layout;
-        m_MaterialPool   = device.CreateDescriptorPool(maxSets, poolSizes);
+        const std::vector<RHI::DescriptorBinding> bindings = {
+            { 0, RHI::DescriptorType::UniformBuffer,        1, RHI::ShaderStage::Fragment },
+            { 1, RHI::DescriptorType::CombinedImageSampler, 1, RHI::ShaderStage::Fragment },
+        };
+        m_MaterialLayout = device.CreateDescriptorSetLayout(bindings);
+
+        const std::vector<RHI::PoolSize> poolSizes = {
+            { RHI::DescriptorType::UniformBuffer,        MAX_MATERIAL_COUNT },
+            { RHI::DescriptorType::CombinedImageSampler, MAX_MATERIAL_COUNT },
+        };
+        m_MaterialPool = device.CreateDescriptorPool(MAX_MATERIAL_COUNT, poolSizes);
+    }
+
+    const RHI::IRHIDescriptorSetLayout& ResourceRegistry::GetMaterialLayout() const
+    {
+        return *m_MaterialLayout;
     }
 
     void ResourceRegistry::SyncMeshes(const HedgehogEngine::MeshContainer& container, RHI::IRHIDevice& device)
@@ -94,8 +108,6 @@ namespace HR
                                           HedgehogEngine::TextureContainer&  texContainer,
                                           RHI::IRHIDevice&                   device)
     {
-        assert(m_MaterialLayout && "SetMaterialLayout must be called before SyncMaterials");
-
         const size_t total = container.GetMaterialCount();
 
         for (size_t i = 0; i < m_RegisteredMaterialCount && i < total; ++i)
@@ -235,7 +247,7 @@ namespace HR
         m_TextureCache.clear();
         m_LinearSampler.reset();
         m_MaterialPool.reset();
-        m_MaterialLayout = nullptr;
+        m_MaterialLayout.reset();
 
         m_IndexBuffer.reset();
         m_NormalsBuffer.reset();

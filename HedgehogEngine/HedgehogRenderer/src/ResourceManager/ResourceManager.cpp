@@ -85,8 +85,8 @@ namespace Renderer
         m_ResourceRegistry->SyncMaterials(engine.GetMaterialContainer(), engine.GetTextureContainer(), device);
     }
 
-    void ResourceManager::ResizeFrameBufferSizeDependenteResources(RHI::IRHIDevice& device,
-                                                                    const RHI::IRHISwapchain& swapchain)
+    void ResourceManager::ResizeFrameBufferSizeDependentResources(RHI::IRHIDevice& device,
+                                                                   const RHI::IRHISwapchain& swapchain)
     {
         device.WaitIdle();
 
@@ -135,8 +135,8 @@ namespace Renderer
         }
     }
 
-    void ResourceManager::ResizeSettingsDependenteResources(RHI::IRHIDevice& device,
-                                                             HedgehogSettings::Settings& settings)
+    void ResourceManager::ResizeSettingsDependentResources(RHI::IRHIDevice& device,
+                                                            HedgehogSettings::Settings& settings)
     {
         auto& shadowmapSettings = settings.GetShadowmapSettings();
         if (!shadowmapSettings->IsDirty())

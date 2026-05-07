@@ -42,11 +42,11 @@ namespace Renderer
 
         void SyncResources(RHI::IRHIDevice& device, HedgehogEngine::EngineContext& engine);
 
-        void ResizeFrameBufferSizeDependenteResources(RHI::IRHIDevice& device,
-                                                      const RHI::IRHISwapchain& swapchain);
+        void ResizeFrameBufferSizeDependentResources(RHI::IRHIDevice& device,
+                                                     const RHI::IRHISwapchain& swapchain);
         void ResizeSceneView(RHI::IRHIDevice& device, uint32_t width, uint32_t height);
-        void ResizeSettingsDependenteResources(RHI::IRHIDevice& device,
-                                               HedgehogSettings::Settings& settings);
+        void ResizeSettingsDependentResources(RHI::IRHIDevice& device,
+                                              HedgehogSettings::Settings& settings);
 
         void                  CreateTexture(const std::string& name, const RHI::TextureDesc& desc,
                                             RHI::IRHIDevice& device);

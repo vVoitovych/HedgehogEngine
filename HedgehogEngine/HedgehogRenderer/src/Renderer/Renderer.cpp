@@ -88,7 +88,7 @@ namespace Renderer
         const auto&    frameData  = engineContext.GetFrameData();
         const uint32_t frameIndex = m_ThreadContext->GetFrameIndex();
 
-        m_RenderQueue->PreExecuteFrame(frameData, frameIndex, engineContext.GetSettings());
+        m_RenderQueue->PreRender(frameData, frameIndex, engineContext.GetSettings());
 
         if (windowContext.IsWindowResized() || window.IsResized())
         {
@@ -101,14 +101,14 @@ namespace Renderer
             device.WaitIdle();
             m_RHIContext->RecreateSwapchain(windowContext);
 
-            m_ResourceManager->ResizeFrameBufferSizeDependenteResources(device, swapchain);
+            m_ResourceManager->ResizeFrameBufferSizeDependentResources(device, swapchain);
 
             return;
         }
 
         if (engineContext.GetSettings().IsDirty())
         {
-            m_ResourceManager->ResizeSettingsDependenteResources(device, engineContext.GetSettings());
+            m_ResourceManager->ResizeSettingsDependentResources(device, engineContext.GetSettings());
             engineContext.GetSettings().CleanDirtyState();
         }
 

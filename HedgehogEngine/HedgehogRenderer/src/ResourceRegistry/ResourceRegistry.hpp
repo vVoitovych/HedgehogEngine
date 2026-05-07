@@ -41,12 +41,7 @@ namespace HR
         ResourceRegistry(ResourceRegistry&&)                 = delete;
         ResourceRegistry& operator=(ResourceRegistry&&)      = delete;
 
-        // Called once by the render pass that owns the material pipeline layout,
-        // before any SyncMaterials call. maxSets must cover the full material budget.
-        void SetMaterialLayout(RHI::IRHIDevice&                    device,
-                               const RHI::IRHIDescriptorSetLayout& layout,
-                               uint32_t                            maxSets,
-                               const std::vector<RHI::PoolSize>&   poolSizes);
+        const RHI::IRHIDescriptorSetLayout& GetMaterialLayout() const;
 
         void SyncMeshes(const HedgehogEngine::MeshContainer& container, RHI::IRHIDevice& device);
         void SyncMaterials(HedgehogEngine::MaterialContainer& container,
@@ -64,6 +59,8 @@ namespace HR
         void Cleanup(RHI::IRHIDevice& device);
 
     private:
+        void InitMaterialLayout(RHI::IRHIDevice& device);
+
         RHI::IRHITexture& GetOrCreateTexture(const std::string& path, RHI::IRHIDevice& device);
 
         void CreateMaterialGpu(float transparency, const std::string& texturePath, RHI::IRHIDevice& device);
@@ -96,9 +93,9 @@ namespace HR
         std::unique_ptr<RHI::IRHIBuffer> m_NormalsBuffer;
         std::unique_ptr<RHI::IRHIBuffer> m_IndexBuffer;
 
-        // Material GPU resources — layout is non-owning (owned by the render pass that defined it)
-        const RHI::IRHIDescriptorSetLayout*      m_MaterialLayout = nullptr;
-        std::unique_ptr<RHI::IRHIDescriptorPool> m_MaterialPool;
+        // Material GPU resources
+        std::unique_ptr<RHI::IRHIDescriptorSetLayout> m_MaterialLayout;
+        std::unique_ptr<RHI::IRHIDescriptorPool>      m_MaterialPool;
         std::vector<MaterialGpuData>             m_Materials;
         size_t                                   m_RegisteredMaterialCount = 0;
 

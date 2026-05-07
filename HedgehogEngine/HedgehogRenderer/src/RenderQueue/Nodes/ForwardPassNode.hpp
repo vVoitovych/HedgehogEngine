@@ -34,9 +34,7 @@ namespace Renderer
     class ForwardPassNode final : public IRenderNode
     {
     public:
-        // resourceManager must be non-const: ForwardPass injects the material
-        // descriptor set layout into ResourceRegistry during construction.
-        ForwardPassNode(RHI::IRHIDevice& device, ResourceManager& resourceManager);
+        ForwardPassNode(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
         ~ForwardPassNode() override;
 
         void Render(RenderContext& ctx) override;
@@ -69,7 +67,6 @@ namespace Renderer
         std::unique_ptr<RHI::IRHIPipeline>             m_Pipeline;
         std::unique_ptr<RHI::IRHIDescriptorSetLayout>  m_FrameLayout;
         std::unique_ptr<RHI::IRHIDescriptorPool>       m_FramePool;
-        std::unique_ptr<RHI::IRHIDescriptorSetLayout>  m_MaterialLayout;
         std::vector<std::unique_ptr<RHI::IRHIBuffer>>        m_FrameUniforms;
         std::vector<std::unique_ptr<RHI::IRHIDescriptorSet>> m_FrameSets;
 
