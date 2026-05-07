@@ -242,11 +242,9 @@ void VertexDescriptionWindow::DrawBindingsTable()
             ImGui::TableNextRow();
             ImGui::PushID(i);
 
-            // Row index label
             ImGui::TableSetColumnIndex(0);
             ImGui::Text("%d", i);
 
-            // Binding index — red background when duplicate
             ImGui::TableSetColumnIndex(1);
             if (dupIdx) ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.55f, 0.1f, 0.1f, 1.0f));
             ImGui::SetNextItemWidth(-FLT_MIN);
@@ -257,7 +255,6 @@ void VertexDescriptionWindow::DrawBindingsTable()
             }
             if (dupIdx) ImGui::PopStyleColor();
 
-            // Stride
             ImGui::TableSetColumnIndex(2);
             ImGui::SetNextItemWidth(-FLT_MIN);
             if (ImGui::InputInt("##s", &b.m_Stride))
@@ -266,13 +263,11 @@ void VertexDescriptionWindow::DrawBindingsTable()
                 m_Dirty = true;
             }
 
-            // Input rate
             ImGui::TableSetColumnIndex(3);
             ImGui::SetNextItemWidth(-FLT_MIN);
             if (ImGui::Combo("##ir", &b.m_InputRate, k_InputRateNames, k_InputRateCount))
                 m_Dirty = true;
 
-            // Delete
             ImGui::TableSetColumnIndex(4);
             if (ImGui::SmallButton("X"))
                 toDelete = i;
@@ -327,11 +322,9 @@ void VertexDescriptionWindow::DrawAttributesTable()
             ImGui::TableNextRow();
             ImGui::PushID(i);
 
-            // Row index label
             ImGui::TableSetColumnIndex(0);
             ImGui::Text("%d", i);
 
-            // Location — red when duplicate
             ImGui::TableSetColumnIndex(1);
             if (dupLoc) ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.55f, 0.1f, 0.1f, 1.0f));
             ImGui::SetNextItemWidth(-FLT_MIN);
@@ -342,7 +335,6 @@ void VertexDescriptionWindow::DrawAttributesTable()
             }
             if (dupLoc) ImGui::PopStyleColor();
 
-            // Binding ref — orange when it doesn't exist in bindings table
             ImGui::TableSetColumnIndex(2);
             if (missingBinding) ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.5f, 0.28f, 0.0f, 1.0f));
             ImGui::SetNextItemWidth(-FLT_MIN);
@@ -353,13 +345,11 @@ void VertexDescriptionWindow::DrawAttributesTable()
             }
             if (missingBinding) ImGui::PopStyleColor();
 
-            // Format dropdown
             ImGui::TableSetColumnIndex(3);
             ImGui::SetNextItemWidth(-FLT_MIN);
             if (ImGui::Combo("##fmt", &a.m_Format, k_FormatNames, k_FormatCount))
                 m_Dirty = true;
 
-            // Offset
             ImGui::TableSetColumnIndex(4);
             ImGui::SetNextItemWidth(-FLT_MIN);
             if (ImGui::InputInt("##off", &a.m_Offset))
@@ -368,7 +358,6 @@ void VertexDescriptionWindow::DrawAttributesTable()
                 m_Dirty = true;
             }
 
-            // Delete
             ImGui::TableSetColumnIndex(5);
             if (ImGui::SmallButton("X"))
                 toDelete = i;
@@ -403,7 +392,6 @@ void VertexDescriptionWindow::DrawValidation()
 
     bool anyIssue = false;
 
-    // Report each duplicate binding index value once
     std::set<int> reportedBindings;
     for (int i = 0; i < static_cast<int>(m_Bindings.size()); ++i)
     {
@@ -417,7 +405,6 @@ void VertexDescriptionWindow::DrawValidation()
         }
     }
 
-    // Report each duplicate attribute location once
     std::set<int> reportedLocations;
     for (int i = 0; i < static_cast<int>(m_Attributes.size()); ++i)
     {
@@ -431,7 +418,6 @@ void VertexDescriptionWindow::DrawValidation()
         }
     }
 
-    // Report attributes referencing undefined bindings
     for (const auto& a : m_Attributes)
     {
         if (!AttributeBindingExists(a.m_Binding))
@@ -457,7 +443,6 @@ void VertexDescriptionWindow::Draw()
     if (!m_Open)
         return;
 
-    // Stable window identity via ###; title prefix changes with dirty state
     const std::string title =
         std::string("Vertex Descriptions") + (m_Dirty ? " *" : "") + "###VertexDescriptions";
 

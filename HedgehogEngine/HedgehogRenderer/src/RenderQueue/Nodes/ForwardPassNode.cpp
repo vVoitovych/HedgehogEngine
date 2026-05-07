@@ -1,8 +1,9 @@
 #include "ForwardPassNode.hpp"
 
+#include "../PreRenderContext.hpp"
 #include "../RenderContext.hpp"
+#include "../NodeFactory/NodeConfigUtils.hpp"
 #include "../../ResourceManager/ResourceManager.hpp"
-#include "../../ResourceManager/ResourceNames.hpp"
 #include "../../ResourceRegistry/ResourceRegistry.hpp"
 #include "../../ResourceRegistry/MeshGpuData.hpp"
 #include "../../Pipeline/ShaderLoader.hpp"
@@ -45,8 +46,14 @@ namespace Renderer
         return gpu;
     }
 
-    ForwardPassNode::ForwardPassNode(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
+    ForwardPassNode::ForwardPassNode(const NodeConfig& config,
+                                     RHI::IRHIDevice& device,
+                                     const ResourceManager& resourceManager)
     {
+        assert(!config.m_ColorAttachments.empty() && "ForwardPass .rq entry must have a color attachment");
+        assert(config.m_DepthAttachment.has_value() && "ForwardPass .rq entry must have a depth attachment");
+        m_ColorResource = config.m_ColorAttachments[0].m_Resource;
+        m_DepthResource = config.m_DepthAttachment->m_Resource;
         const auto sd = ShaderLoader::Load(device,
             "/HedgehogEngine/HedgehogRenderer/Assets/Shaders/ForwardPass.shader");
         assert(sd.m_Layout.m_DescriptorSets.size() >= 1);
@@ -72,18 +79,8 @@ namespace Renderer
         const auto& matLayout = resourceManager.GetResourceRegistry().GetMaterialLayout();
 
         RHI::RenderPassDesc rpDesc;
-        rpDesc.m_ColorAttachments.push_back(RHI::AttachmentDesc{
-            resourceManager.GetTexture(ResourceNames::SceneColorBuffer).GetFormat(),
-            RHI::LoadOp::Clear,    RHI::StoreOp::Store,
-            RHI::LoadOp::DontCare, RHI::StoreOp::DontCare,
-            RHI::ImageLayout::Undefined, RHI::ImageLayout::ColorAttachment
-        });
-        rpDesc.m_DepthAttachment = RHI::AttachmentDesc{
-            resourceManager.GetTexture(ResourceNames::RHIDepthBuffer).GetFormat(),
-            RHI::LoadOp::Load,     RHI::StoreOp::DontCare,
-            RHI::LoadOp::DontCare, RHI::StoreOp::DontCare,
-            RHI::ImageLayout::DepthStencilReadOnly, RHI::ImageLayout::DepthStencilReadOnly
-        };
+        rpDesc.m_ColorAttachments.push_back(ToAttachmentDesc(config.m_ColorAttachments[0], resourceManager));
+        rpDesc.m_DepthAttachment = ToAttachmentDesc(*config.m_DepthAttachment, resourceManager);
         m_RenderPass = device.CreateRenderPass(rpDesc);
 
         auto pipelineDesc                   = sd.m_Pipeline;
@@ -91,8 +88,8 @@ namespace Renderer
         pipelineDesc.m_RenderPass           = m_RenderPass.get();
         m_Pipeline = device.CreateGraphicsPipeline(pipelineDesc);
 
-        const auto& colorBuffer = resourceManager.GetTexture(ResourceNames::SceneColorBuffer);
-        const auto& depthBuffer = resourceManager.GetTexture(ResourceNames::RHIDepthBuffer);
+        const auto& colorBuffer = resourceManager.GetTexture(m_ColorResource);
+        const auto& depthBuffer = resourceManager.GetTexture(m_DepthResource);
         RHI::FramebufferDesc fbDesc;
         fbDesc.m_RenderPass       = m_RenderPass.get();
         fbDesc.m_ColorAttachments = { &colorBuffer };
@@ -107,13 +104,13 @@ namespace Renderer
 
     ForwardPassNode::~ForwardPassNode() = default;
 
-    void ForwardPassNode::Render(RenderContext& ctx)
+    void ForwardPassNode::PreRender(const PreRenderContext& ctx)
     {
-        RebuildFramebufferIfNeeded(ctx.m_Device.get(), ctx.m_ResourceManager.get());
+        const auto& frame = ctx.m_FrameData;
+        auto&       device = ctx.m_Device;
+        const auto& rm     = ctx.m_ResourceManager;
 
-        const auto& frame = ctx.m_FrameData.get();
-        auto&       cmd   = ctx.m_Cmd.get();
-        const auto& rm    = ctx.m_ResourceManager.get();
+        RebuildFramebufferIfNeeded(device, rm);
 
         FrameUniform ubo{};
         ubo.m_View        = frame.m_Camera.m_View;
@@ -122,7 +119,14 @@ namespace Renderer
         ubo.m_LightCount  = frame.m_Lights.size();
         for (size_t i = 0; i < ubo.m_LightCount; ++i)
             ubo.m_Lights[i] = ToGpuLight(frame.m_Lights[i]);
-        m_FrameUniforms[ctx.m_FrameIndex]->CopyData(&ubo, sizeof(ubo));
+        ctx.CurrentBuffer(m_FrameUniforms).CopyData(&ubo, sizeof(ubo));
+    }
+
+    void ForwardPassNode::Render(RenderContext& ctx)
+    {
+        const auto& frame = ctx.m_FrameData.get();
+        auto&       cmd   = ctx.m_Cmd.get();
+        const auto& rm    = ctx.m_ResourceManager.get();
 
         RHI::ClearValue colorClear;
         colorClear.m_Color = { 0.0f, 0.0f, 0.0f, 1.0f };
@@ -147,7 +151,7 @@ namespace Renderer
 
         cmd.BindVertexBuffers(0, { &posBuffer, &uvBuffer, &nrmBuffer }, { 0, 0, 0 });
         cmd.BindIndexBuffer(idxBuffer, RHI::IndexType::Uint32);
-        cmd.BindDescriptorSet(*m_Pipeline, 0, *m_FrameSets[ctx.m_FrameIndex]);
+        cmd.BindDescriptorSet(*m_Pipeline, 0, ctx.CurrentDescriptorSet(m_FrameSets));
 
         for (const auto& drawNode : frame.m_DrawList.m_Opaque)
         {
@@ -182,13 +186,13 @@ namespace Renderer
 
     void ForwardPassNode::RebuildFramebufferIfNeeded(RHI::IRHIDevice& device, const ResourceManager& rm)
     {
-        const auto& colorTex = rm.GetTexture(ResourceNames::SceneColorBuffer);
+        const auto& colorTex = rm.GetTexture(m_ColorResource);
         if (colorTex.GetWidth() == m_CachedWidth && colorTex.GetHeight() == m_CachedHeight)
             return;
 
         m_FrameBuffer.reset();
 
-        const auto& depthTex = rm.GetTexture(ResourceNames::RHIDepthBuffer);
+        const auto& depthTex = rm.GetTexture(m_DepthResource);
         RHI::FramebufferDesc fbDesc;
         fbDesc.m_RenderPass       = m_RenderPass.get();
         fbDesc.m_ColorAttachments = { &colorTex };

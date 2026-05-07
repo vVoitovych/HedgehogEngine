@@ -1,43 +1,22 @@
 #pragma once
 
-#include <cstdint>
 #include <memory>
+#include <string>
 #include <vector>
 
-namespace HedgehogEngine
-{
-    struct FrameData;
-}
-
-namespace RHI
-{
-    class IRHIDevice;
-    class IRHICommandList;
-}
-
-namespace HW
-{
-    class Window;
-}
-
-namespace HedgehogSettings
-{
-    class Settings;
-}
+namespace RHI { class IRHIDevice; }
 
 namespace Renderer
 {
     class IRenderNode;
-    class GuiNode;
     class ResourceManager;
+    struct PreRenderContext;
+    struct RenderContext;
 
     class RenderQueue
     {
     public:
-        RenderQueue(RHI::IRHIDevice&                  device,
-                    HW::Window&                       window,
-                    const HedgehogSettings::Settings& settings,
-                    ResourceManager&                  resourceManager);
+        RenderQueue(RHI::IRHIDevice& device, ResourceManager& resourceManager);
         ~RenderQueue();
 
         RenderQueue(const RenderQueue&)            = delete;
@@ -47,23 +26,19 @@ namespace Renderer
 
         void Cleanup(RHI::IRHIDevice& device);
 
-        void  BeginGui();
-        void  DiscardGui();
-        void* GetSceneViewTextureId() const;
+        void  OnBeginFrame();
+        void  OnDiscardFrame();
+        void* QueryNodeExport(const std::string& nodeName, const std::string& key) const;
 
-        void Render(const HedgehogEngine::FrameData& frame,
-                    RHI::IRHIDevice&                 device,
-                    RHI::IRHICommandList&            cmd,
-                    uint32_t                         frameIndex,
-                    const ResourceManager&           resourceManager);
+        // Append an externally created node to the end of the queue.
+        void AppendNode(const std::string& name, std::unique_ptr<IRenderNode> node);
 
-        void PreRender(const HedgehogEngine::FrameData&   frame,
-                             uint32_t                           frameIndex,
-                             const HedgehogSettings::Settings&  settings);
+        void PreRender(const PreRenderContext& ctx);
+        void Render(RenderContext& ctx);
 
     private:
+        std::vector<std::string>                  m_NodeNames;
         std::vector<std::unique_ptr<IRenderNode>> m_Nodes;
-        GuiNode*                                  m_GuiNode = nullptr; // non-owning alias
     };
 
 } // namespace Renderer

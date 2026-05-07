@@ -1,42 +1,36 @@
 #include "RenderQueue.hpp"
 
 #include "IRenderNode.hpp"
+#include "PreRenderContext.hpp"
 #include "RenderContext.hpp"
-#include "Nodes/GuiNode.hpp"
 #include "NodeFactory/RenderQueueLoader.hpp"
 #include "NodeFactory/NodeFactory.hpp"
 
 #include "ResourceManager/ResourceManager.hpp"
 
-#include "HedgehogSettings/Settings/HedgehogSettings.hpp"
-
-#include "HedgehogEngine/api/Frame/FrameData.hpp"
+#include "Logger/api/Logger.hpp"
 
 #include <cassert>
 
 namespace Renderer
 {
-    RenderQueue::RenderQueue(RHI::IRHIDevice&                  device,
-                              HW::Window&                       window,
-                              const HedgehogSettings::Settings& settings,
-                              ResourceManager&                  resourceManager)
+    RenderQueue::RenderQueue(RHI::IRHIDevice& device, ResourceManager& resourceManager)
     {
         const auto configs = RenderQueueLoader::Load(MAIN_RENDER_QUEUE_PATH);
         assert(!configs.empty() && "Main.rq failed to parse or is empty");
 
-        NodeFactory factory(device, window, settings, resourceManager);
+        NodeFactory factory(device, resourceManager);
         for (const auto& cfg : configs)
-            m_Nodes.push_back(factory.Create(cfg));
-
-        for (auto& node : m_Nodes)
         {
-            if (auto* gui = dynamic_cast<GuiNode*>(node.get()))
+            auto node = factory.Create(cfg);
+            if (!node)
             {
-                m_GuiNode = gui;
-                break;
+                LOGERROR("RenderQueue: skipping pass '", cfg.m_Name, "' (factory returned null)");
+                continue;
             }
+            m_NodeNames.push_back(cfg.m_Name);
+            m_Nodes.push_back(std::move(node));
         }
-        assert(m_GuiNode && "Main.rq must contain a Gui node");
     }
 
     RenderQueue::~RenderQueue() = default;
@@ -47,39 +41,47 @@ namespace Renderer
             node->Cleanup(device);
     }
 
-    void RenderQueue::BeginGui()
+    void RenderQueue::OnBeginFrame()
     {
-        m_GuiNode->BeginFrame();
+        for (auto& node : m_Nodes)
+            node->OnBeginFrame();
     }
 
-    void RenderQueue::DiscardGui()
+    void RenderQueue::OnDiscardFrame()
     {
-        m_GuiNode->DiscardFrame();
+        for (auto& node : m_Nodes)
+            node->OnDiscardFrame();
     }
 
-    void* RenderQueue::GetSceneViewTextureId() const
+    void* RenderQueue::QueryNodeExport(const std::string& nodeName, const std::string& key) const
     {
-        return m_GuiNode->GetSceneViewTextureId();
+        for (size_t i = 0; i < m_Nodes.size(); ++i)
+        {
+            if (m_NodeNames[i] == nodeName)
+                return m_Nodes[i]->ExportResource(key);
+        }
+#ifdef DEBUG
+        LOGWARNING("RenderQueue::QueryNodeExport: node '", nodeName, "' not found (key='", key, "')");
+#endif
+        return nullptr;
     }
 
-    void RenderQueue::Render(const HedgehogEngine::FrameData& frame,
-                              RHI::IRHIDevice&                 device,
-                              RHI::IRHICommandList&            cmd,
-                              uint32_t                         frameIndex,
-                              const ResourceManager&           resourceManager)
+    void RenderQueue::AppendNode(const std::string& name, std::unique_ptr<IRenderNode> node)
     {
-        RenderContext ctx{frame, device, cmd, resourceManager, frameIndex};
+        m_NodeNames.push_back(name);
+        m_Nodes.push_back(std::move(node));
+    }
 
+    void RenderQueue::PreRender(const PreRenderContext& ctx)
+    {
+        for (auto& node : m_Nodes)
+            node->PreRender(ctx);
+    }
+
+    void RenderQueue::Render(RenderContext& ctx)
+    {
         for (auto& node : m_Nodes)
             node->Render(ctx);
-    }
-
-    void RenderQueue::PreRender(const HedgehogEngine::FrameData&  frame,
-                                       uint32_t                          frameIndex,
-                                       const HedgehogSettings::Settings& settings)
-    {
-        for (auto& node : m_Nodes)
-            node->PreRender(frame, frameIndex, settings);
     }
 
 } // namespace Renderer

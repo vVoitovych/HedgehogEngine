@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../IRenderNode.hpp"
+#include "../NodeFactory/NodeConfig.hpp"
 
 #include "HedgehogMath/api/Matrix.hpp"
 
@@ -39,17 +40,15 @@ namespace Renderer
     class ShadowmapNode final : public IRenderNode
     {
     public:
-        ShadowmapNode(RHI::IRHIDevice& device,
-                      const HedgehogSettings::Settings& settings,
+        ShadowmapNode(const NodeConfig& config,
+                      RHI::IRHIDevice& device,
                       const ResourceManager& resourceManager);
         ~ShadowmapNode() override;
 
         void Render(RenderContext& ctx) override;
         void Cleanup(RHI::IRHIDevice& device) override;
 
-        void PreRender(const HedgehogEngine::FrameData& frame,
-                             uint32_t frameIndex,
-                             const HedgehogSettings::Settings& settings) override;
+        void PreRender(const PreRenderContext& ctx) override;
 
     private:
         void RebuildIfNeeded(RHI::IRHIDevice& device, const ResourceManager& rm,
@@ -75,14 +74,14 @@ namespace Renderer
 
         static constexpr uint32_t MaxShadowCascades = 4;
 
-        uint32_t m_CascadesCount     = 1;
-        uint32_t m_ShadowmapSize     = 1024;
-        bool     m_NeedsRebuild      = false;
+        std::string m_DepthResource;
+
+        uint32_t m_CascadesCount = 1;
+        uint32_t m_ShadowmapSize = 1024;
+        bool     m_NeedsRebuild  = true;
 
         std::array<HM::Matrix4x4, MaxShadowCascades> m_ShadowmapMatrices;
         std::vector<std::vector<ShadowViewport>>      m_ShadowViewports;
-
-        const HedgehogSettings::Settings& m_Settings;
 
         std::unique_ptr<RHI::IRHIRenderPass>         m_RenderPass;
         std::unique_ptr<RHI::IRHIFramebuffer>         m_FrameBuffer;
@@ -91,7 +90,7 @@ namespace Renderer
         std::unique_ptr<RHI::IRHIDescriptorSetLayout> m_ShadowmapLayout;
         std::unique_ptr<RHI::IRHIDescriptorPool>      m_ShadowmapPool;
 
-        // [frame][cascade]
+        // [cascade][frame]
         std::vector<std::vector<std::unique_ptr<RHI::IRHIBuffer>>>        m_ShadowmapUniforms;
         std::vector<std::vector<std::unique_ptr<RHI::IRHIDescriptorSet>>> m_ShadowmapSets;
     };

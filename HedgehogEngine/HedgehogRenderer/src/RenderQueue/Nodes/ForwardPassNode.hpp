@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../IRenderNode.hpp"
+#include "../NodeFactory/NodeConfig.hpp"
 
 #include "HedgehogCommon/api/RendererSettings.hpp"
 #include "HedgehogMath/api/Matrix.hpp"
@@ -34,9 +35,12 @@ namespace Renderer
     class ForwardPassNode final : public IRenderNode
     {
     public:
-        ForwardPassNode(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
+        ForwardPassNode(const NodeConfig& config,
+                        RHI::IRHIDevice& device,
+                        const ResourceManager& resourceManager);
         ~ForwardPassNode() override;
 
+        void PreRender(const PreRenderContext& ctx) override;
         void Render(RenderContext& ctx) override;
         void Cleanup(RHI::IRHIDevice& device) override;
 
@@ -69,6 +73,9 @@ namespace Renderer
         std::unique_ptr<RHI::IRHIDescriptorPool>       m_FramePool;
         std::vector<std::unique_ptr<RHI::IRHIBuffer>>        m_FrameUniforms;
         std::vector<std::unique_ptr<RHI::IRHIDescriptorSet>> m_FrameSets;
+
+        std::string m_ColorResource;
+        std::string m_DepthResource;
 
         uint32_t m_CachedWidth  = 0;
         uint32_t m_CachedHeight = 0;

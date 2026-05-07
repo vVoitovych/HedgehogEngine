@@ -1,15 +1,13 @@
 #include "Application.hpp"
-#include "EditorGui.hpp"
 
 #include "HedgehogEngine/api/HedgehogEngine.hpp"
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogEngine/api/WindowContext.hpp"
 #include "HedgehogRenderer/Renderer.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
+#include "HedgehogGui/EditorGuiNode.hpp"
 
 #include "Logger/api/Logger.hpp"
-
-#include "imgui.h"
 
 #include <chrono>
 
@@ -26,15 +24,12 @@ namespace Editor
 
     void EditorApplication::Init()
     {
-        m_Context   = std::make_unique<HedgehogEngine::HedgehogEngine>();
-        m_Renderer  = std::make_unique<Renderer::Renderer>(*m_Context);
-        m_EditorGui = std::make_unique<EditorGui>();
+        m_Context  = std::make_unique<HedgehogEngine::HedgehogEngine>();
+        m_Renderer = std::make_unique<Renderer::Renderer>(*m_Context);
 
-        // WantCaptureMouse is true even over the scene image (it's an ImGui window); exempt it.
-        m_Context->GetWindowContext().GetWindow().SetGuiCallback([this]()
-        {
-            return ImGui::GetIO().WantCaptureMouse && !m_EditorGui->IsSceneViewHovered();
-        });
+        auto& window = m_Context->GetWindowContext().GetWindow();
+        m_Renderer->AppendNode("Gui",
+            std::make_unique<HedgehogGui::EditorGuiNode>(window, *m_Renderer, *m_Context));
 
         m_Context->GetEngineContext().LoadDefaultScene();
 
@@ -49,11 +44,7 @@ namespace Editor
             m_Context->GetWindowContext().HandleInput();
             m_Context->UpdateContext(dt, m_Renderer->GetAspectRatio());
 
-            m_Renderer->BeginGui();
-            m_EditorGui->Draw(*m_Context, m_Renderer->GetSceneViewTextureId());
-            m_Renderer->SetSceneViewSize(m_EditorGui->GetSceneViewWidth(),
-                                         m_EditorGui->GetSceneViewHeight());
-
+            m_Renderer->OnBeginFrame();
             m_Renderer->DrawFrame(*m_Context);
         }
 

@@ -320,11 +320,9 @@ void PipelineWindow::DrawDescriptorSets()
                     ImGui::TableNextRow();
                     ImGui::PushID(bi);
 
-                    // Row index
                     ImGui::TableSetColumnIndex(0);
                     ImGui::Text("%d", bi);
 
-                    // Binding index — red on duplicate
                     ImGui::TableSetColumnIndex(1);
                     if (dupBinding)
                         ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.55f, 0.1f, 0.1f, 1.0f));
@@ -336,13 +334,11 @@ void PipelineWindow::DrawDescriptorSets()
                     }
                     if (dupBinding) ImGui::PopStyleColor();
 
-                    // Type dropdown
                     ImGui::TableSetColumnIndex(2);
                     ImGui::SetNextItemWidth(-FLT_MIN);
                     if (ImGui::Combo("##type", &b.m_Type, k_TypeDisplayNames, k_TypeCount))
                         m_Dirty = true;
 
-                    // Count
                     ImGui::TableSetColumnIndex(3);
                     ImGui::SetNextItemWidth(-FLT_MIN);
                     if (ImGui::InputInt("##cnt", &b.m_Count))
@@ -351,7 +347,6 @@ void PipelineWindow::DrawDescriptorSets()
                         m_Dirty = true;
                     }
 
-                    // Stage checkboxes — orange tint when none selected
                     if (noStage)
                         ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.5f, 0.28f, 0.0f, 1.0f));
 
@@ -364,7 +359,6 @@ void PipelineWindow::DrawDescriptorSets()
 
                     if (noStage) ImGui::PopStyleColor();
 
-                    // Delete
                     ImGui::TableSetColumnIndex(7);
                     if (ImGui::SmallButton("X")) toDeleteBinding = bi;
 
@@ -440,11 +434,9 @@ void PipelineWindow::DrawPushConstants()
             ImGui::TableNextRow();
             ImGui::PushID(i);
 
-            // Row index
             ImGui::TableSetColumnIndex(0);
             ImGui::Text("%d", i);
 
-            // Offset
             ImGui::TableSetColumnIndex(1);
             ImGui::SetNextItemWidth(-FLT_MIN);
             if (ImGui::InputInt("##off", &pc.m_Offset))
@@ -453,7 +445,6 @@ void PipelineWindow::DrawPushConstants()
                 m_Dirty = true;
             }
 
-            // Size — red on zero
             ImGui::TableSetColumnIndex(2);
             if (zeroSize)
                 ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.55f, 0.1f, 0.1f, 1.0f));
@@ -465,7 +456,6 @@ void PipelineWindow::DrawPushConstants()
             }
             if (zeroSize) ImGui::PopStyleColor();
 
-            // Stage checkboxes — orange tint when none selected
             if (noStage)
                 ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.5f, 0.28f, 0.0f, 1.0f));
 
@@ -478,14 +468,12 @@ void PipelineWindow::DrawPushConstants()
 
             if (noStage) ImGui::PopStyleColor();
 
-            // Byte range summary
             ImGui::TableSetColumnIndex(6);
             if (pc.m_Size > 0)
                 ImGui::TextDisabled("[%d, %d)", pc.m_Offset, pc.m_Offset + pc.m_Size);
             else
                 ImGui::TextDisabled("--");
 
-            // Delete
             ImGui::TableSetColumnIndex(7);
             if (ImGui::SmallButton("X")) toDelete = i;
 
@@ -518,8 +506,6 @@ void PipelineWindow::DrawValidation()
 
     bool anyIssue = false;
 
-    // ── Descriptor sets ───────────────────────────────────────────────────────
-
     for (int si = 0; si < static_cast<int>(m_Sets.size()); ++si)
     {
         const auto& set = m_Sets[si];
@@ -532,7 +518,6 @@ void PipelineWindow::DrawValidation()
             anyIssue = true;
         }
 
-        // Duplicate binding indices
         std::set<int> reportedDups;
         for (int bi = 0; bi < static_cast<int>(set.m_Bindings.size()); ++bi)
         {
@@ -546,7 +531,6 @@ void PipelineWindow::DrawValidation()
             }
         }
 
-        // No stages on a binding
         for (int bi = 0; bi < static_cast<int>(set.m_Bindings.size()); ++bi)
         {
             const auto& b = set.m_Bindings[bi];
@@ -559,8 +543,6 @@ void PipelineWindow::DrawValidation()
             }
         }
     }
-
-    // ── Push constants ────────────────────────────────────────────────────────
 
     for (int i = 0; i < static_cast<int>(m_PushConstants.size()); ++i)
     {
@@ -582,7 +564,6 @@ void PipelineWindow::DrawValidation()
             anyIssue = true;
         }
 
-        // Overlap check: report each pair once
         for (int j = i + 1; j < static_cast<int>(m_PushConstants.size()); ++j)
         {
             if (PushConstantsOverlap(i, j))

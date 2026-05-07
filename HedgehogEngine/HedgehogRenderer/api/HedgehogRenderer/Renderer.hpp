@@ -1,14 +1,24 @@
 #pragma once
 
 #include <memory>
+#include <string>
+#include <unordered_map>
+#include <utility>
 
 namespace HedgehogEngine
 {
     class HedgehogEngine;
 }
 
+namespace RHI
+{
+    class IRHIDevice;
+    class IRHITexture;
+}
+
 namespace Renderer
 {
+    class IRenderNode;
     class RHIContext;
     class ThreadContext;
     class ResourceManager;
@@ -25,11 +35,23 @@ namespace Renderer
 
         void Cleanup(HedgehogEngine::HedgehogEngine& context);
 
-        void  BeginGui();
+        void  OnBeginFrame();
         void  DrawFrame(HedgehogEngine::HedgehogEngine& context);
         float GetAspectRatio() const;
-        void* GetSceneViewTextureId() const;
-        void  SetSceneViewSize(uint32_t width, uint32_t height);
+
+        // Append an externally created node to the end of the render queue.
+        // Call before the first DrawFrame.
+        void AppendNode(const std::string& name, std::unique_ptr<IRenderNode> node);
+
+        // Access underlying device and named GPU textures (for external nodes).
+        RHI::IRHIDevice&         GetDevice();
+        const RHI::IRHITexture&  GetTexture(const std::string& name) const;
+
+        // Query an opaque resource exported by a named node. Returns nullptr if not found.
+        void* QueryNodeExport(const std::string& nodeName, const std::string& key) const;
+
+        // Request a render-target resize; applied at end of the current frame.
+        void  SetRenderTargetSize(const std::string& resourceName, uint32_t width, uint32_t height);
 
     private:
         std::unique_ptr<RHIContext>      m_RHIContext;
@@ -37,7 +59,6 @@ namespace Renderer
         std::unique_ptr<ResourceManager> m_ResourceManager;
         std::unique_ptr<RenderQueue>     m_RenderQueue;
 
-        uint32_t m_DesiredSceneW = 0;
-        uint32_t m_DesiredSceneH = 0;
+        std::unordered_map<std::string, std::pair<uint32_t, uint32_t>> m_PendingResizes;
     };
 }

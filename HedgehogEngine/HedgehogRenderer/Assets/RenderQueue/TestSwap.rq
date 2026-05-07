@@ -2,20 +2,49 @@ passes:
   - name: DepthPrepass
     type: RenderPass
     shader: ../Shaders/DepthPrepass.shader
+    attachments:
+      depth:
+        resource: RHIDepthBuffer
+        load:    Clear
+        store:   Store
+        initial: Undefined
+        final:   DepthStencilReadOnly
 
   - name: ShadowmapPass
     type: RenderPass
     shader: ../Shaders/ShadowmapPass.shader
+    attachments:
+      depth:
+        resource: RHIShadowMap
+        load:    Clear
+        store:   DontCare
+        initial: Undefined
+        final:   DepthStencilReadOnly
 
   - name: ForwardPass
     type: RenderPass
     shader: ../Shaders/ForwardPass.shader
+    attachments:
+      color:
+        - resource: SceneColorBuffer
+          load:    Clear
+          store:   Store
+          initial: Undefined
+          final:   ColorAttachment
+      depth:
+        resource: RHIDepthBuffer
+        load:    Load
+        store:   DontCare
+        initial: DepthStencilReadOnly
+        final:   DepthStencilReadOnly
+    inputs:
+      - RHIShadowMap
 
   - name: SceneColorToShaderRead
     type: Transition
     resource: SceneColorBuffer
     from: ColorAttachment
-    to: ShaderReadOnly
+    to:   ShaderReadOnly
 
   - name: Gui
     type: Gui

@@ -14,8 +14,6 @@ namespace Renderer
 
 namespace Editor
 {
-    class EditorGui;
-
     class EditorApplication
     {
     public:
@@ -36,8 +34,7 @@ namespace Editor
         float GetFrameTime();
 
     private:
-        std::unique_ptr<HedgehogEngine::HedgehogEngine>   m_Context;
-        std::unique_ptr<Renderer::Renderer> m_Renderer;
-        std::unique_ptr<EditorGui>          m_EditorGui;
+        std::unique_ptr<HedgehogEngine::HedgehogEngine> m_Context;
+        std::unique_ptr<Renderer::Renderer>             m_Renderer;
     };
 }

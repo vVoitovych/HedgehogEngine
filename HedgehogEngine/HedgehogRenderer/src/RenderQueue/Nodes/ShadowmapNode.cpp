@@ -1,8 +1,9 @@
 #include "ShadowmapNode.hpp"
 
+#include "../PreRenderContext.hpp"
 #include "../RenderContext.hpp"
+#include "../NodeFactory/NodeConfigUtils.hpp"
 #include "../../ResourceManager/ResourceManager.hpp"
-#include "../../ResourceManager/ResourceNames.hpp"
 #include "../../ResourceRegistry/ResourceRegistry.hpp"
 #include "../../ResourceRegistry/MeshGpuData.hpp"
 #include "../../Pipeline/ShaderLoader.hpp"
@@ -33,11 +34,13 @@ namespace Renderer
         struct PushConstants { HM::Matrix4x4 objToWorld; };
     }
 
-    ShadowmapNode::ShadowmapNode(RHI::IRHIDevice& device,
-                                  const HedgehogSettings::Settings& settings,
+    ShadowmapNode::ShadowmapNode(const NodeConfig& config,
+                                  RHI::IRHIDevice& device,
                                   const ResourceManager& resourceManager)
-        : m_Settings(settings)
     {
+        assert(config.m_DepthAttachment.has_value() && "ShadowmapPass .rq entry must have a depth attachment");
+        m_DepthResource = config.m_DepthAttachment->m_Resource;
+
         const auto sd = ShaderLoader::Load(device,
             "/HedgehogEngine/HedgehogRenderer/Assets/Shaders/ShadowmapPass.shader");
         assert(!sd.m_Layout.m_DescriptorSets.empty());
@@ -49,11 +52,11 @@ namespace Renderer
             totalSets,
             PipelineLoader::MakePoolSizes(sd.m_Layout.m_DescriptorSets[0], totalSets));
 
-        m_ShadowmapUniforms.resize(MAX_FRAMES_IN_FLIGHT);
-        m_ShadowmapSets.resize(MAX_FRAMES_IN_FLIGHT);
-        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+        m_ShadowmapUniforms.resize(MaxShadowCascades);
+        m_ShadowmapSets.resize(MaxShadowCascades);
+        for (size_t i = 0; i < MaxShadowCascades; ++i)
         {
-            for (size_t j = 0; j < MaxShadowCascades; ++j)
+            for (size_t j = 0; j < MAX_FRAMES_IN_FLIGHT; ++j)
             {
                 auto ubo = device.CreateBuffer(
                     sizeof(ShadowCascadeUniform),
@@ -68,12 +71,7 @@ namespace Renderer
         }
 
         RHI::RenderPassDesc rpDesc;
-        rpDesc.m_DepthAttachment = RHI::AttachmentDesc{
-            resourceManager.GetTexture(ResourceNames::RHIShadowMap).GetFormat(),
-            RHI::LoadOp::Clear,    RHI::StoreOp::DontCare,
-            RHI::LoadOp::DontCare, RHI::StoreOp::DontCare,
-            RHI::ImageLayout::Undefined, RHI::ImageLayout::DepthStencilReadOnly
-        };
+        rpDesc.m_DepthAttachment = ToAttachmentDesc(*config.m_DepthAttachment, resourceManager);
         m_RenderPass = device.CreateRenderPass(rpDesc);
 
         auto pipelineDesc                   = sd.m_Pipeline;
@@ -82,15 +80,13 @@ namespace Renderer
         m_Pipeline = device.CreateGraphicsPipeline(pipelineDesc);
 
         UpdateFrameBuffer(device, resourceManager);
-        UpdateViewports(settings);
+        // m_NeedsRebuild = true (header default) ensures UpdateViewports runs on the first PreRender.
     }
 
     ShadowmapNode::~ShadowmapNode() = default;
 
     void ShadowmapNode::Render(RenderContext& ctx)
     {
-        RebuildIfNeeded(ctx.m_Device.get(), ctx.m_ResourceManager.get(), m_Settings);
-
         const auto& frame = ctx.m_FrameData.get();
         auto&       cmd   = ctx.m_Cmd.get();
         const auto& rm    = ctx.m_ResourceManager.get();
@@ -115,7 +111,7 @@ namespace Renderer
             cmd.SetViewport({ view.m_X, view.m_Y, view.m_Width, view.m_Height, 0.0f, 1.0f });
             cmd.SetScissor({ 0, 0, m_ShadowmapSize, m_ShadowmapSize });
 
-            cmd.BindDescriptorSet(*m_Pipeline, 0, *m_ShadowmapSets[ctx.m_FrameIndex][i]);
+            cmd.BindDescriptorSet(*m_Pipeline, 0, ctx.CurrentDescriptorSet(m_ShadowmapSets[i]));
 
             for (const auto& drawNode : frame.m_DrawList.m_Opaque)
             {
@@ -145,13 +141,18 @@ namespace Renderer
         m_ShadowmapLayout.reset();
     }
 
-    void ShadowmapNode::PreRender(const HedgehogEngine::FrameData& frame,
-                                         uint32_t frameIndex,
-                                         const HedgehogSettings::Settings& settings)
+    void ShadowmapNode::PreRender(const PreRenderContext& ctx)
     {
+        const auto& frame    = ctx.m_FrameData;
+        auto&       device   = ctx.m_Device;
+        const auto& rm       = ctx.m_ResourceManager;
+        const auto& settings = ctx.m_Settings;
+
         const uint32_t cascades = settings.GetShadowmapSettings()->GetCascadesCount();
         if (cascades != m_CascadesCount)
             m_NeedsRebuild = true;
+
+        RebuildIfNeeded(device, rm, settings);
 
         UpdateShadowmapMatrices(frame.m_Camera, settings, frame.m_ShadowLightDirection);
 
@@ -159,14 +160,14 @@ namespace Renderer
         {
             ShadowCascadeUniform ubo;
             ubo.m_ShadowMatrix = m_ShadowmapMatrices[i];
-            m_ShadowmapUniforms[frameIndex][i]->CopyData(&ubo, sizeof(ubo));
+            ctx.CurrentBuffer(m_ShadowmapUniforms[i]).CopyData(&ubo, sizeof(ubo));
         }
     }
 
     void ShadowmapNode::RebuildIfNeeded(RHI::IRHIDevice& device, const ResourceManager& rm,
                                          const HedgehogSettings::Settings& settings)
     {
-        const uint32_t currentSize = rm.GetTexture(ResourceNames::RHIShadowMap).GetWidth();
+        const uint32_t currentSize = rm.GetTexture(m_DepthResource).GetWidth();
         if (currentSize == m_ShadowmapSize && !m_NeedsRebuild)
             return;
 
@@ -177,7 +178,7 @@ namespace Renderer
 
     void ShadowmapNode::UpdateFrameBuffer(RHI::IRHIDevice& device, const ResourceManager& rm)
     {
-        const auto& shadowMap = rm.GetTexture(ResourceNames::RHIShadowMap);
+        const auto& shadowMap = rm.GetTexture(m_DepthResource);
 
         m_FrameBuffer.reset();
 

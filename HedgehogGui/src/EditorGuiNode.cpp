@@ -1,0 +1,311 @@
+#include "HedgehogGui/EditorGuiNode.hpp"
+
+#include "EditorGui.hpp"
+
+#include "HedgehogRenderer/PreRenderContext.hpp"
+#include "HedgehogRenderer/RenderContext.hpp"
+#include "HedgehogRenderer/Renderer.hpp"
+
+#include "HedgehogEngine/api/HedgehogEngine.hpp"
+#include "HedgehogEngine/api/WindowContext.hpp"
+
+#include "HedgehogCommon/api/RendererSettings.hpp"
+
+#include "RHI/api/IRHIDevice.hpp"
+#include "RHI/api/IRHICommandList.hpp"
+#include "RHI/api/IRHIRenderPass.hpp"
+#include "RHI/api/IRHIFramebuffer.hpp"
+#include "RHI/api/IRHITexture.hpp"
+#include "RHI/api/RHITypes.hpp"
+#include "RHI/src/Vulkan/VulkanDevice.hpp"
+#include "RHI/src/Vulkan/VulkanRenderPass.hpp"
+#include "RHI/src/Vulkan/VulkanCommandList.hpp"
+#include "RHI/src/Vulkan/VulkanTexture.hpp"
+
+#include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
+
+#include "imgui.h"
+#include "backends/imgui_impl_vulkan.h"
+#include "backends/imgui_impl_glfw.h"
+
+#include <algorithm>
+#include <vector>
+
+namespace HedgehogGui
+{
+    static constexpr const char* k_RHIColorBuffer   = "RHIColorBuffer";
+    static constexpr const char* k_SceneColorBuffer = "SceneColorBuffer";
+
+    struct EditorGuiNode::Impl
+    {
+        std::unique_ptr<RHI::IRHIRenderPass>  m_RenderPass;
+        std::unique_ptr<RHI::IRHIFramebuffer> m_FrameBuffer;
+        VkDescriptorPool                      m_ImGuiPool        = VK_NULL_HANDLE;
+        VkSampler                             m_SceneSampler     = VK_NULL_HANDLE;
+        VkDescriptorSet                       m_SceneViewDescSet = VK_NULL_HANDLE;
+
+        uint32_t m_CachedFbWidth     = 0;
+        uint32_t m_CachedFbHeight    = 0;
+        uint32_t m_CachedSceneWidth  = 0;
+        uint32_t m_CachedSceneHeight = 0;
+
+        uint32_t m_LastSceneViewWidth  = 0;
+        uint32_t m_LastSceneViewHeight = 0;
+
+        std::unique_ptr<Editor::EditorGui> m_EditorGui;
+        Renderer::Renderer&                m_Renderer;
+        HedgehogEngine::HedgehogEngine&    m_Engine;
+
+        Impl(HW::Window& window, Renderer::Renderer& renderer, HedgehogEngine::HedgehogEngine& engine)
+            : m_Renderer(renderer)
+            , m_Engine(engine)
+        {
+            auto& device   = renderer.GetDevice();
+            auto& vkDevice = static_cast<RHI::VulkanDevice&>(device);
+
+            VkDescriptorPoolSize poolSizes[] = {
+                { VK_DESCRIPTOR_TYPE_SAMPLER,                1000 },
+                { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+                { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,          1000 },
+                { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,          1000 },
+                { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,   1000 },
+                { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,   1000 },
+                { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         1000 },
+                { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,         1000 },
+                { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+                { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+                { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,       1000 },
+            };
+            VkDescriptorPoolCreateInfo poolInfo{};
+            poolInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+            poolInfo.flags         = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+            poolInfo.maxSets       = 1000;
+            poolInfo.poolSizeCount = static_cast<uint32_t>(std::size(poolSizes));
+            poolInfo.pPoolSizes    = poolSizes;
+            vkCreateDescriptorPool(vkDevice.GetHandle(), &poolInfo, nullptr, &m_ImGuiPool);
+
+            const auto& colorBuffer = renderer.GetTexture(k_RHIColorBuffer);
+            RHI::RenderPassDesc rpDesc;
+            rpDesc.m_ColorAttachments.push_back(RHI::AttachmentDesc{
+                colorBuffer.GetFormat(),
+                RHI::LoadOp::Clear,    RHI::StoreOp::Store,
+                RHI::LoadOp::DontCare, RHI::StoreOp::DontCare,
+                RHI::ImageLayout::Undefined, RHI::ImageLayout::ColorAttachment
+            });
+            m_RenderPass = device.CreateRenderPass(rpDesc);
+
+            RHI::FramebufferDesc fbDesc;
+            fbDesc.m_RenderPass       = m_RenderPass.get();
+            fbDesc.m_ColorAttachments = { &colorBuffer };
+            fbDesc.m_Width            = colorBuffer.GetWidth();
+            fbDesc.m_Height           = colorBuffer.GetHeight();
+            m_FrameBuffer = device.CreateFramebuffer(fbDesc);
+
+            IMGUI_CHECKVERSION();
+            ImGui::CreateContext();
+            ImGuiIO& io = ImGui::GetIO();
+            (void)io;
+            ImGui::StyleColorsDark();
+
+            {
+                constexpr ImVec4 k_PanelBg(2.0f / 255.0f, 12.0f / 255.0f, 30.0f / 255.0f, 1.0f);
+                ImVec4* colors = ImGui::GetStyle().Colors;
+                colors[ImGuiCol_WindowBg]  = k_PanelBg;
+                colors[ImGuiCol_ChildBg]   = k_PanelBg;
+                colors[ImGuiCol_PopupBg]   = k_PanelBg;
+                colors[ImGuiCol_MenuBarBg] = k_PanelBg;
+            }
+
+            ImGui_ImplGlfw_InitForVulkan(window.GetNativeHandle(), true);
+
+            auto& vkRenderPass = static_cast<RHI::VulkanRenderPass&>(*m_RenderPass);
+            ImGui_ImplVulkan_InitInfo initInfo{};
+            initInfo.Instance        = vkDevice.GetInstance();
+            initInfo.PhysicalDevice  = vkDevice.GetPhysicalDevice();
+            initInfo.Device          = vkDevice.GetHandle();
+            initInfo.QueueFamily     = vkDevice.GetQueueFamilyIndices().m_GraphicsFamily.value();
+            initInfo.Queue           = vkDevice.GetGraphicsQueue();
+            initInfo.PipelineCache   = VK_NULL_HANDLE;
+            initInfo.DescriptorPool  = m_ImGuiPool;
+            initInfo.Allocator       = nullptr;
+            initInfo.MinImageCount   = MAX_FRAMES_IN_FLIGHT;
+            initInfo.ImageCount      = MAX_FRAMES_IN_FLIGHT;
+            initInfo.CheckVkResultFn = nullptr;
+            initInfo.PipelineInfoMain.RenderPass = vkRenderPass.GetHandle();
+            ImGui_ImplVulkan_Init(&initInfo);
+
+            VkSamplerCreateInfo samplerInfo{};
+            samplerInfo.sType        = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+            samplerInfo.magFilter    = VK_FILTER_LINEAR;
+            samplerInfo.minFilter    = VK_FILTER_LINEAR;
+            samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+            samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+            samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+            vkCreateSampler(vkDevice.GetHandle(), &samplerInfo, nullptr, &m_SceneSampler);
+
+            CreateSceneDescriptor();
+
+            m_CachedFbWidth     = colorBuffer.GetWidth();
+            m_CachedFbHeight    = colorBuffer.GetHeight();
+            const auto& sceneTex = renderer.GetTexture(k_SceneColorBuffer);
+            m_CachedSceneWidth  = sceneTex.GetWidth();
+            m_CachedSceneHeight = sceneTex.GetHeight();
+
+            m_EditorGui = std::make_unique<Editor::EditorGui>();
+
+            window.SetGuiCallback([this]()
+            {
+                return ImGui::GetIO().WantCaptureMouse && !m_EditorGui->IsSceneViewHovered();
+            });
+        }
+
+        void CreateSceneDescriptor()
+        {
+            const auto& sceneBuffer = static_cast<const RHI::VulkanTexture&>(
+                m_Renderer.GetTexture(k_SceneColorBuffer));
+            m_SceneViewDescSet = ImGui_ImplVulkan_AddTexture(
+                m_SceneSampler,
+                sceneBuffer.GetViewHandle(),
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        }
+
+        void RecreateSceneDescriptor()
+        {
+            if (m_SceneViewDescSet != VK_NULL_HANDLE)
+            {
+                ImGui_ImplVulkan_RemoveTexture(m_SceneViewDescSet);
+                m_SceneViewDescSet = VK_NULL_HANDLE;
+            }
+            CreateSceneDescriptor();
+        }
+
+        void RebuildIfNeeded(RHI::IRHIDevice& device)
+        {
+            const auto& colorTex = m_Renderer.GetTexture(k_RHIColorBuffer);
+            if (colorTex.GetWidth() != m_CachedFbWidth || colorTex.GetHeight() != m_CachedFbHeight)
+            {
+                m_FrameBuffer.reset();
+
+                RHI::FramebufferDesc fbDesc;
+                fbDesc.m_RenderPass       = m_RenderPass.get();
+                fbDesc.m_ColorAttachments = { &colorTex };
+                fbDesc.m_Width            = colorTex.GetWidth();
+                fbDesc.m_Height           = colorTex.GetHeight();
+                m_FrameBuffer = device.CreateFramebuffer(fbDesc);
+
+                m_CachedFbWidth  = colorTex.GetWidth();
+                m_CachedFbHeight = colorTex.GetHeight();
+
+                RecreateSceneDescriptor();
+            }
+
+            const auto& sceneTex = m_Renderer.GetTexture(k_SceneColorBuffer);
+            if (sceneTex.GetWidth() != m_CachedSceneWidth || sceneTex.GetHeight() != m_CachedSceneHeight)
+            {
+                RecreateSceneDescriptor();
+                m_CachedSceneWidth  = sceneTex.GetWidth();
+                m_CachedSceneHeight = sceneTex.GetHeight();
+            }
+        }
+
+        void Cleanup(RHI::IRHIDevice& device)
+        {
+            if (m_SceneViewDescSet != VK_NULL_HANDLE)
+            {
+                ImGui_ImplVulkan_RemoveTexture(m_SceneViewDescSet);
+                m_SceneViewDescSet = VK_NULL_HANDLE;
+            }
+
+            ImGui_ImplVulkan_Shutdown();
+            ImGui_ImplGlfw_Shutdown();
+            ImGui::DestroyContext();
+
+            auto& vkDevice = static_cast<RHI::VulkanDevice&>(device);
+
+            if (m_SceneSampler != VK_NULL_HANDLE)
+            {
+                vkDestroySampler(vkDevice.GetHandle(), m_SceneSampler, nullptr);
+                m_SceneSampler = VK_NULL_HANDLE;
+            }
+
+            vkDestroyDescriptorPool(vkDevice.GetHandle(), m_ImGuiPool, nullptr);
+            m_ImGuiPool = VK_NULL_HANDLE;
+
+            m_FrameBuffer.reset();
+            m_RenderPass.reset();
+        }
+    };
+
+    // ─── EditorGuiNode ───────────────────────────────────────────────────────────
+
+    EditorGuiNode::EditorGuiNode(HW::Window&                    window,
+                                  Renderer::Renderer&             renderer,
+                                  HedgehogEngine::HedgehogEngine& engine)
+        : m_Impl(std::make_unique<Impl>(window, renderer, engine))
+    {}
+
+    EditorGuiNode::~EditorGuiNode() = default;
+
+    void EditorGuiNode::OnBeginFrame()
+    {
+        ImGui_ImplVulkan_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+    }
+
+    void EditorGuiNode::OnDiscardFrame()
+    {
+        ImGui::EndFrame();
+    }
+
+    void EditorGuiNode::PreRender(const Renderer::PreRenderContext& ctx)
+    {
+        m_Impl->RebuildIfNeeded(ctx.m_Device);
+
+        const uint32_t w = m_Impl->m_EditorGui->GetSceneViewWidth();
+        const uint32_t h = m_Impl->m_EditorGui->GetSceneViewHeight();
+        if (w != m_Impl->m_LastSceneViewWidth || h != m_Impl->m_LastSceneViewHeight)
+        {
+            m_Impl->m_LastSceneViewWidth  = w;
+            m_Impl->m_LastSceneViewHeight = h;
+            m_Impl->m_Renderer.SetRenderTargetSize(k_SceneColorBuffer, w, h);
+        }
+    }
+
+    void EditorGuiNode::Render(Renderer::RenderContext& ctx)
+    {
+        m_Impl->m_EditorGui->Draw(m_Impl->m_Engine,
+                                   static_cast<void*>(m_Impl->m_SceneViewDescSet));
+
+        ImGui::Render();
+
+        auto& cmd = ctx.m_Cmd.get();
+
+        RHI::ClearValue colorClear;
+        colorClear.m_Color = { 0.0f, 0.0f, 0.0f, 1.0f };
+        cmd.BeginRenderPass(*m_Impl->m_RenderPass, *m_Impl->m_FrameBuffer, { colorClear });
+
+        auto& vkCmdList = static_cast<RHI::VulkanCommandList&>(cmd);
+        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), vkCmdList.GetHandle());
+
+        cmd.EndRenderPass();
+    }
+
+    void EditorGuiNode::Cleanup(RHI::IRHIDevice& device)
+    {
+        m_Impl->Cleanup(device);
+    }
+
+    void* EditorGuiNode::ExportResource(const std::string& key) const
+    {
+        if (key == "SceneViewDescriptor")
+            return static_cast<void*>(m_Impl->m_SceneViewDescSet);
+        return nullptr;
+    }
+
+    bool EditorGuiNode::IsSceneViewHovered() const
+    {
+        return m_Impl->m_EditorGui->IsSceneViewHovered();
+    }
+
+} // namespace HedgehogGui

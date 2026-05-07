@@ -168,18 +168,15 @@ bool ShaderWindow::LoadFromPath(const std::string& path)
     m_Stages.clear();
     m_BlendAttachments.clear();
 
-    // Required references
     if (const YAML::Node& n = root["pipeline_layout"])
         m_PipelineLayout = n.as<std::string>();
     if (const YAML::Node& n = root["vertex_description"])
         m_VertexDescription = n.as<std::string>();
 
-    // Topology
     m_Topology = 0;
     if (const YAML::Node& n = root["topology"])
         m_Topology = TopologyToIndex(n.as<std::string>());
 
-    // Rasterization
     m_CullMode = 2;
     m_FillMode = 0;
     if (const YAML::Node& n = root["rasterization"])
@@ -188,7 +185,6 @@ bool ShaderWindow::LoadFromPath(const std::string& path)
         if (const YAML::Node& fm = n["fill_mode"])  m_FillMode = FillModeToIndex(fm.as<std::string>());
     }
 
-    // Depth
     m_DepthTest = true; m_DepthWrite = true; m_DepthCompare = 1;
     if (const YAML::Node& n = root["depth"])
     {
@@ -197,7 +193,6 @@ bool ShaderWindow::LoadFromPath(const std::string& path)
         if (const YAML::Node& c = n["compare"]) m_DepthCompare = CompareOpToIndex(c.as<std::string>());
     }
 
-    // Blend attachments
     if (const YAML::Node& blends = root["blend"])
     {
         for (const YAML::Node& b : blends)
@@ -214,7 +209,6 @@ bool ShaderWindow::LoadFromPath(const std::string& path)
         }
     }
 
-    // Shader stages — also infer pipeline type
     bool hasCompute = false;
     bool hasGraphics = false;
     if (const YAML::Node& stages = root["shaders"])
@@ -340,7 +334,6 @@ void ShaderWindow::DrawReferences()
     if (!ImGui::CollapsingHeader("References", ImGuiTreeNodeFlags_DefaultOpen))
         return;
 
-    // Pipeline layout (.pl) — required for all pipeline types
     const bool missingPl = m_PipelineLayout.empty();
     ImGui::Text("Pipeline Layout (.pl):");
     if (missingPl) ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.55f, 0.1f, 0.1f, 1.0f));
@@ -353,7 +346,6 @@ void ShaderWindow::DrawReferences()
         if (p) { m_PipelineLayout = MakeRelativePath(p); m_Dirty = true; }
     }
 
-    // Vertex description (.vdes) — graphics only
     if (m_PipelineType == PipelineType::Graphics)
     {
         ImGui::Text("Vertex Description (.vdes):");
@@ -396,11 +388,9 @@ void ShaderWindow::DrawShaderStages()
             ImGui::TableNextRow();
             ImGui::PushID(i);
 
-            // Row index
             ImGui::TableSetColumnIndex(0);
             ImGui::Text("%d", i);
 
-            // Stage combo — red when duplicate
             ImGui::TableSetColumnIndex(1);
             if (dupStage) ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.55f, 0.1f, 0.1f, 1.0f));
             int stageIdx = StageToIndex(s.m_Stage);
@@ -412,13 +402,11 @@ void ShaderWindow::DrawShaderStages()
             }
             if (dupStage) ImGui::PopStyleColor();
 
-            // SPIR-V path — orange when empty
             ImGui::TableSetColumnIndex(2);
             if (emptyPath) ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.5f, 0.28f, 0.0f, 1.0f));
             if (InputPath("##spv", s.m_Path, -FLT_MIN)) m_Dirty = true;
             if (emptyPath) ImGui::PopStyleColor();
 
-            // Browse for .spv
             ImGui::TableSetColumnIndex(3);
             if (ImGui::SmallButton("Browse"))
             {
@@ -426,7 +414,6 @@ void ShaderWindow::DrawShaderStages()
                 if (p) { s.m_Path = MakeRelativePath(p); m_Dirty = true; }
             }
 
-            // Delete
             ImGui::TableSetColumnIndex(4);
             if (ImGui::SmallButton("X")) toDelete = i;
 
@@ -458,13 +445,11 @@ void ShaderWindow::DrawPipelineState()
     if (!ImGui::CollapsingHeader("Pipeline State", ImGuiTreeNodeFlags_DefaultOpen))
         return;
 
-    // ── Topology ──────────────────────────────────────────────────────────────
     ImGui::SeparatorText("Input Assembly");
     ImGui::SetNextItemWidth(200.0f);
     if (ImGui::Combo("Topology##topo", &m_Topology, k_TopologyDisplay, k_TopologyCount))
         m_Dirty = true;
 
-    // ── Rasterization ─────────────────────────────────────────────────────────
     ImGui::SeparatorText("Rasterization");
     ImGui::SetNextItemWidth(150.0f);
     if (ImGui::Combo("Cull Mode##cull", &m_CullMode, k_CullModeDisplay, k_CullModeCount))
@@ -474,7 +459,6 @@ void ShaderWindow::DrawPipelineState()
     if (ImGui::Combo("Fill Mode##fill", &m_FillMode, k_FillModeDisplay, k_FillModeCount))
         m_Dirty = true;
 
-    // ── Depth ─────────────────────────────────────────────────────────────────
     ImGui::SeparatorText("Depth");
     if (ImGui::Checkbox("Test##dt",  &m_DepthTest))  m_Dirty = true;
     ImGui::SameLine(0.0f, 16.0f);
@@ -483,7 +467,6 @@ void ShaderWindow::DrawPipelineState()
     if (ImGui::Combo("Compare##cmp", &m_DepthCompare, k_CompareOpDisplay, k_CompareOpCount))
         m_Dirty = true;
 
-    // ── Blend attachments ─────────────────────────────────────────────────────
     ImGui::SeparatorText("Blend Attachments");
 
     int toRemove = -1;
@@ -510,7 +493,6 @@ void ShaderWindow::DrawPipelineState()
 
             if (att.m_Enabled)
             {
-                // Color row
                 ImGui::Text("Color:");
                 ImGui::SameLine();
                 ImGui::SetNextItemWidth(120.0f);
@@ -522,7 +504,6 @@ void ShaderWindow::DrawPipelineState()
                 ImGui::SetNextItemWidth(120.0f);
                 if (ImGui::Combo("Dst##dc",  &att.m_DstColor, k_BlendFactorDisplay, k_BlendFactorCount)) m_Dirty = true;
 
-                // Alpha row
                 ImGui::Text("Alpha:");
                 ImGui::SameLine();
                 ImGui::SetNextItemWidth(120.0f);
@@ -584,24 +565,21 @@ void ShaderWindow::DrawValidation()
         anyIssue = true;
     };
 
-    // Pipeline layout required
     if (m_PipelineLayout.empty())
         error("[error] Pipeline layout (.pl) path is required");
 
     if (m_PipelineType == PipelineType::Graphics)
     {
-        // Vertex stage required
         const bool hasVertex = std::any_of(m_Stages.begin(), m_Stages.end(),
             [](const StageEntry& e){ return e.m_Stage == "vertex"; });
         if (!hasVertex)
             error("[error] Graphics pipeline requires a vertex shader stage");
 
-        // Compute stage in graphics
         for (const auto& s : m_Stages)
             if (s.m_Stage == "compute")
                 warn("[warn]  Compute stage in a graphics pipeline");
     }
-    else // Compute
+    else
     {
         const bool hasCompute = std::any_of(m_Stages.begin(), m_Stages.end(),
             [](const StageEntry& e){ return e.m_Stage == "compute"; });
@@ -613,7 +591,6 @@ void ShaderWindow::DrawValidation()
                 warn("[warn]  Graphics stage (%s) in a compute pipeline", s.m_Stage.c_str());
     }
 
-    // Duplicate stages
     std::set<std::string> seenStages;
     for (const auto& s : m_Stages)
     {
@@ -621,7 +598,6 @@ void ShaderWindow::DrawValidation()
             error("[error] Duplicate shader stage: %s", s.m_Stage.c_str());
     }
 
-    // Empty SPIR-V paths
     for (int i = 0; i < static_cast<int>(m_Stages.size()); ++i)
         if (m_Stages[i].m_Path.empty())
             error("[error] Stage %d (%s): SPIR-V path is empty", i, m_Stages[i].m_Stage.c_str());

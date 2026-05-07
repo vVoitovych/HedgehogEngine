@@ -5,14 +5,31 @@ project "Editor"
 
    files { "**.hpp", "**.cpp", "**.rc" }
 
+   removefiles {
+      "EditorGui.hpp",
+      "EditorGui.cpp",
+      "EditorSettings.hpp",
+      "EditorSettings.cpp",
+      "Docking/DockTypes.hpp",
+      "Docking/DockSystem.hpp",
+      "Docking/DockSystem.cpp",
+      "Panels/ConsolePanel.hpp",
+      "Panels/ConsolePanel.cpp",
+      "Tools/PipelineWindow.hpp",
+      "Tools/PipelineWindow.cpp",
+      "Tools/ShaderWindow.hpp",
+      "Tools/ShaderWindow.cpp",
+      "Tools/VertexDescriptionWindow.hpp",
+      "Tools/VertexDescriptionWindow.cpp",
+   }
+
    includedirs
    {
       "..",
       "../HedgehogEngine",
       "../HedgehogEngine/HedgehogEngine/api",
       "../HedgehogEngine/HedgehogRenderer/api",
-      "%{IncludeDir.ImGui}".."/imgui",
-      "%{IncludeDir.yaml_cpp}"
+      "../HedgehogGui/api",
    }
 
    defines { "YAML_CPP_STATIC_DEFINE" }
@@ -22,6 +39,7 @@ project "Editor"
       "HedgehogRenderer",
       "HedgehogWindow",
       "HedgehogSettings",
+      "HedgehogGui",
       "Logger",
       "yaml-cpp",
       "ECS",

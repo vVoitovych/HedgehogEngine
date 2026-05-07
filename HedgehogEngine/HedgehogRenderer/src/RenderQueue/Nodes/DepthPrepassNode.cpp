@@ -1,8 +1,9 @@
 #include "DepthPrepassNode.hpp"
 
+#include "../PreRenderContext.hpp"
 #include "../RenderContext.hpp"
+#include "../NodeFactory/NodeConfigUtils.hpp"
 #include "../../ResourceManager/ResourceManager.hpp"
-#include "../../ResourceManager/ResourceNames.hpp"
 #include "../../ResourceRegistry/ResourceRegistry.hpp"
 #include "../../ResourceRegistry/MeshGpuData.hpp"
 #include "../../Pipeline/ShaderLoader.hpp"
@@ -29,8 +30,13 @@ namespace Renderer
         struct PushConstants { HM::Matrix4x4 objToWorld; };
     }
 
-    DepthPrepassNode::DepthPrepassNode(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
+    DepthPrepassNode::DepthPrepassNode(const NodeConfig& config,
+                                       RHI::IRHIDevice& device,
+                                       const ResourceManager& resourceManager)
     {
+        assert(config.m_DepthAttachment.has_value() && "DepthPrepass .rq entry must have a depth attachment");
+        m_DepthResource = config.m_DepthAttachment->m_Resource;
+
         const auto sd = ShaderLoader::Load(device,
             "/HedgehogEngine/HedgehogRenderer/Assets/Shaders/DepthPrepass.shader");
         assert(!sd.m_Layout.m_DescriptorSets.empty());
@@ -53,15 +59,10 @@ namespace Renderer
             m_FrameSets.push_back(std::move(set));
         }
 
-        const auto& depthBuffer = resourceManager.GetTexture(ResourceNames::RHIDepthBuffer);
+        const auto& depthBuffer = resourceManager.GetTexture(m_DepthResource);
 
         RHI::RenderPassDesc rpDesc;
-        rpDesc.m_DepthAttachment = RHI::AttachmentDesc{
-            depthBuffer.GetFormat(),
-            RHI::LoadOp::Clear,    RHI::StoreOp::Store,
-            RHI::LoadOp::DontCare, RHI::StoreOp::DontCare,
-            RHI::ImageLayout::Undefined, RHI::ImageLayout::DepthStencilReadOnly
-        };
+        rpDesc.m_DepthAttachment = ToAttachmentDesc(*config.m_DepthAttachment, resourceManager);
         m_RenderPass = device.CreateRenderPass(rpDesc);
 
         auto pipelineDesc                   = sd.m_Pipeline;
@@ -82,17 +83,24 @@ namespace Renderer
 
     DepthPrepassNode::~DepthPrepassNode() = default;
 
-    void DepthPrepassNode::Render(RenderContext& ctx)
+    void DepthPrepassNode::PreRender(const PreRenderContext& ctx)
     {
-        RebuildFramebufferIfNeeded(ctx.m_Device.get(), ctx.m_ResourceManager.get());
+        const auto& frame  = ctx.m_FrameData;
+        auto&       device = ctx.m_Device;
+        const auto& rm     = ctx.m_ResourceManager;
 
-        const auto& frame = ctx.m_FrameData.get();
-        auto&       cmd   = ctx.m_Cmd.get();
-        const auto& rm    = ctx.m_ResourceManager.get();
+        RebuildFramebufferIfNeeded(device, rm);
 
         FrameUniform ubo{};
         ubo.m_ViewProj = frame.m_Camera.m_Proj * frame.m_Camera.m_View;
-        m_FrameUniforms[ctx.m_FrameIndex]->CopyData(&ubo, sizeof(ubo));
+        ctx.CurrentBuffer(m_FrameUniforms).CopyData(&ubo, sizeof(ubo));
+    }
+
+    void DepthPrepassNode::Render(RenderContext& ctx)
+    {
+        const auto& frame = ctx.m_FrameData.get();
+        auto&       cmd   = ctx.m_Cmd.get();
+        const auto& rm    = ctx.m_ResourceManager.get();
 
         RHI::ClearValue depthClear;
         depthClear.m_IsDepth      = true;
@@ -113,7 +121,7 @@ namespace Renderer
 
         cmd.BindVertexBuffers(0, { &posBuffer }, { 0 });
         cmd.BindIndexBuffer(idxBuffer, RHI::IndexType::Uint32);
-        cmd.BindDescriptorSet(*m_Pipeline, 0, *m_FrameSets[ctx.m_FrameIndex]);
+        cmd.BindDescriptorSet(*m_Pipeline, 0, ctx.CurrentDescriptorSet(m_FrameSets));
 
         for (const auto& drawNode : frame.m_DrawList.m_Opaque)
         {
@@ -144,7 +152,7 @@ namespace Renderer
 
     void DepthPrepassNode::RebuildFramebufferIfNeeded(RHI::IRHIDevice& device, const ResourceManager& rm)
     {
-        const auto& depthTex = rm.GetTexture(ResourceNames::RHIDepthBuffer);
+        const auto& depthTex = rm.GetTexture(m_DepthResource);
         if (depthTex.GetWidth() == m_CachedWidth && depthTex.GetHeight() == m_CachedHeight)
             return;
 

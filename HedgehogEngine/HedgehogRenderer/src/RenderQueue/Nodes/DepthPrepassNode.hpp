@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../IRenderNode.hpp"
+#include "../NodeFactory/NodeConfig.hpp"
 
 #include "HedgehogMath/api/Matrix.hpp"
 
@@ -27,9 +28,12 @@ namespace Renderer
     class DepthPrepassNode final : public IRenderNode
     {
     public:
-        DepthPrepassNode(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
+        DepthPrepassNode(const NodeConfig& config,
+                         RHI::IRHIDevice& device,
+                         const ResourceManager& resourceManager);
         ~DepthPrepassNode() override;
 
+        void PreRender(const PreRenderContext& ctx) override;
         void Render(RenderContext& ctx) override;
         void Cleanup(RHI::IRHIDevice& device) override;
 
@@ -48,6 +52,8 @@ namespace Renderer
         std::unique_ptr<RHI::IRHIDescriptorPool>       m_FramePool;
         std::vector<std::unique_ptr<RHI::IRHIBuffer>>        m_FrameUniforms;
         std::vector<std::unique_ptr<RHI::IRHIDescriptorSet>> m_FrameSets;
+
+        std::string m_DepthResource;
 
         uint32_t m_CachedWidth  = 0;
         uint32_t m_CachedHeight = 0;

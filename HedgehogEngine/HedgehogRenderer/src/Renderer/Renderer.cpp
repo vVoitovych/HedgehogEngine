@@ -7,6 +7,10 @@
 #include "RHIContext/RHIContext.hpp"
 #include "ThreadContext/ThreadContext.hpp"
 #include "RenderQueue/RenderQueue.hpp"
+#include "HedgehogRenderer/IRenderNode.hpp"
+#include "HedgehogRenderer/PreRenderContext.hpp"
+#include "HedgehogRenderer/RenderContext.hpp"
+#include "RHI/api/IRHITexture.hpp"
 #include "ResourceManager/ResourceManager.hpp"
 #include "ResourceManager/ResourceNames.hpp"
 
@@ -34,8 +38,6 @@ namespace Renderer
             context.GetEngineContext().GetSettings());
         m_RenderQueue = std::make_unique<RenderQueue>(
             m_RHIContext->GetRHIDevice(),
-            windowContext.GetWindow(),
-            context.GetEngineContext().GetSettings(),
             *m_ResourceManager);
     }
 
@@ -53,14 +55,29 @@ namespace Renderer
         m_RHIContext->Cleanup();
     }
 
-    void Renderer::BeginGui()
+    void Renderer::OnBeginFrame()
     {
-        m_RenderQueue->BeginGui();
+        m_RenderQueue->OnBeginFrame();
     }
 
-    void* Renderer::GetSceneViewTextureId() const
+    RHI::IRHIDevice& Renderer::GetDevice()
     {
-        return m_RenderQueue->GetSceneViewTextureId();
+        return m_RHIContext->GetRHIDevice();
+    }
+
+    const RHI::IRHITexture& Renderer::GetTexture(const std::string& name) const
+    {
+        return m_ResourceManager->GetTexture(name);
+    }
+
+    void Renderer::AppendNode(const std::string& name, std::unique_ptr<IRenderNode> node)
+    {
+        m_RenderQueue->AppendNode(name, std::move(node));
+    }
+
+    void* Renderer::QueryNodeExport(const std::string& nodeName, const std::string& key) const
+    {
+        return m_RenderQueue->QueryNodeExport(nodeName, key);
     }
 
     float Renderer::GetAspectRatio() const
@@ -69,10 +86,9 @@ namespace Renderer
         return static_cast<float>(scene.GetWidth()) / static_cast<float>(scene.GetHeight());
     }
 
-    void Renderer::SetSceneViewSize(uint32_t width, uint32_t height)
+    void Renderer::SetRenderTargetSize(const std::string& resourceName, uint32_t width, uint32_t height)
     {
-        m_DesiredSceneW = width;
-        m_DesiredSceneH = height;
+        m_PendingResizes[resourceName] = { width, height };
     }
 
     void Renderer::DrawFrame(HedgehogEngine::HedgehogEngine& context)
@@ -88,11 +104,10 @@ namespace Renderer
         const auto&    frameData  = engineContext.GetFrameData();
         const uint32_t frameIndex = m_ThreadContext->GetFrameIndex();
 
-        m_RenderQueue->PreRender(frameData, frameIndex, engineContext.GetSettings());
-
+        // Handle resize/settings changes before touching frame resources.
         if (windowContext.IsWindowResized() || window.IsResized())
         {
-            m_RenderQueue->DiscardGui();
+            m_RenderQueue->OnDiscardFrame();
 
             if (window.IsResized())
                 window.ResetResizedFlag();
@@ -112,19 +127,27 @@ namespace Renderer
             engineContext.GetSettings().CleanDirtyState();
         }
 
-        // Pre-frame: wait for GPU, acquire swapchain image, begin recording.
         auto& cmd            = m_ThreadContext->GetCommandList();
         auto& fence          = m_ThreadContext->GetFence();
         auto& imageAvailable = m_ThreadContext->GetImageAvailableSemaphore();
         auto& renderFinished = m_ThreadContext->GetRenderFinishedSemaphore();
 
+        // Wait for the GPU to finish this frame slot — safe to modify its resources now.
         fence.Wait();
         const uint32_t backBufferIndex = swapchain.AcquireNextImage(imageAvailable);
         fence.Reset();
+
+        // PreRender: resource creation, framebuffer rebuilds, uniform writes.
+        // Runs after fence.Wait() so destroyed resources are no longer in use.
+        PreRenderContext preCtx{frameData, device, *m_ResourceManager, engineContext.GetSettings(), frameIndex};
+        m_RenderQueue->PreRender(preCtx);
+
+        // Pure command recording.
         cmd.Reset();
         cmd.Begin();
 
-        m_RenderQueue->Render(frameData, device, cmd, frameIndex, *m_ResourceManager);
+        RenderContext renderCtx{frameData, device, cmd, *m_ResourceManager, frameIndex};
+        m_RenderQueue->Render(renderCtx);
 
         // Post-frame: blit color buffer to swapchain, submit, present.
         auto& colorBuffer    = m_ResourceManager->GetTexture(ResourceNames::RHIColorBuffer);
@@ -141,16 +164,20 @@ namespace Renderer
 
         m_ThreadContext->NextFrame();
 
-        // Apply pending scene view resize at end of frame so the current frame's
-        // ImGui draw data (which references the old descriptor) has already been submitted.
-        if (m_DesiredSceneW > 0 && m_DesiredSceneH > 0)
+        // Apply pending render-target resizes. Deferred to after submit so any in-flight
+        // descriptors referencing the old textures are no longer in use.
+        for (const auto& [name, size] : m_PendingResizes)
         {
-            const auto& sceneBuffer = m_ResourceManager->GetTexture(ResourceNames::SceneColorBuffer);
-            if (sceneBuffer.GetWidth() != m_DesiredSceneW || sceneBuffer.GetHeight() != m_DesiredSceneH)
+            if (name == ResourceNames::SceneColorBuffer)
             {
-                device.WaitIdle();
-                m_ResourceManager->ResizeSceneView(device, m_DesiredSceneW, m_DesiredSceneH);
+                const auto& buf = m_ResourceManager->GetTexture(ResourceNames::SceneColorBuffer);
+                if (buf.GetWidth() != size.first || buf.GetHeight() != size.second)
+                {
+                    device.WaitIdle();
+                    m_ResourceManager->ResizeSceneView(device, size.first, size.second);
+                }
             }
         }
+        m_PendingResizes.clear();
     }
 }

@@ -28,6 +28,7 @@ include "HedgehogEngine/HedgehogRenderer/Build-HedgehogRenderer.lua"
 include "HedgehogEngine/HedgehogWindow/Build-HedgehogWindow.lua"
 include "HedgehogEngine/HedgehogSettings/Build-HedgehogSettings.lua"
 
+include "HedgehogGui/Build-HedgehogGui.lua"
 include "Editor/Build-Editor.lua"
 include "ContentLoader/Build-ContentLoader.lua"
 include "DialogueWindows/Build-DialogueWindows.lua"

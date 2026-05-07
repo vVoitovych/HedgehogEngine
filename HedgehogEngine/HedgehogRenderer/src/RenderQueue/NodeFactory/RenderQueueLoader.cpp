@@ -58,6 +58,46 @@ namespace Renderer
             if (entry["resource"]) cfg.m_Resource   = entry["resource"].as<std::string>();
             if (entry["from"])     cfg.m_FromLayout = entry["from"].as<std::string>();
             if (entry["to"])       cfg.m_ToLayout   = entry["to"].as<std::string>();
+
+            if (const YAML::Node& att = entry["attachments"])
+            {
+                auto parseAttachment = [](const YAML::Node& n) -> AttachmentConfig
+                {
+                    AttachmentConfig ac;
+                    if (n["resource"]) ac.m_Resource      = n["resource"].as<std::string>();
+                    if (n["load"])     ac.m_LoadOp        = n["load"].as<std::string>();
+                    if (n["store"])    ac.m_StoreOp       = n["store"].as<std::string>();
+                    if (n["initial"])  ac.m_InitialLayout = n["initial"].as<std::string>();
+                    if (n["final"])    ac.m_FinalLayout   = n["final"].as<std::string>();
+                    return ac;
+                };
+
+                if (const YAML::Node& color = att["color"])
+                {
+                    if (color.IsSequence())
+                    {
+                        for (const auto& c : color)
+                            cfg.m_ColorAttachments.push_back(parseAttachment(c));
+                    }
+                    else
+                    {
+                        cfg.m_ColorAttachments.push_back(parseAttachment(color));
+                    }
+                }
+
+                if (const YAML::Node& depth = att["depth"])
+                    cfg.m_DepthAttachment = parseAttachment(depth);
+            }
+
+            if (const YAML::Node& inputs = entry["inputs"])
+            {
+                if (inputs.IsSequence())
+                {
+                    for (const auto& inp : inputs)
+                        cfg.m_InputResources.push_back(inp.as<std::string>());
+                }
+            }
+
             configs.push_back(std::move(cfg));
         }
 
