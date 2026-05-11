@@ -1,35 +1,20 @@
 #include "ResourceManager.hpp"
-
-#include "ResourceRegistry/ResourceRegistry.hpp"
-
-#include "HedgehogEngine/api/EngineContext.hpp"
-#include "HedgehogEngine/api/Containers/MeshContainer.hpp"
-#include "HedgehogEngine/api/Containers/MaterialContainer.hpp"
-#include "HedgehogEngine/api/Containers/TextureContainer.hpp"
-#include "HedgehogSettings/Settings/HedgehogSettings.hpp"
-#include "HedgehogSettings/Settings/ShadowmapingSettings.hpp"
+#include "ResourceNames.hpp"
 
 #include "RHI/api/IRHIDevice.hpp"
 #include "RHI/api/IRHISwapchain.hpp"
 #include "RHI/api/IRHITexture.hpp"
-
-#include "HedgehogCommon/api/RendererSettings.hpp"
+#include "RHI/api/IRHIBuffer.hpp"
 
 #include "Logger/api/Logger.hpp"
 
+#include <cassert>
+
 namespace Renderer
 {
-    ResourceManager::ResourceManager(RHI::IRHIDevice& device,
-                                     const RHI::IRHISwapchain& swapchain,
-                                     const HedgehogSettings::Settings& settings)
+    ResourceManager::ResourceManager(const RHI::IRHISwapchain& swapchain)
+        : m_Swapchain(swapchain)
     {
-        m_ResourceRegistry = std::make_unique<HR::ResourceRegistry>(device);
-
-        CreateRHIColorBuffer(device, swapchain);
-        CreateRHIDepthBuffer(device, swapchain);
-        CreateRHIShadowMap(device, settings.GetShadowmapSettings()->GetShadowmapSize());
-        CreateRHIShadowMask(device, swapchain);
-        CreateSceneColorBuffer(device, swapchain);
     }
 
     ResourceManager::~ResourceManager()
@@ -39,164 +24,86 @@ namespace Renderer
     void ResourceManager::Cleanup(RHI::IRHIDevice& device)
     {
         device.WaitIdle();
-
-        m_RHIColorBuffer.reset();
-        m_RHIDepthBuffer.reset();
-        m_RHIShadowMap.reset();
-        m_RHIShadowMask.reset();
-        m_SceneColorBuffer.reset();
-        m_ResourceRegistry->Cleanup(device);
+        m_Textures.clear();
+        m_Buffers.clear();
     }
 
-    void ResourceManager::SyncResources(RHI::IRHIDevice& device, HedgehogEngine::EngineContext& engine)
+    void ResourceManager::SetBackBufferIndex(uint32_t index)
     {
-        m_ResourceRegistry->SyncMeshes(engine.GetMeshContainer(), device);
-        m_ResourceRegistry->SyncMaterials(engine.GetMaterialContainer(), engine.GetTextureContainer(), device);
+        m_BackBufferIndex = index;
     }
 
-    void ResourceManager::ResizeFrameBufferSizeDependenteResources(RHI::IRHIDevice& device,
-                                                                    const RHI::IRHISwapchain& swapchain)
+    void ResourceManager::CreateTexture(std::string_view name, RHI::IRHIDevice& device,
+                                        const RHI::TextureDesc& desc)
     {
-        device.WaitIdle();
-        m_RHIColorBuffer.reset();
-        m_RHIShadowMask.reset();
+        assert(name != ResourceNames::SWAP_CHAIN_BACK_BUFFER && "SWAP_CHAIN_BACK_BUFFER is reserved");
+        assert(m_Textures.find(std::string(name)) == m_Textures.end() && "Texture already exists");
 
-        CreateRHIColorBuffer(device, swapchain);
-        CreateRHIShadowMask(device, swapchain);
-        // SceneColorBuffer and DepthBuffer are panel-size driven; resized via ResizeSceneView.
+        m_Textures[std::string(name)] = device.CreateTexture(desc);
+        LOGINFO("Texture created: {}", name);
     }
 
-    void ResourceManager::ResizeSceneView(RHI::IRHIDevice& device, uint32_t width, uint32_t height)
+    void ResourceManager::DestroyTexture(std::string_view name)
     {
-        m_RHIDepthBuffer.reset();
-        m_SceneColorBuffer.reset();
-
-        RHI::TextureDesc depthDesc;
-        depthDesc.m_Width  = width;
-        depthDesc.m_Height = height;
-        depthDesc.m_Format = device.GetPreferredDepthFormat();
-        depthDesc.m_Usage  = RHI::TextureUsage::DepthStencil;
-        m_RHIDepthBuffer = device.CreateTexture(depthDesc);
-
-        RHI::TextureDesc colorDesc;
-        colorDesc.m_Width  = width;
-        colorDesc.m_Height = height;
-        colorDesc.m_Format = RHI::Format::R16G16B16A16Unorm;
-        colorDesc.m_Usage  = RHI::TextureUsage::ColorAttachment | RHI::TextureUsage::Sampled;
-        m_SceneColorBuffer = device.CreateTexture(colorDesc);
+        assert(name != ResourceNames::SWAP_CHAIN_BACK_BUFFER && "Cannot destroy SWAP_CHAIN_BACK_BUFFER");
+        m_Textures.erase(std::string(name));
     }
 
-    void ResourceManager::ResizeSettingsDependenteResources(RHI::IRHIDevice& device,
-                                                             HedgehogSettings::Settings& settings)
+    bool ResourceManager::HasTexture(std::string_view name) const
     {
-        auto& shadowmapSettings = settings.GetShadowmapSettings();
-
-        if (shadowmapSettings->IsDirty())
-        {
-            device.WaitIdle();
-            m_RHIShadowMap.reset();
-            CreateRHIShadowMap(device, shadowmapSettings->GetShadowmapSize());
-
-            shadowmapSettings->CleanDirtyState();
-        }
+        return m_Textures.find(std::string(name)) != m_Textures.end();
     }
 
-    void ResourceManager::CreateRHIColorBuffer(RHI::IRHIDevice& device, const RHI::IRHISwapchain& swapchain)
+    const RHI::IRHITexture& ResourceManager::GetTexture(std::string_view name) const
     {
-        RHI::TextureDesc desc;
-        desc.m_Width  = swapchain.GetWidth();
-        desc.m_Height = swapchain.GetHeight();
-        desc.m_Format = RHI::Format::R16G16B16A16Unorm;
-        desc.m_Usage  = RHI::TextureUsage::ColorAttachment
-                      | RHI::TextureUsage::TransferSrc
-                      | RHI::TextureUsage::TransferDst
-                      | RHI::TextureUsage::Storage;
+        if (name == ResourceNames::SWAP_CHAIN_BACK_BUFFER)
+            return m_Swapchain.GetTexture(m_BackBufferIndex);
 
-        m_RHIColorBuffer = device.CreateTexture(desc);
-        LOGINFO("RHI color buffer created");
+        auto it = m_Textures.find(std::string(name));
+        assert(it != m_Textures.end() && "Texture not found");
+        return *it->second;
     }
 
-    void ResourceManager::CreateRHIDepthBuffer(RHI::IRHIDevice& device, const RHI::IRHISwapchain& swapchain)
+    RHI::IRHITexture& ResourceManager::GetTexture(std::string_view name)
     {
-        RHI::TextureDesc desc;
-        desc.m_Width  = swapchain.GetWidth();
-        desc.m_Height = swapchain.GetHeight();
-        desc.m_Format = device.GetPreferredDepthFormat();
-        desc.m_Usage  = RHI::TextureUsage::DepthStencil;
+        if (name == ResourceNames::SWAP_CHAIN_BACK_BUFFER)
+            return m_Swapchain.GetTexture(m_BackBufferIndex);
 
-        m_RHIDepthBuffer = device.CreateTexture(desc);
-        LOGINFO("RHI depth buffer created");
+        auto it = m_Textures.find(std::string(name));
+        assert(it != m_Textures.end() && "Texture not found");
+        return *it->second;
     }
 
-    void ResourceManager::CreateRHIShadowMap(RHI::IRHIDevice& device, uint32_t shadowmapSize)
+    void ResourceManager::CreateBuffer(std::string_view name, RHI::IRHIDevice& device,
+                                       size_t size, RHI::BufferUsage usage, RHI::MemoryUsage memUsage)
     {
-        RHI::TextureDesc desc;
-        desc.m_Width  = shadowmapSize;
-        desc.m_Height = shadowmapSize;
-        desc.m_Format = device.GetPreferredDepthFormat();
-        desc.m_Usage  = RHI::TextureUsage::DepthStencil;
+        assert(m_Buffers.find(std::string(name)) == m_Buffers.end() && "Buffer already exists");
 
-        m_RHIShadowMap = device.CreateTexture(desc);
-        LOGINFO("RHI shadow map created");
+        m_Buffers[std::string(name)] = device.CreateBuffer(size, usage, memUsage);
+        LOGINFO("Buffer created: {}", name);
     }
 
-    void ResourceManager::CreateRHIShadowMask(RHI::IRHIDevice& device, const RHI::IRHISwapchain& swapchain)
+    void ResourceManager::DestroyBuffer(std::string_view name)
     {
-        RHI::TextureDesc desc;
-        desc.m_Width  = swapchain.GetWidth();
-        desc.m_Height = swapchain.GetHeight();
-        desc.m_Format = RHI::Format::R16Float;
-        desc.m_Usage  = RHI::TextureUsage::Sampled | RHI::TextureUsage::Storage;
-
-        m_RHIShadowMask = device.CreateTexture(desc);
-        LOGINFO("RHI shadow mask created");
+        m_Buffers.erase(std::string(name));
     }
 
-    const RHI::IRHITexture& ResourceManager::GetRHIColorBuffer() const
+    bool ResourceManager::HasBuffer(std::string_view name) const
     {
-        return *m_RHIColorBuffer;
+        return m_Buffers.find(std::string(name)) != m_Buffers.end();
     }
 
-    const RHI::IRHITexture& ResourceManager::GetRHIDepthBuffer() const
+    const RHI::IRHIBuffer& ResourceManager::GetBuffer(std::string_view name) const
     {
-        return *m_RHIDepthBuffer;
+        auto it = m_Buffers.find(std::string(name));
+        assert(it != m_Buffers.end() && "Buffer not found");
+        return *it->second;
     }
 
-    const RHI::IRHITexture& ResourceManager::GetRHIShadowMap() const
+    RHI::IRHIBuffer& ResourceManager::GetBuffer(std::string_view name)
     {
-        return *m_RHIShadowMap;
-    }
-
-    const RHI::IRHITexture& ResourceManager::GetRHIShadowMask() const
-    {
-        return *m_RHIShadowMask;
-    }
-
-    const RHI::IRHITexture& ResourceManager::GetSceneColorBuffer() const
-    {
-        return *m_SceneColorBuffer;
-    }
-
-    void ResourceManager::CreateSceneColorBuffer(RHI::IRHIDevice& device, const RHI::IRHISwapchain& swapchain)
-    {
-        RHI::TextureDesc desc;
-        desc.m_Width  = swapchain.GetWidth();
-        desc.m_Height = swapchain.GetHeight();
-        desc.m_Format = RHI::Format::R16G16B16A16Unorm;
-        desc.m_Usage  = RHI::TextureUsage::ColorAttachment
-                      | RHI::TextureUsage::Sampled;
-
-        m_SceneColorBuffer = device.CreateTexture(desc);
-        LOGINFO("Scene color buffer created");
-    }
-
-    HR::ResourceRegistry& ResourceManager::GetResourceRegistry()
-    {
-        return *m_ResourceRegistry;
-    }
-
-    const HR::ResourceRegistry& ResourceManager::GetResourceRegistry() const
-    {
-        return *m_ResourceRegistry;
+        auto it = m_Buffers.find(std::string(name));
+        assert(it != m_Buffers.end() && "Buffer not found");
+        return *it->second;
     }
 }

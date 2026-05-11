@@ -1,6 +1,8 @@
 #include "RenderQueue.hpp"
 
 #include "ResourceManager/ResourceManager.hpp"
+#include "ResourceManager/ResourceNames.hpp"
+#include "ResourceRegistry/ResourceRegistry.hpp"
 #include "RenderPasses/InitPass/InitPass.hpp"
 #include "RenderPasses/DepthPrepass/DepthPrePass.hpp"
 #include "RenderPasses/ShadowmapPass/ShadowmapPass.hpp"
@@ -23,12 +25,13 @@ namespace Renderer
     RenderQueue::RenderQueue(RHI::IRHIDevice&                  device,
                              HW::Window&                       window,
                              const HedgehogSettings::Settings& settings,
-                             ResourceManager&                  resourceManager)
+                             ResourceManager&                  resourceManager,
+                             HR::ResourceRegistry&             registry)
     {
         m_InitPass      = std::make_unique<InitPass>();
-        m_DepthPrePass  = std::make_unique<DepthPrePass>(device, resourceManager);
-        m_ShadowmapPass = std::make_unique<ShadowmapPass>(device, settings, resourceManager);
-        m_ForwardPass   = std::make_unique<ForwardPass>(device, resourceManager);
+        m_DepthPrePass  = std::make_unique<DepthPrePass>(device, resourceManager, registry);
+        m_ShadowmapPass = std::make_unique<ShadowmapPass>(device, settings, resourceManager, registry);
+        m_ForwardPass   = std::make_unique<ForwardPass>(device, resourceManager, registry);
         m_GuiPass       = std::make_unique<GuiPass>(window, device, resourceManager);
         m_PresentPass   = std::make_unique<PresentPass>();
     }
@@ -65,23 +68,25 @@ namespace Renderer
                              RHI::IRHISemaphore&  imageAvailableSemaphore,
                              RHI::IRHISemaphore&  renderFinishedSemaphore,
                              uint32_t             frameIndex,
-                             const ResourceManager& resourceManager)
+                             ResourceManager&     resourceManager)
     {
         const uint32_t backBufferIndex = m_InitPass->Render(
             swapchain, fence, imageAvailableSemaphore, cmd);
+
+        resourceManager.SetBackBufferIndex(backBufferIndex);
 
         m_ShadowmapPass->Render(frame, resourceManager, cmd, frameIndex);
         m_DepthPrePass->Render(frame, resourceManager, cmd, frameIndex);
         m_ForwardPass->Render(frame, resourceManager, cmd, frameIndex);
 
-        auto& sceneBuffer = const_cast<RHI::IRHITexture&>(resourceManager.GetSceneColorBuffer());
+        auto& sceneBuffer = resourceManager.GetTexture(ResourceNames::SCENE_COLOR_BUFFER);
         cmd.TransitionTexture(sceneBuffer,
             RHI::ImageLayout::ColorAttachment,
             RHI::ImageLayout::ShaderReadOnly);
 
         m_GuiPass->Render(cmd, resourceManager);
 
-        auto& colorBuffer = const_cast<RHI::IRHITexture&>(resourceManager.GetRHIColorBuffer());
+        auto& colorBuffer = resourceManager.GetTexture(ResourceNames::RHI_COLOR_BUFFER);
         m_PresentPass->Render(cmd, device, swapchain, colorBuffer, backBufferIndex,
                               imageAvailableSemaphore, renderFinishedSemaphore, fence);
     }

@@ -30,7 +30,7 @@ public:
     uint32_t     GetWidth()      const override { return m_Width;  }
     uint32_t     GetHeight()     const override { return m_Height; }
 
-    IRHITexture& GetTexture(uint32_t index) override;
+    IRHITexture& GetTexture(uint32_t index) const override;
 
     uint32_t AcquireNextImage(IRHISemaphore& signalSemaphore) override;
     void     Present(uint32_t imageIndex, IRHISemaphore& waitSemaphore) override;

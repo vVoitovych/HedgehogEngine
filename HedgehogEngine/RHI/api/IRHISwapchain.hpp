@@ -27,7 +27,7 @@ public:
 
     // Returns the back-buffer texture for the given swapchain image index.
     // Ownership stays with the swapchain; do NOT store the pointer across frames.
-    virtual IRHITexture& GetTexture(uint32_t index) = 0;
+    virtual IRHITexture& GetTexture(uint32_t index) const = 0;
 
     // Acquire the next available image; signals signalSemaphore when ready.
     // Returns the image index to use for rendering and presentation.

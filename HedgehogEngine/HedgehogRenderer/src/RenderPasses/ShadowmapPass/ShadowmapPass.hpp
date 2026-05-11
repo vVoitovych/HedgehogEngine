@@ -31,6 +31,11 @@ namespace HedgehogSettings
     class Settings;
 }
 
+namespace HR
+{
+    class ResourceRegistry;
+}
+
 namespace Renderer
 {
     class ResourceManager;
@@ -39,7 +44,7 @@ namespace Renderer
     {
     public:
         ShadowmapPass(RHI::IRHIDevice& device, const HedgehogSettings::Settings& settings,
-                      const ResourceManager& resourceManager);
+                      const ResourceManager& resourceManager, HR::ResourceRegistry& registry);
         ~ShadowmapPass();
 
         void Render(const HedgehogEngine::FrameData& frame, const ResourceManager& resourceManager,
@@ -71,6 +76,8 @@ namespace Renderer
             float m_Width  = 0.0f;
             float m_Height = 0.0f;
         };
+
+        HR::ResourceRegistry& m_Registry;
 
         static constexpr uint32_t MaxShadowCascades = 4;
 

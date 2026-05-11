@@ -26,6 +26,11 @@ namespace HedgehogEngine
     struct LightData;
 }
 
+namespace HR
+{
+    class ResourceRegistry;
+}
+
 namespace Renderer
 {
     class ResourceManager;
@@ -33,7 +38,8 @@ namespace Renderer
     class ForwardPass
     {
     public:
-        ForwardPass(RHI::IRHIDevice& device, ResourceManager& resourceManager);
+        ForwardPass(RHI::IRHIDevice& device, const ResourceManager& resourceManager,
+                    HR::ResourceRegistry& registry);
         ~ForwardPass();
 
         void Render(const HedgehogEngine::FrameData& frame, const ResourceManager& resourceManager,
@@ -43,6 +49,8 @@ namespace Renderer
         void ResizeResources(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
 
     private:
+        HR::ResourceRegistry& m_Registry;
+
         // GPU-layout light struct; alignas matches std140/std430 UBO packing expected by the shader.
         struct GpuLight
         {

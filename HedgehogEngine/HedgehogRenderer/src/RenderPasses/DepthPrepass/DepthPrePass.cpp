@@ -4,6 +4,7 @@
 #include "HedgehogEngine/api/Frame/FrameData.hpp"
 
 #include "ResourceManager/ResourceManager.hpp"
+#include "ResourceManager/ResourceNames.hpp"
 #include "ResourceRegistry/ResourceRegistry.hpp"
 #include "ResourceRegistry/MeshGpuData.hpp"
 
@@ -26,7 +27,9 @@
 namespace Renderer
 {
 
-    DepthPrePass::DepthPrePass(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
+    DepthPrePass::DepthPrePass(RHI::IRHIDevice& device, const ResourceManager& resourceManager,
+                               HR::ResourceRegistry& registry)
+        : m_Registry(registry)
     {
         const auto sd = ShaderLoader::Load(device,
             "/HedgehogEngine/HedgehogRenderer/Assets/Shaders/DepthPrepass.shader");
@@ -59,7 +62,7 @@ namespace Renderer
         // Render pass: depth-only (no color attachments)
         RHI::RenderPassDesc rpDesc;
         rpDesc.m_DepthAttachment = RHI::AttachmentDesc{
-            resourceManager.GetRHIDepthBuffer().GetFormat(),
+            resourceManager.GetTexture(ResourceNames::RHI_DEPTH_BUFFER).GetFormat(),
             RHI::LoadOp::Clear,
             RHI::StoreOp::Store,
             RHI::LoadOp::DontCare,
@@ -76,7 +79,7 @@ namespace Renderer
         m_Pipeline = device.CreateGraphicsPipeline(pipelineDesc);
 
         // Framebuffer
-        const auto& depthBuffer = resourceManager.GetRHIDepthBuffer();
+        const auto& depthBuffer = resourceManager.GetTexture(ResourceNames::RHI_DEPTH_BUFFER);
         RHI::FramebufferDesc fbDesc;
         fbDesc.m_RenderPass      = m_RenderPass.get();
         fbDesc.m_DepthAttachment = &depthBuffer;
@@ -109,11 +112,10 @@ namespace Renderer
         cmd.SetViewport({ 0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height), 0.0f, 1.0f });
         cmd.SetScissor({ 0, 0, width, height });
 
-        auto& registry  = resourceManager.GetResourceRegistry();
-        auto& posBuffer = const_cast<RHI::IRHIBuffer&>(registry.GetPositionsBuffer());
+        auto& posBuffer = const_cast<RHI::IRHIBuffer&>(m_Registry.GetPositionsBuffer());
         cmd.BindVertexBuffers(0, { &posBuffer }, { 0 });
 
-        auto& idxBuffer = const_cast<RHI::IRHIBuffer&>(registry.GetIndexBuffer());
+        auto& idxBuffer = const_cast<RHI::IRHIBuffer&>(m_Registry.GetIndexBuffer());
         cmd.BindIndexBuffer(idxBuffer, RHI::IndexType::Uint32);
 
         cmd.BindDescriptorSet(*m_Pipeline, 0, *m_FrameSets[frameIndex]);
@@ -129,7 +131,7 @@ namespace Renderer
                     static_cast<uint32_t>(sizeof(DepthPrePassPushConstants)),
                     &object.m_Transform);
 
-                const auto& geom = registry.GetMeshGeometryInfo(object.m_MeshIndex);
+                const auto& geom = m_Registry.GetMeshGeometryInfo(object.m_MeshIndex);
                 cmd.DrawIndexed(geom.m_IndexCount, 1, geom.m_FirstIndex, geom.m_VertexOffset, 0);
             }
         }
@@ -152,7 +154,7 @@ namespace Renderer
 
     void DepthPrePass::ResizeResources(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
     {
-        const auto& depthBuffer = resourceManager.GetRHIDepthBuffer();
+        const auto& depthBuffer = resourceManager.GetTexture(ResourceNames::RHI_DEPTH_BUFFER);
 
         m_FrameBuffer.reset();
 

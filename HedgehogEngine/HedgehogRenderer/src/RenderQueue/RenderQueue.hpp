@@ -27,6 +27,11 @@ namespace HedgehogSettings
     class Settings;
 }
 
+namespace HR
+{
+    class ResourceRegistry;
+}
+
 namespace Renderer
 {
     class ResourceManager;
@@ -43,7 +48,8 @@ namespace Renderer
         RenderQueue(RHI::IRHIDevice&                  device,
                     HW::Window&                       window,
                     const HedgehogSettings::Settings& settings,
-                    ResourceManager&                  resourceManager);
+                    ResourceManager&                  resourceManager,
+                    HR::ResourceRegistry&             registry);
         ~RenderQueue();
 
         RenderQueue(const RenderQueue&)            = delete;
@@ -65,7 +71,7 @@ namespace Renderer
                     RHI::IRHISemaphore&  imageAvailableSemaphore,
                     RHI::IRHISemaphore&  renderFinishedSemaphore,
                     uint32_t             frameIndex,
-                    const ResourceManager& resourceManager);
+                    ResourceManager&     resourceManager);
 
         void UpdateData(const HedgehogEngine::FrameData&             frame,
                         uint32_t                          frameIndex,

@@ -1,6 +1,7 @@
 #include "GuiPass.hpp"
 
 #include "ResourceManager/ResourceManager.hpp"
+#include "ResourceManager/ResourceNames.hpp"
 
 #include "HedgehogCommon/api/RendererSettings.hpp"
 
@@ -57,7 +58,7 @@ namespace Renderer
         // Render pass: color-only, clear+store (scene is in a separate texture)
         RHI::RenderPassDesc rpDesc;
         rpDesc.m_ColorAttachments.push_back(RHI::AttachmentDesc{
-            resourceManager.GetRHIColorBuffer().GetFormat(),
+            resourceManager.GetTexture(ResourceNames::RHI_COLOR_BUFFER).GetFormat(),
             RHI::LoadOp::Clear,
             RHI::StoreOp::Store,
             RHI::LoadOp::DontCare,
@@ -67,7 +68,7 @@ namespace Renderer
         });
         m_RenderPass = device.CreateRenderPass(rpDesc);
 
-        const auto& colorBuffer = resourceManager.GetRHIColorBuffer();
+        const auto& colorBuffer = resourceManager.GetTexture(ResourceNames::RHI_COLOR_BUFFER);
         RHI::FramebufferDesc fbDesc;
         fbDesc.m_RenderPass       = m_RenderPass.get();
         fbDesc.m_ColorAttachments = { &colorBuffer };
@@ -182,7 +183,7 @@ namespace Renderer
 
     void GuiPass::ResizeResources(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
     {
-        const auto& colorBuffer = resourceManager.GetRHIColorBuffer();
+        const auto& colorBuffer = resourceManager.GetTexture(ResourceNames::RHI_COLOR_BUFFER);
 
         m_FrameBuffer.reset();
 
@@ -228,7 +229,7 @@ namespace Renderer
     void GuiPass::CreateSceneViewDescSet(const ResourceManager& resourceManager)
     {
         const auto& sceneBuffer = static_cast<const RHI::VulkanTexture&>(
-            resourceManager.GetSceneColorBuffer());
+            resourceManager.GetTexture(ResourceNames::SCENE_COLOR_BUFFER));
         m_SceneViewDescSet = ImGui_ImplVulkan_AddTexture(
             m_SceneSampler,
             sceneBuffer.GetViewHandle(),

@@ -4,6 +4,7 @@
 #include "HedgehogEngine/api/Frame/FrameData.hpp"
 
 #include "ResourceManager/ResourceManager.hpp"
+#include "ResourceManager/ResourceNames.hpp"
 #include "ResourceRegistry/ResourceRegistry.hpp"
 #include "ResourceRegistry/MeshGpuData.hpp"
 
@@ -44,7 +45,9 @@ namespace Renderer
     }
 
 
-    ForwardPass::ForwardPass(RHI::IRHIDevice& device, ResourceManager& resourceManager)
+    ForwardPass::ForwardPass(RHI::IRHIDevice& device, const ResourceManager& resourceManager,
+                             HR::ResourceRegistry& registry)
+        : m_Registry(registry)
     {
         const auto sd = ShaderLoader::Load(device,
             "/HedgehogEngine/HedgehogRenderer/Assets/Shaders/ForwardPass.shader");
@@ -76,7 +79,7 @@ namespace Renderer
         // Set 1: per-material data — ForwardPass defines and owns this layout.
         // The layout is injected into ResourceRegistry so it can allocate material descriptor sets.
         m_MaterialLayout = device.CreateDescriptorSetLayout(sd.m_Layout.m_DescriptorSets[1]);
-        resourceManager.GetResourceRegistry().SetMaterialLayout(
+        m_Registry.SetMaterialLayout(
             device,
             *m_MaterialLayout,
             MAX_MATERIAL_COUNT,
@@ -85,7 +88,7 @@ namespace Renderer
         // Render pass: one color + depth (loaded from DepthPrePass)
         RHI::RenderPassDesc rpDesc;
         rpDesc.m_ColorAttachments.push_back(RHI::AttachmentDesc{
-            resourceManager.GetSceneColorBuffer().GetFormat(),
+            resourceManager.GetTexture(ResourceNames::SCENE_COLOR_BUFFER).GetFormat(),
             RHI::LoadOp::Clear,
             RHI::StoreOp::Store,
             RHI::LoadOp::DontCare,
@@ -94,7 +97,7 @@ namespace Renderer
             RHI::ImageLayout::ColorAttachment
         });
         rpDesc.m_DepthAttachment = RHI::AttachmentDesc{
-            resourceManager.GetRHIDepthBuffer().GetFormat(),
+            resourceManager.GetTexture(ResourceNames::RHI_DEPTH_BUFFER).GetFormat(),
             RHI::LoadOp::Load,
             RHI::StoreOp::DontCare,
             RHI::LoadOp::DontCare,
@@ -111,8 +114,8 @@ namespace Renderer
         m_Pipeline = device.CreateGraphicsPipeline(pipelineDesc);
 
         // Framebuffer
-        const auto& colorBuffer = resourceManager.GetSceneColorBuffer();
-        const auto& depthBuffer = resourceManager.GetRHIDepthBuffer();
+        const auto& colorBuffer = resourceManager.GetTexture(ResourceNames::SCENE_COLOR_BUFFER);
+        const auto& depthBuffer = resourceManager.GetTexture(ResourceNames::RHI_DEPTH_BUFFER);
         RHI::FramebufferDesc fbDesc;
         fbDesc.m_RenderPass        = m_RenderPass.get();
         fbDesc.m_ColorAttachments  = { &colorBuffer };
@@ -153,11 +156,10 @@ namespace Renderer
         cmd.SetViewport({ 0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height), 0.0f, 1.0f });
         cmd.SetScissor({ 0, 0, width, height });
 
-        auto& registry  = resourceManager.GetResourceRegistry();
-        auto& posBuffer = const_cast<RHI::IRHIBuffer&>(registry.GetPositionsBuffer());
-        auto& uvBuffer  = const_cast<RHI::IRHIBuffer&>(registry.GetTexCoordsBuffer());
-        auto& nrmBuffer = const_cast<RHI::IRHIBuffer&>(registry.GetNormalsBuffer());
-        auto& idxBuffer = const_cast<RHI::IRHIBuffer&>(registry.GetIndexBuffer());
+        auto& posBuffer = const_cast<RHI::IRHIBuffer&>(m_Registry.GetPositionsBuffer());
+        auto& uvBuffer  = const_cast<RHI::IRHIBuffer&>(m_Registry.GetTexCoordsBuffer());
+        auto& nrmBuffer = const_cast<RHI::IRHIBuffer&>(m_Registry.GetNormalsBuffer());
+        auto& idxBuffer = const_cast<RHI::IRHIBuffer&>(m_Registry.GetIndexBuffer());
 
         cmd.BindVertexBuffers(0, { &posBuffer, &uvBuffer, &nrmBuffer }, { 0, 0, 0 });
         cmd.BindIndexBuffer(idxBuffer, RHI::IndexType::Uint32);
@@ -167,7 +169,7 @@ namespace Renderer
         for (const auto& drawNode : frame.m_DrawList.m_Opaque)
         {
             cmd.BindDescriptorSet(
-                *m_Pipeline, 1, registry.GetMaterialDescriptorSet(static_cast<uint32_t>(drawNode.m_MaterialIndex)));
+                *m_Pipeline, 1, m_Registry.GetMaterialDescriptorSet(static_cast<uint32_t>(drawNode.m_MaterialIndex)));
 
             for (const auto& object : drawNode.m_Objects)
             {
@@ -178,7 +180,7 @@ namespace Renderer
                     static_cast<uint32_t>(sizeof(ForwardPassPushConstants)),
                     &object.m_Transform);
 
-                const auto& geom = registry.GetMeshGeometryInfo(object.m_MeshIndex);
+                const auto& geom = m_Registry.GetMeshGeometryInfo(object.m_MeshIndex);
                 cmd.DrawIndexed(geom.m_IndexCount, 1, geom.m_FirstIndex, geom.m_VertexOffset, 0);
             }
         }
@@ -202,8 +204,8 @@ namespace Renderer
 
     void ForwardPass::ResizeResources(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
     {
-        const auto& colorBuffer = resourceManager.GetSceneColorBuffer();
-        const auto& depthBuffer = resourceManager.GetRHIDepthBuffer();
+        const auto& colorBuffer = resourceManager.GetTexture(ResourceNames::SCENE_COLOR_BUFFER);
+        const auto& depthBuffer = resourceManager.GetTexture(ResourceNames::RHI_DEPTH_BUFFER);
 
         m_FrameBuffer.reset();
 

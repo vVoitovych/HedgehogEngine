@@ -14,6 +14,7 @@
 #include "HedgehogSettings/Settings/ShadowmapingSettings.hpp"
 
 #include "ResourceManager/ResourceManager.hpp"
+#include "ResourceManager/ResourceNames.hpp"
 #include "ResourceRegistry/ResourceRegistry.hpp"
 #include "ResourceRegistry/MeshGpuData.hpp"
 
@@ -33,7 +34,8 @@ namespace Renderer
 {
 
     ShadowmapPass::ShadowmapPass(RHI::IRHIDevice& device, const HedgehogSettings::Settings& settings,
-                                  const ResourceManager& resourceManager)
+                                  const ResourceManager& resourceManager, HR::ResourceRegistry& registry)
+        : m_Registry(registry)
     {
         const auto sd = ShaderLoader::Load(device,
             "/HedgehogEngine/HedgehogRenderer/Assets/Shaders/ShadowmapPass.shader");
@@ -71,7 +73,7 @@ namespace Renderer
         // Render pass: depth-only, Clear/DontCare, Undefined → DepthStencilReadOnly
         RHI::RenderPassDesc rpDesc;
         rpDesc.m_DepthAttachment = RHI::AttachmentDesc{
-            resourceManager.GetRHIShadowMap().GetFormat(),
+            resourceManager.GetTexture(ResourceNames::RHI_SHADOW_MAP).GetFormat(),
             RHI::LoadOp::Clear,
             RHI::StoreOp::DontCare,
             RHI::LoadOp::DontCare,
@@ -105,9 +107,8 @@ namespace Renderer
         cmd.BeginRenderPass(*m_RenderPass, *m_FrameBuffer, { depthClear });
         cmd.BindPipeline(*m_Pipeline);
 
-        auto& registry  = resourceManager.GetResourceRegistry();
-        auto& posBuffer = const_cast<RHI::IRHIBuffer&>(registry.GetPositionsBuffer());
-        auto& idxBuffer = const_cast<RHI::IRHIBuffer&>(registry.GetIndexBuffer());
+        auto& posBuffer = const_cast<RHI::IRHIBuffer&>(m_Registry.GetPositionsBuffer());
+        auto& idxBuffer = const_cast<RHI::IRHIBuffer&>(m_Registry.GetIndexBuffer());
 
         cmd.BindVertexBuffers(0, { &posBuffer }, { 0 });
         cmd.BindIndexBuffer(idxBuffer, RHI::IndexType::Uint32);
@@ -131,7 +132,7 @@ namespace Renderer
                         static_cast<uint32_t>(sizeof(ShadowmapPassPushConstants)),
                         &object.m_Transform);
 
-                    const auto& geom = registry.GetMeshGeometryInfo(object.m_MeshIndex);
+                    const auto& geom = m_Registry.GetMeshGeometryInfo(object.m_MeshIndex);
                     cmd.DrawIndexed(geom.m_IndexCount, 1, geom.m_FirstIndex, geom.m_VertexOffset, 0);
                 }
             }
@@ -180,7 +181,7 @@ namespace Renderer
 
     void ShadowmapPass::UpdateFrameBuffer(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
     {
-        const auto& shadowMap = resourceManager.GetRHIShadowMap();
+        const auto& shadowMap = resourceManager.GetTexture(ResourceNames::RHI_SHADOW_MAP);
 
         m_FrameBuffer.reset();
 

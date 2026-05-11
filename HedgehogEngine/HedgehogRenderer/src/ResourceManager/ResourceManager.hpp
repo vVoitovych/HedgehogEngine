@@ -1,27 +1,19 @@
 #pragma once
 
 #include <memory>
+#include <string>
+#include <string_view>
+#include <unordered_map>
 
 namespace RHI
 {
     class IRHIDevice;
     class IRHISwapchain;
     class IRHITexture;
-}
-
-namespace HedgehogSettings
-{
-    class Settings;
-}
-
-namespace HedgehogEngine
-{
-    class EngineContext;
-}
-
-namespace HR
-{
-    class ResourceRegistry;
+    class IRHIBuffer;
+    struct TextureDesc;
+    enum class BufferUsage : uint32_t;
+    enum class MemoryUsage;
 }
 
 namespace Renderer
@@ -29,44 +21,61 @@ namespace Renderer
     class ResourceManager
     {
     public:
-        ResourceManager(RHI::IRHIDevice& device,
-                        const RHI::IRHISwapchain& swapchain,
-                        const HedgehogSettings::Settings& settings);
+        // m_Swapchain is stored as a reference — safe because RHIContext::RecreateSwapchain
+        // calls IRHISwapchain::Resize() in-place; the swapchain object is never replaced.
+        ResourceManager(const RHI::IRHISwapchain& swapchain);
         ~ResourceManager();
+
+        ResourceManager(const ResourceManager&)            = delete;
+        ResourceManager& operator=(const ResourceManager&) = delete;
+        ResourceManager(ResourceManager&&)                 = delete;
+        ResourceManager& operator=(ResourceManager&&)      = delete;
 
         void Cleanup(RHI::IRHIDevice& device);
 
-        void SyncResources(RHI::IRHIDevice& device, HedgehogEngine::EngineContext& engine);
+        // Call each frame with the index returned by AcquireNextImage.
+        // After this, GetTexture(ResourceNames::SWAP_CHAIN_BACK_BUFFER) returns
+        // the correct swapchain image for the current frame.
+        void SetBackBufferIndex(uint32_t index);
 
-        void ResizeFrameBufferSizeDependenteResources(RHI::IRHIDevice& device,
-                                                      const RHI::IRHISwapchain& swapchain);
-        void ResizeSceneView(RHI::IRHIDevice& device, uint32_t width, uint32_t height);
-        void ResizeSettingsDependenteResources(RHI::IRHIDevice& device,
-                                               HedgehogSettings::Settings& settings);
+        // ── Texture API ──────────────────────────────────────────────────────
+        // Asserts if name already exists or name == SWAP_CHAIN_BACK_BUFFER.
+        void CreateTexture(std::string_view        name,
+                           RHI::IRHIDevice&        device,
+                           const RHI::TextureDesc& desc);
 
-        const RHI::IRHITexture& GetRHIColorBuffer() const;
-        const RHI::IRHITexture& GetRHIDepthBuffer() const;
-        const RHI::IRHITexture& GetRHIShadowMap() const;
-        const RHI::IRHITexture& GetRHIShadowMask() const;
-        const RHI::IRHITexture& GetSceneColorBuffer() const;
+        // No-op if name does not exist. Asserts if name == SWAP_CHAIN_BACK_BUFFER.
+        void DestroyTexture(std::string_view name);
 
-              HR::ResourceRegistry& GetResourceRegistry();
-        const HR::ResourceRegistry& GetResourceRegistry() const;
+        bool HasTexture(std::string_view name) const;
+
+        // Asserts if name is not found.
+        // SWAP_CHAIN_BACK_BUFFER resolves to the swapchain image at the current index.
+        const RHI::IRHITexture& GetTexture(std::string_view name) const;
+              RHI::IRHITexture& GetTexture(std::string_view name);
+
+        // ── Buffer API ───────────────────────────────────────────────────────
+        // Asserts if name already exists.
+        void CreateBuffer(std::string_view name,
+                          RHI::IRHIDevice& device,
+                          size_t           size,
+                          RHI::BufferUsage usage,
+                          RHI::MemoryUsage memUsage);
+
+        // No-op if name does not exist.
+        void DestroyBuffer(std::string_view name);
+
+        bool HasBuffer(std::string_view name) const;
+
+        // Asserts if name is not found.
+        const RHI::IRHIBuffer& GetBuffer(std::string_view name) const;
+              RHI::IRHIBuffer& GetBuffer(std::string_view name);
 
     private:
-        void CreateRHIColorBuffer(RHI::IRHIDevice& device, const RHI::IRHISwapchain& swapchain);
-        void CreateRHIDepthBuffer(RHI::IRHIDevice& device, const RHI::IRHISwapchain& swapchain);
-        void CreateRHIShadowMap(RHI::IRHIDevice& device, uint32_t shadowmapSize);
-        void CreateRHIShadowMask(RHI::IRHIDevice& device, const RHI::IRHISwapchain& swapchain);
-        void CreateSceneColorBuffer(RHI::IRHIDevice& device, const RHI::IRHISwapchain& swapchain);
+        std::unordered_map<std::string, std::unique_ptr<RHI::IRHITexture>> m_Textures;
+        std::unordered_map<std::string, std::unique_ptr<RHI::IRHIBuffer>>  m_Buffers;
 
-    private:
-        std::unique_ptr<RHI::IRHITexture> m_RHIDepthBuffer;
-        std::unique_ptr<RHI::IRHITexture> m_RHIColorBuffer;
-        std::unique_ptr<RHI::IRHITexture> m_RHIShadowMap;
-        std::unique_ptr<RHI::IRHITexture> m_RHIShadowMask;
-        std::unique_ptr<RHI::IRHITexture> m_SceneColorBuffer;
-
-        std::unique_ptr<HR::ResourceRegistry> m_ResourceRegistry;
+        const RHI::IRHISwapchain& m_Swapchain;
+        uint32_t                  m_BackBufferIndex = 0;
     };
 }

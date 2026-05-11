@@ -152,7 +152,7 @@ void VulkanSwapchain::Destroy()
 
 // ── IRHISwapchain ─────────────────────────────────────────────────────────────
 
-IRHITexture& VulkanSwapchain::GetTexture(uint32_t index)
+IRHITexture& VulkanSwapchain::GetTexture(uint32_t index) const
 {
     assert(index < m_Textures.size());
     return *m_Textures[index];
