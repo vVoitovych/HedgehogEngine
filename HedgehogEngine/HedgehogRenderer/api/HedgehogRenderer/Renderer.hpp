@@ -7,16 +7,13 @@ namespace HedgehogEngine
     class HedgehogEngine;
 }
 
-namespace HR
-{
-    class ResourceRegistry;
-}
-
 namespace Renderer
 {
     class RHIContext;
     class ThreadContext;
     class ResourceManager;
+    class MeshSync;
+    class MaterialSync;
     class RenderQueue;
 
     class Renderer
@@ -37,11 +34,12 @@ namespace Renderer
         void  SetSceneViewSize(uint32_t width, uint32_t height);
 
     private:
-        std::unique_ptr<RHIContext>           m_RHIContext;
-        std::unique_ptr<ThreadContext>        m_ThreadContext;
-        std::unique_ptr<HR::ResourceRegistry> m_ResourceRegistry;
-        std::unique_ptr<ResourceManager>      m_ResourceManager;
-        std::unique_ptr<RenderQueue>          m_RenderQueue;
+        std::unique_ptr<RHIContext>      m_RHIContext;
+        std::unique_ptr<ThreadContext>   m_ThreadContext;
+        std::unique_ptr<MeshSync>        m_MeshSync;
+        std::unique_ptr<MaterialSync>    m_MaterialSync;
+        std::unique_ptr<ResourceManager> m_ResourceManager;
+        std::unique_ptr<RenderQueue>     m_RenderQueue;
 
         uint32_t m_DesiredSceneW = 0;
         uint32_t m_DesiredSceneH = 0;

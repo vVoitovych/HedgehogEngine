@@ -8,7 +8,7 @@ namespace RHI
     class IRHIDescriptorSet;
 }
 
-namespace HR
+namespace Renderer
 {
     struct MaterialGpuData
     {

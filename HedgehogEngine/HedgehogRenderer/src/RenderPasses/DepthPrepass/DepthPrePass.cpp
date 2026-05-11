@@ -5,8 +5,7 @@
 
 #include "ResourceManager/ResourceManager.hpp"
 #include "ResourceManager/ResourceNames.hpp"
-#include "ResourceRegistry/ResourceRegistry.hpp"
-#include "ResourceRegistry/MeshGpuData.hpp"
+#include "MeshSync/MeshSync.hpp"
 
 #include "HedgehogCommon/api/RendererSettings.hpp"
 
@@ -28,8 +27,8 @@ namespace Renderer
 {
 
     DepthPrePass::DepthPrePass(RHI::IRHIDevice& device, const ResourceManager& resourceManager,
-                               HR::ResourceRegistry& registry)
-        : m_Registry(registry)
+                               MeshSync& meshSync)
+        : m_MeshSync(meshSync)
     {
         const auto sd = ShaderLoader::Load(device,
             "/HedgehogEngine/HedgehogRenderer/Assets/Shaders/DepthPrepass.shader");
@@ -92,7 +91,7 @@ namespace Renderer
     {
     }
 
-    void DepthPrePass::Render(const HedgehogEngine::FrameData& frame, const ResourceManager& resourceManager,
+    void DepthPrePass::Render(const HedgehogEngine::FrameData& frame, ResourceManager& resourceManager,
                                RHI::IRHICommandList& cmd, uint32_t frameIndex)
     {
         DepthPrepassFrameUniform ubo{};
@@ -112,10 +111,10 @@ namespace Renderer
         cmd.SetViewport({ 0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height), 0.0f, 1.0f });
         cmd.SetScissor({ 0, 0, width, height });
 
-        auto& posBuffer = const_cast<RHI::IRHIBuffer&>(m_Registry.GetPositionsBuffer());
+        auto& posBuffer = resourceManager.GetBuffer(ResourceNames::MESH_POSITIONS);
         cmd.BindVertexBuffers(0, { &posBuffer }, { 0 });
 
-        auto& idxBuffer = const_cast<RHI::IRHIBuffer&>(m_Registry.GetIndexBuffer());
+        auto& idxBuffer = resourceManager.GetBuffer(ResourceNames::MESH_INDICES);
         cmd.BindIndexBuffer(idxBuffer, RHI::IndexType::Uint32);
 
         cmd.BindDescriptorSet(*m_Pipeline, 0, *m_FrameSets[frameIndex]);
@@ -131,7 +130,7 @@ namespace Renderer
                     static_cast<uint32_t>(sizeof(DepthPrePassPushConstants)),
                     &object.m_Transform);
 
-                const auto& geom = m_Registry.GetMeshGeometryInfo(object.m_MeshIndex);
+                const auto& geom = m_MeshSync.GetMeshGeometryInfo(object.m_MeshIndex);
                 cmd.DrawIndexed(geom.m_IndexCount, 1, geom.m_FirstIndex, geom.m_VertexOffset, 0);
             }
         }

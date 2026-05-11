@@ -9,7 +9,8 @@
 #include "RenderQueue/RenderQueue.hpp"
 #include "ResourceManager/ResourceManager.hpp"
 #include "ResourceManager/ResourceNames.hpp"
-#include "ResourceRegistry/ResourceRegistry.hpp"
+#include "MeshSync/MeshSync.hpp"
+#include "MaterialSync/MaterialSync.hpp"
 
 #include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
 
@@ -93,7 +94,8 @@ namespace Renderer
         auto& device    = m_RHIContext->GetRHIDevice();
         auto& swapchain = m_RHIContext->GetRHISwapchain();
 
-        m_ResourceRegistry = std::make_unique<HR::ResourceRegistry>(device);
+        m_MeshSync     = std::make_unique<MeshSync>();
+        m_MaterialSync = std::make_unique<MaterialSync>();
 
         m_ResourceManager = std::make_unique<ResourceManager>(swapchain);
         m_ResourceManager->CreateTexture(ResourceNames::RHI_COLOR_BUFFER,   device, MakeRHIColorDesc(swapchain));
@@ -107,7 +109,8 @@ namespace Renderer
             windowContext.GetWindow(),
             settings,
             *m_ResourceManager,
-            *m_ResourceRegistry);
+            *m_MeshSync,
+            *m_MaterialSync);
     }
 
     Renderer::~Renderer()
@@ -119,7 +122,7 @@ namespace Renderer
         auto& device = m_RHIContext->GetRHIDevice();
         device.WaitIdle();
         m_RenderQueue->Cleanup(device);
-        m_ResourceRegistry->Cleanup(device);
+        m_MaterialSync->Cleanup(device);
         m_ResourceManager->Cleanup(device);
         m_ThreadContext->Cleanup(device);
         m_RHIContext->Cleanup();
@@ -155,9 +158,9 @@ namespace Renderer
         auto& device        = m_RHIContext->GetRHIDevice();
         auto& swapchain     = m_RHIContext->GetRHISwapchain();
 
-        m_ResourceRegistry->SyncMeshes(engineContext.GetMeshContainer(), device);
-        m_ResourceRegistry->SyncMaterials(engineContext.GetMaterialContainer(),
-                                          engineContext.GetTextureContainer(), device);
+        m_MeshSync->Sync(engineContext.GetMeshContainer(), *m_ResourceManager, device);
+        m_MaterialSync->Sync(engineContext.GetMaterialContainer(),
+                             engineContext.GetTextureContainer(), device);
 
         const auto&    frameData  = engineContext.GetFrameData();
         const uint32_t frameIndex = m_ThreadContext->GetFrameIndex();

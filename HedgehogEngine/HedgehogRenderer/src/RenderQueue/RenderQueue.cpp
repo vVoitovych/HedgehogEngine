@@ -2,7 +2,8 @@
 
 #include "ResourceManager/ResourceManager.hpp"
 #include "ResourceManager/ResourceNames.hpp"
-#include "ResourceRegistry/ResourceRegistry.hpp"
+#include "MeshSync/MeshSync.hpp"
+#include "MaterialSync/MaterialSync.hpp"
 #include "RenderPasses/InitPass/InitPass.hpp"
 #include "RenderPasses/DepthPrepass/DepthPrePass.hpp"
 #include "RenderPasses/ShadowmapPass/ShadowmapPass.hpp"
@@ -26,12 +27,13 @@ namespace Renderer
                              HW::Window&                       window,
                              const HedgehogSettings::Settings& settings,
                              ResourceManager&                  resourceManager,
-                             HR::ResourceRegistry&             registry)
+                             MeshSync&                         meshSync,
+                             MaterialSync&                     materialSync)
     {
         m_InitPass      = std::make_unique<InitPass>();
-        m_DepthPrePass  = std::make_unique<DepthPrePass>(device, resourceManager, registry);
-        m_ShadowmapPass = std::make_unique<ShadowmapPass>(device, settings, resourceManager, registry);
-        m_ForwardPass   = std::make_unique<ForwardPass>(device, resourceManager, registry);
+        m_DepthPrePass  = std::make_unique<DepthPrePass>(device, resourceManager, meshSync);
+        m_ShadowmapPass = std::make_unique<ShadowmapPass>(device, settings, resourceManager, meshSync);
+        m_ForwardPass   = std::make_unique<ForwardPass>(device, resourceManager, meshSync, materialSync);
         m_GuiPass       = std::make_unique<GuiPass>(window, device, resourceManager);
         m_PresentPass   = std::make_unique<PresentPass>();
     }

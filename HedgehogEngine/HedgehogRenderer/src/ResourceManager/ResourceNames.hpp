@@ -16,5 +16,11 @@ namespace Renderer
         inline constexpr std::string_view RHI_SHADOW_MAP     = "RHI_SHADOW_MAP";
         inline constexpr std::string_view RHI_SHADOW_MASK    = "RHI_SHADOW_MASK";
         inline constexpr std::string_view SCENE_COLOR_BUFFER = "SCENE_COLOR_BUFFER";
+
+        // Mesh GPU buffers (created/updated by MeshSync)
+        inline constexpr std::string_view MESH_POSITIONS  = "MESH_POSITIONS";
+        inline constexpr std::string_view MESH_TEX_COORDS = "MESH_TEX_COORDS";
+        inline constexpr std::string_view MESH_NORMALS    = "MESH_NORMALS";
+        inline constexpr std::string_view MESH_INDICES    = "MESH_INDICES";
     }
 }

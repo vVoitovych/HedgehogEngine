@@ -23,23 +23,19 @@ namespace HedgehogEngine
     struct FrameData;
 }
 
-namespace HR
-{
-    class ResourceRegistry;
-}
-
 namespace Renderer
 {
     class ResourceManager;
+    class MeshSync;
 
     class DepthPrePass
     {
     public:
         DepthPrePass(RHI::IRHIDevice& device, const ResourceManager& resourceManager,
-                     HR::ResourceRegistry& registry);
+                     MeshSync& meshSync);
         ~DepthPrePass();
 
-        void Render(const HedgehogEngine::FrameData& frame, const ResourceManager& resourceManager,
+        void Render(const HedgehogEngine::FrameData& frame, ResourceManager& resourceManager,
                     RHI::IRHICommandList& cmd, uint32_t frameIndex);
         void Cleanup(RHI::IRHIDevice& device);
 
@@ -52,7 +48,7 @@ namespace Renderer
         };
 
     private:
-        HR::ResourceRegistry& m_Registry;
+        MeshSync& m_MeshSync;
 
         std::unique_ptr<RHI::IRHIRenderPass>         m_RenderPass;
         std::unique_ptr<RHI::IRHIFramebuffer>         m_FrameBuffer;

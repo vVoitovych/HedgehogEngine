@@ -27,14 +27,11 @@ namespace HedgehogSettings
     class Settings;
 }
 
-namespace HR
-{
-    class ResourceRegistry;
-}
-
 namespace Renderer
 {
     class ResourceManager;
+    class MeshSync;
+    class MaterialSync;
     class InitPass;
     class DepthPrePass;
     class ShadowmapPass;
@@ -49,7 +46,8 @@ namespace Renderer
                     HW::Window&                       window,
                     const HedgehogSettings::Settings& settings,
                     ResourceManager&                  resourceManager,
-                    HR::ResourceRegistry&             registry);
+                    MeshSync&                         meshSync,
+                    MaterialSync&                     materialSync);
         ~RenderQueue();
 
         RenderQueue(const RenderQueue&)            = delete;

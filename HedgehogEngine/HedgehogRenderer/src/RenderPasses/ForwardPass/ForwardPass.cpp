@@ -5,8 +5,8 @@
 
 #include "ResourceManager/ResourceManager.hpp"
 #include "ResourceManager/ResourceNames.hpp"
-#include "ResourceRegistry/ResourceRegistry.hpp"
-#include "ResourceRegistry/MeshGpuData.hpp"
+#include "MeshSync/MeshSync.hpp"
+#include "MaterialSync/MaterialSync.hpp"
 
 #include "HedgehogCommon/api/RendererSettings.hpp"
 #include "HedgehogMath/api/Common.hpp"
@@ -46,8 +46,9 @@ namespace Renderer
 
 
     ForwardPass::ForwardPass(RHI::IRHIDevice& device, const ResourceManager& resourceManager,
-                             HR::ResourceRegistry& registry)
-        : m_Registry(registry)
+                             MeshSync& meshSync, MaterialSync& materialSync)
+        : m_MeshSync(meshSync)
+        , m_MaterialSync(materialSync)
     {
         const auto sd = ShaderLoader::Load(device,
             "/HedgehogEngine/HedgehogRenderer/Assets/Shaders/ForwardPass.shader");
@@ -77,9 +78,9 @@ namespace Renderer
         }
 
         // Set 1: per-material data — ForwardPass defines and owns this layout.
-        // The layout is injected into ResourceRegistry so it can allocate material descriptor sets.
+        // The layout is injected into MaterialSync so it can allocate material descriptor sets.
         m_MaterialLayout = device.CreateDescriptorSetLayout(sd.m_Layout.m_DescriptorSets[1]);
-        m_Registry.SetMaterialLayout(
+        m_MaterialSync.SetMaterialLayout(
             device,
             *m_MaterialLayout,
             MAX_MATERIAL_COUNT,
@@ -129,7 +130,7 @@ namespace Renderer
     {
     }
 
-    void ForwardPass::Render(const HedgehogEngine::FrameData& frame, const ResourceManager& resourceManager,
+    void ForwardPass::Render(const HedgehogEngine::FrameData& frame, ResourceManager& resourceManager,
                               RHI::IRHICommandList& cmd, uint32_t frameIndex)
     {
         ForwardPassFrameUniform ubo{};
@@ -156,10 +157,10 @@ namespace Renderer
         cmd.SetViewport({ 0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height), 0.0f, 1.0f });
         cmd.SetScissor({ 0, 0, width, height });
 
-        auto& posBuffer = const_cast<RHI::IRHIBuffer&>(m_Registry.GetPositionsBuffer());
-        auto& uvBuffer  = const_cast<RHI::IRHIBuffer&>(m_Registry.GetTexCoordsBuffer());
-        auto& nrmBuffer = const_cast<RHI::IRHIBuffer&>(m_Registry.GetNormalsBuffer());
-        auto& idxBuffer = const_cast<RHI::IRHIBuffer&>(m_Registry.GetIndexBuffer());
+        auto& posBuffer = resourceManager.GetBuffer(ResourceNames::MESH_POSITIONS);
+        auto& uvBuffer  = resourceManager.GetBuffer(ResourceNames::MESH_TEX_COORDS);
+        auto& nrmBuffer = resourceManager.GetBuffer(ResourceNames::MESH_NORMALS);
+        auto& idxBuffer = resourceManager.GetBuffer(ResourceNames::MESH_INDICES);
 
         cmd.BindVertexBuffers(0, { &posBuffer, &uvBuffer, &nrmBuffer }, { 0, 0, 0 });
         cmd.BindIndexBuffer(idxBuffer, RHI::IndexType::Uint32);
@@ -169,7 +170,7 @@ namespace Renderer
         for (const auto& drawNode : frame.m_DrawList.m_Opaque)
         {
             cmd.BindDescriptorSet(
-                *m_Pipeline, 1, m_Registry.GetMaterialDescriptorSet(static_cast<uint32_t>(drawNode.m_MaterialIndex)));
+                *m_Pipeline, 1, m_MaterialSync.GetMaterialDescriptorSet(static_cast<uint32_t>(drawNode.m_MaterialIndex)));
 
             for (const auto& object : drawNode.m_Objects)
             {
@@ -180,7 +181,7 @@ namespace Renderer
                     static_cast<uint32_t>(sizeof(ForwardPassPushConstants)),
                     &object.m_Transform);
 
-                const auto& geom = m_Registry.GetMeshGeometryInfo(object.m_MeshIndex);
+                const auto& geom = m_MeshSync.GetMeshGeometryInfo(object.m_MeshIndex);
                 cmd.DrawIndexed(geom.m_IndexCount, 1, geom.m_FirstIndex, geom.m_VertexOffset, 0);
             }
         }

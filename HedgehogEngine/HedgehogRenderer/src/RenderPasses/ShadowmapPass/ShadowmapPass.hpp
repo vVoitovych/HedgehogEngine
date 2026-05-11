@@ -31,23 +31,19 @@ namespace HedgehogSettings
     class Settings;
 }
 
-namespace HR
-{
-    class ResourceRegistry;
-}
-
 namespace Renderer
 {
     class ResourceManager;
+    class MeshSync;
 
     class ShadowmapPass
     {
     public:
         ShadowmapPass(RHI::IRHIDevice& device, const HedgehogSettings::Settings& settings,
-                      const ResourceManager& resourceManager, HR::ResourceRegistry& registry);
+                      const ResourceManager& resourceManager, MeshSync& meshSync);
         ~ShadowmapPass();
 
-        void Render(const HedgehogEngine::FrameData& frame, const ResourceManager& resourceManager,
+        void Render(const HedgehogEngine::FrameData& frame, ResourceManager& resourceManager,
                     RHI::IRHICommandList& cmd, uint32_t frameIndex);
         void Cleanup(RHI::IRHIDevice& device);
 
@@ -77,7 +73,7 @@ namespace Renderer
             float m_Height = 0.0f;
         };
 
-        HR::ResourceRegistry& m_Registry;
+        MeshSync& m_MeshSync;
 
         static constexpr uint32_t MaxShadowCascades = 4;
 
