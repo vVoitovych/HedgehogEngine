@@ -47,7 +47,7 @@ namespace Renderer
     ForwardPass::ForwardPass(RHI::IRHIDevice& device, ResourceManager& resourceManager)
     {
         const auto sd = ShaderLoader::Load(device,
-            "/HedgehogEngine/HedgehogRenderer/Assets/Shaders/ForwardPass.shader");
+            "/HedgehogEngine/HedgehogRenderer/assets/Shaders/ForwardPass.shader");
         assert(sd.m_Layout.m_DescriptorSets.size() >= 2);
 
         // Set 0: per-frame data (camera, lights)

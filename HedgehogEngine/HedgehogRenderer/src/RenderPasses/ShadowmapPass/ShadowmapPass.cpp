@@ -36,7 +36,7 @@ namespace Renderer
                                   const ResourceManager& resourceManager)
     {
         const auto sd = ShaderLoader::Load(device,
-            "/HedgehogEngine/HedgehogRenderer/Assets/Shaders/ShadowmapPass.shader");
+            "/HedgehogEngine/HedgehogRenderer/assets/Shaders/ShadowmapPass.shader");
         assert(!sd.m_Layout.m_DescriptorSets.empty());
 
         m_ShadowmapLayout = device.CreateDescriptorSetLayout(sd.m_Layout.m_DescriptorSets[0]);

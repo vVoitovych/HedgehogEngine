@@ -19,7 +19,7 @@ class VertexDescLoader
 public:
     // Load and parse a .vdes file.
     // assetRelativePath must begin with '/' and be relative to the repo root,
-    // e.g. "/HedgehogEngine/HedgehogRenderer/Assets/VertexDescriptions/PositionOnly.vdes".
+    // e.g. "/HedgehogEngine/HedgehogRenderer/assets/VertexDescriptions/PositionOnly.vdes".
     static VertexFileDesc Load(const std::string& assetRelativePath);
 
 private:

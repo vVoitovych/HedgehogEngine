@@ -7,13 +7,13 @@ project "HedgehogRenderer"
     files
     {
         "**.hpp", "**.cpp",
-        "Assets/Shaders/**.vert",
-        "Assets/Shaders/**.frag",
-        "Assets/Shaders/**.comp",
-        "Assets/Shaders/**.glsl",
-        "Assets/Pipelines/**.pl",
-        "Assets/VertexDescriptions/**.vdes",
-        "Assets/Shaders/**.shader"
+        "assets/Shaders/**.vert",
+        "assets/Shaders/**.frag",
+        "assets/Shaders/**.comp",
+        "assets/Shaders/**.glsl",
+        "assets/Pipelines/**.pl",
+        "assets/VertexDescriptions/**.vdes",
+        "assets/Shaders/**.shader"
     }
 
     defines { "YAML_CPP_STATIC_DEFINE" }
@@ -55,7 +55,7 @@ project "HedgehogRenderer"
        defines {  }
        prebuildmessage "Compiling shaders..."
        prebuildcommands {
-           'call "%{wks.location}\\ThirdParty\\glslc\\CompileShaders.bat" "%{wks.location}\\HedgehogEngine\\HedgehogRenderer\\Assets\\Shaders"'
+           'call "%{wks.location}\\ThirdParty\\glslc\\CompileShaders.bat" "%{wks.location}\\HedgehogEngine\\HedgehogRenderer\\assets\\Shaders"'
        }
 
    filter "configurations:Debug"

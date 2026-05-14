@@ -29,7 +29,7 @@ namespace Renderer
     DepthPrePass::DepthPrePass(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
     {
         const auto sd = ShaderLoader::Load(device,
-            "/HedgehogEngine/HedgehogRenderer/Assets/Shaders/DepthPrepass.shader");
+            "/HedgehogEngine/HedgehogRenderer/assets/Shaders/DepthPrepass.shader");
         assert(!sd.m_Layout.m_DescriptorSets.empty());
 
         m_FrameLayout = device.CreateDescriptorSetLayout(sd.m_Layout.m_DescriptorSets[0]);

@@ -22,7 +22,7 @@ class PipelineLoader
 public:
     // Load and parse a .pl file.
     // assetRelativePath must begin with '/' and be relative to the repo root,
-    // e.g. "/HedgehogEngine/HedgehogRenderer/Assets/Pipelines/ForwardPass.pl".
+    // e.g. "/HedgehogEngine/HedgehogRenderer/assets/Pipelines/ForwardPass.pl".
     static PipelineFileDesc Load(const std::string& assetRelativePath);
 
     // Build DescriptorPool sizes from a single set's bindings.
