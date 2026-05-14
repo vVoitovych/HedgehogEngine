@@ -83,6 +83,18 @@ namespace ECS
             m_SystemManager->SetSignature<T>(signature);
         }
 
+        template<typename T>
+        bool HasSystem() const
+        {
+            return m_SystemManager->HasSystem<T>();
+        }
+
+        template<typename T>
+        std::shared_ptr<T> GetSystem() const
+        {
+            return m_SystemManager->GetSystem<T>();
+        }
+
     private:
         std::unique_ptr<ComponentManager> m_ComponentManager;
         std::unique_ptr<EntityManager>    m_EntityManager;

@@ -36,6 +36,23 @@ namespace ECS
             m_Signatures.insert({ typeId, signature });
         }
 
+        template<typename T>
+        bool HasSystem() const
+        {
+            const std::type_index typeId = typeid(T);
+            return m_Systems.find(typeId) != m_Systems.end();
+        }
+
+        template<typename T>
+        std::shared_ptr<T> GetSystem() const
+        {
+            const std::type_index typeId = typeid(T);
+            assert(m_Systems.find(typeId) != m_Systems.end() &&
+                "System used before being registered!");
+
+            return std::static_pointer_cast<T>(m_Systems.at(typeId));
+        }
+
         void EntityDestroyed(Entity entity)
         {
             for (auto const& pair : m_Systems)
