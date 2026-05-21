@@ -20,6 +20,7 @@ namespace Renderer
                 RHI::IRHIDevice& device,
                 const ResourceManager& resourceManager);
 
+        void Setup(RenderGraph& graph) override;
         void Execute(RenderContext& ctx) override;
         void Cleanup(RHI::IRHIDevice& device) override;
 

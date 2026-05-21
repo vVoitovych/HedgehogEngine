@@ -4,9 +4,6 @@
 #include "RenderPasses/GuiPass/GuiPass.hpp"
 #include "ResourceManager/ResourceManager.hpp"
 
-#include "RHI/api/IRHICommandList.hpp"
-#include "RHI/api/IRHITexture.hpp"
-
 namespace Renderer
 {
     GuiNode::GuiNode(HW::Window& window,
@@ -15,14 +12,18 @@ namespace Renderer
         : m_Pass(std::make_unique<GuiPass>(window, device, resourceManager))
     {}
 
+    void GuiNode::Setup(RenderGraph& /*graph*/)
+    {
+        m_Desc.name   = "GuiNode";
+        m_Desc.inputs = {
+            { "SceneColorBuffer", ResourceType::Color, ResourceAccess::Read,
+              RHI::ImageLayout::ShaderReadOnly }
+        };
+    }
+
     void GuiNode::Execute(RenderContext& ctx)
     {
-        // Transition SceneColorBuffer from write to read before GuiPass samples it.
-        auto& sceneBuffer = const_cast<RHI::IRHITexture&>(*ctx.GetTexture("SceneColorBuffer"));
-        ctx.GetCommandList().TransitionTexture(sceneBuffer,
-            RHI::ImageLayout::ColorAttachment,
-            RHI::ImageLayout::ShaderReadOnly);
-
+        // Barrier (ColorAttachment → ShaderReadOnly) is emitted by RenderGraph::Execute().
         m_Pass->Render(ctx.GetCommandList(), ctx.GetResourceManager());
     }
 

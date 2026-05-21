@@ -18,6 +18,7 @@ namespace Renderer
         ForwardNode(RHI::IRHIDevice& device, ResourceManager& resourceManager,
                     ShaderManager& shaderManager, PipelineManager& pipelineManager);
 
+        void Setup(RenderGraph& graph) override;
         void Execute(RenderContext& ctx) override;
         void Cleanup(RHI::IRHIDevice& device) override;
 

@@ -64,8 +64,10 @@ namespace Renderer
 
     private:
         void BuildTextureRegistry(const ResourceManager& resourceManager);
+        void BuildBarrierPlan();
 
-        std::vector<IRenderNode*> m_Nodes;
-        TextureRegistry           m_TextureRegistry;
+        std::vector<IRenderNode*>              m_Nodes;
+        TextureRegistry                        m_TextureRegistry;
+        std::vector<std::vector<BarrierEntry>> m_BarrierPlan;
     };
 }

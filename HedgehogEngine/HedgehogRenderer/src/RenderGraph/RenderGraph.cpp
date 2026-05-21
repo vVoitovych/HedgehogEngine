@@ -7,10 +7,13 @@
 #include "HedgehogEngine/api/Frame/FrameData.hpp"
 #include "HedgehogSettings/Settings/HedgehogSettings.hpp"
 #include "RHI/api/IRHIDevice.hpp"
+#include "RHI/api/IRHICommandList.hpp"
 
 #include "Logger/api/Logger.hpp"
 
 #include <cassert>
+#include <unordered_map>
+#include <utility>
 
 namespace Renderer
 {
@@ -28,6 +31,7 @@ namespace Renderer
             node->Setup(*this);
 
         BuildTextureRegistry(resourceManager);
+        BuildBarrierPlan();
     }
 
     void RenderGraph::BuildTextureRegistry(const ResourceManager& resourceManager)
@@ -40,12 +44,53 @@ namespace Renderer
         m_TextureRegistry["SceneColorBuffer"] = &resourceManager.GetSceneColorBuffer();
     }
 
+    void RenderGraph::BuildBarrierPlan()
+    {
+        m_BarrierPlan.assign(m_Nodes.size(), {});
+
+        // Track the last node that wrote each resource and the layout it left it in.
+        std::unordered_map<std::string, std::pair<size_t, RHI::ImageLayout>> lastWrite;
+
+        for (size_t i = 0; i < m_Nodes.size(); ++i)
+        {
+            const RenderNodeDesc& desc = m_Nodes[i]->GetDesc();
+
+            // For each declared input: if a prior write exists, plan a transition barrier.
+            for (const auto& slot : desc.inputs)
+            {
+                auto writeIt = lastWrite.find(slot.name);
+                auto texIt   = m_TextureRegistry.find(slot.name);
+                if (writeIt != lastWrite.end() && texIt != m_TextureRegistry.end())
+                {
+                    m_BarrierPlan[i].push_back({
+                        texIt->second,
+                        writeIt->second.second,  // from: producer's post-write layout
+                        slot.layout              // to:   consumer's required layout
+                    });
+                }
+            }
+
+            // Record this node's output writes.
+            for (const auto& slot : desc.outputs)
+                lastWrite[slot.name] = { i, slot.layout };
+        }
+    }
+
     void RenderGraph::Execute(RenderContext& ctx)
     {
-        for (IRenderNode* node : m_Nodes)
+        auto& cmd = ctx.GetCommandList();
+        for (size_t i = 0; i < m_Nodes.size(); ++i)
         {
-            if (node->IsEnabled())
-                node->Execute(ctx);
+            for (const auto& barrier : m_BarrierPlan[i])
+            {
+                cmd.TransitionTexture(
+                    const_cast<RHI::IRHITexture&>(*barrier.m_Texture),
+                    barrier.m_FromLayout,
+                    barrier.m_ToLayout);
+            }
+
+            if (m_Nodes[i]->IsEnabled())
+                m_Nodes[i]->Execute(ctx);
         }
     }
 
@@ -93,6 +138,7 @@ namespace Renderer
             node->OnWindowResize(device, resourceManager);
 
         BuildTextureRegistry(resourceManager);
+        BuildBarrierPlan();
     }
 
     void RenderGraph::OnSceneViewResize(RHI::IRHIDevice& device,
@@ -102,6 +148,7 @@ namespace Renderer
             node->OnSceneViewResize(device, resourceManager);
 
         BuildTextureRegistry(resourceManager);
+        BuildBarrierPlan();
     }
 
     void RenderGraph::OnSettingsChanged(RHI::IRHIDevice& device,
@@ -112,5 +159,6 @@ namespace Renderer
             node->OnSettingsChanged(device, settings, resourceManager);
 
         BuildTextureRegistry(resourceManager);
+        BuildBarrierPlan();
     }
 }

@@ -11,6 +11,15 @@ namespace Renderer
         : m_Pass(std::make_unique<ForwardPass>(device, resourceManager, shaderManager, pipelineManager))
     {}
 
+    void ForwardNode::Setup(RenderGraph& /*graph*/)
+    {
+        m_Desc.name    = "ForwardNode";
+        m_Desc.outputs = {
+            { "SceneColorBuffer", ResourceType::Color, ResourceAccess::Write,
+              RHI::ImageLayout::ColorAttachment }
+        };
+    }
+
     void ForwardNode::Execute(RenderContext& ctx)
     {
         m_Pass->Render(ctx.GetFrameData(), ctx.GetResourceManager(),
