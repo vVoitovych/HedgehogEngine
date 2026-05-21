@@ -13,6 +13,7 @@ namespace Renderer
     class ThreadContext;
     class ResourceManager;
     class ShaderManager;
+    class PipelineManager;
     class RenderNodeManager;
     class RenderGraph;
 
@@ -38,6 +39,7 @@ namespace Renderer
         std::unique_ptr<ThreadContext>     m_ThreadContext;
         std::unique_ptr<ResourceManager>   m_ResourceManager;
         std::unique_ptr<ShaderManager>     m_ShaderManager;
+        std::unique_ptr<PipelineManager>   m_PipelineManager;
         std::unique_ptr<RenderNodeManager> m_NodeManager;
         std::unique_ptr<RenderGraph>       m_RenderGraph;
 

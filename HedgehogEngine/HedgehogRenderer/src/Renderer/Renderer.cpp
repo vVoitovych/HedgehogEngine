@@ -10,6 +10,7 @@
 #include "RenderGraph/RenderContext.hpp"
 #include "ResourceManager/ResourceManager.hpp"
 #include "ShaderManager/ShaderManager.hpp"
+#include "PipelineManager/PipelineManager.hpp"
 #include "RenderNodeManager/RenderNodeManager.hpp"
 
 #include "RenderNodes/InitNode.hpp"
@@ -46,8 +47,10 @@ namespace Renderer
         auto& settings = engineContext.GetSettings();
         auto& rm       = *m_ResourceManager;
 
-        m_ShaderManager = std::make_unique<ShaderManager>(device);
-        auto& sm        = *m_ShaderManager;
+        m_ShaderManager   = std::make_unique<ShaderManager>(device);
+        auto& sm          = *m_ShaderManager;
+        m_PipelineManager = std::make_unique<PipelineManager>(device, sm);
+        auto& pm          = *m_PipelineManager;
 
         m_NodeManager = std::make_unique<RenderNodeManager>();
 
@@ -55,18 +58,18 @@ namespace Renderer
             []() { return std::make_unique<InitNode>(); });
 
         m_NodeManager->RegisterNodeType("ShadowmapNode",
-            [&device, &settings, &rm, &sm]() {
-                return std::make_unique<ShadowmapNode>(device, settings, rm, sm);
+            [&device, &settings, &rm, &sm, &pm]() {
+                return std::make_unique<ShadowmapNode>(device, settings, rm, sm, pm);
             });
 
         m_NodeManager->RegisterNodeType("DepthPrepassNode",
-            [&device, &rm, &sm]() {
-                return std::make_unique<DepthPrepassNode>(device, rm, sm);
+            [&device, &rm, &sm, &pm]() {
+                return std::make_unique<DepthPrepassNode>(device, rm, sm, pm);
             });
 
         m_NodeManager->RegisterNodeType("ForwardNode",
-            [&device, &rm, &sm]() {
-                return std::make_unique<ForwardNode>(device, rm, sm);
+            [&device, &rm, &sm, &pm]() {
+                return std::make_unique<ForwardNode>(device, rm, sm, pm);
             });
 
         m_NodeManager->RegisterNodeType("GuiNode",
@@ -103,6 +106,7 @@ namespace Renderer
         device.WaitIdle();
         m_RenderGraph->Cleanup(device);
         m_NodeManager->DestroyAll();
+        m_PipelineManager->Cleanup();
         m_ShaderManager->Cleanup();
         m_ResourceManager->Cleanup(device);
         m_ThreadContext->Cleanup(device);

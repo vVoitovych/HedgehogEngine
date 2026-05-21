@@ -2,13 +2,15 @@
 
 #include "RenderGraph/RenderContext.hpp"
 #include "RenderPasses/DepthPrepass/DepthPrePass.hpp"
+#include "PipelineManager/PipelineManager.hpp"
 
 namespace Renderer
 {
     DepthPrepassNode::DepthPrepassNode(RHI::IRHIDevice& device,
                                        const ResourceManager& resourceManager,
-                                       ShaderManager& shaderManager)
-        : m_Pass(std::make_unique<DepthPrePass>(device, resourceManager, shaderManager))
+                                       ShaderManager& shaderManager,
+                                       PipelineManager& pipelineManager)
+        : m_Pass(std::make_unique<DepthPrePass>(device, resourceManager, shaderManager, pipelineManager))
     {}
 
     void DepthPrepassNode::Execute(RenderContext& ctx)

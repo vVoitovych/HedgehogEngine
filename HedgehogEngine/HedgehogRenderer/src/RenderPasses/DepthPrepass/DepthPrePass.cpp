@@ -10,7 +10,7 @@
 #include "HedgehogCommon/api/RendererSettings.hpp"
 
 #include "ShaderManager/ShaderManager.hpp"
-#include "Pipeline/PipelineLoader.hpp"
+#include "PipelineManager/PipelineManager.hpp"
 
 #include <cassert>
 
@@ -27,7 +27,7 @@ namespace Renderer
 {
 
     DepthPrePass::DepthPrePass(RHI::IRHIDevice& device, const ResourceManager& resourceManager,
-                               ShaderManager& shaderManager)
+                               ShaderManager& shaderManager, PipelineManager& pipelineManager)
     {
         const auto sd = shaderManager.LoadShaderFile(
             "/HedgehogEngine/HedgehogRenderer/assets/Shaders/DepthPrepass.shader");
@@ -37,7 +37,7 @@ namespace Renderer
 
         m_FramePool = device.CreateDescriptorPool(
             MAX_FRAMES_IN_FLIGHT,
-            PipelineLoader::MakePoolSizes(sd.m_Layout.m_DescriptorSets[0], MAX_FRAMES_IN_FLIGHT));
+            PipelineManager::MakePoolSizes(sd.m_Layout.m_DescriptorSets[0], MAX_FRAMES_IN_FLIGHT));
 
         // Per-frame uniform buffers and descriptor sets
         m_FrameUniforms.reserve(MAX_FRAMES_IN_FLIGHT);
@@ -74,7 +74,7 @@ namespace Renderer
         auto pipelineDesc                   = sd.m_Pipeline;
         pipelineDesc.m_DescriptorSetLayouts = { m_FrameLayout.get() };
         pipelineDesc.m_RenderPass           = m_RenderPass.get();
-        m_Pipeline = device.CreateGraphicsPipeline(pipelineDesc);
+        m_Pipeline = &pipelineManager.GetOrCreate(pipelineDesc);
 
         // Framebuffer
         const auto& depthBuffer = resourceManager.GetRHIDepthBuffer();
@@ -144,7 +144,7 @@ namespace Renderer
 
         m_FrameSets.clear();
         m_FrameUniforms.clear();
-        m_Pipeline.reset();
+        m_Pipeline = nullptr;
         m_FrameBuffer.reset();
         m_RenderPass.reset();
         m_FramePool.reset();

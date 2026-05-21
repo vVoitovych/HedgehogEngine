@@ -6,7 +6,7 @@
 #include "HedgehogCommon/api/RendererSettings.hpp"
 
 #include "ShaderManager/ShaderManager.hpp"
-#include "Pipeline/PipelineLoader.hpp"
+#include "PipelineManager/PipelineManager.hpp"
 
 #include <cassert>
 
@@ -33,7 +33,8 @@ namespace Renderer
 {
 
     ShadowmapPass::ShadowmapPass(RHI::IRHIDevice& device, const HedgehogSettings::Settings& settings,
-                                  const ResourceManager& resourceManager, ShaderManager& shaderManager)
+                                  const ResourceManager& resourceManager, ShaderManager& shaderManager,
+                                  PipelineManager& pipelineManager)
     {
         const auto sd = shaderManager.LoadShaderFile(
             "/HedgehogEngine/HedgehogRenderer/assets/Shaders/ShadowmapPass.shader");
@@ -45,7 +46,7 @@ namespace Renderer
         const uint32_t totalSets = MaxShadowCascades * MAX_FRAMES_IN_FLIGHT;
         m_ShadowmapPool = device.CreateDescriptorPool(
             totalSets,
-            PipelineLoader::MakePoolSizes(sd.m_Layout.m_DescriptorSets[0], totalSets));
+            PipelineManager::MakePoolSizes(sd.m_Layout.m_DescriptorSets[0], totalSets));
 
         // Per-frame per-cascade uniform buffers and descriptor sets
         m_ShadowmapUniforms.resize(MAX_FRAMES_IN_FLIGHT);
@@ -85,7 +86,7 @@ namespace Renderer
         auto pipelineDesc                   = sd.m_Pipeline;
         pipelineDesc.m_DescriptorSetLayouts = { m_ShadowmapLayout.get() };
         pipelineDesc.m_RenderPass           = m_RenderPass.get();
-        m_Pipeline = device.CreateGraphicsPipeline(pipelineDesc);
+        m_Pipeline = &pipelineManager.GetOrCreate(pipelineDesc);
 
         UpdateFrameBuffer(device, resourceManager);
         UpdateViewports(settings);
@@ -146,7 +147,7 @@ namespace Renderer
 
         m_ShadowmapSets.clear();
         m_ShadowmapUniforms.clear();
-        m_Pipeline.reset();
+        m_Pipeline = nullptr;
         m_FrameBuffer.reset();
         m_RenderPass.reset();
         m_ShadowmapPool.reset();

@@ -35,12 +35,14 @@ namespace Renderer
 {
     class ResourceManager;
     class ShaderManager;
+    class PipelineManager;
 
     class ShadowmapPass
     {
     public:
         ShadowmapPass(RHI::IRHIDevice& device, const HedgehogSettings::Settings& settings,
-                      const ResourceManager& resourceManager, ShaderManager& shaderManager);
+                      const ResourceManager& resourceManager, ShaderManager& shaderManager,
+                      PipelineManager& pipelineManager);
         ~ShadowmapPass();
 
         void Render(const HedgehogEngine::FrameData& frame, const ResourceManager& resourceManager,
@@ -83,7 +85,7 @@ namespace Renderer
 
         std::unique_ptr<RHI::IRHIRenderPass>         m_RenderPass;
         std::unique_ptr<RHI::IRHIFramebuffer>         m_FrameBuffer;
-        std::unique_ptr<RHI::IRHIPipeline>            m_Pipeline;
+        RHI::IRHIPipeline*                            m_Pipeline = nullptr;
 
         std::unique_ptr<RHI::IRHIDescriptorSetLayout> m_ShadowmapLayout;
         std::unique_ptr<RHI::IRHIDescriptorPool>      m_ShadowmapPool;

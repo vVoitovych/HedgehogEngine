@@ -2,14 +2,16 @@
 
 #include "RenderGraph/RenderContext.hpp"
 #include "RenderPasses/ShadowmapPass/ShadowmapPass.hpp"
+#include "PipelineManager/PipelineManager.hpp"
 
 namespace Renderer
 {
     ShadowmapNode::ShadowmapNode(RHI::IRHIDevice& device,
                                  const HedgehogSettings::Settings& settings,
                                  const ResourceManager& resourceManager,
-                                 ShaderManager& shaderManager)
-        : m_Pass(std::make_unique<ShadowmapPass>(device, settings, resourceManager, shaderManager))
+                                 ShaderManager& shaderManager,
+                                 PipelineManager& pipelineManager)
+        : m_Pass(std::make_unique<ShadowmapPass>(device, settings, resourceManager, shaderManager, pipelineManager))
     {}
 
     void ShadowmapNode::Execute(RenderContext& ctx)

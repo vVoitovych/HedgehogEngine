@@ -11,7 +11,7 @@
 #include "HedgehogMath/api/Common.hpp"
 
 #include "ShaderManager/ShaderManager.hpp"
-#include "Pipeline/PipelineLoader.hpp"
+#include "PipelineManager/PipelineManager.hpp"
 
 #include <cassert>
 #include "HedgehogMath/api/Vector.hpp"
@@ -45,7 +45,7 @@ namespace Renderer
 
 
     ForwardPass::ForwardPass(RHI::IRHIDevice& device, ResourceManager& resourceManager,
-                             ShaderManager& shaderManager)
+                             ShaderManager& shaderManager, PipelineManager& pipelineManager)
     {
         const auto sd = shaderManager.LoadShaderFile(
             "/HedgehogEngine/HedgehogRenderer/assets/Shaders/ForwardPass.shader");
@@ -55,7 +55,7 @@ namespace Renderer
         m_FrameLayout = device.CreateDescriptorSetLayout(sd.m_Layout.m_DescriptorSets[0]);
         m_FramePool = device.CreateDescriptorPool(
             MAX_FRAMES_IN_FLIGHT,
-            PipelineLoader::MakePoolSizes(sd.m_Layout.m_DescriptorSets[0], MAX_FRAMES_IN_FLIGHT));
+            PipelineManager::MakePoolSizes(sd.m_Layout.m_DescriptorSets[0], MAX_FRAMES_IN_FLIGHT));
 
         m_FrameUniforms.reserve(MAX_FRAMES_IN_FLIGHT);
         m_FrameSets.reserve(MAX_FRAMES_IN_FLIGHT);
@@ -81,7 +81,7 @@ namespace Renderer
             device,
             *m_MaterialLayout,
             MAX_MATERIAL_COUNT,
-            PipelineLoader::MakePoolSizes(sd.m_Layout.m_DescriptorSets[1], MAX_MATERIAL_COUNT));
+            PipelineManager::MakePoolSizes(sd.m_Layout.m_DescriptorSets[1], MAX_MATERIAL_COUNT));
 
         // Render pass: one color + depth (loaded from DepthPrePass)
         RHI::RenderPassDesc rpDesc;
@@ -109,7 +109,7 @@ namespace Renderer
         auto pipelineDesc                   = sd.m_Pipeline;
         pipelineDesc.m_DescriptorSetLayouts = { m_FrameLayout.get(), m_MaterialLayout.get() };
         pipelineDesc.m_RenderPass           = m_RenderPass.get();
-        m_Pipeline = device.CreateGraphicsPipeline(pipelineDesc);
+        m_Pipeline = &pipelineManager.GetOrCreate(pipelineDesc);
 
         // Framebuffer
         const auto& colorBuffer = resourceManager.GetSceneColorBuffer();
@@ -193,7 +193,7 @@ namespace Renderer
 
         m_FrameSets.clear();
         m_FrameUniforms.clear();
-        m_Pipeline.reset();
+        m_Pipeline = nullptr;
         m_FrameBuffer.reset();
         m_RenderPass.reset();
         m_FramePool.reset();

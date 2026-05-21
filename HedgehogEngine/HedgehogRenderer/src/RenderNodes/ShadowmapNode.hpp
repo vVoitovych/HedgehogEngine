@@ -8,6 +8,7 @@ namespace Renderer
 {
     class ShadowmapPass;
     class ShaderManager;
+    class PipelineManager;
 
     class ShadowmapNode : public IRenderNode
     {
@@ -15,7 +16,8 @@ namespace Renderer
         ShadowmapNode(RHI::IRHIDevice& device,
                       const HedgehogSettings::Settings& settings,
                       const ResourceManager& resourceManager,
-                      ShaderManager& shaderManager);
+                      ShaderManager& shaderManager,
+                      PipelineManager& pipelineManager);
 
         void Execute(RenderContext& ctx) override;
         void Cleanup(RHI::IRHIDevice& device) override;

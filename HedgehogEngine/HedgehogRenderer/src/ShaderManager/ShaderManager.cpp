@@ -1,5 +1,4 @@
 #include "ShaderManager.hpp"
-#include "Pipeline/VertexDescLoader.hpp"
 
 #include "Logger/api/Logger.hpp"
 
@@ -10,6 +9,7 @@
 #include <Windows.h>
 #include <cassert>
 #include <filesystem>
+#include <sstream>
 
 namespace Renderer
 {
@@ -31,11 +31,13 @@ namespace
         return "/" + rel.generic_string();
     }
 
-    std::string MakeCacheKey(const std::string& path, RHI::ShaderStage stage)
+    std::string ResolveAbsPath(const std::string& repoRelativePath)
     {
-        return path + "|" + std::to_string(static_cast<uint32_t>(stage));
+        return (GetRepoRoot() / repoRelativePath.substr(1)).lexically_normal().string();
     }
 } // namespace
+
+// ── Construction / cleanup ────────────────────────────────────────────────────
 
 ShaderManager::ShaderManager(RHI::IRHIDevice& device)
     : m_Device(device)
@@ -45,6 +47,15 @@ void ShaderManager::Cleanup()
 {
     m_Cache.clear();
 }
+
+// ── Cache key ─────────────────────────────────────────────────────────────────
+
+std::string ShaderManager::MakeCacheKey(const std::string& path, RHI::ShaderStage stage)
+{
+    return path + "|" + std::to_string(static_cast<uint32_t>(stage));
+}
+
+// ── Shader cache ─────────────────────────────────────────────────────────────
 
 RHI::IRHIShader& ShaderManager::GetOrLoad(const std::string& spirvPath, RHI::ShaderStage stage)
 {
@@ -64,17 +75,132 @@ RHI::IRHIShader& ShaderManager::GetOrLoad(const std::string& spirvPath, RHI::Sha
     return *ptr;
 }
 
-ShaderPipelineDesc ShaderManager::LoadShaderFile(const std::string& shaderPath)
+const RHI::IRHIShader* ShaderManager::TryGet(const std::string& spirvPath,
+                                              RHI::ShaderStage   stage) const
 {
-    const auto repoRoot   = GetRepoRoot();
-    const auto absShader  = (repoRoot / shaderPath.substr(1)).lexically_normal();
-    const auto shaderDir  = absShader.parent_path();
+    auto it = m_Cache.find(MakeCacheKey(spirvPath, stage));
+    return it != m_Cache.end() ? it->second.get() : nullptr;
+}
+
+// ── .pl pipeline layout parser ────────────────────────────────────────────────
+
+RHI::DescriptorType ShaderManager::ParseDescriptorType(const std::string& s)
+{
+    if (s == "uniform_buffer")         return RHI::DescriptorType::UniformBuffer;
+    if (s == "storage_buffer")         return RHI::DescriptorType::StorageBuffer;
+    if (s == "combined_image_sampler") return RHI::DescriptorType::CombinedImageSampler;
+    if (s == "storage_image")          return RHI::DescriptorType::StorageImage;
+    if (s == "input_attachment")       return RHI::DescriptorType::InputAttachment;
+    LOGERROR("ShaderManager: unknown descriptor type '", s, "'");
+    assert(false && "Unknown descriptor type in .pl file");
+    return RHI::DescriptorType::UniformBuffer;
+}
+
+RHI::ShaderStage ShaderManager::ParseDescriptorStage(const std::string& s)
+{
+    RHI::ShaderStage result = RHI::ShaderStage::None;
+    std::string token;
+    std::istringstream ss(s);
+    while (std::getline(ss, token, '|'))
+    {
+        while (!token.empty() && token.front() == ' ') token.erase(token.begin());
+        while (!token.empty() && token.back()  == ' ') token.pop_back();
+
+        if      (token == "vertex")   result = result | RHI::ShaderStage::Vertex;
+        else if (token == "fragment") result = result | RHI::ShaderStage::Fragment;
+        else if (token == "compute")  result = result | RHI::ShaderStage::Compute;
+        else if (token == "all")      result = RHI::ShaderStage::All;
+        else
+        {
+            LOGERROR("ShaderManager: unknown shader stage '", token, "'");
+            assert(false && "Unknown shader stage in .pl file");
+        }
+    }
+    return result;
+}
+
+PipelineFileDesc ShaderManager::LoadPipelineLayout(const std::string& layoutPath)
+{
+    const std::string fullPath = ResolveAbsPath(layoutPath);
 
     YAML::Node root;
-    try
+    try { root = YAML::LoadFile(fullPath); }
+    catch (const YAML::Exception& e)
     {
-        root = YAML::LoadFile(absShader.string());
+        LOGERROR("ShaderManager: failed to load layout '", fullPath, "': ", e.what());
+        assert(false && "Pipeline layout file not found or malformed.");
     }
+
+    PipelineFileDesc desc;
+
+    if (const YAML::Node& sets = root["descriptor_sets"])
+    {
+        for (const YAML::Node& setNode : sets)
+        {
+            std::vector<RHI::DescriptorBinding> bindings;
+            if (const YAML::Node& bindingsNode = setNode["bindings"])
+            {
+                for (const YAML::Node& b : bindingsNode)
+                {
+                    RHI::DescriptorBinding binding;
+                    binding.m_Binding = b["binding"].as<uint32_t>();
+                    binding.m_Type    = ParseDescriptorType(b["type"].as<std::string>());
+                    binding.m_Count   = b["count"] ? b["count"].as<uint32_t>() : 1u;
+                    binding.m_Stages  = ParseDescriptorStage(b["stage"].as<std::string>());
+                    bindings.push_back(binding);
+                }
+            }
+            desc.m_DescriptorSets.push_back(std::move(bindings));
+        }
+    }
+
+    if (const YAML::Node& pcs = root["push_constants"])
+    {
+        for (const YAML::Node& pc : pcs)
+        {
+            RHI::PushConstantRange range;
+            range.m_Stages = ParseDescriptorStage(pc["stage"].as<std::string>());
+            range.m_Offset = pc["offset"] ? pc["offset"].as<uint32_t>() : 0u;
+            range.m_Size   = pc["size"].as<uint32_t>();
+            desc.m_PushConstants.push_back(range);
+        }
+    }
+
+    return desc;
+}
+
+// ── .vdes vertex description parser ──────────────────────────────────────────
+
+RHI::Format ShaderManager::ParseVertexFormat(const std::string& s)
+{
+    if (s == "r32_float")          return RHI::Format::R32Float;
+    if (s == "r32g32_float")       return RHI::Format::R32G32Float;
+    if (s == "r32g32b32_float")    return RHI::Format::R32G32B32Float;
+    if (s == "r32g32b32a32_float") return RHI::Format::R32G32B32A32Float;
+    LOGERROR("ShaderManager: unknown vertex format '", s, "'");
+    assert(false && "Unknown format in .vdes file");
+    return RHI::Format::Undefined;
+}
+
+RHI::VertexInputRate ShaderManager::ParseVertexInputRate(const std::string& s)
+{
+    if (s == "per_vertex")   return RHI::VertexInputRate::PerVertex;
+    if (s == "per_instance") return RHI::VertexInputRate::PerInstance;
+    LOGERROR("ShaderManager: unknown input rate '", s, "'");
+    assert(false && "Unknown input rate in .vdes file");
+    return RHI::VertexInputRate::PerVertex;
+}
+
+// ── .shader file loader ────────────────────────────────────────────────────────
+
+ShaderPipelineDesc ShaderManager::LoadShaderFile(const std::string& shaderPath)
+{
+    const auto repoRoot  = GetRepoRoot();
+    const auto absShader = (repoRoot / shaderPath.substr(1)).lexically_normal();
+    const auto shaderDir = absShader.parent_path();
+
+    YAML::Node root;
+    try { root = YAML::LoadFile(absShader.string()); }
     catch (const YAML::Exception& e)
     {
         LOGERROR("ShaderManager: failed to load '", absShader.string(), "': ", e.what());
@@ -83,10 +209,10 @@ ShaderPipelineDesc ShaderManager::LoadShaderFile(const std::string& shaderPath)
 
     ShaderPipelineDesc desc;
 
-    // Pipeline layout (required) — also seeds push constant ranges
+    // Pipeline layout (required)
     if (const YAML::Node& n = root["pipeline_layout"])
     {
-        desc.m_Layout                        = PipelineLoader::Load(ToRepoRelative(shaderDir, n.as<std::string>()));
+        desc.m_Layout                        = LoadPipelineLayout(ToRepoRelative(shaderDir, n.as<std::string>()));
         desc.m_Pipeline.m_PushConstantRanges = desc.m_Layout.m_PushConstants;
     }
     else
@@ -98,12 +224,46 @@ ShaderPipelineDesc ShaderManager::LoadShaderFile(const std::string& shaderPath)
     // Vertex description (optional)
     if (const YAML::Node& n = root["vertex_description"])
     {
-        const auto vd                      = VertexDescLoader::Load(ToRepoRelative(shaderDir, n.as<std::string>()));
-        desc.m_Pipeline.m_VertexBindings   = vd.m_Bindings;
-        desc.m_Pipeline.m_VertexAttributes = vd.m_Attributes;
+        const std::string vdesPath = ToRepoRelative(shaderDir, n.as<std::string>());
+        const std::string fullPath = ResolveAbsPath(vdesPath);
+
+        YAML::Node vdes;
+        try { vdes = YAML::LoadFile(fullPath); }
+        catch (const YAML::Exception& e)
+        {
+            LOGERROR("ShaderManager: failed to load vertex desc '", fullPath, "': ", e.what());
+            assert(false && "Vertex description file not found or malformed.");
+        }
+
+        if (const YAML::Node& bindingsNode = vdes["bindings"])
+        {
+            for (const YAML::Node& b : bindingsNode)
+            {
+                RHI::VertexBinding binding;
+                binding.m_Binding   = b["binding"].as<uint32_t>();
+                binding.m_Stride    = b["stride"].as<uint32_t>();
+                binding.m_InputRate = b["input_rate"]
+                    ? ParseVertexInputRate(b["input_rate"].as<std::string>())
+                    : RHI::VertexInputRate::PerVertex;
+                desc.m_Pipeline.m_VertexBindings.push_back(binding);
+            }
+        }
+
+        if (const YAML::Node& attrsNode = vdes["attributes"])
+        {
+            for (const YAML::Node& a : attrsNode)
+            {
+                RHI::VertexAttribute attr;
+                attr.m_Location = a["location"].as<uint32_t>();
+                attr.m_Binding  = a["binding"].as<uint32_t>();
+                attr.m_Format   = ParseVertexFormat(a["format"].as<std::string>());
+                attr.m_Offset   = a["offset"] ? a["offset"].as<uint32_t>() : 0u;
+                desc.m_Pipeline.m_VertexAttributes.push_back(attr);
+            }
+        }
     }
 
-    // Topology (optional, default: triangle_list)
+    // Topology (optional)
     if (const YAML::Node& n = root["topology"])
         desc.m_Pipeline.m_Topology = ParseTopology(n.as<std::string>());
 
@@ -122,7 +282,7 @@ ShaderPipelineDesc ShaderManager::LoadShaderFile(const std::string& shaderPath)
         if (const YAML::Node& c = n["compare"]) desc.m_Pipeline.m_DepthCompareOp   = ParseCompareOp(c.as<std::string>());
     }
 
-    // Color blend attachments (optional, default: empty = depth-only pass)
+    // Blend attachments (optional)
     if (const YAML::Node& blends = root["blend"])
     {
         for (const YAML::Node& b : blends)
@@ -170,6 +330,8 @@ ShaderPipelineDesc ShaderManager::LoadShaderFile(const std::string& shaderPath)
     assert(desc.m_VertexShader && "A .shader file must contain at least a vertex stage");
     return desc;
 }
+
+// ── Parse helpers ────────────────────────────────────────────────────────────
 
 RHI::ShaderStage ShaderManager::ParseStage(const std::string& s)
 {

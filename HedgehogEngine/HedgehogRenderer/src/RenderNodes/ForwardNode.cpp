@@ -2,12 +2,13 @@
 
 #include "RenderGraph/RenderContext.hpp"
 #include "RenderPasses/ForwardPass/ForwardPass.hpp"
+#include "PipelineManager/PipelineManager.hpp"
 
 namespace Renderer
 {
     ForwardNode::ForwardNode(RHI::IRHIDevice& device, ResourceManager& resourceManager,
-                             ShaderManager& shaderManager)
-        : m_Pass(std::make_unique<ForwardPass>(device, resourceManager, shaderManager))
+                             ShaderManager& shaderManager, PipelineManager& pipelineManager)
+        : m_Pass(std::make_unique<ForwardPass>(device, resourceManager, shaderManager, pipelineManager))
     {}
 
     void ForwardNode::Execute(RenderContext& ctx)

@@ -8,6 +8,7 @@ namespace Renderer
 {
     class ForwardPass;
     class ShaderManager;
+    class PipelineManager;
 
     class ForwardNode : public IRenderNode
     {
@@ -15,7 +16,7 @@ namespace Renderer
         // Non-const ResourceManager& required: ForwardPass constructor injects
         // the material descriptor layout into ResourceRegistry on construction.
         ForwardNode(RHI::IRHIDevice& device, ResourceManager& resourceManager,
-                    ShaderManager& shaderManager);
+                    ShaderManager& shaderManager, PipelineManager& pipelineManager);
 
         void Execute(RenderContext& ctx) override;
         void Cleanup(RHI::IRHIDevice& device) override;

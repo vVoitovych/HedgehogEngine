@@ -27,12 +27,13 @@ namespace Renderer
 {
     class ResourceManager;
     class ShaderManager;
+    class PipelineManager;
 
     class DepthPrePass
     {
     public:
         DepthPrePass(RHI::IRHIDevice& device, const ResourceManager& resourceManager,
-                     ShaderManager& shaderManager);
+                     ShaderManager& shaderManager, PipelineManager& pipelineManager);
         ~DepthPrePass();
 
         void Render(const HedgehogEngine::FrameData& frame, const ResourceManager& resourceManager,
@@ -50,7 +51,7 @@ namespace Renderer
     private:
         std::unique_ptr<RHI::IRHIRenderPass>         m_RenderPass;
         std::unique_ptr<RHI::IRHIFramebuffer>         m_FrameBuffer;
-        std::unique_ptr<RHI::IRHIPipeline>            m_Pipeline;
+        RHI::IRHIPipeline*                            m_Pipeline = nullptr;
 
         std::unique_ptr<RHI::IRHIDescriptorSetLayout> m_FrameLayout;
         std::unique_ptr<RHI::IRHIDescriptorPool>      m_FramePool;
