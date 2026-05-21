@@ -14,16 +14,17 @@
 
 namespace Renderer
 {
-    void RenderGraph::AddNode(std::unique_ptr<IRenderNode> node)
+    void RenderGraph::AddNode(IRenderNode* node)
     {
-        m_Nodes.push_back(std::move(node));
+        assert(node && "RenderGraph::AddNode: null node");
+        m_Nodes.push_back(node);
     }
 
     void RenderGraph::Compile(const ResourceManager& resourceManager)
     {
         assert(!m_Nodes.empty() && "RenderGraph::Compile() called with no nodes");
 
-        for (auto& node : m_Nodes)
+        for (IRenderNode* node : m_Nodes)
             node->Setup(*this);
 
         BuildTextureRegistry(resourceManager);
@@ -32,16 +33,16 @@ namespace Renderer
     void RenderGraph::BuildTextureRegistry(const ResourceManager& resourceManager)
     {
         m_TextureRegistry.clear();
-        m_TextureRegistry["RHIColorBuffer"]  = &resourceManager.GetRHIColorBuffer();
-        m_TextureRegistry["RHIDepthBuffer"]  = &resourceManager.GetRHIDepthBuffer();
-        m_TextureRegistry["RHIShadowMap"]    = &resourceManager.GetRHIShadowMap();
-        m_TextureRegistry["RHIShadowMask"]   = &resourceManager.GetRHIShadowMask();
+        m_TextureRegistry["RHIColorBuffer"]   = &resourceManager.GetRHIColorBuffer();
+        m_TextureRegistry["RHIDepthBuffer"]   = &resourceManager.GetRHIDepthBuffer();
+        m_TextureRegistry["RHIShadowMap"]     = &resourceManager.GetRHIShadowMap();
+        m_TextureRegistry["RHIShadowMask"]    = &resourceManager.GetRHIShadowMask();
         m_TextureRegistry["SceneColorBuffer"] = &resourceManager.GetSceneColorBuffer();
     }
 
     void RenderGraph::Execute(RenderContext& ctx)
     {
-        for (auto& node : m_Nodes)
+        for (IRenderNode* node : m_Nodes)
         {
             if (node->IsEnabled())
                 node->Execute(ctx);
@@ -50,25 +51,26 @@ namespace Renderer
 
     void RenderGraph::Cleanup(RHI::IRHIDevice& device)
     {
-        for (auto& node : m_Nodes)
+        for (IRenderNode* node : m_Nodes)
             node->Cleanup(device);
+        m_Nodes.clear();
     }
 
     void RenderGraph::BeginFrame()
     {
-        for (auto& node : m_Nodes)
+        for (IRenderNode* node : m_Nodes)
             node->BeginFrame();
     }
 
     void RenderGraph::DiscardFrame()
     {
-        for (auto& node : m_Nodes)
+        for (IRenderNode* node : m_Nodes)
             node->DiscardFrame();
     }
 
     void* RenderGraph::GetSceneViewTextureId() const
     {
-        for (const auto& node : m_Nodes)
+        for (IRenderNode* node : m_Nodes)
         {
             if (void* id = node->GetSceneViewTextureId())
                 return id;
@@ -80,14 +82,14 @@ namespace Renderer
                                  uint32_t                           frameIndex,
                                  const HedgehogSettings::Settings&  settings)
     {
-        for (auto& node : m_Nodes)
+        for (IRenderNode* node : m_Nodes)
             node->UpdateData(frame, frameIndex, settings);
     }
 
     void RenderGraph::OnWindowResize(RHI::IRHIDevice& device,
                                      const ResourceManager& resourceManager)
     {
-        for (auto& node : m_Nodes)
+        for (IRenderNode* node : m_Nodes)
             node->OnWindowResize(device, resourceManager);
 
         BuildTextureRegistry(resourceManager);
@@ -96,7 +98,7 @@ namespace Renderer
     void RenderGraph::OnSceneViewResize(RHI::IRHIDevice& device,
                                         const ResourceManager& resourceManager)
     {
-        for (auto& node : m_Nodes)
+        for (IRenderNode* node : m_Nodes)
             node->OnSceneViewResize(device, resourceManager);
 
         BuildTextureRegistry(resourceManager);
@@ -106,7 +108,7 @@ namespace Renderer
                                         const HedgehogSettings::Settings& settings,
                                         const ResourceManager& resourceManager)
     {
-        for (auto& node : m_Nodes)
+        for (IRenderNode* node : m_Nodes)
             node->OnSettingsChanged(device, settings, resourceManager);
 
         BuildTextureRegistry(resourceManager);

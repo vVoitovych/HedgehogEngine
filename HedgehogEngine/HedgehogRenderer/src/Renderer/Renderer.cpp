@@ -9,6 +9,7 @@
 #include "RenderGraph/RenderGraph.hpp"
 #include "RenderGraph/RenderContext.hpp"
 #include "ResourceManager/ResourceManager.hpp"
+#include "RenderNodeManager/RenderNodeManager.hpp"
 
 #include "RenderNodes/InitNode.hpp"
 #include "RenderNodes/ShadowmapNode.hpp"
@@ -42,14 +43,49 @@ namespace Renderer
         auto& device   = m_RHIContext->GetRHIDevice();
         auto& window   = windowContext.GetWindow();
         auto& settings = engineContext.GetSettings();
+        auto& rm       = *m_ResourceManager;
+
+        m_NodeManager = std::make_unique<RenderNodeManager>();
+
+        m_NodeManager->RegisterNodeType("InitNode",
+            []() { return std::make_unique<InitNode>(); });
+
+        m_NodeManager->RegisterNodeType("ShadowmapNode",
+            [&device, &settings, &rm]() {
+                return std::make_unique<ShadowmapNode>(device, settings, rm);
+            });
+
+        m_NodeManager->RegisterNodeType("DepthPrepassNode",
+            [&device, &rm]() {
+                return std::make_unique<DepthPrepassNode>(device, rm);
+            });
+
+        m_NodeManager->RegisterNodeType("ForwardNode",
+            [&device, &rm]() {
+                return std::make_unique<ForwardNode>(device, rm);
+            });
+
+        m_NodeManager->RegisterNodeType("GuiNode",
+            [&window, &device, &rm]() {
+                return std::make_unique<GuiNode>(window, device, rm);
+            });
+
+        m_NodeManager->RegisterNodeType("PresentNode",
+            []() { return std::make_unique<PresentNode>(); });
+
+        const GraphPreset preset{
+            .nodes = {
+                {"InitNode",         "init"},
+                {"ShadowmapNode",    "shadowmap"},
+                {"DepthPrepassNode", "depthPrepass"},
+                {"ForwardNode",      "forward"},
+                {"GuiNode",          "gui"},
+                {"PresentNode",      "present"},
+            }
+        };
 
         m_RenderGraph = std::make_unique<RenderGraph>();
-        m_RenderGraph->AddNode(std::make_unique<InitNode>());
-        m_RenderGraph->AddNode(std::make_unique<ShadowmapNode>(device, settings, *m_ResourceManager));
-        m_RenderGraph->AddNode(std::make_unique<DepthPrepassNode>(device, *m_ResourceManager));
-        m_RenderGraph->AddNode(std::make_unique<ForwardNode>(device, *m_ResourceManager));
-        m_RenderGraph->AddNode(std::make_unique<GuiNode>(window, device, *m_ResourceManager));
-        m_RenderGraph->AddNode(std::make_unique<PresentNode>());
+        m_NodeManager->LoadGraphPreset(preset, *m_RenderGraph);
         m_RenderGraph->Compile(*m_ResourceManager);
     }
 
@@ -62,6 +98,7 @@ namespace Renderer
         auto& device = m_RHIContext->GetRHIDevice();
         device.WaitIdle();
         m_RenderGraph->Cleanup(device);
+        m_NodeManager->DestroyAll();
         m_ResourceManager->Cleanup(device);
         m_ThreadContext->Cleanup(device);
         m_RHIContext->Cleanup();

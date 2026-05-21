@@ -2,7 +2,6 @@
 
 #include "RenderGraphTypes.hpp"
 
-#include <memory>
 #include <vector>
 
 namespace HedgehogEngine
@@ -35,11 +34,14 @@ namespace Renderer
         RenderGraph(const RenderGraph&)            = delete;
         RenderGraph& operator=(const RenderGraph&) = delete;
 
-        void AddNode(std::unique_ptr<IRenderNode> node);
+        // Add a non-owning pointer; ownership stays with RenderNodeManager.
+        void AddNode(IRenderNode* node);
 
         // Calls Setup() on every node then builds the texture registry from ResourceManager.
         void Compile(const ResourceManager& resourceManager);
 
+        // Calls Cleanup() on each node. Does NOT free node memory — caller must do that
+        // via RenderNodeManager::DestroyAll() after this returns.
         void Execute(RenderContext& ctx);
         void Cleanup(RHI::IRHIDevice& device);
 
@@ -63,7 +65,7 @@ namespace Renderer
     private:
         void BuildTextureRegistry(const ResourceManager& resourceManager);
 
-        std::vector<std::unique_ptr<IRenderNode>> m_Nodes;
-        TextureRegistry                           m_TextureRegistry;
+        std::vector<IRenderNode*> m_Nodes;
+        TextureRegistry           m_TextureRegistry;
     };
 }
