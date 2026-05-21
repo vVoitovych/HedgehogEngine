@@ -1,5 +1,6 @@
 #include "ForwardNode.hpp"
 
+#include "RenderGraph/RenderContext.hpp"
 #include "RenderPasses/ForwardPass/ForwardPass.hpp"
 
 namespace Renderer
@@ -8,9 +9,10 @@ namespace Renderer
         : m_Pass(std::make_unique<ForwardPass>(device, resourceManager))
     {}
 
-    void ForwardNode::Execute(NodeContext& ctx)
+    void ForwardNode::Execute(RenderContext& ctx)
     {
-        m_Pass->Render(ctx.frame, ctx.resourceManager, ctx.cmd, ctx.frameIndex);
+        m_Pass->Render(ctx.GetFrameData(), ctx.GetResourceManager(),
+                       ctx.GetCommandList(), ctx.GetFrameIndex());
     }
 
     void ForwardNode::Cleanup(RHI::IRHIDevice& device)

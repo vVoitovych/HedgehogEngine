@@ -13,7 +13,7 @@ namespace Renderer
     public:
         DepthPrepassNode(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
 
-        void Execute(NodeContext& ctx) override;
+        void Execute(RenderContext& ctx) override;
         void Cleanup(RHI::IRHIDevice& device) override;
 
         void OnSceneViewResize(RHI::IRHIDevice& device,

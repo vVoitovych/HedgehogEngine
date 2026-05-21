@@ -1,5 +1,6 @@
 #include "ShadowmapNode.hpp"
 
+#include "RenderGraph/RenderContext.hpp"
 #include "RenderPasses/ShadowmapPass/ShadowmapPass.hpp"
 
 namespace Renderer
@@ -10,9 +11,10 @@ namespace Renderer
         : m_Pass(std::make_unique<ShadowmapPass>(device, settings, resourceManager))
     {}
 
-    void ShadowmapNode::Execute(NodeContext& ctx)
+    void ShadowmapNode::Execute(RenderContext& ctx)
     {
-        m_Pass->Render(ctx.frame, ctx.resourceManager, ctx.cmd, ctx.frameIndex);
+        m_Pass->Render(ctx.GetFrameData(), ctx.GetResourceManager(),
+                       ctx.GetCommandList(), ctx.GetFrameIndex());
     }
 
     void ShadowmapNode::Cleanup(RHI::IRHIDevice& device)

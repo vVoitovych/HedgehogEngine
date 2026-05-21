@@ -12,7 +12,7 @@ namespace Renderer
     class RHIContext;
     class ThreadContext;
     class ResourceManager;
-    class RenderQueue;
+    class RenderGraph;
 
     class Renderer
     {
@@ -35,7 +35,7 @@ namespace Renderer
         std::unique_ptr<RHIContext>      m_RHIContext;
         std::unique_ptr<ThreadContext>   m_ThreadContext;
         std::unique_ptr<ResourceManager> m_ResourceManager;
-        std::unique_ptr<RenderQueue>     m_RenderQueue;
+        std::unique_ptr<RenderGraph>     m_RenderGraph;
 
         uint32_t m_DesiredSceneW = 0;
         uint32_t m_DesiredSceneH = 0;

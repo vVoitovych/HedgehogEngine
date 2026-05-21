@@ -6,11 +6,18 @@
 
 #include "RHIContext/RHIContext.hpp"
 #include "ThreadContext/ThreadContext.hpp"
-#include "RenderQueue/RenderQueue.hpp"
+#include "RenderGraph/RenderGraph.hpp"
+#include "RenderGraph/RenderContext.hpp"
 #include "ResourceManager/ResourceManager.hpp"
 
-#include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
+#include "RenderNodes/InitNode.hpp"
+#include "RenderNodes/ShadowmapNode.hpp"
+#include "RenderNodes/DepthPrepassNode.hpp"
+#include "RenderNodes/ForwardNode.hpp"
+#include "RenderNodes/GuiNode.hpp"
+#include "RenderNodes/PresentNode.hpp"
 
+#include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
 #include "HedgehogSettings/Settings/HedgehogSettings.hpp"
 
 #include "RHI/api/IRHIDevice.hpp"
@@ -23,17 +30,27 @@ namespace Renderer
     Renderer::Renderer(HedgehogEngine::HedgehogEngine& context)
     {
         auto& windowContext = context.GetWindowContext();
-        m_RHIContext    = std::make_unique<RHIContext>(windowContext);
-        m_ThreadContext = std::make_unique<ThreadContext>(m_RHIContext->GetRHIDevice());
+        auto& engineContext = context.GetEngineContext();
+
+        m_RHIContext      = std::make_unique<RHIContext>(windowContext);
+        m_ThreadContext   = std::make_unique<ThreadContext>(m_RHIContext->GetRHIDevice());
         m_ResourceManager = std::make_unique<ResourceManager>(
             m_RHIContext->GetRHIDevice(),
             m_RHIContext->GetRHISwapchain(),
-            context.GetEngineContext().GetSettings());
-        m_RenderQueue = std::make_unique<RenderQueue>(
-            m_RHIContext->GetRHIDevice(),
-            windowContext.GetWindow(),
-            context.GetEngineContext().GetSettings(),
-            *m_ResourceManager);
+            engineContext.GetSettings());
+
+        auto& device   = m_RHIContext->GetRHIDevice();
+        auto& window   = windowContext.GetWindow();
+        auto& settings = engineContext.GetSettings();
+
+        m_RenderGraph = std::make_unique<RenderGraph>();
+        m_RenderGraph->AddNode(std::make_unique<InitNode>());
+        m_RenderGraph->AddNode(std::make_unique<ShadowmapNode>(device, settings, *m_ResourceManager));
+        m_RenderGraph->AddNode(std::make_unique<DepthPrepassNode>(device, *m_ResourceManager));
+        m_RenderGraph->AddNode(std::make_unique<ForwardNode>(device, *m_ResourceManager));
+        m_RenderGraph->AddNode(std::make_unique<GuiNode>(window, device, *m_ResourceManager));
+        m_RenderGraph->AddNode(std::make_unique<PresentNode>());
+        m_RenderGraph->Compile();
     }
 
     Renderer::~Renderer()
@@ -44,7 +61,7 @@ namespace Renderer
     {
         auto& device = m_RHIContext->GetRHIDevice();
         device.WaitIdle();
-        m_RenderQueue->Cleanup(device);
+        m_RenderGraph->Cleanup(device);
         m_ResourceManager->Cleanup(device);
         m_ThreadContext->Cleanup(device);
         m_RHIContext->Cleanup();
@@ -52,12 +69,12 @@ namespace Renderer
 
     void Renderer::BeginGui()
     {
-        m_RenderQueue->BeginGui();
+        m_RenderGraph->BeginFrame();
     }
 
     void* Renderer::GetSceneViewTextureId() const
     {
-        return m_RenderQueue->GetSceneViewTextureId();
+        return m_RenderGraph->GetSceneViewTextureId();
     }
 
     float Renderer::GetAspectRatio() const
@@ -85,11 +102,11 @@ namespace Renderer
         const auto&    frameData  = engineContext.GetFrameData();
         const uint32_t frameIndex = m_ThreadContext->GetFrameIndex();
 
-        m_RenderQueue->UpdateData(frameData, frameIndex, engineContext.GetSettings());
+        m_RenderGraph->UpdateData(frameData, frameIndex, engineContext.GetSettings());
 
         if (windowContext.IsWindowResized() || window.IsResized())
         {
-            m_RenderQueue->DiscardGui();
+            m_RenderGraph->DiscardFrame();
 
             if (window.IsResized())
                 window.ResetResizedFlag();
@@ -99,7 +116,7 @@ namespace Renderer
             m_RHIContext->RecreateSwapchain(windowContext);
 
             m_ResourceManager->ResizeFrameBufferSizeDependenteResources(device, swapchain);
-            m_RenderQueue->ResizeResources(device, *m_ResourceManager);
+            m_RenderGraph->OnWindowResize(device, *m_ResourceManager);
 
             return;
         }
@@ -107,11 +124,11 @@ namespace Renderer
         if (engineContext.GetSettings().IsDirty())
         {
             m_ResourceManager->ResizeSettingsDependenteResources(device, engineContext.GetSettings());
-            m_RenderQueue->UpdateResources(device, engineContext.GetSettings(), *m_ResourceManager);
+            m_RenderGraph->OnSettingsChanged(device, engineContext.GetSettings(), *m_ResourceManager);
             engineContext.GetSettings().CleanDirtyState();
         }
 
-        m_RenderQueue->Render(
+        RenderContext ctx(
             frameData,
             device,
             swapchain,
@@ -122,18 +139,21 @@ namespace Renderer
             frameIndex,
             *m_ResourceManager);
 
+        m_RenderGraph->Execute(ctx);
+
         m_ThreadContext->NextFrame();
 
-        // Apply pending scene view resize at end of frame so the current frame's
-        // ImGui draw data (which references the old descriptor) has already been submitted.
+        // Apply pending scene view resize after frame submission so the ImGui draw
+        // data referencing the old descriptor has already been consumed by the GPU.
         if (m_DesiredSceneW > 0 && m_DesiredSceneH > 0)
         {
             const auto& sceneBuffer = m_ResourceManager->GetSceneColorBuffer();
-            if (sceneBuffer.GetWidth() != m_DesiredSceneW || sceneBuffer.GetHeight() != m_DesiredSceneH)
+            if (sceneBuffer.GetWidth()  != m_DesiredSceneW ||
+                sceneBuffer.GetHeight() != m_DesiredSceneH)
             {
                 device.WaitIdle();
                 m_ResourceManager->ResizeSceneView(device, m_DesiredSceneW, m_DesiredSceneH);
-                m_RenderQueue->ResizeSceneView(device, *m_ResourceManager);
+                m_RenderGraph->OnSceneViewResize(device, *m_ResourceManager);
             }
         }
     }

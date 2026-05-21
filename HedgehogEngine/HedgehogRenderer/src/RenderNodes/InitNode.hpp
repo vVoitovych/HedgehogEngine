@@ -13,7 +13,7 @@ namespace Renderer
     public:
         InitNode();
 
-        void Execute(NodeContext& ctx) override;
+        void Execute(RenderContext& ctx) override;
         void Cleanup(RHI::IRHIDevice& device) override;
 
     private:

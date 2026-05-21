@@ -1,5 +1,6 @@
 #include "PresentNode.hpp"
 
+#include "RenderGraph/RenderContext.hpp"
 #include "RenderPasses/PresentPass/PresentPass.hpp"
 #include "ResourceManager/ResourceManager.hpp"
 
@@ -11,13 +12,14 @@ namespace Renderer
         : m_Pass(std::make_unique<PresentPass>())
     {}
 
-    void PresentNode::Execute(NodeContext& ctx)
+    void PresentNode::Execute(RenderContext& ctx)
     {
-        auto& colorBuffer = const_cast<RHI::IRHITexture&>(ctx.resourceManager.GetRHIColorBuffer());
-        m_Pass->Render(ctx.cmd, ctx.device, ctx.swapchain, colorBuffer,
-                       ctx.backBufferIndex,
-                       ctx.imageAvailableSemaphore, ctx.renderFinishedSemaphore,
-                       ctx.fence);
+        auto& colorBuffer = const_cast<RHI::IRHITexture&>(
+            ctx.GetResourceManager().GetRHIColorBuffer());
+        m_Pass->Render(ctx.GetCommandList(), ctx.GetDevice(), ctx.GetSwapchain(),
+                       colorBuffer, ctx.GetBackBufferIndex(),
+                       ctx.GetImageAvailableSemaphore(), ctx.GetRenderFinishedSemaphore(),
+                       ctx.GetFence());
     }
 
     void PresentNode::Cleanup(RHI::IRHIDevice&)

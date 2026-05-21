@@ -10,10 +10,6 @@ namespace HedgehogEngine
 namespace RHI
 {
     class IRHIDevice;
-    class IRHISwapchain;
-    class IRHICommandList;
-    class IRHIFence;
-    class IRHISemaphore;
 }
 
 namespace HedgehogSettings
@@ -24,29 +20,14 @@ namespace HedgehogSettings
 namespace Renderer
 {
     class ResourceManager;
-
-    // All execution-time state passed to every node's Execute().
-    // backBufferIndex is written by InitNode and read by PresentNode.
-    struct NodeContext
-    {
-        const HedgehogEngine::FrameData& frame;
-        RHI::IRHIDevice&                 device;
-        RHI::IRHISwapchain&              swapchain;
-        RHI::IRHICommandList&            cmd;
-        RHI::IRHIFence&                  fence;
-        RHI::IRHISemaphore&              imageAvailableSemaphore;
-        RHI::IRHISemaphore&              renderFinishedSemaphore;
-        uint32_t                         frameIndex;
-        const ResourceManager&           resourceManager;
-        uint32_t                         backBufferIndex = 0;
-    };
+    class RenderContext;
 
     class IRenderNode
     {
     public:
         virtual ~IRenderNode() = default;
 
-        virtual void Execute(NodeContext& ctx)         = 0;
+        virtual void Execute(RenderContext& ctx)       = 0;
         virtual void Cleanup(RHI::IRHIDevice& device)  = 0;
 
         virtual void OnWindowResize(RHI::IRHIDevice& device,

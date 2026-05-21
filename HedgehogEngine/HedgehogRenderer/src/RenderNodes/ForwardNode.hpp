@@ -15,7 +15,7 @@ namespace Renderer
         // the material descriptor layout into ResourceRegistry on construction.
         ForwardNode(RHI::IRHIDevice& device, ResourceManager& resourceManager);
 
-        void Execute(NodeContext& ctx) override;
+        void Execute(RenderContext& ctx) override;
         void Cleanup(RHI::IRHIDevice& device) override;
 
         void OnSceneViewResize(RHI::IRHIDevice& device,

@@ -15,7 +15,7 @@ namespace Renderer
                       const HedgehogSettings::Settings& settings,
                       const ResourceManager& resourceManager);
 
-        void Execute(NodeContext& ctx) override;
+        void Execute(RenderContext& ctx) override;
         void Cleanup(RHI::IRHIDevice& device) override;
 
         void UpdateData(const HedgehogEngine::FrameData& frame,

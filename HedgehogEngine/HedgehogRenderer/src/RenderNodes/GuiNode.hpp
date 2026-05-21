@@ -20,7 +20,7 @@ namespace Renderer
                 RHI::IRHIDevice& device,
                 const ResourceManager& resourceManager);
 
-        void Execute(NodeContext& ctx) override;
+        void Execute(RenderContext& ctx) override;
         void Cleanup(RHI::IRHIDevice& device) override;
 
         // Recreates the GuiPass framebuffer for the new swapchain size.

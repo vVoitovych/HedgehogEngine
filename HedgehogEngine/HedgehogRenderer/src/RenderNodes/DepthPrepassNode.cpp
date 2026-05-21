@@ -1,5 +1,6 @@
 #include "DepthPrepassNode.hpp"
 
+#include "RenderGraph/RenderContext.hpp"
 #include "RenderPasses/DepthPrepass/DepthPrePass.hpp"
 
 namespace Renderer
@@ -9,9 +10,10 @@ namespace Renderer
         : m_Pass(std::make_unique<DepthPrePass>(device, resourceManager))
     {}
 
-    void DepthPrepassNode::Execute(NodeContext& ctx)
+    void DepthPrepassNode::Execute(RenderContext& ctx)
     {
-        m_Pass->Render(ctx.frame, ctx.resourceManager, ctx.cmd, ctx.frameIndex);
+        m_Pass->Render(ctx.GetFrameData(), ctx.GetResourceManager(),
+                       ctx.GetCommandList(), ctx.GetFrameIndex());
     }
 
     void DepthPrepassNode::Cleanup(RHI::IRHIDevice& device)

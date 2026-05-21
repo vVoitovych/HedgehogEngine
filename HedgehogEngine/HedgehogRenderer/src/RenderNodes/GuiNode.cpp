@@ -1,5 +1,6 @@
 #include "GuiNode.hpp"
 
+#include "RenderGraph/RenderContext.hpp"
 #include "RenderPasses/GuiPass/GuiPass.hpp"
 #include "ResourceManager/ResourceManager.hpp"
 
@@ -14,15 +15,16 @@ namespace Renderer
         : m_Pass(std::make_unique<GuiPass>(window, device, resourceManager))
     {}
 
-    void GuiNode::Execute(NodeContext& ctx)
+    void GuiNode::Execute(RenderContext& ctx)
     {
         // Transition SceneColorBuffer from write to read before GuiPass samples it.
-        auto& sceneBuffer = const_cast<RHI::IRHITexture&>(ctx.resourceManager.GetSceneColorBuffer());
-        ctx.cmd.TransitionTexture(sceneBuffer,
+        auto& sceneBuffer = const_cast<RHI::IRHITexture&>(
+            ctx.GetResourceManager().GetSceneColorBuffer());
+        ctx.GetCommandList().TransitionTexture(sceneBuffer,
             RHI::ImageLayout::ColorAttachment,
             RHI::ImageLayout::ShaderReadOnly);
 
-        m_Pass->Render(ctx.cmd, ctx.resourceManager);
+        m_Pass->Render(ctx.GetCommandList(), ctx.GetResourceManager());
     }
 
     void GuiNode::Cleanup(RHI::IRHIDevice& device)

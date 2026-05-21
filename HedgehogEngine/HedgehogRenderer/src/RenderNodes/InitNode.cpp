@@ -1,5 +1,6 @@
 #include "InitNode.hpp"
 
+#include "RenderGraph/RenderContext.hpp"
 #include "RenderPasses/InitPass/InitPass.hpp"
 
 namespace Renderer
@@ -8,10 +9,11 @@ namespace Renderer
         : m_Pass(std::make_unique<InitPass>())
     {}
 
-    void InitNode::Execute(NodeContext& ctx)
+    void InitNode::Execute(RenderContext& ctx)
     {
-        ctx.backBufferIndex = m_Pass->Render(
-            ctx.swapchain, ctx.fence, ctx.imageAvailableSemaphore, ctx.cmd);
+        ctx.SetBackBufferIndex(
+            m_Pass->Render(ctx.GetSwapchain(), ctx.GetFence(),
+                           ctx.GetImageAvailableSemaphore(), ctx.GetCommandList()));
     }
 
     void InitNode::Cleanup(RHI::IRHIDevice&)
