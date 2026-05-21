@@ -7,8 +7,9 @@ namespace Renderer
 {
     ShadowmapNode::ShadowmapNode(RHI::IRHIDevice& device,
                                  const HedgehogSettings::Settings& settings,
-                                 const ResourceManager& resourceManager)
-        : m_Pass(std::make_unique<ShadowmapPass>(device, settings, resourceManager))
+                                 const ResourceManager& resourceManager,
+                                 ShaderManager& shaderManager)
+        : m_Pass(std::make_unique<ShadowmapPass>(device, settings, resourceManager, shaderManager))
     {}
 
     void ShadowmapNode::Execute(RenderContext& ctx)

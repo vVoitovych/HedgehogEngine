@@ -10,7 +10,7 @@
 #include "HedgehogCommon/api/RendererSettings.hpp"
 #include "HedgehogMath/api/Common.hpp"
 
-#include "Pipeline/ShaderLoader.hpp"
+#include "ShaderManager/ShaderManager.hpp"
 #include "Pipeline/PipelineLoader.hpp"
 
 #include <cassert>
@@ -44,9 +44,10 @@ namespace Renderer
     }
 
 
-    ForwardPass::ForwardPass(RHI::IRHIDevice& device, ResourceManager& resourceManager)
+    ForwardPass::ForwardPass(RHI::IRHIDevice& device, ResourceManager& resourceManager,
+                             ShaderManager& shaderManager)
     {
-        const auto sd = ShaderLoader::Load(device,
+        const auto sd = shaderManager.LoadShaderFile(
             "/HedgehogEngine/HedgehogRenderer/assets/Shaders/ForwardPass.shader");
         assert(sd.m_Layout.m_DescriptorSets.size() >= 2);
 

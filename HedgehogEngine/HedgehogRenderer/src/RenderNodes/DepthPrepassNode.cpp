@@ -6,8 +6,9 @@
 namespace Renderer
 {
     DepthPrepassNode::DepthPrepassNode(RHI::IRHIDevice& device,
-                                       const ResourceManager& resourceManager)
-        : m_Pass(std::make_unique<DepthPrePass>(device, resourceManager))
+                                       const ResourceManager& resourceManager,
+                                       ShaderManager& shaderManager)
+        : m_Pass(std::make_unique<DepthPrePass>(device, resourceManager, shaderManager))
     {}
 
     void DepthPrepassNode::Execute(RenderContext& ctx)

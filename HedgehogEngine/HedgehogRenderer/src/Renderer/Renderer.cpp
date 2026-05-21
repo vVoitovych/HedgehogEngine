@@ -9,6 +9,7 @@
 #include "RenderGraph/RenderGraph.hpp"
 #include "RenderGraph/RenderContext.hpp"
 #include "ResourceManager/ResourceManager.hpp"
+#include "ShaderManager/ShaderManager.hpp"
 #include "RenderNodeManager/RenderNodeManager.hpp"
 
 #include "RenderNodes/InitNode.hpp"
@@ -45,24 +46,27 @@ namespace Renderer
         auto& settings = engineContext.GetSettings();
         auto& rm       = *m_ResourceManager;
 
+        m_ShaderManager = std::make_unique<ShaderManager>(device);
+        auto& sm        = *m_ShaderManager;
+
         m_NodeManager = std::make_unique<RenderNodeManager>();
 
         m_NodeManager->RegisterNodeType("InitNode",
             []() { return std::make_unique<InitNode>(); });
 
         m_NodeManager->RegisterNodeType("ShadowmapNode",
-            [&device, &settings, &rm]() {
-                return std::make_unique<ShadowmapNode>(device, settings, rm);
+            [&device, &settings, &rm, &sm]() {
+                return std::make_unique<ShadowmapNode>(device, settings, rm, sm);
             });
 
         m_NodeManager->RegisterNodeType("DepthPrepassNode",
-            [&device, &rm]() {
-                return std::make_unique<DepthPrepassNode>(device, rm);
+            [&device, &rm, &sm]() {
+                return std::make_unique<DepthPrepassNode>(device, rm, sm);
             });
 
         m_NodeManager->RegisterNodeType("ForwardNode",
-            [&device, &rm]() {
-                return std::make_unique<ForwardNode>(device, rm);
+            [&device, &rm, &sm]() {
+                return std::make_unique<ForwardNode>(device, rm, sm);
             });
 
         m_NodeManager->RegisterNodeType("GuiNode",
@@ -99,6 +103,7 @@ namespace Renderer
         device.WaitIdle();
         m_RenderGraph->Cleanup(device);
         m_NodeManager->DestroyAll();
+        m_ShaderManager->Cleanup();
         m_ResourceManager->Cleanup(device);
         m_ThreadContext->Cleanup(device);
         m_RHIContext->Cleanup();

@@ -5,7 +5,7 @@
 
 #include "HedgehogCommon/api/RendererSettings.hpp"
 
-#include "Pipeline/ShaderLoader.hpp"
+#include "ShaderManager/ShaderManager.hpp"
 #include "Pipeline/PipelineLoader.hpp"
 
 #include <cassert>
@@ -33,9 +33,9 @@ namespace Renderer
 {
 
     ShadowmapPass::ShadowmapPass(RHI::IRHIDevice& device, const HedgehogSettings::Settings& settings,
-                                  const ResourceManager& resourceManager)
+                                  const ResourceManager& resourceManager, ShaderManager& shaderManager)
     {
-        const auto sd = ShaderLoader::Load(device,
+        const auto sd = shaderManager.LoadShaderFile(
             "/HedgehogEngine/HedgehogRenderer/assets/Shaders/ShadowmapPass.shader");
         assert(!sd.m_Layout.m_DescriptorSets.empty());
 

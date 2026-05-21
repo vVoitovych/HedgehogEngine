@@ -5,8 +5,9 @@
 
 namespace Renderer
 {
-    ForwardNode::ForwardNode(RHI::IRHIDevice& device, ResourceManager& resourceManager)
-        : m_Pass(std::make_unique<ForwardPass>(device, resourceManager))
+    ForwardNode::ForwardNode(RHI::IRHIDevice& device, ResourceManager& resourceManager,
+                             ShaderManager& shaderManager)
+        : m_Pass(std::make_unique<ForwardPass>(device, resourceManager, shaderManager))
     {}
 
     void ForwardNode::Execute(RenderContext& ctx)

@@ -12,8 +12,9 @@ namespace Renderer
     class RHIContext;
     class ThreadContext;
     class ResourceManager;
-    class RenderGraph;
+    class ShaderManager;
     class RenderNodeManager;
+    class RenderGraph;
 
     class Renderer
     {
@@ -33,11 +34,12 @@ namespace Renderer
         void  SetSceneViewSize(uint32_t width, uint32_t height);
 
     private:
-        std::unique_ptr<RHIContext>       m_RHIContext;
-        std::unique_ptr<ThreadContext>    m_ThreadContext;
-        std::unique_ptr<ResourceManager>  m_ResourceManager;
+        std::unique_ptr<RHIContext>        m_RHIContext;
+        std::unique_ptr<ThreadContext>     m_ThreadContext;
+        std::unique_ptr<ResourceManager>   m_ResourceManager;
+        std::unique_ptr<ShaderManager>     m_ShaderManager;
         std::unique_ptr<RenderNodeManager> m_NodeManager;
-        std::unique_ptr<RenderGraph>      m_RenderGraph;
+        std::unique_ptr<RenderGraph>       m_RenderGraph;
 
         uint32_t m_DesiredSceneW = 0;
         uint32_t m_DesiredSceneH = 0;

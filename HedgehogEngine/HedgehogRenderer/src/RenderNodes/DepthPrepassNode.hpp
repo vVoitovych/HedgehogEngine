@@ -7,11 +7,13 @@
 namespace Renderer
 {
     class DepthPrePass;
+    class ShaderManager;
 
     class DepthPrepassNode : public IRenderNode
     {
     public:
-        DepthPrepassNode(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
+        DepthPrepassNode(RHI::IRHIDevice& device, const ResourceManager& resourceManager,
+                         ShaderManager& shaderManager);
 
         void Execute(RenderContext& ctx) override;
         void Cleanup(RHI::IRHIDevice& device) override;

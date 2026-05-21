@@ -34,12 +34,13 @@ namespace HedgehogSettings
 namespace Renderer
 {
     class ResourceManager;
+    class ShaderManager;
 
     class ShadowmapPass
     {
     public:
         ShadowmapPass(RHI::IRHIDevice& device, const HedgehogSettings::Settings& settings,
-                      const ResourceManager& resourceManager);
+                      const ResourceManager& resourceManager, ShaderManager& shaderManager);
         ~ShadowmapPass();
 
         void Render(const HedgehogEngine::FrameData& frame, const ResourceManager& resourceManager,

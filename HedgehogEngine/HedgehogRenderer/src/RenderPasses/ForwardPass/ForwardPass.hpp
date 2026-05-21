@@ -29,11 +29,13 @@ namespace HedgehogEngine
 namespace Renderer
 {
     class ResourceManager;
+    class ShaderManager;
 
     class ForwardPass
     {
     public:
-        ForwardPass(RHI::IRHIDevice& device, ResourceManager& resourceManager);
+        ForwardPass(RHI::IRHIDevice& device, ResourceManager& resourceManager,
+                    ShaderManager& shaderManager);
         ~ForwardPass();
 
         void Render(const HedgehogEngine::FrameData& frame, const ResourceManager& resourceManager,

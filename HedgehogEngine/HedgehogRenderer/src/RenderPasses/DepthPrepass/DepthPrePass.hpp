@@ -26,11 +26,13 @@ namespace HedgehogEngine
 namespace Renderer
 {
     class ResourceManager;
+    class ShaderManager;
 
     class DepthPrePass
     {
     public:
-        DepthPrePass(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
+        DepthPrePass(RHI::IRHIDevice& device, const ResourceManager& resourceManager,
+                     ShaderManager& shaderManager);
         ~DepthPrePass();
 
         void Render(const HedgehogEngine::FrameData& frame, const ResourceManager& resourceManager,
