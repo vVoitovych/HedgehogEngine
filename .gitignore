@@ -610,3 +610,5 @@ Binaries
 /Components/Components.vcxproj.filters
 /EcsSerialization/EcsSerialization.vcxproj
 /EcsSerialization/EcsSerialization.vcxproj.filters
+/HedgehogEngine/HedgehogEngine/HedgehogEngine.vcxproj
+/HedgehogEngine/HedgehogEngine/HedgehogEngine.vcxproj.filters
