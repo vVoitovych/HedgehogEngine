@@ -1,5 +1,7 @@
 #pragma once
 
+#include "RenderGraphTypes.hpp"
+
 #include <memory>
 #include <vector>
 
@@ -35,12 +37,13 @@ namespace Renderer
 
         void AddNode(std::unique_ptr<IRenderNode> node);
 
-        // Validates the node list. Future phases will topologically sort nodes
-        // and build the barrier plan here.
-        void Compile();
+        // Calls Setup() on every node then builds the texture registry from ResourceManager.
+        void Compile(const ResourceManager& resourceManager);
 
         void Execute(RenderContext& ctx);
         void Cleanup(RHI::IRHIDevice& device);
+
+        const TextureRegistry& GetTextureRegistry() const { return m_TextureRegistry; }
 
         // Lifecycle events — forwarded to all nodes via their virtual overrides.
         void BeginFrame();
@@ -58,6 +61,9 @@ namespace Renderer
                                const ResourceManager& resourceManager);
 
     private:
+        void BuildTextureRegistry(const ResourceManager& resourceManager);
+
         std::vector<std::unique_ptr<IRenderNode>> m_Nodes;
+        TextureRegistry                           m_TextureRegistry;
     };
 }

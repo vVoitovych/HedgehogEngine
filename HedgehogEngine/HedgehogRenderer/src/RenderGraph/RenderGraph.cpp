@@ -2,6 +2,7 @@
 
 #include "RenderContext.hpp"
 #include "RenderNodes/IRenderNode.hpp"
+#include "ResourceManager/ResourceManager.hpp"
 
 #include "HedgehogEngine/api/Frame/FrameData.hpp"
 #include "HedgehogSettings/Settings/HedgehogSettings.hpp"
@@ -18,9 +19,24 @@ namespace Renderer
         m_Nodes.push_back(std::move(node));
     }
 
-    void RenderGraph::Compile()
+    void RenderGraph::Compile(const ResourceManager& resourceManager)
     {
         assert(!m_Nodes.empty() && "RenderGraph::Compile() called with no nodes");
+
+        for (auto& node : m_Nodes)
+            node->Setup(*this);
+
+        BuildTextureRegistry(resourceManager);
+    }
+
+    void RenderGraph::BuildTextureRegistry(const ResourceManager& resourceManager)
+    {
+        m_TextureRegistry.clear();
+        m_TextureRegistry["RHIColorBuffer"]  = &resourceManager.GetRHIColorBuffer();
+        m_TextureRegistry["RHIDepthBuffer"]  = &resourceManager.GetRHIDepthBuffer();
+        m_TextureRegistry["RHIShadowMap"]    = &resourceManager.GetRHIShadowMap();
+        m_TextureRegistry["RHIShadowMask"]   = &resourceManager.GetRHIShadowMask();
+        m_TextureRegistry["SceneColorBuffer"] = &resourceManager.GetSceneColorBuffer();
     }
 
     void RenderGraph::Execute(RenderContext& ctx)
@@ -73,6 +89,8 @@ namespace Renderer
     {
         for (auto& node : m_Nodes)
             node->OnWindowResize(device, resourceManager);
+
+        BuildTextureRegistry(resourceManager);
     }
 
     void RenderGraph::OnSceneViewResize(RHI::IRHIDevice& device,
@@ -80,6 +98,8 @@ namespace Renderer
     {
         for (auto& node : m_Nodes)
             node->OnSceneViewResize(device, resourceManager);
+
+        BuildTextureRegistry(resourceManager);
     }
 
     void RenderGraph::OnSettingsChanged(RHI::IRHIDevice& device,
@@ -88,5 +108,7 @@ namespace Renderer
     {
         for (auto& node : m_Nodes)
             node->OnSettingsChanged(device, settings, resourceManager);
+
+        BuildTextureRegistry(resourceManager);
     }
 }

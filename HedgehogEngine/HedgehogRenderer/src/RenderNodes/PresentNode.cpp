@@ -2,7 +2,6 @@
 
 #include "RenderGraph/RenderContext.hpp"
 #include "RenderPasses/PresentPass/PresentPass.hpp"
-#include "ResourceManager/ResourceManager.hpp"
 
 #include "RHI/api/IRHITexture.hpp"
 
@@ -14,8 +13,7 @@ namespace Renderer
 
     void PresentNode::Execute(RenderContext& ctx)
     {
-        auto& colorBuffer = const_cast<RHI::IRHITexture&>(
-            ctx.GetResourceManager().GetRHIColorBuffer());
+        auto& colorBuffer = const_cast<RHI::IRHITexture&>(*ctx.GetTexture("RHIColorBuffer"));
         m_Pass->Render(ctx.GetCommandList(), ctx.GetDevice(), ctx.GetSwapchain(),
                        colorBuffer, ctx.GetBackBufferIndex(),
                        ctx.GetImageAvailableSemaphore(), ctx.GetRenderFinishedSemaphore(),

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "RenderGraphTypes.hpp"
+
 #include <cstdint>
 
 namespace HedgehogEngine
@@ -14,6 +16,7 @@ namespace RHI
     class IRHICommandList;
     class IRHIFence;
     class IRHISemaphore;
+    class IRHITexture;
 }
 
 namespace Renderer
@@ -34,7 +37,8 @@ namespace Renderer
                       RHI::IRHISemaphore&              imageAvailableSemaphore,
                       RHI::IRHISemaphore&              renderFinishedSemaphore,
                       uint32_t                         frameIndex,
-                      const ResourceManager&           resourceManager)
+                      const ResourceManager&           resourceManager,
+                      const TextureRegistry&           textureRegistry)
             : m_FrameData(frameData)
             , m_Device(device)
             , m_Swapchain(swapchain)
@@ -44,6 +48,7 @@ namespace Renderer
             , m_RenderFinishedSemaphore(renderFinishedSemaphore)
             , m_FrameIndex(frameIndex)
             , m_ResourceManager(resourceManager)
+            , m_TextureRegistry(textureRegistry)
         {}
 
         const HedgehogEngine::FrameData& GetFrameData()                 const { return m_FrameData; }
@@ -55,6 +60,13 @@ namespace Renderer
         RHI::IRHISemaphore&              GetRenderFinishedSemaphore()   const { return m_RenderFinishedSemaphore; }
         uint32_t                         GetFrameIndex()                const { return m_FrameIndex; }
         const ResourceManager&           GetResourceManager()           const { return m_ResourceManager; }
+
+        // Returns the named texture from the registry, or nullptr if not found.
+        const RHI::IRHITexture* GetTexture(const std::string& name) const
+        {
+            auto it = m_TextureRegistry.find(name);
+            return it != m_TextureRegistry.end() ? it->second : nullptr;
+        }
 
         uint32_t GetBackBufferIndex()            const { return m_BackBufferIndex; }
         void     SetBackBufferIndex(uint32_t idx)      { m_BackBufferIndex = idx; }
@@ -69,6 +81,7 @@ namespace Renderer
         RHI::IRHISemaphore&              m_RenderFinishedSemaphore;
         uint32_t                         m_FrameIndex      = 0;
         const ResourceManager&           m_ResourceManager;
+        const TextureRegistry&           m_TextureRegistry;
         uint32_t                         m_BackBufferIndex = 0;
     };
 }

@@ -18,8 +18,7 @@ namespace Renderer
     void GuiNode::Execute(RenderContext& ctx)
     {
         // Transition SceneColorBuffer from write to read before GuiPass samples it.
-        auto& sceneBuffer = const_cast<RHI::IRHITexture&>(
-            ctx.GetResourceManager().GetSceneColorBuffer());
+        auto& sceneBuffer = const_cast<RHI::IRHITexture&>(*ctx.GetTexture("SceneColorBuffer"));
         ctx.GetCommandList().TransitionTexture(sceneBuffer,
             RHI::ImageLayout::ColorAttachment,
             RHI::ImageLayout::ShaderReadOnly);

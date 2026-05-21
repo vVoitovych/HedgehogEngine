@@ -50,7 +50,7 @@ namespace Renderer
         m_RenderGraph->AddNode(std::make_unique<ForwardNode>(device, *m_ResourceManager));
         m_RenderGraph->AddNode(std::make_unique<GuiNode>(window, device, *m_ResourceManager));
         m_RenderGraph->AddNode(std::make_unique<PresentNode>());
-        m_RenderGraph->Compile();
+        m_RenderGraph->Compile(*m_ResourceManager);
     }
 
     Renderer::~Renderer()
@@ -137,7 +137,8 @@ namespace Renderer
             m_ThreadContext->GetImageAvailableSemaphore(),
             m_ThreadContext->GetRenderFinishedSemaphore(),
             frameIndex,
-            *m_ResourceManager);
+            *m_ResourceManager,
+            m_RenderGraph->GetTextureRegistry());
 
         m_RenderGraph->Execute(ctx);
 
