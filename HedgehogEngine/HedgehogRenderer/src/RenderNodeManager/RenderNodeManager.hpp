@@ -54,8 +54,12 @@ namespace Renderer
         IRenderNode* FindNode(const std::string& instanceName) const;
         void         SetNodeEnabled(RenderNodeHandle handle, bool enabled);
 
-        // Create all nodes in preset order and add them to outGraph.
+        // Create all nodes in preset order and add them to outGraph (in-code preset).
         void LoadGraphPreset(const GraphPreset& preset, RenderGraph& outGraph);
+
+        // Create all nodes from a YAML file and add them to outGraph.
+        // yamlPath is repo-relative, e.g. "/HedgehogEngine/HedgehogRenderer/assets/Graphs/forward_editor.yaml".
+        void LoadGraphPreset(const std::string& yamlPath, RenderGraph& outGraph);
 
     private:
         using NodeFactory = std::function<std::unique_ptr<IRenderNode>()>;

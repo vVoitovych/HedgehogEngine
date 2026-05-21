@@ -1,0 +1,18 @@
+nodes:
+  - type:     InitNode
+    instance: init
+
+  - type:     ShadowmapNode
+    instance: shadowmap
+
+  - type:     DepthPrepassNode
+    instance: depthPrepass
+
+  - type:     ForwardNode
+    instance: forward
+
+  - type:     GuiNode
+    instance: gui
+
+  - type:     PresentNode
+    instance: present

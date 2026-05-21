@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 
 namespace HedgehogEngine
 {
@@ -17,6 +18,12 @@ namespace Renderer
     class RenderNodeManager;
     class RenderGraph;
 
+    enum class RenderMode
+    {
+        Editor,
+        Game,
+    };
+
     class Renderer
     {
     public:
@@ -28,6 +35,9 @@ namespace Renderer
 
         void Cleanup(HedgehogEngine::HedgehogEngine& context);
 
+        // Tear down the current graph and rebuild it from the YAML preset for the given mode.
+        void SetMode(RenderMode mode);
+
         void  BeginGui();
         void  DrawFrame(HedgehogEngine::HedgehogEngine& context);
         float GetAspectRatio() const;
@@ -35,6 +45,8 @@ namespace Renderer
         void  SetSceneViewSize(uint32_t width, uint32_t height);
 
     private:
+        void BuildGraph(const std::string& presetPath);
+
         std::unique_ptr<RHIContext>        m_RHIContext;
         std::unique_ptr<ThreadContext>     m_ThreadContext;
         std::unique_ptr<ResourceManager>   m_ResourceManager;
@@ -43,7 +55,8 @@ namespace Renderer
         std::unique_ptr<RenderNodeManager> m_NodeManager;
         std::unique_ptr<RenderGraph>       m_RenderGraph;
 
-        uint32_t m_DesiredSceneW = 0;
-        uint32_t m_DesiredSceneH = 0;
+        RenderMode m_Mode        = RenderMode::Editor;
+        uint32_t   m_DesiredSceneW = 0;
+        uint32_t   m_DesiredSceneH = 0;
     };
 }

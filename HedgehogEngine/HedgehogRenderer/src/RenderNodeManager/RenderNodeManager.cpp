@@ -3,7 +3,29 @@
 #include "RenderNodes/IRenderNode.hpp"
 #include "RenderGraph/RenderGraph.hpp"
 
+#include "Logger/api/Logger.hpp"
+
+#include <yaml-cpp/yaml.h>
+
+#include <Windows.h>
 #include <cassert>
+#include <filesystem>
+
+namespace
+{
+    std::filesystem::path GetRepoRoot()
+    {
+        char buffer[MAX_PATH];
+        GetModuleFileNameA(nullptr, buffer, MAX_PATH);
+        return std::filesystem::path(buffer)
+            .parent_path().parent_path().parent_path().parent_path().parent_path();
+    }
+
+    std::string ResolveAbsPath(const std::string& repoRelativePath)
+    {
+        return (GetRepoRoot() / repoRelativePath.substr(1)).lexically_normal().string();
+    }
+}
 
 namespace Renderer
 {
@@ -79,5 +101,32 @@ namespace Renderer
             RenderNodeHandle handle = CreateNode(entry.type, entry.instance);
             outGraph.AddNode(GetNode(handle));
         }
+    }
+
+    void RenderNodeManager::LoadGraphPreset(const std::string& yamlPath, RenderGraph& outGraph)
+    {
+        const std::string fullPath = ResolveAbsPath(yamlPath);
+
+        YAML::Node root;
+        try { root = YAML::LoadFile(fullPath); }
+        catch (const YAML::Exception& e)
+        {
+            LOGERROR("RenderNodeManager: failed to load graph preset '", fullPath, "': ", e.what());
+            assert(false && "Graph preset YAML not found or malformed.");
+            return;
+        }
+
+        const YAML::Node& nodes = root["nodes"];
+        assert(nodes && nodes.IsSequence() && "Graph preset must have a 'nodes' sequence.");
+
+        for (const YAML::Node& entry : nodes)
+        {
+            const std::string type     = entry["type"].as<std::string>();
+            const std::string instance = entry["instance"].as<std::string>();
+            RenderNodeHandle  handle   = CreateNode(type, instance);
+            outGraph.AddNode(GetNode(handle));
+        }
+
+        LOGINFO("RenderNodeManager: loaded graph preset '", yamlPath, "'");
     }
 }

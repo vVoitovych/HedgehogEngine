@@ -80,24 +80,32 @@ namespace Renderer
         m_NodeManager->RegisterNodeType("PresentNode",
             []() { return std::make_unique<PresentNode>(); });
 
-        const GraphPreset preset{
-            .nodes = {
-                {"InitNode",         "init"},
-                {"ShadowmapNode",    "shadowmap"},
-                {"DepthPrepassNode", "depthPrepass"},
-                {"ForwardNode",      "forward"},
-                {"GuiNode",          "gui"},
-                {"PresentNode",      "present"},
-            }
-        };
-
-        m_RenderGraph = std::make_unique<RenderGraph>();
-        m_NodeManager->LoadGraphPreset(preset, *m_RenderGraph);
-        m_RenderGraph->Compile(*m_ResourceManager);
+        BuildGraph("/HedgehogEngine/HedgehogRenderer/assets/Graphs/forward_editor.yaml");
     }
 
     Renderer::~Renderer()
     {
+    }
+
+    void Renderer::BuildGraph(const std::string& presetPath)
+    {
+        m_RenderGraph = std::make_unique<RenderGraph>();
+        m_NodeManager->LoadGraphPreset(presetPath, *m_RenderGraph);
+        m_RenderGraph->Compile(*m_ResourceManager);
+    }
+
+    void Renderer::SetMode(RenderMode mode)
+    {
+        auto& device = m_RHIContext->GetRHIDevice();
+        device.WaitIdle();
+        m_RenderGraph->Cleanup(device);
+        m_NodeManager->DestroyAll();
+
+        m_Mode = mode;
+        const std::string preset = (mode == RenderMode::Editor)
+            ? "/HedgehogEngine/HedgehogRenderer/assets/Graphs/forward_editor.yaml"
+            : "/HedgehogEngine/HedgehogRenderer/assets/Graphs/forward_game.yaml";
+        BuildGraph(preset);
     }
 
     void Renderer::Cleanup(HedgehogEngine::HedgehogEngine& context)
