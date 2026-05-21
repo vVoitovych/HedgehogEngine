@@ -186,9 +186,10 @@ namespace Renderer
             *m_ResourceManager,
             m_RenderGraph->GetTextureRegistry());
 
+        m_ResourceManager->BeginFrame(frameIndex);
         m_RenderGraph->Execute(ctx);
-
         m_ThreadContext->NextFrame();
+        m_ResourceManager->EndFrame();
 
         // Apply pending scene view resize after frame submission so the ImGui draw
         // data referencing the old descriptor has already been consumed by the GPU.

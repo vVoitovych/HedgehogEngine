@@ -26,10 +26,26 @@ namespace Renderer
         m_ResourceRegistry = std::make_unique<HR::ResourceRegistry>(device);
 
         CreateRHIColorBuffer(device, swapchain);
-        CreateRHIDepthBuffer(device, swapchain);
         CreateRHIShadowMap(device, settings.GetShadowmapSettings()->GetShadowmapSize());
         CreateRHIShadowMask(device, swapchain);
-        CreateSceneColorBuffer(device, swapchain);
+
+        // Transient: depth and scene-color buffers are graph-managed.
+        {
+            RHI::TextureDesc desc;
+            desc.m_Width  = swapchain.GetWidth();
+            desc.m_Height = swapchain.GetHeight();
+            desc.m_Format = device.GetPreferredDepthFormat();
+            desc.m_Usage  = RHI::TextureUsage::DepthStencil;
+            RegisterTransient(device, "RHIDepthBuffer", desc);
+        }
+        {
+            RHI::TextureDesc desc;
+            desc.m_Width  = swapchain.GetWidth();
+            desc.m_Height = swapchain.GetHeight();
+            desc.m_Format = RHI::Format::R16G16B16A16Unorm;
+            desc.m_Usage  = RHI::TextureUsage::ColorAttachment | RHI::TextureUsage::Sampled;
+            RegisterTransient(device, "SceneColorBuffer", desc);
+        }
     }
 
     ResourceManager::~ResourceManager()
@@ -41,10 +57,9 @@ namespace Renderer
         device.WaitIdle();
 
         m_RHIColorBuffer.reset();
-        m_RHIDepthBuffer.reset();
         m_RHIShadowMap.reset();
         m_RHIShadowMask.reset();
-        m_SceneColorBuffer.reset();
+        m_Transients.clear();
         m_ResourceRegistry->Cleanup(device);
     }
 
@@ -52,6 +67,16 @@ namespace Renderer
     {
         m_ResourceRegistry->SyncMeshes(engine.GetMeshContainer(), device);
         m_ResourceRegistry->SyncMaterials(engine.GetMaterialContainer(), engine.GetTextureContainer(), device);
+    }
+
+    void ResourceManager::BeginFrame(uint32_t /*frameIndex*/)
+    {
+        // Hook for future transient ring-buffer slot advancement.
+    }
+
+    void ResourceManager::EndFrame()
+    {
+        // Hook for future transient slab reclamation.
     }
 
     void ResourceManager::ResizeFrameBufferSizeDependenteResources(RHI::IRHIDevice& device,
@@ -63,27 +88,24 @@ namespace Renderer
 
         CreateRHIColorBuffer(device, swapchain);
         CreateRHIShadowMask(device, swapchain);
-        // SceneColorBuffer and DepthBuffer are panel-size driven; resized via ResizeSceneView.
+        // Transients (SceneColorBuffer, RHIDepthBuffer) are scene-view sized — resized via ResizeSceneView.
     }
 
     void ResourceManager::ResizeSceneView(RHI::IRHIDevice& device, uint32_t width, uint32_t height)
     {
-        m_RHIDepthBuffer.reset();
-        m_SceneColorBuffer.reset();
-
         RHI::TextureDesc depthDesc;
         depthDesc.m_Width  = width;
         depthDesc.m_Height = height;
         depthDesc.m_Format = device.GetPreferredDepthFormat();
         depthDesc.m_Usage  = RHI::TextureUsage::DepthStencil;
-        m_RHIDepthBuffer = device.CreateTexture(depthDesc);
+        RecreateTransient(device, "RHIDepthBuffer", depthDesc);
 
         RHI::TextureDesc colorDesc;
         colorDesc.m_Width  = width;
         colorDesc.m_Height = height;
         colorDesc.m_Format = RHI::Format::R16G16B16A16Unorm;
         colorDesc.m_Usage  = RHI::TextureUsage::ColorAttachment | RHI::TextureUsage::Sampled;
-        m_SceneColorBuffer = device.CreateTexture(colorDesc);
+        RecreateTransient(device, "SceneColorBuffer", colorDesc);
     }
 
     void ResourceManager::ResizeSettingsDependenteResources(RHI::IRHIDevice& device,
@@ -101,6 +123,31 @@ namespace Renderer
         }
     }
 
+    const RHI::IRHITexture& ResourceManager::GetRHIColorBuffer() const
+    {
+        return *m_RHIColorBuffer;
+    }
+
+    const RHI::IRHITexture& ResourceManager::GetRHIShadowMap() const
+    {
+        return *m_RHIShadowMap;
+    }
+
+    const RHI::IRHITexture& ResourceManager::GetRHIShadowMask() const
+    {
+        return *m_RHIShadowMask;
+    }
+
+    const RHI::IRHITexture& ResourceManager::GetRHIDepthBuffer() const
+    {
+        return *m_Transients.at("RHIDepthBuffer").m_Texture;
+    }
+
+    const RHI::IRHITexture& ResourceManager::GetSceneColorBuffer() const
+    {
+        return *m_Transients.at("SceneColorBuffer").m_Texture;
+    }
+
     void ResourceManager::CreateRHIColorBuffer(RHI::IRHIDevice& device, const RHI::IRHISwapchain& swapchain)
     {
         RHI::TextureDesc desc;
@@ -114,18 +161,6 @@ namespace Renderer
 
         m_RHIColorBuffer = device.CreateTexture(desc);
         LOGINFO("RHI color buffer created");
-    }
-
-    void ResourceManager::CreateRHIDepthBuffer(RHI::IRHIDevice& device, const RHI::IRHISwapchain& swapchain)
-    {
-        RHI::TextureDesc desc;
-        desc.m_Width  = swapchain.GetWidth();
-        desc.m_Height = swapchain.GetHeight();
-        desc.m_Format = device.GetPreferredDepthFormat();
-        desc.m_Usage  = RHI::TextureUsage::DepthStencil;
-
-        m_RHIDepthBuffer = device.CreateTexture(desc);
-        LOGINFO("RHI depth buffer created");
     }
 
     void ResourceManager::CreateRHIShadowMap(RHI::IRHIDevice& device, uint32_t shadowmapSize)
@@ -152,42 +187,25 @@ namespace Renderer
         LOGINFO("RHI shadow mask created");
     }
 
-    const RHI::IRHITexture& ResourceManager::GetRHIColorBuffer() const
+    void ResourceManager::RegisterTransient(RHI::IRHIDevice& device,
+                                             const std::string& name,
+                                             const RHI::TextureDesc& desc)
     {
-        return *m_RHIColorBuffer;
+        TransientEntry entry;
+        entry.m_Desc    = desc;
+        entry.m_Texture = device.CreateTexture(desc);
+        m_Transients.emplace(name, std::move(entry));
+        LOGINFO("Transient texture registered: " + name);
     }
 
-    const RHI::IRHITexture& ResourceManager::GetRHIDepthBuffer() const
+    void ResourceManager::RecreateTransient(RHI::IRHIDevice& device,
+                                             const std::string& name,
+                                             const RHI::TextureDesc& desc)
     {
-        return *m_RHIDepthBuffer;
-    }
-
-    const RHI::IRHITexture& ResourceManager::GetRHIShadowMap() const
-    {
-        return *m_RHIShadowMap;
-    }
-
-    const RHI::IRHITexture& ResourceManager::GetRHIShadowMask() const
-    {
-        return *m_RHIShadowMask;
-    }
-
-    const RHI::IRHITexture& ResourceManager::GetSceneColorBuffer() const
-    {
-        return *m_SceneColorBuffer;
-    }
-
-    void ResourceManager::CreateSceneColorBuffer(RHI::IRHIDevice& device, const RHI::IRHISwapchain& swapchain)
-    {
-        RHI::TextureDesc desc;
-        desc.m_Width  = swapchain.GetWidth();
-        desc.m_Height = swapchain.GetHeight();
-        desc.m_Format = RHI::Format::R16G16B16A16Unorm;
-        desc.m_Usage  = RHI::TextureUsage::ColorAttachment
-                      | RHI::TextureUsage::Sampled;
-
-        m_SceneColorBuffer = device.CreateTexture(desc);
-        LOGINFO("Scene color buffer created");
+        auto& entry     = m_Transients.at(name);
+        entry.m_Desc    = desc;
+        entry.m_Texture = device.CreateTexture(desc);
+        LOGINFO("Transient texture recreated: " + name);
     }
 
     HR::ResourceRegistry& ResourceManager::GetResourceRegistry()
