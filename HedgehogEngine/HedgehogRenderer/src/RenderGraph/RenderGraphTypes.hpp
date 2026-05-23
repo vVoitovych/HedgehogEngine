@@ -54,4 +54,27 @@ namespace Renderer
     // Maps resource name → non-owning texture pointer. Built by RenderGraph::Compile()
     // and rebuilt after any resize that invalidates texture handles.
     using TextureRegistry = std::unordered_map<std::string, const RHI::IRHITexture*>;
+
+    // ── Graph-declared resource descriptors ────────────────────────────────────
+
+    // Sentinel width/height meaning "match the swapchain back-buffer size".
+    inline constexpr uint32_t BACKBUFFER_EXTENT = 0;
+
+    // Describes a texture resource declared by CreateGPUResourceNode.
+    // TextureUsage is inferred from the format (depth → DepthStencil|Sampled,
+    // others → ColorAttachment|Sampled).
+    struct GraphTextureDesc
+    {
+        std::string  m_Name;
+        RHI::Format  m_Format = RHI::Format::R8G8B8A8Unorm;
+        uint32_t     m_Width  = BACKBUFFER_EXTENT;
+        uint32_t     m_Height = BACKBUFFER_EXTENT;
+    };
+
+    // Describes a GPU-side storage buffer declared by CreateGPUResourceNode.
+    struct GraphBufferDesc
+    {
+        std::string m_Name;
+        size_t      m_Size = 0;
+    };
 }

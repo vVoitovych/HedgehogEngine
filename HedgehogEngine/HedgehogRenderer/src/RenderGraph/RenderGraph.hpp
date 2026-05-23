@@ -1,7 +1,9 @@
 #pragma once
 
 #include "RenderGraphTypes.hpp"
+#include "GraphResourceRegistry.hpp"
 
+#include <string>
 #include <vector>
 
 namespace HedgehogEngine
@@ -12,6 +14,7 @@ namespace HedgehogEngine
 namespace RHI
 {
     class IRHIDevice;
+    class IRHIBuffer;
 }
 
 namespace HedgehogSettings
@@ -37,8 +40,9 @@ namespace Renderer
         // Add a non-owning pointer; ownership stays with RenderNodeManager.
         void AddNode(IRenderNode* node);
 
-        // Calls Setup() on every node then builds the texture registry from ResourceManager.
-        void Compile(const ResourceManager& resourceManager);
+        // Calls Setup()+ApplyYAMLBindings() on every node, creates graph-declared GPU
+        // resources, builds the texture registry, validates bindings, and plans barriers.
+        void Compile(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
 
         // Calls Cleanup() on each node. Does NOT free node memory — caller must do that
         // via RenderNodeManager::DestroyAll() after this returns.
@@ -46,6 +50,13 @@ namespace Renderer
         void Cleanup(RHI::IRHIDevice& device);
 
         const TextureRegistry& GetTextureRegistry() const { return m_TextureRegistry; }
+
+        // Resource declarations — called by CreateGPUResourceNode::Setup().
+        void DeclareGraphTexture(const GraphTextureDesc& desc);
+        void DeclareGraphBuffer(const GraphBufferDesc& desc);
+
+        // Look up a graph-declared buffer by name (textures are in the TextureRegistry).
+        const RHI::IRHIBuffer* GetBuffer(const std::string& name) const;
 
         // Lifecycle events — forwarded to all nodes via their virtual overrides.
         void BeginFrame();
@@ -64,10 +75,12 @@ namespace Renderer
 
     private:
         void BuildTextureRegistry(const ResourceManager& resourceManager);
+        void ValidateBindings() const;
         void BuildBarrierPlan();
 
         std::vector<IRenderNode*>              m_Nodes;
         TextureRegistry                        m_TextureRegistry;
         std::vector<std::vector<BarrierEntry>> m_BarrierPlan;
+        GraphResourceRegistry                  m_GraphResources;
     };
 }

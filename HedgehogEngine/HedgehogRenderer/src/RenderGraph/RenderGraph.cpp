@@ -8,6 +8,7 @@
 #include "HedgehogSettings/Settings/HedgehogSettings.hpp"
 #include "RHI/api/IRHIDevice.hpp"
 #include "RHI/api/IRHICommandList.hpp"
+#include "RHI/api/IRHITexture.hpp"
 
 #include "Logger/api/Logger.hpp"
 
@@ -23,14 +24,22 @@ namespace Renderer
         m_Nodes.push_back(node);
     }
 
-    void RenderGraph::Compile(const ResourceManager& resourceManager)
+    void RenderGraph::Compile(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
     {
         assert(!m_Nodes.empty() && "RenderGraph::Compile() called with no nodes");
 
         for (IRenderNode* node : m_Nodes)
+        {
             node->Setup(*this);
+            node->ApplyYAMLBindings();
+        }
+
+        const uint32_t backW = resourceManager.GetRHIColorBuffer().GetWidth();
+        const uint32_t backH = resourceManager.GetRHIColorBuffer().GetHeight();
+        m_GraphResources.CreateResources(device, backW, backH);
 
         BuildTextureRegistry(resourceManager);
+        ValidateBindings();
         BuildBarrierPlan();
     }
 
@@ -42,12 +51,109 @@ namespace Renderer
         m_TextureRegistry["RHIShadowMap"]     = &resourceManager.GetRHIShadowMap();
         m_TextureRegistry["RHIShadowMask"]    = &resourceManager.GetRHIShadowMask();
         m_TextureRegistry["SceneColorBuffer"] = &resourceManager.GetSceneColorBuffer();
+
+        m_GraphResources.PopulateTextureRegistry(m_TextureRegistry);
+    }
+
+    void RenderGraph::ValidateBindings() const
+    {
+        std::unordered_map<std::string, std::string> writers;
+
+        for (const IRenderNode* node : m_Nodes)
+        {
+            const RenderNodeDesc& desc = node->GetDesc();
+
+            for (const auto& slot : desc.inputs)
+            {
+                const bool knownTexture = m_TextureRegistry.find(slot.name) != m_TextureRegistry.end();
+                const bool knownBuffer  = m_GraphResources.HasBuffer(slot.name);
+                if (!knownTexture && !knownBuffer)
+                {
+                    LOGERROR("RenderGraph: node '", desc.name, "' input '", slot.name,
+                             "' references an undeclared resource.");
+                }
+            }
+
+            for (const auto& slot : desc.outputs)
+            {
+                const bool knownTexture = m_TextureRegistry.find(slot.name) != m_TextureRegistry.end();
+                const bool knownBuffer  = m_GraphResources.HasBuffer(slot.name);
+                if (!knownTexture && !knownBuffer)
+                {
+                    LOGERROR("RenderGraph: node '", desc.name, "' output '", slot.name,
+                             "' references an undeclared resource.");
+                }
+
+                auto [it, inserted] = writers.emplace(slot.name, desc.name);
+                if (!inserted)
+                {
+                    LOGWARNING("RenderGraph: resource '", slot.name, "' written by both '",
+                               it->second, "' and '", desc.name,
+                               "' — resource aliasing is not yet supported.");
+                }
+            }
+        }
     }
 
     void RenderGraph::BuildBarrierPlan()
     {
         m_BarrierPlan.assign(m_Nodes.size(), {});
 
+        // ── Pass 1: wrap-around barriers ────────────────────────────────────────
+        // For every resource that is written and then read within the same frame,
+        // the image ends up in a READ layout at the end of frame N.  On frame N+1
+        // the barrier plan would emit "from writeLayout → readLayout" again, but the
+        // actual current layout is readLayout → Vulkan validation error.
+        //
+        // Fix: insert a barrier before the first writer that transitions from
+        // VK_IMAGE_LAYOUT_UNDEFINED → writeLayout.  Using Undefined as srcLayout
+        // is always valid per the Vulkan spec ("don't care about previous contents")
+        // and handles both the very first frame (image starts in Undefined) and all
+        // subsequent frames (discards the leftover read layout without a mismatch).
+
+        struct ResourceFrameInfo
+        {
+            size_t           m_FirstWriteIndex  = SIZE_MAX;
+            RHI::ImageLayout m_FirstWriteLayout = RHI::ImageLayout::Undefined;
+            size_t           m_LastReadIndex    = SIZE_MAX;
+        };
+        std::unordered_map<std::string, ResourceFrameInfo> frameInfo;
+
+        for (size_t i = 0; i < m_Nodes.size(); ++i)
+        {
+            const RenderNodeDesc& desc = m_Nodes[i]->GetDesc();
+            for (const auto& slot : desc.outputs)
+            {
+                auto& info = frameInfo[slot.name];
+                if (info.m_FirstWriteIndex == SIZE_MAX)
+                {
+                    info.m_FirstWriteIndex  = i;
+                    info.m_FirstWriteLayout = slot.layout;
+                }
+            }
+            for (const auto& slot : desc.inputs)
+                frameInfo[slot.name].m_LastReadIndex = i;
+        }
+
+        for (const auto& [name, info] : frameInfo)
+        {
+            if (info.m_FirstWriteIndex == SIZE_MAX || info.m_LastReadIndex == SIZE_MAX)
+                continue; // written-only or read-only: no cross-frame risk
+            if (info.m_LastReadIndex <= info.m_FirstWriteIndex)
+                continue; // read before write within the frame: unusual, skip
+
+            const auto texIt = m_TextureRegistry.find(name);
+            if (texIt == m_TextureRegistry.end())
+                continue;
+
+            m_BarrierPlan[info.m_FirstWriteIndex].push_back({
+                texIt->second,
+                RHI::ImageLayout::Undefined,   // srcLayout: discard previous contents
+                info.m_FirstWriteLayout        // dstLayout: required by the writer
+            });
+        }
+
+        // ── Pass 2: within-frame read-after-write barriers ──────────────────────
         // Track the last node that wrote each resource and the layout it left it in.
         std::unordered_map<std::string, std::pair<size_t, RHI::ImageLayout>> lastWrite;
 
@@ -99,6 +205,22 @@ namespace Renderer
         for (IRenderNode* node : m_Nodes)
             node->Cleanup(device);
         m_Nodes.clear();
+        m_GraphResources.Cleanup();
+    }
+
+    void RenderGraph::DeclareGraphTexture(const GraphTextureDesc& desc)
+    {
+        m_GraphResources.DeclareTexture(desc);
+    }
+
+    void RenderGraph::DeclareGraphBuffer(const GraphBufferDesc& desc)
+    {
+        m_GraphResources.DeclareBuffer(desc);
+    }
+
+    const RHI::IRHIBuffer* RenderGraph::GetBuffer(const std::string& name) const
+    {
+        return m_GraphResources.GetBuffer(name);
     }
 
     void RenderGraph::BeginFrame()
@@ -134,6 +256,11 @@ namespace Renderer
     void RenderGraph::OnWindowResize(RHI::IRHIDevice& device,
                                      const ResourceManager& resourceManager)
     {
+        m_GraphResources.RecreateBackbufferSized(
+            device,
+            resourceManager.GetRHIColorBuffer().GetWidth(),
+            resourceManager.GetRHIColorBuffer().GetHeight());
+
         for (IRenderNode* node : m_Nodes)
             node->OnWindowResize(device, resourceManager);
 

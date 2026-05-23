@@ -7,13 +7,14 @@ project "HedgehogRenderer"
     files
     {
         "**.hpp", "**.cpp",
-        "assets/Shaders/**.vert",
-        "assets/Shaders/**.frag",
-        "assets/Shaders/**.comp",
-        "assets/Shaders/**.glsl",
-        "assets/Pipelines/**.pl",
-        "assets/VertexDescriptions/**.vdes",
-        "assets/Shaders/**.shader"
+        "**.vert",
+        "**.frag",
+        "**.comp",
+        "**.glsl",
+        "**.pl",
+        "**.vdes",
+        "**.shader",
+        "**.rgq"
     }
 
     defines { "YAML_CPP_STATIC_DEFINE" }

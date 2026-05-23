@@ -1,18 +1,61 @@
 nodes:
+  # ── Explicit GPU resource declarations ──────────────────────────────────────
+  - type:     CreateGPUResourceNode
+    instance: resources
+    resources:
+      - name:   shadowDepth
+        kind:   texture
+        format: depth32
+        width:  2048
+        height: 2048
+
+      - name:   sceneDepth
+        kind:   texture
+        format: depth32
+        width:  backbuffer
+        height: backbuffer
+
+      - name:   sceneColor
+        kind:   texture
+        format: rgba16f
+        width:  backbuffer
+        height: backbuffer
+
+  # ── Render passes ────────────────────────────────────────────────────────────
   - type:     InitNode
     instance: init
 
   - type:     ShadowmapNode
     instance: shadowmap
+    outputs:
+      - name:  shadowDepth
+        usage: shadowWrite
 
   - type:     DepthPrepassNode
     instance: depthPrepass
+    outputs:
+      - name:  sceneDepth
+        usage: depthWrite
 
   - type:     ForwardNode
     instance: forward
+    inputs:
+      - name:  shadowDepth
+        usage: shadowRead
+      - name:  sceneDepth
+        usage: depthRead
+    outputs:
+      - name:  sceneColor
+        usage: colorWrite
 
   - type:     GuiNode
     instance: gui
+    inputs:
+      - name:  sceneColor
+        usage: shaderRead
+    outputs:
+      - name:  RHIColorBuffer
+        usage: colorWrite
 
   - type:     PresentNode
     instance: present

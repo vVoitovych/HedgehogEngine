@@ -1,7 +1,9 @@
 #include "RenderNodeManager.hpp"
 
 #include "RenderNodes/IRenderNode.hpp"
+#include "RenderNodes/IConfigurableNode.hpp"
 #include "RenderGraph/RenderGraph.hpp"
+#include "RenderGraph/RenderGraphTypes.hpp"
 
 #include "Logger/api/Logger.hpp"
 
@@ -24,6 +26,58 @@ namespace
     std::string ResolveAbsPath(const std::string& repoRelativePath)
     {
         return (GetRepoRoot() / repoRelativePath.substr(1)).lexically_normal().string();
+    }
+
+    Renderer::ResourceSlotDesc ParseResourceSlot(const YAML::Node& slotNode)
+    {
+        Renderer::ResourceSlotDesc slot;
+        slot.name = slotNode["name"].as<std::string>();
+
+        const std::string usage = slotNode["usage"].as<std::string>();
+
+        if (usage == "depthWrite")
+        {
+            slot.type   = Renderer::ResourceType::Depth;
+            slot.access = Renderer::ResourceAccess::Write;
+            slot.layout = RHI::ImageLayout::DepthStencilAttachment;
+        }
+        else if (usage == "depthRead")
+        {
+            slot.type   = Renderer::ResourceType::Depth;
+            slot.access = Renderer::ResourceAccess::Read;
+            slot.layout = RHI::ImageLayout::DepthStencilReadOnly;
+        }
+        else if (usage == "colorWrite")
+        {
+            slot.type   = Renderer::ResourceType::Color;
+            slot.access = Renderer::ResourceAccess::Write;
+            slot.layout = RHI::ImageLayout::ColorAttachment;
+        }
+        else if (usage == "shaderRead")
+        {
+            slot.type   = Renderer::ResourceType::Color;
+            slot.access = Renderer::ResourceAccess::Read;
+            slot.layout = RHI::ImageLayout::ShaderReadOnly;
+        }
+        else if (usage == "shadowWrite")
+        {
+            slot.type   = Renderer::ResourceType::Shadow;
+            slot.access = Renderer::ResourceAccess::Write;
+            slot.layout = RHI::ImageLayout::DepthStencilAttachment;
+        }
+        else if (usage == "shadowRead")
+        {
+            slot.type   = Renderer::ResourceType::Shadow;
+            slot.access = Renderer::ResourceAccess::Read;
+            slot.layout = RHI::ImageLayout::ShaderReadOnly;
+        }
+        else
+        {
+            LOGERROR("RenderNodeManager: unknown slot usage '", usage,
+                     "' for resource '", slot.name, "'.");
+        }
+
+        return slot;
     }
 }
 
@@ -123,8 +177,30 @@ namespace Renderer
         {
             const std::string type     = entry["type"].as<std::string>();
             const std::string instance = entry["instance"].as<std::string>();
-            RenderNodeHandle  handle   = CreateNode(type, instance);
-            outGraph.AddNode(GetNode(handle));
+            const RenderNodeHandle handle = CreateNode(type, instance);
+            IRenderNode* node = GetNode(handle);
+
+            // Let configurable nodes (e.g. CreateGPUResourceNode) parse their own blocks.
+            if (auto* configurable = dynamic_cast<IConfigurableNode*>(node))
+                configurable->SetConfig(entry);
+
+            // Parse optional inputs/outputs overrides — applied after Setup() in Compile().
+            if (entry["inputs"])
+            {
+                std::vector<ResourceSlotDesc> inputs;
+                for (const YAML::Node& slotNode : entry["inputs"])
+                    inputs.push_back(ParseResourceSlot(slotNode));
+                node->SetYAMLInputs(std::move(inputs));
+            }
+            if (entry["outputs"])
+            {
+                std::vector<ResourceSlotDesc> outputs;
+                for (const YAML::Node& slotNode : entry["outputs"])
+                    outputs.push_back(ParseResourceSlot(slotNode));
+                node->SetYAMLOutputs(std::move(outputs));
+            }
+
+            outGraph.AddNode(node);
         }
 
         LOGINFO("RenderNodeManager: loaded graph preset '", yamlPath, "'");

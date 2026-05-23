@@ -19,6 +19,7 @@
 #include "RenderNodes/ForwardNode.hpp"
 #include "RenderNodes/GuiNode.hpp"
 #include "RenderNodes/PresentNode.hpp"
+#include "RenderNodes/CreateGPUResourceNode.hpp"
 
 #include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
 #include "HedgehogSettings/Settings/HedgehogSettings.hpp"
@@ -80,6 +81,9 @@ namespace Renderer
         m_NodeManager->RegisterNodeType("PresentNode",
             []() { return std::make_unique<PresentNode>(); });
 
+        m_NodeManager->RegisterNodeType("CreateGPUResourceNode",
+            []() { return std::make_unique<CreateGPUResourceNode>(); });
+
         BuildGraph("/HedgehogEngine/HedgehogRenderer/assets/Graphs/forward_editor.rgq");
     }
 
@@ -91,7 +95,7 @@ namespace Renderer
     {
         m_RenderGraph = std::make_unique<RenderGraph>();
         m_NodeManager->LoadGraphPreset(presetPath, *m_RenderGraph);
-        m_RenderGraph->Compile(*m_ResourceManager);
+        m_RenderGraph->Compile(m_RHIContext->GetRHIDevice(), *m_ResourceManager);
     }
 
     void Renderer::SetMode(RenderMode mode)

@@ -35,7 +35,7 @@ namespace Renderer
 
         void Cleanup(HedgehogEngine::HedgehogEngine& context);
 
-        // Tear down the current graph and rebuild it from the YAML preset for the given mode.
+        // Tear down the current graph and rebuild it from the rgq preset for the given mode.
         void SetMode(RenderMode mode);
 
         void  BeginGui();
