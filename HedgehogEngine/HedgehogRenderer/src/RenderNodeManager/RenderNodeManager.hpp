@@ -58,7 +58,7 @@ namespace Renderer
         void LoadGraphPreset(const GraphPreset& preset, RenderGraph& outGraph);
 
         // Create all nodes from a YAML file and add them to outGraph.
-        // yamlPath is repo-relative, e.g. "/HedgehogEngine/HedgehogRenderer/assets/Graphs/forward_editor.yaml".
+        // yamlPath is repo-relative, e.g. "/HedgehogEngine/HedgehogRenderer/assets/Graphs/forward_editor.rgq".
         void LoadGraphPreset(const std::string& yamlPath, RenderGraph& outGraph);
 
     private:

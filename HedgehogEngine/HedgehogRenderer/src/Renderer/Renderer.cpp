@@ -80,7 +80,7 @@ namespace Renderer
         m_NodeManager->RegisterNodeType("PresentNode",
             []() { return std::make_unique<PresentNode>(); });
 
-        BuildGraph("/HedgehogEngine/HedgehogRenderer/assets/Graphs/forward_editor.yaml");
+        BuildGraph("/HedgehogEngine/HedgehogRenderer/assets/Graphs/forward_editor.rgq");
     }
 
     Renderer::~Renderer()
@@ -103,8 +103,8 @@ namespace Renderer
 
         m_Mode = mode;
         const std::string preset = (mode == RenderMode::Editor)
-            ? "/HedgehogEngine/HedgehogRenderer/assets/Graphs/forward_editor.yaml"
-            : "/HedgehogEngine/HedgehogRenderer/assets/Graphs/forward_game.yaml";
+            ? "/HedgehogEngine/HedgehogRenderer/assets/Graphs/forward_editor.rgq"
+            : "/HedgehogEngine/HedgehogRenderer/assets/Graphs/forward_game.rgq";
         BuildGraph(preset);
     }
 
