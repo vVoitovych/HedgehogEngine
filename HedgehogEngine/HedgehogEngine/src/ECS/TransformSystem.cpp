@@ -5,11 +5,28 @@
 #include "HedgehogMath/api/Matrix.hpp"
 #include "HedgehogMath/api/Common.hpp"
 
+#include <algorithm>
+
 namespace HedgehogEngine
 {
-    void TransformSystem::Update(ECS::ECS& ecs)
+    void TransformSystem::Init(EventBus& bus)
     {
-        for (auto const& entity : m_Entities)
+        bus.Subscribe<TransformChangedEvent>([this](const TransformChangedEvent& e)
+        {
+            OnTransformChanged(e);
+        });
+    }
+
+    void TransformSystem::OnTransformChanged(const TransformChangedEvent& event)
+    {
+        const auto& entities = GetEntities();
+        if (std::find(entities.begin(), entities.end(), event.entity) != entities.end())
+            m_PendingEntities.push_back(event.entity);
+    }
+
+    void TransformSystem::Update(ECS::ECS& ecs, EventBus& bus)
+    {
+        for (auto const& entity : m_PendingEntities)
         {
             auto& transform = ecs.GetComponent<TransformComponent>(entity);
 
@@ -20,7 +37,10 @@ namespace HedgehogEngine
             HM::Matrix4x4 scale       = HM::Matrix4x4::GetScale(
                 transform.m_Scale.x(), transform.m_Scale.y(), transform.m_Scale.z());
 
-            transform.m_ObjMatrix = translation * rotationX * rotationY * rotationZ * scale;
+            transform.m_LocalMatrix = translation * rotationX * rotationY * rotationZ * scale;
+
+            bus.Publish(LocalMatrixUpdatedEvent{ entity });
         }
+        m_PendingEntities.clear();
     }
 }

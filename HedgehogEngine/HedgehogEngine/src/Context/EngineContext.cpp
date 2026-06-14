@@ -79,6 +79,9 @@ namespace HedgehogEngine
         m_RenderSystem    = m_ECS.RegisterSystem<RenderSystem>();
         m_ScriptSystem    = m_ECS.RegisterSystem<ScriptSystem>();
 
+        m_TransformSystem->Init(m_EventBus);
+        m_HierarchySystem->Init(m_EventBus);
+
         ECS::Signature signature;
 
         signature.set(m_ECS.GetComponentType<TransformComponent>());
@@ -165,7 +168,7 @@ namespace HedgehogEngine
                 }
                 out << YAML::EndMap;
             },
-            [scriptSys](ECS::ECS& ecs, ECS::Entity e, const YAML::Node& node)
+            [scriptSys, this](ECS::ECS& ecs, ECS::Entity e, const YAML::Node& node)
             {
                 EcsSerialization::ComponentSerializerRegistry::DeserializeWithVisit<ScriptComponent>(ecs, e, node);
                 ScriptComponent& script = ecs.GetComponent<ScriptComponent>(e);
@@ -187,7 +190,7 @@ namespace HedgehogEngine
                         script.m_Params[paramName] = { type, value, false };
                     }
                 }
-                scriptSys->InitScript(e, ecs);
+                scriptSys->InitScript(e, ecs, m_EventBus);
             },
             [](const ECS::ECS& ecs, ECS::Entity e) { return ecs.HasComponent<ScriptComponent>(e); }
         );
@@ -198,8 +201,8 @@ namespace HedgehogEngine
         UpdateCamera(windowContext, aspectRatio, dt);
 
         // Update order is load-bearing: Script → Transform → Hierarchy → Light
-        m_ScriptSystem->Update(m_ECS, dt);
-        m_TransformSystem->Update(m_ECS);
+        m_ScriptSystem->Update(m_ECS, dt, m_EventBus);
+        m_TransformSystem->Update(m_ECS, m_EventBus);
         m_HierarchySystem->Update(m_ECS);
         m_LightSystem->Update(m_ECS);
 
@@ -228,6 +231,8 @@ namespace HedgehogEngine
 
     const FrameData& EngineContext::GetFrameData() const { return m_FrameData; }
 
+    EventBus& EngineContext::GetEventBus() { return m_EventBus; }
+
     HedgehogSettings::Settings& EngineContext::GetSettings()             { return *m_Settings; }
     const HedgehogSettings::Settings& EngineContext::GetSettings() const { return *m_Settings; }
 
@@ -248,6 +253,8 @@ namespace HedgehogEngine
     {
         DeleteGameObjectAndChildren(m_ECS.GetRoot());
         EcsSerialization::EcsSerializer::Deserialize(*m_ComponentRegistry, m_ECS, m_SceneName, filePath);
+        for (auto entity : m_TransformSystem->GetEntities())
+            m_EventBus.Publish(TransformChangedEvent{ entity });
         m_MeshSystem->Update(m_ECS);
         m_RenderSystem->UpdateSystem(m_ECS);
     }
@@ -281,6 +288,7 @@ namespace HedgehogEngine
         m_ECS.AddComponent(entity, ECS::HierarchyComponent{ GetUniqueGameObjectName(), realParent, {} });
         parentHierarchy.m_Children.push_back(entity);
 
+        m_EventBus.Publish(TransformChangedEvent{ entity });
         return entity;
     }
 
@@ -312,6 +320,7 @@ namespace HedgehogEngine
         m_ECS.AddComponent(root, TransformComponent{});
         m_ECS.AddComponent(root, ECS::HierarchyComponent{ "Root", root, {} });
         m_ECS.SetRoot(root);
+        m_EventBus.Publish(TransformChangedEvent{ root });
     }
 
     void EngineContext::DeleteGameObjectAndChildren(ECS::Entity entity)
