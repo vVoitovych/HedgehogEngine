@@ -18,14 +18,14 @@ namespace HedgehogEngine
         /// Subscribe to LocalMatrixUpdatedEvent. Call once after system registration.
         HEDGEHOG_ENGINE_API void Init(EventBus& bus);
 
-        /// Cascade world matrices for all queued subtrees; no-op when queue is empty.
-        HEDGEHOG_ENGINE_API void Update(ECS::ECS& ecs);
+        /// Cascade world matrices for all queued subtrees; publishes WorldMatrixUpdatedEvent per entity.
+        HEDGEHOG_ENGINE_API void Update(ECS::ECS& ecs, EventBus& bus);
 
     private:
         void OnLocalMatrixUpdated(const LocalMatrixUpdatedEvent& event);
 
         void CascadeSubtree(ECS::ECS& ecs, ECS::Entity parent, bool parentWorldUpdated,
-                            const std::unordered_set<ECS::Entity>& pending);
+                            const std::unordered_set<ECS::Entity>& pending, EventBus& bus);
 
         std::vector<ECS::Entity> m_PendingUpdates;
     };

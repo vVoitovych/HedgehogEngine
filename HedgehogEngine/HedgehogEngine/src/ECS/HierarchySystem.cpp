@@ -18,7 +18,7 @@ namespace HedgehogEngine
         m_PendingUpdates.push_back(event.entity);
     }
 
-    void HierarchySystem::Update(ECS::ECS& ecs)
+    void HierarchySystem::Update(ECS::ECS& ecs, EventBus& bus)
     {
         if (m_PendingUpdates.empty())
             return;
@@ -31,13 +31,16 @@ namespace HedgehogEngine
 
         const bool rootUpdated = pending.count(root) > 0;
         if (rootUpdated)
+        {
             rootTransform.m_ObjMatrix = rootTransform.m_LocalMatrix;
+            bus.Publish(WorldMatrixUpdatedEvent{ root });
+        }
 
-        CascadeSubtree(ecs, root, rootUpdated, pending);
+        CascadeSubtree(ecs, root, rootUpdated, pending, bus);
     }
 
     void HierarchySystem::CascadeSubtree(ECS::ECS& ecs, ECS::Entity parent, bool parentWorldUpdated,
-                                          const std::unordered_set<ECS::Entity>& pending)
+                                          const std::unordered_set<ECS::Entity>& pending, EventBus& bus)
     {
         auto& parentTransform = ecs.GetComponent<TransformComponent>(parent);
         auto& hierarchy       = ecs.GetComponent<ECS::HierarchyComponent>(parent);
@@ -48,9 +51,12 @@ namespace HedgehogEngine
             const bool needsWorldUpdate = parentWorldUpdated || pending.count(child) > 0;
 
             if (needsWorldUpdate)
+            {
                 childTransform.m_ObjMatrix = parentTransform.m_ObjMatrix * childTransform.m_LocalMatrix;
+                bus.Publish(WorldMatrixUpdatedEvent{ child });
+            }
 
-            CascadeSubtree(ecs, child, needsWorldUpdate, pending);
+            CascadeSubtree(ecs, child, needsWorldUpdate, pending, bus);
         }
     }
 }

@@ -81,6 +81,7 @@ namespace HedgehogEngine
 
         m_TransformSystem->Init(m_EventBus);
         m_HierarchySystem->Init(m_EventBus);
+        m_LightSystem->Init(m_EventBus);
 
         ECS::Signature signature;
 
@@ -203,7 +204,7 @@ namespace HedgehogEngine
         // Update order is load-bearing: Script → Transform → Hierarchy → Light
         m_ScriptSystem->Update(m_ECS, dt, m_EventBus);
         m_TransformSystem->Update(m_ECS, m_EventBus);
-        m_HierarchySystem->Update(m_ECS);
+        m_HierarchySystem->Update(m_ECS, m_EventBus);
         m_LightSystem->Update(m_ECS);
 
         m_LightContainer->UpdateLights(m_ECS, *m_LightSystem);
