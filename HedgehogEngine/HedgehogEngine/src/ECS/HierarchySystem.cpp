@@ -1,24 +1,62 @@
 #include "HedgehogEngine/api/ECS/systems/HierarchySystem.hpp"
-#include "ECS/api/components/Hierarchy.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
+
+#include "ECS/api/components/Hierarchy.hpp"
 
 namespace HedgehogEngine
 {
-    void HierarchySystem::Update(ECS::ECS& ecs)
+    void HierarchySystem::Init(EventBus& bus)
     {
-        UpdateChildrenMatrices(ecs, ecs.GetRoot());
+        bus.Subscribe<LocalMatrixUpdatedEvent>([this](const LocalMatrixUpdatedEvent& e)
+        {
+            OnLocalMatrixUpdated(e);
+        });
     }
 
-    void HierarchySystem::UpdateChildrenMatrices(ECS::ECS& ecs, ECS::Entity parent)
+    void HierarchySystem::OnLocalMatrixUpdated(const LocalMatrixUpdatedEvent& event)
     {
-        auto& transform = ecs.GetComponent<TransformComponent>(parent);
-        auto& hierarchy = ecs.GetComponent<ECS::HierarchyComponent>(parent);
+        m_PendingUpdates.push_back(event.entity);
+    }
 
-        for (auto const& entity : hierarchy.m_Children)
+    void HierarchySystem::Update(ECS::ECS& ecs, EventBus& bus)
+    {
+        if (m_PendingUpdates.empty())
+            return;
+
+        const std::unordered_set<ECS::Entity> pending(m_PendingUpdates.begin(), m_PendingUpdates.end());
+        m_PendingUpdates.clear();
+
+        ECS::Entity root    = ecs.GetRoot();
+        auto& rootTransform = ecs.GetComponent<TransformComponent>(root);
+
+        const bool rootUpdated = pending.count(root) > 0;
+        if (rootUpdated)
         {
-            auto& childTransform       = ecs.GetComponent<TransformComponent>(entity);
-            childTransform.m_ObjMatrix = transform.m_ObjMatrix * childTransform.m_ObjMatrix;
-            UpdateChildrenMatrices(ecs, entity);
+            rootTransform.m_ObjMatrix = rootTransform.m_LocalMatrix;
+            bus.Publish(WorldMatrixUpdatedEvent{ root });
+        }
+
+        CascadeSubtree(ecs, root, rootUpdated, pending, bus);
+    }
+
+    void HierarchySystem::CascadeSubtree(ECS::ECS& ecs, ECS::Entity parent, bool parentWorldUpdated,
+                                          const std::unordered_set<ECS::Entity>& pending, EventBus& bus)
+    {
+        auto& parentTransform = ecs.GetComponent<TransformComponent>(parent);
+        auto& hierarchy       = ecs.GetComponent<ECS::HierarchyComponent>(parent);
+
+        for (auto const& child : hierarchy.m_Children)
+        {
+            auto& childTransform        = ecs.GetComponent<TransformComponent>(child);
+            const bool needsWorldUpdate = parentWorldUpdated || pending.count(child) > 0;
+
+            if (needsWorldUpdate)
+            {
+                childTransform.m_ObjMatrix = parentTransform.m_ObjMatrix * childTransform.m_LocalMatrix;
+                bus.Publish(WorldMatrixUpdatedEvent{ child });
+            }
+
+            CascadeSubtree(ecs, child, needsWorldUpdate, pending, bus);
         }
     }
 }

@@ -3,6 +3,7 @@
 
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
+#include "HedgehogEngine/api/Events/TransformEvents.hpp"
 
 #include "Logger/api/Logger.hpp"
 #include "DialogueWindows/api/ScriptDialogue.hpp"
@@ -31,10 +32,18 @@ namespace
         return std::filesystem::path(path).stem().string();
     }
 
-    void RegisterLuaBindings(lua_State* L, TransformComponent* transform)
+    void RegisterLuaBindings(lua_State* L, TransformComponent* transform,
+                             ECS::Entity entity, EventBus& bus)
     {
         lua_pushlightuserdata(L, transform);
         lua_setglobal(L, "__transform_ptr");
+
+        lua_pushinteger(L, static_cast<lua_Integer>(entity));
+        lua_setglobal(L, "__entity_id");
+
+        // raw void* required by the Lua C API; valid for the lifetime of EngineContext
+        lua_pushlightuserdata(L, &bus);
+        lua_setglobal(L, "__event_bus");
 
         lua_register(L, "GetPosition", [](lua_State* L) -> int
             {
@@ -57,6 +66,12 @@ namespace
                 lua_getfield(L, 1, "x"); t->m_Position.x() = static_cast<float>(lua_tonumber(L, -1)); lua_pop(L, 1);
                 lua_getfield(L, 1, "y"); t->m_Position.y() = static_cast<float>(lua_tonumber(L, -1)); lua_pop(L, 1);
                 lua_getfield(L, 1, "z"); t->m_Position.z() = static_cast<float>(lua_tonumber(L, -1)); lua_pop(L, 1);
+
+                lua_getglobal(L, "__event_bus");
+                auto* bus = static_cast<EventBus*>(lua_touserdata(L, -1)); lua_pop(L, 1);
+                lua_getglobal(L, "__entity_id");
+                const auto eid = static_cast<ECS::Entity>(lua_tointeger(L, -1)); lua_pop(L, 1);
+                bus->Publish(TransformChangedEvent{ eid });
                 return 0;
             }
         );
@@ -82,16 +97,22 @@ namespace
                 lua_getfield(L, 1, "x"); t->m_Rotation.x() = static_cast<float>(lua_tonumber(L, -1)); lua_pop(L, 1);
                 lua_getfield(L, 1, "y"); t->m_Rotation.y() = static_cast<float>(lua_tonumber(L, -1)); lua_pop(L, 1);
                 lua_getfield(L, 1, "z"); t->m_Rotation.z() = static_cast<float>(lua_tonumber(L, -1)); lua_pop(L, 1);
+
+                lua_getglobal(L, "__event_bus");
+                auto* bus = static_cast<EventBus*>(lua_touserdata(L, -1)); lua_pop(L, 1);
+                lua_getglobal(L, "__entity_id");
+                const auto eid = static_cast<ECS::Entity>(lua_tointeger(L, -1)); lua_pop(L, 1);
+                bus->Publish(TransformChangedEvent{ eid });
                 return 0;
             }
         );
     }
 }
 
-    void ScriptSystem::Update(ECS::ECS& ecs, float dt)
+    void ScriptSystem::Update(ECS::ECS& ecs, float dt, EventBus& bus)
     {
         CallOnEnable(ecs);
-        CallUpdate(ecs, dt);
+        CallUpdate(ecs, dt, bus);
         CallOnDisable(ecs);
     }
 
@@ -106,7 +127,7 @@ namespace
         }
     }
 
-    void ScriptSystem::ChangeScript(ECS::Entity entity, ECS::ECS& ecs)
+    void ScriptSystem::ChangeScript(ECS::Entity entity, ECS::ECS& ecs, EventBus& bus)
     {
         std::string scriptPath = DialogueWindows::ScriptChooseDialogue();
         if (scriptPath.empty())
@@ -124,7 +145,7 @@ namespace
         luaL_openlibs(component.m_LuaState);
 
         auto& transform = ecs.GetComponent<TransformComponent>(entity);
-        RegisterLuaBindings(component.m_LuaState, &transform);
+        RegisterLuaBindings(component.m_LuaState, &transform, entity, bus);
 
         const std::string basePath = ContentLoader::GetAssetsDirectory() + s_BaseActorScript;
 
@@ -162,7 +183,7 @@ namespace
             CallMethod(component.m_LuaState, component.m_InstanceRef, "OnEnable");
     }
 
-    void ScriptSystem::InitScript(ECS::Entity entity, ECS::ECS& ecs)
+    void ScriptSystem::InitScript(ECS::Entity entity, ECS::ECS& ecs, EventBus& bus)
     {
         auto& component = ecs.GetComponent<ScriptComponent>(entity);
 
@@ -178,7 +199,7 @@ namespace
         luaL_openlibs(component.m_LuaState);
 
         auto& transform = ecs.GetComponent<TransformComponent>(entity);
-        RegisterLuaBindings(component.m_LuaState, &transform);
+        RegisterLuaBindings(component.m_LuaState, &transform, entity, bus);
 
         const std::string basePath = ContentLoader::GetAssetsDirectory() + s_BaseActorScript;
 
@@ -254,7 +275,7 @@ namespace
         }
     }
 
-    void ScriptSystem::CallUpdate(ECS::ECS& ecs, float dt)
+    void ScriptSystem::CallUpdate(ECS::ECS& ecs, float dt, EventBus& bus)
     {
         for (auto const& entity : m_Entities)
         {
@@ -284,7 +305,7 @@ namespace
             if (component.m_Enable && component.m_LuaState != nullptr)
             {
                 auto& transform = ecs.GetComponent<TransformComponent>(entity);
-                RegisterLuaBindings(component.m_LuaState, &transform);
+                RegisterLuaBindings(component.m_LuaState, &transform, entity, bus);
 
                 CallMethod(component.m_LuaState, component.m_InstanceRef, "OnUpdate", 1,
                     [&]() { lua_pushnumber(component.m_LuaState, dt); }

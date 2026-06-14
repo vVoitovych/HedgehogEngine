@@ -1,6 +1,7 @@
 #pragma once
 
 #include "HedgehogEngine/api/HedgehogEngineApi.hpp"
+#include "HedgehogEngine/api/Events/EventBus.hpp"
 
 #include "ECS/api/ECS.hpp"
 #include "ECS/api/Entity.hpp"
@@ -58,6 +59,8 @@ namespace HedgehogEngine
 
         HEDGEHOG_ENGINE_API const Camera& GetCamera() const;
 
+        HEDGEHOG_ENGINE_API EventBus&            GetEventBus();
+
         HEDGEHOG_ENGINE_API ECS::ECS&           GetECS();
         HEDGEHOG_ENGINE_API ECS::Entity         GetRootEntity()      const;
         HEDGEHOG_ENGINE_API std::string         GetSceneName()       const;
@@ -86,6 +89,8 @@ namespace HedgehogEngine
         static std::string GetUniqueGameObjectName();
 
     private:
+        EventBus m_EventBus;
+
         std::unique_ptr<Camera> m_Camera;
 
         ECS::ECS    m_ECS;

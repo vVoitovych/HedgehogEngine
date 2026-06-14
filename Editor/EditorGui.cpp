@@ -16,6 +16,7 @@
 #include "ECS/api/ECS.hpp"
 #include "ECS/api/components/Hierarchy.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
+#include "HedgehogEngine/api/Events/TransformEvents.hpp"
 #include "HedgehogEngine/api/ECS/systems/MeshSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/RenderSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/LightSystem.hpp"
@@ -411,28 +412,33 @@ namespace Editor
 
     void EditorGui::DrawTransformComponent(HedgehogEngine::HedgehogEngine& context)
     {
-        auto& ecs    = context.GetEngineContext().GetECS();
-        auto  entity = m_SelectedEntity.value();
+        auto& engineContext = context.GetEngineContext();
+        auto& ecs           = engineContext.GetECS();
+        auto  entity        = m_SelectedEntity.value();
 
         if (!ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
             return;
 
         auto& transform = ecs.GetComponent<HedgehogEngine::TransformComponent>(entity);
 
+        bool changed = false;
         ImGui::SeparatorText("Position");
-        ImGui::DragFloat("pos x", &transform.m_Position.x(), 0.5f);
-        ImGui::DragFloat("pos y", &transform.m_Position.y(), 0.5f);
-        ImGui::DragFloat("pos z", &transform.m_Position.z(), 0.5f);
+        changed |= ImGui::DragFloat("pos x", &transform.m_Position.x(), 0.5f);
+        changed |= ImGui::DragFloat("pos y", &transform.m_Position.y(), 0.5f);
+        changed |= ImGui::DragFloat("pos z", &transform.m_Position.z(), 0.5f);
 
         ImGui::SeparatorText("Rotation");
-        ImGui::DragFloat("rot x", &transform.m_Rotation.x(), 0.5f);
-        ImGui::DragFloat("rot y", &transform.m_Rotation.y(), 0.5f);
-        ImGui::DragFloat("rot z", &transform.m_Rotation.z(), 0.5f);
+        changed |= ImGui::DragFloat("rot x", &transform.m_Rotation.x(), 0.5f);
+        changed |= ImGui::DragFloat("rot y", &transform.m_Rotation.y(), 0.5f);
+        changed |= ImGui::DragFloat("rot z", &transform.m_Rotation.z(), 0.5f);
 
         ImGui::SeparatorText("Scale");
-        ImGui::DragFloat("scale x", &transform.m_Scale.x(), 0.5f);
-        ImGui::DragFloat("scale y", &transform.m_Scale.y(), 0.5f);
-        ImGui::DragFloat("scale z", &transform.m_Scale.z(), 0.5f);
+        changed |= ImGui::DragFloat("scale x", &transform.m_Scale.x(), 0.5f);
+        changed |= ImGui::DragFloat("scale y", &transform.m_Scale.y(), 0.5f);
+        changed |= ImGui::DragFloat("scale z", &transform.m_Scale.z(), 0.5f);
+
+        if (changed)
+            engineContext.GetEventBus().Publish(HedgehogEngine::TransformChangedEvent{ entity });
     }
 
     void EditorGui::DrawMeshComponent(HedgehogEngine::HedgehogEngine& context)
@@ -695,7 +701,7 @@ namespace Editor
         ImGui::InputText("Script", &scriptName[0], scriptName.capacity() + 1);
 
         if (ImGui::Button("Load script"))
-            scriptSystem->ChangeScript(entity, ecs);
+            scriptSystem->ChangeScript(entity, ecs, engineContext.GetEventBus());
 
         if (!component.m_Params.empty())
             ImGui::SeparatorText("Parameters");

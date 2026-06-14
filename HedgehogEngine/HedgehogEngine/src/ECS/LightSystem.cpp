@@ -1,8 +1,25 @@
 #include "HedgehogEngine/api/ECS/systems/LightSystem.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
 
+#include <algorithm>
+
 namespace HedgehogEngine
 {
+    void LightSystem::Init(EventBus& bus)
+    {
+        bus.Subscribe<WorldMatrixUpdatedEvent>([this](const WorldMatrixUpdatedEvent& e)
+        {
+            OnWorldMatrixUpdated(e);
+        });
+    }
+
+    void LightSystem::OnWorldMatrixUpdated(const WorldMatrixUpdatedEvent& event)
+    {
+        const auto& entities = GetEntities();
+        if (std::find(entities.begin(), entities.end(), event.entity) != entities.end())
+            m_PendingEntities.push_back(event.entity);
+    }
+
     const std::vector<LightComponent>& LightSystem::GetLightComponents(ECS::ECS& ecs)
     {
         m_LightComponents.resize(m_Entities.size());
@@ -13,7 +30,10 @@ namespace HedgehogEngine
 
     void LightSystem::Update(ECS::ECS& ecs)
     {
-        for (auto const& entity : m_Entities)
+        if (m_PendingEntities.empty())
+            return;
+
+        for (auto const& entity : m_PendingEntities)
         {
             auto& light           = ecs.GetComponent<LightComponent>(entity);
             auto& transform       = ecs.GetComponent<TransformComponent>(entity);
@@ -26,6 +46,7 @@ namespace HedgehogEngine
             if (light.m_CastShadows)
                 m_ShadowDirection = dir;
         }
+        m_PendingEntities.clear();
     }
 
     size_t LightSystem::GetLightComponentsCount() const

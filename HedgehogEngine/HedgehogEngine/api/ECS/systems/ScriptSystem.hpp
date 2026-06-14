@@ -1,6 +1,7 @@
 #pragma once
 
 #include "HedgehogEngine/api/HedgehogEngineApi.hpp"
+#include "HedgehogEngine/api/Events/EventBus.hpp"
 
 #include "ECS/api/System.hpp"
 #include "ECS/api/ECS.hpp"
@@ -13,15 +14,15 @@ namespace HedgehogEngine
     class ScriptSystem : public ECS::System
     {
     public:
-        HEDGEHOG_ENGINE_API void Update(ECS::ECS& ecs, float dt);
+        HEDGEHOG_ENGINE_API void Update(ECS::ECS& ecs, float dt, EventBus& bus);
 
         HEDGEHOG_ENGINE_API void ClearScriptComponent(ECS::Entity entity, ECS::ECS& ecs);
-        HEDGEHOG_ENGINE_API void ChangeScript(ECS::Entity entity, ECS::ECS& ecs);
-        HEDGEHOG_ENGINE_API void InitScript(ECS::Entity entity, ECS::ECS& ecs);
+        HEDGEHOG_ENGINE_API void ChangeScript(ECS::Entity entity, ECS::ECS& ecs, EventBus& bus);
+        HEDGEHOG_ENGINE_API void InitScript(ECS::Entity entity, ECS::ECS& ecs, EventBus& bus);
 
     private:
         void CallOnEnable(ECS::ECS& ecs);
-        void CallUpdate(ECS::ECS& ecs, float dt);
+        void CallUpdate(ECS::ECS& ecs, float dt, EventBus& bus);
         void CallOnDisable(ECS::ECS& ecs);
     };
 }
