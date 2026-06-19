@@ -1,22 +1,16 @@
 #pragma once
 
-#include <string>
+#include "HedgehogEngine/api/Reflection/ComponentMacros.hpp"
+
 #include <optional>
+#include <string>
 
 namespace HedgehogEngine
 {
-    class RenderComponent
-    {
-    public:
-        bool                    m_IsVisible    = true;
-        std::string             m_Material;
-        std::optional<uint64_t> m_MaterialIndex; // runtime-only
+HH_BEGIN_COMPONENT(RenderComponent)
+    HH_PROP_NAMED(bool,        m_IsVisible, "Visible",  true,          None)
+    HH_PROP_NAMED(std::string, m_Material,  "Material", std::string{}, None)
 
-        template<typename V>
-        void Visit(V& v)
-        {
-            v("Visible",  m_IsVisible);
-            v("Material", m_Material);
-        }
-    };
+    std::optional<uint64_t> m_MaterialIndex; // runtime-only
+HH_END_COMPONENT(RenderComponent)
 }

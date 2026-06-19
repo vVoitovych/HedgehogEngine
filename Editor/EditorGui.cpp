@@ -25,6 +25,7 @@
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RenderComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
+#include "HedgehogEngine/api/Reflection/GuiReflection.hpp"
 
 #include "ContentLoader/api/CommonFunctions.hpp"
 #include "DialogueWindows/api/MaterialDialogue.hpp"
@@ -33,7 +34,41 @@
 #include "imgui.h"
 
 #include <algorithm>
-#include <stdexcept>
+
+namespace
+{
+    void SetupLightComponentGuiOverrides()
+    {
+        using HedgehogEngine::LightComponent;
+        using HedgehogEngine::LightType;
+
+        for (auto& prop : LightComponent::_GetPropTable())
+        {
+            if (std::string_view(prop.name) == "LightRadius")
+            {
+                prop.guiOverride = [](void* comp, const Reflection::PropertyDescriptor& p) -> bool
+                {
+                    auto* l = static_cast<LightComponent*>(comp);
+                    if (l->m_LightType == LightType::DirectionLight) return false;
+                    return ImGui::SliderFloat(p.name, &l->m_Radius, p.sliderMin, p.sliderMax);
+                };
+            }
+            else if (std::string_view(prop.name) == "LightConeAngle")
+            {
+                prop.guiOverride = [](void* comp, const Reflection::PropertyDescriptor& p) -> bool
+                {
+                    auto* l = static_cast<LightComponent*>(comp);
+                    if (l->m_LightType != LightType::SpotLight) return false;
+                    return ImGui::SliderFloat(p.name, &l->m_ConeAngle, p.sliderMin, p.sliderMax);
+                };
+            }
+            else if (std::string_view(prop.name) == "CastShadows")
+            {
+                prop.guiOverride = [](void*, const Reflection::PropertyDescriptor&) -> bool { return false; };
+            }
+        }
+    }
+}
 
 namespace Editor
 {
@@ -45,6 +80,8 @@ namespace Editor
     {
         if (m_Settings.Load(k_SettingsPath) && m_Settings.dockLayout.IsValid())
             m_DockSystem.GetLayout() = m_Settings.dockLayout;
+
+        SetupLightComponentGuiOverrides();
     }
 
     EditorGui::~EditorGui()
@@ -421,23 +458,7 @@ namespace Editor
 
         auto& transform = ecs.GetComponent<HedgehogEngine::TransformComponent>(entity);
 
-        bool changed = false;
-        ImGui::SeparatorText("Position");
-        changed |= ImGui::DragFloat("pos x", &transform.m_Position.x(), 0.5f);
-        changed |= ImGui::DragFloat("pos y", &transform.m_Position.y(), 0.5f);
-        changed |= ImGui::DragFloat("pos z", &transform.m_Position.z(), 0.5f);
-
-        ImGui::SeparatorText("Rotation");
-        changed |= ImGui::DragFloat("rot x", &transform.m_Rotation.x(), 0.5f);
-        changed |= ImGui::DragFloat("rot y", &transform.m_Rotation.y(), 0.5f);
-        changed |= ImGui::DragFloat("rot z", &transform.m_Rotation.z(), 0.5f);
-
-        ImGui::SeparatorText("Scale");
-        changed |= ImGui::DragFloat("scale x", &transform.m_Scale.x(), 0.5f);
-        changed |= ImGui::DragFloat("scale y", &transform.m_Scale.y(), 0.5f);
-        changed |= ImGui::DragFloat("scale z", &transform.m_Scale.z(), 0.5f);
-
-        if (changed)
+        if (Reflection::RenderComponentGui(&transform, HedgehogEngine::TransformComponent::GetProperties()))
             engineContext.GetEventBus().Publish(HedgehogEngine::TransformChangedEvent{ entity });
     }
 
@@ -594,31 +615,6 @@ namespace Editor
         }
     }
 
-    namespace
-    {
-        HedgehogEngine::LightType IndexToLightType(int index)
-        {
-            switch (index)
-            {
-            case 0: return HedgehogEngine::LightType::DirectionLight;
-            case 1: return HedgehogEngine::LightType::PointLight;
-            case 2: return HedgehogEngine::LightType::SpotLight;
-            default: throw std::runtime_error("Invalid light type index");
-            }
-        }
-
-        int LightTypeToIndex(HedgehogEngine::LightType type)
-        {
-            switch (type)
-            {
-            case HedgehogEngine::LightType::DirectionLight: return 0;
-            case HedgehogEngine::LightType::PointLight:     return 1;
-            case HedgehogEngine::LightType::SpotLight:      return 2;
-            default: throw std::runtime_error("Invalid light type");
-            }
-        }
-    }
-
     void EditorGui::DrawLightComponent(HedgehogEngine::HedgehogEngine& context)
     {
         auto& engineContext = context.GetEngineContext();
@@ -633,38 +629,9 @@ namespace Editor
 
         auto& light = ecs.GetComponent<HedgehogEngine::LightComponent>(entity);
 
-        bool enabled = light.m_Enable;
-        if (ImGui::Checkbox("Enabled", &enabled))
-            light.m_Enable = enabled;
+        Reflection::RenderComponentGui(&light, HedgehogEngine::LightComponent::GetProperties());
 
-        const char* typeNames[] = { "Direction Light", "Point Light", "Spot Light" };
-        int lightTypeIndex = LightTypeToIndex(light.m_LightType);
-        if (ImGui::Combo("Type", &lightTypeIndex, typeNames, IM_ARRAYSIZE(typeNames)))
-            light.m_LightType = IndexToLightType(lightTypeIndex);
-
-        float color[3] = { light.m_Color.r(), light.m_Color.g(), light.m_Color.b() };
-        if (ImGui::ColorEdit3("Color", color))
-            light.m_Color = { color[0], color[1], color[2] };
-
-        float intensity = light.m_Intensity;
-        if (ImGui::SliderFloat("Intensity", &intensity, 0.0f, 3.0f))
-            light.m_Intensity = intensity;
-
-        if (lightTypeIndex > 0)
-        {
-            float radius = light.m_Radius;
-            if (ImGui::SliderFloat("Radius", &radius, 0.0f, 100.0f))
-                light.m_Radius = radius;
-
-            if (lightTypeIndex > 1)
-            {
-                float coneAngle = light.m_ConeAngle;
-                if (ImGui::SliderFloat("Cone angle", &coneAngle, 0.1f, 179.9f))
-                    light.m_ConeAngle = coneAngle;
-            }
-        }
-
-        if (lightTypeIndex == 0)
+        if (light.m_LightType == HedgehogEngine::LightType::DirectionLight)
         {
             bool castShadows = light.m_CastShadows;
             if (ImGui::Checkbox("Cast shadows", &castShadows))
