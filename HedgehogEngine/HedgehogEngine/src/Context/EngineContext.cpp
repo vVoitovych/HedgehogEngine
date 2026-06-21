@@ -117,25 +117,10 @@ namespace HedgehogEngine
     {
         m_ComponentRegistry = std::make_unique<EcsSerialization::ComponentSerializerRegistry>();
 
-        m_ComponentRegistry->RegisterVisitable<TransformComponent>("TransformComponent");
-        m_ComponentRegistry->RegisterVisitable<MeshComponent>("MeshComponent");
-        m_ComponentRegistry->RegisterVisitable<RenderComponent>("RenderComponent");
-
-        // LightComponent: RegisterCustom to handle the "LightIntencity" backward-compat typo
-        m_ComponentRegistry->RegisterCustom("LightComponent",
-            [](YAML::Emitter& out, const ECS::ECS& ecs, ECS::Entity e)
-            {
-                EcsSerialization::ComponentSerializerRegistry::SerializeWithVisit<LightComponent>(out, ecs, e, "LightComponent");
-            },
-            [](ECS::ECS& ecs, ECS::Entity e, const YAML::Node& node)
-            {
-                EcsSerialization::ComponentSerializerRegistry::DeserializeWithVisit<LightComponent>(ecs, e, node);
-                auto& comp = ecs.GetComponent<LightComponent>(e);
-                if (!node["LightIntensity"] && node["LightIntencity"])
-                    comp.m_Intensity = node["LightIntencity"].as<float>();
-            },
-            [](const ECS::ECS& ecs, ECS::Entity e) { return ecs.HasComponent<LightComponent>(e); }
-        );
+        m_ComponentRegistry->RegisterReflected<TransformComponent>("TransformComponent");
+        m_ComponentRegistry->RegisterReflected<MeshComponent>("MeshComponent");
+        m_ComponentRegistry->RegisterReflected<RenderComponent>("RenderComponent");
+        m_ComponentRegistry->RegisterReflected<LightComponent>("LightComponent");
 
         // ScriptComponent: RegisterCustom to handle m_Params and InitScript
         ScriptSystem* scriptSys = m_ScriptSystem.get();

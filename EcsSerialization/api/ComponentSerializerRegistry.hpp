@@ -3,6 +3,7 @@
 #include "ECS/api/ECS.hpp"
 #include "ECS/api/Entity.hpp"
 #include "HedgehogMath/api/Vector.hpp"
+#include "Reflection/YamlReflection.hpp"
 
 #include "yaml-cpp/yaml.h"
 
@@ -144,6 +145,32 @@ namespace EcsSerialization
                 [](ECS::ECS& ecs, ECS::Entity e, const YAML::Node& node)
                 {
                     DeserializeWithVisit<T>(ecs, e, node);
+                },
+                [](const ECS::ECS& ecs, ECS::Entity e)
+                {
+                    return ecs.HasComponent<T>(e);
+                }
+            });
+        }
+
+        template<typename T>
+        void RegisterReflected(const char* yamlKey)
+        {
+            std::string key(yamlKey);
+            m_Handlers.push_back({
+                key,
+                [key](YAML::Emitter& out, const ECS::ECS& ecs, ECS::Entity e)
+                {
+                    auto& comp = ecs.GetComponent<T>(e);
+                    out << YAML::Key << key.c_str() << YAML::BeginMap;
+                    Reflection::YamlSerializeComponent(out, const_cast<T*>(&comp), T::GetProperties());
+                    out << YAML::EndMap;
+                },
+                [](ECS::ECS& ecs, ECS::Entity e, const YAML::Node& node)
+                {
+                    ecs.AddComponent(e, T{});
+                    T& comp = ecs.GetComponent<T>(e);
+                    Reflection::YamlDeserializeComponent(&comp, node, T::GetProperties());
                 },
                 [](const ECS::ECS& ecs, ECS::Entity e)
                 {

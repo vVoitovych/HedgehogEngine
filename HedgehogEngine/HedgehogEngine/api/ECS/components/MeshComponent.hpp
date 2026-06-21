@@ -1,21 +1,16 @@
 #pragma once
 
-#include <string>
+#include "HedgehogEngine/api/Reflection/ComponentMacros.hpp"
+
 #include <optional>
+#include <string>
 
 namespace HedgehogEngine
 {
-    class MeshComponent
-    {
-    public:
-        std::string             m_MeshPath;
-        std::optional<uint64_t> m_MeshIndex;      // runtime-only
-        std::string             m_CachedMeshPath;  // runtime-only
+HH_BEGIN_COMPONENT(MeshComponent)
+    HH_PROP_NAMED(std::string, m_MeshPath, "MeshPath", std::string{}, None)
 
-        template<typename V>
-        void Visit(V& v)
-        {
-            v("MeshPath", m_MeshPath);
-        }
-    };
+    std::optional<uint64_t> m_MeshIndex;      // runtime-only
+    std::string             m_CachedMeshPath;  // runtime-only
+HH_END_COMPONENT(MeshComponent)
 }
