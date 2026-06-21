@@ -37,10 +37,10 @@ namespace FS
 
     std::optional<std::vector<std::byte>> FileSystem::ReadFile(const std::string& virtualPath) const
     {
-        auto physPath = resolve(virtualPath);
+        auto physPath = Resolve(virtualPath);
         if (!physPath)
         {
-            LOGERROR("[FileSystem] Cannot resolve virtual path '", virtualPath, "'.");
+            LOGERROR("[FileSystem] Cannot Resolve virtual path '", virtualPath, "'.");
             return std::nullopt;
         }
 
@@ -91,7 +91,7 @@ namespace FS
 
     bool FileSystem::OwnsPath(const std::string& virtualPath) const
     {
-        auto parsed = parseVirtualPath(virtualPath);
+        auto parsed = ParseVirtualPath(virtualPath);
         if (!parsed)
             return false;
         return m_MountPoints.count(parsed->first) > 0;
@@ -102,7 +102,7 @@ namespace FS
         return m_MountPoints;
     }
 
-    std::optional<std::pair<std::string, std::string>> FileSystem::parseVirtualPath(const std::string& virtualPath)
+    std::optional<std::pair<std::string, std::string>> FileSystem::ParseVirtualPath(const std::string& virtualPath)
     {
         const auto pos = virtualPath.find("://");
         if (pos == std::string::npos)
@@ -114,9 +114,9 @@ namespace FS
         );
     }
 
-    std::optional<std::filesystem::path> FileSystem::resolve(const std::string& virtualPath) const
+    std::optional<std::filesystem::path> FileSystem::Resolve(const std::string& virtualPath) const
     {
-        auto parsed = parseVirtualPath(virtualPath);
+        auto parsed = ParseVirtualPath(virtualPath);
         if (!parsed)
             return std::nullopt;
 

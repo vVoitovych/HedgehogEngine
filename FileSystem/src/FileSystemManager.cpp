@@ -16,7 +16,7 @@ namespace FS
 
         for (const auto& [alias, path] : mountPoints)
         {
-            if (isAliasTaken(alias))
+            if (IsAliasTaken(alias))
             {
                 LOGERROR("[FileSystemManager] Alias '", alias,
                     "' is already registered in another FileSystem.");
@@ -90,7 +90,7 @@ namespace FS
         return m_FileSystems;
     }
 
-    bool FileSystemManager::isAliasTaken(const std::string& alias) const
+    bool FileSystemManager::IsAliasTaken(const std::string& alias) const
     {
         for (const auto& fs : m_FileSystems)
         {
