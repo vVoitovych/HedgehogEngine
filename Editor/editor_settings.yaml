@@ -1,7 +1,7 @@
 panel_bg_color: [0.021145716, 0.041545115, 0.10784316]
 dock_layout:
   left_width: 252
-  right_width: 280
+  right_width: 204
   bottom_height: 200
   areas:
     left: [scene_hierarchy]
