@@ -14,7 +14,8 @@ project "Logger"
        systemversion "latest"
        defines { "LOGGER_EXPORT" }
        postbuildcommands {
-           "{COPYFILE} %{cfg.targetdir}/Logger.dll ../Binaries/" .. OutputDir .. "/Editor/Logger.dll"
+           "{COPYFILE} %{cfg.targetdir}/Logger.dll ../Binaries/" .. OutputDir .. "/Editor/Logger.dll",
+           "{COPYFILE} %{cfg.targetdir}/Logger.dll ../Binaries/" .. OutputDir .. "/FileSystemTest/Logger.dll"
        }
 
    filter "configurations:Debug"

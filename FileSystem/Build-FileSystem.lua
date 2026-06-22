@@ -15,7 +15,9 @@ project "FileSystem"
    postbuildcommands
    {
       ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/Editor"),
-      ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/Editor/")
+      ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/Editor/"),
+      ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/FileSystemTest"),
+      ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/FileSystemTest/")
    }
 
    filter "system:windows"

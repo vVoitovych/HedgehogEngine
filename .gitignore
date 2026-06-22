@@ -614,3 +614,5 @@ Binaries
 /HedgehogEngine/HedgehogEngine/HedgehogEngine.vcxproj.filters
 /FileSystem/FileSystem.vcxproj
 /FileSystem/FileSystem.vcxproj.filters
+/FileSystem/tests/FileSystemTest.vcxproj
+/FileSystem/tests/FileSystemTest.vcxproj.user
