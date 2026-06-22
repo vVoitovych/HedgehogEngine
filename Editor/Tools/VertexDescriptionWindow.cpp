@@ -2,6 +2,8 @@
 
 #include "DialogueWindows/api/VertexDescDialogue.hpp"
 
+#include "ContentLoader/api/CommonFunctions.hpp"
+
 #include "imgui.h"
 
 #include <yaml-cpp/yaml.h>
@@ -9,6 +11,22 @@
 #include <algorithm>
 #include <fstream>
 #include <set>
+
+namespace
+{
+    std::string ToEngineVirtualPath(const std::string& absPath)
+    {
+        const std::string root = ContentLoader::GetRootDirectory();
+        if (absPath.size() > root.size() && absPath.substr(0, root.size()) == root)
+        {
+            std::string rel = absPath.substr(root.size());
+            for (char& c : rel) { if (c == '\\') c = '/'; }
+            if (!rel.empty() && rel.front() == '/') rel = rel.substr(1);
+            return "engine://" + rel;
+        }
+        return {};
+    }
+}
 
 namespace Editor
 {
@@ -86,11 +104,11 @@ void VertexDescriptionWindow::NewFile()
     m_Dirty = false;
 }
 
-void VertexDescriptionWindow::OpenFile()
+void VertexDescriptionWindow::OpenFile(const FS::FileSystemManager& fileSystem)
 {
     char* path = DialogueWindows::VertexDescOpenDialogue();
     if (path != nullptr)
-        LoadFromPath(path);
+        LoadFromPath(path, fileSystem);
 }
 
 void VertexDescriptionWindow::SaveFile()
@@ -111,12 +129,21 @@ void VertexDescriptionWindow::SaveAsFile()
     }
 }
 
-bool VertexDescriptionWindow::LoadFromPath(const std::string& path)
+bool VertexDescriptionWindow::LoadFromPath(const std::string& path,
+                                            const FS::FileSystemManager& fileSystem)
 {
+    const std::string virtualPath = ToEngineVirtualPath(path);
+    if (virtualPath.empty())
+        return false;
+
+    const auto text = fileSystem.ReadTextFile(virtualPath);
+    if (!text)
+        return false;
+
     YAML::Node root;
     try
     {
-        root = YAML::LoadFile(path);
+        root = YAML::Load(*text);
     }
     catch (const YAML::Exception&)
     {
@@ -198,11 +225,11 @@ bool VertexDescriptionWindow::SaveToPath(const std::string& path)
 
 // ── UI ────────────────────────────────────────────────────────────────────────
 
-void VertexDescriptionWindow::DrawFileControls()
+void VertexDescriptionWindow::DrawFileControls(const FS::FileSystemManager& fileSystem)
 {
     if (ImGui::Button("New"))     NewFile();
     ImGui::SameLine();
-    if (ImGui::Button("Open"))    OpenFile();
+    if (ImGui::Button("Open"))    OpenFile(fileSystem);
     ImGui::SameLine();
     if (ImGui::Button("Save"))    SaveFile();
     ImGui::SameLine();
@@ -452,7 +479,7 @@ void VertexDescriptionWindow::DrawValidation()
     }
 }
 
-void VertexDescriptionWindow::Draw()
+void VertexDescriptionWindow::Draw(const FS::FileSystemManager& fileSystem)
 {
     if (!m_Open)
         return;
@@ -468,7 +495,7 @@ void VertexDescriptionWindow::Draw()
         return;
     }
 
-    DrawFileControls();
+    DrawFileControls(fileSystem);
     ImGui::Spacing();
     DrawBindingsTable();
     ImGui::Spacing();

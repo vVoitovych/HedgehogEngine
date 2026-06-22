@@ -44,6 +44,9 @@ namespace FS
             return std::nullopt;
         }
 
+        if (!std::filesystem::exists(*physPath))
+            return std::nullopt;
+
         std::ifstream file(*physPath, std::ios::binary | std::ios::ate);
         if (!file.is_open())
         {

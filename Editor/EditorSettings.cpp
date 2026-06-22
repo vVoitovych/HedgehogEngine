@@ -3,7 +3,6 @@
 #include "yaml-cpp/yaml.h"
 
 #include <fstream>
-#include <filesystem>
 #include <string>
 
 namespace Editor
@@ -78,14 +77,15 @@ namespace Editor
             file << out.c_str();
     }
 
-    bool EditorSettings::Load(const std::string& path)
+    bool EditorSettings::Load(const std::string& virtualPath, const FS::FileSystemManager& fileSystem)
     {
-        if (!std::filesystem::exists(path))
+        const auto text = fileSystem.ReadTextFile(virtualPath);
+        if (!text)
             return false;
 
         try
         {
-            YAML::Node root = YAML::LoadFile(path);
+            YAML::Node root = YAML::Load(*text);
 
             if (auto n = root["panel_bg_color"])
             {

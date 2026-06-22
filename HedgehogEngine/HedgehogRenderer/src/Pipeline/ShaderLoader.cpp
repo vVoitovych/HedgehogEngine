@@ -7,7 +7,6 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include <Windows.h>
 #include <cassert>
 #include <filesystem>
 
@@ -16,20 +15,22 @@ namespace Renderer
 
 namespace
 {
-    std::filesystem::path GetRepoRoot()
+    // Resolve a path relative to a virtual directory.
+    // virtualDir  — the directory portion of the parent virtual path, e.g. "engine://a/b/"
+    // relPath     — a relative path from within the file, e.g. "../Pipelines/Foo.pl"
+    // Returns a normalised virtual path, e.g. "engine://a/Pipelines/Foo.pl".
+    std::string ResolveVirtualRelative(const std::string& virtualDir,
+                                       const std::string& relPath)
     {
-        char buffer[MAX_PATH];
-        GetModuleFileNameA(nullptr, buffer, MAX_PATH);
-        return std::filesystem::path(buffer)
-            .parent_path().parent_path().parent_path().parent_path().parent_path();
-    }
+        // Split off the alias prefix (everything up to and including "://").
+        const auto sepPos = virtualDir.find("://");
+        const std::string alias   = virtualDir.substr(0, sepPos + 3);  // e.g. "engine://"
+        const std::string dirPart = virtualDir.substr(sepPos + 3);     // e.g. "a/b/"
 
-    std::string ToRepoRelative(const std::filesystem::path& baseDir,
-                               const std::string&           relPath)
-    {
-        const auto abs = (baseDir / relPath).lexically_normal();
-        const auto rel = abs.lexically_relative(GetRepoRoot());
-        return "/" + rel.generic_string();
+        // Use std::filesystem path arithmetic then convert back to generic (forward-slash) form.
+        const std::filesystem::path resolved =
+            (std::filesystem::path(dirPart) / relPath).lexically_normal();
+        return alias + resolved.generic_string();
     }
 }
 
@@ -115,20 +116,29 @@ RHI::BlendOp ShaderLoader::ParseBlendOp(const std::string& s)
     return RHI::BlendOp::Add;
 }
 
-ShaderPipelineDesc ShaderLoader::Load(RHI::IRHIDevice& device, const std::string& shaderPath)
+ShaderPipelineDesc ShaderLoader::Load(RHI::IRHIDevice& device,
+                                       const std::string& shaderVirtualPath,
+                                       const FS::FileSystemManager& fileSystem)
 {
-    const auto repoRoot  = GetRepoRoot();
-    const auto absShader = (repoRoot / shaderPath.substr(1)).lexically_normal();
-    const auto shaderDir = absShader.parent_path();
+    // Derive the virtual directory of the shader file (everything up to the last '/').
+    const std::string shaderVirtualDir =
+        shaderVirtualPath.substr(0, shaderVirtualPath.rfind('/') + 1);
+
+    const auto text = fileSystem.ReadTextFile(shaderVirtualPath);
+    if (!text)
+    {
+        LOGERROR("ShaderLoader: failed to read '", shaderVirtualPath, "'");
+        assert(false && "Shader file not found or malformed.");
+    }
 
     YAML::Node root;
     try
     {
-        root = YAML::LoadFile(absShader.string());
+        root = YAML::Load(*text);
     }
     catch (const YAML::Exception& e)
     {
-        LOGERROR("ShaderLoader: failed to load '", absShader.string(), "': ", e.what());
+        LOGERROR("ShaderLoader: failed to parse '", shaderVirtualPath, "': ", e.what());
         assert(false && "Shader file not found or malformed.");
     }
 
@@ -137,19 +147,21 @@ ShaderPipelineDesc ShaderLoader::Load(RHI::IRHIDevice& device, const std::string
     // Pipeline layout (required) — also seeds push constant ranges
     if (const YAML::Node& n = root["pipeline_layout"])
     {
-        desc.m_Layout                        = PipelineLoader::Load(ToRepoRelative(shaderDir, n.as<std::string>()));
+        const std::string layoutPath         = ResolveVirtualRelative(shaderVirtualDir, n.as<std::string>());
+        desc.m_Layout                        = PipelineLoader::Load(layoutPath, fileSystem);
         desc.m_Pipeline.m_PushConstantRanges = desc.m_Layout.m_PushConstants;
     }
     else
     {
-        LOGERROR("ShaderLoader: 'pipeline_layout' missing in '", absShader.string(), "'");
+        LOGERROR("ShaderLoader: 'pipeline_layout' missing in '", shaderVirtualPath, "'");
         assert(false && "Missing pipeline_layout in .shader file");
     }
 
     // Vertex description (optional)
     if (const YAML::Node& n = root["vertex_description"])
     {
-        const auto vd                      = VertexDescLoader::Load(ToRepoRelative(shaderDir, n.as<std::string>()));
+        const std::string vdesPath         = ResolveVirtualRelative(shaderVirtualDir, n.as<std::string>());
+        const auto vd                      = VertexDescLoader::Load(vdesPath, fileSystem);
         desc.m_Pipeline.m_VertexBindings   = vd.m_Bindings;
         desc.m_Pipeline.m_VertexAttributes = vd.m_Attributes;
     }
@@ -196,9 +208,9 @@ ShaderPipelineDesc ShaderLoader::Load(RHI::IRHIDevice& device, const std::string
         for (const YAML::Node& s : stages)
         {
             const RHI::ShaderStage stage   = ParseStage(s["stage"].as<std::string>());
-            const std::string      spvPath = ToRepoRelative(shaderDir, s["path"].as<std::string>());
+            const std::string      spvPath = ResolveVirtualRelative(shaderVirtualDir, s["path"].as<std::string>());
 
-            auto shader = device.CreateShader(spvPath, stage);
+            auto shader = device.CreateShader(spvPath, stage, fileSystem);
             assert(shader && "Failed to create shader");
 
             switch (stage)

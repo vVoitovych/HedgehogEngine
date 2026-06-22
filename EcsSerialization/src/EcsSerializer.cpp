@@ -8,6 +8,7 @@
 #include "yaml-cpp/yaml.h"
 
 #include <fstream>
+#include <stdexcept>
 
 namespace EcsSerialization
 {
@@ -82,18 +83,27 @@ namespace
 
     void EcsSerializer::Deserialize(const ComponentSerializerRegistry& registry,
                                      ECS::ECS& ecs,
-                                     std::string& outSceneName, const std::string& filePath)
+                                     std::string& outSceneName,
+                                     const std::string& virtualPath,
+                                     const FS::FileSystemManager& fileSystem)
     {
-        LOGINFO("EcsSerializer::Deserialize: ", filePath);
+        LOGINFO("EcsSerializer::Deserialize: ", virtualPath);
+
+        const auto text = fileSystem.ReadTextFile(virtualPath);
+        if (!text)
+        {
+            LOGERROR("Failed to read scene file: ", virtualPath);
+            return;
+        }
 
         YAML::Node data;
         try
         {
-            data = YAML::LoadFile(filePath);
+            data = YAML::Load(*text);
         }
         catch (const YAML::ParserException& e)
         {
-            LOGERROR("Failed to load scene: ", filePath, " with error: ", e.what());
+            LOGERROR("Failed to parse scene: ", virtualPath, " with error: ", e.what());
             return;
         }
 

@@ -33,7 +33,8 @@ namespace Renderer
             m_RHIContext->GetRHIDevice(),
             windowContext.GetWindow(),
             context.GetEngineContext().GetSettings(),
-            *m_ResourceManager);
+            *m_ResourceManager,
+            context.GetEngineContext().GetFileSystem());
     }
 
     Renderer::~Renderer()

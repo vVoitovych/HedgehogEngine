@@ -1,6 +1,8 @@
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogEngine/api/WindowContext.hpp"
 
+#include "ContentLoader/api/CommonFunctions.hpp"
+
 #include "HedgehogEngine/api/Containers/MeshContainer.hpp"
 #include "HedgehogEngine/api/Containers/TextureContainer.hpp"
 #include "HedgehogEngine/api/Containers/LightContainer.hpp"
@@ -42,6 +44,8 @@ namespace HedgehogEngine
     EngineContext::EngineContext()
         : m_SceneName("Default")
     {
+        m_FileSystem.Register(ContentLoader::CreateEngineFileSystem());
+
         m_Camera = std::make_unique<Camera>();
         InitECS();
 
@@ -193,7 +197,7 @@ namespace HedgehogEngine
         m_LightSystem->Update(m_ECS);
 
         m_LightContainer->UpdateLights(m_ECS, *m_LightSystem);
-        m_MaterialContainer->Update(*m_RenderSystem);
+        m_MaterialContainer->Update(*m_RenderSystem, m_FileSystem);
         m_MeshContainer->Update(*m_MeshSystem);
 
         auto materialTypeLookup = [this](uint64_t index) -> MaterialType
@@ -217,6 +221,8 @@ namespace HedgehogEngine
 
     const FrameData& EngineContext::GetFrameData() const { return m_FrameData; }
 
+    const FS::FileSystemManager& EngineContext::GetFileSystem() const { return m_FileSystem; }
+
     EventBus& EngineContext::GetEventBus() { return m_EventBus; }
 
     HedgehogSettings::Settings& EngineContext::GetSettings()             { return *m_Settings; }
@@ -237,8 +243,12 @@ namespace HedgehogEngine
 
     void EngineContext::LoadScene(const std::string& filePath)
     {
+        const std::string relativePath = ContentLoader::GetAssetRelativetlyPath(filePath);
+        const std::string virtualPath  = "assets://" + relativePath;
+
         DeleteGameObjectAndChildren(m_ECS.GetRoot());
-        EcsSerialization::EcsSerializer::Deserialize(*m_ComponentRegistry, m_ECS, m_SceneName, filePath);
+        EcsSerialization::EcsSerializer::Deserialize(*m_ComponentRegistry, m_ECS, m_SceneName,
+                                                      virtualPath, m_FileSystem);
         for (auto entity : m_TransformSystem->GetEntities())
             m_EventBus.Publish(TransformChangedEvent{ entity });
         m_MeshSystem->Update(m_ECS);

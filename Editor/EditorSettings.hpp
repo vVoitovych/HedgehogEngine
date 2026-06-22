@@ -2,6 +2,8 @@
 
 #include "Docking/DockTypes.hpp"
 
+#include "FileSystem/api/FileSystemManager.hpp"
+
 #include <string>
 
 namespace Editor
@@ -12,6 +14,6 @@ namespace Editor
         DockLayoutState dockLayout;
 
         void Save(const std::string& path) const;
-        bool Load(const std::string& path);
+        bool Load(const std::string& virtualPath, const FS::FileSystemManager& fileSystem);
     };
 }

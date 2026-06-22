@@ -4,28 +4,12 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include <Windows.h>
 #include <algorithm>
 #include <cassert>
-#include <filesystem>
 #include <sstream>
 
 namespace Renderer
 {
-
-namespace
-{
-    // Same root-resolution logic as VulkanShader: exe file path up 5 parent_path() calls
-    // lands at the repo root (Binaries/platform/config/Editor/exe → 5 levels up).
-    std::string ResolveAssetPath(const std::string& relativePath)
-    {
-        char buffer[MAX_PATH];
-        GetModuleFileNameA(nullptr, buffer, MAX_PATH);
-        std::filesystem::path root = std::filesystem::path(buffer)
-            .parent_path().parent_path().parent_path().parent_path().parent_path();
-        return root.string() + relativePath;
-    }
-} // namespace
 
 RHI::DescriptorType PipelineLoader::ParseDescriptorType(const std::string& s)
 {
@@ -64,18 +48,24 @@ RHI::ShaderStage PipelineLoader::ParseShaderStage(const std::string& s)
     return result;
 }
 
-PipelineFileDesc PipelineLoader::Load(const std::string& assetRelativePath)
+PipelineFileDesc PipelineLoader::Load(const std::string& virtualPath,
+                                       const FS::FileSystemManager& fileSystem)
 {
-    const std::string fullPath = ResolveAssetPath(assetRelativePath);
+    const auto text = fileSystem.ReadTextFile(virtualPath);
+    if (!text)
+    {
+        LOGERROR("PipelineLoader: failed to read '", virtualPath, "'");
+        assert(false && "Pipeline file not found or malformed.");
+    }
 
     YAML::Node root;
     try
     {
-        root = YAML::LoadFile(fullPath);
+        root = YAML::Load(*text);
     }
     catch (const YAML::Exception& e)
     {
-        LOGERROR("PipelineLoader: failed to load '", fullPath, "': ", e.what());
+        LOGERROR("PipelineLoader: failed to parse '", virtualPath, "': ", e.what());
         assert(false && "Pipeline file not found or malformed.");
     }
 

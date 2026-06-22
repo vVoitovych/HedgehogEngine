@@ -6,6 +6,11 @@
 
 #include <string>
 
+namespace FS
+{
+    class FileSystemManager;
+}
+
 namespace RHI
 {
 
@@ -14,7 +19,8 @@ class VulkanDevice;
 class VulkanShader final : public IRHIShader
 {
 public:
-    VulkanShader(VulkanDevice& device, const std::string& filePath, ShaderStage stage);
+    VulkanShader(VulkanDevice& device, const std::string& virtualPath, ShaderStage stage,
+                 const FS::FileSystemManager& fileSystem);
     ~VulkanShader() override;
 
     VulkanShader(const VulkanShader&)            = delete;

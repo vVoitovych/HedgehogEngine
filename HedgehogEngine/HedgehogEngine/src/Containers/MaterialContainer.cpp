@@ -11,13 +11,14 @@
 
 namespace HedgehogEngine
 {
-    void MaterialContainer::Update(const RenderSystem& renderSystem)
+    void MaterialContainer::Update(const RenderSystem& renderSystem, const FS::FileSystemManager& fileSystem)
     {
         const auto& materialsInScene = renderSystem.GetMaterials();
         for (size_t i = m_Materials.size(); i < materialsInScene.size(); ++i)
         {
             MaterialData data;
-            MaterialSerializer::Deserialize(data, ContentLoader::GetAssetsDirectory() + materialsInScene[i]);
+            const std::string virtualPath = "assets://" + materialsInScene[i];
+            MaterialSerializer::Deserialize(data, virtualPath, fileSystem);
             m_Materials.push_back(data);
         }
     }

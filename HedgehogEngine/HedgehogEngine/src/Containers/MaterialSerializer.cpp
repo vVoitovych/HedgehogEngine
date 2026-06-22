@@ -3,16 +3,15 @@
 #include "HedgehogEngine/api/Containers/MaterialData.hpp"
 
 #include "Logger/api/Logger.hpp"
-#include "ContentLoader/api/CommonFunctions.hpp"
 
 #include "yaml-cpp/yaml.h"
 
 #include <fstream>
-#include <filesystem>
+#include <string_view>
 
 namespace HedgehogEngine
 {
-    void MaterialSerializer::Serialize(const MaterialData& material, std::string materialPath)
+    void MaterialSerializer::Serialize(const MaterialData& material, const std::string& materialPath)
     {
         LOGINFO("Serialize material: ", materialPath);
 
@@ -27,21 +26,33 @@ namespace HedgehogEngine
         fout << out.c_str();
     }
 
-    void MaterialSerializer::Deserialize(MaterialData& material, std::string materialPath)
+    void MaterialSerializer::Deserialize(MaterialData& material,
+                                          const std::string& virtualPath,
+                                          const FS::FileSystemManager& fileSystem)
     {
-        LOGINFO("Deserialize material: ", materialPath);
+        LOGINFO("Deserialize material: ", virtualPath);
+
+        const auto text = fileSystem.ReadTextFile(virtualPath);
+        if (!text)
+        {
+            LOGERROR("Failed to read material file: ", virtualPath);
+            return;
+        }
 
         YAML::Node data;
         try
         {
-            data = YAML::LoadFile(materialPath);
+            data = YAML::Load(*text);
         }
-        catch (YAML::ParserException e)
+        catch (const YAML::ParserException& e)
         {
-            LOGERROR("Failed to load material: ", materialPath, " with error: ", e.what());
+            LOGERROR("Failed to parse material: ", virtualPath, " with error: ", e.what());
             return;
         }
-        material.path         = ContentLoader::GetAssetRelativetlyPath(materialPath);
+
+        // Strip "assets://" prefix to obtain the asset-relative path stored in MaterialData.
+        constexpr std::string_view assetsPrefix = "assets://";
+        material.path         = virtualPath.substr(assetsPrefix.size());
         material.type         = static_cast<MaterialType>(data["Type"].as<size_t>());
         material.baseColor    = data["BaseColor"].as<std::string>();
         material.transparency = data["Transparency"].as<float>();

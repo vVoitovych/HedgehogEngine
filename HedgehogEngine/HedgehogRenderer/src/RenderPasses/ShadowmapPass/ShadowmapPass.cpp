@@ -1,6 +1,8 @@
 #include "ShadowmapPass.hpp"
 #include "ShadowmapPassPushConstants.hpp"
 
+#include "FileSystem/api/FileSystemManager.hpp"
+
 #include "HedgehogEngine/api/Frame/FrameData.hpp"
 
 #include "HedgehogCommon/api/RendererSettings.hpp"
@@ -33,10 +35,12 @@ namespace Renderer
 {
 
     ShadowmapPass::ShadowmapPass(RHI::IRHIDevice& device, const HedgehogSettings::Settings& settings,
-                                  const ResourceManager& resourceManager)
+                                  const ResourceManager& resourceManager,
+                                  const FS::FileSystemManager& fileSystem)
     {
         const auto sd = ShaderLoader::Load(device,
-            "/HedgehogEngine/HedgehogRenderer/assets/Shaders/ShadowmapPass.shader");
+            "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/ShadowmapPass.shader",
+            fileSystem);
         assert(!sd.m_Layout.m_DescriptorSets.empty());
 
         m_ShadowmapLayout = device.CreateDescriptorSetLayout(sd.m_Layout.m_DescriptorSets[0]);

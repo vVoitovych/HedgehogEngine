@@ -2,6 +2,9 @@
 
 #include "ContentLoaderApi.hpp"
 
+#include "FileSystem/api/FileSystem.hpp"
+
+#include <memory>
 #include <string>
 
 namespace ContentLoader
@@ -14,5 +17,7 @@ namespace ContentLoader
 
     CONTENT_LOADER_API std::string GetShadersDirectory();
 
-    CONTENT_LOADER_API std::string ReadFile(const std::string& filepath);
+    // Creates a FileSystem with engine://, assets://, and shaders:// mount points
+    // registered from the exe-relative physical directories.
+    CONTENT_LOADER_API std::unique_ptr<FS::FileSystem> CreateEngineFileSystem();
 }

@@ -1,3 +1,6 @@
+// Lua file loading (luaL_dofile) is intentionally left using Lua's own file API.
+// It is treated as an out-of-scope third-party reader, symmetric with the yaml-cpp/stb exclusion.
+// Migrating to luaL_loadbuffer + FileSystem::ReadTextFile is future work if needed.
 #include "HedgehogEngine/api/ECS/systems/ScriptSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/LuaHelpers.hpp"
 

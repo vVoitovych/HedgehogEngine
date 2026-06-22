@@ -72,13 +72,14 @@ namespace
 
 namespace Editor
 {
-    EditorGui::EditorGui()
+    EditorGui::EditorGui(HedgehogEngine::HedgehogEngine& context)
         : m_ConsolePanel(std::make_unique<ConsolePanel>())
         , m_VertexDescWindow(std::make_unique<VertexDescriptionWindow>())
         , m_PipelineWindow(std::make_unique<PipelineWindow>())
         , m_ShaderWindow(std::make_unique<ShaderWindow>())
     {
-        if (m_Settings.Load(k_SettingsPath) && m_Settings.dockLayout.IsValid())
+        const auto& fs = context.GetEngineContext().GetFileSystem();
+        if (m_Settings.Load("engine://editor_settings.yaml", fs) && m_Settings.dockLayout.IsValid())
             m_DockSystem.GetLayout() = m_Settings.dockLayout;
 
         SetupLightComponentGuiOverrides();
@@ -115,10 +116,11 @@ namespace Editor
             [this, &context](PanelId panel) { DrawPanelContent(panel, context, m_SceneViewTextureId); },
             menuH);
 
+        const auto& fs = context.GetEngineContext().GetFileSystem();
         DrawSettingsWindow(context);
-        m_VertexDescWindow->Draw();
-        m_PipelineWindow->Draw();
-        m_ShaderWindow->Draw();
+        m_VertexDescWindow->Draw(fs);
+        m_PipelineWindow->Draw(fs);
+        m_ShaderWindow->Draw(fs);
     }
 
     // ─── Panel dispatch ───────────────────────────────────────────────────────
@@ -738,7 +740,7 @@ namespace Editor
                 m_Settings.Save(k_SettingsPath);
             ImGui::SameLine();
             if (ImGui::Button("Load settings"))
-                m_Settings.Load(k_SettingsPath);
+                m_Settings.Load("engine://editor_settings.yaml", context.GetEngineContext().GetFileSystem());
         }
 
         auto& engineContext = context.GetEngineContext();

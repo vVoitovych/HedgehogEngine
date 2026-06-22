@@ -14,7 +14,8 @@ project "ContentLoader"
 
     links {
         "HedgehogMath",
-        "Logger"
+        "Logger",
+        "FileSystem"
     }
 
     targetdir ("../Binaries/" .. OutputDir .. "/%{prj.name}")

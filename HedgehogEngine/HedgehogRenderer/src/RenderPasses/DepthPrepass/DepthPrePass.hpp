@@ -23,6 +23,11 @@ namespace HedgehogEngine
     struct FrameData;
 }
 
+namespace FS
+{
+    class FileSystemManager;
+}
+
 namespace Renderer
 {
     class ResourceManager;
@@ -30,7 +35,8 @@ namespace Renderer
     class DepthPrePass
     {
     public:
-        DepthPrePass(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
+        DepthPrePass(RHI::IRHIDevice& device, const ResourceManager& resourceManager,
+                     const FS::FileSystemManager& fileSystem);
         ~DepthPrePass();
 
         void Render(const HedgehogEngine::FrameData& frame, const ResourceManager& resourceManager,

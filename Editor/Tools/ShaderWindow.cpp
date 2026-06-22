@@ -4,6 +4,8 @@
 #include "DialogueWindows/api/PipelineDialogue.hpp"
 #include "DialogueWindows/api/VertexDescDialogue.hpp"
 
+#include "ContentLoader/api/CommonFunctions.hpp"
+
 #include "imgui.h"
 
 #include <yaml-cpp/yaml.h>
@@ -13,6 +15,24 @@
 #include <filesystem>
 #include <fstream>
 #include <set>
+
+namespace
+{
+    // Convert an absolute physical path to an engine:// virtual path by stripping the repo root.
+    std::string ToEngineVirtualPath(const std::string& absPath)
+    {
+        const std::string root = ContentLoader::GetRootDirectory();
+        if (absPath.size() > root.size() && absPath.substr(0, root.size()) == root)
+        {
+            std::string rel = absPath.substr(root.size());
+            // Normalize path separators to forward slashes.
+            for (char& c : rel) { if (c == '\\') c = '/'; }
+            if (!rel.empty() && rel.front() == '/') rel = rel.substr(1);
+            return "engine://" + rel;
+        }
+        return {};
+    }
+}
 
 namespace Editor
 {
@@ -132,11 +152,11 @@ void ShaderWindow::NewFile()
     m_Dirty = false;
 }
 
-void ShaderWindow::OpenFile()
+void ShaderWindow::OpenFile(const FS::FileSystemManager& fileSystem)
 {
     char* path = DialogueWindows::ShaderOpenDialogue();
     if (path != nullptr)
-        LoadFromPath(path);
+        LoadFromPath(path, fileSystem);
 }
 
 void ShaderWindow::SaveFile()
@@ -157,10 +177,18 @@ void ShaderWindow::SaveAsFile()
     }
 }
 
-bool ShaderWindow::LoadFromPath(const std::string& path)
+bool ShaderWindow::LoadFromPath(const std::string& path, const FS::FileSystemManager& fileSystem)
 {
+    const std::string virtualPath = ToEngineVirtualPath(path);
+    if (virtualPath.empty())
+        return false;
+
+    const auto text = fileSystem.ReadTextFile(virtualPath);
+    if (!text)
+        return false;
+
     YAML::Node root;
-    try { root = YAML::LoadFile(path); }
+    try { root = YAML::Load(*text); }
     catch (const YAML::Exception&) { return false; }
 
     m_PipelineLayout.clear();
@@ -305,11 +333,11 @@ bool ShaderWindow::SaveToPath(const std::string& path)
 
 // ── UI sections ───────────────────────────────────────────────────────────────
 
-void ShaderWindow::DrawFileControls()
+void ShaderWindow::DrawFileControls(const FS::FileSystemManager& fileSystem)
 {
     if (ImGui::Button("New"))     NewFile();
     ImGui::SameLine();
-    if (ImGui::Button("Open"))    OpenFile();
+    if (ImGui::Button("Open"))    OpenFile(fileSystem);
     ImGui::SameLine();
     if (ImGui::Button("Save"))    SaveFile();
     ImGui::SameLine();
@@ -634,7 +662,7 @@ void ShaderWindow::DrawValidation()
     }
 }
 
-void ShaderWindow::Draw()
+void ShaderWindow::Draw(const FS::FileSystemManager& fileSystem)
 {
     if (!m_Open)
         return;
@@ -649,7 +677,7 @@ void ShaderWindow::Draw()
         return;
     }
 
-    DrawFileControls();
+    DrawFileControls(fileSystem);
     ImGui::Spacing();
     DrawPipelineType();
     ImGui::Spacing();

@@ -24,7 +24,7 @@ namespace Editor
     class EditorGui
     {
     public:
-        EditorGui();
+        explicit EditorGui(HedgehogEngine::HedgehogEngine& context);
         ~EditorGui();
 
         EditorGui(const EditorGui&)            = delete;

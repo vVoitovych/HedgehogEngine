@@ -4,6 +4,8 @@
 #include "ECS/api/ECS.hpp"
 #include "ECS/api/Entity.hpp"
 
+#include "FileSystem/api/FileSystemManager.hpp"
+
 #include <string>
 
 namespace EcsSerialization
@@ -21,6 +23,8 @@ namespace EcsSerialization
         ECS_SERIALIZATION_API static void Deserialize(
             const ComponentSerializerRegistry& registry,
             ECS::ECS& ecs,
-            std::string& outSceneName, const std::string& filePath);
+            std::string& outSceneName,
+            const std::string& virtualPath,
+            const FS::FileSystemManager& fileSystem);
     };
 }

@@ -27,7 +27,7 @@ namespace Editor
     {
         m_Context   = std::make_unique<HedgehogEngine::HedgehogEngine>();
         m_Renderer  = std::make_unique<Renderer::Renderer>(*m_Context);
-        m_EditorGui = std::make_unique<EditorGui>();
+        m_EditorGui = std::make_unique<EditorGui>(*m_Context);
 
         // WantCaptureMouse is true even over the scene image (it's an ImGui window); exempt it.
         m_Context->GetWindowContext().GetWindow().SetGuiCallback([this]()

@@ -2,6 +2,8 @@
 
 #include "RHI/api/RHITypes.hpp"
 
+#include "FileSystem/api/FileSystemManager.hpp"
+
 #include <string>
 #include <vector>
 
@@ -21,9 +23,9 @@ class PipelineLoader
 {
 public:
     // Load and parse a .pl file.
-    // assetRelativePath must begin with '/' and be relative to the repo root,
-    // e.g. "/HedgehogEngine/HedgehogRenderer/assets/Pipelines/ForwardPass.pl".
-    static PipelineFileDesc Load(const std::string& assetRelativePath);
+    // virtualPath must be a virtual path, e.g. "engine://HedgehogEngine/.../ForwardPass.pl".
+    static PipelineFileDesc Load(const std::string& virtualPath,
+                                 const FS::FileSystemManager& fileSystem);
 
     // Build DescriptorPool sizes from a single set's bindings.
     // Each binding contributes (binding.m_Count * maxSets) descriptors of its type.

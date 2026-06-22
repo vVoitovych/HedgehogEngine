@@ -1,9 +1,10 @@
 #include "api/CommonFunctions.hpp"
 
+#include "FileSystem/api/FileSystem.hpp"
+
 #include <Windows.h>
 #include <stdexcept>
 #include <filesystem>
-#include <fstream>
 
 namespace ContentLoader
 {
@@ -44,20 +45,12 @@ namespace ContentLoader
         return path;
     }
 
-    std::string ReadFile(const std::string& filepath)
+    std::unique_ptr<FS::FileSystem> CreateEngineFileSystem()
     {
-        std::string path = GetRootDirectory();
-        path += filepath;
-        std::ifstream file(path, std::ios::ate | std::ios::binary);
-        if (!file.is_open())
-        {
-            throw std::runtime_error("Failed to open file: " + path);
-        }
-
-        size_t fileSize = static_cast<size_t>(file.tellg());
-        std::string buffer(fileSize, '\0');
-        file.seekg(0);
-        file.read(buffer.data(), fileSize);
-        return buffer;
+        auto fileSystem = std::make_unique<FS::FileSystem>();
+        fileSystem->RegisterPath("engine://", GetRootDirectory());
+        fileSystem->RegisterPath("assets://", GetAssetsDirectory());
+        fileSystem->RegisterPath("shaders://", GetShadersDirectory());
+        return fileSystem;
     }
 }

@@ -16,6 +16,7 @@ project "EcsSerialization"
       "ECS",
       "Logger",
       "HedgehogMath",
+      "FileSystem",
       "yaml-cpp"
    }
 

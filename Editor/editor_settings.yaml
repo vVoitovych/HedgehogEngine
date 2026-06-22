@@ -1,7 +1,7 @@
-panel_bg_color: [0.021145716, 0.041545115, 0.10784316]
+panel_bg_color: [0.007843138, 0.047058824, 0.11764706]
 dock_layout:
-  left_width: 252
-  right_width: 204
+  left_width: 280
+  right_width: 280
   bottom_height: 200
   areas:
     left: [scene_hierarchy]
@@ -15,8 +15,8 @@ dock_layout:
   panel_visible:
     scene_hierarchy: true
     inspector: true
-    console: false
+    console: true
   floating_positions:
-    scene_hierarchy: [23, 415]
-    inspector: [1149, 171]
-    console: [200, 200]
+    scene_hierarchy: [150, 150]
+    inspector: [190, 190]
+    console: [230, 230]
