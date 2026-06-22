@@ -72,12 +72,12 @@ namespace Renderer
             }
         }
 
-        // Render pass: depth-only, Clear/DontCare, Undefined → DepthStencilReadOnly
+        // Render pass: depth-only, Clear/Store, Undefined → DepthStencilReadOnly
         RHI::RenderPassDesc rpDesc;
         rpDesc.m_DepthAttachment = RHI::AttachmentDesc{
             resourceManager.GetRHIShadowMap().GetFormat(),
             RHI::LoadOp::Clear,
-            RHI::StoreOp::DontCare,
+            RHI::StoreOp::Store,
             RHI::LoadOp::DontCare,
             RHI::StoreOp::DontCare,
             RHI::ImageLayout::Undefined,

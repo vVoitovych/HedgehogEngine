@@ -6,6 +6,8 @@
 
 #include "ContentLoader/api/CommonFunctions.hpp"
 
+#include "Logger/api/Logger.hpp"
+
 #include "imgui.h"
 
 #include <yaml-cpp/yaml.h>
@@ -135,6 +137,7 @@ bool ShaderWindow::HasDuplicateStage(const std::string& stage, int skipRow) cons
 void ShaderWindow::NewFile()
 {
     m_FilePath.clear();
+    m_VirtualPath.clear();
     m_PipelineLayout.clear();
     m_VertexDescription.clear();
     m_Stages.clear();
@@ -181,7 +184,10 @@ bool ShaderWindow::LoadFromPath(const std::string& path, const FS::FileSystemMan
 {
     const std::string virtualPath = ToEngineVirtualPath(path);
     if (virtualPath.empty())
+    {
+        LOGERROR("ShaderWindow: '", path, "' is outside the engine root and cannot be opened.");
         return false;
+    }
 
     const auto text = fileSystem.ReadTextFile(virtualPath);
     if (!text)
@@ -259,8 +265,9 @@ bool ShaderWindow::LoadFromPath(const std::string& path, const FS::FileSystemMan
     }
     m_PipelineType = (hasCompute && !hasGraphics) ? PipelineType::Compute : PipelineType::Graphics;
 
-    m_FilePath = path;
-    m_Dirty    = false;
+    m_FilePath    = path;
+    m_VirtualPath = virtualPath;
+    m_Dirty       = false;
     return true;
 }
 
@@ -345,7 +352,9 @@ void ShaderWindow::DrawFileControls(const FS::FileSystemManager& fileSystem)
 
     ImGui::Separator();
 
-    const std::string display = m_FilePath.empty() ? "(unsaved)" : m_FilePath;
+    const std::string display = m_VirtualPath.empty()
+        ? (m_FilePath.empty() ? "(unsaved)" : m_FilePath)
+        : m_VirtualPath;
     ImGui::TextDisabled("File: %s%s", display.c_str(), m_Dirty ? "  *" : "");
 }
 

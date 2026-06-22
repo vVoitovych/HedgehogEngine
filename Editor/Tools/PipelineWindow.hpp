@@ -69,7 +69,8 @@ private:
     static const char* IndexToTypeDisplay(int idx);
 
     // ── State ─────────────────────────────────────────────────────────────────
-    std::string                    m_FilePath;
+    std::string                    m_FilePath;     // absolute OS path — used for writing
+    std::string                    m_VirtualPath;  // engine:// path — used for display
     bool                           m_Dirty = false;
     std::vector<SetState>          m_Sets;
     std::vector<PushConstantState> m_PushConstants;

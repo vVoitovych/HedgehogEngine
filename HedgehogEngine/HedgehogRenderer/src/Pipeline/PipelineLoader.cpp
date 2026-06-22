@@ -58,52 +58,51 @@ PipelineFileDesc PipelineLoader::Load(const std::string& virtualPath,
         assert(false && "Pipeline file not found or malformed.");
     }
 
-    YAML::Node root;
+    PipelineFileDesc desc;
+
     try
     {
-        root = YAML::Load(*text);
+        YAML::Node root = YAML::Load(*text);
+
+        // descriptor_sets: list of sets; position in list = set index in pipeline layout.
+        if (const YAML::Node& sets = root["descriptor_sets"])
+        {
+            for (const YAML::Node& setNode : sets)
+            {
+                std::vector<RHI::DescriptorBinding> bindings;
+                if (const YAML::Node& bindingsNode = setNode["bindings"])
+                {
+                    for (const YAML::Node& b : bindingsNode)
+                    {
+                        RHI::DescriptorBinding binding;
+                        binding.m_Binding = b["binding"].as<uint32_t>();
+                        binding.m_Type    = ParseDescriptorType(b["type"].as<std::string>());
+                        binding.m_Count   = b["count"] ? b["count"].as<uint32_t>() : 1u;
+                        binding.m_Stages  = ParseShaderStage(b["stage"].as<std::string>());
+                        bindings.push_back(binding);
+                    }
+                }
+                desc.m_DescriptorSets.push_back(std::move(bindings));
+            }
+        }
+
+        // push_constants: list of ranges.
+        if (const YAML::Node& pcs = root["push_constants"])
+        {
+            for (const YAML::Node& pc : pcs)
+            {
+                RHI::PushConstantRange range;
+                range.m_Stages = ParseShaderStage(pc["stage"].as<std::string>());
+                range.m_Offset = pc["offset"] ? pc["offset"].as<uint32_t>() : 0u;
+                range.m_Size   = pc["size"].as<uint32_t>();
+                desc.m_PushConstants.push_back(range);
+            }
+        }
     }
     catch (const YAML::Exception& e)
     {
         LOGERROR("PipelineLoader: failed to parse '", virtualPath, "': ", e.what());
         assert(false && "Pipeline file not found or malformed.");
-    }
-
-    PipelineFileDesc desc;
-
-    // descriptor_sets: list of sets; position in list = set index in pipeline layout.
-    if (const YAML::Node& sets = root["descriptor_sets"])
-    {
-        for (const YAML::Node& setNode : sets)
-        {
-            std::vector<RHI::DescriptorBinding> bindings;
-            if (const YAML::Node& bindingsNode = setNode["bindings"])
-            {
-                for (const YAML::Node& b : bindingsNode)
-                {
-                    RHI::DescriptorBinding binding;
-                    binding.m_Binding = b["binding"].as<uint32_t>();
-                    binding.m_Type    = ParseDescriptorType(b["type"].as<std::string>());
-                    binding.m_Count   = b["count"] ? b["count"].as<uint32_t>() : 1u;
-                    binding.m_Stages  = ParseShaderStage(b["stage"].as<std::string>());
-                    bindings.push_back(binding);
-                }
-            }
-            desc.m_DescriptorSets.push_back(std::move(bindings));
-        }
-    }
-
-    // push_constants: list of ranges.
-    if (const YAML::Node& pcs = root["push_constants"])
-    {
-        for (const YAML::Node& pc : pcs)
-        {
-            RHI::PushConstantRange range;
-            range.m_Stages = ParseShaderStage(pc["stage"].as<std::string>());
-            range.m_Offset = pc["offset"] ? pc["offset"].as<uint32_t>() : 0u;
-            range.m_Size   = pc["size"].as<uint32_t>();
-            desc.m_PushConstants.push_back(range);
-        }
     }
 
     return desc;

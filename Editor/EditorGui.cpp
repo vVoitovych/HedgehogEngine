@@ -88,7 +88,7 @@ namespace Editor
     EditorGui::~EditorGui()
     {
         m_Settings.dockLayout = m_DockSystem.GetLayout();
-        m_Settings.Save(k_SettingsPath);
+        m_Settings.Save(ContentLoader::GetRootDirectory() + "/" + k_SettingsPath);
     }
 
     // ─── Top-level entry ─────────────────────────────────────────────────────
@@ -737,7 +737,7 @@ namespace Editor
 
             ImGui::Spacing();
             if (ImGui::Button("Save settings"))
-                m_Settings.Save(k_SettingsPath);
+                m_Settings.Save(ContentLoader::GetRootDirectory() + "/" + k_SettingsPath);
             ImGui::SameLine();
             if (ImGui::Button("Load settings"))
                 m_Settings.Load("engine://editor_settings.yaml", context.GetEngineContext().GetFileSystem());

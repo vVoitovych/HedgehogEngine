@@ -136,7 +136,7 @@ namespace Renderer
         ForwardPassFrameUniform ubo{};
         ubo.m_View        = frame.m_Camera.m_View;
         ubo.m_ViewProj    = frame.m_Camera.m_Proj * frame.m_Camera.m_View;
-        ubo.m_EyePosition = HM::Vector4(frame.m_Camera.m_Position, 1.0f);
+        ubo.m_EyePosition = frame.m_Camera.m_Position;
         ubo.m_LightCount  = frame.m_Lights.size();
         for (size_t i = 0; i < ubo.m_LightCount; ++i)
             ubo.m_Lights[i] = ToGpuLight(frame.m_Lights[i]);

@@ -2,6 +2,8 @@
 
 #include "yaml-cpp/yaml.h"
 
+#include "Logger/api/Logger.hpp"
+
 #include <fstream>
 #include <string>
 
@@ -75,6 +77,8 @@ namespace Editor
         std::ofstream file(path);
         if (file.is_open())
             file << out.c_str();
+        else
+            LOGERROR("EditorSettings::Save: failed to open '", path, "' for writing.");
     }
 
     bool EditorSettings::Load(const std::string& virtualPath, const FS::FileSystemManager& fileSystem)

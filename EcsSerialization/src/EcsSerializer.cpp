@@ -77,7 +77,15 @@ namespace
         out << YAML::EndSeq;
         out << YAML::EndMap;
 
+        // Serialize writes through a raw OS path (the user-chosen save location).
+        // Deserialize reads through a virtual path (assets://).
+        // This asymmetry is intentional: FileSystem is read-only by design.
         std::ofstream fout(filePath);
+        if (!fout.is_open())
+        {
+            LOGERROR("EcsSerializer::Serialize: failed to open '", filePath, "' for writing.");
+            return;
+        }
         fout << out.c_str();
     }
 
@@ -96,27 +104,26 @@ namespace
             return;
         }
 
-        YAML::Node data;
         try
         {
-            data = YAML::Load(*text);
+            YAML::Node data = YAML::Load(*text);
+
+            outSceneName = data["Scene name"].as<std::string>();
+
+            const YAML::Node sceneData = data["Scene"];
+            if (sceneData && sceneData.size() > 0)
+            {
+                for (const auto& node : sceneData)
+                    DeserializeEntity(ecs, node, registry);
+
+                // The first node in the scene sequence is the root entity.
+                ecs.SetRoot(sceneData[0]["Entity"].as<ECS::Entity>());
+            }
         }
-        catch (const YAML::ParserException& e)
+        catch (const YAML::Exception& e)
         {
             LOGERROR("Failed to parse scene: ", virtualPath, " with error: ", e.what());
             return;
-        }
-
-        outSceneName = data["Scene name"].as<std::string>();
-
-        const YAML::Node sceneData = data["Scene"];
-        if (sceneData && sceneData.size() > 0)
-        {
-            for (const auto& node : sceneData)
-                DeserializeEntity(ecs, node, registry);
-
-            // The first node in the scene sequence is the root entity.
-            ecs.SetRoot(sceneData[0]["Entity"].as<ECS::Entity>());
         }
     }
 }

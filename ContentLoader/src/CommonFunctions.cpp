@@ -2,7 +2,10 @@
 
 #include "FileSystem/api/FileSystem.hpp"
 
+#include "Logger/api/Logger.hpp"
+
 #include <Windows.h>
+#include <cassert>
 #include <stdexcept>
 #include <filesystem>
 
@@ -17,6 +20,7 @@ namespace ContentLoader
         std::string programPath = std::string(buffer).substr(0, pos);
         std::filesystem::path fsPath(programPath);
         std::string rootPath = fsPath.parent_path().parent_path().parent_path().parent_path().string();
+        assert(std::filesystem::exists(rootPath) && "Engine root not found — binary must be 4 levels deep (Binaries/Windows-x64/<Config>/<Project>/)");
         return rootPath;
     }
 
@@ -48,9 +52,14 @@ namespace ContentLoader
     std::unique_ptr<FS::FileSystem> CreateEngineFileSystem()
     {
         auto fileSystem = std::make_unique<FS::FileSystem>();
-        fileSystem->RegisterPath("engine://", GetRootDirectory());
-        fileSystem->RegisterPath("assets://", GetAssetsDirectory());
-        fileSystem->RegisterPath("shaders://", GetShadersDirectory());
+        const bool okEngine  = fileSystem->RegisterPath("engine://",  GetRootDirectory());
+        const bool okAssets  = fileSystem->RegisterPath("assets://",  GetAssetsDirectory());
+        const bool okShaders = fileSystem->RegisterPath("shaders://", GetShadersDirectory());
+        if (!okEngine || !okAssets || !okShaders)
+            LOGERROR("CreateEngineFileSystem: one or more mount points failed to register — file I/O will be broken.");
+        assert(okEngine  && "engine:// mount failed");
+        assert(okAssets  && "assets:// mount failed");
+        assert(okShaders && "shaders:// mount failed");
         return fileSystem;
     }
 }

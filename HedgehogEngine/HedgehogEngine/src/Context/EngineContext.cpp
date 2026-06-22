@@ -34,6 +34,8 @@
 
 #include "HedgehogEngine/src/Frame/FrameDataBuilder.hpp"
 
+#include "Logger/api/Logger.hpp"
+
 #include <algorithm>
 #include <cassert>
 #include <filesystem>
@@ -243,8 +245,17 @@ namespace HedgehogEngine
 
     void EngineContext::LoadScene(const std::string& filePath)
     {
-        const std::string relativePath = ContentLoader::GetAssetRelativetlyPath(filePath);
-        const std::string virtualPath  = "assets://" + relativePath;
+        std::string relativePath;
+        try
+        {
+            relativePath = ContentLoader::GetAssetRelativetlyPath(filePath);
+        }
+        catch (const std::runtime_error& e)
+        {
+            LOGERROR("EngineContext::LoadScene: ", e.what(), " (path: ", filePath, ")");
+            return;
+        }
+        const std::string virtualPath = "assets://" + relativePath;
 
         DeleteGameObjectAndChildren(m_ECS.GetRoot());
         EcsSerialization::EcsSerializer::Deserialize(*m_ComponentRegistry, m_ECS, m_SceneName,

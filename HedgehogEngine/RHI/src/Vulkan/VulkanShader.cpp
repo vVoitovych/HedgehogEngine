@@ -20,10 +20,14 @@ VulkanShader::VulkanShader(VulkanDevice& device, const std::string& virtualPath,
     if (!bytes)
     {
         LOGERROR("VulkanShader: cannot read SPIR-V file: ", virtualPath);
-        assert(false && "Shader file not found.");
+        return;
     }
 
-    assert(bytes->size() % 4 == 0 && "SPIR-V file size must be a multiple of 4 bytes.");
+    if (bytes->size() % 4 != 0)
+    {
+        LOGERROR("VulkanShader: SPIR-V size (", bytes->size(), " bytes) is not a multiple of 4: ", virtualPath);
+        return;
+    }
 
     VkShaderModuleCreateInfo createInfo{ VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO };
     createInfo.codeSize = bytes->size();

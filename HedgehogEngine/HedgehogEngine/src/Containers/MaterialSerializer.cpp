@@ -23,6 +23,11 @@ namespace HedgehogEngine
         out << YAML::EndMap;
 
         std::ofstream fout(materialPath);
+        if (!fout.is_open())
+        {
+            LOGERROR("MaterialSerializer::Serialize: failed to open '", materialPath, "' for writing.");
+            return;
+        }
         fout << out.c_str();
     }
 
@@ -39,22 +44,21 @@ namespace HedgehogEngine
             return;
         }
 
-        YAML::Node data;
         try
         {
-            data = YAML::Load(*text);
+            YAML::Node data = YAML::Load(*text);
+
+            // Strip "assets://" prefix to obtain the asset-relative path stored in MaterialData.
+            constexpr std::string_view assetsPrefix = "assets://";
+            material.path         = virtualPath.substr(assetsPrefix.size());
+            material.type         = static_cast<MaterialType>(data["Type"].as<size_t>());
+            material.baseColor    = data["BaseColor"].as<std::string>();
+            material.transparency = data["Transparency"].as<float>();
         }
-        catch (const YAML::ParserException& e)
+        catch (const YAML::Exception& e)
         {
             LOGERROR("Failed to parse material: ", virtualPath, " with error: ", e.what());
             return;
         }
-
-        // Strip "assets://" prefix to obtain the asset-relative path stored in MaterialData.
-        constexpr std::string_view assetsPrefix = "assets://";
-        material.path         = virtualPath.substr(assetsPrefix.size());
-        material.type         = static_cast<MaterialType>(data["Type"].as<size_t>());
-        material.baseColor    = data["BaseColor"].as<std::string>();
-        material.transparency = data["Transparency"].as<float>();
     }
 }

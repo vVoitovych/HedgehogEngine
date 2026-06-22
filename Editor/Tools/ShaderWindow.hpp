@@ -73,7 +73,8 @@ private:
     static const char* IndexToStage(int i);
 
     // ── State ─────────────────────────────────────────────────────────────────
-    std::string  m_FilePath;
+    std::string  m_FilePath;     // absolute OS path — used for writing and relative-path computation
+    std::string  m_VirtualPath;  // engine:// path — used for display
     bool         m_Dirty = false;
 
     PipelineType m_PipelineType = PipelineType::Graphics;

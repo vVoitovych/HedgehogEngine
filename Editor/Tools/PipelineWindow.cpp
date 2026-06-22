@@ -4,6 +4,8 @@
 
 #include "ContentLoader/api/CommonFunctions.hpp"
 
+#include "Logger/api/Logger.hpp"
+
 #include "imgui.h"
 
 #include <yaml-cpp/yaml.h>
@@ -129,6 +131,7 @@ bool PipelineWindow::PushConstantsOverlap(int i, int j) const
 void PipelineWindow::NewFile()
 {
     m_FilePath.clear();
+    m_VirtualPath.clear();
     m_Sets.clear();
     m_PushConstants.clear();
     m_Dirty = false;
@@ -163,7 +166,10 @@ bool PipelineWindow::LoadFromPath(const std::string& path, const FS::FileSystemM
 {
     const std::string virtualPath = ToEngineVirtualPath(path);
     if (virtualPath.empty())
+    {
+        LOGERROR("PipelineWindow: '", path, "' is outside the engine root and cannot be opened.");
         return false;
+    }
 
     const auto text = fileSystem.ReadTextFile(virtualPath);
     if (!text)
@@ -217,8 +223,9 @@ bool PipelineWindow::LoadFromPath(const std::string& path, const FS::FileSystemM
         }
     }
 
-    m_FilePath = path;
-    m_Dirty    = false;
+    m_FilePath    = path;
+    m_VirtualPath = virtualPath;
+    m_Dirty       = false;
     return true;
 }
 
@@ -282,7 +289,9 @@ void PipelineWindow::DrawFileControls(const FS::FileSystemManager& fileSystem)
 
     ImGui::Separator();
 
-    const std::string display = m_FilePath.empty() ? "(unsaved)" : m_FilePath;
+    const std::string display = m_VirtualPath.empty()
+        ? (m_FilePath.empty() ? "(unsaved)" : m_FilePath)
+        : m_VirtualPath;
     ImGui::TextDisabled("File: %s%s", display.c_str(), m_Dirty ? "  *" : "");
 }
 
