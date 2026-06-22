@@ -549,7 +549,7 @@ namespace Editor
             char* path = DialogueWindows::MaterialOpenDialogue();
             if (path != nullptr)
             {
-                render.m_Material = ContentLoader::GetAssetRelativetlyPath(path);
+                render.m_Material = ContentLoader::GetAssetRelativelyPath(path);
                 renderSystem->Update(ecs, entity);
             }
         }

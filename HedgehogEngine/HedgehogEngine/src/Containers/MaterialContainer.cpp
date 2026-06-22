@@ -42,7 +42,7 @@ namespace HedgehogEngine
             newData.type         = MaterialType::Opaque;
             newData.transparency = 1.0f;
             newData.baseColor    = m_DefaultCellTexture;
-            newData.path         = ContentLoader::GetAssetRelativetlyPath(path);
+            newData.path         = ContentLoader::GetAssetRelativelyPath(path);
 
             MaterialSerializer::Serialize(newData, path);
             m_Materials.push_back(newData);
@@ -60,7 +60,7 @@ namespace HedgehogEngine
         auto texturePath = DialogueWindows::TextureOpenDialogue();
         if (texturePath == nullptr)
             return;
-        m_Materials[index].baseColor = ContentLoader::GetAssetRelativetlyPath(texturePath);
+        m_Materials[index].baseColor = ContentLoader::GetAssetRelativelyPath(texturePath);
         m_Materials[index].isDirty   = true;
     }
 

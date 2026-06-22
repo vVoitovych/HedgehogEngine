@@ -13,7 +13,7 @@ namespace ContentLoader
 
     CONTENT_LOADER_API std::string GetAssetsDirectory();
 
-    CONTENT_LOADER_API std::string GetAssetRelativetlyPath(const std::string path);
+    CONTENT_LOADER_API std::string GetAssetRelativelyPath(const std::string path);
 
     CONTENT_LOADER_API std::string GetShadersDirectory();
 

@@ -248,7 +248,7 @@ namespace HedgehogEngine
         std::string relativePath;
         try
         {
-            relativePath = ContentLoader::GetAssetRelativetlyPath(filePath);
+            relativePath = ContentLoader::GetAssetRelativelyPath(filePath);
         }
         catch (const std::runtime_error& e)
         {

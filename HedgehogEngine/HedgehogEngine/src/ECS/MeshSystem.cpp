@@ -88,7 +88,7 @@ namespace HedgehogEngine
         if (path == nullptr)
             return;
 
-        std::string relatedPath  = ContentLoader::GetAssetRelativetlyPath(path);
+        std::string relatedPath  = ContentLoader::GetAssetRelativelyPath(path);
         auto& meshComponent      = ecs.GetComponent<MeshComponent>(entity);
         auto  prevMeshPath       = meshComponent.m_MeshPath;
         meshComponent.m_MeshPath = relatedPath;

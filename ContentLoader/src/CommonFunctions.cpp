@@ -31,12 +31,12 @@ namespace ContentLoader
         return path;
     }
 
-    std::string GetAssetRelativetlyPath(const std::string path)
+    std::string GetAssetRelativelyPath(const std::string path)
     {
         std::string assetPath = GetAssetsDirectory();
         if (path.find(assetPath) == std::string::npos)
         {
-            throw std::runtime_error("file isn\'t in asset forlder!");
+            throw std::runtime_error("file isn't in asset folder!");
         }
 
         return path.substr(assetPath.size());

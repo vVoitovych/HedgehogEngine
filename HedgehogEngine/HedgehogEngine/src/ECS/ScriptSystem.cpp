@@ -143,7 +143,7 @@ namespace
             component.m_LuaState = nullptr;
         }
 
-        component.m_ScriptPath = ContentLoader::GetAssetRelativetlyPath(scriptPath);
+        component.m_ScriptPath = ContentLoader::GetAssetRelativelyPath(scriptPath);
         component.m_LuaState   = luaL_newstate();
         luaL_openlibs(component.m_LuaState);
 
