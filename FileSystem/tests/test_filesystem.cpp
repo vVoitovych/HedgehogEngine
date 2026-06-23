@@ -252,6 +252,123 @@ TEST_CASE("FileSystem::ReadFile - file in subdirectory is resolved correctly")
 }
 
 // ---------------------------------------------------------------------------
+// FileSystem::WriteFile / WriteTextFile
+// ---------------------------------------------------------------------------
+
+TEST_CASE("FileSystem::WriteTextFile then ReadTextFile round-trips identical content")
+{
+    TempDir tmp;
+    FS::FileSystem fs;
+    REQUIRE(fs.RegisterPath("engine://", tmp.Path()) == true);
+
+    const std::string content = "Hello, write round-trip!";
+    REQUIRE(fs.WriteTextFile("engine://roundtrip.txt", content) == true);
+
+    auto result = fs.ReadTextFile("engine://roundtrip.txt");
+    REQUIRE(result.has_value());
+    CHECK(*result == content);
+}
+
+TEST_CASE("FileSystem::WriteFile then ReadFile round-trips identical bytes including embedded nulls")
+{
+    TempDir tmp;
+    FS::FileSystem fs;
+    REQUIRE(fs.RegisterPath("engine://", tmp.Path()) == true);
+
+    std::vector<std::byte> data = {
+        std::byte{0x00}, std::byte{0x01}, std::byte{0xFF}, std::byte{0x42}
+    };
+    REQUIRE(fs.WriteFile("engine://binary.bin", data) == true);
+
+    auto result = fs.ReadFile("engine://binary.bin");
+    REQUIRE(result.has_value());
+    REQUIRE(result->size() == data.size());
+    for (std::size_t i = 0; i < data.size(); ++i)
+        CHECK((*result)[i] == data[i]);
+}
+
+TEST_CASE("FileSystem::WriteFile creates parent directories when they do not exist")
+{
+    TempDir tmp;
+    FS::FileSystem fs;
+    REQUIRE(fs.RegisterPath("engine://", tmp.Path()) == true);
+
+    const std::string content = "nested file";
+    REQUIRE(fs.WriteTextFile("engine://a/b/c/nested.txt", content) == true);
+
+    auto result = fs.ReadTextFile("engine://a/b/c/nested.txt");
+    REQUIRE(result.has_value());
+    CHECK(*result == content);
+}
+
+TEST_CASE("FileSystem::WriteTextFile returns false for unrecognised alias")
+{
+    TempDir tmp;
+    FS::FileSystem fs;
+    REQUIRE(fs.RegisterPath("engine://", tmp.Path()) == true);
+
+    CHECK(fs.WriteTextFile("assets://missing.txt", "data") == false);
+}
+
+// ---------------------------------------------------------------------------
+// FileSystem::Exists
+// ---------------------------------------------------------------------------
+
+TEST_CASE("FileSystem::Exists returns true for a file written through FileSystem")
+{
+    TempDir tmp;
+    FS::FileSystem fs;
+    REQUIRE(fs.RegisterPath("engine://", tmp.Path()) == true);
+
+    REQUIRE(fs.WriteTextFile("engine://exists.txt", "some content") == true);
+    CHECK(fs.Exists("engine://exists.txt") == true);
+}
+
+TEST_CASE("FileSystem::Exists returns false for a missing file under a registered alias")
+{
+    TempDir tmp;
+    FS::FileSystem fs;
+    REQUIRE(fs.RegisterPath("engine://", tmp.Path()) == true);
+
+    CHECK(fs.Exists("engine://ghost.txt") == false);
+}
+
+TEST_CASE("FileSystem::Exists returns false for an unrecognised alias")
+{
+    TempDir tmp;
+    FS::FileSystem fs;
+    REQUIRE(fs.RegisterPath("engine://", tmp.Path()) == true);
+
+    CHECK(fs.Exists("assets://something.txt") == false);
+}
+
+// ---------------------------------------------------------------------------
+// FileSystem::ResolvePhysical
+// ---------------------------------------------------------------------------
+
+TEST_CASE("FileSystem::ResolvePhysical returns the expected physical path for a known alias")
+{
+    TempDir tmp;
+    FS::FileSystem fs;
+    REQUIRE(fs.RegisterPath("engine://", tmp.Path()) == true);
+
+    auto result = fs.ResolvePhysical("engine://textures/foo.png");
+    REQUIRE(result.has_value());
+    // The resolved path must start with the canonical mount directory.
+    const auto canonical = std::filesystem::canonical(tmp.Path());
+    CHECK(result->string().find(canonical.string()) == 0);
+}
+
+TEST_CASE("FileSystem::ResolvePhysical returns nullopt for unrecognised alias")
+{
+    TempDir tmp;
+    FS::FileSystem fs;
+    REQUIRE(fs.RegisterPath("engine://", tmp.Path()) == true);
+
+    CHECK(fs.ResolvePhysical("assets://missing.png") == std::nullopt);
+}
+
+// ---------------------------------------------------------------------------
 // FileSystem::GetMountPoints
 // ---------------------------------------------------------------------------
 

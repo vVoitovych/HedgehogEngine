@@ -45,7 +45,10 @@ namespace FS
         }
 
         if (!std::filesystem::exists(*physPath))
+        {
+            LOGWARNING("[FileSystem] File not found: ", physPath->string());
             return std::nullopt;
+        }
 
         std::ifstream file(*physPath, std::ios::binary | std::ios::ate);
         if (!file.is_open())
@@ -85,6 +88,59 @@ namespace FS
             return std::nullopt;
 
         return std::string(reinterpret_cast<const char*>(bytes->data()), bytes->size());
+    }
+
+    bool FileSystem::WriteFile(const std::string& virtualPath,
+                                const std::vector<std::byte>& data) const
+    {
+        auto physPath = Resolve(virtualPath);
+        if (!physPath)
+        {
+            LOGERROR("[FileSystem] Cannot resolve virtual path '", virtualPath, "' for writing.");
+            return false;
+        }
+
+        std::error_code ec;
+        std::filesystem::create_directories(physPath->parent_path(), ec);
+        if (ec)
+        {
+            LOGERROR("[FileSystem] Failed to create directories for '", physPath->string(),
+                "': ", ec.message());
+            return false;
+        }
+
+        std::ofstream file(*physPath, std::ios::binary | std::ios::trunc);
+        if (!file.is_open())
+        {
+            LOGERROR("[FileSystem] Failed to open '", physPath->string(), "' for writing.");
+            return false;
+        }
+
+        file.write(reinterpret_cast<const char*>(data.data()),
+                   static_cast<std::streamsize>(data.size()));
+        return file.good();
+    }
+
+    bool FileSystem::WriteTextFile(const std::string& virtualPath, const std::string& text) const
+    {
+        const std::vector<std::byte> bytes(
+            reinterpret_cast<const std::byte*>(text.data()),
+            reinterpret_cast<const std::byte*>(text.data()) + text.size());
+        return WriteFile(virtualPath, bytes);
+    }
+
+    bool FileSystem::Exists(const std::string& virtualPath) const
+    {
+        auto physPath = Resolve(virtualPath);
+        if (!physPath)
+            return false;
+        return std::filesystem::exists(*physPath);
+    }
+
+    std::optional<std::filesystem::path> FileSystem::ResolvePhysical(
+        const std::string& virtualPath) const
+    {
+        return Resolve(virtualPath);
     }
 
     bool FileSystem::OwnsAlias(const std::string& alias) const

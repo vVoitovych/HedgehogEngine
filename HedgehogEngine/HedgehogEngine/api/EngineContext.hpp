@@ -90,7 +90,7 @@ namespace HedgehogEngine
 
         void        CreateSceneRoot();
         void        DeleteGameObjectAndChildren(ECS::Entity entity);
-        static std::string GetUniqueGameObjectName();
+        std::string GetUniqueGameObjectName();
 
     private:
         FS::FileSystemManager m_FileSystem;
@@ -115,6 +115,8 @@ namespace HedgehogEngine
         std::unique_ptr<MaterialContainer> m_MaterialContainer;
 
         FrameData m_FrameData;
+
+        size_t m_GameObjectIndex = 0;
 
         std::unique_ptr<HedgehogSettings::Settings>                  m_Settings;
         std::unique_ptr<EcsSerialization::ComponentSerializerRegistry> m_ComponentRegistry;

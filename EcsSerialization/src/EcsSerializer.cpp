@@ -7,7 +7,6 @@
 
 #include "yaml-cpp/yaml.h"
 
-#include <fstream>
 #include <stdexcept>
 
 namespace EcsSerialization
@@ -65,9 +64,11 @@ namespace
 
     void EcsSerializer::Serialize(const ComponentSerializerRegistry& registry,
                                    const ECS::ECS& ecs,
-                                   const std::string& sceneName, const std::string& filePath)
+                                   const std::string& sceneName,
+                                   const std::string& virtualPath,
+                                   const FS::FileSystemManager& fileSystem)
     {
-        LOGINFO("EcsSerializer::Serialize: ", filePath);
+        LOGINFO("EcsSerializer::Serialize: ", virtualPath);
 
         YAML::Emitter out;
         out << YAML::BeginMap;
@@ -77,16 +78,8 @@ namespace
         out << YAML::EndSeq;
         out << YAML::EndMap;
 
-        // Serialize writes through a raw OS path (the user-chosen save location).
-        // Deserialize reads through a virtual path (assets://).
-        // This asymmetry is intentional: FileSystem is read-only by design.
-        std::ofstream fout(filePath);
-        if (!fout.is_open())
-        {
-            LOGERROR("EcsSerializer::Serialize: failed to open '", filePath, "' for writing.");
-            return;
-        }
-        fout << out.c_str();
+        if (!fileSystem.WriteTextFile(virtualPath, out.c_str()))
+            LOGERROR("EcsSerializer::Serialize: failed to write '", virtualPath, "'.");
     }
 
     void EcsSerializer::Deserialize(const ComponentSerializerRegistry& registry,

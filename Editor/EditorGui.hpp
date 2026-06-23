@@ -4,6 +4,8 @@
 #include "EditorSettings.hpp"
 #include "ECS/api/Entity.hpp"
 
+#include "FileSystem/api/FileSystemManager.hpp"
+
 #include <memory>
 #include <optional>
 
@@ -59,6 +61,10 @@ namespace Editor
 
     private:
         static constexpr const char k_SettingsPath[] = "editor_settings.yaml";
+
+        // Non-owning pointer to the FileSystemManager; valid for the entire lifetime of EditorGui
+        // because the engine context outlives it (destroyed first among Application's members).
+        const FS::FileSystemManager* m_FileSystem = nullptr;
 
         EditorSettings m_Settings;
         DockSystem     m_DockSystem;

@@ -46,10 +46,10 @@ private:
     // ── File I/O ──────────────────────────────────────────────────────────────
     void NewFile();
     void OpenFile(const FS::FileSystemManager& fileSystem);
-    void SaveFile();
-    void SaveAsFile();
+    void SaveFile(const FS::FileSystemManager& fileSystem);
+    void SaveAsFile(const FS::FileSystemManager& fileSystem);
     bool LoadFromPath(const std::string& path, const FS::FileSystemManager& fileSystem);
-    bool SaveToPath(const std::string& path);
+    bool SaveToPath(const std::string& virtualPath, const FS::FileSystemManager& fileSystem);
 
     // ── Helpers ───────────────────────────────────────────────────────────────
     std::string MakeRelativePath(const std::string& absPath) const;

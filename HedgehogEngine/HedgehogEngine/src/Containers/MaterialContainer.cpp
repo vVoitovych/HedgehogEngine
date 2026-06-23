@@ -33,7 +33,7 @@ namespace HedgehogEngine
         m_Materials.clear();
     }
 
-    void MaterialContainer::CreateNewMaterial()
+    void MaterialContainer::CreateNewMaterial(const FS::FileSystemManager& fileSystem)
     {
         auto path = DialogueWindows::MaterialCreationDialogue();
         if (path != nullptr)
@@ -44,15 +44,17 @@ namespace HedgehogEngine
             newData.baseColor    = m_DefaultCellTexture;
             newData.path         = ContentLoader::GetAssetRelativelyPath(path);
 
-            MaterialSerializer::Serialize(newData, path);
+            const std::string virtualPath = "assets://" + newData.path;
+            MaterialSerializer::Serialize(newData, virtualPath, fileSystem);
             m_Materials.push_back(newData);
         }
     }
 
-    void MaterialContainer::SaveMaterial(size_t index)
+    void MaterialContainer::SaveMaterial(size_t index, const FS::FileSystemManager& fileSystem)
     {
         const MaterialData& data = m_Materials[index];
-        MaterialSerializer::Serialize(data, ContentLoader::GetAssetsDirectory() + data.path);
+        const std::string virtualPath = "assets://" + data.path;
+        MaterialSerializer::Serialize(data, virtualPath, fileSystem);
     }
 
     void MaterialContainer::LoadBaseTexture(size_t index)

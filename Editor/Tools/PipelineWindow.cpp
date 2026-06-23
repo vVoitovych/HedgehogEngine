@@ -11,7 +11,6 @@
 #include <yaml-cpp/yaml.h>
 
 #include <algorithm>
-#include <fstream>
 #include <set>
 #include <sstream>
 
@@ -144,21 +143,22 @@ void PipelineWindow::OpenFile(const FS::FileSystemManager& fileSystem)
         LoadFromPath(path, fileSystem);
 }
 
-void PipelineWindow::SaveFile()
+void PipelineWindow::SaveFile(const FS::FileSystemManager& fileSystem)
 {
-    if (m_FilePath.empty())
-        SaveAsFile();
+    if (m_VirtualPath.empty())
+        SaveAsFile(fileSystem);
     else
-        SaveToPath(m_FilePath);
+        SaveToPath(m_VirtualPath, fileSystem);
 }
 
-void PipelineWindow::SaveAsFile()
+void PipelineWindow::SaveAsFile(const FS::FileSystemManager& fileSystem)
 {
     char* path = DialogueWindows::PipelineSaveDialogue();
     if (path != nullptr)
     {
-        m_FilePath = path;
-        SaveToPath(m_FilePath);
+        m_FilePath    = path;
+        m_VirtualPath = ToEngineVirtualPath(path);
+        SaveToPath(m_VirtualPath, fileSystem);
     }
 }
 
@@ -229,8 +229,15 @@ bool PipelineWindow::LoadFromPath(const std::string& path, const FS::FileSystemM
     return true;
 }
 
-bool PipelineWindow::SaveToPath(const std::string& path)
+bool PipelineWindow::SaveToPath(const std::string& virtualPath,
+                                 const FS::FileSystemManager& fileSystem)
 {
+    if (virtualPath.empty())
+    {
+        LOGERROR("PipelineWindow: cannot save — file path is outside the engine root.");
+        return false;
+    }
+
     YAML::Emitter out;
     out << YAML::BeginMap;
 
@@ -266,11 +273,9 @@ bool PipelineWindow::SaveToPath(const std::string& path)
 
     out << YAML::EndMap;
 
-    std::ofstream file(path);
-    if (!file.is_open())
+    if (!fileSystem.WriteTextFile(virtualPath, out.c_str()))
         return false;
 
-    file << out.c_str();
     m_Dirty = false;
     return true;
 }
@@ -283,9 +288,9 @@ void PipelineWindow::DrawFileControls(const FS::FileSystemManager& fileSystem)
     ImGui::SameLine();
     if (ImGui::Button("Open"))    OpenFile(fileSystem);
     ImGui::SameLine();
-    if (ImGui::Button("Save"))    SaveFile();
+    if (ImGui::Button("Save"))    SaveFile(fileSystem);
     ImGui::SameLine();
-    if (ImGui::Button("Save As")) SaveAsFile();
+    if (ImGui::Button("Save As")) SaveAsFile(fileSystem);
 
     ImGui::Separator();
 

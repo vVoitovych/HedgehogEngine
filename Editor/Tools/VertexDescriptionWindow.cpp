@@ -4,12 +4,13 @@
 
 #include "ContentLoader/api/CommonFunctions.hpp"
 
+#include "Logger/api/Logger.hpp"
+
 #include "imgui.h"
 
 #include <yaml-cpp/yaml.h>
 
 #include <algorithm>
-#include <fstream>
 #include <set>
 
 namespace
@@ -99,6 +100,7 @@ bool VertexDescriptionWindow::AttributeBindingExists(int binding) const
 void VertexDescriptionWindow::NewFile()
 {
     m_FilePath.clear();
+    m_VirtualPath.clear();
     m_Bindings.clear();
     m_Attributes.clear();
     m_Dirty = false;
@@ -111,21 +113,22 @@ void VertexDescriptionWindow::OpenFile(const FS::FileSystemManager& fileSystem)
         LoadFromPath(path, fileSystem);
 }
 
-void VertexDescriptionWindow::SaveFile()
+void VertexDescriptionWindow::SaveFile(const FS::FileSystemManager& fileSystem)
 {
-    if (m_FilePath.empty())
-        SaveAsFile();
+    if (m_VirtualPath.empty())
+        SaveAsFile(fileSystem);
     else
-        SaveToPath(m_FilePath);
+        SaveToPath(m_VirtualPath, fileSystem);
 }
 
-void VertexDescriptionWindow::SaveAsFile()
+void VertexDescriptionWindow::SaveAsFile(const FS::FileSystemManager& fileSystem)
 {
     char* path = DialogueWindows::VertexDescSaveDialogue();
     if (path != nullptr)
     {
-        m_FilePath = path;
-        SaveToPath(m_FilePath);
+        m_FilePath    = path;
+        m_VirtualPath = ToEngineVirtualPath(path);
+        SaveToPath(m_VirtualPath, fileSystem);
     }
 }
 
@@ -179,13 +182,21 @@ bool VertexDescriptionWindow::LoadFromPath(const std::string& path,
         }
     }
 
-    m_FilePath = path;
-    m_Dirty    = false;
+    m_FilePath    = path;
+    m_VirtualPath = ToEngineVirtualPath(path);
+    m_Dirty       = false;
     return true;
 }
 
-bool VertexDescriptionWindow::SaveToPath(const std::string& path)
+bool VertexDescriptionWindow::SaveToPath(const std::string& virtualPath,
+                                          const FS::FileSystemManager& fileSystem)
 {
+    if (virtualPath.empty())
+    {
+        LOGERROR("VertexDescriptionWindow: cannot save — file path is outside the engine root.");
+        return false;
+    }
+
     YAML::Emitter out;
     out << YAML::BeginMap;
 
@@ -214,11 +225,9 @@ bool VertexDescriptionWindow::SaveToPath(const std::string& path)
 
     out << YAML::EndMap;
 
-    std::ofstream file(path);
-    if (!file.is_open())
+    if (!fileSystem.WriteTextFile(virtualPath, out.c_str()))
         return false;
 
-    file << out.c_str();
     m_Dirty = false;
     return true;
 }
@@ -231,9 +240,9 @@ void VertexDescriptionWindow::DrawFileControls(const FS::FileSystemManager& file
     ImGui::SameLine();
     if (ImGui::Button("Open"))    OpenFile(fileSystem);
     ImGui::SameLine();
-    if (ImGui::Button("Save"))    SaveFile();
+    if (ImGui::Button("Save"))    SaveFile(fileSystem);
     ImGui::SameLine();
-    if (ImGui::Button("Save As")) SaveAsFile();
+    if (ImGui::Button("Save As")) SaveAsFile(fileSystem);
 
     ImGui::Separator();
 

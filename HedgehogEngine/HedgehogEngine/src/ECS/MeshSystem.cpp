@@ -4,19 +4,10 @@
 #include "DialogueWindows/api/MeshDialogue.hpp"
 
 #include <algorithm>
-#include <filesystem>
 
 namespace HedgehogEngine
 {
     const std::string MeshSystem::sDefaultMeshPath = "Models/Default/cube.obj";
-
-    namespace
-    {
-        bool IsFileAccessible(const std::string& path)
-        {
-            return std::filesystem::exists(ContentLoader::GetAssetsDirectory() + path);
-        }
-    }
 
     MeshSystem::MeshSystem()
     {
@@ -24,22 +15,23 @@ namespace HedgehogEngine
         AddMeshPath("Models/Default/sphere.obj");
     }
 
-    void MeshSystem::Update(ECS::ECS& ecs, ECS::Entity entity)
+    void MeshSystem::Update(ECS::ECS& ecs, ECS::Entity entity,
+                             const FS::FileSystemManager& fileSystem)
     {
         auto& meshComponent = ecs.GetComponent<MeshComponent>(entity);
         if (meshComponent.m_MeshIndex.has_value())
         {
             size_t index = meshComponent.m_MeshIndex.value();
             if (m_MeshPaths[index] != meshComponent.m_MeshPath)
-                CheckMeshPath(meshComponent, meshComponent.m_CachedMeshPath);
+                CheckMeshPath(meshComponent, meshComponent.m_CachedMeshPath, fileSystem);
         }
         else
         {
-            CheckMeshPath(meshComponent, sDefaultMeshPath);
+            CheckMeshPath(meshComponent, sDefaultMeshPath, fileSystem);
         }
     }
 
-    void MeshSystem::Update(ECS::ECS& ecs)
+    void MeshSystem::Update(ECS::ECS& ecs, const FS::FileSystemManager& fileSystem)
     {
         for (auto& entity : m_Entities)
         {
@@ -48,11 +40,11 @@ namespace HedgehogEngine
             {
                 size_t index = meshComponent.m_MeshIndex.value();
                 if (m_MeshPaths[index] != meshComponent.m_MeshPath)
-                    CheckMeshPath(meshComponent, meshComponent.m_CachedMeshPath);
+                    CheckMeshPath(meshComponent, meshComponent.m_CachedMeshPath, fileSystem);
             }
             else
             {
-                CheckMeshPath(meshComponent, sDefaultMeshPath);
+                CheckMeshPath(meshComponent, sDefaultMeshPath, fileSystem);
             }
         }
     }
@@ -82,7 +74,8 @@ namespace HedgehogEngine
         m_MeshPaths.push_back(meshPath);
     }
 
-    void MeshSystem::LoadMesh(ECS::ECS& ecs, ECS::Entity entity)
+    void MeshSystem::LoadMesh(ECS::ECS& ecs, ECS::Entity entity,
+                               const FS::FileSystemManager& fileSystem)
     {
         char* path = DialogueWindows::MeshOpenDialogue();
         if (path == nullptr)
@@ -93,10 +86,11 @@ namespace HedgehogEngine
         auto  prevMeshPath       = meshComponent.m_MeshPath;
         meshComponent.m_MeshPath = relatedPath;
         AddMeshPath(relatedPath);
-        CheckMeshPath(meshComponent, prevMeshPath);
+        CheckMeshPath(meshComponent, prevMeshPath, fileSystem);
     }
 
-    void MeshSystem::CheckMeshPath(MeshComponent& meshComponent, const std::string& fallbackPath)
+    void MeshSystem::CheckMeshPath(MeshComponent& meshComponent, const std::string& fallbackPath,
+                                    const FS::FileSystemManager& fileSystem)
     {
         auto it = std::find(m_MeshPaths.begin(), m_MeshPaths.end(), meshComponent.m_MeshPath);
         if (it != m_MeshPaths.end())
@@ -107,7 +101,7 @@ namespace HedgehogEngine
         }
         else
         {
-            if (IsFileAccessible(meshComponent.m_MeshPath))
+            if (fileSystem.Exists("assets://" + meshComponent.m_MeshPath))
             {
                 meshComponent.m_CachedMeshPath = meshComponent.m_MeshPath;
                 meshComponent.m_MeshIndex      = m_MeshPaths.size();

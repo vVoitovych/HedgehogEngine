@@ -9,48 +9,55 @@
 namespace ContentLoader
 {
     TextureLoader::TextureLoader()
-        : mData(nullptr)
-        , mWidth(0)
-        , mHeight(0)
-        , mChanels(0)
+        : m_Data(nullptr)
+        , m_Width(0)
+        , m_Height(0)
+        , m_Channels(0)
     {
     }
 
     TextureLoader::~TextureLoader()
     {
-        if (mData)
+        if (m_Data)
         {
-            stbi_image_free(mData);
+            stbi_image_free(m_Data);
         }
     }
 
-    void TextureLoader::LoadTexture(const std::string& file)
+    void TextureLoader::LoadTexture(const std::string& file,
+                                     const FS::FileSystemManager& fileSystem)
     {
-        std::string fullPath = GetAssetsDirectory() + file;
-        mData = stbi_load(fullPath.c_str(), &mWidth, &mHeight, &mChanels, STBI_rgb_alpha);
-        if (!mData)
-        {
-            throw std::runtime_error("failed to load texture image!");
-        }
+        const std::string virtualPath = "assets://" + file;
+        const auto bytes = fileSystem.ReadFile(virtualPath);
+        if (!bytes)
+            throw std::runtime_error("Failed to read texture file: " + virtualPath);
+
+        m_Data = stbi_load_from_memory(
+            reinterpret_cast<const stbi_uc*>(bytes->data()),
+            static_cast<int>(bytes->size()),
+            &m_Width, &m_Height, &m_Channels, STBI_rgb_alpha);
+
+        if (!m_Data)
+            throw std::runtime_error("Failed to decode texture image: " + virtualPath);
     }
 
     int TextureLoader::GetWidth() const
     {
-        return mWidth;
+        return m_Width;
     }
 
     int TextureLoader::GetHeight() const
     {
-        return mHeight;
+        return m_Height;
     }
 
-    int TextureLoader::GetChanels() const
+    int TextureLoader::GetChannels() const
     {
-        return mChanels;
+        return m_Channels;
     }
 
     void* TextureLoader::GetData() const
     {
-        return mData;
+        return m_Data;
     }
 }

@@ -2,6 +2,8 @@
 
 #include "HedgehogEngine/api/HedgehogEngineApi.hpp"
 
+#include "FileSystem/api/FileSystemManager.hpp"
+
 #include <vector>
 #include <string>
 #include <cstddef>
@@ -22,7 +24,8 @@ namespace HedgehogEngine
         MeshContainer& operator=(const MeshContainer&) = delete;
         MeshContainer& operator=(MeshContainer&&)      = delete;
 
-        HEDGEHOG_ENGINE_API void Update(const MeshSystem& meshSystem);
+        HEDGEHOG_ENGINE_API void Update(const MeshSystem& meshSystem,
+                                         const FS::FileSystemManager& fileSystem);
 
         HEDGEHOG_ENGINE_API size_t      GetMeshCount() const;
         HEDGEHOG_ENGINE_API const Mesh& GetMesh(size_t index) const;

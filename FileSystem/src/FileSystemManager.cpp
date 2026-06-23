@@ -71,6 +71,41 @@ namespace FS
         return owner->ReadTextFile(virtualPath);
     }
 
+    bool FileSystemManager::WriteFile(const std::string& virtualPath,
+                                       const std::vector<std::byte>& data) const
+    {
+        const FileSystem* owner = FindOwner(virtualPath);
+        if (!owner)
+            return false;
+        return owner->WriteFile(virtualPath, data);
+    }
+
+    bool FileSystemManager::WriteTextFile(const std::string& virtualPath,
+                                           const std::string& text) const
+    {
+        const FileSystem* owner = FindOwner(virtualPath);
+        if (!owner)
+            return false;
+        return owner->WriteTextFile(virtualPath, text);
+    }
+
+    bool FileSystemManager::Exists(const std::string& virtualPath) const
+    {
+        const FileSystem* owner = FindOwner(virtualPath);
+        if (!owner)
+            return false;
+        return owner->Exists(virtualPath);
+    }
+
+    std::optional<std::filesystem::path> FileSystemManager::ResolvePhysical(
+        const std::string& virtualPath) const
+    {
+        const FileSystem* owner = FindOwner(virtualPath);
+        if (!owner)
+            return std::nullopt;
+        return owner->ResolvePhysical(virtualPath);
+    }
+
     std::unique_ptr<FileSystem> FileSystemManager::Unregister(const std::string& alias)
     {
         for (auto it = m_FileSystems.begin(); it != m_FileSystems.end(); ++it)

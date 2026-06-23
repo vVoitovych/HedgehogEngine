@@ -2,6 +2,8 @@
 
 #include "ContentLoaderApi.hpp"
 
+#include "FileSystem/api/FileSystemManager.hpp"
+
 #include <string>
 
 namespace ContentLoader
@@ -12,18 +14,24 @@ namespace ContentLoader
         CONTENT_LOADER_API TextureLoader();
         CONTENT_LOADER_API ~TextureLoader();
 
-        CONTENT_LOADER_API void LoadTexture(const std::string& file);
+        TextureLoader(const TextureLoader&)            = delete;
+        TextureLoader& operator=(const TextureLoader&) = delete;
+        TextureLoader(TextureLoader&&)                 = delete;
+        TextureLoader& operator=(TextureLoader&&)      = delete;
+
+        CONTENT_LOADER_API void LoadTexture(const std::string& file,
+                                             const FS::FileSystemManager& fileSystem);
 
         CONTENT_LOADER_API int GetWidth()   const;
         CONTENT_LOADER_API int GetHeight()  const;
-        CONTENT_LOADER_API int GetChanels() const;
+        CONTENT_LOADER_API int GetChannels() const;
 
         CONTENT_LOADER_API void* GetData() const;
 
     private:
-        int   mWidth;
-        int   mHeight;
-        int   mChanels;
-        void* mData;
+        int   m_Width;
+        int   m_Height;
+        int   m_Channels;
+        void* m_Data;
     };
 }

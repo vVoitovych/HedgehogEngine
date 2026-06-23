@@ -45,7 +45,7 @@ namespace ContentLoader
     std::string GetShadersDirectory()
     {
         std::string path = GetRootDirectory();
-        path += "\\Shaders\\Shaders\\";
+        path += "\\HedgehogEngine\\HedgehogRenderer\\assets\\Shaders\\";
         return path;
     }
 

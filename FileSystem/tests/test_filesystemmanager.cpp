@@ -303,6 +303,124 @@ TEST_CASE("FileSystemManager::Unregister - unregisters by any alias owned by the
 }
 
 // ---------------------------------------------------------------------------
+// FileSystemManager::WriteFile / WriteTextFile
+// ---------------------------------------------------------------------------
+
+TEST_CASE("FileSystemManager::WriteTextFile then ReadTextFile round-trips through correct owner")
+{
+    TempDir tmp;
+    FS::FileSystemManager manager;
+    REQUIRE(manager.Register(MakeFS("engine://", tmp.Path())) == true);
+
+    const std::string content = "manager write test";
+    REQUIRE(manager.WriteTextFile("engine://write_rt.txt", content) == true);
+
+    auto result = manager.ReadTextFile("engine://write_rt.txt");
+    REQUIRE(result.has_value());
+    CHECK(*result == content);
+}
+
+TEST_CASE("FileSystemManager::WriteFile then ReadFile round-trips bytes")
+{
+    TempDir tmp;
+    FS::FileSystemManager manager;
+    REQUIRE(manager.Register(MakeFS("engine://", tmp.Path())) == true);
+
+    std::vector<std::byte> data = { std::byte{0xAB}, std::byte{0xCD}, std::byte{0xEF} };
+    REQUIRE(manager.WriteFile("engine://bin.bin", data) == true);
+
+    auto result = manager.ReadFile("engine://bin.bin");
+    REQUIRE(result.has_value());
+    REQUIRE(result->size() == data.size());
+    for (std::size_t i = 0; i < data.size(); ++i)
+        CHECK((*result)[i] == data[i]);
+}
+
+TEST_CASE("FileSystemManager::WriteTextFile returns false for unknown alias")
+{
+    TempDir tmp;
+    FS::FileSystemManager manager;
+    REQUIRE(manager.Register(MakeFS("engine://", tmp.Path())) == true);
+
+    CHECK(manager.WriteTextFile("assets://missing.txt", "data") == false);
+}
+
+TEST_CASE("FileSystemManager::WriteTextFile dispatches to the correct owner among multiple")
+{
+    TempDir tmpEngine;
+    TempDir tmpAssets;
+    FS::FileSystemManager manager;
+    REQUIRE(manager.Register(MakeFS("engine://", tmpEngine.Path())) == true);
+    REQUIRE(manager.Register(MakeFS("assets://", tmpAssets.Path())) == true);
+
+    REQUIRE(manager.WriteTextFile("engine://e.txt", "engine content") == true);
+    REQUIRE(manager.WriteTextFile("assets://a.txt", "asset content") == true);
+
+    CHECK(manager.ReadTextFile("engine://e.txt").value_or("") == "engine content");
+    CHECK(manager.ReadTextFile("assets://a.txt").value_or("") == "asset content");
+    // Cross-owner reads return nullopt.
+    CHECK_FALSE(manager.ReadTextFile("engine://a.txt").has_value());
+    CHECK_FALSE(manager.ReadTextFile("assets://e.txt").has_value());
+}
+
+// ---------------------------------------------------------------------------
+// FileSystemManager::Exists
+// ---------------------------------------------------------------------------
+
+TEST_CASE("FileSystemManager::Exists returns true for a written file")
+{
+    TempDir tmp;
+    FS::FileSystemManager manager;
+    REQUIRE(manager.Register(MakeFS("engine://", tmp.Path())) == true);
+
+    REQUIRE(manager.WriteTextFile("engine://exists.txt", "content") == true);
+    CHECK(manager.Exists("engine://exists.txt") == true);
+}
+
+TEST_CASE("FileSystemManager::Exists returns false for missing file under known alias")
+{
+    TempDir tmp;
+    FS::FileSystemManager manager;
+    REQUIRE(manager.Register(MakeFS("engine://", tmp.Path())) == true);
+
+    CHECK(manager.Exists("engine://ghost.txt") == false);
+}
+
+TEST_CASE("FileSystemManager::Exists returns false for unknown alias")
+{
+    TempDir tmp;
+    FS::FileSystemManager manager;
+    REQUIRE(manager.Register(MakeFS("engine://", tmp.Path())) == true);
+
+    CHECK(manager.Exists("assets://anything.txt") == false);
+}
+
+// ---------------------------------------------------------------------------
+// FileSystemManager::ResolvePhysical
+// ---------------------------------------------------------------------------
+
+TEST_CASE("FileSystemManager::ResolvePhysical returns path for known alias")
+{
+    TempDir tmp;
+    FS::FileSystemManager manager;
+    REQUIRE(manager.Register(MakeFS("engine://", tmp.Path())) == true);
+
+    auto result = manager.ResolvePhysical("engine://shaders/vert.spv");
+    REQUIRE(result.has_value());
+    const auto canonical = std::filesystem::canonical(tmp.Path());
+    CHECK(result->string().find(canonical.string()) == 0);
+}
+
+TEST_CASE("FileSystemManager::ResolvePhysical returns nullopt for unknown alias")
+{
+    TempDir tmp;
+    FS::FileSystemManager manager;
+    REQUIRE(manager.Register(MakeFS("engine://", tmp.Path())) == true);
+
+    CHECK(manager.ResolvePhysical("assets://missing.png") == std::nullopt);
+}
+
+// ---------------------------------------------------------------------------
 // FileSystemManager::GetFileSystems
 // ---------------------------------------------------------------------------
 

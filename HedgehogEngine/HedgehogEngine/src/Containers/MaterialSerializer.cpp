@@ -6,14 +6,16 @@
 
 #include "yaml-cpp/yaml.h"
 
-#include <fstream>
+#include <cassert>
 #include <string_view>
 
 namespace HedgehogEngine
 {
-    void MaterialSerializer::Serialize(const MaterialData& material, const std::string& materialPath)
+    void MaterialSerializer::Serialize(const MaterialData& material,
+                                        const std::string& virtualPath,
+                                        const FS::FileSystemManager& fileSystem)
     {
-        LOGINFO("Serialize material: ", materialPath);
+        LOGINFO("Serialize material: ", virtualPath);
 
         YAML::Emitter out;
         out << YAML::BeginMap;
@@ -22,13 +24,8 @@ namespace HedgehogEngine
         out << YAML::Key << "Transparency" << YAML::Value << material.transparency;
         out << YAML::EndMap;
 
-        std::ofstream fout(materialPath);
-        if (!fout.is_open())
-        {
-            LOGERROR("MaterialSerializer::Serialize: failed to open '", materialPath, "' for writing.");
-            return;
-        }
-        fout << out.c_str();
+        if (!fileSystem.WriteTextFile(virtualPath, out.c_str()))
+            LOGERROR("MaterialSerializer::Serialize: failed to write '", virtualPath, "'.");
     }
 
     void MaterialSerializer::Deserialize(MaterialData& material,
@@ -48,8 +45,9 @@ namespace HedgehogEngine
         {
             YAML::Node data = YAML::Load(*text);
 
-            // Strip "assets://" prefix to obtain the asset-relative path stored in MaterialData.
             constexpr std::string_view assetsPrefix = "assets://";
+            assert(virtualPath.substr(0, assetsPrefix.size()) == assetsPrefix
+                && "MaterialSerializer: virtualPath must use assets:// alias");
             material.path         = virtualPath.substr(assetsPrefix.size());
             material.type         = static_cast<MaterialType>(data["Type"].as<size_t>());
             material.baseColor    = data["BaseColor"].as<std::string>();

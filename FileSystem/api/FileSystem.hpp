@@ -39,6 +39,25 @@ namespace FS
         FILE_SYSTEM_API std::optional<std::string>
             ReadTextFile(const std::string& virtualPath) const;
 
+        // Writes binary data to virtualPath. Creates parent directories as needed.
+        // Returns false and logs on unrecognised alias or write failure.
+        FILE_SYSTEM_API bool WriteFile(const std::string& virtualPath,
+                                       const std::vector<std::byte>& data) const;
+
+        // Writes a string as text to virtualPath. Creates parent directories as needed.
+        // Returns false and logs on unrecognised alias or write failure.
+        FILE_SYSTEM_API bool WriteTextFile(const std::string& virtualPath,
+                                           const std::string& text) const;
+
+        // Returns true if the file at virtualPath exists on disk.
+        // Returns false for an unrecognised alias or a missing file.
+        FILE_SYSTEM_API bool Exists(const std::string& virtualPath) const;
+
+        // Returns the physical path for virtualPath, or nullopt if alias unknown.
+        // Use only as an escape hatch for third-party loaders that require an OS path.
+        FILE_SYSTEM_API std::optional<std::filesystem::path>
+            ResolvePhysical(const std::string& virtualPath) const;
+
         // True if this instance has alias registered as a mount point.
         FILE_SYSTEM_API bool OwnsAlias(const std::string& alias) const;
 

@@ -78,8 +78,9 @@ namespace Editor
         , m_PipelineWindow(std::make_unique<PipelineWindow>())
         , m_ShaderWindow(std::make_unique<ShaderWindow>())
     {
-        const auto& fs = context.GetEngineContext().GetFileSystem();
-        if (m_Settings.Load("engine://editor_settings.yaml", fs) && m_Settings.dockLayout.IsValid())
+        m_FileSystem = &context.GetEngineContext().GetFileSystem();
+        if (m_Settings.Load("engine://editor_settings.yaml", *m_FileSystem)
+            && m_Settings.dockLayout.IsValid())
             m_DockSystem.GetLayout() = m_Settings.dockLayout;
 
         SetupLightComponentGuiOverrides();
@@ -88,7 +89,10 @@ namespace Editor
     EditorGui::~EditorGui()
     {
         m_Settings.dockLayout = m_DockSystem.GetLayout();
-        m_Settings.Save(ContentLoader::GetRootDirectory() + "/" + k_SettingsPath);
+        // m_FileSystem is non-owning; the engine context (and thus FileSystemManager) is still
+        // alive here because EditorGui is destroyed first among the Application's members.
+        if (m_FileSystem)
+            m_Settings.Save("engine://editor_settings.yaml", *m_FileSystem);
     }
 
     // ─── Top-level entry ─────────────────────────────────────────────────────
@@ -223,7 +227,7 @@ namespace Editor
                     if (!ecs.HasComponent<HedgehogEngine::MeshComponent>(e))
                     {
                         ecs.AddComponent(e, HedgehogEngine::MeshComponent{ HedgehogEngine::MeshSystem::sDefaultMeshPath });
-                        meshSystem->Update(ecs, e);
+                        meshSystem->Update(ecs, e, engineContext.GetFileSystem());
                     }
                 }
                 if (ImGui::MenuItem("Render component") && m_SelectedEntity.has_value())
@@ -252,7 +256,7 @@ namespace Editor
 
             ImGui::Separator();
             if (ImGui::MenuItem("Create material"))
-                engineContext.GetMaterialContainer().CreateNewMaterial();
+                engineContext.GetMaterialContainer().CreateNewMaterial(engineContext.GetFileSystem());
             ImGui::EndMenu();
         }
 
@@ -440,12 +444,13 @@ namespace Editor
         auto& ecs       = context.GetEngineContext().GetECS();
         auto  entity    = m_SelectedEntity.value();
         auto& hierarchy = ecs.GetComponent<ECS::HierarchyComponent>(entity);
-        auto  name      = hierarchy.m_Name;
-
         if (ImGui::CollapsingHeader("Name", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            if (ImGui::InputText("##name", &name[0], name.capacity() + 1))
-                hierarchy.m_Name = name;
+            char nameBuf[256];
+            strncpy_s(nameBuf, hierarchy.m_Name.c_str(), sizeof(nameBuf) - 1);
+            nameBuf[sizeof(nameBuf) - 1] = '\0';
+            if (ImGui::InputText("##name", nameBuf, sizeof(nameBuf)))
+                hierarchy.m_Name = nameBuf;
         }
     }
 
@@ -488,7 +493,7 @@ namespace Editor
                 if (ImGui::Selectable(meshPaths[i].c_str(), isSelected))
                 {
                     mesh.m_MeshPath = meshPaths[i];
-                    meshSystem->Update(ecs, entity);
+                    meshSystem->Update(ecs, entity, engineContext.GetFileSystem());
                 }
                 if (isSelected)
                     ImGui::SetItemDefaultFocus();
@@ -497,7 +502,7 @@ namespace Editor
         }
 
         if (ImGui::Button("Load mesh"))
-            meshSystem->LoadMesh(ecs, entity);
+            meshSystem->LoadMesh(ecs, entity, engineContext.GetFileSystem());
         if (ImGui::Button("Remove mesh"))
         {
             if (ecs.HasComponent<HedgehogEngine::MeshComponent>(entity))
@@ -557,7 +562,8 @@ namespace Editor
         if (!materials.empty() && render.m_MaterialIndex.has_value())
         {
             if (ImGui::Button("Save material"))
-                engineContext.GetMaterialContainer().SaveMaterial(render.m_MaterialIndex.value());
+                engineContext.GetMaterialContainer().SaveMaterial(
+                    render.m_MaterialIndex.value(), engineContext.GetFileSystem());
         }
 
         if (ImGui::Button("Remove render"))
@@ -665,9 +671,14 @@ namespace Editor
         if (ImGui::Checkbox("Enabled", &enabled))
             component.m_NewEnable = enabled;
 
-        std::string scriptName = component.m_ScriptPath.empty()
-            ? "No script selected" : component.m_ScriptPath;
-        ImGui::InputText("Script", &scriptName[0], scriptName.capacity() + 1);
+        {
+            const std::string& scriptSrc = component.m_ScriptPath.empty()
+                ? "No script selected" : component.m_ScriptPath;
+            char scriptBuf[256];
+            strncpy_s(scriptBuf, scriptSrc.c_str(), sizeof(scriptBuf) - 1);
+            scriptBuf[sizeof(scriptBuf) - 1] = '\0';
+            ImGui::InputText("Script", scriptBuf, sizeof(scriptBuf));
+        }
 
         if (ImGui::Button("Load script"))
             scriptSystem->ChangeScript(entity, ecs, engineContext.GetEventBus());
@@ -737,10 +748,12 @@ namespace Editor
 
             ImGui::Spacing();
             if (ImGui::Button("Save settings"))
-                m_Settings.Save(ContentLoader::GetRootDirectory() + "/" + k_SettingsPath);
+                m_Settings.Save("engine://editor_settings.yaml",
+                                context.GetEngineContext().GetFileSystem());
             ImGui::SameLine();
             if (ImGui::Button("Load settings"))
-                m_Settings.Load("engine://editor_settings.yaml", context.GetEngineContext().GetFileSystem());
+                m_Settings.Load("engine://editor_settings.yaml",
+                                context.GetEngineContext().GetFileSystem());
         }
 
         auto& engineContext = context.GetEngineContext();

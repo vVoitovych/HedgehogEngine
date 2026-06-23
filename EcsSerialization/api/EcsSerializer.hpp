@@ -18,7 +18,9 @@ namespace EcsSerialization
         ECS_SERIALIZATION_API static void Serialize(
             const ComponentSerializerRegistry& registry,
             const ECS::ECS& ecs,
-            const std::string& sceneName, const std::string& filePath);
+            const std::string& sceneName,
+            const std::string& virtualPath,
+            const FS::FileSystemManager& fileSystem);
 
         ECS_SERIALIZATION_API static void Deserialize(
             const ComponentSerializerRegistry& registry,
