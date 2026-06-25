@@ -2,8 +2,6 @@
 
 #include "DialogueWindows/api/PipelineDialogue.hpp"
 
-#include "FileSystem/api/PathUtils.hpp"
-
 #include "Logger/api/Logger.hpp"
 
 #include "imgui.h"
@@ -13,22 +11,6 @@
 #include <algorithm>
 #include <set>
 #include <sstream>
-
-namespace
-{
-    std::string ToEngineVirtualPath(const std::string& absPath)
-    {
-        const std::string root = FS::GetEngineRootDirectory().string();
-        if (absPath.size() > root.size() && absPath.substr(0, root.size()) == root)
-        {
-            std::string rel = absPath.substr(root.size());
-            for (char& c : rel) { if (c == '\\') c = '/'; }
-            if (!rel.empty() && rel.front() == '/') rel = rel.substr(1);
-            return "engine://" + rel;
-        }
-        return {};
-    }
-}
 
 namespace Editor
 {
@@ -156,22 +138,28 @@ void PipelineWindow::SaveAsFile(const FS::FileSystemManager& fileSystem)
     char* path = DialogueWindows::PipelineSaveDialogue();
     if (path != nullptr)
     {
+        const auto virtualPath = fileSystem.ToVirtualPath(path);
+        if (!virtualPath)
+        {
+            LOGERROR("PipelineWindow: '", path, "' is outside all mounted roots and cannot be saved.");
+            return;
+        }
         m_FilePath    = path;
-        m_VirtualPath = ToEngineVirtualPath(path);
+        m_VirtualPath = *virtualPath;
         SaveToPath(m_VirtualPath, fileSystem);
     }
 }
 
 bool PipelineWindow::LoadFromPath(const std::string& path, const FS::FileSystemManager& fileSystem)
 {
-    const std::string virtualPath = ToEngineVirtualPath(path);
-    if (virtualPath.empty())
+    const auto virtualPath = fileSystem.ToVirtualPath(path);
+    if (!virtualPath)
     {
-        LOGERROR("PipelineWindow: '", path, "' is outside the engine root and cannot be opened.");
+        LOGERROR("PipelineWindow: '", path, "' is outside all mounted roots and cannot be opened.");
         return false;
     }
 
-    const auto text = fileSystem.ReadTextFile(virtualPath);
+    const auto text = fileSystem.ReadTextFile(*virtualPath);
     if (!text)
         return false;
 
@@ -224,7 +212,7 @@ bool PipelineWindow::LoadFromPath(const std::string& path, const FS::FileSystemM
     }
 
     m_FilePath    = path;
-    m_VirtualPath = virtualPath;
+    m_VirtualPath = *virtualPath;
     m_Dirty       = false;
     return true;
 }
