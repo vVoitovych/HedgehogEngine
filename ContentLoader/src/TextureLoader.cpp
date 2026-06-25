@@ -55,7 +55,7 @@ namespace ContentLoader
         return m_Channels;
     }
 
-    void* TextureLoader::GetData() const
+    const void* TextureLoader::GetData() const
     {
         return m_Data;
     }

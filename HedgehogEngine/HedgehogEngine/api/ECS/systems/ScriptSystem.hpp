@@ -25,8 +25,8 @@ namespace HedgehogEngine
                                             const FS::FileSystemManager& fileSystem);
 
     private:
-        void CallOnEnable(ECS::ECS& ecs);
+        void CallOnEnable(ECS::ECS& ecs, EventBus& bus);
         void CallUpdate(ECS::ECS& ecs, float dt, EventBus& bus);
-        void CallOnDisable(ECS::ECS& ecs);
+        void CallOnDisable(ECS::ECS& ecs, EventBus& bus);
     };
 }

@@ -14,7 +14,8 @@ namespace FS
     {
 #ifdef _WIN32
         char buffer[MAX_PATH];
-        GetModuleFileNameA(nullptr, buffer, MAX_PATH);
+        const DWORD len = GetModuleFileNameA(nullptr, buffer, MAX_PATH);
+        assert(len > 0 && len < MAX_PATH && "GetModuleFileNameA failed or path truncated");
         return std::filesystem::path(buffer).parent_path();
 #else
         assert(false && "GetExecutableDirectory is not implemented on this platform.");

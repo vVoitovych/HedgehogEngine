@@ -149,7 +149,6 @@ namespace HedgehogEngine
         m_ComponentRegistry->RegisterReflected<LightComponent>("LightComponent");
 
         // ScriptComponent: RegisterCustom to handle m_Params and InitScript
-        ScriptSystem* scriptSys = m_ScriptSystem.get();
         m_ComponentRegistry->RegisterCustom("ScriptComponent",
             [](YAML::Emitter& out, const ECS::ECS& ecs, ECS::Entity e)
             {
@@ -180,7 +179,7 @@ namespace HedgehogEngine
                 }
                 out << YAML::EndMap;
             },
-            [scriptSys, this](ECS::ECS& ecs, ECS::Entity e, const YAML::Node& node)
+            [scriptSystem = m_ScriptSystem, this](ECS::ECS& ecs, ECS::Entity e, const YAML::Node& node)
             {
                 EcsSerialization::ComponentSerializerRegistry::DeserializeWithVisit<ScriptComponent>(ecs, e, node);
                 ScriptComponent& script = ecs.GetComponent<ScriptComponent>(e);
@@ -202,7 +201,7 @@ namespace HedgehogEngine
                         script.m_Params[paramName] = { type, value, false };
                     }
                 }
-                scriptSys->InitScript(e, ecs, m_EventBus, m_FileSystem);
+                scriptSystem->InitScript(e, ecs, m_EventBus, m_FileSystem);
             },
             [](const ECS::ECS& ecs, ECS::Entity e) { return ecs.HasComponent<ScriptComponent>(e); }
         );
@@ -326,19 +325,22 @@ namespace HedgehogEngine
     {
         assert(entity != m_ECS.GetRoot() && "Cannot delete the root entity.");
 
-        auto& hierarchy       = m_ECS.GetComponent<ECS::HierarchyComponent>(entity);
-        auto& parentHierarchy = m_ECS.GetComponent<ECS::HierarchyComponent>(hierarchy.m_Parent);
+        auto& hierarchy                  = m_ECS.GetComponent<ECS::HierarchyComponent>(entity);
+        const ECS::Entity parentEntity   = hierarchy.m_Parent;
+        const auto        childrenToReparent = hierarchy.m_Children;
+        auto& parentHierarchy            = m_ECS.GetComponent<ECS::HierarchyComponent>(parentEntity);
 
         auto it = std::find(parentHierarchy.m_Children.begin(),
                              parentHierarchy.m_Children.end(), entity);
         if (it != parentHierarchy.m_Children.end())
         {
             parentHierarchy.m_Children.erase(it);
-            for (ECS::Entity child : hierarchy.m_Children)
+            for (ECS::Entity child : childrenToReparent)
             {
                 auto& childHierarchy    = m_ECS.GetComponent<ECS::HierarchyComponent>(child);
-                childHierarchy.m_Parent = hierarchy.m_Parent;
-                parentHierarchy.m_Children.push_back(child);
+                childHierarchy.m_Parent = parentEntity;
+                auto& freshParentHierarchy = m_ECS.GetComponent<ECS::HierarchyComponent>(parentEntity);
+                freshParentHierarchy.m_Children.push_back(child);
             }
         }
         m_ECS.DestroyEntity(entity);

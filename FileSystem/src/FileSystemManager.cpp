@@ -3,6 +3,8 @@
 
 #include "Logger/api/Logger.hpp"
 
+#include <algorithm>
+
 namespace FS
 {
     bool FileSystemManager::Register(std::unique_ptr<FileSystem> fileSystem)
@@ -135,8 +137,8 @@ namespace FS
         }
         catch (const std::filesystem::filesystem_error&)
         {
-            // If the path does not exist, use weakly_canonical so we can still match
-            // against registered mounts (e.g. a path that is about to be created).
+            // weakly_canonical is best-effort for paths about to be created; paths containing
+            // unresolved '..' may escape the mount root and fail the prefix match below.
             canonical = std::filesystem::weakly_canonical(absolutePath);
         }
 
@@ -144,20 +146,14 @@ namespace FS
         {
             for (const auto& [alias, physicalRoot] : fs->GetMountPoints())
             {
-                // Check whether canonical begins with physicalRoot.
-                const std::string rootStr = physicalRoot.string();
-                const std::string pathStr = canonical.string();
-                if (pathStr.size() > rootStr.size() &&
-                    pathStr.substr(0, rootStr.size()) == rootStr &&
-                    (pathStr[rootStr.size()] == '/' || pathStr[rootStr.size()] == '\\'))
+                const std::filesystem::path candidatePath = canonical;
+                auto [pathIt, rootIt] = std::mismatch(
+                    physicalRoot.begin(), physicalRoot.end(),
+                    candidatePath.begin(), candidatePath.end());
+                if (rootIt == physicalRoot.end())
                 {
-                    std::string rel = pathStr.substr(rootStr.size() + 1);
-                    // Normalize separators to forward slashes.
-                    for (char& c : rel)
-                    {
-                        if (c == '\\') c = '/';
-                    }
-                    return alias + rel;
+                    const std::filesystem::path rel = candidatePath.lexically_relative(physicalRoot);
+                    return alias + rel.generic_string();
                 }
             }
         }

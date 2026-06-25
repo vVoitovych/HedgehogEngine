@@ -114,9 +114,9 @@ namespace
 
     void ScriptSystem::Update(ECS::ECS& ecs, float dt, EventBus& bus)
     {
-        CallOnEnable(ecs);
+        CallOnEnable(ecs, bus);
         CallUpdate(ecs, dt, bus);
-        CallOnDisable(ecs);
+        CallOnDisable(ecs, bus);
     }
 
     void ScriptSystem::ClearScriptComponent(ECS::Entity entity, ECS::ECS& ecs)
@@ -152,8 +152,8 @@ namespace
         }
 
         // Strip "assets://" prefix; m_ScriptPath stores the relative path.
-        constexpr std::string_view k_AssetsPrefix = "assets://";
-        component.m_ScriptPath = virtualPath->substr(k_AssetsPrefix.size());
+        constexpr std::string_view ASSETS_PREFIX = "assets://";
+        component.m_ScriptPath = virtualPath->substr(ASSETS_PREFIX.size());
         component.m_LuaState   = luaL_newstate();
         luaL_openlibs(component.m_LuaState);
 
@@ -194,7 +194,15 @@ namespace
         lua_getglobal(component.m_LuaState, className.c_str());
         lua_getfield(component.m_LuaState, -1, "new");
         lua_pushvalue(component.m_LuaState, -2);
-        lua_call(component.m_LuaState, 1, 1);
+        if (lua_pcall(component.m_LuaState, 1, 1, 0) != LUA_OK)
+        {
+            LOGERROR("[Lua Error] ", lua_tostring(component.m_LuaState, -1));
+            lua_pop(component.m_LuaState, 1);
+            lua_close(component.m_LuaState);
+            component.m_LuaState   = nullptr;
+            component.m_ScriptPath = "";
+            return;
+        }
         component.m_InstanceRef = luaL_ref(component.m_LuaState, LUA_REGISTRYINDEX);
 
         component.m_Params.clear();
@@ -267,7 +275,15 @@ namespace
         lua_getglobal(component.m_LuaState, className.c_str());
         lua_getfield(component.m_LuaState, -1, "new");
         lua_pushvalue(component.m_LuaState, -2);
-        lua_call(component.m_LuaState, 1, 1);
+        if (lua_pcall(component.m_LuaState, 1, 1, 0) != LUA_OK)
+        {
+            LOGERROR("[Lua Error] ", lua_tostring(component.m_LuaState, -1));
+            lua_pop(component.m_LuaState, 1);
+            lua_close(component.m_LuaState);
+            component.m_LuaState   = nullptr;
+            component.m_ScriptPath = "";
+            return;
+        }
         component.m_InstanceRef = luaL_ref(component.m_LuaState, LUA_REGISTRYINDEX);
 
         for (const auto& param : component.m_Params)
@@ -286,7 +302,7 @@ namespace
         }
     }
 
-    void ScriptSystem::CallOnEnable(ECS::ECS& ecs)
+    void ScriptSystem::CallOnEnable(ECS::ECS& ecs, EventBus& bus)
     {
         for (auto const& entity : m_Entities)
         {
@@ -294,13 +310,20 @@ namespace
             if (component.m_NewEnable.has_value() && component.m_NewEnable.value())
             {
                 component.m_Enable = true;
+                if (component.m_LuaState == nullptr)
+                {
+                    component.m_NewEnable.reset();
+                    continue;
+                }
                 component.m_NewEnable.reset();
+                auto& transform = ecs.GetComponent<TransformComponent>(entity);
+                RegisterLuaBindings(component.m_LuaState, &transform, entity, bus);
                 CallMethod(component.m_LuaState, component.m_InstanceRef, "OnEnable");
             }
         }
     }
 
-    void ScriptSystem::CallOnDisable(ECS::ECS& ecs)
+    void ScriptSystem::CallOnDisable(ECS::ECS& ecs, EventBus& bus)
     {
         for (auto const& entity : m_Entities)
         {
@@ -308,7 +331,14 @@ namespace
             if (component.m_NewEnable.has_value() && !component.m_NewEnable.value())
             {
                 component.m_Enable = false;
+                if (component.m_LuaState == nullptr)
+                {
+                    component.m_NewEnable.reset();
+                    continue;
+                }
                 component.m_NewEnable.reset();
+                auto& transform = ecs.GetComponent<TransformComponent>(entity);
+                RegisterLuaBindings(component.m_LuaState, &transform, entity, bus);
                 CallMethod(component.m_LuaState, component.m_InstanceRef, "OnDisable");
             }
         }

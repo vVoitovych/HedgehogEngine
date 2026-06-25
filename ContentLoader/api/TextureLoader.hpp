@@ -26,7 +26,7 @@ namespace ContentLoader
         CONTENT_LOADER_API int GetHeight()  const;
         CONTENT_LOADER_API int GetChannels() const;
 
-        CONTENT_LOADER_API void* GetData() const;
+        CONTENT_LOADER_API const void* GetData() const;
 
     private:
         int   m_Width;
