@@ -1,5 +1,7 @@
 #pragma once
 
+#include "FileSystem/api/FileSystemManager.hpp"
+
 #include <string>
 #include <vector>
 
@@ -11,7 +13,7 @@ class PipelineWindow
 public:
     bool m_Open = false;
 
-    void Draw();
+    void Draw(const FS::FileSystemManager& fileSystem);
 
 private:
     struct BindingState
@@ -39,7 +41,7 @@ private:
     };
 
     // ── Sub-sections ──────────────────────────────────────────────────────────
-    void DrawFileControls();
+    void DrawFileControls(const FS::FileSystemManager& fileSystem);
     void DrawDescriptorSets();
     void DrawPushConstants();
     void DrawValidation();
@@ -51,11 +53,11 @@ private:
 
     // ── File I/O ──────────────────────────────────────────────────────────────
     void NewFile();
-    void OpenFile();
-    void SaveFile();
-    void SaveAsFile();
-    bool LoadFromPath(const std::string& path);
-    bool SaveToPath(const std::string& path);
+    void OpenFile(const FS::FileSystemManager& fileSystem);
+    void SaveFile(const FS::FileSystemManager& fileSystem);
+    void SaveAsFile(const FS::FileSystemManager& fileSystem);
+    bool LoadFromPath(const std::string& path, const FS::FileSystemManager& fileSystem);
+    bool SaveToPath(const std::string& virtualPath, const FS::FileSystemManager& fileSystem);
 
     // ── Stage string helpers ──────────────────────────────────────────────────
     static void        ParseStageString(const std::string& s, bool& v, bool& f, bool& c);
@@ -67,7 +69,8 @@ private:
     static const char* IndexToTypeDisplay(int idx);
 
     // ── State ─────────────────────────────────────────────────────────────────
-    std::string                    m_FilePath;
+    std::string                    m_FilePath;     // absolute OS path — used for writing
+    std::string                    m_VirtualPath;  // engine:// path — used for display
     bool                           m_Dirty = false;
     std::vector<SetState>          m_Sets;
     std::vector<PushConstantState> m_PushConstants;

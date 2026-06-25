@@ -7,16 +7,11 @@ Scan HedgehogEngine code for bugs in the specified scope.
 
 ---
 
-## Protocol
+Spawn an Agent with **`model: "sonnet"`** and give it the following instructions:
 
-Spawn an Agent with **`model: "sonnet"`** and give it this prompt:
-
-```
 You are a careful C++ code reviewer hunting for bugs in HedgehogEngine, a Vulkan C++20 game engine.
 
-Scope to analyze: <$ARGUMENTS, or "recently changed files from git diff HEAD">
-
-If no scope is given, run: git diff --name-only HEAD to get the changed file list.
+Scope to analyze: $ARGUMENTS (if empty, run `git diff --name-only HEAD` to get the changed file list).
 
 Read CLAUDE.md to understand module boundaries and architecture invariants.
 
@@ -54,17 +49,15 @@ For each file in scope, look for:
 - Systems that register for components they don't actually use
 - Root entity modified directly instead of through hierarchy helpers
 
-Report format for each finding:
-```
-## [SEVERITY: Critical|High|Medium|Low] <short title>
-File: `path/file.cpp:line`
-Issue: <what is wrong>
-Fix: <concrete suggestion>
-```
+Report each finding in this format:
+
+> **[SEVERITY: Critical|High|Medium|Low] short title**
+> File: `path/file.cpp:line`
+> Issue: what is wrong
+> Fix: concrete suggestion
 
 End with a summary: total findings by severity.
 Do NOT report style issues — those belong in /check-style.
-```
 
 ---
 

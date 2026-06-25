@@ -1,6 +1,9 @@
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogEngine/api/WindowContext.hpp"
 
+#include "FileSystem/api/FileSystem.hpp"
+#include "FileSystem/api/PathUtils.hpp"
+
 #include "HedgehogEngine/api/Containers/MeshContainer.hpp"
 #include "HedgehogEngine/api/Containers/TextureContainer.hpp"
 #include "HedgehogEngine/api/Containers/LightContainer.hpp"
@@ -32,6 +35,8 @@
 
 #include "HedgehogEngine/src/Frame/FrameDataBuilder.hpp"
 
+#include "Logger/api/Logger.hpp"
+
 #include <algorithm>
 #include <cassert>
 #include <filesystem>
@@ -42,11 +47,13 @@ namespace HedgehogEngine
     EngineContext::EngineContext()
         : m_SceneName("Default")
     {
+        InitFileSystem();
+
         m_Camera = std::make_unique<Camera>();
         InitECS();
 
         m_MeshContainer = std::make_unique<MeshContainer>();
-        m_MeshContainer->Update(*m_MeshSystem);
+        m_MeshContainer->Update(*m_MeshSystem, m_FileSystem);
 
         m_TextureContainer  = std::make_unique<TextureContainer>();
         m_LightContainer    = std::make_unique<LightContainer>();
@@ -59,6 +66,25 @@ namespace HedgehogEngine
 
     EngineContext::~EngineContext()
     {
+    }
+
+    void EngineContext::InitFileSystem()
+    {
+        auto fileSystem = std::make_unique<FS::FileSystem>();
+        const std::filesystem::path root = FS::GetEngineRootDirectory();
+
+        const bool okEngine  = fileSystem->RegisterPath("engine://",  root);
+        const bool okAssets  = fileSystem->RegisterPath("assets://",  root / "Assets");
+        const bool okShaders = fileSystem->RegisterPath("shaders://",
+            root / "HedgehogEngine" / "HedgehogRenderer" / "assets" / "Shaders");
+
+        if (!okEngine || !okAssets || !okShaders)
+            LOGERROR("EngineContext::InitFileSystem: one or more mount points failed to register — file I/O will be broken.");
+        assert(okEngine  && "engine:// mount failed");
+        assert(okAssets  && "assets:// mount failed");
+        assert(okShaders && "shaders:// mount failed");
+
+        m_FileSystem.Register(std::move(fileSystem));
     }
 
     void EngineContext::InitECS()
@@ -123,7 +149,6 @@ namespace HedgehogEngine
         m_ComponentRegistry->RegisterReflected<LightComponent>("LightComponent");
 
         // ScriptComponent: RegisterCustom to handle m_Params and InitScript
-        ScriptSystem* scriptSys = m_ScriptSystem.get();
         m_ComponentRegistry->RegisterCustom("ScriptComponent",
             [](YAML::Emitter& out, const ECS::ECS& ecs, ECS::Entity e)
             {
@@ -154,7 +179,7 @@ namespace HedgehogEngine
                 }
                 out << YAML::EndMap;
             },
-            [scriptSys, this](ECS::ECS& ecs, ECS::Entity e, const YAML::Node& node)
+            [scriptSystem = m_ScriptSystem, this](ECS::ECS& ecs, ECS::Entity e, const YAML::Node& node)
             {
                 EcsSerialization::ComponentSerializerRegistry::DeserializeWithVisit<ScriptComponent>(ecs, e, node);
                 ScriptComponent& script = ecs.GetComponent<ScriptComponent>(e);
@@ -176,7 +201,7 @@ namespace HedgehogEngine
                         script.m_Params[paramName] = { type, value, false };
                     }
                 }
-                scriptSys->InitScript(e, ecs, m_EventBus);
+                scriptSystem->InitScript(e, ecs, m_EventBus, m_FileSystem);
             },
             [](const ECS::ECS& ecs, ECS::Entity e) { return ecs.HasComponent<ScriptComponent>(e); }
         );
@@ -193,8 +218,8 @@ namespace HedgehogEngine
         m_LightSystem->Update(m_ECS);
 
         m_LightContainer->UpdateLights(m_ECS, *m_LightSystem);
-        m_MaterialContainer->Update(*m_RenderSystem);
-        m_MeshContainer->Update(*m_MeshSystem);
+        m_MaterialContainer->Update(*m_RenderSystem, m_FileSystem);
+        m_MeshContainer->Update(*m_MeshSystem, m_FileSystem);
 
         auto materialTypeLookup = [this](uint64_t index) -> MaterialType
         {
@@ -217,6 +242,8 @@ namespace HedgehogEngine
 
     const FrameData& EngineContext::GetFrameData() const { return m_FrameData; }
 
+    const FS::FileSystemManager& EngineContext::GetFileSystem() const { return m_FileSystem; }
+
     EventBus& EngineContext::GetEventBus() { return m_EventBus; }
 
     HedgehogSettings::Settings& EngineContext::GetSettings()             { return *m_Settings; }
@@ -237,11 +264,19 @@ namespace HedgehogEngine
 
     void EngineContext::LoadScene(const std::string& filePath)
     {
+        const auto virtualPath = m_FileSystem.ToVirtualPath(filePath);
+        if (!virtualPath)
+        {
+            LOGERROR("EngineContext::LoadScene: path is not under any registered mount (path: ", filePath, ")");
+            return;
+        }
+
         DeleteGameObjectAndChildren(m_ECS.GetRoot());
-        EcsSerialization::EcsSerializer::Deserialize(*m_ComponentRegistry, m_ECS, m_SceneName, filePath);
+        EcsSerialization::EcsSerializer::Deserialize(*m_ComponentRegistry, m_ECS, m_SceneName,
+                                                      *virtualPath, m_FileSystem);
         for (auto entity : m_TransformSystem->GetEntities())
             m_EventBus.Publish(TransformChangedEvent{ entity });
-        m_MeshSystem->Update(m_ECS);
+        m_MeshSystem->Update(m_ECS, m_FileSystem);
         m_RenderSystem->UpdateSystem(m_ECS);
     }
 
@@ -249,14 +284,23 @@ namespace HedgehogEngine
     {
         const std::string sceneName = std::filesystem::path(filePath).stem().string();
         m_SceneName = sceneName;
-        EcsSerialization::EcsSerializer::Serialize(*m_ComponentRegistry, m_ECS, m_SceneName, filePath);
+
+        const auto virtualPath = m_FileSystem.ToVirtualPath(filePath);
+        if (!virtualPath)
+        {
+            LOGERROR("EngineContext::SaveScene: path is not under any registered mount (path: ", filePath, ")");
+            return;
+        }
+        EcsSerialization::EcsSerializer::Serialize(
+            *m_ComponentRegistry, m_ECS, m_SceneName, *virtualPath, m_FileSystem);
     }
 
     void EngineContext::ResetScene()
     {
         DeleteGameObjectAndChildren(m_ECS.GetRoot());
         CreateSceneRoot();
-        m_SceneName = "Default";
+        m_SceneName        = "Default";
+        m_GameObjectIndex  = 0;
     }
 
     void EngineContext::SetSceneName(const std::string& name)
@@ -268,11 +312,10 @@ namespace HedgehogEngine
     {
         ECS::Entity realParent = parent.value_or(m_ECS.GetRoot());
 
-        auto& parentHierarchy = m_ECS.GetComponent<ECS::HierarchyComponent>(realParent);
-        ECS::Entity entity    = m_ECS.CreateEntity();
+        ECS::Entity entity = m_ECS.CreateEntity();
         m_ECS.AddComponent(entity, TransformComponent{});
         m_ECS.AddComponent(entity, ECS::HierarchyComponent{ GetUniqueGameObjectName(), realParent, {} });
-        parentHierarchy.m_Children.push_back(entity);
+        m_ECS.GetComponent<ECS::HierarchyComponent>(realParent).m_Children.push_back(entity);
 
         m_EventBus.Publish(TransformChangedEvent{ entity });
         return entity;
@@ -282,19 +325,22 @@ namespace HedgehogEngine
     {
         assert(entity != m_ECS.GetRoot() && "Cannot delete the root entity.");
 
-        auto& hierarchy       = m_ECS.GetComponent<ECS::HierarchyComponent>(entity);
-        auto& parentHierarchy = m_ECS.GetComponent<ECS::HierarchyComponent>(hierarchy.m_Parent);
+        auto& hierarchy                  = m_ECS.GetComponent<ECS::HierarchyComponent>(entity);
+        const ECS::Entity parentEntity   = hierarchy.m_Parent;
+        const auto        childrenToReparent = hierarchy.m_Children;
+        auto& parentHierarchy            = m_ECS.GetComponent<ECS::HierarchyComponent>(parentEntity);
 
         auto it = std::find(parentHierarchy.m_Children.begin(),
                              parentHierarchy.m_Children.end(), entity);
         if (it != parentHierarchy.m_Children.end())
         {
             parentHierarchy.m_Children.erase(it);
-            for (ECS::Entity child : hierarchy.m_Children)
+            for (ECS::Entity child : childrenToReparent)
             {
                 auto& childHierarchy    = m_ECS.GetComponent<ECS::HierarchyComponent>(child);
-                childHierarchy.m_Parent = hierarchy.m_Parent;
-                parentHierarchy.m_Children.push_back(child);
+                childHierarchy.m_Parent = parentEntity;
+                auto& freshParentHierarchy = m_ECS.GetComponent<ECS::HierarchyComponent>(parentEntity);
+                freshParentHierarchy.m_Children.push_back(child);
             }
         }
         m_ECS.DestroyEntity(entity);
@@ -311,17 +357,16 @@ namespace HedgehogEngine
 
     void EngineContext::DeleteGameObjectAndChildren(ECS::Entity entity)
     {
-        auto& hierarchy = m_ECS.GetComponent<ECS::HierarchyComponent>(entity);
-        for (ECS::Entity child : hierarchy.m_Children)
+        const auto children = m_ECS.GetComponent<ECS::HierarchyComponent>(entity).m_Children;
+        for (ECS::Entity child : children)
             DeleteGameObjectAndChildren(child);
         m_ECS.DestroyEntity(entity);
     }
 
     std::string EngineContext::GetUniqueGameObjectName()
     {
-        static size_t s_Index = 0;
         std::ostringstream ss;
-        ss << "GameObject_" << s_Index++;
+        ss << "GameObject_" << m_GameObjectIndex++;
         return ss.str();
     }
 

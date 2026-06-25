@@ -1,6 +1,8 @@
 #include "DepthPrePass.hpp"
 #include "DepthPrePassPushConstants.hpp"
 
+#include "FileSystem/api/FileSystemManager.hpp"
+
 #include "HedgehogEngine/api/Frame/FrameData.hpp"
 
 #include "ResourceManager/ResourceManager.hpp"
@@ -26,10 +28,12 @@
 namespace Renderer
 {
 
-    DepthPrePass::DepthPrePass(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
+    DepthPrePass::DepthPrePass(RHI::IRHIDevice& device, const ResourceManager& resourceManager,
+                                const FS::FileSystemManager& fileSystem)
     {
         const auto sd = ShaderLoader::Load(device,
-            "/HedgehogEngine/HedgehogRenderer/assets/Shaders/DepthPrepass.shader");
+            "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/DepthPrepass.shader",
+            fileSystem);
         assert(!sd.m_Layout.m_DescriptorSets.empty());
 
         m_FrameLayout = device.CreateDescriptorSetLayout(sd.m_Layout.m_DescriptorSets[0]);

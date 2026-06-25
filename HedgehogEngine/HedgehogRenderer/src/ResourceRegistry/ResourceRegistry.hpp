@@ -3,6 +3,7 @@
 #include "MeshGpuData.hpp"
 #include "MaterialGpuData.hpp"
 
+#include "FileSystem/api/FileSystemManager.hpp"
 #include "RHI/api/RHITypes.hpp"
 
 #include <cstdint>
@@ -51,7 +52,8 @@ namespace HR
         void SyncMeshes(const HedgehogEngine::MeshContainer& container, RHI::IRHIDevice& device);
         void SyncMaterials(HedgehogEngine::MaterialContainer& container,
                            HedgehogEngine::TextureContainer&  texContainer,
-                           RHI::IRHIDevice&                   device);
+                           RHI::IRHIDevice&                   device,
+                           const FS::FileSystemManager&       fileSystem);
 
         const RHI::IRHIBuffer& GetPositionsBuffer() const;
         const RHI::IRHIBuffer& GetTexCoordsBuffer() const;
@@ -64,11 +66,13 @@ namespace HR
         void Cleanup(RHI::IRHIDevice& device);
 
     private:
-        RHI::IRHITexture& GetOrCreateTexture(const std::string& path, RHI::IRHIDevice& device);
+        RHI::IRHITexture& GetOrCreateTexture(const std::string& path, RHI::IRHIDevice& device,
+                                              const FS::FileSystemManager& fileSystem);
 
-        void CreateMaterialGpu(float transparency, const std::string& texturePath, RHI::IRHIDevice& device);
+        void CreateMaterialGpu(float transparency, const std::string& texturePath,
+                                RHI::IRHIDevice& device, const FS::FileSystemManager& fileSystem);
         void UpdateMaterialGpu(uint32_t index, float transparency, const std::string& texturePath,
-                               RHI::IRHIDevice& device);
+                               RHI::IRHIDevice& device, const FS::FileSystemManager& fileSystem);
 
         void FlushMeshUploads(RHI::IRHIDevice& device);
 

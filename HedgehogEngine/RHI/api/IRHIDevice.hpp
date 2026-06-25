@@ -13,6 +13,8 @@
 #include "IRHISwapchain.hpp"
 #include "IRHISyncPrimitive.hpp"
 
+#include "FileSystem/api/FileSystemManager.hpp"
+
 #include <functional>
 #include <memory>
 #include <string>
@@ -54,8 +56,9 @@ public:
     virtual std::unique_ptr<IRHISampler> CreateSampler(const SamplerDesc& desc) const = 0;
 
     virtual std::unique_ptr<IRHIShader>  CreateShader(
-        const std::string& filePath,
-        ShaderStage        stage) const = 0;
+        const std::string&           virtualPath,
+        ShaderStage                  stage,
+        const FS::FileSystemManager& fileSystem) const = 0;
 
     // ── Descriptor resources ─────────────────────────────────────────────────
 

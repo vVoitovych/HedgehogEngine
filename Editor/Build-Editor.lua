@@ -25,7 +25,8 @@ project "Editor"
       "Logger",
       "yaml-cpp",
       "ECS",
-      "DialogueWindows"
+      "DialogueWindows",
+      "FileSystem"
    }
 
    targetdir ("../Binaries/" .. OutputDir .. "/%{prj.name}")

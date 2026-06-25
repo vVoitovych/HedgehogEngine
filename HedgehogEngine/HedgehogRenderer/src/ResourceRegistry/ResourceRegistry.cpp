@@ -53,10 +53,10 @@ namespace HR
         for (size_t i = m_RegisteredMeshCount; i < totalMeshes; ++i)
         {
             const auto& mesh     = container.GetMesh(i);
-            const auto positions = mesh.GetPositions();
-            const auto texCoords = mesh.GetTexCoords();
-            const auto normals   = mesh.GetNormals();
-            const auto indices   = mesh.GetIndices();
+            const auto& positions = mesh.GetPositions();
+            const auto& texCoords = mesh.GetTexCoords();
+            const auto& normals   = mesh.GetNormals();
+            const auto& indices   = mesh.GetIndices();
 
             MeshGeometryInfo geom;
             geom.m_FirstIndex   = mesh.GetFirstIndex();
@@ -92,7 +92,8 @@ namespace HR
 
     void ResourceRegistry::SyncMaterials(HedgehogEngine::MaterialContainer& container,
                                           HedgehogEngine::TextureContainer&  texContainer,
-                                          RHI::IRHIDevice&                   device)
+                                          RHI::IRHIDevice&                   device,
+                                          const FS::FileSystemManager&       fileSystem)
     {
         assert(m_MaterialLayout && "SetMaterialLayout must be called before SyncMaterials");
 
@@ -104,7 +105,8 @@ namespace HR
             if (!mat.isDirty)
                 continue;
 
-            UpdateMaterialGpu(static_cast<uint32_t>(i), mat.transparency, mat.baseColor, device);
+            UpdateMaterialGpu(static_cast<uint32_t>(i), mat.transparency, mat.baseColor,
+                              device, fileSystem);
             texContainer.RegisterTexturePath(mat.baseColor);
             mat.isDirty = false;
         }
@@ -112,7 +114,7 @@ namespace HR
         for (size_t i = m_RegisteredMaterialCount; i < total; ++i)
         {
             auto& mat = container.GetMaterialDataByIndex(i);
-            CreateMaterialGpu(mat.transparency, mat.baseColor, device);
+            CreateMaterialGpu(mat.transparency, mat.baseColor, device, fileSystem);
             texContainer.RegisterTexturePath(mat.baseColor);
             mat.isDirty = false;
         }
@@ -146,14 +148,16 @@ namespace HR
         m_MeshDataDirty = false;
     }
 
-    RHI::IRHITexture& ResourceRegistry::GetOrCreateTexture(const std::string& path, RHI::IRHIDevice& device)
+    RHI::IRHITexture& ResourceRegistry::GetOrCreateTexture(const std::string& path,
+                                                             RHI::IRHIDevice& device,
+                                                             const FS::FileSystemManager& fileSystem)
     {
         auto it = m_TextureCache.find(path);
         if (it != m_TextureCache.end())
             return *it->second;
 
         ContentLoader::TextureLoader loader;
-        loader.LoadTexture(path);
+        loader.LoadTexture(path, fileSystem);
         const uint32_t texW    = static_cast<uint32_t>(loader.GetWidth());
         const uint32_t texH    = static_cast<uint32_t>(loader.GetHeight());
         const size_t   imgSize = texW * texH * 4;
@@ -180,14 +184,15 @@ namespace HR
     }
 
     void ResourceRegistry::CreateMaterialGpu(float transparency, const std::string& texturePath,
-                                              RHI::IRHIDevice& device)
+                                              RHI::IRHIDevice& device,
+                                              const FS::FileSystemManager& fileSystem)
     {
         MaterialUniform uniform{ transparency };
         auto ubo = device.CreateBuffer(sizeof(MaterialUniform), RHI::BufferUsage::UniformBuffer,
                                        RHI::MemoryUsage::CpuToGpu);
         ubo->CopyData(&uniform, sizeof(uniform));
 
-        auto& texture = GetOrCreateTexture(texturePath, device);
+        auto& texture = GetOrCreateTexture(texturePath, device, fileSystem);
 
         auto set = device.AllocateDescriptorSet(*m_MaterialPool, *m_MaterialLayout);
         set->WriteUniformBuffer(0, *ubo);
@@ -201,12 +206,13 @@ namespace HR
     }
 
     void ResourceRegistry::UpdateMaterialGpu(uint32_t index, float transparency,
-                                              const std::string& texturePath, RHI::IRHIDevice& device)
+                                              const std::string& texturePath, RHI::IRHIDevice& device,
+                                              const FS::FileSystemManager& fileSystem)
     {
         MaterialUniform uniform{ transparency };
         m_Materials[index].m_UniformBuffer->CopyData(&uniform, sizeof(uniform));
 
-        auto& texture = GetOrCreateTexture(texturePath, device);
+        auto& texture = GetOrCreateTexture(texturePath, device, fileSystem);
         m_Materials[index].m_DescriptorSet->WriteUniformBuffer(0, *m_Materials[index].m_UniformBuffer);
         m_Materials[index].m_DescriptorSet->WriteTexture(1, texture, *m_LinearSampler);
         m_Materials[index].m_DescriptorSet->Flush();

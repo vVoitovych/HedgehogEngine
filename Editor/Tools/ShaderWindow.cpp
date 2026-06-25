@@ -4,6 +4,8 @@
 #include "DialogueWindows/api/PipelineDialogue.hpp"
 #include "DialogueWindows/api/VertexDescDialogue.hpp"
 
+#include "Logger/api/Logger.hpp"
+
 #include "imgui.h"
 
 #include <yaml-cpp/yaml.h>
@@ -11,7 +13,6 @@
 #include <algorithm>
 #include <cstring>
 #include <filesystem>
-#include <fstream>
 #include <set>
 
 namespace Editor
@@ -115,6 +116,7 @@ bool ShaderWindow::HasDuplicateStage(const std::string& stage, int skipRow) cons
 void ShaderWindow::NewFile()
 {
     m_FilePath.clear();
+    m_VirtualPath.clear();
     m_PipelineLayout.clear();
     m_VertexDescription.clear();
     m_Stages.clear();
@@ -132,35 +134,53 @@ void ShaderWindow::NewFile()
     m_Dirty = false;
 }
 
-void ShaderWindow::OpenFile()
+void ShaderWindow::OpenFile(const FS::FileSystemManager& fileSystem)
 {
     char* path = DialogueWindows::ShaderOpenDialogue();
     if (path != nullptr)
-        LoadFromPath(path);
+        LoadFromPath(path, fileSystem);
 }
 
-void ShaderWindow::SaveFile()
+void ShaderWindow::SaveFile(const FS::FileSystemManager& fileSystem)
 {
-    if (m_FilePath.empty())
-        SaveAsFile();
+    if (m_VirtualPath.empty())
+        SaveAsFile(fileSystem);
     else
-        SaveToPath(m_FilePath);
+        SaveToPath(m_VirtualPath, fileSystem);
 }
 
-void ShaderWindow::SaveAsFile()
+void ShaderWindow::SaveAsFile(const FS::FileSystemManager& fileSystem)
 {
     char* path = DialogueWindows::ShaderSaveDialogue();
     if (path != nullptr)
     {
-        m_FilePath = path;
-        SaveToPath(m_FilePath);
+        const auto virtualPath = fileSystem.ToVirtualPath(path);
+        if (!virtualPath)
+        {
+            LOGERROR("ShaderWindow: '", path, "' is outside all mounted roots and cannot be saved.");
+            return;
+        }
+        m_FilePath    = path;
+        m_VirtualPath = *virtualPath;
+        SaveToPath(m_VirtualPath, fileSystem);
     }
 }
 
-bool ShaderWindow::LoadFromPath(const std::string& path)
+bool ShaderWindow::LoadFromPath(const std::string& path, const FS::FileSystemManager& fileSystem)
 {
+    const auto virtualPath = fileSystem.ToVirtualPath(path);
+    if (!virtualPath)
+    {
+        LOGERROR("ShaderWindow: '", path, "' is outside all mounted roots and cannot be opened.");
+        return false;
+    }
+
+    const auto text = fileSystem.ReadTextFile(*virtualPath);
+    if (!text)
+        return false;
+
     YAML::Node root;
-    try { root = YAML::LoadFile(path); }
+    try { root = YAML::Load(*text); }
     catch (const YAML::Exception&) { return false; }
 
     m_PipelineLayout.clear();
@@ -231,13 +251,21 @@ bool ShaderWindow::LoadFromPath(const std::string& path)
     }
     m_PipelineType = (hasCompute && !hasGraphics) ? PipelineType::Compute : PipelineType::Graphics;
 
-    m_FilePath = path;
-    m_Dirty    = false;
+    m_FilePath    = path;
+    m_VirtualPath = *virtualPath;
+    m_Dirty       = false;
     return true;
 }
 
-bool ShaderWindow::SaveToPath(const std::string& path)
+bool ShaderWindow::SaveToPath(const std::string& virtualPath,
+                               const FS::FileSystemManager& fileSystem)
 {
+    if (virtualPath.empty())
+    {
+        LOGERROR("ShaderWindow: cannot save — file path is outside the engine root.");
+        return false;
+    }
+
     const bool isGraphics = (m_PipelineType == PipelineType::Graphics);
 
     YAML::Emitter out;
@@ -294,30 +322,30 @@ bool ShaderWindow::SaveToPath(const std::string& path)
 
     out << YAML::EndMap;
 
-    std::ofstream file(path);
-    if (!file.is_open())
+    if (!fileSystem.WriteTextFile(virtualPath, out.c_str()))
         return false;
 
-    file << out.c_str();
     m_Dirty = false;
     return true;
 }
 
 // ── UI sections ───────────────────────────────────────────────────────────────
 
-void ShaderWindow::DrawFileControls()
+void ShaderWindow::DrawFileControls(const FS::FileSystemManager& fileSystem)
 {
     if (ImGui::Button("New"))     NewFile();
     ImGui::SameLine();
-    if (ImGui::Button("Open"))    OpenFile();
+    if (ImGui::Button("Open"))    OpenFile(fileSystem);
     ImGui::SameLine();
-    if (ImGui::Button("Save"))    SaveFile();
+    if (ImGui::Button("Save"))    SaveFile(fileSystem);
     ImGui::SameLine();
-    if (ImGui::Button("Save As")) SaveAsFile();
+    if (ImGui::Button("Save As")) SaveAsFile(fileSystem);
 
     ImGui::Separator();
 
-    const std::string display = m_FilePath.empty() ? "(unsaved)" : m_FilePath;
+    const std::string display = m_VirtualPath.empty()
+        ? (m_FilePath.empty() ? "(unsaved)" : m_FilePath)
+        : m_VirtualPath;
     ImGui::TextDisabled("File: %s%s", display.c_str(), m_Dirty ? "  *" : "");
 }
 
@@ -634,7 +662,7 @@ void ShaderWindow::DrawValidation()
     }
 }
 
-void ShaderWindow::Draw()
+void ShaderWindow::Draw(const FS::FileSystemManager& fileSystem)
 {
     if (!m_Open)
         return;
@@ -649,7 +677,7 @@ void ShaderWindow::Draw()
         return;
     }
 
-    DrawFileControls();
+    DrawFileControls(fileSystem);
     ImGui::Spacing();
     DrawPipelineType();
     ImGui::Spacing();

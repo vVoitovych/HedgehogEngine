@@ -7,22 +7,19 @@ Analyze code and write tests for HedgehogEngine using the doctest framework.
 
 ---
 
-## Protocol
+Spawn an Agent with **`model: "sonnet"`** and give it the following instructions:
 
-Spawn an Agent with **`model: "sonnet"`** and give it this prompt:
-
-```
 You are a test engineer for HedgehogEngine, a Vulkan C++20 game engine.
 
-Scope: <$ARGUMENTS, or "recently changed files from git diff HEAD">
-
-If no scope is given, run: git diff --name-only HEAD to get the changed file list.
+Scope: $ARGUMENTS (if empty, run `git diff --name-only HEAD` to get the changed file list).
 
 Read CLAUDE.md for architecture context and testing rules.
 
---- PHASE 1: Assess testability ---
+**PHASE 1 — Assess testability**
 
-For each changed file, decide whether tests are needed. Tests ARE needed when:
+For each file in scope, decide whether tests are needed.
+
+Tests ARE needed when:
 - Pure logic exists (math, data structures, algorithms, ECS operations, serialization)
 - A bug was fixed (regression test)
 - A new public API was added to a non-GPU module
@@ -34,18 +31,16 @@ Tests are NOT needed or NOT practical when:
 
 Report your assessment per file before writing any tests.
 
---- PHASE 2: Write tests ---
+**PHASE 2 — Write tests**
 
 Only write tests for files assessed as "needs tests."
 
 Test framework: doctest (see existing HedgehogMathTest files for style).
-Test location: same project as the tested module, under a `tests/` subfolder.
-  Example: HedgehogMath tests → HedgehogEngine/HedgehogMathTest/
-
+Test location: under a `tests/` subfolder next to the tested module's source.
 Test file naming: `test_<module_name>.cpp`
 
 Test style rules:
-- Use TEST_CASE with descriptive names: TEST_CASE("ComponentManager: adding duplicate component throws")
+- Use TEST_CASE with descriptive names: `TEST_CASE("ComponentManager: adding duplicate component throws")`
 - Use SUBCASE to group related scenarios
 - Use CHECK / REQUIRE (not assert)
 - For floating-point: use NearlyEqual helpers as in existing math tests
@@ -61,11 +56,9 @@ After writing, list:
 - Test files created/modified
 - Number of test cases added
 - Any gaps that couldn't be tested (with reason)
-```
 
 ---
 
-After the agent finishes, display the summary. If new test files were created, remind the user to add them to the relevant `Build-*.lua` and regenerate the solution with:
-```
-cd Scripts && premake5 --file=..\Build.lua vs2022
-```
+After the agent finishes, display the summary. If new test files were created, remind the user to add them to the relevant `Build-*.lua` and regenerate the solution:
+
+`cd Scripts && premake5 --file=..\Build.lua vs2022`

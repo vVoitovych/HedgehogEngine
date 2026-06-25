@@ -2,6 +2,8 @@
 
 #include "RHI/api/RHITypes.hpp"
 
+#include "FileSystem/api/FileSystemManager.hpp"
+
 #include <string>
 #include <vector>
 
@@ -18,9 +20,9 @@ class VertexDescLoader
 {
 public:
     // Load and parse a .vdes file.
-    // assetRelativePath must begin with '/' and be relative to the repo root,
-    // e.g. "/HedgehogEngine/HedgehogRenderer/assets/VertexDescriptions/PositionOnly.vdes".
-    static VertexFileDesc Load(const std::string& assetRelativePath);
+    // virtualPath must be a virtual path, e.g. "engine://HedgehogEngine/.../PositionOnly.vdes".
+    static VertexFileDesc Load(const std::string& virtualPath,
+                               const FS::FileSystemManager& fileSystem);
 
 private:
     static RHI::Format          ParseFormat(const std::string& s);

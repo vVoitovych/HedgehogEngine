@@ -51,7 +51,8 @@ namespace Renderer
     void ResourceManager::SyncResources(RHI::IRHIDevice& device, HedgehogEngine::EngineContext& engine)
     {
         m_ResourceRegistry->SyncMeshes(engine.GetMeshContainer(), device);
-        m_ResourceRegistry->SyncMaterials(engine.GetMaterialContainer(), engine.GetTextureContainer(), device);
+        m_ResourceRegistry->SyncMaterials(engine.GetMaterialContainer(), engine.GetTextureContainer(),
+                                          device, engine.GetFileSystem());
     }
 
     void ResourceManager::ResizeFrameBufferSizeDependenteResources(RHI::IRHIDevice& device,
@@ -68,6 +69,7 @@ namespace Renderer
 
     void ResourceManager::ResizeSceneView(RHI::IRHIDevice& device, uint32_t width, uint32_t height)
     {
+        device.WaitIdle();
         m_RHIDepthBuffer.reset();
         m_SceneColorBuffer.reset();
 

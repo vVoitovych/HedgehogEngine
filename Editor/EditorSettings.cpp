@@ -2,8 +2,8 @@
 
 #include "yaml-cpp/yaml.h"
 
-#include <fstream>
-#include <filesystem>
+#include "Logger/api/Logger.hpp"
+
 #include <string>
 
 namespace Editor
@@ -19,7 +19,8 @@ namespace Editor
             { DockArea::Left, DockArea::Right, DockArea::Bottom, DockArea::Floating };
     }
 
-    void EditorSettings::Save(const std::string& path) const
+    void EditorSettings::Save(const std::string& virtualPath,
+                               const FS::FileSystemManager& fileSystem) const
     {
         YAML::Emitter out;
         out << YAML::BeginMap;
@@ -73,19 +74,19 @@ namespace Editor
         out << YAML::EndMap; // dock_layout
         out << YAML::EndMap; // root
 
-        std::ofstream file(path);
-        if (file.is_open())
-            file << out.c_str();
+        if (!fileSystem.WriteTextFile(virtualPath, out.c_str()))
+            LOGERROR("EditorSettings::Save: failed to write '", virtualPath, "'.");
     }
 
-    bool EditorSettings::Load(const std::string& path)
+    bool EditorSettings::Load(const std::string& virtualPath, const FS::FileSystemManager& fileSystem)
     {
-        if (!std::filesystem::exists(path))
+        const auto text = fileSystem.ReadTextFile(virtualPath);
+        if (!text)
             return false;
 
         try
         {
-            YAML::Node root = YAML::LoadFile(path);
+            YAML::Node root = YAML::Load(*text);
 
             if (auto n = root["panel_bg_color"])
             {

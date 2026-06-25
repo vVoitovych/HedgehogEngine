@@ -27,6 +27,11 @@ namespace HedgehogSettings
     class Settings;
 }
 
+namespace FS
+{
+    class FileSystemManager;
+}
+
 namespace Renderer
 {
     class ResourceManager;
@@ -43,7 +48,8 @@ namespace Renderer
         RenderQueue(RHI::IRHIDevice&                  device,
                     HW::Window&                       window,
                     const HedgehogSettings::Settings& settings,
-                    ResourceManager&                  resourceManager);
+                    ResourceManager&                  resourceManager,
+                    const FS::FileSystemManager&      fileSystem);
         ~RenderQueue();
 
         RenderQueue(const RenderQueue&)            = delete;

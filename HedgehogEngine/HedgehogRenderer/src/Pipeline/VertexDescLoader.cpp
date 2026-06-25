@@ -4,24 +4,10 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include <Windows.h>
 #include <cassert>
-#include <filesystem>
 
 namespace Renderer
 {
-
-namespace
-{
-    std::string ResolveAssetPath(const std::string& relativePath)
-    {
-        char buffer[MAX_PATH];
-        GetModuleFileNameA(nullptr, buffer, MAX_PATH);
-        std::filesystem::path root = std::filesystem::path(buffer)
-            .parent_path().parent_path().parent_path().parent_path().parent_path();
-        return root.string() + relativePath;
-    }
-} // namespace
 
 RHI::Format VertexDescLoader::ParseFormat(const std::string& s)
 {
@@ -45,18 +31,24 @@ RHI::VertexInputRate VertexDescLoader::ParseInputRate(const std::string& s)
     return RHI::VertexInputRate::PerVertex;
 }
 
-VertexFileDesc VertexDescLoader::Load(const std::string& assetRelativePath)
+VertexFileDesc VertexDescLoader::Load(const std::string& virtualPath,
+                                       const FS::FileSystemManager& fileSystem)
 {
-    const std::string fullPath = ResolveAssetPath(assetRelativePath);
+    const auto text = fileSystem.ReadTextFile(virtualPath);
+    if (!text)
+    {
+        LOGERROR("VertexDescLoader: failed to read '", virtualPath, "'");
+        assert(false && "Vertex description file not found or malformed.");
+    }
 
     YAML::Node root;
     try
     {
-        root = YAML::LoadFile(fullPath);
+        root = YAML::Load(*text);
     }
     catch (const YAML::Exception& e)
     {
-        LOGERROR("VertexDescLoader: failed to load '", fullPath, "': ", e.what());
+        LOGERROR("VertexDescLoader: failed to parse '", virtualPath, "': ", e.what());
         assert(false && "Vertex description file not found or malformed.");
     }
 

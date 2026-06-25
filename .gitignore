@@ -612,3 +612,7 @@ Binaries
 /EcsSerialization/EcsSerialization.vcxproj.filters
 /HedgehogEngine/HedgehogEngine/HedgehogEngine.vcxproj
 /HedgehogEngine/HedgehogEngine/HedgehogEngine.vcxproj.filters
+/FileSystem/FileSystem.vcxproj
+/FileSystem/FileSystem.vcxproj.filters
+/FileSystem/tests/FileSystemTest.vcxproj
+/FileSystem/tests/FileSystemTest.vcxproj.user
