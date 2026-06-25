@@ -1,5 +1,4 @@
 #include "api/TextureLoader.hpp"
-#include "api/CommonFunctions.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.hpp"

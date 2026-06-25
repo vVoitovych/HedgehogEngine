@@ -1,9 +1,9 @@
 #include "HedgehogEngine/api/ECS/systems/MeshSystem.hpp"
-#include "ContentLoader/api/CommonFunctions.hpp"
 #include "Logger/api/Logger.hpp"
 #include "DialogueWindows/api/MeshDialogue.hpp"
 
 #include <algorithm>
+#include <string_view>
 
 namespace HedgehogEngine
 {
@@ -81,7 +81,17 @@ namespace HedgehogEngine
         if (path == nullptr)
             return;
 
-        std::string relatedPath  = ContentLoader::GetAssetRelativelyPath(path);
+        const auto virtualPath = fileSystem.ToVirtualPath(path);
+        if (!virtualPath)
+        {
+            LOGERROR("MeshSystem::LoadMesh: path is not under any registered mount (path: ", path, ")");
+            return;
+        }
+
+        // Strip "assets://" prefix; m_MeshPath stores the relative path.
+        constexpr std::string_view k_AssetsPrefix = "assets://";
+        const std::string relatedPath = virtualPath->substr(k_AssetsPrefix.size());
+
         auto& meshComponent      = ecs.GetComponent<MeshComponent>(entity);
         auto  prevMeshPath       = meshComponent.m_MeshPath;
         meshComponent.m_MeshPath = relatedPath;

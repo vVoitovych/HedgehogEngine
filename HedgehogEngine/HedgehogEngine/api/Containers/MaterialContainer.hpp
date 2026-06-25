@@ -29,7 +29,7 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API void ClearMaterials();
         HEDGEHOG_ENGINE_API void CreateNewMaterial(const FS::FileSystemManager& fileSystem);
         HEDGEHOG_ENGINE_API void SaveMaterial(size_t index, const FS::FileSystemManager& fileSystem);
-        HEDGEHOG_ENGINE_API void LoadBaseTexture(size_t index);
+        HEDGEHOG_ENGINE_API void LoadBaseTexture(size_t index, const FS::FileSystemManager& fileSystem);
 
         HEDGEHOG_ENGINE_API size_t              GetMaterialCount() const;
         HEDGEHOG_ENGINE_API MaterialData&       GetMaterialDataByIndex(size_t index);

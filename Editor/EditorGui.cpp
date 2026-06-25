@@ -27,13 +27,15 @@
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
 #include "HedgehogEngine/api/Reflection/GuiReflection.hpp"
 
-#include "ContentLoader/api/CommonFunctions.hpp"
 #include "DialogueWindows/api/MaterialDialogue.hpp"
 #include "DialogueWindows/api/SceneDialogue.hpp"
+
+#include "Logger/api/Logger.hpp"
 
 #include "imgui.h"
 
 #include <algorithm>
+#include <string_view>
 
 namespace
 {
@@ -554,8 +556,18 @@ namespace Editor
             char* path = DialogueWindows::MaterialOpenDialogue();
             if (path != nullptr)
             {
-                render.m_Material = ContentLoader::GetAssetRelativelyPath(path);
-                renderSystem->Update(ecs, entity);
+                const auto virtualPath = engineContext.GetFileSystem().ToVirtualPath(path);
+                if (virtualPath)
+                {
+                    // Strip "assets://" prefix; m_Material stores the relative path.
+                    constexpr std::string_view k_AssetsPrefix = "assets://";
+                    render.m_Material = virtualPath->substr(k_AssetsPrefix.size());
+                    renderSystem->Update(ecs, entity);
+                }
+                else
+                {
+                    LOGERROR("EditorGui: Load material path is not under any registered mount (path: ", path, ")");
+                }
             }
         }
 
@@ -606,7 +618,7 @@ namespace Editor
             }
 
             if (ImGui::Button("Load texture"))
-                materialContainer.LoadBaseTexture(render.m_MaterialIndex.value());
+                materialContainer.LoadBaseTexture(render.m_MaterialIndex.value(), engineContext.GetFileSystem());
 
             if (materialData.type == HedgehogEngine::MaterialType::Transparent)
             {
@@ -681,7 +693,7 @@ namespace Editor
         }
 
         if (ImGui::Button("Load script"))
-            scriptSystem->ChangeScript(entity, ecs, engineContext.GetEventBus());
+            scriptSystem->ChangeScript(entity, ecs, engineContext.GetEventBus(), engineContext.GetFileSystem());
 
         if (!component.m_Params.empty())
             ImGui::SeparatorText("Parameters");

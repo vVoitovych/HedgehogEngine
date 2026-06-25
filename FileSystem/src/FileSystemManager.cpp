@@ -125,6 +125,48 @@ namespace FS
         return m_FileSystems;
     }
 
+    std::optional<std::string> FileSystemManager::ToVirtualPath(
+        const std::filesystem::path& absolutePath) const
+    {
+        std::filesystem::path canonical;
+        try
+        {
+            canonical = std::filesystem::canonical(absolutePath);
+        }
+        catch (const std::filesystem::filesystem_error&)
+        {
+            // If the path does not exist, use weakly_canonical so we can still match
+            // against registered mounts (e.g. a path that is about to be created).
+            canonical = std::filesystem::weakly_canonical(absolutePath);
+        }
+
+        for (const auto& fs : m_FileSystems)
+        {
+            for (const auto& [alias, physicalRoot] : fs->GetMountPoints())
+            {
+                // Check whether canonical begins with physicalRoot.
+                const std::string rootStr = physicalRoot.string();
+                const std::string pathStr = canonical.string();
+                if (pathStr.size() > rootStr.size() &&
+                    pathStr.substr(0, rootStr.size()) == rootStr &&
+                    (pathStr[rootStr.size()] == '/' || pathStr[rootStr.size()] == '\\'))
+                {
+                    std::string rel = pathStr.substr(rootStr.size() + 1);
+                    // Normalize separators to forward slashes.
+                    for (char& c : rel)
+                    {
+                        if (c == '\\') c = '/';
+                    }
+                    return alias + rel;
+                }
+            }
+        }
+
+        LOGWARNING("[FileSystemManager] ToVirtualPath: '", absolutePath.string(),
+                   "' is not under any registered mount point.");
+        return std::nullopt;
+    }
+
     bool FileSystemManager::IsAliasTaken(const std::string& alias) const
     {
         for (const auto& fs : m_FileSystems)

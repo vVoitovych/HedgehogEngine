@@ -5,9 +5,11 @@
 #include "DialogueWindows/api/MaterialDialogue.hpp"
 #include "DialogueWindows/api/TextureDialogue.hpp"
 
-#include "ContentLoader/api/CommonFunctions.hpp"
-
 #include "HedgehogEngine/api/ECS/systems/RenderSystem.hpp"
+
+#include "Logger/api/Logger.hpp"
+
+#include <string_view>
 
 namespace HedgehogEngine
 {
@@ -38,14 +40,22 @@ namespace HedgehogEngine
         auto path = DialogueWindows::MaterialCreationDialogue();
         if (path != nullptr)
         {
+            const auto virtualPath = fileSystem.ToVirtualPath(path);
+            if (!virtualPath)
+            {
+                LOGERROR("MaterialContainer::CreateNewMaterial: path is not under any registered mount (path: ", path, ")");
+                return;
+            }
+
             MaterialData newData;
             newData.type         = MaterialType::Opaque;
             newData.transparency = 1.0f;
             newData.baseColor    = m_DefaultCellTexture;
-            newData.path         = ContentLoader::GetAssetRelativelyPath(path);
+            // Strip "assets://" prefix to store just the relative path.
+            constexpr std::string_view k_AssetsPrefix = "assets://";
+            newData.path = virtualPath->substr(k_AssetsPrefix.size());
 
-            const std::string virtualPath = "assets://" + newData.path;
-            MaterialSerializer::Serialize(newData, virtualPath, fileSystem);
+            MaterialSerializer::Serialize(newData, *virtualPath, fileSystem);
             m_Materials.push_back(newData);
         }
     }
@@ -57,12 +67,22 @@ namespace HedgehogEngine
         MaterialSerializer::Serialize(data, virtualPath, fileSystem);
     }
 
-    void MaterialContainer::LoadBaseTexture(size_t index)
+    void MaterialContainer::LoadBaseTexture(size_t index, const FS::FileSystemManager& fileSystem)
     {
         auto texturePath = DialogueWindows::TextureOpenDialogue();
         if (texturePath == nullptr)
             return;
-        m_Materials[index].baseColor = ContentLoader::GetAssetRelativelyPath(texturePath);
+
+        const auto virtualPath = fileSystem.ToVirtualPath(texturePath);
+        if (!virtualPath)
+        {
+            LOGERROR("MaterialContainer::LoadBaseTexture: path is not under any registered mount (path: ", texturePath, ")");
+            return;
+        }
+
+        // Strip "assets://" prefix; baseColor stores the relative path.
+        constexpr std::string_view k_AssetsPrefix = "assets://";
+        m_Materials[index].baseColor = virtualPath->substr(k_AssetsPrefix.size());
         m_Materials[index].isDirty   = true;
     }
 

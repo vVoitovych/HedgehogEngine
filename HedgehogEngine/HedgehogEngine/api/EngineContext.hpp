@@ -85,6 +85,7 @@ namespace HedgehogEngine
 
     private:
         void InitECS();
+        void InitFileSystem();
         void RegisterComponents();
         void UpdateCamera(WindowContext& windowContext, float aspectRatio, float dt);
 

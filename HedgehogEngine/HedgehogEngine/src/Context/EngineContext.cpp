@@ -1,7 +1,8 @@
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogEngine/api/WindowContext.hpp"
 
-#include "ContentLoader/api/CommonFunctions.hpp"
+#include "FileSystem/api/FileSystem.hpp"
+#include "FileSystem/api/PathUtils.hpp"
 
 #include "HedgehogEngine/api/Containers/MeshContainer.hpp"
 #include "HedgehogEngine/api/Containers/TextureContainer.hpp"
@@ -46,7 +47,7 @@ namespace HedgehogEngine
     EngineContext::EngineContext()
         : m_SceneName("Default")
     {
-        m_FileSystem.Register(ContentLoader::CreateEngineFileSystem());
+        InitFileSystem();
 
         m_Camera = std::make_unique<Camera>();
         InitECS();
@@ -65,6 +66,25 @@ namespace HedgehogEngine
 
     EngineContext::~EngineContext()
     {
+    }
+
+    void EngineContext::InitFileSystem()
+    {
+        auto fileSystem = std::make_unique<FS::FileSystem>();
+        const std::filesystem::path root = FS::GetEngineRootDirectory();
+
+        const bool okEngine  = fileSystem->RegisterPath("engine://",  root);
+        const bool okAssets  = fileSystem->RegisterPath("assets://",  root / "Assets");
+        const bool okShaders = fileSystem->RegisterPath("shaders://",
+            root / "HedgehogEngine" / "HedgehogRenderer" / "assets" / "Shaders");
+
+        if (!okEngine || !okAssets || !okShaders)
+            LOGERROR("EngineContext::InitFileSystem: one or more mount points failed to register — file I/O will be broken.");
+        assert(okEngine  && "engine:// mount failed");
+        assert(okAssets  && "assets:// mount failed");
+        assert(okShaders && "shaders:// mount failed");
+
+        m_FileSystem.Register(std::move(fileSystem));
     }
 
     void EngineContext::InitECS()
@@ -182,7 +202,7 @@ namespace HedgehogEngine
                         script.m_Params[paramName] = { type, value, false };
                     }
                 }
-                scriptSys->InitScript(e, ecs, m_EventBus);
+                scriptSys->InitScript(e, ecs, m_EventBus, m_FileSystem);
             },
             [](const ECS::ECS& ecs, ECS::Entity e) { return ecs.HasComponent<ScriptComponent>(e); }
         );
@@ -245,21 +265,16 @@ namespace HedgehogEngine
 
     void EngineContext::LoadScene(const std::string& filePath)
     {
-        std::string relativePath;
-        try
+        const auto virtualPath = m_FileSystem.ToVirtualPath(filePath);
+        if (!virtualPath)
         {
-            relativePath = ContentLoader::GetAssetRelativelyPath(filePath);
-        }
-        catch (const std::runtime_error& e)
-        {
-            LOGERROR("EngineContext::LoadScene: ", e.what(), " (path: ", filePath, ")");
+            LOGERROR("EngineContext::LoadScene: path is not under any registered mount (path: ", filePath, ")");
             return;
         }
-        const std::string virtualPath = "assets://" + relativePath;
 
         DeleteGameObjectAndChildren(m_ECS.GetRoot());
         EcsSerialization::EcsSerializer::Deserialize(*m_ComponentRegistry, m_ECS, m_SceneName,
-                                                      virtualPath, m_FileSystem);
+                                                      *virtualPath, m_FileSystem);
         for (auto entity : m_TransformSystem->GetEntities())
             m_EventBus.Publish(TransformChangedEvent{ entity });
         m_MeshSystem->Update(m_ECS, m_FileSystem);
@@ -271,19 +286,14 @@ namespace HedgehogEngine
         const std::string sceneName = std::filesystem::path(filePath).stem().string();
         m_SceneName = sceneName;
 
-        std::string relativePath;
-        try
+        const auto virtualPath = m_FileSystem.ToVirtualPath(filePath);
+        if (!virtualPath)
         {
-            relativePath = ContentLoader::GetAssetRelativelyPath(filePath);
-        }
-        catch (const std::runtime_error& e)
-        {
-            LOGERROR("EngineContext::SaveScene: ", e.what(), " (path: ", filePath, ")");
+            LOGERROR("EngineContext::SaveScene: path is not under any registered mount (path: ", filePath, ")");
             return;
         }
-        const std::string virtualPath = "assets://" + relativePath;
         EcsSerialization::EcsSerializer::Serialize(
-            *m_ComponentRegistry, m_ECS, m_SceneName, virtualPath, m_FileSystem);
+            *m_ComponentRegistry, m_ECS, m_SceneName, *virtualPath, m_FileSystem);
     }
 
     void EngineContext::ResetScene()

@@ -4,7 +4,7 @@
 #include "DialogueWindows/api/PipelineDialogue.hpp"
 #include "DialogueWindows/api/VertexDescDialogue.hpp"
 
-#include "ContentLoader/api/CommonFunctions.hpp"
+#include "FileSystem/api/PathUtils.hpp"
 
 #include "Logger/api/Logger.hpp"
 
@@ -22,7 +22,7 @@ namespace
     // Convert an absolute physical path to an engine:// virtual path by stripping the repo root.
     std::string ToEngineVirtualPath(const std::string& absPath)
     {
-        const std::string root = ContentLoader::GetRootDirectory();
+        const std::string root = FS::GetEngineRootDirectory().string();
         if (absPath.size() > root.size() && absPath.substr(0, root.size()) == root)
         {
             std::string rel = absPath.substr(root.size());

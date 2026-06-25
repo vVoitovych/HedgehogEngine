@@ -56,6 +56,12 @@ namespace FS
         // Removes the entire FileSystem object including all its other aliases.
         FILE_SYSTEM_API std::unique_ptr<FileSystem> Unregister(const std::string& alias);
 
+        // Converts an absolute OS path to a virtual path (e.g. "assets://foo/bar.obj") by
+        // matching against the physical root of each registered mount point.
+        // Returns nullopt and logs a warning when absolutePath is not under any known mount.
+        FILE_SYSTEM_API std::optional<std::string>
+            ToVirtualPath(const std::filesystem::path& absolutePath) const;
+
         FILE_SYSTEM_API const std::vector<std::unique_ptr<FileSystem>>& GetFileSystems() const;
 
     private:

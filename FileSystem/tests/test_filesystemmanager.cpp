@@ -450,3 +450,53 @@ TEST_CASE("FileSystemManager::GetFileSystems - count reflects register/unregiste
     manager.Unregister("assets://");
     CHECK(manager.GetFileSystems().size() == 0u);
 }
+
+// ---------------------------------------------------------------------------
+// FileSystemManager::ToVirtualPath
+// ---------------------------------------------------------------------------
+
+TEST_CASE("FileSystemManager::ToVirtualPath - absolute path under mount round-trips to virtual path")
+{
+    TempDir tmp;
+    FS::FileSystemManager manager;
+    REQUIRE(manager.Register(MakeFS("assets://", tmp.Path())) == true);
+
+    // Build an absolute path under the mount.
+    const std::filesystem::path absPath = tmp.Path() / "foo" / "bar.obj";
+    const auto result = manager.ToVirtualPath(absPath);
+
+    REQUIRE(result.has_value());
+    CHECK(result->find("assets://") == 0);
+    CHECK(result->find("foo") != std::string::npos);
+    CHECK(result->find("bar.obj") != std::string::npos);
+}
+
+TEST_CASE("FileSystemManager::ToVirtualPath - path not under any mount returns nullopt")
+{
+    TempDir tmp;
+    FS::FileSystemManager manager;
+    REQUIRE(manager.Register(MakeFS("assets://", tmp.Path())) == true);
+
+    // A path outside the registered directory.
+    const std::filesystem::path outsidePath =
+        std::filesystem::temp_directory_path() / "some_other_dir" / "file.txt";
+    const auto result = manager.ToVirtualPath(outsidePath);
+
+    CHECK_FALSE(result.has_value());
+}
+
+TEST_CASE("FileSystemManager::ToVirtualPath - picks the correct alias when multiple mounts are registered")
+{
+    TempDir tmpEngine;
+    TempDir tmpAssets;
+    FS::FileSystemManager manager;
+    REQUIRE(manager.Register(MakeFS("engine://", tmpEngine.Path())) == true);
+    REQUIRE(manager.Register(MakeFS("assets://", tmpAssets.Path())) == true);
+
+    const std::filesystem::path assetPath = tmpAssets.Path() / "textures" / "rock.png";
+    const auto result = manager.ToVirtualPath(assetPath);
+
+    REQUIRE(result.has_value());
+    CHECK(result->find("assets://") == 0);
+    CHECK(result->find("textures/rock.png") != std::string::npos);
+}

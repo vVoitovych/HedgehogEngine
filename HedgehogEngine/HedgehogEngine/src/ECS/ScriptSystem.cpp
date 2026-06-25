@@ -10,7 +10,6 @@
 
 #include "Logger/api/Logger.hpp"
 #include "DialogueWindows/api/ScriptDialogue.hpp"
-#include "ContentLoader/api/CommonFunctions.hpp"
 
 #include "HedgehogMath/api/Vector.hpp"
 
@@ -23,6 +22,7 @@ extern "C"
 
 #include <filesystem>
 #include <functional>
+#include <string_view>
 
 namespace HedgehogEngine
 {
@@ -130,11 +130,19 @@ namespace
         }
     }
 
-    void ScriptSystem::ChangeScript(ECS::Entity entity, ECS::ECS& ecs, EventBus& bus)
+    void ScriptSystem::ChangeScript(ECS::Entity entity, ECS::ECS& ecs, EventBus& bus,
+                                     const FS::FileSystemManager& fileSystem)
     {
         std::string scriptPath = DialogueWindows::ScriptChooseDialogue();
         if (scriptPath.empty())
             return;
+
+        const auto virtualPath = fileSystem.ToVirtualPath(scriptPath);
+        if (!virtualPath)
+        {
+            LOGERROR("ScriptSystem::ChangeScript: path is not under any registered mount (path: ", scriptPath, ")");
+            return;
+        }
 
         auto& component = ecs.GetComponent<ScriptComponent>(entity);
         if (component.m_LuaState != nullptr)
@@ -143,16 +151,26 @@ namespace
             component.m_LuaState = nullptr;
         }
 
-        component.m_ScriptPath = ContentLoader::GetAssetRelativelyPath(scriptPath);
+        // Strip "assets://" prefix; m_ScriptPath stores the relative path.
+        constexpr std::string_view k_AssetsPrefix = "assets://";
+        component.m_ScriptPath = virtualPath->substr(k_AssetsPrefix.size());
         component.m_LuaState   = luaL_newstate();
         luaL_openlibs(component.m_LuaState);
 
         auto& transform = ecs.GetComponent<TransformComponent>(entity);
         RegisterLuaBindings(component.m_LuaState, &transform, entity, bus);
 
-        const std::string basePath = ContentLoader::GetAssetsDirectory() + s_BaseActorScript;
+        const auto basePhysPath = fileSystem.ResolvePhysical("assets://" + s_BaseActorScript);
+        if (!basePhysPath)
+        {
+            LOGERROR("ScriptSystem::ChangeScript: cannot resolve base actor script path.");
+            lua_close(component.m_LuaState);
+            component.m_LuaState   = nullptr;
+            component.m_ScriptPath = "";
+            return;
+        }
 
-        if (luaL_dofile(component.m_LuaState, basePath.c_str()) != LUA_OK)
+        if (luaL_dofile(component.m_LuaState, basePhysPath->string().c_str()) != LUA_OK)
         {
             LOGERROR("[Lua Error] ", lua_tostring(component.m_LuaState, -1));
             lua_pop(component.m_LuaState, 1);
@@ -186,7 +204,8 @@ namespace
             CallMethod(component.m_LuaState, component.m_InstanceRef, "OnEnable");
     }
 
-    void ScriptSystem::InitScript(ECS::Entity entity, ECS::ECS& ecs, EventBus& bus)
+    void ScriptSystem::InitScript(ECS::Entity entity, ECS::ECS& ecs, EventBus& bus,
+                                   const FS::FileSystemManager& fileSystem)
     {
         auto& component = ecs.GetComponent<ScriptComponent>(entity);
 
@@ -204,9 +223,17 @@ namespace
         auto& transform = ecs.GetComponent<TransformComponent>(entity);
         RegisterLuaBindings(component.m_LuaState, &transform, entity, bus);
 
-        const std::string basePath = ContentLoader::GetAssetsDirectory() + s_BaseActorScript;
+        const auto basePhysPath = fileSystem.ResolvePhysical("assets://" + s_BaseActorScript);
+        if (!basePhysPath)
+        {
+            LOGERROR("ScriptSystem::InitScript: cannot resolve base actor script path.");
+            lua_close(component.m_LuaState);
+            component.m_LuaState   = nullptr;
+            component.m_ScriptPath = "";
+            return;
+        }
 
-        if (luaL_dofile(component.m_LuaState, basePath.c_str()) != LUA_OK)
+        if (luaL_dofile(component.m_LuaState, basePhysPath->string().c_str()) != LUA_OK)
         {
             LOGERROR("[Lua Error] ", lua_tostring(component.m_LuaState, -1));
             lua_pop(component.m_LuaState, 1);
@@ -216,8 +243,17 @@ namespace
             return;
         }
 
-        const std::string scriptPath = ContentLoader::GetAssetsDirectory() + component.m_ScriptPath;
-        if (luaL_dofile(component.m_LuaState, scriptPath.c_str()) != LUA_OK)
+        const auto scriptPhysPath = fileSystem.ResolvePhysical("assets://" + component.m_ScriptPath);
+        if (!scriptPhysPath)
+        {
+            LOGERROR("ScriptSystem::InitScript: cannot resolve script path '", component.m_ScriptPath, "'.");
+            lua_close(component.m_LuaState);
+            component.m_LuaState   = nullptr;
+            component.m_ScriptPath = "";
+            return;
+        }
+
+        if (luaL_dofile(component.m_LuaState, scriptPhysPath->string().c_str()) != LUA_OK)
         {
             LOGERROR("[Lua Error] ", lua_tostring(component.m_LuaState, -1));
             lua_pop(component.m_LuaState, 1);
@@ -227,7 +263,7 @@ namespace
             return;
         }
 
-        const std::string className = GetFileNameWithoutExtension(scriptPath);
+        const std::string className = GetFileNameWithoutExtension(scriptPhysPath->string());
         lua_getglobal(component.m_LuaState, className.c_str());
         lua_getfield(component.m_LuaState, -1, "new");
         lua_pushvalue(component.m_LuaState, -2);
