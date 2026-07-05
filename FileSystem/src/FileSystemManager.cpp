@@ -147,10 +147,10 @@ namespace FS
             for (const auto& [alias, physicalRoot] : fs->GetMountPoints())
             {
                 const std::filesystem::path candidatePath = canonical;
-                auto [pathIt, rootIt] = std::mismatch(
+                auto [mountIt, inputIt] = std::mismatch(
                     physicalRoot.begin(), physicalRoot.end(),
                     candidatePath.begin(), candidatePath.end());
-                if (rootIt == physicalRoot.end())
+                if (mountIt == physicalRoot.end())
                 {
                     const std::filesystem::path rel = candidatePath.lexically_relative(physicalRoot);
                     return alias + rel.generic_string();

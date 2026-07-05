@@ -4,12 +4,8 @@
 
 #include <Volk/volk.h>
 
-#include <string>
-
-namespace FS
-{
-    class FileSystemManager;
-}
+#include <cstddef>
+#include <span>
 
 namespace RHI
 {
@@ -19,8 +15,7 @@ class VulkanDevice;
 class VulkanShader final : public IRHIShader
 {
 public:
-    VulkanShader(VulkanDevice& device, const std::string& virtualPath, ShaderStage stage,
-                 const FS::FileSystemManager& fileSystem);
+    VulkanShader(VulkanDevice& device, std::span<const std::byte> spirv, ShaderStage stage);
     ~VulkanShader() override;
 
     VulkanShader(const VulkanShader&)            = delete;

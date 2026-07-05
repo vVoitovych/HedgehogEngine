@@ -19,7 +19,6 @@ project "RHI"
    links
    {
        "Logger",
-       "FileSystem",
    }
 
    targetdir ("../../Binaries/" .. OutputDir .. "/%{prj.name}")

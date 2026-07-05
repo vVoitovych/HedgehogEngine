@@ -210,7 +210,13 @@ ShaderPipelineDesc ShaderLoader::Load(RHI::IRHIDevice& device,
             const RHI::ShaderStage stage   = ParseStage(s["stage"].as<std::string>());
             const std::string      spvPath = ResolveVirtualRelative(shaderVirtualDir, s["path"].as<std::string>());
 
-            auto shader = device.CreateShader(spvPath, stage, fileSystem);
+            const auto spirv = fileSystem.ReadFile(spvPath);
+            if (!spirv)
+            {
+                LOGERROR("ShaderLoader: failed to read SPIR-V '", spvPath, "'");
+                assert(false && "SPIR-V file not found");
+            }
+            auto shader = device.CreateShader(*spirv, stage);
             assert(shader && "Failed to create shader");
 
             switch (stage)

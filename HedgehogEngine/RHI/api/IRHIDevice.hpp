@@ -13,11 +13,10 @@
 #include "IRHISwapchain.hpp"
 #include "IRHISyncPrimitive.hpp"
 
-#include "FileSystem/api/FileSystemManager.hpp"
-
+#include <cstddef>
 #include <functional>
 #include <memory>
-#include <string>
+#include <span>
 #include <vector>
 
 namespace RHI
@@ -56,9 +55,8 @@ public:
     virtual std::unique_ptr<IRHISampler> CreateSampler(const SamplerDesc& desc) const = 0;
 
     virtual std::unique_ptr<IRHIShader>  CreateShader(
-        const std::string&           virtualPath,
-        ShaderStage                  stage,
-        const FS::FileSystemManager& fileSystem) const = 0;
+        std::span<const std::byte> spirv,
+        ShaderStage                stage) const = 0;
 
     // ── Descriptor resources ─────────────────────────────────────────────────
 
