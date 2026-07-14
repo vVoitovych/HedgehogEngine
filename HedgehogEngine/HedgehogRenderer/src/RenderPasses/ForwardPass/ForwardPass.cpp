@@ -1,6 +1,8 @@
 #include "ForwardPass.hpp"
 #include "ForwardPassPushConstants.hpp"
 
+#include "FileSystem/api/FileSystemManager.hpp"
+
 #include "HedgehogEngine/api/Frame/FrameData.hpp"
 
 #include "ResourceManager/ResourceManager.hpp"
@@ -44,10 +46,12 @@ namespace Renderer
     }
 
 
-    ForwardPass::ForwardPass(RHI::IRHIDevice& device, ResourceManager& resourceManager)
+    ForwardPass::ForwardPass(RHI::IRHIDevice& device, ResourceManager& resourceManager,
+                              const FS::FileSystemManager& fileSystem)
     {
         const auto sd = ShaderLoader::Load(device,
-            "/HedgehogEngine/HedgehogRenderer/assets/Shaders/ForwardPass.shader");
+            "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/ForwardPass.shader",
+            fileSystem);
         assert(sd.m_Layout.m_DescriptorSets.size() >= 2);
 
         // Set 0: per-frame data (camera, lights)
@@ -132,7 +136,7 @@ namespace Renderer
         ForwardPassFrameUniform ubo{};
         ubo.m_View        = frame.m_Camera.m_View;
         ubo.m_ViewProj    = frame.m_Camera.m_Proj * frame.m_Camera.m_View;
-        ubo.m_EyePosition = HM::Vector4(frame.m_Camera.m_Position, 1.0f);
+        ubo.m_EyePosition = frame.m_Camera.m_Position;
         ubo.m_LightCount  = frame.m_Lights.size();
         for (size_t i = 0; i < ubo.m_LightCount; ++i)
             ubo.m_Lights[i] = ToGpuLight(frame.m_Lights[i]);

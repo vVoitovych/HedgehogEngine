@@ -7,7 +7,7 @@
 
 #include "yaml-cpp/yaml.h"
 
-#include <fstream>
+#include <stdexcept>
 
 namespace EcsSerialization
 {
@@ -64,9 +64,11 @@ namespace
 
     void EcsSerializer::Serialize(const ComponentSerializerRegistry& registry,
                                    const ECS::ECS& ecs,
-                                   const std::string& sceneName, const std::string& filePath)
+                                   const std::string& sceneName,
+                                   const std::string& virtualPath,
+                                   const FS::FileSystemManager& fileSystem)
     {
-        LOGINFO("EcsSerializer::Serialize: ", filePath);
+        LOGINFO("EcsSerializer::Serialize: ", virtualPath);
 
         YAML::Emitter out;
         out << YAML::BeginMap;
@@ -76,37 +78,45 @@ namespace
         out << YAML::EndSeq;
         out << YAML::EndMap;
 
-        std::ofstream fout(filePath);
-        fout << out.c_str();
+        if (!fileSystem.WriteTextFile(virtualPath, out.c_str()))
+            LOGERROR("EcsSerializer::Serialize: failed to write '", virtualPath, "'.");
     }
 
     void EcsSerializer::Deserialize(const ComponentSerializerRegistry& registry,
                                      ECS::ECS& ecs,
-                                     std::string& outSceneName, const std::string& filePath)
+                                     std::string& outSceneName,
+                                     const std::string& virtualPath,
+                                     const FS::FileSystemManager& fileSystem)
     {
-        LOGINFO("EcsSerializer::Deserialize: ", filePath);
+        LOGINFO("EcsSerializer::Deserialize: ", virtualPath);
 
-        YAML::Node data;
-        try
+        const auto text = fileSystem.ReadTextFile(virtualPath);
+        if (!text)
         {
-            data = YAML::LoadFile(filePath);
-        }
-        catch (const YAML::ParserException& e)
-        {
-            LOGERROR("Failed to load scene: ", filePath, " with error: ", e.what());
+            LOGERROR("Failed to read scene file: ", virtualPath);
             return;
         }
 
-        outSceneName = data["Scene name"].as<std::string>();
-
-        const YAML::Node sceneData = data["Scene"];
-        if (sceneData && sceneData.size() > 0)
+        try
         {
-            for (const auto& node : sceneData)
-                DeserializeEntity(ecs, node, registry);
+            YAML::Node data = YAML::Load(*text);
 
-            // The first node in the scene sequence is the root entity.
-            ecs.SetRoot(sceneData[0]["Entity"].as<ECS::Entity>());
+            outSceneName = data["Scene name"].as<std::string>();
+
+            const YAML::Node sceneData = data["Scene"];
+            if (sceneData && sceneData.size() > 0)
+            {
+                for (const auto& node : sceneData)
+                    DeserializeEntity(ecs, node, registry);
+
+                // The first node in the scene sequence is the root entity.
+                ecs.SetRoot(sceneData[0]["Entity"].as<ECS::Entity>());
+            }
+        }
+        catch (const YAML::Exception& e)
+        {
+            LOGERROR("Failed to parse scene: ", virtualPath, " with error: ", e.what());
+            return;
         }
     }
 }

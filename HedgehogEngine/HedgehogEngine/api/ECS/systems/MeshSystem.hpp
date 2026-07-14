@@ -7,6 +7,8 @@
 #include "ECS/api/Entity.hpp"
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
 
+#include "FileSystem/api/FileSystemManager.hpp"
+
 #include <vector>
 #include <string>
 
@@ -17,8 +19,10 @@ namespace HedgehogEngine
     public:
         HEDGEHOG_ENGINE_API MeshSystem();
 
-        HEDGEHOG_ENGINE_API void Update(ECS::ECS& ecs, ECS::Entity entity);
-        HEDGEHOG_ENGINE_API void Update(ECS::ECS& ecs);
+        HEDGEHOG_ENGINE_API void Update(ECS::ECS& ecs, ECS::Entity entity,
+                                          const FS::FileSystemManager& fileSystem);
+        HEDGEHOG_ENGINE_API void Update(ECS::ECS& ecs,
+                                        const FS::FileSystemManager& fileSystem);
 
         HEDGEHOG_ENGINE_API bool ShouldUpdateMeshContainer() const;
         HEDGEHOG_ENGINE_API void MeshContainerUpdated();
@@ -27,12 +31,14 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API std::vector<ECS::Entity>        GetEntities() const;
 
         HEDGEHOG_ENGINE_API void AddMeshPath(const std::string& meshPath);
-        HEDGEHOG_ENGINE_API void LoadMesh(ECS::ECS& ecs, ECS::Entity entity);
+        HEDGEHOG_ENGINE_API void LoadMesh(ECS::ECS& ecs, ECS::Entity entity,
+                                          const FS::FileSystemManager& fileSystem);
 
         HEDGEHOG_ENGINE_API static const std::string sDefaultMeshPath;
 
     private:
-        void CheckMeshPath(MeshComponent& meshComponent, const std::string& fallbackPath);
+        void CheckMeshPath(MeshComponent& meshComponent, const std::string& fallbackPath,
+                           const FS::FileSystemManager& fileSystem);
 
     private:
         std::vector<std::string> m_MeshPaths;

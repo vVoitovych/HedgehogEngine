@@ -422,9 +422,10 @@ std::unique_ptr<IRHISampler> VulkanDevice::CreateSampler(const SamplerDesc& desc
 }
 
 std::unique_ptr<IRHIShader> VulkanDevice::CreateShader(
-    const std::string& filePath, ShaderStage stage) const
+    std::span<const std::byte> spirv,
+    ShaderStage                stage) const
 {
-    return std::make_unique<VulkanShader>(const_cast<VulkanDevice&>(*this), filePath, stage);
+    return std::make_unique<VulkanShader>(const_cast<VulkanDevice&>(*this), spirv, stage);
 }
 
 std::unique_ptr<IRHIDescriptorSetLayout> VulkanDevice::CreateDescriptorSetLayout(

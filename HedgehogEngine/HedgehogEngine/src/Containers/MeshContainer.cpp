@@ -17,7 +17,8 @@ namespace HedgehogEngine
     {
     }
 
-    void MeshContainer::Update(const MeshSystem& meshSystem)
+    void MeshContainer::Update(const MeshSystem& meshSystem,
+                                const FS::FileSystemManager& fileSystem)
     {
         const auto& meshPaths = meshSystem.GetMeshes();
         if (meshPaths.size() <= m_Meshes.size())
@@ -31,16 +32,16 @@ namespace HedgehogEngine
                 LOGWARNING("Mesh ", path, " already added");
                 continue;
             }
-            m_FilePaths.push_back(path);
 
             Mesh mesh;
-            mesh.LoadData(path);
+            mesh.LoadData(path, fileSystem);
             mesh.SetVertexOffset(m_TotalVertexCount);
             mesh.SetFirstIndex(m_TotalIndexCount);
             m_TotalVertexCount += static_cast<uint32_t>(mesh.GetPositions().size());
             m_TotalIndexCount  += static_cast<uint32_t>(mesh.GetIndices().size());
 
             LOGINFO("Loaded mesh data: ", path);
+            m_FilePaths.push_back(path);
             m_Meshes.push_back(std::move(mesh));
         }
     }

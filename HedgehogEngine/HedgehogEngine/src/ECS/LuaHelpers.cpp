@@ -47,19 +47,20 @@ namespace HedgehogEngine
 
             if (type == LUA_TNUMBER || type == LUA_TBOOLEAN)
             {
-                float bVal;
-                bool  nVal;
-
                 switch (type)
                 {
                 case LUA_TNUMBER:
-                    bVal = static_cast<float>(lua_tonumber(L, -1));
-                    result[name] = { ParamType::Number, bVal, false };
+                {
+                    const float numVal = static_cast<float>(lua_tonumber(L, -1));
+                    result[name] = { ParamType::Number, numVal, false };
                     break;
+                }
                 case LUA_TBOOLEAN:
-                    nVal = lua_toboolean(L, -1);
-                    result[name] = { ParamType::Boolean, nVal, false };
+                {
+                    const bool boolVal = static_cast<bool>(lua_toboolean(L, -1));
+                    result[name] = { ParamType::Boolean, boolVal, false };
                     break;
+                }
                 }
             }
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "FileSystem/api/FileSystemManager.hpp"
+
 #include <string>
 #include <vector>
 
@@ -11,7 +13,7 @@ class ShaderWindow
 public:
     bool m_Open = false;
 
-    void Draw();
+    void Draw(const FS::FileSystemManager& fileSystem);
 
 private:
     enum class PipelineType { Graphics = 0, Compute = 1 };
@@ -34,7 +36,7 @@ private:
     };
 
     // ── Sub-sections ──────────────────────────────────────────────────────────
-    void DrawFileControls();
+    void DrawFileControls(const FS::FileSystemManager& fileSystem);
     void DrawPipelineType();
     void DrawReferences();
     void DrawShaderStages();
@@ -43,11 +45,11 @@ private:
 
     // ── File I/O ──────────────────────────────────────────────────────────────
     void NewFile();
-    void OpenFile();
-    void SaveFile();
-    void SaveAsFile();
-    bool LoadFromPath(const std::string& path);
-    bool SaveToPath(const std::string& path);
+    void OpenFile(const FS::FileSystemManager& fileSystem);
+    void SaveFile(const FS::FileSystemManager& fileSystem);
+    void SaveAsFile(const FS::FileSystemManager& fileSystem);
+    bool LoadFromPath(const std::string& path, const FS::FileSystemManager& fileSystem);
+    bool SaveToPath(const std::string& virtualPath, const FS::FileSystemManager& fileSystem);
 
     // ── Helpers ───────────────────────────────────────────────────────────────
     std::string MakeRelativePath(const std::string& absPath) const;
@@ -71,7 +73,8 @@ private:
     static const char* IndexToStage(int i);
 
     // ── State ─────────────────────────────────────────────────────────────────
-    std::string  m_FilePath;
+    std::string  m_FilePath;     // absolute OS path — used for writing and relative-path computation
+    std::string  m_VirtualPath;  // engine:// path — used for display
     bool         m_Dirty = false;
 
     PipelineType m_PipelineType = PipelineType::Graphics;

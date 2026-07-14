@@ -5,6 +5,8 @@
 #include "RHI/api/IRHIPipeline.hpp"
 #include "RHI/api/IRHIShader.hpp"
 
+#include "FileSystem/api/FileSystemManager.hpp"
+
 #include <memory>
 #include <string>
 
@@ -36,8 +38,10 @@ class ShaderLoader
 {
 public:
     // Load a .shader file and all assets it references (layout, vertex desc, SPIR-V).
-    // shaderPath must be repo-root-relative and begin with '/'.
-    static ShaderPipelineDesc Load(RHI::IRHIDevice& device, const std::string& shaderPath);
+    // shaderVirtualPath must be a virtual path, e.g. "engine://HedgehogEngine/.../ForwardPass.shader".
+    static ShaderPipelineDesc Load(RHI::IRHIDevice& device,
+                                   const std::string& shaderVirtualPath,
+                                   const FS::FileSystemManager& fileSystem);
 
 private:
     static RHI::ShaderStage        ParseStage(const std::string& s);

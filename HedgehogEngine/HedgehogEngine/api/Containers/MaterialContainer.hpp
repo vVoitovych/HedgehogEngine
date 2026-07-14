@@ -2,6 +2,8 @@
 
 #include "HedgehogEngine/api/HedgehogEngineApi.hpp"
 
+#include "FileSystem/api/FileSystemManager.hpp"
+
 #include <string>
 #include <vector>
 
@@ -21,13 +23,13 @@ namespace HedgehogEngine
         MaterialContainer& operator=(const MaterialContainer&) = delete;
         MaterialContainer& operator=(MaterialContainer&&)      = delete;
 
-        HEDGEHOG_ENGINE_API void Update(const RenderSystem& renderSystem);
+        HEDGEHOG_ENGINE_API void Update(const RenderSystem& renderSystem, const FS::FileSystemManager& fileSystem);
         HEDGEHOG_ENGINE_API void SetMaterialDirty(size_t index);
 
         HEDGEHOG_ENGINE_API void ClearMaterials();
-        HEDGEHOG_ENGINE_API void CreateNewMaterial();
-        HEDGEHOG_ENGINE_API void SaveMaterial(size_t index);
-        HEDGEHOG_ENGINE_API void LoadBaseTexture(size_t index);
+        HEDGEHOG_ENGINE_API void CreateNewMaterial(const FS::FileSystemManager& fileSystem);
+        HEDGEHOG_ENGINE_API void SaveMaterial(size_t index, const FS::FileSystemManager& fileSystem);
+        HEDGEHOG_ENGINE_API void LoadBaseTexture(size_t index, const FS::FileSystemManager& fileSystem);
 
         HEDGEHOG_ENGINE_API size_t              GetMaterialCount() const;
         HEDGEHOG_ENGINE_API MaterialData&       GetMaterialDataByIndex(size_t index);

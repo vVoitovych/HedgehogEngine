@@ -7,6 +7,8 @@
 #include "ECS/api/Entity.hpp"
 #include "HedgehogEngine/api/Frame/FrameData.hpp"
 
+#include "FileSystem/api/FileSystemManager.hpp"
+
 #include <memory>
 #include <optional>
 #include <string>
@@ -74,6 +76,8 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API ECS::Entity CreateGameObject(std::optional<ECS::Entity> parent = std::nullopt);
         HEDGEHOG_ENGINE_API void        DeleteGameObject(ECS::Entity entity);
 
+        HEDGEHOG_ENGINE_API const FS::FileSystemManager& GetFileSystem() const;
+
         HEDGEHOG_ENGINE_API void LoadScene(const std::string& filePath);
         HEDGEHOG_ENGINE_API void SaveScene(const std::string& filePath);
         HEDGEHOG_ENGINE_API void ResetScene();
@@ -81,14 +85,17 @@ namespace HedgehogEngine
 
     private:
         void InitECS();
+        void InitFileSystem();
         void RegisterComponents();
         void UpdateCamera(WindowContext& windowContext, float aspectRatio, float dt);
 
         void        CreateSceneRoot();
         void        DeleteGameObjectAndChildren(ECS::Entity entity);
-        static std::string GetUniqueGameObjectName();
+        std::string GetUniqueGameObjectName();
 
     private:
+        FS::FileSystemManager m_FileSystem;
+
         EventBus m_EventBus;
 
         std::unique_ptr<Camera> m_Camera;
@@ -109,6 +116,8 @@ namespace HedgehogEngine
         std::unique_ptr<MaterialContainer> m_MaterialContainer;
 
         FrameData m_FrameData;
+
+        size_t m_GameObjectIndex = 0;
 
         std::unique_ptr<HedgehogSettings::Settings>                  m_Settings;
         std::unique_ptr<EcsSerialization::ComponentSerializerRegistry> m_ComponentRegistry;

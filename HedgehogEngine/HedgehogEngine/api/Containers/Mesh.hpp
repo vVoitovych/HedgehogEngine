@@ -2,6 +2,7 @@
 
 #include "HedgehogEngine/api/HedgehogEngineApi.hpp"
 
+#include "FileSystem/api/FileSystemManager.hpp"
 #include "HedgehogMath/api/Vector.hpp"
 
 #include <vector>
@@ -12,13 +13,14 @@ namespace HedgehogEngine
     class Mesh
     {
     public:
-        HEDGEHOG_ENGINE_API void LoadData(const std::string fileName);
+        HEDGEHOG_ENGINE_API void LoadData(const std::string& fileName,
+                                          const FS::FileSystemManager& fileSystem);
         HEDGEHOG_ENGINE_API void ClearData();
 
-        HEDGEHOG_ENGINE_API std::vector<HM::Vector3> GetPositions() const;
-        HEDGEHOG_ENGINE_API std::vector<HM::Vector2> GetTexCoords() const;
-        HEDGEHOG_ENGINE_API std::vector<HM::Vector3> GetNormals()   const;
-        HEDGEHOG_ENGINE_API std::vector<uint32_t>    GetIndices()   const;
+        HEDGEHOG_ENGINE_API const std::vector<HM::Vector3>& GetPositions() const;
+        HEDGEHOG_ENGINE_API const std::vector<HM::Vector2>& GetTexCoords() const;
+        HEDGEHOG_ENGINE_API const std::vector<HM::Vector3>& GetNormals()   const;
+        HEDGEHOG_ENGINE_API const std::vector<uint32_t>&    GetIndices()   const;
 
         HEDGEHOG_ENGINE_API uint32_t GetIndexCount()   const;
         HEDGEHOG_ENGINE_API uint32_t GetFirstIndex()   const;

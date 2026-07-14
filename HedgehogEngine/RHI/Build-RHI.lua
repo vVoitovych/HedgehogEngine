@@ -13,7 +13,7 @@ project "RHI"
        ".",
        "..",
        "../..",
-       "%{IncludeDir.VulkanSDK}",
+       "%{IncludeDir.VulkanSDK}"
    }
 
    links

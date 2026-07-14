@@ -4,28 +4,12 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include <Windows.h>
 #include <algorithm>
 #include <cassert>
-#include <filesystem>
 #include <sstream>
 
 namespace Renderer
 {
-
-namespace
-{
-    // Same root-resolution logic as VulkanShader: exe file path up 5 parent_path() calls
-    // lands at the repo root (Binaries/platform/config/Editor/exe → 5 levels up).
-    std::string ResolveAssetPath(const std::string& relativePath)
-    {
-        char buffer[MAX_PATH];
-        GetModuleFileNameA(nullptr, buffer, MAX_PATH);
-        std::filesystem::path root = std::filesystem::path(buffer)
-            .parent_path().parent_path().parent_path().parent_path().parent_path();
-        return root.string() + relativePath;
-    }
-} // namespace
 
 RHI::DescriptorType PipelineLoader::ParseDescriptorType(const std::string& s)
 {
@@ -64,56 +48,61 @@ RHI::ShaderStage PipelineLoader::ParseShaderStage(const std::string& s)
     return result;
 }
 
-PipelineFileDesc PipelineLoader::Load(const std::string& assetRelativePath)
+PipelineFileDesc PipelineLoader::Load(const std::string& virtualPath,
+                                       const FS::FileSystemManager& fileSystem)
 {
-    const std::string fullPath = ResolveAssetPath(assetRelativePath);
-
-    YAML::Node root;
-    try
+    const auto text = fileSystem.ReadTextFile(virtualPath);
+    if (!text)
     {
-        root = YAML::LoadFile(fullPath);
-    }
-    catch (const YAML::Exception& e)
-    {
-        LOGERROR("PipelineLoader: failed to load '", fullPath, "': ", e.what());
+        LOGERROR("PipelineLoader: failed to read '", virtualPath, "'");
         assert(false && "Pipeline file not found or malformed.");
     }
 
     PipelineFileDesc desc;
 
-    // descriptor_sets: list of sets; position in list = set index in pipeline layout.
-    if (const YAML::Node& sets = root["descriptor_sets"])
+    try
     {
-        for (const YAML::Node& setNode : sets)
+        YAML::Node root = YAML::Load(*text);
+
+        // descriptor_sets: list of sets; position in list = set index in pipeline layout.
+        if (const YAML::Node& sets = root["descriptor_sets"])
         {
-            std::vector<RHI::DescriptorBinding> bindings;
-            if (const YAML::Node& bindingsNode = setNode["bindings"])
+            for (const YAML::Node& setNode : sets)
             {
-                for (const YAML::Node& b : bindingsNode)
+                std::vector<RHI::DescriptorBinding> bindings;
+                if (const YAML::Node& bindingsNode = setNode["bindings"])
                 {
-                    RHI::DescriptorBinding binding;
-                    binding.m_Binding = b["binding"].as<uint32_t>();
-                    binding.m_Type    = ParseDescriptorType(b["type"].as<std::string>());
-                    binding.m_Count   = b["count"] ? b["count"].as<uint32_t>() : 1u;
-                    binding.m_Stages  = ParseShaderStage(b["stage"].as<std::string>());
-                    bindings.push_back(binding);
+                    for (const YAML::Node& b : bindingsNode)
+                    {
+                        RHI::DescriptorBinding binding;
+                        binding.m_Binding = b["binding"].as<uint32_t>();
+                        binding.m_Type    = ParseDescriptorType(b["type"].as<std::string>());
+                        binding.m_Count   = b["count"] ? b["count"].as<uint32_t>() : 1u;
+                        binding.m_Stages  = ParseShaderStage(b["stage"].as<std::string>());
+                        bindings.push_back(binding);
+                    }
                 }
+                desc.m_DescriptorSets.push_back(std::move(bindings));
             }
-            desc.m_DescriptorSets.push_back(std::move(bindings));
+        }
+
+        // push_constants: list of ranges.
+        if (const YAML::Node& pcs = root["push_constants"])
+        {
+            for (const YAML::Node& pc : pcs)
+            {
+                RHI::PushConstantRange range;
+                range.m_Stages = ParseShaderStage(pc["stage"].as<std::string>());
+                range.m_Offset = pc["offset"] ? pc["offset"].as<uint32_t>() : 0u;
+                range.m_Size   = pc["size"].as<uint32_t>();
+                desc.m_PushConstants.push_back(range);
+            }
         }
     }
-
-    // push_constants: list of ranges.
-    if (const YAML::Node& pcs = root["push_constants"])
+    catch (const YAML::Exception& e)
     {
-        for (const YAML::Node& pc : pcs)
-        {
-            RHI::PushConstantRange range;
-            range.m_Stages = ParseShaderStage(pc["stage"].as<std::string>());
-            range.m_Offset = pc["offset"] ? pc["offset"].as<uint32_t>() : 0u;
-            range.m_Size   = pc["size"].as<uint32_t>();
-            desc.m_PushConstants.push_back(range);
-        }
+        LOGERROR("PipelineLoader: failed to parse '", virtualPath, "': ", e.what());
+        assert(false && "Pipeline file not found or malformed.");
     }
 
     return desc;

@@ -41,6 +41,7 @@ project "HedgehogRenderer"
         "HedgehogSettings",
         "HedgehogWindow",
         "ContentLoader",
+        "FileSystem",
         "Logger",
         "imgui",
         "yaml-cpp"

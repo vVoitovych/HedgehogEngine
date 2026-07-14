@@ -7,11 +7,12 @@
 
 namespace HedgehogEngine
 {
-    void Mesh::LoadData(const std::string fileName)
+    void Mesh::LoadData(const std::string& fileName,
+                         const FS::FileSystemManager& fileSystem)
     {
         ClearData();
 
-        auto mesh = ContentLoader::LoadMesh(fileName);
+        auto mesh = ContentLoader::LoadMesh(fileName, fileSystem);
         m_IndicesData = mesh.indices;
         m_Positions.reserve(mesh.vertices.size());
         m_TexCoords.reserve(mesh.vertices.size());
@@ -36,10 +37,10 @@ namespace HedgehogEngine
         m_IndicesData.clear();
     }
 
-    std::vector<HM::Vector3> Mesh::GetPositions() const { return m_Positions; }
-    std::vector<HM::Vector2> Mesh::GetTexCoords() const { return m_TexCoords; }
-    std::vector<HM::Vector3> Mesh::GetNormals()   const { return m_Normals; }
-    std::vector<uint32_t>    Mesh::GetIndices()   const { return m_IndicesData; }
+    const std::vector<HM::Vector3>& Mesh::GetPositions() const { return m_Positions; }
+    const std::vector<HM::Vector2>& Mesh::GetTexCoords() const { return m_TexCoords; }
+    const std::vector<HM::Vector3>& Mesh::GetNormals()   const { return m_Normals; }
+    const std::vector<uint32_t>&    Mesh::GetIndices()   const { return m_IndicesData; }
 
     uint32_t Mesh::GetIndexCount()   const { return m_IndexCount; }
     uint32_t Mesh::GetFirstIndex()   const { return m_FirstIndex; }

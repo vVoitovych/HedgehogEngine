@@ -4,7 +4,8 @@
 
 #include <Volk/volk.h>
 
-#include <string>
+#include <cstddef>
+#include <span>
 
 namespace RHI
 {
@@ -14,7 +15,7 @@ class VulkanDevice;
 class VulkanShader final : public IRHIShader
 {
 public:
-    VulkanShader(VulkanDevice& device, const std::string& filePath, ShaderStage stage);
+    VulkanShader(VulkanDevice& device, std::span<const std::byte> spirv, ShaderStage stage);
     ~VulkanShader() override;
 
     VulkanShader(const VulkanShader&)            = delete;

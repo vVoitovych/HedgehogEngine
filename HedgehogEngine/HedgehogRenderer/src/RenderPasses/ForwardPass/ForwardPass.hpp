@@ -26,6 +26,11 @@ namespace HedgehogEngine
     struct LightData;
 }
 
+namespace FS
+{
+    class FileSystemManager;
+}
+
 namespace Renderer
 {
     class ResourceManager;
@@ -33,7 +38,8 @@ namespace Renderer
     class ForwardPass
     {
     public:
-        ForwardPass(RHI::IRHIDevice& device, ResourceManager& resourceManager);
+        ForwardPass(RHI::IRHIDevice& device, ResourceManager& resourceManager,
+                    const FS::FileSystemManager& fileSystem);
         ~ForwardPass();
 
         void Render(const HedgehogEngine::FrameData& frame, const ResourceManager& resourceManager,

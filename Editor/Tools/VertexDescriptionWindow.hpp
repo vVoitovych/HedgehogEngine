@@ -1,5 +1,7 @@
 #pragma once
 
+#include "FileSystem/api/FileSystemManager.hpp"
+
 #include <string>
 #include <vector>
 
@@ -11,7 +13,7 @@ class VertexDescriptionWindow
 public:
     bool m_Open = false;
 
-    void Draw();
+    void Draw(const FS::FileSystemManager& fileSystem);
 
 private:
     struct BindingState
@@ -30,7 +32,7 @@ private:
     };
 
     // ── Sub-sections ──────────────────────────────────────────────────────────
-    void DrawFileControls();
+    void DrawFileControls(const FS::FileSystemManager& fileSystem);
     void DrawBindingsTable();
     void DrawAttributesTable();
     void DrawValidation();
@@ -42,11 +44,11 @@ private:
 
     // ── File I/O ──────────────────────────────────────────────────────────────
     void NewFile();
-    void OpenFile();
-    void SaveFile();
-    void SaveAsFile();
-    bool LoadFromPath(const std::string& path);
-    bool SaveToPath(const std::string& path);
+    void OpenFile(const FS::FileSystemManager& fileSystem);
+    void SaveFile(const FS::FileSystemManager& fileSystem);
+    void SaveAsFile(const FS::FileSystemManager& fileSystem);
+    bool LoadFromPath(const std::string& path, const FS::FileSystemManager& fileSystem);
+    bool SaveToPath(const std::string& virtualPath, const FS::FileSystemManager& fileSystem);
 
     // ── Format / input-rate string mapping ───────────────────────────────────
     static int         FormatToIndex(const std::string& fmt);
@@ -54,7 +56,8 @@ private:
     static const char* IndexToInputRate(int idx);
 
     // ── State ─────────────────────────────────────────────────────────────────
-    std::string                 m_FilePath;
+    std::string                 m_FilePath;     // absolute OS path — used for display
+    std::string                 m_VirtualPath;  // engine:// path — used for writing
     bool                        m_Dirty = false;
     std::vector<BindingState>   m_Bindings;
     std::vector<AttributeState> m_Attributes;

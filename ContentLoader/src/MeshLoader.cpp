@@ -1,5 +1,4 @@
 #include "api/MeshLoader.hpp"
-#include "api/CommonFunctions.hpp"
 
 #include "ObjLoader.hpp"
 #include "GltfMeshLoader.hpp"
@@ -9,21 +8,22 @@
 
 namespace ContentLoader
 {
-    LoadedMesh LoadMesh(const std::string& fileName)
+    LoadedMesh LoadMesh(const std::string& fileName,
+                         const FS::FileSystemManager& fileSystem)
     {
-        std::string path = GetAssetsDirectory() + fileName;
-        std::string extension = std::filesystem::path(path).extension().string();
+        const std::string virtualPath = "assets://" + fileName;
+        const auto physPath = fileSystem.ResolvePhysical(virtualPath);
+        if (!physPath)
+            throw std::runtime_error("Cannot resolve mesh path: " + virtualPath);
+
+        const std::string path      = physPath->string();
+        const std::string extension = std::filesystem::path(path).extension().string();
+
         if (extension == ".obj")
-        {
             return LoadObj(path);
-        }
         else if (extension == ".gltf")
-        {
             return LoadGltfMesh(path);
-        }
         else
-        {
-            throw std::runtime_error("unsuported file format");
-        }
+            throw std::runtime_error("unsupported file format: " + extension);
     }
 }

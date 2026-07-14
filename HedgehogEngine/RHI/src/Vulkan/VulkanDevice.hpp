@@ -47,7 +47,8 @@ public:
     std::unique_ptr<IRHISampler> CreateSampler(const SamplerDesc& desc) const override;
 
     std::unique_ptr<IRHIShader> CreateShader(
-        const std::string& filePath, ShaderStage stage) const override;
+        std::span<const std::byte> spirv,
+        ShaderStage                stage) const override;
 
     std::unique_ptr<IRHIDescriptorSetLayout> CreateDescriptorSetLayout(
         const std::vector<DescriptorBinding>& bindings) const override;

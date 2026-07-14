@@ -31,6 +31,11 @@ namespace HedgehogSettings
     class Settings;
 }
 
+namespace FS
+{
+    class FileSystemManager;
+}
+
 namespace Renderer
 {
     class ResourceManager;
@@ -39,7 +44,8 @@ namespace Renderer
     {
     public:
         ShadowmapPass(RHI::IRHIDevice& device, const HedgehogSettings::Settings& settings,
-                      const ResourceManager& resourceManager);
+                      const ResourceManager& resourceManager,
+                      const FS::FileSystemManager& fileSystem);
         ~ShadowmapPass();
 
         void Render(const HedgehogEngine::FrameData& frame, const ResourceManager& resourceManager,

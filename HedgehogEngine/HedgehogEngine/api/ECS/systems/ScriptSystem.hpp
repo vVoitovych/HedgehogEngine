@@ -7,6 +7,8 @@
 #include "ECS/api/ECS.hpp"
 #include "ECS/api/Entity.hpp"
 
+#include "FileSystem/api/FileSystemManager.hpp"
+
 namespace HedgehogEngine
 {
     class ScriptComponent;
@@ -17,12 +19,14 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API void Update(ECS::ECS& ecs, float dt, EventBus& bus);
 
         HEDGEHOG_ENGINE_API void ClearScriptComponent(ECS::Entity entity, ECS::ECS& ecs);
-        HEDGEHOG_ENGINE_API void ChangeScript(ECS::Entity entity, ECS::ECS& ecs, EventBus& bus);
-        HEDGEHOG_ENGINE_API void InitScript(ECS::Entity entity, ECS::ECS& ecs, EventBus& bus);
+        HEDGEHOG_ENGINE_API void ChangeScript(ECS::Entity entity, ECS::ECS& ecs, EventBus& bus,
+                                              const FS::FileSystemManager& fileSystem);
+        HEDGEHOG_ENGINE_API void InitScript(ECS::Entity entity, ECS::ECS& ecs, EventBus& bus,
+                                            const FS::FileSystemManager& fileSystem);
 
     private:
-        void CallOnEnable(ECS::ECS& ecs);
+        void CallOnEnable(ECS::ECS& ecs, EventBus& bus);
         void CallUpdate(ECS::ECS& ecs, float dt, EventBus& bus);
-        void CallOnDisable(ECS::ECS& ecs);
+        void CallOnDisable(ECS::ECS& ecs, EventBus& bus);
     };
 }

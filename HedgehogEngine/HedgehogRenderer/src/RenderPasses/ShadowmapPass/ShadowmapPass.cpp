@@ -1,6 +1,8 @@
 #include "ShadowmapPass.hpp"
 #include "ShadowmapPassPushConstants.hpp"
 
+#include "FileSystem/api/FileSystemManager.hpp"
+
 #include "HedgehogEngine/api/Frame/FrameData.hpp"
 
 #include "HedgehogCommon/api/RendererSettings.hpp"
@@ -33,10 +35,12 @@ namespace Renderer
 {
 
     ShadowmapPass::ShadowmapPass(RHI::IRHIDevice& device, const HedgehogSettings::Settings& settings,
-                                  const ResourceManager& resourceManager)
+                                  const ResourceManager& resourceManager,
+                                  const FS::FileSystemManager& fileSystem)
     {
         const auto sd = ShaderLoader::Load(device,
-            "/HedgehogEngine/HedgehogRenderer/assets/Shaders/ShadowmapPass.shader");
+            "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/ShadowmapPass.shader",
+            fileSystem);
         assert(!sd.m_Layout.m_DescriptorSets.empty());
 
         m_ShadowmapLayout = device.CreateDescriptorSetLayout(sd.m_Layout.m_DescriptorSets[0]);
@@ -68,12 +72,12 @@ namespace Renderer
             }
         }
 
-        // Render pass: depth-only, Clear/DontCare, Undefined → DepthStencilReadOnly
+        // Render pass: depth-only, Clear/Store, Undefined → DepthStencilReadOnly
         RHI::RenderPassDesc rpDesc;
         rpDesc.m_DepthAttachment = RHI::AttachmentDesc{
             resourceManager.GetRHIShadowMap().GetFormat(),
             RHI::LoadOp::Clear,
-            RHI::StoreOp::DontCare,
+            RHI::StoreOp::Store,
             RHI::LoadOp::DontCare,
             RHI::StoreOp::DontCare,
             RHI::ImageLayout::Undefined,

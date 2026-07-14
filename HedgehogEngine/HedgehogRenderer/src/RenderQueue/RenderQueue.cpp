@@ -12,6 +12,8 @@
 
 #include "HedgehogEngine/api/Frame/FrameData.hpp"
 
+#include "FileSystem/api/FileSystemManager.hpp"
+
 #include "RHI/api/IRHIDevice.hpp"
 #include "RHI/api/IRHISwapchain.hpp"
 #include "RHI/api/IRHICommandList.hpp"
@@ -23,12 +25,13 @@ namespace Renderer
     RenderQueue::RenderQueue(RHI::IRHIDevice&                  device,
                              HW::Window&                       window,
                              const HedgehogSettings::Settings& settings,
-                             ResourceManager&                  resourceManager)
+                             ResourceManager&                  resourceManager,
+                             const FS::FileSystemManager&      fileSystem)
     {
         m_InitPass      = std::make_unique<InitPass>();
-        m_DepthPrePass  = std::make_unique<DepthPrePass>(device, resourceManager);
-        m_ShadowmapPass = std::make_unique<ShadowmapPass>(device, settings, resourceManager);
-        m_ForwardPass   = std::make_unique<ForwardPass>(device, resourceManager);
+        m_DepthPrePass  = std::make_unique<DepthPrePass>(device, resourceManager, fileSystem);
+        m_ShadowmapPass = std::make_unique<ShadowmapPass>(device, settings, resourceManager, fileSystem);
+        m_ForwardPass   = std::make_unique<ForwardPass>(device, resourceManager, fileSystem);
         m_GuiPass       = std::make_unique<GuiPass>(window, device, resourceManager);
         m_PresentPass   = std::make_unique<PresentPass>();
     }

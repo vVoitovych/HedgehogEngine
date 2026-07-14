@@ -2,12 +2,13 @@
 
 #include "DialogueWindows/api/VertexDescDialogue.hpp"
 
+#include "Logger/api/Logger.hpp"
+
 #include "imgui.h"
 
 #include <yaml-cpp/yaml.h>
 
 #include <algorithm>
-#include <fstream>
 #include <set>
 
 namespace Editor
@@ -81,42 +82,62 @@ bool VertexDescriptionWindow::AttributeBindingExists(int binding) const
 void VertexDescriptionWindow::NewFile()
 {
     m_FilePath.clear();
+    m_VirtualPath.clear();
     m_Bindings.clear();
     m_Attributes.clear();
     m_Dirty = false;
 }
 
-void VertexDescriptionWindow::OpenFile()
+void VertexDescriptionWindow::OpenFile(const FS::FileSystemManager& fileSystem)
 {
     char* path = DialogueWindows::VertexDescOpenDialogue();
     if (path != nullptr)
-        LoadFromPath(path);
+        LoadFromPath(path, fileSystem);
 }
 
-void VertexDescriptionWindow::SaveFile()
+void VertexDescriptionWindow::SaveFile(const FS::FileSystemManager& fileSystem)
 {
-    if (m_FilePath.empty())
-        SaveAsFile();
+    if (m_VirtualPath.empty())
+        SaveAsFile(fileSystem);
     else
-        SaveToPath(m_FilePath);
+        SaveToPath(m_VirtualPath, fileSystem);
 }
 
-void VertexDescriptionWindow::SaveAsFile()
+void VertexDescriptionWindow::SaveAsFile(const FS::FileSystemManager& fileSystem)
 {
     char* path = DialogueWindows::VertexDescSaveDialogue();
     if (path != nullptr)
     {
-        m_FilePath = path;
-        SaveToPath(m_FilePath);
+        const auto virtualPath = fileSystem.ToVirtualPath(path);
+        if (!virtualPath)
+        {
+            LOGERROR("VertexDescriptionWindow: '", path, "' is outside all mounted roots and cannot be saved.");
+            return;
+        }
+        m_FilePath    = path;
+        m_VirtualPath = *virtualPath;
+        SaveToPath(m_VirtualPath, fileSystem);
     }
 }
 
-bool VertexDescriptionWindow::LoadFromPath(const std::string& path)
+bool VertexDescriptionWindow::LoadFromPath(const std::string& path,
+                                            const FS::FileSystemManager& fileSystem)
 {
+    const auto virtualPath = fileSystem.ToVirtualPath(path);
+    if (!virtualPath)
+    {
+        LOGERROR("VertexDescriptionWindow: '", path, "' is outside all mounted roots and cannot be opened.");
+        return false;
+    }
+
+    const auto text = fileSystem.ReadTextFile(*virtualPath);
+    if (!text)
+        return false;
+
     YAML::Node root;
     try
     {
-        root = YAML::LoadFile(path);
+        root = YAML::Load(*text);
     }
     catch (const YAML::Exception&)
     {
@@ -152,13 +173,21 @@ bool VertexDescriptionWindow::LoadFromPath(const std::string& path)
         }
     }
 
-    m_FilePath = path;
-    m_Dirty    = false;
+    m_FilePath    = path;
+    m_VirtualPath = *virtualPath;
+    m_Dirty       = false;
     return true;
 }
 
-bool VertexDescriptionWindow::SaveToPath(const std::string& path)
+bool VertexDescriptionWindow::SaveToPath(const std::string& virtualPath,
+                                          const FS::FileSystemManager& fileSystem)
 {
+    if (virtualPath.empty())
+    {
+        LOGERROR("VertexDescriptionWindow: cannot save — file path is outside the engine root.");
+        return false;
+    }
+
     YAML::Emitter out;
     out << YAML::BeginMap;
 
@@ -187,26 +216,24 @@ bool VertexDescriptionWindow::SaveToPath(const std::string& path)
 
     out << YAML::EndMap;
 
-    std::ofstream file(path);
-    if (!file.is_open())
+    if (!fileSystem.WriteTextFile(virtualPath, out.c_str()))
         return false;
 
-    file << out.c_str();
     m_Dirty = false;
     return true;
 }
 
 // ── UI ────────────────────────────────────────────────────────────────────────
 
-void VertexDescriptionWindow::DrawFileControls()
+void VertexDescriptionWindow::DrawFileControls(const FS::FileSystemManager& fileSystem)
 {
     if (ImGui::Button("New"))     NewFile();
     ImGui::SameLine();
-    if (ImGui::Button("Open"))    OpenFile();
+    if (ImGui::Button("Open"))    OpenFile(fileSystem);
     ImGui::SameLine();
-    if (ImGui::Button("Save"))    SaveFile();
+    if (ImGui::Button("Save"))    SaveFile(fileSystem);
     ImGui::SameLine();
-    if (ImGui::Button("Save As")) SaveAsFile();
+    if (ImGui::Button("Save As")) SaveAsFile(fileSystem);
 
     ImGui::Separator();
 
@@ -452,7 +479,7 @@ void VertexDescriptionWindow::DrawValidation()
     }
 }
 
-void VertexDescriptionWindow::Draw()
+void VertexDescriptionWindow::Draw(const FS::FileSystemManager& fileSystem)
 {
     if (!m_Open)
         return;
@@ -468,7 +495,7 @@ void VertexDescriptionWindow::Draw()
         return;
     }
 
-    DrawFileControls();
+    DrawFileControls(fileSystem);
     ImGui::Spacing();
     DrawBindingsTable();
     ImGui::Spacing();
