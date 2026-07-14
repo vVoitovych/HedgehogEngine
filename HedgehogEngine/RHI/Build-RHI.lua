@@ -13,12 +13,14 @@ project "RHI"
        ".",
        "..",
        "../..",
-       "%{IncludeDir.VulkanSDK}"
+       "%{IncludeDir.VulkanSDK}",
+       "%{IncludeDir.ImGui}/imgui"
    }
 
    links
    {
        "Logger",
+       "imgui",
    }
 
    targetdir ("../../Binaries/" .. OutputDir .. "/%{prj.name}")

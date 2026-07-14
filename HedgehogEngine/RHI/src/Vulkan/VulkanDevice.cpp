@@ -21,6 +21,7 @@
 #include "VulkanCommandList.hpp"
 #include "VulkanDescriptor.hpp"
 #include "VulkanFramebuffer.hpp"
+#include "VulkanGuiBackend.hpp"
 #include "VulkanPipeline.hpp"
 #include "VulkanRenderPass.hpp"
 #include "VulkanSampler.hpp"
@@ -482,6 +483,11 @@ std::unique_ptr<IRHIFence> VulkanDevice::CreateFence(bool signaled) const
 std::unique_ptr<IRHISemaphore> VulkanDevice::CreateSemaphore() const
 {
     return std::make_unique<VulkanSemaphore>(const_cast<VulkanDevice&>(*this));
+}
+
+std::unique_ptr<IRHIGuiBackend> VulkanDevice::CreateGuiBackend(const GuiBackendDesc& desc) const
+{
+    return std::make_unique<VulkanGuiBackend>(const_cast<VulkanDevice&>(*this), desc);
 }
 
 // ── Submission ────────────────────────────────────────────────────────────────
