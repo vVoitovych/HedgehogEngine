@@ -7,6 +7,7 @@ project "Editor"
 
    includedirs
    {
+      ".",
       "..",
       "../HedgehogEngine",
       "../HedgehogEngine/HedgehogEngine/api",
@@ -26,7 +27,8 @@ project "Editor"
       "yaml-cpp",
       "ECS",
       "DialogueWindows",
-      "FileSystem"
+      "FileSystem",
+      "imgui"
    }
 
    targetdir ("../Binaries/" .. OutputDir .. "/%{prj.name}")

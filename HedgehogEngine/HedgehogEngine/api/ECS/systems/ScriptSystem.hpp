@@ -19,8 +19,11 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API void Update(ECS::ECS& ecs, float dt, EventBus& bus);
 
         HEDGEHOG_ENGINE_API void ClearScriptComponent(ECS::Entity entity, ECS::ECS& ecs);
+        // physicalPath: absolute file-system path chosen by the caller.
+        // The caller is responsible for opening any file dialog.
         HEDGEHOG_ENGINE_API void ChangeScript(ECS::Entity entity, ECS::ECS& ecs, EventBus& bus,
-                                              const FS::FileSystemManager& fileSystem);
+                                              const FS::FileSystemManager& fileSystem,
+                                              const std::string& physicalPath);
         HEDGEHOG_ENGINE_API void InitScript(ECS::Entity entity, ECS::ECS& ecs, EventBus& bus,
                                             const FS::FileSystemManager& fileSystem);
 

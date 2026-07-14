@@ -25,10 +25,13 @@
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RenderComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
-#include "HedgehogEngine/api/Reflection/GuiReflection.hpp"
+#include "Reflection/GuiReflection.hpp"
 
 #include "DialogueWindows/api/MaterialDialogue.hpp"
+#include "DialogueWindows/api/MeshDialogue.hpp"
 #include "DialogueWindows/api/SceneDialogue.hpp"
+#include "DialogueWindows/api/ScriptDialogue.hpp"
+#include "DialogueWindows/api/TextureDialogue.hpp"
 
 #include "Logger/api/Logger.hpp"
 
@@ -258,7 +261,17 @@ namespace Editor
 
             ImGui::Separator();
             if (ImGui::MenuItem("Create material"))
-                engineContext.GetMaterialContainer().CreateNewMaterial(engineContext.GetFileSystem());
+            {
+                if (const char* path = DialogueWindows::MaterialCreationDialogue())
+                {
+                    const auto& fs = engineContext.GetFileSystem();
+                    const auto virtualPath = fs.ToVirtualPath(path);
+                    if (virtualPath)
+                        engineContext.GetMaterialContainer().CreateNewMaterial(fs, *virtualPath);
+                    else
+                        LOGERROR("Material path is not under any registered mount: ", path);
+                }
+            }
             ImGui::EndMenu();
         }
 
@@ -504,7 +517,22 @@ namespace Editor
         }
 
         if (ImGui::Button("Load mesh"))
-            meshSystem->LoadMesh(ecs, entity, engineContext.GetFileSystem());
+        {
+            if (const char* path = DialogueWindows::MeshOpenDialogue())
+            {
+                const auto& fs = engineContext.GetFileSystem();
+                const auto virtualPath = fs.ToVirtualPath(path);
+                if (virtualPath)
+                {
+                    constexpr std::string_view k_Prefix = "assets://";
+                    meshSystem->LoadMesh(ecs, entity, virtualPath->substr(k_Prefix.size()));
+                }
+                else
+                {
+                    LOGERROR("Mesh path is not under any registered mount: ", path);
+                }
+            }
+        }
         if (ImGui::Button("Remove mesh"))
         {
             if (ecs.HasComponent<HedgehogEngine::MeshComponent>(entity))
@@ -618,7 +646,23 @@ namespace Editor
             }
 
             if (ImGui::Button("Load texture"))
-                materialContainer.LoadBaseTexture(render.m_MaterialIndex.value(), engineContext.GetFileSystem());
+            {
+                if (const char* texPath = DialogueWindows::TextureOpenDialogue())
+                {
+                    const auto& fs = engineContext.GetFileSystem();
+                    const auto virtualPath = fs.ToVirtualPath(texPath);
+                    if (virtualPath)
+                    {
+                        constexpr std::string_view k_Prefix = "assets://";
+                        materialContainer.LoadBaseTexture(render.m_MaterialIndex.value(),
+                                                          virtualPath->substr(k_Prefix.size()));
+                    }
+                    else
+                    {
+                        LOGERROR("Texture path is not under any registered mount: ", texPath);
+                    }
+                }
+            }
 
             if (materialData.type == HedgehogEngine::MaterialType::Transparent)
             {
@@ -693,7 +737,12 @@ namespace Editor
         }
 
         if (ImGui::Button("Load script"))
-            scriptSystem->ChangeScript(entity, ecs, engineContext.GetEventBus(), engineContext.GetFileSystem());
+        {
+            std::string scriptPath = DialogueWindows::ScriptChooseDialogue();
+            if (!scriptPath.empty())
+                scriptSystem->ChangeScript(entity, ecs, engineContext.GetEventBus(),
+                                           engineContext.GetFileSystem(), scriptPath);
+        }
 
         if (!component.m_Params.empty())
             ImGui::SeparatorText("Parameters");

@@ -31,8 +31,10 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API std::vector<ECS::Entity>        GetEntities() const;
 
         HEDGEHOG_ENGINE_API void AddMeshPath(const std::string& meshPath);
+        // Takes the relative mesh path (without "assets://" prefix).
+        // The caller is responsible for opening any file dialog and resolving the path.
         HEDGEHOG_ENGINE_API void LoadMesh(ECS::ECS& ecs, ECS::Entity entity,
-                                          const FS::FileSystemManager& fileSystem);
+                                          const std::string& relativePath);
 
         HEDGEHOG_ENGINE_API static const std::string sDefaultMeshPath;
 

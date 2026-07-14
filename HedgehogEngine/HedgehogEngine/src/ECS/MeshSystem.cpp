@@ -1,9 +1,7 @@
 #include "HedgehogEngine/api/ECS/systems/MeshSystem.hpp"
 #include "Logger/api/Logger.hpp"
-#include "DialogueWindows/api/MeshDialogue.hpp"
 
 #include <algorithm>
-#include <string_view>
 
 namespace HedgehogEngine
 {
@@ -74,29 +72,23 @@ namespace HedgehogEngine
         m_MeshPaths.push_back(meshPath);
     }
 
-    void MeshSystem::LoadMesh(ECS::ECS& ecs, ECS::Entity entity,
-                               const FS::FileSystemManager& fileSystem)
+    void MeshSystem::LoadMesh(ECS::ECS& ecs, ECS::Entity entity, const std::string& relativePath)
     {
-        char* path = DialogueWindows::MeshOpenDialogue();
-        if (path == nullptr)
-            return;
-
-        const auto virtualPath = fileSystem.ToVirtualPath(path);
-        if (!virtualPath)
-        {
-            LOGERROR("MeshSystem::LoadMesh: path is not under any registered mount (path: ", path, ")");
-            return;
-        }
-
-        // Strip "assets://" prefix; m_MeshPath stores the relative path.
-        constexpr std::string_view k_AssetsPrefix = "assets://";
-        const std::string relatedPath = virtualPath->substr(k_AssetsPrefix.size());
-
         auto& meshComponent      = ecs.GetComponent<MeshComponent>(entity);
-        auto  prevMeshPath       = meshComponent.m_MeshPath;
-        meshComponent.m_MeshPath = relatedPath;
-        AddMeshPath(relatedPath);
-        CheckMeshPath(meshComponent, prevMeshPath, fileSystem);
+        meshComponent.m_MeshPath = relativePath;
+
+        auto it = std::find(m_MeshPaths.begin(), m_MeshPaths.end(), relativePath);
+        if (it == m_MeshPaths.end())
+        {
+            meshComponent.m_MeshIndex = static_cast<uint64_t>(m_MeshPaths.size());
+            m_MeshPaths.push_back(relativePath);
+            m_UpdateMeshContainer = true;
+        }
+        else
+        {
+            meshComponent.m_MeshIndex = static_cast<uint64_t>(it - m_MeshPaths.begin());
+        }
+        meshComponent.m_CachedMeshPath = relativePath;
     }
 
     void MeshSystem::CheckMeshPath(MeshComponent& meshComponent, const std::string& fallbackPath,

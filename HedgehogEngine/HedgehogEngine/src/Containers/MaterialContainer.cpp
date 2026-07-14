@@ -2,12 +2,7 @@
 #include "HedgehogEngine/api/Containers/MaterialData.hpp"
 #include "MaterialSerializer.hpp"
 
-#include "DialogueWindows/api/MaterialDialogue.hpp"
-#include "DialogueWindows/api/TextureDialogue.hpp"
-
 #include "HedgehogEngine/api/ECS/systems/RenderSystem.hpp"
-
-#include "Logger/api/Logger.hpp"
 
 #include <cassert>
 #include <string_view>
@@ -37,29 +32,19 @@ namespace HedgehogEngine
         m_Materials.clear();
     }
 
-    void MaterialContainer::CreateNewMaterial(const FS::FileSystemManager& fileSystem)
+    void MaterialContainer::CreateNewMaterial(const FS::FileSystemManager& fileSystem,
+                                               const std::string& virtualPath)
     {
-        auto path = DialogueWindows::MaterialCreationDialogue();
-        if (path != nullptr)
-        {
-            const auto virtualPath = fileSystem.ToVirtualPath(path);
-            if (!virtualPath)
-            {
-                LOGERROR("MaterialContainer::CreateNewMaterial: path is not under any registered mount (path: ", path, ")");
-                return;
-            }
+        constexpr std::string_view k_Prefix = "assets://";
 
-            MaterialData newData;
-            newData.type         = MaterialType::Opaque;
-            newData.transparency = 1.0f;
-            newData.baseColor    = m_DefaultCellTexture;
-            // Strip "assets://" prefix to store just the relative path.
-            constexpr std::string_view ASSETS_PREFIX = "assets://";
-            newData.path = virtualPath->substr(ASSETS_PREFIX.size());
+        MaterialData newData;
+        newData.type         = MaterialType::Opaque;
+        newData.transparency = 1.0f;
+        newData.baseColor    = m_DefaultCellTexture;
+        newData.path         = virtualPath.substr(k_Prefix.size());
 
-            MaterialSerializer::Serialize(newData, *virtualPath, fileSystem);
-            m_Materials.push_back(newData);
-        }
+        MaterialSerializer::Serialize(newData, virtualPath, fileSystem);
+        m_Materials.push_back(newData);
     }
 
     void MaterialContainer::SaveMaterial(size_t index, const FS::FileSystemManager& fileSystem)
@@ -70,23 +55,10 @@ namespace HedgehogEngine
         MaterialSerializer::Serialize(data, virtualPath, fileSystem);
     }
 
-    void MaterialContainer::LoadBaseTexture(size_t index, const FS::FileSystemManager& fileSystem)
+    void MaterialContainer::LoadBaseTexture(size_t index, const std::string& relativePath)
     {
         assert(index < m_Materials.size() && "MaterialContainer::LoadBaseTexture: index out of range");
-        auto texturePath = DialogueWindows::TextureOpenDialogue();
-        if (texturePath == nullptr)
-            return;
-
-        const auto virtualPath = fileSystem.ToVirtualPath(texturePath);
-        if (!virtualPath)
-        {
-            LOGERROR("MaterialContainer::LoadBaseTexture: path is not under any registered mount (path: ", texturePath, ")");
-            return;
-        }
-
-        // Strip "assets://" prefix; baseColor stores the relative path.
-        constexpr std::string_view ASSETS_PREFIX = "assets://";
-        m_Materials[index].baseColor = virtualPath->substr(ASSETS_PREFIX.size());
+        m_Materials[index].baseColor = relativePath;
         m_Materials[index].isDirty   = true;
     }
 

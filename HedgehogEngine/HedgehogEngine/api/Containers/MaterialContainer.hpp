@@ -27,9 +27,12 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API void SetMaterialDirty(size_t index);
 
         HEDGEHOG_ENGINE_API void ClearMaterials();
-        HEDGEHOG_ENGINE_API void CreateNewMaterial(const FS::FileSystemManager& fileSystem);
+        // virtualPath: full "assets://..." path chosen by the caller.
+        HEDGEHOG_ENGINE_API void CreateNewMaterial(const FS::FileSystemManager& fileSystem,
+                                                    const std::string& virtualPath);
         HEDGEHOG_ENGINE_API void SaveMaterial(size_t index, const FS::FileSystemManager& fileSystem);
-        HEDGEHOG_ENGINE_API void LoadBaseTexture(size_t index, const FS::FileSystemManager& fileSystem);
+        // relativePath: path without "assets://" prefix, chosen by the caller.
+        HEDGEHOG_ENGINE_API void LoadBaseTexture(size_t index, const std::string& relativePath);
 
         HEDGEHOG_ENGINE_API size_t              GetMaterialCount() const;
         HEDGEHOG_ENGINE_API MaterialData&       GetMaterialDataByIndex(size_t index);
