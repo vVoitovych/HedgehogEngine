@@ -32,10 +32,13 @@ Work through the Implementation Steps in order, starting from the first unchecke
 
 For EACH step:
 1. Implement the change across all listed files.
-2. After completing the step, immediately update workflow/progress.md:
+2. Build the solution and fix any errors before proceeding:
+   & "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe" HedgehogEngine.sln /p:Configuration=Debug /p:Platform=x64 /m /v:m
+   A step is not done until the solution compiles cleanly.
+3. After the build succeeds, update workflow/progress.md:
    - Mark the step as [x] done
-   - Add a brief note: what you did and any surprises
-3. If you hit an ambiguity or blocker, write it to workflow/progress.md under "## Blockers" and stop.
+   - Add a brief note: what you did, any surprises, and the build result
+4. If you hit an ambiguity or blocker, write it to workflow/progress.md under "## Blockers" and stop.
 
 CODING RULES (enforce strictly):
 - Member variables: m_ prefix
