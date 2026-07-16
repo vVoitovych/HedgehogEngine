@@ -23,6 +23,7 @@ project "HedgehogRenderer"
         "%{IncludeDir.VulkanSDK}",
         "%{IncludeDir.ImGui}".."/imgui",
         "%{IncludeDir.yaml_cpp}",
+        "%{IncludeDir.Tracy}",
         "../..",
         "..",
         "api",
@@ -44,7 +45,8 @@ project "HedgehogRenderer"
         "FileSystem",
         "Logger",
         "imgui",
-        "yaml-cpp"
+        "yaml-cpp",
+        "Tracy"
     }
 
 
@@ -65,7 +67,7 @@ project "HedgehogRenderer"
        symbols "On"
 
    filter "configurations:Release"
-       defines { "RELEASE" }
+       defines { "RELEASE", "TRACY_ENABLE", "TRACY_ON_DEMAND" }
        runtime "Release"
        optimize "On"
 

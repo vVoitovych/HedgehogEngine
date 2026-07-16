@@ -28,7 +28,10 @@ project "Editor"
       "ECS",
       "DialogueWindows",
       "FileSystem",
-      "imgui"
+      "imgui",
+      -- Tracy client (linked into HedgehogRenderer) needs these on Windows.
+      "ws2_32",
+      "dbghelp"
    }
 
    targetdir ("../Binaries/" .. OutputDir .. "/%{prj.name}")

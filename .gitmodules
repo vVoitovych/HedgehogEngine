@@ -16,3 +16,6 @@
 [submodule "ThirdParty/Lua/lua"]
 	path = ThirdParty/Lua/lua
 	url = https://github.com/vVoitovych/lua.git
+[submodule "ThirdParty/Tracy/tracy"]
+	path = ThirdParty/Tracy/tracy
+	url = https://github.com/wolfpld/tracy.git

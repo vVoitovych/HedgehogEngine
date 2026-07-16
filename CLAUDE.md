@@ -44,6 +44,16 @@ Vendor\Binaries\Premake\Windows\premake5.exe --file=Build.lua vs2022
 
 **CI:** `.github/workflows/build.yml` builds Debug+Release and runs all test exes on every PR (the smoke test is local-only — CI runners have no Vulkan GPU).
 
+## Performance
+
+- **Frame budget: 16.6 ms (60 FPS) in Release** at default window size on the baseline machine. Weigh this in any plan touching the frame loop, render passes, ECS iteration, or per-frame allocations.
+- **No optimization without a before/after number.** Measure with:
+  ```
+  Binaries\windows-x86_64\Release\Editor\Editor.exe --benchmark [frames]
+  ```
+  It loads `Assets/Scenes/benchmark.yaml`, warms up 120 frames, measures 600, and logs per-pass CPU timings (avg/min/max/p95) plus wall frame time and FPS. Always Release; run before and after the change and quote both numbers. Baseline table and methodology: `PERFORMANCE.md`.
+- Per-pass rows are CPU record times; GPU-bound waiting shows up in `InitPass` (fence/acquire) and `PresentPass` (submit/present). For GPU-side detail, connect the Tracy 0.13.1 server (client is linked in Release, `TRACY_ON_DEMAND`); zones via `HH_PROFILE_ZONE` in `HedgehogRenderer/src/Profiling/Profiler.hpp`.
+
 ## Architecture
 
 The engine is a set of C++20 libraries (mix of static and shared) with an `Editor` executable as the entry point. Dependencies flow strictly upward:

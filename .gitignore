@@ -616,3 +616,4 @@ Binaries
 /FileSystem/FileSystem.vcxproj.filters
 /FileSystem/tests/FileSystemTest.vcxproj
 /FileSystem/tests/FileSystemTest.vcxproj.user
+/ThirdParty/Tracy/Tracy.vcxproj

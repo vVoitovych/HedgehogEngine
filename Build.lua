@@ -18,6 +18,7 @@ group "ThirdParty"
    include "ThirdParty/tinyfiledialogs/Build-tinyfiledialogs.lua"
    include "ThirdParty/YamlCpp/Build-YamlCpp.lua"
    include "ThirdParty/Lua/Build-Lua.lua"
+   include "ThirdParty/Tracy/Build-Tracy.lua"
 group ""
 
 include "HedgehogEngine/RHI/Build-RHI.lua"

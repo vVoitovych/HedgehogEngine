@@ -32,11 +32,18 @@ namespace Editor
         // renders that many frames and exits (used by the --smoke-test mode).
         void Run(uint32_t maxFrames = 0);
 
+        // Loads the benchmark scene, renders warmupFrames untimed, then
+        // measures measureFrames and logs per-pass and frame-time statistics.
+        void RunBenchmark(uint32_t warmupFrames, uint32_t measureFrames);
+
     private:
         void  Init();
         void  MainLoop(uint32_t maxFrames);
         void  Cleanup();
         float GetFrameTime();
+
+        float stepFrame();
+        void  loadBenchmarkScene();
 
     private:
         std::unique_ptr<HedgehogEngine::HedgehogEngine>   m_Context;

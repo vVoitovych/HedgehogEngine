@@ -38,6 +38,11 @@ namespace Renderer
         void* GetSceneViewTextureId() const;
         void  SetSceneViewSize(uint32_t width, uint32_t height);
 
+        // CPU frame statistics (per render pass + total DrawFrame), used by
+        // the Editor --benchmark mode. Capture is off unless explicitly begun.
+        void BeginFrameStatsCapture();
+        void EndFrameStatsCaptureAndLogReport();
+
     private:
         std::unique_ptr<RHIContext>      m_RHIContext;
         std::unique_ptr<ThreadContext>   m_ThreadContext;

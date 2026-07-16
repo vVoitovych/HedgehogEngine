@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Profiling/FrameStats.hpp"
+
 #include <cstdint>
 #include <memory>
 
@@ -84,7 +86,11 @@ namespace Renderer
                              const HedgehogSettings::Settings& settings,
                              const ResourceManager&            resourceManager);
 
+        FrameStats& GetFrameStats() { return m_FrameStats; }
+
     private:
+        FrameStats m_FrameStats;
+
         std::unique_ptr<InitPass>     m_InitPass;
         std::unique_ptr<DepthPrePass> m_DepthPrePass;
         std::unique_ptr<ShadowmapPass> m_ShadowmapPass;

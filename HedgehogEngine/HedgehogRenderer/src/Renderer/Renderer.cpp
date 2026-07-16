@@ -4,6 +4,7 @@
 #include "HedgehogEngine/api/WindowContext.hpp"
 #include "HedgehogEngine/api/EngineContext.hpp"
 
+#include "Profiling/Profiler.hpp"
 #include "RHIContext/RHIContext.hpp"
 #include "ThreadContext/ThreadContext.hpp"
 #include "RenderQueue/RenderQueue.hpp"
@@ -89,8 +90,23 @@ namespace Renderer
         m_DesiredSceneH = height;
     }
 
+    void Renderer::BeginFrameStatsCapture()
+    {
+        m_RenderQueue->GetFrameStats().BeginCapture();
+    }
+
+    void Renderer::EndFrameStatsCaptureAndLogReport()
+    {
+        auto& stats = m_RenderQueue->GetFrameStats();
+        stats.EndCapture();
+        stats.LogReport();
+    }
+
     void Renderer::DrawFrame(HedgehogEngine::HedgehogEngine& context)
     {
+        HH_PROFILE_ZONE("DrawFrame");
+        ScopedCpuSample sample(m_RenderQueue->GetFrameStats(), "DrawFrame(total)");
+
         auto& windowContext = context.GetWindowContext();
         auto& engineContext = context.GetEngineContext();
         auto& window        = windowContext.GetWindow();
@@ -153,5 +169,7 @@ namespace Renderer
                 m_RenderQueue->ResizeSceneView(device, *m_ResourceManager);
             }
         }
+
+        HH_PROFILE_FRAME();
     }
 }
