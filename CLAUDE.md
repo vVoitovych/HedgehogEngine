@@ -12,21 +12,37 @@ Scripts\SetupWindows.bat
 ```
 This initializes git submodules recursively and generates `HedgehogEngine.sln`.
 
-**Building:** Open `HedgehogEngine.sln` in Visual Studio 2022 and build. Configurations: `Debug` and `Release`, platform: `Windows x64`.
+**Building (CLI — always build after code changes, a change is not done until it compiles):**
+```
+& "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe" HedgehogEngine.sln /p:Configuration=Debug /p:Platform=x64 /m /v:m
+```
+Alternatively open `HedgehogEngine.sln` in Visual Studio 2022. Configurations: `Debug` and `Release`, platform: `x64`.
 
 **Shader compilation** is automatic via a Shaders project pre-build command that calls `ThirdParty/glslc/CompileShaders.bat`, compiling `.vert`/`.frag`/`.comp` GLSL sources to SPIR-V (`.spv`).
 
-**Build output:** `Binaries/Windows-x64/[Debug|Release]/[ProjectName]/`
+**Build output:** `Binaries/windows-x86_64/[Debug|Release]/[ProjectName]/`
 
-**Running tests:**
+**Running tests** (doctest; each exe exits nonzero on failure):
 ```
-Binaries/Windows-x64/Debug/HedgehogMathTest/HedgehogMathTest.exe
+Binaries/windows-x86_64/Debug/HedgehogMathTest/HedgehogMathTest.exe
+Binaries/windows-x86_64/Debug/FileSystemTest/FileSystemTest.exe
+Binaries/windows-x86_64/Debug/ECSTest/ECSTest.exe
+Binaries/windows-x86_64/Debug/EcsSerializationTest/EcsSerializationTest.exe
+Binaries/windows-x86_64/Debug/ContentLoaderTest/ContentLoaderTest.exe
 ```
+
+**Renderer smoke test** — after any renderer/RHI change, run (from the repo root, needs a Vulkan GPU):
+```
+Binaries\windows-x86_64\Debug\Editor\Editor.exe --smoke-test [frames]
+```
+Renders N frames (default 120) and exits nonzero if any Vulkan validation error occurred (Debug builds enable `VK_LAYER_KHRONOS_validation`; messages route through Logger, counters live in `RHI/api/RHIDiagnostics.hpp` and are re-exported via `Renderer.hpp`).
 
 **Regenerating solution** after modifying any `Build.lua` files:
-```bat
-cd Scripts && premake5 --file=..\Build.lua vs2022
 ```
+Vendor\Binaries\Premake\Windows\premake5.exe --file=Build.lua vs2022
+```
+
+**CI:** `.github/workflows/build.yml` builds Debug+Release and runs all test exes on every PR (the smoke test is local-only — CI runners have no Vulkan GPU).
 
 ## Architecture
 
@@ -107,7 +123,16 @@ Each module has its own `Build-[ModuleName].lua` file included from the root `Bu
 
 ### Testing
 
-Only `HedgehogMath` has unit tests (`HedgehogMathTest`), using the **doctest** framework. Test files: `test_vector.cpp`, `test_matrix.cpp`, `test_common.cpp`. Floating-point comparisons use `NearlyEqual` helpers with configurable epsilon.
+Unit tests use the **doctest** framework. Test projects (each `<Module>/tests/` with its own `Build-<Module>Test.lua`):
+- `HedgehogMathTest` — vectors, matrices; `NearlyEqual` helpers with configurable epsilon
+- `FileSystemTest` — virtual file system and mounts; provides the `TempDir` RAII helper (`FileSystem/tests/test_helpers.hpp`), reused by other test projects
+- `ECSTest` — entity lifecycle, component storage integrity, system signature membership
+- `EcsSerializationTest` — scene YAML round-trip plus failure paths (missing/corrupt files)
+- `ContentLoaderTest` — OBJ mesh loading with hermetic temp-dir fixtures
+
+DLL test dependencies are copied to each test's output dir by the owning module's `postbuildcommands` — when adding a test project that links a `SharedLib` module, add a MKDIR/COPY pair to that module's `Build-*.lua`.
+
+The renderer has no unit tests by design; it is covered by validation layers + `Editor.exe --smoke-test` (see Build System).
 
 ### Third-Party Dependencies (git submodules)
 

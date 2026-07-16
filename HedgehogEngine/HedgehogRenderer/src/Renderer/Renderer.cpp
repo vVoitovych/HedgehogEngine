@@ -15,11 +15,27 @@
 
 #include "RHI/api/IRHIDevice.hpp"
 #include "RHI/api/IRHISwapchain.hpp"
+#include "RHI/api/RHIDiagnostics.hpp"
 
 #include "Logger/api/Logger.hpp"
 
 namespace Renderer
 {
+    bool AreValidationLayersEnabled()
+    {
+        return RHI::AreValidationLayersEnabled();
+    }
+
+    uint32_t GetValidationErrorCount()
+    {
+        return RHI::GetValidationErrorCount();
+    }
+
+    uint32_t GetValidationWarningCount()
+    {
+        return RHI::GetValidationWarningCount();
+    }
+
     Renderer::Renderer(HedgehogEngine::HedgehogEngine& context)
     {
         auto& windowContext = context.GetWindowContext();

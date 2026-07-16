@@ -26,7 +26,9 @@ project "EcsSerialization"
    postbuildcommands
    {
       ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/Editor"),
-      ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/Editor/")
+      ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/Editor/"),
+      ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/EcsSerializationTest"),
+      ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/EcsSerializationTest/")
    }
 
    filter "system:windows"

@@ -40,6 +40,21 @@ For EACH step:
    - Add a brief note: what you did, any surprises, and the build result
 4. If you hit an ambiguity or blocker, write it to workflow/progress.md under "## Blockers" and stop.
 
+FINAL VERIFICATION (after the last step, before declaring COMPLETE):
+1. Run every test executable from the repo root; each must exit 0:
+   Binaries\windows-x86_64\Debug\HedgehogMathTest\HedgehogMathTest.exe
+   Binaries\windows-x86_64\Debug\FileSystemTest\FileSystemTest.exe
+   Binaries\windows-x86_64\Debug\ECSTest\ECSTest.exe
+   Binaries\windows-x86_64\Debug\EcsSerializationTest\EcsSerializationTest.exe
+   Binaries\windows-x86_64\Debug\ContentLoaderTest\ContentLoaderTest.exe
+2. If the plan touched HedgehogRenderer, RHI, shaders, or anything else on the
+   GPU path, also run the renderer smoke test from the repo root:
+   Binaries\windows-x86_64\Debug\Editor\Editor.exe --smoke-test
+   It renders 120 frames and exits nonzero on any Vulkan validation error.
+3. Record the results in workflow/progress.md under "## Verification".
+   A failing test or smoke test is a blocker: fix it, or record it under
+   "## Blockers" and stop.
+
 CODING RULES (enforce strictly):
 - Member variables: m_ prefix
 - Private methods: camelCase, public methods: PascalCase
@@ -49,7 +64,8 @@ CODING RULES (enforce strictly):
 - Match the existing file's include order and namespace style
 - Add minimal comments: only explain non-obvious WHY, never WHAT
 
-After all steps are done, write "## Status: COMPLETE" at the top of workflow/progress.md.
+Only after all steps are done AND final verification passes, write
+"## Status: COMPLETE" at the top of workflow/progress.md.
 ```
 
 ---
@@ -58,6 +74,7 @@ After all steps are done, write "## Status: COMPLETE" at the top of workflow/pro
 
 Read `workflow/progress.md` and report to the user:
 - Which steps completed
+- The final verification results (tests, and smoke test if it applied)
 - Any blockers encountered
 - Whether implementation is complete or needs a follow-up `/implement --continue`
 

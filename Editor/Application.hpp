@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <memory>
 
 namespace HedgehogEngine
@@ -27,11 +28,13 @@ namespace Editor
         EditorApplication(EditorApplication&&)                 = delete;
         EditorApplication& operator=(EditorApplication&&)      = delete;
 
-        void Run();
+        // maxFrames == 0 runs until the window is closed; a positive value
+        // renders that many frames and exits (used by the --smoke-test mode).
+        void Run(uint32_t maxFrames = 0);
 
     private:
         void  Init();
-        void  MainLoop();
+        void  MainLoop(uint32_t maxFrames);
         void  Cleanup();
         float GetFrameTime();
 

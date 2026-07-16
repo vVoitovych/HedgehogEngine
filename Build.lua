@@ -30,9 +30,12 @@ include "HedgehogEngine/HedgehogSettings/Build-HedgehogSettings.lua"
 
 include "Editor/Build-Editor.lua"
 include "ContentLoader/Build-ContentLoader.lua"
+include "ContentLoader/tests/Build-ContentLoaderTest.lua"
 include "DialogueWindows/Build-DialogueWindows.lua"
 include "ECS/Build-ECS.lua"
+include "ECS/tests/Build-ECSTest.lua"
 include "EcsSerialization/Build-EcsSerialization.lua"
+include "EcsSerialization/tests/Build-EcsSerializationTest.lua"
 
 include "HedgehogMath/Build-HedgehogMath.lua"
 include "HedgehogMathTest/Build-HedgehogMathTest.lua"

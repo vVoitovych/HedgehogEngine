@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <memory>
 
 namespace HedgehogEngine
@@ -13,6 +14,12 @@ namespace Renderer
     class ThreadContext;
     class ResourceManager;
     class RenderQueue;
+
+    // Vulkan validation-layer diagnostics, safe to query even after the Renderer
+    // is destroyed (teardown errors such as leaked objects are still counted).
+    bool     AreValidationLayersEnabled();
+    uint32_t GetValidationErrorCount();
+    uint32_t GetValidationWarningCount();
 
     class Renderer
     {

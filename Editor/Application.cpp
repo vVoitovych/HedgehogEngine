@@ -17,10 +17,10 @@ namespace Editor
     EditorApplication::EditorApplication()  = default;
     EditorApplication::~EditorApplication() = default;
 
-    void EditorApplication::Run()
+    void EditorApplication::Run(uint32_t maxFrames)
     {
         Init();
-        MainLoop();
+        MainLoop(maxFrames);
     }
 
     void EditorApplication::Init()
@@ -38,10 +38,13 @@ namespace Editor
         LOGINFO("Editor initialized");
     }
 
-    void EditorApplication::MainLoop()
+    void EditorApplication::MainLoop(uint32_t maxFrames)
     {
-        while (!m_Context->GetWindowContext().ShouldClose())
+        uint32_t frameIndex = 0;
+        while (!m_Context->GetWindowContext().ShouldClose()
+            && (maxFrames == 0 || frameIndex < maxFrames))
         {
+            ++frameIndex;
             const float dt = GetFrameTime();
             m_Context->GetWindowContext().HandleInput();
             m_Context->UpdateContext(dt, m_Renderer->GetAspectRatio());
