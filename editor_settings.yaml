@@ -20,3 +20,4 @@ dock_layout:
     scene_hierarchy: [150, 150]
     inspector: [190, 190]
     console: [230, 230]
+last_scene: engine://Assets/Scenes/Default.yaml

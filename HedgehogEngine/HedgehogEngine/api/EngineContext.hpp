@@ -78,8 +78,8 @@ namespace HedgehogEngine
 
         HEDGEHOG_ENGINE_API const FS::FileSystemManager& GetFileSystem() const;
 
-        HEDGEHOG_ENGINE_API void LoadScene(const std::string& filePath);
-        HEDGEHOG_ENGINE_API void SaveScene(const std::string& filePath);
+        HEDGEHOG_ENGINE_API bool LoadScene(const std::string& filePath);
+        HEDGEHOG_ENGINE_API bool SaveScene(const std::string& filePath);
         HEDGEHOG_ENGINE_API void ResetScene();
         HEDGEHOG_ENGINE_API void SetSceneName(const std::string& name);
 

@@ -89,6 +89,8 @@ namespace Editor
             m_DockSystem.GetLayout() = m_Settings.dockLayout;
 
         SetupLightComponentGuiOverrides();
+
+        loadLastScene(context);
     }
 
     EditorGui::~EditorGui()
@@ -203,15 +205,21 @@ namespace Editor
                 char* path = DialogueWindows::SceneOpenDialogue();
                 if (path != nullptr)
                 {
-                    engineContext.LoadScene(path);
-                    m_SelectedEntity.reset();
+                    if (engineContext.LoadScene(path))
+                    {
+                        recordLastScene(path, engineContext.GetFileSystem());
+                        m_SelectedEntity.reset();
+                    }
                 }
             }
             if (ImGui::MenuItem("Save"))
             {
                 char* path = DialogueWindows::SceneSaveDialogue();
                 if (path != nullptr)
-                    engineContext.SaveScene(path);
+                {
+                    if (engineContext.SaveScene(path))
+                        recordLastScene(path, engineContext.GetFileSystem());
+                }
             }
             ImGui::Separator();
             if (ImGui::MenuItem("Quit", "Alt+F4")) {}
@@ -874,5 +882,46 @@ namespace Editor
         }
 
         ImGui::End();
+    }
+
+    // ─── Last-scene persistence ──────────────────────────────────────────────
+
+    void EditorGui::recordLastScene(const std::string& nativePath, const FS::FileSystemManager& fileSystem)
+    {
+        const auto virtualPath = fileSystem.ToVirtualPath(nativePath);
+        if (!virtualPath)
+        {
+            LOGERROR("EditorGui::recordLastScene: path is not under any registered mount (path: ", nativePath, ")");
+            return;
+        }
+
+        m_Settings.m_LastScene = *virtualPath;
+        m_Settings.Save("engine://editor_settings.yaml", fileSystem);
+    }
+
+    void EditorGui::loadLastScene(HedgehogEngine::HedgehogEngine& context)
+    {
+        if (m_Settings.m_LastScene.empty())
+            return;
+
+        if (!m_FileSystem->Exists(m_Settings.m_LastScene))
+        {
+            LOGWARNING("EditorGui::loadLastScene: stored scene not found, starting with an empty scene (path: ",
+                       m_Settings.m_LastScene, ")");
+            m_Settings.m_LastScene.clear();
+            m_Settings.Save("engine://editor_settings.yaml", *m_FileSystem);
+            return;
+        }
+
+        // LoadScene expects a native path (the dialog's contract), so resolve back from virtual.
+        const auto physicalPath = m_FileSystem->ResolvePhysical(m_Settings.m_LastScene);
+        if (physicalPath && context.GetEngineContext().LoadScene(physicalPath->string()))
+            return;
+
+        LOGWARNING("EditorGui::loadLastScene: failed to load stored scene, starting with an empty scene (path: ",
+                   m_Settings.m_LastScene, ")");
+        context.GetEngineContext().ResetScene();
+        m_Settings.m_LastScene.clear();
+        m_Settings.Save("engine://editor_settings.yaml", *m_FileSystem);
     }
 }

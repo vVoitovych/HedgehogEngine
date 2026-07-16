@@ -59,6 +59,10 @@ namespace Editor
         // ── Floating dialogs ─────────────────────────────────────────────────
         void DrawSettingsWindow(HedgehogEngine::HedgehogEngine& context);
 
+        // ── Last-scene persistence ───────────────────────────────────────────
+        void recordLastScene(const std::string& nativePath, const FS::FileSystemManager& fileSystem);
+        void loadLastScene(HedgehogEngine::HedgehogEngine& context);
+
     private:
         static constexpr const char k_SettingsPath[] = "editor_settings.yaml";
 

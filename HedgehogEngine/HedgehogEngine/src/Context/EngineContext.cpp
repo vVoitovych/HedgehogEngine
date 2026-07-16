@@ -262,25 +262,32 @@ namespace HedgehogEngine
     RenderSystem*     EngineContext::GetRenderSystem()     const { return m_RenderSystem.get(); }
     ScriptSystem*     EngineContext::GetScriptSystem()     const { return m_ScriptSystem.get(); }
 
-    void EngineContext::LoadScene(const std::string& filePath)
+    bool EngineContext::LoadScene(const std::string& filePath)
     {
         const auto virtualPath = m_FileSystem.ToVirtualPath(filePath);
         if (!virtualPath)
         {
             LOGERROR("EngineContext::LoadScene: path is not under any registered mount (path: ", filePath, ")");
-            return;
+            return false;
+        }
+
+        if (!m_FileSystem.Exists(*virtualPath))
+        {
+            LOGERROR("EngineContext::LoadScene: file does not exist (path: ", *virtualPath, ")");
+            return false;
         }
 
         DeleteGameObjectAndChildren(m_ECS.GetRoot());
-        EcsSerialization::EcsSerializer::Deserialize(*m_ComponentRegistry, m_ECS, m_SceneName,
-                                                      *virtualPath, m_FileSystem);
+        const bool loaded = EcsSerialization::EcsSerializer::Deserialize(*m_ComponentRegistry, m_ECS, m_SceneName,
+                                                                          *virtualPath, m_FileSystem);
         for (auto entity : m_TransformSystem->GetEntities())
             m_EventBus.Publish(TransformChangedEvent{ entity });
         m_MeshSystem->Update(m_ECS, m_FileSystem);
         m_RenderSystem->UpdateSystem(m_ECS);
+        return loaded;
     }
 
-    void EngineContext::SaveScene(const std::string& filePath)
+    bool EngineContext::SaveScene(const std::string& filePath)
     {
         const std::string sceneName = std::filesystem::path(filePath).stem().string();
         m_SceneName = sceneName;
@@ -289,9 +296,9 @@ namespace HedgehogEngine
         if (!virtualPath)
         {
             LOGERROR("EngineContext::SaveScene: path is not under any registered mount (path: ", filePath, ")");
-            return;
+            return false;
         }
-        EcsSerialization::EcsSerializer::Serialize(
+        return EcsSerialization::EcsSerializer::Serialize(
             *m_ComponentRegistry, m_ECS, m_SceneName, *virtualPath, m_FileSystem);
     }
 
