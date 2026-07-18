@@ -27,6 +27,9 @@ namespace HW
         bool IsResized() const;
         void ResetResizedFlag();
 
+        // Blocks until at least one event is available (used while minimized to avoid busy-waiting).
+        void WaitEvents() const;
+
         void ToggleFullscreen();
         bool IsFullscreen() const;
 

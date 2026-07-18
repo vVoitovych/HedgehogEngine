@@ -1,11 +1,8 @@
-#include "ResourceManager.hpp"
+﻿#include "ResourceManager.hpp"
 
 #include "ResourceRegistry/ResourceRegistry.hpp"
 
-#include "HedgehogEngine/api/EngineContext.hpp"
-#include "HedgehogEngine/api/Containers/MeshContainer.hpp"
-#include "HedgehogEngine/api/Containers/MaterialContainer.hpp"
-#include "HedgehogEngine/api/Containers/TextureContainer.hpp"
+#include "HedgehogCommon/api/Resource/IResourceCatalog.hpp"
 #include "HedgehogSettings/Settings/HedgehogSettings.hpp"
 #include "HedgehogSettings/Settings/ShadowmapingSettings.hpp"
 
@@ -48,14 +45,13 @@ namespace Renderer
         m_ResourceRegistry->Cleanup(device);
     }
 
-    void ResourceManager::SyncResources(RHI::IRHIDevice& device, HedgehogEngine::EngineContext& engine)
+    void ResourceManager::SyncResources(RHI::IRHIDevice& device, HedgehogEngine::IResourceCatalog& catalog)
     {
-        m_ResourceRegistry->SyncMeshes(engine.GetMeshContainer(), device);
-        m_ResourceRegistry->SyncMaterials(engine.GetMaterialContainer(), engine.GetTextureContainer(),
-                                          device, engine.GetFileSystem());
+        m_ResourceRegistry->SyncMeshes(catalog, device);
+        m_ResourceRegistry->SyncMaterials(catalog, device);
     }
 
-    void ResourceManager::ResizeFrameBufferSizeDependenteResources(RHI::IRHIDevice& device,
+    void ResourceManager::ResizeFrameBufferSizeDependentResources(RHI::IRHIDevice& device,
                                                                     const RHI::IRHISwapchain& swapchain)
     {
         device.WaitIdle();
@@ -88,7 +84,7 @@ namespace Renderer
         m_SceneColorBuffer = device.CreateTexture(colorDesc);
     }
 
-    void ResourceManager::ResizeSettingsDependenteResources(RHI::IRHIDevice& device,
+    void ResourceManager::ResizeSettingsDependentResources(RHI::IRHIDevice& device,
                                                              HedgehogSettings::Settings& settings)
     {
         auto& shadowmapSettings = settings.GetShadowmapSettings();

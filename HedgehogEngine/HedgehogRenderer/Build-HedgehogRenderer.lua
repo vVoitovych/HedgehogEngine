@@ -38,7 +38,6 @@ project "HedgehogRenderer"
     links {
         "RHI",
         "HedgehogMath",
-        "HedgehogEngine",
         "HedgehogSettings",
         "HedgehogWindow",
         "ContentLoader",

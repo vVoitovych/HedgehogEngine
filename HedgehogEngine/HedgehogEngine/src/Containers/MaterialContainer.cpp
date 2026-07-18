@@ -35,13 +35,13 @@ namespace HedgehogEngine
     void MaterialContainer::CreateNewMaterial(const FS::FileSystemManager& fileSystem,
                                                const std::string& virtualPath)
     {
-        constexpr std::string_view k_Prefix = "assets://";
+        constexpr std::string_view ASSETS_PREFIX = "assets://";
 
         MaterialData newData;
         newData.type         = MaterialType::Opaque;
         newData.transparency = 1.0f;
         newData.baseColor    = m_DefaultCellTexture;
-        newData.path         = virtualPath.substr(k_Prefix.size());
+        newData.path         = virtualPath.substr(ASSETS_PREFIX.size());
 
         MaterialSerializer::Serialize(newData, virtualPath, fileSystem);
         m_Materials.push_back(newData);

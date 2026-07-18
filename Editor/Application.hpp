@@ -5,7 +5,7 @@
 
 namespace HedgehogEngine
 {
-    class HedgehogEngine;
+    class Engine;
 }
 
 namespace Renderer
@@ -46,7 +46,7 @@ namespace Editor
         void  loadBenchmarkScene();
 
     private:
-        std::unique_ptr<HedgehogEngine::HedgehogEngine>   m_Context;
+        std::unique_ptr<HedgehogEngine::Engine>   m_Context;
         std::unique_ptr<Renderer::Renderer> m_Renderer;
         std::unique_ptr<EditorGui>          m_EditorGui;
     };

@@ -11,7 +11,7 @@
 
 #include "HedgehogSettings/Settings/HedgehogSettings.hpp"
 
-#include "HedgehogEngine/api/Frame/FrameData.hpp"
+#include "HedgehogCommon/api/Frame/FrameData.hpp"
 
 #include "FileSystem/api/FileSystemManager.hpp"
 

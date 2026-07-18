@@ -1,8 +1,4 @@
-#include "HedgehogRenderer/Renderer.hpp"
-
-#include "HedgehogEngine/api/HedgehogEngine.hpp"
-#include "HedgehogEngine/api/WindowContext.hpp"
-#include "HedgehogEngine/api/EngineContext.hpp"
+﻿#include "HedgehogRenderer/Renderer.hpp"
 
 #include "Profiling/Profiler.hpp"
 #include "RHIContext/RHIContext.hpp"
@@ -10,9 +6,14 @@
 #include "RenderQueue/RenderQueue.hpp"
 #include "ResourceManager/ResourceManager.hpp"
 
-#include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
+#include "HedgehogWindow/api/Window.hpp"
+
+#include "HedgehogCommon/api/Frame/FrameData.hpp"
+#include "HedgehogCommon/api/Resource/IResourceCatalog.hpp"
 
 #include "HedgehogSettings/Settings/HedgehogSettings.hpp"
+
+#include "FileSystem/api/FileSystemManager.hpp"
 
 #include "RHI/api/IRHIDevice.hpp"
 #include "RHI/api/IRHISwapchain.hpp"
@@ -37,28 +38,30 @@ namespace Renderer
         return RHI::GetValidationWarningCount();
     }
 
-    Renderer::Renderer(HedgehogEngine::HedgehogEngine& context)
+    Renderer::Renderer(HW::Window& window,
+                       const HedgehogSettings::Settings& settings,
+                       const FS::FileSystemManager& fileSystem)
+        : m_Window(window)
     {
-        auto& windowContext = context.GetWindowContext();
-        m_RHIContext    = std::make_unique<RHIContext>(windowContext);
+        m_RHIContext    = std::make_unique<RHIContext>(window);
         m_ThreadContext = std::make_unique<ThreadContext>(m_RHIContext->GetRHIDevice());
         m_ResourceManager = std::make_unique<ResourceManager>(
             m_RHIContext->GetRHIDevice(),
             m_RHIContext->GetRHISwapchain(),
-            context.GetEngineContext().GetSettings());
+            settings);
         m_RenderQueue = std::make_unique<RenderQueue>(
             m_RHIContext->GetRHIDevice(),
-            windowContext.GetWindow(),
-            context.GetEngineContext().GetSettings(),
+            window,
+            settings,
             *m_ResourceManager,
-            context.GetEngineContext().GetFileSystem());
+            fileSystem);
     }
 
     Renderer::~Renderer()
     {
     }
 
-    void Renderer::Cleanup(HedgehogEngine::HedgehogEngine& context)
+    void Renderer::Cleanup()
     {
         auto& device = m_RHIContext->GetRHIDevice();
         device.WaitIdle();
@@ -102,46 +105,42 @@ namespace Renderer
         stats.LogReport();
     }
 
-    void Renderer::DrawFrame(HedgehogEngine::HedgehogEngine& context)
+    void Renderer::DrawFrame(const HedgehogEngine::FrameData& frameData,
+                             HedgehogEngine::IResourceCatalog& catalog,
+                             HedgehogSettings::Settings&       settings)
     {
         HH_PROFILE_ZONE("DrawFrame");
         ScopedCpuSample sample(m_RenderQueue->GetFrameStats(), "DrawFrame(total)");
 
-        auto& windowContext = context.GetWindowContext();
-        auto& engineContext = context.GetEngineContext();
-        auto& window        = windowContext.GetWindow();
-        auto& device        = m_RHIContext->GetRHIDevice();
-        auto& swapchain     = m_RHIContext->GetRHISwapchain();
+        auto& device    = m_RHIContext->GetRHIDevice();
+        auto& swapchain = m_RHIContext->GetRHISwapchain();
 
-        m_ResourceManager->SyncResources(device, engineContext);
+        m_ResourceManager->SyncResources(device, catalog);
 
-        const auto&    frameData  = engineContext.GetFrameData();
         const uint32_t frameIndex = m_ThreadContext->GetFrameIndex();
 
-        m_RenderQueue->UpdateData(frameData, frameIndex, engineContext.GetSettings());
+        m_RenderQueue->UpdateData(frameData, frameIndex, settings);
 
-        if (windowContext.IsWindowResized() || window.IsResized())
+        if (m_Window.IsResized())
         {
             m_RenderQueue->DiscardGui();
 
-            if (window.IsResized())
-                window.ResetResizedFlag();
-            windowContext.ResetWindowResizeState();
+            m_Window.ResetResizedFlag();
 
             device.WaitIdle();
-            m_RHIContext->RecreateSwapchain(windowContext);
+            m_RHIContext->RecreateSwapchain(m_Window);
 
-            m_ResourceManager->ResizeFrameBufferSizeDependenteResources(device, swapchain);
+            m_ResourceManager->ResizeFrameBufferSizeDependentResources(device, swapchain);
             m_RenderQueue->ResizeResources(device, *m_ResourceManager);
 
             return;
         }
 
-        if (engineContext.GetSettings().IsDirty())
+        if (settings.IsDirty())
         {
-            m_ResourceManager->ResizeSettingsDependenteResources(device, engineContext.GetSettings());
-            m_RenderQueue->UpdateResources(device, engineContext.GetSettings(), *m_ResourceManager);
-            engineContext.GetSettings().CleanDirtyState();
+            m_ResourceManager->ResizeSettingsDependentResources(device, settings);
+            m_RenderQueue->UpdateResources(device, settings, *m_ResourceManager);
+            settings.CleanDirtyState();
         }
 
         m_RenderQueue->Render(

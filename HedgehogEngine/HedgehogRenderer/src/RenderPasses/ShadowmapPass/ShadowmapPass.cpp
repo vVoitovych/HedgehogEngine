@@ -3,7 +3,7 @@
 
 #include "FileSystem/api/FileSystemManager.hpp"
 
-#include "HedgehogEngine/api/Frame/FrameData.hpp"
+#include "HedgehogCommon/api/Frame/FrameData.hpp"
 
 #include "HedgehogCommon/api/RendererSettings.hpp"
 

@@ -3,7 +3,7 @@
 #include "MeshGpuData.hpp"
 #include "MaterialGpuData.hpp"
 
-#include "FileSystem/api/FileSystemManager.hpp"
+#include "HedgehogCommon/api/Resource/IResourceCatalog.hpp"
 #include "RHI/api/RHITypes.hpp"
 
 #include <cstdint>
@@ -12,11 +12,9 @@
 #include <unordered_map>
 #include <vector>
 
-namespace HedgehogEngine
+namespace FS
 {
-    class MeshContainer;
-    class MaterialContainer;
-    class TextureContainer;
+    class FileSystemManager;
 }
 
 namespace RHI
@@ -49,11 +47,8 @@ namespace HR
                                uint32_t                            maxSets,
                                const std::vector<RHI::PoolSize>&   poolSizes);
 
-        void SyncMeshes(const HedgehogEngine::MeshContainer& container, RHI::IRHIDevice& device);
-        void SyncMaterials(HedgehogEngine::MaterialContainer& container,
-                           HedgehogEngine::TextureContainer&  texContainer,
-                           RHI::IRHIDevice&                   device,
-                           const FS::FileSystemManager&       fileSystem);
+        void SyncMeshes(const HedgehogEngine::IResourceCatalog& catalog, RHI::IRHIDevice& device);
+        void SyncMaterials(HedgehogEngine::IResourceCatalog& catalog, RHI::IRHIDevice& device);
 
         const RHI::IRHIBuffer& GetPositionsBuffer() const;
         const RHI::IRHIBuffer& GetTexCoordsBuffer() const;

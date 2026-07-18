@@ -1,7 +1,7 @@
 #include "Application.hpp"
 #include "EditorGui.hpp"
 
-#include "HedgehogEngine/api/HedgehogEngine.hpp"
+#include "HedgehogEngine/api/Engine.hpp"
 #include "HedgehogEngine/api/WindowContext.hpp"
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogRenderer/Renderer.hpp"
@@ -32,8 +32,13 @@ namespace Editor
 
     void EditorApplication::Init()
     {
-        m_Context   = std::make_unique<HedgehogEngine::HedgehogEngine>();
-        m_Renderer  = std::make_unique<Renderer::Renderer>(*m_Context);
+        m_Context   = std::make_unique<HedgehogEngine::Engine>();
+
+        auto& engineContext = m_Context->GetEngineContext();
+        m_Renderer  = std::make_unique<Renderer::Renderer>(
+            m_Context->GetWindowContext().GetWindow(),
+            engineContext.GetSettings(),
+            engineContext.GetFileSystem());
         m_EditorGui = std::make_unique<EditorGui>(*m_Context);
 
         // WantCaptureMouse is true even over the scene image (it's an ImGui window); exempt it.
@@ -110,7 +115,9 @@ namespace Editor
         m_Renderer->SetSceneViewSize(m_EditorGui->GetSceneViewWidth(),
                                      m_EditorGui->GetSceneViewHeight());
 
-        m_Renderer->DrawFrame(*m_Context);
+        auto& engineContext = m_Context->GetEngineContext();
+        m_Renderer->DrawFrame(engineContext.GetFrameData(), engineContext.GetResourceCatalog(),
+                              engineContext.GetSettings());
         return dt;
     }
 
@@ -122,7 +129,7 @@ namespace Editor
         const auto& fileSystem    = engineContext.GetFileSystem();
 
         const auto physicalPath = fileSystem.ResolvePhysical(BENCHMARK_SCENE);
-        if (!physicalPath || !engineContext.LoadScene(physicalPath->string()))
+        if (!physicalPath || !engineContext.GetSceneManager().LoadScene(physicalPath->string()))
         {
             LOGWARNING("Benchmark: failed to load '", BENCHMARK_SCENE,
                        "'; measuring whatever scene is currently open instead.");
@@ -131,7 +138,7 @@ namespace Editor
 
     void EditorApplication::Cleanup()
     {
-        m_Renderer->Cleanup(*m_Context);
+        m_Renderer->Cleanup();
         m_Context->Cleanup();
     }
 

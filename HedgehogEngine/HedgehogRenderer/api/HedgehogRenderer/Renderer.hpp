@@ -3,9 +3,25 @@
 #include <cstdint>
 #include <memory>
 
+namespace HW
+{
+    class Window;
+}
+
+namespace HedgehogSettings
+{
+    class Settings;
+}
+
+namespace FS
+{
+    class FileSystemManager;
+}
+
 namespace HedgehogEngine
 {
-    class HedgehogEngine;
+    struct FrameData;
+    class IResourceCatalog;
 }
 
 namespace Renderer
@@ -24,16 +40,20 @@ namespace Renderer
     class Renderer
     {
     public:
-        explicit Renderer(HedgehogEngine::HedgehogEngine& context);
+        Renderer(HW::Window& window,
+                 const HedgehogSettings::Settings& settings,
+                 const FS::FileSystemManager& fileSystem);
         ~Renderer();
 
         Renderer(const Renderer&)            = delete;
         Renderer& operator=(const Renderer&) = delete;
 
-        void Cleanup(HedgehogEngine::HedgehogEngine& context);
+        void Cleanup();
 
         void  BeginGui();
-        void  DrawFrame(HedgehogEngine::HedgehogEngine& context);
+        void  DrawFrame(const HedgehogEngine::FrameData& frameData,
+                        HedgehogEngine::IResourceCatalog& catalog,
+                        HedgehogSettings::Settings&       settings);
         float GetAspectRatio() const;
         void* GetSceneViewTextureId() const;
         void  SetSceneViewSize(uint32_t width, uint32_t height);
@@ -44,6 +64,8 @@ namespace Renderer
         void EndFrameStatsCaptureAndLogReport();
 
     private:
+        HW::Window& m_Window;
+
         std::unique_ptr<RHIContext>      m_RHIContext;
         std::unique_ptr<ThreadContext>   m_ThreadContext;
         std::unique_ptr<ResourceManager> m_ResourceManager;

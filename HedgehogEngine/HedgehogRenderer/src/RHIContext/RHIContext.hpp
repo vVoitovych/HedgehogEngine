@@ -8,9 +8,9 @@ namespace RHI
     class IRHISwapchain;
 }
 
-namespace HedgehogEngine
+namespace HW
 {
-    class WindowContext;
+    class Window;
 }
 
 namespace Renderer
@@ -18,7 +18,7 @@ namespace Renderer
     class RHIContext
     {
     public:
-        explicit RHIContext(HedgehogEngine::WindowContext& windowContext);
+        explicit RHIContext(HW::Window& window);
         ~RHIContext();
 
         RHIContext(const RHIContext&)            = delete;
@@ -27,7 +27,7 @@ namespace Renderer
         RHIContext& operator=(RHIContext&&)      = delete;
 
         void Cleanup();
-        void RecreateSwapchain(HedgehogEngine::WindowContext& windowContext);
+        void RecreateSwapchain(HW::Window& window);
 
         RHI::IRHIDevice&          GetRHIDevice();
         const RHI::IRHIDevice&    GetRHIDevice() const;

@@ -1,7 +1,5 @@
 #include "RHIContext.hpp"
 
-#include "HedgehogEngine/api/WindowContext.hpp"
-
 #include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
 
 #include "RHI/api/IRHIDevice.hpp"
@@ -9,10 +7,8 @@
 
 namespace Renderer
 {
-    RHIContext::RHIContext(HedgehogEngine::WindowContext& windowContext)
+    RHIContext::RHIContext(HW::Window& window)
     {
-        auto& window = windowContext.GetWindow();
-
         RHI::NativeWindowDesc nativeDesc{};
         nativeDesc.m_NativeHandle = window.GetNativeOsHandle();
         nativeDesc.m_VkExtensions = window.GetVulkanExtensions(nativeDesc.m_VkExtensionCount);
@@ -36,16 +32,14 @@ namespace Renderer
         m_RHIDevice.reset();
     }
 
-    void RHIContext::RecreateSwapchain(HedgehogEngine::WindowContext& windowContext)
+    void RHIContext::RecreateSwapchain(HW::Window& window)
     {
-        auto& window = windowContext.GetWindow();
-
         int fbWidth = 0, fbHeight = 0;
         window.GetFramebufferSize(fbWidth, fbHeight);
         while (fbWidth == 0 || fbHeight == 0)
         {
             window.GetFramebufferSize(fbWidth, fbHeight);
-            windowContext.WaitEvents();
+            window.WaitEvents();
         }
         m_RHIDevice->WaitIdle();
         m_RHISwapchain->Resize(static_cast<uint32_t>(fbWidth), static_cast<uint32_t>(fbHeight));

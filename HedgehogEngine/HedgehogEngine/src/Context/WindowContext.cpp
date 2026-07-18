@@ -30,29 +30,9 @@ namespace HedgehogEngine
         m_WindowManager->PollEvents();
     }
 
-    void WindowContext::WaitEvents()
-    {
-        m_WindowManager->WaitEvents();
-    }
-
     bool WindowContext::ShouldClose() const
     {
         return m_Window->ShouldClose();
-    }
-
-    void WindowContext::ResizeWindow()
-    {
-        m_WindowResized = true;
-    }
-
-    bool WindowContext::IsWindowResized() const
-    {
-        return m_WindowResized;
-    }
-
-    void WindowContext::ResetWindowResizeState()
-    {
-        m_WindowResized = false;
     }
 
     HW::Window& WindowContext::GetWindow()

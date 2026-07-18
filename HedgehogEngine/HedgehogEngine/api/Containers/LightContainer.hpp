@@ -2,7 +2,7 @@
 
 #include "HedgehogEngine/api/HedgehogEngineApi.hpp"
 
-#include "HedgehogEngine/api/Frame/FrameData.hpp"
+#include "HedgehogCommon/api/Frame/FrameData.hpp"
 
 #include <vector>
 
