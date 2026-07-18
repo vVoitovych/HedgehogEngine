@@ -33,20 +33,16 @@ Work through the Implementation Steps in order, starting from the first unchecke
 For EACH step:
 1. Implement the change across all listed files.
 2. Build the solution and fix any errors before proceeding:
-   & "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe" HedgehogEngine.sln /p:Configuration=Debug /p:Platform=x64 /m /v:m
-   A step is not done until the solution compiles cleanly.
+   Scripts\Build.bat Debug
+   A step is not done until the solution compiles cleanly (exit code 0).
 3. After the build succeeds, update workflow/progress.md:
    - Mark the step as [x] done
    - Add a brief note: what you did, any surprises, and the build result
 4. If you hit an ambiguity or blocker, write it to workflow/progress.md under "## Blockers" and stop.
 
 FINAL VERIFICATION (after the last step, before declaring COMPLETE):
-1. Run every test executable from the repo root; each must exit 0:
-   Binaries\windows-x86_64\Debug\HedgehogMathTest\HedgehogMathTest.exe
-   Binaries\windows-x86_64\Debug\FileSystemTest\FileSystemTest.exe
-   Binaries\windows-x86_64\Debug\ECSTest\ECSTest.exe
-   Binaries\windows-x86_64\Debug\EcsSerializationTest\EcsSerializationTest.exe
-   Binaries\windows-x86_64\Debug\ContentLoaderTest\ContentLoaderTest.exe
+1. Build and run every test executable; the script must exit 0:
+   Scripts\RunTests.bat Debug
 2. If the plan touched HedgehogRenderer, RHI, shaders, or anything else on the
    GPU path, also run the renderer smoke test from the repo root:
    Binaries\windows-x86_64\Debug\Editor\Editor.exe --smoke-test

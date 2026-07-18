@@ -14,9 +14,13 @@ This initializes git submodules recursively and generates `HedgehogEngine.sln`.
 
 **Building (CLI — always build after code changes, a change is not done until it compiles):**
 ```
-& "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe" HedgehogEngine.sln /p:Configuration=Debug /p:Platform=x64 /m /v:m
+Scripts\Build.bat [Debug|Release]        (default: Debug; locates MSBuild via vswhere)
 ```
-Alternatively open `HedgehogEngine.sln` in Visual Studio 2022. Configurations: `Debug` and `Release`, platform: `x64`.
+**Build + run all tests in one step:**
+```
+Scripts\RunTests.bat [Debug|Release]     (exits nonzero if the build or any test fails)
+```
+Alternatively invoke MSBuild directly (`MSBuild.exe HedgehogEngine.sln /p:Configuration=Debug /p:Platform=x64 /m /v:m`) or open `HedgehogEngine.sln` in Visual Studio 2022. Configurations: `Debug` and `Release`, platform: `x64`.
 
 **Shader compilation** is automatic via a Shaders project pre-build command that calls `ThirdParty/glslc/CompileShaders.bat`, compiling `.vert`/`.frag`/`.comp` GLSL sources to SPIR-V (`.spv`).
 
