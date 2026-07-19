@@ -145,13 +145,16 @@ namespace HR
             return *it->second;
 
         ContentLoader::TextureLoader loader;
-        loader.LoadTexture(path, fileSystem);
-        const uint32_t texW    = static_cast<uint32_t>(loader.GetWidth());
-        const uint32_t texH    = static_cast<uint32_t>(loader.GetHeight());
+        const bool loaded = loader.LoadTexture(path, fileSystem);
+        // A missing/corrupt texture must not take down rendering: substitute a
+        // 1x1 magenta placeholder (cached under the same path like any texture).
+        constexpr uint8_t FALLBACK_PIXEL[4] = { 255, 0, 255, 255 };
+        const uint32_t texW    = loaded ? static_cast<uint32_t>(loader.GetWidth())  : 1u;
+        const uint32_t texH    = loaded ? static_cast<uint32_t>(loader.GetHeight()) : 1u;
         const size_t   imgSize = texW * texH * 4;
 
         auto staging = device.CreateBuffer(imgSize, RHI::BufferUsage::TransferSrc, RHI::MemoryUsage::CpuToGpu);
-        staging->CopyData(loader.GetData(), imgSize);
+        staging->CopyData(loaded ? loader.GetData() : FALLBACK_PIXEL, imgSize);
 
         RHI::TextureDesc desc;
         desc.m_Width  = texW;

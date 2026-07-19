@@ -34,6 +34,8 @@ namespace HedgehogEngine
             }
 
             Mesh mesh;
+            // On failure keep the empty mesh anyway: entries must stay index-aligned
+            // with MeshSystem::GetMeshes(), and an empty mesh renders nothing.
             mesh.LoadData(path, fileSystem);
             mesh.SetVertexOffset(m_TotalVertexCount);
             mesh.SetFirstIndex(m_TotalIndexCount);

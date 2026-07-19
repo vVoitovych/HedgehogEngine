@@ -36,7 +36,9 @@ TEST_CASE("LoadMesh - OBJ triangle loads with correct geometry")
     FS::FileSystemManager fileSystem;
     MountAssets(fileSystem, tmp.Path());
 
-    const ContentLoader::LoadedMesh mesh = ContentLoader::LoadMesh("triangle.obj", fileSystem);
+    const auto loaded = ContentLoader::LoadMesh("triangle.obj", fileSystem);
+    REQUIRE(loaded.has_value());
+    const ContentLoader::LoadedMesh& mesh = *loaded;
 
     REQUIRE(mesh.vertices.size() == 3u);
     REQUIRE(mesh.indices.size() == 3u);
@@ -81,27 +83,28 @@ TEST_CASE("LoadMesh - shared vertices are deduplicated")
     FS::FileSystemManager fileSystem;
     MountAssets(fileSystem, tmp.Path());
 
-    const ContentLoader::LoadedMesh mesh = ContentLoader::LoadMesh("quad.obj", fileSystem);
+    const auto loaded = ContentLoader::LoadMesh("quad.obj", fileSystem);
+    REQUIRE(loaded.has_value());
 
-    CHECK(mesh.vertices.size() == 4u); // 6 face corners, 4 unique vertices
-    CHECK(mesh.indices.size() == 6u);
+    CHECK(loaded->vertices.size() == 4u); // 6 face corners, 4 unique vertices
+    CHECK(loaded->indices.size() == 6u);
 }
 
-TEST_CASE("LoadMesh - missing file throws")
+TEST_CASE("LoadMesh - missing file returns nullopt")
 {
     TempDir tmp;
     FS::FileSystemManager fileSystem;
     MountAssets(fileSystem, tmp.Path());
 
-    CHECK_THROWS(ContentLoader::LoadMesh("does_not_exist.obj", fileSystem));
+    CHECK_FALSE(ContentLoader::LoadMesh("does_not_exist.obj", fileSystem).has_value());
 }
 
-TEST_CASE("LoadMesh - unsupported extension throws")
+TEST_CASE("LoadMesh - unsupported extension returns nullopt")
 {
     TempDir tmp;
     tmp.WriteFile("not_a_mesh.txt", "hello");
     FS::FileSystemManager fileSystem;
     MountAssets(fileSystem, tmp.Path());
 
-    CHECK_THROWS(ContentLoader::LoadMesh("not_a_mesh.txt", fileSystem));
+    CHECK_FALSE(ContentLoader::LoadMesh("not_a_mesh.txt", fileSystem).has_value());
 }

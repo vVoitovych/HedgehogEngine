@@ -4,12 +4,11 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "ThirdParty/TinyObjectLoader/tiny_obj_loader.h"
 
-#include <stdexcept>
 #include <unordered_map>
 
 namespace ContentLoader
 {
-    LoadedMesh LoadObj(const std::string& path)
+    std::optional<LoadedMesh> LoadObj(const std::string& path)
     {
         tinyobj::attrib_t attrib;
         std::vector<tinyobj::shape_t> shapes;
@@ -18,7 +17,8 @@ namespace ContentLoader
 
         if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, path.c_str()))
         {
-            throw std::runtime_error(warn + err);
+            LOGERROR("Failed to load OBJ [", path, "]: ", warn, err);
+            return std::nullopt;
         }
 
         std::unordered_map<LoadedVertexData, uint32_t> uniqueVertices{};

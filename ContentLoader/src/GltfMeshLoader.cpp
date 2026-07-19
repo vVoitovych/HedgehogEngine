@@ -5,8 +5,6 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "ThirdParty/tinygltf/tiny_gltf.h"
 
-#include <stdexcept>
-
 namespace ContentLoader
 {
 
@@ -118,7 +116,7 @@ namespace
     }
 }
 
-    LoadedMesh LoadGltfMesh(const std::string& path)
+    std::optional<LoadedMesh> LoadGltfMesh(const std::string& path)
     {
         tinygltf::Model    model;
         tinygltf::TinyGLTF loader;
@@ -127,7 +125,8 @@ namespace
         const bool success = loader.LoadASCIIFromFile(&model, &err, &warn, path);
         if (!success)
         {
-            throw std::runtime_error("Failed to load GLTF: " + err + "\n" + warn);
+            LOGERROR("Failed to load GLTF [", path, "]: ", err, " ", warn);
+            return std::nullopt;
         }
 
         LoadedMesh meshData;
@@ -180,7 +179,8 @@ namespace
                             meshData.indices.push_back(reinterpret_cast<const uint32_t*>(dataPtr)[i]);
                         break;
                     default:
-                        throw std::runtime_error("Unsupported index component type.");
+                        LOGERROR("Unsupported index component type in GLTF [", path, "]");
+                        return std::nullopt;
                     }
                 }
             }

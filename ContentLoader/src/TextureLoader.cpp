@@ -1,9 +1,9 @@
 #include "api/TextureLoader.hpp"
 
+#include "Logger/api/Logger.hpp"
+
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.hpp"
-
-#include <stdexcept>
 
 namespace ContentLoader
 {
@@ -23,13 +23,16 @@ namespace ContentLoader
         }
     }
 
-    void TextureLoader::LoadTexture(const std::string& file,
+    bool TextureLoader::LoadTexture(const std::string& file,
                                      const FS::FileSystemManager& fileSystem)
     {
         const std::string virtualPath = "assets://" + file;
         const auto bytes = fileSystem.ReadFile(virtualPath);
         if (!bytes)
-            throw std::runtime_error("Failed to read texture file: " + virtualPath);
+        {
+            LOGERROR("Failed to read texture file: ", virtualPath);
+            return false;
+        }
 
         m_Data = stbi_load_from_memory(
             reinterpret_cast<const stbi_uc*>(bytes->data()),
@@ -37,7 +40,11 @@ namespace ContentLoader
             &m_Width, &m_Height, &m_Channels, STBI_rgb_alpha);
 
         if (!m_Data)
-            throw std::runtime_error("Failed to decode texture image: " + virtualPath);
+        {
+            LOGERROR("Failed to decode texture image: ", virtualPath);
+            return false;
+        }
+        return true;
     }
 
     int TextureLoader::GetWidth() const

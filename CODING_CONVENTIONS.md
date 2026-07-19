@@ -253,9 +253,16 @@ LOGERROR("Wrong file path: ", meshComponent.m_MeshPath);
 LOGWARNING("Too many light components. Some will not be processed!");
 ```
 
-### 9.3 Exceptions
+### 9.3 Exceptions and Failure Returns
 
-Throw exceptions only for truly exceptional external failures (e.g., invalid YAML, unknown enum value in a UI dispatch). Internal invariant violations should use `assert`.
+**Exceptions must not cross module (DLL) boundaries.** Fallible operations — file IO, asset
+parsing/decoding, serialization — return `std::optional<T>` or `bool`, and log the failure with
+`LOGERROR` at the point of failure (see `FS::FileSystemManager`, `ContentLoader::LoadMesh`).
+Callers handle the failure path gracefully: substitute a placeholder resource, skip the item, or
+propagate the failure return — never crash on bad content.
+
+Exceptions remain acceptable only *inside* a module for truly exceptional conditions that are
+caught before reaching the module boundary. Internal invariant violations use `assert`.
 
 ---
 
@@ -318,18 +325,27 @@ Separate each group with a blank line.
 
 ### 11.1 Project Namespaces
 
+The existing per-module namespaces below are **frozen as canonical** — a deliberate mix of long
+names and short abbreviations; do not mass-rename either direction. A new module picks one
+unique PascalCase namespace (a short 2–4 letter abbreviation like `HM`/`HW`/`FS` is fine) and
+adds it to this table in the same PR.
+
 | Module | Namespace |
 |--------|----------|
 | ECS | `ECS` |
-| Scene | `Scene` |
+| EcsSerialization | `EcsSerialization` (reflection headers: `Reflection`) |
 | HedgehogMath | `HM` |
-| Context | `Context` |
-| Renderer | `Renderer` |
+| HedgehogCommon | `HedgehogEngine` |
+| HedgehogEngine | `HedgehogEngine` |
+| HedgehogRenderer | `Renderer` (legacy `HR` in ResourceRegistry — converge on `Renderer` when touching those files) |
+| RHI | `RHI` |
 | HedgehogWindow | `HW` |
-| Settings | `HedgehogSettings` |
+| HedgehogSettings | `HedgehogSettings` |
+| FileSystem | `FS` |
 | Logger | `EngineLogger` |
 | ContentLoader | `ContentLoader` |
 | DialogueWindows | `DialogueWindows` |
+| Editor | `Editor` |
 
 ### 11.2 Anonymous Namespaces
 
