@@ -1,5 +1,8 @@
 #pragma once
 
+#include "RenderGraph/IRenderPass.hpp"
+#include "RenderGraph/RenderGraphTypes.hpp"
+
 #include <memory>
 
 namespace HW
@@ -9,39 +12,36 @@ namespace HW
 
 namespace RHI
 {
-    class IRHIDevice;
     class IRHIFramebuffer;
-    class IRHICommandList;
     class IRHIGuiBackend;
 }
 
 namespace Renderer
 {
-    class ResourceManager;
-
-    class GuiPass
+    class GuiPass : public IRenderPass
     {
     public:
-        GuiPass(HW::Window& window, RHI::IRHIDevice& device, const ResourceManager& resourceManager);
-        ~GuiPass();
+        GuiPass(HW::Window& window, RHI::IRHIDevice& device);
+        ~GuiPass() override;
 
         GuiPass(const GuiPass&)            = delete;
         GuiPass& operator=(const GuiPass&) = delete;
 
         void BeginFrame();
         void DiscardFrame();
-        void Render(RHI::IRHICommandList& cmd, const ResourceManager& resourceManager);
-        void Cleanup(RHI::IRHIDevice& device);
-
-        void ResizeResources(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
-        void RecreateSceneDescriptor(const ResourceManager& resourceManager);
-
         void* GetSceneViewTextureId() const;
 
-    private:
-        void CreateSceneViewDescSet(const ResourceManager& resourceManager);
+        const char* GetName() const override { return "GuiPass"; }
+
+        void Setup(RenderGraphBuilder& builder) override;
+        void CreateFramebuffers(RHI::IRHIDevice& device, RenderGraph& graph) override;
+        void Execute(RenderGraphContext& ctx) override;
+        void Cleanup(RHI::IRHIDevice& device) override;
 
     private:
+        ResourceHandle m_SceneColorHandle = INVALID_RESOURCE_HANDLE;
+        ResourceHandle m_GuiColorHandle   = INVALID_RESOURCE_HANDLE;
+
         std::unique_ptr<RHI::IRHIGuiBackend>  m_GuiBackend;
         std::unique_ptr<RHI::IRHIFramebuffer> m_FrameBuffer;
         void*                                  m_SceneViewId = nullptr;

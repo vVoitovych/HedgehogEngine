@@ -1,5 +1,8 @@
 #pragma once
 
+#include "RenderGraph/IRenderPass.hpp"
+#include "RenderGraph/RenderGraphTypes.hpp"
+
 #include <HedgehogMath/api/Matrix.hpp>
 
 #include <array>
@@ -9,8 +12,6 @@
 
 namespace RHI
 {
-    class IRHIDevice;
-    class IRHICommandList;
     class IRHIRenderPass;
     class IRHIPipeline;
     class IRHIFramebuffer;
@@ -22,7 +23,6 @@ namespace RHI
 
 namespace HedgehogEngine
 {
-    struct FrameData;
     struct CameraData;
 }
 
@@ -38,27 +38,22 @@ namespace FS
 
 namespace Renderer
 {
-    class ResourceManager;
-
-    class ShadowmapPass
+    class ShadowmapPass : public IRenderPass
     {
     public:
         ShadowmapPass(RHI::IRHIDevice& device, const HedgehogSettings::Settings& settings,
-                      const ResourceManager& resourceManager,
                       const FS::FileSystemManager& fileSystem);
-        ~ShadowmapPass();
+        ~ShadowmapPass() override;
 
-        void Render(const HedgehogEngine::FrameData& frame, const ResourceManager& resourceManager,
-                    RHI::IRHICommandList& cmd, uint32_t frameIndex);
-        void Cleanup(RHI::IRHIDevice& device);
+        const char* GetName() const override { return "ShadowmapPass"; }
 
-        void UpdateData(const HedgehogEngine::FrameData& frame, uint32_t frameIndex,
-                        const HedgehogSettings::Settings& settings);
-        void UpdateResources(RHI::IRHIDevice& device, const HedgehogSettings::Settings& settings,
-                             const ResourceManager& resourceManager);
+        void Setup(RenderGraphBuilder& builder) override;
+        void CreateFramebuffers(RHI::IRHIDevice& device, RenderGraph& graph) override;
+        void Update(const RenderGraphContext& ctx) override;
+        void Execute(RenderGraphContext& ctx) override;
+        void Cleanup(RHI::IRHIDevice& device) override;
 
     private:
-        void UpdateFrameBuffer(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
         void UpdateViewports(const HedgehogSettings::Settings& settings);
         void UpdateShadowmapMatrices(const HedgehogEngine::CameraData& camera,
                                      const HedgehogSettings::Settings& settings,
@@ -80,11 +75,15 @@ namespace Renderer
 
         static constexpr uint32_t MaxShadowCascades = 4;
 
+        const HedgehogSettings::Settings& m_Settings;
+
         uint32_t m_CascadesCount = 1;
         uint32_t m_ShadowmapSize = 1024;
 
         std::array<HM::Matrix4x4, MaxShadowCascades> m_ShadowmapMatrices;
         std::vector<std::vector<ShadowViewport>>      m_ShadowViewports;
+
+        ResourceHandle m_ShadowDepthHandle = INVALID_RESOURCE_HANDLE;
 
         std::unique_ptr<RHI::IRHIRenderPass>         m_RenderPass;
         std::unique_ptr<RHI::IRHIFramebuffer>         m_FrameBuffer;

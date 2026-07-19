@@ -34,9 +34,14 @@ namespace FS
     class FileSystemManager;
 }
 
+namespace HR
+{
+    class ResourceRegistry;
+}
+
 namespace Renderer
 {
-    class ResourceManager;
+    class RenderGraph;
     class InitPass;
     class DepthPrePass;
     class ShadowmapPass;
@@ -50,7 +55,8 @@ namespace Renderer
         RenderQueue(RHI::IRHIDevice&                  device,
                     HW::Window&                       window,
                     const HedgehogSettings::Settings& settings,
-                    ResourceManager&                  resourceManager,
+                    RenderGraph&                      graph,
+                    HR::ResourceRegistry&             resourceRegistry,
                     const FS::FileSystemManager&      fileSystem);
         ~RenderQueue();
 
@@ -65,6 +71,7 @@ namespace Renderer
         void  DiscardGui();
         void* GetSceneViewTextureId() const;
 
+        // frame/frameIndex/settings feed graph.Update(ctx); the rest feed graph.Execute(ctx).
         void Render(const HedgehogEngine::FrameData& frame,
                     RHI::IRHIDevice&     device,
                     RHI::IRHISwapchain&  swapchain,
@@ -73,23 +80,15 @@ namespace Renderer
                     RHI::IRHISemaphore&  imageAvailableSemaphore,
                     RHI::IRHISemaphore&  renderFinishedSemaphore,
                     uint32_t             frameIndex,
-                    const ResourceManager& resourceManager);
-
-        void UpdateData(const HedgehogEngine::FrameData&             frame,
-                        uint32_t                          frameIndex,
-                        const HedgehogSettings::Settings& settings);
-
-        void ResizeResources(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
-        void ResizeSceneView(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
-
-        void UpdateResources(RHI::IRHIDevice&                 device,
-                             const HedgehogSettings::Settings& settings,
-                             const ResourceManager&            resourceManager);
+                    const HedgehogSettings::Settings& settings,
+                    HR::ResourceRegistry& resourceRegistry);
 
         FrameStats& GetFrameStats() { return m_FrameStats; }
 
     private:
         FrameStats m_FrameStats;
+
+        RenderGraph* m_Graph = nullptr; // non-owning; owned by Renderer
 
         std::unique_ptr<InitPass>     m_InitPass;
         std::unique_ptr<DepthPrePass> m_DepthPrePass;

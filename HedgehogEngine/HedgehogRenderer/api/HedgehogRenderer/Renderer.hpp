@@ -24,11 +24,16 @@ namespace HedgehogEngine
     class IResourceCatalog;
 }
 
+namespace HR
+{
+    class ResourceRegistry;
+}
+
 namespace Renderer
 {
     class RHIContext;
     class ThreadContext;
-    class ResourceManager;
+    class RenderGraph;
     class RenderQueue;
 
     // Vulkan validation-layer diagnostics, safe to query even after the Renderer
@@ -66,10 +71,11 @@ namespace Renderer
     private:
         HW::Window& m_Window;
 
-        std::unique_ptr<RHIContext>      m_RHIContext;
-        std::unique_ptr<ThreadContext>   m_ThreadContext;
-        std::unique_ptr<ResourceManager> m_ResourceManager;
-        std::unique_ptr<RenderQueue>     m_RenderQueue;
+        std::unique_ptr<RHIContext>            m_RHIContext;
+        std::unique_ptr<ThreadContext>         m_ThreadContext;
+        std::unique_ptr<RenderGraph>           m_Graph;
+        std::unique_ptr<HR::ResourceRegistry>  m_ResourceRegistry;
+        std::unique_ptr<RenderQueue>           m_RenderQueue;
 
         uint32_t m_DesiredSceneW = 0;
         uint32_t m_DesiredSceneH = 0;

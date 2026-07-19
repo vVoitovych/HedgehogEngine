@@ -1,6 +1,8 @@
 #include "GuiPass.hpp"
 
-#include "ResourceManager/ResourceManager.hpp"
+#include "Profiling/Profiler.hpp"
+#include "RenderGraph/RenderGraph.hpp"
+#include "RenderGraph/RenderGraphBuilder.hpp"
 
 #include "HedgehogCommon/api/RendererSettings.hpp"
 
@@ -17,7 +19,7 @@
 
 namespace Renderer
 {
-    GuiPass::GuiPass(HW::Window& window, RHI::IRHIDevice& device, const ResourceManager& resourceManager)
+    GuiPass::GuiPass(HW::Window& window, RHI::IRHIDevice& device)
     {
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
@@ -36,22 +38,11 @@ namespace Renderer
 
         ImGui_ImplGlfw_InitForVulkan(window.GetNativeHandle(), true);
 
-        const auto& colorBuffer = resourceManager.GetRHIColorBuffer();
-
         RHI::GuiBackendDesc backendDesc;
         backendDesc.m_MinImageCount = HedgehogEngine::MAX_FRAMES_IN_FLIGHT;
         backendDesc.m_ImageCount    = HedgehogEngine::MAX_FRAMES_IN_FLIGHT;
-        backendDesc.m_ColorFormat   = colorBuffer.GetFormat();
+        backendDesc.m_ColorFormat   = RHI::Format::R16G16B16A16Unorm; // guiColor's format
         m_GuiBackend = device.CreateGuiBackend(backendDesc);
-
-        RHI::FramebufferDesc fbDesc;
-        fbDesc.m_RenderPass       = &m_GuiBackend->GetRenderPass();
-        fbDesc.m_ColorAttachments = { &colorBuffer };
-        fbDesc.m_Width            = colorBuffer.GetWidth();
-        fbDesc.m_Height           = colorBuffer.GetHeight();
-        m_FrameBuffer = device.CreateFramebuffer(fbDesc);
-
-        CreateSceneViewDescSet(resourceManager);
     }
 
     GuiPass::~GuiPass()
@@ -70,10 +61,45 @@ namespace Renderer
         ImGui::EndFrame();
     }
 
-    void GuiPass::Render(RHI::IRHICommandList& cmd, const ResourceManager& resourceManager)
+    void GuiPass::Setup(RenderGraphBuilder& builder)
     {
+        // Sampled: this pass reads sceneColor through an ImGui image (shader-sampled), so the
+        // graph must transition it to ShaderReadOnly before Execute() — the one barrier the
+        // plan calls out moving from RenderQueue::Render into the graph's per-pass step.
+        m_SceneColorHandle = builder.ReadSampled(GraphResourceNames::SCENE_COLOR);
+        m_GuiColorHandle   = builder.Write(GraphResourceNames::GUI_COLOR, RHI::ImageLayout::ColorAttachment);
+    }
+
+    void GuiPass::CreateFramebuffers(RHI::IRHIDevice& device, RenderGraph& graph)
+    {
+        // Called whenever guiColor (Swapchain) OR sceneColor (SceneView) invalidates — rebuilds
+        // both the framebuffer and the ImGui scene-view descriptor unconditionally each time.
+        // Harmless (a few descriptor/framebuffer allocations at resize time, not per-frame) and
+        // keeps the pass simple; both rebuilds only ever happen at the same deferred, post-submit
+        // point in Renderer::DrawFrame as before migration (see the scene-view descriptor risk
+        // note in workflow/current-plan.md), so the ImTextureID lifetime guarantee is unchanged.
+        const auto& guiColor = graph.GetTexture(m_GuiColorHandle);
+
+        m_FrameBuffer.reset();
+        RHI::FramebufferDesc fbDesc;
+        fbDesc.m_RenderPass       = &m_GuiBackend->GetRenderPass();
+        fbDesc.m_ColorAttachments = { &guiColor };
+        fbDesc.m_Width            = guiColor.GetWidth();
+        fbDesc.m_Height           = guiColor.GetHeight();
+        m_FrameBuffer = device.CreateFramebuffer(fbDesc);
+
+        m_GuiBackend->DestroyTextureId(m_SceneViewId);
+        m_SceneViewId = nullptr;
+        const auto& sceneColor = graph.GetTexture(m_SceneColorHandle);
+        m_SceneViewId = m_GuiBackend->CreateTextureId(sceneColor);
+    }
+
+    void GuiPass::Execute(RenderGraphContext& ctx)
+    {
+        HH_PROFILE_ZONE("GuiPass");
+
         ImGui::Render();
-        m_GuiBackend->Render(cmd, *m_FrameBuffer);
+        m_GuiBackend->Render(*ctx.m_CommandList, *m_FrameBuffer);
     }
 
     void GuiPass::Cleanup(RHI::IRHIDevice& /*device*/)
@@ -88,38 +114,8 @@ namespace Renderer
         ImGui::DestroyContext();
     }
 
-    void GuiPass::ResizeResources(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
-    {
-        const auto& colorBuffer = resourceManager.GetRHIColorBuffer();
-
-        m_FrameBuffer.reset();
-
-        RHI::FramebufferDesc fbDesc;
-        fbDesc.m_RenderPass       = &m_GuiBackend->GetRenderPass();
-        fbDesc.m_ColorAttachments = { &colorBuffer };
-        fbDesc.m_Width            = colorBuffer.GetWidth();
-        fbDesc.m_Height           = colorBuffer.GetHeight();
-        m_FrameBuffer = device.CreateFramebuffer(fbDesc);
-
-        m_GuiBackend->DestroyTextureId(m_SceneViewId);
-        m_SceneViewId = nullptr;
-        CreateSceneViewDescSet(resourceManager);
-    }
-
-    void GuiPass::RecreateSceneDescriptor(const ResourceManager& resourceManager)
-    {
-        m_GuiBackend->DestroyTextureId(m_SceneViewId);
-        m_SceneViewId = nullptr;
-        CreateSceneViewDescSet(resourceManager);
-    }
-
     void* GuiPass::GetSceneViewTextureId() const
     {
         return m_SceneViewId;
-    }
-
-    void GuiPass::CreateSceneViewDescSet(const ResourceManager& resourceManager)
-    {
-        m_SceneViewId = m_GuiBackend->CreateTextureId(resourceManager.GetSceneColorBuffer());
     }
 }

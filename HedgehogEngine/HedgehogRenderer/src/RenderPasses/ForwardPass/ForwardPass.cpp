@@ -1,11 +1,14 @@
 #include "ForwardPass.hpp"
 #include "ForwardPassPushConstants.hpp"
 
+#include "Profiling/Profiler.hpp"
+#include "RenderGraph/RenderGraph.hpp"
+#include "RenderGraph/RenderGraphBuilder.hpp"
+
 #include "FileSystem/api/FileSystemManager.hpp"
 
 #include "HedgehogCommon/api/Frame/FrameData.hpp"
 
-#include "ResourceManager/ResourceManager.hpp"
 #include "ResourceRegistry/ResourceRegistry.hpp"
 #include "ResourceRegistry/MeshGpuData.hpp"
 
@@ -46,7 +49,7 @@ namespace Renderer
     }
 
 
-    ForwardPass::ForwardPass(RHI::IRHIDevice& device, ResourceManager& resourceManager,
+    ForwardPass::ForwardPass(RHI::IRHIDevice& device, HR::ResourceRegistry& resourceRegistry,
                               const FS::FileSystemManager& fileSystem)
     {
         const auto sd = ShaderLoader::Load(device,
@@ -80,7 +83,7 @@ namespace Renderer
         // Set 1: per-material data — ForwardPass defines and owns this layout.
         // The layout is injected into ResourceRegistry so it can allocate material descriptor sets.
         m_MaterialLayout = device.CreateDescriptorSetLayout(sd.m_Layout.m_DescriptorSets[1]);
-        resourceManager.GetResourceRegistry().SetMaterialLayout(
+        resourceRegistry.SetMaterialLayout(
             device,
             *m_MaterialLayout,
             HedgehogEngine::MAX_MATERIAL_COUNT,
@@ -89,7 +92,7 @@ namespace Renderer
         // Render pass: one color + depth (loaded from DepthPrePass)
         RHI::RenderPassDesc rpDesc;
         rpDesc.m_ColorAttachments.push_back(RHI::AttachmentDesc{
-            resourceManager.GetSceneColorBuffer().GetFormat(),
+            RHI::Format::R16G16B16A16Unorm,
             RHI::LoadOp::Clear,
             RHI::StoreOp::Store,
             RHI::LoadOp::DontCare,
@@ -98,7 +101,7 @@ namespace Renderer
             RHI::ImageLayout::ColorAttachment
         });
         rpDesc.m_DepthAttachment = RHI::AttachmentDesc{
-            resourceManager.GetRHIDepthBuffer().GetFormat(),
+            device.GetPreferredDepthFormat(),
             RHI::LoadOp::Load,
             RHI::StoreOp::DontCare,
             RHI::LoadOp::DontCare,
@@ -113,26 +116,42 @@ namespace Renderer
         pipelineDesc.m_DescriptorSetLayouts = { m_FrameLayout.get(), m_MaterialLayout.get() };
         pipelineDesc.m_RenderPass           = m_RenderPass.get();
         m_Pipeline = device.CreateGraphicsPipeline(pipelineDesc);
-
-        // Framebuffer
-        const auto& colorBuffer = resourceManager.GetSceneColorBuffer();
-        const auto& depthBuffer = resourceManager.GetRHIDepthBuffer();
-        RHI::FramebufferDesc fbDesc;
-        fbDesc.m_RenderPass        = m_RenderPass.get();
-        fbDesc.m_ColorAttachments  = { &colorBuffer };
-        fbDesc.m_DepthAttachment   = &depthBuffer;
-        fbDesc.m_Width             = colorBuffer.GetWidth();
-        fbDesc.m_Height            = colorBuffer.GetHeight();
-        m_FrameBuffer = device.CreateFramebuffer(fbDesc);
     }
 
     ForwardPass::~ForwardPass()
     {
     }
 
-    void ForwardPass::Render(const HedgehogEngine::FrameData& frame, const ResourceManager& resourceManager,
-                              RHI::IRHICommandList& cmd, uint32_t frameIndex)
+    void ForwardPass::Setup(RenderGraphBuilder& builder)
     {
+        m_SceneDepthHandle = builder.Read(GraphResourceNames::SCENE_DEPTH);
+        m_SceneColorHandle = builder.Write(GraphResourceNames::SCENE_COLOR, RHI::ImageLayout::ColorAttachment);
+    }
+
+    void ForwardPass::CreateFramebuffers(RHI::IRHIDevice& device, RenderGraph& graph)
+    {
+        const auto& colorBuffer = graph.GetTexture(m_SceneColorHandle);
+        const auto& depthBuffer = graph.GetTexture(m_SceneDepthHandle);
+
+        m_FrameBuffer.reset();
+
+        RHI::FramebufferDesc fbDesc;
+        fbDesc.m_RenderPass       = m_RenderPass.get();
+        fbDesc.m_ColorAttachments = { &colorBuffer };
+        fbDesc.m_DepthAttachment  = &depthBuffer;
+        fbDesc.m_Width            = colorBuffer.GetWidth();
+        fbDesc.m_Height           = colorBuffer.GetHeight();
+        m_FrameBuffer = device.CreateFramebuffer(fbDesc);
+    }
+
+    void ForwardPass::Execute(RenderGraphContext& ctx)
+    {
+        HH_PROFILE_ZONE("ForwardPass");
+
+        const HedgehogEngine::FrameData& frame    = *ctx.m_FrameData;
+        RHI::IRHICommandList&            cmd      = *ctx.m_CommandList;
+        HR::ResourceRegistry&            registry = *ctx.m_ResourceRegistry;
+
         ForwardPassFrameUniform ubo{};
         ubo.m_View        = frame.m_Camera.m_View;
         ubo.m_ViewProj    = frame.m_Camera.m_Proj * frame.m_Camera.m_View;
@@ -140,7 +159,7 @@ namespace Renderer
         ubo.m_LightCount  = frame.m_Lights.size();
         for (size_t i = 0; i < ubo.m_LightCount; ++i)
             ubo.m_Lights[i] = ToGpuLight(frame.m_Lights[i]);
-        m_FrameUniforms[frameIndex]->CopyData(&ubo, sizeof(ubo));
+        m_FrameUniforms[ctx.m_FrameIndex]->CopyData(&ubo, sizeof(ubo));
 
         RHI::ClearValue colorClear;
         colorClear.m_Color = { 0.0f, 0.0f, 0.0f, 1.0f };
@@ -157,7 +176,6 @@ namespace Renderer
         cmd.SetViewport({ 0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height), 0.0f, 1.0f });
         cmd.SetScissor({ 0, 0, width, height });
 
-        auto& registry  = resourceManager.GetResourceRegistry();
         auto& posBuffer = const_cast<RHI::IRHIBuffer&>(registry.GetPositionsBuffer());
         auto& uvBuffer  = const_cast<RHI::IRHIBuffer&>(registry.GetTexCoordsBuffer());
         auto& nrmBuffer = const_cast<RHI::IRHIBuffer&>(registry.GetNormalsBuffer());
@@ -166,7 +184,7 @@ namespace Renderer
         cmd.BindVertexBuffers(0, { &posBuffer, &uvBuffer, &nrmBuffer }, { 0, 0, 0 });
         cmd.BindIndexBuffer(idxBuffer, RHI::IndexType::Uint32);
 
-        cmd.BindDescriptorSet(*m_Pipeline, 0, *m_FrameSets[frameIndex]);
+        cmd.BindDescriptorSet(*m_Pipeline, 0, *m_FrameSets[ctx.m_FrameIndex]);
 
         for (const auto& drawNode : frame.m_DrawList.m_Opaque)
         {
@@ -202,22 +220,6 @@ namespace Renderer
         m_FramePool.reset();
         m_FrameLayout.reset();
         m_MaterialLayout.reset();
-    }
-
-    void ForwardPass::ResizeResources(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
-    {
-        const auto& colorBuffer = resourceManager.GetSceneColorBuffer();
-        const auto& depthBuffer = resourceManager.GetRHIDepthBuffer();
-
-        m_FrameBuffer.reset();
-
-        RHI::FramebufferDesc fbDesc;
-        fbDesc.m_RenderPass       = m_RenderPass.get();
-        fbDesc.m_ColorAttachments = { &colorBuffer };
-        fbDesc.m_DepthAttachment  = &depthBuffer;
-        fbDesc.m_Width            = colorBuffer.GetWidth();
-        fbDesc.m_Height           = colorBuffer.GetHeight();
-        m_FrameBuffer = device.CreateFramebuffer(fbDesc);
     }
 
 }
