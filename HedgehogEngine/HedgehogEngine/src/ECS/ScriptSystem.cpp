@@ -9,7 +9,6 @@
 #include "HedgehogEngine/api/Events/TransformEvents.hpp"
 
 #include "Logger/api/Logger.hpp"
-#include "DialogueWindows/api/ScriptDialogue.hpp"
 
 #include "HedgehogMath/api/Vector.hpp"
 
@@ -131,16 +130,13 @@ namespace
     }
 
     void ScriptSystem::ChangeScript(ECS::Entity entity, ECS::ECS& ecs, EventBus& bus,
-                                     const FS::FileSystemManager& fileSystem)
+                                     const FS::FileSystemManager& fileSystem,
+                                     const std::string& physicalPath)
     {
-        std::string scriptPath = DialogueWindows::ScriptChooseDialogue();
-        if (scriptPath.empty())
-            return;
-
-        const auto virtualPath = fileSystem.ToVirtualPath(scriptPath);
+        const auto virtualPath = fileSystem.ToVirtualPath(physicalPath);
         if (!virtualPath)
         {
-            LOGERROR("ScriptSystem::ChangeScript: path is not under any registered mount (path: ", scriptPath, ")");
+            LOGERROR("ScriptSystem::ChangeScript: path is not under any registered mount (path: ", physicalPath, ")");
             return;
         }
 
@@ -180,7 +176,7 @@ namespace
             return;
         }
 
-        if (luaL_dofile(component.m_LuaState, scriptPath.c_str()) != LUA_OK)
+        if (luaL_dofile(component.m_LuaState, physicalPath.c_str()) != LUA_OK)
         {
             LOGERROR("[Lua Error] ", lua_tostring(component.m_LuaState, -1));
             lua_pop(component.m_LuaState, 1);
@@ -190,7 +186,7 @@ namespace
             return;
         }
 
-        const std::string className = GetFileNameWithoutExtension(scriptPath);
+        const std::string className = GetFileNameWithoutExtension(physicalPath);
         lua_getglobal(component.m_LuaState, className.c_str());
         lua_getfield(component.m_LuaState, -1, "new");
         lua_pushvalue(component.m_LuaState, -2);

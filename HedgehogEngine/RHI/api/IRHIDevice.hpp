@@ -12,6 +12,7 @@
 #include "IRHICommandList.hpp"
 #include "IRHISwapchain.hpp"
 #include "IRHISyncPrimitive.hpp"
+#include "IRHIGuiBackend.hpp"
 
 #include <cstddef>
 #include <functional>
@@ -114,6 +115,12 @@ public:
     // Returns the best depth format supported by the device.
     // Preference order: D32Float → D24UnormS8Uint → D16Unorm.
     virtual Format GetPreferredDepthFormat() const = 0;
+
+    // ── GUI backend ───────────────────────────────────────────────────────────
+
+    // Creates the backend-specific ImGui renderer. Call after ImGui::CreateContext()
+    // and the platform (e.g. GLFW) init, but before the first frame.
+    virtual std::unique_ptr<IRHIGuiBackend> CreateGuiBackend(const GuiBackendDesc& desc) const = 0;
 
     // ── Backend factory ───────────────────────────────────────────────────────
 

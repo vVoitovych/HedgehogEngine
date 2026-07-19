@@ -85,6 +85,11 @@ namespace HW
         m_Impl->m_Resized = false;
     }
 
+    void Window::WaitEvents() const
+    {
+        glfwWaitEvents();
+    }
+
     void Window::ToggleFullscreen()
     {
         if (!m_Impl->m_IsFullscreen)

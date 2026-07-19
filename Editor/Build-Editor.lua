@@ -7,6 +7,7 @@ project "Editor"
 
    includedirs
    {
+      ".",
       "..",
       "../HedgehogEngine",
       "../HedgehogEngine/HedgehogEngine/api",
@@ -26,7 +27,11 @@ project "Editor"
       "yaml-cpp",
       "ECS",
       "DialogueWindows",
-      "FileSystem"
+      "FileSystem",
+      "imgui",
+      -- Tracy client (linked into HedgehogRenderer) needs these on Windows.
+      "ws2_32",
+      "dbghelp"
    }
 
    targetdir ("../Binaries/" .. OutputDir .. "/%{prj.name}")

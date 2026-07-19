@@ -14,8 +14,14 @@ project "Logger"
        systemversion "latest"
        defines { "LOGGER_EXPORT" }
        postbuildcommands {
-           "{COPYFILE} %{cfg.targetdir}/Logger.dll ../Binaries/" .. OutputDir .. "/Editor/Logger.dll",
-           "{COPYFILE} %{cfg.targetdir}/Logger.dll ../Binaries/" .. OutputDir .. "/FileSystemTest/Logger.dll"
+           ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/Editor"),
+           ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/Editor/"),
+           ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/FileSystemTest"),
+           ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/FileSystemTest/"),
+           ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/EcsSerializationTest"),
+           ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/EcsSerializationTest/"),
+           ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/ContentLoaderTest"),
+           ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/ContentLoaderTest/")
        }
 
    filter "configurations:Debug"

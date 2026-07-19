@@ -1,6 +1,6 @@
 #pragma once
 
-#include "HedgehogEngine/api/Frame/FrameData.hpp"
+#include "HedgehogCommon/api/Frame/FrameData.hpp"
 #include "MaterialDef.hpp"
 
 #include <functional>

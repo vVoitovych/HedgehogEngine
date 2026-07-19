@@ -13,7 +13,8 @@ namespace HedgehogEngine
     class Mesh
     {
     public:
-        HEDGEHOG_ENGINE_API void LoadData(const std::string& fileName,
+        // Returns false (after logging) when loading fails; the mesh is left empty.
+        HEDGEHOG_ENGINE_API bool LoadData(const std::string& fileName,
                                           const FS::FileSystemManager& fileSystem);
         HEDGEHOG_ENGINE_API void ClearData();
 

@@ -32,10 +32,24 @@ Work through the Implementation Steps in order, starting from the first unchecke
 
 For EACH step:
 1. Implement the change across all listed files.
-2. After completing the step, immediately update workflow/progress.md:
+2. Build the solution and fix any errors before proceeding:
+   Scripts\Build.bat Debug
+   A step is not done until the solution compiles cleanly (exit code 0).
+3. After the build succeeds, update workflow/progress.md:
    - Mark the step as [x] done
-   - Add a brief note: what you did and any surprises
-3. If you hit an ambiguity or blocker, write it to workflow/progress.md under "## Blockers" and stop.
+   - Add a brief note: what you did, any surprises, and the build result
+4. If you hit an ambiguity or blocker, write it to workflow/progress.md under "## Blockers" and stop.
+
+FINAL VERIFICATION (after the last step, before declaring COMPLETE):
+1. Build and run every test executable; the script must exit 0:
+   Scripts\RunTests.bat Debug
+2. If the plan touched HedgehogRenderer, RHI, shaders, or anything else on the
+   GPU path, also run the renderer smoke test from the repo root:
+   Binaries\windows-x86_64\Debug\Editor\Editor.exe --smoke-test
+   It renders 120 frames and exits nonzero on any Vulkan validation error.
+3. Record the results in workflow/progress.md under "## Verification".
+   A failing test or smoke test is a blocker: fix it, or record it under
+   "## Blockers" and stop.
 
 CODING RULES (enforce strictly):
 - Member variables: m_ prefix
@@ -46,7 +60,8 @@ CODING RULES (enforce strictly):
 - Match the existing file's include order and namespace style
 - Add minimal comments: only explain non-obvious WHY, never WHAT
 
-After all steps are done, write "## Status: COMPLETE" at the top of workflow/progress.md.
+Only after all steps are done AND final verification passes, write
+"## Status: COMPLETE" at the top of workflow/progress.md.
 ```
 
 ---
@@ -55,6 +70,7 @@ After all steps are done, write "## Status: COMPLETE" at the top of workflow/pro
 
 Read `workflow/progress.md` and report to the user:
 - Which steps completed
+- The final verification results (tests, and smoke test if it applied)
 - Any blockers encountered
 - Whether implementation is complete or needs a follow-up `/implement --continue`
 

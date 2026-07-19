@@ -11,7 +11,7 @@
 
 namespace HedgehogEngine
 {
-    class HedgehogEngine;
+    class Engine;
 }
 
 namespace Editor
@@ -26,7 +26,7 @@ namespace Editor
     class EditorGui
     {
     public:
-        explicit EditorGui(HedgehogEngine::HedgehogEngine& context);
+        explicit EditorGui(HedgehogEngine::Engine& context);
         ~EditorGui();
 
         EditorGui(const EditorGui&)            = delete;
@@ -34,7 +34,7 @@ namespace Editor
         EditorGui(EditorGui&&)                 = delete;
         EditorGui& operator=(EditorGui&&)      = delete;
 
-        void Draw(HedgehogEngine::HedgehogEngine& context, void* sceneViewTextureId);
+        void Draw(HedgehogEngine::Engine& context, void* sceneViewTextureId);
 
         uint32_t GetSceneViewWidth()    const { return m_SceneViewWidth; }
         uint32_t GetSceneViewHeight()   const { return m_SceneViewHeight; }
@@ -42,26 +42,28 @@ namespace Editor
 
     private:
         // ── Panel content (drawn into dock areas) ────────────────────────────
-        void DrawPanelContent(PanelId panel, HedgehogEngine::HedgehogEngine& context, void* sceneViewTextureId);
-        void DrawMainMenu(HedgehogEngine::HedgehogEngine& context);
+        void DrawPanelContent(PanelId panel, HedgehogEngine::Engine& context, void* sceneViewTextureId);
+        void DrawMainMenu(HedgehogEngine::Engine& context);
         void DrawToolbarContent();
         void DrawSceneViewContent(void* sceneViewTextureId);
-        void DrawSceneHierarchy(HedgehogEngine::HedgehogEngine& context);
-        void DrawHierarchyNode(HedgehogEngine::HedgehogEngine& context, ECS::Entity entity, int& index);
-        void DrawInspector(HedgehogEngine::HedgehogEngine& context);
-        void DrawEntityTitle(HedgehogEngine::HedgehogEngine& context);
-        void DrawTransformComponent(HedgehogEngine::HedgehogEngine& context);
-        void DrawMeshComponent(HedgehogEngine::HedgehogEngine& context);
-        void DrawRenderComponent(HedgehogEngine::HedgehogEngine& context);
-        void DrawLightComponent(HedgehogEngine::HedgehogEngine& context);
-        void DrawScriptComponent(HedgehogEngine::HedgehogEngine& context);
+        void DrawSceneHierarchy(HedgehogEngine::Engine& context);
+        void DrawHierarchyNode(HedgehogEngine::Engine& context, ECS::Entity entity, int& index);
+        void DrawInspector(HedgehogEngine::Engine& context);
+        void DrawEntityTitle(HedgehogEngine::Engine& context);
+        void DrawTransformComponent(HedgehogEngine::Engine& context);
+        void DrawMeshComponent(HedgehogEngine::Engine& context);
+        void DrawRenderComponent(HedgehogEngine::Engine& context);
+        void DrawLightComponent(HedgehogEngine::Engine& context);
+        void DrawScriptComponent(HedgehogEngine::Engine& context);
 
         // ── Floating dialogs ─────────────────────────────────────────────────
-        void DrawSettingsWindow(HedgehogEngine::HedgehogEngine& context);
+        void DrawSettingsWindow(HedgehogEngine::Engine& context);
+
+        // ── Last-scene persistence ───────────────────────────────────────────
+        void recordLastScene(const std::string& nativePath, const FS::FileSystemManager& fileSystem);
+        void loadLastScene(HedgehogEngine::Engine& context);
 
     private:
-        static constexpr const char k_SettingsPath[] = "editor_settings.yaml";
-
         // Non-owning pointer to the FileSystemManager; valid for the entire lifetime of EditorGui
         // because the engine context outlives it (destroyed first among Application's members).
         const FS::FileSystemManager* m_FileSystem = nullptr;

@@ -12,6 +12,7 @@ namespace Editor
     {
         float           panelBgColor[3] = { 2.0f / 255.0f, 12.0f / 255.0f, 30.0f / 255.0f };
         DockLayoutState dockLayout;
+        std::string     m_LastScene;
 
         void Save(const std::string& virtualPath, const FS::FileSystemManager& fileSystem) const;
         bool Load(const std::string& virtualPath, const FS::FileSystemManager& fileSystem);

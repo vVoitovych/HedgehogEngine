@@ -2,12 +2,6 @@
 
 #include "ContentLoader/api/TextureLoader.hpp"
 
-#include "HedgehogEngine/api/Containers/MeshContainer.hpp"
-#include "HedgehogEngine/api/Containers/Mesh.hpp"
-#include "HedgehogEngine/api/Containers/MaterialContainer.hpp"
-#include "HedgehogEngine/api/Containers/MaterialData.hpp"
-#include "HedgehogEngine/api/Containers/TextureContainer.hpp"
-
 #include "RHI/api/IRHIDevice.hpp"
 #include "RHI/api/IRHIBuffer.hpp"
 #include "RHI/api/IRHITexture.hpp"
@@ -44,44 +38,40 @@ namespace HR
         m_MaterialPool   = device.CreateDescriptorPool(maxSets, poolSizes);
     }
 
-    void ResourceRegistry::SyncMeshes(const HedgehogEngine::MeshContainer& container, RHI::IRHIDevice& device)
+    void ResourceRegistry::SyncMeshes(const HedgehogEngine::IResourceCatalog& catalog, RHI::IRHIDevice& device)
     {
-        const size_t totalMeshes = container.GetMeshCount();
+        const size_t totalMeshes = catalog.GetMeshCount();
         if (totalMeshes <= m_RegisteredMeshCount)
             return;
 
         for (size_t i = m_RegisteredMeshCount; i < totalMeshes; ++i)
         {
-            const auto& mesh     = container.GetMesh(i);
-            const auto& positions = mesh.GetPositions();
-            const auto& texCoords = mesh.GetTexCoords();
-            const auto& normals   = mesh.GetNormals();
-            const auto& indices   = mesh.GetIndices();
+            const HedgehogEngine::MeshView mesh = catalog.GetMesh(i);
 
             MeshGeometryInfo geom;
-            geom.m_FirstIndex   = mesh.GetFirstIndex();
-            geom.m_IndexCount   = mesh.GetIndexCount();
-            geom.m_VertexOffset = mesh.GetVertexOffset();
+            geom.m_FirstIndex   = mesh.firstIndex;
+            geom.m_IndexCount   = mesh.indexCount;
+            geom.m_VertexOffset = mesh.vertexOffset;
             m_MeshGeometryInfos.push_back(geom);
 
-            for (const auto& p : positions)
+            for (const auto& p : mesh.positions)
             {
                 m_CpuPositions.push_back(p.x());
                 m_CpuPositions.push_back(p.y());
                 m_CpuPositions.push_back(p.z());
             }
-            for (const auto& uv : texCoords)
+            for (const auto& uv : mesh.texCoords)
             {
                 m_CpuTexCoords.push_back(uv.x());
                 m_CpuTexCoords.push_back(uv.y());
             }
-            for (const auto& n : normals)
+            for (const auto& n : mesh.normals)
             {
                 m_CpuNormals.push_back(n.x());
                 m_CpuNormals.push_back(n.y());
                 m_CpuNormals.push_back(n.z());
             }
-            for (uint32_t idx : indices)
+            for (uint32_t idx : mesh.indices)
                 m_CpuIndices.push_back(idx);
         }
 
@@ -90,33 +80,31 @@ namespace HR
         FlushMeshUploads(device);
     }
 
-    void ResourceRegistry::SyncMaterials(HedgehogEngine::MaterialContainer& container,
-                                          HedgehogEngine::TextureContainer&  texContainer,
-                                          RHI::IRHIDevice&                   device,
-                                          const FS::FileSystemManager&       fileSystem)
+    void ResourceRegistry::SyncMaterials(HedgehogEngine::IResourceCatalog& catalog, RHI::IRHIDevice& device)
     {
         assert(m_MaterialLayout && "SetMaterialLayout must be called before SyncMaterials");
 
-        const size_t total = container.GetMaterialCount();
+        const FS::FileSystemManager& fileSystem = catalog.GetFileSystem();
+        const size_t total = catalog.GetMaterialCount();
 
         for (size_t i = 0; i < m_RegisteredMaterialCount && i < total; ++i)
         {
-            auto& mat = container.GetMaterialDataByIndex(i);
+            const HedgehogEngine::MaterialView mat = catalog.GetMaterial(i);
             if (!mat.isDirty)
                 continue;
 
             UpdateMaterialGpu(static_cast<uint32_t>(i), mat.transparency, mat.baseColor,
                               device, fileSystem);
-            texContainer.RegisterTexturePath(mat.baseColor);
-            mat.isDirty = false;
+            catalog.RegisterTexturePath(mat.baseColor);
+            catalog.ClearMaterialDirty(i);
         }
 
         for (size_t i = m_RegisteredMaterialCount; i < total; ++i)
         {
-            auto& mat = container.GetMaterialDataByIndex(i);
+            const HedgehogEngine::MaterialView mat = catalog.GetMaterial(i);
             CreateMaterialGpu(mat.transparency, mat.baseColor, device, fileSystem);
-            texContainer.RegisterTexturePath(mat.baseColor);
-            mat.isDirty = false;
+            catalog.RegisterTexturePath(mat.baseColor);
+            catalog.ClearMaterialDirty(i);
         }
 
         m_RegisteredMaterialCount = total;
@@ -157,13 +145,16 @@ namespace HR
             return *it->second;
 
         ContentLoader::TextureLoader loader;
-        loader.LoadTexture(path, fileSystem);
-        const uint32_t texW    = static_cast<uint32_t>(loader.GetWidth());
-        const uint32_t texH    = static_cast<uint32_t>(loader.GetHeight());
+        const bool loaded = loader.LoadTexture(path, fileSystem);
+        // A missing/corrupt texture must not take down rendering: substitute a
+        // 1x1 magenta placeholder (cached under the same path like any texture).
+        constexpr uint8_t FALLBACK_PIXEL[4] = { 255, 0, 255, 255 };
+        const uint32_t texW    = loaded ? static_cast<uint32_t>(loader.GetWidth())  : 1u;
+        const uint32_t texH    = loaded ? static_cast<uint32_t>(loader.GetHeight()) : 1u;
         const size_t   imgSize = texW * texH * 4;
 
         auto staging = device.CreateBuffer(imgSize, RHI::BufferUsage::TransferSrc, RHI::MemoryUsage::CpuToGpu);
-        staging->CopyData(loader.GetData(), imgSize);
+        staging->CopyData(loaded ? loader.GetData() : FALLBACK_PIXEL, imgSize);
 
         RHI::TextureDesc desc;
         desc.m_Width  = texW;

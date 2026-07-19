@@ -10,16 +10,16 @@ namespace HedgehogEngine
     class EngineContext;
     class FrameContext;
 
-    class HedgehogEngine
+    class Engine
     {
     public:
-        HEDGEHOG_ENGINE_API HedgehogEngine();
-        HEDGEHOG_ENGINE_API ~HedgehogEngine();
+        HEDGEHOG_ENGINE_API Engine();
+        HEDGEHOG_ENGINE_API ~Engine();
 
-        HedgehogEngine(const HedgehogEngine&)            = delete;
-        HedgehogEngine& operator=(const HedgehogEngine&) = delete;
-        HedgehogEngine(HedgehogEngine&&)                 = delete;
-        HedgehogEngine& operator=(HedgehogEngine&&)      = delete;
+        Engine(const Engine&)            = delete;
+        Engine& operator=(const Engine&) = delete;
+        Engine(Engine&&)                 = delete;
+        Engine& operator=(Engine&&)      = delete;
 
         HEDGEHOG_ENGINE_API void UpdateContext(float dt, float aspectRatio);
         HEDGEHOG_ENGINE_API void Cleanup();

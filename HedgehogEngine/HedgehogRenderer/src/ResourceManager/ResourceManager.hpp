@@ -16,7 +16,7 @@ namespace HedgehogSettings
 
 namespace HedgehogEngine
 {
-    class EngineContext;
+    class IResourceCatalog;
 }
 
 namespace HR
@@ -36,12 +36,12 @@ namespace Renderer
 
         void Cleanup(RHI::IRHIDevice& device);
 
-        void SyncResources(RHI::IRHIDevice& device, HedgehogEngine::EngineContext& engine);
+        void SyncResources(RHI::IRHIDevice& device, HedgehogEngine::IResourceCatalog& catalog);
 
-        void ResizeFrameBufferSizeDependenteResources(RHI::IRHIDevice& device,
+        void ResizeFrameBufferSizeDependentResources(RHI::IRHIDevice& device,
                                                       const RHI::IRHISwapchain& swapchain);
         void ResizeSceneView(RHI::IRHIDevice& device, uint32_t width, uint32_t height);
-        void ResizeSettingsDependenteResources(RHI::IRHIDevice& device,
+        void ResizeSettingsDependentResources(RHI::IRHIDevice& device,
                                                HedgehogSettings::Settings& settings);
 
         const RHI::IRHITexture& GetRHIColorBuffer() const;

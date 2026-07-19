@@ -4,9 +4,6 @@
 #include "FileSystem/api/FileSystem.hpp"
 #include "FileSystem/api/PathUtils.hpp"
 
-#include "HedgehogEngine/api/Containers/MeshContainer.hpp"
-#include "HedgehogEngine/api/Containers/TextureContainer.hpp"
-#include "HedgehogEngine/api/Containers/LightContainer.hpp"
 #include "HedgehogEngine/api/Containers/MaterialContainer.hpp"
 #include "HedgehogEngine/api/Containers/MaterialData.hpp"
 
@@ -15,7 +12,7 @@
 
 #include "HedgehogCommon/api/Camera.hpp"
 
-#include "HedgehogSettings/Settings/HedgehogSettings.hpp"
+#include "HedgehogSettings/api/HedgehogSettings.hpp"
 
 #include "HedgehogEngine/api/ECS/systems/TransformSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/HierarchySystem.hpp"
@@ -30,36 +27,33 @@
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
 #include "ECS/api/components/Hierarchy.hpp"
 
-#include "EcsSerialization/api/EcsSerializer.hpp"
 #include "EcsSerialization/api/ComponentSerializerRegistry.hpp"
 
 #include "HedgehogEngine/src/Frame/FrameDataBuilder.hpp"
 
 #include "Logger/api/Logger.hpp"
 
-#include <algorithm>
 #include <cassert>
 #include <filesystem>
-#include <sstream>
 
 namespace HedgehogEngine
 {
     EngineContext::EngineContext()
-        : m_SceneName("Default")
+        : m_ResourceCatalog(m_FileSystem)
     {
         InitFileSystem();
 
         m_Camera = std::make_unique<Camera>();
         InitECS();
 
-        m_MeshContainer = std::make_unique<MeshContainer>();
-        m_MeshContainer->Update(*m_MeshSystem, m_FileSystem);
+        // SceneManager creates the scene root on construction, so it must come after InitECS
+        // (systems + component registry ready) and must be the only scene-root creator —
+        // InitECS used to call CreateSceneRoot() itself; that call was removed to avoid a double root.
+        m_SceneManager = std::make_unique<SceneManager>(
+            m_ECS, m_EventBus, m_FileSystem, *m_ComponentRegistry,
+            *m_TransformSystem, *m_MeshSystem, *m_RenderSystem);
 
-        m_TextureContainer  = std::make_unique<TextureContainer>();
-        m_LightContainer    = std::make_unique<LightContainer>();
-        m_LightContainer->UpdateLights(m_ECS, *m_LightSystem);
-
-        m_MaterialContainer = std::make_unique<MaterialContainer>();
+        m_ResourceCatalog.Update(m_ECS, *m_LightSystem, *m_RenderSystem, *m_MeshSystem);
 
         m_Settings = std::make_unique<HedgehogSettings::Settings>();
     }
@@ -133,8 +127,6 @@ namespace HedgehogEngine
 
         signature.set(m_ECS.GetComponentType<ScriptComponent>());
         m_ECS.SetSystemSignature<ScriptSystem>(signature);
-
-        CreateSceneRoot();
 
         RegisterComponents();
     }
@@ -217,13 +209,11 @@ namespace HedgehogEngine
         m_HierarchySystem->Update(m_ECS, m_EventBus);
         m_LightSystem->Update(m_ECS);
 
-        m_LightContainer->UpdateLights(m_ECS, *m_LightSystem);
-        m_MaterialContainer->Update(*m_RenderSystem, m_FileSystem);
-        m_MeshContainer->Update(*m_MeshSystem, m_FileSystem);
+        m_ResourceCatalog.Update(m_ECS, *m_LightSystem, *m_RenderSystem, *m_MeshSystem);
 
         auto materialTypeLookup = [this](uint64_t index) -> MaterialType
         {
-            const auto& data = m_MaterialContainer->GetMaterialDataByIndex(index);
+            const auto& data = m_ResourceCatalog.GetMaterialContainer().GetMaterialDataByIndex(index);
             return data.type;
         };
 
@@ -233,12 +223,11 @@ namespace HedgehogEngine
             *m_Camera, dt, materialTypeLookup);
     }
 
-    const MeshContainer& EngineContext::GetMeshContainer() const     { return *m_MeshContainer; }
-    const TextureContainer& EngineContext::GetTextureContainer() const { return *m_TextureContainer; }
-    TextureContainer& EngineContext::GetTextureContainer()             { return *m_TextureContainer; }
-    const LightContainer& EngineContext::GetLightContainer() const     { return *m_LightContainer; }
-    const MaterialContainer& EngineContext::GetMaterialContainer() const { return *m_MaterialContainer; }
-    MaterialContainer& EngineContext::GetMaterialContainer()             { return *m_MaterialContainer; }
+    ResourceCatalog& EngineContext::GetResourceCatalog()             { return m_ResourceCatalog; }
+    const ResourceCatalog& EngineContext::GetResourceCatalog() const { return m_ResourceCatalog; }
+
+    SceneManager& EngineContext::GetSceneManager()             { return *m_SceneManager; }
+    const SceneManager& EngineContext::GetSceneManager() const { return *m_SceneManager; }
 
     const FrameData& EngineContext::GetFrameData() const { return m_FrameData; }
 
@@ -251,9 +240,7 @@ namespace HedgehogEngine
 
     const Camera& EngineContext::GetCamera() const { return *m_Camera; }
 
-    ECS::ECS&   EngineContext::GetECS()            { return m_ECS; }
-    ECS::Entity EngineContext::GetRootEntity() const { return m_ECS.GetRoot(); }
-    std::string EngineContext::GetSceneName()  const { return m_SceneName; }
+    ECS::ECS& EngineContext::GetECS() { return m_ECS; }
 
     TransformSystem*  EngineContext::GetTransformSystem()  const { return m_TransformSystem.get(); }
     HierarchySystem*  EngineContext::GetHierarchySystem()  const { return m_HierarchySystem.get(); }
@@ -261,114 +248,6 @@ namespace HedgehogEngine
     LightSystem*      EngineContext::GetLightSystem()      const { return m_LightSystem.get(); }
     RenderSystem*     EngineContext::GetRenderSystem()     const { return m_RenderSystem.get(); }
     ScriptSystem*     EngineContext::GetScriptSystem()     const { return m_ScriptSystem.get(); }
-
-    void EngineContext::LoadScene(const std::string& filePath)
-    {
-        const auto virtualPath = m_FileSystem.ToVirtualPath(filePath);
-        if (!virtualPath)
-        {
-            LOGERROR("EngineContext::LoadScene: path is not under any registered mount (path: ", filePath, ")");
-            return;
-        }
-
-        DeleteGameObjectAndChildren(m_ECS.GetRoot());
-        EcsSerialization::EcsSerializer::Deserialize(*m_ComponentRegistry, m_ECS, m_SceneName,
-                                                      *virtualPath, m_FileSystem);
-        for (auto entity : m_TransformSystem->GetEntities())
-            m_EventBus.Publish(TransformChangedEvent{ entity });
-        m_MeshSystem->Update(m_ECS, m_FileSystem);
-        m_RenderSystem->UpdateSystem(m_ECS);
-    }
-
-    void EngineContext::SaveScene(const std::string& filePath)
-    {
-        const std::string sceneName = std::filesystem::path(filePath).stem().string();
-        m_SceneName = sceneName;
-
-        const auto virtualPath = m_FileSystem.ToVirtualPath(filePath);
-        if (!virtualPath)
-        {
-            LOGERROR("EngineContext::SaveScene: path is not under any registered mount (path: ", filePath, ")");
-            return;
-        }
-        EcsSerialization::EcsSerializer::Serialize(
-            *m_ComponentRegistry, m_ECS, m_SceneName, *virtualPath, m_FileSystem);
-    }
-
-    void EngineContext::ResetScene()
-    {
-        DeleteGameObjectAndChildren(m_ECS.GetRoot());
-        CreateSceneRoot();
-        m_SceneName        = "Default";
-        m_GameObjectIndex  = 0;
-    }
-
-    void EngineContext::SetSceneName(const std::string& name)
-    {
-        m_SceneName = name;
-    }
-
-    ECS::Entity EngineContext::CreateGameObject(std::optional<ECS::Entity> parent)
-    {
-        ECS::Entity realParent = parent.value_or(m_ECS.GetRoot());
-
-        ECS::Entity entity = m_ECS.CreateEntity();
-        m_ECS.AddComponent(entity, TransformComponent{});
-        m_ECS.AddComponent(entity, ECS::HierarchyComponent{ GetUniqueGameObjectName(), realParent, {} });
-        m_ECS.GetComponent<ECS::HierarchyComponent>(realParent).m_Children.push_back(entity);
-
-        m_EventBus.Publish(TransformChangedEvent{ entity });
-        return entity;
-    }
-
-    void EngineContext::DeleteGameObject(ECS::Entity entity)
-    {
-        assert(entity != m_ECS.GetRoot() && "Cannot delete the root entity.");
-
-        auto& hierarchy                  = m_ECS.GetComponent<ECS::HierarchyComponent>(entity);
-        const ECS::Entity parentEntity   = hierarchy.m_Parent;
-        const auto        childrenToReparent = hierarchy.m_Children;
-        auto& parentHierarchy            = m_ECS.GetComponent<ECS::HierarchyComponent>(parentEntity);
-
-        auto it = std::find(parentHierarchy.m_Children.begin(),
-                             parentHierarchy.m_Children.end(), entity);
-        if (it != parentHierarchy.m_Children.end())
-        {
-            parentHierarchy.m_Children.erase(it);
-            for (ECS::Entity child : childrenToReparent)
-            {
-                auto& childHierarchy    = m_ECS.GetComponent<ECS::HierarchyComponent>(child);
-                childHierarchy.m_Parent = parentEntity;
-                auto& freshParentHierarchy = m_ECS.GetComponent<ECS::HierarchyComponent>(parentEntity);
-                freshParentHierarchy.m_Children.push_back(child);
-            }
-        }
-        m_ECS.DestroyEntity(entity);
-    }
-
-    void EngineContext::CreateSceneRoot()
-    {
-        ECS::Entity root = m_ECS.CreateEntity();
-        m_ECS.AddComponent(root, TransformComponent{});
-        m_ECS.AddComponent(root, ECS::HierarchyComponent{ "Root", root, {} });
-        m_ECS.SetRoot(root);
-        m_EventBus.Publish(TransformChangedEvent{ root });
-    }
-
-    void EngineContext::DeleteGameObjectAndChildren(ECS::Entity entity)
-    {
-        const auto children = m_ECS.GetComponent<ECS::HierarchyComponent>(entity).m_Children;
-        for (ECS::Entity child : children)
-            DeleteGameObjectAndChildren(child);
-        m_ECS.DestroyEntity(entity);
-    }
-
-    std::string EngineContext::GetUniqueGameObjectName()
-    {
-        std::ostringstream ss;
-        ss << "GameObject_" << m_GameObjectIndex++;
-        return ss.str();
-    }
 
     void EngineContext::UpdateCamera(WindowContext& windowContext, float aspectRatio, float dt)
     {

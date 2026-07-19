@@ -7,26 +7,33 @@
 
 namespace HedgehogEngine
 {
-    void Mesh::LoadData(const std::string& fileName,
+    bool Mesh::LoadData(const std::string& fileName,
                          const FS::FileSystemManager& fileSystem)
     {
         ClearData();
 
-        auto mesh = ContentLoader::LoadMesh(fileName, fileSystem);
-        m_IndicesData = mesh.indices;
-        m_Positions.reserve(mesh.vertices.size());
-        m_TexCoords.reserve(mesh.vertices.size());
-        m_Normals.reserve(mesh.vertices.size());
-        for (size_t i = 0; i < mesh.vertices.size(); ++i)
+        const auto mesh = ContentLoader::LoadMesh(fileName, fileSystem);
+        if (!mesh)
         {
-            m_Positions.push_back(mesh.vertices[i].position);
-            m_Normals.push_back(mesh.vertices[i].normal);
-            m_TexCoords.push_back(mesh.vertices[i].uv);
+            LOGERROR("Failed to load mesh data: ", fileName);
+            return false;
+        }
+
+        m_IndicesData = mesh->indices;
+        m_Positions.reserve(mesh->vertices.size());
+        m_TexCoords.reserve(mesh->vertices.size());
+        m_Normals.reserve(mesh->vertices.size());
+        for (size_t i = 0; i < mesh->vertices.size(); ++i)
+        {
+            m_Positions.push_back(mesh->vertices[i].position);
+            m_Normals.push_back(mesh->vertices[i].normal);
+            m_TexCoords.push_back(mesh->vertices[i].uv);
         }
 
         m_IndexCount = static_cast<uint32_t>(m_IndicesData.size());
 
         LOGINFO("Model [", fileName, "] loaded with ", m_Positions.size(), " vertices and ", m_IndicesData.size(), " indices!");
+        return true;
     }
 
     void Mesh::ClearData()
@@ -35,6 +42,7 @@ namespace HedgehogEngine
         m_TexCoords.clear();
         m_Normals.clear();
         m_IndicesData.clear();
+        m_IndexCount = 0;
     }
 
     const std::vector<HM::Vector3>& Mesh::GetPositions() const { return m_Positions; }

@@ -2,9 +2,10 @@
 
 #include "api/LoadedData.hpp"
 
+#include <optional>
 #include <string>
 
 namespace ContentLoader
 {
-    LoadedMesh LoadObj(const std::string& path);
+    std::optional<LoadedMesh> LoadObj(const std::string& path);
 }

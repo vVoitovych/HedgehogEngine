@@ -4,14 +4,14 @@
 #include "Tools/PipelineWindow.hpp"
 #include "Tools/ShaderWindow.hpp"
 
-#include "HedgehogEngine/api/HedgehogEngine.hpp"
+#include "HedgehogEngine/api/Engine.hpp"
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogEngine/api/Containers/MaterialContainer.hpp"
 #include "HedgehogEngine/api/Containers/MaterialData.hpp"
 #include "HedgehogEngine/api/Containers/MeshContainer.hpp"
 #include "HedgehogEngine/api/Containers/TextureContainer.hpp"
-#include "HedgehogEngine/HedgehogSettings/Settings/HedgehogSettings.hpp"
-#include "HedgehogEngine/HedgehogSettings/Settings/ShadowmapingSettings.hpp"
+#include "HedgehogEngine/HedgehogSettings/api/HedgehogSettings.hpp"
+#include "HedgehogEngine/HedgehogSettings/api/ShadowmapingSettings.hpp"
 
 #include "ECS/api/ECS.hpp"
 #include "ECS/api/components/Hierarchy.hpp"
@@ -25,10 +25,13 @@
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RenderComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
-#include "HedgehogEngine/api/Reflection/GuiReflection.hpp"
+#include "Reflection/GuiReflection.hpp"
 
 #include "DialogueWindows/api/MaterialDialogue.hpp"
+#include "DialogueWindows/api/MeshDialogue.hpp"
 #include "DialogueWindows/api/SceneDialogue.hpp"
+#include "DialogueWindows/api/ScriptDialogue.hpp"
+#include "DialogueWindows/api/TextureDialogue.hpp"
 
 #include "Logger/api/Logger.hpp"
 
@@ -39,6 +42,8 @@
 
 namespace
 {
+    constexpr std::string_view ASSETS_PREFIX = "assets://";
+
     void SetupLightComponentGuiOverrides()
     {
         using HedgehogEngine::LightComponent;
@@ -74,7 +79,7 @@ namespace
 
 namespace Editor
 {
-    EditorGui::EditorGui(HedgehogEngine::HedgehogEngine& context)
+    EditorGui::EditorGui(HedgehogEngine::Engine& context)
         : m_ConsolePanel(std::make_unique<ConsolePanel>())
         , m_VertexDescWindow(std::make_unique<VertexDescriptionWindow>())
         , m_PipelineWindow(std::make_unique<PipelineWindow>())
@@ -86,6 +91,8 @@ namespace Editor
             m_DockSystem.GetLayout() = m_Settings.dockLayout;
 
         SetupLightComponentGuiOverrides();
+
+        loadLastScene(context);
     }
 
     EditorGui::~EditorGui()
@@ -99,7 +106,7 @@ namespace Editor
 
     // ─── Top-level entry ─────────────────────────────────────────────────────
 
-    void EditorGui::Draw(HedgehogEngine::HedgehogEngine& context, void* sceneViewTextureId)
+    void EditorGui::Draw(HedgehogEngine::Engine& context, void* sceneViewTextureId)
     {
         m_SceneViewHovered = false;
 
@@ -131,7 +138,7 @@ namespace Editor
 
     // ─── Panel dispatch ───────────────────────────────────────────────────────
 
-    void EditorGui::DrawPanelContent(PanelId panel, HedgehogEngine::HedgehogEngine& context, void* sceneViewTextureId)
+    void EditorGui::DrawPanelContent(PanelId panel, HedgehogEngine::Engine& context, void* sceneViewTextureId)
     {
         switch (panel)
         {
@@ -172,7 +179,7 @@ namespace Editor
 
     // ─── Main menu ───────────────────────────────────────────────────────────
 
-    void EditorGui::DrawMainMenu(HedgehogEngine::HedgehogEngine& context)
+    void EditorGui::DrawMainMenu(HedgehogEngine::Engine& context)
     {
         auto& engineContext = context.GetEngineContext();
         auto& ecs           = engineContext.GetECS();
@@ -186,29 +193,35 @@ namespace Editor
         {
             if (ImGui::MenuItem("New"))
             {
-                engineContext.ResetScene();
+                engineContext.GetSceneManager().ResetScene();
                 m_SelectedEntity.reset();
             }
             if (ImGui::MenuItem("Rename"))
             {
                 char* newName = DialogueWindows::SceneRenameDialogue();
                 if (newName != nullptr)
-                    engineContext.SetSceneName(newName);
+                    engineContext.GetSceneManager().SetSceneName(newName);
             }
             if (ImGui::MenuItem("Open"))
             {
                 char* path = DialogueWindows::SceneOpenDialogue();
                 if (path != nullptr)
                 {
-                    engineContext.LoadScene(path);
-                    m_SelectedEntity.reset();
+                    if (engineContext.GetSceneManager().LoadScene(path))
+                    {
+                        recordLastScene(path, engineContext.GetFileSystem());
+                        m_SelectedEntity.reset();
+                    }
                 }
             }
             if (ImGui::MenuItem("Save"))
             {
                 char* path = DialogueWindows::SceneSaveDialogue();
                 if (path != nullptr)
-                    engineContext.SaveScene(path);
+                {
+                    if (engineContext.GetSceneManager().SaveScene(path))
+                        recordLastScene(path, engineContext.GetFileSystem());
+                }
             }
             ImGui::Separator();
             if (ImGui::MenuItem("Quit", "Alt+F4")) {}
@@ -218,7 +231,7 @@ namespace Editor
         if (ImGui::BeginMenu("Create"))
         {
             if (ImGui::MenuItem("Create game object"))
-                engineContext.CreateGameObject(m_SelectedEntity);
+                engineContext.GetSceneManager().CreateGameObject(m_SelectedEntity);
 
             ImGui::Separator();
             if (ImGui::BeginMenu("Add component"))
@@ -258,7 +271,17 @@ namespace Editor
 
             ImGui::Separator();
             if (ImGui::MenuItem("Create material"))
-                engineContext.GetMaterialContainer().CreateNewMaterial(engineContext.GetFileSystem());
+            {
+                if (const char* path = DialogueWindows::MaterialCreationDialogue())
+                {
+                    const auto& fs = engineContext.GetFileSystem();
+                    const auto virtualPath = fs.ToVirtualPath(path);
+                    if (virtualPath)
+                        engineContext.GetResourceCatalog().GetMaterialContainer().CreateNewMaterial(fs, *virtualPath);
+                    else
+                        LOGERROR("Material path is not under any registered mount: ", path);
+                }
+            }
             ImGui::EndMenu();
         }
 
@@ -345,21 +368,22 @@ namespace Editor
 
     // ─── Scene hierarchy ─────────────────────────────────────────────────────
 
-    void EditorGui::DrawSceneHierarchy(HedgehogEngine::HedgehogEngine& context)
+    void EditorGui::DrawSceneHierarchy(HedgehogEngine::Engine& context)
     {
         auto& engineContext = context.GetEngineContext();
+        auto& sceneManager  = engineContext.GetSceneManager();
 
-        ImGui::SeparatorText(engineContext.GetSceneName().c_str());
+        ImGui::SeparatorText(sceneManager.GetSceneName().c_str());
 
         const ImVec2 fullWidth = ImVec2(-FLT_MIN, 0.0f);
         if (ImGui::Button("Create object", fullWidth))
-            engineContext.CreateGameObject(m_SelectedEntity);
+            sceneManager.CreateGameObject(m_SelectedEntity);
 
         if (ImGui::Button("Delete object", fullWidth))
         {
-            if (m_SelectedEntity.has_value() && m_SelectedEntity.value() != engineContext.GetRootEntity())
+            if (m_SelectedEntity.has_value() && m_SelectedEntity.value() != sceneManager.GetRootEntity())
             {
-                engineContext.DeleteGameObject(m_SelectedEntity.value());
+                sceneManager.DeleteGameObject(m_SelectedEntity.value());
                 m_SelectedEntity.reset();
             }
         }
@@ -367,10 +391,10 @@ namespace Editor
         ImGui::Separator();
 
         int index = 0;
-        DrawHierarchyNode(context, engineContext.GetRootEntity(), index);
+        DrawHierarchyNode(context, sceneManager.GetRootEntity(), index);
     }
 
-    void EditorGui::DrawHierarchyNode(HedgehogEngine::HedgehogEngine& context, ECS::Entity entity, int& index)
+    void EditorGui::DrawHierarchyNode(HedgehogEngine::Engine& context, ECS::Entity entity, int& index)
     {
         auto& ecs       = context.GetEngineContext().GetECS();
         auto& component = ecs.GetComponent<ECS::HierarchyComponent>(entity);
@@ -424,7 +448,7 @@ namespace Editor
 
     // ─── Inspector ───────────────────────────────────────────────────────────
 
-    void EditorGui::DrawInspector(HedgehogEngine::HedgehogEngine& context)
+    void EditorGui::DrawInspector(HedgehogEngine::Engine& context)
     {
         if (m_SelectedEntity.has_value())
         {
@@ -441,7 +465,7 @@ namespace Editor
         }
     }
 
-    void EditorGui::DrawEntityTitle(HedgehogEngine::HedgehogEngine& context)
+    void EditorGui::DrawEntityTitle(HedgehogEngine::Engine& context)
     {
         auto& ecs       = context.GetEngineContext().GetECS();
         auto  entity    = m_SelectedEntity.value();
@@ -456,7 +480,7 @@ namespace Editor
         }
     }
 
-    void EditorGui::DrawTransformComponent(HedgehogEngine::HedgehogEngine& context)
+    void EditorGui::DrawTransformComponent(HedgehogEngine::Engine& context)
     {
         auto& engineContext = context.GetEngineContext();
         auto& ecs           = engineContext.GetECS();
@@ -471,7 +495,7 @@ namespace Editor
             engineContext.GetEventBus().Publish(HedgehogEngine::TransformChangedEvent{ entity });
     }
 
-    void EditorGui::DrawMeshComponent(HedgehogEngine::HedgehogEngine& context)
+    void EditorGui::DrawMeshComponent(HedgehogEngine::Engine& context)
     {
         auto& engineContext = context.GetEngineContext();
         auto& ecs           = engineContext.GetECS();
@@ -504,7 +528,21 @@ namespace Editor
         }
 
         if (ImGui::Button("Load mesh"))
-            meshSystem->LoadMesh(ecs, entity, engineContext.GetFileSystem());
+        {
+            if (const char* path = DialogueWindows::MeshOpenDialogue())
+            {
+                const auto& fs = engineContext.GetFileSystem();
+                const auto virtualPath = fs.ToVirtualPath(path);
+                if (virtualPath)
+                {
+                    meshSystem->LoadMesh(ecs, entity, virtualPath->substr(ASSETS_PREFIX.size()));
+                }
+                else
+                {
+                    LOGERROR("Mesh path is not under any registered mount: ", path);
+                }
+            }
+        }
         if (ImGui::Button("Remove mesh"))
         {
             if (ecs.HasComponent<HedgehogEngine::MeshComponent>(entity))
@@ -512,7 +550,7 @@ namespace Editor
         }
     }
 
-    void EditorGui::DrawRenderComponent(HedgehogEngine::HedgehogEngine& context)
+    void EditorGui::DrawRenderComponent(HedgehogEngine::Engine& context)
     {
         auto& engineContext = context.GetEngineContext();
         auto& ecs           = engineContext.GetECS();
@@ -560,8 +598,7 @@ namespace Editor
                 if (virtualPath)
                 {
                     // Strip "assets://" prefix; m_Material stores the relative path.
-                    constexpr std::string_view k_AssetsPrefix = "assets://";
-                    render.m_Material = virtualPath->substr(k_AssetsPrefix.size());
+                    render.m_Material = virtualPath->substr(ASSETS_PREFIX.size());
                     renderSystem->Update(ecs, entity);
                 }
                 else
@@ -574,7 +611,7 @@ namespace Editor
         if (!materials.empty() && render.m_MaterialIndex.has_value())
         {
             if (ImGui::Button("Save material"))
-                engineContext.GetMaterialContainer().SaveMaterial(
+                engineContext.GetResourceCatalog().GetMaterialContainer().SaveMaterial(
                     render.m_MaterialIndex.value(), engineContext.GetFileSystem());
         }
 
@@ -587,8 +624,8 @@ namespace Editor
         if (!materials.empty() && render.m_MaterialIndex.has_value())
         {
             ImGui::SeparatorText("Material");
-            auto& materialContainer = engineContext.GetMaterialContainer();
-            auto& textureContainer  = engineContext.GetTextureContainer();
+            auto& materialContainer = engineContext.GetResourceCatalog().GetMaterialContainer();
+            auto& textureContainer  = engineContext.GetResourceCatalog().GetTextureContainer();
             auto& materialData      = materialContainer.GetMaterialDataByIndex(
                 render.m_MaterialIndex.value());
 
@@ -618,7 +655,22 @@ namespace Editor
             }
 
             if (ImGui::Button("Load texture"))
-                materialContainer.LoadBaseTexture(render.m_MaterialIndex.value(), engineContext.GetFileSystem());
+            {
+                if (const char* texPath = DialogueWindows::TextureOpenDialogue())
+                {
+                    const auto& fs = engineContext.GetFileSystem();
+                    const auto virtualPath = fs.ToVirtualPath(texPath);
+                    if (virtualPath)
+                    {
+                        materialContainer.LoadBaseTexture(render.m_MaterialIndex.value(),
+                                                          virtualPath->substr(ASSETS_PREFIX.size()));
+                    }
+                    else
+                    {
+                        LOGERROR("Texture path is not under any registered mount: ", texPath);
+                    }
+                }
+            }
 
             if (materialData.type == HedgehogEngine::MaterialType::Transparent)
             {
@@ -635,7 +687,7 @@ namespace Editor
         }
     }
 
-    void EditorGui::DrawLightComponent(HedgehogEngine::HedgehogEngine& context)
+    void EditorGui::DrawLightComponent(HedgehogEngine::Engine& context)
     {
         auto& engineContext = context.GetEngineContext();
         auto& ecs           = engineContext.GetECS();
@@ -665,7 +717,7 @@ namespace Editor
         }
     }
 
-    void EditorGui::DrawScriptComponent(HedgehogEngine::HedgehogEngine& context)
+    void EditorGui::DrawScriptComponent(HedgehogEngine::Engine& context)
     {
         auto& engineContext = context.GetEngineContext();
         auto& ecs           = engineContext.GetECS();
@@ -693,7 +745,12 @@ namespace Editor
         }
 
         if (ImGui::Button("Load script"))
-            scriptSystem->ChangeScript(entity, ecs, engineContext.GetEventBus(), engineContext.GetFileSystem());
+        {
+            std::string scriptPath = DialogueWindows::ScriptChooseDialogue();
+            if (!scriptPath.empty())
+                scriptSystem->ChangeScript(entity, ecs, engineContext.GetEventBus(),
+                                           engineContext.GetFileSystem(), scriptPath);
+        }
 
         if (!component.m_Params.empty())
             ImGui::SeparatorText("Parameters");
@@ -736,7 +793,7 @@ namespace Editor
 
     // ─── Settings window ─────────────────────────────────────────────────────
 
-    void EditorGui::DrawSettingsWindow(HedgehogEngine::HedgehogEngine& context)
+    void EditorGui::DrawSettingsWindow(HedgehogEngine::Engine& context)
     {
         if (!m_SettingsWindowOpen)
             return;
@@ -825,5 +882,46 @@ namespace Editor
         }
 
         ImGui::End();
+    }
+
+    // ─── Last-scene persistence ──────────────────────────────────────────────
+
+    void EditorGui::recordLastScene(const std::string& nativePath, const FS::FileSystemManager& fileSystem)
+    {
+        const auto virtualPath = fileSystem.ToVirtualPath(nativePath);
+        if (!virtualPath)
+        {
+            LOGERROR("EditorGui::recordLastScene: path is not under any registered mount (path: ", nativePath, ")");
+            return;
+        }
+
+        m_Settings.m_LastScene = *virtualPath;
+        m_Settings.Save("engine://editor_settings.yaml", fileSystem);
+    }
+
+    void EditorGui::loadLastScene(HedgehogEngine::Engine& context)
+    {
+        if (m_Settings.m_LastScene.empty())
+            return;
+
+        if (!m_FileSystem->Exists(m_Settings.m_LastScene))
+        {
+            LOGWARNING("EditorGui::loadLastScene: stored scene not found, starting with an empty scene (path: ",
+                       m_Settings.m_LastScene, ")");
+            m_Settings.m_LastScene.clear();
+            m_Settings.Save("engine://editor_settings.yaml", *m_FileSystem);
+            return;
+        }
+
+        // LoadScene expects a native path (the dialog's contract), so resolve back from virtual.
+        const auto physicalPath = m_FileSystem->ResolvePhysical(m_Settings.m_LastScene);
+        if (physicalPath && context.GetEngineContext().GetSceneManager().LoadScene(physicalPath->string()))
+            return;
+
+        LOGWARNING("EditorGui::loadLastScene: failed to load stored scene, starting with an empty scene (path: ",
+                   m_Settings.m_LastScene, ")");
+        context.GetEngineContext().GetSceneManager().ResetScene();
+        m_Settings.m_LastScene.clear();
+        m_Settings.Save("engine://editor_settings.yaml", *m_FileSystem);
     }
 }

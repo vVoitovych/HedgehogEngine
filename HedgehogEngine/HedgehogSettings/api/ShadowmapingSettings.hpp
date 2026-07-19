@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../api/HedgehogSettingsApi.hpp"
+#include "HedgehogSettingsApi.hpp"
 
 #include <cstdint>
 

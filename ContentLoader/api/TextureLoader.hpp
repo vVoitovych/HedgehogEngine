@@ -19,7 +19,9 @@ namespace ContentLoader
         TextureLoader(TextureLoader&&)                 = delete;
         TextureLoader& operator=(TextureLoader&&)      = delete;
 
-        CONTENT_LOADER_API void LoadTexture(const std::string& file,
+        // Returns false (after logging) when the file cannot be read or decoded;
+        // GetData() stays null in that case.
+        CONTENT_LOADER_API bool LoadTexture(const std::string& file,
                                              const FS::FileSystemManager& fileSystem);
 
         CONTENT_LOADER_API int GetWidth()   const;

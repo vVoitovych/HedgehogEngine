@@ -20,14 +20,12 @@ project "HedgehogEngine"
         "HedgehogSettings",
         "HedgehogWindow",
         "ContentLoader",
-        "DialogueWindows",
         "HedgehogMath",
         "Logger",
         "ECS",
         "EcsSerialization",
         "FileSystem",
         "Lua",
-        "imgui",
         "yaml-cpp"
     }
 

@@ -21,6 +21,7 @@
 #include "VulkanCommandList.hpp"
 #include "VulkanDescriptor.hpp"
 #include "VulkanFramebuffer.hpp"
+#include "VulkanGuiBackend.hpp"
 #include "VulkanPipeline.hpp"
 #include "VulkanRenderPass.hpp"
 #include "VulkanSampler.hpp"
@@ -29,9 +30,12 @@
 #include "VulkanSyncPrimitive.hpp"
 #include "VulkanTexture.hpp"
 
+#include "RHI/api/RHIDiagnostics.hpp"
+
 #include "Logger/api/Logger.hpp"
 
 #include <algorithm>
+#include <atomic>
 #include <cassert>
 #include <cstring>
 #include <map>
@@ -47,6 +51,9 @@ namespace
         false;
 #endif
 
+    std::atomic<uint32_t> s_ValidationErrorCount{ 0 };
+    std::atomic<uint32_t> s_ValidationWarningCount{ 0 };
+
     // Debug callback forwarded to the Logger.
     VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
         VkDebugUtilsMessageSeverityFlagBitsEXT      messageSeverity,
@@ -54,10 +61,20 @@ namespace
         const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
         void*                                       /*pUserData*/)
     {
-        if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+        if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+        {
+            s_ValidationErrorCount.fetch_add(1, std::memory_order_relaxed);
+            LOGERROR("[Vulkan] ", pCallbackData->pMessage);
+        }
+        else if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+        {
+            s_ValidationWarningCount.fetch_add(1, std::memory_order_relaxed);
             LOGWARNING("[Vulkan] ", pCallbackData->pMessage);
+        }
         else
+        {
             LOGVERBOSE("[Vulkan] ", pCallbackData->pMessage);
+        }
         return VK_FALSE;
     }
 
@@ -77,6 +94,29 @@ namespace
 
 namespace RHI
 {
+
+// ── Diagnostics (RHIDiagnostics.hpp) ─────────────────────────────────────────
+
+bool AreValidationLayersEnabled()
+{
+    return ENABLE_VALIDATION_LAYERS;
+}
+
+uint32_t GetValidationErrorCount()
+{
+    return s_ValidationErrorCount.load(std::memory_order_relaxed);
+}
+
+uint32_t GetValidationWarningCount()
+{
+    return s_ValidationWarningCount.load(std::memory_order_relaxed);
+}
+
+void ResetValidationCounters()
+{
+    s_ValidationErrorCount.store(0, std::memory_order_relaxed);
+    s_ValidationWarningCount.store(0, std::memory_order_relaxed);
+}
 
 // ── Factory (IRHIDevice::Create) ──────────────────────────────────────────────
 
@@ -482,6 +522,11 @@ std::unique_ptr<IRHIFence> VulkanDevice::CreateFence(bool signaled) const
 std::unique_ptr<IRHISemaphore> VulkanDevice::CreateSemaphore() const
 {
     return std::make_unique<VulkanSemaphore>(const_cast<VulkanDevice&>(*this));
+}
+
+std::unique_ptr<IRHIGuiBackend> VulkanDevice::CreateGuiBackend(const GuiBackendDesc& desc) const
+{
+    return std::make_unique<VulkanGuiBackend>(const_cast<VulkanDevice&>(*this), desc);
 }
 
 // ── Submission ────────────────────────────────────────────────────────────────

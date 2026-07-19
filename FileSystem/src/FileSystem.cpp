@@ -156,7 +156,7 @@ namespace FS
         return m_MountPoints.count(parsed->first) > 0;
     }
 
-    const std::unordered_map<std::string, std::filesystem::path>& FileSystem::GetMountPoints() const
+    const std::unordered_map<std::string, std::filesystem::path>& FileSystem:: GetMountPoints() const
     {
         return m_MountPoints;
     }

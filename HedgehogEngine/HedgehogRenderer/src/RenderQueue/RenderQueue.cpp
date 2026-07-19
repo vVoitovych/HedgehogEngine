@@ -1,5 +1,6 @@
 #include "RenderQueue.hpp"
 
+#include "Profiling/Profiler.hpp"
 #include "ResourceManager/ResourceManager.hpp"
 #include "RenderPasses/InitPass/InitPass.hpp"
 #include "RenderPasses/DepthPrepass/DepthPrePass.hpp"
@@ -8,9 +9,9 @@
 #include "RenderPasses/PresentPass/PresentPass.hpp"
 #include "RenderPasses/GuiPass/GuiPass.hpp"
 
-#include "HedgehogSettings/Settings/HedgehogSettings.hpp"
+#include "HedgehogSettings/api/HedgehogSettings.hpp"
 
-#include "HedgehogEngine/api/Frame/FrameData.hpp"
+#include "HedgehogCommon/api/Frame/FrameData.hpp"
 
 #include "FileSystem/api/FileSystemManager.hpp"
 
@@ -70,23 +71,52 @@ namespace Renderer
                              uint32_t             frameIndex,
                              const ResourceManager& resourceManager)
     {
-        const uint32_t backBufferIndex = m_InitPass->Render(
-            swapchain, fence, imageAvailableSemaphore, cmd);
+        uint32_t backBufferIndex = 0;
+        {
+            HH_PROFILE_ZONE("InitPass");
+            ScopedCpuSample sample(m_FrameStats, "InitPass");
+            backBufferIndex = m_InitPass->Render(
+                swapchain, fence, imageAvailableSemaphore, cmd);
+        }
 
-        m_ShadowmapPass->Render(frame, resourceManager, cmd, frameIndex);
-        m_DepthPrePass->Render(frame, resourceManager, cmd, frameIndex);
-        m_ForwardPass->Render(frame, resourceManager, cmd, frameIndex);
+        {
+            HH_PROFILE_ZONE("ShadowmapPass");
+            ScopedCpuSample sample(m_FrameStats, "ShadowmapPass");
+            m_ShadowmapPass->Render(frame, resourceManager, cmd, frameIndex);
+        }
 
-        auto& sceneBuffer = const_cast<RHI::IRHITexture&>(resourceManager.GetSceneColorBuffer());
-        cmd.TransitionTexture(sceneBuffer,
-            RHI::ImageLayout::ColorAttachment,
-            RHI::ImageLayout::ShaderReadOnly);
+        {
+            HH_PROFILE_ZONE("DepthPrePass");
+            ScopedCpuSample sample(m_FrameStats, "DepthPrePass");
+            m_DepthPrePass->Render(frame, resourceManager, cmd, frameIndex);
+        }
 
-        m_GuiPass->Render(cmd, resourceManager);
+        {
+            HH_PROFILE_ZONE("ForwardPass");
+            ScopedCpuSample sample(m_FrameStats, "ForwardPass");
+            m_ForwardPass->Render(frame, resourceManager, cmd, frameIndex);
+        }
 
-        auto& colorBuffer = const_cast<RHI::IRHITexture&>(resourceManager.GetRHIColorBuffer());
-        m_PresentPass->Render(cmd, device, swapchain, colorBuffer, backBufferIndex,
-                              imageAvailableSemaphore, renderFinishedSemaphore, fence);
+        {
+            HH_PROFILE_ZONE("GuiPass");
+            ScopedCpuSample sample(m_FrameStats, "GuiPass");
+
+            auto& sceneBuffer = const_cast<RHI::IRHITexture&>(resourceManager.GetSceneColorBuffer());
+            cmd.TransitionTexture(sceneBuffer,
+                RHI::ImageLayout::ColorAttachment,
+                RHI::ImageLayout::ShaderReadOnly);
+
+            m_GuiPass->Render(cmd, resourceManager);
+        }
+
+        {
+            HH_PROFILE_ZONE("PresentPass");
+            ScopedCpuSample sample(m_FrameStats, "PresentPass");
+
+            auto& colorBuffer = const_cast<RHI::IRHITexture&>(resourceManager.GetRHIColorBuffer());
+            m_PresentPass->Render(cmd, device, swapchain, colorBuffer, backBufferIndex,
+                                  imageAvailableSemaphore, renderFinishedSemaphore, fence);
+        }
     }
 
     void RenderQueue::UpdateData(const HedgehogEngine::FrameData&             frame,

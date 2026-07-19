@@ -1,6 +1,6 @@
-#include "HedgehogSettings.hpp"
+#include "HedgehogSettings/api/HedgehogSettings.hpp"
 
-#include "ShadowmapingSettings.hpp"
+#include "HedgehogSettings/api/ShadowmapingSettings.hpp"
 
 namespace HedgehogSettings
 {

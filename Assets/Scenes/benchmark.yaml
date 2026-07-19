@@ -1,0 +1,301 @@
+Scene name: benchmark
+Scene:
+  - Entity: 0
+    Name: Root
+    Parent: 0
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    Children:
+      - Entity: 1
+        Name: helmet_1
+        Parent: 0
+        TransformComponent:
+          Position: [-6, 0, -6]
+          Rotation: [0, 15, 0]
+          Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
+        Children:
+          []
+      - Entity: 2
+        Name: helmet_2
+        Parent: 0
+        TransformComponent:
+          Position: [-6, 0, -3]
+          Rotation: [0, 30, 0]
+          Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
+        Children:
+          []
+      - Entity: 3
+        Name: helmet_3
+        Parent: 0
+        TransformComponent:
+          Position: [-6, 0, 0]
+          Rotation: [0, 45, 0]
+          Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
+        Children:
+          []
+      - Entity: 4
+        Name: helmet_4
+        Parent: 0
+        TransformComponent:
+          Position: [-6, 0, 3]
+          Rotation: [0, 60, 0]
+          Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
+        Children:
+          []
+      - Entity: 5
+        Name: helmet_5
+        Parent: 0
+        TransformComponent:
+          Position: [-6, 0, 6]
+          Rotation: [0, 75, 0]
+          Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
+        Children:
+          []
+      - Entity: 6
+        Name: helmet_6
+        Parent: 0
+        TransformComponent:
+          Position: [-3, 0, -6]
+          Rotation: [0, 90, 0]
+          Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
+        Children:
+          []
+      - Entity: 7
+        Name: helmet_7
+        Parent: 0
+        TransformComponent:
+          Position: [-3, 0, -3]
+          Rotation: [0, 105, 0]
+          Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
+        Children:
+          []
+      - Entity: 8
+        Name: helmet_8
+        Parent: 0
+        TransformComponent:
+          Position: [-3, 0, 0]
+          Rotation: [0, 120, 0]
+          Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
+        Children:
+          []
+      - Entity: 9
+        Name: helmet_9
+        Parent: 0
+        TransformComponent:
+          Position: [-3, 0, 3]
+          Rotation: [0, 135, 0]
+          Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
+        Children:
+          []
+      - Entity: 10
+        Name: helmet_10
+        Parent: 0
+        TransformComponent:
+          Position: [-3, 0, 6]
+          Rotation: [0, 150, 0]
+          Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
+        Children:
+          []
+      - Entity: 11
+        Name: helmet_11
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, -6]
+          Rotation: [0, 165, 0]
+          Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
+        Children:
+          []
+      - Entity: 12
+        Name: helmet_12
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, -3]
+          Rotation: [0, 180, 0]
+          Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
+        Children:
+          []
+      - Entity: 13
+        Name: helmet_13
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 0]
+          Rotation: [0, 195, 0]
+          Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
+        Children:
+          []
+      - Entity: 14
+        Name: helmet_14
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 3]
+          Rotation: [0, 210, 0]
+          Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
+        Children:
+          []
+      - Entity: 15
+        Name: helmet_15
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 6]
+          Rotation: [0, 225, 0]
+          Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
+        Children:
+          []
+      - Entity: 16
+        Name: helmet_16
+        Parent: 0
+        TransformComponent:
+          Position: [3, 0, -6]
+          Rotation: [0, 240, 0]
+          Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
+        Children:
+          []
+      - Entity: 17
+        Name: helmet_17
+        Parent: 0
+        TransformComponent:
+          Position: [3, 0, -3]
+          Rotation: [0, 255, 0]
+          Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
+        Children:
+          []
+      - Entity: 18
+        Name: helmet_18
+        Parent: 0
+        TransformComponent:
+          Position: [3, 0, 0]
+          Rotation: [0, 270, 0]
+          Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
+        Children:
+          []
+      - Entity: 19
+        Name: helmet_19
+        Parent: 0
+        TransformComponent:
+          Position: [3, 0, 3]
+          Rotation: [0, 285, 0]
+          Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
+        Children:
+          []
+      - Entity: 20
+        Name: helmet_20
+        Parent: 0
+        TransformComponent:
+          Position: [3, 0, 6]
+          Rotation: [0, 300, 0]
+          Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
+        Children:
+          []
+      - Entity: 21
+        Name: helmet_21
+        Parent: 0
+        TransformComponent:
+          Position: [6, 0, -6]
+          Rotation: [0, 315, 0]
+          Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
+        Children:
+          []
+      - Entity: 22
+        Name: helmet_22
+        Parent: 0
+        TransformComponent:
+          Position: [6, 0, -3]
+          Rotation: [0, 330, 0]
+          Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
+        Children:
+          []
+      - Entity: 23
+        Name: helmet_23
+        Parent: 0
+        TransformComponent:
+          Position: [6, 0, 0]
+          Rotation: [0, 345, 0]
+          Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
+        Children:
+          []
+      - Entity: 24
+        Name: helmet_24
+        Parent: 0
+        TransformComponent:
+          Position: [6, 0, 3]
+          Rotation: [0, 0, 0]
+          Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
+        Children:
+          []
+      - Entity: 25
+        Name: helmet_25
+        Parent: 0
+        TransformComponent:
+          Position: [6, 0, 6]
+          Rotation: [0, 15, 0]
+          Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
+        Children:
+          []
+      - Entity: 26
+        Name: sun
+        Parent: 0
+        TransformComponent:
+          Position: [0, 10, 0]
+          Rotation: [0, 0, 135]
+          Scale: [1, 1, 1]
+        LightComponent:
+          LightEnabled: true
+          LightType: 0
+          LightColor: [1, 0.95, 0.85]
+          LightIntencity: 5
+          LightRadius: 1
+          LightConeAngle: 2
+        Children:
+          []

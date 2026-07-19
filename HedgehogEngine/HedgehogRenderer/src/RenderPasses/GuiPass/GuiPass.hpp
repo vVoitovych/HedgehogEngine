@@ -1,6 +1,5 @@
 #pragma once
 
-#include <Volk/volk.h>
 #include <memory>
 
 namespace HW
@@ -11,9 +10,9 @@ namespace HW
 namespace RHI
 {
     class IRHIDevice;
-    class IRHIRenderPass;
     class IRHIFramebuffer;
     class IRHICommandList;
+    class IRHIGuiBackend;
 }
 
 namespace Renderer
@@ -39,17 +38,12 @@ namespace Renderer
 
         void* GetSceneViewTextureId() const;
 
-        static bool IsCursorPositionInGUI();
-
     private:
-        void UploadFonts();
         void CreateSceneViewDescSet(const ResourceManager& resourceManager);
 
     private:
-        std::unique_ptr<RHI::IRHIRenderPass>  m_RenderPass;
+        std::unique_ptr<RHI::IRHIGuiBackend>  m_GuiBackend;
         std::unique_ptr<RHI::IRHIFramebuffer> m_FrameBuffer;
-        VkDescriptorPool                      m_ImGuiPool       = VK_NULL_HANDLE;
-        VkSampler                             m_SceneSampler    = VK_NULL_HANDLE;
-        VkDescriptorSet                       m_SceneViewDescSet = VK_NULL_HANDLE;
+        void*                                  m_SceneViewId = nullptr;
     };
 }

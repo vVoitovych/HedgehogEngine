@@ -62,7 +62,7 @@ namespace
     }
 }
 
-    void EcsSerializer::Serialize(const ComponentSerializerRegistry& registry,
+    bool EcsSerializer::Serialize(const ComponentSerializerRegistry& registry,
                                    const ECS::ECS& ecs,
                                    const std::string& sceneName,
                                    const std::string& virtualPath,
@@ -79,10 +79,14 @@ namespace
         out << YAML::EndMap;
 
         if (!fileSystem.WriteTextFile(virtualPath, out.c_str()))
+        {
             LOGERROR("EcsSerializer::Serialize: failed to write '", virtualPath, "'.");
+            return false;
+        }
+        return true;
     }
 
-    void EcsSerializer::Deserialize(const ComponentSerializerRegistry& registry,
+    bool EcsSerializer::Deserialize(const ComponentSerializerRegistry& registry,
                                      ECS::ECS& ecs,
                                      std::string& outSceneName,
                                      const std::string& virtualPath,
@@ -94,7 +98,7 @@ namespace
         if (!text)
         {
             LOGERROR("Failed to read scene file: ", virtualPath);
-            return;
+            return false;
         }
 
         try
@@ -116,7 +120,8 @@ namespace
         catch (const YAML::Exception& e)
         {
             LOGERROR("Failed to parse scene: ", virtualPath, " with error: ", e.what());
-            return;
+            return false;
         }
+        return true;
     }
 }

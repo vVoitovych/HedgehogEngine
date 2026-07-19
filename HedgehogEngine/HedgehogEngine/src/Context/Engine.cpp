@@ -1,4 +1,4 @@
-#include "HedgehogEngine/api/HedgehogEngine.hpp"
+#include "HedgehogEngine/api/Engine.hpp"
 
 #include "HedgehogEngine/api/WindowContext.hpp"
 #include "HedgehogEngine/api/EngineContext.hpp"
@@ -6,53 +6,53 @@
 
 namespace HedgehogEngine
 {
-    HedgehogEngine::HedgehogEngine()
+    Engine::Engine()
     {
         m_WindowContext = std::make_unique<WindowContext>();
         m_EngineContext = std::make_unique<EngineContext>();
         m_FrameContext  = std::make_unique<FrameContext>();
     }
 
-    HedgehogEngine::~HedgehogEngine()
+    Engine::~Engine()
     {
     }
 
-    void HedgehogEngine::UpdateContext(float dt, float aspectRatio)
+    void Engine::UpdateContext(float dt, float aspectRatio)
     {
         m_EngineContext->UpdateContext(*m_WindowContext, aspectRatio, dt);
         m_FrameContext->UpdateContext(m_EngineContext->GetCamera());
     }
 
-    void HedgehogEngine::Cleanup()
+    void Engine::Cleanup()
     {
     }
 
-    WindowContext& HedgehogEngine::GetWindowContext()
-    {
-        return *m_WindowContext;
-    }
-
-    const WindowContext& HedgehogEngine::GetWindowContext() const
+    WindowContext& Engine::GetWindowContext()
     {
         return *m_WindowContext;
     }
 
-    EngineContext& HedgehogEngine::GetEngineContext()
+    const WindowContext& Engine::GetWindowContext() const
+    {
+        return *m_WindowContext;
+    }
+
+    EngineContext& Engine::GetEngineContext()
     {
         return *m_EngineContext;
     }
 
-    const EngineContext& HedgehogEngine::GetEngineContext() const
+    const EngineContext& Engine::GetEngineContext() const
     {
         return *m_EngineContext;
     }
 
-    FrameContext& HedgehogEngine::GetFrameContext()
+    FrameContext& Engine::GetFrameContext()
     {
         return *m_FrameContext;
     }
 
-    const FrameContext& HedgehogEngine::GetFrameContext() const
+    const FrameContext& Engine::GetFrameContext() const
     {
         return *m_FrameContext;
     }

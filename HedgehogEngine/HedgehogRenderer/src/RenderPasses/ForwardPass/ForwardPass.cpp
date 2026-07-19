@@ -3,7 +3,7 @@
 
 #include "FileSystem/api/FileSystemManager.hpp"
 
-#include "HedgehogEngine/api/Frame/FrameData.hpp"
+#include "HedgehogCommon/api/Frame/FrameData.hpp"
 
 #include "ResourceManager/ResourceManager.hpp"
 #include "ResourceRegistry/ResourceRegistry.hpp"
@@ -57,12 +57,12 @@ namespace Renderer
         // Set 0: per-frame data (camera, lights)
         m_FrameLayout = device.CreateDescriptorSetLayout(sd.m_Layout.m_DescriptorSets[0]);
         m_FramePool = device.CreateDescriptorPool(
-            MAX_FRAMES_IN_FLIGHT,
-            PipelineLoader::MakePoolSizes(sd.m_Layout.m_DescriptorSets[0], MAX_FRAMES_IN_FLIGHT));
+            HedgehogEngine::MAX_FRAMES_IN_FLIGHT,
+            PipelineLoader::MakePoolSizes(sd.m_Layout.m_DescriptorSets[0], HedgehogEngine::MAX_FRAMES_IN_FLIGHT));
 
-        m_FrameUniforms.reserve(MAX_FRAMES_IN_FLIGHT);
-        m_FrameSets.reserve(MAX_FRAMES_IN_FLIGHT);
-        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+        m_FrameUniforms.reserve(HedgehogEngine::MAX_FRAMES_IN_FLIGHT);
+        m_FrameSets.reserve(HedgehogEngine::MAX_FRAMES_IN_FLIGHT);
+        for (size_t i = 0; i < HedgehogEngine::MAX_FRAMES_IN_FLIGHT; ++i)
         {
             auto ubo = device.CreateBuffer(
                 sizeof(ForwardPassFrameUniform),
@@ -83,8 +83,8 @@ namespace Renderer
         resourceManager.GetResourceRegistry().SetMaterialLayout(
             device,
             *m_MaterialLayout,
-            MAX_MATERIAL_COUNT,
-            PipelineLoader::MakePoolSizes(sd.m_Layout.m_DescriptorSets[1], MAX_MATERIAL_COUNT));
+            HedgehogEngine::MAX_MATERIAL_COUNT,
+            PipelineLoader::MakePoolSizes(sd.m_Layout.m_DescriptorSets[1], HedgehogEngine::MAX_MATERIAL_COUNT));
 
         // Render pass: one color + depth (loaded from DepthPrePass)
         RHI::RenderPassDesc rpDesc;

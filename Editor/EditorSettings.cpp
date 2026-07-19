@@ -72,6 +72,9 @@ namespace Editor
         out << YAML::EndMap; // floating_positions
 
         out << YAML::EndMap; // dock_layout
+
+        out << YAML::Key << "last_scene" << YAML::Value << m_LastScene;
+
         out << YAML::EndMap; // root
 
         if (!fileSystem.WriteTextFile(virtualPath, out.c_str()))
@@ -155,6 +158,9 @@ namespace Editor
             {
                 dockLayout.InitDefaults();
             }
+
+            if (auto n = root["last_scene"])
+                m_LastScene = n.as<std::string>();
 
             return true;
         }
