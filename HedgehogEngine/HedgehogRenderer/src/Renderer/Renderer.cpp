@@ -1,10 +1,12 @@
-﻿#include "HedgehogRenderer/Renderer.hpp"
+#include "HedgehogRenderer/Renderer.hpp"
 
 #include "Profiling/Profiler.hpp"
 #include "RHIContext/RHIContext.hpp"
 #include "ThreadContext/ThreadContext.hpp"
+#include "RenderGraph/RenderGraph.hpp"
+#include "RenderGraph/RenderGraphTypes.hpp"
 #include "RenderQueue/RenderQueue.hpp"
-#include "ResourceManager/ResourceManager.hpp"
+#include "ResourceRegistry/ResourceRegistry.hpp"
 
 #include "HedgehogWindow/api/Window.hpp"
 
@@ -12,11 +14,13 @@
 #include "HedgehogCommon/api/Resource/IResourceCatalog.hpp"
 
 #include "HedgehogSettings/api/HedgehogSettings.hpp"
+#include "HedgehogSettings/api/ShadowmapingSettings.hpp"
 
 #include "FileSystem/api/FileSystemManager.hpp"
 
 #include "RHI/api/IRHIDevice.hpp"
 #include "RHI/api/IRHISwapchain.hpp"
+#include "RHI/api/IRHITexture.hpp"
 #include "RHI/api/RHIDiagnostics.hpp"
 
 #include "Logger/api/Logger.hpp"
@@ -38,6 +42,44 @@ namespace Renderer
         return RHI::GetValidationWarningCount();
     }
 
+    namespace
+    {
+        // Declares the graph's four transients with the same descs ResourceManager used to own.
+        void DeclareGraphTransients(RenderGraph& graph, RHI::IRHIDevice& device,
+                                    const HedgehogSettings::Settings& settings)
+        {
+            GraphTextureDesc guiColorDesc;
+            guiColorDesc.m_SizeClass = SizeClass::SwapchainRelative;
+            guiColorDesc.m_Format    = RHI::Format::R16G16B16A16Unorm;
+            guiColorDesc.m_Usage     = RHI::TextureUsage::ColorAttachment
+                                      | RHI::TextureUsage::TransferSrc
+                                      | RHI::TextureUsage::TransferDst
+                                      | RHI::TextureUsage::Storage;
+            graph.DeclareTexture(GraphResourceNames::GUI_COLOR, guiColorDesc);
+
+            GraphTextureDesc sceneDepthDesc;
+            sceneDepthDesc.m_SizeClass = SizeClass::SceneViewRelative;
+            sceneDepthDesc.m_Format    = device.GetPreferredDepthFormat();
+            sceneDepthDesc.m_Usage     = RHI::TextureUsage::DepthStencil;
+            graph.DeclareTexture(GraphResourceNames::SCENE_DEPTH, sceneDepthDesc);
+
+            GraphTextureDesc sceneColorDesc;
+            sceneColorDesc.m_SizeClass = SizeClass::SceneViewRelative;
+            sceneColorDesc.m_Format    = RHI::Format::R16G16B16A16Unorm;
+            sceneColorDesc.m_Usage     = RHI::TextureUsage::ColorAttachment | RHI::TextureUsage::Sampled;
+            graph.DeclareTexture(GraphResourceNames::SCENE_COLOR, sceneColorDesc);
+
+            const uint32_t shadowmapSize = settings.GetShadowmapSettings()->GetShadowmapSize();
+            GraphTextureDesc shadowDepthDesc;
+            shadowDepthDesc.m_SizeClass   = SizeClass::Fixed;
+            shadowDepthDesc.m_Format      = device.GetPreferredDepthFormat();
+            shadowDepthDesc.m_Usage       = RHI::TextureUsage::DepthStencil;
+            shadowDepthDesc.m_FixedWidth  = shadowmapSize;
+            shadowDepthDesc.m_FixedHeight = shadowmapSize;
+            graph.DeclareTexture(GraphResourceNames::SHADOW_DEPTH, shadowDepthDesc);
+        }
+    }
+
     Renderer::Renderer(HW::Window& window,
                        const HedgehogSettings::Settings& settings,
                        const FS::FileSystemManager& fileSystem)
@@ -45,15 +87,26 @@ namespace Renderer
     {
         m_RHIContext    = std::make_unique<RHIContext>(window);
         m_ThreadContext = std::make_unique<ThreadContext>(m_RHIContext->GetRHIDevice());
-        m_ResourceManager = std::make_unique<ResourceManager>(
-            m_RHIContext->GetRHIDevice(),
-            m_RHIContext->GetRHISwapchain(),
-            settings);
+
+        auto& device    = m_RHIContext->GetRHIDevice();
+        auto& swapchain = m_RHIContext->GetRHISwapchain();
+
+        m_ResourceRegistry = std::make_unique<HR::ResourceRegistry>(device);
+
+        m_Graph = std::make_unique<RenderGraph>();
+        DeclareGraphTransients(*m_Graph, device, settings);
+        // No passes are registered yet — Compile() just allocates the four declared transients.
+        // Scene-view starts out swapchain-sized; SetSceneViewSize() narrows it later.
+        m_Graph->Compile(device, swapchain.GetWidth(), swapchain.GetHeight(),
+                          swapchain.GetWidth(), swapchain.GetHeight());
+        LOGINFO("Render graph transients created");
+
         m_RenderQueue = std::make_unique<RenderQueue>(
-            m_RHIContext->GetRHIDevice(),
+            device,
             window,
             settings,
-            *m_ResourceManager,
+            *m_Graph,
+            *m_ResourceRegistry,
             fileSystem);
     }
 
@@ -66,7 +119,8 @@ namespace Renderer
         auto& device = m_RHIContext->GetRHIDevice();
         device.WaitIdle();
         m_RenderQueue->Cleanup(device);
-        m_ResourceManager->Cleanup(device);
+        m_Graph->Cleanup(device);
+        m_ResourceRegistry->Cleanup(device);
         m_ThreadContext->Cleanup(device);
         m_RHIContext->Cleanup();
     }
@@ -83,7 +137,7 @@ namespace Renderer
 
     float Renderer::GetAspectRatio() const
     {
-        const auto& scene = m_ResourceManager->GetSceneColorBuffer();
+        const auto& scene = m_Graph->GetTexture(GraphResourceNames::SCENE_COLOR);
         return static_cast<float>(scene.GetWidth()) / static_cast<float>(scene.GetHeight());
     }
 
@@ -115,11 +169,10 @@ namespace Renderer
         auto& device    = m_RHIContext->GetRHIDevice();
         auto& swapchain = m_RHIContext->GetRHISwapchain();
 
-        m_ResourceManager->SyncResources(device, catalog);
+        m_ResourceRegistry->SyncMeshes(catalog, device);
+        m_ResourceRegistry->SyncMaterials(catalog, device);
 
         const uint32_t frameIndex = m_ThreadContext->GetFrameIndex();
-
-        m_RenderQueue->UpdateData(frameData, frameIndex, settings);
 
         if (m_Window.IsResized())
         {
@@ -130,16 +183,24 @@ namespace Renderer
             device.WaitIdle();
             m_RHIContext->RecreateSwapchain(m_Window);
 
-            m_ResourceManager->ResizeFrameBufferSizeDependentResources(device, swapchain);
-            m_RenderQueue->ResizeResources(device, *m_ResourceManager);
+            m_Graph->SetSwapchainSize(swapchain.GetWidth(), swapchain.GetHeight());
+            m_Graph->Invalidate(SizeClass::SwapchainRelative, device);
 
             return;
         }
 
         if (settings.IsDirty())
         {
-            m_ResourceManager->ResizeSettingsDependentResources(device, settings);
-            m_RenderQueue->UpdateResources(device, settings, *m_ResourceManager);
+            auto& shadowmapSettings = settings.GetShadowmapSettings();
+            if (shadowmapSettings->IsDirty())
+            {
+                const uint32_t shadowmapSize = shadowmapSettings->GetShadowmapSize();
+                m_Graph->SetFixedSize(GraphResourceNames::SHADOW_DEPTH, shadowmapSize, shadowmapSize);
+                m_Graph->Invalidate(SizeClass::Fixed, device);
+
+                shadowmapSettings->CleanDirtyState();
+            }
+
             settings.CleanDirtyState();
         }
 
@@ -152,7 +213,8 @@ namespace Renderer
             m_ThreadContext->GetImageAvailableSemaphore(),
             m_ThreadContext->GetRenderFinishedSemaphore(),
             frameIndex,
-            *m_ResourceManager);
+            settings,
+            *m_ResourceRegistry);
 
         m_ThreadContext->NextFrame();
 
@@ -160,12 +222,12 @@ namespace Renderer
         // ImGui draw data (which references the old descriptor) has already been submitted.
         if (m_DesiredSceneW > 0 && m_DesiredSceneH > 0)
         {
-            const auto& sceneBuffer = m_ResourceManager->GetSceneColorBuffer();
+            const auto& sceneBuffer = m_Graph->GetTexture(GraphResourceNames::SCENE_COLOR);
             if (sceneBuffer.GetWidth() != m_DesiredSceneW || sceneBuffer.GetHeight() != m_DesiredSceneH)
             {
                 device.WaitIdle();
-                m_ResourceManager->ResizeSceneView(device, m_DesiredSceneW, m_DesiredSceneH);
-                m_RenderQueue->ResizeSceneView(device, *m_ResourceManager);
+                m_Graph->SetSceneViewSize(m_DesiredSceneW, m_DesiredSceneH);
+                m_Graph->Invalidate(SizeClass::SceneViewRelative, device);
             }
         }
 

@@ -1,5 +1,8 @@
 #pragma once
 
+#include "RenderGraph/IRenderPass.hpp"
+#include "RenderGraph/RenderGraphTypes.hpp"
+
 #include <HedgehogMath/api/Matrix.hpp>
 
 #include <memory>
@@ -7,8 +10,6 @@
 
 namespace RHI
 {
-    class IRHIDevice;
-    class IRHICommandList;
     class IRHIRenderPass;
     class IRHIPipeline;
     class IRHIFramebuffer;
@@ -18,11 +19,6 @@ namespace RHI
     class IRHIBuffer;
 }
 
-namespace HedgehogEngine
-{
-    struct FrameData;
-}
-
 namespace FS
 {
     class FileSystemManager;
@@ -30,20 +26,18 @@ namespace FS
 
 namespace Renderer
 {
-    class ResourceManager;
-
-    class DepthPrePass
+    class DepthPrePass : public IRenderPass
     {
     public:
-        DepthPrePass(RHI::IRHIDevice& device, const ResourceManager& resourceManager,
-                     const FS::FileSystemManager& fileSystem);
-        ~DepthPrePass();
+        DepthPrePass(RHI::IRHIDevice& device, const FS::FileSystemManager& fileSystem);
+        ~DepthPrePass() override;
 
-        void Render(const HedgehogEngine::FrameData& frame, const ResourceManager& resourceManager,
-                    RHI::IRHICommandList& cmd, uint32_t frameIndex);
-        void Cleanup(RHI::IRHIDevice& device);
+        const char* GetName() const override { return "DepthPrePass"; }
 
-        void ResizeResources(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
+        void Setup(RenderGraphBuilder& builder) override;
+        void CreateFramebuffers(RHI::IRHIDevice& device, RenderGraph& graph) override;
+        void Execute(RenderGraphContext& ctx) override;
+        void Cleanup(RHI::IRHIDevice& device) override;
 
     private:
         struct DepthPrepassFrameUniform
@@ -52,6 +46,8 @@ namespace Renderer
         };
 
     private:
+        ResourceHandle m_SceneDepthHandle = INVALID_RESOURCE_HANDLE;
+
         std::unique_ptr<RHI::IRHIRenderPass>         m_RenderPass;
         std::unique_ptr<RHI::IRHIFramebuffer>         m_FrameBuffer;
         std::unique_ptr<RHI::IRHIPipeline>            m_Pipeline;
