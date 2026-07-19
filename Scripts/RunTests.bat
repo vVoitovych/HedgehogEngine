@@ -9,6 +9,13 @@ setlocal enabledelayedexpansion
 set "CONFIG=%~1"
 if "%CONFIG%"=="" set "CONFIG=Debug"
 
+echo === Checking module boundaries ===
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0CheckModuleBoundaries.ps1"
+if errorlevel 1 (
+    echo [ERROR] Module boundary check failed - build and tests were not run.
+    exit /b 1
+)
+
 call "%~dp0Build.bat" %CONFIG%
 if errorlevel 1 (
     echo [ERROR] Build failed - tests were not run.

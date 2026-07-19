@@ -19,8 +19,6 @@ namespace Renderer
 {
     GuiPass::GuiPass(HW::Window& window, RHI::IRHIDevice& device, const ResourceManager& resourceManager)
     {
-        window.SetGuiCallback([]() { return GuiPass::IsCursorPositionInGUI(); });
-
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
         ImGuiIO& io = ImGui::GetIO();
@@ -41,8 +39,8 @@ namespace Renderer
         const auto& colorBuffer = resourceManager.GetRHIColorBuffer();
 
         RHI::GuiBackendDesc backendDesc;
-        backendDesc.m_MinImageCount = MAX_FRAMES_IN_FLIGHT;
-        backendDesc.m_ImageCount    = MAX_FRAMES_IN_FLIGHT;
+        backendDesc.m_MinImageCount = HedgehogEngine::MAX_FRAMES_IN_FLIGHT;
+        backendDesc.m_ImageCount    = HedgehogEngine::MAX_FRAMES_IN_FLIGHT;
         backendDesc.m_ColorFormat   = colorBuffer.GetFormat();
         m_GuiBackend = device.CreateGuiBackend(backendDesc);
 
@@ -113,11 +111,6 @@ namespace Renderer
         m_GuiBackend->DestroyTextureId(m_SceneViewId);
         m_SceneViewId = nullptr;
         CreateSceneViewDescSet(resourceManager);
-    }
-
-    bool GuiPass::IsCursorPositionInGUI()
-    {
-        return ImGui::GetIO().WantCaptureMouse;
     }
 
     void* GuiPass::GetSceneViewTextureId() const

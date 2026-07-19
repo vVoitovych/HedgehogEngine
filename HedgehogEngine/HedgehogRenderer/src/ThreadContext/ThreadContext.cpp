@@ -12,7 +12,7 @@ namespace Renderer
 {
     ThreadContext::ThreadContext(RHI::IRHIDevice& device)
     {
-        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+        for (size_t i = 0; i < HedgehogEngine::MAX_FRAMES_IN_FLIGHT; ++i)
         {
             m_CommandLists.push_back(device.CreateCommandList());
             m_Fences.push_back(device.CreateFence(/*signaled=*/true));
@@ -40,7 +40,7 @@ namespace Renderer
 
     void ThreadContext::NextFrame()
     {
-        m_FrameIndex = (m_FrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
+        m_FrameIndex = (m_FrameIndex + 1) % HedgehogEngine::MAX_FRAMES_IN_FLIGHT;
     }
 
     uint32_t ThreadContext::GetFrameIndex() const

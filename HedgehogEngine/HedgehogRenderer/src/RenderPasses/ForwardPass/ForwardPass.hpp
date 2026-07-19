@@ -63,7 +63,7 @@ namespace Renderer
             alignas(16) HM::Matrix4x4 m_View;
             alignas(16) HM::Matrix4x4 m_ViewProj;
             alignas(16) HM::Vector3   m_EyePosition;
-            alignas(16) GpuLight      m_Lights[MAX_LIGHTS_COUNT];
+            alignas(16) GpuLight      m_Lights[HedgehogEngine::MAX_LIGHTS_COUNT];
             size_t                    m_LightCount;
         };
 

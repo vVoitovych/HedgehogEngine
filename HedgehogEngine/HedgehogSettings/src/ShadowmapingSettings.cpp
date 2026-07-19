@@ -1,4 +1,4 @@
-#include "ShadowmapingSettings.hpp"
+#include "HedgehogSettings/api/ShadowmapingSettings.hpp"
 
 #include <algorithm>
 

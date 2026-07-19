@@ -9,7 +9,7 @@
 #include "RenderPasses/PresentPass/PresentPass.hpp"
 #include "RenderPasses/GuiPass/GuiPass.hpp"
 
-#include "HedgehogSettings/Settings/HedgehogSettings.hpp"
+#include "HedgehogSettings/api/HedgehogSettings.hpp"
 
 #include "HedgehogCommon/api/Frame/FrameData.hpp"
 

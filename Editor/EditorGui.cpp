@@ -10,8 +10,8 @@
 #include "HedgehogEngine/api/Containers/MaterialData.hpp"
 #include "HedgehogEngine/api/Containers/MeshContainer.hpp"
 #include "HedgehogEngine/api/Containers/TextureContainer.hpp"
-#include "HedgehogEngine/HedgehogSettings/Settings/HedgehogSettings.hpp"
-#include "HedgehogEngine/HedgehogSettings/Settings/ShadowmapingSettings.hpp"
+#include "HedgehogEngine/HedgehogSettings/api/HedgehogSettings.hpp"
+#include "HedgehogEngine/HedgehogSettings/api/ShadowmapingSettings.hpp"
 
 #include "ECS/api/ECS.hpp"
 #include "ECS/api/components/Hierarchy.hpp"

@@ -616,4 +616,7 @@ Binaries
 /FileSystem/FileSystem.vcxproj.filters
 /FileSystem/tests/FileSystemTest.vcxproj
 /FileSystem/tests/FileSystemTest.vcxproj.user
+/ContentLoader/tests/ContentLoaderTest.vcxproj*
+/ECS/tests/ECSTest.vcxproj*
+/EcsSerialization/tests/EcsSerializationTest.vcxproj*
 /ThirdParty/Tracy/Tracy.vcxproj

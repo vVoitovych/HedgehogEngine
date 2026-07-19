@@ -12,8 +12,8 @@
 
 #include <cassert>
 
-#include "HedgehogSettings/Settings/HedgehogSettings.hpp"
-#include "HedgehogSettings/Settings/ShadowmapingSettings.hpp"
+#include "HedgehogSettings/api/HedgehogSettings.hpp"
+#include "HedgehogSettings/api/ShadowmapingSettings.hpp"
 
 #include "ResourceManager/ResourceManager.hpp"
 #include "ResourceRegistry/ResourceRegistry.hpp"
@@ -46,15 +46,15 @@ namespace Renderer
         m_ShadowmapLayout = device.CreateDescriptorSetLayout(sd.m_Layout.m_DescriptorSets[0]);
 
         // Pool: one UBO per cascade per frame
-        const uint32_t totalSets = MaxShadowCascades * MAX_FRAMES_IN_FLIGHT;
+        const uint32_t totalSets = MaxShadowCascades * HedgehogEngine::MAX_FRAMES_IN_FLIGHT;
         m_ShadowmapPool = device.CreateDescriptorPool(
             totalSets,
             PipelineLoader::MakePoolSizes(sd.m_Layout.m_DescriptorSets[0], totalSets));
 
         // Per-frame per-cascade uniform buffers and descriptor sets
-        m_ShadowmapUniforms.resize(MAX_FRAMES_IN_FLIGHT);
-        m_ShadowmapSets.resize(MAX_FRAMES_IN_FLIGHT);
-        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i)
+        m_ShadowmapUniforms.resize(HedgehogEngine::MAX_FRAMES_IN_FLIGHT);
+        m_ShadowmapSets.resize(HedgehogEngine::MAX_FRAMES_IN_FLIGHT);
+        for (size_t i = 0; i < HedgehogEngine::MAX_FRAMES_IN_FLIGHT; ++i)
         {
             for (size_t j = 0; j < MaxShadowCascades; ++j)
             {

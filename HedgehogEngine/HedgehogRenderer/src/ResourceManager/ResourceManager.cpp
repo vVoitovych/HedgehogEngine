@@ -3,8 +3,8 @@
 #include "ResourceRegistry/ResourceRegistry.hpp"
 
 #include "HedgehogCommon/api/Resource/IResourceCatalog.hpp"
-#include "HedgehogSettings/Settings/HedgehogSettings.hpp"
-#include "HedgehogSettings/Settings/ShadowmapingSettings.hpp"
+#include "HedgehogSettings/api/HedgehogSettings.hpp"
+#include "HedgehogSettings/api/ShadowmapingSettings.hpp"
 
 #include "RHI/api/IRHIDevice.hpp"
 #include "RHI/api/IRHISwapchain.hpp"

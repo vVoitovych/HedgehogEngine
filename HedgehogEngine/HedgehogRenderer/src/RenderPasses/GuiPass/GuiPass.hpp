@@ -38,8 +38,6 @@ namespace Renderer
 
         void* GetSceneViewTextureId() const;
 
-        static bool IsCursorPositionInGUI();
-
     private:
         void CreateSceneViewDescSet(const ResourceManager& resourceManager);
 

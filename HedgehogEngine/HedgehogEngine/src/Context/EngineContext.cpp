@@ -12,7 +12,7 @@
 
 #include "HedgehogCommon/api/Camera.hpp"
 
-#include "HedgehogSettings/Settings/HedgehogSettings.hpp"
+#include "HedgehogSettings/api/HedgehogSettings.hpp"
 
 #include "HedgehogEngine/api/ECS/systems/TransformSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/HierarchySystem.hpp"
