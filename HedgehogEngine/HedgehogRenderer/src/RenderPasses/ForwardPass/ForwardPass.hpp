@@ -1,5 +1,8 @@
 #pragma once
 
+#include "RenderGraph/IRenderPass.hpp"
+#include "RenderGraph/RenderGraphTypes.hpp"
+
 #include "HedgehogCommon/api/RendererSettings.hpp"
 #include "HedgehogMath/api/Matrix.hpp"
 #include "HedgehogMath/api/Vector.hpp"
@@ -9,8 +12,6 @@
 
 namespace RHI
 {
-    class IRHIDevice;
-    class IRHICommandList;
     class IRHIRenderPass;
     class IRHIPipeline;
     class IRHIFramebuffer;
@@ -22,7 +23,6 @@ namespace RHI
 
 namespace HedgehogEngine
 {
-    struct FrameData;
     struct LightData;
 }
 
@@ -31,22 +31,26 @@ namespace FS
     class FileSystemManager;
 }
 
+namespace HR
+{
+    class ResourceRegistry;
+}
+
 namespace Renderer
 {
-    class ResourceManager;
-
-    class ForwardPass
+    class ForwardPass : public IRenderPass
     {
     public:
-        ForwardPass(RHI::IRHIDevice& device, ResourceManager& resourceManager,
+        ForwardPass(RHI::IRHIDevice& device, HR::ResourceRegistry& resourceRegistry,
                     const FS::FileSystemManager& fileSystem);
-        ~ForwardPass();
+        ~ForwardPass() override;
 
-        void Render(const HedgehogEngine::FrameData& frame, const ResourceManager& resourceManager,
-                    RHI::IRHICommandList& cmd, uint32_t frameIndex);
-        void Cleanup(RHI::IRHIDevice& device);
+        const char* GetName() const override { return "ForwardPass"; }
 
-        void ResizeResources(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
+        void Setup(RenderGraphBuilder& builder) override;
+        void CreateFramebuffers(RHI::IRHIDevice& device, RenderGraph& graph) override;
+        void Execute(RenderGraphContext& ctx) override;
+        void Cleanup(RHI::IRHIDevice& device) override;
 
     private:
         // GPU-layout light struct; alignas matches std140/std430 UBO packing expected by the shader.
@@ -70,6 +74,9 @@ namespace Renderer
         static GpuLight ToGpuLight(const HedgehogEngine::LightData& fd);
 
     private:
+        ResourceHandle m_SceneDepthHandle = INVALID_RESOURCE_HANDLE;
+        ResourceHandle m_SceneColorHandle = INVALID_RESOURCE_HANDLE;
+
         std::unique_ptr<RHI::IRHIRenderPass>  m_RenderPass;
         std::unique_ptr<RHI::IRHIFramebuffer> m_FrameBuffer;
         std::unique_ptr<RHI::IRHIPipeline>    m_Pipeline;
