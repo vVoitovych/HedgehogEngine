@@ -15,12 +15,12 @@ namespace RHI
 VulkanPipeline::VulkanPipeline(VulkanDevice& device, const GraphicsPipelineDesc& desc)
     : m_Device(device)
 {
-    assert(desc.m_VertexShader && "GraphicsPipelineDesc::m_VertexShader must not be null.");
-    assert(desc.m_RenderPass   && "GraphicsPipelineDesc::m_RenderPass must not be null.");
+    assert(desc.VertexShader && "GraphicsPipelineDesc::VertexShader must not be null.");
+    assert(desc.RenderPass   && "GraphicsPipelineDesc::RenderPass must not be null.");
 
     // ── Shader stages ─────────────────────────────────────────────────────────
 
-    const auto& vertShader = static_cast<const VulkanShader&>(*desc.m_VertexShader);
+    const auto& vertShader = static_cast<const VulkanShader&>(*desc.VertexShader);
 
     std::vector<VkPipelineShaderStageCreateInfo> stages;
     stages.reserve(2);
@@ -33,9 +33,9 @@ VulkanPipeline::VulkanPipeline(VulkanDevice& device, const GraphicsPipelineDesc&
         stages.push_back(stage);
     }
 
-    if (desc.m_FragmentShader)
+    if (desc.FragmentShader)
     {
-        const auto& fragShader = static_cast<const VulkanShader&>(*desc.m_FragmentShader);
+        const auto& fragShader = static_cast<const VulkanShader&>(*desc.FragmentShader);
         VkPipelineShaderStageCreateInfo stage{ VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
         stage.stage  = VK_SHADER_STAGE_FRAGMENT_BIT;
         stage.module = fragShader.GetHandle();
@@ -46,15 +46,15 @@ VulkanPipeline::VulkanPipeline(VulkanDevice& device, const GraphicsPipelineDesc&
     // ── Vertex input ──────────────────────────────────────────────────────────
 
     std::vector<VkVertexInputBindingDescription> bindings;
-    bindings.reserve(desc.m_VertexBindings.size());
-    for (const auto& b : desc.m_VertexBindings)
-        bindings.push_back({ b.m_Binding, b.m_Stride, VulkanTypes::ToVkInputRate(b.m_InputRate) });
+    bindings.reserve(desc.VertexBindings.size());
+    for (const auto& b : desc.VertexBindings)
+        bindings.push_back({ b.Binding, b.Stride, VulkanTypes::ToVkInputRate(b.InputRate) });
 
     std::vector<VkVertexInputAttributeDescription> attributes;
-    attributes.reserve(desc.m_VertexAttributes.size());
-    for (const auto& a : desc.m_VertexAttributes)
-        attributes.push_back({ a.m_Location, a.m_Binding,
-                                VulkanTypes::ToVkFormat(a.m_Format), a.m_Offset });
+    attributes.reserve(desc.VertexAttributes.size());
+    for (const auto& a : desc.VertexAttributes)
+        attributes.push_back({ a.Location, a.Binding,
+                                VulkanTypes::ToVkFormat(a.Format), a.Offset });
 
     VkPipelineVertexInputStateCreateInfo vertexInput{ VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO };
     vertexInput.vertexBindingDescriptionCount   = static_cast<uint32_t>(bindings.size());
@@ -65,7 +65,7 @@ VulkanPipeline::VulkanPipeline(VulkanDevice& device, const GraphicsPipelineDesc&
     // ── Input assembly ────────────────────────────────────────────────────────
 
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{ VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO };
-    inputAssembly.topology               = VulkanTypes::ToVkTopology(desc.m_Topology);
+    inputAssembly.topology               = VulkanTypes::ToVkTopology(desc.Topology);
     inputAssembly.primitiveRestartEnable = VK_FALSE;
 
     // ── Dynamic viewport / scissor (set at draw time) ─────────────────────────
@@ -87,11 +87,11 @@ VulkanPipeline::VulkanPipeline(VulkanDevice& device, const GraphicsPipelineDesc&
     VkPipelineRasterizationStateCreateInfo rasterization{ VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO };
     rasterization.depthClampEnable        = VK_FALSE;
     rasterization.rasterizerDiscardEnable = VK_FALSE;
-    rasterization.polygonMode             = VulkanTypes::ToVkFillMode(desc.m_FillMode);
-    rasterization.cullMode                = VulkanTypes::ToVkCullMode(desc.m_CullMode);
+    rasterization.polygonMode             = VulkanTypes::ToVkFillMode(desc.FillMode);
+    rasterization.cullMode                = VulkanTypes::ToVkCullMode(desc.CullMode);
     rasterization.frontFace               = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rasterization.depthBiasEnable         = VK_FALSE;
-    rasterization.lineWidth               = desc.m_LineWidth;
+    rasterization.lineWidth               = desc.LineWidth;
 
     // ── Multisampling ─────────────────────────────────────────────────────────
 
@@ -101,27 +101,27 @@ VulkanPipeline::VulkanPipeline(VulkanDevice& device, const GraphicsPipelineDesc&
     // ── Depth / stencil ───────────────────────────────────────────────────────
 
     VkPipelineDepthStencilStateCreateInfo depthStencil{ VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO };
-    depthStencil.depthTestEnable       = desc.m_DepthTestEnable  ? VK_TRUE : VK_FALSE;
-    depthStencil.depthWriteEnable      = desc.m_DepthWriteEnable ? VK_TRUE : VK_FALSE;
-    depthStencil.depthCompareOp        = VulkanTypes::ToVkCompareOp(desc.m_DepthCompareOp);
+    depthStencil.depthTestEnable       = desc.DepthTestEnable  ? VK_TRUE : VK_FALSE;
+    depthStencil.depthWriteEnable      = desc.DepthWriteEnable ? VK_TRUE : VK_FALSE;
+    depthStencil.depthCompareOp        = VulkanTypes::ToVkCompareOp(desc.DepthCompareOp);
     depthStencil.depthBoundsTestEnable = VK_FALSE;
-    depthStencil.stencilTestEnable     = desc.m_StencilTestEnable ? VK_TRUE : VK_FALSE;
+    depthStencil.stencilTestEnable     = desc.StencilTestEnable ? VK_TRUE : VK_FALSE;
 
     // ── Color blend ───────────────────────────────────────────────────────────
 
     std::vector<VkPipelineColorBlendAttachmentState> blendAttachments;
-    blendAttachments.reserve(desc.m_ColorBlendAttachments.size());
+    blendAttachments.reserve(desc.ColorBlendAttachments.size());
 
-    for (const auto& blend : desc.m_ColorBlendAttachments)
+    for (const auto& blend : desc.ColorBlendAttachments)
     {
         VkPipelineColorBlendAttachmentState state{};
-        state.blendEnable         = blend.m_BlendEnable ? VK_TRUE : VK_FALSE;
-        state.srcColorBlendFactor = VulkanTypes::ToVkBlendFactor(blend.m_SrcColorFactor);
-        state.dstColorBlendFactor = VulkanTypes::ToVkBlendFactor(blend.m_DstColorFactor);
-        state.colorBlendOp        = VulkanTypes::ToVkBlendOp(blend.m_ColorOp);
-        state.srcAlphaBlendFactor = VulkanTypes::ToVkBlendFactor(blend.m_SrcAlphaFactor);
-        state.dstAlphaBlendFactor = VulkanTypes::ToVkBlendFactor(blend.m_DstAlphaFactor);
-        state.alphaBlendOp        = VulkanTypes::ToVkBlendOp(blend.m_AlphaOp);
+        state.blendEnable         = blend.BlendEnable ? VK_TRUE : VK_FALSE;
+        state.srcColorBlendFactor = VulkanTypes::ToVkBlendFactor(blend.SrcColorFactor);
+        state.dstColorBlendFactor = VulkanTypes::ToVkBlendFactor(blend.DstColorFactor);
+        state.colorBlendOp        = VulkanTypes::ToVkBlendOp(blend.ColorOp);
+        state.srcAlphaBlendFactor = VulkanTypes::ToVkBlendFactor(blend.SrcAlphaFactor);
+        state.dstAlphaBlendFactor = VulkanTypes::ToVkBlendFactor(blend.DstAlphaFactor);
+        state.alphaBlendOp        = VulkanTypes::ToVkBlendOp(blend.AlphaOp);
         state.colorWriteMask      = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT
                                   | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
         blendAttachments.push_back(state);
@@ -135,18 +135,18 @@ VulkanPipeline::VulkanPipeline(VulkanDevice& device, const GraphicsPipelineDesc&
     // ── Pipeline layout ───────────────────────────────────────────────────────
 
     std::vector<VkDescriptorSetLayout> setLayouts;
-    setLayouts.reserve(desc.m_DescriptorSetLayouts.size());
-    for (const auto* layout : desc.m_DescriptorSetLayouts)
+    setLayouts.reserve(desc.DescriptorSetLayouts.size());
+    for (const auto* layout : desc.DescriptorSetLayouts)
     {
         assert(layout && "Null descriptor set layout in GraphicsPipelineDesc.");
         setLayouts.push_back(static_cast<const VulkanDescriptorSetLayout&>(*layout).GetHandle());
     }
 
     std::vector<VkPushConstantRange> pushRanges;
-    pushRanges.reserve(desc.m_PushConstantRanges.size());
-    for (const auto& range : desc.m_PushConstantRanges)
-        pushRanges.push_back({ VulkanTypes::ToVkShaderStage(range.m_Stages),
-                                range.m_Offset, range.m_Size });
+    pushRanges.reserve(desc.PushConstantRanges.size());
+    for (const auto& range : desc.PushConstantRanges)
+        pushRanges.push_back({ VulkanTypes::ToVkShaderStage(range.Stages),
+                                range.Offset, range.Size });
 
     VkPipelineLayoutCreateInfo layoutInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
     layoutInfo.setLayoutCount         = static_cast<uint32_t>(setLayouts.size());
@@ -159,7 +159,7 @@ VulkanPipeline::VulkanPipeline(VulkanDevice& device, const GraphicsPipelineDesc&
 
     // ── Graphics pipeline ─────────────────────────────────────────────────────
 
-    const auto& vkPass = static_cast<const VulkanRenderPass&>(*desc.m_RenderPass);
+    const auto& vkPass = static_cast<const VulkanRenderPass&>(*desc.RenderPass);
 
     VkGraphicsPipelineCreateInfo pipelineInfo{ VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO };
     pipelineInfo.stageCount          = static_cast<uint32_t>(stages.size());
@@ -174,7 +174,7 @@ VulkanPipeline::VulkanPipeline(VulkanDevice& device, const GraphicsPipelineDesc&
     pipelineInfo.pDynamicState       = &dynamicState;
     pipelineInfo.layout              = m_Layout;
     pipelineInfo.renderPass          = vkPass.GetHandle();
-    pipelineInfo.subpass             = desc.m_Subpass;
+    pipelineInfo.subpass             = desc.Subpass;
 
     result = vkCreateGraphicsPipelines(
         m_Device.GetHandle(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_Pipeline);

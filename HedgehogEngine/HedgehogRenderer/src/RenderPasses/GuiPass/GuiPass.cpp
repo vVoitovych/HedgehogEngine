@@ -39,16 +39,16 @@ namespace Renderer
         const auto& colorBuffer = resourceManager.GetRHIColorBuffer();
 
         RHI::GuiBackendDesc backendDesc;
-        backendDesc.m_MinImageCount = HedgehogEngine::MAX_FRAMES_IN_FLIGHT;
-        backendDesc.m_ImageCount    = HedgehogEngine::MAX_FRAMES_IN_FLIGHT;
-        backendDesc.m_ColorFormat   = colorBuffer.GetFormat();
+        backendDesc.MinImageCount = HedgehogEngine::MAX_FRAMES_IN_FLIGHT;
+        backendDesc.ImageCount    = HedgehogEngine::MAX_FRAMES_IN_FLIGHT;
+        backendDesc.ColorFormat   = colorBuffer.GetFormat();
         m_GuiBackend = device.CreateGuiBackend(backendDesc);
 
         RHI::FramebufferDesc fbDesc;
-        fbDesc.m_RenderPass       = &m_GuiBackend->GetRenderPass();
-        fbDesc.m_ColorAttachments = { &colorBuffer };
-        fbDesc.m_Width            = colorBuffer.GetWidth();
-        fbDesc.m_Height           = colorBuffer.GetHeight();
+        fbDesc.RenderPass       = &m_GuiBackend->GetRenderPass();
+        fbDesc.ColorAttachments = { &colorBuffer };
+        fbDesc.Width            = colorBuffer.GetWidth();
+        fbDesc.Height           = colorBuffer.GetHeight();
         m_FrameBuffer = device.CreateFramebuffer(fbDesc);
 
         CreateSceneViewDescSet(resourceManager);
@@ -95,10 +95,10 @@ namespace Renderer
         m_FrameBuffer.reset();
 
         RHI::FramebufferDesc fbDesc;
-        fbDesc.m_RenderPass       = &m_GuiBackend->GetRenderPass();
-        fbDesc.m_ColorAttachments = { &colorBuffer };
-        fbDesc.m_Width            = colorBuffer.GetWidth();
-        fbDesc.m_Height           = colorBuffer.GetHeight();
+        fbDesc.RenderPass       = &m_GuiBackend->GetRenderPass();
+        fbDesc.ColorAttachments = { &colorBuffer };
+        fbDesc.Width            = colorBuffer.GetWidth();
+        fbDesc.Height           = colorBuffer.GetHeight();
         m_FrameBuffer = device.CreateFramebuffer(fbDesc);
 
         m_GuiBackend->DestroyTextureId(m_SceneViewId);

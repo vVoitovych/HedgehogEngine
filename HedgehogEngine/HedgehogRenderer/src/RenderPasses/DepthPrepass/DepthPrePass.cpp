@@ -34,13 +34,13 @@ namespace Renderer
         const auto sd = ShaderLoader::Load(device,
             "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/DepthPrepass.shader",
             fileSystem);
-        assert(!sd.m_Layout.m_DescriptorSets.empty());
+        assert(!sd.Layout.DescriptorSets.empty());
 
-        m_FrameLayout = device.CreateDescriptorSetLayout(sd.m_Layout.m_DescriptorSets[0]);
+        m_FrameLayout = device.CreateDescriptorSetLayout(sd.Layout.DescriptorSets[0]);
 
         m_FramePool = device.CreateDescriptorPool(
             HedgehogEngine::MAX_FRAMES_IN_FLIGHT,
-            PipelineLoader::MakePoolSizes(sd.m_Layout.m_DescriptorSets[0], HedgehogEngine::MAX_FRAMES_IN_FLIGHT));
+            PipelineLoader::MakePoolSizes(sd.Layout.DescriptorSets[0], HedgehogEngine::MAX_FRAMES_IN_FLIGHT));
 
         // Per-frame uniform buffers and descriptor sets
         m_FrameUniforms.reserve(HedgehogEngine::MAX_FRAMES_IN_FLIGHT);
@@ -62,7 +62,7 @@ namespace Renderer
 
         // Render pass: depth-only (no color attachments)
         RHI::RenderPassDesc rpDesc;
-        rpDesc.m_DepthAttachment = RHI::AttachmentDesc{
+        rpDesc.DepthAttachment = RHI::AttachmentDesc{
             resourceManager.GetRHIDepthBuffer().GetFormat(),
             RHI::LoadOp::Clear,
             RHI::StoreOp::Store,
@@ -74,18 +74,18 @@ namespace Renderer
         m_RenderPass = device.CreateRenderPass(rpDesc);
 
         // Pipeline
-        auto pipelineDesc                   = sd.m_Pipeline;
-        pipelineDesc.m_DescriptorSetLayouts = { m_FrameLayout.get() };
-        pipelineDesc.m_RenderPass           = m_RenderPass.get();
+        auto pipelineDesc                   = sd.Pipeline;
+        pipelineDesc.DescriptorSetLayouts = { m_FrameLayout.get() };
+        pipelineDesc.RenderPass           = m_RenderPass.get();
         m_Pipeline = device.CreateGraphicsPipeline(pipelineDesc);
 
         // Framebuffer
         const auto& depthBuffer = resourceManager.GetRHIDepthBuffer();
         RHI::FramebufferDesc fbDesc;
-        fbDesc.m_RenderPass      = m_RenderPass.get();
-        fbDesc.m_DepthAttachment = &depthBuffer;
-        fbDesc.m_Width           = depthBuffer.GetWidth();
-        fbDesc.m_Height          = depthBuffer.GetHeight();
+        fbDesc.RenderPass      = m_RenderPass.get();
+        fbDesc.DepthAttachment = &depthBuffer;
+        fbDesc.Width           = depthBuffer.GetWidth();
+        fbDesc.Height          = depthBuffer.GetHeight();
         m_FrameBuffer = device.CreateFramebuffer(fbDesc);
     }
 
@@ -97,12 +97,12 @@ namespace Renderer
                                RHI::IRHICommandList& cmd, uint32_t frameIndex)
     {
         DepthPrepassFrameUniform ubo{};
-        ubo.m_ViewProj = frame.m_Camera.m_Proj * frame.m_Camera.m_View;
+        ubo.ViewProj = frame.Camera.Proj * frame.Camera.View;
         m_FrameUniforms[frameIndex]->CopyData(&ubo, sizeof(ubo));
 
         RHI::ClearValue depthClear;
-        depthClear.m_IsDepth      = true;
-        depthClear.m_DepthStencil = { 1.0f, 0 };
+        depthClear.IsDepth      = true;
+        depthClear.DepthStencil = { 1.0f, 0 };
 
         cmd.BeginRenderPass(*m_RenderPass, *m_FrameBuffer, { depthClear });
 
@@ -122,19 +122,19 @@ namespace Renderer
 
         cmd.BindDescriptorSet(*m_Pipeline, 0, *m_FrameSets[frameIndex]);
 
-        for (const auto& drawNode : frame.m_DrawList.m_Opaque)
+        for (const auto& drawNode : frame.DrawList.Opaque)
         {
-            for (const auto& object : drawNode.m_Objects)
+            for (const auto& object : drawNode.Objects)
             {
                 cmd.PushConstants(
                     *m_Pipeline,
                     RHI::ShaderStage::Vertex,
                     0,
                     static_cast<uint32_t>(sizeof(DepthPrePassPushConstants)),
-                    &object.m_Transform);
+                    &object.Transform);
 
-                const auto& geom = registry.GetMeshGeometryInfo(object.m_MeshIndex);
-                cmd.DrawIndexed(geom.m_IndexCount, 1, geom.m_FirstIndex, geom.m_VertexOffset, 0);
+                const auto& geom = registry.GetMeshGeometryInfo(object.MeshIndex);
+                cmd.DrawIndexed(geom.IndexCount, 1, geom.FirstIndex, geom.VertexOffset, 0);
             }
         }
 
@@ -161,10 +161,10 @@ namespace Renderer
         m_FrameBuffer.reset();
 
         RHI::FramebufferDesc fbDesc;
-        fbDesc.m_RenderPass      = m_RenderPass.get();
-        fbDesc.m_DepthAttachment = &depthBuffer;
-        fbDesc.m_Width           = depthBuffer.GetWidth();
-        fbDesc.m_Height          = depthBuffer.GetHeight();
+        fbDesc.RenderPass      = m_RenderPass.get();
+        fbDesc.DepthAttachment = &depthBuffer;
+        fbDesc.Width           = depthBuffer.GetWidth();
+        fbDesc.Height          = depthBuffer.GetHeight();
         m_FrameBuffer = device.CreateFramebuffer(fbDesc);
     }
 

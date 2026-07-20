@@ -15,8 +15,8 @@ namespace Renderer
 // in the order they appear in the file (position = set index in the pipeline layout).
 struct PipelineFileDesc
 {
-    std::vector<std::vector<RHI::DescriptorBinding>> m_DescriptorSets;
-    std::vector<RHI::PushConstantRange>              m_PushConstants;
+    std::vector<std::vector<RHI::DescriptorBinding>> DescriptorSets;
+    std::vector<RHI::PushConstantRange>              PushConstants;
 };
 
 class PipelineLoader
@@ -28,7 +28,7 @@ public:
                                  const FS::FileSystemManager& fileSystem);
 
     // Build DescriptorPool sizes from a single set's bindings.
-    // Each binding contributes (binding.m_Count * maxSets) descriptors of its type.
+    // Each binding contributes (binding.Count * maxSets) descriptors of its type.
     // Bindings of the same type are merged into one PoolSize entry.
     static std::vector<RHI::PoolSize> MakePoolSizes(
         const std::vector<RHI::DescriptorBinding>& bindings,

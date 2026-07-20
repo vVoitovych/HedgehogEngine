@@ -106,7 +106,7 @@ std::string ShaderWindow::MakeRelativePath(const std::string& absPath) const
 bool ShaderWindow::HasDuplicateStage(const std::string& stage, int skipRow) const
 {
     for (int i = 0; i < static_cast<int>(m_Stages.size()); ++i)
-        if (i != skipRow && m_Stages[i].m_Stage == stage)
+        if (i != skipRow && m_Stages[i].Stage == stage)
             return true;
     return false;
 }
@@ -223,13 +223,13 @@ bool ShaderWindow::LoadFromPath(const std::string& path, const FS::FileSystemMan
         for (const YAML::Node& b : blends)
         {
             BlendAttachment att;
-            if (const YAML::Node& e = b["enabled"])   att.m_Enabled  = e.as<bool>();
-            if (const YAML::Node& f = b["src_color"])  att.m_SrcColor = BlendFactorToIndex(f.as<std::string>());
-            if (const YAML::Node& f = b["dst_color"])  att.m_DstColor = BlendFactorToIndex(f.as<std::string>());
-            if (const YAML::Node& o = b["color_op"])   att.m_ColorOp  = BlendOpToIndex(o.as<std::string>());
-            if (const YAML::Node& f = b["src_alpha"])  att.m_SrcAlpha = BlendFactorToIndex(f.as<std::string>());
-            if (const YAML::Node& f = b["dst_alpha"])  att.m_DstAlpha = BlendFactorToIndex(f.as<std::string>());
-            if (const YAML::Node& o = b["alpha_op"])   att.m_AlphaOp  = BlendOpToIndex(o.as<std::string>());
+            if (const YAML::Node& e = b["enabled"])   att.Enabled  = e.as<bool>();
+            if (const YAML::Node& f = b["src_color"])  att.SrcColor = BlendFactorToIndex(f.as<std::string>());
+            if (const YAML::Node& f = b["dst_color"])  att.DstColor = BlendFactorToIndex(f.as<std::string>());
+            if (const YAML::Node& o = b["color_op"])   att.ColorOp  = BlendOpToIndex(o.as<std::string>());
+            if (const YAML::Node& f = b["src_alpha"])  att.SrcAlpha = BlendFactorToIndex(f.as<std::string>());
+            if (const YAML::Node& f = b["dst_alpha"])  att.DstAlpha = BlendFactorToIndex(f.as<std::string>());
+            if (const YAML::Node& o = b["alpha_op"])   att.AlphaOp  = BlendOpToIndex(o.as<std::string>());
             m_BlendAttachments.push_back(att);
         }
     }
@@ -242,10 +242,10 @@ bool ShaderWindow::LoadFromPath(const std::string& path, const FS::FileSystemMan
         for (const YAML::Node& s : stages)
         {
             StageEntry e;
-            e.m_Stage = s["stage"] ? s["stage"].as<std::string>() : "vertex";
-            e.m_Path  = s["path"]  ? s["path"].as<std::string>()  : "";
-            if (e.m_Stage == "compute")                     hasCompute  = true;
-            if (e.m_Stage == "vertex" || e.m_Stage == "fragment") hasGraphics = true;
+            e.Stage = s["stage"] ? s["stage"].as<std::string>() : "vertex";
+            e.Path  = s["path"]  ? s["path"].as<std::string>()  : "";
+            if (e.Stage == "compute")                     hasCompute  = true;
+            if (e.Stage == "vertex" || e.Stage == "fragment") hasGraphics = true;
             m_Stages.push_back(std::move(e));
         }
     }
@@ -297,13 +297,13 @@ bool ShaderWindow::SaveToPath(const std::string& virtualPath,
             for (const auto& att : m_BlendAttachments)
             {
                 out << YAML::BeginMap;
-                out << YAML::Key << "enabled"    << YAML::Value << att.m_Enabled;
-                out << YAML::Key << "src_color"   << YAML::Value << IndexToBlendFactor(att.m_SrcColor);
-                out << YAML::Key << "dst_color"   << YAML::Value << IndexToBlendFactor(att.m_DstColor);
-                out << YAML::Key << "color_op"    << YAML::Value << IndexToBlendOp(att.m_ColorOp);
-                out << YAML::Key << "src_alpha"   << YAML::Value << IndexToBlendFactor(att.m_SrcAlpha);
-                out << YAML::Key << "dst_alpha"   << YAML::Value << IndexToBlendFactor(att.m_DstAlpha);
-                out << YAML::Key << "alpha_op"    << YAML::Value << IndexToBlendOp(att.m_AlphaOp);
+                out << YAML::Key << "enabled"    << YAML::Value << att.Enabled;
+                out << YAML::Key << "src_color"   << YAML::Value << IndexToBlendFactor(att.SrcColor);
+                out << YAML::Key << "dst_color"   << YAML::Value << IndexToBlendFactor(att.DstColor);
+                out << YAML::Key << "color_op"    << YAML::Value << IndexToBlendOp(att.ColorOp);
+                out << YAML::Key << "src_alpha"   << YAML::Value << IndexToBlendFactor(att.SrcAlpha);
+                out << YAML::Key << "dst_alpha"   << YAML::Value << IndexToBlendFactor(att.DstAlpha);
+                out << YAML::Key << "alpha_op"    << YAML::Value << IndexToBlendOp(att.AlphaOp);
                 out << YAML::EndMap;
             }
             out << YAML::EndSeq;
@@ -314,8 +314,8 @@ bool ShaderWindow::SaveToPath(const std::string& virtualPath,
     for (const auto& s : m_Stages)
     {
         out << YAML::BeginMap;
-        out << YAML::Key << "stage" << YAML::Value << s.m_Stage;
-        out << YAML::Key << "path"  << YAML::Value << s.m_Path;
+        out << YAML::Key << "stage" << YAML::Value << s.Stage;
+        out << YAML::Key << "path"  << YAML::Value << s.Path;
         out << YAML::EndMap;
     }
     out << YAML::EndSeq;
@@ -418,8 +418,8 @@ void ShaderWindow::DrawShaderStages()
         for (int i = 0; i < static_cast<int>(m_Stages.size()); ++i)
         {
             auto& s = m_Stages[i];
-            const bool dupStage  = HasDuplicateStage(s.m_Stage, i);
-            const bool emptyPath = s.m_Path.empty();
+            const bool dupStage  = HasDuplicateStage(s.Stage, i);
+            const bool emptyPath = s.Path.empty();
 
             ImGui::TableNextRow();
             ImGui::PushID(i);
@@ -431,11 +431,11 @@ void ShaderWindow::DrawShaderStages()
             // Stage combo — red when duplicate
             ImGui::TableSetColumnIndex(1);
             if (dupStage) ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.55f, 0.1f, 0.1f, 1.0f));
-            int stageIdx = StageToIndex(s.m_Stage);
+            int stageIdx = StageToIndex(s.Stage);
             ImGui::SetNextItemWidth(-FLT_MIN);
             if (ImGui::Combo("##stg", &stageIdx, k_StageDisplay, k_StageCount))
             {
-                s.m_Stage = IndexToStage(stageIdx);
+                s.Stage = IndexToStage(stageIdx);
                 m_Dirty   = true;
             }
             if (dupStage) ImGui::PopStyleColor();
@@ -443,7 +443,7 @@ void ShaderWindow::DrawShaderStages()
             // SPIR-V path — orange when empty
             ImGui::TableSetColumnIndex(2);
             if (emptyPath) ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.5f, 0.28f, 0.0f, 1.0f));
-            if (InputPath("##spv", s.m_Path, -FLT_MIN)) m_Dirty = true;
+            if (InputPath("##spv", s.Path, -FLT_MIN)) m_Dirty = true;
             if (emptyPath) ImGui::PopStyleColor();
 
             // Browse for .spv
@@ -451,7 +451,7 @@ void ShaderWindow::DrawShaderStages()
             if (ImGui::SmallButton("Browse"))
             {
                 char* p = DialogueWindows::SpvOpenDialogue();
-                if (p) { s.m_Path = MakeRelativePath(p); m_Dirty = true; }
+                if (p) { s.Path = MakeRelativePath(p); m_Dirty = true; }
             }
 
             // Delete
@@ -524,7 +524,7 @@ void ShaderWindow::DrawPipelineState()
             "##att",
             ImGuiTreeNodeFlags_DefaultOpen,
             "Attachment %d  (%s)",
-            i, att.m_Enabled ? "blend on" : "blend off");
+            i, att.Enabled ? "blend on" : "blend off");
 
         ImGui::SameLine();
         ImGui::PushStyleColor(ImGuiCol_Button,        ImVec4(0.5f, 0.1f, 0.1f, 1.0f));
@@ -534,33 +534,33 @@ void ShaderWindow::DrawPipelineState()
 
         if (open)
         {
-            if (ImGui::Checkbox("Blend Enabled##en", &att.m_Enabled)) m_Dirty = true;
+            if (ImGui::Checkbox("Blend Enabled##en", &att.Enabled)) m_Dirty = true;
 
-            if (att.m_Enabled)
+            if (att.Enabled)
             {
                 // Color row
                 ImGui::Text("Color:");
                 ImGui::SameLine();
                 ImGui::SetNextItemWidth(120.0f);
-                if (ImGui::Combo("Src##sc",  &att.m_SrcColor, k_BlendFactorDisplay, k_BlendFactorCount)) m_Dirty = true;
+                if (ImGui::Combo("Src##sc",  &att.SrcColor, k_BlendFactorDisplay, k_BlendFactorCount)) m_Dirty = true;
                 ImGui::SameLine();
                 ImGui::SetNextItemWidth(100.0f);
-                if (ImGui::Combo("Op##co",   &att.m_ColorOp,  k_BlendOpDisplay,     k_BlendOpCount))     m_Dirty = true;
+                if (ImGui::Combo("Op##co",   &att.ColorOp,  k_BlendOpDisplay,     k_BlendOpCount))     m_Dirty = true;
                 ImGui::SameLine();
                 ImGui::SetNextItemWidth(120.0f);
-                if (ImGui::Combo("Dst##dc",  &att.m_DstColor, k_BlendFactorDisplay, k_BlendFactorCount)) m_Dirty = true;
+                if (ImGui::Combo("Dst##dc",  &att.DstColor, k_BlendFactorDisplay, k_BlendFactorCount)) m_Dirty = true;
 
                 // Alpha row
                 ImGui::Text("Alpha:");
                 ImGui::SameLine();
                 ImGui::SetNextItemWidth(120.0f);
-                if (ImGui::Combo("Src##sa",  &att.m_SrcAlpha, k_BlendFactorDisplay, k_BlendFactorCount)) m_Dirty = true;
+                if (ImGui::Combo("Src##sa",  &att.SrcAlpha, k_BlendFactorDisplay, k_BlendFactorCount)) m_Dirty = true;
                 ImGui::SameLine();
                 ImGui::SetNextItemWidth(100.0f);
-                if (ImGui::Combo("Op##ao",   &att.m_AlphaOp,  k_BlendOpDisplay,     k_BlendOpCount))     m_Dirty = true;
+                if (ImGui::Combo("Op##ao",   &att.AlphaOp,  k_BlendOpDisplay,     k_BlendOpCount))     m_Dirty = true;
                 ImGui::SameLine();
                 ImGui::SetNextItemWidth(120.0f);
-                if (ImGui::Combo("Dst##da",  &att.m_DstAlpha, k_BlendFactorDisplay, k_BlendFactorCount)) m_Dirty = true;
+                if (ImGui::Combo("Dst##da",  &att.DstAlpha, k_BlendFactorDisplay, k_BlendFactorCount)) m_Dirty = true;
             }
 
             ImGui::TreePop();
@@ -620,39 +620,39 @@ void ShaderWindow::DrawValidation()
     {
         // Vertex stage required
         const bool hasVertex = std::any_of(m_Stages.begin(), m_Stages.end(),
-            [](const StageEntry& e){ return e.m_Stage == "vertex"; });
+            [](const StageEntry& e){ return e.Stage == "vertex"; });
         if (!hasVertex)
             error("[error] Graphics pipeline requires a vertex shader stage");
 
         // Compute stage in graphics
         for (const auto& s : m_Stages)
-            if (s.m_Stage == "compute")
+            if (s.Stage == "compute")
                 warn("[warn]  Compute stage in a graphics pipeline");
     }
     else // Compute
     {
         const bool hasCompute = std::any_of(m_Stages.begin(), m_Stages.end(),
-            [](const StageEntry& e){ return e.m_Stage == "compute"; });
+            [](const StageEntry& e){ return e.Stage == "compute"; });
         if (!hasCompute)
             error("[error] Compute pipeline requires a compute shader stage");
 
         for (const auto& s : m_Stages)
-            if (s.m_Stage == "vertex" || s.m_Stage == "fragment")
-                warn("[warn]  Graphics stage (%s) in a compute pipeline", s.m_Stage.c_str());
+            if (s.Stage == "vertex" || s.Stage == "fragment")
+                warn("[warn]  Graphics stage (%s) in a compute pipeline", s.Stage.c_str());
     }
 
     // Duplicate stages
     std::set<std::string> seenStages;
     for (const auto& s : m_Stages)
     {
-        if (!seenStages.insert(s.m_Stage).second)
-            error("[error] Duplicate shader stage: %s", s.m_Stage.c_str());
+        if (!seenStages.insert(s.Stage).second)
+            error("[error] Duplicate shader stage: %s", s.Stage.c_str());
     }
 
     // Empty SPIR-V paths
     for (int i = 0; i < static_cast<int>(m_Stages.size()); ++i)
-        if (m_Stages[i].m_Path.empty())
-            error("[error] Stage %d (%s): SPIR-V path is empty", i, m_Stages[i].m_Stage.c_str());
+        if (m_Stages[i].Path.empty())
+            error("[error] Stage %d (%s): SPIR-V path is empty", i, m_Stages[i].Stage.c_str());
 
     if (!anyIssue)
     {
@@ -664,14 +664,14 @@ void ShaderWindow::DrawValidation()
 
 void ShaderWindow::Draw(const FS::FileSystemManager& fileSystem)
 {
-    if (!m_Open)
+    if (!Open)
         return;
 
     const std::string title =
         std::string("Shader") + (m_Dirty ? " *" : "") + "###Shader";
 
     ImGui::SetNextWindowSize(ImVec2(680.0f, 620.0f), ImGuiCond_Appearing);
-    if (!ImGui::Begin(title.c_str(), &m_Open))
+    if (!ImGui::Begin(title.c_str(), &Open))
     {
         ImGui::End();
         return;

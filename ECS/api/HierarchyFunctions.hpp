@@ -12,31 +12,31 @@ namespace ECS
 
     inline const std::string& GetName(const ECS& ecs, Entity entity)
     {
-        return ecs.GetComponent<HierarchyComponent>(entity).m_Name;
+        return ecs.GetComponent<HierarchyComponent>(entity).Name;
     }
 
     inline Entity GetParent(const ECS& ecs, Entity entity)
     {
-        return ecs.GetComponent<HierarchyComponent>(entity).m_Parent;
+        return ecs.GetComponent<HierarchyComponent>(entity).Parent;
     }
 
     inline const std::vector<Entity>& GetChildren(const ECS& ecs, Entity entity)
     {
-        return ecs.GetComponent<HierarchyComponent>(entity).m_Children;
+        return ecs.GetComponent<HierarchyComponent>(entity).Children;
     }
 
     inline void SetName(ECS& ecs, Entity entity, const std::string& name)
     {
-        ecs.GetComponent<HierarchyComponent>(entity).m_Name = name;
+        ecs.GetComponent<HierarchyComponent>(entity).Name = name;
     }
 
     inline void SetParent(ECS& ecs, Entity entity, Entity parent)
     {
-        ecs.GetComponent<HierarchyComponent>(entity).m_Parent = parent;
+        ecs.GetComponent<HierarchyComponent>(entity).Parent = parent;
     }
 
     inline void AddChild(ECS& ecs, Entity entity, Entity child)
     {
-        ecs.GetComponent<HierarchyComponent>(entity).m_Children.push_back(child);
+        ecs.GetComponent<HierarchyComponent>(entity).Children.push_back(child);
     }
 }

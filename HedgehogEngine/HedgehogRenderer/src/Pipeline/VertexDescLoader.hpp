@@ -12,8 +12,8 @@ namespace Renderer
 
 struct VertexFileDesc
 {
-    std::vector<RHI::VertexBinding>   m_Bindings;
-    std::vector<RHI::VertexAttribute> m_Attributes;
+    std::vector<RHI::VertexBinding>   Bindings;
+    std::vector<RHI::VertexAttribute> Attributes;
 };
 
 class VertexDescLoader

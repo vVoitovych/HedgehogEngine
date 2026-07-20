@@ -28,17 +28,17 @@ namespace HedgehogEngine
         for (size_t i = 0; i < lightComponentsCount; ++i)
         {
             const auto& lc = lightSystem.GetLightComponentByIndex(ecs, i);
-            if (!lc.m_Enable)
+            if (!lc.Enable)
                 continue;
 
             auto& light       = m_Lights[counter];
-            light.m_Position  = lc.m_Position;
-            light.m_Direction = lc.m_Direction;
-            light.m_Color     = lc.m_Color;
-            light.m_Type      = static_cast<int>(lc.m_LightType);
-            light.m_Intensity = lc.m_Intensity;
-            light.m_Radius    = lc.m_Radius;
-            light.m_ConeAngle = lc.m_ConeAngle;
+            light.Position  = lc.Position;
+            light.Direction = lc.Direction;
+            light.Color     = lc.Color;
+            light.Type      = static_cast<int>(lc.LightType);
+            light.Intensity = lc.Intensity;
+            light.Radius    = lc.Radius;
+            light.ConeAngle = lc.ConeAngle;
             ++counter;
         }
         m_LightCount = counter;

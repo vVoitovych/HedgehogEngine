@@ -37,13 +37,13 @@ namespace HedgehogEngine
         {
             auto& light           = ecs.GetComponent<LightComponent>(entity);
             auto& transform       = ecs.GetComponent<TransformComponent>(entity);
-            auto& transformMatrix = transform.m_ObjMatrix;
+            auto& transformMatrix = transform.ObjMatrix;
 
-            light.m_Position  = transform.m_Position;
+            light.Position  = transform.Position;
             HM::Vector3 dir   = { transformMatrix[0][0], transformMatrix[0][1], transformMatrix[0][2] };
-            light.m_Direction = dir;
+            light.Direction = dir;
 
-            if (light.m_CastShadows)
+            if (light.CastShadows)
                 m_ShadowDirection = dir;
         }
         m_PendingEntities.clear();
@@ -65,11 +65,11 @@ namespace HedgehogEngine
         for (auto const& entity : m_Entities)
         {
             auto& light         = ecs.GetComponent<LightComponent>(entity);
-            light.m_CastShadows = false;
+            light.CastShadows = false;
             if (entity == inEntity && isCast)
             {
-                light.m_CastShadows = true;
-                m_ShadowDirection   = light.m_Direction;
+                light.CastShadows = true;
+                m_ShadowDirection   = light.Direction;
             }
         }
     }

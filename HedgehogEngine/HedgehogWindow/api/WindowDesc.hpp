@@ -6,11 +6,11 @@ namespace HW
 {
     struct WindowDesc
     {
-        std::string m_Title      = "HedgehogEngine";
-        int         m_X          = 100;
-        int         m_Y          = 100;
-        int         m_Width      = 1366;
-        int         m_Height     = 768;
-        bool        m_Fullscreen = false;
+        std::string Title      = "HedgehogEngine";
+        int         X          = 100;
+        int         Y          = 100;
+        int         Width      = 1366;
+        int         Height     = 768;
+        bool        Fullscreen = false;
     };
 }

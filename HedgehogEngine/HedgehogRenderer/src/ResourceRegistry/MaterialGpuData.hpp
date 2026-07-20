@@ -12,7 +12,7 @@ namespace HR
 {
     struct MaterialGpuData
     {
-        std::unique_ptr<RHI::IRHIBuffer>        m_UniformBuffer;
-        std::unique_ptr<RHI::IRHIDescriptorSet> m_DescriptorSet;
+        std::unique_ptr<RHI::IRHIBuffer>        UniformBuffer;
+        std::unique_ptr<RHI::IRHIDescriptorSet> DescriptorSet;
     };
 }

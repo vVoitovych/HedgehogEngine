@@ -73,6 +73,7 @@ namespace
         }
     }
 
+    // Groundwork for skeletal animation — not called yet, see TODO in LoadGltfMesh.
     void LoadJointData(
         const tinygltf::Model& model,
         const tinygltf::Primitive& primitive,
@@ -94,6 +95,7 @@ namespace
         }
     }
 
+    // Groundwork for skeletal animation — not called yet, see TODO in LoadGltfMesh.
     void LoadWeightData(
         const tinygltf::Model& model,
         const tinygltf::Primitive& primitive,
@@ -114,6 +116,7 @@ namespace
             output.push_back(HM::Vector4(data[i * 4 + 0], data[i * 4 + 1], data[i * 4 + 2], data[i * 4 + 3]));
         }
     }
+
 }
 
     std::optional<LoadedMesh> LoadGltfMesh(const std::string& path)
@@ -142,8 +145,8 @@ namespace
                 LoadPositionData(model, primitive, positions);
                 LoadNormalData(model, primitive, normals);
                 LoadUVData(model, primitive, texCoords);
-                //LoadJointData(model, primitive, jointIndices);
-                //LoadWeightData(model, primitive, jointWeights);
+                // TODO(skeletal-animation): call LoadJointData/LoadWeightData here once
+                // LoadedVertexData carries joint indices and weights.
 
                 for (size_t i = 0; i < positions.size(); ++i)
                 {

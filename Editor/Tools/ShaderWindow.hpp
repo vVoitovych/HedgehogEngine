@@ -11,7 +11,7 @@ namespace Editor
 class ShaderWindow
 {
 public:
-    bool m_Open = false;
+    bool Open = false;
 
     void Draw(const FS::FileSystemManager& fileSystem);
 
@@ -20,19 +20,19 @@ private:
 
     struct StageEntry
     {
-        std::string m_Stage;   // "vertex" | "fragment" | "compute"
-        std::string m_Path;    // relative path to .spv
+        std::string Stage;   // "vertex" | "fragment" | "compute"
+        std::string Path;    // relative path to .spv
     };
 
     struct BlendAttachment
     {
-        bool m_Enabled   = false;
-        int  m_SrcColor  = 1;   // "one"
-        int  m_DstColor  = 0;   // "zero"
-        int  m_ColorOp   = 0;   // "add"
-        int  m_SrcAlpha  = 1;   // "one"
-        int  m_DstAlpha  = 0;   // "zero"
-        int  m_AlphaOp   = 0;   // "add"
+        bool Enabled   = false;
+        int  SrcColor  = 1;   // "one"
+        int  DstColor  = 0;   // "zero"
+        int  ColorOp   = 0;   // "add"
+        int  SrcAlpha  = 1;   // "one"
+        int  DstAlpha  = 0;   // "zero"
+        int  AlphaOp   = 0;   // "add"
     };
 
     // ── Sub-sections ──────────────────────────────────────────────────────────

@@ -53,12 +53,12 @@ namespace Editor
     void EditorApplication::RunBenchmark(uint32_t warmupFrames, uint32_t measureFrames)
     {
         Init();
-        loadBenchmarkScene();
+        LoadBenchmarkScene();
 
         LOGINFO("Benchmark: warming up for ", warmupFrames, " frame(s)...");
         auto& windowContext = m_Context->GetWindowContext();
         for (uint32_t i = 0; i < warmupFrames && !windowContext.ShouldClose(); ++i)
-            stepFrame();
+            StepFrame();
 
         LOGINFO("Benchmark: measuring ", measureFrames, " frame(s)...");
         m_Renderer->BeginFrameStatsCapture();
@@ -66,7 +66,7 @@ namespace Editor
         std::vector<double> frameTimesMs;
         frameTimesMs.reserve(measureFrames);
         for (uint32_t i = 0; i < measureFrames && !windowContext.ShouldClose(); ++i)
-            frameTimesMs.push_back(static_cast<double>(stepFrame()) * 1000.0);
+            frameTimesMs.push_back(static_cast<double>(StepFrame()) * 1000.0);
 
         m_Renderer->EndFrameStatsCaptureAndLogReport();
 
@@ -98,13 +98,13 @@ namespace Editor
             && (maxFrames == 0 || frameIndex < maxFrames))
         {
             ++frameIndex;
-            stepFrame();
+            StepFrame();
         }
 
         Cleanup();
     }
 
-    float EditorApplication::stepFrame()
+    float EditorApplication::StepFrame()
     {
         const float dt = GetFrameTime();
         m_Context->GetWindowContext().HandleInput();
@@ -121,7 +121,7 @@ namespace Editor
         return dt;
     }
 
-    void EditorApplication::loadBenchmarkScene()
+    void EditorApplication::LoadBenchmarkScene()
     {
         constexpr const char* BENCHMARK_SCENE = "assets://Scenes/benchmark.yaml";
 

@@ -29,11 +29,11 @@ namespace Editor
             m_DraggingPanel.reset();
         }
 
-        const float leftW   = m_Layout.m_LeftWidth;
-        const float rightW  = m_Layout.m_RightWidth;
+        const float leftW   = m_Layout.LeftWidth;
+        const float rightW  = m_Layout.RightWidth;
         const float centerW = std::max(k_MinCenterWidth,
                                        display.x - leftW - rightW - 2.0f * k_SplitterThickness);
-        const float bottomH = m_Layout.m_BottomHeight;
+        const float bottomH = m_Layout.BottomHeight;
         const float sceneH  = std::max(k_MinAreaSize,
                                        H - k_ToolbarHeight - bottomH - k_SplitterThickness);
 
@@ -63,10 +63,10 @@ namespace Editor
         ImGui::InvisibleButton("##VSplitL", { k_SplitterThickness, H });
         if (ImGui::IsItemActive())
         {
-            m_Layout.m_LeftWidth = std::clamp(
-                m_Layout.m_LeftWidth + io.MouseDelta.x,
+            m_Layout.LeftWidth = std::clamp(
+                m_Layout.LeftWidth + io.MouseDelta.x,
                 k_MinAreaSize,
-                display.x - m_Layout.m_RightWidth - k_MinCenterWidth - 2.0f * k_SplitterThickness);
+                display.x - m_Layout.RightWidth - k_MinCenterWidth - 2.0f * k_SplitterThickness);
         }
         if (ImGui::IsItemHovered() || ImGui::IsItemActive())
             ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
@@ -102,8 +102,8 @@ namespace Editor
         ImGui::InvisibleButton("##HSplitB", { centerW, k_SplitterThickness });
         if (ImGui::IsItemActive())
         {
-            m_Layout.m_BottomHeight = std::clamp(
-                m_Layout.m_BottomHeight - io.MouseDelta.y,
+            m_Layout.BottomHeight = std::clamp(
+                m_Layout.BottomHeight - io.MouseDelta.y,
                 k_MinAreaSize,
                 H - k_ToolbarHeight - k_MinAreaSize - k_SplitterThickness);
         }
@@ -131,10 +131,10 @@ namespace Editor
         ImGui::InvisibleButton("##VSplitR", { k_SplitterThickness, H });
         if (ImGui::IsItemActive())
         {
-            m_Layout.m_RightWidth = std::clamp(
-                m_Layout.m_RightWidth - io.MouseDelta.x,
+            m_Layout.RightWidth = std::clamp(
+                m_Layout.RightWidth - io.MouseDelta.x,
                 k_MinAreaSize,
-                display.x - m_Layout.m_LeftWidth - k_MinCenterWidth - 2.0f * k_SplitterThickness);
+                display.x - m_Layout.LeftWidth - k_MinCenterWidth - 2.0f * k_SplitterThickness);
         }
         if (ImGui::IsItemHovered() || ImGui::IsItemActive())
             ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
@@ -167,12 +167,12 @@ namespace Editor
     DockSystem::AreaBounds DockSystem::ComputeBounds(DockArea area, ImVec2 display, float menuH) const
     {
         const float H       = display.y - menuH;
-        const float leftW   = m_Layout.m_LeftWidth;
-        const float rightW  = m_Layout.m_RightWidth;
+        const float leftW   = m_Layout.LeftWidth;
+        const float rightW  = m_Layout.RightWidth;
         const float centerW = std::max(k_MinCenterWidth,
                                        display.x - leftW - rightW - 2.0f * k_SplitterThickness);
         const float centerX = leftW + k_SplitterThickness;
-        const float bottomH = m_Layout.m_BottomHeight;
+        const float bottomH = m_Layout.BottomHeight;
         const float sceneH  = std::max(k_MinAreaSize,
                                        H - k_ToolbarHeight - bottomH - k_SplitterThickness);
         const float bottomY = menuH + k_ToolbarHeight + sceneH + k_SplitterThickness;
@@ -196,7 +196,7 @@ namespace Editor
 
     void DockSystem::DrawDockableArea(DockArea area, ImVec2 size, const DrawFn& drawFn)
     {
-        const auto& panels = m_Layout.m_AreaPanels[static_cast<int>(area)];
+        const auto& panels = m_Layout.AreaPanels[static_cast<int>(area)];
         if (panels.empty())
             return;
 
@@ -246,13 +246,13 @@ namespace Editor
 
     void DockSystem::DrawFloatingPanels(const DrawFn& drawFn)
     {
-        auto& floatingPanels = m_Layout.m_AreaPanels[static_cast<int>(DockArea::Floating)];
+        auto& floatingPanels = m_Layout.AreaPanels[static_cast<int>(DockArea::Floating)];
 
         // Iterate backwards so erasing at index i doesn't affect lower indices
         for (int i = static_cast<int>(floatingPanels.size()) - 1; i >= 0; --i)
         {
             const PanelId pid    = floatingPanels[i];
-            auto&         pos    = m_Layout.m_FloatingPositions[static_cast<int>(pid)];
+            auto&         pos    = m_Layout.FloatingPositions[static_cast<int>(pid)];
 
             ImGui::SetNextWindowPos({ pos.x, pos.y }, ImGuiCond_Appearing);
             ImGui::SetNextWindowSize({ 420.0f, 320.0f }, ImGuiCond_Appearing);
@@ -303,14 +303,14 @@ namespace Editor
                 continue;
 
             const AreaBounds b    = ComputeBounds(targetArea, display, menuH);
-            const ImVec2 bMax     = { b.m_Pos.x + b.m_Size.x, b.m_Pos.y + b.m_Size.y };
-            const bool   hovered  = IsPointInRect(mousePos, b.m_Pos, bMax);
+            const ImVec2 bMax     = { b.Pos.x + b.Size.x, b.Pos.y + b.Size.y };
+            const bool   hovered  = IsPointInRect(mousePos, b.Pos, bMax);
 
             const ImU32 fill    = hovered ? IM_COL32(60, 180, 60, 100) : IM_COL32(255, 255, 255, 30);
             const ImU32 outline = hovered ? IM_COL32(60, 255, 60, 220) : IM_COL32(200, 200, 200, 80);
 
-            ImGui::GetForegroundDrawList()->AddRectFilled(b.m_Pos, bMax, fill, 4.0f);
-            ImGui::GetForegroundDrawList()->AddRect(b.m_Pos, bMax, outline, 4.0f, 0, 2.0f);
+            ImGui::GetForegroundDrawList()->AddRectFilled(b.Pos, bMax, fill, 4.0f);
+            ImGui::GetForegroundDrawList()->AddRect(b.Pos, bMax, outline, 4.0f, 0, 2.0f);
         }
     }
 
@@ -320,7 +320,7 @@ namespace Editor
         for (const DockArea area : k_DockableAreas)
         {
             const AreaBounds b = ComputeBounds(area, display, menuH);
-            if (IsPointInRect(mouse, b.m_Pos, { b.m_Pos.x + b.m_Size.x, b.m_Pos.y + b.m_Size.y }))
+            if (IsPointInRect(mouse, b.Pos, { b.Pos.x + b.Size.x, b.Pos.y + b.Size.y }))
                 return area;
         }
         // Not over any dock area — release goes to floating

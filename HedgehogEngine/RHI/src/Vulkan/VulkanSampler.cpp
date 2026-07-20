@@ -16,13 +16,13 @@ VulkanSampler::VulkanSampler(VulkanDevice& device, const SamplerDesc& desc)
     vkGetPhysicalDeviceProperties(m_Device.GetPhysicalDevice(), &props);
 
     VkSamplerCreateInfo samplerInfo{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
-    samplerInfo.magFilter               = VulkanTypes::ToVkFilter(desc.m_MagFilter);
-    samplerInfo.minFilter               = VulkanTypes::ToVkFilter(desc.m_MinFilter);
-    samplerInfo.addressModeU            = VulkanTypes::ToVkAddressMode(desc.m_AddressModeU);
-    samplerInfo.addressModeV            = VulkanTypes::ToVkAddressMode(desc.m_AddressModeV);
-    samplerInfo.addressModeW            = VulkanTypes::ToVkAddressMode(desc.m_AddressModeW);
-    samplerInfo.anisotropyEnable        = desc.m_MaxAnisotropy > 1.0f ? VK_TRUE : VK_FALSE;
-    samplerInfo.maxAnisotropy           = std::min(desc.m_MaxAnisotropy,
+    samplerInfo.magFilter               = VulkanTypes::ToVkFilter(desc.MagFilter);
+    samplerInfo.minFilter               = VulkanTypes::ToVkFilter(desc.MinFilter);
+    samplerInfo.addressModeU            = VulkanTypes::ToVkAddressMode(desc.AddressModeU);
+    samplerInfo.addressModeV            = VulkanTypes::ToVkAddressMode(desc.AddressModeV);
+    samplerInfo.addressModeW            = VulkanTypes::ToVkAddressMode(desc.AddressModeW);
+    samplerInfo.anisotropyEnable        = desc.MaxAnisotropy > 1.0f ? VK_TRUE : VK_FALSE;
+    samplerInfo.maxAnisotropy           = std::min(desc.MaxAnisotropy,
                                                     props.limits.maxSamplerAnisotropy);
     samplerInfo.borderColor             = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
     samplerInfo.unnormalizedCoordinates = VK_FALSE;

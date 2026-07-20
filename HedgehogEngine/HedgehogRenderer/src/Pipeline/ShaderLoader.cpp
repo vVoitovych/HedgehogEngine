@@ -148,8 +148,8 @@ ShaderPipelineDesc ShaderLoader::Load(RHI::IRHIDevice& device,
     if (const YAML::Node& n = root["pipeline_layout"])
     {
         const std::string layoutPath         = ResolveVirtualRelative(shaderVirtualDir, n.as<std::string>());
-        desc.m_Layout                        = PipelineLoader::Load(layoutPath, fileSystem);
-        desc.m_Pipeline.m_PushConstantRanges = desc.m_Layout.m_PushConstants;
+        desc.Layout                        = PipelineLoader::Load(layoutPath, fileSystem);
+        desc.Pipeline.PushConstantRanges = desc.Layout.PushConstants;
     }
     else
     {
@@ -162,27 +162,27 @@ ShaderPipelineDesc ShaderLoader::Load(RHI::IRHIDevice& device,
     {
         const std::string vdesPath         = ResolveVirtualRelative(shaderVirtualDir, n.as<std::string>());
         const auto vd                      = VertexDescLoader::Load(vdesPath, fileSystem);
-        desc.m_Pipeline.m_VertexBindings   = vd.m_Bindings;
-        desc.m_Pipeline.m_VertexAttributes = vd.m_Attributes;
+        desc.Pipeline.VertexBindings   = vd.Bindings;
+        desc.Pipeline.VertexAttributes = vd.Attributes;
     }
 
     // Topology (optional, default: triangle_list)
     if (const YAML::Node& n = root["topology"])
-        desc.m_Pipeline.m_Topology = ParseTopology(n.as<std::string>());
+        desc.Pipeline.Topology = ParseTopology(n.as<std::string>());
 
     // Rasterization (optional, defaults: cull_mode=back, fill_mode=solid)
     if (const YAML::Node& n = root["rasterization"])
     {
-        if (const YAML::Node& cm = n["cull_mode"]) desc.m_Pipeline.m_CullMode = ParseCullMode(cm.as<std::string>());
-        if (const YAML::Node& fm = n["fill_mode"]) desc.m_Pipeline.m_FillMode = ParseFillMode(fm.as<std::string>());
+        if (const YAML::Node& cm = n["cull_mode"]) desc.Pipeline.CullMode = ParseCullMode(cm.as<std::string>());
+        if (const YAML::Node& fm = n["fill_mode"]) desc.Pipeline.FillMode = ParseFillMode(fm.as<std::string>());
     }
 
     // Depth (optional, defaults: test=true, write=true, compare=less)
     if (const YAML::Node& n = root["depth"])
     {
-        if (const YAML::Node& t = n["test"])    desc.m_Pipeline.m_DepthTestEnable  = t.as<bool>();
-        if (const YAML::Node& w = n["write"])   desc.m_Pipeline.m_DepthWriteEnable = w.as<bool>();
-        if (const YAML::Node& c = n["compare"]) desc.m_Pipeline.m_DepthCompareOp   = ParseCompareOp(c.as<std::string>());
+        if (const YAML::Node& t = n["test"])    desc.Pipeline.DepthTestEnable  = t.as<bool>();
+        if (const YAML::Node& w = n["write"])   desc.Pipeline.DepthWriteEnable = w.as<bool>();
+        if (const YAML::Node& c = n["compare"]) desc.Pipeline.DepthCompareOp   = ParseCompareOp(c.as<std::string>());
     }
 
     // Color blend attachments (optional, default: empty = depth-only pass)
@@ -191,14 +191,14 @@ ShaderPipelineDesc ShaderLoader::Load(RHI::IRHIDevice& device,
         for (const YAML::Node& b : blends)
         {
             RHI::ColorBlendAttachment att;
-            if (const YAML::Node& e = b["enabled"])   att.m_BlendEnable    = e.as<bool>();
-            if (const YAML::Node& f = b["src_color"]) att.m_SrcColorFactor = ParseBlendFactor(f.as<std::string>());
-            if (const YAML::Node& f = b["dst_color"]) att.m_DstColorFactor = ParseBlendFactor(f.as<std::string>());
-            if (const YAML::Node& o = b["color_op"])  att.m_ColorOp        = ParseBlendOp(o.as<std::string>());
-            if (const YAML::Node& f = b["src_alpha"]) att.m_SrcAlphaFactor = ParseBlendFactor(f.as<std::string>());
-            if (const YAML::Node& f = b["dst_alpha"]) att.m_DstAlphaFactor = ParseBlendFactor(f.as<std::string>());
-            if (const YAML::Node& o = b["alpha_op"])  att.m_AlphaOp        = ParseBlendOp(o.as<std::string>());
-            desc.m_Pipeline.m_ColorBlendAttachments.push_back(att);
+            if (const YAML::Node& e = b["enabled"])   att.BlendEnable    = e.as<bool>();
+            if (const YAML::Node& f = b["src_color"]) att.SrcColorFactor = ParseBlendFactor(f.as<std::string>());
+            if (const YAML::Node& f = b["dst_color"]) att.DstColorFactor = ParseBlendFactor(f.as<std::string>());
+            if (const YAML::Node& o = b["color_op"])  att.ColorOp        = ParseBlendOp(o.as<std::string>());
+            if (const YAML::Node& f = b["src_alpha"]) att.SrcAlphaFactor = ParseBlendFactor(f.as<std::string>());
+            if (const YAML::Node& f = b["dst_alpha"]) att.DstAlphaFactor = ParseBlendFactor(f.as<std::string>());
+            if (const YAML::Node& o = b["alpha_op"])  att.AlphaOp        = ParseBlendOp(o.as<std::string>());
+            desc.Pipeline.ColorBlendAttachments.push_back(att);
         }
     }
 
@@ -222,12 +222,12 @@ ShaderPipelineDesc ShaderLoader::Load(RHI::IRHIDevice& device,
             switch (stage)
             {
             case RHI::ShaderStage::Vertex:
-                desc.m_VertexShader            = std::move(shader);
-                desc.m_Pipeline.m_VertexShader = desc.m_VertexShader.get();
+                desc.VertexShader            = std::move(shader);
+                desc.Pipeline.VertexShader = desc.VertexShader.get();
                 break;
             case RHI::ShaderStage::Fragment:
-                desc.m_FragmentShader            = std::move(shader);
-                desc.m_Pipeline.m_FragmentShader = desc.m_FragmentShader.get();
+                desc.FragmentShader            = std::move(shader);
+                desc.Pipeline.FragmentShader = desc.FragmentShader.get();
                 break;
             default:
                 LOGERROR("ShaderLoader: unhandled stage '", s["stage"].as<std::string>(), "'");
@@ -237,7 +237,7 @@ ShaderPipelineDesc ShaderLoader::Load(RHI::IRHIDevice& device,
         }
     }
 
-    assert(desc.m_VertexShader && "A .shader file must contain at least a vertex stage");
+    assert(desc.VertexShader && "A .shader file must contain at least a vertex stage");
     return desc;
 }
 

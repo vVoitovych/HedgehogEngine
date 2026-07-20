@@ -23,8 +23,8 @@ namespace Renderer
     private:
         struct ZoneSeries
         {
-            std::string         m_Name;
-            std::vector<double> m_SamplesMs;
+            std::string         Name;
+            std::vector<double> SamplesMs;
         };
 
         ZoneSeries& findOrAddZone(const char* zoneName);

@@ -75,14 +75,14 @@ PipelineFileDesc PipelineLoader::Load(const std::string& virtualPath,
                     for (const YAML::Node& b : bindingsNode)
                     {
                         RHI::DescriptorBinding binding;
-                        binding.m_Binding = b["binding"].as<uint32_t>();
-                        binding.m_Type    = ParseDescriptorType(b["type"].as<std::string>());
-                        binding.m_Count   = b["count"] ? b["count"].as<uint32_t>() : 1u;
-                        binding.m_Stages  = ParseShaderStage(b["stage"].as<std::string>());
+                        binding.Binding = b["binding"].as<uint32_t>();
+                        binding.Type    = ParseDescriptorType(b["type"].as<std::string>());
+                        binding.Count   = b["count"] ? b["count"].as<uint32_t>() : 1u;
+                        binding.Stages  = ParseShaderStage(b["stage"].as<std::string>());
                         bindings.push_back(binding);
                     }
                 }
-                desc.m_DescriptorSets.push_back(std::move(bindings));
+                desc.DescriptorSets.push_back(std::move(bindings));
             }
         }
 
@@ -92,10 +92,10 @@ PipelineFileDesc PipelineLoader::Load(const std::string& virtualPath,
             for (const YAML::Node& pc : pcs)
             {
                 RHI::PushConstantRange range;
-                range.m_Stages = ParseShaderStage(pc["stage"].as<std::string>());
-                range.m_Offset = pc["offset"] ? pc["offset"].as<uint32_t>() : 0u;
-                range.m_Size   = pc["size"].as<uint32_t>();
-                desc.m_PushConstants.push_back(range);
+                range.Stages = ParseShaderStage(pc["stage"].as<std::string>());
+                range.Offset = pc["offset"] ? pc["offset"].as<uint32_t>() : 0u;
+                range.Size   = pc["size"].as<uint32_t>();
+                desc.PushConstants.push_back(range);
             }
         }
     }
@@ -116,11 +116,11 @@ std::vector<RHI::PoolSize> PipelineLoader::MakePoolSizes(
     for (const auto& b : bindings)
     {
         auto it = std::find_if(sizes.begin(), sizes.end(),
-            [&](const RHI::PoolSize& ps) { return ps.m_Type == b.m_Type; });
+            [&](const RHI::PoolSize& ps) { return ps.Type == b.Type; });
         if (it != sizes.end())
-            it->m_Count += b.m_Count * maxSets;
+            it->Count += b.Count * maxSets;
         else
-            sizes.push_back({ b.m_Type, b.m_Count * maxSets });
+            sizes.push_back({ b.Type, b.Count * maxSets });
     }
     return sizes;
 }

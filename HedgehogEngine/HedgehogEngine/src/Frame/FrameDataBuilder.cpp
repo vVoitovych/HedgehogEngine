@@ -18,18 +18,18 @@ namespace
     void AddToDrawBucket(HedgehogEngine::DrawBucket& bucket, HedgehogEngine::DrawObject object, uint64_t materialIndex)
     {
         auto it = std::find_if(bucket.begin(), bucket.end(),
-            [materialIndex](const HedgehogEngine::DrawNode& node) { return node.m_MaterialIndex == materialIndex; });
+            [materialIndex](const HedgehogEngine::DrawNode& node) { return node.MaterialIndex == materialIndex; });
 
         if (it == bucket.end())
         {
             HedgehogEngine::DrawNode node;
-            node.m_MaterialIndex = materialIndex;
-            node.m_Objects.push_back(object);
+            node.MaterialIndex = materialIndex;
+            node.Objects.push_back(object);
             bucket.push_back(std::move(node));
         }
         else
         {
-            it->m_Objects.push_back(object);
+            it->Objects.push_back(object);
         }
     }
 }
@@ -45,39 +45,39 @@ namespace HedgehogEngine
         const std::function<MaterialType(uint64_t)>& materialTypeLookup) const
     {
         FrameData frame;
-        frame.m_DeltaTime = deltaTime;
+        frame.DeltaTime = deltaTime;
 
-        frame.m_Camera.m_View     = camera.GetViewMatrix();
-        frame.m_Camera.m_Proj     = camera.GetProjectionMatrix();
-        frame.m_Camera.m_Position = camera.GetPosition();
-        frame.m_Camera.m_Near     = camera.GetNearPlane();
-        frame.m_Camera.m_Far      = camera.GetFarPlane();
+        frame.Camera.View     = camera.GetViewMatrix();
+        frame.Camera.Proj     = camera.GetProjectionMatrix();
+        frame.Camera.Position = camera.GetPosition();
+        frame.Camera.Near     = camera.GetNearPlane();
+        frame.Camera.Far      = camera.GetFarPlane();
 
         const size_t lightCount = std::min(
             lightSystem.GetLightComponentsCount(),
             static_cast<size_t>(MAX_LIGHTS_COUNT));
 
-        frame.m_Lights.reserve(lightCount);
+        frame.Lights.reserve(lightCount);
 
         for (size_t i = 0; i < lightCount; ++i)
         {
             const auto& lc = lightSystem.GetLightComponentByIndex(ecs, i);
-            if (!lc.m_Enable)
+            if (!lc.Enable)
                 continue;
 
-            LightData& ld  = frame.m_Lights.emplace_back();
-            ld.m_Position  = lc.m_Position;
-            ld.m_Direction = lc.m_Direction;
-            ld.m_Color     = lc.m_Color;
-            ld.m_Intensity = lc.m_Intensity;
-            ld.m_Radius    = lc.m_Radius;
-            ld.m_ConeAngle = lc.m_ConeAngle;
-            ld.m_Type      = static_cast<int>(lc.m_LightType);
+            LightData& ld  = frame.Lights.emplace_back();
+            ld.Position  = lc.Position;
+            ld.Direction = lc.Direction;
+            ld.Color     = lc.Color;
+            ld.Intensity = lc.Intensity;
+            ld.Radius    = lc.Radius;
+            ld.ConeAngle = lc.ConeAngle;
+            ld.Type      = static_cast<int>(lc.LightType);
         }
 
-        frame.m_ShadowLightDirection = lightSystem.GetShadowDir();
+        frame.ShadowLightDirection = lightSystem.GetShadowDir();
 
-        BuildDrawList(ecs, renderSystem, materialTypeLookup, frame.m_DrawList);
+        BuildDrawList(ecs, renderSystem, materialTypeLookup, frame.DrawList);
 
         return frame;
     }
@@ -91,36 +91,36 @@ namespace HedgehogEngine
         for (auto entity : renderSystem.GetEntities())
         {
             const auto& renderComponent = ecs.GetComponent<RenderComponent>(entity);
-            if (!renderComponent.m_IsVisible || !renderComponent.m_MaterialIndex.has_value())
+            if (!renderComponent.IsVisible || !renderComponent.MaterialIndex.has_value())
                 continue;
 
             const auto& meshComponent = ecs.GetComponent<MeshComponent>(entity);
-            if (!meshComponent.m_MeshIndex.has_value())
+            if (!meshComponent.MeshIndex.has_value())
             {
                 LOGERROR("Entity ", entity, " has a render component but no mesh index.");
                 continue;
             }
 
-            const uint64_t materialIndex = renderComponent.m_MaterialIndex.value();
-            const uint64_t meshIndex     = meshComponent.m_MeshIndex.value();
+            const uint64_t materialIndex = renderComponent.MaterialIndex.value();
+            const uint64_t meshIndex     = meshComponent.MeshIndex.value();
             const auto&    transform     = ecs.GetComponent<TransformComponent>(entity);
 
             DrawObject object;
-            object.m_MeshIndex = meshIndex;
-            object.m_Transform = transform.m_ObjMatrix;
+            object.MeshIndex = meshIndex;
+            object.Transform = transform.ObjMatrix;
 
             const MaterialType matType = materialTypeLookup(materialIndex);
 
             switch (matType)
             {
             case MaterialType::Opaque:
-                AddToDrawBucket(outDrawList.m_Opaque, object, materialIndex);
+                AddToDrawBucket(outDrawList.Opaque, object, materialIndex);
                 break;
             case MaterialType::Cutoff:
-                AddToDrawBucket(outDrawList.m_Cutoff, object, materialIndex);
+                AddToDrawBucket(outDrawList.Cutoff, object, materialIndex);
                 break;
             case MaterialType::Transparent:
-                AddToDrawBucket(outDrawList.m_Transparent, object, materialIndex);
+                AddToDrawBucket(outDrawList.Transparent, object, materialIndex);
                 break;
             default:
                 LOGERROR("Unknown material type for material index ", materialIndex);

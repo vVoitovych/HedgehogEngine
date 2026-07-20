@@ -34,7 +34,7 @@ namespace Editor
         const DockLayoutState& GetLayout() const { return m_Layout; }
 
     private:
-        struct AreaBounds { ImVec2 m_Pos; ImVec2 m_Size; };
+        struct AreaBounds { ImVec2 Pos; ImVec2 Size; };
 
         AreaBounds ComputeBounds(DockArea area, ImVec2 display, float menuH) const;
 

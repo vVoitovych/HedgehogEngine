@@ -128,8 +128,8 @@ std::unique_ptr<IRHIDevice> IRHIDevice::Create(const NativeWindowDesc& desc)
 // ── Constructor / Destructor ─────────────────────────────────────────────────
 
 VulkanDevice::VulkanDevice(const NativeWindowDesc& desc)
-    : m_VkExtensions(desc.m_VkExtensions)
-    , m_VkExtensionCount(desc.m_VkExtensionCount)
+    : m_VkExtensions(desc.VkExtensions)
+    , m_VkExtensionCount(desc.VkExtensionCount)
 {
     VkResult result = volkInitialize();
     assert(result == VK_SUCCESS && "Failed to initialize Volk (is a Vulkan runtime installed?)");
@@ -141,7 +141,7 @@ VulkanDevice::VulkanDevice(const NativeWindowDesc& desc)
     volkLoadInstance(m_Instance);
 
     SetupDebugMessenger();
-    CreateSurface(desc.m_NativeHandle);
+    CreateSurface(desc.NativeHandle);
     PickPhysicalDevice();
     CreateLogicalDevice();
     volkLoadDevice(m_Device);
@@ -265,8 +265,8 @@ void VulkanDevice::CreateLogicalDevice()
     m_Indices = FindQueueFamilies(m_PhysicalDevice);
 
     std::set<uint32_t> uniqueFamilies = {
-        m_Indices.m_GraphicsFamily.value(),
-        m_Indices.m_PresentFamily.value()
+        m_Indices.GraphicsFamily.value(),
+        m_Indices.PresentFamily.value()
     };
 
     const float priority = 1.0f;
@@ -306,8 +306,8 @@ void VulkanDevice::CreateLogicalDevice()
     VkResult result = vkCreateDevice(m_PhysicalDevice, &createInfo, nullptr, &m_Device);
     assert(result == VK_SUCCESS && "Failed to create logical device.");
 
-    vkGetDeviceQueue(m_Device, m_Indices.m_GraphicsFamily.value(), 0, &m_GraphicsQueue);
-    vkGetDeviceQueue(m_Device, m_Indices.m_PresentFamily.value(),  0, &m_PresentQueue);
+    vkGetDeviceQueue(m_Device, m_Indices.GraphicsFamily.value(), 0, &m_GraphicsQueue);
+    vkGetDeviceQueue(m_Device, m_Indices.PresentFamily.value(),  0, &m_PresentQueue);
 }
 
 void VulkanDevice::CreateAllocator()
@@ -333,7 +333,7 @@ void VulkanDevice::CreateCommandPool()
     VkCommandPoolCreateInfo poolInfo{ VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO };
     // Allow individual command buffer reset (needed by per-frame command lists).
     poolInfo.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    poolInfo.queueFamilyIndex = m_Indices.m_GraphicsFamily.value();
+    poolInfo.queueFamilyIndex = m_Indices.GraphicsFamily.value();
 
     VkResult result = vkCreateCommandPool(m_Device, &poolInfo, nullptr, &m_CommandPool);
     assert(result == VK_SUCCESS && "Failed to create command pool.");
@@ -395,12 +395,12 @@ QueueFamilyIndices VulkanDevice::FindQueueFamilies(VkPhysicalDevice device) cons
     for (uint32_t i = 0; i < count; ++i)
     {
         if (families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
-            indices.m_GraphicsFamily = i;
+            indices.GraphicsFamily = i;
 
         VkBool32 presentSupport = VK_FALSE;
         vkGetPhysicalDeviceSurfaceSupportKHR(device, i, m_Surface, &presentSupport);
         if (presentSupport)
-            indices.m_PresentFamily = i;
+            indices.PresentFamily = i;
 
         if (indices.IsComplete())
             break;

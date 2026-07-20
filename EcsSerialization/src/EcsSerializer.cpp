@@ -20,17 +20,17 @@ namespace
 
         out << YAML::BeginMap;
         out << YAML::Key << "Entity" << YAML::Value << entity;
-        out << YAML::Key << "Name"   << YAML::Value << hierarchy.m_Name;
-        out << YAML::Key << "Parent" << YAML::Value << hierarchy.m_Parent;
+        out << YAML::Key << "Name"   << YAML::Value << hierarchy.Name;
+        out << YAML::Key << "Parent" << YAML::Value << hierarchy.Parent;
 
         for (const auto& handler : registry.GetHandlers())
         {
-            if (handler.m_HasComponent(ecs, entity))
-                handler.m_Serialize(out, ecs, entity);
+            if (handler.HasComponent(ecs, entity))
+                handler.Serialize(out, ecs, entity);
         }
 
         out << YAML::Key << "Children" << YAML::Value << YAML::BeginSeq;
-        for (ECS::Entity child : hierarchy.m_Children)
+        for (ECS::Entity child : hierarchy.Children)
             SerializeEntity(out, ecs, child, registry);
         out << YAML::EndSeq;
         out << YAML::EndMap;
@@ -45,18 +45,18 @@ namespace
 
         for (const auto& handler : registry.GetHandlers())
         {
-            const YAML::Node componentNode = node[handler.m_YamlKey];
+            const YAML::Node componentNode = node[handler.YamlKey];
             if (componentNode)
-                handler.m_Deserialize(ecs, entity, componentNode);
+                handler.Deserialize(ecs, entity, componentNode);
         }
 
         auto& hierarchy    = ecs.GetComponent<ECS::HierarchyComponent>(entity);
-        hierarchy.m_Name   = node["Name"].as<std::string>();
-        hierarchy.m_Parent = node["Parent"].as<ECS::Entity>();
+        hierarchy.Name   = node["Name"].as<std::string>();
+        hierarchy.Parent = node["Parent"].as<ECS::Entity>();
 
         for (const auto& child : node["Children"])
         {
-            hierarchy.m_Children.push_back(child["Entity"].as<ECS::Entity>());
+            hierarchy.Children.push_back(child["Entity"].as<ECS::Entity>());
             DeserializeEntity(ecs, child, registry);
         }
     }

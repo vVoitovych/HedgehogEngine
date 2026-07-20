@@ -59,12 +59,12 @@ VertexFileDesc VertexDescLoader::Load(const std::string& virtualPath,
         for (const YAML::Node& b : bindingsNode)
         {
             RHI::VertexBinding binding;
-            binding.m_Binding   = b["binding"].as<uint32_t>();
-            binding.m_Stride    = b["stride"].as<uint32_t>();
-            binding.m_InputRate = b["input_rate"]
+            binding.Binding   = b["binding"].as<uint32_t>();
+            binding.Stride    = b["stride"].as<uint32_t>();
+            binding.InputRate = b["input_rate"]
                 ? ParseInputRate(b["input_rate"].as<std::string>())
                 : RHI::VertexInputRate::PerVertex;
-            desc.m_Bindings.push_back(binding);
+            desc.Bindings.push_back(binding);
         }
     }
 
@@ -73,11 +73,11 @@ VertexFileDesc VertexDescLoader::Load(const std::string& virtualPath,
         for (const YAML::Node& a : attrsNode)
         {
             RHI::VertexAttribute attr;
-            attr.m_Location = a["location"].as<uint32_t>();
-            attr.m_Binding  = a["binding"].as<uint32_t>();
-            attr.m_Format   = ParseFormat(a["format"].as<std::string>());
-            attr.m_Offset   = a["offset"] ? a["offset"].as<uint32_t>() : 0u;
-            desc.m_Attributes.push_back(attr);
+            attr.Location = a["location"].as<uint32_t>();
+            attr.Binding  = a["binding"].as<uint32_t>();
+            attr.Format   = ParseFormat(a["format"].as<std::string>());
+            attr.Offset   = a["offset"] ? a["offset"].as<uint32_t>() : 0u;
+            desc.Attributes.push_back(attr);
         }
     }
 

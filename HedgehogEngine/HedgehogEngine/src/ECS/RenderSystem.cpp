@@ -7,9 +7,9 @@ namespace HedgehogEngine
     void RenderSystem::Update(ECS::ECS& ecs, ECS::Entity entity)
     {
         auto& render = ecs.GetComponent<RenderComponent>(entity);
-        if (render.m_MaterialIndex.has_value())
+        if (render.MaterialIndex.has_value())
         {
-            if (m_MaterialPaths[render.m_MaterialIndex.value()] != render.m_Material)
+            if (m_MaterialPaths[render.MaterialIndex.value()] != render.Material)
                 UpdateMaterialPath(ecs, entity);
         }
         else
@@ -48,17 +48,17 @@ namespace HedgehogEngine
     {
         auto& component = ecs.GetComponent<RenderComponent>(entity);
 
-        if (!component.m_Material.empty())
+        if (!component.Material.empty())
         {
-            auto it = std::find(m_MaterialPaths.begin(), m_MaterialPaths.end(), component.m_Material);
+            auto it = std::find(m_MaterialPaths.begin(), m_MaterialPaths.end(), component.Material);
             if (it != m_MaterialPaths.end())
             {
-                component.m_MaterialIndex = static_cast<uint64_t>(it - m_MaterialPaths.begin());
+                component.MaterialIndex = static_cast<uint64_t>(it - m_MaterialPaths.begin());
             }
             else
             {
-                component.m_MaterialIndex = m_MaterialPaths.size();
-                m_MaterialPaths.push_back(component.m_Material);
+                component.MaterialIndex = m_MaterialPaths.size();
+                m_MaterialPaths.push_back(component.Material);
             }
         }
     }

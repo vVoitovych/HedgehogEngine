@@ -112,7 +112,7 @@ namespace HedgehogEngine
         ECS::Entity entity = m_ECS.CreateEntity();
         m_ECS.AddComponent(entity, TransformComponent{});
         m_ECS.AddComponent(entity, ECS::HierarchyComponent{ GetUniqueGameObjectName(), realParent, {} });
-        m_ECS.GetComponent<ECS::HierarchyComponent>(realParent).m_Children.push_back(entity);
+        m_ECS.GetComponent<ECS::HierarchyComponent>(realParent).Children.push_back(entity);
 
         m_EventBus.Publish(TransformChangedEvent{ entity });
         return entity;
@@ -123,21 +123,21 @@ namespace HedgehogEngine
         assert(entity != m_ECS.GetRoot() && "Cannot delete the root entity.");
 
         auto& hierarchy                      = m_ECS.GetComponent<ECS::HierarchyComponent>(entity);
-        const ECS::Entity parentEntity       = hierarchy.m_Parent;
-        const auto        childrenToReparent = hierarchy.m_Children;
+        const ECS::Entity parentEntity       = hierarchy.Parent;
+        const auto        childrenToReparent = hierarchy.Children;
         auto& parentHierarchy                = m_ECS.GetComponent<ECS::HierarchyComponent>(parentEntity);
 
-        auto it = std::find(parentHierarchy.m_Children.begin(),
-                             parentHierarchy.m_Children.end(), entity);
-        if (it != parentHierarchy.m_Children.end())
+        auto it = std::find(parentHierarchy.Children.begin(),
+                             parentHierarchy.Children.end(), entity);
+        if (it != parentHierarchy.Children.end())
         {
-            parentHierarchy.m_Children.erase(it);
+            parentHierarchy.Children.erase(it);
             for (ECS::Entity child : childrenToReparent)
             {
                 auto& childHierarchy    = m_ECS.GetComponent<ECS::HierarchyComponent>(child);
-                childHierarchy.m_Parent = parentEntity;
+                childHierarchy.Parent = parentEntity;
                 auto& freshParentHierarchy = m_ECS.GetComponent<ECS::HierarchyComponent>(parentEntity);
-                freshParentHierarchy.m_Children.push_back(child);
+                freshParentHierarchy.Children.push_back(child);
             }
         }
         m_ECS.DestroyEntity(entity);
@@ -159,7 +159,7 @@ namespace HedgehogEngine
 
     void SceneManager::DeleteGameObjectAndChildren(ECS::Entity entity)
     {
-        const auto children = m_ECS.GetComponent<ECS::HierarchyComponent>(entity).m_Children;
+        const auto children = m_ECS.GetComponent<ECS::HierarchyComponent>(entity).Children;
         for (ECS::Entity child : children)
             DeleteGameObjectAndChildren(child);
         m_ECS.DestroyEntity(entity);

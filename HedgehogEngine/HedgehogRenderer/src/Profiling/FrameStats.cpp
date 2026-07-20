@@ -24,7 +24,7 @@ namespace Renderer
         if (!m_Capturing)
             return;
 
-        findOrAddZone(zoneName).m_SamplesMs.push_back(milliseconds);
+        findOrAddZone(zoneName).SamplesMs.push_back(milliseconds);
     }
 
     void FrameStats::LogReport() const
@@ -39,10 +39,10 @@ namespace Renderer
 
         for (const auto& zone : m_Zones)
         {
-            if (zone.m_SamplesMs.empty())
+            if (zone.SamplesMs.empty())
                 continue;
 
-            std::vector<double> sorted = zone.m_SamplesMs;
+            std::vector<double> sorted = zone.SamplesMs;
             std::sort(sorted.begin(), sorted.end());
 
             const double avg = std::accumulate(sorted.begin(), sorted.end(), 0.0)
@@ -56,7 +56,7 @@ namespace Renderer
             char line[192];
             std::snprintf(line, sizeof(line),
                 "FrameStats | %-20s | %8.3f | %8.3f | %8.3f | %8.3f | %7zu",
-                zone.m_Name.c_str(), avg, min, max, p95, sorted.size());
+                zone.Name.c_str(), avg, min, max, p95, sorted.size());
             LOGINFO(line);
         }
     }
@@ -65,7 +65,7 @@ namespace Renderer
     {
         for (auto& zone : m_Zones)
         {
-            if (zone.m_Name == zoneName)
+            if (zone.Name == zoneName)
                 return zone;
         }
 

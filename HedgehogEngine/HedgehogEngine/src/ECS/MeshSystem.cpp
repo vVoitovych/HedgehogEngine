@@ -17,11 +17,11 @@ namespace HedgehogEngine
                              const FS::FileSystemManager& fileSystem)
     {
         auto& meshComponent = ecs.GetComponent<MeshComponent>(entity);
-        if (meshComponent.m_MeshIndex.has_value())
+        if (meshComponent.MeshIndex.has_value())
         {
-            size_t index = meshComponent.m_MeshIndex.value();
-            if (m_MeshPaths[index] != meshComponent.m_MeshPath)
-                CheckMeshPath(meshComponent, meshComponent.m_CachedMeshPath, fileSystem);
+            size_t index = meshComponent.MeshIndex.value();
+            if (m_MeshPaths[index] != meshComponent.MeshPath)
+                CheckMeshPath(meshComponent, meshComponent.CachedMeshPath, fileSystem);
         }
         else
         {
@@ -34,11 +34,11 @@ namespace HedgehogEngine
         for (auto& entity : m_Entities)
         {
             auto& meshComponent = ecs.GetComponent<MeshComponent>(entity);
-            if (meshComponent.m_MeshIndex.has_value())
+            if (meshComponent.MeshIndex.has_value())
             {
-                size_t index = meshComponent.m_MeshIndex.value();
-                if (m_MeshPaths[index] != meshComponent.m_MeshPath)
-                    CheckMeshPath(meshComponent, meshComponent.m_CachedMeshPath, fileSystem);
+                size_t index = meshComponent.MeshIndex.value();
+                if (m_MeshPaths[index] != meshComponent.MeshPath)
+                    CheckMeshPath(meshComponent, meshComponent.CachedMeshPath, fileSystem);
             }
             else
             {
@@ -75,45 +75,45 @@ namespace HedgehogEngine
     void MeshSystem::LoadMesh(ECS::ECS& ecs, ECS::Entity entity, const std::string& relativePath)
     {
         auto& meshComponent      = ecs.GetComponent<MeshComponent>(entity);
-        meshComponent.m_MeshPath = relativePath;
+        meshComponent.MeshPath = relativePath;
 
         auto it = std::find(m_MeshPaths.begin(), m_MeshPaths.end(), relativePath);
         if (it == m_MeshPaths.end())
         {
-            meshComponent.m_MeshIndex = static_cast<uint64_t>(m_MeshPaths.size());
+            meshComponent.MeshIndex = static_cast<uint64_t>(m_MeshPaths.size());
             m_MeshPaths.push_back(relativePath);
             m_UpdateMeshContainer = true;
         }
         else
         {
-            meshComponent.m_MeshIndex = static_cast<uint64_t>(it - m_MeshPaths.begin());
+            meshComponent.MeshIndex = static_cast<uint64_t>(it - m_MeshPaths.begin());
         }
-        meshComponent.m_CachedMeshPath = relativePath;
+        meshComponent.CachedMeshPath = relativePath;
     }
 
     void MeshSystem::CheckMeshPath(MeshComponent& meshComponent, const std::string& fallbackPath,
                                     const FS::FileSystemManager& fileSystem)
     {
-        auto it = std::find(m_MeshPaths.begin(), m_MeshPaths.end(), meshComponent.m_MeshPath);
+        auto it = std::find(m_MeshPaths.begin(), m_MeshPaths.end(), meshComponent.MeshPath);
         if (it != m_MeshPaths.end())
         {
             uint64_t newIndex              = static_cast<uint64_t>(it - m_MeshPaths.begin());
-            meshComponent.m_MeshIndex      = newIndex;
-            meshComponent.m_CachedMeshPath = meshComponent.m_MeshPath;
+            meshComponent.MeshIndex      = newIndex;
+            meshComponent.CachedMeshPath = meshComponent.MeshPath;
         }
         else
         {
-            if (fileSystem.Exists("assets://" + meshComponent.m_MeshPath))
+            if (fileSystem.Exists("assets://" + meshComponent.MeshPath))
             {
-                meshComponent.m_CachedMeshPath = meshComponent.m_MeshPath;
-                meshComponent.m_MeshIndex      = m_MeshPaths.size();
-                m_MeshPaths.push_back(meshComponent.m_MeshPath);
+                meshComponent.CachedMeshPath = meshComponent.MeshPath;
+                meshComponent.MeshIndex      = m_MeshPaths.size();
+                m_MeshPaths.push_back(meshComponent.MeshPath);
                 m_UpdateMeshContainer = true;
             }
             else
             {
-                LOGERROR("Wrong file path: ", meshComponent.m_MeshPath);
-                meshComponent.m_MeshPath = fallbackPath;
+                LOGERROR("Wrong file path: ", meshComponent.MeshPath);
+                meshComponent.MeshPath = fallbackPath;
             }
         }
     }

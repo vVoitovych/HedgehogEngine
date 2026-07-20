@@ -15,40 +15,40 @@ VulkanRenderPass::VulkanRenderPass(VulkanDevice& device, const RenderPassDesc& d
     std::vector<VkAttachmentDescription> attachments;
     std::vector<VkAttachmentReference>   colorRefs;
 
-    for (uint32_t i = 0; i < static_cast<uint32_t>(desc.m_ColorAttachments.size()); ++i)
+    for (uint32_t i = 0; i < static_cast<uint32_t>(desc.ColorAttachments.size()); ++i)
     {
-        const auto& att = desc.m_ColorAttachments[i];
+        const auto& att = desc.ColorAttachments[i];
 
         VkAttachmentDescription vkAtt{};
-        vkAtt.format         = VulkanTypes::ToVkFormat(att.m_Format);
+        vkAtt.format         = VulkanTypes::ToVkFormat(att.Format);
         vkAtt.samples        = VK_SAMPLE_COUNT_1_BIT;
-        vkAtt.loadOp         = VulkanTypes::ToVkLoadOp(att.m_LoadOp);
-        vkAtt.storeOp        = VulkanTypes::ToVkStoreOp(att.m_StoreOp);
+        vkAtt.loadOp         = VulkanTypes::ToVkLoadOp(att.LoadOp);
+        vkAtt.storeOp        = VulkanTypes::ToVkStoreOp(att.StoreOp);
         vkAtt.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         vkAtt.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        vkAtt.initialLayout  = VulkanTypes::ToVkLayout(att.m_InitialLayout);
-        vkAtt.finalLayout    = VulkanTypes::ToVkLayout(att.m_FinalLayout);
+        vkAtt.initialLayout  = VulkanTypes::ToVkLayout(att.InitialLayout);
+        vkAtt.finalLayout    = VulkanTypes::ToVkLayout(att.FinalLayout);
         attachments.push_back(vkAtt);
 
         colorRefs.push_back({ i, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL });
     }
 
     VkAttachmentReference depthRef{};
-    const bool            hasDepth = desc.m_DepthAttachment.has_value();
+    const bool            hasDepth = desc.DepthAttachment.has_value();
 
     if (hasDepth)
     {
-        const auto& att = *desc.m_DepthAttachment;
+        const auto& att = *desc.DepthAttachment;
 
         VkAttachmentDescription vkAtt{};
-        vkAtt.format         = VulkanTypes::ToVkFormat(att.m_Format);
+        vkAtt.format         = VulkanTypes::ToVkFormat(att.Format);
         vkAtt.samples        = VK_SAMPLE_COUNT_1_BIT;
-        vkAtt.loadOp         = VulkanTypes::ToVkLoadOp(att.m_LoadOp);
-        vkAtt.storeOp        = VulkanTypes::ToVkStoreOp(att.m_StoreOp);
-        vkAtt.stencilLoadOp  = VulkanTypes::ToVkLoadOp(att.m_StencilLoadOp);
-        vkAtt.stencilStoreOp = VulkanTypes::ToVkStoreOp(att.m_StencilStoreOp);
-        vkAtt.initialLayout  = VulkanTypes::ToVkLayout(att.m_InitialLayout);
-        vkAtt.finalLayout    = VulkanTypes::ToVkLayout(att.m_FinalLayout);
+        vkAtt.loadOp         = VulkanTypes::ToVkLoadOp(att.LoadOp);
+        vkAtt.storeOp        = VulkanTypes::ToVkStoreOp(att.StoreOp);
+        vkAtt.stencilLoadOp  = VulkanTypes::ToVkLoadOp(att.StencilLoadOp);
+        vkAtt.stencilStoreOp = VulkanTypes::ToVkStoreOp(att.StencilStoreOp);
+        vkAtt.initialLayout  = VulkanTypes::ToVkLayout(att.InitialLayout);
+        vkAtt.finalLayout    = VulkanTypes::ToVkLayout(att.FinalLayout);
         attachments.push_back(vkAtt);
 
         depthRef = {

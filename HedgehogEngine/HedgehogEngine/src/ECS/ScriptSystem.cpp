@@ -53,9 +53,9 @@ namespace
                 auto* t = static_cast<TransformComponent*>(lua_touserdata(L, -1));
                 lua_pop(L, 1);
                 lua_newtable(L);
-                lua_pushnumber(L, t->m_Position.x()); lua_setfield(L, -2, "x");
-                lua_pushnumber(L, t->m_Position.y()); lua_setfield(L, -2, "y");
-                lua_pushnumber(L, t->m_Position.z()); lua_setfield(L, -2, "z");
+                lua_pushnumber(L, t->Position.x()); lua_setfield(L, -2, "x");
+                lua_pushnumber(L, t->Position.y()); lua_setfield(L, -2, "y");
+                lua_pushnumber(L, t->Position.z()); lua_setfield(L, -2, "z");
                 return 1;
             }
         );
@@ -65,9 +65,9 @@ namespace
                 lua_getglobal(L, "__transform_ptr");
                 auto* t = static_cast<TransformComponent*>(lua_touserdata(L, -1));
                 lua_pop(L, 1);
-                lua_getfield(L, 1, "x"); t->m_Position.x() = static_cast<float>(lua_tonumber(L, -1)); lua_pop(L, 1);
-                lua_getfield(L, 1, "y"); t->m_Position.y() = static_cast<float>(lua_tonumber(L, -1)); lua_pop(L, 1);
-                lua_getfield(L, 1, "z"); t->m_Position.z() = static_cast<float>(lua_tonumber(L, -1)); lua_pop(L, 1);
+                lua_getfield(L, 1, "x"); t->Position.x() = static_cast<float>(lua_tonumber(L, -1)); lua_pop(L, 1);
+                lua_getfield(L, 1, "y"); t->Position.y() = static_cast<float>(lua_tonumber(L, -1)); lua_pop(L, 1);
+                lua_getfield(L, 1, "z"); t->Position.z() = static_cast<float>(lua_tonumber(L, -1)); lua_pop(L, 1);
 
                 lua_getglobal(L, "__event_bus");
                 auto* bus = static_cast<EventBus*>(lua_touserdata(L, -1)); lua_pop(L, 1);
@@ -84,9 +84,9 @@ namespace
                 auto* t = static_cast<TransformComponent*>(lua_touserdata(L, -1));
                 lua_pop(L, 1);
                 lua_newtable(L);
-                lua_pushnumber(L, t->m_Rotation.x()); lua_setfield(L, -2, "x");
-                lua_pushnumber(L, t->m_Rotation.y()); lua_setfield(L, -2, "y");
-                lua_pushnumber(L, t->m_Rotation.z()); lua_setfield(L, -2, "z");
+                lua_pushnumber(L, t->Rotation.x()); lua_setfield(L, -2, "x");
+                lua_pushnumber(L, t->Rotation.y()); lua_setfield(L, -2, "y");
+                lua_pushnumber(L, t->Rotation.z()); lua_setfield(L, -2, "z");
                 return 1;
             }
         );
@@ -96,9 +96,9 @@ namespace
                 lua_getglobal(L, "__transform_ptr");
                 auto* t = static_cast<TransformComponent*>(lua_touserdata(L, -1));
                 lua_pop(L, 1);
-                lua_getfield(L, 1, "x"); t->m_Rotation.x() = static_cast<float>(lua_tonumber(L, -1)); lua_pop(L, 1);
-                lua_getfield(L, 1, "y"); t->m_Rotation.y() = static_cast<float>(lua_tonumber(L, -1)); lua_pop(L, 1);
-                lua_getfield(L, 1, "z"); t->m_Rotation.z() = static_cast<float>(lua_tonumber(L, -1)); lua_pop(L, 1);
+                lua_getfield(L, 1, "x"); t->Rotation.x() = static_cast<float>(lua_tonumber(L, -1)); lua_pop(L, 1);
+                lua_getfield(L, 1, "y"); t->Rotation.y() = static_cast<float>(lua_tonumber(L, -1)); lua_pop(L, 1);
+                lua_getfield(L, 1, "z"); t->Rotation.z() = static_cast<float>(lua_tonumber(L, -1)); lua_pop(L, 1);
 
                 lua_getglobal(L, "__event_bus");
                 auto* bus = static_cast<EventBus*>(lua_touserdata(L, -1)); lua_pop(L, 1);
@@ -149,7 +149,7 @@ namespace
 
         // Strip "assets://" prefix; m_ScriptPath stores the relative path.
         constexpr std::string_view ASSETS_PREFIX = "assets://";
-        component.m_ScriptPath = virtualPath->substr(ASSETS_PREFIX.size());
+        component.ScriptPath = virtualPath->substr(ASSETS_PREFIX.size());
         component.m_LuaState   = luaL_newstate();
         luaL_openlibs(component.m_LuaState);
 
@@ -162,7 +162,7 @@ namespace
             LOGERROR("ScriptSystem::ChangeScript: cannot resolve base actor script path.");
             lua_close(component.m_LuaState);
             component.m_LuaState   = nullptr;
-            component.m_ScriptPath = "";
+            component.ScriptPath = "";
             return;
         }
 
@@ -172,7 +172,7 @@ namespace
             lua_pop(component.m_LuaState, 1);
             lua_close(component.m_LuaState);
             component.m_LuaState   = nullptr;
-            component.m_ScriptPath = "";
+            component.ScriptPath = "";
             return;
         }
 
@@ -182,7 +182,7 @@ namespace
             lua_pop(component.m_LuaState, 1);
             lua_close(component.m_LuaState);
             component.m_LuaState   = nullptr;
-            component.m_ScriptPath = "";
+            component.ScriptPath = "";
             return;
         }
 
@@ -196,15 +196,15 @@ namespace
             lua_pop(component.m_LuaState, 1);
             lua_close(component.m_LuaState);
             component.m_LuaState   = nullptr;
-            component.m_ScriptPath = "";
+            component.ScriptPath = "";
             return;
         }
         component.m_InstanceRef = luaL_ref(component.m_LuaState, LUA_REGISTRYINDEX);
 
-        component.m_Params.clear();
-        component.m_Params = ParseParameters(component.m_LuaState);
+        component.Params.clear();
+        component.Params = ParseParameters(component.m_LuaState);
 
-        if (component.m_Enable)
+        if (component.Enable)
             CallMethod(component.m_LuaState, component.m_InstanceRef, "OnEnable");
     }
 
@@ -218,8 +218,8 @@ namespace
             lua_close(component.m_LuaState);
             component.m_LuaState = nullptr;
         }
-        if (component.m_Enable)
-            component.m_NewEnable = true;
+        if (component.Enable)
+            component.NewEnable = true;
 
         component.m_LuaState = luaL_newstate();
         luaL_openlibs(component.m_LuaState);
@@ -233,7 +233,7 @@ namespace
             LOGERROR("ScriptSystem::InitScript: cannot resolve base actor script path.");
             lua_close(component.m_LuaState);
             component.m_LuaState   = nullptr;
-            component.m_ScriptPath = "";
+            component.ScriptPath = "";
             return;
         }
 
@@ -243,17 +243,17 @@ namespace
             lua_pop(component.m_LuaState, 1);
             lua_close(component.m_LuaState);
             component.m_LuaState   = nullptr;
-            component.m_ScriptPath = "";
+            component.ScriptPath = "";
             return;
         }
 
-        const auto scriptPhysPath = fileSystem.ResolvePhysical("assets://" + component.m_ScriptPath);
+        const auto scriptPhysPath = fileSystem.ResolvePhysical("assets://" + component.ScriptPath);
         if (!scriptPhysPath)
         {
-            LOGERROR("ScriptSystem::InitScript: cannot resolve script path '", component.m_ScriptPath, "'.");
+            LOGERROR("ScriptSystem::InitScript: cannot resolve script path '", component.ScriptPath, "'.");
             lua_close(component.m_LuaState);
             component.m_LuaState   = nullptr;
-            component.m_ScriptPath = "";
+            component.ScriptPath = "";
             return;
         }
 
@@ -263,7 +263,7 @@ namespace
             lua_pop(component.m_LuaState, 1);
             lua_close(component.m_LuaState);
             component.m_LuaState   = nullptr;
-            component.m_ScriptPath = "";
+            component.ScriptPath = "";
             return;
         }
 
@@ -277,12 +277,12 @@ namespace
             lua_pop(component.m_LuaState, 1);
             lua_close(component.m_LuaState);
             component.m_LuaState   = nullptr;
-            component.m_ScriptPath = "";
+            component.ScriptPath = "";
             return;
         }
         component.m_InstanceRef = luaL_ref(component.m_LuaState, LUA_REGISTRYINDEX);
 
-        for (const auto& param : component.m_Params)
+        for (const auto& param : component.Params)
         {
             switch (param.second.type)
             {
@@ -303,15 +303,15 @@ namespace
         for (auto const& entity : m_Entities)
         {
             auto& component = ecs.GetComponent<ScriptComponent>(entity);
-            if (component.m_NewEnable.has_value() && component.m_NewEnable.value())
+            if (component.NewEnable.has_value() && component.NewEnable.value())
             {
-                component.m_Enable = true;
+                component.Enable = true;
                 if (component.m_LuaState == nullptr)
                 {
-                    component.m_NewEnable.reset();
+                    component.NewEnable.reset();
                     continue;
                 }
-                component.m_NewEnable.reset();
+                component.NewEnable.reset();
                 auto& transform = ecs.GetComponent<TransformComponent>(entity);
                 RegisterLuaBindings(component.m_LuaState, &transform, entity, bus);
                 CallMethod(component.m_LuaState, component.m_InstanceRef, "OnEnable");
@@ -324,15 +324,15 @@ namespace
         for (auto const& entity : m_Entities)
         {
             auto& component = ecs.GetComponent<ScriptComponent>(entity);
-            if (component.m_NewEnable.has_value() && !component.m_NewEnable.value())
+            if (component.NewEnable.has_value() && !component.NewEnable.value())
             {
-                component.m_Enable = false;
+                component.Enable = false;
                 if (component.m_LuaState == nullptr)
                 {
-                    component.m_NewEnable.reset();
+                    component.NewEnable.reset();
                     continue;
                 }
-                component.m_NewEnable.reset();
+                component.NewEnable.reset();
                 auto& transform = ecs.GetComponent<TransformComponent>(entity);
                 RegisterLuaBindings(component.m_LuaState, &transform, entity, bus);
                 CallMethod(component.m_LuaState, component.m_InstanceRef, "OnDisable");
@@ -346,7 +346,7 @@ namespace
         {
             auto& component = ecs.GetComponent<ScriptComponent>(entity);
 
-            for (auto& param : component.m_Params)
+            for (auto& param : component.Params)
             {
                 if (param.second.dirty)
                 {
@@ -367,7 +367,7 @@ namespace
                 }
             }
 
-            if (component.m_Enable && component.m_LuaState != nullptr)
+            if (component.Enable && component.m_LuaState != nullptr)
             {
                 auto& transform = ecs.GetComponent<TransformComponent>(entity);
                 RegisterLuaBindings(component.m_LuaState, &transform, entity, bus);

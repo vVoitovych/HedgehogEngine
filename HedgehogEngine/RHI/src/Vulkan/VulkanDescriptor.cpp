@@ -23,10 +23,10 @@ VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(
     for (const auto& b : bindings)
     {
         VkDescriptorSetLayoutBinding vkB{};
-        vkB.binding            = b.m_Binding;
-        vkB.descriptorType     = VulkanTypes::ToVkDescriptorType(b.m_Type);
-        vkB.descriptorCount    = b.m_Count;
-        vkB.stageFlags         = VulkanTypes::ToVkShaderStage(b.m_Stages);
+        vkB.binding            = b.Binding;
+        vkB.descriptorType     = VulkanTypes::ToVkDescriptorType(b.Type);
+        vkB.descriptorCount    = b.Count;
+        vkB.stageFlags         = VulkanTypes::ToVkShaderStage(b.Stages);
         vkB.pImmutableSamplers = nullptr;
         vkBindings.push_back(vkB);
     }
@@ -55,7 +55,7 @@ VulkanDescriptorPool::VulkanDescriptorPool(
     std::vector<VkDescriptorPoolSize> vkSizes;
     vkSizes.reserve(poolSizes.size());
     for (const auto& s : poolSizes)
-        vkSizes.push_back({ VulkanTypes::ToVkDescriptorType(s.m_Type), s.m_Count });
+        vkSizes.push_back({ VulkanTypes::ToVkDescriptorType(s.Type), s.Count });
 
     VkDescriptorPoolCreateInfo createInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
     createInfo.maxSets       = maxSets;
@@ -99,17 +99,17 @@ void VulkanDescriptorSet::EnqueueBufferWrite(
     const auto& vkBuf = static_cast<const VulkanBuffer&>(buffer);
 
     PendingWrite pw{};
-    pw.m_IsBuffer                = true;
-    pw.m_BufferInfo.buffer       = vkBuf.GetHandle();
-    pw.m_BufferInfo.offset       = static_cast<VkDeviceSize>(offset);
-    pw.m_BufferInfo.range        = size == 0 ? VK_WHOLE_SIZE : static_cast<VkDeviceSize>(size);
+    pw.IsBuffer                = true;
+    pw.BufferInfo.buffer       = vkBuf.GetHandle();
+    pw.BufferInfo.offset       = static_cast<VkDeviceSize>(offset);
+    pw.BufferInfo.range        = size == 0 ? VK_WHOLE_SIZE : static_cast<VkDeviceSize>(size);
 
-    pw.m_Write.sType             = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    pw.m_Write.dstSet            = m_Set;
-    pw.m_Write.dstBinding        = binding;
-    pw.m_Write.dstArrayElement   = 0;
-    pw.m_Write.descriptorCount   = 1;
-    pw.m_Write.descriptorType    = type;
+    pw.Write.sType             = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    pw.Write.dstSet            = m_Set;
+    pw.Write.dstBinding        = binding;
+    pw.Write.dstArrayElement   = 0;
+    pw.Write.descriptorCount   = 1;
+    pw.Write.descriptorType    = type;
 
     m_PendingWrites.push_back(pw);
 }
@@ -133,17 +133,17 @@ void VulkanDescriptorSet::WriteTexture(
     const auto& vkSam = static_cast<const VulkanSampler&>(sampler);
 
     PendingWrite pw{};
-    pw.m_IsBuffer                 = false;
-    pw.m_ImageInfo.sampler        = vkSam.GetHandle();
-    pw.m_ImageInfo.imageView      = vkTex.GetViewHandle();
-    pw.m_ImageInfo.imageLayout    = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    pw.IsBuffer                 = false;
+    pw.ImageInfo.sampler        = vkSam.GetHandle();
+    pw.ImageInfo.imageView      = vkTex.GetViewHandle();
+    pw.ImageInfo.imageLayout    = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-    pw.m_Write.sType              = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    pw.m_Write.dstSet             = m_Set;
-    pw.m_Write.dstBinding         = binding;
-    pw.m_Write.dstArrayElement    = 0;
-    pw.m_Write.descriptorCount    = 1;
-    pw.m_Write.descriptorType     = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    pw.Write.sType              = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    pw.Write.dstSet             = m_Set;
+    pw.Write.dstBinding         = binding;
+    pw.Write.dstArrayElement    = 0;
+    pw.Write.descriptorCount    = 1;
+    pw.Write.descriptorType     = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 
     m_PendingWrites.push_back(pw);
 }
@@ -159,12 +159,12 @@ void VulkanDescriptorSet::Flush()
 
     for (auto& pw : m_PendingWrites)
     {
-        if (pw.m_IsBuffer)
-            pw.m_Write.pBufferInfo = &pw.m_BufferInfo;
+        if (pw.IsBuffer)
+            pw.Write.pBufferInfo = &pw.BufferInfo;
         else
-            pw.m_Write.pImageInfo  = &pw.m_ImageInfo;
+            pw.Write.pImageInfo  = &pw.ImageInfo;
 
-        writes.push_back(pw.m_Write);
+        writes.push_back(pw.Write);
     }
 
     vkUpdateDescriptorSets(

@@ -12,22 +12,22 @@ namespace RHI
 
 VulkanTexture::VulkanTexture(VulkanDevice& device, const TextureDesc& desc)
     : m_Device(&device)
-    , m_Width(desc.m_Width)
-    , m_Height(desc.m_Height)
-    , m_Format(desc.m_Format)
+    , m_Width(desc.Width)
+    , m_Height(desc.Height)
+    , m_Format(desc.Format)
     , m_OwnedBySwapchain(false)
 {
-    const VkFormat vkFormat = VulkanTypes::ToVkFormat(desc.m_Format);
+    const VkFormat vkFormat = VulkanTypes::ToVkFormat(desc.Format);
 
     VkImageCreateInfo imgInfo{ VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
     imgInfo.imageType     = VK_IMAGE_TYPE_2D;
-    imgInfo.extent        = { desc.m_Width, desc.m_Height, 1 };
+    imgInfo.extent        = { desc.Width, desc.Height, 1 };
     imgInfo.mipLevels     = 1;
     imgInfo.arrayLayers   = 1;
     imgInfo.format        = vkFormat;
     imgInfo.tiling        = VK_IMAGE_TILING_OPTIMAL;
     imgInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    imgInfo.usage         = VulkanTypes::ToVkImageUsage(desc.m_Usage);
+    imgInfo.usage         = VulkanTypes::ToVkImageUsage(desc.Usage);
     imgInfo.samples       = VK_SAMPLE_COUNT_1_BIT;
     imgInfo.sharingMode   = VK_SHARING_MODE_EXCLUSIVE;
 
@@ -44,7 +44,7 @@ VulkanTexture::VulkanTexture(VulkanDevice& device, const TextureDesc& desc)
     viewInfo.image                           = m_Image;
     viewInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
     viewInfo.format                          = vkFormat;
-    viewInfo.subresourceRange.aspectMask     = VulkanTypes::GetAspectMask(desc.m_Format);
+    viewInfo.subresourceRange.aspectMask     = VulkanTypes::GetAspectMask(desc.Format);
     viewInfo.subresourceRange.baseMipLevel   = 0;
     viewInfo.subresourceRange.levelCount     = 1;
     viewInfo.subresourceRange.baseArrayLayer = 0;

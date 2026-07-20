@@ -21,17 +21,17 @@ namespace Renderer
 // All data derived from a single .shader file.
 // m_Pipeline is pre-filled with every field the .shader file can describe
 // (vertex input, topology, rasterization, depth, blend, push constants).
-// The caller must set m_Pipeline.m_DescriptorSetLayouts and m_Pipeline.m_RenderPass
+// The caller must set m_Pipeline.DescriptorSetLayouts and m_Pipeline.RenderPass
 // before passing it to device.CreateGraphicsPipeline().
 // m_VertexShader / m_FragmentShader keep the shader objects alive; their raw pointers
-// are already stored in m_Pipeline.m_VertexShader / m_Pipeline.m_FragmentShader.
+// are already stored in m_Pipeline.VertexShader / m_Pipeline.FragmentShader.
 struct ShaderPipelineDesc
 {
-    PipelineFileDesc           m_Layout;
-    RHI::GraphicsPipelineDesc  m_Pipeline;
+    PipelineFileDesc           Layout;
+    RHI::GraphicsPipelineDesc  Pipeline;
 
-    std::unique_ptr<RHI::IRHIShader> m_VertexShader;    // always present
-    std::unique_ptr<RHI::IRHIShader> m_FragmentShader;  // null for depth-only passes
+    std::unique_ptr<RHI::IRHIShader> VertexShader;    // always present
+    std::unique_ptr<RHI::IRHIShader> FragmentShader;  // null for depth-only passes
 };
 
 class ShaderLoader

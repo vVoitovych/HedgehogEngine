@@ -56,8 +56,8 @@ namespace
                 prop.guiOverride = [](void* comp, const Reflection::PropertyDescriptor& p) -> bool
                 {
                     auto* l = static_cast<LightComponent*>(comp);
-                    if (l->m_LightType == LightType::DirectionLight) return false;
-                    return ImGui::SliderFloat(p.name, &l->m_Radius, p.sliderMin, p.sliderMax);
+                    if (l->LightType == LightType::DirectionLight) return false;
+                    return ImGui::SliderFloat(p.name, &l->Radius, p.sliderMin, p.sliderMax);
                 };
             }
             else if (std::string_view(prop.name) == "LightConeAngle")
@@ -65,8 +65,8 @@ namespace
                 prop.guiOverride = [](void* comp, const Reflection::PropertyDescriptor& p) -> bool
                 {
                     auto* l = static_cast<LightComponent*>(comp);
-                    if (l->m_LightType != LightType::SpotLight) return false;
-                    return ImGui::SliderFloat(p.name, &l->m_ConeAngle, p.sliderMin, p.sliderMax);
+                    if (l->LightType != LightType::SpotLight) return false;
+                    return ImGui::SliderFloat(p.name, &l->ConeAngle, p.sliderMin, p.sliderMax);
                 };
             }
             else if (std::string_view(prop.name) == "CastShadows")
@@ -92,7 +92,7 @@ namespace Editor
 
         SetupLightComponentGuiOverrides();
 
-        loadLastScene(context);
+        LoadLastScene(context);
     }
 
     EditorGui::~EditorGui()
@@ -209,7 +209,7 @@ namespace Editor
                 {
                     if (engineContext.GetSceneManager().LoadScene(path))
                     {
-                        recordLastScene(path, engineContext.GetFileSystem());
+                        RecordLastScene(path, engineContext.GetFileSystem());
                         m_SelectedEntity.reset();
                     }
                 }
@@ -220,7 +220,7 @@ namespace Editor
                 if (path != nullptr)
                 {
                     if (engineContext.GetSceneManager().SaveScene(path))
-                        recordLastScene(path, engineContext.GetFileSystem());
+                        RecordLastScene(path, engineContext.GetFileSystem());
                 }
             }
             ImGui::Separator();
@@ -291,7 +291,7 @@ namespace Editor
             for (int i = 0; i < PANEL_ID_COUNT; ++i)
             {
                 const PanelId pid     = static_cast<PanelId>(i);
-                const bool    visible = layout.m_PanelVisible[i];
+                const bool    visible = layout.PanelVisible[i];
                 if (ImGui::MenuItem(PanelName(pid), nullptr, visible))
                 {
                     if (visible)
@@ -305,12 +305,12 @@ namespace Editor
 
         if (ImGui::BeginMenu("Tools"))
         {
-            if (ImGui::MenuItem("Vertex Descriptions", nullptr, m_VertexDescWindow->m_Open))
-                m_VertexDescWindow->m_Open = !m_VertexDescWindow->m_Open;
-            if (ImGui::MenuItem("Pipeline", nullptr, m_PipelineWindow->m_Open))
-                m_PipelineWindow->m_Open = !m_PipelineWindow->m_Open;
-            if (ImGui::MenuItem("Shader", nullptr, m_ShaderWindow->m_Open))
-                m_ShaderWindow->m_Open = !m_ShaderWindow->m_Open;
+            if (ImGui::MenuItem("Vertex Descriptions", nullptr, m_VertexDescWindow->Open))
+                m_VertexDescWindow->Open = !m_VertexDescWindow->Open;
+            if (ImGui::MenuItem("Pipeline", nullptr, m_PipelineWindow->Open))
+                m_PipelineWindow->Open = !m_PipelineWindow->Open;
+            if (ImGui::MenuItem("Shader", nullptr, m_ShaderWindow->Open))
+                m_ShaderWindow->Open = !m_ShaderWindow->Open;
             ImGui::EndMenu();
         }
 
@@ -416,11 +416,11 @@ namespace Editor
                 m_SelectedEntity = entity;
         };
 
-        if (!component.m_Children.empty())
+        if (!component.Children.empty())
         {
             const bool nodeOpen = ImGui::TreeNodeEx(
                 reinterpret_cast<void*>(static_cast<intptr_t>(index)),
-                nodeFlags, "%s", component.m_Name.c_str());
+                nodeFlags, "%s", component.Name.c_str());
 
             if (ImGui::IsItemClicked())
                 toggleSelection();
@@ -428,7 +428,7 @@ namespace Editor
 
             if (nodeOpen)
             {
-                for (auto child : component.m_Children)
+                for (auto child : component.Children)
                     DrawHierarchyNode(context, child, index);
                 ImGui::TreePop();
             }
@@ -438,7 +438,7 @@ namespace Editor
             nodeFlags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
             ImGui::TreeNodeEx(
                 reinterpret_cast<void*>(static_cast<intptr_t>(index)),
-                nodeFlags, "%s", component.m_Name.c_str());
+                nodeFlags, "%s", component.Name.c_str());
 
             if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
                 toggleSelection();
@@ -473,10 +473,10 @@ namespace Editor
         if (ImGui::CollapsingHeader("Name", ImGuiTreeNodeFlags_DefaultOpen))
         {
             char nameBuf[256];
-            strncpy_s(nameBuf, hierarchy.m_Name.c_str(), sizeof(nameBuf) - 1);
+            strncpy_s(nameBuf, hierarchy.Name.c_str(), sizeof(nameBuf) - 1);
             nameBuf[sizeof(nameBuf) - 1] = '\0';
             if (ImGui::InputText("##name", nameBuf, sizeof(nameBuf)))
-                hierarchy.m_Name = nameBuf;
+                hierarchy.Name = nameBuf;
         }
     }
 
@@ -509,16 +509,16 @@ namespace Editor
 
         auto&    mesh          = ecs.GetComponent<HedgehogEngine::MeshComponent>(entity);
         const auto& meshPaths  = meshSystem->GetMeshes();
-        uint64_t selectedIndex = mesh.m_MeshIndex.value_or(0);
+        uint64_t selectedIndex = mesh.MeshIndex.value_or(0);
 
-        if (ImGui::BeginCombo("mesh", mesh.m_MeshPath.c_str()))
+        if (ImGui::BeginCombo("mesh", mesh.MeshPath.c_str()))
         {
             for (uint64_t i = 0; i < meshPaths.size(); ++i)
             {
                 const bool isSelected = (selectedIndex == i);
                 if (ImGui::Selectable(meshPaths[i].c_str(), isSelected))
                 {
-                    mesh.m_MeshPath = meshPaths[i];
+                    mesh.MeshPath = meshPaths[i];
                     meshSystem->Update(ecs, entity, engineContext.GetFileSystem());
                 }
                 if (isSelected)
@@ -565,21 +565,21 @@ namespace Editor
         auto& render        = ecs.GetComponent<HedgehogEngine::RenderComponent>(entity);
         const auto& materials = renderSystem->GetMaterials();
 
-        bool visible = render.m_IsVisible;
+        bool visible = render.IsVisible;
         if (ImGui::Checkbox("Visible", &visible))
-            render.m_IsVisible = visible;
+            render.IsVisible = visible;
 
         if (!materials.empty())
         {
-            const uint64_t selectedIndex = render.m_MaterialIndex.value_or(0);
-            if (ImGui::BeginCombo("material", render.m_Material.c_str()))
+            const uint64_t selectedIndex = render.MaterialIndex.value_or(0);
+            if (ImGui::BeginCombo("material", render.Material.c_str()))
             {
                 for (uint64_t i = 0; i < materials.size(); ++i)
                 {
                     const bool isSelected = (selectedIndex == i);
                     if (ImGui::Selectable(materials[i].c_str(), isSelected))
                     {
-                        render.m_Material = materials[i];
+                        render.Material = materials[i];
                         renderSystem->Update(ecs, entity);
                     }
                     if (isSelected)
@@ -598,7 +598,7 @@ namespace Editor
                 if (virtualPath)
                 {
                     // Strip "assets://" prefix; m_Material stores the relative path.
-                    render.m_Material = virtualPath->substr(ASSETS_PREFIX.size());
+                    render.Material = virtualPath->substr(ASSETS_PREFIX.size());
                     renderSystem->Update(ecs, entity);
                 }
                 else
@@ -608,11 +608,11 @@ namespace Editor
             }
         }
 
-        if (!materials.empty() && render.m_MaterialIndex.has_value())
+        if (!materials.empty() && render.MaterialIndex.has_value())
         {
             if (ImGui::Button("Save material"))
                 engineContext.GetResourceCatalog().GetMaterialContainer().SaveMaterial(
-                    render.m_MaterialIndex.value(), engineContext.GetFileSystem());
+                    render.MaterialIndex.value(), engineContext.GetFileSystem());
         }
 
         if (ImGui::Button("Remove render"))
@@ -621,13 +621,13 @@ namespace Editor
                 ecs.RemoveComponent<HedgehogEngine::RenderComponent>(entity);
         }
 
-        if (!materials.empty() && render.m_MaterialIndex.has_value())
+        if (!materials.empty() && render.MaterialIndex.has_value())
         {
             ImGui::SeparatorText("Material");
             auto& materialContainer = engineContext.GetResourceCatalog().GetMaterialContainer();
             auto& textureContainer  = engineContext.GetResourceCatalog().GetTextureContainer();
             auto& materialData      = materialContainer.GetMaterialDataByIndex(
-                render.m_MaterialIndex.value());
+                render.MaterialIndex.value());
 
             const char* typeNames[] = { "Opaque", "Cutoff", "Transparent" };
             int materialType = static_cast<int>(materialData.type);
@@ -646,7 +646,7 @@ namespace Editor
                     if (ImGui::Selectable(texturePaths[i].c_str(), isSelected))
                     {
                         materialData.baseColor = texturePaths[i];
-                        materialContainer.SetMaterialDirty(render.m_MaterialIndex.value());
+                        materialContainer.SetMaterialDirty(render.MaterialIndex.value());
                     }
                     if (isSelected)
                         ImGui::SetItemDefaultFocus();
@@ -662,7 +662,7 @@ namespace Editor
                     const auto virtualPath = fs.ToVirtualPath(texPath);
                     if (virtualPath)
                     {
-                        materialContainer.LoadBaseTexture(render.m_MaterialIndex.value(),
+                        materialContainer.LoadBaseTexture(render.MaterialIndex.value(),
                                                           virtualPath->substr(ASSETS_PREFIX.size()));
                     }
                     else
@@ -680,7 +680,7 @@ namespace Editor
                     if (materialData.transparency != transparency)
                     {
                         materialData.transparency = transparency;
-                        materialContainer.SetMaterialDirty(render.m_MaterialIndex.value());
+                        materialContainer.SetMaterialDirty(render.MaterialIndex.value());
                     }
                 }
             }
@@ -703,9 +703,9 @@ namespace Editor
 
         Reflection::RenderComponentGui(&light, HedgehogEngine::LightComponent::GetProperties());
 
-        if (light.m_LightType == HedgehogEngine::LightType::DirectionLight)
+        if (light.LightType == HedgehogEngine::LightType::DirectionLight)
         {
-            bool castShadows = light.m_CastShadows;
+            bool castShadows = light.CastShadows;
             if (ImGui::Checkbox("Cast shadows", &castShadows))
                 lightSystem->SetShadowCasting(ecs, entity, castShadows);
         }
@@ -731,13 +731,13 @@ namespace Editor
 
         auto& component = ecs.GetComponent<HedgehogEngine::ScriptComponent>(entity);
 
-        bool enabled = component.m_Enable;
+        bool enabled = component.Enable;
         if (ImGui::Checkbox("Enabled", &enabled))
-            component.m_NewEnable = enabled;
+            component.NewEnable = enabled;
 
         {
-            const std::string& scriptSrc = component.m_ScriptPath.empty()
-                ? "No script selected" : component.m_ScriptPath;
+            const std::string& scriptSrc = component.ScriptPath.empty()
+                ? "No script selected" : component.ScriptPath;
             char scriptBuf[256];
             strncpy_s(scriptBuf, scriptSrc.c_str(), sizeof(scriptBuf) - 1);
             scriptBuf[sizeof(scriptBuf) - 1] = '\0';
@@ -752,10 +752,10 @@ namespace Editor
                                            engineContext.GetFileSystem(), scriptPath);
         }
 
-        if (!component.m_Params.empty())
+        if (!component.Params.empty())
             ImGui::SeparatorText("Parameters");
 
-        for (auto& [name, param] : component.m_Params)
+        for (auto& [name, param] : component.Params)
         {
             switch (param.type)
             {
@@ -886,42 +886,42 @@ namespace Editor
 
     // ─── Last-scene persistence ──────────────────────────────────────────────
 
-    void EditorGui::recordLastScene(const std::string& nativePath, const FS::FileSystemManager& fileSystem)
+    void EditorGui::RecordLastScene(const std::string& nativePath, const FS::FileSystemManager& fileSystem)
     {
         const auto virtualPath = fileSystem.ToVirtualPath(nativePath);
         if (!virtualPath)
         {
-            LOGERROR("EditorGui::recordLastScene: path is not under any registered mount (path: ", nativePath, ")");
+            LOGERROR("EditorGui::RecordLastScene: path is not under any registered mount (path: ", nativePath, ")");
             return;
         }
 
-        m_Settings.m_LastScene = *virtualPath;
+        m_Settings.LastScene = *virtualPath;
         m_Settings.Save("engine://editor_settings.yaml", fileSystem);
     }
 
-    void EditorGui::loadLastScene(HedgehogEngine::Engine& context)
+    void EditorGui::LoadLastScene(HedgehogEngine::Engine& context)
     {
-        if (m_Settings.m_LastScene.empty())
+        if (m_Settings.LastScene.empty())
             return;
 
-        if (!m_FileSystem->Exists(m_Settings.m_LastScene))
+        if (!m_FileSystem->Exists(m_Settings.LastScene))
         {
-            LOGWARNING("EditorGui::loadLastScene: stored scene not found, starting with an empty scene (path: ",
-                       m_Settings.m_LastScene, ")");
-            m_Settings.m_LastScene.clear();
+            LOGWARNING("EditorGui::LoadLastScene: stored scene not found, starting with an empty scene (path: ",
+                       m_Settings.LastScene, ")");
+            m_Settings.LastScene.clear();
             m_Settings.Save("engine://editor_settings.yaml", *m_FileSystem);
             return;
         }
 
         // LoadScene expects a native path (the dialog's contract), so resolve back from virtual.
-        const auto physicalPath = m_FileSystem->ResolvePhysical(m_Settings.m_LastScene);
+        const auto physicalPath = m_FileSystem->ResolvePhysical(m_Settings.LastScene);
         if (physicalPath && context.GetEngineContext().GetSceneManager().LoadScene(physicalPath->string()))
             return;
 
-        LOGWARNING("EditorGui::loadLastScene: failed to load stored scene, starting with an empty scene (path: ",
-                   m_Settings.m_LastScene, ")");
+        LOGWARNING("EditorGui::LoadLastScene: failed to load stored scene, starting with an empty scene (path: ",
+                   m_Settings.LastScene, ")");
         context.GetEngineContext().GetSceneManager().ResetScene();
-        m_Settings.m_LastScene.clear();
+        m_Settings.LastScene.clear();
         m_Settings.Save("engine://editor_settings.yaml", *m_FileSystem);
     }
 }

@@ -72,10 +72,10 @@ void VulkanCommandList::BeginRenderPass(
     for (const auto& cv : clearValues)
     {
         VkClearValue vkCv{};
-        if (cv.m_IsDepth)
-            vkCv.depthStencil = { cv.m_DepthStencil.m_Depth, cv.m_DepthStencil.m_Stencil };
+        if (cv.IsDepth)
+            vkCv.depthStencil = { cv.DepthStencil.Depth, cv.DepthStencil.Stencil };
         else
-            vkCv.color = { cv.m_Color.m_R, cv.m_Color.m_G, cv.m_Color.m_B, cv.m_Color.m_A };
+            vkCv.color = { cv.Color.R, cv.Color.G, cv.Color.B, cv.Color.A };
         vkClearValues.push_back(vkCv);
     }
 
@@ -106,20 +106,20 @@ void VulkanCommandList::BindPipeline(const IRHIPipeline& pipeline)
 void VulkanCommandList::SetViewport(const Viewport& viewport)
 {
     VkViewport vkVp{};
-    vkVp.x        = viewport.m_X;
-    vkVp.y        = viewport.m_Y;
-    vkVp.width    = viewport.m_Width;
-    vkVp.height   = viewport.m_Height;
-    vkVp.minDepth = viewport.m_MinDepth;
-    vkVp.maxDepth = viewport.m_MaxDepth;
+    vkVp.x        = viewport.X;
+    vkVp.y        = viewport.Y;
+    vkVp.width    = viewport.Width;
+    vkVp.height   = viewport.Height;
+    vkVp.minDepth = viewport.MinDepth;
+    vkVp.maxDepth = viewport.MaxDepth;
     vkCmdSetViewport(m_CommandBuffer, 0, 1, &vkVp);
 }
 
 void VulkanCommandList::SetScissor(const Scissor& scissor)
 {
     VkRect2D rect{};
-    rect.offset = { scissor.m_X, scissor.m_Y };
-    rect.extent = { scissor.m_Width, scissor.m_Height };
+    rect.offset = { scissor.X, scissor.Y };
+    rect.extent = { scissor.Width, scissor.Height };
     vkCmdSetScissor(m_CommandBuffer, 0, 1, &rect);
 }
 

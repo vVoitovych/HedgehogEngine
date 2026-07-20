@@ -27,35 +27,57 @@
 | Enum value | `PascalCase` | `DirectionLight`, `PointLight` |
 | `constexpr` / macro constant | `UPPER_SNAKE_CASE` | `MAX_ENTITIES`, `MAX_LIGHTS_COUNT` |
 | Static file-local variable | `s_PascalCase` | `s_BaseActorScript` |
-| Static class variable | `s_PascalCase` | `sDefaultMeshPath` |
+| Static class variable | `s_PascalCase` | `s_DefaultMeshPath` |
+| Public data member | `PascalCase` (no prefix) | `Width`, `MeshPath` |
+| Private / protected data member | `m_PascalCase` | `m_EntityCount` |
+| Boolean variable / member | reads as a predicate | `IsVisible`, `HasDepth`, `CastShadows` |
 
-### 2.2 Member Variables
+### 2.2 Data Members
 
-All member variables (private, protected, or public) use the `m_` prefix:
+The `m_` prefix marks **internal state**. Public data members carry no prefix:
+
+- **`struct` = passive data**: all members public, no invariants — members are plain
+  `PascalCase` with no prefix.
+- **`class` = encapsulated state**: `private`/`protected` members use `m_PascalCase`;
+  behavior is exposed through methods.
+- The rare public data member of an otherwise-encapsulated class (e.g. a tool window's
+  `Open` flag) also carries no prefix — visibility, not the `struct`/`class` keyword,
+  decides the prefix.
 
 ```cpp
-// Good
-class Foo
+// Good — passive data struct: no prefix
+struct TextureDesc
 {
-    int         m_Count = 0;
-    std::string m_Name;
+    uint32_t    Width  = 1;
+    uint32_t    Height = 1;
+    RHI::Format Format = RHI::Format::R8G8B8A8Srgb; // qualify when a member shadows its type name
 };
 
-// Bad — inconsistent prefix
-int mCount;      // missing underscore
-int count;       // no prefix at all
-```
-
-This applies equally to data-only component structs:
-
-```cpp
-// Good
-class TransformComponent
+// Good — encapsulated class: m_ on internal state
+class EntityManager
 {
 public:
-    HM::Vector3  m_Position  = {};
-    HM::Matrix4x4 m_ObjMatrix = {};
+    Entity CreateEntity();
+
+private:
+    uint32_t m_EntityCount = 0;
 };
+
+// Bad — prefix noise on public data
+struct TextureDesc
+{
+    uint32_t m_Width = 1;    // caller reads desc.m_Width — the prefix buys nothing
+};
+```
+
+This applies equally to reflected component structs (`HH_BEGIN_COMPONENT`):
+
+```cpp
+HH_BEGIN_COMPONENT(TransformComponent)
+    HH_PROP_NAMED(HM::Vector3, Position, "Position", HM::Vector3(0.0f, 0.0f, 0.0f), None)
+
+    HM::Matrix4x4 ObjMatrix = HM::Matrix4x4(); // runtime-only, not serialised
+HH_END_COMPONENT(TransformComponent)
 ```
 
 ---
@@ -126,6 +148,37 @@ Order within a class: `public`, then `protected`, then `private`.
 - Mark base-class destructors `virtual` when the class is intended for polymorphic use.
 - Use `override` on all overriding methods; never use `virtual` on them again.
 
+### 4.5 `struct` vs `class`
+
+Use `struct` **only** for passive data carriers: all members public, no invariants, no
+resource ownership. The moment a type needs private state, an invariant, or nontrivial
+behavior, make it a `class`. (Same rule as the Google C++ Style Guide.) See §2.2 for the
+member-naming consequences.
+
+### 4.6 `explicit` Constructors
+
+Mark every single-argument constructor `explicit` unless implicit conversion is
+deliberately intended (document it with a comment when it is):
+
+```cpp
+class VulkanBuffer
+{
+public:
+    explicit VulkanBuffer(const BufferDesc& desc);
+};
+```
+
+### 4.7 `noexcept` on Move Operations
+
+Declare move constructors and move assignment operators `noexcept`. Without it,
+`std::vector` and friends **copy** instead of move on reallocation — a silent
+performance loss in per-frame containers:
+
+```cpp
+VulkanTexture(VulkanTexture&& other) noexcept;
+VulkanTexture& operator=(VulkanTexture&& other) noexcept;
+```
+
 ---
 
 ## 5. Constants and Macros
@@ -174,13 +227,17 @@ Use raw pointers **only** for non-owning references to existing objects. Never c
 
 - Mark every method that does not mutate observable state `const`.
 - Mark every parameter that is not modified `const` (references and pointers).
-- Prefer `const std::string&` over `std::string` for read-only parameters.
+- Prefer `std::string_view` for read-only string parameters that are only inspected;
+  keep `const std::string&` (or `const char*`) when the callee needs a null-terminated
+  string (Lua, file APIs, C interfaces) or stores the value as `std::string` anyway.
+- Never pass `std::string` by value for read-only use.
 - Mark read-only local variables `const`.
 
 ```cpp
 // Good
 std::string Scene::GetSceneName() const { return m_SceneName; }
-void Foo(const std::string& path);
+bool HasExtension(std::string_view path);      // only inspected
+void LoadScript(const std::string& path);      // handed to Lua — needs null termination
 
 // Bad
 std::string Scene::GetSceneName() { return m_SceneName; }
@@ -214,6 +271,21 @@ static_cast<size_t>(MAX_LIGHTS_COUNT);
 
 // Bad
 (float)lua_tonumber(L, -1);
+```
+
+### 8.4 `auto`
+
+Use `auto` when the type is obvious from the same line or is an implementation detail;
+spell the type out otherwise:
+
+```cpp
+// Good — type is visible or irrelevant
+auto texture = std::make_unique<VulkanTexture>(desc);
+for (const auto& [entity, component] : m_Components) { ... }
+auto it = m_Lookup.find(name);
+
+// Bad — reader has to guess
+auto result = ProcessFrame();   // what is result?
 ```
 
 ### 8.3 Type Maps / Type Dispatch
@@ -261,6 +333,13 @@ parsing/decoding, serialization — return `std::optional<T>` or `bool`, and log
 Callers handle the failure path gracefully: substitute a placeholder resource, skip the item, or
 propagate the failure return — never crash on bad content.
 
+Mark fallible returns `[[nodiscard]]` so silently ignoring a failure is a compiler warning:
+
+```cpp
+[[nodiscard]] std::optional<LoadedMesh> LoadMesh(const std::string& path);
+[[nodiscard]] bool SaveScene(const std::string& path);
+```
+
 Exceptions remain acceptable only *inside* a module for truly exceptional conditions that are
 caught before reaching the module boundary. Internal invariant violations use `assert`.
 
@@ -268,13 +347,18 @@ caught before reaching the module boundary. Internal invariant violations use `a
 
 ## 10. Formatting
 
+> The repository root contains a **`.clang-format`** file — it is the authority on
+> formatting. Format code you touch with clang-format (most IDEs: format-on-save or
+> format-selection). The rules below summarize it for human readers; if prose and
+> `.clang-format` ever disagree, `.clang-format` wins.
+
 ### 10.1 Indentation
 
 - 4 spaces per level. No tabs.
 
 ### 10.2 Braces
 
-Opening brace on the **same line** for all constructs:
+Opening brace on its **own line** (Allman style) for all constructs:
 
 ```cpp
 void Foo()
@@ -286,7 +370,19 @@ void Foo()
 }
 ```
 
-Actually: opening brace on its **own line** (Allman style), as seen throughout the existing codebase.
+Always brace the body of `if`/`else`/`for`/`while` — even a single statement:
+
+```cpp
+// Good
+if (ready)
+{
+    Submit();
+}
+
+// Bad — unbraced body
+if (ready)
+    Submit();
+```
 
 ### 10.3 Line Length
 

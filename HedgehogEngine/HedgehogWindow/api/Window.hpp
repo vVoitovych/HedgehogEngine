@@ -4,6 +4,7 @@
 #include "HedgehogEngine/HedgehogWindow/api/InputState.hpp"
 
 #include <functional>
+#include <memory>
 
 struct GLFWwindow;
 
@@ -11,45 +12,45 @@ namespace HW
 {
     struct WindowDesc;
 
-    class HEDGEHOG_WINDOW_API Window
+    class Window
     {
     public:
-        explicit Window(const WindowDesc& desc);
-        ~Window();
+        HEDGEHOG_WINDOW_API explicit Window(const WindowDesc& desc);
+        HEDGEHOG_WINDOW_API ~Window();
 
         Window(const Window&)            = delete;
         Window& operator=(const Window&) = delete;
         Window(Window&&)                 = delete;
         Window& operator=(Window&&)      = delete;
 
-        bool ShouldClose() const;
+        HEDGEHOG_WINDOW_API bool ShouldClose() const;
 
-        bool IsResized() const;
-        void ResetResizedFlag();
+        HEDGEHOG_WINDOW_API bool IsResized() const;
+        HEDGEHOG_WINDOW_API void ResetResizedFlag();
 
         // Blocks until at least one event is available (used while minimized to avoid busy-waiting).
-        void WaitEvents() const;
+        HEDGEHOG_WINDOW_API void WaitEvents() const;
 
-        void ToggleFullscreen();
-        bool IsFullscreen() const;
+        HEDGEHOG_WINDOW_API void ToggleFullscreen();
+        HEDGEHOG_WINDOW_API bool IsFullscreen() const;
 
-        void GetFramebufferSize(int& outWidth, int& outHeight) const;
+        HEDGEHOG_WINDOW_API void GetFramebufferSize(int& outWidth, int& outHeight) const;
 
-        const InputState& GetInputState() const;
-        InputState&       GetInputState();
+        HEDGEHOG_WINDOW_API const InputState& GetInputState() const;
+        HEDGEHOG_WINDOW_API InputState&       GetInputState();
 
-        void SetIcon(int width, int height, unsigned char* data);
-        void SetGuiCallback(std::function<bool()> callback);
+        HEDGEHOG_WINDOW_API void SetIcon(int width, int height, unsigned char* data);
+        HEDGEHOG_WINDOW_API void SetGuiCallback(std::function<bool()> callback);
 
-        GLFWwindow*       GetNativeHandle();
-        const GLFWwindow* GetNativeHandle() const;
+        HEDGEHOG_WINDOW_API GLFWwindow*       GetNativeHandle();
+        HEDGEHOG_WINDOW_API const GLFWwindow* GetNativeHandle() const;
 
         // Returns the native OS window handle (HWND on Win32).
-        void* GetNativeOsHandle() const;
+        HEDGEHOG_WINDOW_API void* GetNativeOsHandle() const;
 
         // Returns the Vulkan instance extensions required by the windowing system.
         // Pointer is valid for the lifetime of the process.
-        const char** GetVulkanExtensions(uint32_t& outCount) const;
+        HEDGEHOG_WINDOW_API const char** GetVulkanExtensions(uint32_t& outCount) const;
 
     private:
         static void OnFramebufferResize(GLFWwindow* handle, int width, int height);
@@ -60,6 +61,6 @@ namespace HW
 
     private:
         struct Impl;
-        Impl* m_Impl = nullptr;
+        std::unique_ptr<Impl> m_Impl;
     };
 }

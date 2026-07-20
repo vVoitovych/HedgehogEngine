@@ -6,9 +6,9 @@ namespace HedgehogEngine
 {
     struct MaterialDef
     {
-        std::string  m_AlbedoPath;
-        float        m_Transparency = 1.0f;
-        MaterialType m_Type         = MaterialType::Opaque;
-        bool         m_IsDirty      = false;
+        std::string  AlbedoPath;
+        float        Transparency = 1.0f;
+        MaterialType Type         = MaterialType::Opaque;
+        bool         IsDirty      = false;
     };
 }

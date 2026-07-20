@@ -10,8 +10,8 @@ namespace Renderer
     RHIContext::RHIContext(HW::Window& window)
     {
         RHI::NativeWindowDesc nativeDesc{};
-        nativeDesc.m_NativeHandle = window.GetNativeOsHandle();
-        nativeDesc.m_VkExtensions = window.GetVulkanExtensions(nativeDesc.m_VkExtensionCount);
+        nativeDesc.NativeHandle = window.GetNativeOsHandle();
+        nativeDesc.VkExtensions = window.GetVulkanExtensions(nativeDesc.VkExtensionCount);
         m_RHIDevice = RHI::IRHIDevice::Create(nativeDesc);
 
         int fbWidth = 0, fbHeight = 0;

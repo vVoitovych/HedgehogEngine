@@ -16,11 +16,11 @@ namespace HW
 {
     struct WindowManager::Impl
     {
-        std::vector<std::unique_ptr<Window>> m_Windows;
+        std::vector<std::unique_ptr<Window>> Windows;
     };
 
     WindowManager::WindowManager()
-        : m_Impl(new Impl())
+        : m_Impl(std::make_unique<Impl>())
     {
         const int result = glfwInit();
         assert(result == GLFW_TRUE && "glfwInit() failed");
@@ -29,22 +29,20 @@ namespace HW
 
     WindowManager::~WindowManager()
     {
-        m_Impl->m_Windows.clear();
-        delete m_Impl;
-        m_Impl = nullptr;
+        m_Impl.reset(); // windows must be destroyed before glfwTerminate()
         glfwTerminate();
         LOGINFO("Window manager cleaned");
     }
 
     Window& WindowManager::CreateWindow(const WindowDesc& desc)
     {
-        m_Impl->m_Windows.emplace_back(std::make_unique<Window>(desc));
-        return *m_Impl->m_Windows.back();
+        m_Impl->Windows.emplace_back(std::make_unique<Window>(desc));
+        return *m_Impl->Windows.back();
     }
 
     void WindowManager::DestroyWindow(Window& window)
     {
-        auto& windows = m_Impl->m_Windows;
+        auto& windows = m_Impl->Windows;
         auto it = std::find_if(windows.begin(), windows.end(),
             [&window](const std::unique_ptr<Window>& w) { return w.get() == &window; });
 

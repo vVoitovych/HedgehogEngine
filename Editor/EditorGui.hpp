@@ -60,8 +60,8 @@ namespace Editor
         void DrawSettingsWindow(HedgehogEngine::Engine& context);
 
         // ── Last-scene persistence ───────────────────────────────────────────
-        void recordLastScene(const std::string& nativePath, const FS::FileSystemManager& fileSystem);
-        void loadLastScene(HedgehogEngine::Engine& context);
+        void RecordLastScene(const std::string& nativePath, const FS::FileSystemManager& fileSystem);
+        void LoadLastScene(HedgehogEngine::Engine& context);
 
     private:
         // Non-owning pointer to the FileSystemManager; valid for the entire lifetime of EditorGui

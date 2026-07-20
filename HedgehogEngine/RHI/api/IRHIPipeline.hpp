@@ -14,37 +14,37 @@ class IRHIRenderPass;
 struct GraphicsPipelineDesc
 {
     // Vertex shader is required. Fragment shader may be null for depth-only passes.
-    IRHIShader*                           m_VertexShader   = nullptr;
-    IRHIShader*                           m_FragmentShader = nullptr;
+    IRHIShader*                           VertexShader   = nullptr;
+    IRHIShader*                           FragmentShader = nullptr;
 
     // Vertex input
-    std::vector<VertexBinding>            m_VertexBindings;
-    std::vector<VertexAttribute>          m_VertexAttributes;
+    std::vector<VertexBinding>            VertexBindings;
+    std::vector<VertexAttribute>          VertexAttributes;
 
     // Input assembly
-    PrimitiveTopology                     m_Topology  = PrimitiveTopology::TriangleList;
+    PrimitiveTopology                     Topology  = PrimitiveTopology::TriangleList;
 
     // Rasterization
-    CullMode                              m_CullMode  = CullMode::Back;
-    FillMode                              m_FillMode  = FillMode::Solid;
-    float                                 m_LineWidth = 1.0f;
+    RHI::CullMode                         CullMode  = RHI::CullMode::Back;
+    RHI::FillMode                         FillMode  = RHI::FillMode::Solid;
+    float                                 LineWidth = 1.0f;
 
     // Depth / stencil
-    bool                                  m_DepthTestEnable  = true;
-    bool                                  m_DepthWriteEnable = true;
-    CompareOp                             m_DepthCompareOp   = CompareOp::Less;
-    bool                                  m_StencilTestEnable = false;
+    bool                                  DepthTestEnable  = true;
+    bool                                  DepthWriteEnable = true;
+    CompareOp                             DepthCompareOp   = CompareOp::Less;
+    bool                                  StencilTestEnable = false;
 
     // Color blending (one entry per color attachment in the render pass)
-    std::vector<ColorBlendAttachment>     m_ColorBlendAttachments;
+    std::vector<ColorBlendAttachment>     ColorBlendAttachments;
 
     // Resource binding layout
-    std::vector<const IRHIDescriptorSetLayout*> m_DescriptorSetLayouts;
-    std::vector<PushConstantRange>        m_PushConstantRanges;
+    std::vector<const IRHIDescriptorSetLayout*> DescriptorSetLayouts;
+    std::vector<PushConstantRange>        PushConstantRanges;
 
     // Render pass this pipeline is compatible with
-    const IRHIRenderPass*                 m_RenderPass = nullptr;
-    uint32_t                              m_Subpass    = 0;
+    const IRHIRenderPass*                 RenderPass = nullptr;
+    uint32_t                              Subpass    = 0;
 };
 
 class IRHIPipeline

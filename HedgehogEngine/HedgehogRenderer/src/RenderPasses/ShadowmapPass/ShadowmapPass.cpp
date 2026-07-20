@@ -41,15 +41,15 @@ namespace Renderer
         const auto sd = ShaderLoader::Load(device,
             "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/ShadowmapPass.shader",
             fileSystem);
-        assert(!sd.m_Layout.m_DescriptorSets.empty());
+        assert(!sd.Layout.DescriptorSets.empty());
 
-        m_ShadowmapLayout = device.CreateDescriptorSetLayout(sd.m_Layout.m_DescriptorSets[0]);
+        m_ShadowmapLayout = device.CreateDescriptorSetLayout(sd.Layout.DescriptorSets[0]);
 
         // Pool: one UBO per cascade per frame
         const uint32_t totalSets = MaxShadowCascades * HedgehogEngine::MAX_FRAMES_IN_FLIGHT;
         m_ShadowmapPool = device.CreateDescriptorPool(
             totalSets,
-            PipelineLoader::MakePoolSizes(sd.m_Layout.m_DescriptorSets[0], totalSets));
+            PipelineLoader::MakePoolSizes(sd.Layout.DescriptorSets[0], totalSets));
 
         // Per-frame per-cascade uniform buffers and descriptor sets
         m_ShadowmapUniforms.resize(HedgehogEngine::MAX_FRAMES_IN_FLIGHT);
@@ -74,7 +74,7 @@ namespace Renderer
 
         // Render pass: depth-only, Clear/Store, Undefined → DepthStencilReadOnly
         RHI::RenderPassDesc rpDesc;
-        rpDesc.m_DepthAttachment = RHI::AttachmentDesc{
+        rpDesc.DepthAttachment = RHI::AttachmentDesc{
             resourceManager.GetRHIShadowMap().GetFormat(),
             RHI::LoadOp::Clear,
             RHI::StoreOp::Store,
@@ -86,9 +86,9 @@ namespace Renderer
         m_RenderPass = device.CreateRenderPass(rpDesc);
 
         // Pipeline
-        auto pipelineDesc                   = sd.m_Pipeline;
-        pipelineDesc.m_DescriptorSetLayouts = { m_ShadowmapLayout.get() };
-        pipelineDesc.m_RenderPass           = m_RenderPass.get();
+        auto pipelineDesc                   = sd.Pipeline;
+        pipelineDesc.DescriptorSetLayouts = { m_ShadowmapLayout.get() };
+        pipelineDesc.RenderPass           = m_RenderPass.get();
         m_Pipeline = device.CreateGraphicsPipeline(pipelineDesc);
 
         UpdateFrameBuffer(device, resourceManager);
@@ -103,8 +103,8 @@ namespace Renderer
                                 RHI::IRHICommandList& cmd, uint32_t frameIndex)
     {
         RHI::ClearValue depthClear;
-        depthClear.m_IsDepth      = true;
-        depthClear.m_DepthStencil = { 1.0f, 0 };
+        depthClear.IsDepth      = true;
+        depthClear.DepthStencil = { 1.0f, 0 };
 
         cmd.BeginRenderPass(*m_RenderPass, *m_FrameBuffer, { depthClear });
         cmd.BindPipeline(*m_Pipeline);
@@ -119,24 +119,24 @@ namespace Renderer
         for (size_t i = 0; i < m_CascadesCount; ++i)
         {
             const auto& view = m_ShadowViewports[m_CascadesCount - 1][i];
-            cmd.SetViewport({ view.m_X, view.m_Y, view.m_Width, view.m_Height, 0.0f, 1.0f });
+            cmd.SetViewport({ view.X, view.Y, view.Width, view.Height, 0.0f, 1.0f });
             cmd.SetScissor({ 0, 0, m_ShadowmapSize, m_ShadowmapSize });
 
             cmd.BindDescriptorSet(*m_Pipeline, 0, *m_ShadowmapSets[frameIndex][i]);
 
-            for (const auto& drawNode : frame.m_DrawList.m_Opaque)
+            for (const auto& drawNode : frame.DrawList.Opaque)
             {
-                for (const auto& object : drawNode.m_Objects)
+                for (const auto& object : drawNode.Objects)
                 {
                     cmd.PushConstants(
                         *m_Pipeline,
                         RHI::ShaderStage::Vertex,
                         0,
                         static_cast<uint32_t>(sizeof(ShadowmapPassPushConstants)),
-                        &object.m_Transform);
+                        &object.Transform);
 
-                    const auto& geom = registry.GetMeshGeometryInfo(object.m_MeshIndex);
-                    cmd.DrawIndexed(geom.m_IndexCount, 1, geom.m_FirstIndex, geom.m_VertexOffset, 0);
+                    const auto& geom = registry.GetMeshGeometryInfo(object.MeshIndex);
+                    cmd.DrawIndexed(geom.IndexCount, 1, geom.FirstIndex, geom.VertexOffset, 0);
                 }
             }
         }
@@ -160,14 +160,14 @@ namespace Renderer
     void ShadowmapPass::UpdateData(const HedgehogEngine::FrameData& frame, uint32_t frameIndex,
                                     const HedgehogSettings::Settings& settings)
     {
-        UpdateShadowmapMatrices(frame.m_Camera, settings, frame.m_ShadowLightDirection);
+        UpdateShadowmapMatrices(frame.Camera, settings, frame.ShadowLightDirection);
 
         const uint32_t cascades = settings.GetShadowmapSettings()->GetCascadesCount();
 
         for (size_t i = 0; i < cascades; ++i)
         {
             ShadowCascadeUniform ubo;
-            ubo.m_ShadowMatrix = m_ShadowmapMatrices[i];
+            ubo.ShadowMatrix = m_ShadowmapMatrices[i];
             m_ShadowmapUniforms[frameIndex][i]->CopyData(&ubo, sizeof(ubo));
         }
     }
@@ -189,10 +189,10 @@ namespace Renderer
         m_FrameBuffer.reset();
 
         RHI::FramebufferDesc fbDesc;
-        fbDesc.m_RenderPass      = m_RenderPass.get();
-        fbDesc.m_DepthAttachment = &shadowMap;
-        fbDesc.m_Width           = shadowMap.GetWidth();
-        fbDesc.m_Height          = shadowMap.GetHeight();
+        fbDesc.RenderPass      = m_RenderPass.get();
+        fbDesc.DepthAttachment = &shadowMap;
+        fbDesc.Width           = shadowMap.GetWidth();
+        fbDesc.Height          = shadowMap.GetHeight();
         m_FrameBuffer = device.CreateFramebuffer(fbDesc);
     }
 
@@ -231,8 +231,8 @@ namespace Renderer
 
         std::vector<float> cascadeSplits;
 
-        const float nearClip  = camera.m_Near;
-        const float farClip   = camera.m_Far;
+        const float nearClip  = camera.Near;
+        const float farClip   = camera.Far;
         const float clipRange = farClip - nearClip;
 
         const float minZ  = nearClip;
@@ -250,7 +250,7 @@ namespace Renderer
         }
 
         float lastSplitDist = 0.0f;
-        HM::Matrix4x4 camMatrix = camera.m_View * camera.m_Proj;
+        HM::Matrix4x4 camMatrix = camera.View * camera.Proj;
         bool success = true;
         HM::Matrix4x4 invCam = camMatrix.Inverse(success);
 

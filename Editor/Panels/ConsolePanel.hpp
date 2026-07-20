@@ -12,8 +12,8 @@ namespace Editor
 
     struct LogEntry
     {
-        LogLevel    m_Level;
-        std::string m_Text;
+        LogLevel    Level;
+        std::string Text;
     };
 
     // Captures std::cout output while still forwarding it to the real console.

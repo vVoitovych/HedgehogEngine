@@ -88,7 +88,7 @@ namespace Editor
             ImGuiWindowFlags_HorizontalScrollbar);
 
         for (const auto& entry : m_Entries)
-            ImGui::TextColored(LevelColor(entry.m_Level), "%s", entry.m_Text.c_str());
+            ImGui::TextColored(LevelColor(entry.Level), "%s", entry.Text.c_str());
 
         if (m_ScrollToBottom && ImGui::GetScrollY() >= ImGui::GetScrollMaxY() - 5.0f)
             ImGui::SetScrollHereY(1.0f);

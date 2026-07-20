@@ -34,14 +34,14 @@ namespace Renderer
     ForwardPass::GpuLight ForwardPass::ToGpuLight(const HedgehogEngine::LightData& fd)
     {
         GpuLight gpu;
-        gpu.m_Position  = fd.m_Position;
-        gpu.m_Direction = fd.m_Direction;
-        gpu.m_Color     = fd.m_Color;
-        gpu.m_Data      = HM::Vector4(
-            static_cast<float>(fd.m_Type),
-            fd.m_Intensity,
-            fd.m_Radius,
-            std::cos(HM::ToRadians(fd.m_ConeAngle)));
+        gpu.Position  = fd.Position;
+        gpu.Direction = fd.Direction;
+        gpu.Color     = fd.Color;
+        gpu.Data      = HM::Vector4(
+            static_cast<float>(fd.Type),
+            fd.Intensity,
+            fd.Radius,
+            std::cos(HM::ToRadians(fd.ConeAngle)));
         return gpu;
     }
 
@@ -52,13 +52,13 @@ namespace Renderer
         const auto sd = ShaderLoader::Load(device,
             "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/ForwardPass.shader",
             fileSystem);
-        assert(sd.m_Layout.m_DescriptorSets.size() >= 2);
+        assert(sd.Layout.DescriptorSets.size() >= 2);
 
         // Set 0: per-frame data (camera, lights)
-        m_FrameLayout = device.CreateDescriptorSetLayout(sd.m_Layout.m_DescriptorSets[0]);
+        m_FrameLayout = device.CreateDescriptorSetLayout(sd.Layout.DescriptorSets[0]);
         m_FramePool = device.CreateDescriptorPool(
             HedgehogEngine::MAX_FRAMES_IN_FLIGHT,
-            PipelineLoader::MakePoolSizes(sd.m_Layout.m_DescriptorSets[0], HedgehogEngine::MAX_FRAMES_IN_FLIGHT));
+            PipelineLoader::MakePoolSizes(sd.Layout.DescriptorSets[0], HedgehogEngine::MAX_FRAMES_IN_FLIGHT));
 
         m_FrameUniforms.reserve(HedgehogEngine::MAX_FRAMES_IN_FLIGHT);
         m_FrameSets.reserve(HedgehogEngine::MAX_FRAMES_IN_FLIGHT);
@@ -79,16 +79,16 @@ namespace Renderer
 
         // Set 1: per-material data — ForwardPass defines and owns this layout.
         // The layout is injected into ResourceRegistry so it can allocate material descriptor sets.
-        m_MaterialLayout = device.CreateDescriptorSetLayout(sd.m_Layout.m_DescriptorSets[1]);
+        m_MaterialLayout = device.CreateDescriptorSetLayout(sd.Layout.DescriptorSets[1]);
         resourceManager.GetResourceRegistry().SetMaterialLayout(
             device,
             *m_MaterialLayout,
             HedgehogEngine::MAX_MATERIAL_COUNT,
-            PipelineLoader::MakePoolSizes(sd.m_Layout.m_DescriptorSets[1], HedgehogEngine::MAX_MATERIAL_COUNT));
+            PipelineLoader::MakePoolSizes(sd.Layout.DescriptorSets[1], HedgehogEngine::MAX_MATERIAL_COUNT));
 
         // Render pass: one color + depth (loaded from DepthPrePass)
         RHI::RenderPassDesc rpDesc;
-        rpDesc.m_ColorAttachments.push_back(RHI::AttachmentDesc{
+        rpDesc.ColorAttachments.push_back(RHI::AttachmentDesc{
             resourceManager.GetSceneColorBuffer().GetFormat(),
             RHI::LoadOp::Clear,
             RHI::StoreOp::Store,
@@ -97,7 +97,7 @@ namespace Renderer
             RHI::ImageLayout::Undefined,
             RHI::ImageLayout::ColorAttachment
         });
-        rpDesc.m_DepthAttachment = RHI::AttachmentDesc{
+        rpDesc.DepthAttachment = RHI::AttachmentDesc{
             resourceManager.GetRHIDepthBuffer().GetFormat(),
             RHI::LoadOp::Load,
             RHI::StoreOp::DontCare,
@@ -109,20 +109,20 @@ namespace Renderer
         m_RenderPass = device.CreateRenderPass(rpDesc);
 
         // Pipeline
-        auto pipelineDesc                   = sd.m_Pipeline;
-        pipelineDesc.m_DescriptorSetLayouts = { m_FrameLayout.get(), m_MaterialLayout.get() };
-        pipelineDesc.m_RenderPass           = m_RenderPass.get();
+        auto pipelineDesc                   = sd.Pipeline;
+        pipelineDesc.DescriptorSetLayouts = { m_FrameLayout.get(), m_MaterialLayout.get() };
+        pipelineDesc.RenderPass           = m_RenderPass.get();
         m_Pipeline = device.CreateGraphicsPipeline(pipelineDesc);
 
         // Framebuffer
         const auto& colorBuffer = resourceManager.GetSceneColorBuffer();
         const auto& depthBuffer = resourceManager.GetRHIDepthBuffer();
         RHI::FramebufferDesc fbDesc;
-        fbDesc.m_RenderPass        = m_RenderPass.get();
-        fbDesc.m_ColorAttachments  = { &colorBuffer };
-        fbDesc.m_DepthAttachment   = &depthBuffer;
-        fbDesc.m_Width             = colorBuffer.GetWidth();
-        fbDesc.m_Height            = colorBuffer.GetHeight();
+        fbDesc.RenderPass        = m_RenderPass.get();
+        fbDesc.ColorAttachments  = { &colorBuffer };
+        fbDesc.DepthAttachment   = &depthBuffer;
+        fbDesc.Width             = colorBuffer.GetWidth();
+        fbDesc.Height            = colorBuffer.GetHeight();
         m_FrameBuffer = device.CreateFramebuffer(fbDesc);
     }
 
@@ -134,19 +134,19 @@ namespace Renderer
                               RHI::IRHICommandList& cmd, uint32_t frameIndex)
     {
         ForwardPassFrameUniform ubo{};
-        ubo.m_View        = frame.m_Camera.m_View;
-        ubo.m_ViewProj    = frame.m_Camera.m_Proj * frame.m_Camera.m_View;
-        ubo.m_EyePosition = frame.m_Camera.m_Position;
-        ubo.m_LightCount  = frame.m_Lights.size();
-        for (size_t i = 0; i < ubo.m_LightCount; ++i)
-            ubo.m_Lights[i] = ToGpuLight(frame.m_Lights[i]);
+        ubo.View        = frame.Camera.View;
+        ubo.ViewProj    = frame.Camera.Proj * frame.Camera.View;
+        ubo.EyePosition = frame.Camera.Position;
+        ubo.LightCount  = frame.Lights.size();
+        for (size_t i = 0; i < ubo.LightCount; ++i)
+            ubo.Lights[i] = ToGpuLight(frame.Lights[i]);
         m_FrameUniforms[frameIndex]->CopyData(&ubo, sizeof(ubo));
 
         RHI::ClearValue colorClear;
-        colorClear.m_Color = { 0.0f, 0.0f, 0.0f, 1.0f };
+        colorClear.Color = { 0.0f, 0.0f, 0.0f, 1.0f };
         RHI::ClearValue depthClear;
-        depthClear.m_IsDepth      = true;
-        depthClear.m_DepthStencil = { 1.0f, 0 };
+        depthClear.IsDepth      = true;
+        depthClear.DepthStencil = { 1.0f, 0 };
 
         cmd.BeginRenderPass(*m_RenderPass, *m_FrameBuffer, { colorClear, depthClear });
 
@@ -168,22 +168,22 @@ namespace Renderer
 
         cmd.BindDescriptorSet(*m_Pipeline, 0, *m_FrameSets[frameIndex]);
 
-        for (const auto& drawNode : frame.m_DrawList.m_Opaque)
+        for (const auto& drawNode : frame.DrawList.Opaque)
         {
             cmd.BindDescriptorSet(
-                *m_Pipeline, 1, registry.GetMaterialDescriptorSet(static_cast<uint32_t>(drawNode.m_MaterialIndex)));
+                *m_Pipeline, 1, registry.GetMaterialDescriptorSet(static_cast<uint32_t>(drawNode.MaterialIndex)));
 
-            for (const auto& object : drawNode.m_Objects)
+            for (const auto& object : drawNode.Objects)
             {
                 cmd.PushConstants(
                     *m_Pipeline,
                     RHI::ShaderStage::Vertex,
                     0,
                     static_cast<uint32_t>(sizeof(ForwardPassPushConstants)),
-                    &object.m_Transform);
+                    &object.Transform);
 
-                const auto& geom = registry.GetMeshGeometryInfo(object.m_MeshIndex);
-                cmd.DrawIndexed(geom.m_IndexCount, 1, geom.m_FirstIndex, geom.m_VertexOffset, 0);
+                const auto& geom = registry.GetMeshGeometryInfo(object.MeshIndex);
+                cmd.DrawIndexed(geom.IndexCount, 1, geom.FirstIndex, geom.VertexOffset, 0);
             }
         }
 
@@ -212,11 +212,11 @@ namespace Renderer
         m_FrameBuffer.reset();
 
         RHI::FramebufferDesc fbDesc;
-        fbDesc.m_RenderPass       = m_RenderPass.get();
-        fbDesc.m_ColorAttachments = { &colorBuffer };
-        fbDesc.m_DepthAttachment  = &depthBuffer;
-        fbDesc.m_Width            = colorBuffer.GetWidth();
-        fbDesc.m_Height           = colorBuffer.GetHeight();
+        fbDesc.RenderPass       = m_RenderPass.get();
+        fbDesc.ColorAttachments = { &colorBuffer };
+        fbDesc.DepthAttachment  = &depthBuffer;
+        fbDesc.Width            = colorBuffer.GetWidth();
+        fbDesc.Height           = colorBuffer.GetHeight();
         m_FrameBuffer = device.CreateFramebuffer(fbDesc);
     }
 

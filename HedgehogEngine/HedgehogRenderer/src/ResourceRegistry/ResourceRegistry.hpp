@@ -74,7 +74,7 @@ namespace HR
     private:
         struct MaterialUniform
         {
-            float m_Transparency;
+            float Transparency;
         };
 
     private:

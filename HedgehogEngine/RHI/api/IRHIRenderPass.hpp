@@ -10,8 +10,8 @@ namespace RHI
 
 struct RenderPassDesc
 {
-    std::vector<AttachmentDesc>     m_ColorAttachments;
-    std::optional<AttachmentDesc>   m_DepthAttachment;
+    std::vector<AttachmentDesc>     ColorAttachments;
+    std::optional<AttachmentDesc>   DepthAttachment;
 };
 
 class IRHIRenderPass

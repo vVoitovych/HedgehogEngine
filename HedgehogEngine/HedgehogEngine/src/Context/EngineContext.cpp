@@ -148,10 +148,10 @@ namespace HedgehogEngine
                 out << YAML::Key << "ScriptComponent" << YAML::BeginMap;
                 EcsSerialization::YamlWriter w{out};
                 script.Visit(w);
-                if (!script.m_Params.empty())
+                if (!script.Params.empty())
                 {
                     out << YAML::Key << "ScriptParams" << YAML::BeginMap;
-                    for (const auto& [name, param] : script.m_Params)
+                    for (const auto& [name, param] : script.Params)
                     {
                         out << YAML::Key << name << YAML::BeginMap;
                         out << YAML::Key << "ParamType" << YAML::Value << static_cast<size_t>(param.type);
@@ -190,7 +190,7 @@ namespace HedgehogEngine
                         case ParamType::Number:  value = data["ParamValue"].as<float>(); break;
                         default: break;
                         }
-                        script.m_Params[paramName] = { type, value, false };
+                        script.Params[paramName] = { type, value, false };
                     }
                 }
                 scriptSystem->InitScript(e, ecs, m_EventBus, m_FileSystem);
@@ -254,14 +254,14 @@ namespace HedgehogEngine
         const auto& inputState = windowContext.GetWindow().GetInputState();
 
         HM::Vector3 posOffset(0.0f, 0.0f, 0.0f);
-        HM::Vector2 dirOffset(inputState.m_MouseDelta.x(), inputState.m_MouseDelta.y());
+        HM::Vector2 dirOffset(inputState.MouseDelta.x(), inputState.MouseDelta.y());
 
-        if (inputState.m_KeyQ) posOffset.z() = -1.0f;
-        if (inputState.m_KeyE) posOffset.z() =  1.0f;
-        if (inputState.m_KeyW) posOffset.x() =  1.0f;
-        if (inputState.m_KeyS) posOffset.x() = -1.0f;
-        if (inputState.m_KeyD) posOffset.y() = -1.0f;
-        if (inputState.m_KeyA) posOffset.y() =  1.0f;
+        if (inputState.KeyQ) posOffset.z() = -1.0f;
+        if (inputState.KeyE) posOffset.z() =  1.0f;
+        if (inputState.KeyW) posOffset.x() =  1.0f;
+        if (inputState.KeyS) posOffset.x() = -1.0f;
+        if (inputState.KeyD) posOffset.y() = -1.0f;
+        if (inputState.KeyA) posOffset.y() =  1.0f;
 
         m_Camera->UpdateCamera(dt, aspectRatio, posOffset, dirOffset);
     }

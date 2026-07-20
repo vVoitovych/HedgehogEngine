@@ -42,8 +42,8 @@ namespace Editor
         void  Cleanup();
         float GetFrameTime();
 
-        float stepFrame();
-        void  loadBenchmarkScene();
+        float StepFrame();
+        void  LoadBenchmarkScene();
 
     private:
         std::unique_ptr<HedgehogEngine::Engine>   m_Context;

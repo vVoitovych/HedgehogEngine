@@ -94,39 +94,39 @@ namespace EcsSerialization
 
     struct YamlWriter
     {
-        YAML::Emitter& m_Out;
+        YAML::Emitter& Out;
 
         template<typename T>
         void operator()(const char* key, T& val)
         {
             if constexpr (std::is_enum_v<T>)
-                m_Out << YAML::Key << key << YAML::Value << static_cast<size_t>(val);
+                Out << YAML::Key << key << YAML::Value << static_cast<size_t>(val);
             else
-                m_Out << YAML::Key << key << YAML::Value << val;
+                Out << YAML::Key << key << YAML::Value << val;
         }
     };
 
     struct YamlReader
     {
-        const YAML::Node& m_Node;
+        const YAML::Node& Node;
 
         template<typename T>
         void operator()(const char* key, T& val)
         {
-            if (!m_Node[key]) return;
+            if (!Node[key]) return;
             if constexpr (std::is_enum_v<T>)
-                val = static_cast<T>(m_Node[key].as<size_t>());
+                val = static_cast<T>(Node[key].as<size_t>());
             else
-                val = m_Node[key].as<T>();
+                val = Node[key].as<T>();
         }
     };
 
     struct ComponentHandler
     {
-        std::string m_YamlKey;
-        std::function<void(YAML::Emitter&, const ECS::ECS&, ECS::Entity)> m_Serialize;
-        std::function<void(ECS::ECS&, ECS::Entity, const YAML::Node&)>    m_Deserialize;
-        std::function<bool(const ECS::ECS&, ECS::Entity)>                  m_HasComponent;
+        std::string YamlKey;
+        std::function<void(YAML::Emitter&, const ECS::ECS&, ECS::Entity)> Serialize;
+        std::function<void(ECS::ECS&, ECS::Entity, const YAML::Node&)>    Deserialize;
+        std::function<bool(const ECS::ECS&, ECS::Entity)>                  HasComponent;
     };
 
     class ComponentSerializerRegistry

@@ -16,11 +16,11 @@ namespace HR
     ResourceRegistry::ResourceRegistry(RHI::IRHIDevice& device)
     {
         RHI::SamplerDesc samplerDesc;
-        samplerDesc.m_MinFilter    = RHI::Filter::Linear;
-        samplerDesc.m_MagFilter    = RHI::Filter::Linear;
-        samplerDesc.m_AddressModeU = RHI::AddressMode::Repeat;
-        samplerDesc.m_AddressModeV = RHI::AddressMode::Repeat;
-        samplerDesc.m_AddressModeW = RHI::AddressMode::Repeat;
+        samplerDesc.MinFilter    = RHI::Filter::Linear;
+        samplerDesc.MagFilter    = RHI::Filter::Linear;
+        samplerDesc.AddressModeU = RHI::AddressMode::Repeat;
+        samplerDesc.AddressModeV = RHI::AddressMode::Repeat;
+        samplerDesc.AddressModeW = RHI::AddressMode::Repeat;
         m_LinearSampler = device.CreateSampler(samplerDesc);
     }
 
@@ -49,9 +49,9 @@ namespace HR
             const HedgehogEngine::MeshView mesh = catalog.GetMesh(i);
 
             MeshGeometryInfo geom;
-            geom.m_FirstIndex   = mesh.firstIndex;
-            geom.m_IndexCount   = mesh.indexCount;
-            geom.m_VertexOffset = mesh.vertexOffset;
+            geom.FirstIndex   = mesh.firstIndex;
+            geom.IndexCount   = mesh.indexCount;
+            geom.VertexOffset = mesh.vertexOffset;
             m_MeshGeometryInfos.push_back(geom);
 
             for (const auto& p : mesh.positions)
@@ -157,10 +157,10 @@ namespace HR
         staging->CopyData(loaded ? loader.GetData() : FALLBACK_PIXEL, imgSize);
 
         RHI::TextureDesc desc;
-        desc.m_Width  = texW;
-        desc.m_Height = texH;
-        desc.m_Format = RHI::Format::R8G8B8A8Srgb;
-        desc.m_Usage  = RHI::TextureUsage::Sampled | RHI::TextureUsage::TransferDst;
+        desc.Width  = texW;
+        desc.Height = texH;
+        desc.Format = RHI::Format::R8G8B8A8Srgb;
+        desc.Usage  = RHI::TextureUsage::Sampled | RHI::TextureUsage::TransferDst;
         auto texture  = device.CreateTexture(desc);
 
         device.ExecuteImmediately([&](RHI::IRHICommandList& cmd)
@@ -191,8 +191,8 @@ namespace HR
         set->Flush();
 
         MaterialGpuData data;
-        data.m_UniformBuffer = std::move(ubo);
-        data.m_DescriptorSet = std::move(set);
+        data.UniformBuffer = std::move(ubo);
+        data.DescriptorSet = std::move(set);
         m_Materials.push_back(std::move(data));
     }
 
@@ -201,12 +201,12 @@ namespace HR
                                               const FS::FileSystemManager& fileSystem)
     {
         MaterialUniform uniform{ transparency };
-        m_Materials[index].m_UniformBuffer->CopyData(&uniform, sizeof(uniform));
+        m_Materials[index].UniformBuffer->CopyData(&uniform, sizeof(uniform));
 
         auto& texture = GetOrCreateTexture(texturePath, device, fileSystem);
-        m_Materials[index].m_DescriptorSet->WriteUniformBuffer(0, *m_Materials[index].m_UniformBuffer);
-        m_Materials[index].m_DescriptorSet->WriteTexture(1, texture, *m_LinearSampler);
-        m_Materials[index].m_DescriptorSet->Flush();
+        m_Materials[index].DescriptorSet->WriteUniformBuffer(0, *m_Materials[index].UniformBuffer);
+        m_Materials[index].DescriptorSet->WriteTexture(1, texture, *m_LinearSampler);
+        m_Materials[index].DescriptorSet->Flush();
     }
 
     const MeshGeometryInfo& ResourceRegistry::GetMeshGeometryInfo(size_t meshIndex) const
@@ -221,7 +221,7 @@ namespace HR
 
     const RHI::IRHIDescriptorSet& ResourceRegistry::GetMaterialDescriptorSet(uint32_t index) const
     {
-        return *m_Materials[index].m_DescriptorSet;
+        return *m_Materials[index].DescriptorSet;
     }
 
     void ResourceRegistry::Cleanup(RHI::IRHIDevice& device)

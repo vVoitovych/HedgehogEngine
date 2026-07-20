@@ -11,33 +11,33 @@ namespace Editor
 class PipelineWindow
 {
 public:
-    bool m_Open = false;
+    bool Open = false;
 
     void Draw(const FS::FileSystemManager& fileSystem);
 
 private:
     struct BindingState
     {
-        int  m_Binding  = 0;
-        int  m_Type     = 0;    // index into descriptor type array
-        int  m_Count    = 1;
-        bool m_Vertex   = false;
-        bool m_Fragment = false;
-        bool m_Compute  = false;
+        int  Binding  = 0;
+        int  Type     = 0;    // index into descriptor type array
+        int  Count    = 1;
+        bool Vertex   = false;
+        bool Fragment = false;
+        bool Compute  = false;
     };
 
     struct SetState
     {
-        std::vector<BindingState> m_Bindings;
+        std::vector<BindingState> Bindings;
     };
 
     struct PushConstantState
     {
-        int  m_Offset   = 0;
-        int  m_Size     = 64;
-        bool m_Vertex   = true;
-        bool m_Fragment = false;
-        bool m_Compute  = false;
+        int  Offset   = 0;
+        int  Size     = 64;
+        bool Vertex   = true;
+        bool Fragment = false;
+        bool Compute  = false;
     };
 
     // ── Sub-sections ──────────────────────────────────────────────────────────

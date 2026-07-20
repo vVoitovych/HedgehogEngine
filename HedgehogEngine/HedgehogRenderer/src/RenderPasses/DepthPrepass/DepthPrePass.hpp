@@ -48,7 +48,7 @@ namespace Renderer
     private:
         struct DepthPrepassFrameUniform
         {
-            alignas(16) HM::Matrix4x4 m_ViewProj;
+            alignas(16) HM::Matrix4x4 ViewProj;
         };
 
     private:

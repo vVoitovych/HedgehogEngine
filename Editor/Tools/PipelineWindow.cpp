@@ -91,9 +91,9 @@ std::string PipelineWindow::StagesToString(bool v, bool f, bool c)
 
 bool PipelineWindow::HasDuplicateBinding(int setIdx, int binding, int skipRow) const
 {
-    const auto& bindings = m_Sets[setIdx].m_Bindings;
+    const auto& bindings = m_Sets[setIdx].Bindings;
     for (int i = 0; i < static_cast<int>(bindings.size()); ++i)
-        if (i != skipRow && bindings[i].m_Binding == binding)
+        if (i != skipRow && bindings[i].Binding == binding)
             return true;
     return false;
 }
@@ -102,9 +102,9 @@ bool PipelineWindow::PushConstantsOverlap(int i, int j) const
 {
     const auto& a = m_PushConstants[i];
     const auto& b = m_PushConstants[j];
-    const int aEnd = a.m_Offset + a.m_Size;
-    const int bEnd = b.m_Offset + b.m_Size;
-    return (a.m_Offset < bEnd) && (b.m_Offset < aEnd);
+    const int aEnd = a.Offset + a.Size;
+    const int bEnd = b.Offset + b.Size;
+    return (a.Offset < bEnd) && (b.Offset < aEnd);
 }
 
 // ── File I/O ──────────────────────────────────────────────────────────────────
@@ -186,12 +186,12 @@ bool PipelineWindow::LoadFromPath(const std::string& path, const FS::FileSystemM
                 for (const YAML::Node& b : bindingsNode)
                 {
                     BindingState bs;
-                    bs.m_Binding = b["binding"].as<int>(0);
-                    bs.m_Type    = TypeNameToIndex(b["type"] ? b["type"].as<std::string>() : "uniform_buffer");
-                    bs.m_Count   = b["count"].as<int>(1);
+                    bs.Binding = b["binding"].as<int>(0);
+                    bs.Type    = TypeNameToIndex(b["type"] ? b["type"].as<std::string>() : "uniform_buffer");
+                    bs.Count   = b["count"].as<int>(1);
                     ParseStageString(b["stage"] ? b["stage"].as<std::string>() : "vertex",
-                                     bs.m_Vertex, bs.m_Fragment, bs.m_Compute);
-                    set.m_Bindings.push_back(bs);
+                                     bs.Vertex, bs.Fragment, bs.Compute);
+                    set.Bindings.push_back(bs);
                 }
             }
             m_Sets.push_back(std::move(set));
@@ -203,10 +203,10 @@ bool PipelineWindow::LoadFromPath(const std::string& path, const FS::FileSystemM
         for (const YAML::Node& pc : pcs)
         {
             PushConstantState ps;
-            ps.m_Offset = pc["offset"].as<int>(0);
-            ps.m_Size   = pc["size"].as<int>(0);
+            ps.Offset = pc["offset"].as<int>(0);
+            ps.Size   = pc["size"].as<int>(0);
             ParseStageString(pc["stage"] ? pc["stage"].as<std::string>() : "vertex",
-                             ps.m_Vertex, ps.m_Fragment, ps.m_Compute);
+                             ps.Vertex, ps.Fragment, ps.Compute);
             m_PushConstants.push_back(ps);
         }
     }
@@ -234,13 +234,13 @@ bool PipelineWindow::SaveToPath(const std::string& virtualPath,
     {
         out << YAML::BeginMap;
         out << YAML::Key << "bindings" << YAML::Value << YAML::BeginSeq;
-        for (const auto& b : set.m_Bindings)
+        for (const auto& b : set.Bindings)
         {
             out << YAML::BeginMap;
-            out << YAML::Key << "binding" << YAML::Value << b.m_Binding;
-            out << YAML::Key << "type"    << YAML::Value << IndexToTypeName(b.m_Type);
-            out << YAML::Key << "stage"   << YAML::Value << StagesToString(b.m_Vertex, b.m_Fragment, b.m_Compute);
-            out << YAML::Key << "count"   << YAML::Value << b.m_Count;
+            out << YAML::Key << "binding" << YAML::Value << b.Binding;
+            out << YAML::Key << "type"    << YAML::Value << IndexToTypeName(b.Type);
+            out << YAML::Key << "stage"   << YAML::Value << StagesToString(b.Vertex, b.Fragment, b.Compute);
+            out << YAML::Key << "count"   << YAML::Value << b.Count;
             out << YAML::EndMap;
         }
         out << YAML::EndSeq;
@@ -252,9 +252,9 @@ bool PipelineWindow::SaveToPath(const std::string& virtualPath,
     for (const auto& pc : m_PushConstants)
     {
         out << YAML::BeginMap;
-        out << YAML::Key << "stage"  << YAML::Value << StagesToString(pc.m_Vertex, pc.m_Fragment, pc.m_Compute);
-        out << YAML::Key << "offset" << YAML::Value << pc.m_Offset;
-        out << YAML::Key << "size"   << YAML::Value << pc.m_Size;
+        out << YAML::Key << "stage"  << YAML::Value << StagesToString(pc.Vertex, pc.Fragment, pc.Compute);
+        out << YAML::Key << "offset" << YAML::Value << pc.Offset;
+        out << YAML::Key << "size"   << YAML::Value << pc.Size;
         out << YAML::EndMap;
     }
     out << YAML::EndSeq;
@@ -321,8 +321,8 @@ void PipelineWindow::DrawDescriptorSets()
             ImGuiTreeNodeFlags_DefaultOpen,
             "Set %d  (%zu binding%s)",
             si,
-            set.m_Bindings.size(),
-            set.m_Bindings.size() == 1 ? "" : "s");
+            set.Bindings.size(),
+            set.Bindings.size() == 1 ? "" : "s");
 
         if (setOpen)
         {
@@ -339,11 +339,11 @@ void PipelineWindow::DrawDescriptorSets()
                 ImGui::TableHeadersRow();
 
                 int toDeleteBinding = -1;
-                for (int bi = 0; bi < static_cast<int>(set.m_Bindings.size()); ++bi)
+                for (int bi = 0; bi < static_cast<int>(set.Bindings.size()); ++bi)
                 {
-                    auto& b = set.m_Bindings[bi];
-                    const bool dupBinding = HasDuplicateBinding(si, b.m_Binding, bi);
-                    const bool noStage    = NoStagesSelected(b.m_Vertex, b.m_Fragment, b.m_Compute);
+                    auto& b = set.Bindings[bi];
+                    const bool dupBinding = HasDuplicateBinding(si, b.Binding, bi);
+                    const bool noStage    = NoStagesSelected(b.Vertex, b.Fragment, b.Compute);
 
                     ImGui::TableNextRow();
                     ImGui::PushID(bi);
@@ -357,9 +357,9 @@ void PipelineWindow::DrawDescriptorSets()
                     if (dupBinding)
                         ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.55f, 0.1f, 0.1f, 1.0f));
                     ImGui::SetNextItemWidth(-FLT_MIN);
-                    if (ImGui::InputInt("##bnd", &b.m_Binding))
+                    if (ImGui::InputInt("##bnd", &b.Binding))
                     {
-                        b.m_Binding = std::max(0, b.m_Binding);
+                        b.Binding = std::max(0, b.Binding);
                         m_Dirty = true;
                     }
                     if (dupBinding) ImGui::PopStyleColor();
@@ -367,15 +367,15 @@ void PipelineWindow::DrawDescriptorSets()
                     // Type dropdown
                     ImGui::TableSetColumnIndex(2);
                     ImGui::SetNextItemWidth(-FLT_MIN);
-                    if (ImGui::Combo("##type", &b.m_Type, k_TypeDisplayNames, k_TypeCount))
+                    if (ImGui::Combo("##type", &b.Type, k_TypeDisplayNames, k_TypeCount))
                         m_Dirty = true;
 
                     // Count
                     ImGui::TableSetColumnIndex(3);
                     ImGui::SetNextItemWidth(-FLT_MIN);
-                    if (ImGui::InputInt("##cnt", &b.m_Count))
+                    if (ImGui::InputInt("##cnt", &b.Count))
                     {
-                        b.m_Count = std::max(1, b.m_Count);
+                        b.Count = std::max(1, b.Count);
                         m_Dirty = true;
                     }
 
@@ -384,11 +384,11 @@ void PipelineWindow::DrawDescriptorSets()
                         ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.5f, 0.28f, 0.0f, 1.0f));
 
                     ImGui::TableSetColumnIndex(4);
-                    if (ImGui::Checkbox("##v", &b.m_Vertex))   m_Dirty = true;
+                    if (ImGui::Checkbox("##v", &b.Vertex))   m_Dirty = true;
                     ImGui::TableSetColumnIndex(5);
-                    if (ImGui::Checkbox("##f", &b.m_Fragment)) m_Dirty = true;
+                    if (ImGui::Checkbox("##f", &b.Fragment)) m_Dirty = true;
                     ImGui::TableSetColumnIndex(6);
-                    if (ImGui::Checkbox("##c", &b.m_Compute))  m_Dirty = true;
+                    if (ImGui::Checkbox("##c", &b.Compute))  m_Dirty = true;
 
                     if (noStage) ImGui::PopStyleColor();
 
@@ -402,7 +402,7 @@ void PipelineWindow::DrawDescriptorSets()
 
                 if (toDeleteBinding >= 0)
                 {
-                    set.m_Bindings.erase(set.m_Bindings.begin() + toDeleteBinding);
+                    set.Bindings.erase(set.Bindings.begin() + toDeleteBinding);
                     m_Dirty = true;
                 }
             }
@@ -410,9 +410,9 @@ void PipelineWindow::DrawDescriptorSets()
             if (ImGui::Button("+ Add binding"))
             {
                 BindingState b;
-                b.m_Binding = static_cast<int>(set.m_Bindings.size());
-                b.m_Vertex  = true;
-                set.m_Bindings.push_back(b);
+                b.Binding = static_cast<int>(set.Bindings.size());
+                b.Vertex  = true;
+                set.Bindings.push_back(b);
                 m_Dirty = true;
             }
 
@@ -462,8 +462,8 @@ void PipelineWindow::DrawPushConstants()
         for (int i = 0; i < static_cast<int>(m_PushConstants.size()); ++i)
         {
             auto& pc = m_PushConstants[i];
-            const bool noStage  = NoStagesSelected(pc.m_Vertex, pc.m_Fragment, pc.m_Compute);
-            const bool zeroSize = (pc.m_Size <= 0);
+            const bool noStage  = NoStagesSelected(pc.Vertex, pc.Fragment, pc.Compute);
+            const bool zeroSize = (pc.Size <= 0);
 
             ImGui::TableNextRow();
             ImGui::PushID(i);
@@ -475,9 +475,9 @@ void PipelineWindow::DrawPushConstants()
             // Offset
             ImGui::TableSetColumnIndex(1);
             ImGui::SetNextItemWidth(-FLT_MIN);
-            if (ImGui::InputInt("##off", &pc.m_Offset))
+            if (ImGui::InputInt("##off", &pc.Offset))
             {
-                pc.m_Offset = std::max(0, pc.m_Offset);
+                pc.Offset = std::max(0, pc.Offset);
                 m_Dirty = true;
             }
 
@@ -486,9 +486,9 @@ void PipelineWindow::DrawPushConstants()
             if (zeroSize)
                 ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.55f, 0.1f, 0.1f, 1.0f));
             ImGui::SetNextItemWidth(-FLT_MIN);
-            if (ImGui::InputInt("##sz", &pc.m_Size))
+            if (ImGui::InputInt("##sz", &pc.Size))
             {
-                pc.m_Size = std::max(0, pc.m_Size);
+                pc.Size = std::max(0, pc.Size);
                 m_Dirty = true;
             }
             if (zeroSize) ImGui::PopStyleColor();
@@ -498,18 +498,18 @@ void PipelineWindow::DrawPushConstants()
                 ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.5f, 0.28f, 0.0f, 1.0f));
 
             ImGui::TableSetColumnIndex(3);
-            if (ImGui::Checkbox("##v", &pc.m_Vertex))   m_Dirty = true;
+            if (ImGui::Checkbox("##v", &pc.Vertex))   m_Dirty = true;
             ImGui::TableSetColumnIndex(4);
-            if (ImGui::Checkbox("##f", &pc.m_Fragment)) m_Dirty = true;
+            if (ImGui::Checkbox("##f", &pc.Fragment)) m_Dirty = true;
             ImGui::TableSetColumnIndex(5);
-            if (ImGui::Checkbox("##c", &pc.m_Compute))  m_Dirty = true;
+            if (ImGui::Checkbox("##c", &pc.Compute))  m_Dirty = true;
 
             if (noStage) ImGui::PopStyleColor();
 
             // Byte range summary
             ImGui::TableSetColumnIndex(6);
-            if (pc.m_Size > 0)
-                ImGui::TextDisabled("[%d, %d)", pc.m_Offset, pc.m_Offset + pc.m_Size);
+            if (pc.Size > 0)
+                ImGui::TextDisabled("[%d, %d)", pc.Offset, pc.Offset + pc.Size);
             else
                 ImGui::TextDisabled("--");
 
@@ -552,7 +552,7 @@ void PipelineWindow::DrawValidation()
     {
         const auto& set = m_Sets[si];
 
-        if (set.m_Bindings.empty())
+        if (set.Bindings.empty())
         {
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.65f, 0.0f, 1.0f));
             ImGui::Text("[warn]  Set %d has no bindings", si);
@@ -562,9 +562,9 @@ void PipelineWindow::DrawValidation()
 
         // Duplicate binding indices
         std::set<int> reportedDups;
-        for (int bi = 0; bi < static_cast<int>(set.m_Bindings.size()); ++bi)
+        for (int bi = 0; bi < static_cast<int>(set.Bindings.size()); ++bi)
         {
-            const int idx = set.m_Bindings[bi].m_Binding;
+            const int idx = set.Bindings[bi].Binding;
             if (HasDuplicateBinding(si, idx, bi) && reportedDups.insert(idx).second)
             {
                 ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
@@ -575,13 +575,13 @@ void PipelineWindow::DrawValidation()
         }
 
         // No stages on a binding
-        for (int bi = 0; bi < static_cast<int>(set.m_Bindings.size()); ++bi)
+        for (int bi = 0; bi < static_cast<int>(set.Bindings.size()); ++bi)
         {
-            const auto& b = set.m_Bindings[bi];
-            if (NoStagesSelected(b.m_Vertex, b.m_Fragment, b.m_Compute))
+            const auto& b = set.Bindings[bi];
+            if (NoStagesSelected(b.Vertex, b.Fragment, b.Compute))
             {
                 ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
-                ImGui::Text("[error] Set %d, binding %d: no shader stages selected", si, b.m_Binding);
+                ImGui::Text("[error] Set %d, binding %d: no shader stages selected", si, b.Binding);
                 ImGui::PopStyleColor();
                 anyIssue = true;
             }
@@ -594,7 +594,7 @@ void PipelineWindow::DrawValidation()
     {
         const auto& pc = m_PushConstants[i];
 
-        if (pc.m_Size <= 0)
+        if (pc.Size <= 0)
         {
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
             ImGui::Text("[error] Push constant range %d: size must be > 0", i);
@@ -602,7 +602,7 @@ void PipelineWindow::DrawValidation()
             anyIssue = true;
         }
 
-        if (NoStagesSelected(pc.m_Vertex, pc.m_Fragment, pc.m_Compute))
+        if (NoStagesSelected(pc.Vertex, pc.Fragment, pc.Compute))
         {
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
             ImGui::Text("[error] Push constant range %d: no shader stages selected", i);
@@ -633,14 +633,14 @@ void PipelineWindow::DrawValidation()
 
 void PipelineWindow::Draw(const FS::FileSystemManager& fileSystem)
 {
-    if (!m_Open)
+    if (!Open)
         return;
 
     const std::string title =
         std::string("Pipeline") + (m_Dirty ? " *" : "") + "###Pipeline";
 
     ImGui::SetNextWindowSize(ImVec2(680.0f, 580.0f), ImGuiCond_Appearing);
-    if (!ImGui::Begin(title.c_str(), &m_Open))
+    if (!ImGui::Begin(title.c_str(), &Open))
     {
         ImGui::End();
         return;

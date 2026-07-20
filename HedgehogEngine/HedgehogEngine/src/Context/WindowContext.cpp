@@ -13,11 +13,11 @@ namespace HedgehogEngine
         m_WindowManager = std::make_unique<HW::WindowManager>();
 
         HW::WindowDesc desc;
-        desc.m_Title  = "Hedgehog Engine";
-        desc.m_X      = 100;
-        desc.m_Y      = 100;
-        desc.m_Width  = 1366;
-        desc.m_Height = 768;
+        desc.Title  = "Hedgehog Engine";
+        desc.X      = 100;
+        desc.Y      = 100;
+        desc.Width  = 1366;
+        desc.Height = 768;
         m_Window = &m_WindowManager->CreateWindow(desc);
     }
 

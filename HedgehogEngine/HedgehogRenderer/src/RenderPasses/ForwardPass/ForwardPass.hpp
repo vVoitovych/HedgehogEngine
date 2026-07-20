@@ -52,19 +52,19 @@ namespace Renderer
         // GPU-layout light struct; alignas matches std140/std430 UBO packing expected by the shader.
         struct GpuLight
         {
-            alignas(16) HM::Vector3 m_Position;
-            alignas(16) HM::Vector3 m_Direction;
-            alignas(16) HM::Vector3 m_Color;
-            alignas(16) HM::Vector4 m_Data;  // (type, intensity, radius, cos(coneAngle))
+            alignas(16) HM::Vector3 Position;
+            alignas(16) HM::Vector3 Direction;
+            alignas(16) HM::Vector3 Color;
+            alignas(16) HM::Vector4 Data;  // (type, intensity, radius, cos(coneAngle))
         };
 
         struct ForwardPassFrameUniform
         {
-            alignas(16) HM::Matrix4x4 m_View;
-            alignas(16) HM::Matrix4x4 m_ViewProj;
-            alignas(16) HM::Vector3   m_EyePosition;
-            alignas(16) GpuLight      m_Lights[HedgehogEngine::MAX_LIGHTS_COUNT];
-            size_t                    m_LightCount;
+            alignas(16) HM::Matrix4x4 View;
+            alignas(16) HM::Matrix4x4 ViewProj;
+            alignas(16) HM::Vector3   EyePosition;
+            alignas(16) GpuLight      Lights[HedgehogEngine::MAX_LIGHTS_COUNT];
+            size_t                    LightCount;
         };
 
         static GpuLight ToGpuLight(const HedgehogEngine::LightData& fd);

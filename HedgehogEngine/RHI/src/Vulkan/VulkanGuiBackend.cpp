@@ -41,8 +41,8 @@ namespace RHI
         vkCreateDescriptorPool(m_Device.GetHandle(), &poolInfo, nullptr, &m_Pool);
 
         RenderPassDesc rpDesc;
-        rpDesc.m_ColorAttachments.push_back(AttachmentDesc{
-            desc.m_ColorFormat,
+        rpDesc.ColorAttachments.push_back(AttachmentDesc{
+            desc.ColorFormat,
             LoadOp::Clear,
             StoreOp::Store,
             LoadOp::DontCare,
@@ -58,11 +58,11 @@ namespace RHI
         initInfo.Instance       = m_Device.GetInstance();
         initInfo.PhysicalDevice = m_Device.GetPhysicalDevice();
         initInfo.Device         = m_Device.GetHandle();
-        initInfo.QueueFamily    = m_Device.GetQueueFamilyIndices().m_GraphicsFamily.value();
+        initInfo.QueueFamily    = m_Device.GetQueueFamilyIndices().GraphicsFamily.value();
         initInfo.Queue          = m_Device.GetGraphicsQueue();
         initInfo.DescriptorPool = m_Pool;
-        initInfo.MinImageCount  = desc.m_MinImageCount;
-        initInfo.ImageCount     = desc.m_ImageCount;
+        initInfo.MinImageCount  = desc.MinImageCount;
+        initInfo.ImageCount     = desc.ImageCount;
         initInfo.PipelineInfoMain.RenderPass = vkRenderPass.GetHandle();
         ImGui_ImplVulkan_Init(&initInfo);
 
@@ -94,7 +94,7 @@ namespace RHI
     void VulkanGuiBackend::Render(IRHICommandList& cmd, IRHIFramebuffer& framebuffer)
     {
         ClearValue colorClear;
-        colorClear.m_Color = { 0.0f, 0.0f, 0.0f, 1.0f };
+        colorClear.Color = { 0.0f, 0.0f, 0.0f, 1.0f };
         cmd.BeginRenderPass(*m_RenderPass, framebuffer, { colorClear });
 
         auto& vkCmd = static_cast<VulkanCommandList&>(cmd);

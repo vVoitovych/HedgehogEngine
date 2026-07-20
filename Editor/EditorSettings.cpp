@@ -32,9 +32,9 @@ namespace Editor
             << YAML::EndSeq;
 
         out << YAML::Key << "dock_layout" << YAML::Value << YAML::BeginMap;
-        out << YAML::Key << "left_width"    << YAML::Value << dockLayout.m_LeftWidth;
-        out << YAML::Key << "right_width"   << YAML::Value << dockLayout.m_RightWidth;
-        out << YAML::Key << "bottom_height" << YAML::Value << dockLayout.m_BottomHeight;
+        out << YAML::Key << "left_width"    << YAML::Value << dockLayout.LeftWidth;
+        out << YAML::Key << "right_width"   << YAML::Value << dockLayout.RightWidth;
+        out << YAML::Key << "bottom_height" << YAML::Value << dockLayout.BottomHeight;
 
         // Area → panel lists and active tab indices
         out << YAML::Key << "areas" << YAML::Value << YAML::BeginMap;
@@ -43,12 +43,12 @@ namespace Editor
             const int areaIdx = static_cast<int>(area);
             out << YAML::Key << k_DockAreaKeys[areaIdx]
                 << YAML::Value << YAML::Flow << YAML::BeginSeq;
-            for (const PanelId pid : dockLayout.m_AreaPanels[areaIdx])
+            for (const PanelId pid : dockLayout.AreaPanels[areaIdx])
                 out << PanelIdToString(pid);
             out << YAML::EndSeq;
 
             out << YAML::Key << (std::string(k_DockAreaKeys[areaIdx]) + "_active")
-                << YAML::Value << dockLayout.m_ActiveTab[areaIdx];
+                << YAML::Value << dockLayout.ActiveTab[areaIdx];
         }
         out << YAML::EndMap; // areas
 
@@ -56,14 +56,14 @@ namespace Editor
         out << YAML::Key << "panel_visible" << YAML::Value << YAML::BeginMap;
         for (int i = 0; i < PANEL_ID_COUNT; ++i)
             out << YAML::Key << PanelIdToString(static_cast<PanelId>(i))
-                << YAML::Value << dockLayout.m_PanelVisible[i];
+                << YAML::Value << dockLayout.PanelVisible[i];
         out << YAML::EndMap; // panel_visible
 
         // Floating panel last-known positions
         out << YAML::Key << "floating_positions" << YAML::Value << YAML::BeginMap;
         for (int i = 0; i < PANEL_ID_COUNT; ++i)
         {
-            const auto& p = dockLayout.m_FloatingPositions[i];
+            const auto& p = dockLayout.FloatingPositions[i];
             out << YAML::Key << PanelIdToString(static_cast<PanelId>(i))
                 << YAML::Value << YAML::Flow << YAML::BeginSeq
                 << p.x << p.y
@@ -73,7 +73,7 @@ namespace Editor
 
         out << YAML::EndMap; // dock_layout
 
-        out << YAML::Key << "last_scene" << YAML::Value << m_LastScene;
+        out << YAML::Key << "last_scene" << YAML::Value << LastScene;
 
         out << YAML::EndMap; // root
 
@@ -103,9 +103,9 @@ namespace Editor
 
             if (auto dock = root["dock_layout"])
             {
-                if (auto n = dock["left_width"])    dockLayout.m_LeftWidth    = n.as<float>();
-                if (auto n = dock["right_width"])   dockLayout.m_RightWidth   = n.as<float>();
-                if (auto n = dock["bottom_height"]) dockLayout.m_BottomHeight = n.as<float>();
+                if (auto n = dock["left_width"])    dockLayout.LeftWidth    = n.as<float>();
+                if (auto n = dock["right_width"])   dockLayout.RightWidth   = n.as<float>();
+                if (auto n = dock["bottom_height"]) dockLayout.BottomHeight = n.as<float>();
 
                 if (auto areas = dock["areas"])
                 {
@@ -114,17 +114,17 @@ namespace Editor
                         const int areaIdx = static_cast<int>(area);
                         if (auto seq = areas[k_DockAreaKeys[areaIdx]])
                         {
-                            dockLayout.m_AreaPanels[areaIdx].clear();
+                            dockLayout.AreaPanels[areaIdx].clear();
                             for (const auto& node : seq)
                             {
                                 if (auto pid = StringToPanelId(node.as<std::string>()))
-                                    dockLayout.m_AreaPanels[areaIdx].push_back(pid.value());
+                                    dockLayout.AreaPanels[areaIdx].push_back(pid.value());
                             }
                         }
                         const std::string activeKey =
                             std::string(k_DockAreaKeys[areaIdx]) + "_active";
                         if (auto n = areas[activeKey])
-                            dockLayout.m_ActiveTab[areaIdx] = n.as<int>();
+                            dockLayout.ActiveTab[areaIdx] = n.as<int>();
                     }
                 }
 
@@ -134,7 +134,7 @@ namespace Editor
                     {
                         const char* key = PanelIdToString(static_cast<PanelId>(i));
                         if (auto n = vis[key])
-                            dockLayout.m_PanelVisible[i] = n.as<bool>();
+                            dockLayout.PanelVisible[i] = n.as<bool>();
                     }
                 }
 
@@ -147,8 +147,8 @@ namespace Editor
                         {
                             if (seq.IsSequence() && seq.size() == 2)
                             {
-                                dockLayout.m_FloatingPositions[i].x = seq[0].as<float>();
-                                dockLayout.m_FloatingPositions[i].y = seq[1].as<float>();
+                                dockLayout.FloatingPositions[i].x = seq[0].as<float>();
+                                dockLayout.FloatingPositions[i].y = seq[1].as<float>();
                             }
                         }
                     }
@@ -160,7 +160,7 @@ namespace Editor
             }
 
             if (auto n = root["last_scene"])
-                m_LastScene = n.as<std::string>();
+                LastScene = n.as<std::string>();
 
             return true;
         }

@@ -27,17 +27,17 @@ namespace HedgehogEngine
     class ScriptComponent
     {
     public:
-        bool                                         m_Enable = true;
-        std::optional<bool>                          m_NewEnable;  // runtime-only
-        std::string                                  m_ScriptPath;
-        std::unordered_map<std::string, ScriptParam> m_Params;
+        bool                                         Enable = true;
+        std::optional<bool>                          NewEnable;  // runtime-only
+        std::string                                  ScriptPath;
+        std::unordered_map<std::string, ScriptParam> Params;
 
-        // Visit serializes simple fields; m_Params is handled manually in EcsSerializer
+        // Visit serializes simple fields; Params is handled manually in EcsSerializer
         template<typename V>
         void Visit(V& v)
         {
-            v("ScriptEnable", m_Enable);
-            v("ScriptFile",   m_ScriptPath);
+            v("ScriptEnable", Enable);
+            v("ScriptFile",   ScriptPath);
         }
 
         friend class ScriptSystem;

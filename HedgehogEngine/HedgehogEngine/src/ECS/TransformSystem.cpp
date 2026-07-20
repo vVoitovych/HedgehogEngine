@@ -30,14 +30,14 @@ namespace HedgehogEngine
         {
             auto& transform = ecs.GetComponent<TransformComponent>(entity);
 
-            HM::Matrix4x4 translation = HM::Matrix4x4::GetTranslation(transform.m_Position);
-            HM::Matrix4x4 rotationX   = HM::Matrix4x4::GetRotationX(HM::ToRadians(transform.m_Rotation.x()));
-            HM::Matrix4x4 rotationY   = HM::Matrix4x4::GetRotationY(HM::ToRadians(transform.m_Rotation.y()));
-            HM::Matrix4x4 rotationZ   = HM::Matrix4x4::GetRotationZ(HM::ToRadians(transform.m_Rotation.z()));
+            HM::Matrix4x4 translation = HM::Matrix4x4::GetTranslation(transform.Position);
+            HM::Matrix4x4 rotationX   = HM::Matrix4x4::GetRotationX(HM::ToRadians(transform.Rotation.x()));
+            HM::Matrix4x4 rotationY   = HM::Matrix4x4::GetRotationY(HM::ToRadians(transform.Rotation.y()));
+            HM::Matrix4x4 rotationZ   = HM::Matrix4x4::GetRotationZ(HM::ToRadians(transform.Rotation.z()));
             HM::Matrix4x4 scale       = HM::Matrix4x4::GetScale(
-                transform.m_Scale.x(), transform.m_Scale.y(), transform.m_Scale.z());
+                transform.Scale.x(), transform.Scale.y(), transform.Scale.z());
 
-            transform.m_LocalMatrix = translation * rotationX * rotationY * rotationZ * scale;
+            transform.LocalMatrix = translation * rotationX * rotationY * rotationZ * scale;
 
             bus.Publish(LocalMatrixUpdatedEvent{ entity });
         }

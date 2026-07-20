@@ -218,117 +218,117 @@ enum class VertexInputRate
 
 struct Viewport
 {
-    float m_X        = 0.0f;
-    float m_Y        = 0.0f;
-    float m_Width    = 0.0f;
-    float m_Height   = 0.0f;
-    float m_MinDepth = 0.0f;
-    float m_MaxDepth = 1.0f;
+    float X        = 0.0f;
+    float Y        = 0.0f;
+    float Width    = 0.0f;
+    float Height   = 0.0f;
+    float MinDepth = 0.0f;
+    float MaxDepth = 1.0f;
 };
 
 struct Scissor
 {
-    int32_t  m_X      = 0;
-    int32_t  m_Y      = 0;
-    uint32_t m_Width  = 0;
-    uint32_t m_Height = 0;
+    int32_t  X      = 0;
+    int32_t  Y      = 0;
+    uint32_t Width  = 0;
+    uint32_t Height = 0;
 };
 
 struct ClearColorValue
 {
-    float m_R = 0.0f;
-    float m_G = 0.0f;
-    float m_B = 0.0f;
-    float m_A = 1.0f;
+    float R = 0.0f;
+    float G = 0.0f;
+    float B = 0.0f;
+    float A = 1.0f;
 };
 
 struct ClearDepthStencilValue
 {
-    float    m_Depth   = 1.0f;
-    uint32_t m_Stencil = 0;
+    float    Depth   = 1.0f;
+    uint32_t Stencil = 0;
 };
 
 struct ClearValue
 {
-    bool                   m_IsDepth      = false;
-    ClearColorValue        m_Color        = {};
-    ClearDepthStencilValue m_DepthStencil = {};
+    bool                   IsDepth      = false;
+    ClearColorValue        Color        = {};
+    ClearDepthStencilValue DepthStencil = {};
 };
 
 struct VertexBinding
 {
-    uint32_t        m_Binding   = 0;
-    uint32_t        m_Stride    = 0;
-    VertexInputRate m_InputRate = VertexInputRate::PerVertex;
+    uint32_t        Binding   = 0;
+    uint32_t        Stride    = 0;
+    VertexInputRate InputRate = VertexInputRate::PerVertex;
 };
 
 struct VertexAttribute
 {
-    uint32_t m_Location = 0;
-    uint32_t m_Binding  = 0;
-    Format   m_Format   = Format::Undefined;
-    uint32_t m_Offset   = 0;
+    uint32_t    Location = 0;
+    uint32_t    Binding  = 0;
+    RHI::Format Format   = RHI::Format::Undefined;
+    uint32_t    Offset   = 0;
 };
 
 struct PushConstantRange
 {
-    ShaderStage m_Stages = ShaderStage::All;
-    uint32_t    m_Offset = 0;
-    uint32_t    m_Size   = 0;
+    ShaderStage Stages = ShaderStage::All;
+    uint32_t    Offset = 0;
+    uint32_t    Size   = 0;
 };
 
 struct DescriptorBinding
 {
-    uint32_t       m_Binding = 0;
-    DescriptorType m_Type    = DescriptorType::UniformBuffer;
-    uint32_t       m_Count   = 1;
-    ShaderStage    m_Stages  = ShaderStage::All;
+    uint32_t       Binding = 0;
+    DescriptorType Type    = DescriptorType::UniformBuffer;
+    uint32_t       Count   = 1;
+    ShaderStage    Stages  = ShaderStage::All;
 };
 
 struct PoolSize
 {
-    DescriptorType m_Type  = DescriptorType::UniformBuffer;
-    uint32_t       m_Count = 0;
+    DescriptorType Type  = DescriptorType::UniformBuffer;
+    uint32_t       Count = 0;
 };
 
 struct AttachmentDesc
 {
-    Format      m_Format             = Format::Undefined;
-    LoadOp      m_LoadOp             = LoadOp::Clear;
-    StoreOp     m_StoreOp            = StoreOp::Store;
-    LoadOp      m_StencilLoadOp      = LoadOp::DontCare;
-    StoreOp     m_StencilStoreOp     = StoreOp::DontCare;
-    ImageLayout m_InitialLayout      = ImageLayout::Undefined;
-    ImageLayout m_FinalLayout        = ImageLayout::ColorAttachment;
+    RHI::Format  Format             = RHI::Format::Undefined;
+    RHI::LoadOp  LoadOp             = RHI::LoadOp::Clear;
+    RHI::StoreOp StoreOp            = RHI::StoreOp::Store;
+    RHI::LoadOp  StencilLoadOp      = RHI::LoadOp::DontCare;
+    RHI::StoreOp StencilStoreOp     = RHI::StoreOp::DontCare;
+    ImageLayout InitialLayout      = ImageLayout::Undefined;
+    ImageLayout FinalLayout        = ImageLayout::ColorAttachment;
 };
 
 struct ColorBlendAttachment
 {
-    bool        m_BlendEnable      = false;
-    BlendFactor m_SrcColorFactor   = BlendFactor::SrcAlpha;
-    BlendFactor m_DstColorFactor   = BlendFactor::OneMinusSrcAlpha;
-    BlendOp     m_ColorOp          = BlendOp::Add;
-    BlendFactor m_SrcAlphaFactor   = BlendFactor::One;
-    BlendFactor m_DstAlphaFactor   = BlendFactor::Zero;
-    BlendOp     m_AlphaOp          = BlendOp::Add;
+    bool        BlendEnable      = false;
+    BlendFactor SrcColorFactor   = BlendFactor::SrcAlpha;
+    BlendFactor DstColorFactor   = BlendFactor::OneMinusSrcAlpha;
+    BlendOp     ColorOp          = BlendOp::Add;
+    BlendFactor SrcAlphaFactor   = BlendFactor::One;
+    BlendFactor DstAlphaFactor   = BlendFactor::Zero;
+    BlendOp     AlphaOp          = BlendOp::Add;
 };
 
 struct TextureDesc
 {
-    uint32_t     m_Width   = 1;
-    uint32_t     m_Height  = 1;
-    Format       m_Format  = Format::R8G8B8A8Srgb;
-    TextureUsage m_Usage   = TextureUsage::Sampled;
+    uint32_t     Width   = 1;
+    uint32_t     Height  = 1;
+    RHI::Format  Format  = RHI::Format::R8G8B8A8Srgb;
+    TextureUsage Usage   = TextureUsage::Sampled;
 };
 
 struct SamplerDesc
 {
-    Filter      m_MinFilter    = Filter::Linear;
-    Filter      m_MagFilter    = Filter::Linear;
-    AddressMode m_AddressModeU = AddressMode::Repeat;
-    AddressMode m_AddressModeV = AddressMode::Repeat;
-    AddressMode m_AddressModeW = AddressMode::Repeat;
-    float       m_MaxAnisotropy = 16.0f;
+    Filter      MinFilter    = Filter::Linear;
+    Filter      MagFilter    = Filter::Linear;
+    AddressMode AddressModeU = AddressMode::Repeat;
+    AddressMode AddressModeV = AddressMode::Repeat;
+    AddressMode AddressModeW = AddressMode::Repeat;
+    float       MaxAnisotropy = 16.0f;
 };
 
 } // namespace RHI

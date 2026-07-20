@@ -56,7 +56,7 @@ const char* VertexDescriptionWindow::IndexToInputRate(int idx)
 bool VertexDescriptionWindow::HasDuplicateBindingIndex(int index, int skipRow) const
 {
     for (int i = 0; i < static_cast<int>(m_Bindings.size()); ++i)
-        if (i != skipRow && m_Bindings[i].m_Binding == index)
+        if (i != skipRow && m_Bindings[i].Binding == index)
             return true;
     return false;
 }
@@ -64,7 +64,7 @@ bool VertexDescriptionWindow::HasDuplicateBindingIndex(int index, int skipRow) c
 bool VertexDescriptionWindow::HasDuplicateAttributeLocation(int location, int skipRow) const
 {
     for (int i = 0; i < static_cast<int>(m_Attributes.size()); ++i)
-        if (i != skipRow && m_Attributes[i].m_Location == location)
+        if (i != skipRow && m_Attributes[i].Location == location)
             return true;
     return false;
 }
@@ -72,7 +72,7 @@ bool VertexDescriptionWindow::HasDuplicateAttributeLocation(int location, int sk
 bool VertexDescriptionWindow::AttributeBindingExists(int binding) const
 {
     for (const auto& b : m_Bindings)
-        if (b.m_Binding == binding)
+        if (b.Binding == binding)
             return true;
     return false;
 }
@@ -152,10 +152,10 @@ bool VertexDescriptionWindow::LoadFromPath(const std::string& path,
         for (const YAML::Node& b : bn)
         {
             BindingState bs;
-            bs.m_Binding   = b["binding"].as<int>(0);
-            bs.m_Stride    = b["stride"].as<int>(12);
+            bs.Binding   = b["binding"].as<int>(0);
+            bs.Stride    = b["stride"].as<int>(12);
             const std::string rate = b["input_rate"] ? b["input_rate"].as<std::string>() : "per_vertex";
-            bs.m_InputRate = (rate == "per_instance") ? 1 : 0;
+            bs.InputRate = (rate == "per_instance") ? 1 : 0;
             m_Bindings.push_back(bs);
         }
     }
@@ -165,10 +165,10 @@ bool VertexDescriptionWindow::LoadFromPath(const std::string& path,
         for (const YAML::Node& a : an)
         {
             AttributeState as;
-            as.m_Location = a["location"].as<int>(0);
-            as.m_Binding  = a["binding"].as<int>(0);
-            as.m_Format   = FormatToIndex(a["format"] ? a["format"].as<std::string>() : "r32g32b32_float");
-            as.m_Offset   = a["offset"].as<int>(0);
+            as.Location = a["location"].as<int>(0);
+            as.Binding  = a["binding"].as<int>(0);
+            as.Format   = FormatToIndex(a["format"] ? a["format"].as<std::string>() : "r32g32b32_float");
+            as.Offset   = a["offset"].as<int>(0);
             m_Attributes.push_back(as);
         }
     }
@@ -195,9 +195,9 @@ bool VertexDescriptionWindow::SaveToPath(const std::string& virtualPath,
     for (const auto& b : m_Bindings)
     {
         out << YAML::BeginMap;
-        out << YAML::Key << "binding"    << YAML::Value << b.m_Binding;
-        out << YAML::Key << "stride"     << YAML::Value << b.m_Stride;
-        out << YAML::Key << "input_rate" << YAML::Value << IndexToInputRate(b.m_InputRate);
+        out << YAML::Key << "binding"    << YAML::Value << b.Binding;
+        out << YAML::Key << "stride"     << YAML::Value << b.Stride;
+        out << YAML::Key << "input_rate" << YAML::Value << IndexToInputRate(b.InputRate);
         out << YAML::EndMap;
     }
     out << YAML::EndSeq;
@@ -206,10 +206,10 @@ bool VertexDescriptionWindow::SaveToPath(const std::string& virtualPath,
     for (const auto& a : m_Attributes)
     {
         out << YAML::BeginMap;
-        out << YAML::Key << "location" << YAML::Value << a.m_Location;
-        out << YAML::Key << "binding"  << YAML::Value << a.m_Binding;
-        out << YAML::Key << "format"   << YAML::Value << IndexToFormat(a.m_Format);
-        out << YAML::Key << "offset"   << YAML::Value << a.m_Offset;
+        out << YAML::Key << "location" << YAML::Value << a.Location;
+        out << YAML::Key << "binding"  << YAML::Value << a.Binding;
+        out << YAML::Key << "format"   << YAML::Value << IndexToFormat(a.Format);
+        out << YAML::Key << "offset"   << YAML::Value << a.Offset;
         out << YAML::EndMap;
     }
     out << YAML::EndSeq;
@@ -264,7 +264,7 @@ void VertexDescriptionWindow::DrawBindingsTable()
         for (int i = 0; i < static_cast<int>(m_Bindings.size()); ++i)
         {
             auto& b = m_Bindings[i];
-            const bool dupIdx = HasDuplicateBindingIndex(b.m_Binding, i);
+            const bool dupIdx = HasDuplicateBindingIndex(b.Binding, i);
 
             ImGui::TableNextRow();
             ImGui::PushID(i);
@@ -277,9 +277,9 @@ void VertexDescriptionWindow::DrawBindingsTable()
             ImGui::TableSetColumnIndex(1);
             if (dupIdx) ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.55f, 0.1f, 0.1f, 1.0f));
             ImGui::SetNextItemWidth(-FLT_MIN);
-            if (ImGui::InputInt("##b", &b.m_Binding))
+            if (ImGui::InputInt("##b", &b.Binding))
             {
-                b.m_Binding = std::max(0, b.m_Binding);
+                b.Binding = std::max(0, b.Binding);
                 m_Dirty = true;
             }
             if (dupIdx) ImGui::PopStyleColor();
@@ -287,16 +287,16 @@ void VertexDescriptionWindow::DrawBindingsTable()
             // Stride
             ImGui::TableSetColumnIndex(2);
             ImGui::SetNextItemWidth(-FLT_MIN);
-            if (ImGui::InputInt("##s", &b.m_Stride))
+            if (ImGui::InputInt("##s", &b.Stride))
             {
-                b.m_Stride = std::max(1, b.m_Stride);
+                b.Stride = std::max(1, b.Stride);
                 m_Dirty = true;
             }
 
             // Input rate
             ImGui::TableSetColumnIndex(3);
             ImGui::SetNextItemWidth(-FLT_MIN);
-            if (ImGui::Combo("##ir", &b.m_InputRate, k_InputRateNames, k_InputRateCount))
+            if (ImGui::Combo("##ir", &b.InputRate, k_InputRateNames, k_InputRateCount))
                 m_Dirty = true;
 
             // Delete
@@ -318,7 +318,7 @@ void VertexDescriptionWindow::DrawBindingsTable()
     if (ImGui::Button("+ Add binding"))
     {
         BindingState b;
-        b.m_Binding = static_cast<int>(m_Bindings.size());
+        b.Binding = static_cast<int>(m_Bindings.size());
         m_Bindings.push_back(b);
         m_Dirty = true;
     }
@@ -348,8 +348,8 @@ void VertexDescriptionWindow::DrawAttributesTable()
         for (int i = 0; i < static_cast<int>(m_Attributes.size()); ++i)
         {
             auto& a = m_Attributes[i];
-            const bool dupLoc        = HasDuplicateAttributeLocation(a.m_Location, i);
-            const bool missingBinding = !AttributeBindingExists(a.m_Binding);
+            const bool dupLoc        = HasDuplicateAttributeLocation(a.Location, i);
+            const bool missingBinding = !AttributeBindingExists(a.Binding);
 
             ImGui::TableNextRow();
             ImGui::PushID(i);
@@ -362,9 +362,9 @@ void VertexDescriptionWindow::DrawAttributesTable()
             ImGui::TableSetColumnIndex(1);
             if (dupLoc) ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.55f, 0.1f, 0.1f, 1.0f));
             ImGui::SetNextItemWidth(-FLT_MIN);
-            if (ImGui::InputInt("##loc", &a.m_Location))
+            if (ImGui::InputInt("##loc", &a.Location))
             {
-                a.m_Location = std::max(0, a.m_Location);
+                a.Location = std::max(0, a.Location);
                 m_Dirty = true;
             }
             if (dupLoc) ImGui::PopStyleColor();
@@ -373,9 +373,9 @@ void VertexDescriptionWindow::DrawAttributesTable()
             ImGui::TableSetColumnIndex(2);
             if (missingBinding) ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.5f, 0.28f, 0.0f, 1.0f));
             ImGui::SetNextItemWidth(-FLT_MIN);
-            if (ImGui::InputInt("##ab", &a.m_Binding))
+            if (ImGui::InputInt("##ab", &a.Binding))
             {
-                a.m_Binding = std::max(0, a.m_Binding);
+                a.Binding = std::max(0, a.Binding);
                 m_Dirty = true;
             }
             if (missingBinding) ImGui::PopStyleColor();
@@ -383,15 +383,15 @@ void VertexDescriptionWindow::DrawAttributesTable()
             // Format dropdown
             ImGui::TableSetColumnIndex(3);
             ImGui::SetNextItemWidth(-FLT_MIN);
-            if (ImGui::Combo("##fmt", &a.m_Format, k_FormatNames, k_FormatCount))
+            if (ImGui::Combo("##fmt", &a.Format, k_FormatNames, k_FormatCount))
                 m_Dirty = true;
 
             // Offset
             ImGui::TableSetColumnIndex(4);
             ImGui::SetNextItemWidth(-FLT_MIN);
-            if (ImGui::InputInt("##off", &a.m_Offset))
+            if (ImGui::InputInt("##off", &a.Offset))
             {
-                a.m_Offset = std::max(0, a.m_Offset);
+                a.Offset = std::max(0, a.Offset);
                 m_Dirty = true;
             }
 
@@ -414,7 +414,7 @@ void VertexDescriptionWindow::DrawAttributesTable()
     if (ImGui::Button("+ Add attribute"))
     {
         AttributeState a;
-        a.m_Location = static_cast<int>(m_Attributes.size());
+        a.Location = static_cast<int>(m_Attributes.size());
         m_Attributes.push_back(a);
         m_Dirty = true;
     }
@@ -434,7 +434,7 @@ void VertexDescriptionWindow::DrawValidation()
     std::set<int> reportedBindings;
     for (int i = 0; i < static_cast<int>(m_Bindings.size()); ++i)
     {
-        const int idx = m_Bindings[i].m_Binding;
+        const int idx = m_Bindings[i].Binding;
         if (HasDuplicateBindingIndex(idx, i) && reportedBindings.insert(idx).second)
         {
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
@@ -448,7 +448,7 @@ void VertexDescriptionWindow::DrawValidation()
     std::set<int> reportedLocations;
     for (int i = 0; i < static_cast<int>(m_Attributes.size()); ++i)
     {
-        const int loc = m_Attributes[i].m_Location;
+        const int loc = m_Attributes[i].Location;
         if (HasDuplicateAttributeLocation(loc, i) && reportedLocations.insert(loc).second)
         {
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
@@ -461,11 +461,11 @@ void VertexDescriptionWindow::DrawValidation()
     // Report attributes referencing undefined bindings
     for (const auto& a : m_Attributes)
     {
-        if (!AttributeBindingExists(a.m_Binding))
+        if (!AttributeBindingExists(a.Binding))
         {
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.65f, 0.0f, 1.0f));
             ImGui::Text("[warn]  Attribute location %d references undefined binding %d",
-                a.m_Location, a.m_Binding);
+                a.Location, a.Binding);
             ImGui::PopStyleColor();
             anyIssue = true;
         }
@@ -481,7 +481,7 @@ void VertexDescriptionWindow::DrawValidation()
 
 void VertexDescriptionWindow::Draw(const FS::FileSystemManager& fileSystem)
 {
-    if (!m_Open)
+    if (!Open)
         return;
 
     // Stable window identity via ###; title prefix changes with dirty state
@@ -489,7 +489,7 @@ void VertexDescriptionWindow::Draw(const FS::FileSystemManager& fileSystem)
         std::string("Vertex Descriptions") + (m_Dirty ? " *" : "") + "###VertexDescriptions";
 
     ImGui::SetNextWindowSize(ImVec2(620.0f, 520.0f), ImGuiCond_Appearing);
-    if (!ImGui::Begin(title.c_str(), &m_Open))
+    if (!ImGui::Begin(title.c_str(), &Open))
     {
         ImGui::End();
         return;

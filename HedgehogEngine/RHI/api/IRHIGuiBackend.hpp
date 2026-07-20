@@ -11,9 +11,9 @@ namespace RHI
 
     struct GuiBackendDesc
     {
-        uint32_t m_MinImageCount;
-        uint32_t m_ImageCount;
-        Format   m_ColorFormat;
+        uint32_t MinImageCount;
+        uint32_t ImageCount;
+        Format   ColorFormat;
     };
 
     class IRHIGuiBackend

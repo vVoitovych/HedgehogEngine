@@ -32,7 +32,7 @@ namespace HedgehogEngine
         const bool rootUpdated = pending.count(root) > 0;
         if (rootUpdated)
         {
-            rootTransform.m_ObjMatrix = rootTransform.m_LocalMatrix;
+            rootTransform.ObjMatrix = rootTransform.LocalMatrix;
             bus.Publish(WorldMatrixUpdatedEvent{ root });
         }
 
@@ -45,14 +45,14 @@ namespace HedgehogEngine
         auto& parentTransform = ecs.GetComponent<TransformComponent>(parent);
         auto& hierarchy       = ecs.GetComponent<ECS::HierarchyComponent>(parent);
 
-        for (auto const& child : hierarchy.m_Children)
+        for (auto const& child : hierarchy.Children)
         {
             auto& childTransform        = ecs.GetComponent<TransformComponent>(child);
             const bool needsWorldUpdate = parentWorldUpdated || pending.count(child) > 0;
 
             if (needsWorldUpdate)
             {
-                childTransform.m_ObjMatrix = parentTransform.m_ObjMatrix * childTransform.m_LocalMatrix;
+                childTransform.ObjMatrix = parentTransform.ObjMatrix * childTransform.LocalMatrix;
                 bus.Publish(WorldMatrixUpdatedEvent{ child });
             }
 

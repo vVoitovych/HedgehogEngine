@@ -16,14 +16,14 @@ namespace
 {
     struct TestTransform
     {
-        HM::Vector3 m_Position{};
-        float       m_Scale{ 1.0f };
+        HM::Vector3 Position{};
+        float       Scale{ 1.0f };
 
         template<typename Visitor>
         void Visit(Visitor& visitor)
         {
-            visitor("Position", m_Position);
-            visitor("Scale",    m_Scale);
+            visitor("Position", Position);
+            visitor("Scale",    Scale);
         }
     };
 
@@ -64,13 +64,13 @@ TEST_CASE("EcsSerializer - scene round-trips through YAML")
 
     const ECS::Entity child = source.CreateEntity();
     source.AddComponent(child, ECS::HierarchyComponent{ "Child", root, {} });
-    source.GetComponent<ECS::HierarchyComponent>(root).m_Children.push_back(child);
+    source.GetComponent<ECS::HierarchyComponent>(root).Children.push_back(child);
 
     TestTransform transform;
-    transform.m_Position.x() = 1.0f;
-    transform.m_Position.y() = 2.0f;
-    transform.m_Position.z() = 3.0f;
-    transform.m_Scale        = 0.5f;
+    transform.Position.x() = 1.0f;
+    transform.Position.y() = 2.0f;
+    transform.Position.z() = 3.0f;
+    transform.Scale        = 0.5f;
     source.AddComponent(child, transform);
 
     REQUIRE(EcsSerialization::EcsSerializer::Serialize(
@@ -86,20 +86,20 @@ TEST_CASE("EcsSerializer - scene round-trips through YAML")
     REQUIRE(target.GetRoot() == root);
 
     const auto& rootHierarchy = target.GetComponent<ECS::HierarchyComponent>(root);
-    CHECK(rootHierarchy.m_Name == "Root");
-    REQUIRE(rootHierarchy.m_Children.size() == 1u);
-    CHECK(rootHierarchy.m_Children.front() == child);
+    CHECK(rootHierarchy.Name == "Root");
+    REQUIRE(rootHierarchy.Children.size() == 1u);
+    CHECK(rootHierarchy.Children.front() == child);
 
     const auto& childHierarchy = target.GetComponent<ECS::HierarchyComponent>(child);
-    CHECK(childHierarchy.m_Name == "Child");
-    CHECK(childHierarchy.m_Parent == root);
+    CHECK(childHierarchy.Name == "Child");
+    CHECK(childHierarchy.Parent == root);
 
     REQUIRE(target.HasComponent<TestTransform>(child));
     const auto& loaded = target.GetComponent<TestTransform>(child);
-    CHECK(loaded.m_Position.x() == 1.0f);
-    CHECK(loaded.m_Position.y() == 2.0f);
-    CHECK(loaded.m_Position.z() == 3.0f);
-    CHECK(loaded.m_Scale == 0.5f);
+    CHECK(loaded.Position.x() == 1.0f);
+    CHECK(loaded.Position.y() == 2.0f);
+    CHECK(loaded.Position.z() == 3.0f);
+    CHECK(loaded.Scale == 0.5f);
 }
 
 TEST_CASE("EcsSerializer::Serialize - unmounted path returns false")

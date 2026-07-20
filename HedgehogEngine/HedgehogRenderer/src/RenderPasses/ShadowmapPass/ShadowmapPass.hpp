@@ -67,15 +67,15 @@ namespace Renderer
     private:
         struct ShadowCascadeUniform
         {
-            alignas(16) HM::Matrix4x4 m_ShadowMatrix;
+            alignas(16) HM::Matrix4x4 ShadowMatrix;
         };
 
         struct ShadowViewport
         {
-            float m_X      = 0.0f;
-            float m_Y      = 0.0f;
-            float m_Width  = 0.0f;
-            float m_Height = 0.0f;
+            float X      = 0.0f;
+            float Y      = 0.0f;
+            float Width  = 0.0f;
+            float Height = 0.0f;
         };
 
         static constexpr uint32_t MaxShadowCascades = 4;

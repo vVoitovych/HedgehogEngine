@@ -85,10 +85,10 @@ private:
     // (avoids dangling pointers when vectors grow).
     struct PendingWrite
     {
-        VkDescriptorBufferInfo m_BufferInfo = {};
-        VkDescriptorImageInfo  m_ImageInfo  = {};
-        VkWriteDescriptorSet   m_Write      = {};
-        bool                   m_IsBuffer   = true;
+        VkDescriptorBufferInfo BufferInfo = {};
+        VkDescriptorImageInfo  ImageInfo  = {};
+        VkWriteDescriptorSet   Write      = {};
+        bool                   IsBuffer   = true;
     };
 
     void EnqueueBufferWrite(uint32_t binding, const IRHIBuffer& buffer,

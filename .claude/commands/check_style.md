@@ -3,7 +3,7 @@
 Check HedgehogEngine code against CODING_CONVENTIONS.md.
 
 **Scope:** $ARGUMENTS
-(Examples: `HedgehogEngine/src/ECS/`, `HedgehogRenderer/`, or leave blank for recently changed files.)
+(Examples: `HedgehogEngine/src/ECS/`, `HedgehogRenderer/`, `--all` for the entire project, or leave blank for recently changed files.)
 
 ---
 
@@ -13,14 +13,16 @@ You are a code style enforcer for HedgehogEngine, a Vulkan C++20 game engine.
 
 Scope: $ARGUMENTS (if empty, run `git diff --name-only HEAD` to get the changed file list).
 
+If the scope is `--all`, check every first-party module in the repository: `ECS/`, `EcsSerialization/`, `ContentLoader/`, `DialogueWindows/`, `Editor/`, `FileSystem/`, `Logger/`, `Shaders/`, and everything under `HedgehogEngine/` (HedgehogCommon, HedgehogEngine, HedgehogMath, HedgehogRenderer, HedgehogSettings, HedgehogWindow, RHI). Exclude `ThirdParty/`, `Vendor/`, `Binaries/`, and `.claude/`. This is a large sweep — process module by module and keep per-module violation counts so the final report stays readable.
+
 Step 1: Read CODING_CONVENTIONS.md in full. These rules are authoritative.
 Step 2: Check each .hpp and .cpp file in scope against every rule.
 
 Rules to check (at minimum):
 
 **NAMING**
-- Member variables must have m_ prefix
-- Private methods must be camelCase, public methods PascalCase
+- Private/protected data members must have m_ prefix; public data members (structs, public class fields) must have NO prefix — plain PascalCase
+- All functions and methods (public and private) must be PascalCase
 - Constants must be constexpr, not #define (unless macro behavior is required)
 - Type aliases use PascalCase
 - Namespaces match the module name

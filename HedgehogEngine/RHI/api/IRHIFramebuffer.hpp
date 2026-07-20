@@ -11,11 +11,11 @@ class IRHITexture;
 
 struct FramebufferDesc
 {
-    const IRHIRenderPass*             m_RenderPass      = nullptr;
-    std::vector<const IRHITexture*>   m_ColorAttachments;
-    const IRHITexture*                m_DepthAttachment = nullptr;
-    uint32_t                          m_Width           = 0;
-    uint32_t                          m_Height          = 0;
+    const IRHIRenderPass*             RenderPass      = nullptr;
+    std::vector<const IRHITexture*>   ColorAttachments;
+    const IRHITexture*                DepthAttachment = nullptr;
+    uint32_t                          Width           = 0;
+    uint32_t                          Height          = 0;
 };
 
 class IRHIFramebuffer

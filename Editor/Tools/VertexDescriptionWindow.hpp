@@ -11,24 +11,24 @@ namespace Editor
 class VertexDescriptionWindow
 {
 public:
-    bool m_Open = false;
+    bool Open = false;
 
     void Draw(const FS::FileSystemManager& fileSystem);
 
 private:
     struct BindingState
     {
-        int m_Binding   = 0;
-        int m_Stride    = 12;
-        int m_InputRate = 0;    // 0 = per_vertex, 1 = per_instance
+        int Binding   = 0;
+        int Stride    = 12;
+        int InputRate = 0;    // 0 = per_vertex, 1 = per_instance
     };
 
     struct AttributeState
     {
-        int m_Location = 0;
-        int m_Binding  = 0;
-        int m_Format   = 2;    // default: r32g32b32_float
-        int m_Offset   = 0;
+        int Location = 0;
+        int Binding  = 0;
+        int Format   = 2;    // default: r32g32b32_float
+        int Offset   = 0;
     };
 
     // ── Sub-sections ──────────────────────────────────────────────────────────

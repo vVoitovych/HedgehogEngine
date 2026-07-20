@@ -17,12 +17,12 @@ namespace RHI
 // Internal queue family info — not part of the public RHI interface.
 struct QueueFamilyIndices
 {
-    std::optional<uint32_t> m_GraphicsFamily;
-    std::optional<uint32_t> m_PresentFamily;
+    std::optional<uint32_t> GraphicsFamily;
+    std::optional<uint32_t> PresentFamily;
 
     bool IsComplete() const
     {
-        return m_GraphicsFamily.has_value() && m_PresentFamily.has_value();
+        return GraphicsFamily.has_value() && PresentFamily.has_value();
     }
 };
 
