@@ -6,8 +6,10 @@
 #include "ECS/api/ECS.hpp"
 #include "HedgehogEngine/api/ECS/systems/LightSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/RenderSystem.hpp"
+#include "HedgehogEngine/api/ECS/systems/CameraSystem.hpp"
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/CameraComponent.hpp"
 
 #include "Logger/api/Logger.hpp"
 
@@ -40,7 +42,9 @@ namespace HedgehogEngine
         const ECS::ECS&                              ecs,
         const LightSystem&                           lightSystem,
         const RenderSystem&                          renderSystem,
+        const CameraSystem&                          cameraSystem,
         const Camera&                                camera,
+        float                                        gameAspectRatio,
         float                                        deltaTime,
         const std::function<MaterialType(uint64_t)>& materialTypeLookup) const
     {
@@ -52,6 +56,8 @@ namespace HedgehogEngine
         frame.Camera.Position = camera.GetPosition();
         frame.Camera.Near     = camera.GetNearPlane();
         frame.Camera.Far      = camera.GetFarPlane();
+
+        frame.GameCamera = BuildGameCamera(ecs, cameraSystem, gameAspectRatio);
 
         const size_t lightCount = std::min(
             lightSystem.GetLightComponentsCount(),
@@ -127,5 +133,56 @@ namespace HedgehogEngine
                 break;
             }
         }
+    }
+
+    std::optional<CameraData> FrameDataBuilder::BuildGameCamera(
+        const ECS::ECS&     ecs,
+        const CameraSystem& cameraSystem,
+        float               aspectRatio) const
+    {
+        const CameraComponent* primary       = nullptr;
+        ECS::Entity            primaryEntity  = 0;
+        size_t                 primaryCount   = 0;
+
+        for (auto entity : cameraSystem.GetEntities())
+        {
+            const auto& cam = ecs.GetComponent<CameraComponent>(entity);
+            if (!cam.IsPrimary || !ecs.HasComponent<TransformComponent>(entity))
+                continue;
+
+            ++primaryCount;
+            if (primary == nullptr)
+            {
+                primary       = &cam;
+                primaryEntity = entity;
+            }
+        }
+
+        if (primary == nullptr)
+            return std::nullopt;
+
+        if (primaryCount > 1)
+            LOGWARNING("Multiple primary cameras found; using the first (entity ", primaryEntity, ").");
+
+        const HM::Matrix4x4& world = ecs.GetComponent<TransformComponent>(primaryEntity).ObjMatrix;
+
+        // Row-vector convention (see LightSystem/TransformSystem): row 0 = forward (local +X),
+        // row 2 = up (local +Z), row 3 = world translation.
+        const HM::Vector3 eye     = { world[3][0], world[3][1], world[3][2] };
+        const HM::Vector3 forward = { world[0][0], world[0][1], world[0][2] };
+        const HM::Vector3 up      = { world[2][0], world[2][1], world[2][2] };
+
+        const float aspect = (aspectRatio > 0.0f) ? aspectRatio : 1.0f;
+
+        CameraData data;
+        data.View        = HM::Matrix4x4::LookAt(eye, eye + forward, up);
+        // Matches the editor Camera's projection setup (fovY = fov/aspect, plus Vulkan Y-flip).
+        data.Proj        = HM::Matrix4x4::Perspective(
+            HM::ToRadians(primary->Fov) / aspect, aspect, primary->NearPlane, primary->FarPlane);
+        data.Proj[1][1] *= -1.0f;
+        data.Position    = eye;
+        data.Near        = primary->NearPlane;
+        data.Far         = primary->FarPlane;
+        return data;
     }
 }

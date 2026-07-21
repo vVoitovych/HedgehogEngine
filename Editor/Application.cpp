@@ -108,12 +108,18 @@ namespace Editor
     {
         const float dt = GetFrameTime();
         m_Context->GetWindowContext().HandleInput();
-        m_Context->UpdateContext(dt, m_Renderer->GetAspectRatio());
+        const bool tickGameLogic = (m_EditorGui->GetEditorMode() == EditorMode::Play);
+        m_Context->UpdateContext(dt, m_Renderer->GetAspectRatio(), tickGameLogic);
 
         m_Renderer->BeginGui();
-        m_EditorGui->Draw(*m_Context, m_Renderer->GetSceneViewTextureId());
+        m_EditorGui->Draw(*m_Context, m_Renderer->GetSceneViewTextureId(),
+                          m_Renderer->GetGameViewTextureId());
         m_Renderer->SetSceneViewSize(m_EditorGui->GetSceneViewWidth(),
                                      m_EditorGui->GetSceneViewHeight());
+        m_Renderer->SetGameViewSize(m_EditorGui->GetGameViewWidth(),
+                                    m_EditorGui->GetGameViewHeight());
+        m_Renderer->SetGameViewVisible(m_EditorGui->IsGameViewVisible());
+        m_Renderer->SetSelectedGizmo(m_EditorGui->GetSelectedGizmoMatrix(*m_Context));
 
         auto& engineContext = m_Context->GetEngineContext();
         m_Renderer->DrawFrame(engineContext.GetFrameData(), engineContext.GetResourceCatalog(),

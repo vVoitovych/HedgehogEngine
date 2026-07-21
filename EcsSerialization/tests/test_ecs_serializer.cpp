@@ -102,6 +102,40 @@ TEST_CASE("EcsSerializer - scene round-trips through YAML")
     CHECK(loaded.Scale == 0.5f);
 }
 
+TEST_CASE("EcsSerializer - in-memory snapshot/restore round-trips (Play mode)")
+{
+    EcsSerialization::ComponentSerializerRegistry registry;
+    registry.RegisterVisitable<TestTransform>("TestTransform");
+
+    ECS::ECS ecs = MakeEcs();
+
+    const ECS::Entity root = ecs.CreateEntity();
+    ecs.AddComponent(root, ECS::HierarchyComponent{ "Root", ECS::INVALID_ENTITY, {} });
+    ecs.SetRoot(root);
+
+    const ECS::Entity child = ecs.CreateEntity();
+    ecs.AddComponent(child, ECS::HierarchyComponent{ "Child", root, {} });
+    ecs.GetComponent<ECS::HierarchyComponent>(root).Children.push_back(child);
+
+    TestTransform t;
+    t.Position.x() = 5.0f;
+    ecs.AddComponent(child, t);
+
+    // Capture the pre-Play state to an in-memory snapshot (no filesystem).
+    const std::string snapshot =
+        EcsSerialization::EcsSerializer::SerializeToString(registry, ecs, "Snap");
+
+    // Restore into a fresh ECS (models Stop → SceneManager::RestoreScene) and compare.
+    ECS::ECS restored = MakeEcs();
+    std::string name;
+    REQUIRE(EcsSerialization::EcsSerializer::DeserializeFromString(registry, restored, name, snapshot));
+
+    CHECK(name == "Snap");
+    REQUIRE(restored.GetRoot() == root);
+    REQUIRE(restored.HasComponent<TestTransform>(child));
+    CHECK(restored.GetComponent<TestTransform>(child).Position.x() == 5.0f);
+}
+
 TEST_CASE("EcsSerializer::Serialize - unmounted path returns false")
 {
     TempDir tmp;

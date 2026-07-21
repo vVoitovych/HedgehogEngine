@@ -1,9 +1,14 @@
 #pragma once
 
+#include "ResourceManager/ResourceManager.hpp"
+
 #include "HedgehogCommon/api/RendererSettings.hpp"
+#include "HedgehogCommon/api/Frame/FrameData.hpp"
+
 #include "HedgehogMath/api/Matrix.hpp"
 #include "HedgehogMath/api/Vector.hpp"
 
+#include <array>
 #include <memory>
 #include <vector>
 
@@ -18,12 +23,6 @@ namespace RHI
     class IRHIDescriptorPool;
     class IRHIDescriptorSet;
     class IRHIBuffer;
-}
-
-namespace HedgehogEngine
-{
-    struct FrameData;
-    struct LightData;
 }
 
 namespace FS
@@ -42,11 +41,18 @@ namespace Renderer
                     const FS::FileSystemManager& fileSystem);
         ~ForwardPass();
 
-        void Render(const HedgehogEngine::FrameData& frame, const ResourceManager& resourceManager,
+        // Renders the lit geometry pass for one view (target) from the given camera. Pass an empty
+        // draw bucket to produce a clear-only frame (e.g. game view with no primary camera).
+        void Render(RenderTargetId target,
+                    const HedgehogEngine::CameraData&          camera,
+                    const HedgehogEngine::DrawBucket&          opaque,
+                    const std::vector<HedgehogEngine::LightData>& lights,
+                    const ResourceManager& resourceManager,
                     RHI::IRHICommandList& cmd, uint32_t frameIndex);
         void Cleanup(RHI::IRHIDevice& device);
 
-        void ResizeResources(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
+        void ResizeResources(RenderTargetId target, RHI::IRHIDevice& device,
+                             const ResourceManager& resourceManager);
 
     private:
         // GPU-layout light struct; alignas matches std140/std430 UBO packing expected by the shader.
@@ -69,16 +75,21 @@ namespace Renderer
 
         static GpuLight ToGpuLight(const HedgehogEngine::LightData& fd);
 
+        void CreateFramebuffer(RenderTargetId target, RHI::IRHIDevice& device,
+                               const ResourceManager& resourceManager);
+
     private:
         std::unique_ptr<RHI::IRHIRenderPass>  m_RenderPass;
-        std::unique_ptr<RHI::IRHIFramebuffer> m_FrameBuffer;
         std::unique_ptr<RHI::IRHIPipeline>    m_Pipeline;
 
         std::unique_ptr<RHI::IRHIDescriptorSetLayout> m_FrameLayout;
         std::unique_ptr<RHI::IRHIDescriptorPool>      m_FramePool;
         std::unique_ptr<RHI::IRHIDescriptorSetLayout> m_MaterialLayout;
 
-        std::vector<std::unique_ptr<RHI::IRHIBuffer>>        m_FrameUniforms;
-        std::vector<std::unique_ptr<RHI::IRHIDescriptorSet>> m_FrameSets;
+        // Per-target framebuffers and per-target × per-frame uniforms/descriptor sets, so the
+        // scene and game views can be recorded in the same frame without clobbering each other.
+        std::array<std::unique_ptr<RHI::IRHIFramebuffer>, kRenderTargetCount> m_FrameBuffers;
+        std::array<std::vector<std::unique_ptr<RHI::IRHIBuffer>>, kRenderTargetCount>        m_FrameUniforms;
+        std::array<std::vector<std::unique_ptr<RHI::IRHIDescriptorSet>>, kRenderTargetCount> m_FrameSets;
     };
 }

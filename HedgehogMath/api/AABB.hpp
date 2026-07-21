@@ -21,6 +21,11 @@ namespace HM
 
         HEDGEHOG_MATH_API void ExpandToInclude(const Vector3& point);
 
+        // Slab ray/box intersection. dir need not be normalised. On a hit, tNear is the entry
+        // parameter along dir (may be negative if origin is inside the box). Returns false when
+        // the box is entirely behind the origin or the ray misses.
+        HEDGEHOG_MATH_API bool IntersectRay(const Vector3& origin, const Vector3& dir, float& tNear) const;
+
     private:
         Vector3 m_Min;
         Vector3 m_Max;

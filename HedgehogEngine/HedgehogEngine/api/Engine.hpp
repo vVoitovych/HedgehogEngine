@@ -21,7 +21,9 @@ namespace HedgehogEngine
         Engine(Engine&&)                 = delete;
         Engine& operator=(Engine&&)      = delete;
 
-        HEDGEHOG_ENGINE_API void UpdateContext(float dt, float aspectRatio);
+        // tickGameLogic: when false (editor Edit/Pause), gameplay scripts are not ticked; the
+        // scene still updates transforms/hierarchy/lights so editor edits reflect live.
+        HEDGEHOG_ENGINE_API void UpdateContext(float dt, float aspectRatio, bool tickGameLogic);
         HEDGEHOG_ENGINE_API void Cleanup();
 
         HEDGEHOG_ENGINE_API WindowContext&       GetWindowContext();

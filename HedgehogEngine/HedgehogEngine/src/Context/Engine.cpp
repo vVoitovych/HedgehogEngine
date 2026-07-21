@@ -17,9 +17,9 @@ namespace HedgehogEngine
     {
     }
 
-    void Engine::UpdateContext(float dt, float aspectRatio)
+    void Engine::UpdateContext(float dt, float aspectRatio, bool tickGameLogic)
     {
-        m_EngineContext->UpdateContext(*m_WindowContext, aspectRatio, dt);
+        m_EngineContext->UpdateContext(*m_WindowContext, aspectRatio, dt, tickGameLogic);
         m_FrameContext->UpdateContext(m_EngineContext->GetCamera());
     }
 

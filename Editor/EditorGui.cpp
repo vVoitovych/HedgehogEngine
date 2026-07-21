@@ -24,6 +24,9 @@
 #include "HedgehogEngine/api/ECS/components/LightComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RenderComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/CameraComponent.hpp"
+
+#include "Picking/ScenePicker.hpp"
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
 #include "Reflection/GuiReflection.hpp"
 
@@ -106,9 +109,10 @@ namespace Editor
 
     // ─── Top-level entry ─────────────────────────────────────────────────────
 
-    void EditorGui::Draw(HedgehogEngine::Engine& context, void* sceneViewTextureId)
+    void EditorGui::Draw(HedgehogEngine::Engine& context, void* sceneViewTextureId, void* gameViewTextureId)
     {
         m_SceneViewHovered = false;
+        m_GameViewVisible  = false;
 
         ImVec4* styleColors = ImGui::GetStyle().Colors;
         const ImVec4 panelBg(m_Settings.panelBgColor[0], m_Settings.panelBgColor[1],
@@ -119,14 +123,15 @@ namespace Editor
         styleColors[ImGuiCol_MenuBarBg] = panelBg;
 
         m_SceneViewTextureId = sceneViewTextureId;
+        m_GameViewTextureId  = gameViewTextureId;
 
         DrawMainMenu(context);
 
         const float menuH = ImGui::GetFrameHeight();
 
         m_DockSystem.Draw(
-            [this]() { DrawToolbarContent(); },
-            [this, &context](PanelId panel) { DrawPanelContent(panel, context, m_SceneViewTextureId); },
+            [this, &context]() { DrawToolbarContent(context); },
+            [this, &context](PanelId panel) { DrawPanelContent(panel, context); },
             menuH);
 
         const auto& fs = context.GetEngineContext().GetFileSystem();
@@ -138,18 +143,18 @@ namespace Editor
 
     // ─── Panel dispatch ───────────────────────────────────────────────────────
 
-    void EditorGui::DrawPanelContent(PanelId panel, HedgehogEngine::Engine& context, void* sceneViewTextureId)
+    void EditorGui::DrawPanelContent(PanelId panel, HedgehogEngine::Engine& context)
     {
         switch (panel)
         {
-        case PanelId::SceneHierarchy: DrawSceneHierarchy(context);          break;
-        case PanelId::Inspector:      DrawInspector(context);                break;
-        case PanelId::Console:        m_ConsolePanel->Draw();                break;
-        default:                      DrawSceneViewContent(sceneViewTextureId); break;
+        case PanelId::SceneHierarchy: DrawSceneHierarchy(context); break;
+        case PanelId::Inspector:      DrawInspector(context);      break;
+        case PanelId::Console:        m_ConsolePanel->Draw();      break;
+        default:                      DrawSceneViewContent(context); break;
         }
     }
 
-    void EditorGui::DrawSceneViewContent(void* sceneViewTextureId)
+    void EditorGui::DrawSceneViewContent(HedgehogEngine::Engine& context)
     {
         if (!ImGui::BeginTabBar("##SceneGameTabs"))
             return;
@@ -160,10 +165,21 @@ namespace Editor
             m_SceneViewWidth  = static_cast<uint32_t>(std::max(1.0f, avail.x));
             m_SceneViewHeight = static_cast<uint32_t>(std::max(1.0f, avail.y));
 
-            if (sceneViewTextureId)
+            if (m_SceneViewTextureId)
             {
-                ImGui::Image(sceneViewTextureId, avail);
+                const ImVec2 imageMin = ImGui::GetCursorScreenPos();
+                ImGui::Image(m_SceneViewTextureId, avail);
                 m_SceneViewHovered = ImGui::IsItemHovered();
+
+                // Left-click selects the mesh under the cursor; clicking empty space deselects.
+                if (m_SceneViewHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+                {
+                    const ImVec2 mouse = ImGui::GetMousePos();
+                    m_SelectedEntity = Picking::PickEntity(
+                        context,
+                        mouse.x - imageMin.x, mouse.y - imageMin.y,
+                        avail.x, avail.y);
+                }
             }
 
             ImGui::EndTabItem();
@@ -171,6 +187,14 @@ namespace Editor
 
         if (ImGui::BeginTabItem("Game"))
         {
+            const ImVec2 avail = ImGui::GetContentRegionAvail();
+            m_GameViewWidth   = static_cast<uint32_t>(std::max(1.0f, avail.x));
+            m_GameViewHeight  = static_cast<uint32_t>(std::max(1.0f, avail.y));
+            m_GameViewVisible = true;
+
+            if (m_GameViewTextureId)
+                ImGui::Image(m_GameViewTextureId, avail);
+
             ImGui::EndTabItem();
         }
 
@@ -266,6 +290,12 @@ namespace Editor
                     if (!ecs.HasComponent<HedgehogEngine::ScriptComponent>(e))
                         ecs.AddComponent(e, HedgehogEngine::ScriptComponent{});
                 }
+                if (ImGui::MenuItem("Camera component") && m_SelectedEntity.has_value())
+                {
+                    ECS::Entity e = m_SelectedEntity.value();
+                    if (!ecs.HasComponent<HedgehogEngine::CameraComponent>(e))
+                        ecs.AddComponent(e, HedgehogEngine::CameraComponent{});
+                }
                 ImGui::EndMenu();
             }
 
@@ -325,15 +355,22 @@ namespace Editor
 
     // ─── Toolbar ─────────────────────────────────────────────────────────────
 
-    void EditorGui::DrawToolbarContent()
+    void EditorGui::DrawToolbarContent(HedgehogEngine::Engine& context)
     {
+        auto& sceneManager = context.GetEngineContext().GetSceneManager();
+
         const bool isEdit  = (m_EditorMode == EditorMode::Edit);
         const bool isPlay  = (m_EditorMode == EditorMode::Play);
         const bool isPause = (m_EditorMode == EditorMode::Pause);
 
         if (isPlay)  ImGui::BeginDisabled();
         if (ImGui::Button("  Play  "))
+        {
+            // Snapshot the current scene when first entering Play (not when resuming from Pause).
+            if (m_EditorMode == EditorMode::Edit)
+                m_PlaySnapshot = sceneManager.SnapshotScene();
             m_EditorMode = EditorMode::Play;
+        }
         if (isPlay)  ImGui::EndDisabled();
 
         ImGui::SameLine();
@@ -347,7 +384,16 @@ namespace Editor
 
         if (isEdit)  ImGui::BeginDisabled();
         if (ImGui::Button("  Stop  "))
+        {
+            // Restore the pre-Play scene so the play session leaves the edited scene untouched.
+            if (!m_PlaySnapshot.empty())
+            {
+                sceneManager.RestoreScene(m_PlaySnapshot);
+                m_PlaySnapshot.clear();
+                m_SelectedEntity.reset(); // entities were recreated; drop the stale selection
+            }
             m_EditorMode = EditorMode::Edit;
+        }
         if (isEdit)  ImGui::EndDisabled();
 
         ImGui::SameLine();
@@ -455,6 +501,7 @@ namespace Editor
             DrawEntityTitle(context);
             DrawTransformComponent(context);
             DrawLightComponent(context);
+            DrawCameraComponent(context);
             DrawMeshComponent(context);
             DrawRenderComponent(context);
             DrawScriptComponent(context);
@@ -463,6 +510,19 @@ namespace Editor
         {
             ImGui::TextDisabled("No entity selected.");
         }
+    }
+
+    std::optional<HM::Matrix4x4> EditorGui::GetSelectedGizmoMatrix(HedgehogEngine::Engine& context) const
+    {
+        if (!m_SelectedEntity.has_value())
+            return std::nullopt;
+
+        auto&             ecs    = context.GetEngineContext().GetECS();
+        const ECS::Entity entity = m_SelectedEntity.value();
+        if (!ecs.HasComponent<HedgehogEngine::TransformComponent>(entity))
+            return std::nullopt;
+
+        return ecs.GetComponent<HedgehogEngine::TransformComponent>(entity).ObjMatrix;
     }
 
     void EditorGui::DrawEntityTitle(HedgehogEngine::Engine& context)
@@ -714,6 +774,27 @@ namespace Editor
         {
             if (ecs.HasComponent<HedgehogEngine::LightComponent>(entity))
                 ecs.RemoveComponent<HedgehogEngine::LightComponent>(entity);
+        }
+    }
+
+    void EditorGui::DrawCameraComponent(HedgehogEngine::Engine& context)
+    {
+        auto& ecs    = context.GetEngineContext().GetECS();
+        auto  entity = m_SelectedEntity.value();
+
+        if (!ecs.HasComponent<HedgehogEngine::CameraComponent>(entity))
+            return;
+        if (!ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen))
+            return;
+
+        auto& camera = ecs.GetComponent<HedgehogEngine::CameraComponent>(entity);
+
+        Reflection::RenderComponentGui(&camera, HedgehogEngine::CameraComponent::GetProperties());
+
+        if (ImGui::Button("Remove camera"))
+        {
+            if (ecs.HasComponent<HedgehogEngine::CameraComponent>(entity))
+                ecs.RemoveComponent<HedgehogEngine::CameraComponent>(entity);
         }
     }
 

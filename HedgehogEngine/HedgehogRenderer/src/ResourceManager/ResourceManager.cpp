@@ -27,6 +27,7 @@ namespace Renderer
         CreateRHIShadowMap(device, settings.GetShadowmapSettings()->GetShadowmapSize());
         CreateRHIShadowMask(device, swapchain);
         CreateSceneColorBuffer(device, swapchain);
+        CreateGameViewBuffers(device, swapchain);
     }
 
     ResourceManager::~ResourceManager()
@@ -42,6 +43,8 @@ namespace Renderer
         m_RHIShadowMap.reset();
         m_RHIShadowMask.reset();
         m_SceneColorBuffer.reset();
+        m_GameColorBuffer.reset();
+        m_GameDepthBuffer.reset();
         m_ResourceRegistry->Cleanup(device);
     }
 
@@ -82,6 +85,27 @@ namespace Renderer
         colorDesc.Format = RHI::Format::R16G16B16A16Unorm;
         colorDesc.Usage  = RHI::TextureUsage::ColorAttachment | RHI::TextureUsage::Sampled;
         m_SceneColorBuffer = device.CreateTexture(colorDesc);
+    }
+
+    void ResourceManager::ResizeGameView(RHI::IRHIDevice& device, uint32_t width, uint32_t height)
+    {
+        device.WaitIdle();
+        m_GameDepthBuffer.reset();
+        m_GameColorBuffer.reset();
+
+        RHI::TextureDesc depthDesc;
+        depthDesc.Width  = width;
+        depthDesc.Height = height;
+        depthDesc.Format = device.GetPreferredDepthFormat();
+        depthDesc.Usage  = RHI::TextureUsage::DepthStencil;
+        m_GameDepthBuffer = device.CreateTexture(depthDesc);
+
+        RHI::TextureDesc colorDesc;
+        colorDesc.Width  = width;
+        colorDesc.Height = height;
+        colorDesc.Format = RHI::Format::R16G16B16A16Unorm;
+        colorDesc.Usage  = RHI::TextureUsage::ColorAttachment | RHI::TextureUsage::Sampled;
+        m_GameColorBuffer = device.CreateTexture(colorDesc);
     }
 
     void ResourceManager::ResizeSettingsDependentResources(RHI::IRHIDevice& device,
@@ -186,6 +210,35 @@ namespace Renderer
 
         m_SceneColorBuffer = device.CreateTexture(desc);
         LOGINFO("Scene color buffer created");
+    }
+
+    void ResourceManager::CreateGameViewBuffers(RHI::IRHIDevice& device, const RHI::IRHISwapchain& swapchain)
+    {
+        RHI::TextureDesc colorDesc;
+        colorDesc.Width  = swapchain.GetWidth();
+        colorDesc.Height = swapchain.GetHeight();
+        colorDesc.Format = RHI::Format::R16G16B16A16Unorm;
+        colorDesc.Usage  = RHI::TextureUsage::ColorAttachment | RHI::TextureUsage::Sampled;
+        m_GameColorBuffer = device.CreateTexture(colorDesc);
+
+        RHI::TextureDesc depthDesc;
+        depthDesc.Width  = swapchain.GetWidth();
+        depthDesc.Height = swapchain.GetHeight();
+        depthDesc.Format = device.GetPreferredDepthFormat();
+        depthDesc.Usage  = RHI::TextureUsage::DepthStencil;
+        m_GameDepthBuffer = device.CreateTexture(depthDesc);
+
+        LOGINFO("Game view buffers created");
+    }
+
+    const RHI::IRHITexture& ResourceManager::GetColorBuffer(RenderTargetId target) const
+    {
+        return target == RenderTargetId::Game ? *m_GameColorBuffer : *m_SceneColorBuffer;
+    }
+
+    const RHI::IRHITexture& ResourceManager::GetDepthBuffer(RenderTargetId target) const
+    {
+        return target == RenderTargetId::Game ? *m_GameDepthBuffer : *m_RHIDepthBuffer;
     }
 
     HR::ResourceRegistry& ResourceManager::GetResourceRegistry()

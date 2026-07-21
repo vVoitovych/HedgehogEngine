@@ -675,4 +675,12 @@ namespace HM
         return result;
     }
 
+    Vector3 UnprojectNdc(const Matrix4x4& invViewProj, const Vector3& ndc)
+    {
+        // Row-vector convention: clip_row * invViewProj = world_row (homogeneous).
+        const Vector4 h = Vector4(ndc.x(), ndc.y(), ndc.z(), 1.0f) * invViewProj;
+        const float invW = 1.0f / h.w();
+        return Vector3(h.x() * invW, h.y() * invW, h.z() * invW);
+    }
+
 }

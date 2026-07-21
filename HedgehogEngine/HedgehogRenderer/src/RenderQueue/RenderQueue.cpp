@@ -6,6 +6,7 @@
 #include "RenderPasses/DepthPrepass/DepthPrePass.hpp"
 #include "RenderPasses/ShadowmapPass/ShadowmapPass.hpp"
 #include "RenderPasses/ForwardPass/ForwardPass.hpp"
+#include "RenderPasses/GizmoPass/GizmoPass.hpp"
 #include "RenderPasses/PresentPass/PresentPass.hpp"
 #include "RenderPasses/GuiPass/GuiPass.hpp"
 
@@ -33,6 +34,7 @@ namespace Renderer
         m_DepthPrePass  = std::make_unique<DepthPrePass>(device, resourceManager, fileSystem);
         m_ShadowmapPass = std::make_unique<ShadowmapPass>(device, settings, resourceManager, fileSystem);
         m_ForwardPass   = std::make_unique<ForwardPass>(device, resourceManager, fileSystem);
+        m_GizmoPass     = std::make_unique<GizmoPass>(device, resourceManager, fileSystem);
         m_GuiPass       = std::make_unique<GuiPass>(window, device, resourceManager);
         m_PresentPass   = std::make_unique<PresentPass>();
     }
@@ -47,6 +49,7 @@ namespace Renderer
         m_DepthPrePass->Cleanup(device);
         m_ShadowmapPass->Cleanup(device);
         m_ForwardPass->Cleanup(device);
+        m_GizmoPass->Cleanup(device);
         m_GuiPass->Cleanup(device);
         m_PresentPass->Cleanup();
     }
@@ -69,8 +72,12 @@ namespace Renderer
                              RHI::IRHISemaphore&  imageAvailableSemaphore,
                              RHI::IRHISemaphore&  renderFinishedSemaphore,
                              uint32_t             frameIndex,
+                             bool                 gameViewVisible,
+                             const std::optional<HM::Matrix4x4>& selectedGizmo,
                              const ResourceManager& resourceManager)
     {
+        static const HedgehogEngine::DrawBucket s_EmptyBucket;
+
         uint32_t backBufferIndex = 0;
         {
             HH_PROFILE_ZONE("InitPass");
@@ -85,16 +92,46 @@ namespace Renderer
             m_ShadowmapPass->Render(frame, resourceManager, cmd, frameIndex);
         }
 
+        // Scene view: rendered from the frame's camera (the editor flycam), no culling.
         {
             HH_PROFILE_ZONE("DepthPrePass");
             ScopedCpuSample sample(m_FrameStats, "DepthPrePass");
-            m_DepthPrePass->Render(frame, resourceManager, cmd, frameIndex);
+            m_DepthPrePass->Render(RenderTargetId::Scene, frame.Camera, frame.DrawList.Opaque,
+                                   resourceManager, cmd, frameIndex);
         }
 
         {
             HH_PROFILE_ZONE("ForwardPass");
             ScopedCpuSample sample(m_FrameStats, "ForwardPass");
-            m_ForwardPass->Render(frame, resourceManager, cmd, frameIndex);
+            m_ForwardPass->Render(RenderTargetId::Scene, frame.Camera, frame.DrawList.Opaque,
+                                  frame.Lights, resourceManager, cmd, frameIndex);
+        }
+
+        // Editor gizmo overlay (scene view only), drawn on top of the forward result.
+        {
+            HH_PROFILE_ZONE("GizmoPass");
+            ScopedCpuSample sample(m_FrameStats, "GizmoPass");
+            m_GizmoPass->Render(frame.Camera, frame.Lights, selectedGizmo, cmd, frameIndex);
+        }
+
+        // Game view: only recorded when its tab is visible, to avoid a second geometry pass
+        // every frame. With no primary camera, an empty bucket clears it to a flat colour.
+        const bool renderGameView = gameViewVisible;
+        if (renderGameView)
+        {
+            HH_PROFILE_ZONE("GameViewPass");
+            ScopedCpuSample sample(m_FrameStats, "GameViewPass");
+
+            const bool hasGameCamera = frame.GameCamera.has_value();
+            const HedgehogEngine::CameraData& gameCamera =
+                hasGameCamera ? *frame.GameCamera : frame.Camera;
+            const HedgehogEngine::DrawBucket& gameGeometry =
+                hasGameCamera ? frame.DrawList.Opaque : s_EmptyBucket;
+
+            m_DepthPrePass->Render(RenderTargetId::Game, gameCamera, gameGeometry,
+                                   resourceManager, cmd, frameIndex);
+            m_ForwardPass->Render(RenderTargetId::Game, gameCamera, gameGeometry,
+                                  frame.Lights, resourceManager, cmd, frameIndex);
         }
 
         {
@@ -105,6 +142,15 @@ namespace Renderer
             cmd.TransitionTexture(sceneBuffer,
                 RHI::ImageLayout::ColorAttachment,
                 RHI::ImageLayout::ShaderReadOnly);
+
+            if (renderGameView)
+            {
+                auto& gameBuffer = const_cast<RHI::IRHITexture&>(
+                    resourceManager.GetColorBuffer(RenderTargetId::Game));
+                cmd.TransitionTexture(gameBuffer,
+                    RHI::ImageLayout::ColorAttachment,
+                    RHI::ImageLayout::ShaderReadOnly);
+            }
 
             m_GuiPass->Render(cmd, resourceManager);
         }
@@ -135,14 +181,27 @@ namespace Renderer
 
     void RenderQueue::ResizeSceneView(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
     {
-        m_DepthPrePass->ResizeResources(device, resourceManager);
-        m_ForwardPass->ResizeResources(device, resourceManager);
+        m_DepthPrePass->ResizeResources(RenderTargetId::Scene, device, resourceManager);
+        m_ForwardPass->ResizeResources(RenderTargetId::Scene, device, resourceManager);
+        m_GizmoPass->ResizeResources(device, resourceManager);
         m_GuiPass->RecreateSceneDescriptor(resourceManager);
+    }
+
+    void RenderQueue::ResizeGameView(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
+    {
+        m_DepthPrePass->ResizeResources(RenderTargetId::Game, device, resourceManager);
+        m_ForwardPass->ResizeResources(RenderTargetId::Game, device, resourceManager);
+        m_GuiPass->RecreateGameDescriptor(resourceManager);
     }
 
     void* RenderQueue::GetSceneViewTextureId() const
     {
         return m_GuiPass->GetSceneViewTextureId();
+    }
+
+    void* RenderQueue::GetGameViewTextureId() const
+    {
+        return m_GuiPass->GetGameViewTextureId();
     }
 
     void RenderQueue::UpdateResources(RHI::IRHIDevice&                  device,

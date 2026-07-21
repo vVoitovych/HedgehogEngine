@@ -13,7 +13,7 @@ Scene:
         Parent: 0
         TransformComponent:
           Position: [4.5, -0.5, 0.5]
-          Rotation: [-3, -16, 143.55739]
+          Rotation: [-3, -16, 35.20782]
           Scale: [1, 1, 1]
         MeshComponent:
           MeshPath: Models\viking_room.obj
@@ -59,6 +59,7 @@ Scene:
           LightIntensity: 0.838
           LightRadius: 1
           LightConeAngle: 2
+          CastShadows: false
         Children:
           []
       - Entity: 4
@@ -73,5 +74,19 @@ Scene:
         RenderComponent:
           Visible: true
           Material: Materials\test3.material
+        Children:
+          []
+      - Entity: 5
+        Name: Camera
+        Parent: 0
+        TransformComponent:
+          Position: [-7, 0, 0]
+          Rotation: [0, 0, 0]
+          Scale: [1, 1, 1]
+        CameraComponent:
+          IsPrimary: true
+          Fov: 45
+          NearPlane: 0.1
+          FarPlane: 1000
         Children:
           []
