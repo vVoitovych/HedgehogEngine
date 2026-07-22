@@ -2,8 +2,11 @@
 
 #include "Profiling/FrameStats.hpp"
 
+#include "HedgehogMath/api/Matrix.hpp"
+
 #include <cstdint>
 #include <memory>
+#include <optional>
 
 namespace HedgehogEngine
 {
@@ -41,6 +44,7 @@ namespace Renderer
     class DepthPrePass;
     class ShadowmapPass;
     class ForwardPass;
+    class GizmoPass;
     class PresentPass;
     class GuiPass;
 
@@ -64,6 +68,7 @@ namespace Renderer
         void  BeginGui();
         void  DiscardGui();
         void* GetSceneViewTextureId() const;
+        void* GetGameViewTextureId() const;
 
         void Render(const HedgehogEngine::FrameData& frame,
                     RHI::IRHIDevice&     device,
@@ -73,6 +78,8 @@ namespace Renderer
                     RHI::IRHISemaphore&  imageAvailableSemaphore,
                     RHI::IRHISemaphore&  renderFinishedSemaphore,
                     uint32_t             frameIndex,
+                    bool                 gameViewVisible,
+                    const std::optional<HM::Matrix4x4>& selectedGizmo,
                     const ResourceManager& resourceManager);
 
         void UpdateData(const HedgehogEngine::FrameData&             frame,
@@ -81,6 +88,7 @@ namespace Renderer
 
         void ResizeResources(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
         void ResizeSceneView(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
+        void ResizeGameView(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
 
         void UpdateResources(RHI::IRHIDevice&                 device,
                              const HedgehogSettings::Settings& settings,
@@ -95,6 +103,7 @@ namespace Renderer
         std::unique_ptr<DepthPrePass> m_DepthPrePass;
         std::unique_ptr<ShadowmapPass> m_ShadowmapPass;
         std::unique_ptr<ForwardPass>  m_ForwardPass;
+        std::unique_ptr<GizmoPass>    m_GizmoPass;
         std::unique_ptr<PresentPass>  m_PresentPass;
         std::unique_ptr<GuiPass>      m_GuiPass;
     };

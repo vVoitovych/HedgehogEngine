@@ -62,6 +62,49 @@ namespace
     }
 }
 
+    std::string EcsSerializer::SerializeToString(const ComponentSerializerRegistry& registry,
+                                                  const ECS::ECS& ecs,
+                                                  const std::string& sceneName)
+    {
+        YAML::Emitter out;
+        out << YAML::BeginMap;
+        out << YAML::Key << "Scene name" << YAML::Value << sceneName;
+        out << YAML::Key << "Scene"      << YAML::Value << YAML::BeginSeq;
+        SerializeEntity(out, ecs, ecs.GetRoot(), registry);
+        out << YAML::EndSeq;
+        out << YAML::EndMap;
+        return out.c_str();
+    }
+
+    bool EcsSerializer::DeserializeFromString(const ComponentSerializerRegistry& registry,
+                                               ECS::ECS& ecs,
+                                               std::string& outSceneName,
+                                               const std::string& text)
+    {
+        try
+        {
+            YAML::Node data = YAML::Load(text);
+
+            outSceneName = data["Scene name"].as<std::string>();
+
+            const YAML::Node sceneData = data["Scene"];
+            if (sceneData && sceneData.size() > 0)
+            {
+                for (const auto& node : sceneData)
+                    DeserializeEntity(ecs, node, registry);
+
+                // The first node in the scene sequence is the root entity.
+                ecs.SetRoot(sceneData[0]["Entity"].as<ECS::Entity>());
+            }
+        }
+        catch (const YAML::Exception& e)
+        {
+            LOGERROR("Failed to parse scene from string with error: ", e.what());
+            return false;
+        }
+        return true;
+    }
+
     bool EcsSerializer::Serialize(const ComponentSerializerRegistry& registry,
                                    const ECS::ECS& ecs,
                                    const std::string& sceneName,
@@ -70,15 +113,8 @@ namespace
     {
         LOGINFO("EcsSerializer::Serialize: ", virtualPath);
 
-        YAML::Emitter out;
-        out << YAML::BeginMap;
-        out << YAML::Key << "Scene name" << YAML::Value << sceneName;
-        out << YAML::Key << "Scene"      << YAML::Value << YAML::BeginSeq;
-        SerializeEntity(out, ecs, ecs.GetRoot(), registry);
-        out << YAML::EndSeq;
-        out << YAML::EndMap;
-
-        if (!fileSystem.WriteTextFile(virtualPath, out.c_str()))
+        const std::string text = SerializeToString(registry, ecs, sceneName);
+        if (!fileSystem.WriteTextFile(virtualPath, text))
         {
             LOGERROR("EcsSerializer::Serialize: failed to write '", virtualPath, "'.");
             return false;
@@ -100,28 +136,6 @@ namespace
             LOGERROR("Failed to read scene file: ", virtualPath);
             return false;
         }
-
-        try
-        {
-            YAML::Node data = YAML::Load(*text);
-
-            outSceneName = data["Scene name"].as<std::string>();
-
-            const YAML::Node sceneData = data["Scene"];
-            if (sceneData && sceneData.size() > 0)
-            {
-                for (const auto& node : sceneData)
-                    DeserializeEntity(ecs, node, registry);
-
-                // The first node in the scene sequence is the root entity.
-                ecs.SetRoot(sceneData[0]["Entity"].as<ECS::Entity>());
-            }
-        }
-        catch (const YAML::Exception& e)
-        {
-            LOGERROR("Failed to parse scene: ", virtualPath, " with error: ", e.what());
-            return false;
-        }
-        return true;
+        return DeserializeFromString(registry, ecs, outSceneName, *text);
     }
 }

@@ -52,6 +52,7 @@ namespace Renderer
         m_FrameBuffer = device.CreateFramebuffer(fbDesc);
 
         CreateSceneViewDescSet(resourceManager);
+        CreateGameViewDescSet(resourceManager);
     }
 
     GuiPass::~GuiPass()
@@ -80,6 +81,8 @@ namespace Renderer
     {
         m_GuiBackend->DestroyTextureId(m_SceneViewId);
         m_SceneViewId = nullptr;
+        m_GuiBackend->DestroyTextureId(m_GameViewId);
+        m_GameViewId = nullptr;
 
         m_FrameBuffer.reset();
         m_GuiBackend.reset();   // calls ImGui_ImplVulkan_Shutdown() before DestroyContext
@@ -113,13 +116,30 @@ namespace Renderer
         CreateSceneViewDescSet(resourceManager);
     }
 
+    void GuiPass::RecreateGameDescriptor(const ResourceManager& resourceManager)
+    {
+        m_GuiBackend->DestroyTextureId(m_GameViewId);
+        m_GameViewId = nullptr;
+        CreateGameViewDescSet(resourceManager);
+    }
+
     void* GuiPass::GetSceneViewTextureId() const
     {
         return m_SceneViewId;
     }
 
+    void* GuiPass::GetGameViewTextureId() const
+    {
+        return m_GameViewId;
+    }
+
     void GuiPass::CreateSceneViewDescSet(const ResourceManager& resourceManager)
     {
         m_SceneViewId = m_GuiBackend->CreateTextureId(resourceManager.GetSceneColorBuffer());
+    }
+
+    void GuiPass::CreateGameViewDescSet(const ResourceManager& resourceManager)
+    {
+        m_GameViewId = m_GuiBackend->CreateTextureId(resourceManager.GetColorBuffer(RenderTargetId::Game));
     }
 }

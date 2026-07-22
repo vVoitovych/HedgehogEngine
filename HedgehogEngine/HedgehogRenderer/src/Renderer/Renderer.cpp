@@ -87,10 +87,37 @@ namespace Renderer
         return static_cast<float>(scene.GetWidth()) / static_cast<float>(scene.GetHeight());
     }
 
+    float Renderer::GetGameViewAspectRatio() const
+    {
+        const auto& game = m_ResourceManager->GetColorBuffer(RenderTargetId::Game);
+        return static_cast<float>(game.GetWidth()) / static_cast<float>(game.GetHeight());
+    }
+
     void Renderer::SetSceneViewSize(uint32_t width, uint32_t height)
     {
         m_DesiredSceneW = width;
         m_DesiredSceneH = height;
+    }
+
+    void* Renderer::GetGameViewTextureId() const
+    {
+        return m_RenderQueue->GetGameViewTextureId();
+    }
+
+    void Renderer::SetGameViewSize(uint32_t width, uint32_t height)
+    {
+        m_DesiredGameW = width;
+        m_DesiredGameH = height;
+    }
+
+    void Renderer::SetGameViewVisible(bool visible)
+    {
+        m_GameViewVisible = visible;
+    }
+
+    void Renderer::SetSelectedGizmo(const std::optional<HM::Matrix4x4>& worldMatrix)
+    {
+        m_SelectedGizmo = worldMatrix;
     }
 
     void Renderer::BeginFrameStatsCapture()
@@ -152,12 +179,14 @@ namespace Renderer
             m_ThreadContext->GetImageAvailableSemaphore(),
             m_ThreadContext->GetRenderFinishedSemaphore(),
             frameIndex,
+            m_GameViewVisible,
+            m_SelectedGizmo,
             *m_ResourceManager);
 
         m_ThreadContext->NextFrame();
 
-        // Apply pending scene view resize at end of frame so the current frame's
-        // ImGui draw data (which references the old descriptor) has already been submitted.
+        // Apply pending view resizes at end of frame so the current frame's ImGui draw data
+        // (which references the old descriptors) has already been submitted.
         if (m_DesiredSceneW > 0 && m_DesiredSceneH > 0)
         {
             const auto& sceneBuffer = m_ResourceManager->GetSceneColorBuffer();
@@ -166,6 +195,17 @@ namespace Renderer
                 device.WaitIdle();
                 m_ResourceManager->ResizeSceneView(device, m_DesiredSceneW, m_DesiredSceneH);
                 m_RenderQueue->ResizeSceneView(device, *m_ResourceManager);
+            }
+        }
+
+        if (m_DesiredGameW > 0 && m_DesiredGameH > 0)
+        {
+            const auto& gameBuffer = m_ResourceManager->GetColorBuffer(RenderTargetId::Game);
+            if (gameBuffer.GetWidth() != m_DesiredGameW || gameBuffer.GetHeight() != m_DesiredGameH)
+            {
+                device.WaitIdle();
+                m_ResourceManager->ResizeGameView(device, m_DesiredGameW, m_DesiredGameH);
+                m_RenderQueue->ResizeGameView(device, *m_ResourceManager);
             }
         }
 

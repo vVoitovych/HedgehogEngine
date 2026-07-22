@@ -35,15 +35,19 @@ namespace Renderer
 
         void ResizeResources(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
         void RecreateSceneDescriptor(const ResourceManager& resourceManager);
+        void RecreateGameDescriptor(const ResourceManager& resourceManager);
 
         void* GetSceneViewTextureId() const;
+        void* GetGameViewTextureId() const;
 
     private:
         void CreateSceneViewDescSet(const ResourceManager& resourceManager);
+        void CreateGameViewDescSet(const ResourceManager& resourceManager);
 
     private:
         std::unique_ptr<RHI::IRHIGuiBackend>  m_GuiBackend;
         std::unique_ptr<RHI::IRHIFramebuffer> m_FrameBuffer;
         void*                                  m_SceneViewId = nullptr;
+        void*                                  m_GameViewId  = nullptr;
     };
 }

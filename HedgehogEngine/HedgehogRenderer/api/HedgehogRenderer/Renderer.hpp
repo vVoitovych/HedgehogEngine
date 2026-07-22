@@ -1,7 +1,10 @@
 #pragma once
 
+#include "HedgehogMath/api/Matrix.hpp"
+
 #include <cstdint>
 #include <memory>
+#include <optional>
 
 namespace HW
 {
@@ -55,8 +58,17 @@ namespace Renderer
                         HedgehogEngine::IResourceCatalog& catalog,
                         HedgehogSettings::Settings&       settings);
         float GetAspectRatio() const;
+        float GetGameViewAspectRatio() const;
         void* GetSceneViewTextureId() const;
         void  SetSceneViewSize(uint32_t width, uint32_t height);
+
+        void* GetGameViewTextureId() const;
+        void  SetGameViewSize(uint32_t width, uint32_t height);
+        // Whether the game viewport is currently shown; when false its geometry pass is skipped.
+        void  SetGameViewVisible(bool visible);
+
+        // World matrix of the selected entity for the scene-view gizmo overlay; nullopt = none.
+        void  SetSelectedGizmo(const std::optional<HM::Matrix4x4>& worldMatrix);
 
         // CPU frame statistics (per render pass + total DrawFrame), used by
         // the Editor --benchmark mode. Capture is off unless explicitly begun.
@@ -73,5 +85,9 @@ namespace Renderer
 
         uint32_t m_DesiredSceneW = 0;
         uint32_t m_DesiredSceneH = 0;
+        uint32_t m_DesiredGameW  = 0;
+        uint32_t m_DesiredGameH  = 0;
+        bool     m_GameViewVisible = false;
+        std::optional<HM::Matrix4x4> m_SelectedGizmo;
     };
 }

@@ -36,31 +36,35 @@ namespace Renderer
             fileSystem);
         assert(!sd.Layout.DescriptorSets.empty());
 
+        constexpr uint32_t setCount = HedgehogEngine::MAX_FRAMES_IN_FLIGHT * kRenderTargetCount;
+
         m_FrameLayout = device.CreateDescriptorSetLayout(sd.Layout.DescriptorSets[0]);
-
         m_FramePool = device.CreateDescriptorPool(
-            HedgehogEngine::MAX_FRAMES_IN_FLIGHT,
-            PipelineLoader::MakePoolSizes(sd.Layout.DescriptorSets[0], HedgehogEngine::MAX_FRAMES_IN_FLIGHT));
+            setCount,
+            PipelineLoader::MakePoolSizes(sd.Layout.DescriptorSets[0], setCount));
 
-        // Per-frame uniform buffers and descriptor sets
-        m_FrameUniforms.reserve(HedgehogEngine::MAX_FRAMES_IN_FLIGHT);
-        m_FrameSets.reserve(HedgehogEngine::MAX_FRAMES_IN_FLIGHT);
-        for (size_t i = 0; i < HedgehogEngine::MAX_FRAMES_IN_FLIGHT; ++i)
+        // Per-target × per-frame uniform buffers and descriptor sets.
+        for (uint32_t t = 0; t < kRenderTargetCount; ++t)
         {
-            auto ubo = device.CreateBuffer(
-                sizeof(DepthPrepassFrameUniform),
-                RHI::BufferUsage::UniformBuffer,
-                RHI::MemoryUsage::CpuToGpu);
+            m_FrameUniforms[t].reserve(HedgehogEngine::MAX_FRAMES_IN_FLIGHT);
+            m_FrameSets[t].reserve(HedgehogEngine::MAX_FRAMES_IN_FLIGHT);
+            for (size_t i = 0; i < HedgehogEngine::MAX_FRAMES_IN_FLIGHT; ++i)
+            {
+                auto ubo = device.CreateBuffer(
+                    sizeof(DepthPrepassFrameUniform),
+                    RHI::BufferUsage::UniformBuffer,
+                    RHI::MemoryUsage::CpuToGpu);
 
-            auto set = device.AllocateDescriptorSet(*m_FramePool, *m_FrameLayout);
-            set->WriteUniformBuffer(0, *ubo);
-            set->Flush();
+                auto set = device.AllocateDescriptorSet(*m_FramePool, *m_FrameLayout);
+                set->WriteUniformBuffer(0, *ubo);
+                set->Flush();
 
-            m_FrameUniforms.push_back(std::move(ubo));
-            m_FrameSets.push_back(std::move(set));
+                m_FrameUniforms[t].push_back(std::move(ubo));
+                m_FrameSets[t].push_back(std::move(set));
+            }
         }
 
-        // Render pass: depth-only (no color attachments)
+        // Render pass: depth-only (no color attachments). Shared by both targets (same format).
         RHI::RenderPassDesc rpDesc;
         rpDesc.DepthAttachment = RHI::AttachmentDesc{
             resourceManager.GetRHIDepthBuffer().GetFormat(),
@@ -74,40 +78,52 @@ namespace Renderer
         m_RenderPass = device.CreateRenderPass(rpDesc);
 
         // Pipeline
-        auto pipelineDesc                   = sd.Pipeline;
+        auto pipelineDesc                 = sd.Pipeline;
         pipelineDesc.DescriptorSetLayouts = { m_FrameLayout.get() };
         pipelineDesc.RenderPass           = m_RenderPass.get();
         m_Pipeline = device.CreateGraphicsPipeline(pipelineDesc);
 
-        // Framebuffer
-        const auto& depthBuffer = resourceManager.GetRHIDepthBuffer();
-        RHI::FramebufferDesc fbDesc;
-        fbDesc.RenderPass      = m_RenderPass.get();
-        fbDesc.DepthAttachment = &depthBuffer;
-        fbDesc.Width           = depthBuffer.GetWidth();
-        fbDesc.Height          = depthBuffer.GetHeight();
-        m_FrameBuffer = device.CreateFramebuffer(fbDesc);
+        CreateFramebuffer(RenderTargetId::Scene, device, resourceManager);
+        CreateFramebuffer(RenderTargetId::Game,  device, resourceManager);
     }
 
     DepthPrePass::~DepthPrePass()
     {
     }
 
-    void DepthPrePass::Render(const HedgehogEngine::FrameData& frame, const ResourceManager& resourceManager,
+    void DepthPrePass::CreateFramebuffer(RenderTargetId target, RHI::IRHIDevice& device,
+                                          const ResourceManager& resourceManager)
+    {
+        const auto& depthBuffer = resourceManager.GetDepthBuffer(target);
+
+        RHI::FramebufferDesc fbDesc;
+        fbDesc.RenderPass      = m_RenderPass.get();
+        fbDesc.DepthAttachment = &depthBuffer;
+        fbDesc.Width           = depthBuffer.GetWidth();
+        fbDesc.Height          = depthBuffer.GetHeight();
+        m_FrameBuffers[static_cast<uint32_t>(target)] = device.CreateFramebuffer(fbDesc);
+    }
+
+    void DepthPrePass::Render(RenderTargetId target,
+                               const HedgehogEngine::CameraData& camera,
+                               const HedgehogEngine::DrawBucket&  opaque,
+                               const ResourceManager& resourceManager,
                                RHI::IRHICommandList& cmd, uint32_t frameIndex)
     {
+        const uint32_t ti = static_cast<uint32_t>(target);
+
         DepthPrepassFrameUniform ubo{};
-        ubo.ViewProj = frame.Camera.Proj * frame.Camera.View;
-        m_FrameUniforms[frameIndex]->CopyData(&ubo, sizeof(ubo));
+        ubo.ViewProj = camera.Proj * camera.View;
+        m_FrameUniforms[ti][frameIndex]->CopyData(&ubo, sizeof(ubo));
 
         RHI::ClearValue depthClear;
         depthClear.IsDepth      = true;
         depthClear.DepthStencil = { 1.0f, 0 };
 
-        cmd.BeginRenderPass(*m_RenderPass, *m_FrameBuffer, { depthClear });
+        cmd.BeginRenderPass(*m_RenderPass, *m_FrameBuffers[ti], { depthClear });
 
-        const uint32_t width  = m_FrameBuffer->GetWidth();
-        const uint32_t height = m_FrameBuffer->GetHeight();
+        const uint32_t width  = m_FrameBuffers[ti]->GetWidth();
+        const uint32_t height = m_FrameBuffers[ti]->GetHeight();
 
         cmd.BindPipeline(*m_Pipeline);
         cmd.SetViewport({ 0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height), 0.0f, 1.0f });
@@ -120,9 +136,9 @@ namespace Renderer
         auto& idxBuffer = const_cast<RHI::IRHIBuffer&>(registry.GetIndexBuffer());
         cmd.BindIndexBuffer(idxBuffer, RHI::IndexType::Uint32);
 
-        cmd.BindDescriptorSet(*m_Pipeline, 0, *m_FrameSets[frameIndex]);
+        cmd.BindDescriptorSet(*m_Pipeline, 0, *m_FrameSets[ti][frameIndex]);
 
-        for (const auto& drawNode : frame.DrawList.Opaque)
+        for (const auto& drawNode : opaque)
         {
             for (const auto& object : drawNode.Objects)
             {
@@ -145,27 +161,23 @@ namespace Renderer
     {
         device.WaitIdle();
 
-        m_FrameSets.clear();
-        m_FrameUniforms.clear();
+        for (uint32_t t = 0; t < kRenderTargetCount; ++t)
+        {
+            m_FrameSets[t].clear();
+            m_FrameUniforms[t].clear();
+            m_FrameBuffers[t].reset();
+        }
         m_Pipeline.reset();
-        m_FrameBuffer.reset();
         m_RenderPass.reset();
         m_FramePool.reset();
         m_FrameLayout.reset();
     }
 
-    void DepthPrePass::ResizeResources(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
+    void DepthPrePass::ResizeResources(RenderTargetId target, RHI::IRHIDevice& device,
+                                        const ResourceManager& resourceManager)
     {
-        const auto& depthBuffer = resourceManager.GetRHIDepthBuffer();
-
-        m_FrameBuffer.reset();
-
-        RHI::FramebufferDesc fbDesc;
-        fbDesc.RenderPass      = m_RenderPass.get();
-        fbDesc.DepthAttachment = &depthBuffer;
-        fbDesc.Width           = depthBuffer.GetWidth();
-        fbDesc.Height          = depthBuffer.GetHeight();
-        m_FrameBuffer = device.CreateFramebuffer(fbDesc);
+        m_FrameBuffers[static_cast<uint32_t>(target)].reset();
+        CreateFramebuffer(target, device, resourceManager);
     }
 
 }

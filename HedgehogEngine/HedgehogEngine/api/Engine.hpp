@@ -21,7 +21,12 @@ namespace HedgehogEngine
         Engine(Engine&&)                 = delete;
         Engine& operator=(Engine&&)      = delete;
 
-        HEDGEHOG_ENGINE_API void UpdateContext(float dt, float aspectRatio);
+        // sceneAspect/gameAspect: aspect ratios of the scene and game viewports (they can differ);
+        // the editor flycam uses sceneAspect, the ECS primary camera uses gameAspect.
+        // tickGameLogic: when false (editor Edit/Pause), gameplay scripts are not ticked; the
+        // scene still updates transforms/hierarchy/lights so editor edits reflect live.
+        HEDGEHOG_ENGINE_API void UpdateContext(float dt, float sceneAspect, float gameAspect,
+                                                bool tickGameLogic);
         HEDGEHOG_ENGINE_API void Cleanup();
 
         HEDGEHOG_ENGINE_API WindowContext&       GetWindowContext();
