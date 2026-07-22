@@ -42,8 +42,8 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API EngineContext();
         HEDGEHOG_ENGINE_API ~EngineContext();
 
-        HEDGEHOG_ENGINE_API void UpdateContext(WindowContext& windowContext, float aspectRatio, float dt,
-                                                bool tickGameLogic);
+        HEDGEHOG_ENGINE_API void UpdateContext(WindowContext& windowContext, float sceneAspect,
+                                                float gameAspect, float dt, bool tickGameLogic);
 
         HEDGEHOG_ENGINE_API ResourceCatalog&       GetResourceCatalog();
         HEDGEHOG_ENGINE_API const ResourceCatalog& GetResourceCatalog() const;

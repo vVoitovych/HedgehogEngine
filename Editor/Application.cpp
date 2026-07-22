@@ -109,7 +109,8 @@ namespace Editor
         const float dt = GetFrameTime();
         m_Context->GetWindowContext().HandleInput();
         const bool tickGameLogic = (m_EditorGui->GetEditorMode() == EditorMode::Play);
-        m_Context->UpdateContext(dt, m_Renderer->GetAspectRatio(), tickGameLogic);
+        m_Context->UpdateContext(dt, m_Renderer->GetAspectRatio(),
+                                 m_Renderer->GetGameViewAspectRatio(), tickGameLogic);
 
         m_Renderer->BeginGui();
         m_EditorGui->Draw(*m_Context, m_Renderer->GetSceneViewTextureId(),

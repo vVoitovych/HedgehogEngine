@@ -208,10 +208,10 @@ namespace HedgehogEngine
         );
     }
 
-    void EngineContext::UpdateContext(WindowContext& windowContext, float aspectRatio, float dt,
-                                      bool tickGameLogic)
+    void EngineContext::UpdateContext(WindowContext& windowContext, float sceneAspect,
+                                      float gameAspect, float dt, bool tickGameLogic)
     {
-        UpdateCamera(windowContext, aspectRatio, dt);
+        UpdateCamera(windowContext, sceneAspect, dt);
 
         // Update order is load-bearing: Script → Transform → Hierarchy → Light.
         // Scripts only tick in Play mode; the reactive systems below always run so that editor
@@ -233,7 +233,7 @@ namespace HedgehogEngine
         FrameDataBuilder builder;
         m_FrameData = builder.Build(
             m_ECS, *m_LightSystem, *m_RenderSystem, *m_CameraSystem,
-            *m_Camera, aspectRatio, dt, materialTypeLookup);
+            *m_Camera, gameAspect, dt, materialTypeLookup);
     }
 
     ResourceCatalog& EngineContext::GetResourceCatalog()             { return m_ResourceCatalog; }

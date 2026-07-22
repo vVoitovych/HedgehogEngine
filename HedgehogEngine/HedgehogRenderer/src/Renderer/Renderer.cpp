@@ -87,6 +87,12 @@ namespace Renderer
         return static_cast<float>(scene.GetWidth()) / static_cast<float>(scene.GetHeight());
     }
 
+    float Renderer::GetGameViewAspectRatio() const
+    {
+        const auto& game = m_ResourceManager->GetColorBuffer(RenderTargetId::Game);
+        return static_cast<float>(game.GetWidth()) / static_cast<float>(game.GetHeight());
+    }
+
     void Renderer::SetSceneViewSize(uint32_t width, uint32_t height)
     {
         m_DesiredSceneW = width;

@@ -58,6 +58,7 @@ namespace Renderer
                         HedgehogEngine::IResourceCatalog& catalog,
                         HedgehogSettings::Settings&       settings);
         float GetAspectRatio() const;
+        float GetGameViewAspectRatio() const;
         void* GetSceneViewTextureId() const;
         void  SetSceneViewSize(uint32_t width, uint32_t height);
 
