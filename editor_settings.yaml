@@ -1,8 +1,8 @@
 panel_bg_color: [0.007843138, 0.047058824, 0.11764706]
 dock_layout:
   left_width: 280
-  right_width: 280
-  bottom_height: 200
+  right_width: 181
+  bottom_height: 196
   areas:
     left: [scene_hierarchy]
     left_active: 0
@@ -21,3 +21,4 @@ dock_layout:
     inspector: [190, 190]
     console: [230, 230]
 last_scene: engine://Assets/Scenes/Default.yaml
+use_tabbed_scene_game_view: false

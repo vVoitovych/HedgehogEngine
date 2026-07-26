@@ -6,8 +6,13 @@
 
 #include "FileSystem/api/FileSystemManager.hpp"
 
+#include "HedgehogMath/api/Matrix.hpp"
+
 #include <memory>
 #include <optional>
+#include <string>
+
+struct ImVec2;
 
 namespace HedgehogEngine
 {
@@ -34,18 +39,33 @@ namespace Editor
         EditorGui(EditorGui&&)                 = delete;
         EditorGui& operator=(EditorGui&&)      = delete;
 
-        void Draw(HedgehogEngine::Engine& context, void* sceneViewTextureId);
+        void Draw(HedgehogEngine::Engine& context, void* sceneViewTextureId, void* gameViewTextureId);
 
         uint32_t GetSceneViewWidth()    const { return m_SceneViewWidth; }
         uint32_t GetSceneViewHeight()   const { return m_SceneViewHeight; }
         bool     IsSceneViewHovered()   const { return m_SceneViewHovered; }
+        // False only in tabbed mode with the Game tab active — see EditorSettings::UseTabbedSceneGameView.
+        bool     IsSceneViewVisible()   const { return m_SceneViewVisible; }
+
+        uint32_t GetGameViewWidth()     const { return m_GameViewWidth; }
+        uint32_t GetGameViewHeight()    const { return m_GameViewHeight; }
+        bool     IsGameViewVisible()    const { return m_GameViewVisible; }
+
+        EditorMode GetEditorMode()      const { return m_EditorMode; }
+
+        // World matrix of the currently selected entity, for the scene-view gizmo; nullopt if none.
+        std::optional<HM::Matrix4x4> GetSelectedGizmoMatrix(HedgehogEngine::Engine& context) const;
 
     private:
         // ── Panel content (drawn into dock areas) ────────────────────────────
-        void DrawPanelContent(PanelId panel, HedgehogEngine::Engine& context, void* sceneViewTextureId);
+        void DrawPanelContent(PanelId panel, HedgehogEngine::Engine& context);
         void DrawMainMenu(HedgehogEngine::Engine& context);
-        void DrawToolbarContent();
-        void DrawSceneViewContent(void* sceneViewTextureId);
+        void DrawToolbarContent(HedgehogEngine::Engine& context);
+        void DrawSceneViewContent(HedgehogEngine::Engine& context);
+        void DrawSceneGameSplit(HedgehogEngine::Engine& context);
+        void DrawSceneGameTabs(HedgehogEngine::Engine& context);
+        void DrawSceneImage(HedgehogEngine::Engine& context, const ImVec2& avail);
+        void DrawGameImage(const ImVec2& avail);
         void DrawSceneHierarchy(HedgehogEngine::Engine& context);
         void DrawHierarchyNode(HedgehogEngine::Engine& context, ECS::Entity entity, int& index);
         void DrawInspector(HedgehogEngine::Engine& context);
@@ -54,6 +74,7 @@ namespace Editor
         void DrawMeshComponent(HedgehogEngine::Engine& context);
         void DrawRenderComponent(HedgehogEngine::Engine& context);
         void DrawLightComponent(HedgehogEngine::Engine& context);
+        void DrawCameraComponent(HedgehogEngine::Engine& context);
         void DrawScriptComponent(HedgehogEngine::Engine& context);
 
         // ── Floating dialogs ─────────────────────────────────────────────────
@@ -74,16 +95,25 @@ namespace Editor
         uint32_t m_SceneViewWidth   = 0;
         uint32_t m_SceneViewHeight  = 0;
         bool     m_SceneViewHovered = false;
+        bool     m_SceneViewVisible = false;
+
+        uint32_t m_GameViewWidth    = 0;
+        uint32_t m_GameViewHeight   = 0;
+        bool     m_GameViewVisible  = false;
+        float    m_SceneGameSplit   = 0.5f; // fraction of viewport width given to the Scene view
 
         std::optional<ECS::Entity>             m_SelectedEntity;
         EditorMode                             m_EditorMode         = EditorMode::Edit;
+        // Scene state captured on entering Play; restored on Stop so Play is non-destructive.
+        std::string                            m_PlaySnapshot;
         bool                                   m_SettingsWindowOpen = false;
         std::unique_ptr<ConsolePanel>            m_ConsolePanel;
         std::unique_ptr<VertexDescriptionWindow> m_VertexDescWindow;
         std::unique_ptr<PipelineWindow>          m_PipelineWindow;
         std::unique_ptr<ShaderWindow>            m_ShaderWindow;
 
-        // Non-owning pointer valid only during Draw(); used by DrawPanelContent lambdas
+        // Non-owning pointers valid only during Draw(); used by DrawPanelContent lambdas
         void* m_SceneViewTextureId = nullptr;
+        void* m_GameViewTextureId  = nullptr;
     };
 }

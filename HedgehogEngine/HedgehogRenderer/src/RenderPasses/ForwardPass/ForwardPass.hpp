@@ -1,6 +1,10 @@
 #pragma once
 
+#include "RenderGraph/IRenderPass.hpp"
+
 #include "HedgehogCommon/api/RendererSettings.hpp"
+#include "HedgehogCommon/api/Frame/FrameData.hpp"
+
 #include "HedgehogMath/api/Matrix.hpp"
 #include "HedgehogMath/api/Vector.hpp"
 
@@ -10,43 +14,31 @@
 namespace RHI
 {
     class IRHIDevice;
-    class IRHICommandList;
-    class IRHIRenderPass;
-    class IRHIPipeline;
     class IRHIFramebuffer;
-    class IRHIDescriptorSetLayout;
     class IRHIDescriptorPool;
     class IRHIDescriptorSet;
     class IRHIBuffer;
 }
 
-namespace HedgehogEngine
-{
-    struct FrameData;
-    struct LightData;
-}
-
-namespace FS
-{
-    class FileSystemManager;
-}
-
 namespace Renderer
 {
-    class ResourceManager;
+    class ForwardPassResources;
+    struct PassInitContext;
 
-    class ForwardPass
+    // View-stage pass: lit forward geometry into this view's own viewColor target. One instance
+    // per view — see DepthPrePass.hpp for the shared-resources/per-instance split this relies on.
+    class ForwardPass : public IRenderPass
     {
     public:
-        ForwardPass(RHI::IRHIDevice& device, ResourceManager& resourceManager,
-                    const FS::FileSystemManager& fileSystem);
-        ~ForwardPass();
+        explicit ForwardPass(const PassInitContext& init);
+        ~ForwardPass() override;
 
-        void Render(const HedgehogEngine::FrameData& frame, const ResourceManager& resourceManager,
-                    RHI::IRHICommandList& cmd, uint32_t frameIndex);
-        void Cleanup(RHI::IRHIDevice& device);
+        const char* GetName() const override { return "ForwardPass"; }
 
-        void ResizeResources(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
+        void Setup(RenderGraphBuilder& builder) override;
+        void CreateFramebuffers(RHI::IRHIDevice& device, RenderGraph& graph) override;
+        void Execute(RenderGraphContext& ctx) override;
+        void Cleanup(RHI::IRHIDevice& device) override;
 
     private:
         // GPU-layout light struct; alignas matches std140/std430 UBO packing expected by the shader.
@@ -70,15 +62,14 @@ namespace Renderer
         static GpuLight ToGpuLight(const HedgehogEngine::LightData& fd);
 
     private:
-        std::unique_ptr<RHI::IRHIRenderPass>  m_RenderPass;
-        std::unique_ptr<RHI::IRHIFramebuffer> m_FrameBuffer;
-        std::unique_ptr<RHI::IRHIPipeline>    m_Pipeline;
+        // Shared, immutable half (render pass, pipeline, descriptor-set layouts) — see
+        // PassResourceCache.
+        std::shared_ptr<const ForwardPassResources> m_Resources;
 
-        std::unique_ptr<RHI::IRHIDescriptorSetLayout> m_FrameLayout;
-        std::unique_ptr<RHI::IRHIDescriptorPool>      m_FramePool;
-        std::unique_ptr<RHI::IRHIDescriptorSetLayout> m_MaterialLayout;
+        std::unique_ptr<RHI::IRHIDescriptorPool> m_FramePool;
+        std::unique_ptr<RHI::IRHIFramebuffer>    m_FrameBuffer;
 
-        std::vector<std::unique_ptr<RHI::IRHIBuffer>>        m_FrameUniforms;
-        std::vector<std::unique_ptr<RHI::IRHIDescriptorSet>> m_FrameSets;
+        std::vector<std::unique_ptr<RHI::IRHIBuffer>>        m_FrameUniforms; // [frame]
+        std::vector<std::unique_ptr<RHI::IRHIDescriptorSet>> m_FrameSets;     // [frame]
     };
 }

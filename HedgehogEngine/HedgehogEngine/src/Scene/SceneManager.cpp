@@ -95,6 +95,25 @@ namespace HedgehogEngine
         m_GameObjectIndex = 0;
     }
 
+    std::string SceneManager::SnapshotScene() const
+    {
+        return EcsSerialization::EcsSerializer::SerializeToString(m_ComponentRegistry, m_ECS, m_SceneName);
+    }
+
+    bool SceneManager::RestoreScene(const std::string& snapshot)
+    {
+        DeleteGameObjectAndChildren(m_ECS.GetRoot());
+        const bool ok = EcsSerialization::EcsSerializer::DeserializeFromString(
+            m_ComponentRegistry, m_ECS, m_SceneName, snapshot);
+
+        // Mirror LoadScene's post-load fix-up so matrices, meshes and materials are rebuilt.
+        for (auto entity : m_TransformSystem.GetEntities())
+            m_EventBus.Publish(TransformChangedEvent{ entity });
+        m_MeshSystem.Update(m_ECS, m_FileSystem);
+        m_RenderSystem.UpdateSystem(m_ECS);
+        return ok;
+    }
+
     void SceneManager::SetSceneName(const std::string& name)
     {
         m_SceneName = name;

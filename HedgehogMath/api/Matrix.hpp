@@ -83,4 +83,8 @@ namespace HM
 
     HEDGEHOG_MATH_API Vector4 operator*(const Vector4& first, const Matrix4x4& second);
 
+    // Unproject a normalised-device-coordinate point (x,y in [-1,1], z in [0,1] for Vulkan) back to
+    // world space using the inverse of the view-projection matrix, including the perspective divide.
+    HEDGEHOG_MATH_API Vector3 UnprojectNdc(const Matrix4x4& invViewProj, const Vector3& ndc);
+
 }

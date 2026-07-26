@@ -54,7 +54,8 @@ namespace HedgehogEngine
     {
         HedgehogEngine::DrawList   DrawList;
         std::vector<LightData>     Lights;
-        CameraData                 Camera;
+        CameraData                 Camera;      // scene view: the editor flycam
+        std::optional<CameraData>  GameCamera;  // game view: the ECS primary camera, if one exists
         float                      DeltaTime = 0.0f;
         std::optional<HM::Vector3> ShadowLightDirection;
     };

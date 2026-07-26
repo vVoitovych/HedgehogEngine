@@ -13,8 +13,11 @@ project "HedgehogRenderer"
         "assets/Shaders/**.glsl",
         "assets/Pipelines/**.pl",
         "assets/VertexDescriptions/**.vdes",
-        "assets/Shaders/**.shader"
+        "assets/Shaders/**.shader",
+        "assets/Graphs/**.rgq"
     }
+
+    removefiles { "tests/**.hpp", "tests/**.cpp" }
 
     defines { "YAML_CPP_STATIC_DEFINE" }
 

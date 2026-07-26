@@ -33,13 +33,19 @@ Binaries/windows-x86_64/Debug/FileSystemTest/FileSystemTest.exe
 Binaries/windows-x86_64/Debug/ECSTest/ECSTest.exe
 Binaries/windows-x86_64/Debug/EcsSerializationTest/EcsSerializationTest.exe
 Binaries/windows-x86_64/Debug/ContentLoaderTest/ContentLoaderTest.exe
+Binaries/windows-x86_64/Debug/RenderGraphTest/RenderGraphTest.exe
 ```
 
 **Renderer smoke test** — after any renderer/RHI change, run (from the repo root, needs a Vulkan GPU):
 ```
 Binaries\windows-x86_64\Debug\Editor\Editor.exe --smoke-test [frames]
 ```
-Renders N frames (default 120) and exits nonzero if any Vulkan validation error occurred (Debug builds enable `VK_LAYER_KHRONOS_validation`; messages route through Logger, counters live in `RHI/api/RHIDiagnostics.hpp` and are re-exported via `Renderer.hpp`).
+Renders N frames (default 120) with the normal editor pipeline (frame graph + Scene/Game views + ImGui composition) and exits nonzero if any Vulkan validation error occurred (Debug builds enable `VK_LAYER_KHRONOS_validation`; messages route through Logger, counters live in `RHI/api/RHIDiagnostics.hpp` and are re-exported via `Renderer.hpp`).
+
+**Headless/game-mode proof** — same validation-error contract as `--smoke-test`, but with exactly one view and no ImGui at all (proves the renderer core is editor-free):
+```
+Binaries\windows-x86_64\Debug\Editor\Editor.exe --game-mode [frames]
+```
 
 **Regenerating solution** after modifying any `Build.lua` files:
 ```
@@ -102,34 +108,78 @@ The renderer follows a strict `api` / `src` split:
 HedgehogRenderer/
 ├── api/
 │   └── HedgehogRenderer/
-│       └── Renderer.hpp          ← sole public header
+│       └── Renderer.hpp          ← sole public header (ViewHandle-based: CreateView,
+│                                    SetFramePipeline, SetCompositionPipeline, SetMainView, …)
+├── assets/
+│   └── Graphs/                   ← *.rgq pipeline-composition assets (see below)
 └── src/
-    ├── Renderer/Renderer.cpp
+    ├── Renderer/Renderer.cpp     ← owns RHIContext, ThreadContext, ResourceRegistry,
+    │                                PassResourceCache, RenderResourceLedger, RenderPassRegistry,
+    │                                ViewRegistry, the frame RenderPipeline and the composition
+    │                                RenderPipeline; DrawFrame = frame graph → per-view graphs →
+    │                                composition graph
     ├── RHIContext/               ← owns IRHIDevice + IRHISwapchain
     ├── ThreadContext/            ← per-frame command lists, fences, semaphores
-    ├── ResourceManager/          ← GPU textures (color, depth, shadow map, scene)
     ├── ResourceRegistry/         ← mesh/material GPU buffers and descriptor sets
+    ├── RenderGraph/              ← the graph runtime + the .rgq loader/factory:
+    │   ├── RenderGraph, RenderGraphBuilder, RenderGraphResourcePool, RenderResourceLedger,
+    │   │   IRenderPass — handle/pool-based transient textures, auto barriers, cross-graph
+    │   │   imports via a shared name→texture ledger
+    │   ├── RenderGraphDesc, RenderGraphVocabulary, RenderGraphLoader — parse + validate a .rgq
+    │   │   file into a device-free GraphAssetDesc (pure function, unit-tested — see
+    │   │   RenderGraphTest below); resource declarations are validated but NOT mechanically
+    │   │   wired to texture creation — each pass still declares its own transients in Setup()
+    │   ├── RenderPassRegistry — type-string → pass-constructor factory, populated once in
+    │   │   Renderer's constructor with the 7 built-in pass types
+    │   └── RenderGraphInstantiator — turns a parsed GraphAssetDesc + the registry into pass
+    │       instances, in file order
+    ├── RenderPipeline/           ← owns one RenderGraph + the pass instances registered on it;
+    │                                used for the frame graph, each view graph, and the
+    │                                composition graph
+    ├── View/                     ← RenderView (one view's own RenderPipeline + camera/gizmo
+    │                                payload + desired/compiled size) and ViewRegistry
+    │                                (handle→view storage, ordered iteration)
     └── RenderPasses/
-        ├── InitPass/
-        ├── DepthPrepass/
-        ├── ShadowmapPass/
-        ├── ForwardPass/
-        ├── GuiPass/
-        └── PresentPass/
+        ├── PassInitContext, PassResourceCache  ← shared, ref-counted immutable pass resources
+        │                                          (render pass object, pipeline, layouts), so N
+        │                                          per-view pass instances share one GPU object
+        ├── InitPass/       (frame graph)
+        ├── ShadowmapPass/  (frame graph)
+        ├── DepthPrepass/   (view graph)
+        ├── ForwardPass/    (view graph)
+        ├── GizmoPass/      (view graph, editor-only pipelines)
+        ├── GuiPass/        (composition graph, editor-only pipelines)
+        └── PresentPass/    (composition graph)
 ```
 
 `api/` is the public include root (added to dependents' include paths).  
 `src/` is private — never included from outside the module.
 
-### Render Passes (HedgehogRenderer)
+### Render Graph Architecture (HedgehogRenderer)
 
-Forward-rendering pipeline executed in order:
-1. **InitPass** — acquires the next swapchain image
-2. **DepthPrepass** — early-Z depth pass into scene depth buffer
-3. **ShadowmapPass** — directional shadow map generation
-4. **ForwardPass** — main lit geometry pass into scene color buffer
-5. **GuiPass** — ImGui overlay (renders into RHI color buffer)
-6. **PresentPass** — blits scene + GUI to swapchain and submits
+Three kinds of render-graph instance execute per frame, each a `RenderPipeline` (one `RenderGraph`
++ the pass instances driving it), sharing one frame-level `RenderResourceLedger`:
+
+1. **Frame graph** (once per frame, first) — `InitPass` (acquires the swapchain image, begins the
+   shared command buffer), `ShadowmapPass` (writes a `Fixed`-size shadow map, cascades fit to the
+   *main view*'s camera).
+2. **View graphs** (one instance per registered `RenderView`, application-defined) — e.g. the
+   editor's Scene view: `DepthPrePass` → `ForwardPass` → `GizmoPass` into that view's own
+   `viewColor`/`viewDepth` (`ViewRelative`-sized); the Game view is identical minus `GizmoPass`.
+   Each view owns its own pass instances, framebuffers, and per-frame UBOs/descriptor sets.
+3. **Composition graph** (once per frame, last) — e.g. the editor's: `GuiPass` (samples every
+   view's colour output, draws ImGui — including the viewport images themselves — into its own
+   `guiColor`) → `PresentPass` (blits its declared source to the swapchain, ends and submits the
+   command buffer, presents). A headless/game build's composition has no `GuiPass` at all —
+   `PresentPass` blits a named view's colour straight to the swapchain (see `present_direct.rgq`).
+
+Which passes exist, in which graph, is declared by a `.rgq` YAML asset under `assets/Graphs/`
+(schema doc: `workflow/current-plan.md`, ".rgq schema (version 1)"), loaded through
+`Renderer::SetFramePipeline`/`CreateView(desc.PipelineAsset)`/`SetCompositionPipeline` — a bad or
+missing asset logs and fails that one call gracefully, it does not crash the process. The five
+shipped assets: `frame_default.rgq`, `scene_view.rgq`, `game_view.rgq` (scene minus `GizmoPass`),
+`composition_editor.rgq` (GuiPass + PresentPass), `present_direct.rgq` (PresentPass only — the
+headless/game composition, exercised by `Editor.exe --game-mode`).
 
 ### Project Configuration Files
 
@@ -143,10 +193,14 @@ Unit tests use the **doctest** framework. Test projects (each `<Module>/tests/` 
 - `ECSTest` — entity lifecycle, component storage integrity, system signature membership
 - `EcsSerializationTest` — scene YAML round-trip plus failure paths (missing/corrupt files)
 - `ContentLoaderTest` — OBJ mesh loading with hermetic temp-dir fixtures
+- `RenderGraphTest` — `RenderGraphLoader::Parse` and every `.rgq` schema validation rule (V1–V8),
+  malformed YAML, and a round-trip parse of all five shipped `assets/Graphs/*.rgq` files off disk
+  (assumes the repo root as working directory — true for `Scripts\RunTests.bat`, not for launching
+  the exe directly from another directory)
 
 DLL test dependencies are copied to each test's output dir by the owning module's `postbuildcommands` — when adding a test project that links a `SharedLib` module, add a MKDIR/COPY pair to that module's `Build-*.lua`.
 
-The renderer has no unit tests by design; it is covered by validation layers + `Editor.exe --smoke-test` (see Build System).
+The render graph *runtime* has no unit tests by design (it needs a live Vulkan device); it is covered by validation layers + `Editor.exe --smoke-test`/`--game-mode` (see Build System). The `.rgq` *parser and validator* are pure functions over text with no device or filesystem dependency, so they get real unit tests (`RenderGraphTest`, above) — same reasoning as `EcsSerializationTest`'s round-trip/corrupt-file coverage.
 
 ### Third-Party Dependencies (git submodules)
 

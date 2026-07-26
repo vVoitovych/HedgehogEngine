@@ -620,3 +620,4 @@ Binaries
 /ECS/tests/ECSTest.vcxproj*
 /EcsSerialization/tests/EcsSerializationTest.vcxproj*
 /ThirdParty/Tracy/Tracy.vcxproj
+/HedgehogEngine/HedgehogRenderer/assets/Shaders/Gizmo/*.spv

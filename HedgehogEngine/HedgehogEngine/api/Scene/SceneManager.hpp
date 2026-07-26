@@ -53,6 +53,11 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API bool LoadScene(const std::string& filePath);
         HEDGEHOG_ENGINE_API bool SaveScene(const std::string& filePath);
         HEDGEHOG_ENGINE_API void ResetScene();
+
+        // In-memory scene snapshot/restore for the editor's Play mode: capture before entering
+        // Play, restore on Stop so a play session never mutates the saved scene.
+        HEDGEHOG_ENGINE_API std::string SnapshotScene() const;
+        HEDGEHOG_ENGINE_API bool        RestoreScene(const std::string& snapshot);
         HEDGEHOG_ENGINE_API void SetSceneName(const std::string& name);
         HEDGEHOG_ENGINE_API std::string GetSceneName() const;
 

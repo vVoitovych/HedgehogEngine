@@ -1,29 +1,26 @@
 #include "InitPass.hpp"
 
+#include "RenderGraph/RenderGraphTypes.hpp"
+
+#include "Profiling/Profiler.hpp"
+
 #include "RHI/api/IRHISwapchain.hpp"
 #include "RHI/api/IRHISyncPrimitive.hpp"
 #include "RHI/api/IRHICommandList.hpp"
 
 namespace Renderer
 {
-    uint32_t InitPass::Render(RHI::IRHISwapchain&  swapchain,
-                              RHI::IRHIFence&      fence,
-                              RHI::IRHISemaphore&  imageAvailableSemaphore,
-                              RHI::IRHICommandList& cmd)
+    void InitPass::Execute(RenderGraphContext& ctx)
     {
-        fence.Wait();
+        HH_PROFILE_ZONE("InitPass");
 
-        const uint32_t imageIndex = swapchain.AcquireNextImage(imageAvailableSemaphore);
+        ctx.Fence->Wait();
 
-        fence.Reset();
+        ctx.BackBufferIndex = ctx.Swapchain->AcquireNextImage(*ctx.ImageAvailableSemaphore);
 
-        cmd.Reset();
-        cmd.Begin();
+        ctx.Fence->Reset();
 
-        return imageIndex;
-    }
-
-    void InitPass::Cleanup()
-    {
+        ctx.CommandList->Reset();
+        ctx.CommandList->Begin();
     }
 }

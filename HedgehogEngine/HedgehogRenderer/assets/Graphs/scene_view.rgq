@@ -1,0 +1,36 @@
+# View-graph pipeline: the editor's Scene panel. Depth prepass, then lit forward geometry, then a
+# gizmo overlay (selection axes + light glyphs) on top. shadowDepth is deliberately not sampled
+# here — the forward shader doesn't read it yet (see workflow/current-plan.md, "shadowDepth
+# currently has no reader"); adding an unused import would emit a real but pointless barrier.
+version: 1
+stage:   view
+
+resources:
+  - name:   viewDepth
+    kind:   texture
+    format: depth_preferred
+    size:   view
+    usage:  [depth_stencil]
+  - name:   viewColor
+    kind:   texture
+    format: rgba16
+    size:   view
+    usage:  [color_attachment, sampled]
+
+nodes:
+  - type:     DepthPrePass
+    instance: depthPre
+    outputs:
+      - { name: viewDepth, usage: depthWrite }
+
+  - type:     ForwardPass
+    instance: forward
+    inputs:
+      - { name: viewDepth, usage: depthRead }
+    outputs:
+      - { name: viewColor, usage: colorWrite }
+
+  - type:     GizmoPass
+    instance: gizmo
+    outputs:
+      - { name: viewColor, usage: colorWrite }

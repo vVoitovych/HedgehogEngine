@@ -1,0 +1,27 @@
+# Frame-graph pipeline: runs once per frame, before every view. Declares the shadow map fit to
+# the main view's camera (see Renderer::SetMainView) — no per-view work belongs here.
+#
+# Note: resource declarations below document what each node actually creates but do not mechanically
+# drive it — every built-in pass still declares its own transient textures in code (format/usage stay
+# co-located with the shader/pipeline that needs them). See workflow/current-plan.md, Phase 5
+# completion note, "resource declarations stay pass-owned".
+version: 1
+stage:   frame
+
+resources:
+  - name:   shadowDepth
+    kind:   texture
+    format: depth_preferred
+    size:   fixed
+    width:  1024
+    height: 1024
+    usage:  [depth_stencil]
+
+nodes:
+  - type:     InitPass
+    instance: init
+
+  - type:     ShadowmapPass
+    instance: shadowmap
+    outputs:
+      - { name: shadowDepth, usage: shadowWrite }

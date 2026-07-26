@@ -1,13 +1,18 @@
 #include "GuiPass.hpp"
 
-#include "ResourceManager/ResourceManager.hpp"
+#include "RenderGraph/RenderGraph.hpp"
+#include "RenderGraph/RenderGraphBuilder.hpp"
+#include "RenderGraph/RenderGraphTypes.hpp"
 
 #include "HedgehogCommon/api/RendererSettings.hpp"
+
+#include "Profiling/Profiler.hpp"
 
 #include "RHI/api/IRHIDevice.hpp"
 #include "RHI/api/IRHICommandList.hpp"
 #include "RHI/api/IRHIFramebuffer.hpp"
 #include "RHI/api/IRHIGuiBackend.hpp"
+#include "RHI/api/IRHITexture.hpp"
 #include "RHI/api/RHITypes.hpp"
 
 #include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
@@ -17,7 +22,7 @@
 
 namespace Renderer
 {
-    GuiPass::GuiPass(HW::Window& window, RHI::IRHIDevice& device, const ResourceManager& resourceManager)
+    GuiPass::GuiPass(HW::Window& window, RHI::IRHIDevice& device)
     {
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
@@ -36,22 +41,13 @@ namespace Renderer
 
         ImGui_ImplGlfw_InitForVulkan(window.GetNativeHandle(), true);
 
-        const auto& colorBuffer = resourceManager.GetRHIColorBuffer();
-
         RHI::GuiBackendDesc backendDesc;
         backendDesc.MinImageCount = HedgehogEngine::MAX_FRAMES_IN_FLIGHT;
         backendDesc.ImageCount    = HedgehogEngine::MAX_FRAMES_IN_FLIGHT;
-        backendDesc.ColorFormat   = colorBuffer.GetFormat();
+        // Renderer-wide colour convention (see PassInitContext.hpp) — matches the guiColor graph
+        // texture's format declared in Setup(), since the backend is built before Setup() runs.
+        backendDesc.ColorFormat = RHI::Format::R16G16B16A16Unorm;
         m_GuiBackend = device.CreateGuiBackend(backendDesc);
-
-        RHI::FramebufferDesc fbDesc;
-        fbDesc.RenderPass       = &m_GuiBackend->GetRenderPass();
-        fbDesc.ColorAttachments = { &colorBuffer };
-        fbDesc.Width            = colorBuffer.GetWidth();
-        fbDesc.Height           = colorBuffer.GetHeight();
-        m_FrameBuffer = device.CreateFramebuffer(fbDesc);
-
-        CreateSceneViewDescSet(resourceManager);
     }
 
     GuiPass::~GuiPass()
@@ -70,27 +66,22 @@ namespace Renderer
         ImGui::EndFrame();
     }
 
-    void GuiPass::Render(RHI::IRHICommandList& cmd, const ResourceManager& resourceManager)
+    void GuiPass::Setup(RenderGraphBuilder& builder)
     {
-        ImGui::Render();
-        m_GuiBackend->Render(cmd, *m_FrameBuffer);
+        for (const auto& source : m_ViewSources)
+            builder.ImportReadSampled(source);
+
+        GraphTextureDesc desc;
+        desc.TextureSizeClass = SizeClass::SwapchainRelative;
+        desc.Format           = RHI::Format::R16G16B16A16Unorm;
+        desc.Usage            = RHI::TextureUsage::ColorAttachment | RHI::TextureUsage::TransferSrc;
+        builder.CreateTexture(GraphResourceNames::GUI_COLOR, desc);
+        builder.Write(GraphResourceNames::GUI_COLOR, RHI::ImageLayout::ColorAttachment);
     }
 
-    void GuiPass::Cleanup(RHI::IRHIDevice& /*device*/)
+    void GuiPass::CreateFramebuffers(RHI::IRHIDevice& device, RenderGraph& graph)
     {
-        m_GuiBackend->DestroyTextureId(m_SceneViewId);
-        m_SceneViewId = nullptr;
-
-        m_FrameBuffer.reset();
-        m_GuiBackend.reset();   // calls ImGui_ImplVulkan_Shutdown() before DestroyContext
-
-        ImGui_ImplGlfw_Shutdown();
-        ImGui::DestroyContext();
-    }
-
-    void GuiPass::ResizeResources(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
-    {
-        const auto& colorBuffer = resourceManager.GetRHIColorBuffer();
+        auto& colorBuffer = graph.GetTexture(GraphResourceNames::GUI_COLOR);
 
         m_FrameBuffer.reset();
 
@@ -101,25 +92,40 @@ namespace Renderer
         fbDesc.Height           = colorBuffer.GetHeight();
         m_FrameBuffer = device.CreateFramebuffer(fbDesc);
 
-        m_GuiBackend->DestroyTextureId(m_SceneViewId);
-        m_SceneViewId = nullptr;
-        CreateSceneViewDescSet(resourceManager);
+        // Rebuild every view's ImGui texture id. Simpler than tracking exactly which import
+        // changed generation (this only runs on a resize, which is already a WaitIdle event).
+        for (auto& [name, id] : m_ViewTextureIds)
+            m_GuiBackend->DestroyTextureId(id);
+        m_ViewTextureIds.clear();
+
+        for (const auto& source : m_ViewSources)
+            m_ViewTextureIds[source] = m_GuiBackend->CreateTextureId(graph.GetTexture(source));
     }
 
-    void GuiPass::RecreateSceneDescriptor(const ResourceManager& resourceManager)
+    void GuiPass::Execute(RenderGraphContext& ctx)
     {
-        m_GuiBackend->DestroyTextureId(m_SceneViewId);
-        m_SceneViewId = nullptr;
-        CreateSceneViewDescSet(resourceManager);
+        HH_PROFILE_ZONE("GuiPass");
+
+        ImGui::Render();
+        m_GuiBackend->Render(*ctx.CommandList, *m_FrameBuffer);
     }
 
-    void* GuiPass::GetSceneViewTextureId() const
+    void GuiPass::Cleanup(RHI::IRHIDevice& /*device*/)
     {
-        return m_SceneViewId;
+        for (auto& [name, id] : m_ViewTextureIds)
+            m_GuiBackend->DestroyTextureId(id);
+        m_ViewTextureIds.clear();
+
+        m_FrameBuffer.reset();
+        m_GuiBackend.reset();   // calls ImGui_ImplVulkan_Shutdown() before DestroyContext
+
+        ImGui_ImplGlfw_Shutdown();
+        ImGui::DestroyContext();
     }
 
-    void GuiPass::CreateSceneViewDescSet(const ResourceManager& resourceManager)
+    void* GuiPass::GetViewTextureId(const std::string& viewOutputName) const
     {
-        m_SceneViewId = m_GuiBackend->CreateTextureId(resourceManager.GetSceneColorBuffer());
+        const auto it = m_ViewTextureIds.find(viewOutputName);
+        return it != m_ViewTextureIds.end() ? it->second : nullptr;
     }
 }

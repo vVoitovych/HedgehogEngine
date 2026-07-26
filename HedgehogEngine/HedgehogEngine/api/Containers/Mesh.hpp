@@ -4,6 +4,7 @@
 
 #include "FileSystem/api/FileSystemManager.hpp"
 #include "HedgehogMath/api/Vector.hpp"
+#include "HedgehogMath/api/AABB.hpp"
 
 #include <vector>
 #include <string>
@@ -23,6 +24,9 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API const std::vector<HM::Vector3>& GetNormals()   const;
         HEDGEHOG_ENGINE_API const std::vector<uint32_t>&    GetIndices()   const;
 
+        // Local-space (model) bounds, computed from positions at load; used for picking.
+        HEDGEHOG_ENGINE_API const HM::AABB& GetLocalBounds() const;
+
         HEDGEHOG_ENGINE_API uint32_t GetIndexCount()   const;
         HEDGEHOG_ENGINE_API uint32_t GetFirstIndex()   const;
         HEDGEHOG_ENGINE_API uint32_t GetVertexOffset() const;
@@ -36,6 +40,8 @@ namespace HedgehogEngine
         std::vector<HM::Vector3> m_Normals;
 
         std::vector<uint32_t> m_IndicesData;
+
+        HM::AABB m_LocalBounds;
 
         uint32_t m_IndexCount    = 0;
         uint32_t m_FirstIndex    = 0;

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "RenderGraph/IRenderPass.hpp"
+
 #include <HedgehogMath/api/Matrix.hpp>
 
 #include <array>
@@ -10,11 +12,7 @@
 namespace RHI
 {
     class IRHIDevice;
-    class IRHICommandList;
-    class IRHIRenderPass;
-    class IRHIPipeline;
     class IRHIFramebuffer;
-    class IRHIDescriptorSetLayout;
     class IRHIDescriptorPool;
     class IRHIDescriptorSet;
     class IRHIBuffer;
@@ -31,34 +29,41 @@ namespace HedgehogSettings
     class Settings;
 }
 
-namespace FS
-{
-    class FileSystemManager;
-}
-
 namespace Renderer
 {
-    class ResourceManager;
+    class ShadowmapPassResources;
+    struct PassInitContext;
 
-    class ShadowmapPass
+    // Frame-graph pass: renders cascaded shadow depth once per frame, fit to the currently-main
+    // view's camera (RenderGraphContext::View, repointed by Renderer to the main view while the
+    // frame graph executes — see workflow/current-plan.md, "Main-view camera for frame-stage
+    // passes") — not per-view; every view samples the same shared shadow map. No pass currently
+    // reads shadowDepth, so Setup() declares it write-only. The shadow map is now a graph-owned
+    // Fixed-size transient (shared/shadowDepth) rather than a ResourceManager-owned texture —
+    // UpdateShadowSettings() drives its resize via RenderGraph::SetFixedSize + Invalidate.
+    class ShadowmapPass : public IRenderPass
     {
     public:
-        ShadowmapPass(RHI::IRHIDevice& device, const HedgehogSettings::Settings& settings,
-                      const ResourceManager& resourceManager,
-                      const FS::FileSystemManager& fileSystem);
-        ~ShadowmapPass();
+        explicit ShadowmapPass(const PassInitContext& init);
+        ~ShadowmapPass() override;
 
-        void Render(const HedgehogEngine::FrameData& frame, const ResourceManager& resourceManager,
-                    RHI::IRHICommandList& cmd, uint32_t frameIndex);
-        void Cleanup(RHI::IRHIDevice& device);
+        const char* GetName() const override { return "ShadowmapPass"; }
 
-        void UpdateData(const HedgehogEngine::FrameData& frame, uint32_t frameIndex,
-                        const HedgehogSettings::Settings& settings);
-        void UpdateResources(RHI::IRHIDevice& device, const HedgehogSettings::Settings& settings,
-                             const ResourceManager& resourceManager);
+        void Setup(RenderGraphBuilder& builder) override;
+        void CreateFramebuffers(RHI::IRHIDevice& device, RenderGraph& graph) override;
+        void Update(const RenderGraphContext& ctx) override;
+        void Execute(RenderGraphContext& ctx) override;
+        void Cleanup(RHI::IRHIDevice& device) override;
+
+        // Called by RenderPipeline::NotifySettingsDirty, itself called by Renderer once per frame
+        // only when settings.IsDirty() (the outer dirty flag — see Renderer::DrawFrame). Checks the
+        // shadowmap-specific IsDirty()/CleanDirtyState() pair itself, matching the two-level
+        // dirty-check this replaces from ResourceManager::ResizeSettingsDependentResources +
+        // ShadowmapPass::UpdateResources.
+        void OnSettingsDirty(RenderGraph& graph, RHI::IRHIDevice& device,
+                             const HedgehogSettings::Settings& settings) override;
 
     private:
-        void UpdateFrameBuffer(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
         void UpdateViewports(const HedgehogSettings::Settings& settings);
         void UpdateShadowmapMatrices(const HedgehogEngine::CameraData& camera,
                                      const HedgehogSettings::Settings& settings,
@@ -86,12 +91,12 @@ namespace Renderer
         std::array<HM::Matrix4x4, MaxShadowCascades> m_ShadowmapMatrices;
         std::vector<std::vector<ShadowViewport>>      m_ShadowViewports;
 
-        std::unique_ptr<RHI::IRHIRenderPass>         m_RenderPass;
-        std::unique_ptr<RHI::IRHIFramebuffer>         m_FrameBuffer;
-        std::unique_ptr<RHI::IRHIPipeline>            m_Pipeline;
+        // Shared, immutable half (render pass, pipeline, per-cascade descriptor-set layout) —
+        // see PassResourceCache.
+        std::shared_ptr<const ShadowmapPassResources> m_Resources;
 
-        std::unique_ptr<RHI::IRHIDescriptorSetLayout> m_ShadowmapLayout;
-        std::unique_ptr<RHI::IRHIDescriptorPool>      m_ShadowmapPool;
+        std::unique_ptr<RHI::IRHIFramebuffer>    m_FrameBuffer;
+        std::unique_ptr<RHI::IRHIDescriptorPool> m_ShadowmapPool;
 
         // [frame][cascade]
         std::vector<std::vector<std::unique_ptr<RHI::IRHIBuffer>>>        m_ShadowmapUniforms;

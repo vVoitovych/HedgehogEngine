@@ -77,6 +77,33 @@ namespace
         }
         return EXIT_SUCCESS;
     }
+
+    // Headless/game-mode proof (Phase 6): one view, no GuiPass, no ImGui — see
+    // EditorApplication::RunGameMode.
+    int RunGameMode(uint32_t frames)
+    {
+        LOGINFO("Game mode: rendering ", frames, " frame(s)...");
+        if (!Renderer::AreValidationLayersEnabled())
+            LOGWARNING("Game mode: Vulkan validation layers are disabled in this build; "
+                       "only a crash-free run is being verified. Use a Debug build for full coverage.");
+
+        {
+            Editor::EditorApplication app{};
+            app.RunGameMode(frames);
+        }
+
+        const uint32_t errors   = Renderer::GetValidationErrorCount();
+        const uint32_t warnings = Renderer::GetValidationWarningCount();
+        if (errors > 0)
+        {
+            LOGERROR("Game mode FAILED: ", errors, " Vulkan validation error(s), ",
+                     warnings, " warning(s). See the log above for details.");
+            return EXIT_FAILURE;
+        }
+
+        LOGINFO("Game mode PASSED: 0 validation errors, ", warnings, " warning(s).");
+        return EXIT_SUCCESS;
+    }
 }
 
 int main(int argc, char* argv[])
@@ -90,6 +117,11 @@ int main(int argc, char* argv[])
         argc, argv, "--benchmark", DEFAULT_BENCHMARK_FRAMES);
     if (benchmarkFrames > 0)
         return RunBenchmark(benchmarkFrames);
+
+    const uint32_t gameModeFrames = ParseFrameCountFlag(
+        argc, argv, "--game-mode", DEFAULT_SMOKE_TEST_FRAMES);
+    if (gameModeFrames > 0)
+        return RunGameMode(gameModeFrames);
 
     Editor::EditorApplication app{};
     app.Run();

@@ -32,6 +32,13 @@ namespace HedgehogEngine
 
         m_IndexCount = static_cast<uint32_t>(m_IndicesData.size());
 
+        if (!m_Positions.empty())
+        {
+            m_LocalBounds = HM::AABB(m_Positions[0], m_Positions[0]);
+            for (size_t i = 1; i < m_Positions.size(); ++i)
+                m_LocalBounds.ExpandToInclude(m_Positions[i]);
+        }
+
         LOGINFO("Model [", fileName, "] loaded with ", m_Positions.size(), " vertices and ", m_IndicesData.size(), " indices!");
         return true;
     }
@@ -42,6 +49,7 @@ namespace HedgehogEngine
         m_TexCoords.clear();
         m_Normals.clear();
         m_IndicesData.clear();
+        m_LocalBounds = HM::AABB();
         m_IndexCount = 0;
     }
 
@@ -49,6 +57,8 @@ namespace HedgehogEngine
     const std::vector<HM::Vector2>& Mesh::GetTexCoords() const { return m_TexCoords; }
     const std::vector<HM::Vector3>& Mesh::GetNormals()   const { return m_Normals; }
     const std::vector<uint32_t>&    Mesh::GetIndices()   const { return m_IndicesData; }
+
+    const HM::AABB& Mesh::GetLocalBounds() const { return m_LocalBounds; }
 
     uint32_t Mesh::GetIndexCount()   const { return m_IndexCount; }
     uint32_t Mesh::GetFirstIndex()   const { return m_FirstIndex; }

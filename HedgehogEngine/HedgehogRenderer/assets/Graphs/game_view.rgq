@@ -1,0 +1,30 @@
+# View-graph pipeline: the pure game view (editor's Game panel, and the only view a headless/game
+# build creates). Identical to scene_view.rgq minus the GizmoPass node — no gizmo overlay, ever.
+# That one-node difference from scene_view.rgq is the actual feature this plan set out to deliver.
+version: 1
+stage:   view
+
+resources:
+  - name:   viewDepth
+    kind:   texture
+    format: depth_preferred
+    size:   view
+    usage:  [depth_stencil]
+  - name:   viewColor
+    kind:   texture
+    format: rgba16
+    size:   view
+    usage:  [color_attachment, sampled]
+
+nodes:
+  - type:     DepthPrePass
+    instance: depthPre
+    outputs:
+      - { name: viewDepth, usage: depthWrite }
+
+  - type:     ForwardPass
+    instance: forward
+    inputs:
+      - { name: viewDepth, usage: depthRead }
+    outputs:
+      - { name: viewColor, usage: colorWrite }

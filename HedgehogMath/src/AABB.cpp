@@ -1,5 +1,9 @@
 #include "api/AABB.hpp"
 
+#include <algorithm>
+#include <cmath>
+#include <limits>
+
 namespace HM
 {
     AABB::AABB()
@@ -52,6 +56,45 @@ namespace HM
     {
         m_Min = Min(m_Min, point);
         m_Max = Max(m_Max, point);
+    }
+
+    bool AABB::IntersectRay(const Vector3& origin, const Vector3& dir, float& tNear) const
+    {
+        float tmin = -std::numeric_limits<float>::infinity();
+        float tmax =  std::numeric_limits<float>::infinity();
+
+        for (int axis = 0; axis < 3; ++axis)
+        {
+            const float o  = origin[axis];
+            const float d  = dir[axis];
+            const float mn = m_Min[axis];
+            const float mx = m_Max[axis];
+
+            if (std::abs(d) < 1e-8f)
+            {
+                // Ray parallel to this slab: miss if the origin is outside it.
+                if (o < mn || o > mx)
+                    return false;
+            }
+            else
+            {
+                const float inv = 1.0f / d;
+                float t1 = (mn - o) * inv;
+                float t2 = (mx - o) * inv;
+                if (t1 > t2)
+                    std::swap(t1, t2);
+                tmin = std::max(tmin, t1);
+                tmax = std::min(tmax, t2);
+                if (tmin > tmax)
+                    return false;
+            }
+        }
+
+        if (tmax < 0.0f) // box entirely behind the ray origin
+            return false;
+
+        tNear = tmin;
+        return true;
     }
 
 }

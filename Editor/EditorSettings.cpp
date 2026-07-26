@@ -74,6 +74,7 @@ namespace Editor
         out << YAML::EndMap; // dock_layout
 
         out << YAML::Key << "last_scene" << YAML::Value << LastScene;
+        out << YAML::Key << "use_tabbed_scene_game_view" << YAML::Value << UseTabbedSceneGameView;
 
         out << YAML::EndMap; // root
 
@@ -161,6 +162,9 @@ namespace Editor
 
             if (auto n = root["last_scene"])
                 LastScene = n.as<std::string>();
+
+            if (auto n = root["use_tabbed_scene_game_view"])
+                UseTabbedSceneGameView = n.as<bool>();
 
             return true;
         }
