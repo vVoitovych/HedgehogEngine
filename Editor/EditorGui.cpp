@@ -112,6 +112,7 @@ namespace Editor
     void EditorGui::Draw(HedgehogEngine::Engine& context, void* sceneViewTextureId, void* gameViewTextureId)
     {
         m_SceneViewHovered = false;
+        m_SceneViewVisible = false;
         m_GameViewVisible  = false;
 
         ImVec4* styleColors = ImGui::GetStyle().Colors;
@@ -156,32 +157,73 @@ namespace Editor
 
     void EditorGui::DrawSceneViewContent(HedgehogEngine::Engine& context)
     {
+        // Side-by-side (new, default) or tabbed — one view visible/rendered at a time (old) — see
+        // EditorSettings::UseTabbedSceneGameView, toggled in the Settings window.
+        if (m_Settings.UseTabbedSceneGameView)
+            DrawSceneGameTabs(context);
+        else
+            DrawSceneGameSplit(context);
+    }
+
+    void EditorGui::DrawSceneGameSplit(HedgehogEngine::Engine& context)
+    {
+        // Scene and Game viewports are shown side-by-side with a draggable vertical splitter.
+        const ImVec2 total = ImGui::GetContentRegionAvail();
+        constexpr float splitterW = 6.0f;
+        const float usableW = std::max(1.0f, total.x - splitterW);
+        const float sceneW  = std::max(50.0f, std::min(usableW - 50.0f, usableW * m_SceneGameSplit));
+
+        // ── Scene view (left) ──────────────────────────────────────────────────
+        ImGui::BeginChild("##SceneView", ImVec2(sceneW, total.y), ImGuiChildFlags_None,
+                          ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+        {
+            ImGui::TextUnformatted("Scene");
+            const ImVec2 avail = ImGui::GetContentRegionAvail();
+            m_SceneViewWidth   = static_cast<uint32_t>(std::max(1.0f, avail.x));
+            m_SceneViewHeight  = static_cast<uint32_t>(std::max(1.0f, avail.y));
+            m_SceneViewVisible = true;
+            DrawSceneImage(context, avail);
+        }
+        ImGui::EndChild();
+
+        // ── Splitter ────────────────────────────────────────────────────────────
+        ImGui::SameLine(0.0f, 0.0f);
+        ImGui::InvisibleButton("##SceneGameSplitter", ImVec2(splitterW, total.y));
+        if (ImGui::IsItemActive())
+            m_SceneGameSplit += ImGui::GetIO().MouseDelta.x / usableW;
+        m_SceneGameSplit = std::clamp(m_SceneGameSplit, 0.1f, 0.9f);
+        if (ImGui::IsItemHovered() || ImGui::IsItemActive())
+            ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
+        ImGui::SameLine(0.0f, 0.0f);
+
+        // ── Game view (right) ───────────────────────────────────────────────────
+        ImGui::BeginChild("##GameView", ImVec2(0.0f, total.y), ImGuiChildFlags_None,
+                          ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+        {
+            ImGui::TextUnformatted("Game");
+            const ImVec2 avail = ImGui::GetContentRegionAvail();
+            m_GameViewWidth   = static_cast<uint32_t>(std::max(1.0f, avail.x));
+            m_GameViewHeight  = static_cast<uint32_t>(std::max(1.0f, avail.y));
+            m_GameViewVisible = true;
+            DrawGameImage(avail);
+        }
+        ImGui::EndChild();
+    }
+
+    void EditorGui::DrawSceneGameTabs(HedgehogEngine::Engine& context)
+    {
+        // Only the active tab's view is marked visible, so Application::StepFrame disables the
+        // other view's render pass entirely — matching the pre-split-view behaviour exactly.
         if (!ImGui::BeginTabBar("##SceneGameTabs"))
             return;
 
         if (ImGui::BeginTabItem("Scene"))
         {
             const ImVec2 avail = ImGui::GetContentRegionAvail();
-            m_SceneViewWidth  = static_cast<uint32_t>(std::max(1.0f, avail.x));
-            m_SceneViewHeight = static_cast<uint32_t>(std::max(1.0f, avail.y));
-
-            if (m_SceneViewTextureId)
-            {
-                const ImVec2 imageMin = ImGui::GetCursorScreenPos();
-                ImGui::Image(m_SceneViewTextureId, avail);
-                m_SceneViewHovered = ImGui::IsItemHovered();
-
-                // Left-click selects the mesh under the cursor; clicking empty space deselects.
-                if (m_SceneViewHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
-                {
-                    const ImVec2 mouse = ImGui::GetMousePos();
-                    m_SelectedEntity = Picking::PickEntity(
-                        context,
-                        mouse.x - imageMin.x, mouse.y - imageMin.y,
-                        avail.x, avail.y);
-                }
-            }
-
+            m_SceneViewWidth   = static_cast<uint32_t>(std::max(1.0f, avail.x));
+            m_SceneViewHeight  = static_cast<uint32_t>(std::max(1.0f, avail.y));
+            m_SceneViewVisible = true;
+            DrawSceneImage(context, avail);
             ImGui::EndTabItem();
         }
 
@@ -191,14 +233,37 @@ namespace Editor
             m_GameViewWidth   = static_cast<uint32_t>(std::max(1.0f, avail.x));
             m_GameViewHeight  = static_cast<uint32_t>(std::max(1.0f, avail.y));
             m_GameViewVisible = true;
-
-            if (m_GameViewTextureId)
-                ImGui::Image(m_GameViewTextureId, avail);
-
+            DrawGameImage(avail);
             ImGui::EndTabItem();
         }
 
         ImGui::EndTabBar();
+    }
+
+    void EditorGui::DrawSceneImage(HedgehogEngine::Engine& context, const ImVec2& avail)
+    {
+        if (!m_SceneViewTextureId)
+            return;
+
+        const ImVec2 imageMin = ImGui::GetCursorScreenPos();
+        ImGui::Image(m_SceneViewTextureId, avail);
+        m_SceneViewHovered = ImGui::IsItemHovered();
+
+        // Left-click selects the mesh under the cursor; clicking empty space deselects.
+        if (m_SceneViewHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+        {
+            const ImVec2 mouse = ImGui::GetMousePos();
+            m_SelectedEntity = Picking::PickEntity(
+                context,
+                mouse.x - imageMin.x, mouse.y - imageMin.y,
+                avail.x, avail.y);
+        }
+    }
+
+    void EditorGui::DrawGameImage(const ImVec2& avail)
+    {
+        if (m_GameViewTextureId)
+            ImGui::Image(m_GameViewTextureId, avail);
     }
 
     // ─── Main menu ───────────────────────────────────────────────────────────
@@ -895,6 +960,13 @@ namespace Editor
         if (ImGui::CollapsingHeader("Editor"))
         {
             ImGui::ColorEdit3("Panel background", m_Settings.panelBgColor);
+
+            ImGui::Checkbox("Tabbed Scene/Game view (old layout)", &m_Settings.UseTabbedSceneGameView);
+            ImGui::SameLine();
+            ImGui::TextDisabled("(?)");
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Off: Scene and Game shown side-by-side (current default).\n"
+                                  "On: switch between them with tabs, one rendered at a time (old layout).");
 
             ImGui::Spacing();
             if (ImGui::Button("Save settings"))

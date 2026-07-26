@@ -1,54 +1,44 @@
 #pragma once
 
-#include "ResourceManager/ResourceManager.hpp"
+#include "RenderGraph/IRenderPass.hpp"
 
 #include "HedgehogCommon/api/Frame/FrameData.hpp"
 
 #include <HedgehogMath/api/Matrix.hpp>
 
-#include <array>
 #include <memory>
 #include <vector>
 
 namespace RHI
 {
     class IRHIDevice;
-    class IRHICommandList;
-    class IRHIRenderPass;
-    class IRHIPipeline;
     class IRHIFramebuffer;
-    class IRHIDescriptorSetLayout;
     class IRHIDescriptorPool;
     class IRHIDescriptorSet;
     class IRHIBuffer;
 }
 
-namespace FS
-{
-    class FileSystemManager;
-}
-
 namespace Renderer
 {
-    class ResourceManager;
+    class DepthPrePassResources;
+    struct PassInitContext;
 
-    class DepthPrePass
+    // View-stage pass: early-Z depth prepass into this view's own viewDepth target. One instance
+    // per view (constructed fresh for each RenderView — see Renderer::CreateView); the shared,
+    // immutable half (render pass/pipeline/layout) still comes from the cache (PassResourceCache),
+    // so N view instances share one pipeline without re-registering anything.
+    class DepthPrePass : public IRenderPass
     {
     public:
-        DepthPrePass(RHI::IRHIDevice& device, const ResourceManager& resourceManager,
-                     const FS::FileSystemManager& fileSystem);
-        ~DepthPrePass();
+        explicit DepthPrePass(const PassInitContext& init);
+        ~DepthPrePass() override;
 
-        // Renders the depth prepass for one view (target) from the given camera.
-        void Render(RenderTargetId target,
-                    const HedgehogEngine::CameraData& camera,
-                    const HedgehogEngine::DrawBucket&  opaque,
-                    const ResourceManager& resourceManager,
-                    RHI::IRHICommandList& cmd, uint32_t frameIndex);
-        void Cleanup(RHI::IRHIDevice& device);
+        const char* GetName() const override { return "DepthPrePass"; }
 
-        void ResizeResources(RenderTargetId target, RHI::IRHIDevice& device,
-                             const ResourceManager& resourceManager);
+        void Setup(RenderGraphBuilder& builder) override;
+        void CreateFramebuffers(RHI::IRHIDevice& device, RenderGraph& graph) override;
+        void Execute(RenderGraphContext& ctx) override;
+        void Cleanup(RHI::IRHIDevice& device) override;
 
     private:
         struct DepthPrepassFrameUniform
@@ -56,20 +46,16 @@ namespace Renderer
             alignas(16) HM::Matrix4x4 ViewProj;
         };
 
-        void CreateFramebuffer(RenderTargetId target, RHI::IRHIDevice& device,
-                               const ResourceManager& resourceManager);
-
     private:
-        std::unique_ptr<RHI::IRHIRenderPass>          m_RenderPass;
-        std::unique_ptr<RHI::IRHIPipeline>            m_Pipeline;
-        std::unique_ptr<RHI::IRHIDescriptorSetLayout> m_FrameLayout;
-        std::unique_ptr<RHI::IRHIDescriptorPool>      m_FramePool;
+        // Shared, immutable half (render pass, pipeline, frame descriptor-set layout) — see
+        // PassResourceCache.
+        std::shared_ptr<const DepthPrePassResources> m_Resources;
 
-        // Per-target framebuffers and per-target × per-frame uniforms/descriptor sets, so the
-        // scene and game views can be recorded in the same frame without clobbering each other.
-        std::array<std::unique_ptr<RHI::IRHIFramebuffer>, kRenderTargetCount> m_FrameBuffers;
-        std::array<std::vector<std::unique_ptr<RHI::IRHIBuffer>>, kRenderTargetCount>        m_FrameUniforms;
-        std::array<std::vector<std::unique_ptr<RHI::IRHIDescriptorSet>>, kRenderTargetCount> m_FrameSets;
+        std::unique_ptr<RHI::IRHIDescriptorPool> m_FramePool;
+        std::unique_ptr<RHI::IRHIFramebuffer>    m_FrameBuffer;
+
+        std::vector<std::unique_ptr<RHI::IRHIBuffer>>        m_FrameUniforms; // [frame]
+        std::vector<std::unique_ptr<RHI::IRHIDescriptorSet>> m_FrameSets;     // [frame]
     };
 
 }

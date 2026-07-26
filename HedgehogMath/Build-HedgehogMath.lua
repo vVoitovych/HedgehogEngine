@@ -21,7 +21,9 @@ project "HedgehogMath"
       ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/EcsSerializationTest"),
       ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/EcsSerializationTest/"),
       ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/ContentLoaderTest"),
-      ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/ContentLoaderTest/")
+      ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/ContentLoaderTest/"),
+      ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/RenderGraphTest"),
+      ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/RenderGraphTest/")
    }
 
    filter "system:windows"

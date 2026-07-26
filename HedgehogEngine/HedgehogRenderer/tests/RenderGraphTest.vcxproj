@@ -1,0 +1,137 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{9779FCA5-0305-6A6A-0C16-ED5E7820C66A}</ProjectGuid>
+    <IgnoreWarnCompileDuplicatedFilename>true</IgnoreWarnCompileDuplicatedFilename>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>RenderGraphTest</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>..\..\..\Binaries\windows-x86_64\Debug\RenderGraphTest\</OutDir>
+    <IntDir>..\..\..\Binaries\Intermediates\windows-x86_64\Debug\RenderGraphTest\</IntDir>
+    <TargetName>RenderGraphTest</TargetName>
+    <TargetExt>.exe</TargetExt>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>..\..\..\Binaries\windows-x86_64\Release\RenderGraphTest\</OutDir>
+    <IntDir>..\..\..\Binaries\Intermediates\windows-x86_64\Release\RenderGraphTest\</IntDir>
+    <TargetName>RenderGraphTest</TargetName>
+    <TargetExt>.exe</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>YAML_CPP_STATIC_DEFINE;DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\ThirdParty\vulkan\Include;..\..\..\ThirdParty\ImGui\imgui;..\..\..\ThirdParty\YamlCpp\yaml-cpp\include;..\..\..\ThirdParty\Tracy\tracy\public;..\..\..\ThirdParty;..\..\..;..\..;..\src;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <Optimization>Disabled</Optimization>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <ExternalWarningLevel>Level3</ExternalWarningLevel>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>YAML_CPP_STATIC_DEFINE;RELEASE;TRACY_ENABLE;TRACY_ON_DEMAND;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\ThirdParty\vulkan\Include;..\..\..\ThirdParty\ImGui\imgui;..\..\..\ThirdParty\YamlCpp\yaml-cpp\include;..\..\..\ThirdParty\Tracy\tracy\public;..\..\..\ThirdParty;..\..\..;..\..;..\src;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <Optimization>Full</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <MinimalRebuild>false</MinimalRebuild>
+      <StringPooling>true</StringPooling>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <ExternalWarningLevel>Level3</ExternalWarningLevel>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="test_main.cpp" />
+    <ClCompile Include="test_rgq_parser.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\HedgehogRenderer.vcxproj">
+      <Project>{172C46DC-0325-652E-2C57-4AB318AF443A}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\RHI\RHI.vcxproj">
+      <Project>{4819880B-B422-887C-3D9E-9E7CA9A6937C}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\HedgehogMath\HedgehogMath.vcxproj">
+      <Project>{CABCDCB2-B61F-6C57-5FA5-A40D4BE737DA}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\HedgehogSettings\HedgehogSettings.vcxproj">
+      <Project>{919DAAD7-7D96-C929-A6C8-AEAE9220A935}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\HedgehogWindow\HedgehogWindow.vcxproj">
+      <Project>{1825E0F4-04F3-D3FA-ED86-4421D9F3AF5F}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\ContentLoader\ContentLoader.vcxproj">
+      <Project>{B7201DA3-23E1-98D9-EC1B-E256589BDDB5}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\FileSystem\FileSystem.vcxproj">
+      <Project>{6A7A86EC-5632-C839-BF39-A195AB10632A}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\Logger\Logger.vcxproj">
+      <Project>{25F339C1-1195-6497-FA4F-78EBE690EBE7}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\ThirdParty\ImGui\imgui.vcxproj">
+      <Project>{0098A80F-6CAC-D0C0-352E-7420A101CDF1}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\ThirdParty\YamlCpp\yaml-cpp.vcxproj">
+      <Project>{88F1A057-74BE-FB62-9DD7-E90A890331F1}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\ThirdParty\Tracy\Tracy.vcxproj">
+      <Project>{88372F0E-F44B-57BF-BDCD-FA1E29A153F0}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

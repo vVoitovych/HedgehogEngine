@@ -13,7 +13,7 @@ Scene:
         Parent: 0
         TransformComponent:
           Position: [4.5, -0.5, 0.5]
-          Rotation: [-3, -16, 35.20782]
+          Rotation: [-3, -16, -14.888349]
           Scale: [1, 1, 1]
         MeshComponent:
           MeshPath: Models\viking_room.obj
@@ -80,8 +80,8 @@ Scene:
         Name: Camera
         Parent: 0
         TransformComponent:
-          Position: [-7, 0, 0]
-          Rotation: [0, 0, 0]
+          Position: [-2, 1, 7]
+          Rotation: [0, 35, 0]
           Scale: [1, 1, 1]
         CameraComponent:
           IsPrimary: true

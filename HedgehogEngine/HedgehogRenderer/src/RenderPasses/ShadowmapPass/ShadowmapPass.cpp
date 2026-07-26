@@ -1,21 +1,27 @@
 #include "ShadowmapPass.hpp"
 #include "ShadowmapPassPushConstants.hpp"
+#include "ShadowmapPassResources.hpp"
 
-#include "FileSystem/api/FileSystemManager.hpp"
+#include "RenderPasses/PassInitContext.hpp"
+#include "RenderPasses/PassResourceCache.hpp"
+
+#include "RenderGraph/RenderGraph.hpp"
+#include "RenderGraph/RenderGraphBuilder.hpp"
+#include "RenderGraph/RenderGraphTypes.hpp"
 
 #include "HedgehogCommon/api/Frame/FrameData.hpp"
 
 #include "HedgehogCommon/api/RendererSettings.hpp"
 
-#include "Pipeline/ShaderLoader.hpp"
 #include "Pipeline/PipelineLoader.hpp"
+
+#include "Profiling/Profiler.hpp"
 
 #include <cassert>
 
 #include "HedgehogSettings/api/HedgehogSettings.hpp"
 #include "HedgehogSettings/api/ShadowmapingSettings.hpp"
 
-#include "ResourceManager/ResourceManager.hpp"
 #include "ResourceRegistry/ResourceRegistry.hpp"
 #include "ResourceRegistry/MeshGpuData.hpp"
 
@@ -34,22 +40,14 @@
 namespace Renderer
 {
 
-    ShadowmapPass::ShadowmapPass(RHI::IRHIDevice& device, const HedgehogSettings::Settings& settings,
-                                  const ResourceManager& resourceManager,
-                                  const FS::FileSystemManager& fileSystem)
+    ShadowmapPass::ShadowmapPass(const PassInitContext& init)
+        : m_Resources(init.Cache.GetOrCreate<ShadowmapPassResources>("ShadowmapPass", init))
     {
-        const auto sd = ShaderLoader::Load(device,
-            "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/ShadowmapPass.shader",
-            fileSystem);
-        assert(!sd.Layout.DescriptorSets.empty());
-
-        m_ShadowmapLayout = device.CreateDescriptorSetLayout(sd.Layout.DescriptorSets[0]);
-
         // Pool: one UBO per cascade per frame
         const uint32_t totalSets = MaxShadowCascades * HedgehogEngine::MAX_FRAMES_IN_FLIGHT;
-        m_ShadowmapPool = device.CreateDescriptorPool(
+        m_ShadowmapPool = init.Device.CreateDescriptorPool(
             totalSets,
-            PipelineLoader::MakePoolSizes(sd.Layout.DescriptorSets[0], totalSets));
+            PipelineLoader::MakePoolSizes(m_Resources->GetShadowBindings(), totalSets));
 
         // Per-frame per-cascade uniform buffers and descriptor sets
         m_ShadowmapUniforms.resize(HedgehogEngine::MAX_FRAMES_IN_FLIGHT);
@@ -58,12 +56,12 @@ namespace Renderer
         {
             for (size_t j = 0; j < MaxShadowCascades; ++j)
             {
-                auto ubo = device.CreateBuffer(
+                auto ubo = init.Device.CreateBuffer(
                     sizeof(ShadowCascadeUniform),
                     RHI::BufferUsage::UniformBuffer,
                     RHI::MemoryUsage::CpuToGpu);
 
-                auto set = device.AllocateDescriptorSet(*m_ShadowmapPool, *m_ShadowmapLayout);
+                auto set = init.Device.AllocateDescriptorSet(*m_ShadowmapPool, m_Resources->GetShadowLayout());
                 set->WriteUniformBuffer(0, *ubo);
                 set->Flush();
 
@@ -72,44 +70,79 @@ namespace Renderer
             }
         }
 
-        // Render pass: depth-only, Clear/Store, Undefined → DepthStencilReadOnly
-        RHI::RenderPassDesc rpDesc;
-        rpDesc.DepthAttachment = RHI::AttachmentDesc{
-            resourceManager.GetRHIShadowMap().GetFormat(),
-            RHI::LoadOp::Clear,
-            RHI::StoreOp::Store,
-            RHI::LoadOp::DontCare,
-            RHI::StoreOp::DontCare,
-            RHI::ImageLayout::Undefined,
-            RHI::ImageLayout::DepthStencilReadOnly
-        };
-        m_RenderPass = device.CreateRenderPass(rpDesc);
-
-        // Pipeline
-        auto pipelineDesc                   = sd.Pipeline;
-        pipelineDesc.DescriptorSetLayouts = { m_ShadowmapLayout.get() };
-        pipelineDesc.RenderPass           = m_RenderPass.get();
-        m_Pipeline = device.CreateGraphicsPipeline(pipelineDesc);
-
-        UpdateFrameBuffer(device, resourceManager);
-        UpdateViewports(settings);
+        UpdateViewports(init.Settings);
     }
 
     ShadowmapPass::~ShadowmapPass()
     {
     }
 
-    void ShadowmapPass::Render(const HedgehogEngine::FrameData& frame, const ResourceManager& resourceManager,
-                                RHI::IRHICommandList& cmd, uint32_t frameIndex)
+    void ShadowmapPass::Setup(RenderGraphBuilder& builder)
     {
+        GraphTextureDesc desc;
+        desc.TextureSizeClass = SizeClass::Fixed;
+        desc.Format           = m_Resources->GetShadowFormat();
+        desc.Usage            = RHI::TextureUsage::DepthStencil;
+        desc.FixedWidth       = m_ShadowmapSize;
+        desc.FixedHeight      = m_ShadowmapSize;
+        builder.CreateTexture(GraphResourceNames::SHADOW_DEPTH, desc);
+
+        // Write-only: no pass currently samples the shadow map (see workflow/current-plan.md,
+        // "shadowDepth currently has no reader"). Adding an unused ReadSampled would emit a real
+        // but behaviour-changing barrier every frame.
+        builder.Write(GraphResourceNames::SHADOW_DEPTH, RHI::ImageLayout::DepthStencilReadOnly);
+    }
+
+    void ShadowmapPass::CreateFramebuffers(RHI::IRHIDevice& device, RenderGraph& graph)
+    {
+        m_FrameBuffer.reset();
+
+        auto& shadowMap = graph.GetTexture(GraphResourceNames::SHADOW_DEPTH);
+
+        RHI::FramebufferDesc fbDesc;
+        fbDesc.RenderPass      = &m_Resources->GetRenderPass();
+        fbDesc.DepthAttachment = &shadowMap;
+        fbDesc.Width           = shadowMap.GetWidth();
+        fbDesc.Height          = shadowMap.GetHeight();
+        m_FrameBuffer = device.CreateFramebuffer(fbDesc);
+    }
+
+    void ShadowmapPass::Update(const RenderGraphContext& ctx)
+    {
+        // ctx.View is the main view (see Renderer::DrawFrame) and can legitimately be null — no
+        // main view has been set yet, or a load failure (e.g. a malformed .rgq) left CreateView
+        // never having succeeded for it. Leave the shadow matrices/UBOs as whatever they already
+        // are rather than crash; nothing currently reads shadowDepth, so a stale cascade fit this
+        // frame has no visible effect.
+        if (!ctx.View)
+            return;
+
+        UpdateShadowmapMatrices(ctx.View->Camera, *ctx.Settings, ctx.FrameData->ShadowLightDirection);
+
+        const uint32_t cascades = ctx.Settings->GetShadowmapSettings()->GetCascadesCount();
+
+        for (size_t i = 0; i < cascades; ++i)
+        {
+            ShadowCascadeUniform ubo;
+            ubo.ShadowMatrix = m_ShadowmapMatrices[i];
+            m_ShadowmapUniforms[ctx.FrameIndex][i]->CopyData(&ubo, sizeof(ubo));
+        }
+    }
+
+    void ShadowmapPass::Execute(RenderGraphContext& ctx)
+    {
+        HH_PROFILE_ZONE("ShadowmapPass");
+
         RHI::ClearValue depthClear;
         depthClear.IsDepth      = true;
         depthClear.DepthStencil = { 1.0f, 0 };
 
-        cmd.BeginRenderPass(*m_RenderPass, *m_FrameBuffer, { depthClear });
-        cmd.BindPipeline(*m_Pipeline);
+        auto& cmd = *ctx.CommandList;
 
-        auto& registry  = resourceManager.GetResourceRegistry();
+        cmd.BeginRenderPass(m_Resources->GetRenderPass(), *m_FrameBuffer, { depthClear });
+        cmd.BindPipeline(m_Resources->GetPipeline());
+
+        auto& registry  = *ctx.ResourceRegistry;
         auto& posBuffer = const_cast<RHI::IRHIBuffer&>(registry.GetPositionsBuffer());
         auto& idxBuffer = const_cast<RHI::IRHIBuffer&>(registry.GetIndexBuffer());
 
@@ -122,14 +155,14 @@ namespace Renderer
             cmd.SetViewport({ view.X, view.Y, view.Width, view.Height, 0.0f, 1.0f });
             cmd.SetScissor({ 0, 0, m_ShadowmapSize, m_ShadowmapSize });
 
-            cmd.BindDescriptorSet(*m_Pipeline, 0, *m_ShadowmapSets[frameIndex][i]);
+            cmd.BindDescriptorSet(m_Resources->GetPipeline(), 0, *m_ShadowmapSets[ctx.FrameIndex][i]);
 
-            for (const auto& drawNode : frame.DrawList.Opaque)
+            for (const auto& drawNode : ctx.FrameData->DrawList.Opaque)
             {
                 for (const auto& object : drawNode.Objects)
                 {
                     cmd.PushConstants(
-                        *m_Pipeline,
+                        m_Resources->GetPipeline(),
                         RHI::ShaderStage::Vertex,
                         0,
                         static_cast<uint32_t>(sizeof(ShadowmapPassPushConstants)),
@@ -150,50 +183,24 @@ namespace Renderer
 
         m_ShadowmapSets.clear();
         m_ShadowmapUniforms.clear();
-        m_Pipeline.reset();
         m_FrameBuffer.reset();
-        m_RenderPass.reset();
         m_ShadowmapPool.reset();
-        m_ShadowmapLayout.reset();
+        m_Resources.reset();
     }
 
-    void ShadowmapPass::UpdateData(const HedgehogEngine::FrameData& frame, uint32_t frameIndex,
-                                    const HedgehogSettings::Settings& settings)
+    void ShadowmapPass::OnSettingsDirty(RenderGraph& graph, RHI::IRHIDevice& device,
+                                        const HedgehogSettings::Settings& settings)
     {
-        UpdateShadowmapMatrices(frame.Camera, settings, frame.ShadowLightDirection);
-
-        const uint32_t cascades = settings.GetShadowmapSettings()->GetCascadesCount();
-
-        for (size_t i = 0; i < cascades; ++i)
-        {
-            ShadowCascadeUniform ubo;
-            ubo.ShadowMatrix = m_ShadowmapMatrices[i];
-            m_ShadowmapUniforms[frameIndex][i]->CopyData(&ubo, sizeof(ubo));
-        }
-    }
-
-    void ShadowmapPass::UpdateResources(RHI::IRHIDevice& device, const HedgehogSettings::Settings& settings,
-                                         const ResourceManager& resourceManager)
-    {
-        if (!settings.GetShadowmapSettings()->IsDirty())
+        auto& shadowmapSettings = settings.GetShadowmapSettings();
+        if (!shadowmapSettings->IsDirty())
             return;
 
-        UpdateFrameBuffer(device, resourceManager);
         UpdateViewports(settings);
-    }
 
-    void ShadowmapPass::UpdateFrameBuffer(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
-    {
-        const auto& shadowMap = resourceManager.GetRHIShadowMap();
+        graph.SetFixedSize(GraphResourceNames::SHADOW_DEPTH, m_ShadowmapSize, m_ShadowmapSize);
+        graph.Invalidate(SizeClass::Fixed, device);
 
-        m_FrameBuffer.reset();
-
-        RHI::FramebufferDesc fbDesc;
-        fbDesc.RenderPass      = m_RenderPass.get();
-        fbDesc.DepthAttachment = &shadowMap;
-        fbDesc.Width           = shadowMap.GetWidth();
-        fbDesc.Height          = shadowMap.GetHeight();
-        m_FrameBuffer = device.CreateFramebuffer(fbDesc);
+        shadowmapSettings->CleanDirtyState();
     }
 
     void ShadowmapPass::UpdateViewports(const HedgehogSettings::Settings& settings)

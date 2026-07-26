@@ -1,0 +1,25 @@
+# Composition-graph pipeline: the editor's post-view stage. GuiPass samples every currently
+# registered view's colour output (views:*) and draws ImGui — including the viewport images
+# themselves — into guiColor; PresentPass blits guiColor to the swapchain and presents.
+version: 1
+stage:   composition
+
+resources:
+  - name:   guiColor
+    kind:   texture
+    format: rgba16
+    size:   swapchain
+    usage:  [color_attachment, transfer_src]
+
+nodes:
+  - type:     GuiPass
+    instance: gui
+    inputs:
+      - { name: views:*, usage: shaderRead }
+    outputs:
+      - { name: guiColor, usage: colorWrite }
+
+  - type:     PresentPass
+    instance: present
+    inputs:
+      - { name: guiColor, usage: presentSource }

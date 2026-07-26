@@ -1,0 +1,12 @@
+# Composition-graph pipeline: the headless/game path (see Editor --game-mode, Phase 6). No GuiPass
+# — no ImGui object is ever constructed — just a straight blit of the single "main" view's colour
+# output to the swapchain. This is the ticket's second stated motivation: a game build renders
+# nothing an editor-only feature would need.
+version: 1
+stage:   composition
+
+nodes:
+  - type:     PresentPass
+    instance: present
+    inputs:
+      - { name: views:main, usage: presentSource }

@@ -1,12 +1,16 @@
 #include "GizmoPass.hpp"
+#include "GizmoPassResources.hpp"
 
-#include "FileSystem/api/FileSystemManager.hpp"
+#include "RenderPasses/PassInitContext.hpp"
+#include "RenderPasses/PassResourceCache.hpp"
 
-#include "ResourceManager/ResourceManager.hpp"
+#include "RenderGraph/RenderGraph.hpp"
+#include "RenderGraph/RenderGraphBuilder.hpp"
+#include "RenderGraph/RenderGraphTypes.hpp"
 
 #include "HedgehogCommon/api/RendererSettings.hpp"
 
-#include "Pipeline/ShaderLoader.hpp"
+#include "Profiling/Profiler.hpp"
 
 #include "RHI/api/IRHIDevice.hpp"
 #include "RHI/api/IRHICommandList.hpp"
@@ -32,51 +36,36 @@ namespace
     }
 }
 
-    GizmoPass::GizmoPass(RHI::IRHIDevice& device, const ResourceManager& resourceManager,
-                          const FS::FileSystemManager& fileSystem)
+    GizmoPass::GizmoPass(const PassInitContext& init)
+        : m_Resources(init.Cache.GetOrCreate<GizmoPassResources>("GizmoPass", init))
     {
-        const auto sd = ShaderLoader::Load(device,
-            "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/Gizmo.shader",
-            fileSystem);
-
-        // Color-only render pass that loads (preserves) the forward result and draws lines over it.
-        RHI::RenderPassDesc rpDesc;
-        rpDesc.ColorAttachments.push_back(RHI::AttachmentDesc{
-            resourceManager.GetSceneColorBuffer().GetFormat(),
-            RHI::LoadOp::Load,
-            RHI::StoreOp::Store,
-            RHI::LoadOp::DontCare,
-            RHI::StoreOp::DontCare,
-            RHI::ImageLayout::ColorAttachment,
-            RHI::ImageLayout::ColorAttachment
-        });
-        m_RenderPass = device.CreateRenderPass(rpDesc);
-
-        auto pipelineDesc       = sd.Pipeline;   // no descriptor sets: view-proj is a push constant
-        pipelineDesc.RenderPass = m_RenderPass.get();
-        m_Pipeline = device.CreateGraphicsPipeline(pipelineDesc);
-
         for (auto& buffer : m_VertexBuffers)
         {
-            buffer = device.CreateBuffer(
+            buffer = init.Device.CreateBuffer(
                 static_cast<size_t>(kMaxGizmoVertices) * sizeof(GizmoVertex),
                 RHI::BufferUsage::VertexBuffer,
                 RHI::MemoryUsage::CpuToGpu);
         }
-
-        CreateFramebuffer(device, resourceManager);
     }
 
     GizmoPass::~GizmoPass()
     {
     }
 
-    void GizmoPass::CreateFramebuffer(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
+    void GizmoPass::Setup(RenderGraphBuilder& builder)
     {
-        const auto& colorBuffer = resourceManager.GetSceneColorBuffer();
+        // ForwardPass (earlier in the same view graph) already declared viewColor — just write it.
+        builder.Write(GraphResourceNames::VIEW_COLOR, RHI::ImageLayout::ColorAttachment);
+    }
+
+    void GizmoPass::CreateFramebuffers(RHI::IRHIDevice& device, RenderGraph& graph)
+    {
+        m_FrameBuffer.reset();
+
+        auto& colorBuffer = graph.GetTexture(GraphResourceNames::VIEW_COLOR);
 
         RHI::FramebufferDesc fbDesc;
-        fbDesc.RenderPass       = m_RenderPass.get();
+        fbDesc.RenderPass       = &m_Resources->GetRenderPass();
         fbDesc.ColorAttachments = { &colorBuffer };
         fbDesc.Width            = colorBuffer.GetWidth();
         fbDesc.Height           = colorBuffer.GetHeight();
@@ -148,34 +137,35 @@ namespace
             m_Lines.resize(kMaxGizmoVertices);
     }
 
-    void GizmoPass::Render(const HedgehogEngine::CameraData&              camera,
-                            const std::vector<HedgehogEngine::LightData>&  lights,
-                            const std::optional<HM::Matrix4x4>&            selected,
-                            RHI::IRHICommandList& cmd, uint32_t frameIndex)
+    void GizmoPass::Execute(RenderGraphContext& ctx)
     {
-        BuildLines(lights, selected);
+        HH_PROFILE_ZONE("GizmoPass");
+
+        BuildLines(ctx.FrameData->Lights, ctx.View->SelectedGizmo);
         if (m_Lines.empty())
             return;
 
         const uint32_t vertexCount = static_cast<uint32_t>(m_Lines.size());
-        m_VertexBuffers[frameIndex]->CopyData(m_Lines.data(), vertexCount * sizeof(GizmoVertex));
+        m_VertexBuffers[ctx.FrameIndex]->CopyData(m_Lines.data(), vertexCount * sizeof(GizmoVertex));
 
         RHI::ClearValue colorClear;
         colorClear.Color = { 0.0f, 0.0f, 0.0f, 1.0f }; // ignored (LoadOp::Load), required by the API
 
-        cmd.BeginRenderPass(*m_RenderPass, *m_FrameBuffer, { colorClear });
+        auto& cmd = *ctx.CommandList;
+
+        cmd.BeginRenderPass(m_Resources->GetRenderPass(), *m_FrameBuffer, { colorClear });
 
         const uint32_t width  = m_FrameBuffer->GetWidth();
         const uint32_t height = m_FrameBuffer->GetHeight();
-        cmd.BindPipeline(*m_Pipeline);
+        cmd.BindPipeline(m_Resources->GetPipeline());
         cmd.SetViewport({ 0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height), 0.0f, 1.0f });
         cmd.SetScissor({ 0, 0, width, height });
 
-        const HM::Matrix4x4 viewProj = camera.Proj * camera.View;
-        cmd.PushConstants(*m_Pipeline, RHI::ShaderStage::Vertex, 0,
+        const HM::Matrix4x4 viewProj = ctx.View->Camera.Proj * ctx.View->Camera.View;
+        cmd.PushConstants(m_Resources->GetPipeline(), RHI::ShaderStage::Vertex, 0,
                           static_cast<uint32_t>(sizeof(HM::Matrix4x4)), &viewProj);
 
-        auto* vb = m_VertexBuffers[frameIndex].get();
+        auto* vb = m_VertexBuffers[ctx.FrameIndex].get();
         cmd.BindVertexBuffers(0, { vb }, { 0 });
         cmd.Draw(vertexCount, 1, 0, 0);
 
@@ -189,13 +179,6 @@ namespace
         for (auto& buffer : m_VertexBuffers)
             buffer.reset();
         m_FrameBuffer.reset();
-        m_Pipeline.reset();
-        m_RenderPass.reset();
-    }
-
-    void GizmoPass::ResizeResources(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
-    {
-        m_FrameBuffer.reset();
-        CreateFramebuffer(device, resourceManager);
+        m_Resources.reset();
     }
 }
