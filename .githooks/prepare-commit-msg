@@ -1,0 +1,28 @@
+#!/bin/sh
+#
+# Prefills the commit subject with the ticket key taken from the branch name,
+# so "HE-42: " is already there when the editor opens. Never overwrites a
+# message you supplied, and stays silent on a branch without a key.
+#
+# Installed by Scripts\InstallHooks.bat (sets core.hooksPath to .githooks).
+
+msg_file="$1"
+msg_source="$2"
+
+# -m, -F, -c/-C, merges and squashes already carry their intended message.
+case "$msg_source" in
+    message|commit|merge|squash) exit 0 ;;
+esac
+
+branch=$(git symbolic-ref --short HEAD 2>/dev/null) || exit 0
+
+ticket=$(printf '%s' "$branch" | grep -Eo '^HE-[0-9]+') || exit 0
+[ -n "$ticket" ] || exit 0
+
+# Leave it alone if a key is already present anywhere in the message.
+if grep -q "$ticket" "$msg_file"; then
+    exit 0
+fi
+
+printf '%s: %s' "$ticket" "$(cat "$msg_file")" > "$msg_file.tmp"
+mv "$msg_file.tmp" "$msg_file"

@@ -15,3 +15,7 @@ if errorlevel 1 (
 )
 
 echo Premake project files generated successfully.
+REM ============================================
+REM Install repository git hooks (ticket-key enforcement)
+REM ============================================
+call "%~dp0InstallHooks.bat"

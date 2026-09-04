@@ -1,0 +1,39 @@
+#!/bin/sh
+#
+# Rejects a commit whose subject carries no Jira ticket key.
+# Jira links commits to HE tickets by scanning for HE-<number>; a commit without
+# one is invisible on the board. See WORKFLOW.md.
+#
+# Installed by Scripts\InstallHooks.bat (sets core.hooksPath to .githooks).
+
+msg_file="$1"
+subject=$(sed -n '/^[^#]/{p;q;}' "$msg_file")
+
+# Git's own generated subjects and rebase helpers are left alone.
+case "$subject" in
+    Merge\ *|Revert\ *|fixup!\ *|squash!\ *|amend!\ *) exit 0 ;;
+esac
+
+# HE-42: ... , or several keys: HE-42, HE-43: ... , or the NO-TICKET escape hatch.
+if printf '%s' "$subject" | grep -Eq '^(HE-[0-9]+(,[[:space:]]*HE-[0-9]+)*|NO-TICKET): .+'; then
+    subject_length=$(printf '%s' "$subject" | wc -c)
+    if [ "$subject_length" -gt 72 ]; then
+        echo "warning: commit subject is $subject_length characters (soft limit 72)" >&2
+    fi
+    exit 0
+fi
+
+cat >&2 <<'MESSAGE'
+Commit rejected: the subject line needs a Jira ticket key.
+
+  Expected:  HE-<number>: <imperative summary>
+  Examples:  HE-42: Extract SwapchainManager from RHIContext
+             HE-42, HE-43: Drop the legacy swapchain path
+             NO-TICKET: Fix typo in README
+
+Your subject was:
+MESSAGE
+printf '  %s\n\n' "$subject" >&2
+echo "Branch names of the form HE-<number>-<slug> are prefilled automatically." >&2
+echo "See WORKFLOW.md. Use NO-TICKET: for the rare change with no ticket." >&2
+exit 1

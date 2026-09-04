@@ -1,0 +1,45 @@
+name: Ticket check
+
+# Jira links a pull request to its HE ticket by scanning the title, the branch
+# name and the commit subjects. The title matters most: it becomes the
+# squash-merge subject on master. See WORKFLOW.md.
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  ticket-key:
+    name: Pull request references a ticket
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check title and branch for HE-<number>
+        env:
+          # Read through the environment: a PR title is untrusted input and must
+          # never be interpolated straight into the shell.
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          if printf '%s' "$PR_TITLE" | grep -Eq '^(HE-[0-9]+(, *HE-[0-9]+)*|NO-TICKET): .+'; then
+            echo "Title references a ticket: $PR_TITLE"
+            exit 0
+          fi
+
+          echo "::error::Pull request title must start with a Jira ticket key."
+          echo ""
+          echo "  Expected:  HE-<number>: <summary>"
+          echo "  Got:       $PR_TITLE"
+          echo ""
+          echo "The title becomes the squash-merge commit subject, so without a key"
+          echo "Jira never sees the merge and the ticket is not moved to Done."
+          echo ""
+          if printf '%s' "$PR_BRANCH" | grep -Eq '^HE-[0-9]+'; then
+            key=$(printf '%s' "$PR_BRANCH" | grep -Eo '^HE-[0-9]+')
+            echo "Your branch is $PR_BRANCH — retitle the PR as \"$key: <summary>\"."
+          else
+            echo "Branch $PR_BRANCH has no key either. See WORKFLOW.md."
+          fi
+          exit 1

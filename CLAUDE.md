@@ -2,6 +2,15 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Development Workflow
+
+**Every change starts as a Jira ticket in project `HE` and lands as one pull request under ~1000 changed lines.** Read `WORKFLOW.md` before starting any work — it defines the ticket model, the sizing rule, branch and commit conventions, and the Jira/GitHub automation.
+
+The short form:
+- Branch `HE-<n>-<slug>` off `master`; no long-lived integration branches.
+- Commit subjects and PR titles start `HE-<n>: `. A `commit-msg` hook and the `ticket-check` CI job enforce this; Jira uses it to move the ticket to **In Review** on PR creation and **Done** on merge.
+- Break a problem into tickets with `/jira-tickets <problem>` before writing code.
+
 ## Build System
 
 HedgehogEngine uses **Premake5** to generate Visual Studio 2022 solution files. There is no CMake.
@@ -46,7 +55,7 @@ Renders N frames (default 120) and exits nonzero if any Vulkan validation error 
 Vendor\Binaries\Premake\Windows\premake5.exe --file=Build.lua vs2022
 ```
 
-**CI:** `.github/workflows/build.yml` builds Debug+Release and runs all test exes on every PR (the smoke test is local-only — CI runners have no Vulkan GPU).
+**CI:** `.github/workflows/ticket-check.yml` fails any PR whose title carries no `HE-<number>` key. There is currently **no build workflow** — Debug/Release builds and the test exes must be run locally before opening a PR (the smoke test is local-only in any case: CI runners have no Vulkan GPU).
 
 ## Performance
 
