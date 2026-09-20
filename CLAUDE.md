@@ -85,6 +85,8 @@ Editor (ConsoleApp)
         └── RHI             (static lib) → Vulkan (Volk + VMA)
 ```
 
+**The renderer is being rewritten.** `RENDERING.md` at the repository root is the design: a camera-and-view architecture where a `CameraComponent` carries scene data, a `View` is the render request, and each view owns a render graph. It describes the *target*, not what is on master today — the structures below (the six fixed render passes, `ResourceManager`, `RenderQueue`) are what exists now. Epic [HE-63](https://viktoravoitovych.atlassian.net/browse/HE-63) lands it as 28 sub-1000-line pull requests.
+
 ### Key Modules
 
 | Module | Type | Role |
