@@ -4,6 +4,7 @@
 #include "HedgehogEngine/api/Engine.hpp"
 #include "HedgehogEngine/api/WindowContext.hpp"
 #include "HedgehogEngine/api/EngineContext.hpp"
+#include "HedgehogEngine/HedgehogSettings/api/HedgehogSettings.hpp"
 #include "HedgehogRenderer/Renderer.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
 
@@ -21,6 +22,11 @@
 
 namespace Editor
 {
+    namespace
+    {
+        constexpr const char* ENGINE_SETTINGS_PATH = "engine://engine_settings.yaml";
+    }
+
     EditorApplication::EditorApplication()  = default;
     EditorApplication::~EditorApplication() = default;
 
@@ -35,6 +41,23 @@ namespace Editor
         m_Context   = std::make_unique<HedgehogEngine::Engine>();
 
         auto& engineContext = m_Context->GetEngineContext();
+
+        // Engine settings must load before the renderer is constructed: they decide the size of
+        // GPU resources it creates there. Loading afterwards leaves the settings dirty for the
+        // first frame and forces a resize of resources that have never been rendered to.
+        auto&       settings   = engineContext.GetSettings();
+        const auto& fileSystem = engineContext.GetFileSystem();
+        if (!fileSystem.Exists(ENGINE_SETTINGS_PATH))
+        {
+            LOGINFO("No engine settings file yet, using defaults.");
+        }
+        else if (!settings.Load(ENGINE_SETTINGS_PATH, fileSystem))
+        {
+            LOGWARNING("Engine settings could not be read, using defaults.");
+        }
+        // Nothing to resize: the renderer below reads these values when it creates its resources.
+        settings.CleanDirtyState();
+
         m_Renderer  = std::make_unique<Renderer::Renderer>(
             m_Context->GetWindowContext().GetWindow(),
             engineContext.GetSettings(),
@@ -138,6 +161,12 @@ namespace Editor
 
     void EditorApplication::Cleanup()
     {
+        auto& engineContext = m_Context->GetEngineContext();
+        if (!engineContext.GetSettings().Save(ENGINE_SETTINGS_PATH, engineContext.GetFileSystem()))
+        {
+            LOGWARNING("Failed to persist engine settings on shutdown.");
+        }
+
         m_Renderer->Cleanup();
         m_Context->Cleanup();
     }

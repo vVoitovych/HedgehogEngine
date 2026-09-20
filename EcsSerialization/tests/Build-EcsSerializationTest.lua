@@ -20,6 +20,7 @@ project "EcsSerializationTest"
         "EcsSerialization",
         "ECS",
         "FileSystem",
+        "HedgehogSettings",
         "Logger",
         "HedgehogMath",
         "yaml-cpp"
