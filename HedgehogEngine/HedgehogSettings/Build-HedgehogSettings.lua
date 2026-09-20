@@ -10,10 +10,16 @@ project "HedgehogSettings"
 
     includedirs
     {
+        "%{IncludeDir.yaml_cpp}",
+        "../..",
         ".."
     }
 
-    links { }
+    links {
+        "FileSystem",
+        "Logger",
+        "yaml-cpp"
+    }
 
    targetdir ("../../Binaries/" .. OutputDir .. "/%{prj.name}")
    objdir ("../../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")
@@ -21,12 +27,14 @@ project "HedgehogSettings"
    postbuildcommands
    {
        ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/Editor"),
-       ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/Editor/")
+       ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/Editor/"),
+       ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/EcsSerializationTest"),
+       ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/EcsSerializationTest/")
    }
 
    filter "system:windows"
        systemversion "latest"
-       defines { "HEDGEHOG_SETTINGS_EXPORT" }
+       defines { "HEDGEHOG_SETTINGS_EXPORT", "YAML_CPP_STATIC_DEFINE" }
 
    filter "configurations:Debug"
        defines { "DEBUG" }

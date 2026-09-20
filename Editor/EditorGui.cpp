@@ -11,6 +11,8 @@
 #include "HedgehogEngine/api/Containers/MeshContainer.hpp"
 #include "HedgehogEngine/api/Containers/TextureContainer.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/HedgehogSettings.hpp"
+#include "HedgehogEngine/HedgehogSettings/api/HedgehogSettings.hpp"
+#include "HedgehogEngine/HedgehogSettings/api/LayerSettings.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/ShadowmapingSettings.hpp"
 
 #include "ECS/api/ECS.hpp"
@@ -89,6 +91,7 @@ namespace Editor
         if (m_Settings.Load("engine://editor_settings.yaml", *m_FileSystem)
             && m_Settings.dockLayout.IsValid())
             m_DockSystem.GetLayout() = m_Settings.dockLayout;
+
 
         SetupLightComponentGuiOverrides();
 
@@ -569,6 +572,26 @@ namespace Editor
         if (ImGui::Checkbox("Visible", &visible))
             render.IsVisible = visible;
 
+        // Hand-drawn rather than reflected: layer names are edited at runtime, so the combo has
+        // to read them from settings every frame instead of a static label array.
+        const auto& layers = engineContext.GetSettings().GetLayerSettings();
+        if (ImGui::BeginCombo("Layer", layers->GetLayerDisplayName(render.Layer).c_str()))
+        {
+            for (uint32_t layer = 0; layer < HedgehogSettings::LayerSettings::LAYER_COUNT; ++layer)
+            {
+                const bool isSelected = (render.Layer == layer);
+                if (ImGui::Selectable(layers->GetLayerDisplayName(layer).c_str(), isSelected))
+                {
+                    render.Layer = layer;
+                }
+                if (isSelected)
+                {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::EndCombo();
+        }
+
         if (!materials.empty())
         {
             const uint64_t selectedIndex = render.MaterialIndex.value_or(0);
@@ -827,6 +850,51 @@ namespace Editor
 
         auto& engineContext = context.GetEngineContext();
         auto& settings      = engineContext.GetSettings();
+
+        ImGui::SeparatorText("Engine settings");
+        if (ImGui::Button("Save engine settings"))
+        {
+            if (!settings.Save("engine://engine_settings.yaml", engineContext.GetFileSystem()))
+            {
+                LOGWARNING("EditorGui: failed to save engine settings.");
+            }
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Reload engine settings"))
+        {
+            if (!settings.Load("engine://engine_settings.yaml", engineContext.GetFileSystem()))
+            {
+                LOGWARNING("EditorGui: no engine settings file to reload.");
+            }
+        }
+
+        if (ImGui::CollapsingHeader("Layers"))
+        {
+            ImGui::TextWrapped(
+                "A scene stores a layer's index, never its name. Renaming a layer relabels it "
+                "and never moves an object between layers.");
+            ImGui::Spacing();
+
+            auto& layers = settings.GetLayerSettings();
+            for (uint32_t layer = 0; layer < HedgehogSettings::LayerSettings::LAYER_COUNT; ++layer)
+            {
+                const std::string& name = layers->GetLayerName(layer);
+
+                char buffer[64];
+                buffer[name.copy(buffer, sizeof(buffer) - 1)] = '\0';
+
+                const std::string label = "Layer " + std::to_string(layer);
+
+                ImGui::PushID(static_cast<int>(layer));
+                if (ImGui::InputText(label.c_str(), buffer, sizeof(buffer)))
+                {
+                    // Blanking layer 0 is refused by SetLayerName; the field repopulates with
+                    // "Default" on the next frame.
+                    layers->SetLayerName(layer, buffer);
+                }
+                ImGui::PopID();
+            }
+        }
 
         if (ImGui::CollapsingHeader("Shadows"))
         {

@@ -1,0 +1,9 @@
+shadowmap:
+  size: 2048
+  cascades_count: 4
+  cascade_split_lambda: 0.95
+  split1: 10
+  split2: 25
+  split3: 50
+layers:
+  0: Default
