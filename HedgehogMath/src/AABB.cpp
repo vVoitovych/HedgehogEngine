@@ -1,5 +1,7 @@
 #include "api/AABB.hpp"
 
+#include "api/Matrix.hpp"
+
 namespace HM
 {
     AABB::AABB()
@@ -52,6 +54,19 @@ namespace HM
     {
         m_Min = Min(m_Min, point);
         m_Max = Max(m_Max, point);
+    }
+
+    AABB AABB::Transform(const Matrix4x4& matrix) const
+    {
+        const std::array<Vector3, 8> corners = GetCorners();
+
+        const Vector3 firstCorner = Vector3(Vector4(corners[0], 1.0f) * matrix);
+        AABB result(firstCorner, firstCorner);
+        for (size_t i = 1; i < corners.size(); ++i)
+        {
+            result.ExpandToInclude(Vector3(Vector4(corners[i], 1.0f) * matrix));
+        }
+        return result;
     }
 
 }
