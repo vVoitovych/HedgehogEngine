@@ -75,3 +75,24 @@ Scene:
           Material: Materials\test3.material
         Children:
           []
+      - Entity: 5
+        Name: MainCamera
+        Parent: 0
+        TransformComponent:
+          Position: [0, 2, 10]
+          Rotation: [0, 0, 0]
+          Scale: [1, 1, 1]
+        CameraComponent:
+          Enabled: true
+          ProjectionType: 0
+          Fov: 60
+          OrthoSize: 10
+          NearPlane: 0.1
+          FarPlane: 1000
+          LayerMask: 4294967295
+          TargetMode: 0
+          TargetName: ""
+          GraphName: game
+          Priority: 0
+        Children:
+          []

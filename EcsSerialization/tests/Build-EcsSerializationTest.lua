@@ -8,7 +8,8 @@ project "EcsSerializationTest"
     includedirs
     {
         "../../ThirdParty",
-        "../..",           -- so "EcsSerialization/api/..." resolves
+        "../..",                -- so "EcsSerialization/api/..." resolves
+        "../../HedgehogEngine",  -- so component headers' own "HedgehogEngine/api/..." includes resolve
         ".",
         "%{IncludeDir.yaml_cpp}"
     }

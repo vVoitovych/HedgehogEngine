@@ -11,7 +11,6 @@
 #include "HedgehogEngine/api/Containers/MeshContainer.hpp"
 #include "HedgehogEngine/api/Containers/TextureContainer.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/HedgehogSettings.hpp"
-#include "HedgehogEngine/HedgehogSettings/api/HedgehogSettings.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/LayerSettings.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/ShadowmapingSettings.hpp"
 
@@ -27,6 +26,7 @@
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RenderComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/CameraComponent.hpp"
 #include "Reflection/GuiReflection.hpp"
 
 #include "DialogueWindows/api/MaterialDialogue.hpp"
@@ -77,6 +77,23 @@ namespace
             }
         }
     }
+
+    // LayerMask stays reflected (None, not Hidden) so it still serialises — Hidden properties
+    // are skipped by YamlSerializeComponent/YamlDeserializeComponent, not just the GUI. The
+    // override below only silences the generic DragInt widget so DrawCameraComponent can draw
+    // named checkboxes instead, sourced live from HedgehogSettings::LayerSettings.
+    void SetupCameraComponentGuiOverrides()
+    {
+        using HedgehogEngine::CameraComponent;
+
+        for (auto& prop : CameraComponent::_GetPropTable())
+        {
+            if (std::string_view(prop.name) == "LayerMask")
+            {
+                prop.guiOverride = [](void*, const Reflection::PropertyDescriptor&) -> bool { return false; };
+            }
+        }
+    }
 }
 
 namespace Editor
@@ -94,6 +111,7 @@ namespace Editor
 
 
         SetupLightComponentGuiOverrides();
+        SetupCameraComponentGuiOverrides();
 
         LoadLastScene(context);
     }
@@ -262,6 +280,12 @@ namespace Editor
                     ECS::Entity e = m_SelectedEntity.value();
                     if (!ecs.HasComponent<HedgehogEngine::LightComponent>(e))
                         ecs.AddComponent(e, HedgehogEngine::LightComponent{});
+                }
+                if (ImGui::MenuItem("Camera component") && m_SelectedEntity.has_value())
+                {
+                    ECS::Entity e = m_SelectedEntity.value();
+                    if (!ecs.HasComponent<HedgehogEngine::CameraComponent>(e))
+                        ecs.AddComponent(e, HedgehogEngine::CameraComponent{});
                 }
                 if (ImGui::MenuItem("Script component") && m_SelectedEntity.has_value())
                 {
@@ -458,6 +482,7 @@ namespace Editor
             DrawEntityTitle(context);
             DrawTransformComponent(context);
             DrawLightComponent(context);
+            DrawCameraComponent(context);
             DrawMeshComponent(context);
             DrawRenderComponent(context);
             DrawScriptComponent(context);
@@ -737,6 +762,48 @@ namespace Editor
         {
             if (ecs.HasComponent<HedgehogEngine::LightComponent>(entity))
                 ecs.RemoveComponent<HedgehogEngine::LightComponent>(entity);
+        }
+    }
+
+    void EditorGui::DrawCameraComponent(HedgehogEngine::Engine& context)
+    {
+        auto& engineContext = context.GetEngineContext();
+        auto& ecs           = engineContext.GetECS();
+        auto  entity        = m_SelectedEntity.value();
+
+        if (!ecs.HasComponent<HedgehogEngine::CameraComponent>(entity))
+            return;
+        if (!ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen))
+            return;
+
+        auto& camera = ecs.GetComponent<HedgehogEngine::CameraComponent>(entity);
+
+        Reflection::RenderComponentGui(&camera, HedgehogEngine::CameraComponent::GetProperties());
+
+        // Hand-drawn, like RenderComponent's Layer combo: named checkboxes need live layer
+        // names from settings, which the reflected uint32 widget has no way to source.
+        ImGui::SeparatorText("Layer Mask");
+        const auto& layers = engineContext.GetSettings().GetLayerSettings();
+        for (uint32_t layer = 0; layer < HedgehogSettings::LayerSettings::LAYER_COUNT; ++layer)
+        {
+            const uint32_t bit     = 1u << layer;
+            bool           checked = (camera.LayerMask & bit) != 0;
+
+            ImGui::PushID(static_cast<int>(layer));
+            if (ImGui::Checkbox(layers->GetLayerDisplayName(layer).c_str(), &checked))
+            {
+                camera.LayerMask = checked ? (camera.LayerMask | bit) : (camera.LayerMask & ~bit);
+            }
+            ImGui::PopID();
+
+            if (layer % 4 != 3)
+                ImGui::SameLine();
+        }
+
+        if (ImGui::Button("Remove camera"))
+        {
+            if (ecs.HasComponent<HedgehogEngine::CameraComponent>(entity))
+                ecs.RemoveComponent<HedgehogEngine::CameraComponent>(entity);
         }
     }
 
