@@ -54,6 +54,7 @@ namespace Editor
         void DrawMeshComponent(HedgehogEngine::Engine& context);
         void DrawRenderComponent(HedgehogEngine::Engine& context);
         void DrawLightComponent(HedgehogEngine::Engine& context);
+        void DrawCameraComponent(HedgehogEngine::Engine& context);
         void DrawScriptComponent(HedgehogEngine::Engine& context);
 
         // ── Floating dialogs ─────────────────────────────────────────────────

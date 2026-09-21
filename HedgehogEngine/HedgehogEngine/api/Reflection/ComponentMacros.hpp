@@ -15,14 +15,14 @@
 
 #define HH_BEGIN_COMPONENT(Name_)                                                   \
 struct Name_ {                                                                       \
-    using _Self = Name_;                                                            \
+    using Self_ = Name_;                                                            \
     static constexpr const char* s_TypeName = #Name_;                              \
-    static std::vector<::Reflection::PropertyDescriptor>& _GetPropTable() {        \
+    static std::vector<::Reflection::PropertyDescriptor>& GetPropTable_() {        \
         static std::vector<::Reflection::PropertyDescriptor> t;                     \
         return t;                                                                   \
     }                                                                               \
     static std::span<const ::Reflection::PropertyDescriptor> GetProperties() {     \
-        return _GetPropTable();                                                     \
+        return GetPropTable_();                                                     \
     }
 
 // ─── HH_PROP ─────────────────────────────────────────────────────────────────
@@ -31,14 +31,14 @@ struct Name_ {                                                                  
 
 #define HH_PROP(T_, name_, def_, flags_)                                            \
     T_ name_ = def_;                                                                \
-    static void* _acc_##name_(void* c_) {                                          \
-        return &static_cast<_Self*>(c_)->name_;                                    \
+    static void* Accessor_##name_(void* c_) {                                      \
+        return &static_cast<Self_*>(c_)->name_;                                    \
     }                                                                               \
-    inline static bool _prop_##name_ = (_GetPropTable().push_back(                 \
+    inline static bool Registered_##name_ = (GetPropTable_().push_back(            \
         ::Reflection::PropertyDescriptor{                                            \
             ::Reflection::TypeTagOf<T_>(),                                          \
             #name_,                                                                 \
-            _acc_##name_,                                                           \
+            Accessor_##name_,                                                      \
             ::Reflection::PropertyFlags::flags_,                                    \
             0.0f, 0.0f                                                              \
         }), true);
@@ -50,14 +50,14 @@ struct Name_ {                                                                  
 
 #define HH_PROP_NAMED(T_, name_, yamlKey_, def_, flags_)                            \
     T_ name_ = def_;                                                                \
-    static void* _acc_##name_(void* c_) {                                          \
-        return &static_cast<_Self*>(c_)->name_;                                    \
+    static void* Accessor_##name_(void* c_) {                                      \
+        return &static_cast<Self_*>(c_)->name_;                                    \
     }                                                                               \
-    inline static bool _prop_##name_ = (_GetPropTable().push_back(                 \
+    inline static bool Registered_##name_ = (GetPropTable_().push_back(            \
         ::Reflection::PropertyDescriptor{                                            \
             ::Reflection::TypeTagOf<T_>(),                                          \
             yamlKey_,                                                               \
-            _acc_##name_,                                                           \
+            Accessor_##name_,                                                      \
             ::Reflection::PropertyFlags::flags_,                                    \
             0.0f, 0.0f                                                              \
         }), true);
@@ -68,14 +68,14 @@ struct Name_ {                                                                  
 
 #define HH_PROP_SLIDER(T_, name_, def_, min_, max_)                                 \
     T_ name_ = def_;                                                                \
-    static void* _acc_##name_(void* c_) {                                          \
-        return &static_cast<_Self*>(c_)->name_;                                    \
+    static void* Accessor_##name_(void* c_) {                                      \
+        return &static_cast<Self_*>(c_)->name_;                                    \
     }                                                                               \
-    inline static bool _prop_##name_ = (_GetPropTable().push_back(                 \
+    inline static bool Registered_##name_ = (GetPropTable_().push_back(            \
         ::Reflection::PropertyDescriptor{                                            \
             ::Reflection::TypeTagOf<T_>(),                                          \
             #name_,                                                                 \
-            _acc_##name_,                                                           \
+            Accessor_##name_,                                                      \
             ::Reflection::PropertyFlags::IsSlider,                                  \
             static_cast<float>(min_), static_cast<float>(max_)                     \
         }), true);
@@ -86,14 +86,14 @@ struct Name_ {                                                                  
 
 #define HH_PROP_NAMED_SLIDER(T_, name_, yamlKey_, def_, min_, max_)                 \
     T_ name_ = def_;                                                                \
-    static void* _acc_##name_(void* c_) {                                          \
-        return &static_cast<_Self*>(c_)->name_;                                    \
+    static void* Accessor_##name_(void* c_) {                                      \
+        return &static_cast<Self_*>(c_)->name_;                                    \
     }                                                                               \
-    inline static bool _prop_##name_ = (_GetPropTable().push_back(                 \
+    inline static bool Registered_##name_ = (GetPropTable_().push_back(            \
         ::Reflection::PropertyDescriptor{                                            \
             ::Reflection::TypeTagOf<T_>(),                                          \
             yamlKey_,                                                               \
-            _acc_##name_,                                                           \
+            Accessor_##name_,                                                      \
             ::Reflection::PropertyFlags::IsSlider,                                  \
             static_cast<float>(min_), static_cast<float>(max_)                     \
         }), true);
@@ -105,14 +105,14 @@ struct Name_ {                                                                  
 
 #define HH_PROP_NAMED_ENUM(T_, name_, yamlKey_, def_, labels_, count_)              \
     T_ name_ = def_;                                                                \
-    static void* _acc_##name_(void* c_) {                                          \
-        return &static_cast<_Self*>(c_)->name_;                                    \
+    static void* Accessor_##name_(void* c_) {                                      \
+        return &static_cast<Self_*>(c_)->name_;                                    \
     }                                                                               \
-    inline static bool _prop_##name_ = (_GetPropTable().push_back(                 \
+    inline static bool Registered_##name_ = (GetPropTable_().push_back(            \
         ::Reflection::PropertyDescriptor{                                            \
             ::Reflection::TypeTag::Enum,                                            \
             yamlKey_,                                                               \
-            _acc_##name_,                                                           \
+            Accessor_##name_,                                                      \
             ::Reflection::PropertyFlags::None,                                      \
             0.0f, 0.0f,                                                             \
             nullptr,                                                                \

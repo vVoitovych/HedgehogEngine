@@ -20,11 +20,13 @@
 #include "HedgehogEngine/api/ECS/systems/LightSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/RenderSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/ScriptSystem.hpp"
+#include "HedgehogEngine/api/ECS/systems/CameraSystem.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/LightComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RenderComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/CameraComponent.hpp"
 #include "ECS/api/components/Hierarchy.hpp"
 
 #include "EcsSerialization/api/ComponentSerializerRegistry.hpp"
@@ -91,6 +93,7 @@ namespace HedgehogEngine
         m_ECS.RegisterComponent<LightComponent>();
         m_ECS.RegisterComponent<RenderComponent>();
         m_ECS.RegisterComponent<ScriptComponent>();
+        m_ECS.RegisterComponent<CameraComponent>();
 
         m_TransformSystem = m_ECS.RegisterSystem<TransformSystem>();
         m_HierarchySystem = m_ECS.RegisterSystem<HierarchySystem>();
@@ -98,6 +101,7 @@ namespace HedgehogEngine
         m_LightSystem     = m_ECS.RegisterSystem<LightSystem>();
         m_RenderSystem    = m_ECS.RegisterSystem<RenderSystem>();
         m_ScriptSystem    = m_ECS.RegisterSystem<ScriptSystem>();
+        m_CameraSystem    = m_ECS.RegisterSystem<CameraSystem>();
 
         m_TransformSystem->Init(m_EventBus);
         m_HierarchySystem->Init(m_EventBus);
@@ -127,6 +131,10 @@ namespace HedgehogEngine
 
         signature.set(m_ECS.GetComponentType<ScriptComponent>());
         m_ECS.SetSystemSignature<ScriptSystem>(signature);
+        signature.reset();
+
+        signature.set(m_ECS.GetComponentType<CameraComponent>());
+        m_ECS.SetSystemSignature<CameraSystem>(signature);
 
         RegisterComponents();
     }
@@ -139,6 +147,7 @@ namespace HedgehogEngine
         m_ComponentRegistry->RegisterReflected<MeshComponent>("MeshComponent");
         m_ComponentRegistry->RegisterReflected<RenderComponent>("RenderComponent");
         m_ComponentRegistry->RegisterReflected<LightComponent>("LightComponent");
+        m_ComponentRegistry->RegisterReflected<CameraComponent>("CameraComponent");
 
         // ScriptComponent: RegisterCustom to handle m_Params and InitScript
         m_ComponentRegistry->RegisterCustom("ScriptComponent",
@@ -248,6 +257,7 @@ namespace HedgehogEngine
     LightSystem*      EngineContext::GetLightSystem()      const { return m_LightSystem.get(); }
     RenderSystem*     EngineContext::GetRenderSystem()     const { return m_RenderSystem.get(); }
     ScriptSystem*     EngineContext::GetScriptSystem()     const { return m_ScriptSystem.get(); }
+    CameraSystem*     EngineContext::GetCameraSystem()     const { return m_CameraSystem.get(); }
 
     void EngineContext::UpdateCamera(WindowContext& windowContext, float aspectRatio, float dt)
     {
