@@ -202,6 +202,30 @@ Use `inline constexpr` so the constant can be placed in a header without ODR iss
 - Platform-detection guards (`#ifdef _WIN32`).
 - Include guards (but prefer `#pragma once`).
 - Debug-break utilities (`ENGINE_DEBUG_BREAK`).
+- Code generation, e.g. the reflected-component macros in `ComponentMacros.hpp`.
+
+### 5.3 Naming Macro-Generated Identifiers
+
+**Never start a generated identifier with an underscore.** `_Name` (leading underscore
+followed by an uppercase letter) is reserved to the implementation in *every* scope by the
+C++ standard — using one is undefined behaviour, not just a style issue, even though nothing
+observably breaks today.
+
+Signal "this identifier is macro-generated plumbing, not part of the public API" with a
+**trailing** underscore instead, matching the macro-parameter convention already used
+throughout this codebase (`T_`, `name_`, `flags_`, …):
+
+```cpp
+// Good
+using Self_ = Name_;
+static std::vector<PropertyDescriptor>& GetPropTable_() { ... }
+static void* Accessor_##name_(void* c_) { ... }
+
+// Bad — reserved to the implementation, and _acc_/_prop_ read as unfinished
+using _Self = Name_;
+static std::vector<PropertyDescriptor>& _GetPropTable() { ... }
+static void* _acc_##name_(void* c_) { ... }
+```
 
 ---
 

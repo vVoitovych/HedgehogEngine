@@ -51,7 +51,7 @@ namespace
         using HedgehogEngine::LightComponent;
         using HedgehogEngine::LightType;
 
-        for (auto& prop : LightComponent::_GetPropTable())
+        for (auto& prop : LightComponent::GetPropTable_())
         {
             if (std::string_view(prop.name) == "LightRadius")
             {
@@ -86,7 +86,7 @@ namespace
     {
         using HedgehogEngine::CameraComponent;
 
-        for (auto& prop : CameraComponent::_GetPropTable())
+        for (auto& prop : CameraComponent::GetPropTable_())
         {
             if (std::string_view(prop.name) == "LayerMask")
             {
