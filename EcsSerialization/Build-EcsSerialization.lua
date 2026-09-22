@@ -28,7 +28,9 @@ project "EcsSerialization"
       ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/Editor"),
       ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/Editor/"),
       ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/EcsSerializationTest"),
-      ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/EcsSerializationTest/")
+      ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/EcsSerializationTest/"),
+      ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/HedgehogExtractTest"),
+      ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/HedgehogExtractTest/")
    }
 
    filter "system:windows"

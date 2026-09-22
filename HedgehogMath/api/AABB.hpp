@@ -6,6 +6,8 @@
 
 namespace HM
 {
+    class Matrix4x4;
+
     class AABB
     {
     public:
@@ -20,6 +22,10 @@ namespace HM
         HEDGEHOG_MATH_API std::array<Vector3, 8> GetCorners() const;
 
         HEDGEHOG_MATH_API void ExpandToInclude(const Vector3& point);
+
+        // Transforms all 8 corners by matrix and returns their axis-aligned bounds —
+        // not tight for a rotated box, but that's the standard world-AABB tradeoff.
+        HEDGEHOG_MATH_API AABB Transform(const Matrix4x4& matrix) const;
 
     private:
         Vector3 m_Min;

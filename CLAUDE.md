@@ -42,6 +42,7 @@ Binaries/windows-x86_64/Debug/FileSystemTest/FileSystemTest.exe
 Binaries/windows-x86_64/Debug/ECSTest/ECSTest.exe
 Binaries/windows-x86_64/Debug/EcsSerializationTest/EcsSerializationTest.exe
 Binaries/windows-x86_64/Debug/ContentLoaderTest/ContentLoaderTest.exe
+Binaries/windows-x86_64/Debug/HedgehogExtractTest/HedgehogExtractTest.exe
 ```
 
 **Renderer smoke test** — after any renderer/RHI change, run (from the repo root, needs a Vulkan GPU):
@@ -100,6 +101,7 @@ Editor (ConsoleApp)
 | `HedgehogRenderer` | static lib | Multi-pass Vulkan renderer (see structure and passes below) |
 | `ECS` | static lib | Entity Component System (EntityManager, ComponentManager, SystemManager, Coordinator) |
 | `EcsSerialization` | DLL | ECS serialization; `IHierarchyProvider` interface decoupled from engine |
+| `HedgehogExtract` | static lib | `RenderScene` + `SceneExtractor` (namespace `HX`): reads the ECS read-only, produces the immutable per-frame scene every view will consume (RENDERING.md section 3.1) |
 | `ContentLoader` | static lib | glTF/glb, OBJ, and texture loading (stb_image) |
 | `DialogueWindows` | static lib | ImGui-based dialogs for materials, meshes, scenes, textures |
 | `Logger` | static lib | Colorized console logging, no dependencies |

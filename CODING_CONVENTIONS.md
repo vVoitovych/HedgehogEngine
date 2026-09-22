@@ -462,6 +462,7 @@ adds it to this table in the same PR.
 | HedgehogWindow | `HW` |
 | HedgehogSettings | `HedgehogSettings` |
 | FileSystem | `FS` |
+| HedgehogExtract | `HX` |
 | Logger | `EngineLogger` |
 | ContentLoader | `ContentLoader` |
 | DialogueWindows | `DialogueWindows` |

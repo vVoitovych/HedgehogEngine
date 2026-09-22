@@ -65,7 +65,9 @@ project "glfw"
         postbuildcommands
         {
             ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/Editor"),
-            ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/Editor/")
+            ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/Editor/"),
+            ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/HedgehogExtractTest"),
+            ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/HedgehogExtractTest/")
         }
 
    filter "configurations:Debug"

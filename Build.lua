@@ -43,3 +43,6 @@ include "HedgehogMathTest/Build-HedgehogMathTest.lua"
 include "Logger/Build-Logger.lua"
 include "FileSystem/Build-FileSystem.lua"
 include "FileSystem/tests/Build-FileSystemTest.lua"
+
+include "HedgehogExtract/Build-HedgehogExtract.lua"
+include "HedgehogExtract/tests/Build-HedgehogExtractTest.lua"

@@ -619,4 +619,6 @@ Binaries
 /ContentLoader/tests/ContentLoaderTest.vcxproj*
 /ECS/tests/ECSTest.vcxproj*
 /EcsSerialization/tests/EcsSerializationTest.vcxproj*
+/HedgehogExtract/HedgehogExtract.vcxproj*
+/HedgehogExtract/tests/HedgehogExtractTest.vcxproj*
 /ThirdParty/Tracy/Tracy.vcxproj
