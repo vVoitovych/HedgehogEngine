@@ -31,9 +31,10 @@ public:
     VulkanTexture& operator=(VulkanTexture&&)      = delete;
 
     // IRHITexture
-    uint32_t GetWidth()  const override { return m_Width;  }
-    uint32_t GetHeight() const override { return m_Height; }
-    Format   GetFormat() const override { return m_Format; }
+    uint32_t            GetWidth()  const override { return m_Desc.Width;  }
+    uint32_t            GetHeight() const override { return m_Desc.Height; }
+    Format              GetFormat() const override { return m_Desc.Format; }
+    const TextureDesc&  GetDesc()   const override { return m_Desc; }
 
     // Internal Vulkan accessors
     VkImage     GetHandle()     const { return m_Image; }
@@ -42,9 +43,7 @@ public:
 private:
     VulkanDevice* m_Device   = nullptr;   // nullptr for swapchain textures
 
-    uint32_t      m_Width    = 0;
-    uint32_t      m_Height   = 0;
-    Format        m_Format   = Format::Undefined;
+    TextureDesc   m_Desc{};
 
     VkImage       m_Image      = VK_NULL_HANDLE;
     VkImageView   m_View       = VK_NULL_HANDLE;

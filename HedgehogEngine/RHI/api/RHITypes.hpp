@@ -214,6 +214,29 @@ enum class VertexInputRate
     PerInstance,
 };
 
+// A resource's usage at one point in a command stream — what Barrier() transitions between.
+// Shared by textures and buffers; the texture-only states (RenderTarget, DepthWrite, DepthRead,
+// Present) are simply never used in a BufferBarrier.
+enum class ResourceState
+{
+    Undefined,
+    RenderTarget,
+    DepthWrite,
+    DepthRead,
+    ShaderResource,
+    UnorderedAccess,
+    CopySrc,
+    CopyDst,
+    Present,
+};
+
+enum class TextureType
+{
+    Texture2D,
+    TextureCube,
+    Texture2DArray,
+};
+
 // ── POD Structs ───────────────────────────────────────────────────────────────
 
 struct Viewport
@@ -313,12 +336,34 @@ struct ColorBlendAttachment
     BlendOp     AlphaOp          = BlendOp::Add;
 };
 
+// Sentinels mirroring Vulkan's VK_REMAINING_MIP_LEVELS / VK_REMAINING_ARRAY_LAYERS: "every
+// level/layer from Base.. to the end of the resource". A default-constructed
+// TextureSubresourceRange means "the whole resource".
+inline constexpr uint32_t REMAINING_MIP_LEVELS   = ~0u;
+inline constexpr uint32_t REMAINING_ARRAY_LAYERS = ~0u;
+
+// Mirrors Vulkan's VK_WHOLE_SIZE: a BufferBarrier::Size of this value means "from Offset to
+// the end of the buffer".
+inline constexpr size_t WHOLE_BUFFER_SIZE = static_cast<size_t>(~0ull);
+
+struct TextureSubresourceRange
+{
+    uint32_t BaseMipLevel    = 0;
+    uint32_t MipLevelCount   = REMAINING_MIP_LEVELS;
+    uint32_t BaseArrayLayer  = 0;
+    uint32_t ArrayLayerCount = REMAINING_ARRAY_LAYERS;
+};
+
 struct TextureDesc
 {
     uint32_t     Width   = 1;
     uint32_t     Height  = 1;
     RHI::Format  Format  = RHI::Format::R8G8B8A8Srgb;
     TextureUsage Usage   = TextureUsage::Sampled;
+
+    TextureType  Type        = TextureType::Texture2D;
+    uint32_t     MipLevels   = 1;
+    uint32_t     ArrayLayers = 1;
 };
 
 struct SamplerDesc

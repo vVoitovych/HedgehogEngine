@@ -295,6 +295,71 @@ void VulkanCommandList::TransitionTexture(
     vkCmdPipelineBarrier2(m_CommandBuffer, &depInfo);
 }
 
+void VulkanCommandList::Barrier(
+    std::span<const TextureBarrier> textureBarriers,
+    std::span<const BufferBarrier>  bufferBarriers)
+{
+    std::vector<VkImageMemoryBarrier2> imageBarriers;
+    imageBarriers.reserve(textureBarriers.size());
+    for (const auto& tb : textureBarriers)
+    {
+        assert(tb.Texture && "TextureBarrier::Texture must not be null.");
+        const auto& vkTex = static_cast<const VulkanTexture&>(*tb.Texture);
+
+        const auto before = VulkanTypes::ToVkResourceStateInfo(tb.Before);
+        const auto after  = VulkanTypes::ToVkResourceStateInfo(tb.After);
+
+        VkImageMemoryBarrier2 barrier{ VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2 };
+        barrier.srcStageMask        = before.Stage;
+        barrier.srcAccessMask       = before.Access;
+        barrier.dstStageMask        = after.Stage;
+        barrier.dstAccessMask       = after.Access;
+        barrier.oldLayout           = before.Layout;
+        barrier.newLayout           = after.Layout;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.image               = vkTex.GetHandle();
+        barrier.subresourceRange    = VulkanTypes::ToVkSubresourceRange(
+            tb.Range, VulkanTypes::GetAspectMask(vkTex.GetFormat()));
+        imageBarriers.push_back(barrier);
+    }
+
+    std::vector<VkBufferMemoryBarrier2> bufferMemoryBarriers;
+    bufferMemoryBarriers.reserve(bufferBarriers.size());
+    for (const auto& bb : bufferBarriers)
+    {
+        assert(bb.Buffer && "BufferBarrier::Buffer must not be null.");
+        const auto& vkBuf = static_cast<const VulkanBuffer&>(*bb.Buffer);
+
+        const auto before = VulkanTypes::ToVkResourceStateInfo(bb.Before);
+        const auto after  = VulkanTypes::ToVkResourceStateInfo(bb.After);
+
+        VkBufferMemoryBarrier2 barrier{ VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2 };
+        barrier.srcStageMask        = before.Stage;
+        barrier.srcAccessMask       = before.Access;
+        barrier.dstStageMask        = after.Stage;
+        barrier.dstAccessMask       = after.Access;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.buffer              = vkBuf.GetHandle();
+        barrier.offset              = static_cast<VkDeviceSize>(bb.Offset);
+        barrier.size                = bb.Size == RHI::WHOLE_BUFFER_SIZE
+                                         ? VK_WHOLE_SIZE : static_cast<VkDeviceSize>(bb.Size);
+        bufferMemoryBarriers.push_back(barrier);
+    }
+
+    if (imageBarriers.empty() && bufferMemoryBarriers.empty())
+        return;
+
+    VkDependencyInfo depInfo{ VK_STRUCTURE_TYPE_DEPENDENCY_INFO };
+    depInfo.imageMemoryBarrierCount  = static_cast<uint32_t>(imageBarriers.size());
+    depInfo.pImageMemoryBarriers     = imageBarriers.data();
+    depInfo.bufferMemoryBarrierCount = static_cast<uint32_t>(bufferMemoryBarriers.size());
+    depInfo.pBufferMemoryBarriers    = bufferMemoryBarriers.data();
+
+    vkCmdPipelineBarrier2(m_CommandBuffer, &depInfo);
+}
+
 void VulkanCommandList::CopyBufferToBuffer(
     const IRHIBuffer& src, IRHIBuffer& dst,
     size_t srcOffset, size_t dstOffset, size_t size)

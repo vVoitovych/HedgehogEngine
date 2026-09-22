@@ -44,6 +44,9 @@ public:
 
     std::unique_ptr<IRHITexture> CreateTexture(const TextureDesc& desc) const override;
 
+    std::unique_ptr<IRHITextureView> CreateTextureView(
+        const IRHITexture& texture, const TextureSubresourceRange& range = {}) const override;
+
     std::unique_ptr<IRHISampler> CreateSampler(const SamplerDesc& desc) const override;
 
     std::unique_ptr<IRHIShader> CreateShader(
