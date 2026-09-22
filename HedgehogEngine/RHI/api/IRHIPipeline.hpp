@@ -42,9 +42,14 @@ struct GraphicsPipelineDesc
     std::vector<const IRHIDescriptorSetLayout*> DescriptorSetLayouts;
     std::vector<PushConstantRange>        PushConstantRanges;
 
-    // Render pass this pipeline is compatible with
+    // Render pass this pipeline is compatible with. Leave null to create the pipeline for
+    // dynamic rendering (BeginRendering/EndRendering) instead — in that case ColorAttachmentFormats
+    // (and DepthAttachmentFormat, if the pass has one) must be set; they are ignored otherwise.
     const IRHIRenderPass*                 RenderPass = nullptr;
     uint32_t                              Subpass    = 0;
+
+    std::vector<RHI::Format>              ColorAttachmentFormats;
+    RHI::Format                           DepthAttachmentFormat = RHI::Format::Undefined;
 };
 
 class IRHIPipeline

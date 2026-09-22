@@ -3,6 +3,7 @@
 #include "RHITypes.hpp"
 
 #include <cstddef>
+#include <optional>
 #include <vector>
 
 namespace RHI
@@ -14,6 +15,27 @@ class IRHIPipeline;
 class IRHIDescriptorSet;
 class IRHIRenderPass;
 class IRHIFramebuffer;
+
+// One attachment for BeginRendering (VK_KHR_dynamic_rendering / Vulkan 1.3 core): a texture
+// view plus the load/store/clear behaviour that RenderPassDesc+ClearValue split across a
+// render pass object and a separate clear-values vector. The caller transitions Texture into
+// the right layout (ColorAttachment / DepthStencilAttachment) beforehand, same as it already
+// does before BeginRenderPass.
+struct RenderingAttachment
+{
+    const IRHITexture* Texture = nullptr;
+    RHI::LoadOp         LoadOp  = RHI::LoadOp::Load;
+    RHI::StoreOp         StoreOp = RHI::StoreOp::Store;
+    ClearValue            Clear   = {};
+};
+
+struct RenderingInfo
+{
+    std::vector<RenderingAttachment>   ColorAttachments;
+    std::optional<RenderingAttachment> DepthAttachment;
+    uint32_t                           Width  = 0;
+    uint32_t                           Height = 0;
+};
 
 class IRHICommandList
 {
@@ -44,6 +66,16 @@ public:
                                  const std::vector<ClearValue>& clearValues) = 0;
 
     virtual void EndRenderPass() = 0;
+
+    // ── Dynamic rendering (VK_KHR_dynamic_rendering / Vulkan 1.3 core) ─────────
+
+    // Alternative to BeginRenderPass/EndRenderPass that needs no IRHIRenderPass or
+    // IRHIFramebuffer object — attachments are texture views passed directly. A pipeline
+    // bound inside must have been created with matching GraphicsPipelineDesc attachment
+    // formats (RenderPass left null), not a render-pass-compatible one.
+    virtual void BeginRendering(const RenderingInfo& renderingInfo) = 0;
+
+    virtual void EndRendering() = 0;
 
     // ── Pipeline state ────────────────────────────────────────────────────────
 
