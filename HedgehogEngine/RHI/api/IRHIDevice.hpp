@@ -3,6 +3,7 @@
 #include "RHITypes.hpp"
 #include "IRHIBuffer.hpp"
 #include "IRHITexture.hpp"
+#include "IRHITextureView.hpp"
 #include "IRHISampler.hpp"
 #include "IRHIShader.hpp"
 #include "IRHIDescriptor.hpp"
@@ -52,6 +53,11 @@ public:
         MemoryUsage memUsage) const = 0;
 
     virtual std::unique_ptr<IRHITexture> CreateTexture(const TextureDesc& desc) const = 0;
+
+    // range defaulted covers the whole resource (see TextureSubresourceRange).
+    virtual std::unique_ptr<IRHITextureView> CreateTextureView(
+        const IRHITexture&             texture,
+        const TextureSubresourceRange& range = {}) const = 0;
 
     virtual std::unique_ptr<IRHISampler> CreateSampler(const SamplerDesc& desc) const = 0;
 

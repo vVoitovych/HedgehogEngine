@@ -334,6 +334,110 @@ inline VkSamplerAddressMode ToVkAddressMode(AddressMode mode)
     }
 }
 
+// ── Texture type ──────────────────────────────────────────────────────────────
+
+inline VkImageType ToVkImageType(TextureType type)
+{
+    // Every current TextureType (2D, cube, 2D array) is a VkImageType 2D image — only the
+    // view type and layer count differ. Revisit if/when a 3D texture type is added.
+    (void)type;
+    return VK_IMAGE_TYPE_2D;
+}
+
+inline VkImageViewType ToVkImageViewType(TextureType type)
+{
+    switch (type)
+    {
+        case TextureType::Texture2D:      return VK_IMAGE_VIEW_TYPE_2D;
+        case TextureType::TextureCube:    return VK_IMAGE_VIEW_TYPE_CUBE;
+        case TextureType::Texture2DArray: return VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+        default: assert(false && "Unknown TextureType"); return VK_IMAGE_VIEW_TYPE_2D;
+    }
+}
+
+// ── Subresource range ─────────────────────────────────────────────────────────
+
+// For barriers: REMAINING_MIP_LEVELS/REMAINING_ARRAY_LAYERS pass straight through, since
+// synchronization2 barriers accept VK_REMAINING_* directly. Image views need concrete counts
+// instead (see VulkanTextureView, which resolves against the source texture's TextureDesc
+// before calling this).
+inline VkImageSubresourceRange ToVkSubresourceRange(const TextureSubresourceRange& range,
+                                                       VkImageAspectFlags             aspect)
+{
+    VkImageSubresourceRange vkRange{};
+    vkRange.aspectMask     = aspect;
+    vkRange.baseMipLevel   = range.BaseMipLevel;
+    vkRange.levelCount     = range.MipLevelCount == REMAINING_MIP_LEVELS
+                                ? VK_REMAINING_MIP_LEVELS : range.MipLevelCount;
+    vkRange.baseArrayLayer = range.BaseArrayLayer;
+    vkRange.layerCount     = range.ArrayLayerCount == REMAINING_ARRAY_LAYERS
+                                ? VK_REMAINING_ARRAY_LAYERS : range.ArrayLayerCount;
+    return vkRange;
+}
+
+// ── Resource state (access-based barriers, synchronization2) ─────────────────
+
+struct ResourceStateInfo
+{
+    VkImageLayout         Layout = VK_IMAGE_LAYOUT_UNDEFINED; // textures only; ignored for buffers
+    VkPipelineStageFlags2 Stage  = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;
+    VkAccessFlags2        Access = 0;
+};
+
+// What a resource looks like while it is in a given ResourceState — the layout (for textures)
+// plus the pipeline stage / access mask a barrier needs on whichever side (src or dst) that
+// state falls on.
+inline ResourceStateInfo ToVkResourceStateInfo(ResourceState state)
+{
+    switch (state)
+    {
+        case ResourceState::Undefined:
+            return { VK_IMAGE_LAYOUT_UNDEFINED, VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, 0 };
+
+        case ResourceState::RenderTarget:
+            return { VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                     VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                     VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT };
+
+        case ResourceState::DepthWrite:
+            return { VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                     VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+                     VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT };
+
+        case ResourceState::DepthRead:
+            return { VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+                     VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT
+                         | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+                     VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_SHADER_READ_BIT };
+
+        case ResourceState::ShaderResource:
+            return { VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                     VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT
+                         | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT,
+                     VK_ACCESS_2_SHADER_READ_BIT };
+
+        case ResourceState::UnorderedAccess:
+            return { VK_IMAGE_LAYOUT_GENERAL,
+                     VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+                     VK_ACCESS_2_SHADER_READ_BIT | VK_ACCESS_2_SHADER_WRITE_BIT };
+
+        case ResourceState::CopySrc:
+            return { VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                     VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_READ_BIT };
+
+        case ResourceState::CopyDst:
+            return { VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                     VK_PIPELINE_STAGE_2_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT };
+
+        case ResourceState::Present:
+            return { VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT, 0 };
+
+        default:
+            assert(false && "Unknown ResourceState");
+            return {};
+    }
+}
+
 // ── Barrier helpers (synchronization2) ───────────────────────────────────────
 
 // Derives appropriate stage masks and access masks for a layout transition.

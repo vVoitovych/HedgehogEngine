@@ -4,6 +4,7 @@
 
 #include <cstddef>
 #include <optional>
+#include <span>
 #include <vector>
 
 namespace RHI
@@ -35,6 +36,26 @@ struct RenderingInfo
     std::optional<RenderingAttachment> DepthAttachment;
     uint32_t                           Width  = 0;
     uint32_t                           Height = 0;
+};
+
+// One entry in a Barrier() call. Before/After are states, never raw layouts — the backend
+// derives the layout, pipeline stage and access mask from each. Range defaulted covers the
+// whole resource.
+struct TextureBarrier
+{
+    IRHITexture*             Texture = nullptr;
+    RHI::ResourceState        Before  = RHI::ResourceState::Undefined;
+    RHI::ResourceState        After   = RHI::ResourceState::Undefined;
+    TextureSubresourceRange    Range   = {};
+};
+
+struct BufferBarrier
+{
+    IRHIBuffer*        Buffer = nullptr;
+    RHI::ResourceState Before  = RHI::ResourceState::Undefined;
+    RHI::ResourceState After   = RHI::ResourceState::Undefined;
+    size_t             Offset  = 0;
+    size_t             Size    = WHOLE_BUFFER_SIZE;
 };
 
 class IRHICommandList
@@ -124,6 +145,13 @@ public:
     virtual void TransitionTexture(IRHITexture& texture,
                                    ImageLayout  oldLayout,
                                    ImageLayout  newLayout) = 0;
+
+    // Batches any number of texture and buffer transitions into a single synchronization2
+    // vkCmdPipelineBarrier2 call, access-based (ResourceState) rather than raw layouts. The
+    // intended sole transition mechanism for the graph (RENDERING.md section 5.3) — TransitionTexture
+    // above stays only for the passes that predate it.
+    virtual void Barrier(std::span<const TextureBarrier> textureBarriers,
+                         std::span<const BufferBarrier>  bufferBarriers) = 0;
 
     virtual void CopyBufferToBuffer(const IRHIBuffer& src,
                                     IRHIBuffer&       dst,

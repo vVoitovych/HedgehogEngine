@@ -29,6 +29,7 @@
 #include "VulkanSwapchain.hpp"
 #include "VulkanSyncPrimitive.hpp"
 #include "VulkanTexture.hpp"
+#include "VulkanTextureView.hpp"
 
 #include "RHI/api/RHIDiagnostics.hpp"
 
@@ -454,6 +455,13 @@ std::unique_ptr<IRHIBuffer> VulkanDevice::CreateBuffer(
 std::unique_ptr<IRHITexture> VulkanDevice::CreateTexture(const TextureDesc& desc) const
 {
     return std::make_unique<VulkanTexture>(const_cast<VulkanDevice&>(*this), desc);
+}
+
+std::unique_ptr<IRHITextureView> VulkanDevice::CreateTextureView(
+    const IRHITexture& texture, const TextureSubresourceRange& range) const
+{
+    return std::make_unique<VulkanTextureView>(
+        const_cast<VulkanDevice&>(*this), static_cast<const VulkanTexture&>(texture), range);
 }
 
 std::unique_ptr<IRHISampler> VulkanDevice::CreateSampler(const SamplerDesc& desc) const

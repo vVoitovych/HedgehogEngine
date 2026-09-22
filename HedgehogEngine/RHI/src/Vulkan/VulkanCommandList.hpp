@@ -67,6 +67,9 @@ public:
                            ImageLayout  oldLayout,
                            ImageLayout  newLayout) override;
 
+    void Barrier(std::span<const TextureBarrier> textureBarriers,
+                std::span<const BufferBarrier>  bufferBarriers) override;
+
     void CopyBufferToBuffer(const IRHIBuffer& src,
                             IRHIBuffer&       dst,
                             size_t            srcOffset,
