@@ -101,11 +101,9 @@ namespace HX
     void SceneExtractor::ExtractLights(const ECS::ECS& ecs, const HedgehogEngine::LightSystem& lightSystem,
                                         RenderScene& outScene) const
     {
-        const std::vector<ECS::Entity>& entities = lightSystem.GetEntities();
-        const size_t count = lightSystem.GetLightComponentsCount();
-        for (size_t i = 0; i < count; ++i)
+        for (const ECS::Entity entity : lightSystem.GetEntities())
         {
-            const auto& lightComponent = lightSystem.GetLightComponentByIndex(ecs, i);
+            const auto& lightComponent = ecs.GetComponent<HedgehogEngine::LightComponent>(entity);
             if (!lightComponent.Enable)
             {
                 continue;
@@ -120,7 +118,7 @@ namespace HX
             light.Radius      = lightComponent.Radius;
             light.ConeAngle   = lightComponent.ConeAngle;
             light.CastShadows = lightComponent.CastShadows;
-            light.SourceId    = static_cast<uint64_t>(entities[i]);
+            light.SourceId    = static_cast<uint64_t>(entity);
             outScene.Lights.push_back(light);
         }
     }
