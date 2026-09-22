@@ -571,6 +571,7 @@ Binaries
 /HedgehogEngine/HedgehogContext/HedgehogContext.vcxproj.filters
 /HedgehogEngine/HedgehogRenderer/HedgehogRenderer.vcxproj
 /HedgehogEngine/HedgehogRenderer/HedgehogRenderer.vcxproj.filters
+/HedgehogEngine/HedgehogRenderer/tests/RenderGraphTest.vcxproj*
 /HedgehogEngine/HedgehogWrappers/HedgehogWrappers.vcxproj
 /HedgehogEngine/HedgehogWrappers/HedgehogWrappers.vcxproj.filters
 /HedgehogEngine/HedgehogWrappers/HedgehogWrappers.vcxproj.user

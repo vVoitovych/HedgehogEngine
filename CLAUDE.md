@@ -43,6 +43,7 @@ Binaries/windows-x86_64/Debug/ECSTest/ECSTest.exe
 Binaries/windows-x86_64/Debug/EcsSerializationTest/EcsSerializationTest.exe
 Binaries/windows-x86_64/Debug/ContentLoaderTest/ContentLoaderTest.exe
 Binaries/windows-x86_64/Debug/HedgehogExtractTest/HedgehogExtractTest.exe
+Binaries/windows-x86_64/Debug/RenderGraphTest/RenderGraphTest.exe
 ```
 
 **Renderer smoke test** — after any renderer/RHI change, run (from the repo root, needs a Vulkan GPU):
@@ -156,10 +157,12 @@ Unit tests use the **doctest** framework. Test projects (each `<Module>/tests/` 
 - `ECSTest` — entity lifecycle, component storage integrity, system signature membership
 - `EcsSerializationTest` — scene YAML round-trip plus failure paths (missing/corrupt files)
 - `ContentLoaderTest` — OBJ mesh loading with hermetic temp-dir fixtures
+- `HedgehogExtractTest` — ECS-to-`RenderScene` extraction: instance/light/camera extraction, world-bounds correctness, `SourceId` round-trip, layer propagation, zero-allocation re-extraction
+- `RenderGraphTest` (`HedgehogEngine/HedgehogRenderer/tests/`) — the render graph's declaration side only (`RGTypes`/`GraphDescription`/`GraphBuilder`/`RGPassBuilder`, namespace `Renderer`): handle versioning across writes, read-after-write/write-after-read edge recording, size-policy resolution. Compiles the graph's sources directly rather than linking the `HedgehogRenderer` static lib, so it needs no RHI device, Vulkan SDK, or GLFW — genuinely headless.
 
 DLL test dependencies are copied to each test's output dir by the owning module's `postbuildcommands` — when adding a test project that links a `SharedLib` module, add a MKDIR/COPY pair to that module's `Build-*.lua`.
 
-The renderer has no unit tests by design; it is covered by validation layers + `Editor.exe --smoke-test` (see Build System).
+Everything else in the renderer (the RHI-backed render passes) has no unit tests by design; it is covered by validation layers + `Editor.exe --smoke-test` (see Build System). The render graph's declaration layer above is the deliberate exception — it is device-free by construction (RENDERING.md section 5.3), so it is unit-tested like any other module.
 
 ### Third-Party Dependencies (git submodules)
 
