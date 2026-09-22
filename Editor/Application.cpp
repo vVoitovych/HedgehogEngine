@@ -25,6 +25,19 @@ namespace Editor
     namespace
     {
         constexpr const char* ENGINE_SETTINGS_PATH = "engine://engine_settings.yaml";
+
+        size_t CountDrawObjects(const HedgehogEngine::DrawList& drawList)
+        {
+            size_t count = 0;
+            for (const HedgehogEngine::DrawBucket* bucket : { &drawList.Opaque, &drawList.Cutoff, &drawList.Transparent })
+            {
+                for (const HedgehogEngine::DrawNode& node : *bucket)
+                {
+                    count += node.Objects.size();
+                }
+            }
+            return count;
+        }
     }
 
     EditorApplication::EditorApplication()  = default;
@@ -82,6 +95,9 @@ namespace Editor
         auto& windowContext = m_Context->GetWindowContext();
         for (uint32_t i = 0; i < warmupFrames && !windowContext.ShouldClose(); ++i)
             StepFrame();
+
+        const size_t drawCount = CountDrawObjects(m_Context->GetEngineContext().GetFrameData().DrawList);
+        LOGINFO("Benchmark: draw count = ", drawCount);
 
         LOGINFO("Benchmark: measuring ", measureFrames, " frame(s)...");
         m_Renderer->BeginFrameStatsCapture();
