@@ -16,7 +16,9 @@ VulkanPipeline::VulkanPipeline(VulkanDevice& device, const GraphicsPipelineDesc&
     : m_Device(device)
 {
     assert(desc.VertexShader && "GraphicsPipelineDesc::VertexShader must not be null.");
-    assert(desc.RenderPass   && "GraphicsPipelineDesc::RenderPass must not be null.");
+    assert((desc.RenderPass || !desc.ColorAttachmentFormats.empty()
+                            || desc.DepthAttachmentFormat != RHI::Format::Undefined)
+           && "GraphicsPipelineDesc needs either RenderPass or attachment formats for dynamic rendering.");
 
     // ── Shader stages ─────────────────────────────────────────────────────────
 
@@ -159,8 +161,6 @@ VulkanPipeline::VulkanPipeline(VulkanDevice& device, const GraphicsPipelineDesc&
 
     // ── Graphics pipeline ─────────────────────────────────────────────────────
 
-    const auto& vkPass = static_cast<const VulkanRenderPass&>(*desc.RenderPass);
-
     VkGraphicsPipelineCreateInfo pipelineInfo{ VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO };
     pipelineInfo.stageCount          = static_cast<uint32_t>(stages.size());
     pipelineInfo.pStages             = stages.data();
@@ -173,8 +173,36 @@ VulkanPipeline::VulkanPipeline(VulkanDevice& device, const GraphicsPipelineDesc&
     pipelineInfo.pColorBlendState    = &colorBlend;
     pipelineInfo.pDynamicState       = &dynamicState;
     pipelineInfo.layout              = m_Layout;
-    pipelineInfo.renderPass          = vkPass.GetHandle();
-    pipelineInfo.subpass             = desc.Subpass;
+
+    // Two mutually exclusive ways to tell the pipeline which attachments it is compatible
+    // with: a render-pass object (classic path, still used by every existing pass), or
+    // attachment formats directly for dynamic rendering (BeginRendering/EndRendering, no
+    // render-pass or framebuffer object involved). desc.RenderPass selects which.
+    std::vector<VkFormat>         colorFormats;
+    VkPipelineRenderingCreateInfo renderingCreateInfo{ VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO };
+
+    if (desc.RenderPass)
+    {
+        const auto& vkPass = static_cast<const VulkanRenderPass&>(*desc.RenderPass);
+        pipelineInfo.renderPass = vkPass.GetHandle();
+        pipelineInfo.subpass    = desc.Subpass;
+    }
+    else
+    {
+        colorFormats.reserve(desc.ColorAttachmentFormats.size());
+        for (RHI::Format format : desc.ColorAttachmentFormats)
+            colorFormats.push_back(VulkanTypes::ToVkFormat(format));
+
+        renderingCreateInfo.colorAttachmentCount    = static_cast<uint32_t>(colorFormats.size());
+        renderingCreateInfo.pColorAttachmentFormats = colorFormats.data();
+        renderingCreateInfo.depthAttachmentFormat   = VulkanTypes::ToVkFormat(desc.DepthAttachmentFormat);
+        if (VulkanTypes::GetAspectMask(desc.DepthAttachmentFormat) & VK_IMAGE_ASPECT_STENCIL_BIT)
+            renderingCreateInfo.stencilAttachmentFormat = renderingCreateInfo.depthAttachmentFormat;
+
+        pipelineInfo.pNext      = &renderingCreateInfo;
+        pipelineInfo.renderPass = VK_NULL_HANDLE;
+        pipelineInfo.subpass    = 0;
+    }
 
     result = vkCreateGraphicsPipelines(
         m_Device.GetHandle(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_Pipeline);

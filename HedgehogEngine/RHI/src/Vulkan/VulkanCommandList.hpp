@@ -31,6 +31,9 @@ public:
                          const std::vector<ClearValue>& clearValues) override;
     void EndRenderPass() override;
 
+    void BeginRendering(const RenderingInfo& renderingInfo) override;
+    void EndRendering() override;
+
     void BindPipeline(const IRHIPipeline& pipeline)       override;
     void SetViewport(const Viewport& viewport)             override;
     void SetScissor(const Scissor& scissor)                override;

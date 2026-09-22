@@ -95,6 +95,70 @@ void VulkanCommandList::EndRenderPass()
     vkCmdEndRenderPass(m_CommandBuffer);
 }
 
+// ── Dynamic rendering ────────────────────────────────────────────────────────
+
+namespace
+{
+    VkClearValue ToVkClearValue(const ClearValue& cv)
+    {
+        VkClearValue vkCv{};
+        if (cv.IsDepth)
+            vkCv.depthStencil = { cv.DepthStencil.Depth, cv.DepthStencil.Stencil };
+        else
+            vkCv.color = { cv.Color.R, cv.Color.G, cv.Color.B, cv.Color.A };
+        return vkCv;
+    }
+
+    VkRenderingAttachmentInfo ToVkRenderingAttachmentInfo(const RenderingAttachment& attachment,
+                                                            VkImageLayout               layout)
+    {
+        const auto& vkTex = static_cast<const VulkanTexture&>(*attachment.Texture);
+
+        VkRenderingAttachmentInfo info{ VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
+        info.imageView   = vkTex.GetViewHandle();
+        info.imageLayout = layout;
+        info.loadOp       = VulkanTypes::ToVkLoadOp(attachment.LoadOp);
+        info.storeOp      = VulkanTypes::ToVkStoreOp(attachment.StoreOp);
+        info.clearValue  = ToVkClearValue(attachment.Clear);
+        return info;
+    }
+}
+
+void VulkanCommandList::BeginRendering(const RenderingInfo& renderingInfo)
+{
+    std::vector<VkRenderingAttachmentInfo> colorAttachments;
+    colorAttachments.reserve(renderingInfo.ColorAttachments.size());
+    for (const auto& attachment : renderingInfo.ColorAttachments)
+    {
+        assert(attachment.Texture && "RenderingAttachment::Texture must not be null.");
+        colorAttachments.push_back(
+            ToVkRenderingAttachmentInfo(attachment, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL));
+    }
+
+    VkRenderingAttachmentInfo depthAttachment{ VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
+    if (renderingInfo.DepthAttachment)
+    {
+        assert(renderingInfo.DepthAttachment->Texture && "RenderingAttachment::Texture must not be null.");
+        depthAttachment = ToVkRenderingAttachmentInfo(
+            *renderingInfo.DepthAttachment, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    }
+
+    VkRenderingInfo vkInfo{ VK_STRUCTURE_TYPE_RENDERING_INFO };
+    vkInfo.renderArea.offset    = { 0, 0 };
+    vkInfo.renderArea.extent    = { renderingInfo.Width, renderingInfo.Height };
+    vkInfo.layerCount           = 1;
+    vkInfo.colorAttachmentCount = static_cast<uint32_t>(colorAttachments.size());
+    vkInfo.pColorAttachments    = colorAttachments.data();
+    vkInfo.pDepthAttachment     = renderingInfo.DepthAttachment ? &depthAttachment : nullptr;
+
+    vkCmdBeginRendering(m_CommandBuffer, &vkInfo);
+}
+
+void VulkanCommandList::EndRendering()
+{
+    vkCmdEndRendering(m_CommandBuffer);
+}
+
 // ── Pipeline state ────────────────────────────────────────────────────────────
 
 void VulkanCommandList::BindPipeline(const IRHIPipeline& pipeline)
