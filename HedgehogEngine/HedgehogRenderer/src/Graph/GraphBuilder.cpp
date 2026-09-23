@@ -66,6 +66,15 @@ namespace Renderer
         return static_cast<uint32_t>(m_Description.OutputSlots.size() - 1);
     }
 
+    void GraphBuilder::BindOutput(uint32_t slotIndex, RGTexture texture)
+    {
+        assert(slotIndex < m_Description.OutputSlots.size() && "Output slot index out of range.");
+        RGOutputSlot& slot   = m_Description.OutputSlots[slotIndex];
+        slot.IsBound         = true;
+        slot.BoundResource   = texture.Id;
+        slot.BoundVersion    = texture.Version;
+    }
+
     void GraphBuilder::AddPass(const std::string& name, const std::function<void(RGPassBuilder&)>& setup)
     {
         RGPassRecord record;

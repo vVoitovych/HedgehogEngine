@@ -68,9 +68,9 @@ namespace Renderer
     RGVersion RGPassBuilder::RecordWrite(RGResourceId id, RGVersion inputVersion, RGResourceUsage usage)
     {
         RGResourceRecord& resource = m_Builder.GetResourceRecordMutable(id);
-        assert(!(resource.IsImported && resource.IsReadOnly)
-               && "Writing an imported read-only resource — Compile will reject this too, "
-                  "but the version bump below would otherwise hide the mistake.");
+        // Deliberately NOT asserting on IsImported && IsReadOnly here: GraphCompiler::Compile
+        // is where that is reported as a proper CompileError (with pass and resource names),
+        // and it needs to be possible to declare the mistake in the first place to test that.
         assert(inputVersion == resource.LatestVersion
                && "Writing a stale handle — this isn't the latest version of the resource. "
                   "Thread the handle a prior write/read verb returned, not an old one.");

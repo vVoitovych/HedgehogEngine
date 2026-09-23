@@ -41,6 +41,10 @@ namespace Renderer
         // never Name (RENDERING.md section 5.2).
         uint32_t AddOutputSlot(const std::string& name, RHI::Format format, const RGSizePolicy& size);
 
+        // Attaches the resource version that actually produces a slot's content. A slot left
+        // unbound is a Compile() validation failure.
+        void BindOutput(uint32_t slotIndex, RGTexture texture);
+
         // Records a pass: creates its RGPassRecord, then calls setup(passBuilder) synchronously
         // so every dependency the pass declares lands against that record before AddPass returns.
         void AddPass(const std::string& name, const std::function<void(RGPassBuilder&)>& setup);
