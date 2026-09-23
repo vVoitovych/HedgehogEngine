@@ -123,16 +123,25 @@ namespace Renderer
 
     // One entry in the graph's ordered output list (RENDERING.md section 5.2). A view binds
     // its targets by slot index, never by Name — Name survives for diagnostics only.
+    //
+    // GraphBuilder::BindOutput attaches the graph-side half of that binding: which resource
+    // version actually produces this slot's content. A slot nobody bound is a Compile()
+    // validation failure ("unbound output slots") — the view-side binding (matching a real
+    // render target against Format/Size) is a later ticket's concern.
     struct RGOutputSlot
     {
         std::string    Name;
         RHI::Format     Format = RHI::Format::Undefined;
         RGSizePolicy     Size;
+
+        bool         IsBound       = false;
+        RGResourceId BoundResource = INVALID_RG_RESOURCE_ID;
+        RGVersion    BoundVersion  = 0;
     };
 
     // What a pass is doing with a resource it reads or writes — recorded per RGPassBuilder verb
-    // so a later compiler (C2) can derive the RHI::ResourceState each usage implies without
-    // re-deriving it from the verb name.
+    // so the compiler (GraphCompiler.hpp) can derive the RHI::ResourceState each usage implies
+    // without re-deriving it from the verb name.
     enum class RGResourceUsage
     {
         SampledTexture,
@@ -142,5 +151,44 @@ namespace Renderer
         StorageReadWrite,
         ReadBuffer,
         WriteBuffer,
+    };
+
+    // usage -> the RHI::ResourceState it implies once the compiler derives barriers. Textures
+    // and buffers share RGResourceUsage but not every value applies to both — ReadBuffer/
+    // WriteBuffer are buffer-only, ColorTarget/DepthTarget/DepthReadOnly texture-only; callers
+    // never mix them (RGPassBuilder's overloads make that a compile error already).
+    inline RHI::ResourceState ToResourceState(RGResourceUsage usage)
+    {
+        switch (usage)
+        {
+            case RGResourceUsage::SampledTexture:   return RHI::ResourceState::ShaderResource;
+            case RGResourceUsage::ColorTarget:      return RHI::ResourceState::RenderTarget;
+            case RGResourceUsage::DepthTarget:      return RHI::ResourceState::DepthWrite;
+            case RGResourceUsage::DepthReadOnly:    return RHI::ResourceState::DepthRead;
+            case RGResourceUsage::StorageReadWrite: return RHI::ResourceState::UnorderedAccess;
+            case RGResourceUsage::ReadBuffer:       return RHI::ResourceState::ShaderResource;
+            case RGResourceUsage::WriteBuffer:      return RHI::ResourceState::UnorderedAccess;
+        }
+        return RHI::ResourceState::Undefined;
+    }
+
+    // The compiler's derived-barrier output (RENDERING.md section 5.3, step 5): what state a
+    // resource must move between, batched per pass. Unlike RHI::TextureBarrier/BufferBarrier
+    // (RHI/api/IRHICommandList.hpp), these name a graph resource (RGResourceId) rather than a
+    // live IRHITexture*/IRHIBuffer* — Compile() is device-free, so no such pointer exists yet.
+    // A future execution-time step resolves Id against the resource pool to get one.
+    struct RGTextureBarrier
+    {
+        RGResourceId                  Id     = INVALID_RG_RESOURCE_ID;
+        RHI::ResourceState             Before = RHI::ResourceState::Undefined;
+        RHI::ResourceState             After  = RHI::ResourceState::Undefined;
+        RHI::TextureSubresourceRange    Range  = {};
+    };
+
+    struct RGBufferBarrier
+    {
+        RGResourceId        Id     = INVALID_RG_RESOURCE_ID;
+        RHI::ResourceState   Before = RHI::ResourceState::Undefined;
+        RHI::ResourceState   After  = RHI::ResourceState::Undefined;
     };
 }
