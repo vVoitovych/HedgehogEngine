@@ -51,6 +51,11 @@ namespace Renderer
 
         const GraphDescription& GetDescription() const { return m_Description; }
 
+        // Clears back to a fresh, empty graph — for a long-lived builder a caller reuses frame
+        // to frame (RenderGraphRuntime) instead of constructing a new one. Every RGTexture/
+        // RGBuffer/slot index from before this call is meaningless afterwards.
+        void Reset() { m_Description = GraphDescription{}; }
+
     private:
         friend class RGPassBuilder;
 
