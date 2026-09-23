@@ -16,6 +16,13 @@ project "HedgehogRenderer"
         "assets/Shaders/**.shader"
     }
 
+    -- tests/ is its own project (RenderGraphTest) with its own doctest include path; the
+    -- **.hpp/**.cpp glob above would otherwise also pull its sources in here.
+    removefiles
+    {
+        "tests/**.hpp", "tests/**.cpp"
+    }
+
     defines { "YAML_CPP_STATIC_DEFINE" }
 
     includedirs
