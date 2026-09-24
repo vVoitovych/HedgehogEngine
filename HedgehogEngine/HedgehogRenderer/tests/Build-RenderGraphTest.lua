@@ -3,11 +3,12 @@ project "RenderGraphTest"
     language "C++"
     cppdialect "C++20"
 
-    -- The render graph's declaration side (RGTypes/GraphDescription/GraphBuilder/RGPassBuilder)
-    -- has no RHI device, ImGui, or window dependency of its own — only RHI's header-only enums
-    -- (RHI::Format etc). Compiling its sources directly here, rather than linking the full
-    -- HedgehogRenderer static lib, keeps this test genuinely headless: no Vulkan SDK, no GLFW,
-    -- no DLL copying, nothing but doctest.
+    -- The render graph (RGTypes/GraphDescription/GraphBuilder/RGPassBuilder/GraphCompiler/
+    -- FrameArena/ResourcePool/RenderGraphRuntime) has no ImGui, GLFW or window dependency of
+    -- its own — only RHI's header-only enums/structs (RHI::Format, IRHIDevice/IRHITexture as
+    -- pure interfaces — a device is never instantiated here) and Logger. Compiling its sources
+    -- directly, rather than linking the full HedgehogRenderer static lib, keeps this test
+    -- genuinely headless: no Vulkan SDK, no GLFW, no ImGui, and only one DLL to copy.
     files
     {
         "**.hpp", "**.cpp",
@@ -18,10 +19,13 @@ project "RenderGraphTest"
     includedirs
     {
         "../../../ThirdParty",
-        "../..",   -- so "RHI/api/..." resolves
-        "../api",  -- so "HedgehogRenderer/Graph/..." resolves
+        "../../../",  -- so "Logger/api/..." resolves
+        "../..",      -- so "RHI/api/..." resolves
+        "../api",     -- so "HedgehogRenderer/Graph/..." resolves
         "."
     }
+
+    links { "Logger" }
 
     targetdir ("../../../Binaries/" .. OutputDir .. "/%{prj.name}")
     objdir    ("../../../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")

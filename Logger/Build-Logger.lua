@@ -23,7 +23,9 @@ project "Logger"
            ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/ContentLoaderTest"),
            ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/ContentLoaderTest/"),
            ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/HedgehogExtractTest"),
-           ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/HedgehogExtractTest/")
+           ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/HedgehogExtractTest/"),
+           ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/RenderGraphTest"),
+           ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/RenderGraphTest/")
        }
 
    filter "configurations:Debug"
