@@ -8,7 +8,8 @@ project "RenderGraphTest"
     -- its own — only RHI's header-only enums/structs (RHI::Format, IRHIDevice/IRHITexture as
     -- pure interfaces — a device is never instantiated here) and Logger. Compiling its sources
     -- directly, rather than linking the full HedgehogRenderer static lib, keeps this test
-    -- genuinely headless: no Vulkan SDK, no GLFW, no ImGui, and only one DLL to copy.
+    -- genuinely headless: no Vulkan SDK, no GLFW, no ImGui, and only one DLL to copy. The graph
+    -- asset parser adds yaml-cpp, a static lib, so that stays true.
     files
     {
         "**.hpp", "**.cpp",
@@ -22,10 +23,13 @@ project "RenderGraphTest"
         "../../../",  -- so "Logger/api/..." resolves
         "../..",      -- so "RHI/api/..." resolves
         "../api",     -- so "HedgehogRenderer/Graph/..." resolves
+        "%{IncludeDir.yaml_cpp}",
         "."
     }
 
-    links { "Logger" }
+    defines { "YAML_CPP_STATIC_DEFINE" }
+
+    links { "Logger", "yaml-cpp" }
 
     targetdir ("../../../Binaries/" .. OutputDir .. "/%{prj.name}")
     objdir    ("../../../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")
