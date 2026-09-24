@@ -35,6 +35,10 @@ namespace Renderer
     {
         std::optional<HX::RenderCamera> Camera;    // absent for a pure composite (the editor's result view)
         std::vector<std::string>        Targets;   // ordered: Targets[i] binds the graph's output slot i
+        // Targets this view samples (e.g. the result view reads the scene and game panels). A view
+        // runs after every view that writes one of them (ViewOrdering.hpp). Derived views read
+        // nothing until materials can reference render targets.
+        std::vector<std::string>        Reads;
         std::string                     GraphName;
         uint32_t                        LayerMask = 0xFFFFFFFFu;
         ViewRect                        Viewport;
@@ -58,6 +62,7 @@ namespace Renderer
         NoTargets,
         UnknownTarget,
         ZeroAreaTarget,
+        Cycle,          // part of a render-target dependency cycle (ViewOrdering.hpp)
     };
 
     // A view skipped at build time (RENDERING.md section 3.2): dropped here, never later.

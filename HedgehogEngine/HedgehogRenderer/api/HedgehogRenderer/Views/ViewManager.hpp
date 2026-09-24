@@ -46,7 +46,8 @@ namespace Renderer
         void ClearTargetOverride(uint64_t cameraSourceId);
 
         // The build phase: reconciles derived views against scene.Cameras, resolves targets, and
-        // returns every surviving view in ascending ViewId order. Valid until the next BuildViews.
+        // returns every surviving view in render order, derived from render-target dependencies
+        // (OrderViews in ViewOrdering.hpp). Valid until the next BuildViews.
         const std::vector<View>& BuildViews(const HX::RenderScene& scene);
 
         // The views the last BuildViews skipped, and why.
