@@ -1,5 +1,7 @@
 #include "HedgehogRenderer/Views/ViewManager.hpp"
 
+#include "HedgehogRenderer/Views/ViewOrdering.hpp"
+
 #include <algorithm>
 
 namespace Renderer
@@ -91,7 +93,8 @@ namespace Renderer
                 m_PendingDestroy.insert(id);
         }
 
-        // 2. Build every live view in ViewId order: one path whatever the count.
+        // 2. Build every live view: one path whatever the count. ViewId order only makes the build
+        //    deterministic; the render order comes from step 3.
         std::vector<ViewId> ids;
         ids.reserve(m_Descs.size());
         for (const auto& [id, entry] : m_Descs)
@@ -103,6 +106,8 @@ namespace Renderer
         for (const ViewId id : ids)
             BuildOne(id, m_Descs.at(id));
 
+        // 3. Order by render-target dependency; a cycle drops one view with a named error.
+        m_Built = OrderViews(std::move(m_Built), m_Dropped);
         return m_Built;
     }
 
