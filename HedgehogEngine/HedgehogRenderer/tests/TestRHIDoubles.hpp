@@ -7,8 +7,11 @@
 // to satisfy the interface and is never expected to be called by these tests.
 
 #include "RHI/api/IRHIDevice.hpp"
+#include "RHI/api/IRHISwapchain.hpp"
+#include "RHI/api/IRHITexture.hpp"
 
 #include <cassert>
+#include <memory>
 #include <vector>
 
 namespace RGTest
@@ -16,7 +19,15 @@ namespace RGTest
     class TestTexture final : public RHI::IRHITexture
     {
     public:
-        explicit TestTexture(const RHI::TextureDesc& desc) : m_Desc(desc) {}
+        // destroyedCounter, when given, is incremented on destruction, so tests can check exactly
+        // when a texture is released (RenderTargetRegistry's fence-deferred destruction).
+        explicit TestTexture(const RHI::TextureDesc& desc, int* destroyedCounter = nullptr)
+            : m_Desc(desc), m_DestroyedCounter(destroyedCounter) {}
+        ~TestTexture() override
+        {
+            if (m_DestroyedCounter)
+                ++*m_DestroyedCounter;
+        }
 
         uint32_t                  GetWidth()  const override { return m_Desc.Width; }
         uint32_t                  GetHeight() const override { return m_Desc.Height; }
@@ -25,6 +36,43 @@ namespace RGTest
 
     private:
         RHI::TextureDesc m_Desc;
+        int*             m_DestroyedCounter = nullptr;
+    };
+
+    // A swapchain with a settable extent. Resize() only records the new size, as a real one would
+    // after recreating its images; nothing is acquired or presented.
+    class TestSwapchain final : public RHI::IRHISwapchain
+    {
+    public:
+        TestSwapchain(uint32_t width, uint32_t height) { Resize(width, height); }
+
+        uint32_t     GetImageCount() const override { return static_cast<uint32_t>(m_Images.size()); }
+        RHI::Format  GetFormat()     const override { return RHI::Format::B8G8R8A8Srgb; }
+        uint32_t     GetWidth()      const override { return m_Width; }
+        uint32_t     GetHeight()     const override { return m_Height; }
+        RHI::IRHITexture& GetTexture(uint32_t index) override { return *m_Images.at(index); }
+        uint32_t     AcquireNextImage(RHI::IRHISemaphore&) override { return 0; }
+        void         Present(uint32_t, RHI::IRHISemaphore&) override {}
+
+        void Resize(uint32_t width, uint32_t height) override
+        {
+            m_Width  = width;
+            m_Height = height;
+            m_Images.clear();
+            for (int i = 0; i < 2; ++i)
+            {
+                RHI::TextureDesc desc;
+                desc.Width  = width;
+                desc.Height = height;
+                desc.Format = RHI::Format::B8G8R8A8Srgb;
+                m_Images.push_back(std::make_unique<TestTexture>(desc));
+            }
+        }
+
+    private:
+        uint32_t                                      m_Width  = 0;
+        uint32_t                                      m_Height = 0;
+        std::vector<std::unique_ptr<RHI::IRHITexture>> m_Images;
     };
 
     class TestBuffer final : public RHI::IRHIBuffer
@@ -52,7 +100,7 @@ namespace RGTest
         std::unique_ptr<RHI::IRHITexture> CreateTexture(const RHI::TextureDesc& desc) const override
         {
             ++m_TexturesCreated;
-            return std::make_unique<TestTexture>(desc);
+            return std::make_unique<TestTexture>(desc, &m_TexturesDestroyed);
         }
 
         std::unique_ptr<RHI::IRHITextureView> CreateTextureView(
@@ -158,7 +206,8 @@ namespace RGTest
             return nullptr;
         }
 
-        mutable int m_TexturesCreated = 0;
+        mutable int m_TexturesCreated   = 0;
+        mutable int m_TexturesDestroyed = 0;
     };
 
     // Records every Barrier() call it receives instead of issuing anything — what
