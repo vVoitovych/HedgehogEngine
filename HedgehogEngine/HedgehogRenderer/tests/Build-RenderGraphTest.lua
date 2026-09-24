@@ -16,7 +16,9 @@ project "RenderGraphTest"
         "../api/HedgehogRenderer/Graph/**.hpp",
         "../src/Graph/**.cpp",
         "../api/HedgehogRenderer/Targets/**.hpp",
-        "../src/Targets/**.cpp"
+        "../src/Targets/**.cpp",
+        "../api/HedgehogRenderer/Views/**.hpp",
+        "../src/Views/**.cpp"
     }
 
     includedirs
@@ -38,7 +40,9 @@ project "RenderGraphTest"
         'HH_GRAPH_ASSET_DIR="' .. path.getabsolute("../assets/Graphs") .. '"'
     }
 
-    links { "Logger", "yaml-cpp" }
+    -- HedgehogMath (a DLL, copied here by its own post-build step) for the RenderScene the
+    -- view tests build views from.
+    links { "Logger", "yaml-cpp", "HedgehogMath" }
 
     targetdir ("../../../Binaries/" .. OutputDir .. "/%{prj.name}")
     objdir    ("../../../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")
