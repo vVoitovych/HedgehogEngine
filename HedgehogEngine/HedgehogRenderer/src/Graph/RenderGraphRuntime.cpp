@@ -76,6 +76,7 @@ namespace Renderer
             return false;
         }
 
+        m_Executing = &description;
         for (const CompiledPass& pass : result.Graph.Passes)
         {
             std::vector<RHI::TextureBarrier> textureBarriers;
@@ -112,8 +113,16 @@ namespace Renderer
         return true;
     }
 
+    RHI::IRHITexture* RenderGraphRuntime::GetTexture(RGTexture texture)
+    {
+        assert(m_Executing && "RenderGraphRuntime::GetTexture: only valid from a pass's execute closure.");
+        return ResolveTexture(*m_Executing, texture.Id);
+    }
+
     void RenderGraphRuntime::ResetForNextFrame()
     {
+        m_Executing    = nullptr;
+        m_FrameContext = nullptr;
         m_Pool.RetireFrame();
         m_PassExecutions.clear();
         m_ImportedTextures.clear();

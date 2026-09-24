@@ -211,7 +211,8 @@ namespace RGTest
     };
 
     // Records every Barrier() call it receives instead of issuing anything — what
-    // RenderGraphRuntime::Execute tests inspect to confirm resolved barriers/execute order.
+    // RenderGraphRuntime::Execute tests inspect to confirm resolved barriers/execute order — and
+    // counts the rendering, binding and draw calls pass execute bodies make.
     class RecordingCommandList final : public RHI::IRHICommandList
     {
     public:
@@ -229,8 +230,8 @@ namespace RGTest
                              const std::vector<RHI::ClearValue>&) override {}
         void EndRenderPass() override {}
 
-        void BeginRendering(const RHI::RenderingInfo&) override {}
-        void EndRendering() override {}
+        void BeginRendering(const RHI::RenderingInfo& info) override { Renderings.push_back(info); }
+        void EndRendering() override { ++EndRenderingCount; }
 
         void Barrier(std::span<const RHI::TextureBarrier> textureBarriers,
                     std::span<const RHI::BufferBarrier>  bufferBarriers) override
@@ -242,23 +243,34 @@ namespace RGTest
         }
 
         void BindPipeline(const RHI::IRHIPipeline&) override {}
-        void SetViewport(const RHI::Viewport&) override {}
+        void SetViewport(const RHI::Viewport& viewport) override { Viewports.push_back(viewport); }
         void SetScissor(const RHI::Scissor&) override {}
 
         void BindVertexBuffers(uint32_t, const std::vector<RHI::IRHIBuffer*>&,
                                const std::vector<size_t>&) override {}
         void BindIndexBuffer(const RHI::IRHIBuffer&, RHI::IndexType, size_t) override {}
-        void BindDescriptorSet(const RHI::IRHIPipeline&, uint32_t, const RHI::IRHIDescriptorSet&) override {}
+        void BindDescriptorSet(const RHI::IRHIPipeline&, uint32_t, const RHI::IRHIDescriptorSet&) override
+        {
+            ++DescriptorSetBinds;
+        }
         void PushConstants(const RHI::IRHIPipeline&, RHI::ShaderStage, uint32_t, uint32_t, const void*) override {}
 
         void Draw(uint32_t, uint32_t, uint32_t, uint32_t) override {}
-        void DrawIndexed(uint32_t, uint32_t, uint32_t, int32_t, uint32_t) override {}
+        void DrawIndexed(uint32_t indexCount, uint32_t, uint32_t, int32_t, uint32_t) override
+        {
+            DrawnIndexCounts.push_back(indexCount);
+        }
 
         void TransitionTexture(RHI::IRHITexture&, RHI::ImageLayout, RHI::ImageLayout) override {}
         void CopyBufferToBuffer(const RHI::IRHIBuffer&, RHI::IRHIBuffer&, size_t, size_t, size_t) override {}
         void CopyBufferToTexture(const RHI::IRHIBuffer&, RHI::IRHITexture&) override {}
         void CopyTextureToTexture(const RHI::IRHITexture&, RHI::IRHITexture&) override {}
 
-        std::vector<BarrierCall> Calls;
+        std::vector<BarrierCall>         Calls;
+        std::vector<RHI::RenderingInfo>  Renderings;
+        int                              EndRenderingCount  = 0;
+        std::vector<RHI::Viewport>       Viewports;
+        int                              DescriptorSetBinds = 0;
+        std::vector<uint32_t>            DrawnIndexCounts;
     };
 }
