@@ -106,6 +106,10 @@ namespace Renderer
         // to check whether a pointer actually came from this arena.
         const FrameArena& GetArena() const { return m_Arena; }
 
+        // What has been declared since the last Execute(). Exposed so the C++ equivalence oracle
+        // (RENDERING.md section 6, Rule 2) can compile an instantiated graph without executing it.
+        const GraphDescription& GetDescription() const { return m_Builder.GetDescription(); }
+
     private:
         struct PassExecutionRecord
         {
