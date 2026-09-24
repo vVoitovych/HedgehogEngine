@@ -56,6 +56,11 @@ namespace Renderer
     public:
         explicit GraphInstantiator(const PassBuilderRegistry& registry) : m_Registry(registry) {}
 
+        // Every check Instantiate() makes before declaring anything, without declaring anything.
+        // Lets a caller vet a reloaded asset before replacing a known-good one (GraphAssetLibrary).
+        [[nodiscard]] GraphInstantiationResult Validate(
+            const GraphAsset& asset, const std::vector<GraphOutputRequirement>* requiredOutputs = nullptr) const;
+
         // requiredOutputs is the view's contract, checked when given.
         [[nodiscard]] GraphInstantiationResult Instantiate(
             const GraphAsset& asset, RenderGraphRuntime& graph,

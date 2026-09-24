@@ -1,0 +1,15 @@
+# The editor's result view (RENDERING.md section 7): no camera, drawn straight to the swapchain.
+# Its Ui pass runs the application-supplied UI callback (HE-85), which draws the scene and game
+# panels from their views' persistent textures.
+# Held to a hand-written C++ twin by RenderGraphTest (test_shipped_graphs.cpp).
+version: 1
+outputs:
+  - slot: 0
+    name: main
+    format: B8G8R8A8Srgb
+    size: RelativeToSwapchain(1.0)
+passes:
+  - type: Ui
+    name: Ui
+    bindings:
+      target: main

@@ -142,13 +142,10 @@ namespace Renderer
              | RHI::TextureUsage::Sampled;
     }
 
-    GraphInstantiationResult GraphInstantiator::Instantiate(
-        const GraphAsset& asset, RenderGraphRuntime& graph,
-        const std::vector<GraphOutputRequirement>* requiredOutputs) const
+    GraphInstantiationResult GraphInstantiator::Validate(
+        const GraphAsset& asset, const std::vector<GraphOutputRequirement>* requiredOutputs) const
     {
         GraphInstantiationResult result;
-
-        // 1. Validate everything that can be checked without declaring anything.
         if (requiredOutputs)
             ValidateOutputContract(asset, *requiredOutputs, result.Errors);
 
@@ -158,14 +155,20 @@ namespace Renderer
         for (const auto& resource : asset.Resources)
             declaredNames.insert(resource.Name);
 
-        std::vector<const PassTypeInfo*> passTypes;
-        passTypes.reserve(asset.Passes.size());
         for (const GraphAssetPass& pass : asset.Passes)
-        {
-            passTypes.push_back(m_Registry.Find(pass.Type));
-            ValidatePass(pass, passTypes.back(), declaredNames, result.Errors);
-        }
-        if (!result.Errors.empty())
+            ValidatePass(pass, m_Registry.Find(pass.Type), declaredNames, result.Errors);
+
+        result.Success = result.Errors.empty();
+        return result;
+    }
+
+    GraphInstantiationResult GraphInstantiator::Instantiate(
+        const GraphAsset& asset, RenderGraphRuntime& graph,
+        const std::vector<GraphOutputRequirement>* requiredOutputs) const
+    {
+        // 1. Validate everything that can be checked without declaring anything.
+        GraphInstantiationResult result = Validate(asset, requiredOutputs);
+        if (!result.Success)
             return result;
 
         // 2. Declare, through the same public API a C++ caller uses.
@@ -188,7 +191,7 @@ namespace Renderer
             for (const GraphAssetParameter& parameter : pass.Parameters)
                 invocation.SetParameter(parameter.Name, parameter.Value);
 
-            passTypes[i]->Build(graph, invocation);
+            m_Registry.Find(pass.Type)->Build(graph, invocation);
 
             // A write bumped the slot's version; later passes and outputs must see it.
             for (const GraphAssetBinding& binding : pass.Bindings)

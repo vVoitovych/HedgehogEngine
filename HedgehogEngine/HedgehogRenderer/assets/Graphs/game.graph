@@ -1,0 +1,33 @@
+# The game view (RENDERING.md section 7): what a camera entity renders, in the editor's game panel
+# and in a game build. The shadow map is per view until the shared phase (HE-82) moves it out.
+# Held to a hand-written C++ twin by RenderGraphTest (test_shipped_graphs.cpp).
+version: 1
+outputs:
+  - slot: 0
+    name: color
+    format: R16G16B16A16Unorm
+    size: RelativeToResult(1.0)
+resources:
+  - name: depth
+    format: D32Float
+    size: RelativeToResult(1.0)
+  - name: shadowMap
+    format: D32Float
+    size: Absolute(2048, 2048)
+passes:
+  - type: DepthPrepass
+    name: DepthPrepass
+    bindings:
+      depth: depth
+  - type: Shadow
+    name: Shadow
+    bindings:
+      shadowMap: shadowMap
+  - type: Forward
+    name: Forward
+    bindings:
+      color: color
+      depth: depth
+      shadowMap: shadowMap
+    parameters:
+      cullBackFaces: true
