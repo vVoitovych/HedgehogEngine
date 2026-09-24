@@ -12,6 +12,7 @@ project "HedgehogRenderer"
         "assets/Shaders/**.comp",
         "assets/Shaders/**.glsl",
         "assets/Pipelines/**.pl",
+        "assets/Graphs/**.graph",
         "assets/VertexDescriptions/**.vdes",
         "assets/Shaders/**.shader"
     }

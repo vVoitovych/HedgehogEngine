@@ -27,7 +27,14 @@ project "RenderGraphTest"
         "."
     }
 
-    defines { "YAML_CPP_STATIC_DEFINE" }
+    defines
+    {
+        "YAML_CPP_STATIC_DEFINE",
+        -- The shipped graph assets, which the equivalence tests load straight from the source tree.
+        -- Absolute, resolved at generation time: %{wks.location} would be emitted relative to the
+        -- project file, which is not where the test runs from.
+        'HH_GRAPH_ASSET_DIR="' .. path.getabsolute("../assets/Graphs") .. '"'
+    }
 
     links { "Logger", "yaml-cpp" }
 
