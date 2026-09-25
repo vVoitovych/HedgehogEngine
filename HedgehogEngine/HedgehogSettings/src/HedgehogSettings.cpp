@@ -1,6 +1,7 @@
 #include "HedgehogSettings/api/HedgehogSettings.hpp"
 
 #include "HedgehogSettings/api/LayerSettings.hpp"
+#include "HedgehogSettings/api/RenderingSettings.hpp"
 #include "HedgehogSettings/api/ShadowmapingSettings.hpp"
 
 #include "FileSystem/api/FileSystemManager.hpp"
@@ -16,6 +17,7 @@ namespace HedgehogSettings
     {
         m_ShadowmapSettings = std::make_unique<ShadowmapSettings>();
         m_LayerSettings     = std::make_unique<LayerSettings>();
+        m_RenderingSettings = std::make_unique<RenderingSettings>();
     }
 
     Settings::~Settings()
@@ -40,6 +42,16 @@ namespace HedgehogSettings
     const std::unique_ptr<LayerSettings>& Settings::GetLayerSettings() const
     {
         return m_LayerSettings;
+    }
+
+    RenderingSettings& Settings::GetRenderingSettings()
+    {
+        return *m_RenderingSettings;
+    }
+
+    const RenderingSettings& Settings::GetRenderingSettings() const
+    {
+        return *m_RenderingSettings;
     }
 
     bool Settings::Load(const std::string& virtualPath, const FS::FileSystemManager& fileSystem)
@@ -90,6 +102,14 @@ namespace HedgehogSettings
                 }
             }
 
+            if (const YAML::Node rendering = root["rendering"])
+            {
+                if (const YAML::Node n = rendering["use_render_graph"])
+                {
+                    m_RenderingSettings->SetUseRenderGraph(n.as<bool>());
+                }
+            }
+
             if (const YAML::Node layers = root["layers"])
             {
                 for (const auto& entry : layers)
@@ -128,6 +148,10 @@ namespace HedgehogSettings
         out << YAML::Key << "split2"               << YAML::Value << m_ShadowmapSettings->GetSplit2();
         out << YAML::Key << "split3"               << YAML::Value << m_ShadowmapSettings->GetSplit3();
         out << YAML::Key << "caster_mask"          << YAML::Value << m_ShadowmapSettings->GetShadowCasterMask();
+        out << YAML::EndMap;
+
+        out << YAML::Key << "rendering" << YAML::Value << YAML::BeginMap;
+        out << YAML::Key << "use_render_graph" << YAML::Value << m_RenderingSettings->GetUseRenderGraph();
         out << YAML::EndMap;
 
         // Keyed by index, and only named slots are written: the index is the identity that

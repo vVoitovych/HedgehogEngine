@@ -39,7 +39,9 @@ namespace Renderer
 
         // Declaration passthrough (GraphBuilder.hpp) — building the graph for this frame
         // happens directly against these, exactly as it would against a bare GraphBuilder.
-        RGTexture CreateTexture(const RGTextureDesc& desc) { return m_Builder.CreateTexture(desc); }
+        // A relative size policy resolves to Absolute here once SetSizeReferences has given it a
+        // reference; without one it stays relative, as in the headless tests.
+        RGTexture CreateTexture(const RGTextureDesc& desc) { return m_Builder.CreateTexture(ResolveSize(desc)); }
         RGBuffer  CreateBuffer(const RGBufferDesc& desc)   { return m_Builder.CreateBuffer(desc); }
         RGTexture ImportTexture(const std::string& name, RHI::Format format, bool isReadOnly = false)
         {
@@ -54,6 +56,13 @@ namespace Renderer
             return m_Builder.AddOutputSlot(name, format, size);
         }
         void BindOutput(uint32_t slotIndex, RGTexture texture) { m_Builder.BindOutput(slotIndex, texture); }
+
+        // The extents that RelativeToResult and RelativeToSwapchain resolve against for textures
+        // created from now on (RENDERING.md section 4): the result target of the view being
+        // declared, and the swapchain. The frame loop sets them before each view's graph;
+        // Execute() clears them.
+        void SetSizeReferences(uint32_t resultWidth, uint32_t resultHeight,
+                               uint32_t swapchainWidth, uint32_t swapchainHeight);
 
         // Attaches the real, externally-owned resource behind an imported handle — required
         // before Execute() for every resource ImportTexture/ImportBuffer declared, since the
@@ -129,6 +138,7 @@ namespace Renderer
             void (*Invoke)(void* passData, void* executeState, RHI::IRHICommandList& cmdList) = nullptr;
         };
 
+        RGTextureDesc     ResolveSize(const RGTextureDesc& desc) const;
         RHI::IRHITexture* ResolveTexture(const GraphDescription& description, RGResourceId id);
         RHI::IRHIBuffer*  ResolveBuffer(RGResourceId id);
         void               ResetForNextFrame();
@@ -143,6 +153,11 @@ namespace Renderer
         std::unordered_map<RGResourceId, RHI::IRHITexture*>     m_ImportedTextures;
         std::unordered_map<RGResourceId, RHI::IRHIBuffer*>      m_ImportedBuffers;
         std::unordered_map<RGResourceId, RHI::IRHITexture*>     m_AcquiredTransients; // this-frame cache
+
+        uint32_t m_ResultWidth     = 0;
+        uint32_t m_ResultHeight    = 0;
+        uint32_t m_SwapchainWidth  = 0;
+        uint32_t m_SwapchainHeight = 0;
 
         const GraphFrameContext* m_FrameContext = nullptr;
         const GraphDescription*  m_Executing    = nullptr; // set only while Execute() runs passes

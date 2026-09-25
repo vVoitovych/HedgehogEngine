@@ -52,10 +52,13 @@ namespace Renderer
         };
 
         // Binds the shared geometry and draws every opaque instance with its model matrix as the
-        // push constant. Instances whose mesh has no draw range are skipped.
+        // push constant. Instances whose mesh has no draw range are skipped, and nothing is drawn
+        // before any geometry has been uploaded.
         void DrawOpaqueInstances(RHI::IRHICommandList& cmd, const RHI::IRHIPipeline& pipeline,
                                  const GraphFrameData& frame)
         {
+            if (!frame.Positions || !frame.Indices)
+                return;
             cmd.BindVertexBuffers(0, { frame.Positions }, { 0 });
             cmd.BindIndexBuffer(*frame.Indices, RHI::IndexType::Uint32);
             for (const HX::RenderInstance& instance : frame.OpaqueInstances)
@@ -193,6 +196,11 @@ namespace Renderer
             cmd.SetViewport({ 0.0f, 0.0f, static_cast<float>(color.GetWidth()),
                               static_cast<float>(color.GetHeight()), 0.0f, 1.0f });
             cmd.SetScissor({ 0, 0, color.GetWidth(), color.GetHeight() });
+            if (!frame.Positions || !frame.TexCoords || !frame.Normals || !frame.Indices)
+            {
+                cmd.EndRendering(); // the clear still happens: an empty scene renders black
+                return;
+            }
             cmd.BindVertexBuffers(0, { frame.Positions, frame.TexCoords, frame.Normals }, { 0, 0, 0 });
             cmd.BindIndexBuffer(*frame.Indices, RHI::IndexType::Uint32);
             cmd.BindDescriptorSet(pipeline, 0, services.AllocateForwardViewUniform(MakeForwardViewUniform(frame)));

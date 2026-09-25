@@ -197,7 +197,8 @@ namespace Renderer
         desc.Width  = extent.Width;
         desc.Height = extent.Height;
         desc.Format = target.Desc.Format;
-        desc.Usage  = DefaultTextureUsage(target.Desc.Format);
+        // TransferSrc: a target can be the source of the blit that presents it to the swapchain.
+        desc.Usage  = DefaultTextureUsage(target.Desc.Format) | RHI::TextureUsage::TransferSrc;
         target.Texture = m_Device.CreateTexture(desc);
     }
 }

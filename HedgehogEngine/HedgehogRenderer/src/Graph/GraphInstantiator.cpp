@@ -110,6 +110,28 @@ namespace Renderer
             }
         }
 
+        void ValidateOutputTargets(const GraphAsset& asset, const GraphDescription& description,
+                                   const std::vector<RGTexture>& targets, Errors& errors)
+        {
+            if (targets.size() != asset.Outputs.size())
+            {
+                errors.push_back({ "graph declares " + std::to_string(asset.Outputs.size())
+                                   + " output slot(s) but " + std::to_string(targets.size())
+                                   + " target texture(s) were supplied", "", "" });
+                return;
+            }
+            for (size_t i = 0; i < targets.size(); ++i)
+            {
+                const RGResourceRecord* record = description.FindResource(targets[i].Id);
+                if (!record || record->IsBuffer || record->TextureDesc.Format != asset.Outputs[i].Format)
+                {
+                    errors.push_back({ OutputLabel(asset.Outputs[i])
+                                       + ": the supplied target texture is missing or has another format",
+                                       "", asset.Outputs[i].Name });
+                }
+            }
+        }
+
         void ValidatePass(const GraphAssetPass& pass, const PassTypeInfo* info,
                           const std::unordered_set<std::string>& declaredNames, Errors& errors)
         {
@@ -192,11 +214,14 @@ namespace Renderer
 
     GraphInstantiationResult GraphInstantiator::Instantiate(
         const GraphAsset& asset, RenderGraphRuntime& graph,
-        const std::vector<GraphOutputRequirement>* requiredOutputs, const GraphImports* imports) const
+        const std::vector<GraphOutputRequirement>* requiredOutputs, const GraphImports* imports,
+        const std::vector<RGTexture>* outputTargets) const
     {
         // 1. Validate everything that can be checked without declaring anything.
         GraphInstantiationResult result = Validate(asset, requiredOutputs);
         ValidateImports(asset, graph.GetDescription(), imports, result.Errors);
+        if (outputTargets)
+            ValidateOutputTargets(asset, graph.GetDescription(), *outputTargets, result.Errors);
         result.Success = result.Errors.empty();
         if (!result.Success)
             return result;
@@ -207,8 +232,14 @@ namespace Renderer
         {
             latest[name] = graph.CreateTexture({ name, format, size, DefaultTextureUsage(format) });
         };
-        for (const auto& output : asset.Outputs)
-            declare(output.Name, output.Format, output.Size);
+        for (size_t i = 0; i < asset.Outputs.size(); ++i)
+        {
+            const GraphAssetOutput& output = asset.Outputs[i];
+            if (outputTargets)
+                latest[output.Name] = (*outputTargets)[i];
+            else
+                declare(output.Name, output.Format, output.Size);
+        }
         for (const auto& resource : asset.Resources)
             declare(resource.Name, resource.Format, resource.Size);
         for (const auto& import : asset.Imports)

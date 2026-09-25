@@ -14,6 +14,7 @@ namespace HedgehogSettings
 {
     class ShadowmapSettings;
     class LayerSettings;
+    class RenderingSettings;
 
     class Settings
     {
@@ -31,6 +32,9 @@ namespace HedgehogSettings
 
         HEDGEHOG_SETTINGS_API std::unique_ptr<LayerSettings>& GetLayerSettings();
         HEDGEHOG_SETTINGS_API const std::unique_ptr<LayerSettings>& GetLayerSettings() const;
+
+        HEDGEHOG_SETTINGS_API RenderingSettings&       GetRenderingSettings();
+        HEDGEHOG_SETTINGS_API const RenderingSettings& GetRenderingSettings() const;
 
         // Engine settings live in their own file rather than the editor's layout file, so a game
         // build can read them too. A missing file is not an error: the defaults stand and Load
@@ -54,5 +58,6 @@ namespace HedgehogSettings
     private:
         std::unique_ptr<ShadowmapSettings> m_ShadowmapSettings;
         std::unique_ptr<LayerSettings>     m_LayerSettings;
+        std::unique_ptr<RenderingSettings> m_RenderingSettings;
     };
 }

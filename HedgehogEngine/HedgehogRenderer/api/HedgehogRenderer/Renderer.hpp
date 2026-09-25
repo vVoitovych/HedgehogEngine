@@ -1,5 +1,7 @@
 #pragma once
 
+#include "HedgehogRenderer/Views/View.hpp"
+
 #include <cstdint>
 #include <memory>
 
@@ -24,8 +26,14 @@ namespace HedgehogEngine
     class IResourceCatalog;
 }
 
+namespace HX
+{
+    struct RenderScene;
+}
+
 namespace Renderer
 {
+    class FrameRenderer;
     class RHIContext;
     class ThreadContext;
     class ResourceManager;
@@ -63,6 +71,25 @@ namespace Renderer
         void BeginFrameStatsCapture();
         void EndFrameStatsCaptureAndLogReport();
 
+        // ── The render-graph path (RENDERING.md) ──────────────────────────────────────────
+        // Runs instead of DrawFrame when RenderingSettings::GetUseRenderGraph() is on; both
+        // paths are built, so the flag can change between frames. It renders the views below
+        // (and one per enabled camera in the scene) and presents VIEWPORT_TARGET. There is no
+        // UI pass yet: the ImGui frame BeginGui started is discarded.
+
+        // The target a view renders into to be presented, sized to the window.
+        static constexpr const char* VIEWPORT_TARGET = "viewport";
+
+        // Uploads new or changed meshes and materials. DrawFrame does this itself.
+        void SyncResources(HedgehogEngine::IResourceCatalog& catalog);
+
+        void RenderFrame(const HX::RenderScene& scene, const HedgehogSettings::Settings& settings);
+
+        // Application views (the editor's), never reconciled against the scene's cameras.
+        [[nodiscard]] ViewId CreateView(ViewDesc desc);
+        [[nodiscard]] bool   UpdateView(ViewId id, ViewDesc desc);
+        void                 DestroyView(ViewId id);
+
     private:
         HW::Window& m_Window;
 
@@ -70,6 +97,7 @@ namespace Renderer
         std::unique_ptr<ThreadContext>   m_ThreadContext;
         std::unique_ptr<ResourceManager> m_ResourceManager;
         std::unique_ptr<RenderQueue>     m_RenderQueue;
+        std::unique_ptr<FrameRenderer>   m_FrameRenderer;
 
         uint32_t m_DesiredSceneW = 0;
         uint32_t m_DesiredSceneH = 0;

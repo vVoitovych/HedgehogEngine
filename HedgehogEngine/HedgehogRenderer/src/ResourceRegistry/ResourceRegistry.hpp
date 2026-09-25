@@ -55,6 +55,10 @@ namespace HR
         const RHI::IRHIBuffer& GetNormalsBuffer()   const;
         const RHI::IRHIBuffer& GetIndexBuffer()     const;
 
+        // The geometry buffers exist once at least one mesh has been synced.
+        size_t GetMeshCount()     const { return m_MeshGeometryInfos.size(); }
+        size_t GetMaterialCount() const { return m_Materials.size(); }
+
         const MeshGeometryInfo&       GetMeshGeometryInfo(size_t meshIndex) const;
         const RHI::IRHIDescriptorSet& GetMaterialDescriptorSet(uint32_t index) const;
 

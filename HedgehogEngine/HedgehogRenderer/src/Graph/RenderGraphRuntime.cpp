@@ -2,7 +2,9 @@
 
 #include "Logger/api/Logger.hpp"
 
+#include <algorithm>
 #include <cassert>
+#include <cmath>
 
 namespace Renderer
 {
@@ -25,6 +27,33 @@ namespace Renderer
         m_ImportedBuffers[imported.Id] = real;
     }
 
+    void RenderGraphRuntime::SetSizeReferences(uint32_t resultWidth, uint32_t resultHeight,
+                                               uint32_t swapchainWidth, uint32_t swapchainHeight)
+    {
+        m_ResultWidth     = resultWidth;
+        m_ResultHeight    = resultHeight;
+        m_SwapchainWidth  = swapchainWidth;
+        m_SwapchainHeight = swapchainHeight;
+    }
+
+    RGTextureDesc RenderGraphRuntime::ResolveSize(const RGTextureDesc& desc) const
+    {
+        const auto scaled = [&](uint32_t extent)
+        {
+            return std::max(1u, static_cast<uint32_t>(std::lround(static_cast<float>(extent) * desc.Size.Scale)));
+        };
+
+        const bool hasResult    = m_ResultWidth > 0 && m_ResultHeight > 0;
+        const bool hasSwapchain = m_SwapchainWidth > 0 && m_SwapchainHeight > 0;
+
+        RGTextureDesc resolved = desc;
+        if (desc.Size.Kind == RGSizePolicyKind::RelativeToResult && hasResult)
+            resolved.Size = RGSizePolicy::MakeAbsolute(scaled(m_ResultWidth), scaled(m_ResultHeight));
+        else if (desc.Size.Kind == RGSizePolicyKind::RelativeToSwapchain && hasSwapchain)
+            resolved.Size = RGSizePolicy::MakeAbsolute(scaled(m_SwapchainWidth), scaled(m_SwapchainHeight));
+        return resolved;
+    }
+
     RHI::IRHITexture* RenderGraphRuntime::ResolveTexture(const GraphDescription& description, RGResourceId id)
     {
         if (auto it = m_ImportedTextures.find(id); it != m_ImportedTextures.end())
@@ -42,12 +71,10 @@ namespace Renderer
         desc.Height      = resource->TextureDesc.Size.Height;
         desc.Format      = resource->TextureDesc.Format;
         desc.Usage       = resource->TextureDesc.Usage;
-        // RENDERING.md section 5.4 defers relative size-policy resolution (against a real
-        // result/swapchain size) to the view integration that calls this — Absolute is the
-        // only policy a transient can use until that lands.
+        // CreateTexture resolved any relative policy against SetSizeReferences; one still relative
+        // here was declared without a reference and has no size.
         assert(resource->TextureDesc.Size.Kind == RGSizePolicyKind::Absolute
-               && "ResolveTexture: only Absolute-sized transients are supported until view "
-                  "integration provides a reference size to resolve Relative* against.");
+               && "ResolveTexture: a relative-sized transient was declared before SetSizeReferences.");
 
         RHI::IRHITexture* texture = m_Pool.Acquire(desc);
         m_AcquiredTransients[id] = texture;
@@ -123,6 +150,7 @@ namespace Renderer
     {
         m_Executing    = nullptr;
         m_FrameContext = nullptr;
+        SetSizeReferences(0, 0, 0, 0);
         m_Pool.RetireFrame();
         m_PassExecutions.clear();
         m_ImportedTextures.clear();

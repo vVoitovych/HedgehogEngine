@@ -72,6 +72,11 @@ namespace HedgehogEngine
         return m_Pos;
     }
 
+    float Camera::GetFov() const
+    {
+        return m_FOV;
+    }
+
     float Camera::GetNearPlane() const
     {
         return m_NearPlane;

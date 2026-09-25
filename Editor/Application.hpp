@@ -1,5 +1,8 @@
 #pragma once
 
+#include "HedgehogExtract/api/RenderScene.hpp"
+#include "HedgehogRenderer/Views/View.hpp"
+
 #include <cstdint>
 #include <memory>
 
@@ -43,11 +46,17 @@ namespace Editor
         float GetFrameTime();
 
         float StepFrame();
+        void  RenderWithGraph();
         void  LoadBenchmarkScene();
 
     private:
         std::unique_ptr<HedgehogEngine::Engine>   m_Context;
         std::unique_ptr<Renderer::Renderer> m_Renderer;
         std::unique_ptr<EditorGui>          m_EditorGui;
+
+        // The render-graph path (RenderingSettings::GetUseRenderGraph): the scene extracted each
+        // frame, and the view that renders the editor camera to the window.
+        HX::RenderScene  m_RenderScene;
+        Renderer::ViewId m_EditorView = Renderer::INVALID_VIEW_ID;
     };
 }

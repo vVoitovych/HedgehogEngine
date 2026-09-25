@@ -1,5 +1,6 @@
 ﻿#include "HedgehogRenderer/Renderer.hpp"
 
+#include "FrameRenderer.hpp"
 #include "Profiling/Profiler.hpp"
 #include "RHIContext/RHIContext.hpp"
 #include "ThreadContext/ThreadContext.hpp"
@@ -16,6 +17,7 @@
 #include "FileSystem/api/FileSystemManager.hpp"
 
 #include "RHI/api/IRHIDevice.hpp"
+#include "RHI/api/IRHISyncPrimitive.hpp"
 #include "RHI/api/IRHISwapchain.hpp"
 #include "RHI/api/RHIDiagnostics.hpp"
 
@@ -55,6 +57,11 @@ namespace Renderer
             settings,
             *m_ResourceManager,
             fileSystem);
+        m_FrameRenderer = std::make_unique<FrameRenderer>(
+            m_RHIContext->GetRHIDevice(),
+            m_RHIContext->GetRHISwapchain(),
+            fileSystem);
+        static_assert(std::string_view(VIEWPORT_TARGET) == FrameRenderer::VIEWPORT_TARGET);
     }
 
     Renderer::~Renderer()
@@ -65,6 +72,7 @@ namespace Renderer
     {
         auto& device = m_RHIContext->GetRHIDevice();
         device.WaitIdle();
+        m_FrameRenderer.reset();
         m_RenderQueue->Cleanup(device);
         m_ResourceManager->Cleanup(device);
         m_ThreadContext->Cleanup(device);
@@ -103,6 +111,60 @@ namespace Renderer
         auto& stats = m_RenderQueue->GetFrameStats();
         stats.EndCapture();
         stats.LogReport();
+    }
+
+    void Renderer::SyncResources(HedgehogEngine::IResourceCatalog& catalog)
+    {
+        m_ResourceManager->SyncResources(m_RHIContext->GetRHIDevice(), catalog);
+    }
+
+    ViewId Renderer::CreateView(ViewDesc desc)
+    {
+        return m_FrameRenderer->GetViewManager().CreateView(std::move(desc));
+    }
+
+    bool Renderer::UpdateView(ViewId id, ViewDesc desc)
+    {
+        return m_FrameRenderer->GetViewManager().UpdateView(id, std::move(desc));
+    }
+
+    void Renderer::DestroyView(ViewId id)
+    {
+        m_FrameRenderer->GetViewManager().DestroyView(id);
+    }
+
+    void Renderer::RenderFrame(const HX::RenderScene& scene, const HedgehogSettings::Settings& settings)
+    {
+        HH_PROFILE_ZONE("RenderFrame");
+        ScopedCpuSample sample(m_RenderQueue->GetFrameStats(), "RenderFrame(total)");
+
+        // The editor began an ImGui frame; nothing on this path draws it yet.
+        m_RenderQueue->DiscardGui();
+
+        auto& device    = m_RHIContext->GetRHIDevice();
+        auto& swapchain = m_RHIContext->GetRHISwapchain();
+
+        m_ThreadContext->GetFence().Wait();
+
+        // Resize before acquiring, so a resize never costs a frame.
+        if (m_Window.IsResized())
+        {
+            m_Window.ResetResizedFlag();
+            device.WaitIdle();
+            m_RHIContext->RecreateSwapchain(m_Window);
+            // The legacy resources follow too, so DrawFrame finds them sized for the new window.
+            m_ResourceManager->ResizeFrameBufferSizeDependentResources(device, swapchain);
+            m_RenderQueue->ResizeResources(device, *m_ResourceManager);
+            m_FrameRenderer->NotifySwapchainResized();
+        }
+
+        const FrameSync sync{ m_ThreadContext->GetCommandList(), m_ThreadContext->GetFence(),
+                              m_ThreadContext->GetImageAvailableSemaphore(),
+                              m_ThreadContext->GetRenderFinishedSemaphore(), m_ThreadContext->GetFrameIndex() };
+        m_FrameRenderer->Render(scene, m_ResourceManager->GetResourceRegistry(), settings, sync);
+
+        m_ThreadContext->NextFrame();
+        HH_PROFILE_FRAME();
     }
 
     void Renderer::DrawFrame(const HedgehogEngine::FrameData& frameData,

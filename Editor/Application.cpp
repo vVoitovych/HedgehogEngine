@@ -5,6 +5,9 @@
 #include "HedgehogEngine/api/WindowContext.hpp"
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/HedgehogSettings.hpp"
+#include "HedgehogEngine/HedgehogSettings/api/RenderingSettings.hpp"
+#include "HedgehogCommon/api/Camera.hpp"
+#include "HedgehogExtract/api/SceneExtractor.hpp"
 #include "HedgehogRenderer/Renderer.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
 
@@ -15,6 +18,7 @@
 #include "imgui.h"
 
 #include <algorithm>
+#include <cassert>
 #include <chrono>
 #include <cstdio>
 #include <numeric>
@@ -25,6 +29,26 @@ namespace Editor
     namespace
     {
         constexpr const char* ENGINE_SETTINGS_PATH = "engine://engine_settings.yaml";
+
+        constexpr float RADIANS_TO_DEGREES = 57.2957795f;
+
+        // The editor camera as a view: drawn with the scene graph into the window-sized target
+        // the render-graph path presents. It outranks scene cameras, so it fits the shadows.
+        Renderer::ViewDesc MakeEditorView(const HedgehogEngine::Camera& camera)
+        {
+            HX::RenderCamera renderCamera;
+            renderCamera.WorldMatrix = camera.GetViewMatrix().Inverse();
+            renderCamera.Fov         = camera.GetFov() * RADIANS_TO_DEGREES;
+            renderCamera.NearPlane   = camera.GetNearPlane();
+            renderCamera.FarPlane    = camera.GetFarPlane();
+
+            Renderer::ViewDesc desc;
+            desc.Camera    = renderCamera;
+            desc.Targets   = { Renderer::Renderer::VIEWPORT_TARGET };
+            desc.GraphName = "scene";
+            desc.Priority  = 100;
+            return desc;
+        }
 
         size_t CountDrawObjects(const HedgehogEngine::DrawList& drawList)
         {
@@ -76,6 +100,7 @@ namespace Editor
             engineContext.GetSettings(),
             engineContext.GetFileSystem());
         m_EditorGui = std::make_unique<EditorGui>(*m_Context);
+        m_EditorView = m_Renderer->CreateView(MakeEditorView(engineContext.GetCamera()));
 
         // WantCaptureMouse is true even over the scene image (it's an ImGui window); exempt it.
         m_Context->GetWindowContext().GetWindow().SetGuiCallback([this]()
@@ -155,9 +180,29 @@ namespace Editor
                                      m_EditorGui->GetSceneViewHeight());
 
         auto& engineContext = m_Context->GetEngineContext();
-        m_Renderer->DrawFrame(engineContext.GetFrameData(), engineContext.GetResourceCatalog(),
-                              engineContext.GetSettings());
+        if (engineContext.GetSettings().GetRenderingSettings().GetUseRenderGraph())
+            RenderWithGraph();
+        else
+            m_Renderer->DrawFrame(engineContext.GetFrameData(), engineContext.GetResourceCatalog(),
+                                  engineContext.GetSettings());
         return dt;
+    }
+
+    void EditorApplication::RenderWithGraph()
+    {
+        auto& engineContext = m_Context->GetEngineContext();
+
+        m_RenderScene.Clear();
+        HX::SceneExtractor{}.Extract(engineContext.GetECS(), *engineContext.GetRenderSystem(),
+                                     *engineContext.GetLightSystem(), *engineContext.GetCameraSystem(),
+                                     m_RenderScene);
+
+        [[maybe_unused]] const bool updated =
+            m_Renderer->UpdateView(m_EditorView, MakeEditorView(engineContext.GetCamera()));
+        assert(updated && "EditorApplication: the editor view was not created.");
+
+        m_Renderer->SyncResources(engineContext.GetResourceCatalog());
+        m_Renderer->RenderFrame(m_RenderScene, engineContext.GetSettings());
     }
 
     void EditorApplication::LoadBenchmarkScene()
