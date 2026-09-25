@@ -2,6 +2,7 @@
 
 #include "Pipeline/PipelineLoader.hpp"
 #include "Pipeline/ShaderLoader.hpp"
+#include "ResourceRegistry/ResourceRegistry.hpp"
 
 #include "HedgehogCommon/api/RendererSettings.hpp"
 
@@ -56,7 +57,9 @@ namespace Renderer
                    sizeof(ForwardViewUniform));
         CreateRing(device, m_SceneLightsRing, forwardShader.Layout.DescriptorSets[2], SCENE_LIGHTS_PER_FRAME,
                    sizeof(SceneLightsUniform));
-        m_MaterialLayout = device.CreateDescriptorSetLayout(forwardShader.Layout.DescriptorSets[1]);
+        m_MaterialLayout    = device.CreateDescriptorSetLayout(forwardShader.Layout.DescriptorSets[1]);
+        m_MaterialPoolSizes = PipelineLoader::MakePoolSizes(forwardShader.Layout.DescriptorSets[1],
+                                                            HedgehogEngine::MAX_MATERIAL_COUNT);
 
         const std::vector<const RHI::IRHIDescriptorSetLayout*> forwardLayouts = {
             m_ForwardRing.Layout.get(), m_MaterialLayout.get(), m_SceneLightsRing.Layout.get() };
@@ -105,6 +108,11 @@ namespace Renderer
         m_ViewProjRing.Next    = 0;
         m_ForwardRing.Next     = 0;
         m_SceneLightsRing.Next = 0;
+    }
+
+    void GraphPassServices::ProvideMaterialLayout(RHI::IRHIDevice& device, HR::ResourceRegistry& registry) const
+    {
+        registry.SetMaterialLayout(device, *m_MaterialLayout, HedgehogEngine::MAX_MATERIAL_COUNT, m_MaterialPoolSizes);
     }
 
     const RHI::IRHIPipeline& GraphPassServices::GetPipeline(EnginePipeline pipeline) const

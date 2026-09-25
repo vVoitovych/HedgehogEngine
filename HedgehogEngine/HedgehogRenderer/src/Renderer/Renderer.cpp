@@ -23,6 +23,9 @@
 
 #include "Logger/api/Logger.hpp"
 
+#include <cassert>
+#include <optional>
+
 namespace Renderer
 {
     bool AreValidationLayersEnabled()
@@ -42,7 +45,8 @@ namespace Renderer
 
     Renderer::Renderer(HW::Window& window,
                        const HedgehogSettings::Settings& settings,
-                       const FS::FileSystemManager& fileSystem)
+                       const FS::FileSystemManager& fileSystem,
+                       RendererPaths paths)
         : m_Window(window)
     {
         m_RHIContext    = std::make_unique<RHIContext>(window);
@@ -51,16 +55,22 @@ namespace Renderer
             m_RHIContext->GetRHIDevice(),
             m_RHIContext->GetRHISwapchain(),
             settings);
-        m_RenderQueue = std::make_unique<RenderQueue>(
-            m_RHIContext->GetRHIDevice(),
-            window,
-            settings,
-            *m_ResourceManager,
-            fileSystem);
+        if (paths == RendererPaths::LegacyAndRenderGraph)
+        {
+            m_RenderQueue = std::make_unique<RenderQueue>(
+                m_RHIContext->GetRHIDevice(),
+                window,
+                settings,
+                *m_ResourceManager,
+                fileSystem);
+        }
         m_FrameRenderer = std::make_unique<FrameRenderer>(
             m_RHIContext->GetRHIDevice(),
             m_RHIContext->GetRHISwapchain(),
             fileSystem);
+        // Without the legacy ForwardPass, nothing else gives the registry its material layout.
+        if (!m_RenderQueue)
+            m_FrameRenderer->ProvideMaterialLayout(m_ResourceManager->GetResourceRegistry());
         static_assert(std::string_view(VIEWPORT_TARGET) == FrameRenderer::VIEWPORT_TARGET);
     }
 
@@ -73,7 +83,8 @@ namespace Renderer
         auto& device = m_RHIContext->GetRHIDevice();
         device.WaitIdle();
         m_FrameRenderer.reset();
-        m_RenderQueue->Cleanup(device);
+        if (m_RenderQueue)
+            m_RenderQueue->Cleanup(device);
         m_ResourceManager->Cleanup(device);
         m_ThreadContext->Cleanup(device);
         m_RHIContext->Cleanup();
@@ -81,12 +92,13 @@ namespace Renderer
 
     void Renderer::BeginGui()
     {
+        assert(m_RenderQueue && "Renderer::BeginGui: this renderer was built without the legacy path (and ImGui).");
         m_RenderQueue->BeginGui();
     }
 
     void* Renderer::GetSceneViewTextureId() const
     {
-        return m_RenderQueue->GetSceneViewTextureId();
+        return m_RenderQueue ? m_RenderQueue->GetSceneViewTextureId() : nullptr;
     }
 
     float Renderer::GetAspectRatio() const
@@ -103,11 +115,14 @@ namespace Renderer
 
     void Renderer::BeginFrameStatsCapture()
     {
-        m_RenderQueue->GetFrameStats().BeginCapture();
+        if (m_RenderQueue)
+            m_RenderQueue->GetFrameStats().BeginCapture();
     }
 
     void Renderer::EndFrameStatsCaptureAndLogReport()
     {
+        if (!m_RenderQueue)
+            return;
         auto& stats = m_RenderQueue->GetFrameStats();
         stats.EndCapture();
         stats.LogReport();
@@ -136,10 +151,13 @@ namespace Renderer
     void Renderer::RenderFrame(const HX::RenderScene& scene, const HedgehogSettings::Settings& settings)
     {
         HH_PROFILE_ZONE("RenderFrame");
-        ScopedCpuSample sample(m_RenderQueue->GetFrameStats(), "RenderFrame(total)");
-
-        // The editor began an ImGui frame; nothing on this path draws it yet.
-        m_RenderQueue->DiscardGui();
+        std::optional<ScopedCpuSample> sample;
+        if (m_RenderQueue)
+        {
+            sample.emplace(m_RenderQueue->GetFrameStats(), "RenderFrame(total)");
+            // The editor began an ImGui frame; nothing on this path draws it yet.
+            m_RenderQueue->DiscardGui();
+        }
 
         auto& device    = m_RHIContext->GetRHIDevice();
         auto& swapchain = m_RHIContext->GetRHISwapchain();
@@ -154,7 +172,8 @@ namespace Renderer
             m_RHIContext->RecreateSwapchain(m_Window);
             // The legacy resources follow too, so DrawFrame finds them sized for the new window.
             m_ResourceManager->ResizeFrameBufferSizeDependentResources(device, swapchain);
-            m_RenderQueue->ResizeResources(device, *m_ResourceManager);
+            if (m_RenderQueue)
+                m_RenderQueue->ResizeResources(device, *m_ResourceManager);
             m_FrameRenderer->NotifySwapchainResized();
         }
 
@@ -172,6 +191,7 @@ namespace Renderer
                              HedgehogSettings::Settings&       settings)
     {
         HH_PROFILE_ZONE("DrawFrame");
+        assert(m_RenderQueue && "Renderer::DrawFrame: this renderer was built without the legacy path.");
         ScopedCpuSample sample(m_RenderQueue->GetFrameStats(), "DrawFrame(total)");
 
         auto& device    = m_RHIContext->GetRHIDevice();

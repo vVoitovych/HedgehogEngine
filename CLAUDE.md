@@ -52,6 +52,12 @@ Binaries\windows-x86_64\Debug\Editor\Editor.exe --smoke-test [frames]
 ```
 Renders N frames (default 120) and exits nonzero if any Vulkan validation error occurred (Debug builds enable `VK_LAYER_KHRONOS_validation`; messages route through Logger, counters live in `RHI/api/RHIDiagnostics.hpp` and are re-exported via `Renderer.hpp`).
 
+**Game mode** — the render-graph path as a game build runs it, with no editor:
+```
+Binaries\windows-x86_64\Debug\Editor\Editor.exe --game-mode [frames]
+```
+Loads `Assets/Scenes/Default.yaml`, builds a `Renderer` with `RendererPaths::RenderGraphOnly` (no legacy pass, so no ImGui), forces `rendering.use_render_graph` on for the run without saving it, and renders N frames (default 120) with `RenderFrame` from views derived from the scene's camera components. Exits nonzero on any Vulkan validation error **or if an ImGui context ever exists** — the renderer not depending on ImGui is checked, not assumed. Run it after any render-graph or renderer change, alongside `--smoke-test`; like it, it needs a GPU and runs locally only.
+
 **Regenerating solution** after modifying any `Build.lua` files:
 ```
 Vendor\Binaries\Premake\Windows\premake5.exe --file=Build.lua vs2022

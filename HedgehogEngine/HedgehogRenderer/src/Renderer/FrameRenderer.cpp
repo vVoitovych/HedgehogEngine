@@ -116,12 +116,26 @@ namespace Renderer
         const SharedPhaseOutputs shared =
             m_Shared.Declare(graph, m_Services, shadowFrame, scene.Lights, sharedSettings);
 
+        // Only one view presents: the highest priority, the earliest on a tie.
+        const View* presenter = nullptr;
+        for (const View& view : views)
+        {
+            if (Presents(view) && (!presenter || view.Desc.Priority > presenter->Desc.Priority))
+                presenter = &view;
+        }
+
         bool hasViewport = false;
         for (size_t i = 0; i < views.size(); ++i)
         {
+            if (Presents(views[i]) && &views[i] != presenter)
+            {
+                ReportOnce("FrameRenderer: view " + std::to_string(views[i].Id) + " also targets the presented "
+                           "surface; view " + std::to_string(presenter->Id) + " has a higher priority and "
+                           "presents (RENDERING.md section 8).");
+                continue;
+            }
             const bool declared = DeclareView(graph, views[i], m_ViewFrames[i], m_ViewContexts[i], shared);
-            const auto& targets = views[i].Desc.Targets;
-            if (declared && std::find(targets.begin(), targets.end(), VIEWPORT_TARGET) != targets.end())
+            if (declared && &views[i] == presenter)
                 hasViewport = true;
         }
 
@@ -222,8 +236,16 @@ namespace Renderer
         m_OutputContract.clear();
         for (size_t i = 0; i < view.ResolvedTargets.size(); ++i)
         {
-            const ResolvedRenderTarget& target = view.ResolvedTargets[i];
-            const RGTexture imported = graph.ImportTexture(view.Desc.Targets[i], target.Format);
+            // Main is presented through the viewport until a graph can write the swapchain's format.
+            const bool isMain = view.Desc.Targets[i] == RenderTargetRegistry::MAIN_TARGET;
+            const ResolvedRenderTarget target = isMain ? m_Targets.Resolve(VIEWPORT_TARGET) : view.ResolvedTargets[i];
+            if (target.Status != RenderTargetStatus::Ok)
+            {
+                ReportOnce("FrameRenderer: view " + std::to_string(view.Id) + ": " + target.Message);
+                return false;
+            }
+            const RGTexture imported = graph.ImportTexture(isMain ? VIEWPORT_TARGET : view.Desc.Targets[i],
+                                                           target.Format);
             graph.BindImportedTexture(imported, target.Texture);
             m_OutputTargets.push_back(imported);
             m_OutputContract.push_back({ target.Format, RGSizePolicy::MakeRelativeToResult(1.0f) });
@@ -281,6 +303,13 @@ namespace Renderer
         cmd.End();
         m_Device.SubmitCommandList(cmd, { &sync.ImageAvailable }, { &sync.RenderFinished }, &sync.Fence);
         m_Swapchain.Present(imageIndex, sync.RenderFinished);
+    }
+
+    bool FrameRenderer::Presents(const View& view)
+    {
+        const auto& targets = view.Desc.Targets;
+        return std::find(targets.begin(), targets.end(), VIEWPORT_TARGET) != targets.end()
+            || std::find(targets.begin(), targets.end(), RenderTargetRegistry::MAIN_TARGET) != targets.end();
     }
 
     // A problem that persists would otherwise be logged every frame.

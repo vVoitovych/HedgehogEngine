@@ -22,6 +22,11 @@ namespace FS
     class FileSystemManager;
 }
 
+namespace HR
+{
+    class ResourceRegistry;
+}
+
 namespace Renderer
 {
     // The renderer-owned GPU objects behind IGraphPassServices: the engine pipelines, built for
@@ -52,6 +57,11 @@ namespace Renderer
         GraphPassServices& operator=(GraphPassServices&&)      = delete;
 
         void BeginFrame(uint32_t frameIndex);
+
+        // Gives the resource registry the material layout (the forward shader's set 1) to allocate
+        // material sets from. The legacy ForwardPass does this when the legacy path is built; a
+        // renderer built with the graph path only calls this instead.
+        void ProvideMaterialLayout(RHI::IRHIDevice& device, HR::ResourceRegistry& registry) const;
 
         const RHI::IRHIPipeline&      GetPipeline(EnginePipeline pipeline) const override;
         const RHI::IRHIDescriptorSet& AllocateViewProjUniform(const HM::Matrix4x4& viewProj) override;
@@ -85,6 +95,7 @@ namespace Renderer
         // The forward shader's set 1. Identical to the layout the resource registry allocates
         // material sets from, so those sets bind to these pipelines.
         std::unique_ptr<RHI::IRHIDescriptorSetLayout> m_MaterialLayout;
+        std::vector<RHI::PoolSize>                    m_MaterialPoolSizes; // for MAX_MATERIAL_COUNT sets
 
         std::unique_ptr<RHI::IRHIPipeline> m_DepthPrepassPipeline;
         std::unique_ptr<RHI::IRHIPipeline> m_ShadowPipeline;
