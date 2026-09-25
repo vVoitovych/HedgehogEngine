@@ -20,49 +20,74 @@ namespace Renderer
     {
         constexpr const char* DEPTH_PREPASS_SHADER = "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/DepthPrepass.shader";
         constexpr const char* SHADOW_SHADER        = "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/ShadowmapPass.shader";
+        constexpr const char* FORWARD_SHADER       = "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/ForwardPass.shader";
 
-        // The depth format every engine graph asset declares for depth and shadow maps.
+        // The formats every engine graph asset declares: D32Float depth and shadow maps, and a
+        // R16G16B16A16Unorm colour output for the scene and game views.
         constexpr RHI::Format DEPTH_FORMAT = RHI::Format::D32Float;
+        constexpr RHI::Format COLOR_FORMAT = RHI::Format::R16G16B16A16Unorm;
 
-        // A depth-only pipeline for dynamic rendering, sharing one viewProj descriptor layout.
-        std::unique_ptr<RHI::IRHIPipeline> CreateDepthOnlyPipeline(RHI::IRHIDevice& device, const char* shaderPath,
-                                                                   const FS::FileSystemManager& fileSystem,
-                                                                   const RHI::IRHIDescriptorSetLayout& layout)
+        // A pipeline for dynamic rendering from a .shader file, with the given set layouts.
+        std::unique_ptr<RHI::IRHIPipeline> CreatePipeline(RHI::IRHIDevice& device, const ShaderPipelineDesc& shader,
+                                                          std::vector<const RHI::IRHIDescriptorSetLayout*> layouts,
+                                                          std::vector<RHI::Format> colorFormats,
+                                                          RHI::CullMode cullMode)
         {
-            const ShaderPipelineDesc shader = ShaderLoader::Load(device, shaderPath, fileSystem);
             RHI::GraphicsPipelineDesc desc = shader.Pipeline;
-            desc.DescriptorSetLayouts  = { &layout };
-            desc.RenderPass            = nullptr;
-            desc.ColorAttachmentFormats.clear();
-            desc.DepthAttachmentFormat = DEPTH_FORMAT;
+            desc.DescriptorSetLayouts   = std::move(layouts);
+            desc.RenderPass             = nullptr;
+            desc.ColorAttachmentFormats = std::move(colorFormats);
+            desc.DepthAttachmentFormat  = DEPTH_FORMAT;
+            desc.CullMode               = cullMode;
             return device.CreateGraphicsPipeline(desc);
         }
     }
 
     GraphPassServices::GraphPassServices(RHI::IRHIDevice& device, const FS::FileSystemManager& fileSystem)
     {
+        const ShaderPipelineDesc depthShader   = ShaderLoader::Load(device, DEPTH_PREPASS_SHADER, fileSystem);
+        const ShaderPipelineDesc shadowShader  = ShaderLoader::Load(device, SHADOW_SHADER, fileSystem);
+        const ShaderPipelineDesc forwardShader = ShaderLoader::Load(device, FORWARD_SHADER, fileSystem);
+        assert(!depthShader.Layout.DescriptorSets.empty() && forwardShader.Layout.DescriptorSets.size() >= 2);
+
         // Both depth-only shaders declare the same set 0: one viewProj uniform buffer.
-        const ShaderPipelineDesc layoutSource = ShaderLoader::Load(device, DEPTH_PREPASS_SHADER, fileSystem);
-        assert(!layoutSource.Layout.DescriptorSets.empty());
-        const auto& setLayout = layoutSource.Layout.DescriptorSets[0];
-        m_ViewProjLayout = device.CreateDescriptorSetLayout(setLayout);
+        CreateRing(device, m_ViewProjRing, depthShader.Layout.DescriptorSets[0], UNIFORMS_PER_FRAME, sizeof(float) * 16);
+        CreateRing(device, m_ForwardRing, forwardShader.Layout.DescriptorSets[0], FORWARD_UNIFORMS_PER_FRAME,
+                   sizeof(ForwardViewUniform));
+        m_MaterialLayout = device.CreateDescriptorSetLayout(forwardShader.Layout.DescriptorSets[1]);
 
-        const uint32_t totalSets = UNIFORMS_PER_FRAME * HedgehogEngine::MAX_FRAMES_IN_FLIGHT;
-        m_Pool = device.CreateDescriptorPool(totalSets, PipelineLoader::MakePoolSizes(setLayout, totalSets));
+        const RHI::CullMode depthCull = depthShader.Pipeline.CullMode;
+        m_DepthPrepassPipeline = CreatePipeline(device, depthShader, { m_ViewProjRing.Layout.get() }, {}, depthCull);
+        m_ShadowPipeline       = CreatePipeline(device, shadowShader, { m_ViewProjRing.Layout.get() }, {},
+                                                shadowShader.Pipeline.CullMode);
+        m_ForwardPipeline      = CreatePipeline(device, forwardShader,
+                                                { m_ForwardRing.Layout.get(), m_MaterialLayout.get() },
+                                                { COLOR_FORMAT }, forwardShader.Pipeline.CullMode);
+        m_ForwardDoubleSidedPipeline = CreatePipeline(device, forwardShader,
+                                                      { m_ForwardRing.Layout.get(), m_MaterialLayout.get() },
+                                                      { COLOR_FORMAT }, RHI::CullMode::None);
+    }
 
-        m_DepthPrepassPipeline = CreateDepthOnlyPipeline(device, DEPTH_PREPASS_SHADER, fileSystem, *m_ViewProjLayout);
-        m_ShadowPipeline       = CreateDepthOnlyPipeline(device, SHADOW_SHADER, fileSystem, *m_ViewProjLayout);
+    // The owner waits for the device to go idle first, as for every other GPU resource.
+    GraphPassServices::~GraphPassServices() = default;
 
-        m_Uniforms.resize(HedgehogEngine::MAX_FRAMES_IN_FLIGHT);
-        for (auto& frame : m_Uniforms)
+    void GraphPassServices::CreateRing(RHI::IRHIDevice& device, UniformRing& ring,
+                                       const std::vector<RHI::DescriptorBinding>& layout,
+                                       uint32_t slotsPerFrame, size_t uniformSize)
+    {
+        const uint32_t totalSets = slotsPerFrame * HedgehogEngine::MAX_FRAMES_IN_FLIGHT;
+        ring.Layout = device.CreateDescriptorSetLayout(layout);
+        ring.Pool   = device.CreateDescriptorPool(totalSets, PipelineLoader::MakePoolSizes(layout, totalSets));
+
+        ring.Slots.resize(HedgehogEngine::MAX_FRAMES_IN_FLIGHT);
+        for (auto& frame : ring.Slots)
         {
-            frame.reserve(UNIFORMS_PER_FRAME);
-            for (uint32_t i = 0; i < UNIFORMS_PER_FRAME; ++i)
+            frame.reserve(slotsPerFrame);
+            for (uint32_t i = 0; i < slotsPerFrame; ++i)
             {
                 UniformSlot slot;
-                slot.Buffer = device.CreateBuffer(sizeof(float) * 16, RHI::BufferUsage::UniformBuffer,
-                                                  RHI::MemoryUsage::CpuToGpu);
-                slot.Set = device.AllocateDescriptorSet(*m_Pool, *m_ViewProjLayout);
+                slot.Buffer = device.CreateBuffer(uniformSize, RHI::BufferUsage::UniformBuffer, RHI::MemoryUsage::CpuToGpu);
+                slot.Set    = device.AllocateDescriptorSet(*ring.Pool, *ring.Layout);
                 slot.Set->WriteUniformBuffer(0, *slot.Buffer);
                 slot.Set->Flush();
                 frame.push_back(std::move(slot));
@@ -70,32 +95,42 @@ namespace Renderer
         }
     }
 
-    // The owner waits for the device to go idle first, as for every other GPU resource.
-    GraphPassServices::~GraphPassServices() = default;
-
     void GraphPassServices::BeginFrame(uint32_t frameIndex)
     {
-        assert(frameIndex < m_Uniforms.size() && "GraphPassServices::BeginFrame: frame index out of range.");
-        m_FrameIndex = frameIndex;
-        m_NextSlot   = 0;
+        assert(frameIndex < HedgehogEngine::MAX_FRAMES_IN_FLIGHT && "GraphPassServices::BeginFrame: frame index out of range.");
+        m_FrameIndex        = frameIndex;
+        m_ViewProjRing.Next = 0;
+        m_ForwardRing.Next  = 0;
     }
 
     const RHI::IRHIPipeline& GraphPassServices::GetPipeline(EnginePipeline pipeline) const
     {
         switch (pipeline)
         {
-            case EnginePipeline::DepthPrepass: return *m_DepthPrepassPipeline;
-            case EnginePipeline::Shadow:       return *m_ShadowPipeline;
+            case EnginePipeline::DepthPrepass:       return *m_DepthPrepassPipeline;
+            case EnginePipeline::Shadow:             return *m_ShadowPipeline;
+            case EnginePipeline::Forward:            return *m_ForwardPipeline;
+            case EnginePipeline::ForwardDoubleSided: return *m_ForwardDoubleSidedPipeline;
         }
         assert(false && "GraphPassServices::GetPipeline: unknown pipeline.");
         return *m_DepthPrepassPipeline;
     }
 
+    const RHI::IRHIDescriptorSet& GraphPassServices::Allocate(UniformRing& ring, const void* data, size_t size)
+    {
+        assert(ring.Next < ring.Slots[m_FrameIndex].size() && "GraphPassServices: out of uniforms for this frame.");
+        UniformSlot& slot = ring.Slots[m_FrameIndex][ring.Next++];
+        slot.Buffer->CopyData(data, size);
+        return *slot.Set;
+    }
+
     const RHI::IRHIDescriptorSet& GraphPassServices::AllocateViewProjUniform(const HM::Matrix4x4& viewProj)
     {
-        assert(m_NextSlot < UNIFORMS_PER_FRAME && "GraphPassServices: out of viewProj uniforms for this frame.");
-        UniformSlot& slot = m_Uniforms[m_FrameIndex][m_NextSlot++];
-        slot.Buffer->CopyData(viewProj.GetBuffer(), sizeof(float) * 16);
-        return *slot.Set;
+        return Allocate(m_ViewProjRing, viewProj.GetBuffer(), sizeof(float) * 16);
+    }
+
+    const RHI::IRHIDescriptorSet& GraphPassServices::AllocateForwardViewUniform(const ForwardViewUniform& uniform)
+    {
+        return Allocate(m_ForwardRing, &uniform, sizeof(uniform));
     }
 }

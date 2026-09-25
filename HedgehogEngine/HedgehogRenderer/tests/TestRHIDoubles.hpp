@@ -249,9 +249,10 @@ namespace RGTest
         void BindVertexBuffers(uint32_t, const std::vector<RHI::IRHIBuffer*>&,
                                const std::vector<size_t>&) override {}
         void BindIndexBuffer(const RHI::IRHIBuffer&, RHI::IndexType, size_t) override {}
-        void BindDescriptorSet(const RHI::IRHIPipeline&, uint32_t, const RHI::IRHIDescriptorSet&) override
+        void BindDescriptorSet(const RHI::IRHIPipeline&, uint32_t setIndex, const RHI::IRHIDescriptorSet&) override
         {
             ++DescriptorSetBinds;
+            BoundSetIndices.push_back(setIndex);
         }
         void PushConstants(const RHI::IRHIPipeline&, RHI::ShaderStage, uint32_t, uint32_t, const void*) override {}
 
@@ -271,6 +272,7 @@ namespace RGTest
         int                              EndRenderingCount  = 0;
         std::vector<RHI::Viewport>       Viewports;
         int                              DescriptorSetBinds = 0;
+        std::vector<uint32_t>            BoundSetIndices;
         std::vector<uint32_t>            DrawnIndexCounts;
     };
 }
