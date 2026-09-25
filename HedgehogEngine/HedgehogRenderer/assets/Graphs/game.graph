@@ -1,7 +1,8 @@
 # The game view (RENDERING.md section 7): what a camera entity renders, in the editor's game panel
-# and in a game build. The shadow map is per view until the shared phase (HE-82) moves it out.
+# and in a game build. The shadow atlas is not the view's own: the shared frame phase renders it
+# once for every view (SharedPhase.hpp), and the graph imports it.
 # Held to a hand-written C++ twin by RenderGraphTest (test_shipped_graphs.cpp).
-version: 1
+version: 2
 outputs:
   - slot: 0
     name: color
@@ -11,23 +12,19 @@ resources:
   - name: depth
     format: D32Float
     size: RelativeToResult(1.0)
-  - name: shadowMap
+imports:
+  - name: shadowAtlas
     format: D32Float
-    size: Absolute(2048, 2048)
 passes:
   - type: DepthPrepass
     name: DepthPrepass
     bindings:
       depth: depth
-  - type: Shadow
-    name: Shadow
-    bindings:
-      shadowMap: shadowMap
   - type: Forward
     name: Forward
     bindings:
       color: color
       depth: depth
-      shadowMap: shadowMap
+      shadowMap: shadowAtlas
     parameters:
       cullBackFaces: true

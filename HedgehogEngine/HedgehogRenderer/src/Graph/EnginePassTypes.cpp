@@ -196,6 +196,9 @@ namespace Renderer
             cmd.BindVertexBuffers(0, { frame.Positions, frame.TexCoords, frame.Normals }, { 0, 0, 0 });
             cmd.BindIndexBuffer(*frame.Indices, RHI::IndexType::Uint32);
             cmd.BindDescriptorSet(pipeline, 0, services.AllocateForwardViewUniform(MakeForwardViewUniform(frame)));
+            assert(frame.SceneLights && "Forward: the shared phase has not uploaded the scene lights.");
+            if (frame.SceneLights)
+                cmd.BindDescriptorSet(pipeline, 2, *frame.SceneLights);
 
             // Rebind the material set only when it changes between consecutive instances.
             uint64_t boundMaterial = UINT64_MAX;

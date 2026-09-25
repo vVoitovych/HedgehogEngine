@@ -268,6 +268,10 @@ name, slot bindings, parameters). No expressions, no conditionals, no parameter 
 coercion. If the schema starts growing one, stop — that is the signal that the thing being
 expressed belongs in C++.
 
+Version 2 adds `imports[]` (name, format): resources the graph reads but does not create, such
+as the shadow atlas from the shared phase (§3.4). The instantiating caller supplies a handle for
+each one. Like a binding, an import is identity, not behaviour. Version 1 assets still load.
+
 ### Failure behaviour
 
 Validation runs at instantiation, not at load, because a graph is meant to be editable in

@@ -115,12 +115,29 @@ TEST_CASE("An empty graph with only a version is well-formed")
 
 TEST_CASE("An unknown schema version is rejected alone, naming the version")
 {
-    // The broken pass below must not be reported: under version 2 nothing else is interpretable.
-    const GraphAssetParseResult result = Parse("version: 2\npasses:\n  - name: NoType\n");
+    // The broken pass below must not be reported: under version 3 nothing else is interpretable.
+    const GraphAssetParseResult result = Parse("version: 3\npasses:\n  - name: NoType\n");
     REQUIRE_FALSE(result.Success);
     REQUIRE(result.Errors.size() == 1);
     CHECK(result.Errors[0].Path == "version");
-    CHECK(AnyErrorMentions(result, "unsupported graph asset schema version '2'"));
+    CHECK(AnyErrorMentions(result, "unsupported graph asset schema version '3' (this build reads versions 1 to 2)"));
+}
+
+TEST_CASE("Version 2 declares imports; version 1 still loads but cannot declare them")
+{
+    const GraphAssetParseResult v2 = Parse(
+        "version: 2\n"
+        "imports:\n  - { name: shadowAtlas, format: D32Float }\n"
+        "passes:\n  - { type: Forward, name: Main, bindings: { shadowMap: shadowAtlas } }\n");
+    REQUIRE(v2.Success);
+    CHECK(v2.Asset.Version == 2);
+    REQUIRE(v2.Asset.Imports.size() == 1);
+    CHECK(v2.Asset.Imports[0].Name == "shadowAtlas");
+    CHECK(v2.Asset.Imports[0].Format == RHI::Format::D32Float);
+
+    CHECK(Parse("version: 1\npasses: []\n").Success);
+    CHECK(AnyErrorMentions(Parse("version: 1\nimports:\n  - { name: a, format: D32Float }\n"),
+                           "graph asset: unknown key 'imports'"));
 }
 
 TEST_CASE("Malformed documents are rejected with a message naming the offender")
@@ -168,6 +185,14 @@ TEST_CASE("Malformed documents are rejected with a message naming the offender")
           "resources:\n  - { name: color, format: D32Float, size: 'Absolute(64, 64)' }\n",
           "duplicate resource name 'color', already declared by outputs (slot 0)" },
         { "version: 1\nconditions: []\n", "graph asset: unknown key 'conditions'" },
+        // Imports
+        { "version: 2\nimports:\n  - { name: a, format: D32Float, size: 'Absolute(1, 1)' }\n",
+          "imports[0]: unknown key 'size'" },
+        { "version: 2\nimports:\n  - { format: D32Float }\n", "imports[0]: missing required key 'name'" },
+        { "version: 2\nimports:\n  - { name: a, format: D32 }\n", "imports[0].format: unknown format 'D32'" },
+        { "version: 2\nresources:\n  - { name: a, format: D32Float, size: 'Absolute(1, 1)' }\n"
+          "imports:\n  - { name: a, format: D32Float }\n",
+          "duplicate resource name 'a', already declared by resources[0]" },
         { "version: 1\npasses: Forward\n", "passes: must be a sequence" },
         { "version: [1\n", "graph asset is not valid YAML" },
         { "- 1\n- 2\n", "graph asset must be a YAML map" },

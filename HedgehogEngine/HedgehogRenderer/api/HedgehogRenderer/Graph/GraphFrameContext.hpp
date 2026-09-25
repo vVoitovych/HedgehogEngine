@@ -44,9 +44,6 @@ namespace Renderer
         // Opaque instances only: what the depth prepass, shadow and forward passes draw.
         std::span<const HX::RenderInstance> OpaqueInstances;
 
-        // The lights the forward pass shades with; at most MAX_LIGHTS_COUNT are used.
-        std::span<const HX::RenderLight> Lights;
-
         // Shared geometry. Meshes is indexed by RenderInstance::MeshIndex. TexCoords and Normals
         // are only read by the forward pass.
         RHI::IRHIBuffer*              Positions = nullptr;
@@ -58,9 +55,14 @@ namespace Renderer
         // Each material's descriptor set (the forward shader's set 1), indexed by
         // RenderInstance::MaterialIndex. Owned by the resource registry.
         std::span<const RHI::IRHIDescriptorSet* const> MaterialSets;
+
+        // The frame's lights (the forward shader's set 2), uploaded once by the shared phase for
+        // every view (SharedPhaseOutputs::SceneLights).
+        const RHI::IRHIDescriptorSet* SceneLights = nullptr;
     };
 
-    // The forward shader's set 0 (ForwardPass/Base.vert and .frag), laid out for std140.
+    // The graph-path forward shader's uniforms (GraphForward/Base.vert and .frag), laid out for
+    // std140: set 0 is per view, set 2 is shared by every view.
     struct GpuLight
     {
         alignas(16) HM::Vector3 Position;
@@ -74,13 +76,20 @@ namespace Renderer
         alignas(16) HM::Matrix4x4 View;
         alignas(16) HM::Matrix4x4 ViewProj;
         alignas(16) HM::Vector3   EyePosition;
-        alignas(16) GpuLight      Lights[HedgehogEngine::MAX_LIGHTS_COUNT];
-        int32_t                   LightCount = 0;
     };
 
-    // Packs one view's camera and lights into the forward shader's layout. Lights past
-    // MAX_LIGHTS_COUNT are dropped, as the legacy forward pass did.
+    struct SceneLightsUniform
+    {
+        alignas(16) GpuLight Lights[HedgehogEngine::MAX_LIGHTS_COUNT];
+        int32_t              LightCount = 0;
+    };
+
+    // Packs one view's camera into the forward shader's set 0.
     [[nodiscard]] ForwardViewUniform MakeForwardViewUniform(const GraphFrameData& frame);
+
+    // Packs the frame's lights into the forward shader's set 2. Lights past MAX_LIGHTS_COUNT are
+    // dropped, as the legacy forward pass did.
+    [[nodiscard]] SceneLightsUniform MakeSceneLightsUniform(std::span<const HX::RenderLight> lights);
 
     enum class EnginePipeline
     {
@@ -104,9 +113,13 @@ namespace Renderer
         // round again. One allocation per draw pass (or per shadow cascade) per frame.
         virtual const RHI::IRHIDescriptorSet& AllocateViewProjUniform(const HM::Matrix4x4& viewProj) = 0;
 
-        // The forward pass's set 0: camera and lights for one view. One allocation per forward pass
-        // per frame, from its own per-frame ring.
+        // The forward pass's set 0: one view's camera. One allocation per forward pass per frame,
+        // from its own per-frame ring.
         virtual const RHI::IRHIDescriptorSet& AllocateForwardViewUniform(const ForwardViewUniform& uniform) = 0;
+
+        // The forward pass's set 2: the frame's lights. One allocation per frame, by the shared
+        // phase; every view's forward pass binds the same set.
+        virtual const RHI::IRHIDescriptorSet& AllocateSceneLightsUniform(const SceneLightsUniform& uniform) = 0;
     };
 
     // Attached to a RenderGraphRuntime for one frame (SetFrameContext). Pass builders capture a

@@ -12,10 +12,11 @@
 //   Ui             slots: target                     writes target
 //
 // The declarations — slots, parameters, and every graph read and write — are final: they are what
-// the shipped assets and their C++ twins are held to. The execute bodies are empty until the
-// recording lands: DepthPrepass and Shadow in HE-80, Forward in HE-81, and Ui, which runs the
-// application-supplied UI callback, in HE-85. Filling them in must not change a declaration; the
-// equivalence tests would catch it if it did.
+// the shipped assets and their C++ twins are held to. Shadow is declared by the shared phase
+// (SharedPhase.hpp) rather than by a view graph; Forward samples its output through an import.
+// DepthPrepass, Shadow and Forward record; Ui's body, which runs the application-supplied UI
+// callback, is still empty. Filling it in must not change its declaration; the equivalence tests
+// would catch it if it did.
 namespace Renderer
 {
     void RegisterEnginePassTypes(PassBuilderRegistry& registry);

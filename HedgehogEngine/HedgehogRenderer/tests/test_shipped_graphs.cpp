@@ -43,26 +43,32 @@ namespace
         return graph.CreateTexture({ name, format, size, DefaultTextureUsage(format) });
     }
 
+    // Stands in for the shared phase's outputs when a view graph is compiled on its own.
+    GraphImports ImportsFor(RenderGraphRuntime& graph, const GraphAsset& asset)
+    {
+        GraphImports imports;
+        for (const GraphAssetImport& import : asset.Imports)
+            imports.emplace(import.Name, graph.ImportTexture(import.Name, import.Format, true));
+        return imports;
+    }
+
     // Hand-written twin of scene.graph and game.graph, straight against the builder API.
     void BuildViewGraphByHand(RenderGraphRuntime& graph)
     {
         const RGSizePolicy full = RGSizePolicy::MakeRelativeToResult(1.0f);
-        const RGTexture shadowMap = Declare(graph, "shadowMap", RHI::Format::D32Float, RGSizePolicy::MakeAbsolute(2048, 2048));
-        const RGTexture depth     = Declare(graph, "depth", RHI::Format::D32Float, full);
-        const RGTexture color     = Declare(graph, "color", RHI::Format::R16G16B16A16Unorm, full);
+        const RGTexture shadowAtlas = graph.ImportTexture("shadowAtlas", RHI::Format::D32Float, true);
+        const RGTexture depth       = Declare(graph, "depth", RHI::Format::D32Float, full);
+        const RGTexture color       = Declare(graph, "color", RHI::Format::R16G16B16A16Unorm, full);
 
-        RGTexture depthWritten, shadowWritten, colorWritten;
+        RGTexture depthWritten, colorWritten;
         graph.AddPass<TargetData>("DepthPrepass",
             [&](RGPassBuilder& pass, TargetData& data) { depthWritten = data.Target = pass.DepthTarget(depth); },
-            NO_EXECUTE);
-        graph.AddPass<TargetData>("Shadow",
-            [&](RGPassBuilder& pass, TargetData& data) { shadowWritten = data.Target = pass.DepthTarget(shadowMap); },
             NO_EXECUTE);
         graph.AddPass<TargetData>("Forward",
             [&](RGPassBuilder& pass, TargetData& data)
             {
                 pass.DepthReadOnly(depthWritten);
-                pass.SampleTexture(shadowWritten);
+                pass.SampleTexture(shadowAtlas);
                 colorWritten = data.Target = pass.ColorTarget(color);
             },
             NO_EXECUTE);
@@ -86,7 +92,8 @@ namespace
     {
         TestDevice device;
         RenderGraphRuntime graph(device, ARENA_BYTES);
-        const GraphInstantiationResult result = GraphInstantiator(registry).Instantiate(asset, graph);
+        const GraphImports imports = ImportsFor(graph, asset);
+        const GraphInstantiationResult result = GraphInstantiator(registry).Instantiate(asset, graph, nullptr, &imports);
         for (const auto& error : result.Errors)
             MESSAGE("instantiation: " << error.Message);
         REQUIRE(result.Success);

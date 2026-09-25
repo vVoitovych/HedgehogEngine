@@ -20,7 +20,7 @@ namespace Renderer
     {
         constexpr const char* DEPTH_PREPASS_SHADER = "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/DepthPrepass.shader";
         constexpr const char* SHADOW_SHADER        = "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/ShadowmapPass.shader";
-        constexpr const char* FORWARD_SHADER       = "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/ForwardPass.shader";
+        constexpr const char* FORWARD_SHADER       = "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/GraphForward.shader";
 
         // The formats every engine graph asset declares: D32Float depth and shadow maps, and a
         // R16G16B16A16Unorm colour output for the scene and game views.
@@ -48,24 +48,27 @@ namespace Renderer
         const ShaderPipelineDesc depthShader   = ShaderLoader::Load(device, DEPTH_PREPASS_SHADER, fileSystem);
         const ShaderPipelineDesc shadowShader  = ShaderLoader::Load(device, SHADOW_SHADER, fileSystem);
         const ShaderPipelineDesc forwardShader = ShaderLoader::Load(device, FORWARD_SHADER, fileSystem);
-        assert(!depthShader.Layout.DescriptorSets.empty() && forwardShader.Layout.DescriptorSets.size() >= 2);
+        assert(!depthShader.Layout.DescriptorSets.empty() && forwardShader.Layout.DescriptorSets.size() >= 3);
 
         // Both depth-only shaders declare the same set 0: one viewProj uniform buffer.
         CreateRing(device, m_ViewProjRing, depthShader.Layout.DescriptorSets[0], UNIFORMS_PER_FRAME, sizeof(float) * 16);
         CreateRing(device, m_ForwardRing, forwardShader.Layout.DescriptorSets[0], FORWARD_UNIFORMS_PER_FRAME,
                    sizeof(ForwardViewUniform));
+        CreateRing(device, m_SceneLightsRing, forwardShader.Layout.DescriptorSets[2], SCENE_LIGHTS_PER_FRAME,
+                   sizeof(SceneLightsUniform));
         m_MaterialLayout = device.CreateDescriptorSetLayout(forwardShader.Layout.DescriptorSets[1]);
+
+        const std::vector<const RHI::IRHIDescriptorSetLayout*> forwardLayouts = {
+            m_ForwardRing.Layout.get(), m_MaterialLayout.get(), m_SceneLightsRing.Layout.get() };
 
         const RHI::CullMode depthCull = depthShader.Pipeline.CullMode;
         m_DepthPrepassPipeline = CreatePipeline(device, depthShader, { m_ViewProjRing.Layout.get() }, {}, depthCull);
         m_ShadowPipeline       = CreatePipeline(device, shadowShader, { m_ViewProjRing.Layout.get() }, {},
                                                 shadowShader.Pipeline.CullMode);
-        m_ForwardPipeline      = CreatePipeline(device, forwardShader,
-                                                { m_ForwardRing.Layout.get(), m_MaterialLayout.get() },
-                                                { COLOR_FORMAT }, forwardShader.Pipeline.CullMode);
-        m_ForwardDoubleSidedPipeline = CreatePipeline(device, forwardShader,
-                                                      { m_ForwardRing.Layout.get(), m_MaterialLayout.get() },
-                                                      { COLOR_FORMAT }, RHI::CullMode::None);
+        m_ForwardPipeline      = CreatePipeline(device, forwardShader, forwardLayouts, { COLOR_FORMAT },
+                                                forwardShader.Pipeline.CullMode);
+        m_ForwardDoubleSidedPipeline = CreatePipeline(device, forwardShader, forwardLayouts, { COLOR_FORMAT },
+                                                      RHI::CullMode::None);
     }
 
     // The owner waits for the device to go idle first, as for every other GPU resource.
@@ -98,9 +101,10 @@ namespace Renderer
     void GraphPassServices::BeginFrame(uint32_t frameIndex)
     {
         assert(frameIndex < HedgehogEngine::MAX_FRAMES_IN_FLIGHT && "GraphPassServices::BeginFrame: frame index out of range.");
-        m_FrameIndex        = frameIndex;
-        m_ViewProjRing.Next = 0;
-        m_ForwardRing.Next  = 0;
+        m_FrameIndex           = frameIndex;
+        m_ViewProjRing.Next    = 0;
+        m_ForwardRing.Next     = 0;
+        m_SceneLightsRing.Next = 0;
     }
 
     const RHI::IRHIPipeline& GraphPassServices::GetPipeline(EnginePipeline pipeline) const
@@ -132,5 +136,10 @@ namespace Renderer
     const RHI::IRHIDescriptorSet& GraphPassServices::AllocateForwardViewUniform(const ForwardViewUniform& uniform)
     {
         return Allocate(m_ForwardRing, &uniform, sizeof(uniform));
+    }
+
+    const RHI::IRHIDescriptorSet& GraphPassServices::AllocateSceneLightsUniform(const SceneLightsUniform& uniform)
+    {
+        return Allocate(m_SceneLightsRing, &uniform, sizeof(uniform));
     }
 }
