@@ -11,7 +11,7 @@ if errorlevel 1 (
 )
 
 echo Updating submodules recursively and pulling remote changes...
-git submodule update --recursive --remote
+git submodule update --init --recursive
 if errorlevel 1 (
     echo Failed to update submodules.
     exit /b 1
