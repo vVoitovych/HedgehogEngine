@@ -36,19 +36,31 @@ namespace
     public:
         const RHI::IRHIPipeline& GetPipeline(EnginePipeline pipeline) const override
         {
-            return pipeline == EnginePipeline::DepthPrepass ? m_Depth : m_Shadow;
+            switch (pipeline)
+            {
+                case EnginePipeline::DepthPrepass: return m_Depth;
+                case EnginePipeline::Shadow:       return m_Shadow;
+                default:                           return m_Forward;
+            }
         }
         const RHI::IRHIDescriptorSet& AllocateViewProjUniform(const HM::Matrix4x4& viewProj) override
         {
             UploadedFirstElements.push_back(viewProj.GetBuffer()[0]);
             return m_Set;
         }
+        const RHI::IRHIDescriptorSet& AllocateForwardViewUniform(const ForwardViewUniform& uniform) override
+        {
+            ForwardLightCounts.push_back(uniform.LightCount);
+            return m_Set;
+        }
 
-        std::vector<float> UploadedFirstElements;
+        std::vector<float>   UploadedFirstElements;
+        std::vector<int32_t> ForwardLightCounts;
 
     private:
         FakePipeline      m_Depth;
         FakePipeline      m_Shadow;
+        FakePipeline      m_Forward;
         FakeDescriptorSet m_Set;
     };
 
@@ -190,4 +202,111 @@ TEST_CASE("Without a frame context the passes declare the same graph and record 
     REQUIRE(graph.Execute(cmd));
     CHECK(cmd.Renderings.empty());
     CHECK(cmd.DrawnIndexCounts.empty());
+}
+
+TEST_CASE("The forward pass packs camera and lights into the shader layout, capping the light count")
+{
+    GraphFrameData frame = MakeFrame(1);
+    frame.EyePosition = HM::Vector3(1.0f, 2.0f, 3.0f);
+
+    HX::RenderLight spot;
+    spot.Type      = HX::LightType::Spot;
+    spot.Intensity = 4.0f;
+    spot.Radius    = 9.0f;
+    spot.ConeAngle = 60.0f;
+    const std::vector<HX::RenderLight> lights(HedgehogEngine::MAX_LIGHTS_COUNT + 3, spot);
+    frame.Lights = lights;
+
+    const ForwardViewUniform uniform = MakeForwardViewUniform(frame);
+    CHECK(uniform.LightCount == static_cast<int32_t>(HedgehogEngine::MAX_LIGHTS_COUNT));
+    CHECK(uniform.EyePosition.y() == doctest::Approx(2.0f));
+    CHECK(uniform.Lights[0].Data.x() == doctest::Approx(2.0f)); // LightType::Spot
+    CHECK(uniform.Lights[0].Data.y() == doctest::Approx(4.0f));
+    CHECK(uniform.Lights[0].Data.z() == doctest::Approx(9.0f));
+    CHECK(uniform.Lights[0].Data.w() == doctest::Approx(0.5f)); // cos(60 degrees)
+
+    // std140: every light is 64 bytes, and the count follows the array.
+    static_assert(sizeof(GpuLight) == 64);
+    CHECK(reinterpret_cast<const char*>(&uniform.LightCount) - reinterpret_cast<const char*>(&uniform.Lights[0])
+          == static_cast<std::ptrdiff_t>(64 * HedgehogEngine::MAX_LIGHTS_COUNT));
+}
+
+TEST_CASE("The forward pass records lit draws into its colour target against the prepass depth")
+{
+    PassBuilderRegistry registry;
+    RegisterEnginePassTypes(registry);
+
+    TestBuffer positions(1024);
+    TestBuffer texCoords(1024);
+    TestBuffer normals(1024);
+    TestBuffer indices(1024);
+    FakeDescriptorSet materialA;
+    FakeDescriptorSet materialB;
+    const RHI::IRHIDescriptorSet* materials[] = { &materialA, &materialB, nullptr };
+    const MeshDrawRange meshes[] = { { 0, 36, 0 }, { 36, 120, 24 } };
+
+    const auto instance = [](uint64_t mesh, uint64_t material)
+    {
+        HX::RenderInstance result = Instance(mesh);
+        result.MaterialIndex = material;
+        return result;
+    };
+    // Two share material A (one bind), one uses B; one has no material set and one no mesh range.
+    const HX::RenderInstance instances[] = { instance(0, 0), instance(1, 0), instance(1, 1), instance(0, 2),
+                                             instance(9, 0) };
+    const HX::RenderLight lights[2] = {};
+
+    GraphFrameData frame = MakeFrame(1);
+    frame.OpaqueInstances = instances;
+    frame.Lights          = lights;
+    frame.Meshes          = meshes;
+    frame.MaterialSets    = materials;
+    frame.Positions       = &positions;
+    frame.TexCoords       = &texCoords;
+    frame.Normals         = &normals;
+    frame.Indices         = &indices;
+
+    FakeServices      services;
+    GraphFrameContext context{ &services, &frame };
+
+    TestDevice device;
+    RenderGraphRuntime graph(device, 64 * 1024);
+    graph.SetFrameContext(&context);
+
+    PassInvocation prepass("DepthPrepass");
+    prepass.SetSlot("depth", DeclareDepth(graph, "depth", 640));
+    registry.Find("DepthPrepass")->Build(graph, prepass);
+    PassInvocation shadow("Shadow");
+    shadow.SetSlot("shadowMap", DeclareDepth(graph, "shadowMap", 512));
+    registry.Find("Shadow")->Build(graph, shadow);
+
+    PassInvocation forward("Forward");
+    forward.SetSlot("color", graph.CreateTexture({ "color", RHI::Format::R16G16B16A16Unorm,
+                                                   RGSizePolicy::MakeAbsolute(640, 640),
+                                                   RHI::TextureUsage::ColorAttachment | RHI::TextureUsage::Sampled }));
+    forward.SetSlot("depth", prepass.GetSlot("depth"));
+    forward.SetSlot("shadowMap", shadow.GetSlot("shadowMap"));
+    registry.Find("Forward")->Build(graph, forward);
+    graph.BindOutput(graph.AddOutputSlot("color", RHI::Format::R16G16B16A16Unorm, RGSizePolicy::MakeAbsolute(640, 640)),
+                     forward.GetSlot("color"));
+
+    RecordingCommandList cmd;
+    REQUIRE(graph.Execute(cmd));
+
+    // Prepass, shadow, forward: the graph orders forward last because of its reads.
+    REQUIRE(cmd.Renderings.size() == 3);
+    const RHI::RenderingInfo& lit = cmd.Renderings[2];
+    REQUIRE(lit.ColorAttachments.size() == 1);
+    CHECK(lit.ColorAttachments[0].LoadOp == RHI::LoadOp::Clear);
+    REQUIRE(lit.DepthAttachment.has_value());
+    CHECK(lit.DepthAttachment->LoadOp == RHI::LoadOp::Load); // reads the prepass depth
+    CHECK(lit.DepthAttachment->Texture == cmd.Renderings[0].DepthAttachment->Texture);
+
+    CHECK(services.ForwardLightCounts == std::vector<int32_t>{ 2 });
+    // The last three draws are the forward ones: the instances with both a mesh and a material.
+    const std::vector<uint32_t> forwardDraws(cmd.DrawnIndexCounts.end() - 3, cmd.DrawnIndexCounts.end());
+    CHECK(forwardDraws == std::vector<uint32_t>{ 36, 120, 120 });
+    // Set 0 once, then set 1 only when the material changes: A, then B.
+    const std::vector<uint32_t> forwardSets(cmd.BoundSetIndices.end() - 3, cmd.BoundSetIndices.end());
+    CHECK(forwardSets == std::vector<uint32_t>{ 0, 1, 1 });
 }
