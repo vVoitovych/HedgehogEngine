@@ -20,6 +20,8 @@ project "Editor"
 
    links {
       "HedgehogEngine",
+      "HedgehogCommon",
+      "HedgehogExtract",
       "HedgehogRenderer",
       "HedgehogWindow",
       "HedgehogSettings",

@@ -194,3 +194,37 @@ TEST_CASE("An imported texture keeps its exact identity across Execute — the p
     CHECK(seenDuringExecute == persistent);
     CHECK(device.m_TexturesCreated == 0); // the pool was never asked to create anything for it
 }
+
+TEST_CASE("Relative sizes resolve against the references set for the view being declared")
+{
+    TestDevice device;
+    RenderGraphRuntime graph(device, 16 * 1024);
+
+    RGTextureDesc half = MakeRGDesc(0, 0);
+    half.Size = RGSizePolicy::MakeRelativeToResult(0.5f);
+    RGTextureDesc window = MakeRGDesc(0, 0);
+    window.Name = "Window";
+    window.Size = RGSizePolicy::MakeRelativeToSwapchain(1.0f);
+
+    const auto sizeOf = [&](RGTexture texture)
+    {
+        return graph.GetDescription().FindResource(texture.Id)->TextureDesc.Size;
+    };
+
+    // No reference yet: the policy stays relative, as in the headless oracle tests.
+    CHECK(sizeOf(graph.CreateTexture(half)).Kind == RGSizePolicyKind::RelativeToResult);
+
+    graph.SetSizeReferences(640, 360, 1920, 1080);
+    const RGSizePolicy halfSize   = sizeOf(graph.CreateTexture(half));
+    const RGSizePolicy windowSize = sizeOf(graph.CreateTexture(window));
+    CHECK(halfSize.Kind == RGSizePolicyKind::Absolute);
+    CHECK(halfSize.Width == 320);
+    CHECK(halfSize.Height == 180);
+    CHECK(windowSize.Width == 1920);
+    CHECK(windowSize.Height == 1080);
+
+    // Execute clears the references: the next frame sets them again for each view.
+    RecordingCommandList cmd;
+    REQUIRE(graph.Execute(cmd));
+    CHECK(sizeOf(graph.CreateTexture(half)).Kind == RGSizePolicyKind::RelativeToResult);
+}

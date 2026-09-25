@@ -37,6 +37,8 @@ namespace HedgehogEngine
         HEDGEHOG_COMMON_API HM::Matrix4x4 GetProjectionMatrix() const;
         HEDGEHOG_COMMON_API HM::Vector3   GetPosition()         const;
 
+        // Radians, as SetFov takes it.
+        HEDGEHOG_COMMON_API float GetFov()       const;
         HEDGEHOG_COMMON_API float GetNearPlane() const;
         HEDGEHOG_COMMON_API float GetFarPlane()  const;
 

@@ -58,7 +58,8 @@ TEST_CASE("A declared target resolves to its own texture")
     REQUIRE(scene.Status == RenderTargetStatus::Ok);
     REQUIRE(scene.Texture != nullptr);
     CHECK(scene.Texture->GetWidth() == 640);
-    CHECK(scene.Texture->GetDesc().Usage == (RHI::TextureUsage::ColorAttachment | RHI::TextureUsage::Sampled));
+    CHECK(scene.Texture->GetDesc().Usage
+          == (RHI::TextureUsage::ColorAttachment | RHI::TextureUsage::Sampled | RHI::TextureUsage::TransferSrc));
 }
 
 TEST_CASE("Invalid declarations are rejected with the target named")

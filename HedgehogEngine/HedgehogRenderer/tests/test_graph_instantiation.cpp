@@ -360,6 +360,34 @@ TEST_CASE("Imports bind to handles the caller supplies, which must exist and mat
     CHECK(other.GetDescription().Passes.empty()); // rejected before anything was declared
 }
 
+TEST_CASE("A view's target textures stand in for the graph's outputs when supplied")
+{
+    const PassBuilderRegistry registry = MakeRegistry();
+    const GraphAsset asset = ParseAsset(
+        "version: 1\noutputs:\n"
+        "  - { slot: 0, name: color, format: R8G8B8A8Unorm, size: 'Absolute(64, 64)' }\n"
+        "passes:\n  - { type: DebugOverlay, name: Overlay, bindings: { target: color } }\n");
+
+    TestDevice device;
+    RenderGraphRuntime graph(device, ARENA_BYTES);
+    const std::vector<RGTexture> targets{ graph.ImportTexture("viewport", RHI::Format::R8G8B8A8Unorm) };
+    REQUIRE(GraphInstantiator(registry).Instantiate(asset, graph, nullptr, nullptr, &targets).Success);
+
+    // The pass writes the target in place: no transient named after the output is created.
+    const GraphDescription& description = graph.GetDescription();
+    REQUIRE(description.Resources.size() == 1);
+    CHECK(description.Resources[0].Name == "viewport");
+    REQUIRE(description.OutputSlots.size() == 1);
+    CHECK(description.OutputSlots[0].BoundResource == targets[0].Id);
+    CHECK(DescribeCompiledPlan(description).find("pass Overlay") != std::string::npos);
+
+    TestDevice otherDevice;
+    RenderGraphRuntime other(otherDevice, ARENA_BYTES);
+    const std::vector<RGTexture> wrongFormat{ other.ImportTexture("viewport", RHI::Format::D32Float) };
+    CHECK(AnyErrorMentions(GraphInstantiator(registry).Instantiate(asset, other, nullptr, nullptr, &wrongFormat),
+                           "output slot 0 ('color'): the supplied target texture is missing or has another format"));
+}
+
 TEST_CASE("Registering a pass type twice keeps the first registration")
 {
     PassBuilderRegistry registry;

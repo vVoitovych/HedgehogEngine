@@ -70,11 +70,14 @@ namespace Renderer
             const GraphAsset& asset, const std::vector<GraphOutputRequirement>* requiredOutputs = nullptr) const;
 
         // requiredOutputs is the view's contract, checked when given. imports must supply a handle
-        // for every import the asset declares.
+        // for every import the asset declares. outputTargets, when given, holds one texture per
+        // output slot (the view's targets, imported into graph): each slot is written into that
+        // texture instead of a transient the graph creates for itself.
         [[nodiscard]] GraphInstantiationResult Instantiate(
             const GraphAsset& asset, RenderGraphRuntime& graph,
             const std::vector<GraphOutputRequirement>* requiredOutputs = nullptr,
-            const GraphImports* imports = nullptr) const;
+            const GraphImports* imports = nullptr,
+            const std::vector<RGTexture>* outputTargets = nullptr) const;
 
     private:
         const PassBuilderRegistry& m_Registry;
