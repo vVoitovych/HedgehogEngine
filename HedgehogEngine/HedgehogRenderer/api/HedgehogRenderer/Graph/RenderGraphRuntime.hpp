@@ -24,6 +24,8 @@
 // survives across frames).
 namespace Renderer
 {
+    struct GraphFrameContext;
+
     class RenderGraphRuntime
     {
     public:
@@ -59,6 +61,15 @@ namespace Renderer
         // exclusion; buffers aren't pooled at all).
         void BindImportedTexture(RGTexture imported, RHI::IRHITexture* real);
         void BindImportedBuffer(RGBuffer imported, RHI::IRHIBuffer* real);
+
+        // The frame data and pass services the engine passes read (GraphFrameContext.hpp). Attach
+        // before declaring passes; builders capture the pointer. Cleared by Execute().
+        void                     SetFrameContext(const GraphFrameContext* context) { m_FrameContext = context; }
+        const GraphFrameContext* GetFrameContext() const { return m_FrameContext; }
+
+        // The real texture behind a handle, for an execute closure to render into. Valid only
+        // while Execute() is running passes: transients are only resolved then.
+        [[nodiscard]] RHI::IRHITexture* GetTexture(RGTexture texture);
 
         // Declares a pass: PassData is default-constructed in the frame arena, setup(passBuilder,
         // passData) runs synchronously against it (declare dependencies AND fill in whatever the
@@ -132,5 +143,8 @@ namespace Renderer
         std::unordered_map<RGResourceId, RHI::IRHITexture*>     m_ImportedTextures;
         std::unordered_map<RGResourceId, RHI::IRHIBuffer*>      m_ImportedBuffers;
         std::unordered_map<RGResourceId, RHI::IRHITexture*>     m_AcquiredTransients; // this-frame cache
+
+        const GraphFrameContext* m_FrameContext = nullptr;
+        const GraphDescription*  m_Executing    = nullptr; // set only while Execute() runs passes
     };
 }
