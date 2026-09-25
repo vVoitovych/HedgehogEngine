@@ -68,6 +68,10 @@ namespace HedgehogSettings
                 {
                     m_ShadowmapSettings->SetCascadeSplitLambda(n.as<float>());
                 }
+                if (const YAML::Node n = shadowmap["caster_mask"])
+                {
+                    m_ShadowmapSettings->SetShadowCasterMask(n.as<uint32_t>());
+                }
 
                 // Farthest split first. Each setter clamps against its neighbours, so restoring
                 // 60/70/80 in ascending order would clamp split1 against the *default* split2
@@ -123,6 +127,7 @@ namespace HedgehogSettings
         out << YAML::Key << "split1"               << YAML::Value << m_ShadowmapSettings->GetSplit1();
         out << YAML::Key << "split2"               << YAML::Value << m_ShadowmapSettings->GetSplit2();
         out << YAML::Key << "split3"               << YAML::Value << m_ShadowmapSettings->GetSplit3();
+        out << YAML::Key << "caster_mask"          << YAML::Value << m_ShadowmapSettings->GetShadowCasterMask();
         out << YAML::EndMap;
 
         // Keyed by index, and only named slots are written: the index is the identity that

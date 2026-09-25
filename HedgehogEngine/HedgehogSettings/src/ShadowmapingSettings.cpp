@@ -103,6 +103,16 @@ namespace HedgehogSettings
         }
     }
 
+    uint32_t ShadowmapSettings::GetShadowCasterMask() const
+    {
+        return m_ShadowCasterMask;
+    }
+
+    void ShadowmapSettings::SetShadowCasterMask(uint32_t mask)
+    {
+        m_ShadowCasterMask = mask;
+    }
+
     bool ShadowmapSettings::IsDirty() const
     {
         return m_IsDirty;

@@ -206,6 +206,27 @@ namespace Renderer
             }
         }
 
+        void ParseImports(const YAML::Node& sequence, GraphAsset& asset, Errors& errors)
+        {
+            for (size_t i = 0; i < sequence.size(); ++i)
+            {
+                const YAML::Node entry = sequence[i];
+                const std::string path = IndexedPath("imports", i);
+                if (!entry.IsMap())
+                {
+                    AddError(errors, path, "malformed import: expected a map", entry);
+                    continue;
+                }
+                RejectUnknownKeys(entry, { "name", "format" }, path, errors);
+
+                const std::optional<std::string> name   = RequireScalar(entry, "name", path, errors);
+                const std::optional<RHI::Format> format =
+                    ParseVocabularyField(entry, "format", path, ResolveFormat, "format", "", errors);
+                if (name && format)
+                    asset.Imports.push_back({ *name, *format });
+            }
+        }
+
         // A flat map of non-empty scalar keys to non-empty scalar values, in document order.
         // Nested values are rejected: parameters and bindings are never expressions. Duplicate keys
         // never reach here: yaml-cpp rejects them while loading ("map keys must be unique").
@@ -309,8 +330,9 @@ namespace Renderer
             }
         }
 
-        // Outputs and resources share one namespace: a binding names either, so an ambiguous name
-        // could never be resolved by instantiation. The error has no line: it involves two entries.
+        // Outputs, resources and imports share one namespace: a binding names any of them, so an
+        // ambiguous name could never be resolved by instantiation. The error has no line: it
+        // involves two entries.
         void RejectDuplicateResourceNames(const GraphAsset& asset, Errors& errors)
         {
             std::unordered_map<std::string, std::string> owner; // name -> path that declared it
@@ -329,6 +351,8 @@ namespace Renderer
                 claim(output.Name, "outputs (slot " + std::to_string(output.Slot) + ")");
             for (size_t i = 0; i < asset.Resources.size(); ++i)
                 claim(asset.Resources[i].Name, IndexedPath("resources", i));
+            for (size_t i = 0; i < asset.Imports.size(); ++i)
+                claim(asset.Imports[i].Name, IndexedPath("imports", i));
         }
     }
 
@@ -354,16 +378,23 @@ namespace Renderer
         if (!versionText)
             return result;
         const std::optional<uint32_t> version = ParseUnsigned(*versionText);
-        if (!version || *version != GRAPH_ASSET_SCHEMA_VERSION)
+        if (!version || *version < GRAPH_ASSET_MIN_SCHEMA_VERSION || *version > GRAPH_ASSET_SCHEMA_VERSION)
         {
             AddError(result.Errors, "version",
-                     "unsupported graph asset schema version '" + *versionText + "' (this build reads version "
+                     "unsupported graph asset schema version '" + *versionText + "' (this build reads versions "
+                     + std::to_string(GRAPH_ASSET_MIN_SCHEMA_VERSION) + " to "
                      + std::to_string(GRAPH_ASSET_SCHEMA_VERSION) + ")",
                      root["version"]);
             return result;
         }
 
-        RejectUnknownKeys(root, { "version", "outputs", "resources", "passes" }, "graph asset", result.Errors);
+        // Version 1 predates imports, so under it `imports` is an unknown key like any other.
+        const bool hasImports = *version >= 2;
+        if (hasImports)
+            RejectUnknownKeys(root, { "version", "outputs", "resources", "imports", "passes" }, "graph asset",
+                              result.Errors);
+        else
+            RejectUnknownKeys(root, { "version", "outputs", "resources", "passes" }, "graph asset", result.Errors);
 
         GraphAsset asset;
         asset.Version = *version;
@@ -371,6 +402,11 @@ namespace Renderer
             ParseOutputs(*outputs, asset, result.Errors);
         if (const std::optional<YAML::Node> resources = OptionalSequence(root, "resources", result.Errors))
             ParseResources(*resources, asset, result.Errors);
+        if (hasImports)
+        {
+            if (const std::optional<YAML::Node> imports = OptionalSequence(root, "imports", result.Errors))
+                ParseImports(*imports, asset, result.Errors);
+        }
         if (const std::optional<YAML::Node> passes = OptionalSequence(root, "passes", result.Errors))
             ParsePasses(*passes, asset, result.Errors);
 

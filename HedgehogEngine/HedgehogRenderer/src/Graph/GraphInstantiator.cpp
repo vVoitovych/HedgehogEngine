@@ -85,6 +85,31 @@ namespace Renderer
             }
         }
 
+        void ValidateImports(const GraphAsset& asset, const GraphDescription& description,
+                             const GraphImports* imports, Errors& errors)
+        {
+            for (const GraphAssetImport& import : asset.Imports)
+            {
+                const auto supplied = imports ? imports->find(import.Name) : GraphImports::const_iterator{};
+                if (!imports || supplied == imports->end())
+                {
+                    errors.push_back({ "import '" + import.Name + "' is not supplied by the caller", "", import.Name });
+                    continue;
+                }
+                const RGResourceRecord* record = description.FindResource(supplied->second.Id);
+                if (!record || record->IsBuffer)
+                {
+                    errors.push_back({ "import '" + import.Name + "' is supplied with a handle that is not a texture "
+                                       "in this graph", "", import.Name });
+                }
+                else if (record->TextureDesc.Format != import.Format)
+                {
+                    errors.push_back({ "import '" + import.Name + "': format does not match the supplied texture '"
+                                       + record->Name + "'", "", import.Name });
+                }
+            }
+        }
+
         void ValidatePass(const GraphAssetPass& pass, const PassTypeInfo* info,
                           const std::unordered_set<std::string>& declaredNames, Errors& errors)
         {
@@ -105,7 +130,8 @@ namespace Renderer
                 else if (!declaredNames.contains(binding.Resource))
                 {
                     errors.push_back({ prefix + "slot '" + binding.Slot + "' is bound to '" + binding.Resource
-                                       + "', which is not a declared output or resource", pass.Name, binding.Slot });
+                                       + "', which is not a declared output, resource or import", pass.Name,
+                                       binding.Slot });
                 }
             }
             for (const std::string& slot : info->Slots)
@@ -154,6 +180,8 @@ namespace Renderer
             declaredNames.insert(output.Name);
         for (const auto& resource : asset.Resources)
             declaredNames.insert(resource.Name);
+        for (const auto& import : asset.Imports)
+            declaredNames.insert(import.Name);
 
         for (const GraphAssetPass& pass : asset.Passes)
             ValidatePass(pass, m_Registry.Find(pass.Type), declaredNames, result.Errors);
@@ -164,10 +192,12 @@ namespace Renderer
 
     GraphInstantiationResult GraphInstantiator::Instantiate(
         const GraphAsset& asset, RenderGraphRuntime& graph,
-        const std::vector<GraphOutputRequirement>* requiredOutputs) const
+        const std::vector<GraphOutputRequirement>* requiredOutputs, const GraphImports* imports) const
     {
         // 1. Validate everything that can be checked without declaring anything.
         GraphInstantiationResult result = Validate(asset, requiredOutputs);
+        ValidateImports(asset, graph.GetDescription(), imports, result.Errors);
+        result.Success = result.Errors.empty();
         if (!result.Success)
             return result;
 
@@ -181,6 +211,8 @@ namespace Renderer
             declare(output.Name, output.Format, output.Size);
         for (const auto& resource : asset.Resources)
             declare(resource.Name, resource.Format, resource.Size);
+        for (const auto& import : asset.Imports)
+            latest[import.Name] = imports->at(import.Name);
 
         for (size_t i = 0; i < asset.Passes.size(); ++i)
         {

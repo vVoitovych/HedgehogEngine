@@ -26,7 +26,7 @@ namespace Renderer
 {
     // The renderer-owned GPU objects behind IGraphPassServices: the engine pipelines, built for
     // dynamic rendering, and per frame in flight a ring of viewProj uniforms (depth and shadow
-    // passes) and a ring of forward view uniforms (camera and lights).
+    // passes), a ring of forward view uniforms (one camera each) and the frame's scene lights.
     // The pass builders own none of this; they reach it through the GraphFrameContext.
     //
     // Frame protocol: BeginFrame(frameIndex) rewinds that frame slot's uniforms, which the fence
@@ -40,6 +40,8 @@ namespace Renderer
         static constexpr uint32_t UNIFORMS_PER_FRAME = 64;
         // Forward view uniforms one frame may make: one per view.
         static constexpr uint32_t FORWARD_UNIFORMS_PER_FRAME = 8;
+        // Scene-light uploads one frame makes: one, by the shared phase, for every view.
+        static constexpr uint32_t SCENE_LIGHTS_PER_FRAME = 1;
 
         GraphPassServices(RHI::IRHIDevice& device, const FS::FileSystemManager& fileSystem);
         ~GraphPassServices() override;
@@ -54,6 +56,7 @@ namespace Renderer
         const RHI::IRHIPipeline&      GetPipeline(EnginePipeline pipeline) const override;
         const RHI::IRHIDescriptorSet& AllocateViewProjUniform(const HM::Matrix4x4& viewProj) override;
         const RHI::IRHIDescriptorSet& AllocateForwardViewUniform(const ForwardViewUniform& uniform) override;
+        const RHI::IRHIDescriptorSet& AllocateSceneLightsUniform(const SceneLightsUniform& uniform) override;
 
     private:
         struct UniformSlot
@@ -77,6 +80,7 @@ namespace Renderer
 
         UniformRing m_ViewProjRing;
         UniformRing m_ForwardRing;
+        UniformRing m_SceneLightsRing;
 
         // The forward shader's set 1. Identical to the layout the resource registry allocates
         // material sets from, so those sets bind to these pipelines.

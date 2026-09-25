@@ -1,8 +1,8 @@
 # The editor's scene view (RENDERING.md section 7). Identical to game.graph for now; scene-only
-# work such as gizmos arrives with layer-aware culling (HE-87). The shadow map is per view until
-# the shared phase (HE-82) moves it out and the graphs import it instead.
+# work such as gizmos arrives with layer-aware culling. The shadow atlas is imported from the
+# shared frame phase (SharedPhase.hpp), which renders it once for every view.
 # Held to a hand-written C++ twin by RenderGraphTest (test_shipped_graphs.cpp).
-version: 1
+version: 2
 outputs:
   - slot: 0
     name: color
@@ -12,23 +12,19 @@ resources:
   - name: depth
     format: D32Float
     size: RelativeToResult(1.0)
-  - name: shadowMap
+imports:
+  - name: shadowAtlas
     format: D32Float
-    size: Absolute(2048, 2048)
 passes:
   - type: DepthPrepass
     name: DepthPrepass
     bindings:
       depth: depth
-  - type: Shadow
-    name: Shadow
-    bindings:
-      shadowMap: shadowMap
   - type: Forward
     name: Forward
     bindings:
       color: color
       depth: depth
-      shadowMap: shadowMap
+      shadowMap: shadowAtlas
     parameters:
       cullBackFaces: true

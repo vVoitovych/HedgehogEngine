@@ -244,7 +244,7 @@ TEST_CASE("Semantic errors are rejected before anything is declared, naming the 
         { "  - { type: DebugOverlay, name: Overlay }\n",
           "pass 'Overlay': required slot 'target' of pass type 'DebugOverlay' is not bound" },
         { "  - { type: DebugOverlay, name: Overlay, bindings: { target: nowhere } }\n",
-          "pass 'Overlay': slot 'target' is bound to 'nowhere', which is not a declared output or resource" },
+          "pass 'Overlay': slot 'target' is bound to 'nowhere', which is not a declared output, resource or import" },
         { "  - { type: DebugOverlay, name: Overlay, bindings: { target: color }, parameters: { tint: red } }\n",
           "pass 'Overlay': pass type 'DebugOverlay' has no parameter 'tint'" },
         { "  - type: Forward\n    name: Main\n    bindings: { color: color, depth: color, shadow: color }\n"
@@ -317,6 +317,47 @@ TEST_CASE("The view's output contract is checked slot by slot")
 
     const GraphInstantiationResult wrongCount = instantiate({});
     CHECK(AnyErrorMentions(wrongCount, "graph declares 1 output slot(s) but the view binds 0"));
+}
+
+TEST_CASE("Imports bind to handles the caller supplies, which must exist and match in format")
+{
+    const PassBuilderRegistry registry = MakeRegistry();
+    const GraphAsset asset = ParseAsset(
+        "version: 2\noutputs:\n"
+        "  - { slot: 0, name: color, format: R8G8B8A8Unorm, size: 'Absolute(64, 64)' }\n"
+        "  - { slot: 1, name: depth, format: D32Float, size: 'Absolute(64, 64)' }\n"
+        "imports:\n  - { name: sun, format: D32Float }\n"
+        "passes:\n"
+        "  - { type: DepthPrepass, name: Prepass, bindings: { depth: depth } }\n"
+        "  - { type: Forward, name: Main, bindings: { color: color, depth: depth, shadow: sun } }\n");
+
+    // The supplied handle is written by a pass declared before the graph, as the shared phase does:
+    // the compiler orders that pass first and derives the barrier into the graph's read.
+    TestDevice device;
+    RenderGraphRuntime graph(device, ARENA_BYTES);
+    PassInvocation sun("Sun");
+    sun.SetSlot("shadowMap", Declare(graph, "atlas", RHI::Format::D32Float, 256, 256));
+    registry.Find("Shadow")->Build(graph, sun);
+    const GraphImports imports{ { "sun", sun.GetSlot("shadowMap") } };
+    REQUIRE(GraphInstantiator(registry).Instantiate(asset, graph, nullptr, &imports).Success);
+
+    const CompileResult compiled = GraphCompiler{}.Compile(graph.GetDescription());
+    REQUIRE(compiled.Success);
+    REQUIRE(compiled.Graph.Passes.size() == 3);
+    CHECK(compiled.Graph.Passes[0].Name == "Sun");
+    CHECK(compiled.Graph.Passes[2].Name == "Main");
+
+    const auto instantiate = [&](const GraphImports* supplied, RenderGraphRuntime& target)
+    {
+        return GraphInstantiator(registry).Instantiate(asset, target, nullptr, supplied);
+    };
+    TestDevice otherDevice;
+    RenderGraphRuntime other(otherDevice, ARENA_BYTES);
+    CHECK(AnyErrorMentions(instantiate(nullptr, other), "import 'sun' is not supplied by the caller"));
+    const GraphImports wrongFormat{ { "sun", Declare(other, "atlas", RHI::Format::R8G8B8A8Unorm, 8, 8) } };
+    CHECK(AnyErrorMentions(instantiate(&wrongFormat, other),
+                           "import 'sun': format does not match the supplied texture 'atlas'"));
+    CHECK(other.GetDescription().Passes.empty()); // rejected before anything was declared
 }
 
 TEST_CASE("Registering a pass type twice keeps the first registration")

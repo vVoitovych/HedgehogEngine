@@ -18,7 +18,9 @@ project "RenderGraphTest"
         "../api/HedgehogRenderer/Targets/**.hpp",
         "../src/Targets/**.cpp",
         "../api/HedgehogRenderer/Views/**.hpp",
-        "../src/Views/**.cpp"
+        "../src/Views/**.cpp",
+        "../api/HedgehogRenderer/Frame/**.hpp",
+        "../src/Frame/**.cpp"
     }
 
     includedirs

@@ -3,10 +3,8 @@
 #include "HedgehogRenderer/Graph/RenderGraphRuntime.hpp"
 #include "HedgehogRenderer/Graph/ShadowCascades.hpp"
 
+#include "TestPassServices.hpp"
 #include "TestRHIDoubles.hpp"
-
-#include "RHI/api/IRHIDescriptor.hpp"
-#include "RHI/api/IRHIPipeline.hpp"
 
 #include "doctest/doctest/doctest.h"
 
@@ -17,74 +15,6 @@ using namespace RGTest;
 
 namespace
 {
-    class FakePipeline final : public RHI::IRHIPipeline
-    {
-    };
-
-    class FakeDescriptorSet final : public RHI::IRHIDescriptorSet
-    {
-    public:
-        void WriteUniformBuffer(uint32_t, const RHI::IRHIBuffer&, size_t, size_t) override {}
-        void WriteStorageBuffer(uint32_t, const RHI::IRHIBuffer&, size_t, size_t) override {}
-        void WriteTexture(uint32_t, const RHI::IRHITexture&, const RHI::IRHISampler&) override {}
-        void Flush() override {}
-    };
-
-    // Stands in for GraphPassServices: fixed pipelines, and a record of every viewProj uploaded.
-    class FakeServices final : public IGraphPassServices
-    {
-    public:
-        const RHI::IRHIPipeline& GetPipeline(EnginePipeline pipeline) const override
-        {
-            switch (pipeline)
-            {
-                case EnginePipeline::DepthPrepass: return m_Depth;
-                case EnginePipeline::Shadow:       return m_Shadow;
-                default:                           return m_Forward;
-            }
-        }
-        const RHI::IRHIDescriptorSet& AllocateViewProjUniform(const HM::Matrix4x4& viewProj) override
-        {
-            UploadedFirstElements.push_back(viewProj.GetBuffer()[0]);
-            return m_Set;
-        }
-        const RHI::IRHIDescriptorSet& AllocateForwardViewUniform(const ForwardViewUniform& uniform) override
-        {
-            ForwardLightCounts.push_back(uniform.LightCount);
-            return m_Set;
-        }
-
-        std::vector<float>   UploadedFirstElements;
-        std::vector<int32_t> ForwardLightCounts;
-
-    private:
-        FakePipeline      m_Depth;
-        FakePipeline      m_Shadow;
-        FakePipeline      m_Forward;
-        FakeDescriptorSet m_Set;
-    };
-
-    HX::RenderInstance Instance(uint64_t meshIndex)
-    {
-        HX::RenderInstance instance;
-        instance.MeshIndex = meshIndex;
-        return instance;
-    }
-
-    GraphFrameData MakeFrame(uint32_t cascades)
-    {
-        GraphFrameData frame;
-        frame.View                     = HM::Matrix4x4::LookAt(HM::Vector3(0.0f, -10.0f, 2.0f), HM::Vector3(0.0f, 0.0f, 0.0f),
-                                                               HM::Vector3(0.0f, 0.0f, 1.0f));
-        frame.Proj                     = HM::Matrix4x4::Perspective(60.0f, 16.0f / 9.0f, 0.1f, 100.0f);
-        frame.NearPlane                = 0.1f;
-        frame.FarPlane                 = 100.0f;
-        frame.ShadowCascadeCount       = cascades;
-        frame.ShadowCascadeSplitLambda = 0.75f;
-        frame.ShadowLightDirection     = HM::Vector3(0.3f, 0.2f, -1.0f);
-        return frame;
-    }
-
     RGTexture DeclareDepth(RenderGraphRuntime& graph, const char* name, uint32_t size)
     {
         return graph.CreateTexture({ name, RHI::Format::D32Float, RGSizePolicy::MakeAbsolute(size, size),
@@ -204,10 +134,11 @@ TEST_CASE("Without a frame context the passes declare the same graph and record 
     CHECK(cmd.DrawnIndexCounts.empty());
 }
 
-TEST_CASE("The forward pass packs camera and lights into the shader layout, capping the light count")
+TEST_CASE("The forward pass packs the camera per view and the lights per frame, capping the light count")
 {
     GraphFrameData frame = MakeFrame(1);
     frame.EyePosition = HM::Vector3(1.0f, 2.0f, 3.0f);
+    CHECK(MakeForwardViewUniform(frame).EyePosition.y() == doctest::Approx(2.0f));
 
     HX::RenderLight spot;
     spot.Type      = HX::LightType::Spot;
@@ -215,11 +146,9 @@ TEST_CASE("The forward pass packs camera and lights into the shader layout, capp
     spot.Radius    = 9.0f;
     spot.ConeAngle = 60.0f;
     const std::vector<HX::RenderLight> lights(HedgehogEngine::MAX_LIGHTS_COUNT + 3, spot);
-    frame.Lights = lights;
 
-    const ForwardViewUniform uniform = MakeForwardViewUniform(frame);
+    const SceneLightsUniform uniform = MakeSceneLightsUniform(lights);
     CHECK(uniform.LightCount == static_cast<int32_t>(HedgehogEngine::MAX_LIGHTS_COUNT));
-    CHECK(uniform.EyePosition.y() == doctest::Approx(2.0f));
     CHECK(uniform.Lights[0].Data.x() == doctest::Approx(2.0f)); // LightType::Spot
     CHECK(uniform.Lights[0].Data.y() == doctest::Approx(4.0f));
     CHECK(uniform.Lights[0].Data.z() == doctest::Approx(9.0f));
@@ -254,11 +183,11 @@ TEST_CASE("The forward pass records lit draws into its colour target against the
     // Two share material A (one bind), one uses B; one has no material set and one no mesh range.
     const HX::RenderInstance instances[] = { instance(0, 0), instance(1, 0), instance(1, 1), instance(0, 2),
                                              instance(9, 0) };
-    const HX::RenderLight lights[2] = {};
+    FakeDescriptorSet sceneLights;
 
     GraphFrameData frame = MakeFrame(1);
     frame.OpaqueInstances = instances;
-    frame.Lights          = lights;
+    frame.SceneLights     = &sceneLights;
     frame.Meshes          = meshes;
     frame.MaterialSets    = materials;
     frame.Positions       = &positions;
@@ -302,11 +231,12 @@ TEST_CASE("The forward pass records lit draws into its colour target against the
     CHECK(lit.DepthAttachment->LoadOp == RHI::LoadOp::Load); // reads the prepass depth
     CHECK(lit.DepthAttachment->Texture == cmd.Renderings[0].DepthAttachment->Texture);
 
-    CHECK(services.ForwardLightCounts == std::vector<int32_t>{ 2 });
+    CHECK(services.ForwardViewUploads == 1);
     // The last three draws are the forward ones: the instances with both a mesh and a material.
     const std::vector<uint32_t> forwardDraws(cmd.DrawnIndexCounts.end() - 3, cmd.DrawnIndexCounts.end());
     CHECK(forwardDraws == std::vector<uint32_t>{ 36, 120, 120 });
-    // Set 0 once, then set 1 only when the material changes: A, then B.
-    const std::vector<uint32_t> forwardSets(cmd.BoundSetIndices.end() - 3, cmd.BoundSetIndices.end());
-    CHECK(forwardSets == std::vector<uint32_t>{ 0, 1, 1 });
+    // The view's set 0 and the frame's lights at set 2 once, then set 1 only when the material
+    // changes: A, then B.
+    const std::vector<uint32_t> forwardSets(cmd.BoundSetIndices.end() - 4, cmd.BoundSetIndices.end());
+    CHECK(forwardSets == std::vector<uint32_t>{ 0, 2, 1, 1 });
 }

@@ -13,11 +13,16 @@ namespace Renderer
         uniform.View        = frame.View;
         uniform.ViewProj    = frame.Proj * frame.View;
         uniform.EyePosition = frame.EyePosition;
+        return uniform;
+    }
 
-        const size_t count = std::min(frame.Lights.size(), static_cast<size_t>(HedgehogEngine::MAX_LIGHTS_COUNT));
+    SceneLightsUniform MakeSceneLightsUniform(std::span<const HX::RenderLight> lights)
+    {
+        SceneLightsUniform uniform;
+        const size_t count = std::min(lights.size(), static_cast<size_t>(HedgehogEngine::MAX_LIGHTS_COUNT));
         for (size_t i = 0; i < count; ++i)
         {
-            const HX::RenderLight& light = frame.Lights[i];
+            const HX::RenderLight& light = lights[i];
             GpuLight& gpu = uniform.Lights[i];
             gpu.Position  = light.Position;
             gpu.Direction = light.Direction;
