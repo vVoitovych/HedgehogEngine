@@ -19,6 +19,7 @@ namespace Renderer
 namespace Editor
 {
     class EditorGui;
+    class ImGuiLayer;
 
     class EditorApplication
     {
@@ -52,11 +53,15 @@ namespace Editor
     private:
         std::unique_ptr<HedgehogEngine::Engine>   m_Context;
         std::unique_ptr<Renderer::Renderer> m_Renderer;
+        std::unique_ptr<ImGuiLayer>         m_ImGui;
         std::unique_ptr<EditorGui>          m_EditorGui;
 
-        // The render-graph path (RenderingSettings::GetUseRenderGraph): the scene extracted each
-        // frame, and the view that renders the editor camera to the window.
+        // The render-graph path (RenderingSettings::GetUseRenderGraph, RENDERING.md section 7): the
+        // scene extracted each frame, the scene view (the editor camera into the scene panel's
+        // target) and the result view (the editor's UI into the window, showing both panels). The
+        // game view is the scene's camera, redirected to the game panel's target.
         HX::RenderScene  m_RenderScene;
-        Renderer::ViewId m_EditorView = Renderer::INVALID_VIEW_ID;
+        Renderer::ViewId m_SceneView  = Renderer::INVALID_VIEW_ID;
+        Renderer::ViewId m_ResultView = Renderer::INVALID_VIEW_ID;
     };
 }

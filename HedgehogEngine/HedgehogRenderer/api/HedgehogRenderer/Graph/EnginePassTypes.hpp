@@ -9,14 +9,15 @@
 //   Shadow         slots: shadowMap                  writes shadowMap
 //   Forward        slots: color, depth, shadowMap    reads depth (depth test), samples shadowMap,
 //                  parameters: cullBackFaces (Flag)  writes color
-//   Ui             slots: target                     writes target
+//   Ui             slots: target                     writes target; samples the view's read
+//                                                    targets (GraphFrameData::UiSampledTargets)
 //
 // The declarations — slots, parameters, and every graph read and write — are final: they are what
 // the shipped assets and their C++ twins are held to. Shadow is declared by the shared phase
 // (SharedPhase.hpp) rather than by a view graph; Forward samples its output through an import.
-// DepthPrepass, Shadow and Forward record; Ui's body, which runs the application-supplied UI
-// callback, is still empty. Filling it in must not change its declaration; the equivalence tests
-// would catch it if it did.
+// Every pass records. Ui runs the application's UiCallback, or clears its target without one; the
+// targets it samples come from the frame context, so with none attached (the headless equivalence
+// tests) its declaration is exactly the asset's.
 namespace Renderer
 {
     void RegisterEnginePassTypes(PassBuilderRegistry& registry);

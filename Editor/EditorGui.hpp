@@ -23,6 +23,15 @@ namespace Editor
 
     enum class EditorMode { Edit, Play, Pause };
 
+    // What the scene and game panels show this frame: ImGui texture ids (nullptr: nothing to show)
+    // and, on the render-graph path, how many passes the last frame ran.
+    struct ViewportImages
+    {
+        void*  Scene          = nullptr;
+        void*  Game           = nullptr;
+        size_t GraphPassCount = 0;
+    };
+
     class EditorGui
     {
     public:
@@ -34,18 +43,21 @@ namespace Editor
         EditorGui(EditorGui&&)                 = delete;
         EditorGui& operator=(EditorGui&&)      = delete;
 
-        void Draw(HedgehogEngine::Engine& context, void* sceneViewTextureId);
+        void Draw(HedgehogEngine::Engine& context, const ViewportImages& images);
 
+        // A panel's size is 0x0 while its tab is hidden, so its view is dropped for the frame.
         uint32_t GetSceneViewWidth()    const { return m_SceneViewWidth; }
         uint32_t GetSceneViewHeight()   const { return m_SceneViewHeight; }
+        uint32_t GetGameViewWidth()     const { return m_GameViewWidth; }
+        uint32_t GetGameViewHeight()    const { return m_GameViewHeight; }
         bool     IsSceneViewHovered()   const { return m_SceneViewHovered; }
 
     private:
         // ── Panel content (drawn into dock areas) ────────────────────────────
-        void DrawPanelContent(PanelId panel, HedgehogEngine::Engine& context, void* sceneViewTextureId);
+        void DrawPanelContent(PanelId panel, HedgehogEngine::Engine& context);
         void DrawMainMenu(HedgehogEngine::Engine& context);
         void DrawToolbarContent();
-        void DrawSceneViewContent(void* sceneViewTextureId);
+        void DrawSceneViewContent();
         void DrawSceneHierarchy(HedgehogEngine::Engine& context);
         void DrawHierarchyNode(HedgehogEngine::Engine& context, ECS::Entity entity, int& index);
         void DrawInspector(HedgehogEngine::Engine& context);
@@ -74,6 +86,8 @@ namespace Editor
 
         uint32_t m_SceneViewWidth   = 0;
         uint32_t m_SceneViewHeight  = 0;
+        uint32_t m_GameViewWidth    = 0;
+        uint32_t m_GameViewHeight   = 0;
         bool     m_SceneViewHovered = false;
 
         std::optional<ECS::Entity>             m_SelectedEntity;
@@ -84,7 +98,7 @@ namespace Editor
         std::unique_ptr<PipelineWindow>          m_PipelineWindow;
         std::unique_ptr<ShaderWindow>            m_ShaderWindow;
 
-        // Non-owning pointer valid only during Draw(); used by DrawPanelContent lambdas
-        void* m_SceneViewTextureId = nullptr;
+        // Valid only during Draw(); read by the viewport panel.
+        ViewportImages m_ViewportImages;
     };
 }

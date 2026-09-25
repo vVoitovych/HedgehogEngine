@@ -24,7 +24,6 @@
 namespace Renderer
 {
     RenderQueue::RenderQueue(RHI::IRHIDevice&                  device,
-                             HW::Window&                       window,
                              const HedgehogSettings::Settings& settings,
                              ResourceManager&                  resourceManager,
                              const FS::FileSystemManager&      fileSystem)
@@ -33,7 +32,7 @@ namespace Renderer
         m_DepthPrePass  = std::make_unique<DepthPrePass>(device, resourceManager, fileSystem);
         m_ShadowmapPass = std::make_unique<ShadowmapPass>(device, settings, resourceManager, fileSystem);
         m_ForwardPass   = std::make_unique<ForwardPass>(device, resourceManager, fileSystem);
-        m_GuiPass       = std::make_unique<GuiPass>(window, device, resourceManager);
+        m_GuiPass       = std::make_unique<GuiPass>();
         m_PresentPass   = std::make_unique<PresentPass>();
     }
 
@@ -47,18 +46,7 @@ namespace Renderer
         m_DepthPrePass->Cleanup(device);
         m_ShadowmapPass->Cleanup(device);
         m_ForwardPass->Cleanup(device);
-        m_GuiPass->Cleanup(device);
         m_PresentPass->Cleanup();
-    }
-
-    void RenderQueue::BeginGui()
-    {
-        m_GuiPass->BeginFrame();
-    }
-
-    void RenderQueue::DiscardGui()
-    {
-        m_GuiPass->DiscardFrame();
     }
 
     void RenderQueue::Render(const HedgehogEngine::FrameData& frame,
@@ -69,7 +57,8 @@ namespace Renderer
                              RHI::IRHISemaphore&  imageAvailableSemaphore,
                              RHI::IRHISemaphore&  renderFinishedSemaphore,
                              uint32_t             frameIndex,
-                             const ResourceManager& resourceManager)
+                             const ResourceManager& resourceManager,
+                             const UiCallback&      ui)
     {
         uint32_t backBufferIndex = 0;
         {
@@ -106,7 +95,7 @@ namespace Renderer
                 RHI::ImageLayout::ColorAttachment,
                 RHI::ImageLayout::ShaderReadOnly);
 
-            m_GuiPass->Render(cmd, resourceManager);
+            m_GuiPass->Render(cmd, resourceManager, ui);
         }
 
         {
@@ -126,23 +115,10 @@ namespace Renderer
         m_ShadowmapPass->UpdateData(frame, frameIndex, settings);
     }
 
-    void RenderQueue::ResizeResources(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
-    {
-        // Window resize: only GuiPass framebuffer depends on swapchain/RHIColorBuffer size.
-        // DepthPrePass and ForwardPass are resized by ResizeSceneView when the panel size changes.
-        m_GuiPass->ResizeResources(device, resourceManager);
-    }
-
     void RenderQueue::ResizeSceneView(RHI::IRHIDevice& device, const ResourceManager& resourceManager)
     {
         m_DepthPrePass->ResizeResources(device, resourceManager);
         m_ForwardPass->ResizeResources(device, resourceManager);
-        m_GuiPass->RecreateSceneDescriptor(resourceManager);
-    }
-
-    void* RenderQueue::GetSceneViewTextureId() const
-    {
-        return m_GuiPass->GetSceneViewTextureId();
     }
 
     void RenderQueue::UpdateResources(RHI::IRHIDevice&                  device,

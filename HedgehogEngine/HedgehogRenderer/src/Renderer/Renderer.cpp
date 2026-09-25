@@ -17,6 +17,7 @@
 #include "FileSystem/api/FileSystemManager.hpp"
 
 #include "RHI/api/IRHIDevice.hpp"
+#include "RHI/api/IRHIGuiBackend.hpp"
 #include "RHI/api/IRHISyncPrimitive.hpp"
 #include "RHI/api/IRHISwapchain.hpp"
 #include "RHI/api/RHIDiagnostics.hpp"
@@ -59,7 +60,6 @@ namespace Renderer
         {
             m_RenderQueue = std::make_unique<RenderQueue>(
                 m_RHIContext->GetRHIDevice(),
-                window,
                 settings,
                 *m_ResourceManager,
                 fileSystem);
@@ -90,15 +90,49 @@ namespace Renderer
         m_RHIContext->Cleanup();
     }
 
-    void Renderer::BeginGui()
+    const RHI::IRHITexture& Renderer::GetSceneViewTexture() const
     {
-        assert(m_RenderQueue && "Renderer::BeginGui: this renderer was built without the legacy path (and ImGui).");
-        m_RenderQueue->BeginGui();
+        return m_ResourceManager->GetSceneColorBuffer();
     }
 
-    void* Renderer::GetSceneViewTextureId() const
+    std::unique_ptr<RHI::IRHIGuiBackend> Renderer::CreateGuiBackend(bool forRenderGraph) const
     {
-        return m_RenderQueue ? m_RenderQueue->GetSceneViewTextureId() : nullptr;
+        RHI::GuiBackendDesc desc;
+        desc.MinImageCount = HedgehogEngine::MAX_FRAMES_IN_FLIGHT;
+        desc.ImageCount    = HedgehogEngine::MAX_FRAMES_IN_FLIGHT;
+        desc.ColorFormat   = forRenderGraph ? m_RHIContext->GetRHISwapchain().GetFormat()
+                                            : m_ResourceManager->GetRHIColorBuffer().GetFormat();
+        return m_RHIContext->GetRHIDevice().CreateGuiBackend(desc);
+    }
+
+    void Renderer::WaitIdle() const
+    {
+        m_RHIContext->GetRHIDevice().WaitIdle();
+    }
+
+    void Renderer::SetCameraTargetOverride(uint64_t cameraSourceId, std::vector<std::string> targets)
+    {
+        m_FrameRenderer->GetViewManager().SetTargetOverride(cameraSourceId, std::move(targets));
+    }
+
+    RenderTargetResult Renderer::DeclareTarget(const RenderTargetDesc& desc)
+    {
+        return m_FrameRenderer->DeclareTarget(desc);
+    }
+
+    RenderTargetResult Renderer::ResizeTarget(std::string_view name, uint32_t width, uint32_t height)
+    {
+        return m_FrameRenderer->ResizeTarget(name, width, height);
+    }
+
+    RHI::IRHITexture* Renderer::GetTargetTexture(std::string_view name) const
+    {
+        return m_FrameRenderer->FindTargetTexture(name);
+    }
+
+    size_t Renderer::GetLastFramePassCount() const
+    {
+        return m_FrameRenderer->GetLastFramePassCount();
     }
 
     float Renderer::GetAspectRatio() const
@@ -148,16 +182,13 @@ namespace Renderer
         m_FrameRenderer->GetViewManager().DestroyView(id);
     }
 
-    void Renderer::RenderFrame(const HX::RenderScene& scene, const HedgehogSettings::Settings& settings)
+    void Renderer::RenderFrame(const HX::RenderScene& scene, const HedgehogSettings::Settings& settings,
+                               const UiCallback& ui)
     {
         HH_PROFILE_ZONE("RenderFrame");
         std::optional<ScopedCpuSample> sample;
         if (m_RenderQueue)
-        {
             sample.emplace(m_RenderQueue->GetFrameStats(), "RenderFrame(total)");
-            // The editor began an ImGui frame; nothing on this path draws it yet.
-            m_RenderQueue->DiscardGui();
-        }
 
         auto& device    = m_RHIContext->GetRHIDevice();
         auto& swapchain = m_RHIContext->GetRHISwapchain();
@@ -172,15 +203,13 @@ namespace Renderer
             m_RHIContext->RecreateSwapchain(m_Window);
             // The legacy resources follow too, so DrawFrame finds them sized for the new window.
             m_ResourceManager->ResizeFrameBufferSizeDependentResources(device, swapchain);
-            if (m_RenderQueue)
-                m_RenderQueue->ResizeResources(device, *m_ResourceManager);
             m_FrameRenderer->NotifySwapchainResized();
         }
 
         const FrameSync sync{ m_ThreadContext->GetCommandList(), m_ThreadContext->GetFence(),
                               m_ThreadContext->GetImageAvailableSemaphore(),
                               m_ThreadContext->GetRenderFinishedSemaphore(), m_ThreadContext->GetFrameIndex() };
-        m_FrameRenderer->Render(scene, m_ResourceManager->GetResourceRegistry(), settings, sync);
+        m_FrameRenderer->Render(scene, m_ResourceManager->GetResourceRegistry(), settings, ui, sync);
 
         m_ThreadContext->NextFrame();
         HH_PROFILE_FRAME();
@@ -188,7 +217,8 @@ namespace Renderer
 
     void Renderer::DrawFrame(const HedgehogEngine::FrameData& frameData,
                              HedgehogEngine::IResourceCatalog& catalog,
-                             HedgehogSettings::Settings&       settings)
+                             HedgehogSettings::Settings&       settings,
+                             const UiCallback&                 ui)
     {
         HH_PROFILE_ZONE("DrawFrame");
         assert(m_RenderQueue && "Renderer::DrawFrame: this renderer was built without the legacy path.");
@@ -205,15 +235,13 @@ namespace Renderer
 
         if (m_Window.IsResized())
         {
-            m_RenderQueue->DiscardGui();
-
             m_Window.ResetResizedFlag();
 
             device.WaitIdle();
             m_RHIContext->RecreateSwapchain(m_Window);
 
             m_ResourceManager->ResizeFrameBufferSizeDependentResources(device, swapchain);
-            m_RenderQueue->ResizeResources(device, *m_ResourceManager);
+            m_FrameRenderer->NotifySwapchainResized();
 
             return;
         }
@@ -234,12 +262,14 @@ namespace Renderer
             m_ThreadContext->GetImageAvailableSemaphore(),
             m_ThreadContext->GetRenderFinishedSemaphore(),
             frameIndex,
-            *m_ResourceManager);
+            *m_ResourceManager,
+            ui);
 
         m_ThreadContext->NextFrame();
 
-        // Apply pending scene view resize at end of frame so the current frame's
-        // ImGui draw data (which references the old descriptor) has already been submitted.
+        // Apply a pending scene view resize at the end of the frame, after this frame's UI (which
+        // shows the old scene image) has been recorded. The application sees the new texture through
+        // GetSceneViewTexture from the next frame on.
         if (m_DesiredSceneW > 0 && m_DesiredSceneH > 0)
         {
             const auto& sceneBuffer = m_ResourceManager->GetSceneColorBuffer();

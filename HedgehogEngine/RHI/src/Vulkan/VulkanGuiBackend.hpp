@@ -7,7 +7,6 @@
 
 namespace RHI
 {
-    class IRHIRenderPass;
     class VulkanDevice;
 
     class VulkanGuiBackend final : public IRHIGuiBackend
@@ -21,17 +20,16 @@ namespace RHI
         VulkanGuiBackend(VulkanGuiBackend&&)                 = delete;
         VulkanGuiBackend& operator=(VulkanGuiBackend&&)      = delete;
 
-        void            NewFrame() override;
-        void            Render(IRHICommandList& cmd, IRHIFramebuffer& framebuffer) override;
-        IRHIRenderPass& GetRenderPass() override;
-        void*           CreateTextureId(const IRHITexture& texture) override;
-        void            DestroyTextureId(void* id) override;
+        void  NewFrame() override;
+        void  Render(IRHICommandList& cmd, IRHITexture& target) override;
+        void* CreateTextureId(const IRHITexture& texture) override;
+        void  DestroyTextureId(void* id) override;
 
     private:
-        VulkanDevice&                   m_Device;
-        std::unique_ptr<IRHIRenderPass> m_RenderPass;
-        VkDescriptorPool                m_Pool    = VK_NULL_HANDLE;
-        VkSampler                       m_Sampler = VK_NULL_HANDLE;
+        VulkanDevice&    m_Device;
+        VkFormat         m_ColorFormat = VK_FORMAT_UNDEFINED; // the pipeline's; kept alive for its create info
+        VkDescriptorPool m_Pool        = VK_NULL_HANDLE;
+        VkSampler        m_Sampler     = VK_NULL_HANDLE;
     };
 
 } // namespace RHI

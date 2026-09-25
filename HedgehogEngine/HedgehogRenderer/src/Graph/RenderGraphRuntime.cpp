@@ -99,10 +99,12 @@ namespace Renderer
         {
             for (const CompileError& error : result.Errors)
                 LOGERROR(error.Message);
+            m_LastExecutedPassCount = 0;
             ResetForNextFrame();
             return false;
         }
 
+        m_LastExecutedPassCount = result.Graph.Passes.size();
         m_Executing = &description;
         for (const CompiledPass& pass : result.Graph.Passes)
         {

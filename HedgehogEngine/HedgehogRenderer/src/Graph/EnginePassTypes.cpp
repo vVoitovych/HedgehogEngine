@@ -15,11 +15,6 @@ namespace Renderer
 {
     namespace
     {
-        struct TargetPassData
-        {
-            RGTexture Target{};
-        };
-
         struct ForwardPassData
         {
             RGTexture                Color{};
@@ -29,22 +24,9 @@ namespace Renderer
             bool                     CullBackFaces = true;
         };
 
-        // Declares a pass whose only effect is writing one slot as a depth or color target.
-        template<RGTexture (RGPassBuilder::*Write)(RGTexture)>
-        void BuildSingleTargetPass(RenderGraphRuntime& graph, PassInvocation& invocation, const char* slot)
-        {
-            graph.AddPass<TargetPassData>(invocation.GetName(),
-                [&](RGPassBuilder& pass, TargetPassData& data)
-                {
-                    data.Target = (pass.*Write)(invocation.GetSlot(slot));
-                    invocation.SetSlot(slot, data.Target);
-                },
-                [](TargetPassData&, RHI::IRHICommandList&) {});
-        }
-
-        // What a depth-only engine pass keeps between setup and execute: its target, and pointers
+        // What a single-target engine pass keeps between setup and execute: its target, and pointers
         // to the runtime and frame context. Pointers and handles only - the arena never destroys it.
-        struct DepthOnlyPassData
+        struct TargetPassData
         {
             RGTexture                Target{};
             RenderGraphRuntime*      Graph   = nullptr;
@@ -94,8 +76,8 @@ namespace Renderer
         void AddDepthOnlyPass(RenderGraphRuntime& graph, PassInvocation& invocation, const char* slot,
                               ExecuteFn&& execute)
         {
-            graph.AddPass<DepthOnlyPassData>(invocation.GetName(),
-                [&](RGPassBuilder& pass, DepthOnlyPassData& data)
+            graph.AddPass<TargetPassData>(invocation.GetName(),
+                [&](RGPassBuilder& pass, TargetPassData& data)
                 {
                     data.Target  = pass.DepthTarget(invocation.GetSlot(slot));
                     data.Graph   = &graph;
@@ -107,7 +89,7 @@ namespace Renderer
 
         void BuildDepthPrepass(RenderGraphRuntime& graph, PassInvocation& invocation)
         {
-            AddDepthOnlyPass(graph, invocation, "depth", [](DepthOnlyPassData& data, RHI::IRHICommandList& cmd)
+            AddDepthOnlyPass(graph, invocation, "depth", [](TargetPassData& data, RHI::IRHICommandList& cmd)
             {
                 if (!data.Context)
                     return;
@@ -129,7 +111,7 @@ namespace Renderer
 
         void BuildShadow(RenderGraphRuntime& graph, PassInvocation& invocation)
         {
-            AddDepthOnlyPass(graph, invocation, "shadowMap", [](DepthOnlyPassData& data, RHI::IRHICommandList& cmd)
+            AddDepthOnlyPass(graph, invocation, "shadowMap", [](TargetPassData& data, RHI::IRHICommandList& cmd)
             {
                 if (!data.Context)
                     return;
@@ -153,9 +135,52 @@ namespace Renderer
             });
         }
 
+        // Clears target to opaque black: what the UI pass leaves when there is no UI to draw.
+        void ClearColorTarget(RHI::IRHICommandList& cmd, RHI::IRHITexture& target)
+        {
+            RHI::RenderingAttachment color;
+            color.Texture     = &target;
+            color.LoadOp      = RHI::LoadOp::Clear;
+            color.StoreOp     = RHI::StoreOp::Store;
+            color.Clear.Color = { 0.0f, 0.0f, 0.0f, 1.0f };
+
+            RHI::RenderingInfo info;
+            info.ColorAttachments = { color };
+            info.Width            = target.GetWidth();
+            info.Height           = target.GetHeight();
+            cmd.BeginRendering(info);
+            cmd.EndRendering();
+        }
+
+        // The application's UI into the target (RENDERING.md section 7): the pass runs the frame
+        // context's UiCallback and never draws anything itself. It samples the render targets the
+        // view reads, so the compiler orders their writers first and leaves them readable.
         void BuildUi(RenderGraphRuntime& graph, PassInvocation& invocation)
         {
-            BuildSingleTargetPass<&RGPassBuilder::ColorTarget>(graph, invocation, "target");
+            graph.AddPass<TargetPassData>(invocation.GetName(),
+                [&](RGPassBuilder& pass, TargetPassData& data)
+                {
+                    data.Context = graph.GetFrameContext();
+                    data.Graph   = &graph;
+                    if (data.Context && data.Context->Frame)
+                    {
+                        for (const RGTexture sampled : data.Context->Frame->UiSampledTargets)
+                            pass.SampleTexture(sampled);
+                    }
+                    data.Target = pass.ColorTarget(invocation.GetSlot("target"));
+                    invocation.SetSlot("target", data.Target);
+                },
+                [](TargetPassData& data, RHI::IRHICommandList& cmd)
+                {
+                    if (!data.Context)
+                        return;
+                    RHI::IRHITexture& target = *data.Graph->GetTexture(data.Target);
+                    const UiCallback& ui     = data.Context->Frame->Ui;
+                    if (ui)
+                        ui(cmd, target);
+                    else
+                        ClearColorTarget(cmd, target);
+                });
         }
 
         // Colour cleared to opaque black, drawn against the prepass depth without writing it.

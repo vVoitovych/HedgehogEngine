@@ -5,10 +5,10 @@
 namespace RHI
 {
     class IRHICommandList;
-    class IRHIFramebuffer;
-    class IRHIRenderPass;
     class IRHITexture;
 
+    // ColorFormat is the format of every texture Render() draws into: the backend's pipeline is
+    // built for it, so a target of another format needs another backend.
     struct GuiBackendDesc
     {
         uint32_t MinImageCount;
@@ -28,11 +28,9 @@ namespace RHI
 
         virtual void NewFrame() = 0;
 
-        // Executes a BeginRenderPass/RenderDrawData/EndRenderPass sequence.
-        virtual void Render(IRHICommandList& cmd, IRHIFramebuffer& framebuffer) = 0;
-
-        // Returns the render pass used internally so callers can create compatible framebuffers.
-        virtual IRHIRenderPass& GetRenderPass() = 0;
+        // Records the current ImGui draw data into target with dynamic rendering, clearing it to
+        // opaque black first. The caller transitions target to ColorAttachment beforehand.
+        virtual void Render(IRHICommandList& cmd, IRHITexture& target) = 0;
 
         // Registers a texture for use as ImTextureID. Caller owns the returned id.
         virtual void* CreateTextureId(const IRHITexture& texture) = 0;

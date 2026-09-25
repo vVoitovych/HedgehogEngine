@@ -80,7 +80,8 @@ namespace Renderer
     FrameRenderer::~FrameRenderer() = default;
 
     void FrameRenderer::Render(const HX::RenderScene& scene, const HR::ResourceRegistry& resources,
-                               const HedgehogSettings::Settings& settings, const FrameSync& sync)
+                               const HedgehogSettings::Settings& settings, const UiCallback& ui,
+                               const FrameSync& sync)
     {
         const uint32_t imageIndex = m_Swapchain.AcquireNextImage(sync.ImageAvailable);
         sync.Fence.Reset();
@@ -101,8 +102,13 @@ namespace Renderer
         // Filled completely before any pointer into them is taken.
         m_ViewFrames.clear();
         for (const View& view : views)
+        {
             m_ViewFrames.push_back(MakeViewFrame(view));
+            m_ViewFrames.back().Ui = ui;
+        }
         m_ViewContexts.assign(views.size(), GraphFrameContext{});
+        m_ViewSampledTargets.resize(views.size());
+        m_WrittenTargets.clear();
 
         const View*           shadowView  = SelectShadowView(views);
         const GraphFrameData* shadowFrame = shadowView ? &m_ViewFrames[shadowView - views.data()] : nullptr;
@@ -124,7 +130,7 @@ namespace Renderer
                 presenter = &view;
         }
 
-        bool hasViewport = false;
+        PresentSource presented = PresentSource::None;
         for (size_t i = 0; i < views.size(); ++i)
         {
             if (Presents(views[i]) && &views[i] != presenter)
@@ -134,15 +140,17 @@ namespace Renderer
                            "presents (RENDERING.md section 8).");
                 continue;
             }
-            const bool declared = DeclareView(graph, views[i], m_ViewFrames[i], m_ViewContexts[i], shared);
-            if (declared && &views[i] == presenter)
-                hasViewport = true;
+            const std::optional<PresentSource> source =
+                DeclareView(graph, views[i], m_ViewFrames[i], m_ViewContexts[i], shared);
+            if (source && &views[i] == presenter)
+                presented = *source;
         }
 
         if (!graph.Execute(sync.Cmd))
-            hasViewport = false;
+            presented = PresentSource::None;
+        m_LastFramePassCount = graph.GetLastExecutedPassCount();
 
-        Present(sync, imageIndex, hasViewport);
+        Present(sync, imageIndex, presented);
 
         m_Targets.EndFrame();
         m_Views.EndFrame();
@@ -212,18 +220,29 @@ namespace Renderer
         return frame;
     }
 
-    bool FrameRenderer::DeclareView(RenderGraphRuntime& graph, const View& view, GraphFrameData& frame,
-                                    GraphFrameContext& context, const SharedPhaseOutputs& shared)
+    std::optional<FrameRenderer::PresentSource> FrameRenderer::DeclareView(
+        RenderGraphRuntime& graph, const View& view, GraphFrameData& frame, GraphFrameContext& context,
+        const SharedPhaseOutputs& shared)
     {
         const GraphAsset* asset = m_Library.Find(view.Desc.GraphName);
         if (!asset)
         {
             ReportOnce("FrameRenderer: view " + std::to_string(view.Id) + " uses the unknown graph '"
                        + view.Desc.GraphName + "'; it is skipped.");
-            return false;
+            return std::nullopt;
         }
 
-        frame.SceneLights = shared.SceneLights;
+        // The targets this view reads, as the views before it wrote them this frame. One not
+        // written this frame (its view hidden or dropped) is not sampled.
+        std::vector<RGTexture>& sampled = m_ViewSampledTargets[static_cast<size_t>(&frame - m_ViewFrames.data())];
+        sampled.clear();
+        for (const std::string& read : view.Desc.Reads)
+        {
+            if (const auto written = m_WrittenTargets.find(read); written != m_WrittenTargets.end())
+                sampled.push_back(written->second);
+        }
+        frame.UiSampledTargets = sampled;
+        frame.SceneLights      = shared.SceneLights;
         context           = { &m_Services, &frame };
         graph.SetFrameContext(&context);
 
@@ -232,23 +251,36 @@ namespace Renderer
         graph.SetSizeReferences(resultExtent.Width, resultExtent.Height, swapchain.Width, swapchain.Height);
 
         // The view's targets, imported so its graph writes them in place.
+        PresentSource source = PresentSource::None;
         m_OutputTargets.clear();
         m_OutputContract.clear();
         for (size_t i = 0; i < view.ResolvedTargets.size(); ++i)
         {
-            // Main is presented through the viewport until a graph can write the swapchain's format.
-            const bool isMain = view.Desc.Targets[i] == RenderTargetRegistry::MAIN_TARGET;
-            const ResolvedRenderTarget target = isMain ? m_Targets.Resolve(VIEWPORT_TARGET) : view.ResolvedTargets[i];
+            // A graph that cannot write the swapchain's format presents main through the viewport.
+            const bool isMain      = view.Desc.Targets[i] == RenderTargetRegistry::MAIN_TARGET;
+            const bool viaViewport = isMain && i < asset->Outputs.size()
+                                  && asset->Outputs[i].Format != view.ResolvedTargets[i].Format;
+            const ResolvedRenderTarget target = viaViewport ? m_Targets.Resolve(VIEWPORT_TARGET)
+                                                            : view.ResolvedTargets[i];
             if (target.Status != RenderTargetStatus::Ok)
             {
                 ReportOnce("FrameRenderer: view " + std::to_string(view.Id) + ": " + target.Message);
-                return false;
+                return std::nullopt;
             }
-            const RGTexture imported = graph.ImportTexture(isMain ? VIEWPORT_TARGET : view.Desc.Targets[i],
+            if (isMain)
+                source = viaViewport ? PresentSource::Viewport : PresentSource::Main;
+            else if (view.Desc.Targets[i] == VIEWPORT_TARGET)
+                source = PresentSource::Viewport;
+
+            const RGTexture imported = graph.ImportTexture(viaViewport ? VIEWPORT_TARGET : view.Desc.Targets[i],
                                                            target.Format);
             graph.BindImportedTexture(imported, target.Texture);
             m_OutputTargets.push_back(imported);
-            m_OutputContract.push_back({ target.Format, RGSizePolicy::MakeRelativeToResult(1.0f) });
+            // The graph's output is the target itself: relative to the result, or, for main written
+            // directly, to the swapchain, which is the same size.
+            const RGSizePolicy size = isMain && !viaViewport ? RGSizePolicy::MakeRelativeToSwapchain(1.0f)
+                                                             : RGSizePolicy::MakeRelativeToResult(1.0f);
+            m_OutputContract.push_back({ target.Format, size });
         }
 
         const GraphInstantiationResult result = m_Instantiator.Instantiate(*asset, graph, &m_OutputContract,
@@ -260,18 +292,34 @@ namespace Renderer
             for (const GraphInstantiationError& error : result.Errors)
                 message += "\n  " + error.Message;
             ReportOnce(message);
-            return false;
+            return std::nullopt;
         }
-        return true;
+
+        // Record what this view wrote, for the views after it that read these targets. Its output
+        // slots are the last ones declared.
+        const std::vector<RGOutputSlot>& slots = graph.GetDescription().OutputSlots;
+        const size_t                     first = slots.size() - asset->Outputs.size();
+        for (size_t i = 0; i < asset->Outputs.size() && i < view.Desc.Targets.size(); ++i)
+        {
+            const RGOutputSlot& slot = slots[first + i];
+            if (slot.IsBound)
+                m_WrittenTargets[view.Desc.Targets[i]] = RGTexture{ slot.BoundResource, slot.BoundVersion };
+        }
+        return source;
     }
 
-    void FrameRenderer::Present(const FrameSync& sync, uint32_t imageIndex, bool hasViewport)
+    void FrameRenderer::Present(const FrameSync& sync, uint32_t imageIndex, PresentSource source)
     {
         RHI::IRHICommandList&      cmd      = sync.Cmd;
         RHI::IRHITexture&          image    = m_Swapchain.GetTexture(imageIndex);
         const ResolvedRenderTarget viewport = m_Targets.Resolve(VIEWPORT_TARGET);
 
-        if (hasViewport && viewport.Status == RenderTargetStatus::Ok)
+        if (source == PresentSource::Main)
+        {
+            // The graph wrote the swapchain image itself and left it a colour attachment.
+            cmd.TransitionTexture(image, RHI::ImageLayout::ColorAttachment, RHI::ImageLayout::Present);
+        }
+        else if (source == PresentSource::Viewport && viewport.Status == RenderTargetStatus::Ok)
         {
             // The graph left the viewport as a colour attachment, its last write.
             cmd.TransitionTexture(*viewport.Texture, RHI::ImageLayout::ColorAttachment, RHI::ImageLayout::TransferSrc);
@@ -282,7 +330,7 @@ namespace Renderer
         else
         {
             // Nothing rendered the viewport: present a cleared frame (RENDERING.md section 8).
-            ReportOnce("FrameRenderer: no view rendered the viewport this frame; presenting a cleared frame.");
+            ReportOnce("FrameRenderer: no view presented this frame; presenting a cleared frame.");
             RHI::RenderingAttachment clear;
             clear.Texture     = &image;
             clear.LoadOp      = RHI::LoadOp::Clear;
