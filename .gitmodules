@@ -18,4 +18,4 @@
 	url = https://github.com/vVoitovych/lua.git
 [submodule "ThirdParty/Tracy/tracy"]
 	path = ThirdParty/Tracy/tracy
-	url = https://github.com/wolfpld/tracy.git
+	url = https://github.com/vVoitovych/tracy.git
