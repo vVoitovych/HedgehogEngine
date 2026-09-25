@@ -45,12 +45,22 @@ namespace Renderer
     uint32_t GetValidationErrorCount();
     uint32_t GetValidationWarningCount();
 
+    // Which frame paths a Renderer builds. The editor builds both and picks one per frame with
+    // RenderingSettings::GetUseRenderGraph. RenderGraphOnly builds no legacy pass, and therefore
+    // no ImGui context: DrawFrame, BeginGui and the scene-view texture are unavailable.
+    enum class RendererPaths
+    {
+        LegacyAndRenderGraph,
+        RenderGraphOnly,
+    };
+
     class Renderer
     {
     public:
         Renderer(HW::Window& window,
                  const HedgehogSettings::Settings& settings,
-                 const FS::FileSystemManager& fileSystem);
+                 const FS::FileSystemManager& fileSystem,
+                 RendererPaths paths = RendererPaths::LegacyAndRenderGraph);
         ~Renderer();
 
         Renderer(const Renderer&)            = delete;

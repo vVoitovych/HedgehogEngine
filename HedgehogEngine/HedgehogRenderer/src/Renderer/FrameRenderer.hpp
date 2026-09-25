@@ -57,6 +57,11 @@ namespace Renderer
     // graph into this slot's runtime, execute it as one recorded stream, blit the viewport target
     // to the swapchain, submit and present. The fence wait and swapchain resize happen before, in
     // Renderer::RenderFrame, because the legacy resources resize with them.
+    //
+    // No graph writes the swapchain's format yet, so "main" is presented through the viewport: a
+    // view targeting main (a camera, as in a game build) renders into the viewport instead. Only
+    // one view may present. When several target main or the viewport, the highest priority one
+    // renders and the others are skipped with a warning (RENDERING.md section 8).
     class FrameRenderer
     {
     public:
@@ -74,6 +79,12 @@ namespace Renderer
 
         ViewManager& GetViewManager() { return m_Views; }
 
+        // For a renderer built without the legacy path, whose ForwardPass would do this.
+        void ProvideMaterialLayout(HR::ResourceRegistry& registry)
+        {
+            m_Services.ProvideMaterialLayout(m_Device, registry);
+        }
+
         // The swapchain was recreated; "main" and swapchain-relative targets follow at this
         // frame's end.
         void NotifySwapchainResized() { m_Targets.NotifySwapchainResized(); }
@@ -89,6 +100,7 @@ namespace Renderer
         bool           DeclareView(RenderGraphRuntime& graph, const View& view, GraphFrameData& frame,
                                    GraphFrameContext& context, const SharedPhaseOutputs& shared);
         void           Present(const FrameSync& sync, uint32_t imageIndex, bool hasViewport);
+        static bool    Presents(const View& view);
         void           ReportOnce(const std::string& message);
 
         RHI::IRHIDevice&    m_Device;

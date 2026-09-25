@@ -1,4 +1,5 @@
 #include "Application.hpp"
+#include "GameMode.hpp"
 
 #include "HedgehogRenderer/Renderer.hpp"
 #include "Logger/api/Logger.hpp"
@@ -11,6 +12,7 @@ namespace
 {
     inline constexpr uint32_t DEFAULT_SMOKE_TEST_FRAMES  = 120;
     inline constexpr uint32_t DEFAULT_BENCHMARK_FRAMES   = 600;
+    inline constexpr uint32_t DEFAULT_GAME_MODE_FRAMES   = 120;
     inline constexpr uint32_t BENCHMARK_WARMUP_FRAMES    = 120;
 
     // Returns the frame count if the flag was passed (with an optional numeric
@@ -85,6 +87,11 @@ int main(int argc, char* argv[])
         argc, argv, "--smoke-test", DEFAULT_SMOKE_TEST_FRAMES);
     if (smokeTestFrames > 0)
         return RunSmokeTest(smokeTestFrames);
+
+    const uint32_t gameModeFrames = ParseFrameCountFlag(
+        argc, argv, "--game-mode", DEFAULT_GAME_MODE_FRAMES);
+    if (gameModeFrames > 0)
+        return Editor::RunGameMode(gameModeFrames);
 
     const uint32_t benchmarkFrames = ParseFrameCountFlag(
         argc, argv, "--benchmark", DEFAULT_BENCHMARK_FRAMES);
