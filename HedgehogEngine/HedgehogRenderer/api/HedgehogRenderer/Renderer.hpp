@@ -1,11 +1,14 @@
 #pragma once
 
+#include "HedgehogRenderer/Graph/GraphAsset.hpp"
+#include "HedgehogRenderer/Graph/PassBuilderRegistry.hpp"
 #include "HedgehogRenderer/Graph/UiCallback.hpp"
 #include "HedgehogRenderer/Views/View.hpp"
 
 #include "RHI/api/RHITypes.hpp"
 
 #include <cstdint>
+#include <filesystem>
 #include <functional>
 #include <memory>
 #include <string>
@@ -121,6 +124,14 @@ namespace Renderer
         // Every graph asset a view can name (a CameraComponent's GraphName), in sorted order: each
         // "*.graph" file in the engine's graph directory, including files added while running.
         const std::vector<std::string>& GetGraphNames() const;
+
+        // For tools that show graph assets (the editor's render graph editor). The last known-good
+        // asset of a graph, or nullptr if it has never loaded; the file it was registered from, or
+        // an empty path; and a registered pass type's slots and parameters, or nullptr. A hot reload
+        // changes the asset in place, so compare it each frame rather than keeping a copy as current.
+        const GraphAsset*     FindGraphAsset(std::string_view name) const;
+        std::filesystem::path GetGraphFile(std::string_view name) const;
+        const PassTypeInfo*   FindPassType(std::string_view type) const;
 
     private:
         HW::Window& m_Window;

@@ -51,6 +51,9 @@ namespace Renderer
         // Why the most recent load of name failed; empty if it succeeded or name is unknown.
         [[nodiscard]] std::string_view GetLastError(std::string_view name) const;
 
+        // The file name was registered from; empty if name is unknown.
+        [[nodiscard]] std::filesystem::path GetFile(std::string_view name) const;
+
         // Every registered name in sorted order, whether or not it has a known-good asset.
         [[nodiscard]] const std::vector<std::string>& GetNames() const { return m_Names; }
 
