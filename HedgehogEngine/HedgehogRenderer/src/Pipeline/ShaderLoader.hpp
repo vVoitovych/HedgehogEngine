@@ -38,7 +38,7 @@ class ShaderLoader
 {
 public:
     // Load a .shader file and all assets it references (layout, vertex desc, SPIR-V).
-    // shaderVirtualPath must be a virtual path, e.g. "engine://HedgehogEngine/.../ForwardPass.shader".
+    // shaderVirtualPath must be a virtual path, e.g. "engine://HedgehogEngine/.../GraphForward.shader".
     static ShaderPipelineDesc Load(RHI::IRHIDevice& device,
                                    const std::string& shaderVirtualPath,
                                    const FS::FileSystemManager& fileSystem);

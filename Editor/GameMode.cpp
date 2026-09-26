@@ -44,8 +44,7 @@ namespace Editor
             if (!scenePath || !engineContext.GetSceneManager().LoadScene(scenePath->string()))
                 LOGWARNING("Game mode: could not load '", GAME_SCENE, "'; rendering an empty scene.");
 
-            Renderer::Renderer renderer(engine.GetWindowContext().GetWindow(), settings, fileSystem,
-                                        Renderer::RendererPaths::RenderGraphOnly);
+            Renderer::Renderer renderer(engine.GetWindowContext().GetWindow(), settings, fileSystem);
 
             HX::RenderScene          scene;
             HX::MeshBoundsCache      meshBounds;

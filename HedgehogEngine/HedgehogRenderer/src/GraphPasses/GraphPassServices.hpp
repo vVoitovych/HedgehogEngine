@@ -59,8 +59,7 @@ namespace Renderer
         void BeginFrame(uint32_t frameIndex);
 
         // Gives the resource registry the material layout (the forward shader's set 1) to allocate
-        // material sets from. The legacy ForwardPass does this when the legacy path is built; a
-        // renderer built with the graph path only calls this instead.
+        // material sets from.
         void ProvideMaterialLayout(RHI::IRHIDevice& device, HR::ResourceRegistry& registry) const;
 
         const RHI::IRHIPipeline&      GetPipeline(EnginePipeline pipeline) const override;

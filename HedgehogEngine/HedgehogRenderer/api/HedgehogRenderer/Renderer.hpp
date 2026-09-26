@@ -43,7 +43,6 @@ namespace Renderer
     class FrameRenderer;
     class RHIContext;
     class ResourceManager;
-    class RenderQueue;
 
     // Vulkan validation-layer diagnostics, safe to query even after the Renderer
     // is destroyed (teardown errors such as leaked objects are still counted).
@@ -51,24 +50,12 @@ namespace Renderer
     uint32_t GetValidationErrorCount();
     uint32_t GetValidationWarningCount();
 
-    // Which frame paths a Renderer builds. The editor and --game-mode build RenderGraphOnly and
-    // render with RenderFrame. LegacyAndRenderGraph also builds the legacy passes behind DrawFrame,
-    // which nothing calls any more; they are compiled until they are deleted. The renderer never
-    // creates a UI context on either path; the application owns its UI and records it through a
-    // UiCallback.
-    enum class RendererPaths
-    {
-        LegacyAndRenderGraph,
-        RenderGraphOnly,
-    };
-
     class Renderer
     {
     public:
         Renderer(HW::Window& window,
                  const HedgehogSettings::Settings& settings,
-                 const FS::FileSystemManager& fileSystem,
-                 RendererPaths paths = RendererPaths::LegacyAndRenderGraph);
+                 const FS::FileSystemManager& fileSystem);
         ~Renderer();
 
         Renderer(const Renderer&)            = delete;
@@ -141,7 +128,6 @@ namespace Renderer
 
         std::unique_ptr<RHIContext>      m_RHIContext;
         std::unique_ptr<ResourceManager> m_ResourceManager;
-        std::unique_ptr<RenderQueue>     m_RenderQueue;
         std::unique_ptr<FrameRenderer>   m_FrameRenderer;
 
         uint32_t m_DesiredSceneW = 0;

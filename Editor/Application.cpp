@@ -107,8 +107,7 @@ namespace Editor
         m_Renderer  = std::make_unique<Renderer::Renderer>(
             m_Context->GetWindowContext().GetWindow(),
             engineContext.GetSettings(),
-            engineContext.GetFileSystem(),
-            Renderer::RendererPaths::RenderGraphOnly);
+            engineContext.GetFileSystem());
         m_ImGui     = std::make_unique<ImGuiLayer>(m_Context->GetWindowContext().GetWindow());
         m_EditorGui = std::make_unique<EditorGui>(*m_Context);
 

@@ -79,7 +79,7 @@ namespace Renderer
 
         ViewManager& GetViewManager() { return m_Views; }
 
-        // For a renderer built without the legacy path, whose ForwardPass would do this.
+        // Gives the resource registry the forward shader's material layout (set 1).
         void ProvideMaterialLayout(HR::ResourceRegistry& registry)
         {
             m_Services.ProvideMaterialLayout(m_Device, registry);

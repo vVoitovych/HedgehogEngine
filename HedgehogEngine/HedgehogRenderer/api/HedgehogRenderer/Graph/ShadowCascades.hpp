@@ -29,7 +29,7 @@ namespace Renderer
 
     // Splits the view frustum into frame.ShadowCascadeCount cascades (clamped to 1..4) with the
     // practical split scheme, fits a light-space ortho box around each, and tiles them into a
-    // shadowMapSize-square map. Pure: the same math as the legacy ShadowmapPass, so both paths
-    // produce the same cascades.
+    // shadowMapSize-square map. Pure: the same math the deleted legacy ShadowmapPass used, so the
+    // cascades did not change when it was removed.
     [[nodiscard]] ShadowCascades ComputeShadowCascades(const GraphFrameData& frame, uint32_t shadowMapSize);
 }

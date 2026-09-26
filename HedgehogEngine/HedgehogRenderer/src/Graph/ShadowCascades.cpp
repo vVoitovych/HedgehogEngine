@@ -7,7 +7,7 @@ namespace Renderer
 {
     namespace
     {
-        // Cascade tiles within the map, for each cascade count 1..4 (same layout as ShadowmapPass).
+        // Cascade tiles within the map, for each cascade count 1..4 (the legacy shadow pass's layout).
         void FillViewports(ShadowCascades& cascades, float size)
         {
             const float half = size / 2.0f;
