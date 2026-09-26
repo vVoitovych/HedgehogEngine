@@ -8,7 +8,7 @@ project "RenderGraphTest"
     -- its own — only RHI's header-only enums/structs (RHI::Format, IRHIDevice/IRHITexture as
     -- pure interfaces — a device is never instantiated here) and Logger. Compiling its sources
     -- directly, rather than linking the full HedgehogRenderer static lib, keeps this test
-    -- genuinely headless: no Vulkan SDK, no GLFW, no ImGui, and only one DLL to copy. The graph
+    -- genuinely headless: no Vulkan SDK, no GLFW, no ImGui, and only one DLL to load. The graph
     -- asset parser adds yaml-cpp, a static lib, so that stays true.
     files
     {
@@ -42,12 +42,12 @@ project "RenderGraphTest"
         'HH_GRAPH_ASSET_DIR="' .. path.getabsolute("../assets/Graphs") .. '"'
     }
 
-    -- HedgehogMath (a DLL, copied here by its own post-build step) for the RenderScene the
+    -- HedgehogMath (a DLL, built into the same output directory) for the RenderScene the
     -- view tests build views from.
     links { "Logger", "yaml-cpp", "HedgehogMath" }
 
-    targetdir ("../../../Binaries/" .. OutputDir .. "/%{prj.name}")
-    objdir    ("../../../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")
+    targetdir (BinariesDir)
+    objdir    (IntermediatesDir)
 
     filter "system:windows"
         systemversion "latest"

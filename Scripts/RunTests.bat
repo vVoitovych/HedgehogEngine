@@ -28,14 +28,14 @@ set FAILED=0
 for %%T in (HedgehogMathTest FileSystemTest ECSTest EcsSerializationTest ContentLoaderTest HedgehogExtractTest RenderGraphTest) do (
     echo.
     echo === Running %%T ^(%CONFIG%^) ===
-    if exist "%BINDIR%\%%T\%%T.exe" (
-        "%BINDIR%\%%T\%%T.exe"
+    if exist "%BINDIR%\%%T.exe" (
+        "%BINDIR%\%%T.exe"
         if errorlevel 1 (
             echo [FAILED] %%T
             set /a FAILED+=1
         )
     ) else (
-        echo [FAILED] %%T.exe not found in %BINDIR%\%%T
+        echo [FAILED] %%T.exe not found in %BINDIR%
         set /a FAILED+=1
     )
 )

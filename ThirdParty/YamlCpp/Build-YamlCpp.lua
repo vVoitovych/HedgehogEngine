@@ -12,8 +12,8 @@ project "yaml-cpp"
     "%{IncludeDir.yaml_cpp}"
    }
 
-   targetdir ("../../Binaries/" .. OutputDir .. "/%{prj.name}")
-   objdir ("../../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")
+   targetdir (IntermediatesDir)
+   objdir    (IntermediatesDir)
 
     warnings "Off" 
 

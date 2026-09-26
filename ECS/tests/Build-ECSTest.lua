@@ -17,8 +17,8 @@ project "ECSTest"
         "ECS"
     }
 
-    targetdir ("../../Binaries/" .. OutputDir .. "/%{prj.name}")
-    objdir    ("../../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")
+    targetdir (BinariesDir)
+    objdir    (IntermediatesDir)
 
     filter "system:windows"
         systemversion "latest"

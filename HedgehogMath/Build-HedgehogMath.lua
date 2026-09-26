@@ -9,24 +9,8 @@ project "HedgehogMath"
 
    defines { "HEDGEHOG_MATH_EXPORTS" }
 
-   targetdir ("../Binaries/" .. OutputDir .. "/%{prj.name}")
-   objdir ("../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")
-
-   postbuildcommands
-   {
-      ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/Editor"),
-      ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/Editor/"),
-      ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/HedgehogMathTest"),
-      ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/HedgehogMathTest/"),
-      ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/EcsSerializationTest"),
-      ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/EcsSerializationTest/"),
-      ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/ContentLoaderTest"),
-      ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/ContentLoaderTest/"),
-      ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/HedgehogExtractTest"),
-      ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/HedgehogExtractTest/"),
-      ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/RenderGraphTest"),
-      ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/RenderGraphTest/")
-   }
+   targetdir (BinariesDir)
+   objdir    (IntermediatesDir)
 
    filter "system:windows"
        systemversion "latest"

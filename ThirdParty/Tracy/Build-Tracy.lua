@@ -7,8 +7,8 @@ project "Tracy"
 
     includedirs { "tracy/public" }
 
-    targetdir ("../../Binaries/" .. OutputDir .. "/%{prj.name}")
-    objdir ("../../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")
+    targetdir (IntermediatesDir)
+    objdir    (IntermediatesDir)
 
     filter "system:windows"
         systemversion "latest"

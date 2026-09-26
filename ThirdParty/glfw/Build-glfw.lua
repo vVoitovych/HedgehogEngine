@@ -2,8 +2,8 @@ project "glfw"
     kind "SharedLib"
     language "C"
 
-    targetdir ("../../Binaries/" .. OutputDir .. "/%{prj.name}")
-    objdir ("../../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")
+    targetdir (BinariesDir)
+    objdir    (IntermediatesDir)
 
     files
     {
@@ -60,14 +60,6 @@ project "glfw"
             "gdi32",
             "user32",
             "shell32"
-        }
-
-        postbuildcommands
-        {
-            ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/Editor"),
-            ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/Editor/"),
-            ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/HedgehogExtractTest"),
-            ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/HedgehogExtractTest/")
         }
 
    filter "configurations:Debug"

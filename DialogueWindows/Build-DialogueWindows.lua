@@ -23,15 +23,8 @@ project "DialogueWindows"
       "tinyfiledialogs"
    }
 
-   targetdir ("../Binaries/" .. OutputDir .. "/%{prj.name}")
-   objdir ("../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")
-
-   -- Copy the DLL next to the Editor executable so it is found at runtime.
-   postbuildcommands
-   {
-      "{MKDIR} %{wks.location}Binaries/%{cfg.system}-%{cfg.architecture}/%{cfg.buildcfg}/Editor",
-      "{COPYFILE} %{cfg.buildtarget.abspath} %{wks.location}Binaries/%{cfg.system}-%{cfg.architecture}/%{cfg.buildcfg}/Editor/%{cfg.buildtarget.name}"
-   }
+   targetdir (BinariesDir)
+   objdir    (IntermediatesDir)
 
    filter "system:windows"
       systemversion "latest"

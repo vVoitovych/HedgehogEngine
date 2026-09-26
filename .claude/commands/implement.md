@@ -45,7 +45,7 @@ FINAL VERIFICATION (after the last step, before declaring COMPLETE):
    Scripts\RunTests.bat Debug
 2. If the plan touched HedgehogRenderer, RHI, shaders, or anything else on the
    GPU path, also run the renderer smoke test from the repo root:
-   Binaries\windows-x86_64\Debug\Editor\Editor.exe --smoke-test
+   Binaries\windows-x86_64\Debug\Editor.exe --smoke-test
    It renders 120 frames and exits nonzero on any Vulkan validation error.
 3. Record the results in workflow/progress.md under "## Verification".
    A failing test or smoke test is a blocker: fix it, or record it under

@@ -26,13 +26,12 @@ namespace FS
     std::filesystem::path GetEngineRootDirectory()
     {
         const std::filesystem::path exeDir = GetExecutableDirectory();
-        // Binary layout: Binaries/Windows-x64/<Config>/<Project>/exe
-        // Walk up 4 levels to reach the repo root.
-        const std::filesystem::path root =
-            exeDir.parent_path().parent_path().parent_path().parent_path();
-        assert(std::filesystem::exists(root) &&
-               "Engine root not found — binary must be 4 levels deep "
-               "(Binaries/Windows-x64/<Config>/<Project>/)");
+        // Binary layout: Binaries/<Platform>/<Config>/exe
+        // Walk up 3 levels to reach the repo root.
+        const std::filesystem::path root = exeDir.parent_path().parent_path().parent_path();
+        assert(std::filesystem::exists(root / "Assets") &&
+               "Engine root not found — the executable must be 3 levels deep "
+               "(Binaries/<Platform>/<Config>/)");
         return root;
     }
 }
