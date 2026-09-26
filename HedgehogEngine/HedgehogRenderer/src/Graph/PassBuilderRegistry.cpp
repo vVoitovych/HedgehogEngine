@@ -1,5 +1,6 @@
 #include "HedgehogRenderer/Graph/PassBuilderRegistry.hpp"
 
+#include <algorithm>
 #include <cassert>
 
 namespace Renderer
@@ -14,5 +15,15 @@ namespace Renderer
     {
         const auto it = m_Types.find(std::string(type));
         return it != m_Types.end() ? &it->second : nullptr;
+    }
+
+    std::vector<std::string> PassBuilderRegistry::GetTypeNames() const
+    {
+        std::vector<std::string> names;
+        names.reserve(m_Types.size());
+        for (const auto& [name, info] : m_Types)
+            names.push_back(name);
+        std::ranges::sort(names);
+        return names;
     }
 }
