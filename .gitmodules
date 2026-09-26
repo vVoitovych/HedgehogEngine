@@ -19,3 +19,6 @@
 [submodule "ThirdParty/Tracy/tracy"]
 	path = ThirdParty/Tracy/tracy
 	url = https://github.com/vVoitovych/tracy.git
+[submodule "ThirdParty/ImGuiNodeEditor/imgui-node-editor"]
+	path = ThirdParty/ImGuiNodeEditor/imgui-node-editor
+	url = https://github.com/vVoitovych/imgui-node-editor.git

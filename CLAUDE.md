@@ -179,4 +179,4 @@ Everything else in the renderer (the RHI-backed render passes) has no unit tests
 
 ### Third-Party Dependencies (git submodules)
 
-glfw, ImGui, yaml-cpp, tinygltf, doctest, Lua — all under `ThirdParty/`. Vulkan SDK headers/libs are also under `ThirdParty/vulkan/`.
+glfw, ImGui, imgui-node-editor (the Editor's render graph canvas), yaml-cpp, tinygltf, doctest, Lua, Tracy — all under `ThirdParty/`, each pinned to a commit of a fork under `vVoitovych`. The imgui-node-editor fork carries a small patch for the ImGui version in use; update it there, not in the submodule's working tree. Vulkan SDK headers/libs are also under `ThirdParty/vulkan/`.
