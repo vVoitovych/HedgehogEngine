@@ -93,7 +93,7 @@ Editor (ConsoleApp)
         └── RHI             (static lib) → Vulkan (Volk + VMA)
 ```
 
-**The renderer is being rewritten.** `RENDERING.md` at the repository root is the design: a camera-and-view architecture where a `CameraComponent` carries scene data, a `View` is the render request, and each view owns a render graph. Every frame now renders through it (see *Rendering a frame* below); the legacy fixed-pass structures (`RenderQueue`, the six passes, `ResourceManager`'s textures) remain compiled but unused until they are deleted. Epic [HE-63](https://viktoravoitovych.atlassian.net/browse/HE-63) lands it as 28 sub-1000-line pull requests.
+**The renderer is being rewritten.** `RENDERING.md` at the repository root is the design: a camera-and-view architecture where a `CameraComponent` carries scene data, a `View` is the render request, and each view owns a render graph. Every frame now renders through it (see *Rendering a frame* below), and the legacy fixed-pass renderer is deleted. Epic [HE-63](https://viktoravoitovych.atlassian.net/browse/HE-63) lands it as 28 sub-1000-line pull requests.
 
 ### Key Modules
 
@@ -131,7 +131,6 @@ HedgehogRenderer/
     ├── Graph/                    ← the render graph, graph assets, engine pass types
     ├── GraphPasses/              ← GraphPassServices: pipelines and uniform rings for the passes
     ├── Views/, Targets/, Frame/  ← ViewManager and culling, RenderTargetRegistry, SharedPhase
-    ├── ResourceManager/          ← legacy GPU textures; owns the ResourceRegistry
     ├── ResourceRegistry/         ← mesh/material GPU buffers and descriptor sets
     └── Pipeline/, Profiling/     ← .shader/.pl loading; FrameStats and Tracy zones
 ```
@@ -145,9 +144,9 @@ Every frame goes through the render graph: the Editor (and `--game-mode`) builds
 
 Graph passes (`assets/Graphs/*.graph`, pass types in `EnginePassTypes`): the shared phase's **Shadow** (the cascaded shadow atlas, once per frame), then per view **DepthPrepass** → **Forward** (lit, samples the atlas) → **Gizmo** (scene view only: editor-layer bounds), and the result view's **Ui** (the application's `UiCallback` into `main`). Views are culled by layer mask and frustum.
 
-What is left of the legacy fixed-pass path is being deleted: `Renderer::DrawFrame` is an inert stub that asserts, and `ResourceManager` still allocates the legacy textures. Every legacy pass and `RenderQueue` are gone; render order comes from the graph compiler's topological sort, and `FrameRenderer` owns the per-frame command lists and synchronization objects.
+The legacy fixed-pass renderer is gone: `DrawFrame`, every legacy pass, `RenderQueue` and `ResourceManager` with its textures. Render order comes from the graph compiler's topological sort, render targets are either pooled graph transients or view-owned targets in the render-target registry, the `Renderer` owns the mesh/material `ResourceRegistry` directly, and `FrameRenderer` owns the per-frame command lists and synchronization objects. `Renderer.hpp`'s public surface is `RenderFrame`, `SyncResources`, `Cleanup`, the frame-stats pair and the view accessors (`CreateView`/`UpdateView`/`DestroyView`, `SetCameraTargetOverride`, `DeclareTarget`/`ResizeTarget`/`GetTargetTexture`, `GetLastFramePassCount`).
 
-**ImGui belongs to the Editor, never the renderer.** `Editor/ImGuiLayer` owns the context, the GLFW platform backend and the RHI GUI backend (`IRHIGuiBackend`, dynamic rendering into any texture of one colour format, created with `Renderer::CreateGuiBackend` for the swapchain's format). The result view's `Ui` pass hands the editor its colour target through a `UiCallback`. `HedgehogRenderer` has no ImGui include path or link, so it cannot include an ImGui header.
+**ImGui belongs to the Editor, never the renderer.** `Editor/ImGuiLayer` owns the context, the GLFW platform backend and the RHI GUI backend (`IRHIGuiBackend`, dynamic rendering into any texture of one colour format, created in the `Renderer`'s `DeviceReadyCallback`, which hands the application the device and the swapchain's format once at construction). The result view's `Ui` pass hands the editor its colour target through a `UiCallback`. `HedgehogRenderer` has no ImGui include path or link, so it cannot include an ImGui header.
 
 ### Project Configuration Files
 

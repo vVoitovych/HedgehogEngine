@@ -104,11 +104,11 @@ namespace Editor
         // Nothing to resize: the renderer below reads these values when it creates its resources.
         settings.CleanDirtyState();
 
-        m_Renderer  = std::make_unique<Renderer::Renderer>(
-            m_Context->GetWindowContext().GetWindow(),
-            engineContext.GetSettings(),
-            engineContext.GetFileSystem());
-        m_ImGui     = std::make_unique<ImGuiLayer>(m_Context->GetWindowContext().GetWindow());
+        // ImGui's context first: the renderer hands it the device to build its GUI renderer on.
+        m_ImGui    = std::make_unique<ImGuiLayer>(m_Context->GetWindowContext().GetWindow());
+        m_Renderer = std::make_unique<Renderer::Renderer>(
+            m_Context->GetWindowContext().GetWindow(), engineContext.GetFileSystem(),
+            [this](const Renderer::RendererDevice& device) { m_ImGui->CreateBackend(device); });
         m_EditorGui = std::make_unique<EditorGui>(*m_Context);
 
         // The panels' targets: zero-sized until their tabs are first drawn.
@@ -191,9 +191,9 @@ namespace Editor
     {
         const float dt = GetFrameTime();
         m_Context->GetWindowContext().HandleInput();
-        m_Context->UpdateContext(dt, m_Renderer->GetAspectRatio());
+        m_Context->UpdateContext(dt, GetSceneAspectRatio());
 
-        m_ImGui->BeginFrame(*m_Renderer);
+        m_ImGui->BeginFrame();
         ViewportImages images;
         images.Scene          = m_ImGui->GetTextureId(SCENE_TARGET, m_Renderer->GetTargetTexture(SCENE_TARGET));
         images.Game           = m_ImGui->GetTextureId(GAME_TARGET, m_Renderer->GetTargetTexture(GAME_TARGET));
@@ -294,9 +294,24 @@ namespace Editor
             LOGWARNING("Failed to persist engine settings on shutdown.");
         }
 
-        m_ImGui->Shutdown(*m_Renderer);
+        m_ImGui->Shutdown();
         m_Renderer->Cleanup();
         m_Context->Cleanup();
+    }
+
+    // The flycam's aspect: its scene panel's, or the window's while the panel has no size yet.
+    float EditorApplication::GetSceneAspectRatio() const
+    {
+        uint32_t width  = m_EditorGui->GetSceneViewWidth();
+        uint32_t height = m_EditorGui->GetSceneViewHeight();
+        if (width == 0 || height == 0)
+        {
+            int windowWidth = 0, windowHeight = 0;
+            m_Context->GetWindowContext().GetWindow().GetFramebufferSize(windowWidth, windowHeight);
+            width  = static_cast<uint32_t>(std::max(windowWidth, 1));
+            height = static_cast<uint32_t>(std::max(windowHeight, 1));
+        }
+        return static_cast<float>(width) / static_cast<float>(height);
     }
 
     float EditorApplication::GetFrameTime()

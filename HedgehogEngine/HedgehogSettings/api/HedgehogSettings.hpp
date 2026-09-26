@@ -45,9 +45,10 @@ namespace HedgehogSettings
         [[nodiscard]] HEDGEHOG_SETTINGS_API bool Save(const std::string& virtualPath,
                                                       const FS::FileSystemManager& fileSystem) const;
 
-        // "Do the renderer's GPU resources need rebuilding?" — not "has any setting changed".
-        // Renderer::DrawFrame gates resource recreation on this, so purely cosmetic settings
-        // (layer names) deliberately do not participate. Query those sub-objects directly.
+        // "Would a renderer's settings-sized GPU resources need rebuilding?" — not "has any setting
+        // changed", so purely cosmetic settings (layer names) deliberately do not participate. Query
+        // those sub-objects directly. The render graph reads the settings every frame, so nothing in
+        // the renderer consults this today.
         HEDGEHOG_SETTINGS_API bool IsDirty() const;
         HEDGEHOG_SETTINGS_API void CleanDirtyState();
 

@@ -3,7 +3,10 @@
 #include "HedgehogRenderer/Graph/UiCallback.hpp"
 #include "HedgehogRenderer/Views/View.hpp"
 
+#include "RHI/api/RHITypes.hpp"
+
 #include <cstdint>
+#include <functional>
 #include <memory>
 
 namespace HW
@@ -23,7 +26,6 @@ namespace FS
 
 namespace HedgehogEngine
 {
-    struct FrameData;
     class IResourceCatalog;
 }
 
@@ -32,9 +34,14 @@ namespace HX
     struct RenderScene;
 }
 
+namespace HR
+{
+    class ResourceRegistry;
+}
+
 namespace RHI
 {
-    class IRHIGuiBackend;
+    class IRHIDevice;
     class IRHITexture;
 }
 
@@ -42,7 +49,6 @@ namespace Renderer
 {
     class FrameRenderer;
     class RHIContext;
-    class ResourceManager;
 
     // Vulkan validation-layer diagnostics, safe to query even after the Renderer
     // is destroyed (teardown errors such as leaked objects are still counted).
@@ -50,12 +56,25 @@ namespace Renderer
     uint32_t GetValidationErrorCount();
     uint32_t GetValidationWarningCount();
 
+    // Handed to the application once, while the Renderer is constructed: the device, and the format
+    // the result view's Ui pass records into. It is what the application needs to create its UI
+    // renderer (the RHI's GUI backend) and to wait for the GPU before destroying it, while the
+    // renderer never knows the UI. The device lives until Cleanup.
+    struct RendererDevice
+    {
+        RHI::IRHIDevice& Device;
+        RHI::Format      PresentFormat = RHI::Format::Undefined;
+    };
+    using DeviceReadyCallback = std::function<void(const RendererDevice&)>;
+
+    // The frame path (RENDERING.md section 9): extract a RenderScene, SyncResources, RenderFrame. It
+    // renders the application's views and one per enabled camera in the scene, and presents the
+    // highest-priority view that targets main (RENDERING.md section 8).
     class Renderer
     {
     public:
-        Renderer(HW::Window& window,
-                 const HedgehogSettings::Settings& settings,
-                 const FS::FileSystemManager& fileSystem);
+        Renderer(HW::Window& window, const FS::FileSystemManager& fileSystem,
+                 const DeviceReadyCallback& onDeviceReady = {});
         ~Renderer();
 
         Renderer(const Renderer&)            = delete;
@@ -63,43 +82,17 @@ namespace Renderer
 
         void Cleanup();
 
-        // Removed: asserts and does nothing. Kept only until the legacy resources are deleted.
-        void  DrawFrame(const HedgehogEngine::FrameData& frameData,
-                        HedgehogEngine::IResourceCatalog& catalog,
-                        HedgehogSettings::Settings&       settings,
-                        const UiCallback&                 ui = {});
-        float GetAspectRatio() const;
-        // The legacy path's scene image, for the application's scene panel, and its size.
-        const RHI::IRHITexture& GetSceneViewTexture() const;
-        void                    SetSceneViewSize(uint32_t width, uint32_t height);
-
-        // A GUI renderer (the RHI's ImGui backend) for the colour target a path records its UI
-        // into: the legacy colour buffer, or the swapchain for the render graph's result view.
-        // Create it after the application's ImGui context; it is tied to that target's format.
-        [[nodiscard]] std::unique_ptr<RHI::IRHIGuiBackend> CreateGuiBackend(bool forRenderGraph) const;
-
-        // Blocks until the GPU is idle, e.g. before replacing a GUI backend.
-        void WaitIdle() const;
-
-        // CPU frame statistics (RenderFrame's total and each render-graph pass's record time), used
-        // by the Editor --benchmark mode. Capture is off unless explicitly begun.
-        void BeginFrameStatsCapture();
-        void EndFrameStatsCaptureAndLogReport();
-
-        // ── The render-graph path (RENDERING.md) ──────────────────────────────────────────
-        // The frame path: it renders the application's views below and one per enabled camera
-        // in the scene, and presents the highest-priority view that targets main (RENDERING.md
-        // section 8).
-
-        // The target a view renders into to be presented, sized to the window.
-        static constexpr const char* VIEWPORT_TARGET = "viewport";
-
-        // Uploads new or changed meshes and materials. DrawFrame does this itself.
+        // Uploads new or changed meshes and materials.
         void SyncResources(HedgehogEngine::IResourceCatalog& catalog);
 
         // ui records into the target of any view whose graph has a Ui pass (the result view).
         void RenderFrame(const HX::RenderScene& scene, const HedgehogSettings::Settings& settings,
                          const UiCallback& ui = {});
+
+        // CPU frame statistics (RenderFrame's total and each render-graph pass's record time), used
+        // by the Editor --benchmark mode. Capture is off unless explicitly begun.
+        void BeginFrameStatsCapture();
+        void EndFrameStatsCaptureAndLogReport();
 
         // Application views (the editor's), never reconciled against the scene's cameras.
         [[nodiscard]] ViewId CreateView(ViewDesc desc);
@@ -126,11 +119,8 @@ namespace Renderer
     private:
         HW::Window& m_Window;
 
-        std::unique_ptr<RHIContext>      m_RHIContext;
-        std::unique_ptr<ResourceManager> m_ResourceManager;
-        std::unique_ptr<FrameRenderer>   m_FrameRenderer;
-
-        uint32_t m_DesiredSceneW = 0;
-        uint32_t m_DesiredSceneH = 0;
+        std::unique_ptr<RHIContext>           m_RHIContext;
+        std::unique_ptr<HR::ResourceRegistry> m_Resources; // mesh and material GPU data
+        std::unique_ptr<FrameRenderer>        m_FrameRenderer;
     };
 }
