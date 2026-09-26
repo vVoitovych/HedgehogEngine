@@ -1,0 +1,24 @@
+name: Module boundaries
+
+# Fails a pull request that breaks a module boundary: an include reaching into another module's
+# src/, or HedgehogRenderer including the ECS, the engine module or ImGui. The same script runs
+# first in Scripts\RunTests.bat. It reads #include strings only, so no submodules or build are
+# needed.
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  boundaries:
+    name: Module boundaries hold
+    # Windows PowerShell 5.1, the same engine RunTests.bat runs the script with.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check module boundaries
+        shell: powershell
+        run: .\Scripts\CheckModuleBoundaries.ps1

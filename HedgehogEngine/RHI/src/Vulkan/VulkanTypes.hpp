@@ -158,25 +158,6 @@ inline VkDescriptorType ToVkDescriptorType(DescriptorType type)
     }
 }
 
-// ── Image layout ─────────────────────────────────────────────────────────────
-
-inline VkImageLayout ToVkLayout(ImageLayout layout)
-{
-    switch (layout)
-    {
-        case ImageLayout::Undefined:              return VK_IMAGE_LAYOUT_UNDEFINED;
-        case ImageLayout::General:                return VK_IMAGE_LAYOUT_GENERAL;
-        case ImageLayout::ColorAttachment:        return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        case ImageLayout::DepthStencilAttachment: return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-        case ImageLayout::DepthStencilReadOnly:   return VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-        case ImageLayout::ShaderReadOnly:         return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        case ImageLayout::TransferSrc:            return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-        case ImageLayout::TransferDst:            return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        case ImageLayout::Present:                return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-        default: assert(false && "Unknown ImageLayout"); return VK_IMAGE_LAYOUT_UNDEFINED;
-    }
-}
-
 // ── Load / store ops ──────────────────────────────────────────────────────────
 
 inline VkAttachmentLoadOp ToVkLoadOp(LoadOp op)
@@ -435,83 +416,6 @@ inline ResourceStateInfo ToVkResourceStateInfo(ResourceState state)
         default:
             assert(false && "Unknown ResourceState");
             return {};
-    }
-}
-
-// ── Barrier helpers (synchronization2) ───────────────────────────────────────
-
-// Derives appropriate stage masks and access masks for a layout transition.
-inline void FillBarrierStages(VkImageMemoryBarrier2& barrier,
-                               ImageLayout             oldLayout,
-                               ImageLayout             newLayout)
-{
-    // Source stage / access — what was the previous operation?
-    switch (oldLayout)
-    {
-        case ImageLayout::Undefined:
-            barrier.srcStageMask  = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;
-            barrier.srcAccessMask = 0;
-            break;
-        case ImageLayout::TransferDst:
-            barrier.srcStageMask  = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
-            barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
-            break;
-        case ImageLayout::ColorAttachment:
-            barrier.srcStageMask  = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
-            barrier.srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
-            break;
-        case ImageLayout::DepthStencilAttachment:
-            barrier.srcStageMask  = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT
-                                  | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT;
-            barrier.srcAccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-            break;
-        case ImageLayout::ShaderReadOnly:
-            barrier.srcStageMask  = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
-            barrier.srcAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
-            break;
-        case ImageLayout::Present:
-            barrier.srcStageMask  = VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT;
-            barrier.srcAccessMask = 0;
-            break;
-        default:
-            barrier.srcStageMask  = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-            barrier.srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT;
-            break;
-    }
-
-    // Destination stage / access — what does the next operation need?
-    switch (newLayout)
-    {
-        case ImageLayout::TransferDst:
-            barrier.dstStageMask  = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
-            barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
-            break;
-        case ImageLayout::TransferSrc:
-            barrier.dstStageMask  = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
-            barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
-            break;
-        case ImageLayout::ShaderReadOnly:
-            barrier.dstStageMask  = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
-            barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
-            break;
-        case ImageLayout::ColorAttachment:
-            barrier.dstStageMask  = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
-            barrier.dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
-            break;
-        case ImageLayout::DepthStencilAttachment:
-            barrier.dstStageMask  = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT
-                                  | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT;
-            barrier.dstAccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT
-                                  | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
-            break;
-        case ImageLayout::Present:
-            barrier.dstStageMask  = VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT;
-            barrier.dstAccessMask = 0;
-            break;
-        default:
-            barrier.dstStageMask  = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-            barrier.dstAccessMask = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT;
-            break;
     }
 }
 

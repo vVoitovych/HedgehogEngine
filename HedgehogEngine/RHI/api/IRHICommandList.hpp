@@ -14,14 +14,10 @@ class IRHIBuffer;
 class IRHITexture;
 class IRHIPipeline;
 class IRHIDescriptorSet;
-class IRHIRenderPass;
-class IRHIFramebuffer;
 
-// One attachment for BeginRendering (VK_KHR_dynamic_rendering / Vulkan 1.3 core): a texture
-// view plus the load/store/clear behaviour that RenderPassDesc+ClearValue split across a
-// render pass object and a separate clear-values vector. The caller transitions Texture into
-// the right layout (ColorAttachment / DepthStencilAttachment) beforehand, same as it already
-// does before BeginRenderPass.
+// One attachment for BeginRendering (Vulkan 1.3 dynamic rendering): a texture view plus its
+// load/store/clear behaviour. The caller transitions Texture into RenderTarget / DepthWrite with
+// Barrier() beforehand.
 struct RenderingAttachment
 {
     const IRHITexture* Texture = nullptr;
@@ -80,20 +76,11 @@ public:
 
     virtual void End() = 0;
 
-    // ── Render pass ───────────────────────────────────────────────────────────
-
-    virtual void BeginRenderPass(const IRHIRenderPass&        renderPass,
-                                 const IRHIFramebuffer&        framebuffer,
-                                 const std::vector<ClearValue>& clearValues) = 0;
-
-    virtual void EndRenderPass() = 0;
-
     // ── Dynamic rendering (VK_KHR_dynamic_rendering / Vulkan 1.3 core) ─────────
 
-    // Alternative to BeginRenderPass/EndRenderPass that needs no IRHIRenderPass or
-    // IRHIFramebuffer object — attachments are texture views passed directly. A pipeline
-    // bound inside must have been created with matching GraphicsPipelineDesc attachment
-    // formats (RenderPass left null), not a render-pass-compatible one.
+    // Attachments are texture views passed directly; there are no render-pass or framebuffer
+    // objects. A pipeline bound inside must have been created with matching GraphicsPipelineDesc
+    // attachment formats.
     virtual void BeginRendering(const RenderingInfo& renderingInfo) = 0;
 
     virtual void EndRendering() = 0;
@@ -141,15 +128,9 @@ public:
 
     // ── Transfer / barrier ────────────────────────────────────────────────────
 
-    // Insert a pipeline barrier transitioning the texture layout.
-    virtual void TransitionTexture(IRHITexture& texture,
-                                   ImageLayout  oldLayout,
-                                   ImageLayout  newLayout) = 0;
-
     // Batches any number of texture and buffer transitions into a single synchronization2
-    // vkCmdPipelineBarrier2 call, access-based (ResourceState) rather than raw layouts. The
-    // intended sole transition mechanism for the graph (RENDERING.md section 5.3) — TransitionTexture
-    // above stays only for the passes that predate it.
+    // vkCmdPipelineBarrier2 call, access-based (ResourceState) rather than raw layouts. The only
+    // transition mechanism (RENDERING.md section 5.3).
     virtual void Barrier(std::span<const TextureBarrier> textureBarriers,
                          std::span<const BufferBarrier>  bufferBarriers) = 0;
 

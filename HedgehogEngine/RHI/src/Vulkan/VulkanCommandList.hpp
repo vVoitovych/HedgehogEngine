@@ -26,11 +26,6 @@ public:
     void Begin(bool oneTimeSubmit = false) override;
     void End()   override;
 
-    void BeginRenderPass(const IRHIRenderPass&         renderPass,
-                         const IRHIFramebuffer&         framebuffer,
-                         const std::vector<ClearValue>& clearValues) override;
-    void EndRenderPass() override;
-
     void BeginRendering(const RenderingInfo& renderingInfo) override;
     void EndRendering() override;
 
@@ -62,10 +57,6 @@ public:
     void DrawIndexed(uint32_t indexCount,   uint32_t instanceCount,
                      uint32_t firstIndex,   int32_t  vertexOffset,
                      uint32_t firstInstance) override;
-
-    void TransitionTexture(IRHITexture& texture,
-                           ImageLayout  oldLayout,
-                           ImageLayout  newLayout) override;
 
     void Barrier(std::span<const TextureBarrier> textureBarriers,
                 std::span<const BufferBarrier>  bufferBarriers) override;

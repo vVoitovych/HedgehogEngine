@@ -143,18 +143,6 @@ namespace RGTest
             return nullptr;
         }
 
-        std::unique_ptr<RHI::IRHIRenderPass> CreateRenderPass(const RHI::RenderPassDesc&) const override
-        {
-            assert(false && "not exercised by these tests");
-            return nullptr;
-        }
-
-        std::unique_ptr<RHI::IRHIFramebuffer> CreateFramebuffer(const RHI::FramebufferDesc&) const override
-        {
-            assert(false && "not exercised by these tests");
-            return nullptr;
-        }
-
         std::unique_ptr<RHI::IRHIPipeline> CreateGraphicsPipeline(const RHI::GraphicsPipelineDesc&) const override
         {
             assert(false && "not exercised by these tests");
@@ -200,12 +188,6 @@ namespace RGTest
 
         RHI::Format GetPreferredDepthFormat() const override { return RHI::Format::D32Float; }
 
-        std::unique_ptr<RHI::IRHIGuiBackend> CreateGuiBackend(const RHI::GuiBackendDesc&) const override
-        {
-            assert(false && "not exercised by these tests");
-            return nullptr;
-        }
-
         mutable int m_TexturesCreated   = 0;
         mutable int m_TexturesDestroyed = 0;
     };
@@ -225,10 +207,6 @@ namespace RGTest
         void Reset() override {}
         void Begin(bool) override {}
         void End() override {}
-
-        void BeginRenderPass(const RHI::IRHIRenderPass&, const RHI::IRHIFramebuffer&,
-                             const std::vector<RHI::ClearValue>&) override {}
-        void EndRenderPass() override {}
 
         void BeginRendering(const RHI::RenderingInfo& info) override { Renderings.push_back(info); }
         void EndRendering() override { ++EndRenderingCount; }
@@ -262,7 +240,6 @@ namespace RGTest
             DrawnIndexCounts.push_back(indexCount);
         }
 
-        void TransitionTexture(RHI::IRHITexture&, RHI::ImageLayout, RHI::ImageLayout) override {}
         void CopyBufferToBuffer(const RHI::IRHIBuffer&, RHI::IRHIBuffer&, size_t, size_t, size_t) override {}
         void CopyBufferToTexture(const RHI::IRHIBuffer&, RHI::IRHITexture&) override {}
         void CopyTextureToTexture(const RHI::IRHITexture&, RHI::IRHITexture&) override {}

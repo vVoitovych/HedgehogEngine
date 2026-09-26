@@ -21,7 +21,7 @@ namespace Renderer
 // All data derived from a single .shader file.
 // m_Pipeline is pre-filled with every field the .shader file can describe
 // (vertex input, topology, rasterization, depth, blend, push constants).
-// The caller must set m_Pipeline.DescriptorSetLayouts and m_Pipeline.RenderPass
+// The caller must set m_Pipeline.DescriptorSetLayouts and the attachment formats
 // before passing it to device.CreateGraphicsPipeline().
 // m_VertexShader / m_FragmentShader keep the shader objects alive; their raw pointers
 // are already stored in m_Pipeline.VertexShader / m_Pipeline.FragmentShader.

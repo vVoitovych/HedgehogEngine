@@ -20,10 +20,7 @@
 #include "VulkanBuffer.hpp"
 #include "VulkanCommandList.hpp"
 #include "VulkanDescriptor.hpp"
-#include "VulkanFramebuffer.hpp"
-#include "VulkanGuiBackend.hpp"
 #include "VulkanPipeline.hpp"
-#include "VulkanRenderPass.hpp"
 #include "VulkanSampler.hpp"
 #include "VulkanShader.hpp"
 #include "VulkanSwapchain.hpp"
@@ -496,16 +493,6 @@ std::unique_ptr<IRHIDescriptorSet> VulkanDevice::AllocateDescriptorSet(
     return std::make_unique<VulkanDescriptorSet>(const_cast<VulkanDevice&>(*this), vkPool, vkLayout);
 }
 
-std::unique_ptr<IRHIRenderPass> VulkanDevice::CreateRenderPass(const RenderPassDesc& desc) const
-{
-    return std::make_unique<VulkanRenderPass>(const_cast<VulkanDevice&>(*this), desc);
-}
-
-std::unique_ptr<IRHIFramebuffer> VulkanDevice::CreateFramebuffer(const FramebufferDesc& desc) const
-{
-    return std::make_unique<VulkanFramebuffer>(const_cast<VulkanDevice&>(*this), desc);
-}
-
 std::unique_ptr<IRHIPipeline> VulkanDevice::CreateGraphicsPipeline(
     const GraphicsPipelineDesc& desc) const
 {
@@ -530,11 +517,6 @@ std::unique_ptr<IRHIFence> VulkanDevice::CreateFence(bool signaled) const
 std::unique_ptr<IRHISemaphore> VulkanDevice::CreateSemaphore() const
 {
     return std::make_unique<VulkanSemaphore>(const_cast<VulkanDevice&>(*this));
-}
-
-std::unique_ptr<IRHIGuiBackend> VulkanDevice::CreateGuiBackend(const GuiBackendDesc& desc) const
-{
-    return std::make_unique<VulkanGuiBackend>(const_cast<VulkanDevice&>(*this), desc);
 }
 
 // ── Submission ────────────────────────────────────────────────────────────────

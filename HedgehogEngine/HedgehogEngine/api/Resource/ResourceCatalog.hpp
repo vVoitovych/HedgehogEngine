@@ -15,16 +15,14 @@ namespace ECS
 
 namespace HedgehogEngine
 {
-    class LightSystem;
     class RenderSystem;
     class MeshSystem;
 
     class MeshContainer;
     class TextureContainer;
-    class LightContainer;
     class MaterialContainer;
 
-    // Owns the four CPU-side resource containers (mesh/texture/light/material) and implements
+    // Owns the three CPU-side resource containers (mesh/texture/material) and implements
     // IResourceCatalog, the narrow read-mostly contract consumed by the renderer. The Editor
     // uses the concrete accessors below when it needs container-specific operations (dialogues,
     // material editing) rather than the interface's plain-data views.
@@ -39,13 +37,11 @@ namespace HedgehogEngine
         ResourceCatalog(ResourceCatalog&&)                 = delete;
         ResourceCatalog& operator=(ResourceCatalog&&)      = delete;
 
-        HEDGEHOG_ENGINE_API void Update(const ECS::ECS& ecs, const LightSystem& lightSystem,
-                                         const RenderSystem& renderSystem, const MeshSystem& meshSystem);
+        HEDGEHOG_ENGINE_API void Update(const RenderSystem& renderSystem, const MeshSystem& meshSystem);
 
         HEDGEHOG_ENGINE_API const MeshContainer&     GetMeshContainer()     const;
         HEDGEHOG_ENGINE_API const TextureContainer&  GetTextureContainer()  const;
         HEDGEHOG_ENGINE_API TextureContainer&        GetTextureContainer();
-        HEDGEHOG_ENGINE_API const LightContainer&    GetLightContainer()    const;
         HEDGEHOG_ENGINE_API const MaterialContainer& GetMaterialContainer() const;
         HEDGEHOG_ENGINE_API MaterialContainer&       GetMaterialContainer();
 
@@ -63,7 +59,6 @@ namespace HedgehogEngine
 
         std::unique_ptr<MeshContainer>     m_MeshContainer;
         std::unique_ptr<TextureContainer>  m_TextureContainer;
-        std::unique_ptr<LightContainer>    m_LightContainer;
         std::unique_ptr<MaterialContainer> m_MaterialContainer;
     };
 }

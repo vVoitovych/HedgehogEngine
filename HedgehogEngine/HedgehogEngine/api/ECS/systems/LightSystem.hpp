@@ -22,8 +22,6 @@ namespace HedgehogEngine
 
         HEDGEHOG_ENGINE_API const std::vector<LightComponent>& GetLightComponents(ECS::ECS& ecs);
         HEDGEHOG_ENGINE_API void   Update(ECS::ECS& ecs);
-        HEDGEHOG_ENGINE_API size_t GetLightComponentsCount() const;
-        HEDGEHOG_ENGINE_API const LightComponent& GetLightComponentByIndex(const ECS::ECS& ecs, size_t index) const;
 
         HEDGEHOG_ENGINE_API void SetShadowCasting(const ECS::ECS& ecs, ECS::Entity entity, bool isCast);
         HEDGEHOG_ENGINE_API const std::optional<HM::Vector3>& GetShadowDir() const;

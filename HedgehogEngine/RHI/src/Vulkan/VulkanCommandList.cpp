@@ -3,9 +3,7 @@
 #include "VulkanBuffer.hpp"
 #include "VulkanDescriptor.hpp"
 #include "VulkanDevice.hpp"
-#include "VulkanFramebuffer.hpp"
 #include "VulkanPipeline.hpp"
-#include "VulkanRenderPass.hpp"
 #include "VulkanTexture.hpp"
 #include "VulkanTypes.hpp"
 
@@ -55,44 +53,6 @@ void VulkanCommandList::End()
 {
     VkResult result = vkEndCommandBuffer(m_CommandBuffer);
     assert(result == VK_SUCCESS && "vkEndCommandBuffer failed.");
-}
-
-// ── Render pass ───────────────────────────────────────────────────────────────
-
-void VulkanCommandList::BeginRenderPass(
-    const IRHIRenderPass&         renderPass,
-    const IRHIFramebuffer&         framebuffer,
-    const std::vector<ClearValue>& clearValues)
-{
-    const auto& vkPass = static_cast<const VulkanRenderPass&>(renderPass);
-    const auto& vkFb   = static_cast<const VulkanFramebuffer&>(framebuffer);
-
-    std::vector<VkClearValue> vkClearValues;
-    vkClearValues.reserve(clearValues.size());
-    for (const auto& cv : clearValues)
-    {
-        VkClearValue vkCv{};
-        if (cv.IsDepth)
-            vkCv.depthStencil = { cv.DepthStencil.Depth, cv.DepthStencil.Stencil };
-        else
-            vkCv.color = { cv.Color.R, cv.Color.G, cv.Color.B, cv.Color.A };
-        vkClearValues.push_back(vkCv);
-    }
-
-    VkRenderPassBeginInfo beginInfo{ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
-    beginInfo.renderPass               = vkPass.GetHandle();
-    beginInfo.framebuffer              = vkFb.GetHandle();
-    beginInfo.renderArea.offset        = { 0, 0 };
-    beginInfo.renderArea.extent        = { vkFb.GetWidth(), vkFb.GetHeight() };
-    beginInfo.clearValueCount          = static_cast<uint32_t>(vkClearValues.size());
-    beginInfo.pClearValues             = vkClearValues.data();
-
-    vkCmdBeginRenderPass(m_CommandBuffer, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
-}
-
-void VulkanCommandList::EndRenderPass()
-{
-    vkCmdEndRenderPass(m_CommandBuffer);
 }
 
 // ── Dynamic rendering ────────────────────────────────────────────────────────
@@ -268,32 +228,6 @@ void VulkanCommandList::DrawIndexed(
 }
 
 // ── Barriers / copies ─────────────────────────────────────────────────────────
-
-void VulkanCommandList::TransitionTexture(
-    IRHITexture& texture, ImageLayout oldLayout, ImageLayout newLayout)
-{
-    auto& vkTex = static_cast<VulkanTexture&>(texture);
-
-    VkImageMemoryBarrier2 barrier{ VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2 };
-    barrier.oldLayout                       = VulkanTypes::ToVkLayout(oldLayout);
-    barrier.newLayout                       = VulkanTypes::ToVkLayout(newLayout);
-    barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
-    barrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
-    barrier.image                           = vkTex.GetHandle();
-    barrier.subresourceRange.aspectMask     = VulkanTypes::GetAspectMask(vkTex.GetFormat());
-    barrier.subresourceRange.baseMipLevel   = 0;
-    barrier.subresourceRange.levelCount     = 1;
-    barrier.subresourceRange.baseArrayLayer = 0;
-    barrier.subresourceRange.layerCount     = 1;
-
-    VulkanTypes::FillBarrierStages(barrier, oldLayout, newLayout);
-
-    VkDependencyInfo depInfo{ VK_STRUCTURE_TYPE_DEPENDENCY_INFO };
-    depInfo.imageMemoryBarrierCount = 1;
-    depInfo.pImageMemoryBarriers    = &barrier;
-
-    vkCmdPipelineBarrier2(m_CommandBuffer, &depInfo);
-}
 
 void VulkanCommandList::Barrier(
     std::span<const TextureBarrier> textureBarriers,

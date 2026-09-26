@@ -63,7 +63,7 @@ Loads `Assets/Scenes/Default.yaml`, builds a `Renderer` exactly as the editor do
 Vendor\Binaries\Premake\Windows\premake5.exe --file=Build.lua vs2022
 ```
 
-**CI:** `.github/workflows/ticket-check.yml` fails any PR whose title carries no `HE-<number>` key. There is currently **no build workflow** — Debug/Release builds and the test exes must be run locally before opening a PR (the smoke test is local-only in any case: CI runners have no Vulkan GPU).
+**CI:** `.github/workflows/ticket-check.yml` fails any PR whose title carries no `HE-<number>` key, and `module-boundaries.yml` runs `Scripts\CheckModuleBoundaries.ps1` (see *Architecture*). There is currently **no build workflow** — Debug/Release builds and the test exes must be run locally before opening a PR (the smoke test is local-only in any case: CI runners have no Vulkan GPU).
 
 ## Performance
 
@@ -80,18 +80,26 @@ Vendor\Binaries\Premake\Windows\premake5.exe --file=Build.lua vs2022
 The engine is a set of C++20 libraries (mix of static and shared) with an `Editor` executable as the entry point. Dependencies flow strictly upward:
 
 ```
-Editor (ConsoleApp)
-  └── HedgehogEngine + HedgehogRenderer + HedgehogWindow + HedgehogSettings + Logger
-        ├── HedgehogEngine  (DLL) → HedgehogCommon, HedgehogSettings, HedgehogWindow,
-        │                           ContentLoader, ECS, EcsSerialization, yaml-cpp, ImGui
-        ├── HedgehogRenderer (static lib) → RHI, HedgehogEngine, HedgehogCommon,
-        │                                   HedgehogSettings, HedgehogWindow,
-        │                                   HedgehogMath, ContentLoader, Shaders, imgui
-        ├── HedgehogWindow  (DLL) → HedgehogMath, GLFW, Vulkan
-        ├── HedgehogSettings (DLL) → yaml-cpp
-        ├── HedgehogCommon  (DLL) → HedgehogMath
-        └── RHI             (static lib) → Vulkan (Volk + VMA)
+Editor (ConsoleApp)            owns ImGui: context, GLFW backend, GUI renderer (RHIImGui)
+  └── HedgehogEngine + HedgehogExtract + HedgehogRenderer + RHIImGui + HedgehogWindow
+      + HedgehogSettings + HedgehogCommon + DialogueWindows + ECS + FileSystem + Logger + imgui
+        ├── HedgehogExtract  (static lib) → ECS, HedgehogEngine, HedgehogMath
+        ├── HedgehogEngine   (DLL)        → HedgehogCommon, HedgehogSettings, HedgehogWindow,
+        │                                   ContentLoader, HedgehogMath, ECS, EcsSerialization,
+        │                                   FileSystem, Lua, yaml-cpp, Logger
+        ├── HedgehogRenderer (static lib) → RHI, HedgehogMath, HedgehogSettings, HedgehogWindow,
+        │                                   ContentLoader, FileSystem, Logger, yaml-cpp, Tracy
+        │                                   (headers only: HedgehogCommon, HedgehogExtract's
+        │                                   RenderScene; never the ECS, HedgehogEngine or ImGui)
+        ├── RHIImGui         (static lib) → RHI, imgui (ImGui's Vulkan renderer, via
+        │                                   RHI/api/Vulkan/VulkanNative.hpp)
+        ├── HedgehogWindow   (DLL)        → HedgehogMath, GLFW, Logger
+        ├── HedgehogSettings (DLL)        → FileSystem, yaml-cpp, Logger
+        ├── HedgehogCommon   (DLL)        → HedgehogMath
+        └── RHI              (static lib) → Vulkan (Volk + VMA), Logger — no ImGui
 ```
+
+`Scripts\CheckModuleBoundaries.ps1` enforces two rules on `#include` strings: no include reaches into another module's `src/`, and nothing under `HedgehogRenderer/` includes `ECS/`, the engine module (`HedgehogEngine/HedgehogEngine/`, `HedgehogEngine/api/`), `imgui.h` or `imgui_impl_*`. It runs first in `RunTests.bat` and in CI (`module-boundaries.yml`).
 
 **The renderer is being rewritten.** `RENDERING.md` at the repository root is the design: a camera-and-view architecture where a `CameraComponent` carries scene data, a `View` is the render request, and each view owns a render graph. Every frame now renders through it (see *Rendering a frame* below), and the legacy fixed-pass renderer is deleted. Epic [HE-63](https://viktoravoitovych.atlassian.net/browse/HE-63) lands it as 28 sub-1000-line pull requests.
 
@@ -103,8 +111,9 @@ Editor (ConsoleApp)
 | `HedgehogCommon` | DLL | Shared renderer constants (`MAX_FRAMES_IN_FLIGHT`, `MAX_LIGHTS_COUNT`, …), Camera |
 | `HedgehogWindow` | DLL | GLFW window wrapper, input handling (namespace `HW`) |
 | `HedgehogSettings` | DLL | YAML-based engine configuration |
-| `HedgehogEngine` | DLL | Engine/Frame/Thread context; resource containers (DrawList, Light, Material, Mesh, Texture); ECS integration |
-| `RHI` | static lib | Graphics abstraction: `IRHIDevice`, `IRHICommandList`, `IRHITexture`, … — Vulkan backend under `src/Vulkan/` |
+| `HedgehogEngine` | DLL | Engine context; resource catalog (Material, Mesh, Texture containers); ECS systems and components; scenes; Lua scripting |
+| `RHI` | static lib | Graphics abstraction: `IRHIDevice`, `IRHICommandList`, `IRHITexture`, … — dynamic rendering and `Barrier()` only (no render-pass/framebuffer objects); Vulkan backend under `src/Vulkan/`, native handles for integrations in `api/Vulkan/VulkanNative.hpp` |
+| `RHIImGui` | static lib | ImGui's GPU renderer on the RHI (`RHIImGui::IGuiRenderer`), used only by the Editor |
 | `HedgehogRenderer` | static lib | Multi-pass Vulkan renderer (see structure and passes below) |
 | `ECS` | static lib | Entity Component System (EntityManager, ComponentManager, SystemManager, Coordinator) |
 | `EcsSerialization` | DLL | ECS serialization; `IHierarchyProvider` interface decoupled from engine |
@@ -146,7 +155,7 @@ Graph passes (`assets/Graphs/*.graph`, pass types in `EnginePassTypes`): the sha
 
 The legacy fixed-pass renderer is gone: `DrawFrame`, every legacy pass, `RenderQueue` and `ResourceManager` with its textures. Render order comes from the graph compiler's topological sort, render targets are either pooled graph transients or view-owned targets in the render-target registry, the `Renderer` owns the mesh/material `ResourceRegistry` directly, and `FrameRenderer` owns the per-frame command lists and synchronization objects. `Renderer.hpp`'s public surface is `RenderFrame`, `SyncResources`, `Cleanup`, the frame-stats pair and the view accessors (`CreateView`/`UpdateView`/`DestroyView`, `SetCameraTargetOverride`, `DeclareTarget`/`ResizeTarget`/`GetTargetTexture`, `GetLastFramePassCount`).
 
-**ImGui belongs to the Editor, never the renderer.** `Editor/ImGuiLayer` owns the context, the GLFW platform backend and the RHI GUI backend (`IRHIGuiBackend`, dynamic rendering into any texture of one colour format, created in the `Renderer`'s `DeviceReadyCallback`, which hands the application the device and the swapchain's format once at construction). The result view's `Ui` pass hands the editor its colour target through a `UiCallback`. `HedgehogRenderer` has no ImGui include path or link, so it cannot include an ImGui header.
+**ImGui belongs to the Editor, never the renderer.** `Editor/ImGuiLayer` owns the context, the GLFW platform backend and the GUI renderer (`RHIImGui::IGuiRenderer`, ImGui's Vulkan backend with dynamic rendering into any texture of one colour format, created in the `Renderer`'s `DeviceReadyCallback`, which hands the application the device and the swapchain's format once at construction). The result view's `Ui` pass hands the editor its colour target through a `UiCallback`. Neither `HedgehogRenderer` nor `RHI` has an ImGui include path or link, and the boundary check keeps it that way.
 
 ### Project Configuration Files
 

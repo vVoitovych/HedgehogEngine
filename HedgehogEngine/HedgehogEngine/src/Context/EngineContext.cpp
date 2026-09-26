@@ -31,8 +31,6 @@
 
 #include "EcsSerialization/api/ComponentSerializerRegistry.hpp"
 
-#include "HedgehogEngine/src/Frame/FrameDataBuilder.hpp"
-
 #include "Logger/api/Logger.hpp"
 
 #include <cassert>
@@ -55,7 +53,7 @@ namespace HedgehogEngine
             m_ECS, m_EventBus, m_FileSystem, *m_ComponentRegistry,
             *m_TransformSystem, *m_MeshSystem, *m_RenderSystem);
 
-        m_ResourceCatalog.Update(m_ECS, *m_LightSystem, *m_RenderSystem, *m_MeshSystem);
+        m_ResourceCatalog.Update(*m_RenderSystem, *m_MeshSystem);
 
         m_Settings = std::make_unique<HedgehogSettings::Settings>();
     }
@@ -218,18 +216,7 @@ namespace HedgehogEngine
         m_HierarchySystem->Update(m_ECS, m_EventBus);
         m_LightSystem->Update(m_ECS);
 
-        m_ResourceCatalog.Update(m_ECS, *m_LightSystem, *m_RenderSystem, *m_MeshSystem);
-
-        auto materialTypeLookup = [this](uint64_t index) -> MaterialType
-        {
-            const auto& data = m_ResourceCatalog.GetMaterialContainer().GetMaterialDataByIndex(index);
-            return data.type;
-        };
-
-        FrameDataBuilder builder;
-        m_FrameData = builder.Build(
-            m_ECS, *m_LightSystem, *m_RenderSystem,
-            *m_Camera, dt, materialTypeLookup);
+        m_ResourceCatalog.Update(*m_RenderSystem, *m_MeshSystem);
     }
 
     ResourceCatalog& EngineContext::GetResourceCatalog()             { return m_ResourceCatalog; }
@@ -237,8 +224,6 @@ namespace HedgehogEngine
 
     SceneManager& EngineContext::GetSceneManager()             { return *m_SceneManager; }
     const SceneManager& EngineContext::GetSceneManager() const { return *m_SceneManager; }
-
-    const FrameData& EngineContext::GetFrameData() const { return m_FrameData; }
 
     const FS::FileSystemManager& EngineContext::GetFileSystem() const { return m_FileSystem; }
 

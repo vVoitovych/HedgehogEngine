@@ -6,7 +6,7 @@
 #include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
 
 #include "RHI/api/IRHIDevice.hpp"
-#include "RHI/api/IRHIGuiBackend.hpp"
+#include "RHIImGui/GuiRenderer.hpp"
 #include "RHI/api/IRHITexture.hpp"
 
 #include "imgui.h"
@@ -29,12 +29,12 @@ namespace Editor
 
     void ImGuiLayer::CreateBackend(const Renderer::RendererDevice& device)
     {
-        RHI::GuiBackendDesc desc;
+        RHIImGui::GuiRendererDesc desc;
         desc.MinImageCount = HedgehogEngine::MAX_FRAMES_IN_FLIGHT;
         desc.ImageCount    = HedgehogEngine::MAX_FRAMES_IN_FLIGHT;
         desc.ColorFormat   = device.PresentFormat;
         m_Device  = &device.Device;
-        m_Backend = device.Device.CreateGuiBackend(desc);
+        m_Backend = RHIImGui::CreateGuiRenderer(device.Device, desc);
     }
 
     void ImGuiLayer::BeginFrame()

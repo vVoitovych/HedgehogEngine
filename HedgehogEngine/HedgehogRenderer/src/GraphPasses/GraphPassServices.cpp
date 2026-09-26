@@ -44,7 +44,6 @@ namespace Renderer
         {
             RHI::GraphicsPipelineDesc desc = shader.Pipeline;
             desc.DescriptorSetLayouts   = std::move(layouts);
-            desc.RenderPass             = nullptr;
             desc.ColorAttachmentFormats = std::move(colorFormats);
             desc.DepthAttachmentFormat  = DEPTH_FORMAT;
             desc.CullMode               = cullMode;

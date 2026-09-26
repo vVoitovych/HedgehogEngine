@@ -62,8 +62,6 @@ public:
     std::unique_ptr<IRHIDescriptorSet> AllocateDescriptorSet(
         const IRHIDescriptorPool& pool, const IRHIDescriptorSetLayout& layout) const override;
 
-    std::unique_ptr<IRHIRenderPass>  CreateRenderPass(const RenderPassDesc& desc) const override;
-    std::unique_ptr<IRHIFramebuffer> CreateFramebuffer(const FramebufferDesc& desc) const override;
     std::unique_ptr<IRHIPipeline>    CreateGraphicsPipeline(const GraphicsPipelineDesc& desc) const override;
 
     std::unique_ptr<IRHICommandList> CreateCommandList() const override;
@@ -71,7 +69,6 @@ public:
 
     std::unique_ptr<IRHIFence>       CreateFence(bool signaled = false) const override;
     std::unique_ptr<IRHISemaphore>   CreateSemaphore() const override;
-    std::unique_ptr<IRHIGuiBackend>  CreateGuiBackend(const GuiBackendDesc& desc) const override;
 
     void SubmitCommandList(
         const IRHICommandList&             commandList,
