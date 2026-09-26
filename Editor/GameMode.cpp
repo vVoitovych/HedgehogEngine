@@ -16,6 +16,7 @@
 
 #include "imgui.h"
 
+#include <algorithm>
 #include <cstdlib>
 
 namespace Editor
@@ -44,7 +45,7 @@ namespace Editor
             if (!scenePath || !engineContext.GetSceneManager().LoadScene(scenePath->string()))
                 LOGWARNING("Game mode: could not load '", GAME_SCENE, "'; rendering an empty scene.");
 
-            Renderer::Renderer renderer(engine.GetWindowContext().GetWindow(), settings, fileSystem);
+            Renderer::Renderer renderer(engine.GetWindowContext().GetWindow(), fileSystem);
 
             HX::RenderScene          scene;
             HX::MeshBoundsCache      meshBounds;
@@ -55,7 +56,9 @@ namespace Editor
             for (uint32_t frame = 0; frame < frames && !windowContext.ShouldClose(); ++frame)
             {
                 windowContext.HandleInput();
-                engine.UpdateContext(FRAME_TIME, renderer.GetAspectRatio());
+                int width = 0, height = 0;
+                windowContext.GetWindow().GetFramebufferSize(width, height);
+                engine.UpdateContext(FRAME_TIME, static_cast<float>(std::max(width, 1)) / static_cast<float>(std::max(height, 1)));
 
                 meshBounds.Update(engineContext.GetResourceCatalog());
                 scene.Clear();

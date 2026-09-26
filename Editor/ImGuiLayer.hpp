@@ -15,13 +15,14 @@ namespace HW
 
 namespace RHI
 {
+    class IRHIDevice;
     class IRHIGuiBackend;
     class IRHITexture;
 }
 
 namespace Renderer
 {
-    class Renderer;
+    struct RendererDevice;
 }
 
 namespace Editor
@@ -44,8 +45,12 @@ namespace Editor
         ImGuiLayer(ImGuiLayer&&)                 = delete;
         ImGuiLayer& operator=(ImGuiLayer&&)      = delete;
 
-        // Starts an ImGui frame; the first one creates the GUI renderer.
-        void BeginFrame(Renderer::Renderer& renderer);
+        // Creates the GUI renderer for the format the result view's Ui pass records into. Pass it as
+        // the Renderer's DeviceReadyCallback: the device outlives this layer's Shutdown.
+        void CreateBackend(const Renderer::RendererDevice& device);
+
+        // Starts an ImGui frame.
+        void BeginFrame();
         // Ends it and builds the draw data the UiCallback records.
         void EndFrame();
 
@@ -55,8 +60,9 @@ namespace Editor
 
         Renderer::UiCallback GetUiCallback() { return { &Record, this }; }
 
-        // Releases the GUI renderer and the context. Call before the renderer is cleaned up.
-        void Shutdown(Renderer::Renderer& renderer);
+        // Waits for the GPU, then releases the GUI renderer and the context. Call before the renderer
+        // is cleaned up.
+        void Shutdown();
 
     private:
         struct ShownTexture
@@ -76,6 +82,7 @@ namespace Editor
         static void Record(void* user, RHI::IRHICommandList& cmd, RHI::IRHITexture& target);
         void        ReleaseTextureIds(bool onlyExpired);
 
+        const RHI::IRHIDevice*                        m_Device = nullptr;
         std::unique_ptr<RHI::IRHIGuiBackend>          m_Backend;
         std::unordered_map<std::string, ShownTexture> m_Shown;
         std::vector<RetiredId>                        m_Retired;

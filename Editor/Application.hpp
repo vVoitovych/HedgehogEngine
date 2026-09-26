@@ -47,6 +47,7 @@ namespace Editor
         void  MainLoop(uint32_t maxFrames);
         void  Cleanup();
         float GetFrameTime();
+        float GetSceneAspectRatio() const;
 
         float StepFrame();
         void  Render();

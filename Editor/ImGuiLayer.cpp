@@ -5,6 +5,7 @@
 #include "HedgehogCommon/api/RendererSettings.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
 
+#include "RHI/api/IRHIDevice.hpp"
 #include "RHI/api/IRHIGuiBackend.hpp"
 #include "RHI/api/IRHITexture.hpp"
 
@@ -12,6 +13,7 @@
 #include "backends/imgui_impl_glfw.h"
 
 #include <algorithm>
+#include <cassert>
 
 namespace Editor
 {
@@ -25,10 +27,19 @@ namespace Editor
 
     ImGuiLayer::~ImGuiLayer() = default;
 
-    void ImGuiLayer::BeginFrame(Renderer::Renderer& renderer)
+    void ImGuiLayer::CreateBackend(const Renderer::RendererDevice& device)
     {
-        if (!m_Backend)
-            m_Backend = renderer.CreateGuiBackend(true);
+        RHI::GuiBackendDesc desc;
+        desc.MinImageCount = HedgehogEngine::MAX_FRAMES_IN_FLIGHT;
+        desc.ImageCount    = HedgehogEngine::MAX_FRAMES_IN_FLIGHT;
+        desc.ColorFormat   = device.PresentFormat;
+        m_Device  = &device.Device;
+        m_Backend = device.Device.CreateGuiBackend(desc);
+    }
+
+    void ImGuiLayer::BeginFrame()
+    {
+        assert(m_Backend && "ImGuiLayer: pass CreateBackend to the Renderer as its DeviceReadyCallback.");
 
         ++m_Frame;
         ReleaseTextureIds(true);
@@ -57,9 +68,10 @@ namespace Editor
         return shown.Id;
     }
 
-    void ImGuiLayer::Shutdown(Renderer::Renderer& renderer)
+    void ImGuiLayer::Shutdown()
     {
-        renderer.WaitIdle();
+        if (m_Device)
+            m_Device->WaitIdle();
         ReleaseTextureIds(false);
         m_Backend.reset();
         ImGui_ImplGlfw_Shutdown();
