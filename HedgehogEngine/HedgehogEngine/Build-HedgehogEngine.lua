@@ -29,16 +29,8 @@ project "HedgehogEngine"
         "yaml-cpp"
     }
 
-   targetdir ("../../Binaries/" .. OutputDir .. "/%{prj.name}")
-   objdir ("../../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")
-
-   postbuildcommands
-   {
-       ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/Editor"),
-       ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/Editor/"),
-       ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/HedgehogExtractTest"),
-       ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/HedgehogExtractTest/")
-   }
+   targetdir (BinariesDir)
+   objdir    (IntermediatesDir)
 
    filter "system:windows"
        systemversion "latest"
@@ -53,6 +45,4 @@ project "HedgehogEngine"
        defines { "RELEASE" }
        runtime "Release"
        optimize "On"
-
-
 

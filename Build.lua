@@ -10,6 +10,12 @@ workspace "HedgehogEngine"
       buildoptions {  }
 
 OutputDir = "%{cfg.system}-%{cfg.architecture}/%{cfg.buildcfg}"
+
+-- Every executable and DLL of a configuration builds into one directory, so each program finds
+-- the DLLs it links next to itself with no copy step. Static libraries and object files stay
+-- per project under Intermediates: they are build inputs, never loaded at runtime.
+BinariesDir      = _MAIN_SCRIPT_DIR .. "/Binaries/" .. OutputDir
+IntermediatesDir = _MAIN_SCRIPT_DIR .. "/Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}"
 VulkanSDK = os.getenv("VULKAN_SDK")
 
 group "ThirdParty"

@@ -7,26 +7,12 @@ project "Logger"
 
    includedirs { "." }
 
-   targetdir ("../Binaries/" .. OutputDir .. "/%{prj.name}")
-   objdir ("../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")
+   targetdir (BinariesDir)
+   objdir    (IntermediatesDir)
 
    filter "system:windows"
        systemversion "latest"
        defines { "LOGGER_EXPORT" }
-       postbuildcommands {
-           ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/Editor"),
-           ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/Editor/"),
-           ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/FileSystemTest"),
-           ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/FileSystemTest/"),
-           ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/EcsSerializationTest"),
-           ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/EcsSerializationTest/"),
-           ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/ContentLoaderTest"),
-           ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/ContentLoaderTest/"),
-           ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/HedgehogExtractTest"),
-           ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/HedgehogExtractTest/"),
-           ("{MKDIR} %{wks.location}Binaries/" .. OutputDir .. "/RenderGraphTest"),
-           ("{COPY} %{cfg.buildtarget.abspath} %{wks.location}Binaries/" .. OutputDir .. "/RenderGraphTest/")
-       }
 
    filter "configurations:Debug"
        defines { "DEBUG" }

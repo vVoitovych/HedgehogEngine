@@ -56,9 +56,8 @@ project "HedgehogRenderer"
         "Tracy"
     }
 
-
-   targetdir ("../../Binaries/" .. OutputDir .. "/%{prj.name}")
-   objdir ("../../Binaries/Intermediates/" .. OutputDir .. "/%{prj.name}")
+   targetdir (IntermediatesDir)
+   objdir    (IntermediatesDir)
 
    filter "system:windows"
        systemversion "latest"
@@ -77,6 +76,4 @@ project "HedgehogRenderer"
        defines { "RELEASE", "TRACY_ENABLE", "TRACY_ON_DEMAND" }
        runtime "Release"
        optimize "On"
-
-
 

@@ -97,7 +97,7 @@ A ticket is Done when its PR is merged and:
 - `Scripts\Build.bat Debug` and `Scripts\Build.bat Release` both exit 0.
 - `Scripts\RunTests.bat Debug` exits 0.
 - If it touched HedgehogRenderer, RHI or shaders:
-  `Binaries\windows-x86_64\Debug\Editor\Editor.exe --smoke-test` exits 0.
+  `Binaries\windows-x86_64\Debug\Editor.exe --smoke-test` exits 0.
 - If it touched the frame loop or a render pass: before/after `--benchmark`
   numbers are quoted in the PR (see PERFORMANCE.md).
 - The code follows CODING_CONVENTIONS.md.

@@ -10,7 +10,7 @@ number get rejected, no matter how clever they look.
 ## Running the benchmark
 
 ```
-Binaries\windows-x86_64\Release\Editor\Editor.exe --benchmark [frames] [scene.yaml]
+Binaries\windows-x86_64\Release\Editor.exe --benchmark [frames] [scene.yaml]
 ```
 
 - Always **Release** — Debug numbers are meaningless and validation layers skew timings.
