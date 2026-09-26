@@ -203,7 +203,6 @@ namespace Editor
         images.Scene          = m_ImGui->GetTextureId(SCENE_TARGET, m_Renderer->GetTargetTexture(SCENE_TARGET));
         images.Game           = m_ImGui->GetTextureId(GAME_TARGET, m_Renderer->GetTargetTexture(GAME_TARGET));
         images.GraphPassCount = m_Renderer->GetLastFramePassCount();
-        m_EditorGui->SetGraphNames(m_Renderer->GetGraphNames());
         m_EditorGui->Draw(*m_Context, images);
         m_ImGui->EndFrame();
 

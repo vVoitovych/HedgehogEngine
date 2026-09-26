@@ -3,6 +3,7 @@
 #include "Tools/VertexDescriptionWindow.hpp"
 #include "Tools/PipelineWindow.hpp"
 #include "Tools/ShaderWindow.hpp"
+#include "Tools/RenderGraphEditor/GraphFileReference.hpp"
 #include "Tools/RenderGraphEditor/RenderGraphEditorWindow.hpp"
 
 #include "HedgehogEngine/api/Engine.hpp"
@@ -32,9 +33,13 @@
 
 #include "DialogueWindows/api/MaterialDialogue.hpp"
 #include "DialogueWindows/api/MeshDialogue.hpp"
+#include "DialogueWindows/api/RenderGraphDialogue.hpp"
 #include "DialogueWindows/api/SceneDialogue.hpp"
 #include "DialogueWindows/api/ScriptDialogue.hpp"
 #include "DialogueWindows/api/TextureDialogue.hpp"
+
+#include "HedgehogRenderer/Graph/GraphReference.hpp"
+#include "HedgehogRenderer/Renderer.hpp"
 
 #include "Logger/api/Logger.hpp"
 
@@ -89,8 +94,8 @@ namespace
 
         for (auto& prop : CameraComponent::GetPropTable_())
         {
-            // GraphName likewise: DrawCameraGraphCombo lists the renderer's graphs instead of a
-            // free-text field.
+            // GraphName likewise: DrawCameraGraph lists the renderer's graphs, with Browse... and
+            // Edit, instead of a free-text field.
             const std::string_view name(prop.name);
             if (name == "LayerMask" || name == "GraphName")
             {
@@ -820,7 +825,7 @@ namespace Editor
         auto& camera = ecs.GetComponent<HedgehogEngine::CameraComponent>(entity);
 
         Reflection::RenderComponentGui(&camera, HedgehogEngine::CameraComponent::GetProperties());
-        DrawCameraGraphCombo(camera.GraphName);
+        DrawCameraGraph(camera.GraphName);
 
         // Hand-drawn, like RenderComponent's Layer combo: named checkboxes need live layer
         // names from settings, which the reflected uint32 widget has no way to source.
@@ -849,50 +854,93 @@ namespace Editor
         }
     }
 
-    // Hand-drawn instead of the reflected text field, so a camera picks from the graphs that exist.
-    // A name that matches none (saved in an older scene, or its file deleted) shows in red with a
-    // tooltip: the camera's view is skipped until another graph is picked.
-    void EditorGui::DrawCameraGraphCombo(std::string& graphName) const
+    // Hand-drawn instead of the reflected text field, so a camera picks from the graphs that exist,
+    // or any .graph file with Browse..., and Edit opens its graph in the render graph editor. A
+    // reference with no usable graph (an unknown name, a missing or broken file) shows in red with
+    // a tooltip: the camera's view is skipped until another graph is picked.
+    void EditorGui::DrawCameraGraph(std::string& graphName)
     {
         constexpr ImVec4 MISSING_GRAPH_COLOR = { 0.95f, 0.35f, 0.35f, 1.0f };
-
-        const auto isEditorGraph = [](std::string_view name) { return name == SCENE_GRAPH || name == RESULT_GRAPH; };
-        const bool known         = std::ranges::find(m_GraphNames, graphName) != m_GraphNames.end();
-
-        if (!known)
-            ImGui::PushStyleColor(ImGuiCol_Text, MISSING_GRAPH_COLOR);
-        const bool open = ImGui::BeginCombo("GraphName", graphName.empty() ? "(none)" : graphName.c_str());
-        if (!known)
-        {
-            ImGui::PopStyleColor();
-            if (ImGui::IsItemHovered())
-                ImGui::SetTooltip("No graph asset named '%s': this camera's view is skipped.", graphName.c_str());
-        }
-        if (!open)
+        if (!m_Renderer)
             return;
 
-        // Graphs a scene camera would pick first, then the editor's own views' graphs.
-        for (const bool editorGraphs : { false, true })
+        // An engine graph by its name, a file by its file name; the drop-down's tooltip gives the path.
+        const auto label = [](const std::string& reference)
         {
-            bool separated = !editorGraphs;
-            for (const std::string& name : m_GraphNames)
+            if (Renderer::ClassifyGraphReference(reference) == Renderer::GraphReferenceKind::Name)
+                return reference;
+            return std::filesystem::path(reference).filename().string();
+        };
+        const auto isEditorGraph = [](std::string_view name) { return name == SCENE_GRAPH || name == RESULT_GRAPH; };
+        const bool usable        = m_Renderer->FindGraphAsset(graphName) != nullptr;
+
+        if (!usable)
+            ImGui::PushStyleColor(ImGuiCol_Text, MISSING_GRAPH_COLOR);
+        const bool open = ImGui::BeginCombo("GraphName", graphName.empty() ? "(none)" : label(graphName).c_str());
+        if (!usable)
+            ImGui::PopStyleColor();
+        if (ImGui::IsItemHovered() && !graphName.empty())
+        {
+            // A file no view has asked for yet (its view is hidden, say) has no error recorded:
+            // trying it now, only while hovered, says whether it is missing or broken.
+            if (!usable && Renderer::ClassifyGraphReference(graphName) == Renderer::GraphReferenceKind::File)
+                (void)m_Renderer->LoadGraph(graphName);
+            const std::string_view error = m_Renderer->GetGraphError(graphName);
+            if (usable)
+                ImGui::SetTooltip("%s", graphName.c_str());
+            else if (!error.empty())
+                ImGui::SetTooltip("%s\n%s\nThis camera's view is skipped.", graphName.c_str(), std::string(error).c_str());
+            else
+                ImGui::SetTooltip("No graph asset named '%s': this camera's view is skipped.", graphName.c_str());
+        }
+        if (open)
+        {
+            // Graphs a scene camera would pick first, then the editor's own views' graphs.
+            for (const bool editorGraphs : { false, true })
             {
-                if (isEditorGraph(name) != editorGraphs)
-                    continue;
-                if (!separated)
+                bool separated = !editorGraphs;
+                for (const std::string& name : m_Renderer->GetGraphNames())
                 {
-                    ImGui::Separator();
-                    separated = true;
+                    if (isEditorGraph(name) != editorGraphs)
+                        continue;
+                    if (!separated)
+                    {
+                        ImGui::Separator();
+                        separated = true;
+                    }
+                    const std::string shown  = editorGraphs ? name + " (editor)" : label(name);
+                    const bool        chosen = name == graphName;
+                    ImGui::PushID(name.c_str());
+                    if (ImGui::Selectable(shown.c_str(), chosen))
+                        graphName = name;
+                    if (ImGui::IsItemHovered() && shown != name)
+                        ImGui::SetTooltip("%s", name.c_str());
+                    ImGui::PopID();
+                    if (chosen)
+                        ImGui::SetItemDefaultFocus();
                 }
-                const std::string label = editorGraphs ? name + " (editor)" : name;
-                const bool        chosen = name == graphName;
-                if (ImGui::Selectable(label.c_str(), chosen))
-                    graphName = name;
-                if (chosen)
-                    ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
+        }
+
+        // On their own line: the inspector is narrow, and the drop-down lines up with the fields above.
+        if (ImGui::Button("Browse..."))
+        {
+            const char* picked = DialogueWindows::RenderGraphOpenDialogue(GetGraphDialoguePath(*m_FileSystem, "").c_str());
+            if (picked)
+            {
+                graphName = MakeGraphReference(picked, *m_Renderer, *m_FileSystem);
+                (void)m_Renderer->LoadGraph(graphName); // one that fails to load shows in red, with why
             }
         }
-        ImGui::EndCombo();
+        ImGui::SameLine();
+        ImGui::BeginDisabled(graphName.empty());
+        if (ImGui::Button("Edit"))
+        {
+            (void)m_Renderer->LoadGraph(graphName);
+            m_RenderGraphEditorWindow->OpenGraph(graphName);
+        }
+        ImGui::EndDisabled();
     }
 
     void EditorGui::DrawScriptComponent(HedgehogEngine::Engine& context)

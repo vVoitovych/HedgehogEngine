@@ -64,6 +64,9 @@ namespace Editor
         // fileSystem names the files Open... and Save As... pick (MakeGraphReference).
         void Draw(Renderer::Renderer* renderer, const FS::FileSystemManager& fileSystem);
 
+        // Shows the window on the graph a reference names, asking first when there are unsaved edits.
+        void OpenGraph(const std::string& reference);
+
     private:
         // What waits for the unsaved-changes prompt to be answered.
         enum class PendingAction
@@ -80,7 +83,7 @@ namespace Editor
         // Acts at once, or asks first when there are unsaved edits.
         void RequestOpenGraph(const std::string& reference);
         void RequestNewGraph();
-        void OpenGraph(const std::string& reference);
+        void SwitchToGraph(const std::string& reference);
         void NewGraph();
         // Picks a .graph file, registers it with the renderer and opens it.
         void OpenFile(Renderer::Renderer& renderer, const FS::FileSystemManager& fileSystem);

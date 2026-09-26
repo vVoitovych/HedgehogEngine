@@ -24,4 +24,8 @@ namespace Editor
     // The result is normalized (Renderer::NormalizeGraphReference), as GetGraphNames() lists it.
     [[nodiscard]] std::string MakeGraphReference(const std::filesystem::path& file, const Renderer::Renderer& renderer,
                                                  const FS::FileSystemManager& fileSystem);
+
+    // Where the graph file dialogues start: fileName in the Assets folder, or the folder itself
+    // for an empty fileName.
+    [[nodiscard]] std::string GetGraphDialoguePath(const FS::FileSystemManager& fileSystem, const char* fileName);
 }

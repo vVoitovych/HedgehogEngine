@@ -8,7 +8,6 @@
 
 #include <memory>
 #include <optional>
-#include <span>
 #include <string>
 
 namespace HedgehogEngine
@@ -79,12 +78,8 @@ namespace Editor
         std::optional<ECS::Entity> GetSelectedEntity() const { return m_SelectedEntity; }
         void SetSelectedEntity(std::optional<ECS::Entity> entity) { m_SelectedEntity = entity; }
 
-        // The graph assets a camera can name, for the inspector's GraphName list. The names must
-        // outlive the next Draw(): the renderer's list, set every frame before drawing.
-        void SetGraphNames(std::span<const std::string> names) { m_GraphNames = names; }
-
-        // The renderer the render graph editor reads graphs and pass types from, and registers the
-        // graph files it opens with; set once it exists.
+        // The renderer the render graph editor and the camera inspector read graphs and pass types
+        // from, and register the graph files they open with; set once it exists.
         void SetRenderer(Renderer::Renderer* renderer) { m_Renderer = renderer; }
 
     private:
@@ -102,7 +97,7 @@ namespace Editor
         void DrawRenderComponent(HedgehogEngine::Engine& context);
         void DrawLightComponent(HedgehogEngine::Engine& context);
         void DrawCameraComponent(HedgehogEngine::Engine& context);
-        void DrawCameraGraphCombo(std::string& graphName) const;
+        void DrawCameraGraph(std::string& graphName);
         void DrawScriptComponent(HedgehogEngine::Engine& context);
 
         // ── Floating dialogs ─────────────────────────────────────────────────
@@ -138,7 +133,6 @@ namespace Editor
 
         // Valid only during Draw(); read by the viewport panel.
         ViewportImages m_ViewportImages;
-        std::span<const std::string> m_GraphNames;
         Renderer::Renderer*          m_Renderer = nullptr;
     };
 }
