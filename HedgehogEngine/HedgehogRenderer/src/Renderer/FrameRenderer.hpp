@@ -4,6 +4,7 @@
 #include "Profiling/FrameStats.hpp"
 
 #include "HedgehogRenderer/Frame/SharedPhase.hpp"
+#include "HedgehogRenderer/Graph/GraphDiagnostics.hpp"
 #include "HedgehogRenderer/Graph/GraphAssetLibrary.hpp"
 #include "HedgehogRenderer/Graph/GraphInstantiator.hpp"
 #include "HedgehogRenderer/Graph/PassBuilderRegistry.hpp"
@@ -113,6 +114,10 @@ namespace Renderer
         const std::vector<std::string>& GetGraphNames() const { return m_Library.GetNames(); }
         const GraphAssetLibrary&        GetGraphLibrary() const { return m_Library; }
         const PassBuilderRegistry&      GetPassTypes() const { return m_Registry; }
+        std::vector<GraphDiagnostic>    DiagnoseGraph(const GraphAsset& asset) const
+        {
+            return DiagnoseGraphAsset(asset, m_Registry, m_Device);
+        }
 
         // CPU timings for the Editor's --benchmark: while capturing, each frame adds one sample per
         // graph pass name (summed over the views that ran it) besides the Renderer's own zones.
