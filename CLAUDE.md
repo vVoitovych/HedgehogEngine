@@ -126,20 +126,17 @@ HedgehogRenderer/
 └── src/
     ├── Renderer/Renderer.cpp
     ├── RHIContext/               ← owns IRHIDevice + IRHISwapchain
-    ├── ThreadContext/            ← per-frame command lists, fences, semaphores
-    ├── Renderer/FrameRenderer    ← the frame: views, shared phase, per-view graphs, present
+    ├── Renderer/FrameRenderer    ← the frame: per-frame command lists, fences and semaphores,
+    │                               views, shared phase, per-view graphs, present
     ├── Graph/                    ← the render graph, graph assets, engine pass types
     ├── GraphPasses/              ← GraphPassServices: pipelines and uniform rings for the passes
     ├── Views/, Targets/, Frame/  ← ViewManager and culling, RenderTargetRegistry, SharedPhase
     ├── ResourceManager/          ← legacy GPU textures; owns the ResourceRegistry
     ├── ResourceRegistry/         ← mesh/material GPU buffers and descriptor sets
-    └── RenderPasses/             ← the legacy passes: compiled, never run, until deleted
-        ├── InitPass/
+    └── RenderPasses/             ← the legacy geometry passes: compiled, never run, until deleted
         ├── DepthPrepass/
         ├── ShadowmapPass/
-        ├── ForwardPass/
-        ├── GuiPass/
-        └── PresentPass/
+        └── ForwardPass/
 ```
 
 `api/` is the public include root (added to dependents' include paths).  
@@ -151,7 +148,7 @@ Every frame goes through the render graph: the Editor (and `--game-mode`) builds
 
 Graph passes (`assets/Graphs/*.graph`, pass types in `EnginePassTypes`): the shared phase's **Shadow** (the cascaded shadow atlas, once per frame), then per view **DepthPrepass** → **Forward** (lit, samples the atlas) → **Gizmo** (scene view only: editor-layer bounds), and the result view's **Ui** (the application's `UiCallback` into `main`). Views are culled by layer mask and frustum.
 
-The legacy fixed-pass path (`Renderer::DrawFrame`: InitPass, DepthPrepass, ShadowmapPass, ForwardPass, GuiPass, PresentPass under `RenderQueue`) has no callers; it is still compiled until the epic's deletion tickets remove it.
+What is left of the legacy fixed-pass path is being deleted: `Renderer::DrawFrame` is an inert stub that asserts, and `RenderQueue`'s DepthPrepass, ShadowmapPass and ForwardPass are compiled but never recorded. The frame-level legacy pieces (InitPass, GuiPass, PresentPass, ThreadContext) are gone; `FrameRenderer` owns the per-frame command lists and synchronization objects.
 
 **ImGui belongs to the Editor, never the renderer.** `Editor/ImGuiLayer` owns the context, the GLFW platform backend and the RHI GUI backend (`IRHIGuiBackend`, dynamic rendering into any texture of one colour format, created with `Renderer::CreateGuiBackend` for the swapchain's format). The result view's `Ui` pass hands the editor its colour target through a `UiCallback`. `HedgehogRenderer` has no ImGui include path or link, so it cannot include an ImGui header.
 

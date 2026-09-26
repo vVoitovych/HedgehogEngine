@@ -43,26 +43,16 @@ namespace HedgehogSettings
 
 namespace Renderer
 {
-    // The command list and synchronization objects of the frame slot being recorded, owned by
-    // the renderer's ThreadContext and shared with the legacy path.
-    struct FrameSync
-    {
-        RHI::IRHICommandList& Cmd;
-        RHI::IRHIFence&       Fence;
-        RHI::IRHISemaphore&   ImageAvailable;
-        RHI::IRHISemaphore&   RenderFinished;
-        uint32_t              FrameIndex = 0;
-    };
-
     // The render-graph frame (RENDERING.md section 3.1), behind Renderer::RenderFrame. It owns
     // everything the new path adds: the pass services, the shipped graph assets, the render-target
-    // registry and the views, the shared phase, and one RenderGraphRuntime per frame in flight, so
-    // a pooled transient is never reused while an earlier frame may still be reading it.
+    // registry and the views, the shared phase, and per frame in flight a RenderGraphRuntime (so a
+    // pooled transient is never reused while an earlier frame may still be reading it) and the
+    // frame's command list, fence and semaphores.
     //
-    // One frame: acquire, build and order the views, declare the shared phase and then each view's
-    // graph into this slot's runtime, execute it as one recorded stream, blit the viewport target
-    // to the swapchain, submit and present. The fence wait and swapchain resize happen before, in
-    // Renderer::RenderFrame, because the legacy resources resize with them.
+    // One frame: WaitForFrameSlot (the slot's fence), then Render: acquire, build and order the
+    // views, declare the shared phase and then each view's graph into this slot's runtime, execute
+    // it as one recorded stream, blit the viewport target to the swapchain, submit and present.
+    // Renderer::RenderFrame recreates the swapchain between the two when the window was resized.
     //
     // A view whose graph writes the swapchain's format (the editor's result view) renders into
     // "main" directly. One whose graph does not (a camera with the game graph, as in a game build)
@@ -99,10 +89,14 @@ namespace Renderer
         // frame's end.
         void NotifySwapchainResized() { m_Targets.NotifySwapchainResized(); }
 
-        // Everything after the fence wait: acquire, build, execute, submit and present. ui is what
-        // any Ui pass records into its target.
+        // Blocks until the GPU has finished the frame that last used this frame slot, so its command
+        // list, semaphores, runtime and uniforms can be reused.
+        void WaitForFrameSlot();
+
+        // Everything after the fence wait: acquire, build, execute, submit and present, then move to
+        // the next frame slot. ui is what any Ui pass records into its target.
         void Render(const HX::RenderScene& scene, const HR::ResourceRegistry& resources,
-                    const HedgehogSettings::Settings& settings, const UiCallback& ui, const FrameSync& sync);
+                    const HedgehogSettings::Settings& settings, const UiCallback& ui);
 
         // A declared target's texture, for the application to show; nullptr while it is unknown or
         // zero-area. Changes only at the end of a frame that resized it.
@@ -137,7 +131,16 @@ namespace Renderer
         std::optional<PresentSource> DeclareView(RenderGraphRuntime& graph, const View& view,
                                                  GraphFrameData& frame, GraphFrameContext& context,
                                                  const SharedPhaseOutputs& shared);
-        void Present(const FrameSync& sync, uint32_t imageIndex, PresentSource source);
+        // One frame in flight's command list and synchronization objects.
+        struct FrameSlot
+        {
+            std::unique_ptr<RHI::IRHICommandList> Cmd;
+            std::unique_ptr<RHI::IRHIFence>       Fence; // created signaled: the first wait returns
+            std::unique_ptr<RHI::IRHISemaphore>   ImageAvailable;
+            std::unique_ptr<RHI::IRHISemaphore>   RenderFinished;
+        };
+
+        void Present(FrameSlot& slot, uint32_t imageIndex, PresentSource source);
         static bool    Presents(const View& view);
         void           ReportOnce(const std::string& message);
 
@@ -153,6 +156,8 @@ namespace Renderer
         SharedPhase          m_Shared;
 
         std::array<std::unique_ptr<RenderGraphRuntime>, HedgehogEngine::MAX_FRAMES_IN_FLIGHT> m_Runtimes;
+        std::array<FrameSlot, HedgehogEngine::MAX_FRAMES_IN_FLIGHT>                          m_Slots;
+        uint32_t                                                                             m_SlotIndex = 0;
 
         // Rebuilt every frame, reused so steady-state frames allocate little.
         GraphFrameData                           m_SceneFrame; // what every view shares

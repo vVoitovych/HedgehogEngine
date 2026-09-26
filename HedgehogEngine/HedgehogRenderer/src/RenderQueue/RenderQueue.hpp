@@ -2,8 +2,6 @@
 
 #include "Profiling/FrameStats.hpp"
 
-#include "HedgehogRenderer/Graph/UiCallback.hpp"
-
 #include <cstdint>
 #include <memory>
 
@@ -39,13 +37,12 @@ namespace FS
 namespace Renderer
 {
     class ResourceManager;
-    class InitPass;
     class DepthPrePass;
     class ShadowmapPass;
     class ForwardPass;
-    class PresentPass;
-    class GuiPass;
 
+    // The legacy geometry passes. Nothing records them any more: the frame-level work around them
+    // (acquire, UI, submit, present) is gone, and they are deleted next.
     class RenderQueue
     {
     public:
@@ -62,16 +59,11 @@ namespace Renderer
 
         void Cleanup(RHI::IRHIDevice& device);
 
+        // Records the shadow map, depth prepass and forward passes into cmd.
         void Render(const HedgehogEngine::FrameData& frame,
-                    RHI::IRHIDevice&     device,
-                    RHI::IRHISwapchain&  swapchain,
-                    RHI::IRHICommandList& cmd,
-                    RHI::IRHIFence&      fence,
-                    RHI::IRHISemaphore&  imageAvailableSemaphore,
-                    RHI::IRHISemaphore&  renderFinishedSemaphore,
-                    uint32_t             frameIndex,
-                    const ResourceManager& resourceManager,
-                    const UiCallback&      ui);
+                    RHI::IRHICommandList&            cmd,
+                    uint32_t                         frameIndex,
+                    const ResourceManager&           resourceManager);
 
         void UpdateData(const HedgehogEngine::FrameData&             frame,
                         uint32_t                          frameIndex,
@@ -88,11 +80,8 @@ namespace Renderer
     private:
         FrameStats m_FrameStats;
 
-        std::unique_ptr<InitPass>     m_InitPass;
-        std::unique_ptr<DepthPrePass> m_DepthPrePass;
+        std::unique_ptr<DepthPrePass>  m_DepthPrePass;
         std::unique_ptr<ShadowmapPass> m_ShadowmapPass;
-        std::unique_ptr<ForwardPass>  m_ForwardPass;
-        std::unique_ptr<PresentPass>  m_PresentPass;
-        std::unique_ptr<GuiPass>      m_GuiPass;
+        std::unique_ptr<ForwardPass>   m_ForwardPass;
     };
 }

@@ -3,7 +3,6 @@
 #include "FrameRenderer.hpp"
 #include "Profiling/Profiler.hpp"
 #include "RHIContext/RHIContext.hpp"
-#include "ThreadContext/ThreadContext.hpp"
 #include "RenderQueue/RenderQueue.hpp"
 #include "ResourceManager/ResourceManager.hpp"
 
@@ -50,7 +49,6 @@ namespace Renderer
         : m_Window(window)
     {
         m_RHIContext    = std::make_unique<RHIContext>(window);
-        m_ThreadContext = std::make_unique<ThreadContext>(m_RHIContext->GetRHIDevice());
         m_ResourceManager = std::make_unique<ResourceManager>(
             m_RHIContext->GetRHIDevice(),
             m_RHIContext->GetRHISwapchain(),
@@ -85,7 +83,6 @@ namespace Renderer
         if (m_RenderQueue)
             m_RenderQueue->Cleanup(device);
         m_ResourceManager->Cleanup(device);
-        m_ThreadContext->Cleanup(device);
         m_RHIContext->Cleanup();
     }
 
@@ -187,7 +184,7 @@ namespace Renderer
         auto& device    = m_RHIContext->GetRHIDevice();
         auto& swapchain = m_RHIContext->GetRHISwapchain();
 
-        m_ThreadContext->GetFence().Wait();
+        m_FrameRenderer->WaitForFrameSlot();
 
         // Resize before acquiring, so a resize never costs a frame.
         if (m_Window.IsResized())
@@ -195,86 +192,21 @@ namespace Renderer
             m_Window.ResetResizedFlag();
             device.WaitIdle();
             m_RHIContext->RecreateSwapchain(m_Window);
-            // The legacy resources follow too, so DrawFrame finds them sized for the new window.
+            // The legacy resources still exist until they are deleted; keep them the window's size.
             m_ResourceManager->ResizeFrameBufferSizeDependentResources(device, swapchain);
             m_FrameRenderer->NotifySwapchainResized();
         }
 
-        const FrameSync sync{ m_ThreadContext->GetCommandList(), m_ThreadContext->GetFence(),
-                              m_ThreadContext->GetImageAvailableSemaphore(),
-                              m_ThreadContext->GetRenderFinishedSemaphore(), m_ThreadContext->GetFrameIndex() };
-        m_FrameRenderer->Render(scene, m_ResourceManager->GetResourceRegistry(), settings, ui, sync);
-
-        m_ThreadContext->NextFrame();
+        m_FrameRenderer->Render(scene, m_ResourceManager->GetResourceRegistry(), settings, ui);
         HH_PROFILE_FRAME();
     }
 
-    void Renderer::DrawFrame(const HedgehogEngine::FrameData& frameData,
-                             HedgehogEngine::IResourceCatalog& catalog,
-                             HedgehogSettings::Settings&       settings,
-                             const UiCallback&                 ui)
+    // The legacy frame path lost its frame-level work (acquire, UI, submit, present) with InitPass,
+    // GuiPass, PresentPass and ThreadContext. Nothing calls it; it is deleted with ResourceManager.
+    void Renderer::DrawFrame(const HedgehogEngine::FrameData&, HedgehogEngine::IResourceCatalog&,
+                             HedgehogSettings::Settings&, const UiCallback&)
     {
-        HH_PROFILE_ZONE("DrawFrame");
-        assert(m_RenderQueue && "Renderer::DrawFrame: this renderer was built without the legacy path.");
-        ScopedCpuSample sample(m_RenderQueue->GetFrameStats(), "DrawFrame(total)");
-
-        auto& device    = m_RHIContext->GetRHIDevice();
-        auto& swapchain = m_RHIContext->GetRHISwapchain();
-
-        m_ResourceManager->SyncResources(device, catalog);
-
-        const uint32_t frameIndex = m_ThreadContext->GetFrameIndex();
-
-        m_RenderQueue->UpdateData(frameData, frameIndex, settings);
-
-        if (m_Window.IsResized())
-        {
-            m_Window.ResetResizedFlag();
-
-            device.WaitIdle();
-            m_RHIContext->RecreateSwapchain(m_Window);
-
-            m_ResourceManager->ResizeFrameBufferSizeDependentResources(device, swapchain);
-            m_FrameRenderer->NotifySwapchainResized();
-
-            return;
-        }
-
-        if (settings.IsDirty())
-        {
-            m_ResourceManager->ResizeSettingsDependentResources(device, settings);
-            m_RenderQueue->UpdateResources(device, settings, *m_ResourceManager);
-            settings.CleanDirtyState();
-        }
-
-        m_RenderQueue->Render(
-            frameData,
-            device,
-            swapchain,
-            m_ThreadContext->GetCommandList(),
-            m_ThreadContext->GetFence(),
-            m_ThreadContext->GetImageAvailableSemaphore(),
-            m_ThreadContext->GetRenderFinishedSemaphore(),
-            frameIndex,
-            *m_ResourceManager,
-            ui);
-
-        m_ThreadContext->NextFrame();
-
-        // Apply a pending scene view resize at the end of the frame, after this frame's UI (which
-        // shows the old scene image) has been recorded. The application sees the new texture through
-        // GetSceneViewTexture from the next frame on.
-        if (m_DesiredSceneW > 0 && m_DesiredSceneH > 0)
-        {
-            const auto& sceneBuffer = m_ResourceManager->GetSceneColorBuffer();
-            if (sceneBuffer.GetWidth() != m_DesiredSceneW || sceneBuffer.GetHeight() != m_DesiredSceneH)
-            {
-                device.WaitIdle();
-                m_ResourceManager->ResizeSceneView(device, m_DesiredSceneW, m_DesiredSceneH);
-                m_RenderQueue->ResizeSceneView(device, *m_ResourceManager);
-            }
-        }
-
-        HH_PROFILE_FRAME();
+        assert(false && "Renderer::DrawFrame: the legacy frame path is removed; use RenderFrame.");
+        LOGERROR("Renderer::DrawFrame: the legacy frame path is removed; use RenderFrame.");
     }
 }
