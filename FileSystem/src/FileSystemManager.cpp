@@ -99,6 +99,14 @@ namespace FS
         return owner->Exists(virtualPath);
     }
 
+    std::optional<std::vector<DirectoryEntry>> FileSystemManager::ListDirectory(const std::string& virtualPath) const
+    {
+        const FileSystem* owner = FindOwner(virtualPath);
+        if (!owner)
+            return std::nullopt;
+        return owner->ListDirectory(virtualPath);
+    }
+
     std::optional<std::filesystem::path> FileSystemManager::ResolvePhysical(
         const std::string& virtualPath) const
     {

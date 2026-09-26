@@ -2,6 +2,7 @@
 
 #include "Logger/api/Logger.hpp"
 
+#include <algorithm>
 #include <fstream>
 
 namespace FS
@@ -135,6 +136,26 @@ namespace FS
         if (!physPath)
             return false;
         return std::filesystem::exists(*physPath);
+    }
+
+    std::optional<std::vector<DirectoryEntry>> FileSystem::ListDirectory(const std::string& virtualPath) const
+    {
+        const auto physPath = Resolve(virtualPath);
+        std::error_code error;
+        if (!physPath || !std::filesystem::is_directory(*physPath, error))
+            return std::nullopt;
+
+        std::vector<DirectoryEntry> entries;
+        for (const auto& item : std::filesystem::directory_iterator(*physPath, error))
+            entries.push_back({ item.path().filename().string(), item.is_directory(error) });
+        if (error)
+            return std::nullopt;
+
+        std::sort(entries.begin(), entries.end(), [](const DirectoryEntry& a, const DirectoryEntry& b)
+        {
+            return a.IsDirectory != b.IsDirectory ? a.IsDirectory : a.Name < b.Name;
+        });
+        return entries;
     }
 
     std::optional<std::filesystem::path> FileSystem::ResolvePhysical(

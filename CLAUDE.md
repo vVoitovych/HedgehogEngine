@@ -121,7 +121,7 @@ Editor (ConsoleApp)            owns ImGui: context, GLFW backend, GUI renderer (
 | `ContentLoader` | static lib | glTF/glb, OBJ, and texture loading (stb_image) |
 | `DialogueWindows` | static lib | ImGui-based dialogs for materials, meshes, scenes, textures |
 | `Logger` | static lib | Colorized console logging, no dependencies |
-| `Editor` | executable | H-form 5-panel editor; Play/Pause/Stop mode; ConsolePanel captures Logger |
+| `Editor` | executable | H-form 5-panel editor; Play/Pause/Stop mode; ConsolePanel captures Logger; ContentPanel browses `assets://` (folder tree, breadcrumb, search, a grid of type icons from one extension table in `Panels/ContentTypes`, listings re-read at most once a second) |
 
 ### HedgehogRenderer Structure
 
@@ -166,7 +166,7 @@ Each module has its own `Build-[ModuleName].lua` file included from the root `Bu
 
 Unit tests use the **doctest** framework. Test projects (each `<Module>/tests/` with its own `Build-<Module>Test.lua`):
 - `HedgehogMathTest` — vectors, matrices; `NearlyEqual` helpers with configurable epsilon
-- `FileSystemTest` — virtual file system and mounts; provides the `TempDir` RAII helper (`FileSystem/tests/test_helpers.hpp`), reused by other test projects
+- `FileSystemTest` — virtual file system and mounts, directory listing (`ListDirectory`: folders first, then files, by name); provides the `TempDir` RAII helper (`FileSystem/tests/test_helpers.hpp`), reused by other test projects
 - `ECSTest` — entity lifecycle, component storage integrity, system signature membership
 - `EcsSerializationTest` — scene YAML round-trip plus failure paths (missing/corrupt files)
 - `ContentLoaderTest` — OBJ mesh loading with hermetic temp-dir fixtures

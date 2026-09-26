@@ -500,3 +500,55 @@ TEST_CASE("FileSystemManager::ToVirtualPath - picks the correct alias when multi
     CHECK(result->find("assets://") == 0);
     CHECK(result->find("textures/rock.png") != std::string::npos);
 }
+
+// ---------------------------------------------------------------------------
+// FileSystemManager::ListDirectory
+// ---------------------------------------------------------------------------
+
+TEST_CASE("FileSystemManager::ListDirectory - folders first, then files, each by name")
+{
+    TempDir tmp;
+    tmp.WriteFile("b.txt", "b");
+    tmp.WriteFile("a.png", "a");
+    tmp.MakeSubdir("Zeta");
+    tmp.MakeSubdir("Alpha");
+    tmp.WriteFile("Alpha/inner.txt", "not listed: only the direct children are");
+
+    FS::FileSystemManager manager;
+    REQUIRE(manager.Register(MakeFS("assets://", tmp.Path())));
+
+    const auto entries = manager.ListDirectory("assets://");
+    REQUIRE(entries.has_value());
+    const std::vector<FS::DirectoryEntry> expected = {
+        { "Alpha", true }, { "Zeta", true }, { "a.png", false }, { "b.txt", false } };
+    CHECK(*entries == expected);
+
+    const auto inner = manager.ListDirectory("assets://Alpha");
+    REQUIRE(inner.has_value());
+    REQUIRE(inner->size() == 1u);
+    CHECK((*inner)[0] == FS::DirectoryEntry{ "inner.txt", false });
+}
+
+TEST_CASE("FileSystemManager::ListDirectory - an empty folder lists nothing")
+{
+    TempDir tmp;
+    tmp.MakeSubdir("Empty");
+    FS::FileSystemManager manager;
+    REQUIRE(manager.Register(MakeFS("assets://", tmp.Path())));
+
+    const auto entries = manager.ListDirectory("assets://Empty");
+    REQUIRE(entries.has_value());
+    CHECK(entries->empty());
+}
+
+TEST_CASE("FileSystemManager::ListDirectory - a file, a missing folder or an unknown alias gives nullopt")
+{
+    TempDir tmp;
+    tmp.WriteFile("file.txt", "x");
+    FS::FileSystemManager manager;
+    REQUIRE(manager.Register(MakeFS("assets://", tmp.Path())));
+
+    CHECK_FALSE(manager.ListDirectory("assets://file.txt").has_value());
+    CHECK_FALSE(manager.ListDirectory("assets://missing").has_value());
+    CHECK_FALSE(manager.ListDirectory("unknown://").has_value());
+}

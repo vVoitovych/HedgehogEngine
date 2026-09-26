@@ -24,7 +24,8 @@ namespace Editor
         SceneHierarchy = 0,
         Inspector      = 1,
         Console        = 2,
-        Count          = 3
+        Content        = 3,
+        Count          = 4
     };
 
     inline constexpr int DOCK_AREA_COUNT = static_cast<int>(DockArea::Count);
@@ -37,6 +38,7 @@ namespace Editor
         case PanelId::SceneHierarchy: return "Scene Hierarchy";
         case PanelId::Inspector:      return "Inspector";
         case PanelId::Console:        return "Console";
+        case PanelId::Content:        return "Content";
         default:                      return "Unknown";
         }
     }
@@ -48,6 +50,7 @@ namespace Editor
         case PanelId::SceneHierarchy: return "scene_hierarchy";
         case PanelId::Inspector:      return "inspector";
         case PanelId::Console:        return "console";
+        case PanelId::Content:        return "content";
         default:                      return "unknown";
         }
     }
@@ -57,7 +60,19 @@ namespace Editor
         if (s == "scene_hierarchy") return PanelId::SceneHierarchy;
         if (s == "inspector")       return PanelId::Inspector;
         if (s == "console")         return PanelId::Console;
+        if (s == "content")         return PanelId::Content;
         return std::nullopt;
+    }
+
+    // Where a panel goes in a fresh layout, and in one saved before the panel existed.
+    inline constexpr DockArea DefaultPanelArea(PanelId id)
+    {
+        switch (id)
+        {
+        case PanelId::SceneHierarchy: return DockArea::Left;
+        case PanelId::Inspector:      return DockArea::Right;
+        default:                      return DockArea::Bottom;
+        }
     }
 
     struct PanelPos { float x = 200.0f; float y = 200.0f; };
@@ -84,9 +99,8 @@ namespace Editor
             for (int i = 0; i < PANEL_ID_COUNT; ++i)
                 FloatingPositions[i] = { 150.0f + i * 40.0f, 150.0f + i * 40.0f };
 
-            AreaPanels[static_cast<int>(DockArea::Left)].push_back(PanelId::SceneHierarchy);
-            AreaPanels[static_cast<int>(DockArea::Right)].push_back(PanelId::Inspector);
-            AreaPanels[static_cast<int>(DockArea::Bottom)].push_back(PanelId::Console);
+            for (int i = 0; i < PANEL_ID_COUNT; ++i)
+                AreaPanels[static_cast<int>(DefaultPanelArea(static_cast<PanelId>(i)))].push_back(static_cast<PanelId>(i));
         }
 
         bool IsPanelInAnyArea(PanelId id) const
