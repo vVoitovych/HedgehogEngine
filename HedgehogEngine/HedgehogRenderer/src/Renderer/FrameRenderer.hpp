@@ -23,6 +23,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace RHI
@@ -118,6 +119,8 @@ namespace Renderer
         {
             return DiagnoseGraphAsset(asset, m_Registry, m_Device);
         }
+        // Registers a graph file reference ahead of its first use; true if it has a usable asset.
+        bool LoadGraph(std::string_view reference);
 
         // CPU timings for the Editor's --benchmark: while capturing, each frame adds one sample per
         // graph pass name (summed over the views that ran it) besides the Renderer's own zones.
@@ -153,8 +156,12 @@ namespace Renderer
         static bool    Presents(const View& view);
         void           ReportOnce(const std::string& message);
 
-        RHI::IRHIDevice&    m_Device;
-        RHI::IRHISwapchain& m_Swapchain;
+        // The graph a view names, registering a file reference on first use.
+        const GraphAsset* FindOrLoadGraph(std::string_view reference);
+
+        RHI::IRHIDevice&            m_Device;
+        RHI::IRHISwapchain&         m_Swapchain;
+        const FS::FileSystemManager& m_FileSystem; // resolves virtual graph paths
 
         GraphPassServices    m_Services;
         PassBuilderRegistry  m_Registry;
@@ -189,6 +196,8 @@ namespace Renderer
         std::vector<RenderGraphRuntime::PassTiming> m_PassTotals; // this frame's, by pass name
 
         uint64_t    m_FrameNumber = 0;
-        std::string m_LastReport;
+        // ReportOnce(): the messages reported in the previous frame and so far in this one.
+        std::unordered_set<std::string> m_ReportedLastFrame;
+        std::unordered_set<std::string> m_ReportedThisFrame;
     };
 }

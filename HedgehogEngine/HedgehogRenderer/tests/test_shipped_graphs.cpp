@@ -2,6 +2,7 @@
 #include "HedgehogRenderer/Graph/GraphAssetLibrary.hpp"
 #include "HedgehogRenderer/Graph/GraphAssetParser.hpp"
 #include "HedgehogRenderer/Graph/GraphAssetWriter.hpp"
+#include "HedgehogRenderer/Graph/GraphReference.hpp"
 #include "HedgehogRenderer/Graph/GraphInstantiator.hpp"
 #include "HedgehogRenderer/Graph/RenderGraphRuntime.hpp"
 
@@ -360,5 +361,85 @@ TEST_CASE("Oracle: each shipped graph, written and parsed back, is equal and com
         CHECK(PlanOf(registry, reparsed.Asset) == PlanOf(registry, *shipped));
         CHECK(WriteGraphAsset(reparsed.Asset) == text);
     }
+}
+
+TEST_CASE("A graph file anywhere is loaded by path on first use and hot-reloaded like any other")
+{
+    const PassBuilderRegistry registry = MakeEngineRegistry();
+    TempDir dir;
+    const std::filesystem::path file = dir.WriteFile("custom.graph", SMALL_GRAPH);
+    const std::string reference = file.generic_string();
+
+    GraphAssetLibrary library(registry);
+    CHECK(library.Find(reference) == nullptr); // Find never registers
+
+    const GraphAsset* asset = library.FindOrLoad(reference, nullptr);
+    REQUIRE(asset != nullptr);
+    CHECK(library.GetFile(reference) == file);
+
+    // Another spelling of the same file finds the same entry rather than registering it twice.
+    std::string backslashed = file.string();
+    CHECK(library.FindOrLoad(backslashed, nullptr) == asset);
+    CHECK(library.GetNames().size() == 1);
+
+    const std::string before = PlanOf(registry, *asset);
+    dir.WriteFile("custom.graph", SMALL_GRAPH_WITH_SHADOW);
+    Touch(file, 2);
+    CHECK(library.Poll().size() == 1);
+    CHECK(PlanOf(registry, *library.Find(reference)) != before);
+}
+
+TEST_CASE("A virtual graph path is resolved through the caller's resolver")
+{
+    const PassBuilderRegistry registry = MakeEngineRegistry();
+    TempDir dir;
+    const std::filesystem::path file = dir.WriteFile("custom.graph", SMALL_GRAPH);
+
+    GraphAssetLibrary library(registry);
+    const auto resolve = [&](std::string_view virtualPath) -> std::optional<std::filesystem::path>
+    {
+        if (virtualPath == "assets://Graphs/custom.graph")
+            return file;
+        return std::nullopt;
+    };
+    CHECK(library.FindOrLoad("assets://Graphs/custom.graph", resolve) != nullptr);
+    CHECK(library.GetFile("assets://Graphs/custom.graph") == file);
+
+    CHECK(library.FindOrLoad("assets://Graphs/other.graph", resolve) == nullptr);
+    CHECK(std::string(library.GetLastError("assets://Graphs/other.graph")).find("does not exist") != std::string::npos);
+}
+
+TEST_CASE("A missing graph file is reported, not registered, and picked up once it exists")
+{
+    const PassBuilderRegistry registry = MakeEngineRegistry();
+    TempDir dir;
+    const std::filesystem::path file = dir.Path() / "later.graph";
+    const std::string reference = file.generic_string();
+
+    GraphAssetLibrary library(registry);
+    CHECK(library.FindOrLoad(reference, nullptr) == nullptr);
+    CHECK(std::string(library.GetLastError(reference)).find("does not exist") != std::string::npos);
+    CHECK(library.GetNames().empty());
+
+    dir.WriteFile("later.graph", SMALL_GRAPH);
+    CHECK(library.FindOrLoad(reference, nullptr) != nullptr);
+    CHECK(library.GetLastError(reference).empty());
+}
+
+TEST_CASE("Names are listed before file references, and an unknown name is never loaded as a file")
+{
+    const PassBuilderRegistry registry = MakeEngineRegistry();
+    TempDir dir;
+    const std::filesystem::path file = dir.WriteFile("aaa.graph", SMALL_GRAPH);
+
+    GraphAssetLibrary library(registry);
+    REQUIRE(library.FindOrLoad(file.generic_string(), nullptr) != nullptr);
+    REQUIRE(library.Register("zzz", file));
+    CHECK(library.FindOrLoad("unknown", nullptr) == nullptr);
+
+    const std::vector<std::string>& names = library.GetNames();
+    REQUIRE(names.size() == 2);
+    CHECK(names[0] == "zzz");
+    CHECK(names[1] == NormalizeGraphReference(file.generic_string()));
 }
 

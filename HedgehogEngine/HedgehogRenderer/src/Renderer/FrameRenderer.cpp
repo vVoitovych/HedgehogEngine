@@ -45,6 +45,7 @@ namespace Renderer
                                  const FS::FileSystemManager& fileSystem)
         : m_Device(device)
         , m_Swapchain(swapchain)
+        , m_FileSystem(fileSystem)
         , m_Services(device, fileSystem)
         , m_Library(m_Registry)
         , m_Instantiator(m_Registry)
@@ -97,6 +98,8 @@ namespace Renderer
 
         // This slot's fence has signaled, so every frame up to MAX_FRAMES_IN_FLIGHT ago is complete.
         ++m_FrameNumber;
+        std::swap(m_ReportedLastFrame, m_ReportedThisFrame);
+        m_ReportedThisFrame.clear();
         const uint64_t completed = m_FrameNumber > HedgehogEngine::MAX_FRAMES_IN_FLIGHT
                                  ? m_FrameNumber - HedgehogEngine::MAX_FRAMES_IN_FLIGHT : 0;
         m_Targets.BeginFrame(m_FrameNumber, completed, imageIndex);
@@ -271,11 +274,14 @@ namespace Renderer
         RenderGraphRuntime& graph, const View& view, GraphFrameData& frame, GraphFrameContext& context,
         const SharedPhaseOutputs& shared)
     {
-        const GraphAsset* asset = m_Library.Find(view.Desc.GraphName);
+        const GraphAsset* asset = FindOrLoadGraph(view.Desc.GraphName);
         if (!asset)
         {
-            ReportOnce("FrameRenderer: view " + std::to_string(view.Id) + " uses the unknown graph '"
-                       + view.Desc.GraphName + "'; it is skipped.");
+            const std::string_view reason = m_Library.GetLastError(view.Desc.GraphName);
+            ReportOnce("FrameRenderer: view " + std::to_string(view.Id) + " has no usable graph '"
+                       + view.Desc.GraphName + "' (" + (reason.empty() ? std::string("no graph by that name")
+                                                                          : std::string(reason))
+                       + "); it is skipped.");
             return std::nullopt;
         }
 
@@ -410,12 +416,26 @@ namespace Renderer
             || std::find(targets.begin(), targets.end(), RenderTargetRegistry::MAIN_TARGET) != targets.end();
     }
 
-    // A problem that persists would otherwise be logged every frame.
+    // A problem that persists would otherwise be logged every frame. A message is logged when it was
+    // not reported last frame, so an ongoing problem logs once however many others it interleaves
+    // with, and one that goes away and comes back logs again.
     void FrameRenderer::ReportOnce(const std::string& message)
     {
-        if (message == m_LastReport)
-            return;
-        m_LastReport = message;
-        LOGWARNING(message);
+        const bool reportedLastFrame = m_ReportedLastFrame.contains(message);
+        if (m_ReportedThisFrame.insert(message).second && !reportedLastFrame)
+            LOGWARNING(message);
+    }
+
+    const GraphAsset* FrameRenderer::FindOrLoadGraph(std::string_view reference)
+    {
+        return m_Library.FindOrLoad(reference, [this](std::string_view virtualPath)
+        {
+            return m_FileSystem.ResolvePhysical(std::string(virtualPath));
+        });
+    }
+
+    bool FrameRenderer::LoadGraph(std::string_view reference)
+    {
+        return FindOrLoadGraph(reference) != nullptr;
     }
 }
