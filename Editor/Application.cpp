@@ -114,6 +114,7 @@ namespace Editor
             m_Context->GetWindowContext().GetWindow(), engineContext.GetFileSystem(),
             [this](const Renderer::RendererDevice& device) { m_ImGui->CreateBackend(device); });
         m_EditorGui = std::make_unique<EditorGui>(*m_Context);
+        m_EditorGui->SetRenderer(m_Renderer.get());
 
         // The panels' targets: zero-sized until their tabs are first drawn.
         for (const char* target : { SCENE_TARGET, GAME_TARGET })

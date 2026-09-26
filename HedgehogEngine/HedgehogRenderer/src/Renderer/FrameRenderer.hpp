@@ -111,6 +111,8 @@ namespace Renderer
         size_t GetLastFramePassCount() const { return m_LastFramePassCount; }
 
         const std::vector<std::string>& GetGraphNames() const { return m_Library.GetNames(); }
+        const GraphAssetLibrary&        GetGraphLibrary() const { return m_Library; }
+        const PassBuilderRegistry&      GetPassTypes() const { return m_Registry; }
 
         // CPU timings for the Editor's --benchmark: while capturing, each frame adds one sample per
         // graph pass name (summed over the views that ran it) besides the Renderer's own zones.

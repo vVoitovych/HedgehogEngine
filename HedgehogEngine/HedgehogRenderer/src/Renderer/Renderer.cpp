@@ -96,6 +96,21 @@ namespace Renderer
         return m_FrameRenderer->GetGraphNames();
     }
 
+    const GraphAsset* Renderer::FindGraphAsset(std::string_view name) const
+    {
+        return m_FrameRenderer->GetGraphLibrary().Find(name);
+    }
+
+    std::filesystem::path Renderer::GetGraphFile(std::string_view name) const
+    {
+        return m_FrameRenderer->GetGraphLibrary().GetFile(name);
+    }
+
+    const PassTypeInfo* Renderer::FindPassType(std::string_view type) const
+    {
+        return m_FrameRenderer->GetPassTypes().Find(type);
+    }
+
     void Renderer::BeginFrameStatsCapture()
     {
         m_FrameRenderer->GetFrameStats().BeginCapture();

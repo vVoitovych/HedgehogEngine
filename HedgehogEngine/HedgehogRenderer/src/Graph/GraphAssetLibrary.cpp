@@ -116,6 +116,12 @@ namespace Renderer
         return it != m_Entries.end() && it->second.KnownGood ? &*it->second.KnownGood : nullptr;
     }
 
+    std::filesystem::path GraphAssetLibrary::GetFile(std::string_view name) const
+    {
+        const auto it = m_Entries.find(std::string(name));
+        return it != m_Entries.end() ? it->second.File : std::filesystem::path{};
+    }
+
     std::string_view GraphAssetLibrary::GetLastError(std::string_view name) const
     {
         const auto it = m_Entries.find(std::string(name));

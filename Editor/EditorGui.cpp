@@ -165,7 +165,7 @@ namespace Editor
         m_VertexDescWindow->Draw(fs);
         m_PipelineWindow->Draw(fs);
         m_ShaderWindow->Draw(fs);
-        m_RenderGraphEditorWindow->Draw();
+        m_RenderGraphEditorWindow->Draw(m_Renderer);
     }
 
     // ─── Panel dispatch ───────────────────────────────────────────────────────

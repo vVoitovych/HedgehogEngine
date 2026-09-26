@@ -16,6 +16,11 @@ namespace HedgehogEngine
     class Engine;
 }
 
+namespace Renderer
+{
+    class Renderer;
+}
+
 namespace Editor
 {
     class ConsolePanel;
@@ -78,6 +83,9 @@ namespace Editor
         // outlive the next Draw(): the renderer's list, set every frame before drawing.
         void SetGraphNames(std::span<const std::string> names) { m_GraphNames = names; }
 
+        // The renderer the render graph editor reads graphs and pass types from; set once it exists.
+        void SetRenderer(const Renderer::Renderer* renderer) { m_Renderer = renderer; }
+
     private:
         // ── Panel content (drawn into dock areas) ────────────────────────────
         void DrawPanelContent(PanelId panel, HedgehogEngine::Engine& context);
@@ -130,5 +138,6 @@ namespace Editor
         // Valid only during Draw(); read by the viewport panel.
         ViewportImages m_ViewportImages;
         std::span<const std::string> m_GraphNames;
+        const Renderer::Renderer*    m_Renderer = nullptr;
     };
 }
