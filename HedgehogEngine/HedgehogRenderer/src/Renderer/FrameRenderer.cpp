@@ -141,14 +141,34 @@ namespace Renderer
                 presented = *source;
         }
 
+        graph.SetPassTimingEnabled(m_Stats.IsCapturing());
         if (!graph.Execute(sync.Cmd))
             presented = PresentSource::None;
         m_LastFramePassCount = graph.GetLastExecutedPassCount();
+        RecordPassTimings(graph);
 
         Present(sync, imageIndex, presented);
 
         m_Targets.EndFrame();
         m_Views.EndFrame();
+    }
+
+    void FrameRenderer::RecordPassTimings(const RenderGraphRuntime& graph)
+    {
+        if (!m_Stats.IsCapturing())
+            return;
+        m_PassTotals.clear();
+        for (const RenderGraphRuntime::PassTiming& timing : graph.GetLastPassTimings())
+        {
+            const auto same = std::find_if(m_PassTotals.begin(), m_PassTotals.end(),
+                [&](const RenderGraphRuntime::PassTiming& total) { return total.Name == timing.Name; });
+            if (same != m_PassTotals.end())
+                same->CpuMilliseconds += timing.CpuMilliseconds;
+            else
+                m_PassTotals.push_back(timing);
+        }
+        for (const RenderGraphRuntime::PassTiming& total : m_PassTotals)
+            m_Stats.AddSample(total.Name.c_str(), total.CpuMilliseconds);
     }
 
     void FrameRenderer::FillSceneFrame(const HX::RenderScene& scene, const HR::ResourceRegistry& resources,

@@ -126,6 +126,17 @@ namespace Renderer
         // view or an unread pass shows up here as fewer passes.
         size_t GetLastExecutedPassCount() const { return m_LastExecutedPassCount; }
 
+        // CPU time each executed pass took to record (its barriers and its closure), by pass name
+        // in execution order, for the Editor's --benchmark. Measured only while enabled; the last
+        // Execute() with timing off leaves the list empty.
+        struct PassTiming
+        {
+            std::string Name;
+            double      CpuMilliseconds = 0.0;
+        };
+        void SetPassTimingEnabled(bool enabled) { m_PassTimingEnabled = enabled; }
+        const std::vector<PassTiming>& GetLastPassTimings() const { return m_LastPassTimings; }
+
         // Exposed for tests/diagnostics — verifying AddPass's "no heap churn" claim needs a way
         // to check whether a pointer actually came from this arena.
         const FrameArena& GetArena() const { return m_Arena; }
@@ -164,6 +175,9 @@ namespace Renderer
         uint32_t m_SwapchainHeight = 0;
 
         size_t m_LastExecutedPassCount = 0;
+
+        bool                    m_PassTimingEnabled = false;
+        std::vector<PassTiming> m_LastPassTimings; // reused: names fit the small-string buffer
 
         const GraphFrameContext* m_FrameContext = nullptr;
         const GraphDescription*  m_Executing    = nullptr; // set only while Execute() runs passes

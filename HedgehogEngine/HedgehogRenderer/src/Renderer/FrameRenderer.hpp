@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GraphPasses/GraphPassServices.hpp"
+#include "Profiling/FrameStats.hpp"
 
 #include "HedgehogRenderer/Frame/SharedPhase.hpp"
 #include "HedgehogRenderer/Graph/GraphAssetLibrary.hpp"
@@ -115,7 +116,12 @@ namespace Renderer
         // How many passes the last frame executed, across every view.
         size_t GetLastFramePassCount() const { return m_LastFramePassCount; }
 
+        // CPU timings for the Editor's --benchmark: while capturing, each frame adds one sample per
+        // graph pass name (summed over the views that ran it) besides the Renderer's own zones.
+        FrameStats& GetFrameStats() { return m_Stats; }
+
     private:
+        void           RecordPassTimings(const RenderGraphRuntime& graph);
         void           FillSceneFrame(const HX::RenderScene& scene, const HR::ResourceRegistry& resources,
                                       const HedgehogSettings::Settings& settings);
         // The view's frame: its camera, and the instances its layer mask and frustum keep.
@@ -164,6 +170,9 @@ namespace Renderer
         std::unordered_map<std::string, RGTexture> m_WrittenTargets; // this frame: target -> newest version
 
         size_t m_LastFramePassCount = 0;
+
+        FrameStats                                 m_Stats;
+        std::vector<RenderGraphRuntime::PassTiming> m_PassTotals; // this frame's, by pass name
 
         uint64_t    m_FrameNumber = 0;
         std::string m_LastReport;

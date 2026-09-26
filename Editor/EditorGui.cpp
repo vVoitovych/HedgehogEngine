@@ -223,8 +223,7 @@ namespace Editor
             if (m_ViewportImages.Game)
                 ImGui::Image(m_ViewportImages.Game, avail);
             else
-                ImGui::TextDisabled("No camera is drawn here: the game view needs the render graph "
-                                    "(rendering.use_render_graph) and a camera in the scene.");
+                ImGui::TextDisabled("No camera is drawn here: add an enabled camera to the scene.");
 
             ImGui::EndTabItem();
         }

@@ -25,20 +25,10 @@ namespace Editor
 
     ImGuiLayer::~ImGuiLayer() = default;
 
-    void ImGuiLayer::BeginFrame(Renderer::Renderer& renderer, bool forRenderGraph)
+    void ImGuiLayer::BeginFrame(Renderer::Renderer& renderer)
     {
-        if (!m_Backend || m_BackendForRenderGraph != forRenderGraph)
-        {
-            if (m_Backend)
-            {
-                // Every id belongs to the old GUI renderer, and a frame in flight may still use one.
-                renderer.WaitIdle();
-                ReleaseTextureIds(false);
-                m_Backend.reset();
-            }
-            m_Backend               = renderer.CreateGuiBackend(forRenderGraph);
-            m_BackendForRenderGraph = forRenderGraph;
-        }
+        if (!m_Backend)
+            m_Backend = renderer.CreateGuiBackend(true);
 
         ++m_Frame;
         ReleaseTextureIds(true);

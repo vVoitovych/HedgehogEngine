@@ -4,7 +4,6 @@
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogEngine/api/WindowContext.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/HedgehogSettings.hpp"
-#include "HedgehogEngine/HedgehogSettings/api/RenderingSettings.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
 #include "HedgehogExtract/api/MeshBounds.hpp"
 #include "HedgehogExtract/api/RenderScene.hpp"
@@ -40,7 +39,6 @@ namespace Editor
             if (fileSystem.Exists(ENGINE_SETTINGS_PATH) && !settings.Load(ENGINE_SETTINGS_PATH, fileSystem))
                 LOGWARNING("Game mode: engine settings could not be read, using defaults.");
             settings.CleanDirtyState();
-            settings.GetRenderingSettings().SetUseRenderGraph(true); // for this run only; never saved
 
             const auto scenePath = fileSystem.ResolvePhysical(GAME_SCENE);
             if (!scenePath || !engineContext.GetSceneManager().LoadScene(scenePath->string()))
