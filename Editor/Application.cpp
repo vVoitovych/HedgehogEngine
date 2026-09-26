@@ -139,6 +139,7 @@ namespace Editor
     void EditorApplication::RunBenchmark(uint32_t warmupFrames, uint32_t measureFrames, const std::string& sceneFile)
     {
         Init();
+        m_EditorGui->SetBenchmarkMode(true);
         LoadBenchmarkScene(sceneFile);
 
         LOGINFO("Benchmark: warming up for ", warmupFrames, " frame(s)...");

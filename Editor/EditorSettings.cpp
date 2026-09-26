@@ -103,6 +103,8 @@ namespace Editor
 
             if (auto dock = root["dock_layout"])
             {
+                // The file's layout over the defaults, so a panel it does not know keeps its own.
+                dockLayout.InitDefaults();
                 if (auto n = dock["left_width"])    dockLayout.LeftWidth    = n.as<float>();
                 if (auto n = dock["right_width"])   dockLayout.RightWidth   = n.as<float>();
                 if (auto n = dock["bottom_height"]) dockLayout.BottomHeight = n.as<float>();
@@ -128,14 +130,16 @@ namespace Editor
                     }
                 }
 
-                if (auto vis = dock["panel_visible"])
+                // A panel newer than the file has no visibility entry: it is shown, and placed in
+                // its default area when the file's area lists left it out.
+                const YAML::Node vis = dock["panel_visible"];
+                for (int i = 0; i < PANEL_ID_COUNT; ++i)
                 {
-                    for (int i = 0; i < PANEL_ID_COUNT; ++i)
-                    {
-                        const char* key = PanelIdToString(static_cast<PanelId>(i));
-                        if (auto n = vis[key])
-                            dockLayout.PanelVisible[i] = n.as<bool>();
-                    }
+                    const PanelId id = static_cast<PanelId>(i);
+                    if (vis && vis[PanelIdToString(id)])
+                        dockLayout.PanelVisible[i] = vis[PanelIdToString(id)].as<bool>();
+                    else if (!dockLayout.IsPanelInAnyArea(id))
+                        dockLayout.AreaPanels[static_cast<int>(DefaultPanelArea(id))].push_back(id);
                 }
 
                 if (auto fp = dock["floating_positions"])

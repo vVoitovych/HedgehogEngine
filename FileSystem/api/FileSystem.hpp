@@ -10,6 +10,15 @@
 
 namespace FS
 {
+    // One entry of a directory listing (ListDirectory).
+    struct DirectoryEntry
+    {
+        std::string Name; // the file or folder name, without its parent path
+        bool        IsDirectory = false;
+
+        bool operator==(const DirectoryEntry& other) const = default;
+    };
+
     class FileSystem
     {
     public:
@@ -52,6 +61,11 @@ namespace FS
         // Returns true if the file at virtualPath exists on disk.
         // Returns false for an unrecognised alias or a missing file.
         FILE_SYSTEM_API bool Exists(const std::string& virtualPath) const;
+
+        // Lists the directory at virtualPath: folders first, then files, each sorted by name.
+        // Returns nullopt for an unrecognised alias or a path that is not an existing directory.
+        FILE_SYSTEM_API std::optional<std::vector<DirectoryEntry>>
+            ListDirectory(const std::string& virtualPath) const;
 
         // Returns the physical path for virtualPath, or nullopt if alias unknown.
         // Use only as an escape hatch for third-party loaders that require an OS path.

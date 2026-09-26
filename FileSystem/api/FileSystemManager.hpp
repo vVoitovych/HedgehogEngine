@@ -1,5 +1,6 @@
 #pragma once
 
+#include "FileSystem.hpp"
 #include "FileSystemApi.hpp"
 
 #include <filesystem>
@@ -47,6 +48,11 @@ namespace FS
 
         // Returns true if the file at virtualPath exists on disk.
         FILE_SYSTEM_API bool Exists(const std::string& virtualPath) const;
+
+        // Lists the directory at virtualPath through whichever FileSystem owns it: folders
+        // first, then files, each sorted by name. nullopt when it is not an existing directory.
+        FILE_SYSTEM_API std::optional<std::vector<DirectoryEntry>>
+            ListDirectory(const std::string& virtualPath) const;
 
         // Returns the physical OS path for virtualPath, or nullopt if the alias is unknown.
         FILE_SYSTEM_API std::optional<std::filesystem::path>

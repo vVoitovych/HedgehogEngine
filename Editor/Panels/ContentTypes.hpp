@@ -1,0 +1,33 @@
+#pragma once
+
+#include <string_view>
+
+namespace Editor
+{
+    // What a file or folder under Assets/ is, as the Content panel shows it and later tickets act
+    // on it (opening it, dragging it onto a field).
+    enum class ContentType
+    {
+        Folder,
+        Scene,
+        Material,
+        Texture,
+        Mesh,
+        Script,
+        Shader,
+        Pipeline,
+        VertexDescription,
+        RenderGraph,
+        Other,
+    };
+
+    // The type of an entry, from its extension (case-insensitive) in one table. A .yaml file is a
+    // scene only in a folder named "Scenes"; elsewhere it is Other.
+    [[nodiscard]] ContentType GetContentType(std::string_view virtualPath, bool isDirectory);
+
+    // A short label drawn in the entry's icon ("DIR", "MAT", ...).
+    [[nodiscard]] const char* GetContentTypeGlyph(ContentType type);
+
+    // The type's name, for tooltips ("Material").
+    [[nodiscard]] const char* GetContentTypeName(ContentType type);
+}

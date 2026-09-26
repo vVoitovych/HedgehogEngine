@@ -1,5 +1,6 @@
 #include "EditorGui.hpp"
 #include "Panels/ConsolePanel.hpp"
+#include "Panels/ContentPanel.hpp"
 #include "Tools/VertexDescriptionWindow.hpp"
 #include "Tools/PipelineWindow.hpp"
 #include "Tools/ShaderWindow.hpp"
@@ -114,7 +115,8 @@ namespace Editor
         , m_ShaderWindow(std::make_unique<ShaderWindow>())
         , m_RenderGraphEditorWindow(std::make_unique<RenderGraphEditorWindow>())
     {
-        m_FileSystem = &context.GetEngineContext().GetFileSystem();
+        m_FileSystem   = &context.GetEngineContext().GetFileSystem();
+        m_ContentPanel = std::make_unique<ContentPanel>(*m_FileSystem);
         if (m_Settings.Load("engine://editor_settings.yaml", *m_FileSystem)
             && m_Settings.dockLayout.IsValid())
             m_DockSystem.GetLayout() = m_Settings.dockLayout;
@@ -182,8 +184,17 @@ namespace Editor
         case PanelId::SceneHierarchy: DrawSceneHierarchy(context);          break;
         case PanelId::Inspector:      DrawInspector(context);                break;
         case PanelId::Console:        m_ConsolePanel->Draw();                break;
+        case PanelId::Content:        DrawContentPanel();                    break;
         default:                      DrawSceneViewContent();                break;
         }
+    }
+
+    void EditorGui::DrawContentPanel()
+    {
+        if (m_Benchmarking)
+            ImGui::TextDisabled("Hidden while benchmarking.");
+        else
+            m_ContentPanel->Draw();
     }
 
     void EditorGui::DrawSceneViewContent()

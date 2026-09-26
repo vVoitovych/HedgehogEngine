@@ -23,6 +23,7 @@ namespace Renderer
 namespace Editor
 {
     class ConsolePanel;
+    class ContentPanel;
     class VertexDescriptionWindow;
     class PipelineWindow;
     class ShaderWindow;
@@ -82,12 +83,17 @@ namespace Editor
         // from, and register the graph files they open with; set once it exists.
         void SetRenderer(Renderer::Renderer* renderer) { m_Renderer = renderer; }
 
+        // A benchmark measures the renderer: the Content panel then draws nothing, so its folder
+        // scans never land in the numbers, whatever tab the saved layout left active.
+        void SetBenchmarkMode(bool benchmarking) { m_Benchmarking = benchmarking; }
+
     private:
         // ── Panel content (drawn into dock areas) ────────────────────────────
         void DrawPanelContent(PanelId panel, HedgehogEngine::Engine& context);
         void DrawMainMenu(HedgehogEngine::Engine& context);
         void DrawToolbarContent();
         void DrawSceneViewContent();
+        void DrawContentPanel();
         void DrawSceneHierarchy(HedgehogEngine::Engine& context);
         void DrawHierarchyNode(HedgehogEngine::Engine& context, ECS::Entity entity, int& index);
         void DrawInspector(HedgehogEngine::Engine& context);
@@ -126,6 +132,7 @@ namespace Editor
         EditorMode                             m_EditorMode         = EditorMode::Edit;
         bool                                   m_SettingsWindowOpen = false;
         std::unique_ptr<ConsolePanel>            m_ConsolePanel;
+        std::unique_ptr<ContentPanel>            m_ContentPanel;
         std::unique_ptr<VertexDescriptionWindow> m_VertexDescWindow;
         std::unique_ptr<PipelineWindow>          m_PipelineWindow;
         std::unique_ptr<ShaderWindow>            m_ShaderWindow;
@@ -134,5 +141,6 @@ namespace Editor
         // Valid only during Draw(); read by the viewport panel.
         ViewportImages m_ViewportImages;
         Renderer::Renderer*          m_Renderer = nullptr;
+        bool                         m_Benchmarking = false;
     };
 }
