@@ -40,7 +40,6 @@ namespace Editor
         constexpr const char* UNSAVED_POPUP   = "Unsaved graph changes";
         constexpr const char* UNTITLED        = "untitled";
         constexpr const char* GRAPH_EXTENSION = ".graph";
-        constexpr const char* DIALOGUE_FOLDER = "assets://"; // where Open... and Save As... start
 
         ImVec4 TitleColor(const GraphCanvasNode& node)
         {
@@ -59,13 +58,6 @@ namespace Editor
         GraphNodePosition AutomaticPosition(const GraphCanvasNode& node)
         {
             return { static_cast<float>(node.Column) * COLUMN_WIDTH, static_cast<float>(node.Row) * ROW_HEIGHT };
-        }
-
-        // The dialogues' starting point: a file in the Assets folder, or the folder itself.
-        std::string DialoguePath(const FS::FileSystemManager& fileSystem, const char* fileName)
-        {
-            const std::optional<std::filesystem::path> folder = fileSystem.ResolvePhysical(DIALOGUE_FOLDER);
-            return folder ? (*folder / fileName).make_preferred().string() : std::string(fileName);
         }
 
         // The renderer's load errors read "graph 'x' (file) is invalid; keeping ...:" and then one
@@ -252,7 +244,7 @@ namespace Editor
         if (proceed)
         {
             if (m_Pending == PendingAction::OpenGraph)
-                OpenGraph(m_PendingGraph);
+                SwitchToGraph(m_PendingGraph);
             else if (m_Pending == PendingAction::NewGraph)
                 NewGraph();
             else
@@ -273,7 +265,7 @@ namespace Editor
             m_PendingGraph = reference;
             return;
         }
-        OpenGraph(reference);
+        SwitchToGraph(reference);
     }
 
     void RenderGraphEditorWindow::RequestNewGraph()
@@ -285,6 +277,12 @@ namespace Editor
     }
 
     void RenderGraphEditorWindow::OpenGraph(const std::string& reference)
+    {
+        Open = true;
+        RequestOpenGraph(reference);
+    }
+
+    void RenderGraphEditorWindow::SwitchToGraph(const std::string& reference)
     {
         m_GraphName = reference;
         m_GraphFile.clear();
@@ -306,7 +304,7 @@ namespace Editor
 
     void RenderGraphEditorWindow::OpenFile(Renderer::Renderer& renderer, const FS::FileSystemManager& fileSystem)
     {
-        const char* picked = DialogueWindows::RenderGraphOpenDialogue(DialoguePath(fileSystem, "").c_str());
+        const char* picked = DialogueWindows::RenderGraphOpenDialogue(GetGraphDialoguePath(fileSystem, "").c_str());
         if (!picked)
             return;
         const std::string reference = MakeGraphReference(picked, renderer, fileSystem);
@@ -358,7 +356,7 @@ namespace Editor
 
     void RenderGraphEditorWindow::SaveAs(Renderer::Renderer& renderer, const FS::FileSystemManager& fileSystem)
     {
-        const std::string start = m_GraphFile.empty() ? DialoguePath(fileSystem, "untitled.graph")
+        const std::string start = m_GraphFile.empty() ? GetGraphDialoguePath(fileSystem, "untitled.graph")
                                                       : m_GraphFile.string();
         const char* picked = DialogueWindows::RenderGraphSaveDialogue(start.c_str());
         if (!picked)

@@ -12,6 +12,8 @@ namespace Editor
 {
     namespace
     {
+        constexpr const char* DIALOGUE_FOLDER = "assets://";
+
         // Absolute, with '..' resolved and the real spelling of the parts that exist, and no
         // trailing separator, so two paths to one place compare equal element by element.
         std::filesystem::path Canonical(const std::filesystem::path& path)
@@ -59,5 +61,11 @@ namespace Editor
         }
         // The renderer's spelling of the reference, so the editor can compare it with GetGraphNames().
         return Renderer::NormalizeGraphReference(best.empty() ? path.generic_string() : best);
+    }
+
+    std::string GetGraphDialoguePath(const FS::FileSystemManager& fileSystem, const char* fileName)
+    {
+        const std::optional<std::filesystem::path> folder = fileSystem.ResolvePhysical(DIALOGUE_FOLDER);
+        return folder ? (*folder / fileName).make_preferred().string() : std::string(fileName);
     }
 }
