@@ -281,3 +281,60 @@ TEST_CASE("A graph that never loaded has nothing to fall back to until it is fix
     CHECK(library.Poll() == std::vector<std::string>{ "custom" });
     CHECK(library.Find("custom") != nullptr);
 }
+
+TEST_CASE("A graph directory registers every .graph file under its stem, in sorted order")
+{
+    const PassBuilderRegistry registry = MakeEngineRegistry();
+    GraphAssetLibrary library(registry);
+
+    SUBCASE("the shipped directory")
+    {
+        REQUIRE(library.RegisterDirectory(HH_GRAPH_ASSET_DIR));
+        CHECK(library.GetNames() == std::vector<std::string>{ "game", "result", "scene" });
+        for (const std::string& name : library.GetNames())
+        {
+            CAPTURE(name);
+            CHECK(library.Find(name) != nullptr);
+        }
+    }
+    SUBCASE("other files are ignored, and a broken graph is still listed")
+    {
+        TempDir dir;
+        dir.WriteFile("b.graph", SMALL_GRAPH);
+        dir.WriteFile("a.graph", SMALL_GRAPH_WITH_SHADOW);
+        dir.WriteFile("broken.graph", "version: 3\n");
+        dir.WriteFile("notes.txt", "not a graph");
+        dir.WriteFile("c.graph.bak", SMALL_GRAPH);
+
+        REQUIRE(library.RegisterDirectory(dir.Path()));
+        CHECK(library.GetNames() == std::vector<std::string>{ "a", "b", "broken" });
+        CHECK(library.Find("a") != nullptr);
+        CHECK(library.Find("broken") == nullptr);
+        CHECK_FALSE(library.GetLastError("broken").empty());
+    }
+    SUBCASE("a missing directory registers nothing")
+    {
+        CHECK_FALSE(library.RegisterDirectory(std::filesystem::path(HH_GRAPH_ASSET_DIR) / "missing"));
+        CHECK(library.GetNames().empty());
+    }
+}
+
+TEST_CASE("A graph file added to a watched directory is registered by the next Poll()")
+{
+    const PassBuilderRegistry registry = MakeEngineRegistry();
+    TempDir dir;
+    dir.WriteFile("game.graph", SMALL_GRAPH);
+
+    GraphAssetLibrary library(registry);
+    REQUIRE(library.RegisterDirectory(dir.Path()));
+    CHECK(library.Poll().empty()); // nothing added: the directory is not even listed
+
+    dir.WriteFile("custom.graph", SMALL_GRAPH_WITH_SHADOW);
+    Touch(dir.Path(), 2); // the directory's write time is what Poll() checks
+    CHECK(library.Poll() == std::vector<std::string>{ "custom" });
+    CHECK(library.GetNames() == std::vector<std::string>{ "custom", "game" });
+    REQUIRE(library.Find("custom") != nullptr);
+    CHECK(PlanOf(registry, *library.Find("custom")) != PlanOf(registry, *library.Find("game")));
+
+    CHECK(library.Poll().empty()); // registered once, not again
+}

@@ -8,6 +8,8 @@
 
 #include <memory>
 #include <optional>
+#include <span>
+#include <string>
 
 namespace HedgehogEngine
 {
@@ -22,6 +24,11 @@ namespace Editor
     class ShaderWindow;
 
     enum class EditorMode { Edit, Play, Pause };
+
+    // The graphs the editor's own views use (RENDERING.md section 7). The inspector lists them
+    // apart from the graphs a scene camera would normally pick.
+    inline constexpr const char* SCENE_GRAPH  = "scene";
+    inline constexpr const char* RESULT_GRAPH = "result";
 
     // What the scene and game panels show this frame: ImGui texture ids (nullptr: nothing to show)
     // and, on the render-graph path, how many passes the last frame ran.
@@ -66,6 +73,10 @@ namespace Editor
         std::optional<ECS::Entity> GetSelectedEntity() const { return m_SelectedEntity; }
         void SetSelectedEntity(std::optional<ECS::Entity> entity) { m_SelectedEntity = entity; }
 
+        // The graph assets a camera can name, for the inspector's GraphName list. The names must
+        // outlive the next Draw(): the renderer's list, set every frame before drawing.
+        void SetGraphNames(std::span<const std::string> names) { m_GraphNames = names; }
+
     private:
         // ── Panel content (drawn into dock areas) ────────────────────────────
         void DrawPanelContent(PanelId panel, HedgehogEngine::Engine& context);
@@ -81,6 +92,7 @@ namespace Editor
         void DrawRenderComponent(HedgehogEngine::Engine& context);
         void DrawLightComponent(HedgehogEngine::Engine& context);
         void DrawCameraComponent(HedgehogEngine::Engine& context);
+        void DrawCameraGraphCombo(std::string& graphName) const;
         void DrawScriptComponent(HedgehogEngine::Engine& context);
 
         // ── Floating dialogs ─────────────────────────────────────────────────
@@ -115,5 +127,6 @@ namespace Editor
 
         // Valid only during Draw(); read by the viewport panel.
         ViewportImages m_ViewportImages;
+        std::span<const std::string> m_GraphNames;
     };
 }

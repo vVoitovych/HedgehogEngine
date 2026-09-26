@@ -8,6 +8,8 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <string>
+#include <vector>
 
 namespace HW
 {
@@ -115,6 +117,10 @@ namespace Renderer
         // How many render-graph passes the last RenderFrame executed, across every view: a hidden
         // (zero-area) view contributes none.
         size_t GetLastFramePassCount() const;
+
+        // Every graph asset a view can name (a CameraComponent's GraphName), in sorted order: each
+        // "*.graph" file in the engine's graph directory, including files added while running.
+        const std::vector<std::string>& GetGraphNames() const;
 
     private:
         HW::Window& m_Window;

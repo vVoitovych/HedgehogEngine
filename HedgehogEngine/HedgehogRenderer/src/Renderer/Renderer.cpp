@@ -91,6 +91,11 @@ namespace Renderer
         return m_FrameRenderer->GetLastFramePassCount();
     }
 
+    const std::vector<std::string>& Renderer::GetGraphNames() const
+    {
+        return m_FrameRenderer->GetGraphNames();
+    }
+
     void Renderer::BeginFrameStatsCapture()
     {
         m_FrameRenderer->GetFrameStats().BeginCapture();
