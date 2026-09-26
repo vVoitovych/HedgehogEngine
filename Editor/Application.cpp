@@ -73,7 +73,11 @@ namespace Editor
 
     }
 
-    EditorApplication::EditorApplication()  = default;
+    EditorApplication::EditorApplication(HedgehogEngine::WindowMode windowMode)
+        : m_WindowMode(windowMode)
+    {
+    }
+
     EditorApplication::~EditorApplication() = default;
 
     void EditorApplication::Run(uint32_t maxFrames)
@@ -84,7 +88,7 @@ namespace Editor
 
     void EditorApplication::Init()
     {
-        m_Context   = std::make_unique<HedgehogEngine::Engine>();
+        m_Context   = std::make_unique<HedgehogEngine::Engine>(m_WindowMode);
 
         auto& engineContext = m_Context->GetEngineContext();
 

@@ -12,10 +12,19 @@ namespace HW
 
 namespace HedgehogEngine
 {
+    // How the main window opens. The interactive editor asks for Maximized. The automated runs
+    // (--smoke-test, --game-mode, --benchmark) keep the fixed-size Windowed default so their
+    // results stay comparable across machines and runs.
+    enum class WindowMode
+    {
+        Windowed,
+        Maximized
+    };
+
     class WindowContext
     {
     public:
-        HEDGEHOG_ENGINE_API WindowContext();
+        HEDGEHOG_ENGINE_API explicit WindowContext(WindowMode mode);
         HEDGEHOG_ENGINE_API ~WindowContext();
 
         WindowContext(const WindowContext&)            = delete;

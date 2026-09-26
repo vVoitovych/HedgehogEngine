@@ -33,7 +33,14 @@ namespace HW
     Window::Window(const WindowDesc& desc)
         : m_Impl(std::make_unique<Impl>())
     {
+        // Hints persist across glfwCreateWindow calls, so start from the defaults for every window.
+        glfwDefaultWindowHints();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+        // The initial position is a hint rather than a glfwSetWindowPos after creation, which
+        // would move a maximized window out of its maximized state.
+        glfwWindowHint(GLFW_POSITION_X, desc.X);
+        glfwWindowHint(GLFW_POSITION_Y, desc.Y);
+        glfwWindowHint(GLFW_MAXIMIZED, desc.Maximized ? GLFW_TRUE : GLFW_FALSE);
 
         m_Impl->IsFullscreen = desc.Fullscreen;
         m_Impl->SavedX       = desc.X;
@@ -45,8 +52,6 @@ namespace HW
         m_Impl->Handle = glfwCreateWindow(desc.Width, desc.Height, desc.Title.c_str(), monitor, nullptr);
         assert(m_Impl->Handle != nullptr && "glfwCreateWindow() failed");
 
-        if (!desc.Fullscreen)
-            glfwSetWindowPos(m_Impl->Handle, desc.X, desc.Y);
         glfwSetWindowUserPointer(m_Impl->Handle, this);
 
         glfwSetFramebufferSizeCallback(m_Impl->Handle, OnFramebufferResize);
