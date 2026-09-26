@@ -16,13 +16,17 @@ namespace HW
 namespace RHI
 {
     class IRHIDevice;
-    class IRHIGuiBackend;
     class IRHITexture;
 }
 
 namespace Renderer
 {
     struct RendererDevice;
+}
+
+namespace RHIImGui
+{
+    class IGuiRenderer;
 }
 
 namespace Editor
@@ -83,7 +87,7 @@ namespace Editor
         void        ReleaseTextureIds(bool onlyExpired);
 
         const RHI::IRHIDevice*                        m_Device = nullptr;
-        std::unique_ptr<RHI::IRHIGuiBackend>          m_Backend;
+        std::unique_ptr<RHIImGui::IGuiRenderer>       m_Backend;
         std::unordered_map<std::string, ShownTexture> m_Shown;
         std::vector<RetiredId>                        m_Retired;
         uint64_t                                      m_Frame = 0;

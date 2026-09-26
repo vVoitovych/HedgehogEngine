@@ -1,24 +1,24 @@
-project "RHI"
+project "RHIImGui"
    kind "StaticLib"
    language "C++"
    cppdialect "C++20"
 
-   files
-   {
-       "**.hpp", "**.cpp"
-   }
+   -- ImGui's GPU renderer on top of the RHI, for the application only: RHI links no UI library and
+   -- HedgehogRenderer never includes one. It reaches Vulkan through RHI/api/Vulkan/VulkanNative.hpp.
+   files { "api/**.hpp", "src/**.cpp" }
 
    includedirs
    {
-       ".",
-       "..",
-       "../..",
-       "%{IncludeDir.VulkanSDK}"
+      "api",
+      "..",
+      "%{IncludeDir.VulkanSDK}",
+      "%{IncludeDir.ImGui}/imgui"
    }
 
    links
    {
-       "Logger",
+      "RHI",
+      "imgui"
    }
 
    targetdir ("../../Binaries/" .. OutputDir .. "/%{prj.name}")

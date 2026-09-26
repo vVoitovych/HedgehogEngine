@@ -165,9 +165,11 @@ namespace HR
 
         device.ExecuteImmediately([&](RHI::IRHICommandList& cmd)
         {
-            cmd.TransitionTexture(*texture, RHI::ImageLayout::Undefined, RHI::ImageLayout::TransferDst);
+            const RHI::TextureBarrier toCopy{ texture.get(), RHI::ResourceState::Undefined, RHI::ResourceState::CopyDst };
+            cmd.Barrier({ &toCopy, 1 }, {});
             cmd.CopyBufferToTexture(*staging, *texture);
-            cmd.TransitionTexture(*texture, RHI::ImageLayout::TransferDst, RHI::ImageLayout::ShaderReadOnly);
+            const RHI::TextureBarrier toRead{ texture.get(), RHI::ResourceState::CopyDst, RHI::ResourceState::ShaderResource };
+            cmd.Barrier({ &toRead, 1 }, {});
         });
 
         auto [result, _] = m_TextureCache.emplace(path, std::move(texture));

@@ -127,19 +127,6 @@ enum class StoreOp
     DontCare,
 };
 
-enum class ImageLayout
-{
-    Undefined,
-    General,
-    ColorAttachment,
-    DepthStencilAttachment,
-    DepthStencilReadOnly,
-    ShaderReadOnly,
-    TransferSrc,
-    TransferDst,
-    Present,
-};
-
 enum class PrimitiveTopology
 {
     TriangleList,
@@ -312,17 +299,6 @@ struct PoolSize
 {
     DescriptorType Type  = DescriptorType::UniformBuffer;
     uint32_t       Count = 0;
-};
-
-struct AttachmentDesc
-{
-    RHI::Format  Format             = RHI::Format::Undefined;
-    RHI::LoadOp  LoadOp             = RHI::LoadOp::Clear;
-    RHI::StoreOp StoreOp            = RHI::StoreOp::Store;
-    RHI::LoadOp  StencilLoadOp      = RHI::LoadOp::DontCare;
-    RHI::StoreOp StencilStoreOp     = RHI::StoreOp::DontCare;
-    ImageLayout InitialLayout      = ImageLayout::Undefined;
-    ImageLayout FinalLayout        = ImageLayout::ColorAttachment;
 };
 
 struct ColorBlendAttachment

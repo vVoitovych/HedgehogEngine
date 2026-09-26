@@ -12,6 +12,7 @@ project "Editor"
       "../HedgehogEngine",
       "../HedgehogEngine/HedgehogEngine/api",
       "../HedgehogEngine/HedgehogRenderer/api",
+      "../HedgehogEngine/RHIImGui/api",
       "%{IncludeDir.ImGui}".."/imgui",
       "%{IncludeDir.yaml_cpp}"
    }
@@ -23,6 +24,7 @@ project "Editor"
       "HedgehogCommon",
       "HedgehogExtract",
       "HedgehogRenderer",
+      "RHIImGui",
       "HedgehogWindow",
       "HedgehogSettings",
       "Logger",

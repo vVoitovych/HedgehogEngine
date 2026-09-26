@@ -49,16 +49,6 @@ namespace HedgehogEngine
         m_PendingEntities.clear();
     }
 
-    size_t LightSystem::GetLightComponentsCount() const
-    {
-        return m_Entities.size();
-    }
-
-    const LightComponent& LightSystem::GetLightComponentByIndex(const ECS::ECS& ecs, size_t index) const
-    {
-        return ecs.GetComponent<LightComponent>(m_Entities[index]);
-    }
-
     void LightSystem::SetShadowCasting(const ECS::ECS& ecs, ECS::Entity inEntity, bool isCast)
     {
         m_ShadowDirection.reset();

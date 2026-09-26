@@ -7,7 +7,6 @@
 
 #include "ECS/api/ECS.hpp"
 #include "ECS/api/Entity.hpp"
-#include "HedgehogCommon/api/Frame/FrameData.hpp"
 
 #include "FileSystem/api/FileSystemManager.hpp"
 
@@ -49,8 +48,6 @@ namespace HedgehogEngine
 
         HEDGEHOG_ENGINE_API SceneManager&       GetSceneManager();
         HEDGEHOG_ENGINE_API const SceneManager& GetSceneManager() const;
-
-        HEDGEHOG_ENGINE_API const FrameData&         GetFrameData()         const;
 
         HEDGEHOG_ENGINE_API HedgehogSettings::Settings&       GetSettings();
         HEDGEHOG_ENGINE_API const HedgehogSettings::Settings& GetSettings() const;
@@ -94,8 +91,6 @@ namespace HedgehogEngine
         std::shared_ptr<CameraSystem>     m_CameraSystem;
 
         ResourceCatalog m_ResourceCatalog;
-
-        FrameData m_FrameData;
 
         std::unique_ptr<HedgehogSettings::Settings>                    m_Settings;
         std::unique_ptr<EcsSerialization::ComponentSerializerRegistry> m_ComponentRegistry;

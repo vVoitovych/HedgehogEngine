@@ -58,7 +58,7 @@ namespace Renderer
 
     // Handed to the application once, while the Renderer is constructed: the device, and the format
     // the result view's Ui pass records into. It is what the application needs to create its UI
-    // renderer (the RHI's GUI backend) and to wait for the GPU before destroying it, while the
+    // renderer (RHIImGui) and to wait for the GPU before destroying it, while the
     // renderer never knows the UI. The device lives until Cleanup.
     struct RendererDevice
     {

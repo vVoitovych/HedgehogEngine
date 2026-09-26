@@ -31,6 +31,13 @@ namespace Renderer
 
         constexpr const char* SHIPPED_GRAPHS[] = { "scene", "game", "result" };
         constexpr const char* GRAPH_DIRECTORY  = "engine://HedgehogEngine/HedgehogRenderer/assets/Graphs/";
+
+        void Transition(RHI::IRHICommandList& cmd, RHI::IRHITexture& texture, RHI::ResourceState before,
+                        RHI::ResourceState after)
+        {
+            const RHI::TextureBarrier barrier{ &texture, before, after };
+            cmd.Barrier({ &barrier, 1 }, {});
+        }
     }
 
     FrameRenderer::FrameRenderer(RHI::IRHIDevice& device, RHI::IRHISwapchain& swapchain,
@@ -354,15 +361,18 @@ namespace Renderer
         if (source == PresentSource::Main)
         {
             // The graph wrote the swapchain image itself and left it a colour attachment.
-            cmd.TransitionTexture(image, RHI::ImageLayout::ColorAttachment, RHI::ImageLayout::Present);
+            Transition(cmd, image, RHI::ResourceState::RenderTarget, RHI::ResourceState::Present);
         }
         else if (source == PresentSource::Viewport && viewport.Status == RenderTargetStatus::Ok)
         {
             // The graph left the viewport as a colour attachment, its last write.
-            cmd.TransitionTexture(*viewport.Texture, RHI::ImageLayout::ColorAttachment, RHI::ImageLayout::TransferSrc);
-            cmd.TransitionTexture(image, RHI::ImageLayout::Undefined, RHI::ImageLayout::TransferDst);
+            const RHI::TextureBarrier toCopy[] = {
+                { viewport.Texture, RHI::ResourceState::RenderTarget, RHI::ResourceState::CopySrc },
+                { &image,           RHI::ResourceState::Undefined,    RHI::ResourceState::CopyDst },
+            };
+            cmd.Barrier(toCopy, {});
             cmd.CopyTextureToTexture(*viewport.Texture, image);
-            cmd.TransitionTexture(image, RHI::ImageLayout::TransferDst, RHI::ImageLayout::Present);
+            Transition(cmd, image, RHI::ResourceState::CopyDst, RHI::ResourceState::Present);
         }
         else
         {
@@ -379,10 +389,10 @@ namespace Renderer
             info.Width            = image.GetWidth();
             info.Height           = image.GetHeight();
 
-            cmd.TransitionTexture(image, RHI::ImageLayout::Undefined, RHI::ImageLayout::ColorAttachment);
+            Transition(cmd, image, RHI::ResourceState::Undefined, RHI::ResourceState::RenderTarget);
             cmd.BeginRendering(info);
             cmd.EndRendering();
-            cmd.TransitionTexture(image, RHI::ImageLayout::ColorAttachment, RHI::ImageLayout::Present);
+            Transition(cmd, image, RHI::ResourceState::RenderTarget, RHI::ResourceState::Present);
         }
 
         cmd.End();
