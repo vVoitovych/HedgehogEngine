@@ -27,10 +27,10 @@ namespace Editor
     //
     // Editing: right-click the canvas to add a pass, resource, import or output; drag between a
     // resource, import or output pin and a pass's slot pin to bind the slot; select a link or node
-    // and press Delete to remove it. Save (Ctrl+S) writes the .graph with GraphAssetWriter, which
-    // the renderer then hot-reloads; a graph that fails its reload keeps rendering its last good
-    // version, and the error is shown here. New... starts a graph from a copy of "game". Node
-    // positions are kept in "<name>.graph.layout".
+    // and press Delete to remove it; edit the selected node in the Details panel. Save (Ctrl+S)
+    // writes the .graph with GraphAssetWriter, which the renderer then hot-reloads; a graph that
+    // fails its reload keeps rendering its last good version, and the error is shown here. New...
+    // starts a graph from a copy of "game". Node positions are kept in "<name>.graph.layout".
     class RenderGraphEditorWindow
     {
     public:
@@ -76,6 +76,12 @@ namespace Editor
         void HandleDeletions();
         // Once no node is being dragged, saves the layout if a node moved since it was placed.
         void SaveMovedNodes();
+
+        // ── Details panel (RenderGraphDetailsPanel.cpp) ──────────────────────
+        void DrawDetails(const Renderer::Renderer& renderer);
+        void DrawPassDetails(const Renderer::Renderer& renderer, const GraphCanvasNode& node);
+        void DrawResourceDetails(const GraphCanvasNode& node);
+        void DrawNameField(const GraphCanvasNode& node);
 
         // Rebuilds the canvas from m_Edited after an edit, keeping every node where it is. Pass
         // nodesChanged when a node was added or removed, which renumbers the canvas's ids.

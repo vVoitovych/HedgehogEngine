@@ -19,8 +19,9 @@ namespace Editor
 {
     namespace
     {
-        constexpr float COLUMN_WIDTH = 300.0f;
-        constexpr float ROW_HEIGHT   = 150.0f;
+        constexpr float COLUMN_WIDTH  = 300.0f;
+        constexpr float ROW_HEIGHT    = 150.0f;
+        constexpr float DETAILS_WIDTH = 320.0f;
 
         // A window that has just opened takes a few frames to settle its size, and fitting the view
         // before that is silently undone; nodes also have no size on the frame they are placed.
@@ -108,7 +109,14 @@ namespace Editor
                 SyncGraph(*renderer);
             }
 
+            ImGui::BeginChild("RenderGraphCanvasRegion", ImVec2(-DETAILS_WIDTH, 0.0f));
             DrawCanvas(renderer);
+            ImGui::EndChild();
+            ImGui::SameLine();
+            ImGui::BeginChild("RenderGraphDetails", ImVec2(0.0f, 0.0f), ImGuiChildFlags_Borders);
+            if (renderer)
+                DrawDetails(*renderer);
+            ImGui::EndChild();
 
             if (renderer)
             {
