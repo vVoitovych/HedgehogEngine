@@ -6,6 +6,7 @@
 
 #include <optional>
 #include <span>
+#include <string>
 #include <string_view>
 
 // RENDERING.md section 6 — the strings a graph asset may use for engine values, and the only
@@ -25,12 +26,21 @@ namespace Renderer
 
     [[nodiscard]] std::optional<RHI::Format> ResolveFormat(std::string_view name);
 
+    // The reverse of ResolveFormat: the vocabulary string for format, or std::nullopt for one the
+    // vocabulary has no string for (Undefined).
+    [[nodiscard]] std::optional<std::string_view> GetFormatName(RHI::Format format);
+
     // Size-policy syntax:
     //   Absolute(<width>, <height>)   width, height: integers >= 1
     //   RelativeToResult(<scale>)     scale: finite decimal > 0
     //   RelativeToSwapchain(<scale>)
     // Whitespace is allowed around the arguments only.
     [[nodiscard]] std::optional<RGSizePolicy> ResolveSizePolicy(std::string_view text);
+
+    // The reverse of ResolveSizePolicy, in the canonical spelling: "Absolute(1024, 512)",
+    // "RelativeToResult(1.0)". A scale is written as its shortest exact decimal, with ".0" added to a
+    // whole number, so ResolveSizePolicy reads back exactly the same value.
+    [[nodiscard]] std::string SizePolicyToString(const RGSizePolicy& policy);
 
     // "true" or "false", nothing else, for boolean pass parameters.
     [[nodiscard]] std::optional<bool> ResolveFlag(std::string_view text);
