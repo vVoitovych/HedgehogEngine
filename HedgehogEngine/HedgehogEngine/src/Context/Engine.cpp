@@ -6,9 +6,9 @@
 
 namespace HedgehogEngine
 {
-    Engine::Engine()
+    Engine::Engine(WindowMode windowMode)
     {
-        m_WindowContext = std::make_unique<WindowContext>();
+        m_WindowContext = std::make_unique<WindowContext>(windowMode);
         m_EngineContext = std::make_unique<EngineContext>();
         m_FrameContext  = std::make_unique<FrameContext>();
     }

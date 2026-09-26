@@ -1,19 +1,19 @@
 #pragma once
 
 #include "HedgehogEngine/api/HedgehogEngineApi.hpp"
+#include "HedgehogEngine/api/WindowContext.hpp"
 
 #include <memory>
 
 namespace HedgehogEngine
 {
-    class WindowContext;
     class EngineContext;
     class FrameContext;
 
     class Engine
     {
     public:
-        HEDGEHOG_ENGINE_API Engine();
+        HEDGEHOG_ENGINE_API explicit Engine(WindowMode windowMode = WindowMode::Windowed);
         HEDGEHOG_ENGINE_API ~Engine();
 
         Engine(const Engine&)            = delete;

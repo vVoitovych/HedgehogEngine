@@ -1,5 +1,6 @@
 #pragma once
 
+#include "HedgehogEngine/api/WindowContext.hpp"
 #include "HedgehogExtract/api/MeshBounds.hpp"
 #include "HedgehogExtract/api/RenderScene.hpp"
 #include "HedgehogRenderer/Views/View.hpp"
@@ -26,7 +27,7 @@ namespace Editor
     class EditorApplication
     {
     public:
-        EditorApplication();
+        explicit EditorApplication(HedgehogEngine::WindowMode windowMode = HedgehogEngine::WindowMode::Windowed);
         ~EditorApplication();
 
         EditorApplication(const EditorApplication&)            = delete;
@@ -55,6 +56,8 @@ namespace Editor
         void  LoadBenchmarkScene(const std::string& sceneFile);
 
     private:
+        HedgehogEngine::WindowMode m_WindowMode;
+
         std::unique_ptr<HedgehogEngine::Engine>   m_Context;
         std::unique_ptr<Renderer::Renderer> m_Renderer;
         std::unique_ptr<ImGuiLayer>         m_ImGui;

@@ -117,7 +117,9 @@ int main(int argc, char* argv[])
     if (benchmarkFrames > 0)
         return RunBenchmark(benchmarkFrames, ParseBenchmarkScene(argc, argv));
 
-    Editor::EditorApplication app{};
+    // Only the interactive editor opens maximized; the automated runs above keep the fixed-size
+    // window their results are defined at (PERFORMANCE.md).
+    Editor::EditorApplication app{ HedgehogEngine::WindowMode::Maximized };
     app.Run();
     return EXIT_SUCCESS;
 }

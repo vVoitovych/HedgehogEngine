@@ -12,5 +12,8 @@ namespace HW
         int         Width      = 1366;
         int         Height     = 768;
         bool        Fullscreen = false;
+        // Opens maximized on its monitor. X, Y, Width and Height remain the restored geometry.
+        // Ignored when Fullscreen is set.
+        bool        Maximized  = false;
     };
 }
