@@ -7,7 +7,6 @@
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/HedgehogSettings.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/LayerSettings.hpp"
-#include "HedgehogEngine/HedgehogSettings/api/RenderingSettings.hpp"
 #include "HedgehogCommon/api/Camera.hpp"
 #include "HedgehogExtract/api/SceneExtractor.hpp"
 #include "HedgehogExtract/api/ScenePicker.hpp"
@@ -72,18 +71,6 @@ namespace Editor
             return desc;
         }
 
-        size_t CountDrawObjects(const HedgehogEngine::DrawList& drawList)
-        {
-            size_t count = 0;
-            for (const HedgehogEngine::DrawBucket* bucket : { &drawList.Opaque, &drawList.Cutoff, &drawList.Transparent })
-            {
-                for (const HedgehogEngine::DrawNode& node : *bucket)
-                {
-                    count += node.Objects.size();
-                }
-            }
-            return count;
-        }
     }
 
     EditorApplication::EditorApplication()  = default;
@@ -120,11 +107,12 @@ namespace Editor
         m_Renderer  = std::make_unique<Renderer::Renderer>(
             m_Context->GetWindowContext().GetWindow(),
             engineContext.GetSettings(),
-            engineContext.GetFileSystem());
+            engineContext.GetFileSystem(),
+            Renderer::RendererPaths::RenderGraphOnly);
         m_ImGui     = std::make_unique<ImGuiLayer>(m_Context->GetWindowContext().GetWindow());
         m_EditorGui = std::make_unique<EditorGui>(*m_Context);
 
-        // The render-graph path's panels: zero-sized until their tabs are first drawn.
+        // The panels' targets: zero-sized until their tabs are first drawn.
         for (const char* target : { SCENE_TARGET, GAME_TARGET })
         {
             const Renderer::RenderTargetResult declared = m_Renderer->DeclareTarget(
@@ -144,18 +132,17 @@ namespace Editor
         LOGINFO("Editor initialized");
     }
 
-    void EditorApplication::RunBenchmark(uint32_t warmupFrames, uint32_t measureFrames)
+    void EditorApplication::RunBenchmark(uint32_t warmupFrames, uint32_t measureFrames, const std::string& sceneFile)
     {
         Init();
-        LoadBenchmarkScene();
+        LoadBenchmarkScene(sceneFile);
 
         LOGINFO("Benchmark: warming up for ", warmupFrames, " frame(s)...");
         auto& windowContext = m_Context->GetWindowContext();
         for (uint32_t i = 0; i < warmupFrames && !windowContext.ShouldClose(); ++i)
             StepFrame();
 
-        const size_t drawCount = CountDrawObjects(m_Context->GetEngineContext().GetFrameData().DrawList);
-        LOGINFO("Benchmark: draw count = ", drawCount);
+        LOGINFO("Benchmark: render instances = ", m_RenderScene.Instances.size());
 
         LOGINFO("Benchmark: measuring ", measureFrames, " frame(s)...");
         m_Renderer->BeginFrameStatsCapture();
@@ -207,38 +194,20 @@ namespace Editor
         m_Context->GetWindowContext().HandleInput();
         m_Context->UpdateContext(dt, m_Renderer->GetAspectRatio());
 
-        auto&      engineContext = m_Context->GetEngineContext();
-        const bool useGraph      = engineContext.GetSettings().GetRenderingSettings().GetUseRenderGraph();
-
-        m_ImGui->BeginFrame(*m_Renderer, useGraph);
+        m_ImGui->BeginFrame(*m_Renderer);
         ViewportImages images;
-        if (useGraph)
-        {
-            images.Scene          = m_ImGui->GetTextureId(SCENE_TARGET, m_Renderer->GetTargetTexture(SCENE_TARGET));
-            images.Game           = m_ImGui->GetTextureId(GAME_TARGET, m_Renderer->GetTargetTexture(GAME_TARGET));
-            images.GraphPassCount = m_Renderer->GetLastFramePassCount();
-        }
-        else
-        {
-            images.Scene = m_ImGui->GetTextureId("legacyScene", &m_Renderer->GetSceneViewTexture());
-        }
+        images.Scene          = m_ImGui->GetTextureId(SCENE_TARGET, m_Renderer->GetTargetTexture(SCENE_TARGET));
+        images.Game           = m_ImGui->GetTextureId(GAME_TARGET, m_Renderer->GetTargetTexture(GAME_TARGET));
+        images.GraphPassCount = m_Renderer->GetLastFramePassCount();
         m_EditorGui->Draw(*m_Context, images);
         m_ImGui->EndFrame();
 
-        if (useGraph)
-        {
-            RenderWithGraph();
-        }
-        else
-        {
-            m_Renderer->SetSceneViewSize(m_EditorGui->GetSceneViewWidth(), m_EditorGui->GetSceneViewHeight());
-            m_Renderer->DrawFrame(engineContext.GetFrameData(), engineContext.GetResourceCatalog(),
-                                  engineContext.GetSettings(), m_ImGui->GetUiCallback());
-        }
+        Render();
         return dt;
     }
 
-    void EditorApplication::RenderWithGraph()
+    // Extract, then render every view through the render graph (RENDERING.md section 7).
+    void EditorApplication::Render()
     {
         auto& engineContext = m_Context->GetEngineContext();
 
@@ -299,18 +268,22 @@ namespace Editor
         m_RenderScene.Instances.push_back(gizmo);
     }
 
-    void EditorApplication::LoadBenchmarkScene()
+    void EditorApplication::LoadBenchmarkScene(const std::string& sceneFile)
     {
-        constexpr const char* BENCHMARK_SCENE = "assets://Scenes/benchmark.yaml";
+        const std::string scenePath = "assets://Scenes/" + sceneFile;
 
         auto&       engineContext = m_Context->GetEngineContext();
         const auto& fileSystem    = engineContext.GetFileSystem();
 
-        const auto physicalPath = fileSystem.ResolvePhysical(BENCHMARK_SCENE);
+        const auto physicalPath = fileSystem.ResolvePhysical(scenePath);
         if (!physicalPath || !engineContext.GetSceneManager().LoadScene(physicalPath->string()))
         {
-            LOGWARNING("Benchmark: failed to load '", BENCHMARK_SCENE,
+            LOGWARNING("Benchmark: failed to load '", scenePath,
                        "'; measuring whatever scene is currently open instead.");
+        }
+        else
+        {
+            LOGINFO("Benchmark: scene '", scenePath, "'");
         }
     }
 

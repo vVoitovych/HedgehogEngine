@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <chrono>
 #include <cmath>
 
 namespace Renderer
@@ -93,6 +94,7 @@ namespace Renderer
     bool RenderGraphRuntime::Execute(RHI::IRHICommandList& cmdList)
     {
         const GraphDescription& description = m_Builder.GetDescription();
+        m_LastPassTimings.clear();
         const CompileResult     result      = m_Compiler.Compile(description);
 
         if (!result.Success)
@@ -108,6 +110,9 @@ namespace Renderer
         m_Executing = &description;
         for (const CompiledPass& pass : result.Graph.Passes)
         {
+            const auto passStart = m_PassTimingEnabled ? std::chrono::steady_clock::now()
+                                                       : std::chrono::steady_clock::time_point{};
+
             std::vector<RHI::TextureBarrier> textureBarriers;
             textureBarriers.reserve(pass.TextureBarriers.size());
             for (const RGTextureBarrier& barrier : pass.TextureBarriers)
@@ -136,6 +141,13 @@ namespace Renderer
 
             const PassExecutionRecord& record = m_PassExecutions[pass.OriginalPassIndex];
             record.Invoke(record.PassData, record.ExecuteState, cmdList);
+
+            if (m_PassTimingEnabled)
+            {
+                const auto passEnd = std::chrono::steady_clock::now();
+                m_LastPassTimings.push_back({ pass.Name,
+                    std::chrono::duration<double, std::milli>(passEnd - passStart).count() });
+            }
         }
 
         ResetForNextFrame();

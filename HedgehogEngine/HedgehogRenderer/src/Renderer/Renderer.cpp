@@ -25,7 +25,6 @@
 #include "Logger/api/Logger.hpp"
 
 #include <cassert>
-#include <optional>
 
 namespace Renderer
 {
@@ -149,15 +148,12 @@ namespace Renderer
 
     void Renderer::BeginFrameStatsCapture()
     {
-        if (m_RenderQueue)
-            m_RenderQueue->GetFrameStats().BeginCapture();
+        m_FrameRenderer->GetFrameStats().BeginCapture();
     }
 
     void Renderer::EndFrameStatsCaptureAndLogReport()
     {
-        if (!m_RenderQueue)
-            return;
-        auto& stats = m_RenderQueue->GetFrameStats();
+        FrameStats& stats = m_FrameRenderer->GetFrameStats();
         stats.EndCapture();
         stats.LogReport();
     }
@@ -186,9 +182,7 @@ namespace Renderer
                                const UiCallback& ui)
     {
         HH_PROFILE_ZONE("RenderFrame");
-        std::optional<ScopedCpuSample> sample;
-        if (m_RenderQueue)
-            sample.emplace(m_RenderQueue->GetFrameStats(), "RenderFrame(total)");
+        ScopedCpuSample sample(m_FrameRenderer->GetFrameStats(), "RenderFrame(total)");
 
         auto& device    = m_RHIContext->GetRHIDevice();
         auto& swapchain = m_RHIContext->GetRHISwapchain();

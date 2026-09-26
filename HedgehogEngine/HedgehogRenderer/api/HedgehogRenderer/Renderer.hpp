@@ -52,10 +52,11 @@ namespace Renderer
     uint32_t GetValidationErrorCount();
     uint32_t GetValidationWarningCount();
 
-    // Which frame paths a Renderer builds. The editor builds both and picks one per frame with
-    // RenderingSettings::GetUseRenderGraph. RenderGraphOnly builds no legacy pass: DrawFrame and
-    // the legacy scene-view texture are unavailable. The renderer never creates a UI context on
-    // either path; the application owns its UI and records it through a UiCallback.
+    // Which frame paths a Renderer builds. The editor and --game-mode build RenderGraphOnly and
+    // render with RenderFrame. LegacyAndRenderGraph also builds the legacy passes behind DrawFrame,
+    // which nothing calls any more; they are compiled until they are deleted. The renderer never
+    // creates a UI context on either path; the application owns its UI and records it through a
+    // UiCallback.
     enum class RendererPaths
     {
         LegacyAndRenderGraph,
@@ -94,16 +95,15 @@ namespace Renderer
         // Blocks until the GPU is idle, e.g. before replacing a GUI backend.
         void WaitIdle() const;
 
-        // CPU frame statistics (per render pass + total DrawFrame), used by
-        // the Editor --benchmark mode. Capture is off unless explicitly begun.
+        // CPU frame statistics (RenderFrame's total and each render-graph pass's record time), used
+        // by the Editor --benchmark mode. Capture is off unless explicitly begun.
         void BeginFrameStatsCapture();
         void EndFrameStatsCaptureAndLogReport();
 
         // ── The render-graph path (RENDERING.md) ──────────────────────────────────────────
-        // Runs instead of DrawFrame when RenderingSettings::GetUseRenderGraph() is on; both
-        // paths are built, so the flag can change between frames. It renders the views below
-        // (and one per enabled camera in the scene) and presents VIEWPORT_TARGET. There is no
-        // UI pass yet: the ImGui frame BeginGui started is discarded.
+        // The frame path: it renders the application's views below and one per enabled camera
+        // in the scene, and presents the highest-priority view that targets main (RENDERING.md
+        // section 8).
 
         // The target a view renders into to be presented, sized to the window.
         static constexpr const char* VIEWPORT_TARGET = "viewport";

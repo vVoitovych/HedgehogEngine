@@ -6,6 +6,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <string>
 
 namespace HedgehogEngine
 {
@@ -37,9 +38,9 @@ namespace Editor
         // renders that many frames and exits (used by the --smoke-test mode).
         void Run(uint32_t maxFrames = 0);
 
-        // Loads the benchmark scene, renders warmupFrames untimed, then
-        // measures measureFrames and logs per-pass and frame-time statistics.
-        void RunBenchmark(uint32_t warmupFrames, uint32_t measureFrames);
+        // Loads sceneFile (under Assets/Scenes), renders warmupFrames untimed, then measures
+        // measureFrames and logs per-pass and frame-time statistics.
+        void RunBenchmark(uint32_t warmupFrames, uint32_t measureFrames, const std::string& sceneFile);
 
     private:
         void  Init();
@@ -48,9 +49,9 @@ namespace Editor
         float GetFrameTime();
 
         float StepFrame();
-        void  RenderWithGraph();
+        void  Render();
         void  PickAndHighlight(const HX::RenderCamera& sceneCamera);
-        void  LoadBenchmarkScene();
+        void  LoadBenchmarkScene(const std::string& sceneFile);
 
     private:
         std::unique_ptr<HedgehogEngine::Engine>   m_Context;
@@ -58,10 +59,10 @@ namespace Editor
         std::unique_ptr<ImGuiLayer>         m_ImGui;
         std::unique_ptr<EditorGui>          m_EditorGui;
 
-        // The render-graph path (RenderingSettings::GetUseRenderGraph, RENDERING.md section 7): the
-        // scene extracted each frame, the scene view (the editor camera into the scene panel's
-        // target) and the result view (the editor's UI into the window, showing both panels). The
-        // game view is the scene's camera, redirected to the game panel's target.
+        // RENDERING.md section 7: the scene extracted each frame, the scene view (the editor camera
+        // into the scene panel's target) and the result view (the editor's UI into the window,
+        // showing both panels). The game view is the scene's camera, redirected to the game panel's
+        // target.
         HX::RenderScene     m_RenderScene;
         HX::MeshBoundsCache m_MeshBounds;
         Renderer::ViewId m_SceneView  = Renderer::INVALID_VIEW_ID;

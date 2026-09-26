@@ -30,10 +30,9 @@ namespace Editor
     // context, the GLFW platform backend and the GUI renderer; the renderer only hands a colour
     // target to GetUiCallback() and never includes an ImGui header.
     //
-    // The GUI renderer is built for one colour format, and the two frame paths record their UI into
-    // targets of different formats (the legacy colour buffer, the swapchain), so it is rebuilt when
-    // the path changes. Texture ids for images shown in the UI are reissued when their texture is
-    // replaced, and a replaced id is released only once no frame in flight can still use it.
+    // The GUI renderer is built for the swapchain's format, which the result view's Ui pass records
+    // into. Texture ids for images shown in the UI are reissued when their texture is replaced, and a
+    // replaced id is released only once no frame in flight can still use it.
     class ImGuiLayer
     {
     public:
@@ -45,8 +44,8 @@ namespace Editor
         ImGuiLayer(ImGuiLayer&&)                 = delete;
         ImGuiLayer& operator=(ImGuiLayer&&)      = delete;
 
-        // Starts an ImGui frame, for the path that will render it.
-        void BeginFrame(Renderer::Renderer& renderer, bool forRenderGraph);
+        // Starts an ImGui frame; the first one creates the GUI renderer.
+        void BeginFrame(Renderer::Renderer& renderer);
         // Ends it and builds the draw data the UiCallback records.
         void EndFrame();
 
@@ -78,7 +77,6 @@ namespace Editor
         void        ReleaseTextureIds(bool onlyExpired);
 
         std::unique_ptr<RHI::IRHIGuiBackend>          m_Backend;
-        bool                                          m_BackendForRenderGraph = false;
         std::unordered_map<std::string, ShownTexture> m_Shown;
         std::vector<RetiredId>                        m_Retired;
         uint64_t                                      m_Frame = 0;

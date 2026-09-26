@@ -14,6 +14,7 @@ namespace
     inline constexpr uint32_t DEFAULT_BENCHMARK_FRAMES   = 600;
     inline constexpr uint32_t DEFAULT_GAME_MODE_FRAMES   = 120;
     inline constexpr uint32_t BENCHMARK_WARMUP_FRAMES    = 120;
+    inline constexpr const char* DEFAULT_BENCHMARK_SCENE = "benchmark.yaml";
 
     // Returns the frame count if the flag was passed (with an optional numeric
     // frame-count argument), or 0 when the flag is absent.
@@ -34,6 +35,24 @@ namespace
             return defaultFrames;
         }
         return 0;
+    }
+
+    // The scene file after --benchmark (and its optional frame count): the first of the next two
+    // arguments that ends in ".yaml", or the default benchmark scene.
+    std::string ParseBenchmarkScene(int argc, char* argv[])
+    {
+        for (int i = 1; i < argc; ++i)
+        {
+            if (std::strcmp(argv[i], "--benchmark") != 0)
+                continue;
+            for (int j = i + 1; j < argc && j <= i + 2; ++j)
+            {
+                const std::string argument = argv[j];
+                if (argument.size() > 5 && argument.ends_with(".yaml"))
+                    return argument;
+            }
+        }
+        return DEFAULT_BENCHMARK_SCENE;
     }
 
     int RunSmokeTest(uint32_t frames)
@@ -63,11 +82,11 @@ namespace
         return EXIT_SUCCESS;
     }
 
-    int RunBenchmark(uint32_t frames)
+    int RunBenchmark(uint32_t frames, const std::string& sceneFile)
     {
         {
             Editor::EditorApplication app{};
-            app.RunBenchmark(BENCHMARK_WARMUP_FRAMES, frames);
+            app.RunBenchmark(BENCHMARK_WARMUP_FRAMES, frames, sceneFile);
         }
 
         const uint32_t errors = Renderer::GetValidationErrorCount();
@@ -96,7 +115,7 @@ int main(int argc, char* argv[])
     const uint32_t benchmarkFrames = ParseFrameCountFlag(
         argc, argv, "--benchmark", DEFAULT_BENCHMARK_FRAMES);
     if (benchmarkFrames > 0)
-        return RunBenchmark(benchmarkFrames);
+        return RunBenchmark(benchmarkFrames, ParseBenchmarkScene(argc, argv));
 
     Editor::EditorApplication app{};
     app.Run();

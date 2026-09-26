@@ -228,3 +228,43 @@ TEST_CASE("Relative sizes resolve against the references set for the view being 
     REQUIRE(graph.Execute(cmd));
     CHECK(sizeOf(graph.CreateTexture(half)).Kind == RGSizePolicyKind::RelativeToResult);
 }
+
+TEST_CASE("Pass timings are recorded by name in execution order only while enabled")
+{
+    TestDevice         device;
+    RenderGraphRuntime runtime(device, 64 * 1024);
+
+    // Two passes writing the same texture in turn, so the second runs after the first.
+    const auto declare = [&]
+    {
+        RGTexture tex = runtime.CreateTexture(MakeRGDesc(64, 64));
+        for (const char* name : { "First", "Second" })
+        {
+            runtime.AddPass<OpaquePassData>(name,
+                [&](RGPassBuilder& pass, OpaquePassData& data)
+                {
+                    tex = data.ColorTarget = pass.ColorTarget(tex);
+                    pass.SetSideEffect();
+                },
+                [](OpaquePassData&, RHI::IRHICommandList&) {});
+        }
+    };
+
+    RecordingCommandList cmdList;
+    declare();
+    REQUIRE(runtime.Execute(cmdList));
+    CHECK(runtime.GetLastPassTimings().empty()); // off by default
+
+    runtime.SetPassTimingEnabled(true);
+    declare();
+    REQUIRE(runtime.Execute(cmdList));
+    REQUIRE(runtime.GetLastPassTimings().size() == 2);
+    CHECK(runtime.GetLastPassTimings()[0].Name == "First");
+    CHECK(runtime.GetLastPassTimings()[1].Name == "Second");
+    CHECK(runtime.GetLastPassTimings()[1].CpuMilliseconds >= 0.0);
+
+    runtime.SetPassTimingEnabled(false);
+    declare();
+    REQUIRE(runtime.Execute(cmdList));
+    CHECK(runtime.GetLastPassTimings().empty());
+}

@@ -10,20 +10,24 @@ number get rejected, no matter how clever they look.
 ## Running the benchmark
 
 ```
-Binaries\windows-x86_64\Release\Editor\Editor.exe --benchmark [frames]
+Binaries\windows-x86_64\Release\Editor\Editor.exe --benchmark [frames] [scene.yaml]
 ```
 
 - Always **Release** — Debug numbers are meaningless and validation layers skew timings.
 - Loads `Assets/Scenes/benchmark.yaml` (5×5 grid of DamagedHelmet instances,
   ~364k vertices per geometry pass, one directional light), warms up 120 frames,
-  measures 600 (or `[frames]`), then logs a `FrameStats` table and exits.
+  measures 600 (or `[frames]`), then logs a `FrameStats` table and exits. Pass a
+  file name under `Assets/Scenes/` (e.g. `Default.yaml`) to measure another scene.
 - Don't touch the window while it runs; close other GPU-heavy apps.
 - Run it 2–3 times and compare medians; single runs can swing a few percent.
 
-**What the numbers are:** CPU-side timings. Per-pass rows measure command-list
-*recording* cost; `InitPass` includes the fence wait + swapchain acquire and
-`PresentPass` includes queue submit + present, so those two absorb most
-GPU-bound waiting. GPU pass durations need a Tracy capture (below) or future
+**What the numbers are:** CPU-side timings. Since HE-87 every frame renders
+through the render graph: per-pass rows (`Shadow`, `DepthPrepass`, `Forward`,
+`Gizmo`, `Ui`) measure each graph pass's command-list *recording* cost (its
+barriers plus its closure), summed over the views that ran it, and
+`RenderFrame(total)` includes the fence wait, swapchain acquire, queue submit
+and present, so it absorbs most GPU-bound waiting. (Entries before HE-87 are the
+legacy path: `InitPass`/`PresentPass` held the waiting there.) GPU pass durations need a Tracy capture (below) or future
 GPU timestamp queries.
 
 ## Deep profiling (Tracy)
@@ -89,6 +93,27 @@ Raw `Frame(wall)` avg across the 3 runs (median row used above): 3.819 ms, **3.6
 — run-to-run swing is large relative to the sub-4ms frame cost at this scale (25 instances is
 still far below the frame budget), consistent with the doc's own "single runs can swing a few
 percent" note, just more visible when the absolute numbers are this small.
+
+### 2026-09-26 (HE-87) — the editor renders through the render graph
+
+The editor now always renders with `Renderer::RenderFrame` (scene view with the Scene
+tab visible, plus the result view's UI; the hidden game panel costs nothing). Before =
+master's legacy `DrawFrame`, after = this change; runs interleaved, 600 frames each.
+The machine was noisier than for the entry above, so compare within this entry only.
+`--benchmark` now reports **render instances = 25** for `benchmark.yaml`.
+
+| Scene            | Before, `Frame(wall)` avg ms (runs) | After, `Frame(wall)` avg ms (runs) | Median before → after |
+|------------------|-------------------------------------|------------------------------------|----------------------:|
+| `benchmark.yaml` | 2.555, 2.345, 2.248                 | 2.670, 2.259, 1.889                | 2.345 → 2.259 |
+| `Default.yaml`   | 2.256, 2.035, 2.223, 2.230, 2.217   | 2.415, 2.000, 1.722, 2.212, 1.865, 2.220 | 2.223 → 2.106 |
+
+Two `Default.yaml` runs of the legacy build and one of the new build crashed during
+warm-up, right after the scene's Lua script starts: a pre-existing crash, not a
+rendering one.
+
+Graph-path per-pass rows (`benchmark.yaml`, one run): `Shadow` 0.051, `DepthPrepass`
+0.010, `Forward` 0.015, `Gizmo` 0.000 (nothing selected), `Ui` 0.032,
+`RenderFrame(total)` 1.680 ms avg.
 
 When a change intentionally alters performance, re-run the benchmark and update
 this table (keep the old row set; add a dated entry below it so history accumulates).

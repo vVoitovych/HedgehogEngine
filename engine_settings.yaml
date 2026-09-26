@@ -6,7 +6,6 @@ shadowmap:
   split2: 25
   split3: 50
   caster_mask: 4294967295
-rendering:
-  use_render_graph: false
 layers:
   0: Default
+  31: Editor
