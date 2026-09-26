@@ -83,8 +83,9 @@ namespace Editor
         // outlive the next Draw(): the renderer's list, set every frame before drawing.
         void SetGraphNames(std::span<const std::string> names) { m_GraphNames = names; }
 
-        // The renderer the render graph editor reads graphs and pass types from; set once it exists.
-        void SetRenderer(const Renderer::Renderer* renderer) { m_Renderer = renderer; }
+        // The renderer the render graph editor reads graphs and pass types from, and registers the
+        // graph files it opens with; set once it exists.
+        void SetRenderer(Renderer::Renderer* renderer) { m_Renderer = renderer; }
 
     private:
         // ── Panel content (drawn into dock areas) ────────────────────────────
@@ -138,6 +139,6 @@ namespace Editor
         // Valid only during Draw(); read by the viewport panel.
         ViewportImages m_ViewportImages;
         std::span<const std::string> m_GraphNames;
-        const Renderer::Renderer*    m_Renderer = nullptr;
+        Renderer::Renderer*          m_Renderer = nullptr;
     };
 }

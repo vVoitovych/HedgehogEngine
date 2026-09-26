@@ -1,9 +1,13 @@
 #include "RenderGraphEditorWindow.hpp"
 
 #include "GraphEditing.hpp"
+#include "GraphFileReference.hpp"
 #include "RenderGraphEditorStyle.hpp"
 
+#include "DialogueWindows/api/RenderGraphDialogue.hpp"
+#include "FileSystem/api/FileSystemManager.hpp"
 #include "HedgehogRenderer/Graph/GraphAssetWriter.hpp"
+#include "HedgehogRenderer/Graph/GraphReference.hpp"
 #include "HedgehogRenderer/Renderer.hpp"
 
 #include "imgui.h"
@@ -33,9 +37,10 @@ namespace Editor
         constexpr int FIT_VIEW_DELAY_FRAMES = 10;
 
         constexpr const char* ADD_MENU_POPUP  = "AddGraphNode";
-        constexpr const char* NEW_GRAPH_POPUP = "New render graph";
         constexpr const char* UNSAVED_POPUP   = "Unsaved graph changes";
-        constexpr const char* TEMPLATE_GRAPH  = "game";
+        constexpr const char* UNTITLED        = "untitled";
+        constexpr const char* GRAPH_EXTENSION = ".graph";
+        constexpr const char* DIALOGUE_FOLDER = "assets://"; // where Open... and Save As... start
 
         ImVec4 TitleColor(const GraphCanvasNode& node)
         {
@@ -56,13 +61,11 @@ namespace Editor
             return { static_cast<float>(node.Column) * COLUMN_WIDTH, static_cast<float>(node.Row) * ROW_HEIGHT };
         }
 
-        // A graph name is a file stem: letters, digits, '_' and '-'.
-        bool IsValidGraphName(std::string_view name)
+        // The dialogues' starting point: a file in the Assets folder, or the folder itself.
+        std::string DialoguePath(const FS::FileSystemManager& fileSystem, const char* fileName)
         {
-            return !name.empty() && std::ranges::all_of(name, [](char c)
-            {
-                return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == '-';
-            });
+            const std::optional<std::filesystem::path> folder = fileSystem.ResolvePhysical(DIALOGUE_FOLDER);
+            return folder ? (*folder / fileName).make_preferred().string() : std::string(fileName);
         }
 
         // The renderer's load errors read "graph 'x' (file) is invalid; keeping ...:" and then one
@@ -85,7 +88,7 @@ namespace Editor
             ed::DestroyEditor(m_Canvas);
     }
 
-    void RenderGraphEditorWindow::Draw(const Renderer::Renderer* renderer)
+    void RenderGraphEditorWindow::Draw(Renderer::Renderer* renderer, const FS::FileSystemManager& fileSystem)
     {
         if (!Open)
             return;
@@ -99,9 +102,16 @@ namespace Editor
             m_Canvas = ed::CreateEditor(&config);
         }
 
+        // A graph file is shown by its file name, an engine graph by its name; the Graph drop-down's tooltip gives the whole reference.
         std::string title = "Render Graph Editor";
-        if (!m_GraphName.empty())
-            title += " - " + m_GraphName + (IsDirty() ? "*" : "");
+        if (IsUntitled())
+            title += std::string(" - ") + UNTITLED;
+        else if (!m_GraphName.empty())
+        {
+            const bool isFile = Renderer::ClassifyGraphReference(m_GraphName) == Renderer::GraphReferenceKind::File;
+            title += " - " + (isFile ? std::filesystem::path(m_GraphName).filename().string() : m_GraphName);
+        }
+        title += IsDirty() ? "*" : "";
         title += "###RenderGraphEditor";
 
         bool keepOpen = true;
@@ -110,7 +120,7 @@ namespace Editor
         {
             if (renderer)
             {
-                DrawToolbar(*renderer);
+                DrawToolbar(*renderer, fileSystem);
                 SyncGraph(*renderer);
             }
 
@@ -140,10 +150,9 @@ namespace Editor
                 if (IsDirty() && ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)
                     && ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_S))
                 {
-                    Save(*renderer);
+                    Save(*renderer, fileSystem);
                 }
-                DrawNewGraphPopup(*renderer);
-                DrawUnsavedChangesPopup(*renderer);
+                DrawUnsavedChangesPopup(*renderer, fileSystem);
             }
         }
         ImGui::End();
@@ -159,10 +168,28 @@ namespace Editor
 
     // ── Graph lifetime ───────────────────────────────────────────────────────
 
-    void RenderGraphEditorWindow::DrawToolbar(const Renderer::Renderer& renderer)
+    void RenderGraphEditorWindow::DrawToolbar(Renderer::Renderer& renderer, const FS::FileSystemManager& fileSystem)
     {
-        ImGui::SetNextItemWidth(220.0f);
-        if (ImGui::BeginCombo("Graph", m_GraphName.empty() ? "(open a graph)" : m_GraphName.c_str()))
+        if (ImGui::Button("New"))
+            RequestNewGraph();
+        ImGui::SameLine();
+        if (ImGui::Button("Open..."))
+            OpenFile(renderer, fileSystem);
+        ImGui::SameLine();
+        ImGui::BeginDisabled(!IsDirty() && !IsUntitled());
+        if (ImGui::Button("Save"))
+            Save(renderer, fileSystem);
+        ImGui::EndDisabled();
+        ImGui::SameLine();
+        ImGui::BeginDisabled(!m_HasGraph);
+        if (ImGui::Button("Save As..."))
+            SaveAs(renderer, fileSystem);
+        ImGui::EndDisabled();
+        ImGui::SameLine();
+
+        const char* shown = IsUntitled() ? UNTITLED : m_GraphName.empty() ? "(open a graph)" : m_GraphName.c_str();
+        ImGui::SetNextItemWidth(260.0f);
+        if (ImGui::BeginCombo("Graph", shown))
         {
             for (const std::string& name : renderer.GetGraphNames())
             {
@@ -174,17 +201,8 @@ namespace Editor
             }
             ImGui::EndCombo();
         }
-        ImGui::SameLine();
-        if (ImGui::Button("New..."))
-        {
-            m_NewGraphName[0] = '\0';
-            ImGui::OpenPopup(NEW_GRAPH_POPUP);
-        }
-        ImGui::SameLine();
-        ImGui::BeginDisabled(!IsDirty());
-        if (ImGui::Button("Save"))
-            Save(renderer);
-        ImGui::EndDisabled();
+        if (!m_GraphName.empty() && ImGui::IsItemHovered())
+            ImGui::SetTooltip("%s", m_GraphName.c_str());
 
         // What went wrong wins over what went right: a graph the renderer rejected, then the last
         // save's or edit's message, then a hint.
@@ -204,61 +222,18 @@ namespace Editor
             ImGui::TextDisabled("Right-click to add nodes, drag between pins to bind, Delete removes the selection.");
     }
 
-    void RenderGraphEditorWindow::DrawNewGraphPopup(const Renderer::Renderer& renderer)
-    {
-        if (!ImGui::BeginPopupModal(NEW_GRAPH_POPUP, nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-            return;
-
-        ImGui::TextUnformatted("The new graph starts as a copy of 'game'.");
-        ImGui::SetNextItemWidth(240.0f);
-        ImGui::InputText("Name", m_NewGraphName, sizeof(m_NewGraphName));
-
-        const std::string name(m_NewGraphName);
-        const auto& names  = renderer.GetGraphNames();
-        const bool  taken  = std::ranges::find(names, name) != names.end();
-        const bool  valid  = IsValidGraphName(name) && !taken;
-        if (!name.empty() && !valid)
-        {
-            ImGui::TextColored(PROBLEM_COLOR, taken ? "A graph with that name exists."
-                                                    : "Use letters, digits, '_' and '-' only.");
-        }
-
-        ImGui::BeginDisabled(!valid);
-        if (ImGui::Button("Create"))
-        {
-            const Renderer::GraphAsset* templateAsset = renderer.FindGraphAsset(TEMPLATE_GRAPH);
-            const std::filesystem::path directory     = renderer.GetGraphFile(TEMPLATE_GRAPH).parent_path();
-            std::string error;
-            if (!templateAsset || directory.empty())
-                m_Status = "Cannot create a graph: the 'game' graph it copies is not loaded.";
-            else if (!Renderer::WriteGraphAssetFile(*templateAsset, directory / (name + ".graph"), &error))
-                m_Status = "Cannot create the graph: " + error;
-            else
-            {
-                m_Status.clear();
-                RequestOpenGraph(name); // the renderer registers the file on its next poll
-            }
-            ImGui::CloseCurrentPopup();
-        }
-        ImGui::EndDisabled();
-        ImGui::SameLine();
-        if (ImGui::Button("Cancel"))
-            ImGui::CloseCurrentPopup();
-        ImGui::EndPopup();
-    }
-
-    void RenderGraphEditorWindow::DrawUnsavedChangesPopup(const Renderer::Renderer& renderer)
+    void RenderGraphEditorWindow::DrawUnsavedChangesPopup(Renderer::Renderer& renderer, const FS::FileSystemManager& fileSystem)
     {
         if (m_Pending != PendingAction::None && !ImGui::IsPopupOpen(UNSAVED_POPUP))
             ImGui::OpenPopup(UNSAVED_POPUP);
         if (!ImGui::BeginPopupModal(UNSAVED_POPUP, nullptr, ImGuiWindowFlags_AlwaysAutoResize))
             return;
 
-        ImGui::Text("'%s' has unsaved changes.", m_GraphName.c_str());
+        ImGui::Text("'%s' has unsaved changes.", IsUntitled() ? UNTITLED : m_GraphName.c_str());
         bool proceed = false;
         if (ImGui::Button("Save"))
         {
-            Save(renderer);
+            Save(renderer, fileSystem);
             proceed = !IsDirty(); // a failed save keeps the prompt's question open
         }
         ImGui::SameLine();
@@ -278,6 +253,8 @@ namespace Editor
         {
             if (m_Pending == PendingAction::OpenGraph)
                 OpenGraph(m_PendingGraph);
+            else if (m_Pending == PendingAction::NewGraph)
+                NewGraph();
             else
                 Open = false;
             m_Pending = PendingAction::None;
@@ -286,25 +263,55 @@ namespace Editor
         ImGui::EndPopup();
     }
 
-    void RenderGraphEditorWindow::RequestOpenGraph(const std::string& name)
+    void RenderGraphEditorWindow::RequestOpenGraph(const std::string& reference)
     {
-        if (name == m_GraphName)
+        if (reference == m_GraphName)
             return;
         if (IsDirty())
         {
             m_Pending      = PendingAction::OpenGraph;
-            m_PendingGraph = name;
+            m_PendingGraph = reference;
             return;
         }
-        OpenGraph(name);
+        OpenGraph(reference);
     }
 
-    void RenderGraphEditorWindow::OpenGraph(const std::string& name)
+    void RenderGraphEditorWindow::RequestNewGraph()
     {
-        m_GraphName = name;
+        if (IsDirty())
+            m_Pending = PendingAction::NewGraph;
+        else
+            NewGraph();
+    }
+
+    void RenderGraphEditorWindow::OpenGraph(const std::string& reference)
+    {
+        m_GraphName = reference;
+        m_GraphFile.clear();
         m_HasGraph  = false;
         m_Model     = {};
         m_Status.clear();
+    }
+
+    void RenderGraphEditorWindow::NewGraph()
+    {
+        m_GraphName.clear();
+        m_GraphFile.clear();
+        m_Library = m_Saved = m_Edited = {};
+        m_Layout   = {};
+        m_HasGraph = true;
+        m_Status.clear();
+        ApplyEdit(true);
+    }
+
+    void RenderGraphEditorWindow::OpenFile(Renderer::Renderer& renderer, const FS::FileSystemManager& fileSystem)
+    {
+        const char* picked = DialogueWindows::RenderGraphOpenDialogue(DialoguePath(fileSystem, "").c_str());
+        if (!picked)
+            return;
+        const std::string reference = MakeGraphReference(picked, renderer, fileSystem);
+        (void)renderer.LoadGraph(reference); // one that fails to load shows its error in the toolbar
+        RequestOpenGraph(reference);
     }
 
     void RenderGraphEditorWindow::SyncGraph(const Renderer::Renderer& renderer)
@@ -341,23 +348,54 @@ namespace Editor
         }
     }
 
-    void RenderGraphEditorWindow::Save(const Renderer::Renderer& renderer)
+    void RenderGraphEditorWindow::Save(Renderer::Renderer& renderer, const FS::FileSystemManager& fileSystem)
     {
-        (void)renderer;
+        if (m_GraphFile.empty())
+            SaveAs(renderer, fileSystem);
+        else if (WriteGraph(m_GraphFile))
+            m_Saved = m_Edited;
+    }
+
+    void RenderGraphEditorWindow::SaveAs(Renderer::Renderer& renderer, const FS::FileSystemManager& fileSystem)
+    {
+        const std::string start = m_GraphFile.empty() ? DialoguePath(fileSystem, "untitled.graph")
+                                                      : m_GraphFile.string();
+        const char* picked = DialogueWindows::RenderGraphSaveDialogue(start.c_str());
+        if (!picked)
+            return;
+        std::filesystem::path file(picked);
+        if (file.extension() != GRAPH_EXTENSION)
+            file += GRAPH_EXTENSION;
+        if (!WriteGraph(file))
+            return;
+
+        // Go on editing the new file. When the renderer already knows it, its version is what the
+        // edits are compared with until it reloads the file just written.
+        const std::string reference = MakeGraphReference(file, renderer, fileSystem);
+        (void)renderer.LoadGraph(reference);
+        const Renderer::GraphAsset* known = renderer.FindGraphAsset(reference);
+        m_Library   = known ? *known : m_Edited;
+        m_Saved     = m_Edited;
+        m_GraphName = reference;
+        m_GraphFile = file;
+    }
+
+    bool RenderGraphEditorWindow::WriteGraph(const std::filesystem::path& file)
+    {
         std::string error;
-        if (!Renderer::WriteGraphAssetFile(m_Edited, m_GraphFile, &error))
+        if (!Renderer::WriteGraphAssetFile(m_Edited, file, &error))
         {
             m_Status = "Save failed: " + error;
-            return;
+            return false;
         }
-        m_Saved  = m_Edited;
-        m_Status = "Saved " + m_GraphFile.filename().string() + ".";
+        m_Status = "Saved " + file.filename().string() + ".";
         if (!m_Diagnostics.empty())
         {
             m_Status += " It has " + std::to_string(m_Diagnostics.size())
                       + " problem(s), so the renderer keeps its last good version until they are fixed.";
         }
-        SaveGraphLayout(GetGraphLayoutFile(m_GraphFile), m_Layout);
+        SaveGraphLayout(GetGraphLayoutFile(file), m_Layout);
+        return true;
     }
 
     // ── Canvas ───────────────────────────────────────────────────────────────
