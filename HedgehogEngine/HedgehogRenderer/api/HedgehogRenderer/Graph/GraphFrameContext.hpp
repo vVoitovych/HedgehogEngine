@@ -1,5 +1,8 @@
 #pragma once
 
+#include "RGTypes.hpp"
+#include "UiCallback.hpp"
+
 #include "HedgehogCommon/api/RendererSettings.hpp"
 #include "HedgehogExtract/api/RenderScene.hpp"
 #include "HedgehogMath/api/Matrix.hpp"
@@ -59,6 +62,12 @@ namespace Renderer
         // The frame's lights (the forward shader's set 2), uploaded once by the shared phase for
         // every view (SharedPhaseOutputs::SceneLights).
         const RHI::IRHIDescriptorSet* SceneLights = nullptr;
+
+        // The Ui pass: the application's callback, and the render targets the view reads (its
+        // ViewDesc::Reads, as written earlier this frame). The Ui pass declares each as sampled, so
+        // the compiler orders their writers first and makes them readable to the UI.
+        UiCallback                 Ui;
+        std::span<const RGTexture> UiSampledTargets;
     };
 
     // The graph-path forward shader's uniforms (GraphForward/Base.vert and .frag), laid out for

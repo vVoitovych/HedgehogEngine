@@ -1,11 +1,10 @@
 #include "VulkanGuiBackend.hpp"
 #include "VulkanDevice.hpp"
 #include "VulkanCommandList.hpp"
-#include "VulkanRenderPass.hpp"
 #include "VulkanTexture.hpp"
+#include "VulkanTypes.hpp"
 
 #include "RHI/api/IRHICommandList.hpp"
-#include "RHI/api/IRHIFramebuffer.hpp"
 #include "RHI/api/RHITypes.hpp"
 
 #include "imgui.h"
@@ -40,19 +39,9 @@ namespace RHI
         poolInfo.pPoolSizes    = k_PoolSizes.data();
         vkCreateDescriptorPool(m_Device.GetHandle(), &poolInfo, nullptr, &m_Pool);
 
-        RenderPassDesc rpDesc;
-        rpDesc.ColorAttachments.push_back(AttachmentDesc{
-            desc.ColorFormat,
-            LoadOp::Clear,
-            StoreOp::Store,
-            LoadOp::DontCare,
-            StoreOp::DontCare,
-            ImageLayout::Undefined,
-            ImageLayout::ColorAttachment
-        });
-        m_RenderPass = m_Device.CreateRenderPass(rpDesc);
-
-        auto& vkRenderPass = static_cast<VulkanRenderPass&>(*m_RenderPass);
+        // Dynamic rendering (Vulkan 1.3 core): the pipeline is built for one colour format and
+        // needs no render pass or framebuffer, so Render() can draw into any texture of it.
+        m_ColorFormat = VulkanTypes::ToVkFormat(desc.ColorFormat);
 
         ImGui_ImplVulkan_InitInfo initInfo{};
         initInfo.Instance       = m_Device.GetInstance();
@@ -63,7 +52,10 @@ namespace RHI
         initInfo.DescriptorPool = m_Pool;
         initInfo.MinImageCount  = desc.MinImageCount;
         initInfo.ImageCount     = desc.ImageCount;
-        initInfo.PipelineInfoMain.RenderPass = vkRenderPass.GetHandle();
+        initInfo.UseDynamicRendering = true;
+        initInfo.PipelineInfoMain.PipelineRenderingCreateInfo = { VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO };
+        initInfo.PipelineInfoMain.PipelineRenderingCreateInfo.colorAttachmentCount    = 1;
+        initInfo.PipelineInfoMain.PipelineRenderingCreateInfo.pColorAttachmentFormats = &m_ColorFormat;
         ImGui_ImplVulkan_Init(&initInfo);
 
         VkSamplerCreateInfo samplerInfo{};
@@ -91,21 +83,24 @@ namespace RHI
         ImGui_ImplVulkan_NewFrame();
     }
 
-    void VulkanGuiBackend::Render(IRHICommandList& cmd, IRHIFramebuffer& framebuffer)
+    void VulkanGuiBackend::Render(IRHICommandList& cmd, IRHITexture& target)
     {
-        ClearValue colorClear;
-        colorClear.Color = { 0.0f, 0.0f, 0.0f, 1.0f };
-        cmd.BeginRenderPass(*m_RenderPass, framebuffer, { colorClear });
+        RenderingAttachment color;
+        color.Texture     = &target;
+        color.LoadOp      = LoadOp::Clear;
+        color.StoreOp     = StoreOp::Store;
+        color.Clear.Color = { 0.0f, 0.0f, 0.0f, 1.0f };
+
+        RenderingInfo info;
+        info.ColorAttachments = { color };
+        info.Width            = target.GetWidth();
+        info.Height           = target.GetHeight();
+        cmd.BeginRendering(info);
 
         auto& vkCmd = static_cast<VulkanCommandList&>(cmd);
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), vkCmd.GetHandle());
 
-        cmd.EndRenderPass();
-    }
-
-    IRHIRenderPass& VulkanGuiBackend::GetRenderPass()
-    {
-        return *m_RenderPass;
+        cmd.EndRendering();
     }
 
     void* VulkanGuiBackend::CreateTextureId(const IRHITexture& texture)

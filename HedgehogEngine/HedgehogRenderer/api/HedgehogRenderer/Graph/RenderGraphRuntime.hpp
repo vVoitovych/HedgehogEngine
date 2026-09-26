@@ -122,6 +122,10 @@ namespace Renderer
         // the next frame declares its graph from scratch.
         bool Execute(RHI::IRHICommandList& cmdList);
 
+        // How many passes the last Execute() ran after culling; 0 if it failed to compile. A hidden
+        // view or an unread pass shows up here as fewer passes.
+        size_t GetLastExecutedPassCount() const { return m_LastExecutedPassCount; }
+
         // Exposed for tests/diagnostics — verifying AddPass's "no heap churn" claim needs a way
         // to check whether a pointer actually came from this arena.
         const FrameArena& GetArena() const { return m_Arena; }
@@ -158,6 +162,8 @@ namespace Renderer
         uint32_t m_ResultHeight    = 0;
         uint32_t m_SwapchainWidth  = 0;
         uint32_t m_SwapchainHeight = 0;
+
+        size_t m_LastExecutedPassCount = 0;
 
         const GraphFrameContext* m_FrameContext = nullptr;
         const GraphDescription*  m_Executing    = nullptr; // set only while Execute() runs passes

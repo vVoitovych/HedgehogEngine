@@ -28,8 +28,9 @@ project "HedgehogRenderer"
 
     includedirs
     {
+        -- No ImGui include path: the renderer never includes a UI header (RENDERING.md section 7).
+        -- The application owns ImGui and records it through a UiCallback.
         "%{IncludeDir.VulkanSDK}",
-        "%{IncludeDir.ImGui}".."/imgui",
         "%{IncludeDir.yaml_cpp}",
         "%{IncludeDir.Tracy}",
         "../..",
@@ -51,7 +52,6 @@ project "HedgehogRenderer"
         "ContentLoader",
         "FileSystem",
         "Logger",
-        "imgui",
         "yaml-cpp",
         "Tracy"
     }

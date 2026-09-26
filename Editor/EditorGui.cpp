@@ -127,9 +127,13 @@ namespace Editor
 
     // ─── Top-level entry ─────────────────────────────────────────────────────
 
-    void EditorGui::Draw(HedgehogEngine::Engine& context, void* sceneViewTextureId)
+    void EditorGui::Draw(HedgehogEngine::Engine& context, const ViewportImages& images)
     {
         m_SceneViewHovered = false;
+        m_SceneViewWidth   = 0;
+        m_SceneViewHeight  = 0;
+        m_GameViewWidth    = 0;
+        m_GameViewHeight   = 0;
 
         ImVec4* styleColors = ImGui::GetStyle().Colors;
         const ImVec4 panelBg(m_Settings.panelBgColor[0], m_Settings.panelBgColor[1],
@@ -139,7 +143,7 @@ namespace Editor
         styleColors[ImGuiCol_PopupBg]   = panelBg;
         styleColors[ImGuiCol_MenuBarBg] = panelBg;
 
-        m_SceneViewTextureId = sceneViewTextureId;
+        m_ViewportImages = images;
 
         DrawMainMenu(context);
 
@@ -147,7 +151,7 @@ namespace Editor
 
         m_DockSystem.Draw(
             [this]() { DrawToolbarContent(); },
-            [this, &context](PanelId panel) { DrawPanelContent(panel, context, m_SceneViewTextureId); },
+            [this, &context](PanelId panel) { DrawPanelContent(panel, context); },
             menuH);
 
         const auto& fs = context.GetEngineContext().GetFileSystem();
@@ -159,32 +163,40 @@ namespace Editor
 
     // ─── Panel dispatch ───────────────────────────────────────────────────────
 
-    void EditorGui::DrawPanelContent(PanelId panel, HedgehogEngine::Engine& context, void* sceneViewTextureId)
+    void EditorGui::DrawPanelContent(PanelId panel, HedgehogEngine::Engine& context)
     {
         switch (panel)
         {
         case PanelId::SceneHierarchy: DrawSceneHierarchy(context);          break;
         case PanelId::Inspector:      DrawInspector(context);                break;
         case PanelId::Console:        m_ConsolePanel->Draw();                break;
-        default:                      DrawSceneViewContent(sceneViewTextureId); break;
+        default:                      DrawSceneViewContent();                break;
         }
     }
 
-    void EditorGui::DrawSceneViewContent(void* sceneViewTextureId)
+    void EditorGui::DrawSceneViewContent()
     {
         if (!ImGui::BeginTabBar("##SceneGameTabs"))
             return;
 
+        // Only the visible tab gets a size: the hidden one stays 0x0, so its view renders nothing.
         if (ImGui::BeginTabItem("Scene"))
         {
             const ImVec2 avail = ImGui::GetContentRegionAvail();
             m_SceneViewWidth  = static_cast<uint32_t>(std::max(1.0f, avail.x));
             m_SceneViewHeight = static_cast<uint32_t>(std::max(1.0f, avail.y));
 
-            if (sceneViewTextureId)
+            if (m_ViewportImages.Scene)
             {
-                ImGui::Image(sceneViewTextureId, avail);
+                ImGui::Image(m_ViewportImages.Scene, avail);
                 m_SceneViewHovered = ImGui::IsItemHovered();
+            }
+            if (m_ViewportImages.GraphPassCount > 0)
+            {
+                const std::string passes = std::to_string(m_ViewportImages.GraphPassCount) + " render graph passes";
+                const ImVec2      origin = ImGui::GetItemRectMin();
+                ImGui::GetWindowDrawList()->AddText(ImVec2(origin.x + 8.0f, origin.y + 8.0f),
+                                                    IM_COL32(255, 255, 255, 200), passes.c_str());
             }
 
             ImGui::EndTabItem();
@@ -192,6 +204,16 @@ namespace Editor
 
         if (ImGui::BeginTabItem("Game"))
         {
+            const ImVec2 avail = ImGui::GetContentRegionAvail();
+            m_GameViewWidth  = static_cast<uint32_t>(std::max(1.0f, avail.x));
+            m_GameViewHeight = static_cast<uint32_t>(std::max(1.0f, avail.y));
+
+            if (m_ViewportImages.Game)
+                ImGui::Image(m_ViewportImages.Game, avail);
+            else
+                ImGui::TextDisabled("No camera is drawn here: the game view needs the render graph "
+                                    "(rendering.use_render_graph) and a camera in the scene.");
+
             ImGui::EndTabItem();
         }
 

@@ -1,5 +1,6 @@
 #include "Application.hpp"
 #include "EditorGui.hpp"
+#include "ImGuiLayer.hpp"
 
 #include "HedgehogEngine/api/Engine.hpp"
 #include "HedgehogEngine/api/WindowContext.hpp"
@@ -32,9 +33,13 @@ namespace Editor
 
         constexpr float RADIANS_TO_DEGREES = 57.2957795f;
 
-        // The editor camera as a view: drawn with the scene graph into the window-sized target
-        // the render-graph path presents. It outranks scene cameras, so it fits the shadows.
-        Renderer::ViewDesc MakeEditorView(const HedgehogEngine::Camera& camera)
+        // The render targets the scene and game panels show, sized to their panels.
+        constexpr const char* SCENE_TARGET = "scene";
+        constexpr const char* GAME_TARGET  = "game";
+
+        // The editor camera as a view, drawn with the scene graph into the scene panel's target. It
+        // outranks scene cameras, so the shared shadows fit it.
+        Renderer::ViewDesc MakeSceneView(const HedgehogEngine::Camera& camera)
         {
             HX::RenderCamera renderCamera;
             renderCamera.WorldMatrix = camera.GetViewMatrix().Inverse();
@@ -44,8 +49,20 @@ namespace Editor
 
             Renderer::ViewDesc desc;
             desc.Camera    = renderCamera;
-            desc.Targets   = { Renderer::Renderer::VIEWPORT_TARGET };
+            desc.Targets   = { SCENE_TARGET };
             desc.GraphName = "scene";
+            desc.Priority  = 100;
+            return desc;
+        }
+
+        // The editor's UI into the window. It has no camera, and it reads both panels' targets, so
+        // it is ordered after the views that write them.
+        Renderer::ViewDesc MakeResultView()
+        {
+            Renderer::ViewDesc desc;
+            desc.Targets   = { std::string(Renderer::RenderTargetRegistry::MAIN_TARGET) };
+            desc.Reads     = { SCENE_TARGET, GAME_TARGET };
+            desc.GraphName = "result";
             desc.Priority  = 100;
             return desc;
         }
@@ -99,8 +116,19 @@ namespace Editor
             m_Context->GetWindowContext().GetWindow(),
             engineContext.GetSettings(),
             engineContext.GetFileSystem());
+        m_ImGui     = std::make_unique<ImGuiLayer>(m_Context->GetWindowContext().GetWindow());
         m_EditorGui = std::make_unique<EditorGui>(*m_Context);
-        m_EditorView = m_Renderer->CreateView(MakeEditorView(engineContext.GetCamera()));
+
+        // The render-graph path's panels: zero-sized until their tabs are first drawn.
+        for (const char* target : { SCENE_TARGET, GAME_TARGET })
+        {
+            const Renderer::RenderTargetResult declared = m_Renderer->DeclareTarget(
+                { target, RHI::Format::R16G16B16A16Unorm, Renderer::RGSizePolicy::MakeAbsolute(0, 0) });
+            if (!declared.Success)
+                LOGERROR("Editor: ", declared.Message);
+        }
+        m_SceneView  = m_Renderer->CreateView(MakeSceneView(engineContext.GetCamera()));
+        m_ResultView = m_Renderer->CreateView(MakeResultView());
 
         // WantCaptureMouse is true even over the scene image (it's an ImGui window); exempt it.
         m_Context->GetWindowContext().GetWindow().SetGuiCallback([this]()
@@ -174,17 +202,34 @@ namespace Editor
         m_Context->GetWindowContext().HandleInput();
         m_Context->UpdateContext(dt, m_Renderer->GetAspectRatio());
 
-        m_Renderer->BeginGui();
-        m_EditorGui->Draw(*m_Context, m_Renderer->GetSceneViewTextureId());
-        m_Renderer->SetSceneViewSize(m_EditorGui->GetSceneViewWidth(),
-                                     m_EditorGui->GetSceneViewHeight());
+        auto&      engineContext = m_Context->GetEngineContext();
+        const bool useGraph      = engineContext.GetSettings().GetRenderingSettings().GetUseRenderGraph();
 
-        auto& engineContext = m_Context->GetEngineContext();
-        if (engineContext.GetSettings().GetRenderingSettings().GetUseRenderGraph())
-            RenderWithGraph();
+        m_ImGui->BeginFrame(*m_Renderer, useGraph);
+        ViewportImages images;
+        if (useGraph)
+        {
+            images.Scene          = m_ImGui->GetTextureId(SCENE_TARGET, m_Renderer->GetTargetTexture(SCENE_TARGET));
+            images.Game           = m_ImGui->GetTextureId(GAME_TARGET, m_Renderer->GetTargetTexture(GAME_TARGET));
+            images.GraphPassCount = m_Renderer->GetLastFramePassCount();
+        }
         else
+        {
+            images.Scene = m_ImGui->GetTextureId("legacyScene", &m_Renderer->GetSceneViewTexture());
+        }
+        m_EditorGui->Draw(*m_Context, images);
+        m_ImGui->EndFrame();
+
+        if (useGraph)
+        {
+            RenderWithGraph();
+        }
+        else
+        {
+            m_Renderer->SetSceneViewSize(m_EditorGui->GetSceneViewWidth(), m_EditorGui->GetSceneViewHeight());
             m_Renderer->DrawFrame(engineContext.GetFrameData(), engineContext.GetResourceCatalog(),
-                                  engineContext.GetSettings());
+                                  engineContext.GetSettings(), m_ImGui->GetUiCallback());
+        }
         return dt;
     }
 
@@ -198,11 +243,25 @@ namespace Editor
                                      m_RenderScene);
 
         [[maybe_unused]] const bool updated =
-            m_Renderer->UpdateView(m_EditorView, MakeEditorView(engineContext.GetCamera()));
-        assert(updated && "EditorApplication: the editor view was not created.");
+            m_Renderer->UpdateView(m_SceneView, MakeSceneView(engineContext.GetCamera()));
+        assert(updated && "EditorApplication: the scene view was not created.");
+
+        // A hidden panel is 0x0: its view is dropped and its passes never declared.
+        (void)m_Renderer->ResizeTarget(SCENE_TARGET, m_EditorGui->GetSceneViewWidth(),
+                                       m_EditorGui->GetSceneViewHeight());
+        (void)m_Renderer->ResizeTarget(GAME_TARGET, m_EditorGui->GetGameViewWidth(),
+                                       m_EditorGui->GetGameViewHeight());
+
+        // The game view: a camera that would draw to the window draws into the game panel instead,
+        // leaving the camera itself untouched.
+        for (const HX::RenderCamera& camera : m_RenderScene.Cameras)
+        {
+            if (camera.TargetMode == HX::CameraTargetMode::Main)
+                m_Renderer->SetCameraTargetOverride(camera.SourceId, { GAME_TARGET });
+        }
 
         m_Renderer->SyncResources(engineContext.GetResourceCatalog());
-        m_Renderer->RenderFrame(m_RenderScene, engineContext.GetSettings());
+        m_Renderer->RenderFrame(m_RenderScene, engineContext.GetSettings(), m_ImGui->GetUiCallback());
     }
 
     void EditorApplication::LoadBenchmarkScene()
@@ -228,6 +287,7 @@ namespace Editor
             LOGWARNING("Failed to persist engine settings on shutdown.");
         }
 
+        m_ImGui->Shutdown(*m_Renderer);
         m_Renderer->Cleanup();
         m_Context->Cleanup();
     }

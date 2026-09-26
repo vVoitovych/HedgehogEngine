@@ -2,6 +2,8 @@
 
 #include "Profiling/FrameStats.hpp"
 
+#include "HedgehogRenderer/Graph/UiCallback.hpp"
+
 #include <cstdint>
 #include <memory>
 
@@ -48,7 +50,6 @@ namespace Renderer
     {
     public:
         RenderQueue(RHI::IRHIDevice&                  device,
-                    HW::Window&                       window,
                     const HedgehogSettings::Settings& settings,
                     ResourceManager&                  resourceManager,
                     const FS::FileSystemManager&      fileSystem);
@@ -61,10 +62,6 @@ namespace Renderer
 
         void Cleanup(RHI::IRHIDevice& device);
 
-        void  BeginGui();
-        void  DiscardGui();
-        void* GetSceneViewTextureId() const;
-
         void Render(const HedgehogEngine::FrameData& frame,
                     RHI::IRHIDevice&     device,
                     RHI::IRHISwapchain&  swapchain,
@@ -73,13 +70,13 @@ namespace Renderer
                     RHI::IRHISemaphore&  imageAvailableSemaphore,
                     RHI::IRHISemaphore&  renderFinishedSemaphore,
                     uint32_t             frameIndex,
-                    const ResourceManager& resourceManager);
+                    const ResourceManager& resourceManager,
+                    const UiCallback&      ui);
 
         void UpdateData(const HedgehogEngine::FrameData&             frame,
                         uint32_t                          frameIndex,
                         const HedgehogSettings::Settings& settings);
 
-        void ResizeResources(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
         void ResizeSceneView(RHI::IRHIDevice& device, const ResourceManager& resourceManager);
 
         void UpdateResources(RHI::IRHIDevice&                 device,

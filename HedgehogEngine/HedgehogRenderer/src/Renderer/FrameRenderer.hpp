@@ -15,7 +15,10 @@
 #include <array>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
+#include <string_view>
+#include <unordered_map>
 #include <vector>
 
 namespace RHI
@@ -58,10 +61,14 @@ namespace Renderer
     // to the swapchain, submit and present. The fence wait and swapchain resize happen before, in
     // Renderer::RenderFrame, because the legacy resources resize with them.
     //
-    // No graph writes the swapchain's format yet, so "main" is presented through the viewport: a
-    // view targeting main (a camera, as in a game build) renders into the viewport instead. Only
-    // one view may present. When several target main or the viewport, the highest priority one
-    // renders and the others are skipped with a warning (RENDERING.md section 8).
+    // A view whose graph writes the swapchain's format (the editor's result view) renders into
+    // "main" directly. One whose graph does not (a camera with the game graph, as in a game build)
+    // renders into the viewport, which the frame blits to the swapchain. Only one view may present:
+    // when several target main or the viewport, the highest priority one renders and the others are
+    // skipped with a warning (RENDERING.md section 8).
+    //
+    // A view's Ui pass samples the targets it reads (ViewDesc::Reads) as written earlier in the
+    // frame, so a composite such as the editor's result view is ordered after the views it shows.
     class FrameRenderer
     {
     public:
@@ -89,17 +96,39 @@ namespace Renderer
         // frame's end.
         void NotifySwapchainResized() { m_Targets.NotifySwapchainResized(); }
 
-        // Everything after the fence wait: acquire, build, execute, submit and present.
+        // Everything after the fence wait: acquire, build, execute, submit and present. ui is what
+        // any Ui pass records into its target.
         void Render(const HX::RenderScene& scene, const HR::ResourceRegistry& resources,
-                    const HedgehogSettings::Settings& settings, const FrameSync& sync);
+                    const HedgehogSettings::Settings& settings, const UiCallback& ui, const FrameSync& sync);
+
+        // A declared target's texture, for the application to show; nullptr while it is unknown or
+        // zero-area. Changes only at the end of a frame that resized it.
+        RHI::IRHITexture* FindTargetTexture(std::string_view name) const { return m_Targets.Resolve(name).Texture; }
+        RenderTargetResult DeclareTarget(const RenderTargetDesc& desc) { return m_Targets.Declare(desc); }
+        RenderTargetResult ResizeTarget(std::string_view name, uint32_t width, uint32_t height)
+        {
+            return m_Targets.RequestResize(name, width, height);
+        }
+
+        // How many passes the last frame executed, across every view.
+        size_t GetLastFramePassCount() const { return m_LastFramePassCount; }
 
     private:
         void           FillSceneFrame(const HX::RenderScene& scene, const HR::ResourceRegistry& resources,
                                       const HedgehogSettings::Settings& settings);
         GraphFrameData MakeViewFrame(const View& view) const;
-        bool           DeclareView(RenderGraphRuntime& graph, const View& view, GraphFrameData& frame,
-                                   GraphFrameContext& context, const SharedPhaseOutputs& shared);
-        void           Present(const FrameSync& sync, uint32_t imageIndex, bool hasViewport);
+        // What the presenting view wrote: main directly, the viewport, or nothing that presents.
+        enum class PresentSource
+        {
+            None,
+            Main,
+            Viewport,
+        };
+
+        std::optional<PresentSource> DeclareView(RenderGraphRuntime& graph, const View& view,
+                                                 GraphFrameData& frame, GraphFrameContext& context,
+                                                 const SharedPhaseOutputs& shared);
+        void Present(const FrameSync& sync, uint32_t imageIndex, PresentSource source);
         static bool    Presents(const View& view);
         void           ReportOnce(const std::string& message);
 
@@ -124,6 +153,10 @@ namespace Renderer
         std::vector<GraphFrameContext>           m_ViewContexts;
         std::vector<RGTexture>                   m_OutputTargets;
         std::vector<GraphOutputRequirement>      m_OutputContract;
+        std::vector<std::vector<RGTexture>>      m_ViewSampledTargets;
+        std::unordered_map<std::string, RGTexture> m_WrittenTargets; // this frame: target -> newest version
+
+        size_t m_LastFramePassCount = 0;
 
         uint64_t    m_FrameNumber = 0;
         std::string m_LastReport;

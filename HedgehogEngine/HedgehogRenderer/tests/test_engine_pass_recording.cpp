@@ -1,4 +1,5 @@
 #include "HedgehogRenderer/Graph/EnginePassTypes.hpp"
+#include "HedgehogRenderer/Graph/GraphCompiler.hpp"
 #include "HedgehogRenderer/Graph/GraphFrameContext.hpp"
 #include "HedgehogRenderer/Graph/RenderGraphRuntime.hpp"
 #include "HedgehogRenderer/Graph/ShadowCascades.hpp"
@@ -8,6 +9,7 @@
 
 #include "doctest/doctest/doctest.h"
 
+#include <algorithm>
 #include <cmath>
 
 using namespace Renderer;
@@ -239,4 +241,108 @@ TEST_CASE("The forward pass records lit draws into its colour target against the
     // changes: A, then B.
     const std::vector<uint32_t> forwardSets(cmd.BoundSetIndices.end() - 4, cmd.BoundSetIndices.end());
     CHECK(forwardSets == std::vector<uint32_t>{ 0, 2, 1, 1 });
+}
+
+namespace
+{
+    struct WrittenTarget
+    {
+        RGTexture Target{};
+    };
+
+    // What an application's UI callback saw.
+    struct UiProbe
+    {
+        int               Calls  = 0;
+        RHI::IRHITexture* Target = nullptr;
+    };
+
+    void RecordProbe(void* user, RHI::IRHICommandList&, RHI::IRHITexture& target)
+    {
+        UiProbe& probe = *static_cast<UiProbe*>(user);
+        ++probe.Calls;
+        probe.Target = &target;
+    }
+
+    RGTexture DeclareColor(RenderGraphRuntime& graph, const char* name, RHI::Format format)
+    {
+        return graph.CreateTexture({ name, format, RGSizePolicy::MakeAbsolute(64, 64),
+                                     RHI::TextureUsage::ColorAttachment | RHI::TextureUsage::Sampled });
+    }
+}
+
+TEST_CASE("The Ui pass runs the application's callback into its target, after the views it samples")
+{
+    PassBuilderRegistry registry;
+    RegisterEnginePassTypes(registry);
+    TestDevice         device;
+    RenderGraphRuntime graph(device, 64 * 1024);
+
+    // An earlier view writes the target the UI shows.
+    RGTexture sceneWritten;
+    graph.AddPass<WrittenTarget>("SceneView",
+        [&](RGPassBuilder& pass, WrittenTarget& data)
+        {
+            sceneWritten = data.Target = pass.ColorTarget(DeclareColor(graph, "scene", RHI::Format::R16G16B16A16Unorm));
+        },
+        [](WrittenTarget&, RHI::IRHICommandList&) {});
+
+    UiProbe         probe;
+    GraphFrameData  frame      = MakeFrame(1);
+    const RGTexture sampled[]  = { sceneWritten };
+    frame.Ui                   = { &RecordProbe, &probe };
+    frame.UiSampledTargets     = sampled;
+    FakeServices      services;
+    GraphFrameContext context{ &services, &frame };
+    graph.SetFrameContext(&context);
+
+    PassInvocation ui("Ui");
+    ui.SetSlot("target", DeclareColor(graph, "main", RHI::Format::B8G8R8A8Srgb));
+    registry.Find("Ui")->Build(graph, ui);
+    graph.BindOutput(graph.AddOutputSlot("main", RHI::Format::B8G8R8A8Srgb, RGSizePolicy::MakeAbsolute(64, 64)),
+                     ui.GetSlot("target"));
+
+    // The sampled target orders its writer first and is made readable before the UI runs.
+    const CompileResult compiled = GraphCompiler{}.Compile(graph.GetDescription());
+    REQUIRE(compiled.Success);
+    REQUIRE(compiled.Graph.Passes.size() == 2);
+    CHECK(compiled.Graph.Passes[0].Name == "SceneView");
+    CHECK(compiled.Graph.Passes[1].Name == "Ui");
+    const auto& barriers    = compiled.Graph.Passes[1].TextureBarriers;
+    const auto  toShaderRead = [&](const RGTextureBarrier& barrier)
+    {
+        return barrier.Id == sceneWritten.Id && barrier.After == RHI::ResourceState::ShaderResource;
+    };
+    CHECK(std::any_of(barriers.begin(), barriers.end(), toShaderRead));
+
+    RecordingCommandList cmd;
+    REQUIRE(graph.Execute(cmd));
+    CHECK(probe.Calls == 1);
+    CHECK(probe.Target != nullptr);
+    CHECK(graph.GetLastExecutedPassCount() == 2);
+}
+
+TEST_CASE("Without a UI callback the Ui pass clears its target")
+{
+    PassBuilderRegistry registry;
+    RegisterEnginePassTypes(registry);
+    TestDevice         device;
+    RenderGraphRuntime graph(device, 64 * 1024);
+
+    GraphFrameData    frame = MakeFrame(1); // no Ui
+    FakeServices      services;
+    GraphFrameContext context{ &services, &frame };
+    graph.SetFrameContext(&context);
+
+    PassInvocation ui("Ui");
+    ui.SetSlot("target", DeclareColor(graph, "main", RHI::Format::B8G8R8A8Srgb));
+    registry.Find("Ui")->Build(graph, ui);
+    graph.BindOutput(graph.AddOutputSlot("main", RHI::Format::B8G8R8A8Srgb, RGSizePolicy::MakeAbsolute(64, 64)),
+                     ui.GetSlot("target"));
+
+    RecordingCommandList cmd;
+    REQUIRE(graph.Execute(cmd));
+    REQUIRE(cmd.Renderings.size() == 1);
+    REQUIRE(cmd.Renderings[0].ColorAttachments.size() == 1);
+    CHECK(cmd.Renderings[0].ColorAttachments[0].LoadOp == RHI::LoadOp::Clear);
 }
