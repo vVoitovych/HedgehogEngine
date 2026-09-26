@@ -130,6 +130,7 @@ namespace Editor
     void EditorGui::Draw(HedgehogEngine::Engine& context, const ViewportImages& images)
     {
         m_SceneViewHovered = false;
+        m_ScenePick.reset();
         m_SceneViewWidth   = 0;
         m_SceneViewHeight  = 0;
         m_GameViewWidth    = 0;
@@ -190,6 +191,17 @@ namespace Editor
             {
                 ImGui::Image(m_ViewportImages.Scene, avail);
                 m_SceneViewHovered = ImGui::IsItemHovered();
+
+                // A click, not the end of a camera drag.
+                constexpr float CLICK_DRAG_PIXELS = 4.0f;
+                const ImGuiIO&  io = ImGui::GetIO();
+                if (m_SceneViewHovered && ImGui::IsMouseReleased(ImGuiMouseButton_Left)
+                    && io.MouseDragMaxDistanceSqr[ImGuiMouseButton_Left] < CLICK_DRAG_PIXELS * CLICK_DRAG_PIXELS)
+                {
+                    const ImVec2 origin = ImGui::GetItemRectMin();
+                    const ImVec2 size   = ImGui::GetItemRectSize();
+                    m_ScenePick = ViewportPoint{ (io.MousePos.x - origin.x) / size.x, (io.MousePos.y - origin.y) / size.y };
+                }
             }
             if (m_ViewportImages.GraphPassCount > 0)
             {

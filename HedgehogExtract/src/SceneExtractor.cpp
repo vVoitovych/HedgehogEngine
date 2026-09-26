@@ -12,8 +12,7 @@
 
 namespace
 {
-    // Placeholder local-space bounds used until a module computes real per-mesh bounds
-    // (see RenderInstance::WorldBounds). A unit cube centered on the origin.
+    // The local bounds of a mesh the caller has no bounds for (see RenderInstance::WorldBounds).
     const HM::AABB kUnitLocalBounds(HM::Vector3(-0.5f, -0.5f, -0.5f), HM::Vector3(0.5f, 0.5f, 0.5f));
 
     HX::LightType ToExtractLightType(HedgehogEngine::LightType type)
@@ -55,15 +54,16 @@ namespace HX
         const HedgehogEngine::RenderSystem&  renderSystem,
         const HedgehogEngine::LightSystem&   lightSystem,
         const HedgehogEngine::CameraSystem&  cameraSystem,
-        RenderScene&                         outScene) const
+        RenderScene&                         outScene,
+        std::span<const HM::AABB>            meshLocalBounds) const
     {
-        ExtractInstances(ecs, renderSystem, outScene);
+        ExtractInstances(ecs, renderSystem, meshLocalBounds, outScene);
         ExtractLights(ecs, lightSystem, outScene);
         ExtractCameras(ecs, cameraSystem, outScene);
     }
 
     void SceneExtractor::ExtractInstances(const ECS::ECS& ecs, const HedgehogEngine::RenderSystem& renderSystem,
-                                           RenderScene& outScene) const
+                                           std::span<const HM::AABB> meshLocalBounds, RenderScene& outScene) const
     {
         for (const ECS::Entity entity : renderSystem.GetEntities())
         {
@@ -86,10 +86,13 @@ namespace HX
             }
 
             const auto& transformComponent = ecs.GetComponent<HedgehogEngine::TransformComponent>(entity);
+            const size_t meshIndex         = static_cast<size_t>(*meshComponent.MeshIndex);
+            const HM::AABB& localBounds    = meshIndex < meshLocalBounds.size() ? meshLocalBounds[meshIndex]
+                                                                                : kUnitLocalBounds;
 
             RenderInstance instance;
             instance.WorldMatrix   = transformComponent.ObjMatrix;
-            instance.WorldBounds   = kUnitLocalBounds.Transform(transformComponent.ObjMatrix);
+            instance.WorldBounds   = localBounds.Transform(transformComponent.ObjMatrix);
             instance.MeshIndex     = *meshComponent.MeshIndex;
             instance.MaterialIndex = *renderComponent.MaterialIndex;
             instance.Layer         = renderComponent.Layer;

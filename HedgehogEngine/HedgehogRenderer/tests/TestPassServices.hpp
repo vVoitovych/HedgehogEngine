@@ -2,6 +2,8 @@
 
 #include "HedgehogRenderer/Graph/GraphFrameContext.hpp"
 
+#include "TestRHIDoubles.hpp"
+
 #include "RHI/api/IRHIDescriptor.hpp"
 #include "RHI/api/IRHIPipeline.hpp"
 
@@ -34,9 +36,11 @@ namespace RGTest
             {
                 case Renderer::EnginePipeline::DepthPrepass: return m_Depth;
                 case Renderer::EnginePipeline::Shadow:       return m_Shadow;
+                case Renderer::EnginePipeline::Gizmo:        return m_Gizmo;
                 default:                                     return m_Forward;
             }
         }
+        RHI::IRHIBuffer& GetGizmoBoxLines() override { return m_GizmoBoxLines; }
         const RHI::IRHIDescriptorSet& AllocateViewProjUniform(const HM::Matrix4x4& viewProj) override
         {
             UploadedFirstElements.push_back(viewProj.GetBuffer()[0]);
@@ -61,6 +65,8 @@ namespace RGTest
         FakePipeline      m_Depth;
         FakePipeline      m_Shadow;
         FakePipeline      m_Forward;
+        FakePipeline      m_Gizmo;
+        TestBuffer        m_GizmoBoxLines{ Renderer::GIZMO_BOX_LINE_VERTICES * 12 };
         FakeDescriptorSet m_Set;
         FakeDescriptorSet m_SceneLights;
     };

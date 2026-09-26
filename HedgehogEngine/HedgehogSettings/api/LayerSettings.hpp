@@ -16,6 +16,9 @@ namespace HedgehogSettings
     {
     public:
         static constexpr uint32_t LAYER_COUNT = 32;
+        // Reserved for what the editor draws over the scene, such as the selection gizmo: only the
+        // editor's scene view shows it, and never as scene geometry (HX::EDITOR_LAYER).
+        static constexpr uint32_t EDITOR_LAYER = LAYER_COUNT - 1;
 
         HEDGEHOG_SETTINGS_API LayerSettings();
 

@@ -32,6 +32,13 @@ namespace Editor
         size_t GraphPassCount = 0;
     };
 
+    // A point in a panel's image: (0, 0) its top left corner, (1, 1) its bottom right.
+    struct ViewportPoint
+    {
+        float U = 0.0f;
+        float V = 0.0f;
+    };
+
     class EditorGui
     {
     public:
@@ -51,6 +58,13 @@ namespace Editor
         uint32_t GetGameViewWidth()     const { return m_GameViewWidth; }
         uint32_t GetGameViewHeight()    const { return m_GameViewHeight; }
         bool     IsSceneViewHovered()   const { return m_SceneViewHovered; }
+
+        // Where the scene panel was clicked this frame (pressed and released without dragging the
+        // camera), for the application to pick at.
+        std::optional<ViewportPoint> GetScenePick() const { return m_ScenePick; }
+
+        std::optional<ECS::Entity> GetSelectedEntity() const { return m_SelectedEntity; }
+        void SetSelectedEntity(std::optional<ECS::Entity> entity) { m_SelectedEntity = entity; }
 
     private:
         // ── Panel content (drawn into dock areas) ────────────────────────────
@@ -89,6 +103,7 @@ namespace Editor
         uint32_t m_GameViewWidth    = 0;
         uint32_t m_GameViewHeight   = 0;
         bool     m_SceneViewHovered = false;
+        std::optional<ViewportPoint> m_ScenePick;
 
         std::optional<ECS::Entity>             m_SelectedEntity;
         EditorMode                             m_EditorMode         = EditorMode::Edit;

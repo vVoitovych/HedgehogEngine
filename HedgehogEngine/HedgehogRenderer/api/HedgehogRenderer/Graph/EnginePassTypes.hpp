@@ -9,6 +9,8 @@
 //   Shadow         slots: shadowMap                  writes shadowMap
 //   Forward        slots: color, depth, shadowMap    reads depth (depth test), samples shadowMap,
 //                  parameters: cullBackFaces (Flag)  writes color
+//   Gizmo          slots: color, depth               reads depth (depth test), writes color over
+//                                                    what is there: the overlay instances' bounds
 //   Ui             slots: target                     writes target; samples the view's read
 //                                                    targets (GraphFrameData::UiSampledTargets)
 //

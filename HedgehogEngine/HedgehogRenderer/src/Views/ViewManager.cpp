@@ -16,7 +16,9 @@ namespace Renderer
                                    ? std::string(RenderTargetRegistry::MAIN_TARGET)
                                    : camera.TargetName };
             desc.GraphName = camera.GraphName;
-            desc.LayerMask = camera.LayerMask;
+            // A scene camera never sees the editor's overlay (the selection gizmo): only the editor's
+            // own views may include that layer.
+            desc.LayerMask = camera.LayerMask & ~HX::EDITOR_LAYER_MASK;
             desc.Priority  = camera.Priority;
             return desc;
         }

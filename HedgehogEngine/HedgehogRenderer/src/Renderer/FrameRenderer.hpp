@@ -8,6 +8,7 @@
 #include "HedgehogRenderer/Graph/PassBuilderRegistry.hpp"
 #include "HedgehogRenderer/Graph/RenderGraphRuntime.hpp"
 #include "HedgehogRenderer/Targets/RenderTargetRegistry.hpp"
+#include "HedgehogRenderer/Views/ViewCulling.hpp"
 #include "HedgehogRenderer/Views/ViewManager.hpp"
 
 #include "HedgehogCommon/api/RendererSettings.hpp"
@@ -16,6 +17,7 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -116,7 +118,8 @@ namespace Renderer
     private:
         void           FillSceneFrame(const HX::RenderScene& scene, const HR::ResourceRegistry& resources,
                                       const HedgehogSettings::Settings& settings);
-        GraphFrameData MakeViewFrame(const View& view) const;
+        // The view's frame: its camera, and the instances its layer mask and frustum keep.
+        GraphFrameData MakeViewFrame(const View& view, ViewInstances& instances) const;
         // What the presenting view wrote: main directly, the viewport, or nothing that presents.
         enum class PresentSource
         {
@@ -147,6 +150,10 @@ namespace Renderer
 
         // Rebuilt every frame, reused so steady-state frames allocate little.
         GraphFrameData                           m_SceneFrame; // what every view shares
+        std::span<const HX::RenderInstance>      m_FrameInstances; // the scene's, during Render only
+        std::vector<HX::RenderInstance>          m_SceneInstances; // all but the editor layer
+        std::vector<ViewInstances>               m_ViewInstances;  // per view, culled
+        GraphFrameData                           m_ShadowViewFrame; // the shadow view, unculled
         std::vector<MeshDrawRange>               m_Meshes;
         std::vector<const RHI::IRHIDescriptorSet*> m_MaterialSets;
         std::vector<GraphFrameData>              m_ViewFrames;

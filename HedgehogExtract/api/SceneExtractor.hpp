@@ -1,5 +1,9 @@
 #pragma once
 
+#include "HedgehogMath/api/AABB.hpp"
+
+#include <span>
+
 namespace ECS
 {
     class ECS;
@@ -25,16 +29,20 @@ namespace HX
     public:
         // Does not call outScene.Clear() itself: callers reuse one RenderScene across frames
         // and decide when to clear it (see RenderScene::Clear).
+        //
+        // meshLocalBounds is indexed by MeshComponent::MeshIndex (MeshBoundsCache::GetBounds); an
+        // instance whose mesh it does not cover gets a unit cube as its local bounds.
         void Extract(
             const ECS::ECS&                     ecs,
             const HedgehogEngine::RenderSystem&  renderSystem,
             const HedgehogEngine::LightSystem&   lightSystem,
             const HedgehogEngine::CameraSystem&  cameraSystem,
-            RenderScene&                         outScene) const;
+            RenderScene&                         outScene,
+            std::span<const HM::AABB>            meshLocalBounds = {}) const;
 
     private:
         void ExtractInstances(const ECS::ECS& ecs, const HedgehogEngine::RenderSystem& renderSystem,
-                               RenderScene& outScene) const;
+                               std::span<const HM::AABB> meshLocalBounds, RenderScene& outScene) const;
         void ExtractLights(const ECS::ECS& ecs, const HedgehogEngine::LightSystem& lightSystem,
                             RenderScene& outScene) const;
         void ExtractCameras(const ECS::ECS& ecs, const HedgehogEngine::CameraSystem& cameraSystem,

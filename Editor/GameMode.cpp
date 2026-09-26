@@ -6,6 +6,7 @@
 #include "HedgehogEngine/HedgehogSettings/api/HedgehogSettings.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/RenderingSettings.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
+#include "HedgehogExtract/api/MeshBounds.hpp"
 #include "HedgehogExtract/api/RenderScene.hpp"
 #include "HedgehogExtract/api/SceneExtractor.hpp"
 #include "HedgehogRenderer/Renderer.hpp"
@@ -49,6 +50,7 @@ namespace Editor
                                         Renderer::RendererPaths::RenderGraphOnly);
 
             HX::RenderScene          scene;
+            HX::MeshBoundsCache      meshBounds;
             const HX::SceneExtractor extractor;
             bool                     sawImGui = ImGui::GetCurrentContext() != nullptr;
 
@@ -58,9 +60,11 @@ namespace Editor
                 windowContext.HandleInput();
                 engine.UpdateContext(FRAME_TIME, renderer.GetAspectRatio());
 
+                meshBounds.Update(engineContext.GetResourceCatalog());
                 scene.Clear();
                 extractor.Extract(engineContext.GetECS(), *engineContext.GetRenderSystem(),
-                                  *engineContext.GetLightSystem(), *engineContext.GetCameraSystem(), scene);
+                                  *engineContext.GetLightSystem(), *engineContext.GetCameraSystem(), scene,
+                                  meshBounds.GetBounds());
 
                 renderer.SyncResources(engineContext.GetResourceCatalog());
                 renderer.RenderFrame(scene, settings);

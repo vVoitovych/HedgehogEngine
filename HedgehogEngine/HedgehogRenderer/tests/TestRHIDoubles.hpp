@@ -256,7 +256,7 @@ namespace RGTest
         }
         void PushConstants(const RHI::IRHIPipeline&, RHI::ShaderStage, uint32_t, uint32_t, const void*) override {}
 
-        void Draw(uint32_t, uint32_t, uint32_t, uint32_t) override {}
+        void Draw(uint32_t vertexCount, uint32_t, uint32_t, uint32_t) override { DrawnVertexCounts.push_back(vertexCount); }
         void DrawIndexed(uint32_t indexCount, uint32_t, uint32_t, int32_t, uint32_t) override
         {
             DrawnIndexCounts.push_back(indexCount);
@@ -274,5 +274,6 @@ namespace RGTest
         int                              DescriptorSetBinds = 0;
         std::vector<uint32_t>            BoundSetIndices;
         std::vector<uint32_t>            DrawnIndexCounts;
+        std::vector<uint32_t>            DrawnVertexCounts;
     };
 }

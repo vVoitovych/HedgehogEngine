@@ -1,6 +1,6 @@
-# The editor's scene view (RENDERING.md section 7). Identical to game.graph for now; scene-only
-# work such as gizmos arrives with layer-aware culling. The shadow atlas is imported from the
-# shared frame phase (SharedPhase.hpp), which renders it once for every view.
+# The editor's scene view (RENDERING.md section 7): game.graph plus the Gizmo pass, which draws
+# the editor-layer instances (the selection) over the lit scene. The shadow atlas is imported from
+# the shared frame phase (SharedPhase.hpp), which renders it once for every view.
 # Held to a hand-written C++ twin by RenderGraphTest (test_shipped_graphs.cpp).
 version: 2
 outputs:
@@ -28,3 +28,8 @@ passes:
       shadowMap: shadowAtlas
     parameters:
       cullBackFaces: true
+  - type: Gizmo
+    name: Gizmo
+    bindings:
+      color: color
+      depth: depth

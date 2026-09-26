@@ -40,8 +40,8 @@ namespace Renderer
     class GraphPassServices final : public IGraphPassServices
     {
     public:
-        // Uniform allocations one frame may make: a depth prepass per view plus up to four shadow
-        // cascades per view, for several views.
+        // Uniform allocations one frame may make: a depth prepass and a gizmo pass per view plus up
+        // to four shadow cascades, for several views.
         static constexpr uint32_t UNIFORMS_PER_FRAME = 64;
         // Forward view uniforms one frame may make: one per view.
         static constexpr uint32_t FORWARD_UNIFORMS_PER_FRAME = 8;
@@ -64,6 +64,7 @@ namespace Renderer
         void ProvideMaterialLayout(RHI::IRHIDevice& device, HR::ResourceRegistry& registry) const;
 
         const RHI::IRHIPipeline&      GetPipeline(EnginePipeline pipeline) const override;
+        RHI::IRHIBuffer&              GetGizmoBoxLines() override;
         const RHI::IRHIDescriptorSet& AllocateViewProjUniform(const HM::Matrix4x4& viewProj) override;
         const RHI::IRHIDescriptorSet& AllocateForwardViewUniform(const ForwardViewUniform& uniform) override;
         const RHI::IRHIDescriptorSet& AllocateSceneLightsUniform(const SceneLightsUniform& uniform) override;
@@ -101,6 +102,8 @@ namespace Renderer
         std::unique_ptr<RHI::IRHIPipeline> m_ShadowPipeline;
         std::unique_ptr<RHI::IRHIPipeline> m_ForwardPipeline;
         std::unique_ptr<RHI::IRHIPipeline> m_ForwardDoubleSidedPipeline;
+        std::unique_ptr<RHI::IRHIPipeline> m_GizmoPipeline;
+        std::unique_ptr<RHI::IRHIBuffer>   m_GizmoBoxLines;
 
         uint32_t m_FrameIndex = 0;
     };
