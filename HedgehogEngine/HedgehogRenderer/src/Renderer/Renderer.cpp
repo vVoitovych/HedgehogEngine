@@ -121,6 +121,11 @@ namespace Renderer
         return m_FrameRenderer->GetGraphLibrary().GetLastError(name);
     }
 
+    std::vector<GraphDiagnostic> Renderer::DiagnoseGraph(const GraphAsset& asset) const
+    {
+        return m_FrameRenderer->DiagnoseGraph(asset);
+    }
+
     void Renderer::BeginFrameStatsCapture()
     {
         m_FrameRenderer->GetFrameStats().BeginCapture();

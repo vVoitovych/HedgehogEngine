@@ -1,6 +1,7 @@
 #pragma once
 
 #include "HedgehogRenderer/Graph/GraphAsset.hpp"
+#include "HedgehogRenderer/Graph/GraphDiagnostics.hpp"
 #include "HedgehogRenderer/Graph/PassBuilderRegistry.hpp"
 #include "HedgehogRenderer/Graph/UiCallback.hpp"
 #include "HedgehogRenderer/Views/View.hpp"
@@ -137,6 +138,9 @@ namespace Renderer
         // Why the graph's most recent load failed (the runtime then keeps its last known-good
         // version); empty if it loaded or is unknown.
         std::string_view GetGraphError(std::string_view name) const;
+        // Why asset, e.g. an edited version of a graph, would not render; empty if it would. Checks
+        // what loading it would, without touching the GPU (GraphDiagnostics.hpp).
+        std::vector<GraphDiagnostic> DiagnoseGraph(const GraphAsset& asset) const;
 
     private:
         HW::Window& m_Window;

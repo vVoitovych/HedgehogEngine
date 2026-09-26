@@ -4,9 +4,12 @@
 #include "GraphLayoutFile.hpp"
 
 #include "HedgehogRenderer/Graph/GraphAsset.hpp"
+#include "HedgehogRenderer/Graph/GraphDiagnostics.hpp"
 
 #include <filesystem>
 #include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace ax::NodeEditor
 {
@@ -31,6 +34,10 @@ namespace Editor
     // writes the .graph with GraphAssetWriter, which the renderer then hot-reloads; a graph that
     // fails its reload keeps rendering its last good version, and the error is shown here. New...
     // starts a graph from a copy of "game". Node positions are kept in "<name>.graph.layout".
+    //
+    // Every edit is checked the way the renderer would load it (Renderer::DiagnoseGraph): nodes
+    // with a problem get a red border and a tooltip, and a list under the canvas names every
+    // problem; clicking one selects its node and centres the view on it.
     class RenderGraphEditorWindow
     {
     public:
@@ -71,6 +78,10 @@ namespace Editor
         // ── Canvas ───────────────────────────────────────────────────────────
         void DrawCanvas(const Renderer::Renderer* renderer);
         void DrawNode(const GraphCanvasNode& node) const;
+        void DrawDiagnostics();
+        // Checks m_Edited as the renderer would load it, and maps each problem to its node.
+        void Diagnose();
+        uint32_t FindDiagnosticNode(const Renderer::GraphDiagnostic& diagnostic) const;
         void DrawAddMenu(const Renderer::Renderer& renderer);
         void HandleNewLinks();
         void HandleDeletions();
@@ -104,6 +115,11 @@ namespace Editor
         GraphCanvasModel      m_Model;
         GraphLayout           m_Layout;  // every node's position, as last saved or placed
         std::string           m_Status;  // the last save's outcome or an edit's error
+
+        std::vector<Renderer::GraphDiagnostic>    m_Diagnostics;     // why m_Edited would not render
+        std::vector<uint32_t>                     m_DiagnosticNodes; // per diagnostic, its node (0: none)
+        std::unordered_map<uint32_t, std::string> m_NodeProblems;    // node id to its problems, one per line
+        uint32_t                                  m_FocusNodeId = 0; // select and centre it next canvas frame
 
         bool m_PlaceNodes      = false; // set the nodes' positions on the next canvas frame
         bool m_ClearSelection  = false; // on the next canvas frame, after ids were renumbered

@@ -23,6 +23,11 @@ namespace Editor
         constexpr float ROW_HEIGHT    = 150.0f;
         constexpr float DETAILS_WIDTH = 320.0f;
 
+        // Rows the problem list shows before it scrolls.
+        constexpr size_t MAX_LISTED_ROWS = 4;
+
+        constexpr float PROBLEM_BORDER_WIDTH = 2.5f;
+
         // A window that has just opened takes a few frames to settle its size, and fitting the view
         // before that is silently undone; nodes also have no size on the frame they are placed.
         constexpr int FIT_VIEW_DELAY_FRAMES = 10;
@@ -109,9 +114,21 @@ namespace Editor
                 SyncGraph(*renderer);
             }
 
-            ImGui::BeginChild("RenderGraphCanvasRegion", ImVec2(-DETAILS_WIDTH, 0.0f));
+            // The canvas, with the problem list under it while there are problems.
+            const float diagnosticsHeight = m_Diagnostics.empty() ? 0.0f
+                : ImGui::GetTextLineHeightWithSpacing() * static_cast<float>(std::min<size_t>(m_Diagnostics.size(), MAX_LISTED_ROWS) + 1)
+                  + ImGui::GetStyle().WindowPadding.y * 2.0f;
+            ImGui::BeginGroup();
+            ImGui::BeginChild("RenderGraphCanvasRegion", ImVec2(-DETAILS_WIDTH, -diagnosticsHeight));
             DrawCanvas(renderer);
             ImGui::EndChild();
+            if (!m_Diagnostics.empty())
+            {
+                ImGui::BeginChild("RenderGraphDiagnostics", ImVec2(-DETAILS_WIDTH, 0.0f), ImGuiChildFlags_Borders);
+                DrawDiagnostics();
+                ImGui::EndChild();
+            }
+            ImGui::EndGroup();
             ImGui::SameLine();
             ImGui::BeginChild("RenderGraphDetails", ImVec2(0.0f, 0.0f), ImGuiChildFlags_Borders);
             if (renderer)
@@ -335,6 +352,11 @@ namespace Editor
         }
         m_Saved  = m_Edited;
         m_Status = "Saved " + m_GraphFile.filename().string() + ".";
+        if (!m_Diagnostics.empty())
+        {
+            m_Status += " It has " + std::to_string(m_Diagnostics.size())
+                      + " problem(s), so the renderer keeps its last good version until they are fixed.";
+        }
         SaveGraphLayout(GetGraphLayoutFile(m_GraphFile), m_Layout);
     }
 
@@ -347,6 +369,7 @@ namespace Editor
         {
             return renderer ? renderer->FindPassType(type) : nullptr;
         });
+        Diagnose();
         // Node, pin and link ids follow the asset's order, so a node added or removed renumbers
         // the ones after it: re-place them all, and drop a selection that now means another node.
         if (nodesChanged)
@@ -397,6 +420,22 @@ namespace Editor
         for (const GraphCanvasLink& link : m_Model.Links)
             ed::Link(ed::LinkId(link.Id), ed::PinId(link.FromPin), ed::PinId(link.ToPin));
 
+        if (const ed::NodeId hovered = ed::GetHoveredNode())
+        {
+            if (const auto problems = m_NodeProblems.find(static_cast<uint32_t>(hovered.Get())); problems != m_NodeProblems.end())
+            {
+                ed::Suspend();
+                ImGui::SetTooltip("%s", problems->second.c_str());
+                ed::Resume();
+            }
+        }
+        if (m_FocusNodeId != 0)
+        {
+            ed::SelectNode(ed::NodeId(m_FocusNodeId));
+            ed::NavigateToSelection();
+            m_FocusNodeId = 0;
+        }
+
         if (m_HasGraph)
         {
             HandleNewLinks();
@@ -415,6 +454,12 @@ namespace Editor
 
     void RenderGraphEditorWindow::DrawNode(const GraphCanvasNode& node) const
     {
+        const bool hasProblem = m_NodeProblems.contains(node.Id);
+        if (hasProblem)
+        {
+            ed::PushStyleColor(ed::StyleColor_NodeBorder, PROBLEM_COLOR);
+            ed::PushStyleVar(ed::StyleVar_NodeBorderWidth, PROBLEM_BORDER_WIDTH);
+        }
         ed::BeginNode(ed::NodeId(node.Id));
         ImGui::TextColored(TitleColor(node), "%s", node.Title.c_str());
         for (const std::string& detail : node.Details)
@@ -434,6 +479,60 @@ namespace Editor
             ed::EndPin();
         }
         ed::EndNode();
+        if (hasProblem)
+        {
+            ed::PopStyleVar();
+            ed::PopStyleColor();
+        }
+    }
+
+    void RenderGraphEditorWindow::DrawDiagnostics()
+    {
+        ImGui::TextColored(PROBLEM_COLOR, "%zu problem(s): the renderer would reject this graph. Click one to find it.",
+                           m_Diagnostics.size());
+        for (size_t i = 0; i < m_Diagnostics.size(); ++i)
+        {
+            ImGui::PushID(static_cast<int>(i));
+            if (ImGui::Selectable(m_Diagnostics[i].Message.c_str()) && m_DiagnosticNodes[i] != 0)
+                m_FocusNodeId = m_DiagnosticNodes[i];
+            ImGui::PopID();
+        }
+    }
+
+    void RenderGraphEditorWindow::Diagnose()
+    {
+        m_Diagnostics = m_Renderer ? m_Renderer->DiagnoseGraph(m_Edited) : std::vector<Renderer::GraphDiagnostic>{};
+        m_DiagnosticNodes.clear();
+        m_NodeProblems.clear();
+        for (const Renderer::GraphDiagnostic& diagnostic : m_Diagnostics)
+        {
+            const uint32_t node = FindDiagnosticNode(diagnostic);
+            m_DiagnosticNodes.push_back(node);
+            if (node == 0)
+                continue;
+            std::string& problems = m_NodeProblems[node];
+            if (!problems.empty())
+                problems += '\n';
+            problems += diagnostic.Message;
+        }
+    }
+
+    // The pass a problem names, else the output, resource or import it names; an output's problem
+    // may name it only as a slot. 0 when it concerns none of the graph's nodes.
+    uint32_t RenderGraphEditorWindow::FindDiagnosticNode(const Renderer::GraphDiagnostic& diagnostic) const
+    {
+        const auto find = [this](auto&& matches) -> uint32_t
+        {
+            const auto it = std::ranges::find_if(m_Model.Nodes, matches);
+            return it != m_Model.Nodes.end() ? it->Id : 0;
+        };
+        if (!diagnostic.PassName.empty())
+            return find([&](const GraphCanvasNode& node) { return node.Kind == GraphNodeKind::Pass && node.Name == diagnostic.PassName; });
+        if (!diagnostic.ResourceName.empty())
+            return find([&](const GraphCanvasNode& node) { return node.Kind != GraphNodeKind::Pass && node.Name == diagnostic.ResourceName; });
+        if (!diagnostic.SlotName.empty())
+            return find([&](const GraphCanvasNode& node) { return node.Kind == GraphNodeKind::Output && node.Name == diagnostic.SlotName; });
+        return 0;
     }
 
     void RenderGraphEditorWindow::DrawAddMenu(const Renderer::Renderer& renderer)
