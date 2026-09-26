@@ -126,9 +126,9 @@ namespace Renderer
         // "*.graph" file in the engine's graph directory, including files added while running.
         const std::vector<std::string>& GetGraphNames() const;
 
-        // For tools that show graph assets (the editor's render graph editor). The last known-good
-        // asset of a graph, or nullptr if it has never loaded; the file it was registered from, or
-        // an empty path; and a registered pass type's slots and parameters, or nullptr. A hot reload
+        // For tools that show graph assets (the editor's render graph editor), by graph reference: a
+        // name or a file path (GraphReference.hpp). The last known-good asset of a graph, or nullptr
+        // if it has never loaded; the file it was registered from, or an empty path; and a registered pass type's slots and parameters, or nullptr. A hot reload
         // changes the asset in place, so compare it each frame rather than keeping a copy as current.
         const GraphAsset*     FindGraphAsset(std::string_view name) const;
         std::filesystem::path GetGraphFile(std::string_view name) const;
@@ -141,6 +141,10 @@ namespace Renderer
         // Why asset, e.g. an edited version of a graph, would not render; empty if it would. Checks
         // what loading it would, without touching the GPU (GraphDiagnostics.hpp).
         std::vector<GraphDiagnostic> DiagnoseGraph(const GraphAsset& asset) const;
+        // Registers a graph file reference (GraphReference.hpp) before any view uses it, so a tool
+        // can open it: the file is loaded and hot-reloaded from then on. True if it has a usable
+        // asset; otherwise GetGraphError says why. A name is only looked up.
+        bool LoadGraph(std::string_view reference);
 
     private:
         HW::Window& m_Window;

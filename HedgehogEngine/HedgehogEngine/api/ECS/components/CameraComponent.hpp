@@ -45,7 +45,9 @@ HH_BEGIN_COMPONENT(CameraComponent)
                        HedgehogEngine::CameraTargetMode::Main, kTargetModeNames, 2)
     HH_PROP_NAMED(std::string, TargetName, "TargetName", std::string{}, None)
 
-    // Which graph asset (RENDERING.md section 6) this camera's view instantiates. Defaults to
+    // Which graph asset (RENDERING.md section 6) this camera's view instantiates: a graph reference,
+    // either the name of an engine graph or the path of a .graph file (virtual or absolute; see
+    // HedgehogRenderer/Graph/GraphReference.hpp). The key stays "GraphName". Defaults to
     // "game" rather than "scene": the editor's scene and result views are constructed directly
     // by the editor (RENDERING.md section 7), never through a CameraComponent — an entity
     // carrying this component is always somebody's *game* camera.

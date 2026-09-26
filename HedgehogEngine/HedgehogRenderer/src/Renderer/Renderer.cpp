@@ -126,6 +126,11 @@ namespace Renderer
         return m_FrameRenderer->DiagnoseGraph(asset);
     }
 
+    bool Renderer::LoadGraph(std::string_view reference)
+    {
+        return m_FrameRenderer->LoadGraph(reference);
+    }
+
     void Renderer::BeginFrameStatsCapture()
     {
         m_FrameRenderer->GetFrameStats().BeginCapture();
