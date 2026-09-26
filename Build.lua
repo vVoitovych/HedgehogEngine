@@ -21,6 +21,7 @@ VulkanSDK = os.getenv("VULKAN_SDK")
 group "ThirdParty"
    include "ThirdParty/glfw/Build-glfw.lua"
 	include "ThirdParty/ImGui/Build-ImGui.lua"
+   include "ThirdParty/ImGuiNodeEditor/Build-ImGuiNodeEditor.lua"
    include "ThirdParty/tinyfiledialogs/Build-tinyfiledialogs.lua"
    include "ThirdParty/YamlCpp/Build-YamlCpp.lua"
    include "ThirdParty/Lua/Build-Lua.lua"

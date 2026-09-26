@@ -22,6 +22,7 @@ namespace Editor
     class VertexDescriptionWindow;
     class PipelineWindow;
     class ShaderWindow;
+    class RenderGraphEditorWindow;
 
     enum class EditorMode { Edit, Play, Pause };
 
@@ -124,6 +125,7 @@ namespace Editor
         std::unique_ptr<VertexDescriptionWindow> m_VertexDescWindow;
         std::unique_ptr<PipelineWindow>          m_PipelineWindow;
         std::unique_ptr<ShaderWindow>            m_ShaderWindow;
+        std::unique_ptr<RenderGraphEditorWindow> m_RenderGraphEditorWindow;
 
         // Valid only during Draw(); read by the viewport panel.
         ViewportImages m_ViewportImages;

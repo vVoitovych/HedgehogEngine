@@ -3,6 +3,7 @@
 #include "Tools/VertexDescriptionWindow.hpp"
 #include "Tools/PipelineWindow.hpp"
 #include "Tools/ShaderWindow.hpp"
+#include "Tools/RenderGraphEditor/RenderGraphEditorWindow.hpp"
 
 #include "HedgehogEngine/api/Engine.hpp"
 #include "HedgehogEngine/api/EngineContext.hpp"
@@ -106,6 +107,7 @@ namespace Editor
         , m_VertexDescWindow(std::make_unique<VertexDescriptionWindow>())
         , m_PipelineWindow(std::make_unique<PipelineWindow>())
         , m_ShaderWindow(std::make_unique<ShaderWindow>())
+        , m_RenderGraphEditorWindow(std::make_unique<RenderGraphEditorWindow>())
     {
         m_FileSystem = &context.GetEngineContext().GetFileSystem();
         if (m_Settings.Load("engine://editor_settings.yaml", *m_FileSystem)
@@ -163,6 +165,7 @@ namespace Editor
         m_VertexDescWindow->Draw(fs);
         m_PipelineWindow->Draw(fs);
         m_ShaderWindow->Draw(fs);
+        m_RenderGraphEditorWindow->Draw();
     }
 
     // ─── Panel dispatch ───────────────────────────────────────────────────────
@@ -374,6 +377,8 @@ namespace Editor
                 m_PipelineWindow->Open = !m_PipelineWindow->Open;
             if (ImGui::MenuItem("Shader", nullptr, m_ShaderWindow->Open))
                 m_ShaderWindow->Open = !m_ShaderWindow->Open;
+            if (ImGui::MenuItem("Render Graph Editor", nullptr, m_RenderGraphEditorWindow->Open))
+                m_RenderGraphEditorWindow->Open = !m_RenderGraphEditorWindow->Open;
             ImGui::EndMenu();
         }
 

@@ -557,6 +557,7 @@ Binaries
 /Scripts/__pycache__/SetupVulkan.cpython-312.pyc
 /Scripts/vulkan_sdk.exe
 /ThirdParty/ImGui/*.vcxproj
+/ThirdParty/ImGuiNodeEditor/*.vcxproj*
 /ThirdParty/glfw/*.vcxproj
 /ThirdParty/glfw/*.filters
 /ThirdParty/tinyfiledialogs/*.vcxproj

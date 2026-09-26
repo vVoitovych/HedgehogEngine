@@ -3,6 +3,7 @@ IncludeDir["stb_image"] = "%{wks.location}/ThirdParty/stb"
 IncludeDir["yaml_cpp"]  = "%{wks.location}/ThirdParty/YamlCpp/yaml-cpp/include"
 IncludeDir["GLFW"]      = "%{wks.location}/ThirdParty/glfw/glfw/include"
 IncludeDir["ImGui"]     = "%{wks.location}/ThirdParty/ImGui"
+IncludeDir["ImGuiNodeEditor"] = "%{wks.location}/ThirdParty/ImGuiNodeEditor/imgui-node-editor"
 IncludeDir["VulkanSDK"] = "%{wks.location}/ThirdParty/vulkan/Include"
 IncludeDir["Tracy"]     = "%{wks.location}/ThirdParty/Tracy/tracy/public"
 

@@ -14,6 +14,7 @@ project "Editor"
       "../HedgehogEngine/HedgehogRenderer/api",
       "../HedgehogEngine/RHIImGui/api",
       "%{IncludeDir.ImGui}".."/imgui",
+      "%{IncludeDir.ImGuiNodeEditor}",
       "%{IncludeDir.yaml_cpp}"
    }
 
@@ -33,6 +34,7 @@ project "Editor"
       "DialogueWindows",
       "FileSystem",
       "imgui",
+      "imgui-node-editor",
       -- Tracy client (linked into HedgehogRenderer) needs these on Windows.
       "ws2_32",
       "dbghelp"
