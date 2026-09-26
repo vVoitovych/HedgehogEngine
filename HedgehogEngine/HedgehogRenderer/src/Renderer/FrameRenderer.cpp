@@ -59,26 +59,38 @@ namespace Renderer
 
         for (auto& runtime : m_Runtimes)
             runtime = std::make_unique<RenderGraphRuntime>(device, GRAPH_ARENA_BYTES);
+        for (FrameSlot& slot : m_Slots)
+        {
+            slot.Cmd            = device.CreateCommandList();
+            slot.Fence          = device.CreateFence(/*signaled=*/true);
+            slot.ImageAvailable = device.CreateSemaphore();
+            slot.RenderFinished = device.CreateSemaphore();
+        }
     }
 
     // The owner waits for the device to go idle first, as for every other GPU resource.
     FrameRenderer::~FrameRenderer() = default;
 
-    void FrameRenderer::Render(const HX::RenderScene& scene, const HR::ResourceRegistry& resources,
-                               const HedgehogSettings::Settings& settings, const UiCallback& ui,
-                               const FrameSync& sync)
+    void FrameRenderer::WaitForFrameSlot()
     {
-        const uint32_t imageIndex = m_Swapchain.AcquireNextImage(sync.ImageAvailable);
-        sync.Fence.Reset();
-        sync.Cmd.Reset();
-        sync.Cmd.Begin();
+        m_Slots[m_SlotIndex].Fence->Wait();
+    }
+
+    void FrameRenderer::Render(const HX::RenderScene& scene, const HR::ResourceRegistry& resources,
+                               const HedgehogSettings::Settings& settings, const UiCallback& ui)
+    {
+        FrameSlot&     slot       = m_Slots[m_SlotIndex];
+        const uint32_t imageIndex = m_Swapchain.AcquireNextImage(*slot.ImageAvailable);
+        slot.Fence->Reset();
+        slot.Cmd->Reset();
+        slot.Cmd->Begin();
 
         // This slot's fence has signaled, so every frame up to MAX_FRAMES_IN_FLIGHT ago is complete.
         ++m_FrameNumber;
         const uint64_t completed = m_FrameNumber > HedgehogEngine::MAX_FRAMES_IN_FLIGHT
                                  ? m_FrameNumber - HedgehogEngine::MAX_FRAMES_IN_FLIGHT : 0;
         m_Targets.BeginFrame(m_FrameNumber, completed, imageIndex);
-        m_Services.BeginFrame(sync.FrameIndex);
+        m_Services.BeginFrame(m_SlotIndex);
         m_Library.Poll();
 
         const std::vector<View>& views = m_Views.BuildViews(scene);
@@ -113,7 +125,7 @@ namespace Renderer
         sharedSettings.ShadowAtlasSize  = shadowmap.GetShadowmapSize();
         sharedSettings.ShadowCasterMask = shadowmap.GetShadowCasterMask();
 
-        RenderGraphRuntime&      graph  = *m_Runtimes[sync.FrameIndex];
+        RenderGraphRuntime&      graph  = *m_Runtimes[m_SlotIndex];
         const SharedPhaseOutputs shared =
             m_Shared.Declare(graph, m_Services, shadowFrame, scene.Lights, sharedSettings);
 
@@ -142,15 +154,16 @@ namespace Renderer
         }
 
         graph.SetPassTimingEnabled(m_Stats.IsCapturing());
-        if (!graph.Execute(sync.Cmd))
+        if (!graph.Execute(*slot.Cmd))
             presented = PresentSource::None;
         m_LastFramePassCount = graph.GetLastExecutedPassCount();
         RecordPassTimings(graph);
 
-        Present(sync, imageIndex, presented);
+        Present(slot, imageIndex, presented);
 
         m_Targets.EndFrame();
         m_Views.EndFrame();
+        m_SlotIndex = (m_SlotIndex + 1) % HedgehogEngine::MAX_FRAMES_IN_FLIGHT;
     }
 
     void FrameRenderer::RecordPassTimings(const RenderGraphRuntime& graph)
@@ -332,9 +345,9 @@ namespace Renderer
         return source;
     }
 
-    void FrameRenderer::Present(const FrameSync& sync, uint32_t imageIndex, PresentSource source)
+    void FrameRenderer::Present(FrameSlot& slot, uint32_t imageIndex, PresentSource source)
     {
-        RHI::IRHICommandList&      cmd      = sync.Cmd;
+        RHI::IRHICommandList&      cmd      = *slot.Cmd;
         RHI::IRHITexture&          image    = m_Swapchain.GetTexture(imageIndex);
         const ResolvedRenderTarget viewport = m_Targets.Resolve(VIEWPORT_TARGET);
 
@@ -373,8 +386,8 @@ namespace Renderer
         }
 
         cmd.End();
-        m_Device.SubmitCommandList(cmd, { &sync.ImageAvailable }, { &sync.RenderFinished }, &sync.Fence);
-        m_Swapchain.Present(imageIndex, sync.RenderFinished);
+        m_Device.SubmitCommandList(cmd, { slot.ImageAvailable.get() }, { slot.RenderFinished.get() }, slot.Fence.get());
+        m_Swapchain.Present(imageIndex, *slot.RenderFinished);
     }
 
     bool FrameRenderer::Presents(const View& view)

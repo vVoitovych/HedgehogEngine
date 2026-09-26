@@ -42,7 +42,6 @@ namespace Renderer
 {
     class FrameRenderer;
     class RHIContext;
-    class ThreadContext;
     class ResourceManager;
     class RenderQueue;
 
@@ -77,7 +76,7 @@ namespace Renderer
 
         void Cleanup();
 
-        // The legacy path. ui records into the legacy colour buffer.
+        // Removed: asserts and does nothing. Kept only until the legacy resources are deleted.
         void  DrawFrame(const HedgehogEngine::FrameData& frameData,
                         HedgehogEngine::IResourceCatalog& catalog,
                         HedgehogSettings::Settings&       settings,
@@ -141,7 +140,6 @@ namespace Renderer
         HW::Window& m_Window;
 
         std::unique_ptr<RHIContext>      m_RHIContext;
-        std::unique_ptr<ThreadContext>   m_ThreadContext;
         std::unique_ptr<ResourceManager> m_ResourceManager;
         std::unique_ptr<RenderQueue>     m_RenderQueue;
         std::unique_ptr<FrameRenderer>   m_FrameRenderer;
