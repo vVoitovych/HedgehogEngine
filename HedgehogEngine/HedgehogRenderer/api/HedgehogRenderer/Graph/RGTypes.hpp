@@ -60,6 +60,8 @@ namespace Renderer
         uint32_t         Height = 0;    // Absolute only
         float            Scale  = 1.0f; // RelativeToResult / RelativeToSwapchain only
 
+        bool operator==(const RGSizePolicy& other) const = default;
+
         static RGSizePolicy MakeAbsolute(uint32_t width, uint32_t height)
         {
             RGSizePolicy policy;

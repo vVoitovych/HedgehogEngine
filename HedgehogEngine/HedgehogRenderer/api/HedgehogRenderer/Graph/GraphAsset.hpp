@@ -30,6 +30,8 @@ namespace Renderer
         std::string  Name;
         RHI::Format  Format = RHI::Format::Undefined;
         RGSizePolicy Size;
+
+        bool operator==(const GraphAssetOutput& other) const = default;
     };
 
     // A transient resource the graph creates for itself.
@@ -38,6 +40,8 @@ namespace Renderer
         std::string  Name;
         RHI::Format  Format = RHI::Format::Undefined;
         RGSizePolicy Size;
+
+        bool operator==(const GraphAssetResource& other) const = default;
     };
 
     // A resource the graph reads but does not create: its handle is supplied by whoever
@@ -46,6 +50,8 @@ namespace Renderer
     {
         std::string Name;
         RHI::Format Format = RHI::Format::Undefined;
+
+        bool operator==(const GraphAssetImport& other) const = default;
     };
 
     // "Slot" is a binding slot the pass type defines (e.g. "color"); "Resource" names an output,
@@ -54,6 +60,8 @@ namespace Renderer
     {
         std::string Slot;
         std::string Resource;
+
+        bool operator==(const GraphAssetBinding& other) const = default;
     };
 
     // Parameters stay untyped strings. The pass builder that owns them interprets each one,
@@ -62,6 +70,8 @@ namespace Renderer
     {
         std::string Name;
         std::string Value;
+
+        bool operator==(const GraphAssetParameter& other) const = default;
     };
 
     struct GraphAssetPass
@@ -70,6 +80,8 @@ namespace Renderer
         std::string                      Name;
         std::vector<GraphAssetBinding>   Bindings;   // document order
         std::vector<GraphAssetParameter> Parameters; // document order
+
+        bool operator==(const GraphAssetPass& other) const = default;
     };
 
     struct GraphAsset
@@ -79,5 +91,7 @@ namespace Renderer
         std::vector<GraphAssetResource> Resources;
         std::vector<GraphAssetImport>   Imports;   // document order
         std::vector<GraphAssetPass>     Passes;    // document order
+
+        bool operator==(const GraphAsset& other) const = default;
     };
 }

@@ -119,6 +119,16 @@ namespace Renderer
         return std::nullopt;
     }
 
+    std::optional<std::string_view> GetFormatName(RHI::Format format)
+    {
+        for (const auto& entry : FORMAT_VOCABULARY)
+        {
+            if (entry.Value == format)
+                return entry.Name;
+        }
+        return std::nullopt;
+    }
+
     std::optional<RGSizePolicy> ResolveSizePolicy(std::string_view text)
     {
         const size_t open = text.find('(');
@@ -151,6 +161,28 @@ namespace Renderer
         return *kind == RGSizePolicyKind::RelativeToResult
             ? RGSizePolicy::MakeRelativeToResult(*scale)
             : RGSizePolicy::MakeRelativeToSwapchain(*scale);
+    }
+
+    std::string SizePolicyToString(const RGSizePolicy& policy)
+    {
+        std::string kind;
+        for (const auto& entry : SIZE_POLICY_KIND_VOCABULARY)
+        {
+            if (entry.Value == policy.Kind)
+                kind = entry.Name;
+        }
+
+        if (policy.Kind == RGSizePolicyKind::Absolute)
+            return kind + "(" + std::to_string(policy.Width) + ", " + std::to_string(policy.Height) + ")";
+
+        // Shortest round-trip form in fixed notation, which is what ResolveSizePolicy parses.
+        char buffer[64];
+        const auto [end, error] = std::to_chars(buffer, buffer + sizeof(buffer), policy.Scale,
+                                                std::chars_format::fixed);
+        std::string scale = error == std::errc{} ? std::string(buffer, end) : std::string("1");
+        if (scale.find('.') == std::string::npos)
+            scale += ".0";
+        return kind + "(" + scale + ")";
     }
 
     std::optional<bool> ResolveFlag(std::string_view text)

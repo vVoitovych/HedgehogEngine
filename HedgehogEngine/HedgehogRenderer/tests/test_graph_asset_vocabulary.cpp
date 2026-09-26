@@ -2,6 +2,7 @@
 
 #include "doctest/doctest/doctest.h"
 
+#include <ostream> // doctest streams std::string_view values when a check fails
 #include <set>
 #include <string>
 
@@ -108,3 +109,40 @@ TEST_CASE("Flags accept exactly 'true' and 'false'")
         CHECK_FALSE(ResolveFlag(text).has_value());
     }
 }
+
+TEST_CASE("Every format has its vocabulary string back, and Undefined has none")
+{
+    for (const auto& entry : GetFormatVocabulary())
+    {
+        CAPTURE(entry.Name);
+        const std::optional<std::string_view> name = GetFormatName(entry.Value);
+        REQUIRE(name.has_value());
+        CHECK(std::string(*name) == std::string(entry.Name));
+    }
+    CHECK_FALSE(GetFormatName(RHI::Format::Undefined).has_value());
+}
+
+TEST_CASE("Size policies are written in the canonical spelling and read back exactly")
+{
+    CHECK(SizePolicyToString(RGSizePolicy::MakeAbsolute(2048, 1024)) == "Absolute(2048, 1024)");
+    CHECK(SizePolicyToString(RGSizePolicy::MakeRelativeToResult(1.0f)) == "RelativeToResult(1.0)");
+    CHECK(SizePolicyToString(RGSizePolicy::MakeRelativeToResult(0.5f)) == "RelativeToResult(0.5)");
+    CHECK(SizePolicyToString(RGSizePolicy::MakeRelativeToSwapchain(2.0f)) == "RelativeToSwapchain(2.0)");
+
+    for (const RGSizePolicy& policy : {
+             RGSizePolicy::MakeAbsolute(1, 1),
+             RGSizePolicy::MakeAbsolute(4096, 4096),
+             RGSizePolicy::MakeRelativeToResult(0.1f),
+             RGSizePolicy::MakeRelativeToResult(1.0f / 3.0f),
+             RGSizePolicy::MakeRelativeToSwapchain(0.25f),
+             RGSizePolicy::MakeRelativeToSwapchain(1.5f),
+         })
+    {
+        const std::string text = SizePolicyToString(policy);
+        CAPTURE(text);
+        const std::optional<RGSizePolicy> readBack = ResolveSizePolicy(text);
+        REQUIRE(readBack.has_value());
+        CHECK(*readBack == policy); // exact, not approximate: the scale's bits survive
+    }
+}
+

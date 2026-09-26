@@ -1,5 +1,7 @@
 #include "HedgehogRenderer/Graph/EnginePassTypes.hpp"
 #include "HedgehogRenderer/Graph/GraphAssetLibrary.hpp"
+#include "HedgehogRenderer/Graph/GraphAssetParser.hpp"
+#include "HedgehogRenderer/Graph/GraphAssetWriter.hpp"
 #include "HedgehogRenderer/Graph/GraphInstantiator.hpp"
 #include "HedgehogRenderer/Graph/RenderGraphRuntime.hpp"
 
@@ -338,3 +340,25 @@ TEST_CASE("A graph file added to a watched directory is registered by the next P
 
     CHECK(library.Poll().empty()); // registered once, not again
 }
+
+TEST_CASE("Oracle: each shipped graph, written and parsed back, is equal and compiles to the same plan")
+{
+    const PassBuilderRegistry registry = MakeEngineRegistry();
+    GraphAssetLibrary library(registry);
+    REQUIRE(library.RegisterDirectory(HH_GRAPH_ASSET_DIR));
+
+    for (const char* name : { "scene", "game", "result" })
+    {
+        CAPTURE(name);
+        const GraphAsset* shipped = library.Find(name);
+        REQUIRE(shipped != nullptr);
+
+        const std::string text = WriteGraphAsset(*shipped);
+        const GraphAssetParseResult reparsed = GraphAssetParser{}.Parse(text);
+        REQUIRE(reparsed.Success);
+        CHECK(reparsed.Asset == *shipped);
+        CHECK(PlanOf(registry, reparsed.Asset) == PlanOf(registry, *shipped));
+        CHECK(WriteGraphAsset(reparsed.Asset) == text);
+    }
+}
+
