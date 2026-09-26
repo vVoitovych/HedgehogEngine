@@ -5,6 +5,7 @@
 
 #include "Logger/api/Logger.hpp"
 
+#include <algorithm>
 #include <fstream>
 #include <sstream>
 
@@ -12,6 +13,8 @@ namespace Renderer
 {
     namespace
     {
+        constexpr const char* GRAPH_EXTENSION = ".graph";
+
         std::optional<std::string> ReadFile(const std::filesystem::path& file)
         {
             std::ifstream in(file, std::ios::binary);
@@ -34,16 +37,64 @@ namespace Renderer
 
     bool GraphAssetLibrary::Register(const std::string& name, const std::filesystem::path& file)
     {
-        Entry& entry = m_Entries[name];
+        const auto [position, inserted] = m_Entries.try_emplace(name);
+        if (inserted)
+            m_Names.insert(std::upper_bound(m_Names.begin(), m_Names.end(), name), name);
+
+        Entry& entry = position->second;
         entry.File = file;
         std::error_code error;
         entry.LastWriteTime = std::filesystem::last_write_time(file, error);
         return Load(name, entry);
     }
 
+    bool GraphAssetLibrary::RegisterDirectory(const std::filesystem::path& directory)
+    {
+        std::error_code error;
+        if (!std::filesystem::is_directory(directory, error))
+            return false;
+
+        m_Directory          = directory;
+        m_DirectoryWriteTime = std::filesystem::last_write_time(directory, error);
+        RegisterNewDirectoryFiles();
+        return true;
+    }
+
+    std::vector<std::string> GraphAssetLibrary::RegisterNewDirectoryFiles()
+    {
+        std::vector<std::string> loaded;
+        std::error_code error;
+        for (const auto& item : std::filesystem::directory_iterator(m_Directory, error))
+        {
+            const std::filesystem::path& file = item.path();
+            if (!item.is_regular_file(error) || file.extension() != GRAPH_EXTENSION)
+                continue;
+            const std::string name = file.stem().string();
+            if (m_Entries.contains(name))
+                continue;
+            if (Register(name, file))
+            {
+                LOGINFO("Registered graph '", name, "' from ", file.string());
+                loaded.push_back(name);
+            }
+        }
+        return loaded;
+    }
+
     std::vector<std::string> GraphAssetLibrary::Poll()
     {
         std::vector<std::string> reloaded;
+        if (!m_Directory.empty())
+        {
+            std::error_code error;
+            const auto writeTime = std::filesystem::last_write_time(m_Directory, error);
+            if (!error && writeTime != m_DirectoryWriteTime)
+            {
+                m_DirectoryWriteTime = writeTime;
+                reloaded = RegisterNewDirectoryFiles();
+            }
+        }
+
         for (auto& [name, entry] : m_Entries)
         {
             std::error_code error;

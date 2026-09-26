@@ -29,8 +29,9 @@ namespace Renderer
         // Pass data and closures for one frame: the shared phase plus a few views.
         constexpr size_t GRAPH_ARENA_BYTES = 256 * 1024;
 
+        // Every graph in the directory is registered; these are the ones the engine itself needs.
         constexpr const char* SHIPPED_GRAPHS[] = { "scene", "game", "result" };
-        constexpr const char* GRAPH_DIRECTORY  = "engine://HedgehogEngine/HedgehogRenderer/assets/Graphs/";
+        constexpr const char* GRAPH_DIRECTORY  = "engine://HedgehogEngine/HedgehogRenderer/assets/Graphs";
 
         void Transition(RHI::IRHICommandList& cmd, RHI::IRHITexture& texture, RHI::ResourceState before,
                         RHI::ResourceState after)
@@ -52,10 +53,12 @@ namespace Renderer
         , m_Shared(m_Registry)
     {
         RegisterEnginePassTypes(m_Registry);
+        const auto directory = fileSystem.ResolvePhysical(GRAPH_DIRECTORY);
+        if (!directory || !m_Library.RegisterDirectory(*directory))
+            LOGERROR("FrameRenderer: the graph directory '", GRAPH_DIRECTORY, "' could not be read.");
         for (const char* name : SHIPPED_GRAPHS)
         {
-            const auto file = fileSystem.ResolvePhysical(std::string(GRAPH_DIRECTORY) + name + ".graph");
-            if (!file || !m_Library.Register(name, *file))
+            if (!m_Library.Find(name))
                 LOGERROR("FrameRenderer: the shipped graph '", name, "' could not be loaded.");
         }
 

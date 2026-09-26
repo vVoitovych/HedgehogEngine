@@ -88,7 +88,10 @@ namespace
 
         for (auto& prop : CameraComponent::GetPropTable_())
         {
-            if (std::string_view(prop.name) == "LayerMask")
+            // GraphName likewise: DrawCameraGraphCombo lists the renderer's graphs instead of a
+            // free-text field.
+            const std::string_view name(prop.name);
+            if (name == "LayerMask" || name == "GraphName")
             {
                 prop.guiOverride = [](void*, const Reflection::PropertyDescriptor&) -> bool { return false; };
             }
@@ -812,6 +815,7 @@ namespace Editor
         auto& camera = ecs.GetComponent<HedgehogEngine::CameraComponent>(entity);
 
         Reflection::RenderComponentGui(&camera, HedgehogEngine::CameraComponent::GetProperties());
+        DrawCameraGraphCombo(camera.GraphName);
 
         // Hand-drawn, like RenderComponent's Layer combo: named checkboxes need live layer
         // names from settings, which the reflected uint32 widget has no way to source.
@@ -838,6 +842,52 @@ namespace Editor
             if (ecs.HasComponent<HedgehogEngine::CameraComponent>(entity))
                 ecs.RemoveComponent<HedgehogEngine::CameraComponent>(entity);
         }
+    }
+
+    // Hand-drawn instead of the reflected text field, so a camera picks from the graphs that exist.
+    // A name that matches none (saved in an older scene, or its file deleted) shows in red with a
+    // tooltip: the camera's view is skipped until another graph is picked.
+    void EditorGui::DrawCameraGraphCombo(std::string& graphName) const
+    {
+        constexpr ImVec4 MISSING_GRAPH_COLOR = { 0.95f, 0.35f, 0.35f, 1.0f };
+
+        const auto isEditorGraph = [](std::string_view name) { return name == SCENE_GRAPH || name == RESULT_GRAPH; };
+        const bool known         = std::ranges::find(m_GraphNames, graphName) != m_GraphNames.end();
+
+        if (!known)
+            ImGui::PushStyleColor(ImGuiCol_Text, MISSING_GRAPH_COLOR);
+        const bool open = ImGui::BeginCombo("GraphName", graphName.empty() ? "(none)" : graphName.c_str());
+        if (!known)
+        {
+            ImGui::PopStyleColor();
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("No graph asset named '%s': this camera's view is skipped.", graphName.c_str());
+        }
+        if (!open)
+            return;
+
+        // Graphs a scene camera would pick first, then the editor's own views' graphs.
+        for (const bool editorGraphs : { false, true })
+        {
+            bool separated = !editorGraphs;
+            for (const std::string& name : m_GraphNames)
+            {
+                if (isEditorGraph(name) != editorGraphs)
+                    continue;
+                if (!separated)
+                {
+                    ImGui::Separator();
+                    separated = true;
+                }
+                const std::string label = editorGraphs ? name + " (editor)" : name;
+                const bool        chosen = name == graphName;
+                if (ImGui::Selectable(label.c_str(), chosen))
+                    graphName = name;
+                if (chosen)
+                    ImGui::SetItemDefaultFocus();
+            }
+        }
+        ImGui::EndCombo();
     }
 
     void EditorGui::DrawScriptComponent(HedgehogEngine::Engine& context)

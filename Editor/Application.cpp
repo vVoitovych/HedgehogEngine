@@ -54,7 +54,7 @@ namespace Editor
             Renderer::ViewDesc desc;
             desc.Camera    = renderCamera;
             desc.Targets   = { SCENE_TARGET };
-            desc.GraphName = "scene";
+            desc.GraphName = SCENE_GRAPH;
             desc.Priority  = 100;
             return desc;
         }
@@ -66,7 +66,7 @@ namespace Editor
             Renderer::ViewDesc desc;
             desc.Targets   = { std::string(Renderer::RenderTargetRegistry::MAIN_TARGET) };
             desc.Reads     = { SCENE_TARGET, GAME_TARGET };
-            desc.GraphName = "result";
+            desc.GraphName = RESULT_GRAPH;
             desc.Priority  = 100;
             return desc;
         }
@@ -202,6 +202,7 @@ namespace Editor
         images.Scene          = m_ImGui->GetTextureId(SCENE_TARGET, m_Renderer->GetTargetTexture(SCENE_TARGET));
         images.Game           = m_ImGui->GetTextureId(GAME_TARGET, m_Renderer->GetTargetTexture(GAME_TARGET));
         images.GraphPassCount = m_Renderer->GetLastFramePassCount();
+        m_EditorGui->SetGraphNames(m_Renderer->GetGraphNames());
         m_EditorGui->Draw(*m_Context, images);
         m_ImGui->EndFrame();
 
