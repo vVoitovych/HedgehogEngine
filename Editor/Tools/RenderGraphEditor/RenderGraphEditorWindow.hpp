@@ -16,6 +16,11 @@ namespace ax::NodeEditor
     struct EditorContext;
 }
 
+namespace FS
+{
+    class FileSystemManager;
+}
+
 namespace Renderer
 {
     class Renderer;
@@ -30,10 +35,14 @@ namespace Editor
     //
     // Editing: right-click the canvas to add a pass, resource, import or output; drag between a
     // resource, import or output pin and a pass's slot pin to bind the slot; select a link or node
-    // and press Delete to remove it; edit the selected node in the Details panel. Save (Ctrl+S)
-    // writes the .graph with GraphAssetWriter, which the renderer then hot-reloads; a graph that
-    // fails its reload keeps rendering its last good version, and the error is shown here. New...
-    // starts a graph from a copy of "game". Node positions are kept in "<name>.graph.layout".
+    // and press Delete to remove it; edit the selected node in the Details panel.
+    //
+    // Files: New starts an empty, untitled graph; Open... opens any .graph file, registering it with
+    // the renderer; the Graph drop-down switches between the graphs the renderer knows. Save
+    // (Ctrl+S) writes the graph's file with GraphAssetWriter, or asks where for an untitled graph;
+    // Save As... writes it to a new file and goes on editing that one. The renderer hot-reloads a
+    // saved file; a graph that fails its reload keeps rendering its last good version, and the
+    // error is shown here. Node positions are kept in "<name>.graph.layout" beside the graph.
     //
     // Every edit is checked the way the renderer would load it (Renderer::DiagnoseGraph): nodes
     // with a problem get a red border and a tooltip, and a list under the canvas names every
@@ -52,7 +61,8 @@ namespace Editor
         bool Open = false;
 
         // renderer supplies the graphs and pass types; with none, the window shows an empty canvas.
-        void Draw(const Renderer::Renderer* renderer);
+        // fileSystem names the files Open... and Save As... pick (MakeGraphReference).
+        void Draw(Renderer::Renderer* renderer, const FS::FileSystemManager& fileSystem);
 
     private:
         // What waits for the unsaved-changes prompt to be answered.
@@ -60,19 +70,27 @@ namespace Editor
         {
             None,
             OpenGraph, // switch to m_PendingGraph
+            NewGraph,
             Close,
         };
 
         // ── Graph lifetime ───────────────────────────────────────────────────
-        void DrawToolbar(const Renderer::Renderer& renderer);
-        void DrawNewGraphPopup(const Renderer::Renderer& renderer);
-        void DrawUnsavedChangesPopup(const Renderer::Renderer& renderer);
-        // Opens the graph at once, or asks first when there are unsaved edits.
-        void RequestOpenGraph(const std::string& name);
-        void OpenGraph(const std::string& name);
+        void DrawToolbar(Renderer::Renderer& renderer, const FS::FileSystemManager& fileSystem);
+        void DrawUnsavedChangesPopup(Renderer::Renderer& renderer, const FS::FileSystemManager& fileSystem);
+        // Acts at once, or asks first when there are unsaved edits.
+        void RequestOpenGraph(const std::string& reference);
+        void RequestNewGraph();
+        void OpenGraph(const std::string& reference);
+        void NewGraph();
+        // Picks a .graph file, registers it with the renderer and opens it.
+        void OpenFile(Renderer::Renderer& renderer, const FS::FileSystemManager& fileSystem);
         // Loads the graph when it changes: another one opened, or the renderer reloaded it.
         void SyncGraph(const Renderer::Renderer& renderer);
-        void Save(const Renderer::Renderer& renderer);
+        // Save writes the graph's file; an untitled graph has none, so it saves as.
+        void Save(Renderer::Renderer& renderer, const FS::FileSystemManager& fileSystem);
+        void SaveAs(Renderer::Renderer& renderer, const FS::FileSystemManager& fileSystem);
+        bool WriteGraph(const std::filesystem::path& file);
+        bool IsUntitled() const { return m_HasGraph && m_GraphName.empty(); }
         bool IsDirty() const { return m_HasGraph && !(m_Edited == m_Saved); }
 
         // ── Canvas ───────────────────────────────────────────────────────────
@@ -106,12 +124,12 @@ namespace Editor
         ax::NodeEditor::EditorContext* m_Canvas = nullptr;
         const Renderer::Renderer*      m_Renderer = nullptr; // this frame's, for pass types
 
-        std::string           m_GraphName;
+        std::string           m_GraphName; // the graph's reference; empty for an untitled graph
         bool                  m_HasGraph = false;
         Renderer::GraphAsset  m_Edited;  // what the canvas shows and edits
         Renderer::GraphAsset  m_Saved;   // what the file holds, as last loaded or saved
         Renderer::GraphAsset  m_Library; // the renderer's asset as last seen, to notice its reloads
-        std::filesystem::path m_GraphFile;
+        std::filesystem::path m_GraphFile; // empty for an untitled graph
         GraphCanvasModel      m_Model;
         GraphLayout           m_Layout;  // every node's position, as last saved or placed
         std::string           m_Status;  // the last save's outcome or an edit's error
@@ -129,6 +147,5 @@ namespace Editor
         PendingAction     m_Pending = PendingAction::None;
         std::string       m_PendingGraph;
         GraphNodePosition m_AddPosition; // canvas position of the right-click that opened the Add menu
-        char              m_NewGraphName[64] = {};
     };
 }
