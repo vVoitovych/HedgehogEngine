@@ -132,6 +132,11 @@ namespace Renderer
         const GraphAsset*     FindGraphAsset(std::string_view name) const;
         std::filesystem::path GetGraphFile(std::string_view name) const;
         const PassTypeInfo*   FindPassType(std::string_view type) const;
+        // Every registered pass type name, sorted.
+        std::vector<std::string> GetPassTypeNames() const;
+        // Why the graph's most recent load failed (the runtime then keeps its last known-good
+        // version); empty if it loaded or is unknown.
+        std::string_view GetGraphError(std::string_view name) const;
 
     private:
         HW::Window& m_Window;

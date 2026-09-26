@@ -111,6 +111,16 @@ namespace Renderer
         return m_FrameRenderer->GetPassTypes().Find(type);
     }
 
+    std::vector<std::string> Renderer::GetPassTypeNames() const
+    {
+        return m_FrameRenderer->GetPassTypes().GetTypeNames();
+    }
+
+    std::string_view Renderer::GetGraphError(std::string_view name) const
+    {
+        return m_FrameRenderer->GetGraphLibrary().GetLastError(name);
+    }
+
     void Renderer::BeginFrameStatsCapture()
     {
         m_FrameRenderer->GetFrameStats().BeginCapture();

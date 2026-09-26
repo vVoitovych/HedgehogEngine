@@ -29,19 +29,33 @@ namespace Editor
         };
     }
 
+    std::string GetGraphNodeKey(GraphNodeKind kind, std::string_view name)
+    {
+        switch (kind)
+        {
+        case GraphNodeKind::Resource: return "resource:" + std::string(name);
+        case GraphNodeKind::Import:   return "import:" + std::string(name);
+        case GraphNodeKind::Output:   return "output:" + std::string(name);
+        case GraphNodeKind::Pass:     return "pass:" + std::string(name);
+        }
+        return std::string(name);
+    }
+
     GraphCanvasModel BuildGraphCanvasModel(const Renderer::GraphAsset& asset, const FindPassTypeFn& findPassType)
     {
         GraphCanvasModel model;
         uint32_t nextId = 1;
         std::unordered_map<std::string, ResourceEnd> resources;
 
-        const auto addResourceNode = [&](GraphNodeKind kind, const char* keyPrefix, const std::string& name,
+        const auto addResourceNode = [&](GraphNodeKind kind, size_t index, const std::string& name,
                                          std::vector<std::string> details, uint32_t column, uint32_t row)
         {
             GraphCanvasNode node;
             node.Id      = nextId++;
             node.Kind    = kind;
-            node.Key     = std::string(keyPrefix) + name;
+            node.Index   = index;
+            node.Name    = name;
+            node.Key     = GetGraphNodeKey(kind, name);
             node.Title   = name;
             node.Details = std::move(details);
             node.Column  = column;
@@ -57,18 +71,23 @@ namespace Editor
         };
 
         uint32_t row = 0;
-        for (const Renderer::GraphAssetResource& resource : asset.Resources)
+        for (size_t i = 0; i < asset.Resources.size(); ++i)
         {
-            addResourceNode(GraphNodeKind::Resource, "resource:", resource.Name,
+            const Renderer::GraphAssetResource& resource = asset.Resources[i];
+            addResourceNode(GraphNodeKind::Resource, i, resource.Name,
                             { FormatName(resource.Format), Renderer::SizePolicyToString(resource.Size) }, 0, row++);
         }
-        for (const Renderer::GraphAssetImport& import : asset.Imports)
-            addResourceNode(GraphNodeKind::Import, "import:", import.Name, { "import", FormatName(import.Format) }, 0, row++);
+        for (size_t i = 0; i < asset.Imports.size(); ++i)
+        {
+            const Renderer::GraphAssetImport& import = asset.Imports[i];
+            addResourceNode(GraphNodeKind::Import, i, import.Name, { "import", FormatName(import.Format) }, 0, row++);
+        }
 
         const uint32_t outputColumn = static_cast<uint32_t>(asset.Passes.size()) + 1;
-        for (const Renderer::GraphAssetOutput& output : asset.Outputs)
+        for (size_t i = 0; i < asset.Outputs.size(); ++i)
         {
-            addResourceNode(GraphNodeKind::Output, "output:", output.Name,
+            const Renderer::GraphAssetOutput& output = asset.Outputs[i];
+            addResourceNode(GraphNodeKind::Output, i, output.Name,
                             { "output " + std::to_string(output.Slot), FormatName(output.Format),
                               Renderer::SizePolicyToString(output.Size) },
                             outputColumn, output.Slot);
@@ -82,7 +101,9 @@ namespace Editor
             GraphCanvasNode node;
             node.Id      = nextId++;
             node.Kind    = GraphNodeKind::Pass;
-            node.Key     = "pass:" + pass.Name;
+            node.Index   = passIndex;
+            node.Name    = pass.Name;
+            node.Key     = GetGraphNodeKey(GraphNodeKind::Pass, pass.Name);
             node.Title   = pass.Name == pass.Type ? pass.Name : pass.Name + " (" + pass.Type + ")";
             node.Problem = type == nullptr;
             node.Column  = static_cast<uint32_t>(passIndex) + 1;
@@ -103,6 +124,7 @@ namespace Editor
             {
                 GraphCanvasPin pin;
                 pin.Id    = nextId++;
+                pin.Slot  = slot;
                 pin.Label = slot;
 
                 const bool declared = !type || std::ranges::find(type->Slots, slot) != type->Slots.end();
@@ -127,11 +149,11 @@ namespace Editor
                 else if (resource->second.Kind == GraphNodeKind::Output)
                 {
                     pin.OnRight = true;
-                    model.Links.push_back({ 0, pin.Id, resource->second.Pin });
+                    model.Links.push_back({ 0, pin.Id, resource->second.Pin, passIndex, slot });
                 }
                 else
                 {
-                    model.Links.push_back({ 0, resource->second.Pin, pin.Id });
+                    model.Links.push_back({ 0, resource->second.Pin, pin.Id, passIndex, slot });
                 }
                 node.Pins.push_back(std::move(pin));
             }

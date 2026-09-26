@@ -50,6 +50,9 @@ namespace Renderer
         // nullptr if type is not registered.
         [[nodiscard]] const PassTypeInfo* Find(std::string_view type) const;
 
+        // Every registered type name, sorted.
+        [[nodiscard]] std::vector<std::string> GetTypeNames() const;
+
     private:
         std::unordered_map<std::string, PassTypeInfo> m_Types;
     };

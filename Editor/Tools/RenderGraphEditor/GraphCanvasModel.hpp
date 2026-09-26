@@ -24,6 +24,7 @@ namespace Editor
     struct GraphCanvasPin
     {
         uint32_t    Id = 0;
+        std::string Slot;  // the pass's binding slot; empty on a resource, import or output node
         std::string Label;
         bool        OnRight = false;
         bool        Problem = false; // an unbound slot, a binding to nothing, a slot the type lacks
@@ -33,6 +34,8 @@ namespace Editor
     {
         uint32_t                    Id = 0;
         GraphNodeKind               Kind = GraphNodeKind::Pass;
+        size_t                      Index = 0; // into the asset's Passes, Resources, Imports or Outputs
+        std::string                 Name;      // the pass's or resource's name in the asset
         std::string                 Key;     // "pass:Forward": names the node in the layout file
         std::string                 Title;
         std::vector<std::string>    Details; // format, size, "cullBackFaces = true", ...
@@ -45,11 +48,14 @@ namespace Editor
         uint32_t Row    = 0;
     };
 
+    // A binding of the asset: the pass's slot is bound to a resource, import or output.
     struct GraphCanvasLink
     {
-        uint32_t Id      = 0;
-        uint32_t FromPin = 0;
-        uint32_t ToPin   = 0;
+        uint32_t    Id        = 0;
+        uint32_t    FromPin   = 0;
+        uint32_t    ToPin     = 0;
+        size_t      PassIndex = 0;
+        std::string Slot;
     };
 
     struct GraphCanvasModel
@@ -59,6 +65,9 @@ namespace Editor
     };
 
     using FindPassTypeFn = std::function<const Renderer::PassTypeInfo*(std::string_view type)>;
+
+    // The key a node is saved under in the layout file, e.g. "pass:Forward".
+    [[nodiscard]] std::string GetGraphNodeKey(GraphNodeKind kind, std::string_view name);
 
     // What the render graph editor draws for asset. A pass's pins are its type's slots in the
     // registry's order, then any slot the asset binds that the type does not declare; a pass whose
