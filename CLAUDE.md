@@ -56,7 +56,7 @@ Renders N frames (default 120) and exits nonzero if any Vulkan validation error 
 ```
 Binaries\windows-x86_64\Debug\Editor\Editor.exe --game-mode [frames]
 ```
-Loads `Assets/Scenes/Default.yaml`, builds a `Renderer` with `RendererPaths::RenderGraphOnly` exactly as the editor does, but creates no ImGui, and renders N frames (default 120) with `RenderFrame` from views derived from the scene's camera components. Exits nonzero on any Vulkan validation error **or if an ImGui context ever exists** — the renderer not depending on ImGui is checked, not assumed. Run it after any render-graph or renderer change, alongside `--smoke-test`; like it, it needs a GPU and runs locally only.
+Loads `Assets/Scenes/Default.yaml`, builds a `Renderer` exactly as the editor does, but creates no ImGui, and renders N frames (default 120) with `RenderFrame` from views derived from the scene's camera components. Exits nonzero on any Vulkan validation error **or if an ImGui context ever exists** — the renderer not depending on ImGui is checked, not assumed. Run it after any render-graph or renderer change, alongside `--smoke-test`; like it, it needs a GPU and runs locally only.
 
 **Regenerating solution** after modifying any `Build.lua` files:
 ```
@@ -133,10 +133,7 @@ HedgehogRenderer/
     ├── Views/, Targets/, Frame/  ← ViewManager and culling, RenderTargetRegistry, SharedPhase
     ├── ResourceManager/          ← legacy GPU textures; owns the ResourceRegistry
     ├── ResourceRegistry/         ← mesh/material GPU buffers and descriptor sets
-    └── RenderPasses/             ← the legacy geometry passes: compiled, never run, until deleted
-        ├── DepthPrepass/
-        ├── ShadowmapPass/
-        └── ForwardPass/
+    └── Pipeline/, Profiling/     ← .shader/.pl loading; FrameStats and Tracy zones
 ```
 
 `api/` is the public include root (added to dependents' include paths).  
@@ -144,11 +141,11 @@ HedgehogRenderer/
 
 ### Rendering a frame (HedgehogRenderer)
 
-Every frame goes through the render graph: the Editor (and `--game-mode`) builds a `Renderer` with `RendererPaths::RenderGraphOnly`, simulates, extracts a `RenderScene`, calls `SyncResources`, then `Renderer::RenderFrame`, which owns the frame lifecycle inline (fence wait, resize before acquire, shared phase, per-view graphs, one execute, present) in `src/Renderer/FrameRenderer`. The editor has three views (RENDERING.md section 7): **scene** (the flycam into the `scene` target), **game** (the scene's camera, redirected to the `game` target with `SetCameraTargetOverride`), and **result** (no camera; the `result` graph's `Ui` pass draws the editor into `main`, sampling both panel targets). A hidden panel tab is sized 0x0, so its view is dropped and its passes never declared (`GetLastFramePassCount`).
+Every frame goes through the render graph: the Editor (and `--game-mode`) builds a `Renderer`, simulates, extracts a `RenderScene`, calls `SyncResources`, then `Renderer::RenderFrame`, which owns the frame lifecycle inline (fence wait, resize before acquire, shared phase, per-view graphs, one execute, present) in `src/Renderer/FrameRenderer`. The editor has three views (RENDERING.md section 7): **scene** (the flycam into the `scene` target), **game** (the scene's camera, redirected to the `game` target with `SetCameraTargetOverride`), and **result** (no camera; the `result` graph's `Ui` pass draws the editor into `main`, sampling both panel targets). A hidden panel tab is sized 0x0, so its view is dropped and its passes never declared (`GetLastFramePassCount`).
 
 Graph passes (`assets/Graphs/*.graph`, pass types in `EnginePassTypes`): the shared phase's **Shadow** (the cascaded shadow atlas, once per frame), then per view **DepthPrepass** → **Forward** (lit, samples the atlas) → **Gizmo** (scene view only: editor-layer bounds), and the result view's **Ui** (the application's `UiCallback` into `main`). Views are culled by layer mask and frustum.
 
-What is left of the legacy fixed-pass path is being deleted: `Renderer::DrawFrame` is an inert stub that asserts, and `RenderQueue`'s DepthPrepass, ShadowmapPass and ForwardPass are compiled but never recorded. The frame-level legacy pieces (InitPass, GuiPass, PresentPass, ThreadContext) are gone; `FrameRenderer` owns the per-frame command lists and synchronization objects.
+What is left of the legacy fixed-pass path is being deleted: `Renderer::DrawFrame` is an inert stub that asserts, and `ResourceManager` still allocates the legacy textures. Every legacy pass and `RenderQueue` are gone; render order comes from the graph compiler's topological sort, and `FrameRenderer` owns the per-frame command lists and synchronization objects.
 
 **ImGui belongs to the Editor, never the renderer.** `Editor/ImGuiLayer` owns the context, the GLFW platform backend and the RHI GUI backend (`IRHIGuiBackend`, dynamic rendering into any texture of one colour format, created with `Renderer::CreateGuiBackend` for the swapchain's format). The result view's `Ui` pass hands the editor its colour target through a `UiCallback`. `HedgehogRenderer` has no ImGui include path or link, so it cannot include an ImGui header.
 

@@ -3,7 +3,6 @@
 #include "FrameRenderer.hpp"
 #include "Profiling/Profiler.hpp"
 #include "RHIContext/RHIContext.hpp"
-#include "RenderQueue/RenderQueue.hpp"
 #include "ResourceManager/ResourceManager.hpp"
 
 #include "HedgehogWindow/api/Window.hpp"
@@ -44,8 +43,7 @@ namespace Renderer
 
     Renderer::Renderer(HW::Window& window,
                        const HedgehogSettings::Settings& settings,
-                       const FS::FileSystemManager& fileSystem,
-                       RendererPaths paths)
+                       const FS::FileSystemManager& fileSystem)
         : m_Window(window)
     {
         m_RHIContext    = std::make_unique<RHIContext>(window);
@@ -53,21 +51,12 @@ namespace Renderer
             m_RHIContext->GetRHIDevice(),
             m_RHIContext->GetRHISwapchain(),
             settings);
-        if (paths == RendererPaths::LegacyAndRenderGraph)
-        {
-            m_RenderQueue = std::make_unique<RenderQueue>(
-                m_RHIContext->GetRHIDevice(),
-                settings,
-                *m_ResourceManager,
-                fileSystem);
-        }
         m_FrameRenderer = std::make_unique<FrameRenderer>(
             m_RHIContext->GetRHIDevice(),
             m_RHIContext->GetRHISwapchain(),
             fileSystem);
-        // Without the legacy ForwardPass, nothing else gives the registry its material layout.
-        if (!m_RenderQueue)
-            m_FrameRenderer->ProvideMaterialLayout(m_ResourceManager->GetResourceRegistry());
+        // The registry allocates material sets in the forward shader's set-1 layout.
+        m_FrameRenderer->ProvideMaterialLayout(m_ResourceManager->GetResourceRegistry());
         static_assert(std::string_view(VIEWPORT_TARGET) == FrameRenderer::VIEWPORT_TARGET);
     }
 
@@ -80,8 +69,6 @@ namespace Renderer
         auto& device = m_RHIContext->GetRHIDevice();
         device.WaitIdle();
         m_FrameRenderer.reset();
-        if (m_RenderQueue)
-            m_RenderQueue->Cleanup(device);
         m_ResourceManager->Cleanup(device);
         m_RHIContext->Cleanup();
     }

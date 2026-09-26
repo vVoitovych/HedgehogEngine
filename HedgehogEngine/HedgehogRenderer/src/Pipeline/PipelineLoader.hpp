@@ -23,7 +23,7 @@ class PipelineLoader
 {
 public:
     // Load and parse a .pl file.
-    // virtualPath must be a virtual path, e.g. "engine://HedgehogEngine/.../ForwardPass.pl".
+    // virtualPath must be a virtual path, e.g. "engine://HedgehogEngine/.../GraphForward.pl".
     static PipelineFileDesc Load(const std::string& virtualPath,
                                  const FS::FileSystemManager& fileSystem);
 
