@@ -184,17 +184,17 @@ namespace Editor
         case PanelId::SceneHierarchy: DrawSceneHierarchy(context);          break;
         case PanelId::Inspector:      DrawInspector(context);                break;
         case PanelId::Console:        m_ConsolePanel->Draw();                break;
-        case PanelId::Content:        DrawContentPanel();                    break;
+        case PanelId::Content:        DrawContentPanel(context);             break;
         default:                      DrawSceneViewContent();                break;
         }
     }
 
-    void EditorGui::DrawContentPanel()
+    void EditorGui::DrawContentPanel(HedgehogEngine::Engine& context)
     {
         if (m_Benchmarking)
             ImGui::TextDisabled("Hidden while benchmarking.");
-        else
-            m_ContentPanel->Draw();
+        else if (const std::optional<ContentOpenRequest> request = m_ContentPanel->Draw())
+            OpenContentItem(context, *request);
     }
 
     void EditorGui::DrawSceneViewContent()

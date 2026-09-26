@@ -1,6 +1,6 @@
 #include "ContentPanel.hpp"
 
-#include "ContentTypes.hpp"
+#include "Platform/ShellActions.hpp"
 
 #include "FileSystem/api/FileSystemManager.hpp"
 
@@ -76,8 +76,9 @@ namespace Editor
     {
     }
 
-    void ContentPanel::Draw()
+    std::optional<ContentOpenRequest> ContentPanel::Draw()
     {
+        m_OpenRequest.reset();
         // A folder deleted while it was shown: fall back to the root.
         if (!GetListing(m_Current).Exists && m_Current != ROOT_FOLDER)
             Navigate(ROOT_FOLDER);
@@ -94,6 +95,34 @@ namespace Editor
         DrawGrid();
         ImGui::EndChild();
         ImGui::EndGroup();
+        return m_OpenRequest;
+    }
+
+    void ContentPanel::Activate(const std::string& path, ContentType type)
+    {
+        if (type == ContentType::Folder)
+            m_PendingFolder = ContentOpenRequest{ path, type };
+        else
+            m_OpenRequest = ContentOpenRequest{ path, type };
+    }
+
+    void ContentPanel::DrawEntryMenu(const std::string& path, ContentType type)
+    {
+        if (!ImGui::BeginPopupContextItem("##EntryMenu"))
+            return;
+        const std::optional<std::filesystem::path> physical = m_FileSystem.ResolvePhysical(path);
+        const std::string physicalText = physical ? std::filesystem::path(*physical).make_preferred().string() : std::string{};
+
+        if (ImGui::MenuItem("Open"))
+            Activate(path, type);
+        if (ImGui::MenuItem("Show in Explorer", nullptr, false, physical.has_value()))
+            (void)ShowInExplorer(*physical);
+        ImGui::Separator();
+        if (ImGui::MenuItem("Copy path (virtual)"))
+            ImGui::SetClipboardText(path.c_str());
+        if (ImGui::MenuItem("Copy path (physical)", nullptr, false, physical.has_value()))
+            ImGui::SetClipboardText(physicalText.c_str());
+        ImGui::EndPopup();
     }
 
     const ContentPanel::Listing& ContentPanel::GetListing(const std::string& folder)
@@ -200,8 +229,7 @@ namespace Editor
         const int   columns    = std::max(1, static_cast<int>(ImGui::GetContentRegionAvail().x / CELL_WIDTH));
         ImDrawList* drawList   = ImGui::GetWindowDrawList();
 
-        std::string openFolder; // navigating while iterating the listing would change it underfoot
-        int         column = 0;
+        int column = 0;
         for (const FS::DirectoryEntry& entry : listing.Entries)
         {
             if (!ContainsIgnoringCase(entry.Name, m_Search))
@@ -215,11 +243,14 @@ namespace Editor
             const ImVec2 cell = ImGui::GetCursorScreenPos();
             if (ImGui::InvisibleButton("##Entry", ImVec2(CELL_WIDTH - CELL_PADDING, cellHeight)))
                 m_Selected = entry.Name;
+            if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
+                m_Selected = entry.Name;
             const bool hovered = ImGui::IsItemHovered();
-            if (hovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && entry.IsDirectory)
-                openFolder = path;
+            if (hovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+                Activate(path, type);
             if (hovered)
                 ImGui::SetTooltip("%s\n%s", entry.Name.c_str(), GetContentTypeName(type));
+            DrawEntryMenu(path, type);
 
             if (entry.Name == m_Selected || hovered)
             {
@@ -246,7 +277,11 @@ namespace Editor
         if (column == 0)
             ImGui::TextDisabled(m_Search[0] != '\0' ? "Nothing here matches the search." : "This folder is empty.");
 
-        if (!openFolder.empty())
-            Navigate(openFolder);
+        // Navigating while iterating the listing would change it underfoot.
+        if (m_PendingFolder)
+        {
+            Navigate(m_PendingFolder->VirtualPath);
+            m_PendingFolder.reset();
+        }
     }
 }

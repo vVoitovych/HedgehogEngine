@@ -15,6 +15,9 @@ public:
 
     void Draw(const FS::FileSystemManager& fileSystem);
 
+    // Shows the window with the file at physicalPath loaded, as its Open... button would.
+    void OpenPath(const std::string& physicalPath, const FS::FileSystemManager& fileSystem);
+
 private:
     enum class PipelineType { Graphics = 0, Compute = 1 };
 

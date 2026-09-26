@@ -88,6 +88,12 @@ void VertexDescriptionWindow::NewFile()
     m_Dirty = false;
 }
 
+void VertexDescriptionWindow::OpenPath(const std::string& physicalPath, const FS::FileSystemManager& fileSystem)
+{
+    Open = true;
+    LoadFromPath(physicalPath, fileSystem);
+}
+
 void VertexDescriptionWindow::OpenFile(const FS::FileSystemManager& fileSystem)
 {
     char* path = DialogueWindows::VertexDescOpenDialogue();

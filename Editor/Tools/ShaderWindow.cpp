@@ -134,6 +134,12 @@ void ShaderWindow::NewFile()
     m_Dirty = false;
 }
 
+void ShaderWindow::OpenPath(const std::string& physicalPath, const FS::FileSystemManager& fileSystem)
+{
+    Open = true;
+    LoadFromPath(physicalPath, fileSystem);
+}
+
 void ShaderWindow::OpenFile(const FS::FileSystemManager& fileSystem)
 {
     char* path = DialogueWindows::ShaderOpenDialogue();

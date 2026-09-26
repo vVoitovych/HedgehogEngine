@@ -118,6 +118,12 @@ void PipelineWindow::NewFile()
     m_Dirty = false;
 }
 
+void PipelineWindow::OpenPath(const std::string& physicalPath, const FS::FileSystemManager& fileSystem)
+{
+    Open = true;
+    LoadFromPath(physicalPath, fileSystem);
+}
+
 void PipelineWindow::OpenFile(const FS::FileSystemManager& fileSystem)
 {
     char* path = DialogueWindows::PipelineOpenDialogue();
