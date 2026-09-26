@@ -125,8 +125,6 @@ private:
     VmaAllocator             m_Allocator      = VK_NULL_HANDLE;
     VkCommandPool            m_CommandPool    = VK_NULL_HANDLE;
 
-    const char**             m_VkExtensions      = nullptr;
-    uint32_t                 m_VkExtensionCount  = 0;
 
     std::vector<const char*> m_ValidationLayers;
     std::vector<const char*> m_DeviceExtensions;

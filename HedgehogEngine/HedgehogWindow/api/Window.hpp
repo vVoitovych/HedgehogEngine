@@ -48,10 +48,6 @@ namespace HW
         // Returns the native OS window handle (HWND on Win32).
         HEDGEHOG_WINDOW_API void* GetNativeOsHandle() const;
 
-        // Returns the Vulkan instance extensions required by the windowing system.
-        // Pointer is valid for the lifetime of the process.
-        HEDGEHOG_WINDOW_API const char** GetVulkanExtensions(uint32_t& outCount) const;
-
     private:
         static void OnFramebufferResize(GLFWwindow* handle, int width, int height);
         static void OnKey(GLFWwindow* handle, int key, int scancode, int action, int mods);

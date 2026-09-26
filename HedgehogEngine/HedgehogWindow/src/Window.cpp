@@ -163,11 +163,6 @@ namespace HW
 #endif
     }
 
-    const char** Window::GetVulkanExtensions(uint32_t& outCount) const
-    {
-        return glfwGetRequiredInstanceExtensions(&outCount);
-    }
-
     void Window::OnFramebufferResize(GLFWwindow* handle, int /*width*/, int /*height*/)
     {
         auto* self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(handle));
