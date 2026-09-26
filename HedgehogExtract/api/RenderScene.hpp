@@ -13,6 +13,13 @@
 // Everything downstream (view building, culling, the graph) reads only this.
 namespace HX
 {
+    // The layer the editor puts its own overlay instances on, such as the selection gizmo. Mirrors
+    // HedgehogSettings::LayerSettings::EDITOR_LAYER. Views draw an instance on this layer only
+    // through the Gizmo pass (GraphFrameData::OverlayInstances), never as scene geometry, and
+    // views derived from scene cameras never include it, so the game view never shows a gizmo.
+    inline constexpr uint32_t EDITOR_LAYER      = 31;
+    inline constexpr uint32_t EDITOR_LAYER_MASK = 1u << EDITOR_LAYER;
+
     // Mirrors HedgehogEngine::CameraProjectionType, kept as an independent copy rather than an
     // include of CameraComponent.hpp so this header never pulls in the ECS/reflection headers.
     enum class CameraProjectionType
@@ -40,10 +47,9 @@ namespace HX
     {
         HM::Matrix4x4 WorldMatrix;
 
-        // Precomputed so culling never touches mesh data (RENDERING.md section 3.1). Today this
-        // is a local unit-cube AABB transformed by WorldMatrix — a placeholder, since no module
-        // yet computes real per-mesh local bounds. Replace the source, not the call sites, once
-        // one does.
+        // Precomputed so culling and picking never touch mesh data (RENDERING.md section 3.1):
+        // the mesh's local bounds (MeshBoundsCache) transformed by WorldMatrix. A mesh with no
+        // known bounds falls back to a unit cube centered on the origin.
         HM::AABB WorldBounds;
 
         uint64_t MeshIndex     = 0;
@@ -52,8 +58,8 @@ namespace HX
         // Index into HedgehogSettings::LayerSettings — RenderComponent::Layer, passed through.
         uint32_t Layer = 0;
 
-        // The originating ECS::Entity. Used only by editor picking (F7) — never by culling,
-        // sorting, or draw submission.
+        // The originating ECS::Entity. Used only by editor picking (ScenePicker) — never by
+        // culling, sorting, or draw submission.
         uint64_t SourceId = 0;
     };
 

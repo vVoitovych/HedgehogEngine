@@ -44,8 +44,13 @@ namespace Renderer
         uint32_t                   ShadowCascadeCount       = 1;
         float                      ShadowCascadeSplitLambda = 0.5f;
 
-        // Opaque instances only: what the depth prepass, shadow and forward passes draw.
+        // Opaque instances only: what the depth prepass, shadow and forward passes draw. For a view,
+        // those on a layer in its mask whose bounds its frustum can see (ViewCulling.hpp).
         std::span<const HX::RenderInstance> OpaqueInstances;
+
+        // The view's editor-layer instances (HX::EDITOR_LAYER), culled like OpaqueInstances: only the
+        // Gizmo pass reads them, drawing their bounds. Never scene geometry, never shadow casters.
+        std::span<const HX::RenderInstance> OverlayInstances;
 
         // Shared geometry. Meshes is indexed by RenderInstance::MeshIndex. TexCoords and Normals
         // are only read by the forward pass.
@@ -100,12 +105,18 @@ namespace Renderer
     // dropped, as the legacy forward pass did.
     [[nodiscard]] SceneLightsUniform MakeSceneLightsUniform(std::span<const HX::RenderLight> lights);
 
+    inline constexpr uint32_t GIZMO_BOX_LINE_VERTICES = 24;
+
+    // The model matrix that maps the unit cube onto box: the Gizmo pass's per-box push constant.
+    [[nodiscard]] HM::Matrix4x4 MakeGizmoBoxMatrix(const HM::AABB& box);
+
     enum class EnginePipeline
     {
         DepthPrepass,
         Shadow,
         Forward,            // back faces culled
         ForwardDoubleSided, // Forward with cullBackFaces: false
+        Gizmo,              // unit-cube wireframes (GetGizmoBoxLines), depth-tested, not written
     };
 
     // The long-lived GPU objects the engine passes use but do not own: pipelines, and per-frame
@@ -117,6 +128,10 @@ namespace Renderer
         virtual ~IGraphPassServices() = default;
 
         virtual const RHI::IRHIPipeline& GetPipeline(EnginePipeline pipeline) const = 0;
+
+        // A vertex buffer of GIZMO_BOX_LINE_VERTICES positions: the twelve edges of the unit cube
+        // [0, 1]^3 as a line list, for the Gizmo pipeline.
+        virtual RHI::IRHIBuffer& GetGizmoBoxLines() = 0;
 
         // A descriptor set (set 0, binding 0) holding viewProj, valid until this frame slot comes
         // round again. One allocation per draw pass (or per shadow cascade) per frame.

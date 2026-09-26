@@ -52,15 +52,16 @@ namespace
         return imports;
     }
 
-    // Hand-written twin of scene.graph and game.graph, straight against the builder API.
-    void BuildViewGraphByHand(RenderGraphRuntime& graph)
+    // The passes game.graph and scene.graph share, straight against the builder API. Returns the lit
+    // colour and sets depthWritten to the prepass depth.
+    RGTexture BuildViewPasses(RenderGraphRuntime& graph, RGTexture& depthWritten)
     {
         const RGSizePolicy full = RGSizePolicy::MakeRelativeToResult(1.0f);
         const RGTexture shadowAtlas = graph.ImportTexture("shadowAtlas", RHI::Format::D32Float, true);
         const RGTexture depth       = Declare(graph, "depth", RHI::Format::D32Float, full);
         const RGTexture color       = Declare(graph, "color", RHI::Format::R16G16B16A16Unorm, full);
 
-        RGTexture depthWritten, colorWritten;
+        RGTexture colorWritten;
         graph.AddPass<TargetData>("DepthPrepass",
             [&](RGPassBuilder& pass, TargetData& data) { depthWritten = data.Target = pass.DepthTarget(depth); },
             NO_EXECUTE);
@@ -72,7 +73,34 @@ namespace
                 colorWritten = data.Target = pass.ColorTarget(color);
             },
             NO_EXECUTE);
-        graph.BindOutput(graph.AddOutputSlot("color", RHI::Format::R16G16B16A16Unorm, full), colorWritten);
+        return colorWritten;
+    }
+
+    // Hand-written twin of game.graph.
+    void BuildViewGraphByHand(RenderGraphRuntime& graph)
+    {
+        RGTexture       depthWritten;
+        const RGTexture colorWritten = BuildViewPasses(graph, depthWritten);
+        graph.BindOutput(graph.AddOutputSlot("color", RHI::Format::R16G16B16A16Unorm,
+                                             RGSizePolicy::MakeRelativeToResult(1.0f)), colorWritten);
+    }
+
+    // Hand-written twin of scene.graph: the game view's passes, then the gizmos over them.
+    void BuildSceneGraphByHand(RenderGraphRuntime& graph)
+    {
+        RGTexture       depthWritten;
+        const RGTexture litColor = BuildViewPasses(graph, depthWritten);
+
+        RGTexture colorWritten;
+        graph.AddPass<TargetData>("Gizmo",
+            [&](RGPassBuilder& pass, TargetData& data)
+            {
+                pass.DepthReadOnly(depthWritten);
+                colorWritten = data.Target = pass.ColorTarget(litColor);
+            },
+            NO_EXECUTE);
+        graph.BindOutput(graph.AddOutputSlot("color", RHI::Format::R16G16B16A16Unorm,
+                                             RGSizePolicy::MakeRelativeToResult(1.0f)), colorWritten);
     }
 
     // Hand-written twin of result.graph.
@@ -158,10 +186,14 @@ TEST_CASE("Oracle: each shipped graph compiles to the same plan as its hand-writ
     REQUIRE(library.Register("game", ShippedGraph("game")));
     REQUIRE(library.Register("result", ShippedGraph("result")));
 
-    const std::string viewTwin = PlanOf(&BuildViewGraphByHand);
-    CHECK(viewTwin.find("compile failed") == std::string::npos);
-    CHECK(PlanOf(registry, *library.Find("scene")) == viewTwin);
-    CHECK(PlanOf(registry, *library.Find("game")) == viewTwin);
+    const std::string sceneTwin = PlanOf(&BuildSceneGraphByHand);
+    CHECK(sceneTwin.find("compile failed") == std::string::npos);
+    CHECK(sceneTwin.find("pass Gizmo") != std::string::npos);
+    CHECK(PlanOf(registry, *library.Find("scene")) == sceneTwin);
+
+    const std::string gameTwin = PlanOf(&BuildViewGraphByHand);
+    CHECK(gameTwin.find("compile failed") == std::string::npos);
+    CHECK(PlanOf(registry, *library.Find("game")) == gameTwin);
 
     const std::string resultTwin = PlanOf(&BuildResultGraphByHand);
     CHECK(resultTwin.find("compile failed") == std::string::npos);

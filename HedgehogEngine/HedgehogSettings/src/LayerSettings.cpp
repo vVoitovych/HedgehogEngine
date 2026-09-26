@@ -12,7 +12,8 @@ namespace HedgehogSettings
 
     LayerSettings::LayerSettings()
     {
-        m_Names[0] = "Default";
+        m_Names[0]            = "Default";
+        m_Names[EDITOR_LAYER] = "Editor";
         for (uint32_t layer = 0; layer < LAYER_COUNT; ++layer)
         {
             RefreshDisplayName(layer);

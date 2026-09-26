@@ -6,9 +6,11 @@
 #include "HedgehogEngine/api/WindowContext.hpp"
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/HedgehogSettings.hpp"
+#include "HedgehogEngine/HedgehogSettings/api/LayerSettings.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/RenderingSettings.hpp"
 #include "HedgehogCommon/api/Camera.hpp"
 #include "HedgehogExtract/api/SceneExtractor.hpp"
+#include "HedgehogExtract/api/ScenePicker.hpp"
 #include "HedgehogRenderer/Renderer.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
 
@@ -32,6 +34,9 @@ namespace Editor
         constexpr const char* ENGINE_SETTINGS_PATH = "engine://engine_settings.yaml";
 
         constexpr float RADIANS_TO_DEGREES = 57.2957795f;
+
+        static_assert(HX::EDITOR_LAYER == HedgehogSettings::LayerSettings::EDITOR_LAYER,
+                      "The extracted scene and the layer settings must agree on the editor layer.");
 
         // The render targets the scene and game panels show, sized to their panels.
         constexpr const char* SCENE_TARGET = "scene";
@@ -237,13 +242,16 @@ namespace Editor
     {
         auto& engineContext = m_Context->GetEngineContext();
 
+        m_MeshBounds.Update(engineContext.GetResourceCatalog());
         m_RenderScene.Clear();
         HX::SceneExtractor{}.Extract(engineContext.GetECS(), *engineContext.GetRenderSystem(),
                                      *engineContext.GetLightSystem(), *engineContext.GetCameraSystem(),
-                                     m_RenderScene);
+                                     m_RenderScene, m_MeshBounds.GetBounds());
 
-        [[maybe_unused]] const bool updated =
-            m_Renderer->UpdateView(m_SceneView, MakeSceneView(engineContext.GetCamera()));
+        const Renderer::ViewDesc sceneView = MakeSceneView(engineContext.GetCamera());
+        PickAndHighlight(*sceneView.Camera);
+
+        [[maybe_unused]] const bool updated = m_Renderer->UpdateView(m_SceneView, sceneView);
         assert(updated && "EditorApplication: the scene view was not created.");
 
         // A hidden panel is 0x0: its view is dropped and its passes never declared.
@@ -262,6 +270,33 @@ namespace Editor
 
         m_Renderer->SyncResources(engineContext.GetResourceCatalog());
         m_Renderer->RenderFrame(m_RenderScene, engineContext.GetSettings(), m_ImGui->GetUiCallback());
+    }
+
+    // Picking reads only the extracted scene (ScenePicker). The selection is drawn by adding a copy of
+    // its instance on the editor layer, which only the scene view's Gizmo pass draws: the renderer
+    // has no notion of a selection.
+    void EditorApplication::PickAndHighlight(const HX::RenderCamera& sceneCamera)
+    {
+        if (const std::optional<ViewportPoint> click = m_EditorGui->GetScenePick())
+        {
+            const float aspect = static_cast<float>(m_EditorGui->GetSceneViewWidth())
+                               / static_cast<float>(std::max(1u, m_EditorGui->GetSceneViewHeight()));
+            const HX::Ray ray = HX::MakePickRay(sceneCamera, aspect, click->U, click->V);
+            const std::optional<uint64_t> picked = HX::PickInstance(m_RenderScene, ray);
+            m_EditorGui->SetSelectedEntity(picked ? std::optional<ECS::Entity>(static_cast<ECS::Entity>(*picked))
+                                                  : std::nullopt);
+        }
+
+        const std::optional<ECS::Entity> selected = m_EditorGui->GetSelectedEntity();
+        if (!selected)
+            return;
+        const auto it = std::find_if(m_RenderScene.Instances.begin(), m_RenderScene.Instances.end(),
+            [&](const HX::RenderInstance& instance) { return instance.SourceId == static_cast<uint64_t>(*selected); });
+        if (it == m_RenderScene.Instances.end())
+            return; // not drawn: a light, a camera, or a hidden object
+        HX::RenderInstance gizmo = *it;
+        gizmo.Layer = HX::EDITOR_LAYER;
+        m_RenderScene.Instances.push_back(gizmo);
     }
 
     void EditorApplication::LoadBenchmarkScene()

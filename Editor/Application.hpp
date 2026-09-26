@@ -1,5 +1,6 @@
 #pragma once
 
+#include "HedgehogExtract/api/MeshBounds.hpp"
 #include "HedgehogExtract/api/RenderScene.hpp"
 #include "HedgehogRenderer/Views/View.hpp"
 
@@ -48,6 +49,7 @@ namespace Editor
 
         float StepFrame();
         void  RenderWithGraph();
+        void  PickAndHighlight(const HX::RenderCamera& sceneCamera);
         void  LoadBenchmarkScene();
 
     private:
@@ -60,7 +62,8 @@ namespace Editor
         // scene extracted each frame, the scene view (the editor camera into the scene panel's
         // target) and the result view (the editor's UI into the window, showing both panels). The
         // game view is the scene's camera, redirected to the game panel's target.
-        HX::RenderScene  m_RenderScene;
+        HX::RenderScene     m_RenderScene;
+        HX::MeshBoundsCache m_MeshBounds;
         Renderer::ViewId m_SceneView  = Renderer::INVALID_VIEW_ID;
         Renderer::ViewId m_ResultView = Renderer::INVALID_VIEW_ID;
     };

@@ -3,11 +3,12 @@
 #include "ResourceRegistry/ResourceRegistry.hpp"
 
 #include "HedgehogRenderer/Graph/EnginePassTypes.hpp"
+#include "HedgehogRenderer/Views/ViewCulling.hpp"
+
+#include "HedgehogExtract/api/CameraMath.hpp"
 
 #include "HedgehogSettings/api/HedgehogSettings.hpp"
 #include "HedgehogSettings/api/ShadowmapingSettings.hpp"
-
-#include "HedgehogMath/api/Common.hpp"
 
 #include "FileSystem/api/FileSystemManager.hpp"
 
@@ -30,22 +31,6 @@ namespace Renderer
 
         constexpr const char* SHIPPED_GRAPHS[] = { "scene", "game", "result" };
         constexpr const char* GRAPH_DIRECTORY  = "engine://HedgehogEngine/HedgehogRenderer/assets/Graphs/";
-
-        // Vertical field of view in degrees, a Vulkan-style (Y down) clip space, depth 0..1.
-        HM::Matrix4x4 MakeProjection(const HX::RenderCamera& camera, float aspect)
-        {
-            if (camera.ProjectionType == HX::CameraProjectionType::Orthographic)
-            {
-                const float halfHeight = camera.OrthoSize * 0.5f;
-                const float halfWidth  = halfHeight * aspect;
-                return HM::Matrix4x4::Ortho(-halfWidth, halfWidth, -halfHeight, halfHeight, camera.NearPlane,
-                                            camera.FarPlane);
-            }
-            HM::Matrix4x4 proj = HM::Matrix4x4::Perspective(HM::ToRadians(camera.Fov), aspect, camera.NearPlane,
-                                                            camera.FarPlane);
-            proj[1][1] *= -1.0f;
-            return proj;
-        }
     }
 
     FrameRenderer::FrameRenderer(RHI::IRHIDevice& device, RHI::IRHISwapchain& swapchain,
@@ -101,17 +86,27 @@ namespace Renderer
 
         // Filled completely before any pointer into them is taken.
         m_ViewFrames.clear();
-        for (const View& view : views)
+        m_ViewInstances.resize(views.size());
+        for (size_t i = 0; i < views.size(); ++i)
         {
-            m_ViewFrames.push_back(MakeViewFrame(view));
+            m_ViewFrames.push_back(MakeViewFrame(views[i], m_ViewInstances[i]));
             m_ViewFrames.back().Ui = ui;
         }
         m_ViewContexts.assign(views.size(), GraphFrameContext{});
         m_ViewSampledTargets.resize(views.size());
         m_WrittenTargets.clear();
 
+        // The shadows are fitted to one view's camera, but cast by every scene instance: an object
+        // the view culls or hides still shadows what it shows.
         const View*           shadowView  = SelectShadowView(views);
-        const GraphFrameData* shadowFrame = shadowView ? &m_ViewFrames[shadowView - views.data()] : nullptr;
+        const GraphFrameData* shadowFrame = nullptr;
+        if (shadowView)
+        {
+            m_ShadowViewFrame                  = m_ViewFrames[static_cast<size_t>(shadowView - views.data())];
+            m_ShadowViewFrame.OpaqueInstances  = m_SceneFrame.OpaqueInstances;
+            m_ShadowViewFrame.OverlayInstances = {};
+            shadowFrame                        = &m_ShadowViewFrame;
+        }
 
         const auto& shadowmap = *settings.GetShadowmapSettings();
         SharedPhaseSettings sharedSettings;
@@ -171,7 +166,9 @@ namespace Renderer
 
         GraphFrameData frame;
         // Every visible instance is drawn as opaque: RenderScene carries no material type yet.
-        frame.OpaqueInstances = scene.Instances;
+        m_FrameInstances = scene.Instances;
+        CollectSceneInstances(scene.Instances, m_SceneInstances);
+        frame.OpaqueInstances = m_SceneInstances;
         frame.Meshes          = m_Meshes;
         frame.MaterialSets    = m_MaterialSets;
         if (!m_Meshes.empty())
@@ -201,7 +198,7 @@ namespace Renderer
         m_SceneFrame = frame;
     }
 
-    GraphFrameData FrameRenderer::MakeViewFrame(const View& view) const
+    GraphFrameData FrameRenderer::MakeViewFrame(const View& view, ViewInstances& instances) const
     {
         GraphFrameData frame = m_SceneFrame;
         if (!view.Desc.Camera || view.ResolvedTargets.empty())
@@ -211,8 +208,15 @@ namespace Renderer
         const TargetExtent&     extent = view.ResolvedTargets[0].Extent;
         const float             aspect = static_cast<float>(extent.Width) / static_cast<float>(extent.Height);
 
-        frame.View        = camera.WorldMatrix.Inverse();
-        frame.Proj        = MakeProjection(camera, aspect);
+        frame.View        = HX::MakeViewMatrix(camera);
+        frame.Proj        = HX::MakeProjection(camera, aspect);
+        if (!m_Meshes.empty())
+        {
+            // Every instance, the editor layer included: the view's mask decides what it sees.
+            CullViewInstances(m_FrameInstances, view.Desc.LayerMask, frame.Proj * frame.View, instances);
+            frame.OpaqueInstances  = instances.Opaque;
+            frame.OverlayInstances = instances.Overlay;
+        }
         const HM::Vector4& position = camera.WorldMatrix[3]; // the translation column
         frame.EyePosition = HM::Vector3(position.x(), position.y(), position.z());
         frame.NearPlane   = camera.NearPlane;

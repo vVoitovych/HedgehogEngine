@@ -22,11 +22,19 @@ namespace Renderer
         constexpr const char* DEPTH_PREPASS_SHADER = "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/DepthPrepass.shader";
         constexpr const char* SHADOW_SHADER        = "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/ShadowmapPass.shader";
         constexpr const char* FORWARD_SHADER       = "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/GraphForward.shader";
+        constexpr const char* GIZMO_SHADER         = "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/Gizmo.shader";
 
         // The formats every engine graph asset declares: D32Float depth and shadow maps, and a
         // R16G16B16A16Unorm colour output for the scene and game views.
         constexpr RHI::Format DEPTH_FORMAT = RHI::Format::D32Float;
         constexpr RHI::Format COLOR_FORMAT = RHI::Format::R16G16B16A16Unorm;
+
+        // The twelve edges of the unit cube [0, 1]^3, two vertices each, as GetGizmoBoxLines hands out.
+        constexpr float GIZMO_BOX_LINES[GIZMO_BOX_LINE_VERTICES][3] = {
+            { 0, 0, 0 }, { 1, 0, 0 },  { 1, 0, 0 }, { 1, 1, 0 },  { 1, 1, 0 }, { 0, 1, 0 },  { 0, 1, 0 }, { 0, 0, 0 },
+            { 0, 0, 1 }, { 1, 0, 1 },  { 1, 0, 1 }, { 1, 1, 1 },  { 1, 1, 1 }, { 0, 1, 1 },  { 0, 1, 1 }, { 0, 0, 1 },
+            { 0, 0, 0 }, { 0, 0, 1 },  { 1, 0, 0 }, { 1, 0, 1 },  { 1, 1, 0 }, { 1, 1, 1 },  { 0, 1, 0 }, { 0, 1, 1 },
+        };
 
         // A pipeline for dynamic rendering from a .shader file, with the given set layouts.
         std::unique_ptr<RHI::IRHIPipeline> CreatePipeline(RHI::IRHIDevice& device, const ShaderPipelineDesc& shader,
@@ -49,9 +57,10 @@ namespace Renderer
         const ShaderPipelineDesc depthShader   = ShaderLoader::Load(device, DEPTH_PREPASS_SHADER, fileSystem);
         const ShaderPipelineDesc shadowShader  = ShaderLoader::Load(device, SHADOW_SHADER, fileSystem);
         const ShaderPipelineDesc forwardShader = ShaderLoader::Load(device, FORWARD_SHADER, fileSystem);
+        const ShaderPipelineDesc gizmoShader   = ShaderLoader::Load(device, GIZMO_SHADER, fileSystem);
         assert(!depthShader.Layout.DescriptorSets.empty() && forwardShader.Layout.DescriptorSets.size() >= 3);
 
-        // Both depth-only shaders declare the same set 0: one viewProj uniform buffer.
+        // Both depth-only shaders and the gizmo shader declare the same set 0: one viewProj uniform buffer.
         CreateRing(device, m_ViewProjRing, depthShader.Layout.DescriptorSets[0], UNIFORMS_PER_FRAME, sizeof(float) * 16);
         CreateRing(device, m_ForwardRing, forwardShader.Layout.DescriptorSets[0], FORWARD_UNIFORMS_PER_FRAME,
                    sizeof(ForwardViewUniform));
@@ -72,6 +81,12 @@ namespace Renderer
                                                 forwardShader.Pipeline.CullMode);
         m_ForwardDoubleSidedPipeline = CreatePipeline(device, forwardShader, forwardLayouts, { COLOR_FORMAT },
                                                       RHI::CullMode::None);
+        m_GizmoPipeline = CreatePipeline(device, gizmoShader, { m_ViewProjRing.Layout.get() }, { COLOR_FORMAT },
+                                         gizmoShader.Pipeline.CullMode);
+
+        m_GizmoBoxLines = device.CreateBuffer(sizeof(GIZMO_BOX_LINES), RHI::BufferUsage::VertexBuffer,
+                                              RHI::MemoryUsage::CpuToGpu);
+        m_GizmoBoxLines->CopyData(GIZMO_BOX_LINES, sizeof(GIZMO_BOX_LINES));
     }
 
     // The owner waits for the device to go idle first, as for every other GPU resource.
@@ -123,9 +138,15 @@ namespace Renderer
             case EnginePipeline::Shadow:             return *m_ShadowPipeline;
             case EnginePipeline::Forward:            return *m_ForwardPipeline;
             case EnginePipeline::ForwardDoubleSided: return *m_ForwardDoubleSidedPipeline;
+            case EnginePipeline::Gizmo:              return *m_GizmoPipeline;
         }
         assert(false && "GraphPassServices::GetPipeline: unknown pipeline.");
         return *m_DepthPrepassPipeline;
+    }
+
+    RHI::IRHIBuffer& GraphPassServices::GetGizmoBoxLines()
+    {
+        return *m_GizmoBoxLines;
     }
 
     const RHI::IRHIDescriptorSet& GraphPassServices::Allocate(UniformRing& ring, const void* data, size_t size)

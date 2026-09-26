@@ -204,3 +204,27 @@ TEST_CASE("0, 1 and N cameras go through the same build")
             CHECK(views[i - 1].Id < views[i].Id); // ascending ViewId
     }
 }
+
+TEST_CASE("A derived view never includes the editor layer; an application view may")
+{
+    Fixture f;
+    HX::RenderScene scene;
+    scene.Cameras = { MakeCamera(7) };
+    scene.Cameras[0].LayerMask = 0xFFFFFFFFu;
+
+    ViewDesc editorDesc;
+    editorDesc.Targets   = { "scene" };
+    editorDesc.GraphName = "scene";
+    const ViewId editor  = f.Views.CreateView(editorDesc);
+
+    const std::vector<View>& views = f.Views.BuildViews(scene);
+    REQUIRE(views.size() == 2);
+    for (const View& view : views)
+    {
+        if (view.Id == editor)
+            CHECK(view.Desc.LayerMask == 0xFFFFFFFFu);
+        else
+            CHECK(view.Desc.LayerMask == ~HX::EDITOR_LAYER_MASK);
+    }
+    CHECK(scene.Cameras[0].LayerMask == 0xFFFFFFFFu); // the camera itself is untouched
+}
