@@ -32,8 +32,13 @@
 
 #include "Logger/api/Logger.hpp"
 
+#ifdef _WIN32
+    #include <psapi.h>
+#endif
+
 #include <algorithm>
 #include <atomic>
+#include <iterator>
 #include <cassert>
 #include <cstring>
 #include <map>
@@ -88,6 +93,39 @@ namespace
                                    | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
         createInfo.pfnUserCallback = DebugCallback;
     }
+
+    // Keeps every loaded Vulkan driver (ICD) mapped until the process exits.
+    //
+    // The loader unloads the ICDs in vkDestroyInstance. The NVIDIA driver (nvoglv64.dll) keeps a
+    // thread of its own running past that point, and when the thread next ran, it executed inside
+    // the unmapped DLL and crashed the process at shutdown (roughly one run in ten). Pinned, the
+    // driver stays mapped until the process ends, when Windows stops every thread before detaching
+    // it. vkDestroyInstance is still called; nothing leaks. ICDs are recognised by the entry point
+    // every driver exports, not by name.
+    void PinLoadedVulkanDrivers()
+    {
+#ifdef _WIN32
+        HANDLE  process = GetCurrentProcess();
+        HMODULE modules[1024];
+        DWORD   bytesNeeded = 0;
+        if (!K32EnumProcessModules(process, modules, sizeof(modules), &bytesNeeded))
+            return;
+
+        const DWORD count = std::min<DWORD>(bytesNeeded / sizeof(HMODULE), static_cast<DWORD>(std::size(modules)));
+        for (DWORD i = 0; i < count; ++i)
+        {
+            if (!GetProcAddress(modules[i], "vk_icdGetInstanceProcAddr"))
+                continue;
+
+            HMODULE pinned = nullptr;
+            char    name[MAX_PATH] = {};
+            K32GetModuleBaseNameA(process, modules[i], name, MAX_PATH);
+            if (GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_PIN,
+                                   reinterpret_cast<LPCSTR>(modules[i]), &pinned))
+                LOGINFO("Vulkan driver ", name, " stays loaded until the process exits.");
+        }
+#endif
+    }
 } // namespace
 
 namespace RHI
@@ -126,8 +164,6 @@ std::unique_ptr<IRHIDevice> IRHIDevice::Create(const NativeWindowDesc& desc)
 // ── Constructor / Destructor ─────────────────────────────────────────────────
 
 VulkanDevice::VulkanDevice(const NativeWindowDesc& desc)
-    : m_VkExtensions(desc.VkExtensions)
-    , m_VkExtensionCount(desc.VkExtensionCount)
 {
     VkResult result = volkInitialize();
     assert(result == VK_SUCCESS && "Failed to initialize Volk (is a Vulkan runtime installed?)");
@@ -137,6 +173,7 @@ VulkanDevice::VulkanDevice(const NativeWindowDesc& desc)
 
     CreateInstance();
     volkLoadInstance(m_Instance);
+    PinLoadedVulkanDrivers();
 
     SetupDebugMessenger();
     CreateSurface(desc.NativeHandle);
@@ -407,9 +444,18 @@ QueueFamilyIndices VulkanDevice::FindQueueFamilies(VkPhysicalDevice device) cons
     return indices;
 }
 
+// The platform's surface extensions, named here rather than asked of the windowing library. Asking
+// GLFW (glfwGetRequiredInstanceExtensions) made the Vulkan loader enumerate instance extensions
+// before this instance existed: the loader loaded the ICD (nvoglv64.dll on NVIDIA) for the query and
+// unloaded it again, and a driver thread started by that load could later execute inside the
+// unloaded DLL, crashing the process at a random point: during startup, on the first frame or at
+// shutdown. The first loader call that needs the ICD is now vkCreateInstance, which keeps it loaded.
 std::vector<const char*> VulkanDevice::GetRequiredExtensions() const
 {
-    std::vector<const char*> extensions(m_VkExtensions, m_VkExtensions + m_VkExtensionCount);
+    std::vector<const char*> extensions = { VK_KHR_SURFACE_EXTENSION_NAME };
+#ifdef _WIN32
+    extensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+#endif
 
     if (ENABLE_VALIDATION_LAYERS)
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);

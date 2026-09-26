@@ -22,9 +22,7 @@ namespace RHI
 {
     struct NativeWindowDesc
     {
-        void*        NativeHandle;       // Platform OS handle (HWND on Win32)
-        const char** VkExtensions;       // Required Vulkan instance extensions
-        uint32_t     VkExtensionCount;
+        void* NativeHandle = nullptr; // Platform OS handle (HWND on Win32)
     };
 }
 
@@ -117,8 +115,8 @@ public:
 
     // ── Backend factory ───────────────────────────────────────────────────────
 
-    // desc.NativeHandle: native OS window handle (HWND on Win32).
-    // desc.VkExtensions: required Vulkan instance extensions from the windowing layer.
+    // desc.NativeHandle: native OS window handle (HWND on Win32). The device enables the platform's
+    // surface extensions itself and creates the surface from the handle.
     static std::unique_ptr<IRHIDevice> Create(const NativeWindowDesc& desc);
 
 protected:
