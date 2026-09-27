@@ -24,6 +24,10 @@ namespace ContentLoader
         CONTENT_LOADER_API bool LoadTexture(const std::string& file,
                                              const FS::FileSystemManager& fileSystem);
 
+        // As LoadTexture, for any virtual path ("engine://Editor/..."), not only one under assets://.
+        CONTENT_LOADER_API bool LoadFromVirtualPath(const std::string& virtualPath,
+                                                     const FS::FileSystemManager& fileSystem);
+
         CONTENT_LOADER_API int GetWidth()   const;
         CONTENT_LOADER_API int GetHeight()  const;
         CONTENT_LOADER_API int GetChannels() const;

@@ -112,7 +112,18 @@ namespace Editor
         m_ImGui    = std::make_unique<ImGuiLayer>(m_Context->GetWindowContext().GetWindow());
         m_Renderer = std::make_unique<Renderer::Renderer>(
             m_Context->GetWindowContext().GetWindow(), engineContext.GetFileSystem(),
-            [this](const Renderer::RendererDevice& device) { m_ImGui->CreateBackend(device); });
+            [this, &fileSystem](const Renderer::RendererDevice& device)
+            {
+                m_ImGui->CreateBackend(device);
+                m_ContentIcons.Load(device.Device, fileSystem);
+            });
+        // The icons never change, so neither do their ids.
+        for (size_t index = 0; index < CONTENT_TYPE_COUNT; ++index)
+        {
+            const ContentType type = static_cast<ContentType>(index);
+            m_ContentIconIds[index] = m_ImGui->GetTextureId(std::string("icon:") + GetContentTypeName(type),
+                                                            m_ContentIcons.Get(type));
+        }
         m_EditorGui = std::make_unique<EditorGui>(*m_Context);
         m_EditorGui->SetRenderer(m_Renderer.get());
 
@@ -204,6 +215,7 @@ namespace Editor
         images.Scene          = m_ImGui->GetTextureId(SCENE_TARGET, m_Renderer->GetTargetTexture(SCENE_TARGET));
         images.Game           = m_ImGui->GetTextureId(GAME_TARGET, m_Renderer->GetTargetTexture(GAME_TARGET));
         images.GraphPassCount = m_Renderer->GetLastFramePassCount();
+        images.ContentIcons   = m_ContentIconIds;
         m_EditorGui->Draw(*m_Context, images);
         m_ImGui->EndFrame();
 
@@ -301,6 +313,7 @@ namespace Editor
         }
 
         m_ImGui->Shutdown();
+        m_ContentIcons.Release();
         m_Renderer->Cleanup();
         m_Context->Cleanup();
     }
