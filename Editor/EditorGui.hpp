@@ -2,6 +2,7 @@
 
 #include "Docking/DockSystem.hpp"
 #include "EditorSettings.hpp"
+#include "Panels/ContentPanel.hpp"
 #include "ECS/api/Entity.hpp"
 
 #include "FileSystem/api/FileSystemManager.hpp"
@@ -23,8 +24,6 @@ namespace Renderer
 namespace Editor
 {
     class ConsolePanel;
-    class ContentPanel;
-    struct ContentOpenRequest;
     class VertexDescriptionWindow;
     class PipelineWindow;
     class ShaderWindow;
@@ -100,6 +99,22 @@ namespace Editor
         // pipeline, vertex description or graph opens in its tool; anything else, or an asset
         // with nothing suitable selected, opens in the OS default application.
         void OpenContentItem(HedgehogEngine::Engine& context, const ContentOpenRequest& request);
+        // Drops arrive while panels draw, over lists they are iterating: each is kept here and
+        // applied once the frame's panels are drawn (EditorGuiContent.cpp).
+        struct AssetDrop
+        {
+            ContentOpenRequest         Asset;
+            bool                       OnHierarchy = false; // else onto the selected entity
+            std::optional<ECS::Entity> Parent;              // the hierarchy entity it was dropped on
+        };
+        void ApplyAssetDrop(HedgehogEngine::Engine& context);
+        // Makes the last inspector widget a drop target for assets of that type, onto the selection.
+        void AcceptSelectionDrop(ContentType type);
+        // A mesh dropped on the hierarchy: a new entity named after the file, with Mesh and Render
+        // components (the scene's first material), under parent or the root.
+        void CreateMeshEntity(HedgehogEngine::Engine& context, const ContentOpenRequest& mesh,
+                              std::optional<ECS::Entity> parent);
+        void DrawOpenSceneDropPopup(HedgehogEngine::Engine& context);
         // False when the selected entity has nowhere to put the file.
         bool AssignToSelection(HedgehogEngine::Engine& context, const ContentOpenRequest& request,
                                const std::string& physicalPath);
@@ -150,6 +165,8 @@ namespace Editor
         // Valid only during Draw(); read by the viewport panel.
         ViewportImages m_ViewportImages;
         Renderer::Renderer*          m_Renderer = nullptr;
+        std::optional<AssetDrop>          m_AssetDrop;        // this frame's, applied after the panels
+        std::optional<ContentOpenRequest> m_SceneToOpen;      // a scene dropped on the hierarchy, awaiting yes
         bool                         m_Benchmarking = false;
     };
 }
