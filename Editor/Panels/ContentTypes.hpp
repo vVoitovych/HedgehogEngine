@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <string_view>
 
 namespace Editor
@@ -20,6 +21,9 @@ namespace Editor
         RenderGraph,
         Other,
     };
+
+    // How many content types there are, for tables indexed by ContentType.
+    inline constexpr size_t CONTENT_TYPE_COUNT = static_cast<size_t>(ContentType::Other) + 1;
 
     // The type of an entry, from its extension (case-insensitive) in one table. A .yaml file is a
     // scene only in a folder named "Scenes"; elsewhere it is Other.

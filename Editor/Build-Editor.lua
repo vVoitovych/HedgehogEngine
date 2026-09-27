@@ -32,6 +32,7 @@ project "Editor"
       "yaml-cpp",
       "ECS",
       "DialogueWindows",
+      "ContentLoader",
       "FileSystem",
       "imgui",
       "imgui-node-editor",

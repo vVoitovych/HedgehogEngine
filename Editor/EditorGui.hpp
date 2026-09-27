@@ -37,12 +37,14 @@ namespace Editor
     inline constexpr const char* RESULT_GRAPH = "result";
 
     // What the scene and game panels show this frame: ImGui texture ids (nullptr: nothing to show)
-    // and, on the render-graph path, how many passes the last frame ran.
+    // and, on the render-graph path, how many passes the last frame ran; with the Content panel's
+    // icon for each type.
     struct ViewportImages
     {
-        void*  Scene          = nullptr;
-        void*  Game           = nullptr;
-        size_t GraphPassCount = 0;
+        void*          Scene          = nullptr;
+        void*          Game           = nullptr;
+        size_t         GraphPassCount = 0;
+        ContentIconIds ContentIcons   = {};
     };
 
     // A point in a panel's image: (0, 0) its top left corner, (1, 1) its bottom right.

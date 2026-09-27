@@ -38,8 +38,13 @@ namespace Editor
         }
     }
 
-    void DrawAssetIcon(ImDrawList& drawList, const ImVec2& min, float size, ContentType type)
+    void DrawAssetIcon(ImDrawList& drawList, const ImVec2& min, float size, ContentType type, void* icon)
     {
+        if (icon)
+        {
+            drawList.AddImage(icon, min, ImVec2(min.x + size, min.y + size));
+            return;
+        }
         drawList.AddRectFilled(min, ImVec2(min.x + size, min.y + size), IconColor(type), size * 0.1f);
         const char*  glyph     = GetContentTypeGlyph(type);
         const ImVec2 glyphSize = ImGui::CalcTextSize(glyph);
@@ -47,7 +52,7 @@ namespace Editor
                          IM_COL32(20, 20, 20, 255), glyph);
     }
 
-    void DragAssetSource(const std::string& virtualPath, ContentType type, const std::string& name)
+    void DragAssetSource(const std::string& virtualPath, ContentType type, const std::string& name, void* icon)
     {
         if (!ImGui::BeginDragDropSource())
             return;
@@ -56,8 +61,8 @@ namespace Editor
         payload.Type = type;
         ImGui::SetDragDropPayload(ASSET_PAYLOAD, &payload, sizeof(payload));
 
-        const ImVec2 icon = ImGui::GetCursorScreenPos();
-        DrawAssetIcon(*ImGui::GetWindowDrawList(), icon, PREVIEW_ICON, type);
+        const ImVec2 preview = ImGui::GetCursorScreenPos();
+        DrawAssetIcon(*ImGui::GetWindowDrawList(), preview, PREVIEW_ICON, type, icon);
         ImGui::Dummy(ImVec2(PREVIEW_ICON, PREVIEW_ICON));
         ImGui::SameLine();
         ImGui::AlignTextToFramePadding();

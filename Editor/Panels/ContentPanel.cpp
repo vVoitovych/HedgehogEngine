@@ -59,7 +59,7 @@ namespace Editor
     {
     }
 
-    std::optional<ContentOpenRequest> ContentPanel::Draw()
+    std::optional<ContentOpenRequest> ContentPanel::Draw(const ContentIconIds& icons)
     {
         m_OpenRequest.reset();
         // A folder deleted while it was shown: fall back to the root.
@@ -75,7 +75,7 @@ namespace Editor
         ImGui::BeginGroup();
         DrawBreadcrumb();
         ImGui::BeginChild("ContentGrid", ImVec2(0.0f, 0.0f), ImGuiChildFlags_Borders);
-        DrawGrid();
+        DrawGrid(icons);
         ImGui::EndChild();
         ImGui::EndGroup();
         return m_OpenRequest;
@@ -199,7 +199,7 @@ namespace Editor
         ImGui::InputTextWithHint("##ContentSearch", "Search this folder", m_Search, sizeof(m_Search));
     }
 
-    void ContentPanel::DrawGrid()
+    void ContentPanel::DrawGrid(const ContentIconIds& icons)
     {
         const Listing& listing = GetListing(m_Current);
         if (!listing.Exists)
@@ -219,6 +219,7 @@ namespace Editor
                 continue;
             const std::string path = JoinPath(m_Current, entry.Name);
             const ContentType type = GetContentType(path, entry.IsDirectory);
+            void* const       icon = icons[static_cast<size_t>(type)];
 
             if (column++ % columns != 0)
                 ImGui::SameLine();
@@ -229,7 +230,7 @@ namespace Editor
             if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
                 m_Selected = entry.Name;
             if (type != ContentType::Folder)
-                DragAssetSource(path, type, entry.Name);
+                DragAssetSource(path, type, entry.Name, icon);
             const bool hovered = ImGui::IsItemHovered();
             if (hovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
                 Activate(path, type);
@@ -243,11 +244,11 @@ namespace Editor
                 drawList->AddRectFilled(cell, ImVec2(cell.x + CELL_WIDTH - CELL_PADDING, cell.y + cellHeight), highlight, 4.0f);
             }
 
-            // The icon: a coloured tile with the type's glyph, then the name, cut to fit.
+            // The type's icon, then the name, cut to fit.
             const float  iconX   = cell.x + (CELL_WIDTH - CELL_PADDING - ICON_SIZE) * 0.5f;
             const ImVec2 iconMin = { iconX, cell.y + CELL_PADDING };
             const ImVec2 iconMax = { iconX + ICON_SIZE, iconMin.y + ICON_SIZE };
-            DrawAssetIcon(*drawList, iconMin, ICON_SIZE, type);
+            DrawAssetIcon(*drawList, iconMin, ICON_SIZE, type, icon);
 
             const std::string label     = FitToWidth(entry.Name, CELL_WIDTH - CELL_PADDING);
             const float       labelSize = ImGui::CalcTextSize(label.c_str()).x;

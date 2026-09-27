@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ContentIcons.hpp"
 #include "ContentTypes.hpp"
 
 #include "FileSystem/api/FileSystem.hpp"
@@ -41,8 +42,8 @@ namespace Editor
         ContentPanel(ContentPanel&&)                 = delete;
         ContentPanel& operator=(ContentPanel&&)      = delete;
 
-        // The file the user asked to open this frame, if any.
-        [[nodiscard]] std::optional<ContentOpenRequest> Draw();
+        // The file the user asked to open this frame, if any. icons: each type's picture (ContentIcons).
+        [[nodiscard]] std::optional<ContentOpenRequest> Draw(const ContentIconIds& icons);
 
     private:
         struct Listing
@@ -58,7 +59,7 @@ namespace Editor
 
         void DrawFolderTree(const std::string& folder, const std::string& label);
         void DrawBreadcrumb();
-        void DrawGrid();
+        void DrawGrid(const ContentIconIds& icons);
         void DrawEntryMenu(const std::string& path, ContentType type);
         // A folder is navigated into; a file becomes this frame's open request.
         void Activate(const std::string& path, ContentType type);

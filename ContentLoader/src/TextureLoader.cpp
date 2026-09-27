@@ -26,7 +26,12 @@ namespace ContentLoader
     bool TextureLoader::LoadTexture(const std::string& file,
                                      const FS::FileSystemManager& fileSystem)
     {
-        const std::string virtualPath = "assets://" + file;
+        return LoadFromVirtualPath("assets://" + file, fileSystem);
+    }
+
+    bool TextureLoader::LoadFromVirtualPath(const std::string& virtualPath,
+                                             const FS::FileSystemManager& fileSystem)
+    {
         const auto bytes = fileSystem.ReadFile(virtualPath);
         if (!bytes)
         {

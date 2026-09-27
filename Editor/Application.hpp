@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Panels/ContentIcons.hpp"
+
 #include "HedgehogEngine/api/WindowContext.hpp"
 #include "HedgehogExtract/api/MeshBounds.hpp"
 #include "HedgehogExtract/api/RenderScene.hpp"
@@ -62,6 +64,10 @@ namespace Editor
         std::unique_ptr<Renderer::Renderer> m_Renderer;
         std::unique_ptr<ImGuiLayer>         m_ImGui;
         std::unique_ptr<EditorGui>          m_EditorGui;
+
+        // The Content panel's pictures, uploaded once the device exists, and their ImGui ids.
+        ContentIcons   m_ContentIcons;
+        ContentIconIds m_ContentIconIds = {};
 
         // RENDERING.md section 7: the scene extracted each frame, the scene view (the editor camera
         // into the scene panel's target) and the result view (the editor's UI into the window,

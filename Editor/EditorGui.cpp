@@ -197,7 +197,7 @@ namespace Editor
     {
         if (m_Benchmarking)
             ImGui::TextDisabled("Hidden while benchmarking.");
-        else if (const std::optional<ContentOpenRequest> request = m_ContentPanel->Draw())
+        else if (const std::optional<ContentOpenRequest> request = m_ContentPanel->Draw(m_ViewportImages.ContentIcons))
             OpenContentItem(context, *request);
     }
 
