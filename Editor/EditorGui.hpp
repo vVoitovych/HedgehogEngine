@@ -24,6 +24,7 @@ namespace Editor
 {
     class ConsolePanel;
     class ContentPanel;
+    struct ContentOpenRequest;
     class VertexDescriptionWindow;
     class PipelineWindow;
     class ShaderWindow;
@@ -93,7 +94,15 @@ namespace Editor
         void DrawMainMenu(HedgehogEngine::Engine& context);
         void DrawToolbarContent();
         void DrawSceneViewContent();
-        void DrawContentPanel();
+        void DrawContentPanel(HedgehogEngine::Engine& context);
+        // What opening a Content panel file means, by type (EditorGuiContent.cpp): a scene
+        // loads; a mesh, material, texture or script goes onto the selected entity; a shader,
+        // pipeline, vertex description or graph opens in its tool; anything else, or an asset
+        // with nothing suitable selected, opens in the OS default application.
+        void OpenContentItem(HedgehogEngine::Engine& context, const ContentOpenRequest& request);
+        // False when the selected entity has nowhere to put the file.
+        bool AssignToSelection(HedgehogEngine::Engine& context, const ContentOpenRequest& request,
+                               const std::string& physicalPath);
         void DrawSceneHierarchy(HedgehogEngine::Engine& context);
         void DrawHierarchyNode(HedgehogEngine::Engine& context, ECS::Entity entity, int& index);
         void DrawInspector(HedgehogEngine::Engine& context);

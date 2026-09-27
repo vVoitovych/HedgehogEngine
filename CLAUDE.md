@@ -121,7 +121,7 @@ Editor (ConsoleApp)            owns ImGui: context, GLFW backend, GUI renderer (
 | `ContentLoader` | static lib | glTF/glb, OBJ, and texture loading (stb_image) |
 | `DialogueWindows` | static lib | ImGui-based dialogs for materials, meshes, scenes, textures |
 | `Logger` | static lib | Colorized console logging, no dependencies |
-| `Editor` | executable | H-form 5-panel editor; Play/Pause/Stop mode; ConsolePanel captures Logger; ContentPanel browses `assets://` (folder tree, breadcrumb, search, a grid of type icons from one extension table in `Panels/ContentTypes`, listings re-read at most once a second) |
+| `Editor` | executable | H-form 5-panel editor; Play/Pause/Stop mode; ConsolePanel captures Logger; ContentPanel browses `assets://` (folder tree, breadcrumb, search, a grid of type icons from one extension table in `Panels/ContentTypes`, listings re-read at most once a second; double-click or Open acts by type in `EditorGuiContent.cpp`: a scene loads, a mesh, material, texture or script goes onto the selected entity, a shader, pipeline, vertex description or graph opens in its tool, anything else in the OS default app; the context menu adds Show in Explorer and Copy path, virtual or physical, through `Platform/ShellActions`) |
 
 ### HedgehogRenderer Structure
 
