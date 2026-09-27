@@ -1,5 +1,7 @@
 #include "ContentPanel.hpp"
 
+#include "AssetDragDrop.hpp"
+
 #include "Platform/ShellActions.hpp"
 
 #include "FileSystem/api/FileSystemManager.hpp"
@@ -48,25 +50,6 @@ namespace Editor
             while (!cut.empty() && ImGui::CalcTextSize((cut + "...").c_str()).x > width)
                 cut.pop_back();
             return cut + "...";
-        }
-
-        ImU32 IconColor(ContentType type)
-        {
-            switch (type)
-            {
-            case ContentType::Folder:            return IM_COL32(214, 170, 72, 255);
-            case ContentType::Scene:             return IM_COL32(86, 156, 214, 255);
-            case ContentType::Material:          return IM_COL32(197, 108, 192, 255);
-            case ContentType::Texture:           return IM_COL32(96, 180, 110, 255);
-            case ContentType::Mesh:              return IM_COL32(220, 130, 70, 255);
-            case ContentType::Script:            return IM_COL32(120, 120, 220, 255);
-            case ContentType::Shader:
-            case ContentType::Pipeline:
-            case ContentType::VertexDescription: return IM_COL32(70, 170, 170, 255);
-            case ContentType::RenderGraph:       return IM_COL32(200, 90, 90, 255);
-            case ContentType::Other:             return IM_COL32(120, 120, 120, 255);
-            }
-            return IM_COL32(120, 120, 120, 255);
         }
     }
 
@@ -245,6 +228,8 @@ namespace Editor
                 m_Selected = entry.Name;
             if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
                 m_Selected = entry.Name;
+            if (type != ContentType::Folder)
+                DragAssetSource(path, type, entry.Name);
             const bool hovered = ImGui::IsItemHovered();
             if (hovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
                 Activate(path, type);
@@ -262,11 +247,7 @@ namespace Editor
             const float  iconX   = cell.x + (CELL_WIDTH - CELL_PADDING - ICON_SIZE) * 0.5f;
             const ImVec2 iconMin = { iconX, cell.y + CELL_PADDING };
             const ImVec2 iconMax = { iconX + ICON_SIZE, iconMin.y + ICON_SIZE };
-            drawList->AddRectFilled(iconMin, iconMax, IconColor(type), 6.0f);
-            const char*  glyph     = GetContentTypeGlyph(type);
-            const ImVec2 glyphSize = ImGui::CalcTextSize(glyph);
-            drawList->AddText(ImVec2(iconMin.x + (ICON_SIZE - glyphSize.x) * 0.5f, iconMin.y + (ICON_SIZE - glyphSize.y) * 0.5f),
-                              IM_COL32(20, 20, 20, 255), glyph);
+            DrawAssetIcon(*drawList, iconMin, ICON_SIZE, type);
 
             const std::string label     = FitToWidth(entry.Name, CELL_WIDTH - CELL_PADDING);
             const float       labelSize = ImGui::CalcTextSize(label.c_str()).x;

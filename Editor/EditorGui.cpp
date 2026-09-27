@@ -4,6 +4,7 @@
 #include "Tools/VertexDescriptionWindow.hpp"
 #include "Tools/PipelineWindow.hpp"
 #include "Tools/ShaderWindow.hpp"
+#include "Panels/AssetDragDrop.hpp"
 #include "Tools/RenderGraphEditor/GraphFileReference.hpp"
 #include "Tools/RenderGraphEditor/RenderGraphEditorWindow.hpp"
 
@@ -173,6 +174,9 @@ namespace Editor
         m_PipelineWindow->Draw(fs);
         m_ShaderWindow->Draw(fs);
         m_RenderGraphEditorWindow->Draw(m_Renderer, *m_FileSystem);
+
+        DrawOpenSceneDropPopup(context);
+        ApplyAssetDrop(context);
     }
 
     // ─── Panel dispatch ───────────────────────────────────────────────────────
@@ -476,6 +480,12 @@ namespace Editor
 
         int index = 0;
         DrawHierarchyNode(context, sceneManager.GetRootEntity(), index);
+
+        // The space under the tree takes drops too: a mesh dropped there goes under the root.
+        const ImVec2 space = ImGui::GetContentRegionAvail();
+        ImGui::InvisibleButton("##HierarchySpace", ImVec2(std::max(space.x, 1.0f), std::max(space.y, ImGui::GetFrameHeight())));
+        if (const auto drop = AcceptAssetDrop({ ContentType::Mesh, ContentType::Scene }))
+            m_AssetDrop = AssetDrop{ *drop, true, std::nullopt };
     }
 
     void EditorGui::DrawHierarchyNode(HedgehogEngine::Engine& context, ECS::Entity entity, int& index)
@@ -508,6 +518,8 @@ namespace Editor
 
             if (ImGui::IsItemClicked())
                 toggleSelection();
+            if (const auto drop = AcceptAssetDrop({ ContentType::Mesh, ContentType::Scene }))
+                m_AssetDrop = AssetDrop{ *drop, true, entity };
             ++index;
 
             if (nodeOpen)
@@ -526,6 +538,8 @@ namespace Editor
 
             if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
                 toggleSelection();
+            if (const auto drop = AcceptAssetDrop({ ContentType::Mesh, ContentType::Scene }))
+                m_AssetDrop = AssetDrop{ *drop, true, entity };
             ++index;
         }
     }
@@ -596,7 +610,9 @@ namespace Editor
         const auto& meshPaths  = meshSystem->GetMeshes();
         uint64_t selectedIndex = mesh.MeshIndex.value_or(0);
 
-        if (ImGui::BeginCombo("mesh", mesh.MeshPath.c_str()))
+        const bool meshComboOpen = ImGui::BeginCombo("mesh", mesh.MeshPath.c_str());
+        AcceptSelectionDrop(ContentType::Mesh);
+        if (meshComboOpen)
         {
             for (uint64_t i = 0; i < meshPaths.size(); ++i)
             {
@@ -677,7 +693,9 @@ namespace Editor
         if (!materials.empty())
         {
             const uint64_t selectedIndex = render.MaterialIndex.value_or(0);
-            if (ImGui::BeginCombo("material", render.Material.c_str()))
+            const bool materialComboOpen = ImGui::BeginCombo("material", render.Material.c_str());
+            AcceptSelectionDrop(ContentType::Material);
+            if (materialComboOpen)
             {
                 for (uint64_t i = 0; i < materials.size(); ++i)
                 {
@@ -743,7 +761,9 @@ namespace Editor
             int selectedTexture      = static_cast<int>(
                 textureContainer.GetTextureIndex(materialData.baseColor));
 
-            if (ImGui::BeginCombo("baseColor", materialData.baseColor.c_str()))
+            const bool textureComboOpen = ImGui::BeginCombo("baseColor", materialData.baseColor.c_str());
+            AcceptSelectionDrop(ContentType::Texture);
+            if (textureComboOpen)
             {
                 for (int i = 0; i < static_cast<int>(texturePaths.size()); ++i)
                 {
@@ -888,6 +908,7 @@ namespace Editor
         if (!usable)
             ImGui::PushStyleColor(ImGuiCol_Text, MISSING_GRAPH_COLOR);
         const bool open = ImGui::BeginCombo("GraphName", graphName.empty() ? "(none)" : label(graphName).c_str());
+        AcceptSelectionDrop(ContentType::RenderGraph);
         if (!usable)
             ImGui::PopStyleColor();
         if (ImGui::IsItemHovered() && !graphName.empty())
@@ -979,6 +1000,7 @@ namespace Editor
             strncpy_s(scriptBuf, scriptSrc.c_str(), sizeof(scriptBuf) - 1);
             scriptBuf[sizeof(scriptBuf) - 1] = '\0';
             ImGui::InputText("Script", scriptBuf, sizeof(scriptBuf));
+            AcceptSelectionDrop(ContentType::Script);
         }
 
         if (ImGui::Button("Load script"))
