@@ -1,5 +1,7 @@
 #include "ImGuiLayer.hpp"
 
+#include "EditorTheme.hpp"
+
 #include "HedgehogRenderer/Renderer.hpp"
 
 #include "HedgehogCommon/api/RendererSettings.hpp"
@@ -21,7 +23,7 @@ namespace Editor
     {
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
-        ImGui::StyleColorsDark();
+        Theme::Apply(ImGui::GetStyle());
         ImGui_ImplGlfw_InitForVulkan(window.GetNativeHandle(), true);
     }
 

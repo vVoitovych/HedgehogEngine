@@ -1,5 +1,7 @@
 #include "DockSystem.hpp"
 
+#include "EditorTheme.hpp"
+
 #include <algorithm>
 #include <string>
 
@@ -90,7 +92,7 @@ namespace Editor
         // Scene view
         ImGui::SetCursorPos({ centerX, k_ToolbarHeight });
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 0.0f, 0.0f });
-        ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ChildBg, Theme::MAIN_BG);
         ImGui::BeginChild("##AreaCenter", { centerW, sceneH }, ImGuiChildFlags_None);
         drawFn(PanelId::Count); // sentinel: scene view
         ImGui::EndChild();
@@ -292,7 +294,7 @@ namespace Editor
 
         ImGui::GetForegroundDrawList()->AddText(
             { mousePos.x + 14.0f, mousePos.y },
-            IM_COL32(255, 255, 255, 200),
+            ImGui::GetColorU32(Theme::TEXT),
             PanelName(m_DraggingPanel.value()));
 
         constexpr DockArea k_DockableAreas[] = { DockArea::Left, DockArea::Right, DockArea::Bottom };
@@ -306,8 +308,8 @@ namespace Editor
             const ImVec2 bMax     = { b.Pos.x + b.Size.x, b.Pos.y + b.Size.y };
             const bool   hovered  = IsPointInRect(mousePos, b.Pos, bMax);
 
-            const ImU32 fill    = hovered ? IM_COL32(60, 180, 60, 100) : IM_COL32(255, 255, 255, 30);
-            const ImU32 outline = hovered ? IM_COL32(60, 255, 60, 220) : IM_COL32(200, 200, 200, 80);
+            const ImU32 fill    = ImGui::GetColorU32(hovered ? Theme::ACCENT_FILL : Theme::WithAlpha(Theme::TEXT, 0.06f));
+            const ImU32 outline = ImGui::GetColorU32(hovered ? Theme::ACCENT : Theme::WithAlpha(Theme::TEXT_MUTED, 0.5f));
 
             ImGui::GetForegroundDrawList()->AddRectFilled(b.Pos, bMax, fill, 4.0f);
             ImGui::GetForegroundDrawList()->AddRect(b.Pos, bMax, outline, 4.0f, 0, 2.0f);
