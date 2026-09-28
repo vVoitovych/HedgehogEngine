@@ -25,12 +25,6 @@ namespace Editor
         YAML::Emitter out;
         out << YAML::BeginMap;
 
-        // Panel background colour
-        out << YAML::Key << "panel_bg_color" << YAML::Value
-            << YAML::Flow << YAML::BeginSeq
-            << panelBgColor[0] << panelBgColor[1] << panelBgColor[2]
-            << YAML::EndSeq;
-
         out << YAML::Key << "dock_layout" << YAML::Value << YAML::BeginMap;
         out << YAML::Key << "left_width"    << YAML::Value << dockLayout.LeftWidth;
         out << YAML::Key << "right_width"   << YAML::Value << dockLayout.RightWidth;
@@ -90,16 +84,6 @@ namespace Editor
         try
         {
             YAML::Node root = YAML::Load(*text);
-
-            if (auto n = root["panel_bg_color"])
-            {
-                if (n.IsSequence() && n.size() == 3)
-                {
-                    panelBgColor[0] = n[0].as<float>();
-                    panelBgColor[1] = n[1].as<float>();
-                    panelBgColor[2] = n[2].as<float>();
-                }
-            }
 
             if (auto dock = root["dock_layout"])
             {

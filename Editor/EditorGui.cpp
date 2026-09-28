@@ -1,4 +1,5 @@
 #include "EditorGui.hpp"
+#include "EditorTheme.hpp"
 #include "Panels/ConsolePanel.hpp"
 #include "Panels/ContentPanel.hpp"
 #include "Tools/VertexDescriptionWindow.hpp"
@@ -149,14 +150,6 @@ namespace Editor
         m_GameViewWidth    = 0;
         m_GameViewHeight   = 0;
 
-        ImVec4* styleColors = ImGui::GetStyle().Colors;
-        const ImVec4 panelBg(m_Settings.panelBgColor[0], m_Settings.panelBgColor[1],
-                             m_Settings.panelBgColor[2], 1.0f);
-        styleColors[ImGuiCol_WindowBg]  = panelBg;
-        styleColors[ImGuiCol_ChildBg]   = panelBg;
-        styleColors[ImGuiCol_PopupBg]   = panelBg;
-        styleColors[ImGuiCol_MenuBarBg] = panelBg;
-
         m_ViewportImages = images;
 
         DrawMainMenu(context);
@@ -234,7 +227,7 @@ namespace Editor
                 const std::string passes = std::to_string(m_ViewportImages.GraphPassCount) + " render graph passes";
                 const ImVec2      origin = ImGui::GetItemRectMin();
                 ImGui::GetWindowDrawList()->AddText(ImVec2(origin.x + 8.0f, origin.y + 8.0f),
-                                                    IM_COL32(255, 255, 255, 200), passes.c_str());
+                                                    ImGui::GetColorU32(Theme::TEXT), passes.c_str());
             }
 
             ImGui::EndTabItem();
@@ -1072,9 +1065,6 @@ namespace Editor
 
         if (ImGui::CollapsingHeader("Editor"))
         {
-            ImGui::ColorEdit3("Panel background", m_Settings.panelBgColor);
-
-            ImGui::Spacing();
             if (ImGui::Button("Save settings"))
                 m_Settings.Save("engine://editor_settings.yaml",
                                 context.GetEngineContext().GetFileSystem());

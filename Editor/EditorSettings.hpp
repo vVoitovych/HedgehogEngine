@@ -10,7 +10,6 @@ namespace Editor
 {
     struct EditorSettings
     {
-        float           panelBgColor[3] = { 2.0f / 255.0f, 12.0f / 255.0f, 30.0f / 255.0f };
         DockLayoutState dockLayout;
         std::string     LastScene;
 
