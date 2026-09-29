@@ -624,3 +624,6 @@ Binaries
 /HedgehogExtract/tests/HedgehogExtractTest.vcxproj*
 /ThirdParty/Tracy/Tracy.vcxproj
 /HedgehogEngine/RHIImGui/*.vcxproj*
+
+# Per-run log files written beside executables
+Logs/
