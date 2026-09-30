@@ -111,7 +111,7 @@ Editor (ConsoleApp)            owns ImGui: context, GLFW backend, GUI renderer (
 
 | Module | Type | Role |
 |--------|------|------|
-| `HedgehogMath` | DLL | Vectors, matrices, AABB/OBB/Plane/Frustum primitives |
+| `HedgehogMath` | DLL | Vectors, matrices, AABB/OBB/Plane/Frustum primitives; `Quaternion` (identity, axis-angle and Euler in degrees, multiply, rotate, normalize, inverse, `Slerp`, `ToMatrix`, `LookRotation` turning local -Z to forward with +Y up). `FromEuler(e).ToMatrix()` equals TransformSystem's `GetRotationX * GetRotationY * GetRotationZ`, so a `TransformComponent` keeps storing Euler degrees; `ToEuler` gives y in [-90, 90] and z = 0 at gimbal lock |
 | `HedgehogCommon` | DLL | Shared renderer constants (`MAX_FRAMES_IN_FLIGHT`, `MAX_LIGHTS_COUNT`, …), Camera |
 | `HedgehogWindow` | DLL | GLFW window wrapper, input handling (namespace `HW`) |
 | `HedgehogSettings` | DLL | YAML-based engine configuration |
@@ -170,7 +170,7 @@ Each module has its own `Build-[ModuleName].lua` file included from the root `Bu
 ### Testing
 
 Unit tests use the **doctest** framework. Test projects (each `<Module>/tests/` with its own `Build-<Module>Test.lua`):
-- `HedgehogMathTest` — vectors, matrices; `NearlyEqual` helpers with configurable epsilon
+- `HedgehogMathTest` — vectors, matrices, quaternions (1,000 seeded Euler triples matching TransformSystem's rotation product within 1e-5 and round-tripping through `ToEuler` up to sign, gimbal lock, basis-vector rotation, composition order, inverse, `Slerp` endpoints, midpoint and shorter way, `LookRotation`); `NearlyEqual` helpers with configurable epsilon
 - `FileSystemTest` — virtual file system and mounts, directory listing (`ListDirectory`: folders first, then files, by name); provides the `TempDir` RAII helper (`FileSystem/tests/test_helpers.hpp`), reused by other test projects
 - `ECSTest` — entity lifecycle, component storage integrity, system signature membership
 - `EcsSerializationTest` — scene YAML round-trip plus failure paths (missing/corrupt files); `SerializeToString`/`DeserializeFromString` byte-identical round trip, the file version writing exactly the string
