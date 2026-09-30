@@ -7,6 +7,7 @@
 
 #include "EcsApi.hpp"
 #include "Entity.hpp"
+#include "PlayState.hpp"
 #include "System.hpp"
 #include "ComponentManager.hpp"
 #include "EntityManager.hpp"
@@ -17,6 +18,18 @@ namespace ECS
     class ECS
     {
     public:
+        ECS() = default;
+        // Destroys the systems before the entity and component storage: a system may hold a
+        // component-removed callback or other state that refers to that storage.
+        ECS_API ~ECS();
+
+        ECS(const ECS&)            = delete;
+        ECS& operator=(const ECS&) = delete;
+        // Movable so a fully built ECS can be returned from a helper. Do not move one whose
+        // systems keep a reference to it.
+        ECS_API ECS(ECS&& other) noexcept;
+        ECS_API ECS& operator=(ECS&& other) noexcept;
+
         ECS_API void Init();
 
         ECS_API Entity CreateEntity();
@@ -89,10 +102,11 @@ namespace ECS
             return m_ComponentManager->GetComponentType<T>();
         }
 
-        template<typename T>
-        std::shared_ptr<T> RegisterSystem()
+        // Constructs T from args; the ECS owns it from then on.
+        template<typename T, typename... Args>
+        std::shared_ptr<T> RegisterSystem(Args&&... args)
         {
-            return m_SystemManager->RegisterSystem<T>();
+            return m_SystemManager->RegisterSystem<T>(std::forward<Args>(args)...);
         }
 
         template<typename T>
@@ -122,11 +136,27 @@ namespace ECS
             return m_SystemManager->GetSystem<T>();
         }
 
+        // Play state. A transition returns false, and changes nothing, when it does not apply.
+        //   StartPlay: Edit -> Playing, then every system's OnPlayStart in registration order.
+        //   PausePlay: Playing -> Paused.   ResumePlay: Paused -> Playing.
+        //   StopPlay:  Playing or Paused -> Edit, then every OnPlayStop in reverse order.
+        // The ECS knows nothing of scene snapshots or clocks; its owner handles those.
+        ECS_API bool      StartPlay();
+        ECS_API bool      PausePlay();
+        ECS_API bool      ResumePlay();
+        ECS_API bool      StopPlay();
+        ECS_API PlayState GetPlayState() const;
+
+        // Every system's OnFixedUpdate / OnUpdate, in registration order, only while Playing.
+        ECS_API void RunFixedUpdate(float fixedDeltaTime);
+        ECS_API void RunUpdate(float deltaTime);
+
     private:
         std::unique_ptr<ComponentManager> m_ComponentManager;
         std::unique_ptr<EntityManager>    m_EntityManager;
         std::unique_ptr<SystemManager>    m_SystemManager;
 
-        Entity m_RootEntity{INVALID_ENTITY};
+        Entity    m_RootEntity{INVALID_ENTITY};
+        PlayState m_PlayState{PlayState::Edit};
     };
 }
