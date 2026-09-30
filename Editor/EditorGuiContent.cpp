@@ -64,7 +64,12 @@ namespace Editor
         switch (request.Type)
         {
         case ContentType::Scene:
-            // As File > Open does.
+            // As File > Open does, and like it only in Edit: Stop would overwrite the load.
+            if (!engineContext.GetSimulation().IsEditing())
+            {
+                LOGWARNING("Stop the simulation before opening a scene (", request.VirtualPath, ").");
+                return;
+            }
             if (engineContext.GetSceneManager().LoadScene(physicalPath))
             {
                 RecordLastScene(physicalPath, fileSystem);

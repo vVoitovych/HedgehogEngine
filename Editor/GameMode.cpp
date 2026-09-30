@@ -45,6 +45,9 @@ namespace Editor
             if (!scenePath || !engineContext.GetSceneManager().LoadScene(scenePath->string()))
                 LOGWARNING("Game mode: could not load '", GAME_SCENE, "'; rendering an empty scene.");
 
+            // A game runs its gameplay: the scene's scripts tick from the first frame.
+            engineContext.GetSimulation().Play();
+
             Renderer::Renderer renderer(engine.GetWindowContext().GetWindow(), fileSystem);
 
             HX::RenderScene          scene;
@@ -71,6 +74,7 @@ namespace Editor
                 sawImGui = sawImGui || ImGui::GetCurrentContext() != nullptr;
             }
 
+            engineContext.GetSimulation().Stop();
             renderer.Cleanup();
             engine.Cleanup();
             return sawImGui || ImGui::GetCurrentContext() != nullptr;

@@ -55,11 +55,20 @@ namespace HedgehogEngine
 
         m_ResourceCatalog.Update(*m_RenderSystem, *m_MeshSystem);
 
+        // The legacy script system is the first gameplay system: it runs only in Play.
+        m_ScriptSystem->Init(m_ECS, m_EventBus);
+        m_Simulation = std::make_unique<Simulation>(*m_SceneManager);
+        m_Simulation->AddSystem(m_ScriptSystem);
+
         m_Settings = std::make_unique<HedgehogSettings::Settings>();
     }
 
     EngineContext::~EngineContext()
     {
+        // Tearing down the ECS runs no removal callbacks, so close the scripts still open.
+        const std::vector<ECS::Entity> scripted = m_ScriptSystem->GetEntities();
+        for (ECS::Entity entity : scripted)
+            m_ScriptSystem->ClearScriptComponent(entity, m_ECS);
     }
 
     void EngineContext::InitFileSystem()
@@ -92,6 +101,13 @@ namespace HedgehogEngine
         m_ECS.RegisterComponent<RenderComponent>();
         m_ECS.RegisterComponent<ScriptComponent>();
         m_ECS.RegisterComponent<CameraComponent>();
+
+        // Closes a script's lua_State whenever its component goes: removal, entity
+        // deletion, a scene load, or Stop restoring the Play snapshot.
+        m_ECS.SetComponentRemovedCallback<ScriptComponent>([this](ECS::Entity entity, ScriptComponent&)
+        {
+            m_ScriptSystem->ClearScriptComponent(entity, m_ECS);
+        });
 
         m_TransformSystem = m_ECS.RegisterSystem<TransformSystem>();
         m_HierarchySystem = m_ECS.RegisterSystem<HierarchySystem>();
@@ -210,8 +226,9 @@ namespace HedgehogEngine
     {
         UpdateCamera(windowContext, aspectRatio, dt);
 
-        // Update order is load-bearing: Script → Transform → Hierarchy → Light
-        m_ScriptSystem->Update(m_ECS, dt, m_EventBus);
+        // Update order is load-bearing: Simulation (gameplay, Play only) → Transform → Hierarchy → Light.
+        // Transform, Hierarchy and Light run in every mode, so edits show in Edit mode too.
+        m_Simulation->Tick(dt);
         m_TransformSystem->Update(m_ECS, m_EventBus);
         m_HierarchySystem->Update(m_ECS, m_EventBus);
         m_LightSystem->Update(m_ECS);
@@ -224,6 +241,9 @@ namespace HedgehogEngine
 
     SceneManager& EngineContext::GetSceneManager()             { return *m_SceneManager; }
     const SceneManager& EngineContext::GetSceneManager() const { return *m_SceneManager; }
+
+    Simulation& EngineContext::GetSimulation()             { return *m_Simulation; }
+    const Simulation& EngineContext::GetSimulation() const { return *m_Simulation; }
 
     const FS::FileSystemManager& EngineContext::GetFileSystem() const { return m_FileSystem; }
 
