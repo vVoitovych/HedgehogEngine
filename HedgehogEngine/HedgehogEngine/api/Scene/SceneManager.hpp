@@ -29,6 +29,14 @@ namespace HedgehogEngine
     class MeshSystem;
     class RenderSystem;
 
+    // A whole scene held in memory: what CaptureSnapshot saw and RestoreSnapshot puts back.
+    struct SceneSnapshot
+    {
+        std::string Yaml;            // the scene serialized exactly as SaveScene would write it
+        std::string SceneName;
+        size_t      GameObjectIndex = 0;
+    };
+
     // Scene / game-object facade: owns the scene name and game-object index, and provides
     // load/save/reset and create/delete game-object operations. Holds non-owning references
     // to the engine services it needs (ECS, event bus, filesystem, systems, serializer registry),
@@ -56,6 +64,12 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API void SetSceneName(const std::string& name);
         HEDGEHOG_ENGINE_API std::string GetSceneName() const;
 
+        // Restore replaces the whole tree with the captured one. Entities come back
+        // with their captured ids, so ids held elsewhere (the editor selection,
+        // script references) stay valid across a round trip.
+        [[nodiscard]] HEDGEHOG_ENGINE_API SceneSnapshot CaptureSnapshot() const;
+        [[nodiscard]] HEDGEHOG_ENGINE_API bool          RestoreSnapshot(const SceneSnapshot& snapshot);
+
         HEDGEHOG_ENGINE_API ECS::Entity CreateGameObject(std::optional<ECS::Entity> parent = std::nullopt);
         HEDGEHOG_ENGINE_API void        DeleteGameObject(ECS::Entity entity);
 
@@ -64,6 +78,8 @@ namespace HedgehogEngine
     private:
         void        CreateSceneRoot();
         void        DeleteGameObjectAndChildren(ECS::Entity entity);
+        // Brings the systems in line with a freshly deserialized tree.
+        void        RefreshAfterLoad();
         std::string GetUniqueGameObjectName();
 
     private:
