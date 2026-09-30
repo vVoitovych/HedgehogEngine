@@ -11,6 +11,8 @@ namespace HedgehogScripting
 {
     namespace
     {
+        int s_OpenStates = 0;
+
         // Runs once, with the debug library still open, and leaves only the sandbox.
         constexpr std::string_view SANDBOX_SETUP = R"lua(
             local rawLoad, rawCollect = load, collectgarbage
@@ -38,7 +40,13 @@ namespace HedgehogScripting
     ScriptVM::ScriptVM(const FS::FileSystemManager& fileSystem)
         : m_FileSystem(fileSystem)
     {
+        ++s_OpenStates;
         OpenSandbox();
+    }
+
+    ScriptVM::~ScriptVM()
+    {
+        --s_OpenStates;
     }
 
     void ScriptVM::OpenSandbox()
@@ -102,29 +110,6 @@ namespace HedgehogScripting
         return chunk && Call(*chunk);
     }
 
-    bool ScriptVM::Call(const sol::protected_function& function)
-    {
-        try
-        {
-            sol::protected_function withTraceback = function;
-            withTraceback.set_error_handler(m_Traceback);
-
-            const sol::protected_function_result result = withTraceback();
-            if (!result.valid())
-            {
-                const sol::error error = result;
-                Fail(error.what());
-                return false;
-            }
-            return true;
-        }
-        catch (const std::exception& e)
-        {
-            Fail(std::string("ScriptVM::Call: ") + e.what());
-            return false;
-        }
-    }
-
     sol::state& ScriptVM::GetState()
     {
         return m_Lua;
@@ -133,6 +118,16 @@ namespace HedgehogScripting
     const std::string& ScriptVM::GetLastError() const
     {
         return m_LastError;
+    }
+
+    const sol::protected_function& ScriptVM::GetTracebackHandler() const
+    {
+        return m_Traceback;
+    }
+
+    int ScriptVM::GetOpenStateCount()
+    {
+        return s_OpenStates;
     }
 
     void ScriptVM::Fail(std::string message)
