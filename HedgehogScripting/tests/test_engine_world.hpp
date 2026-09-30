@@ -5,6 +5,8 @@
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
 #include "HedgehogEngine/api/Scene/SceneManager.hpp"
+#include "HedgehogEngine/api/ECS/systems/HierarchySystem.hpp"
+#include "HedgehogEngine/api/ECS/systems/TransformSystem.hpp"
 
 #include "ECS/api/ECS.hpp"
 
@@ -72,6 +74,15 @@ public:
     }
 
     ECS::ECS& Ecs() { return Context.GetECS(); }
+
+    // One frame as EngineContext::UpdateContext runs it, less the editor camera (which needs a
+    // window): gameplay, then Transform and Hierarchy, so script writes reach ObjMatrix.
+    void Frame(float dt)
+    {
+        Context.UpdatePlayMode(dt);
+        Context.GetTransformSystem()->Update(Context.GetECS(), Context.GetEventBus());
+        Context.GetHierarchySystem()->Update(Context.GetECS(), Context.GetEventBus());
+    }
 
 private:
     TempDir               m_Dir;

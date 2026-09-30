@@ -59,8 +59,9 @@ namespace HedgehogScripting
     class ScriptSystem : public ECS::System
     {
     public:
-        // scriptFiles resolves "assets://" script paths; it must outlive the system.
-        explicit ScriptSystem(const FS::FileSystemManager& scriptFiles);
+        // context gives the scripts' Entity API its ECS and EventBus; scriptFiles resolves
+        // "assets://" script paths. Both must outlive the system.
+        ScriptSystem(HedgehogEngine::EngineContext& context, const FS::FileSystemManager& scriptFiles);
         ~ScriptSystem() override;
 
         ScriptSystem(const ScriptSystem&)            = delete;
