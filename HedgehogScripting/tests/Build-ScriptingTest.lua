@@ -12,17 +12,24 @@ project "ScriptingTest"
         "../../HedgehogEngine", -- so engine headers' own "HedgehogEngine/api/..." includes resolve
         ".",
         "%{IncludeDir.Lua}",
-        "%{IncludeDir.sol2}"
+        "%{IncludeDir.sol2}",
+        "%{IncludeDir.yaml_cpp}"
     }
+
+    -- The runtime tests build a scene (SceneManager, the serializer registry) around the runtime.
+    defines { "YAML_CPP_STATIC_DEFINE" }
 
     links
     {
         "HedgehogScripting",
         "HedgehogEngine",
+        "EcsSerialization",
         "ECS",
         "FileSystem",
+        "HedgehogMath",
         "Logger",
-        "Lua"
+        "Lua",
+        "yaml-cpp"
     }
 
     targetdir (BinariesDir)

@@ -44,6 +44,10 @@ namespace HedgehogScripting
                                                                    ECS::Entity entity,
                                                                    const std::string& entityName);
 
+        // The file's top-level globals after it ran once (compiling it if needed):
+        // its class table and its default values. Nothing is instantiated.
+        [[nodiscard]] std::optional<sol::table> GetDefaults(const std::string& scriptPath);
+
         [[nodiscard]] bool IsBaseLoaded() const;
         // Script files compiled so far, the base included. A cached file is never recompiled.
         [[nodiscard]] int GetCompileCount() const;
