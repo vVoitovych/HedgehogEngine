@@ -2,15 +2,19 @@
 
 #include "HedgehogScripting/api/Sol.hpp"
 
+#include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
+
 #include "ECS/api/Entity.hpp"
 #include "ECS/api/System.hpp"
 
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <vector>
 
 namespace ECS
 {
@@ -39,11 +43,19 @@ namespace HedgehogScripting
     // environment). The file's top-level globals are the class defaults: every entity gets its
     // own shallow copy of them, so `speed = 1.0` is per entity while the methods are shared.
     //
-    // Driven by the ECS play-mode events: OnPlayStart makes an instance for every enabled entity
-    // with a script, OnUpdate calls the script's OnStart once and then OnUpdate(dt), and
-    // OnPlayStop calls OnDestroy and drops them all. A script error is logged once as
-    // "[Script] <entity> (<assets://path>): <message>" with a traceback; that script stops
-    // updating, and the others carry on.
+    // Driven by the ECS play-mode events. OnPlayStart makes an instance for every entity with a
+    // script path, with its ScriptComponent Params as globals. Both update events first sync the
+    // scripts with the ECS: a component added during Play gets an instance, an entity that left
+    // the system gets OnDisable and OnDestroy, and the component's Enable against the system's own
+    // view of it gives OnStart (once, on the first enable), OnEnable and OnDisable. Then
+    // OnFixedUpdate(fixedDt) or OnUpdate(dt) runs for every enabled script, so a first frame runs
+    // OnStart, OnEnable, the fixed steps and then OnUpdate. Removing the component or destroying
+    // the entity during Play gives OnDisable and OnDestroy (a removal callback chained in front of
+    // the engine's own for the length of Play), and OnPlayStop gives them to every script.
+    //
+    // A script error is logged once as "[Script] <entity> (<assets://path>): <message>" with a
+    // traceback. An error in OnStart, OnEnable, OnFixedUpdate or OnUpdate faults the script: it is
+    // skipped until the next Play (OnDestroy is still attempted), and the others carry on.
     class ScriptSystem : public ECS::System
     {
     public:
@@ -56,7 +68,17 @@ namespace HedgehogScripting
 
         void OnPlayStart(ECS::ECS& ecs) override;
         void OnPlayStop(ECS::ECS& ecs) override;
+        void OnFixedUpdate(ECS::ECS& ecs, float fixedDeltaTime) override;
         void OnUpdate(ECS::ECS& ecs, float deltaTime) override;
+
+        // Re-applies entity's ScriptComponent Params as globals of its script, for live
+        // inspector edits. Does nothing outside Play or for an entity with no script.
+        void PushParams(ECS::ECS& ecs, ECS::Entity entity);
+
+        // The number and boolean top-level globals of the script at scriptPath, as ScriptParams,
+        // for the inspector. Compiles a throwaway class and runs no method.
+        [[nodiscard]] std::unordered_map<std::string, HedgehogEngine::ScriptParam> DescribeScript(
+            const std::string& scriptPath);
 
         // Entities with a live script instance.
         [[nodiscard]] size_t GetScriptCount() const;
@@ -85,14 +107,25 @@ namespace HedgehogScripting
             std::string EntityName;
             sol::table  Environment;
             sol::table  Self;
-            bool        Started = false;
-            bool        Faulted = false;
+            bool        Started = false; // OnStart has run
+            bool        Enabled = false; // the system's view of the component's Enable
+            bool        Faulted = false; // skipped until the next Play
         };
+
+        using RemovedCallback = std::function<void(ECS::Entity, HedgehogEngine::ScriptComponent&)>;
 
         void               StartClassSupport();
         bool               EnsureBaseLoaded();
         const ScriptClass* FindOrCompile(const std::string& scriptPath, const std::string& entityName);
         void               CreateScript(ECS::ECS& ecs, ECS::Entity entity);
+        void               SyncScripts(ECS::ECS& ecs);
+        // OnDisable (if enabled and not faulted) and OnDestroy (if it has an instance), then drop it.
+        void               DestroyScript(ECS::Entity entity);
+        void               OnScriptRemoved(ECS::Entity entity);
+        void               ApplyParams(ECS::ECS& ecs, ECS::Entity entity, EntityScript& script);
+        // Runs method on every enabled, healthy script, faulting a script whose call fails.
+        template<typename... Args>
+        void               InvokeAll(std::string_view method, Args&&... args);
         // Calls self:method(args...) with the entity's environment current. Returns false, having
         // logged the error, when the call fails.
         template<typename... Args>
@@ -117,6 +150,13 @@ namespace HedgehogScripting
         std::unordered_map<ECS::Entity, EntityScript> m_Scripts;
         std::optional<ECS::Entity>                    m_RunningEntity;
         int                                           m_CompileCount = 0;
+
+        // While playing: the ECS whose ScriptComponent removal callback this system chained, and
+        // the callback it replaced, put back at OnPlayStop.
+        ECS::ECS*                                     m_CallbackEcs = nullptr;
+        RemovedCallback                               m_PreviousRemovedCallback;
+        // Entities removed while one of their own script calls was running; handled after it.
+        std::vector<ECS::Entity>                      m_PendingRemovals;
     };
 
     // Registers the script system in the engine's ECS with its signature (ScriptComponent and

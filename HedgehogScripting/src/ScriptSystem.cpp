@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <exception>
 #include <filesystem>
+#include <utility>
 #include <vector>
 
 namespace HedgehogScripting
@@ -94,7 +95,13 @@ namespace HedgehogScripting
         StartClassSupport();
     }
 
-    ScriptSystem::~ScriptSystem() = default;
+    ScriptSystem::~ScriptSystem()
+    {
+        // Destroyed mid-Play (the ECS destroys its systems before its component storage): put the
+        // engine's removal callback back, since ours points at this system.
+        if (m_CallbackEcs != nullptr)
+            m_CallbackEcs->SetComponentRemovedCallback<HedgehogEngine::ScriptComponent>(std::move(m_PreviousRemovedCallback));
+    }
 
     void ScriptSystem::StartClassSupport()
     {
@@ -184,28 +191,33 @@ namespace HedgehogScripting
     void ScriptSystem::CreateScript(ECS::ECS& ecs, ECS::Entity entity)
     {
         const auto& component = ecs.GetComponent<HedgehogEngine::ScriptComponent>(entity);
-        if (!component.Enable || component.ScriptPath.empty())
+        if (component.ScriptPath.empty())
             return;
 
-        const std::string scriptPath = NormalizeScriptPath(component.ScriptPath);
-        const std::string entityName = EntityNameOf(ecs, entity);
+        // The entry exists from here on, so a script that fails to load is not retried every
+        // frame: it stays faulted until the next Play.
+        EntityScript& script = m_Scripts[entity];
+        script            = EntityScript{};
+        script.ScriptPath = NormalizeScriptPath(component.ScriptPath);
+        script.Generation = ecs.GetGeneration(entity);
+        script.EntityName = EntityNameOf(ecs, entity);
+        script.Faulted    = true;
+
         if (!EnsureBaseLoaded())
         {
-            LogError(entityName, scriptPath, "the base script '" + std::string(BASE_SCRIPT_PATH) + "' is not loaded.");
+            LogError(script.EntityName, script.ScriptPath,
+                     "the base script '" + std::string(BASE_SCRIPT_PATH) + "' is not loaded.");
             return;
         }
 
-        const ScriptClass* scriptClass = FindOrCompile(scriptPath, entityName);
+        const ScriptClass* scriptClass = FindOrCompile(script.ScriptPath, script.EntityName);
         if (scriptClass == nullptr)
             return;
 
-        EntityScript script;
-        script.ScriptPath = scriptPath;
-        script.Generation = ecs.GetGeneration(entity);
-        script.EntityName = entityName;
         try
         {
             script.Environment = m_NewEnvironment(scriptClass->Defaults).get<sol::table>();
+            ApplyParams(ecs, entity, script);
 
             m_RunningEntity = entity;
             const sol::protected_function_result made =
@@ -214,62 +226,79 @@ namespace HedgehogScripting
             if (!made.valid())
             {
                 const sol::error error = made;
-                LogError(entityName, scriptPath, error.what());
+                LogError(script.EntityName, script.ScriptPath, error.what());
                 return;
             }
             if (made.get_type() != sol::type::table)
             {
-                LogError(entityName, scriptPath, ClassNameOf(scriptPath) + ":new() did not return a table.");
+                LogError(script.EntityName, script.ScriptPath,
+                         ClassNameOf(script.ScriptPath) + ":new() did not return a table.");
                 return;
             }
-            script.Self = made.get<sol::table>();
+            script.Self    = made.get<sol::table>();
+            script.Faulted = false;
         }
         catch (const std::exception& e)
         {
             m_RunningEntity.reset();
-            LogError(entityName, scriptPath, e.what());
-            return;
+            LogError(script.EntityName, script.ScriptPath, e.what());
         }
+    }
 
-        m_Scripts.insert_or_assign(entity, std::move(script));
+    void ScriptSystem::ApplyParams(ECS::ECS& ecs, ECS::Entity entity, EntityScript& script)
+    {
+        const auto& component = ecs.GetComponent<HedgehogEngine::ScriptComponent>(entity);
+        for (const auto& [name, param] : component.Params)
+        {
+            switch (param.type)
+            {
+            case HedgehogEngine::ParamType::Boolean:
+                script.Environment[name] = std::get<bool>(param.value);
+                break;
+            case HedgehogEngine::ParamType::Number:
+                script.Environment[name] = std::get<float>(param.value);
+                break;
+            default:
+                break;
+            }
+        }
     }
 
     template<typename... Args>
     bool ScriptSystem::Invoke(ECS::Entity entity, EntityScript& script, std::string_view method, Args&&... args)
     {
+        // Copies, so the call is safe even if the script's entry changes while it runs.
+        const sol::table  environment = script.Environment;
+        const sol::table  self        = script.Self;
+        const std::string entityName  = script.EntityName;
+        const std::string scriptPath  = script.ScriptPath;
+
         m_RunningEntity = entity;
         bool succeeded  = false;
         try
         {
             const sol::protected_function_result result =
-                m_Invoke(script.Environment, script.Self, method, std::forward<Args>(args)...);
+                m_Invoke(environment, self, method, std::forward<Args>(args)...);
             succeeded = result.valid();
             if (!succeeded)
             {
                 const sol::error error = result;
-                LogError(script.EntityName, script.ScriptPath, error.what());
+                LogError(entityName, scriptPath, error.what());
             }
         }
         catch (const std::exception& e)
         {
-            LogError(script.EntityName, script.ScriptPath, e.what());
+            LogError(entityName, scriptPath, e.what());
         }
         m_RunningEntity.reset();
         return succeeded;
     }
 
-    void ScriptSystem::OnPlayStart(ECS::ECS& ecs)
+    template<typename... Args>
+    void ScriptSystem::InvokeAll(std::string_view method, Args&&... args)
     {
-        // Every Play reads the script files afresh, so an edit made in Edit mode takes effect.
-        m_Classes.clear();
-        m_Scripts.clear();
-        for (const ECS::Entity entity : m_Entities)
-            CreateScript(ecs, entity);
-    }
-
-    void ScriptSystem::OnUpdate(ECS::ECS& ecs, float deltaTime)
-    {
-        // A script may change the set of scripts while it runs, so walk a snapshot of the ids.
+        // A script may change the set of scripts while it runs, so walk a sorted snapshot of the
+        // ids and look each one up again.
         std::vector<ECS::Entity> entities;
         entities.reserve(m_Scripts.size());
         for (const auto& [entity, script] : m_Scripts)
@@ -279,36 +308,210 @@ namespace HedgehogScripting
         for (const ECS::Entity entity : entities)
         {
             const auto it = m_Scripts.find(entity);
-            if (it == m_Scripts.end())
+            if (it == m_Scripts.end() || !it->second.Enabled || it->second.Faulted)
                 continue;
-            EntityScript& script = it->second;
-            if (!ecs.IsAlive(entity) || ecs.GetGeneration(entity) != script.Generation)
+            if (!Invoke(entity, it->second, method, args...))
             {
-                m_Scripts.erase(it);
-                continue;
+                if (const auto failed = m_Scripts.find(entity); failed != m_Scripts.end())
+                    failed->second.Faulted = true;
             }
-            if (script.Faulted)
-                continue;
-
-            if (!script.Started)
-            {
-                script.Started = true;
-                if (!Invoke(entity, script, "OnStart"))
-                {
-                    script.Faulted = true;
-                    continue;
-                }
-            }
-            if (!Invoke(entity, script, "OnUpdate", deltaTime))
-                script.Faulted = true;
         }
     }
 
-    void ScriptSystem::OnPlayStop(ECS::ECS& /*ecs*/)
+    void ScriptSystem::SyncScripts(ECS::ECS& ecs)
     {
-        for (auto& [entity, script] : m_Scripts)
-            (void)Invoke(entity, script, "OnDestroy");
+        // Entities that left the system (lost their Transform) or whose id was recycled.
+        std::vector<ECS::Entity> gone;
+        for (const auto& [entity, script] : m_Scripts)
+        {
+            const bool member = std::find(m_Entities.begin(), m_Entities.end(), entity) != m_Entities.end();
+            if (!member || !ecs.IsAlive(entity) || ecs.GetGeneration(entity) != script.Generation)
+                gone.push_back(entity);
+        }
+        std::sort(gone.begin(), gone.end());
+        for (const ECS::Entity entity : gone)
+            DestroyScript(entity);
+
+        // Scripts added during Play.
+        std::vector<ECS::Entity> members(m_Entities.begin(), m_Entities.end());
+        std::sort(members.begin(), members.end());
+        for (const ECS::Entity entity : members)
+        {
+            if (m_Scripts.find(entity) == m_Scripts.end())
+                CreateScript(ecs, entity);
+        }
+
+        // Enable changes: OnStart once on the first enable, then OnEnable; OnDisable when turned off.
+        for (const ECS::Entity entity : members)
+        {
+            const auto it = m_Scripts.find(entity);
+            if (it == m_Scripts.end() || it->second.Faulted)
+                continue;
+            const bool wanted = ecs.GetComponent<HedgehogEngine::ScriptComponent>(entity).Enable;
+            if (wanted == it->second.Enabled)
+                continue;
+
+            it->second.Enabled = wanted;
+            bool succeeded     = true;
+            if (wanted)
+            {
+                if (!it->second.Started)
+                {
+                    it->second.Started = true;
+                    succeeded          = Invoke(entity, it->second, "OnStart");
+                }
+                if (succeeded)
+                    succeeded = Invoke(entity, m_Scripts.at(entity), "OnEnable");
+            }
+            else
+            {
+                (void)Invoke(entity, it->second, "OnDisable");
+            }
+            if (!succeeded)
+            {
+                if (const auto failed = m_Scripts.find(entity); failed != m_Scripts.end())
+                    failed->second.Faulted = true;
+            }
+        }
+    }
+
+    void ScriptSystem::DestroyScript(ECS::Entity entity)
+    {
+        const auto it = m_Scripts.find(entity);
+        if (it == m_Scripts.end())
+            return;
+
+        EntityScript script = std::move(it->second);
+        m_Scripts.erase(it);
+        if (!script.Self.valid())
+            return;
+        if (script.Enabled && !script.Faulted)
+            (void)Invoke(entity, script, "OnDisable");
+        (void)Invoke(entity, script, "OnDestroy");
+    }
+
+    void ScriptSystem::OnScriptRemoved(ECS::Entity entity)
+    {
+        // A script whose own call is running cannot be torn down under it: finish that first.
+        if (m_RunningEntity.has_value())
+        {
+            m_PendingRemovals.push_back(entity);
+            return;
+        }
+        DestroyScript(entity);
+    }
+
+    void ScriptSystem::OnPlayStart(ECS::ECS& ecs)
+    {
+        // Every Play reads the script files afresh, so an edit made in Edit mode takes effect.
+        m_Classes.clear();
         m_Scripts.clear();
+        m_PendingRemovals.clear();
+
+        // Chain in front of whatever removal callback the engine keeps for ScriptComponent, for
+        // the length of Play.
+        if (m_CallbackEcs == nullptr)
+        {
+            m_CallbackEcs             = &ecs;
+            m_PreviousRemovedCallback = ecs.GetComponentRemovedCallback<HedgehogEngine::ScriptComponent>();
+            ecs.SetComponentRemovedCallback<HedgehogEngine::ScriptComponent>(
+                [this, previous = m_PreviousRemovedCallback](ECS::Entity entity, HedgehogEngine::ScriptComponent& component)
+                {
+                    OnScriptRemoved(entity);
+                    if (previous)
+                        previous(entity, component);
+                });
+        }
+
+        std::vector<ECS::Entity> members(m_Entities.begin(), m_Entities.end());
+        std::sort(members.begin(), members.end());
+        for (const ECS::Entity entity : members)
+            CreateScript(ecs, entity);
+    }
+
+    void ScriptSystem::OnFixedUpdate(ECS::ECS& ecs, float fixedDeltaTime)
+    {
+        SyncScripts(ecs);
+        InvokeAll("OnFixedUpdate", fixedDeltaTime);
+        for (const ECS::Entity entity : std::exchange(m_PendingRemovals, {}))
+            DestroyScript(entity);
+    }
+
+    void ScriptSystem::OnUpdate(ECS::ECS& ecs, float deltaTime)
+    {
+        SyncScripts(ecs);
+        InvokeAll("OnUpdate", deltaTime);
+        for (const ECS::Entity entity : std::exchange(m_PendingRemovals, {}))
+            DestroyScript(entity);
+    }
+
+    void ScriptSystem::OnPlayStop(ECS::ECS& ecs)
+    {
+        std::vector<ECS::Entity> entities;
+        entities.reserve(m_Scripts.size());
+        for (const auto& [entity, script] : m_Scripts)
+            entities.push_back(entity);
+        std::sort(entities.begin(), entities.end());
+        for (const ECS::Entity entity : entities)
+            DestroyScript(entity);
+        m_Scripts.clear();
+        m_PendingRemovals.clear();
+
+        if (m_CallbackEcs == &ecs)
+        {
+            ecs.SetComponentRemovedCallback<HedgehogEngine::ScriptComponent>(std::move(m_PreviousRemovedCallback));
+            m_PreviousRemovedCallback = {};
+            m_CallbackEcs             = nullptr;
+        }
+    }
+
+    void ScriptSystem::PushParams(ECS::ECS& ecs, ECS::Entity entity)
+    {
+        const auto it = m_Scripts.find(entity);
+        if (it == m_Scripts.end() || !it->second.Environment.valid())
+            return;
+        ApplyParams(ecs, entity, it->second);
+    }
+
+    std::unordered_map<std::string, HedgehogEngine::ScriptParam> ScriptSystem::DescribeScript(const std::string& scriptPath)
+    {
+        std::unordered_map<std::string, HedgehogEngine::ScriptParam> params;
+        const std::string path = NormalizeScriptPath(scriptPath);
+        if (!EnsureBaseLoaded())
+            return params;
+
+        const std::optional<sol::protected_function> chunk = LoadScriptFile(m_Lua, m_ScriptFiles, path, m_Traceback);
+        if (!chunk)
+            return params;
+        sol::set_environment(m_Proxy, *chunk);
+
+        try
+        {
+            // Runs the file's top level into a throwaway table, as a Play compile would, and
+            // calls no method.
+            sol::table defaults = m_NewEnvironment().get<sol::table>();
+            const sol::protected_function_result ran = m_Run(defaults, *chunk);
+            if (!ran.valid())
+            {
+                const sol::error error = ran;
+                LogError("DescribeScript", path, error.what());
+                return params;
+            }
+            for (const auto& [key, value] : defaults)
+            {
+                if (key.get_type() != sol::type::string)
+                    continue;
+                if (value.get_type() == sol::type::number)
+                    params[key.as<std::string>()] = { HedgehogEngine::ParamType::Number, value.as<float>(), false };
+                else if (value.get_type() == sol::type::boolean)
+                    params[key.as<std::string>()] = { HedgehogEngine::ParamType::Boolean, value.as<bool>(), false };
+            }
+        }
+        catch (const std::exception& e)
+        {
+            LogError("DescribeScript", path, e.what());
+        }
+        return params;
     }
 
     size_t ScriptSystem::GetScriptCount() const

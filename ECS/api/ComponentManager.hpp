@@ -55,6 +55,12 @@ namespace ECS
         }
 
         template<typename T>
+        typename ComponentArray<T>::RemovedCallback GetComponentRemovedCallback() const
+        {
+            return GetComponentArray<T>()->GetRemovedCallback();
+        }
+
+        template<typename T>
         T& GetComponent(Entity entity) const
         {
             return GetComponentArray<T>()->GetData(entity);

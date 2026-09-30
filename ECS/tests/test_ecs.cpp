@@ -369,6 +369,35 @@ TEST_CASE("ECS removed callback - a new callback replaces the old, an empty one 
     CHECK(second == 1);
 }
 
+TEST_CASE("ECS removed callback - the current callback can be read back, chained and restored")
+{
+    ECS::ECS ecs = MakeEcs();
+    CHECK_FALSE(ecs.GetComponentRemovedCallback<Position>());
+
+    std::vector<std::string> log;
+    ecs.SetComponentRemovedCallback<Position>([&log](ECS::Entity, Position&) { log.push_back("original"); });
+
+    // Chain: the new callback runs, then the one it replaced.
+    auto previous = ecs.GetComponentRemovedCallback<Position>();
+    REQUIRE(previous);
+    ecs.SetComponentRemovedCallback<Position>([&log, previous](ECS::Entity entity, Position& position)
+    {
+        log.push_back("chained");
+        previous(entity, position);
+    });
+
+    const ECS::Entity e = ecs.CreateEntity();
+    ecs.AddComponent(e, Position{});
+    ecs.RemoveComponent<Position>(e);
+    CHECK(log == std::vector<std::string>{ "chained", "original" });
+
+    // Restore: only the original runs again.
+    ecs.SetComponentRemovedCallback<Position>(previous);
+    ecs.AddComponent(e, Position{});
+    ecs.RemoveComponent<Position>(e);
+    CHECK(log == std::vector<std::string>{ "chained", "original", "original" });
+}
+
 // ---------------------------------------------------------------------------
 // Entity generations
 // ---------------------------------------------------------------------------
