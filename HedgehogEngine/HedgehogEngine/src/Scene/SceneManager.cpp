@@ -65,11 +65,41 @@ namespace HedgehogEngine
         DeleteGameObjectAndChildren(m_ECS.GetRoot());
         const bool loaded = EcsSerialization::EcsSerializer::Deserialize(m_ComponentRegistry, m_ECS, m_SceneName,
                                                                           *virtualPath, m_FileSystem);
+        RefreshAfterLoad();
+        return loaded;
+    }
+
+    SceneSnapshot SceneManager::CaptureSnapshot() const
+    {
+        SceneSnapshot snapshot;
+        snapshot.Yaml            = EcsSerialization::EcsSerializer::SerializeToString(m_ComponentRegistry, m_ECS,
+                                                                                      m_SceneName);
+        snapshot.SceneName       = m_SceneName;
+        snapshot.GameObjectIndex = m_GameObjectIndex;
+        return snapshot;
+    }
+
+    bool SceneManager::RestoreSnapshot(const SceneSnapshot& snapshot)
+    {
+        DeleteGameObjectAndChildren(m_ECS.GetRoot());
+
+        // DeserializeFromString logs the parse error itself, naming this source.
+        std::string sceneName;
+        const bool restored = EcsSerialization::EcsSerializer::DeserializeFromString(
+            m_ComponentRegistry, m_ECS, sceneName, snapshot.Yaml, "the snapshot of '" + snapshot.SceneName + "'");
+
+        m_SceneName       = snapshot.SceneName;
+        m_GameObjectIndex = snapshot.GameObjectIndex;
+        RefreshAfterLoad();
+        return restored;
+    }
+
+    void SceneManager::RefreshAfterLoad()
+    {
         for (auto entity : m_TransformSystem.GetEntities())
             m_EventBus.Publish(TransformChangedEvent{ entity });
         m_MeshSystem.Update(m_ECS, m_FileSystem);
         m_RenderSystem.UpdateSystem(m_ECS);
-        return loaded;
     }
 
     bool SceneManager::SaveScene(const std::string& filePath)
