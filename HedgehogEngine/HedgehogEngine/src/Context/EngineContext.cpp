@@ -33,6 +33,7 @@
 
 #include "Logger/api/Logger.hpp"
 
+#include <algorithm>
 #include <cassert>
 #include <filesystem>
 
@@ -60,6 +61,14 @@ namespace HedgehogEngine
 
     EngineContext::~EngineContext()
     {
+        // Systems hear that play ends, but the scene is going away, so it is not restored.
+        if (m_PlayState != PlayState::Edit)
+            m_ECS.NotifyPlayStop();
+
+        // Tearing down the ECS runs no removal callbacks, so close the scripts still open.
+        const std::vector<ECS::Entity> scripted = m_ScriptSystem->GetEntities();
+        for (ECS::Entity entity : scripted)
+            m_ScriptSystem->ClearScriptComponent(entity, m_ECS);
     }
 
     void EngineContext::InitFileSystem()
@@ -93,12 +102,19 @@ namespace HedgehogEngine
         m_ECS.RegisterComponent<ScriptComponent>();
         m_ECS.RegisterComponent<CameraComponent>();
 
+        // Closes a script's lua_State whenever its component goes: removal, entity deletion,
+        // a scene load, or Stop restoring the Play snapshot.
+        m_ECS.SetComponentRemovedCallback<ScriptComponent>([](ECS::Entity, ScriptComponent& script)
+        {
+            ScriptSystem::ReleaseScript(script);
+        });
+
         m_TransformSystem = m_ECS.RegisterSystem<TransformSystem>();
         m_HierarchySystem = m_ECS.RegisterSystem<HierarchySystem>();
         m_MeshSystem      = m_ECS.RegisterSystem<MeshSystem>();
         m_LightSystem     = m_ECS.RegisterSystem<LightSystem>();
         m_RenderSystem    = m_ECS.RegisterSystem<RenderSystem>();
-        m_ScriptSystem    = m_ECS.RegisterSystem<ScriptSystem>();
+        m_ScriptSystem    = m_ECS.RegisterSystem<ScriptSystem>(m_EventBus);
         m_CameraSystem    = m_ECS.RegisterSystem<CameraSystem>();
 
         m_TransformSystem->Init(m_EventBus);
@@ -210,13 +226,76 @@ namespace HedgehogEngine
     {
         UpdateCamera(windowContext, aspectRatio, dt);
 
-        // Update order is load-bearing: Script → Transform → Hierarchy → Light
-        m_ScriptSystem->Update(m_ECS, dt, m_EventBus);
+        // Update order is load-bearing: gameplay (Play only) → Transform → Hierarchy → Light.
+        // Transform, Hierarchy and Light run in every mode, so edits show in Edit mode too.
+        UpdatePlayMode(dt);
         m_TransformSystem->Update(m_ECS, m_EventBus);
         m_HierarchySystem->Update(m_ECS, m_EventBus);
         m_LightSystem->Update(m_ECS);
 
         m_ResourceCatalog.Update(*m_RenderSystem, *m_MeshSystem);
+    }
+
+    bool EngineContext::Play()
+    {
+        if (m_PlayState != PlayState::Edit)
+            return false;
+
+        m_PlaySnapshot = m_SceneManager->CaptureSnapshot();
+        ResetFixedStepClock(m_Clock);
+        m_PlayState = PlayState::Playing;
+        m_ECS.NotifyPlayStart();
+        return true;
+    }
+
+    bool EngineContext::Pause()
+    {
+        if (m_PlayState != PlayState::Playing)
+            return false;
+
+        m_PlayState = PlayState::Paused;
+        m_ECS.NotifyPlayPause();
+        return true;
+    }
+
+    bool EngineContext::Resume()
+    {
+        if (m_PlayState != PlayState::Paused)
+            return false;
+
+        m_PlayState = PlayState::Playing;
+        m_ECS.NotifyPlayResume();
+        return true;
+    }
+
+    bool EngineContext::Stop()
+    {
+        if (m_PlayState == PlayState::Edit)
+            return false;
+
+        m_PlayState = PlayState::Edit;
+        m_ECS.NotifyPlayStop();
+        if (m_PlaySnapshot && !m_SceneManager->RestoreSnapshot(*m_PlaySnapshot))
+            LOGERROR("EngineContext::Stop: the scene could not be restored to its state before Play.");
+        m_PlaySnapshot.reset();
+        return true;
+    }
+
+    PlayState EngineContext::GetPlayState() const { return m_PlayState; }
+
+    FixedStepClock&       EngineContext::GetFixedStepClock()       { return m_Clock; }
+    const FixedStepClock& EngineContext::GetFixedStepClock() const { return m_Clock; }
+
+    void EngineContext::UpdatePlayMode(float dt)
+    {
+        if (m_PlayState != PlayState::Playing)
+            return;
+
+        const uint32_t steps = AdvanceFixedStepClock(m_Clock, dt);
+        for (uint32_t step = 0; step < steps; ++step)
+            m_ECS.RunFixedUpdate(m_Clock.FixedDeltaTime);
+        // Scaled like the fixed steps; a negative scale counts as 0, as the clock treats it.
+        m_ECS.RunUpdate(std::max(dt * m_Clock.TimeScale, 0.0f));
     }
 
     ResourceCatalog& EngineContext::GetResourceCatalog()             { return m_ResourceCatalog; }

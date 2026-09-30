@@ -4,6 +4,7 @@
 #include "HedgehogEngine/api/Events/EventBus.hpp"
 #include "HedgehogEngine/api/Resource/ResourceCatalog.hpp"
 #include "HedgehogEngine/api/Scene/SceneManager.hpp"
+#include "HedgehogEngine/api/Time/FixedStepClock.hpp"
 
 #include "ECS/api/ECS.hpp"
 #include "ECS/api/Entity.hpp"
@@ -11,6 +12,7 @@
 #include "FileSystem/api/FileSystemManager.hpp"
 
 #include <memory>
+#include <optional>
 
 namespace HedgehogSettings
 {
@@ -35,6 +37,15 @@ namespace HedgehogEngine
     class ScriptSystem;
     class CameraSystem;
 
+    // Edit: gameplay does not run. Playing: every frame runs the fixed steps and the update.
+    // Paused: nothing runs, and the scene waits to be resumed or stopped.
+    enum class PlayState
+    {
+        Edit,
+        Playing,
+        Paused
+    };
+
     class EngineContext
     {
     public:
@@ -42,6 +53,27 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API ~EngineContext();
 
         HEDGEHOG_ENGINE_API void UpdateContext(WindowContext& windowContext, float aspectRatio, float dt);
+
+        // Play mode. EngineContext owns the state, the scene snapshot and the clock; the ECS
+        // only forwards the events to its systems. Each call returns false and does nothing
+        // in the wrong state.
+        //   Play   (from Edit):            snapshot the scene, reset the clock, OnPlayStart.
+        //   Pause  (from Playing):         OnPlayPause.
+        //   Resume (from Paused):          OnPlayResume.
+        //   Stop   (from Playing/Paused):  OnPlayStop in reverse order, then restore the snapshot.
+        HEDGEHOG_ENGINE_API bool Play();
+        HEDGEHOG_ENGINE_API bool Pause();
+        HEDGEHOG_ENGINE_API bool Resume();
+        HEDGEHOG_ENGINE_API bool Stop();
+
+        [[nodiscard]] HEDGEHOG_ENGINE_API PlayState GetPlayState() const;
+        [[nodiscard]] HEDGEHOG_ENGINE_API FixedStepClock&       GetFixedStepClock();
+        [[nodiscard]] HEDGEHOG_ENGINE_API const FixedStepClock& GetFixedStepClock() const;
+
+        // One frame of gameplay, only while Playing: the clock's fixed steps of OnFixedUpdate,
+        // then one OnUpdate with the scaled frame time. UpdateContext calls it; it is public
+        // so tests can drive frames without a window.
+        HEDGEHOG_ENGINE_API void UpdatePlayMode(float dt);
 
         HEDGEHOG_ENGINE_API ResourceCatalog&       GetResourceCatalog();
         HEDGEHOG_ENGINE_API const ResourceCatalog& GetResourceCatalog() const;
@@ -98,5 +130,9 @@ namespace HedgehogEngine
         // Constructed after ECS/systems/component-registry are ready (it creates the scene root
         // and needs live system references) — see EngineContext.cpp for the ordering.
         std::unique_ptr<SceneManager> m_SceneManager;
+
+        PlayState                    m_PlayState = PlayState::Edit;
+        FixedStepClock               m_Clock;
+        std::optional<SceneSnapshot> m_PlaySnapshot;
     };
 }
