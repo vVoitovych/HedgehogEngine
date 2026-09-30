@@ -157,7 +157,7 @@ namespace Editor
         const float menuH = ImGui::GetFrameHeight();
 
         m_DockSystem.Draw(
-            [this]() { DrawToolbarContent(); },
+            [this, &context]() { DrawToolbarContent(context); },
             [this, &context](PanelId panel) { DrawPanelContent(panel, context); },
             menuH);
 
@@ -264,7 +264,9 @@ namespace Editor
 
         if (ImGui::BeginMenu("File"))
         {
-            if (ImGui::MenuItem("New"))
+            // Scene files change only in Edit: Stop would overwrite whatever they loaded.
+            const bool editing = engineContext.GetSimulation().IsEditing();
+            if (ImGui::MenuItem("New", nullptr, false, editing))
             {
                 engineContext.GetSceneManager().ResetScene();
                 m_SelectedEntity.reset();
@@ -275,7 +277,7 @@ namespace Editor
                 if (newName != nullptr)
                     engineContext.GetSceneManager().SetSceneName(newName);
             }
-            if (ImGui::MenuItem("Open"))
+            if (ImGui::MenuItem("Open", nullptr, false, editing))
             {
                 char* path = DialogueWindows::SceneOpenDialogue();
                 if (path != nullptr)
@@ -287,7 +289,7 @@ namespace Editor
                     }
                 }
             }
-            if (ImGui::MenuItem("Save"))
+            if (ImGui::MenuItem("Save", nullptr, false, editing))
             {
                 char* path = DialogueWindows::SceneSaveDialogue();
                 if (path != nullptr)
@@ -406,44 +408,54 @@ namespace Editor
 
     // ─── Toolbar ─────────────────────────────────────────────────────────────
 
-    void EditorGui::DrawToolbarContent()
+    void EditorGui::DrawToolbarContent(HedgehogEngine::Engine& context)
     {
-        const bool isEdit  = (m_EditorMode == EditorMode::Edit);
-        const bool isPlay  = (m_EditorMode == EditorMode::Play);
-        const bool isPause = (m_EditorMode == EditorMode::Pause);
+        auto&                                 engineContext = context.GetEngineContext();
+        HedgehogEngine::Simulation&           simulation    = engineContext.GetSimulation();
+        const HedgehogEngine::SimulationState state         = simulation.GetState();
+
+        const bool isEdit  = (state == HedgehogEngine::SimulationState::Edit);
+        const bool isPlay  = (state == HedgehogEngine::SimulationState::Playing);
+        const bool isPause = (state == HedgehogEngine::SimulationState::Paused);
 
         if (isPlay)  ImGui::BeginDisabled();
         if (ImGui::Button("  Play  "))
-            m_EditorMode = EditorMode::Play;
+            simulation.Play();
         if (isPlay)  ImGui::EndDisabled();
 
         ImGui::SameLine();
 
         if (isEdit)  ImGui::BeginDisabled();
         if (ImGui::Button(isPause ? " Resume " : "  Pause  "))
-            m_EditorMode = isPause ? EditorMode::Play : EditorMode::Pause;
+        {
+            if (isPause)
+                simulation.Resume();
+            else
+                simulation.Pause();
+        }
         if (isEdit)  ImGui::EndDisabled();
 
         ImGui::SameLine();
 
         if (isEdit)  ImGui::BeginDisabled();
         if (ImGui::Button("  Stop  "))
-            m_EditorMode = EditorMode::Edit;
+        {
+            simulation.Stop();
+            // The restored scene keeps its ids, but an entity made during Play is gone.
+            if (m_SelectedEntity && !engineContext.GetECS().IsAlive(*m_SelectedEntity))
+                m_SelectedEntity.reset();
+        }
         if (isEdit)  ImGui::EndDisabled();
 
         ImGui::SameLine();
         ImGui::Text("|");
         ImGui::SameLine();
 
-        const char* modeText = [this]() -> const char*
-        {
-            switch (m_EditorMode)
-            {
-            case EditorMode::Play:  return "PLAY";
-            case EditorMode::Pause: return "PAUSE";
-            default:                return "EDIT";
-            }
-        }();
+        const char* modeText = "EDIT";
+        if (isPlay)
+            modeText = "PLAY";
+        else if (isPause)
+            modeText = "PAUSE";
         ImGui::Text("Mode: %s", modeText);
     }
 

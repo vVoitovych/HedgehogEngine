@@ -19,6 +19,7 @@ extern "C"
 #include "ThirdParty/Lua/lua/lauxlib.h"
 }
 
+#include <cassert>
 #include <filesystem>
 #include <functional>
 #include <string_view>
@@ -28,6 +29,27 @@ namespace HedgehogEngine
 namespace
 {
     const std::string s_BaseActorScript = "Scripts/Base/ActorScript.lua";
+
+    // Every lua_State is opened and closed through these two, so the count of open
+    // states is exact and a leak shows up as a count that does not return to zero.
+    int s_OpenLuaStates = 0;
+
+    lua_State* NewLuaState()
+    {
+        lua_State* state = luaL_newstate();
+        if (state != nullptr)
+            ++s_OpenLuaStates;
+        return state;
+    }
+
+    void CloseLuaState(lua_State*& state)
+    {
+        if (state == nullptr)
+            return;
+        lua_close(state);
+        state = nullptr;
+        --s_OpenLuaStates;
+    }
 
     std::string GetFileNameWithoutExtension(const std::string& path)
     {
@@ -111,11 +133,23 @@ namespace
     }
 }
 
-    void ScriptSystem::Update(ECS::ECS& ecs, float dt, EventBus& bus)
+    void ScriptSystem::Init(ECS::ECS& ecs, EventBus& bus)
     {
-        CallOnEnable(ecs, bus);
-        CallUpdate(ecs, dt, bus);
-        CallOnDisable(ecs, bus);
+        m_ECS      = &ecs;
+        m_EventBus = &bus;
+    }
+
+    void ScriptSystem::Update(float deltaTime)
+    {
+        assert(m_ECS != nullptr && m_EventBus != nullptr && "ScriptSystem::Update before Init.");
+        CallOnEnable(*m_ECS, *m_EventBus);
+        CallUpdate(*m_ECS, deltaTime, *m_EventBus);
+        CallOnDisable(*m_ECS, *m_EventBus);
+    }
+
+    int ScriptSystem::GetOpenLuaStateCount()
+    {
+        return s_OpenLuaStates;
     }
 
     void ScriptSystem::ClearScriptComponent(ECS::Entity entity, ECS::ECS& ecs)
@@ -123,8 +157,7 @@ namespace
         auto& component = ecs.GetComponent<ScriptComponent>(entity);
         if (component.m_LuaState != nullptr)
         {
-            lua_close(component.m_LuaState);
-            component.m_LuaState    = nullptr;
+            CloseLuaState(component.m_LuaState);
             component.m_InstanceRef = 0;
         }
     }
@@ -143,14 +176,13 @@ namespace
         auto& component = ecs.GetComponent<ScriptComponent>(entity);
         if (component.m_LuaState != nullptr)
         {
-            lua_close(component.m_LuaState);
-            component.m_LuaState = nullptr;
+            CloseLuaState(component.m_LuaState);
         }
 
         // Strip "assets://" prefix; m_ScriptPath stores the relative path.
         constexpr std::string_view ASSETS_PREFIX = "assets://";
         component.ScriptPath = virtualPath->substr(ASSETS_PREFIX.size());
-        component.m_LuaState   = luaL_newstate();
+        component.m_LuaState   = NewLuaState();
         luaL_openlibs(component.m_LuaState);
 
         auto& transform = ecs.GetComponent<TransformComponent>(entity);
@@ -160,8 +192,7 @@ namespace
         if (!basePhysPath)
         {
             LOGERROR("ScriptSystem::ChangeScript: cannot resolve base actor script path.");
-            lua_close(component.m_LuaState);
-            component.m_LuaState   = nullptr;
+            CloseLuaState(component.m_LuaState);
             component.ScriptPath = "";
             return;
         }
@@ -170,8 +201,7 @@ namespace
         {
             LOGERROR("[Lua Error] ", lua_tostring(component.m_LuaState, -1));
             lua_pop(component.m_LuaState, 1);
-            lua_close(component.m_LuaState);
-            component.m_LuaState   = nullptr;
+            CloseLuaState(component.m_LuaState);
             component.ScriptPath = "";
             return;
         }
@@ -180,8 +210,7 @@ namespace
         {
             LOGERROR("[Lua Error] ", lua_tostring(component.m_LuaState, -1));
             lua_pop(component.m_LuaState, 1);
-            lua_close(component.m_LuaState);
-            component.m_LuaState   = nullptr;
+            CloseLuaState(component.m_LuaState);
             component.ScriptPath = "";
             return;
         }
@@ -194,8 +223,7 @@ namespace
         {
             LOGERROR("[Lua Error] ", lua_tostring(component.m_LuaState, -1));
             lua_pop(component.m_LuaState, 1);
-            lua_close(component.m_LuaState);
-            component.m_LuaState   = nullptr;
+            CloseLuaState(component.m_LuaState);
             component.ScriptPath = "";
             return;
         }
@@ -215,13 +243,12 @@ namespace
 
         if (component.m_LuaState != nullptr)
         {
-            lua_close(component.m_LuaState);
-            component.m_LuaState = nullptr;
+            CloseLuaState(component.m_LuaState);
         }
         if (component.Enable)
             component.NewEnable = true;
 
-        component.m_LuaState = luaL_newstate();
+        component.m_LuaState = NewLuaState();
         luaL_openlibs(component.m_LuaState);
 
         auto& transform = ecs.GetComponent<TransformComponent>(entity);
@@ -231,8 +258,7 @@ namespace
         if (!basePhysPath)
         {
             LOGERROR("ScriptSystem::InitScript: cannot resolve base actor script path.");
-            lua_close(component.m_LuaState);
-            component.m_LuaState   = nullptr;
+            CloseLuaState(component.m_LuaState);
             component.ScriptPath = "";
             return;
         }
@@ -241,8 +267,7 @@ namespace
         {
             LOGERROR("[Lua Error] ", lua_tostring(component.m_LuaState, -1));
             lua_pop(component.m_LuaState, 1);
-            lua_close(component.m_LuaState);
-            component.m_LuaState   = nullptr;
+            CloseLuaState(component.m_LuaState);
             component.ScriptPath = "";
             return;
         }
@@ -251,8 +276,7 @@ namespace
         if (!scriptPhysPath)
         {
             LOGERROR("ScriptSystem::InitScript: cannot resolve script path '", component.ScriptPath, "'.");
-            lua_close(component.m_LuaState);
-            component.m_LuaState   = nullptr;
+            CloseLuaState(component.m_LuaState);
             component.ScriptPath = "";
             return;
         }
@@ -261,8 +285,7 @@ namespace
         {
             LOGERROR("[Lua Error] ", lua_tostring(component.m_LuaState, -1));
             lua_pop(component.m_LuaState, 1);
-            lua_close(component.m_LuaState);
-            component.m_LuaState   = nullptr;
+            CloseLuaState(component.m_LuaState);
             component.ScriptPath = "";
             return;
         }
@@ -275,8 +298,7 @@ namespace
         {
             LOGERROR("[Lua Error] ", lua_tostring(component.m_LuaState, -1));
             lua_pop(component.m_LuaState, 1);
-            lua_close(component.m_LuaState);
-            component.m_LuaState   = nullptr;
+            CloseLuaState(component.m_LuaState);
             component.ScriptPath = "";
             return;
         }
