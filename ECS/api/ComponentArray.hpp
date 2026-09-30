@@ -33,6 +33,11 @@ namespace ECS
             m_RemovedCallback = std::move(callback);
         }
 
+        const RemovedCallback& GetRemovedCallback() const
+        {
+            return m_RemovedCallback;
+        }
+
         void InsertData(Entity entity, T component)
         {
             assert(m_EntityToIndexMap.find(entity) == m_EntityToIndexMap.end() &&

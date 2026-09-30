@@ -83,6 +83,14 @@ namespace ECS
             m_ComponentManager->SetComponentRemovedCallback<T>(std::move(callback));
         }
 
+        // The current removed callback for T (empty if none), so a system can chain it and put
+        // it back later.
+        template<typename T>
+        std::function<void(Entity, T&)> GetComponentRemovedCallback() const
+        {
+            return m_ComponentManager->GetComponentRemovedCallback<T>();
+        }
+
         template<typename T>
         T& GetComponent(Entity entity) const
         {

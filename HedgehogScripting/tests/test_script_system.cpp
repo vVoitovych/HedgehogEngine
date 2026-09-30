@@ -168,15 +168,18 @@ TEST_CASE("ScriptSystem - an OnUpdate error names the entity, the file and line,
     world.Ecs().NotifyPlayStop();
 }
 
-TEST_CASE("ScriptSystem - a disabled or pathless component gets no script")
+TEST_CASE("ScriptSystem - a pathless component gets no script; a disabled one waits without starting")
 {
     EngineWorld world;
     world.WriteScript("Tracer.lua", TRACER);
     (void)world.AddScripted("Scripts/Tracer.lua", false);
     (void)world.AddScripted("");
 
+    LogCapture log;
     world.Ecs().NotifyPlayStart();
-    CHECK(world.Scripts->GetScriptCount() == 0);
+    world.Ecs().RunUpdate(0.25f);
+    CHECK(world.Scripts->GetScriptCount() == 1);
+    CHECK(log.Lines("tracer").empty());
     world.Ecs().NotifyPlayStop();
 }
 
