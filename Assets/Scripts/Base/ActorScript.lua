@@ -7,11 +7,11 @@ function ActorScript:new()
 end
 
 function ActorScript:OnEnable()
-    print("Base enabled")
+    Log.info("Base enabled")
 end
 
 function ActorScript:OnDisable()
-    print("Base disabled")
+    Log.info("Base disabled")
 end
 
 function ActorScript:OnUpdate(dt)

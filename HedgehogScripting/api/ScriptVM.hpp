@@ -20,6 +20,9 @@ namespace HedgehogScripting
     // the file system, the process or the debug library is left. Source is read
     // through the engine's file system, never Lua's own file functions.
     //
+    // Every VM also gives scripts the engine's globals: Vector3 and Quat (HedgehogMath),
+    // and Log.info/warn/error, with print routed to Log.info (src/Bindings/).
+    //
     // Every call is protected: a failure is logged with its chunk name, line and a
     // stack traceback, kept as GetLastError(), and reported by the return value.
     // No Lua or sol2 exception leaves this class.

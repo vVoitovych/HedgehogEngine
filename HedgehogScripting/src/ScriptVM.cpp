@@ -1,5 +1,7 @@
 #include "HedgehogScripting/api/ScriptVM.hpp"
 
+#include "Bindings/Bindings.hpp"
+
 #include "FileSystem/api/FileSystemManager.hpp"
 
 #include "Logger/api/Logger.hpp"
@@ -63,6 +65,9 @@ namespace HedgehogScripting
             const sol::error error = result;
             Fail(std::string("ScriptVM: sandbox setup failed: ") + error.what());
         }
+
+        Bindings::RegisterMath(m_Lua);
+        Bindings::RegisterLog(m_Lua);
     }
 
     std::optional<sol::protected_function> ScriptVM::Load(std::string_view source, const std::string& chunkName)
