@@ -29,8 +29,6 @@ namespace Editor
     class ShaderWindow;
     class RenderGraphEditorWindow;
 
-    enum class EditorMode { Edit, Play, Pause };
-
     // The graphs the editor's own views use (RENDERING.md section 7). The inspector lists them
     // apart from the graphs a scene camera would normally pick.
     inline constexpr const char* SCENE_GRAPH  = "scene";
@@ -93,7 +91,7 @@ namespace Editor
         // ── Panel content (drawn into dock areas) ────────────────────────────
         void DrawPanelContent(PanelId panel, HedgehogEngine::Engine& context);
         void DrawMainMenu(HedgehogEngine::Engine& context);
-        void DrawToolbarContent();
+        void DrawToolbarContent(HedgehogEngine::Engine& context);
         void DrawSceneViewContent();
         void DrawContentPanel(HedgehogEngine::Engine& context);
         // What opening a Content panel file means, by type (EditorGuiContent.cpp): a scene
@@ -155,7 +153,6 @@ namespace Editor
         std::optional<ViewportPoint> m_ScenePick;
 
         std::optional<ECS::Entity>             m_SelectedEntity;
-        EditorMode                             m_EditorMode         = EditorMode::Edit;
         bool                                   m_SettingsWindowOpen = false;
         std::unique_ptr<ConsolePanel>            m_ConsolePanel;
         std::unique_ptr<ContentPanel>            m_ContentPanel;

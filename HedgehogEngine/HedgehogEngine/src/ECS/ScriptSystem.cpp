@@ -111,22 +111,31 @@ namespace
     }
 }
 
-    void ScriptSystem::Update(ECS::ECS& ecs, float dt, EventBus& bus)
+    ScriptSystem::ScriptSystem(EventBus& bus)
+        : m_EventBus(bus)
     {
-        CallOnEnable(ecs, bus);
-        CallUpdate(ecs, dt, bus);
-        CallOnDisable(ecs, bus);
     }
 
-    void ScriptSystem::ClearScriptComponent(ECS::Entity entity, ECS::ECS& ecs)
+    void ScriptSystem::OnUpdate(ECS::ECS& ecs, float deltaTime)
     {
-        auto& component = ecs.GetComponent<ScriptComponent>(entity);
+        CallOnEnable(ecs, m_EventBus);
+        CallUpdate(ecs, deltaTime, m_EventBus);
+        CallOnDisable(ecs, m_EventBus);
+    }
+
+    void ScriptSystem::ReleaseScript(ScriptComponent& component)
+    {
         if (component.m_LuaState != nullptr)
         {
             lua_close(component.m_LuaState);
             component.m_LuaState    = nullptr;
             component.m_InstanceRef = 0;
         }
+    }
+
+    void ScriptSystem::ClearScriptComponent(ECS::Entity entity, ECS::ECS& ecs)
+    {
+        ReleaseScript(ecs.GetComponent<ScriptComponent>(entity));
     }
 
     void ScriptSystem::ChangeScript(ECS::Entity entity, ECS::ECS& ecs, EventBus& bus,
@@ -204,8 +213,9 @@ namespace
         component.Params.clear();
         component.Params = ParseParameters(component.m_LuaState);
 
+        // OnEnable runs on the next played frame, never in Edit mode.
         if (component.Enable)
-            CallMethod(component.m_LuaState, component.m_InstanceRef, "OnEnable");
+            component.NewEnable = true;
     }
 
     void ScriptSystem::InitScript(ECS::Entity entity, ECS::ECS& ecs, EventBus& bus,

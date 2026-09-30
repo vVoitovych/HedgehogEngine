@@ -13,10 +13,18 @@ namespace HedgehogEngine
 {
     class ScriptComponent;
 
+    // Legacy per-entity Lua scripts. Scripts load in any mode, but OnEnable, OnUpdate and
+    // OnDisable run only from the OnUpdate play-mode event, so only while the engine plays.
     class ScriptSystem : public ECS::System
     {
     public:
-        HEDGEHOG_ENGINE_API void Update(ECS::ECS& ecs, float dt, EventBus& bus);
+        HEDGEHOG_ENGINE_API explicit ScriptSystem(EventBus& bus);
+
+        HEDGEHOG_ENGINE_API void OnUpdate(ECS::ECS& ecs, float deltaTime) override;
+
+        // Closes the script's lua_State, if it has one. The engine calls it from the
+        // ScriptComponent removal callback, so a state never outlives its component.
+        HEDGEHOG_ENGINE_API static void ReleaseScript(ScriptComponent& component);
 
         HEDGEHOG_ENGINE_API void ClearScriptComponent(ECS::Entity entity, ECS::ECS& ecs);
         // physicalPath: absolute file-system path chosen by the caller.
@@ -28,6 +36,8 @@ namespace HedgehogEngine
                                             const FS::FileSystemManager& fileSystem);
 
     private:
+        EventBus& m_EventBus;
+
         void CallOnEnable(ECS::ECS& ecs, EventBus& bus);
         void CallUpdate(ECS::ECS& ecs, float dt, EventBus& bus);
         void CallOnDisable(ECS::ECS& ecs, EventBus& bus);

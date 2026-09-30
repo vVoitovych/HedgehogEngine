@@ -17,7 +17,8 @@ project "HedgehogEngineTest"
     {
         "HedgehogEngine",
         "ECS",
-        "HedgehogMath"
+        "HedgehogMath",
+        "FileSystem"
     }
 
     targetdir (BinariesDir)

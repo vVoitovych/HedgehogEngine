@@ -64,7 +64,12 @@ namespace Editor
         switch (request.Type)
         {
         case ContentType::Scene:
-            // As File > Open does.
+            // As File > Open does, and like it only in Edit: Stop would overwrite the load.
+            if (engineContext.GetPlayState() != HedgehogEngine::PlayState::Edit)
+            {
+                LOGWARNING("Stop play mode before opening a scene (", request.VirtualPath, ").");
+                return;
+            }
             if (engineContext.GetSceneManager().LoadScene(physicalPath))
             {
                 RecordLastScene(physicalPath, fileSystem);
@@ -235,12 +240,18 @@ namespace Editor
         const std::string name = std::filesystem::path(m_SceneToOpen ? m_SceneToOpen->VirtualPath : std::string{}).filename().string();
         ImGui::Text("Open the scene '%s'? It replaces the current scene.", name.c_str());
         bool close = false;
+        // Only in Edit, like File > Open: Stop would overwrite the load.
+        const bool editing = context.GetEngineContext().GetPlayState() == HedgehogEngine::PlayState::Edit;
+        if (!editing)
+            ImGui::TextUnformatted("Stop play mode to open a scene.");
+        if (!editing) ImGui::BeginDisabled();
         if (ImGui::Button("Open"))
         {
             if (m_SceneToOpen)
                 OpenContentItem(context, *m_SceneToOpen);
             close = true;
         }
+        if (!editing) ImGui::EndDisabled();
         ImGui::SameLine();
         if (ImGui::Button("Cancel"))
             close = true;
