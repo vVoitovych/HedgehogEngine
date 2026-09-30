@@ -38,7 +38,7 @@ namespace HedgehogScripting
         , m_Classes(m_VM)
         , m_DeprecationWarned(std::make_shared<std::unordered_set<std::string>>())
     {
-        Bindings::RegisterEntity(m_VM.GetState(), m_ECS, m_EventBus);
+        Bindings::RegisterEntity(m_VM.GetState(), m_ECS, m_EventBus, fileSystem);
 
         m_Entities = m_ECS.HasSystem<ScriptedEntities>() ? m_ECS.GetSystem<ScriptedEntities>()
                                                          : m_ECS.RegisterSystem<ScriptedEntities>();

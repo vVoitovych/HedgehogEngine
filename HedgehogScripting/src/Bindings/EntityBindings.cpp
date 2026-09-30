@@ -19,17 +19,6 @@ namespace HedgehogScripting::Bindings
 
     namespace
     {
-        std::string Describe(const EntityHandle& handle)
-        {
-            return "Entity " + std::to_string(handle.Id) + " (generation " + std::to_string(handle.Generation) + ")";
-        }
-
-        void RequireValid(const ECS::ECS& ecs, const EntityHandle& handle)
-        {
-            if (!IsValid(ecs, handle))
-                throw std::runtime_error(Describe(handle) + " no longer exists");
-        }
-
         ECS::HierarchyComponent* FindHierarchy(ECS::ECS& ecs, const EntityHandle& handle)
         {
             RequireValid(ecs, handle);
@@ -38,9 +27,9 @@ namespace HedgehogScripting::Bindings
             return &ecs.GetComponent<ECS::HierarchyComponent>(handle.Id);
         }
 
-        void RegisterEntityType(sol::state& lua, ECS::ECS& ecs)
+        sol::usertype<EntityHandle> RegisterEntityType(sol::state& lua, ECS::ECS& ecs)
         {
-            lua.new_usertype<EntityHandle>(
+            return lua.new_usertype<EntityHandle>(
                 "Entity", sol::no_constructor,
 
                 "id", sol::readonly_property([](const EntityHandle& e) { return e.Id; }),
@@ -81,7 +70,7 @@ namespace HedgehogScripting::Bindings
 
                 sol::meta_function::equal_to,
                 [](const EntityHandle& a, const EntityHandle& b) { return a.Id == b.Id && a.Generation == b.Generation; },
-                sol::meta_function::to_string, [](const EntityHandle& e) { return Describe(e); });
+                sol::meta_function::to_string, [](const EntityHandle& e) { return DescribeEntity(e); });
         }
 
         void RegisterTransformType(sol::state& lua, ECS::ECS& ecs, HedgehogEngine::EventBus& eventBus)
@@ -145,7 +134,7 @@ namespace HedgehogScripting::Bindings
                     }),
 
                 sol::meta_function::to_string,
-                [](const TransformHandle& t) { return "Transform of " + Describe(t.Entity); });
+                [](const TransformHandle& t) { return "Transform of " + DescribeEntity(t.Entity); });
         }
     }
 
@@ -160,17 +149,30 @@ namespace HedgehogScripting::Bindings
                ecs.GetGeneration(handle.Id) == handle.Generation;
     }
 
+    std::string DescribeEntity(const EntityHandle& handle)
+    {
+        return "Entity " + std::to_string(handle.Id) + " (generation " + std::to_string(handle.Generation) + ")";
+    }
+
+    void RequireValid(const ECS::ECS& ecs, const EntityHandle& handle)
+    {
+        if (!IsValid(ecs, handle))
+            throw std::runtime_error(DescribeEntity(handle) + " no longer exists");
+    }
+
     TransformComponent& GetTransform(ECS::ECS& ecs, const EntityHandle& handle)
     {
         RequireValid(ecs, handle);
         if (!ecs.HasComponent<TransformComponent>(handle.Id))
-            throw std::runtime_error(Describe(handle) + " has no transform");
+            throw std::runtime_error(DescribeEntity(handle) + " has no transform");
         return ecs.GetComponent<TransformComponent>(handle.Id);
     }
 
-    void RegisterEntity(sol::state& lua, ECS::ECS& ecs, HedgehogEngine::EventBus& eventBus)
+    void RegisterEntity(sol::state& lua, ECS::ECS& ecs, HedgehogEngine::EventBus& eventBus,
+                        const FS::FileSystemManager& fileSystem)
     {
-        RegisterEntityType(lua, ecs);
+        sol::usertype<EntityHandle> entityType = RegisterEntityType(lua, ecs);
         RegisterTransformType(lua, ecs, eventBus);
+        RegisterComponents(lua, entityType, ecs, fileSystem);
     }
 }
