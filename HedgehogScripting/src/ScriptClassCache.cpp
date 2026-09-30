@@ -193,6 +193,16 @@ namespace HedgehogScripting
         }
     }
 
+    std::optional<sol::table> ScriptClassCache::GetDefaults(const std::string& scriptPath)
+    {
+        if (!m_BaseLoaded)
+            return std::nullopt;
+        const ScriptClass* scriptClass = FindOrCompile(scriptPath, "(describe)");
+        if (scriptClass == nullptr)
+            return std::nullopt;
+        return scriptClass->Defaults;
+    }
+
     bool ScriptClassCache::IsBaseLoaded() const
     {
         return m_BaseLoaded;
