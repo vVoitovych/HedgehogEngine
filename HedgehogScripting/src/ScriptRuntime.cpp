@@ -1,8 +1,9 @@
 #include "HedgehogScripting/api/ScriptRuntime.hpp"
 
+#include "Bindings/EntityBindings.hpp"
+
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
 #include "HedgehogEngine/api/Events/EventBus.hpp"
-#include "HedgehogEngine/api/Events/TransformEvents.hpp"
 
 #include "ECS/api/components/Hierarchy.hpp"
 
@@ -35,7 +36,10 @@ namespace HedgehogScripting
         , m_EventBus(eventBus)
         , m_VM(fileSystem)
         , m_Classes(m_VM)
+        , m_DeprecationWarned(std::make_shared<std::unordered_set<std::string>>())
     {
+        Bindings::RegisterEntity(m_VM.GetState(), m_ECS, m_EventBus);
+
         m_Entities = m_ECS.HasSystem<ScriptedEntities>() ? m_ECS.GetSystem<ScriptedEntities>()
                                                          : m_ECS.RegisterSystem<ScriptedEntities>();
         ECS::Signature signature;
@@ -195,39 +199,12 @@ namespace HedgehogScripting
         if (!instance)
             return;
 
-        AddLegacyBindings(*instance, entity);
+        const Bindings::EntityHandle handle = Bindings::MakeEntityHandle(m_ECS, entity);
+        instance->GetSelf()["entity"]       = handle;
+        Bindings::AddLegacyFunctions(instance->GetEnvironment(), m_ECS, m_EventBus, handle,
+                                     instance->GetScriptPath(), m_DeprecationWarned);
         ApplyParams(*instance, component, false);
         m_Running.emplace(entity, RunningScript{ std::move(*instance) });
-    }
-
-    void ScriptRuntime::AddLegacyBindings(ScriptInstance& instance, ECS::Entity entity)
-    {
-        sol::table environment = instance.GetEnvironment();
-
-        // A vector field of the entity's transform as a {x, y, z} table, or nil if it has none.
-        auto get = [this, entity](HM::Vector3 TransformComponent::*field, sol::this_state state) -> sol::object
-        {
-            if (!m_ECS.IsAlive(entity) || !m_ECS.HasComponent<TransformComponent>(entity))
-                return sol::lua_nil;
-            const HM::Vector3& value = m_ECS.GetComponent<TransformComponent>(entity).*field;
-            sol::state_view    lua(state);
-            return lua.create_table_with("x", value.x(), "y", value.y(), "z", value.z());
-        };
-        auto set = [this, entity](HM::Vector3 TransformComponent::*field, const sol::table& value)
-        {
-            if (!m_ECS.IsAlive(entity) || !m_ECS.HasComponent<TransformComponent>(entity))
-                return;
-            HM::Vector3& target = m_ECS.GetComponent<TransformComponent>(entity).*field;
-            target.x() = value.get_or("x", target.x());
-            target.y() = value.get_or("y", target.y());
-            target.z() = value.get_or("z", target.z());
-            m_EventBus.Publish(HedgehogEngine::TransformChangedEvent{ entity });
-        };
-
-        environment.set_function("GetPosition", [get](sol::this_state s) { return get(&TransformComponent::Position, s); });
-        environment.set_function("GetRotation", [get](sol::this_state s) { return get(&TransformComponent::Rotation, s); });
-        environment.set_function("SetPosition", [set](const sol::table& v) { set(&TransformComponent::Position, v); });
-        environment.set_function("SetRotation", [set](const sol::table& v) { set(&TransformComponent::Rotation, v); });
     }
 
     void ScriptRuntime::ApplyParams(ScriptInstance& instance, ScriptComponent& component, bool onlyDirty)

@@ -10,6 +10,8 @@
 
 #include "FileSystem/api/PathUtils.hpp"
 
+#include "test_log_capture.hpp"
+
 #include <memory>
 
 using namespace HedgehogEngine;
@@ -50,7 +52,7 @@ namespace
     };
 }
 
-TEST_CASE("Engine scripts - Default.yaml's object turns only in Play, at its saved speed and direction")
+TEST_CASE("Engine scripts - Default.yaml's object turns only in Play, at its saved speed and direction, through the Entity API")
 {
     PlayableEngine engine;
     engine.LoadDefaultScene();
@@ -61,9 +63,13 @@ TEST_CASE("Engine scripts - Default.yaml's object turns only in Play, at its sav
     CHECK(engine.RotationZ(DEFAULT_SCENE_SPINNER) == start); // Edit
     CHECK(engine.Runtime->GetInstanceCount() == 0u);
 
+    LogCapture capture;
     simulation.Play();
     for (int i = 0; i < 10; ++i)
         simulation.Tick(STEP);
+    // PlayerScript uses the Entity API, not the deprecated globals.
+    CHECK(capture.CountLines("deprecated") == 0);
+    CHECK(capture.CountLines("[ERROR]") == 0);
     // clockWise false turns it backwards, at the saved 7.45 rather than the script's 1.0.
     const float played = engine.RotationZ(DEFAULT_SCENE_SPINNER);
     CHECK(played == doctest::Approx(start - 10.0f * 7.45f * STEP).epsilon(1e-4));
