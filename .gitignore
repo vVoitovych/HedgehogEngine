@@ -622,6 +622,7 @@ Binaries
 /EcsSerialization/tests/EcsSerializationTest.vcxproj*
 /HedgehogExtract/HedgehogExtract.vcxproj*
 /HedgehogExtract/tests/HedgehogExtractTest.vcxproj*
+/HedgehogEngine/HedgehogEngine/tests/HedgehogEngineTest.vcxproj*
 /ThirdParty/Tracy/Tracy.vcxproj
 /HedgehogEngine/RHIImGui/*.vcxproj*
 
