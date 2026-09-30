@@ -21,6 +21,11 @@ namespace Renderer
     class Renderer;
 }
 
+namespace HedgehogScripting
+{
+    class ScriptRuntime;
+}
+
 namespace Editor
 {
     class EditorGui;
@@ -61,6 +66,9 @@ namespace Editor
         HedgehogEngine::WindowMode m_WindowMode;
 
         std::unique_ptr<HedgehogEngine::Engine>   m_Context;
+        // Plays the scene's scripts. Declared after the engine: the Simulation holds it too,
+        // and the last owner must go while the ECS it touches still exists.
+        std::shared_ptr<HedgehogScripting::ScriptRuntime> m_ScriptRuntime;
         std::unique_ptr<Renderer::Renderer> m_Renderer;
         std::unique_ptr<ImGuiLayer>         m_ImGui;
         std::unique_ptr<EditorGui>          m_EditorGui;

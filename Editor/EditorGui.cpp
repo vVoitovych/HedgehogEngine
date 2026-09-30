@@ -26,7 +26,6 @@
 #include "HedgehogEngine/api/ECS/systems/MeshSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/RenderSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/LightSystem.hpp"
-#include "HedgehogEngine/api/ECS/systems/ScriptSystem.hpp"
 #include "HedgehogEngine/api/ECS/components/LightComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RenderComponent.hpp"
@@ -984,7 +983,6 @@ namespace Editor
     {
         auto& engineContext = context.GetEngineContext();
         auto& ecs           = engineContext.GetECS();
-        auto* scriptSystem  = engineContext.GetScriptSystem();
         auto  entity        = m_SelectedEntity.value();
 
         if (!ecs.HasComponent<HedgehogEngine::ScriptComponent>(entity))
@@ -1008,13 +1006,15 @@ namespace Editor
             AcceptSelectionDrop(ContentType::Script);
         }
 
+        // A running instance keeps the script it started with, so the script changes only in Edit.
+        ImGui::BeginDisabled(!engineContext.GetSimulation().IsEditing());
         if (ImGui::Button("Load script"))
         {
             std::string scriptPath = DialogueWindows::ScriptChooseDialogue();
             if (!scriptPath.empty())
-                scriptSystem->ChangeScript(entity, ecs, engineContext.GetEventBus(),
-                                           engineContext.GetFileSystem(), scriptPath);
+                (void)AssignScript(context, entity, scriptPath);
         }
+        ImGui::EndDisabled();
 
         if (!component.Params.empty())
             ImGui::SeparatorText("Parameters");

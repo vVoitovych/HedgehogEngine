@@ -55,10 +55,9 @@ namespace HedgehogEngine
 
         m_ResourceCatalog.Update(*m_RenderSystem, *m_MeshSystem);
 
-        // The legacy script system is the first gameplay system: it runs only in Play.
-        m_ScriptSystem->Init(m_ECS, m_EventBus);
+        // Gameplay systems, the script runtime among them, are added by the application
+        // (the Editor, game mode), which sits above the engine.
         m_Simulation = std::make_unique<Simulation>(*m_SceneManager);
-        m_Simulation->AddSystem(m_ScriptSystem);
 
         m_Settings = std::make_unique<HedgehogSettings::Settings>();
     }
@@ -194,7 +193,8 @@ namespace HedgehogEngine
                 }
                 out << YAML::EndMap;
             },
-            [scriptSystem = m_ScriptSystem, this](ECS::ECS& ecs, ECS::Entity e, const YAML::Node& node)
+            // Scripts are data here: they get a Lua instance only on Play, from the script runtime.
+            [](ECS::ECS& ecs, ECS::Entity e, const YAML::Node& node)
             {
                 EcsSerialization::ComponentSerializerRegistry::DeserializeWithVisit<ScriptComponent>(ecs, e, node);
                 ScriptComponent& script = ecs.GetComponent<ScriptComponent>(e);
@@ -216,7 +216,6 @@ namespace HedgehogEngine
                         script.Params[paramName] = { type, value, false };
                     }
                 }
-                scriptSystem->InitScript(e, ecs, m_EventBus, m_FileSystem);
             },
             [](const ECS::ECS& ecs, ECS::Entity e) { return ecs.HasComponent<ScriptComponent>(e); }
         );

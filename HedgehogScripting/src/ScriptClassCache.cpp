@@ -95,14 +95,28 @@ namespace HedgehogScripting
             return;
         }
 
+        LoadBase();
+    }
+
+    void ScriptClassCache::LoadBase()
+    {
         // The base script defines ActorScript in the base environment, where every
         // class file's lookups end up.
+        m_BaseLoaded = false;
+        if (!m_Proxy.valid())
+            return;
         const std::optional<sol::protected_function> base = m_VM.LoadFile(m_BaseScriptPath);
         if (!base)
             return;
         ++m_CompileCount;
         sol::set_environment(m_BaseEnvironment, *base);
         m_BaseLoaded = m_VM.Call(*base);
+    }
+
+    void ScriptClassCache::Reload()
+    {
+        m_Classes.clear();
+        LoadBase();
     }
 
     std::optional<ScriptInstance> ScriptClassCache::CreateInstance(const std::string& scriptPath,

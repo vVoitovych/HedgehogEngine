@@ -15,7 +15,7 @@
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
 #include "HedgehogEngine/api/ECS/systems/MeshSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/RenderSystem.hpp"
-#include "HedgehogEngine/api/ECS/systems/ScriptSystem.hpp"
+#include "HedgehogScripting/api/ScriptRuntime.hpp"
 #include "HedgehogEngine/api/Engine.hpp"
 #include "HedgehogEngine/api/Resource/ResourceCatalog.hpp"
 #include "HedgehogEngine/api/EngineContext.hpp"
@@ -149,10 +149,8 @@ namespace Editor
             break;
         }
         case ContentType::Script:
-            if (!ecs.HasComponent<HedgehogEngine::ScriptComponent>(entity))
+            if (!ecs.HasComponent<HedgehogEngine::ScriptComponent>(entity) || !AssignScript(context, entity, physicalPath))
                 return false;
-            engineContext.GetScriptSystem()->ChangeScript(entity, ecs, engineContext.GetEventBus(), engineContext.GetFileSystem(),
-                                                          physicalPath);
             break;
         case ContentType::RenderGraph:
         {
@@ -228,6 +226,30 @@ namespace Editor
 
         m_SelectedEntity = entity;
         LOGINFO("Content: created '", ecs.GetComponent<ECS::HierarchyComponent>(entity).Name, "' from '", mesh.VirtualPath, "'.");
+    }
+
+    bool EditorGui::AssignScript(HedgehogEngine::Engine& context, ECS::Entity entity, const std::string& physicalPath)
+    {
+        auto& engineContext = context.GetEngineContext();
+        if (!engineContext.GetSimulation().IsEditing())
+        {
+            LOGWARNING("Stop the simulation before changing a script (", physicalPath, ").");
+            return false;
+        }
+        const std::optional<std::string> virtualPath = engineContext.GetFileSystem().ToVirtualPath(physicalPath);
+        if (!virtualPath || virtualPath->rfind(ASSETS_PREFIX, 0) != 0)
+        {
+            LOGERROR("A script must be under assets:// (", physicalPath, ").");
+            return false;
+        }
+
+        // Only the path and the parameters change: no script code runs until Play.
+        auto& script      = engineContext.GetECS().GetComponent<HedgehogEngine::ScriptComponent>(entity);
+        script.ScriptPath = virtualPath->substr(ASSETS_PREFIX.size());
+        script.Params.clear();
+        if (m_ScriptRuntime != nullptr)
+            script.Params = m_ScriptRuntime->DescribeScript(script.ScriptPath);
+        return true;
     }
 
     void EditorGui::DrawOpenSceneDropPopup(HedgehogEngine::Engine& context)

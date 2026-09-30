@@ -10,6 +10,8 @@
 
 #include "ECS/api/ECS.hpp"
 
+#include "FileSystem/api/PathUtils.hpp"
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -58,11 +60,6 @@ namespace
         context.GetScriptSystem()->InitScript(entity, context.GetECS(), context.GetEventBus(),
                                               context.GetFileSystem());
         return entity;
-    }
-
-    float RotationZ(EngineContext& context, ECS::Entity entity)
-    {
-        return context.GetECS().GetComponent<TransformComponent>(entity).Rotation.z();
     }
 }
 
@@ -168,28 +165,31 @@ TEST_CASE("Simulation - Stop restores the scene as it was on Play")
         CHECK_FALSE(ecs.IsAlive(spawned));
 }
 
-TEST_CASE("Simulation - a script runs only in Play, freezes on Pause and is undone by Stop")
+TEST_CASE("Scripts get no lua_State from the engine: not on scene load, not on Stop")
 {
-    EngineContext context;
-    Simulation&   simulation = context.GetSimulation();
-    const ECS::Entity player = CreateScriptedObject(context);
-    const float       start  = RotationZ(context, player);
+    // Scripts run only through the script runtime, which the application adds on Play.
+    const int baseline = ScriptSystem::GetOpenLuaStateCount();
+    {
+        EngineContext context;
+        Simulation&   simulation = context.GetSimulation();
 
-    context.GetSimulation().Tick(0.5f);
-    CHECK(RotationZ(context, player) == start); // Edit: no gameplay
+        const ECS::Entity scripted = context.GetSceneManager().CreateGameObject();
+        ScriptComponent   script;
+        script.ScriptPath = "Scripts/PlayerScript.lua";
+        context.GetECS().AddComponent(scripted, script);
 
-    simulation.Play();
-    for (int i = 0; i < 10; ++i)
+        simulation.Play();
         simulation.Tick(STEP);
-    const float played = RotationZ(context, player);
-    CHECK(played != start);
+        simulation.Stop(); // restores the snapshot through the scene deserializer
+        CHECK(ScriptSystem::GetOpenLuaStateCount() == baseline);
+        REQUIRE(context.GetECS().HasComponent<ScriptComponent>(scripted));
+        CHECK(context.GetECS().GetComponent<ScriptComponent>(scripted).ScriptPath == "Scripts/PlayerScript.lua");
 
-    simulation.Pause();
-    simulation.Tick(0.5f);
-    CHECK(RotationZ(context, player) == played);
-
-    simulation.Stop();
-    CHECK(RotationZ(context, player) == start);
+        const auto scene = FS::GetEngineRootDirectory() / "Assets" / "Scenes" / "Default.yaml";
+        REQUIRE(context.GetSceneManager().LoadScene(scene.string()));
+        CHECK(ScriptSystem::GetOpenLuaStateCount() == baseline);
+    }
+    CHECK(ScriptSystem::GetOpenLuaStateCount() == baseline);
 }
 
 TEST_CASE("ScriptComponent removal closes the script's lua_State exactly once")
@@ -212,30 +212,5 @@ TEST_CASE("ScriptComponent removal closes the script's lua_State exactly once")
         REQUIRE(ScriptSystem::GetOpenLuaStateCount() == baseline + 1);
     }
     // Destroying the context closes the scripts still open.
-    CHECK(ScriptSystem::GetOpenLuaStateCount() == baseline);
-}
-
-TEST_CASE("50 Play/Stop cycles leave no lua_State open")
-{
-    const int baseline = ScriptSystem::GetOpenLuaStateCount();
-    {
-        EngineContext context;
-        Simulation&   simulation = context.GetSimulation();
-        (void)CreateScriptedObject(context);
-        (void)CreateScriptedObject(context);
-        REQUIRE(ScriptSystem::GetOpenLuaStateCount() == baseline + 2);
-
-        for (int cycle = 0; cycle < 50; ++cycle)
-        {
-            simulation.Play();
-            (void)CreateScriptedObject(context); // made during Play, gone after Stop
-            simulation.Tick(STEP);
-            simulation.Stop();
-            REQUIRE(ScriptSystem::GetOpenLuaStateCount() == baseline + 2);
-        }
-
-        context.GetSceneManager().ResetScene();
-        CHECK(ScriptSystem::GetOpenLuaStateCount() == baseline);
-    }
     CHECK(ScriptSystem::GetOpenLuaStateCount() == baseline);
 }
