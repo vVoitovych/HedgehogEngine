@@ -64,7 +64,7 @@ Loads `Assets/Scenes/Default.yaml`, builds a `Renderer` exactly as the editor do
 Vendor\Binaries\Premake\Windows\premake5.exe --file=Build.lua vs2022
 ```
 
-**CI:** `.github/workflows/ticket-check.yml` fails any PR whose title carries no `HE-<number>` key, and `module-boundaries.yml` runs `Scripts\CheckModuleBoundaries.ps1` (see *Architecture*). There is currently **no build workflow** — Debug/Release builds and the test exes must be run locally before opening a PR (the smoke test is local-only in any case: CI runners have no Vulkan GPU).
+**CI:** `.github/workflows/ticket-check.yml` fails any PR whose title carries no `HE-<number>` key, and `module-boundaries.yml` runs `Scripts\CheckModuleBoundaries.ps1` and its `-SelfTest` (see *Architecture*). There is currently **no build workflow** — Debug/Release builds and the test exes must be run locally before opening a PR (the smoke test is local-only in any case: CI runners have no Vulkan GPU).
 
 ## Performance
 
@@ -100,7 +100,7 @@ Editor (ConsoleApp)            owns ImGui: context, GLFW backend, GUI renderer (
         └── RHI              (static lib) → Vulkan (Volk + VMA), Logger — no ImGui
 ```
 
-`Scripts\CheckModuleBoundaries.ps1` enforces two rules on `#include` strings: no include reaches into another module's `src/`, and nothing under `HedgehogRenderer/` includes `ECS/`, the engine module (`HedgehogEngine/HedgehogEngine/`, `HedgehogEngine/api/`), `imgui.h` or `imgui_impl_*`. It runs first in `RunTests.bat` and in CI (`module-boundaries.yml`).
+`Scripts\CheckModuleBoundaries.ps1` enforces three rules on `#include` strings: no include reaches into another module's `src/`; nothing under `HedgehogRenderer/` includes `ECS/`, the engine module (`HedgehogEngine/HedgehogEngine/`, `HedgehogEngine/api/`), `imgui.h` or `imgui_impl_*`; and nothing under `HedgehogEngine/HedgehogEngine/` (tests included) includes sol2 (`sol/...`) or `HedgehogScripting/...`, the scripting library above it (Lua joins this rule once the legacy script system is deleted). Each include is reported once, however many patterns it matches. `-SelfTest` builds a throwaway tree shaped like the repository, plants one violation of each kind (a cross-module `src/` include, the renderer including the ECS and `imgui.h`, the engine including `sol/` and `HedgehogScripting/`), checks each gives exactly one violation and that the tree passes without them (a `HedgehogScripting` module including sol2 included), and lists each case it caught. `RunTests.bat` runs the check and then the self-test before building, and CI (`module-boundaries.yml`) runs both as separate steps.
 
 **The renderer is being rewritten.** `RENDERING.md` at the repository root is the design: a camera-and-view architecture where a `CameraComponent` carries scene data, a `View` is the render request, and each view owns a render graph. Every frame now renders through it (see *Rendering a frame* below), and the legacy fixed-pass renderer is deleted. Epic [HE-63](https://viktoravoitovych.atlassian.net/browse/HE-63) lands it as 28 sub-1000-line pull requests.
 
