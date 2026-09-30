@@ -189,7 +189,7 @@ TEST_CASE("ScriptClassCache - a missing file or class makes no instance")
     CHECK_FALSE(cache.CreateInstance("assets://Scripts/Nameless.lua", 1, "A").has_value());
 }
 
-TEST_CASE("ScriptClassCache - the shipped ActorScript and PlayerScript load unchanged")
+TEST_CASE("ScriptClassCache - the shipped ActorScript and PlayerScript load, and PlayerScript turns its entity")
 {
     // Mount the real Assets folder, read-only use.
     FS::FileSystemManager fileSystem;
@@ -197,19 +197,18 @@ TEST_CASE("ScriptClassCache - the shipped ActorScript and PlayerScript load unch
     REQUIRE(fs->RegisterPath("assets://", FS::GetEngineRootDirectory() / "Assets"));
     REQUIRE(fileSystem.Register(std::move(fs)));
 
-    ScriptVM vm(fileSystem);
-    // PlayerScript calls the legacy transform bindings; stand-ins record the rotation.
-    REQUIRE(vm.Run("rotationZ = 0\n"
-                   "function GetRotation() return { x = 0, y = 0, z = rotationZ } end\n"
-                   "function SetRotation(r) rotationZ = r.z end\n",
-                   "=bindings"));
-
+    ScriptVM         vm(fileSystem);
     ScriptClassCache cache(vm);
     REQUIRE(cache.IsBaseLoaded());
     std::optional<ScriptInstance> player = cache.CreateInstance("assets://Scripts/PlayerScript.lua", 3, "Player");
     REQUIRE(player.has_value());
 
+    // PlayerScript turns self.entity.transform; a plain table stands in for the entity.
+    REQUIRE(vm.Run("standIn = { transform = { eulerAngles = Vector3(0, 0, 0) } }", "=stand-in"));
+    player->GetSelf()["entity"] = vm.GetState()["standIn"];
+
     CHECK(player->GetEnvironment()["speed"].get<double>() == doctest::Approx(1.0));
     REQUIRE(player->Call("OnUpdate", 0.5f));
+    REQUIRE(vm.Run("rotationZ = standIn.transform.eulerAngles.z", "=read back"));
     CHECK(vm.GetState()["rotationZ"].get<double>() == doctest::Approx(0.5));
 }

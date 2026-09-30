@@ -14,6 +14,7 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace FS
 {
@@ -46,9 +47,12 @@ namespace HedgehogScripting
     // Nothing runs in Edit mode or while paused, because the Simulation calls none of
     // this then. A faulted instance is skipped; the others carry on.
     //
-    // Until scripts get an Entity API, each instance also has the legacy globals
-    // GetPosition/SetPosition/GetRotation/SetRotation for its own entity (the setters
-    // publish TransformChangedEvent), and the component's Params as plain globals.
+    // Each instance's self.entity is an Entity handle to its own entity, with
+    // self.entity.transform for position, rotation and scale (setters publish
+    // TransformChangedEvent, so TransformSystem picks them up the same frame). The
+    // component's Params are plain globals. The legacy globals GetPosition/SetPosition/
+    // GetRotation/SetRotation still work for one epic, with a deprecation warning the
+    // first time each script file uses one.
     //
     // The runtime owns the ECS's ScriptComponent removal callback while it lives,
     // replacing any other; it clears it on destruction.
@@ -88,7 +92,6 @@ namespace HedgehogScripting
         };
 
         void Instantiate(ECS::Entity entity);
-        void AddLegacyBindings(ScriptInstance& instance, ECS::Entity entity);
         void ApplyParams(ScriptInstance& instance, HedgehogEngine::ScriptComponent& component, bool onlyDirty);
         void Destroy(ECS::Entity entity);
         std::string EntityName(ECS::Entity entity) const;
@@ -100,5 +103,7 @@ namespace HedgehogScripting
         std::shared_ptr<ScriptedEntities> m_Entities;
 
         std::unordered_map<ECS::Entity, RunningScript> m_Running;
+        // "<script>|<function>" for each legacy function whose deprecation was logged.
+        std::shared_ptr<std::unordered_set<std::string>> m_DeprecationWarned;
     };
 }
