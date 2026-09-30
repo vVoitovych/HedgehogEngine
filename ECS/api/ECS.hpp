@@ -7,7 +7,6 @@
 
 #include "EcsApi.hpp"
 #include "Entity.hpp"
-#include "PlayState.hpp"
 #include "System.hpp"
 #include "ComponentManager.hpp"
 #include "EntityManager.hpp"
@@ -136,18 +135,13 @@ namespace ECS
             return m_SystemManager->GetSystem<T>();
         }
 
-        // Play state. A transition returns false, and changes nothing, when it does not apply.
-        //   StartPlay: Edit -> Playing, then every system's OnPlayStart in registration order.
-        //   PausePlay: Playing -> Paused.   ResumePlay: Paused -> Playing.
-        //   StopPlay:  Playing or Paused -> Edit, then every OnPlayStop in reverse order.
-        // The ECS knows nothing of scene snapshots or clocks; its owner handles those.
-        ECS_API bool      StartPlay();
-        ECS_API bool      PausePlay();
-        ECS_API bool      ResumePlay();
-        ECS_API bool      StopPlay();
-        ECS_API PlayState GetPlayState() const;
-
-        // Every system's OnFixedUpdate / OnUpdate, in registration order, only while Playing.
+        // Play-mode events, forwarded to every registered system in registration order
+        // (NotifyPlayStop in reverse). The ECS keeps no play state and checks nothing: the caller
+        // that drives play mode decides when each event is due.
+        ECS_API void NotifyPlayStart();
+        ECS_API void NotifyPlayPause();
+        ECS_API void NotifyPlayResume();
+        ECS_API void NotifyPlayStop();
         ECS_API void RunFixedUpdate(float fixedDeltaTime);
         ECS_API void RunUpdate(float deltaTime);
 
@@ -156,7 +150,6 @@ namespace ECS
         std::unique_ptr<EntityManager>    m_EntityManager;
         std::unique_ptr<SystemManager>    m_SystemManager;
 
-        Entity    m_RootEntity{INVALID_ENTITY};
-        PlayState m_PlayState{PlayState::Edit};
+        Entity m_RootEntity{INVALID_ENTITY};
     };
 }

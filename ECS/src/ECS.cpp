@@ -20,7 +20,6 @@ namespace ECS
         m_EntityManager    = std::make_unique<EntityManager>();
         m_SystemManager    = std::make_unique<SystemManager>();
         m_RootEntity       = INVALID_ENTITY;
-        m_PlayState        = PlayState::Edit;
     }
 
     Entity ECS::CreateEntity()
@@ -64,56 +63,33 @@ namespace ECS
         return m_EntityManager->GetGeneration(entity);
     }
 
-    bool ECS::StartPlay()
+    void ECS::NotifyPlayStart()
     {
-        if (m_PlayState != PlayState::Edit)
-            return false;
-        m_PlayState = PlayState::Playing;
         m_SystemManager->ForEachSystem([this](System& system) { system.OnPlayStart(*this); });
-        return true;
     }
 
-    bool ECS::PausePlay()
+    void ECS::NotifyPlayPause()
     {
-        if (m_PlayState != PlayState::Playing)
-            return false;
-        m_PlayState = PlayState::Paused;
-        return true;
+        m_SystemManager->ForEachSystem([this](System& system) { system.OnPlayPause(*this); });
     }
 
-    bool ECS::ResumePlay()
+    void ECS::NotifyPlayResume()
     {
-        if (m_PlayState != PlayState::Paused)
-            return false;
-        m_PlayState = PlayState::Playing;
-        return true;
+        m_SystemManager->ForEachSystem([this](System& system) { system.OnPlayResume(*this); });
     }
 
-    bool ECS::StopPlay()
+    void ECS::NotifyPlayStop()
     {
-        if (m_PlayState == PlayState::Edit)
-            return false;
-        m_PlayState = PlayState::Edit;
         m_SystemManager->ForEachSystemReverse([this](System& system) { system.OnPlayStop(*this); });
-        return true;
-    }
-
-    PlayState ECS::GetPlayState() const
-    {
-        return m_PlayState;
     }
 
     void ECS::RunFixedUpdate(float fixedDeltaTime)
     {
-        if (m_PlayState != PlayState::Playing)
-            return;
         m_SystemManager->ForEachSystem([&](System& system) { system.OnFixedUpdate(*this, fixedDeltaTime); });
     }
 
     void ECS::RunUpdate(float deltaTime)
     {
-        if (m_PlayState != PlayState::Playing)
-            return;
         m_SystemManager->ForEachSystem([&](System& system) { system.OnUpdate(*this, deltaTime); });
     }
 }

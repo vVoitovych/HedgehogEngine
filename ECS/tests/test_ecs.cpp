@@ -503,7 +503,7 @@ TEST_CASE("ECS removed callback - on DestroyEntity every callback still sees the
 }
 
 // ---------------------------------------------------------------------------
-// Systems: construction arguments, registration order, play state and hooks
+// Systems: construction arguments, registration order and play-mode events
 // ---------------------------------------------------------------------------
 
 namespace
@@ -519,8 +519,10 @@ namespace
         {
         }
 
-        void OnPlayStart(ECS::ECS&) override { Log.push_back(Name + ".start"); }
-        void OnPlayStop(ECS::ECS&) override  { Log.push_back(Name + ".stop"); }
+        void OnPlayStart(ECS::ECS&) override  { Log.push_back(Name + ".start"); }
+        void OnPlayPause(ECS::ECS&) override  { Log.push_back(Name + ".pause"); }
+        void OnPlayResume(ECS::ECS&) override { Log.push_back(Name + ".resume"); }
+        void OnPlayStop(ECS::ECS&) override   { Log.push_back(Name + ".stop"); }
         void OnFixedUpdate(ECS::ECS&, float fixedDeltaTime) override
         {
             Log.push_back(Name + ".fixed");
@@ -578,7 +580,7 @@ TEST_CASE("ECS::RegisterSystem - forwards constructor arguments")
     CHECK(ecs.GetSystem<RecordingSystem<1>>().get() == system.get());
 }
 
-TEST_CASE("ECS play state - starts in Edit; hooks run only while Playing, in registration order")
+TEST_CASE("ECS play events - each reaches every system in registration order, stop in reverse")
 {
     ECS::ECS                 ecs = MakeEcs();
     std::vector<std::string> log;
@@ -586,85 +588,46 @@ TEST_CASE("ECS play state - starts in Edit; hooks run only while Playing, in reg
     ecs.RegisterSystem<PlainSystem>();
     auto b = ecs.RegisterSystem<RecordingSystem<2>>("B", log);
 
-    CHECK(ecs.GetPlayState() == ECS::PlayState::Edit);
-    ecs.RunFixedUpdate(0.5f);
-    ecs.RunUpdate(0.5f);
-    CHECK(log.empty());
-
-    REQUIRE(ecs.StartPlay());
-    CHECK(ecs.GetPlayState() == ECS::PlayState::Playing);
+    ecs.NotifyPlayStart();
     ecs.RunFixedUpdate(1.0f / 60.0f);
     ecs.RunUpdate(1.0f / 30.0f);
-    CHECK(log == std::vector<std::string>{ "A.start", "B.start", "A.fixed", "B.fixed", "A.update", "B.update" });
+    ecs.NotifyPlayPause();
+    ecs.NotifyPlayResume();
+    ecs.NotifyPlayStop();
+
+    const std::vector<std::string> expected{ "A.start",  "B.start",  "A.fixed",  "B.fixed",
+                                             "A.update", "B.update", "A.pause",  "B.pause",
+                                             "A.resume", "B.resume", "B.stop",   "A.stop" };
+    CHECK(log == expected);
     CHECK(b->LastFixedDeltaTime == 1.0f / 60.0f);
     CHECK(b->LastDeltaTime == 1.0f / 30.0f);
-
-    log.clear();
-    REQUIRE(ecs.PausePlay());
-    CHECK(ecs.GetPlayState() == ECS::PlayState::Paused);
-    ecs.RunFixedUpdate(1.0f);
-    ecs.RunUpdate(1.0f);
-    CHECK(log.empty());
-
-    REQUIRE(ecs.ResumePlay());
-    ecs.RunUpdate(1.0f);
-    CHECK(log == std::vector<std::string>{ "A.update", "B.update" });
-
-    log.clear();
-    REQUIRE(ecs.StopPlay());
-    CHECK(ecs.GetPlayState() == ECS::PlayState::Edit);
-    CHECK(log == std::vector<std::string>{ "B.stop", "A.stop" });
-    ecs.RunUpdate(1.0f);
-    CHECK(log == std::vector<std::string>{ "B.stop", "A.stop" });
 }
 
-TEST_CASE("ECS play state - StopPlay from Paused stops the systems in reverse")
+TEST_CASE("ECS play events - the ECS keeps no play state and forwards every call as it comes")
 {
-    ECS::ECS                 ecs = MakeEcs();
-    std::vector<std::string> log;
-    ecs.RegisterSystem<RecordingSystem<1>>("A", log);
-    ecs.RegisterSystem<RecordingSystem<2>>("B", log);
-
-    REQUIRE(ecs.StartPlay());
-    REQUIRE(ecs.PausePlay());
-    REQUIRE(ecs.StopPlay());
-    CHECK(log == std::vector<std::string>{ "A.start", "B.start", "B.stop", "A.stop" });
-}
-
-TEST_CASE("ECS play state - an invalid transition returns false and changes nothing")
-{
+    // Deciding when an event is due belongs to whoever drives play mode, not to the ECS.
     ECS::ECS                 ecs = MakeEcs();
     std::vector<std::string> log;
     ecs.RegisterSystem<RecordingSystem<1>>("A", log);
 
-    CHECK_FALSE(ecs.PausePlay());
-    CHECK_FALSE(ecs.ResumePlay());
-    CHECK_FALSE(ecs.StopPlay());
-    CHECK(ecs.GetPlayState() == ECS::PlayState::Edit);
-
-    REQUIRE(ecs.StartPlay());
-    CHECK_FALSE(ecs.StartPlay());
-    CHECK_FALSE(ecs.ResumePlay());
-    CHECK(ecs.GetPlayState() == ECS::PlayState::Playing);
-
-    REQUIRE(ecs.PausePlay());
-    CHECK_FALSE(ecs.PausePlay());
-    CHECK_FALSE(ecs.StartPlay());
-    CHECK(ecs.GetPlayState() == ECS::PlayState::Paused);
-
-    CHECK(log == std::vector<std::string>{ "A.start" });
+    ecs.RunUpdate(0.5f);
+    ecs.NotifyPlayStop();
+    ecs.NotifyPlayStop();
+    CHECK(log == std::vector<std::string>{ "A.update", "A.stop", "A.stop" });
 }
 
-TEST_CASE("ECS::System - a system that overrides no hook is left untouched by play")
+TEST_CASE("ECS::System - a system that overrides no event is left untouched")
 {
-    ECS::ECS ecs = MakeEcs();
+    ECS::ECS ecs   = MakeEcs();
     auto     plain = ecs.RegisterSystem<PlainSystem>();
 
     const ECS::Entity e = ecs.CreateEntity();
-    REQUIRE(ecs.StartPlay());
+    ecs.NotifyPlayStart();
     ecs.RunFixedUpdate(1.0f / 60.0f);
     ecs.RunUpdate(1.0f / 60.0f);
-    REQUIRE(ecs.StopPlay());
+    ecs.NotifyPlayPause();
+    ecs.NotifyPlayResume();
+    ecs.NotifyPlayStop();
 
     CHECK(ecs.IsAlive(e));
     CHECK(plain->GetEntities().empty());
