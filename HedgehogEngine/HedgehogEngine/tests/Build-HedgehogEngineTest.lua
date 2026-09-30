@@ -15,7 +15,9 @@ project "HedgehogEngineTest"
 
     links
     {
-        "HedgehogEngine"
+        "HedgehogEngine",
+        "ECS",
+        "HedgehogMath"
     }
 
     targetdir (BinariesDir)
