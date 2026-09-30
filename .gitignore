@@ -623,6 +623,8 @@ Binaries
 /HedgehogExtract/HedgehogExtract.vcxproj*
 /HedgehogExtract/tests/HedgehogExtractTest.vcxproj*
 /HedgehogEngine/HedgehogEngine/tests/HedgehogEngineTest.vcxproj*
+/HedgehogScripting/HedgehogScripting.vcxproj*
+/HedgehogScripting/tests/ScriptingTest.vcxproj*
 /ThirdParty/Tracy/Tracy.vcxproj
 /HedgehogEngine/RHIImGui/*.vcxproj*
 
