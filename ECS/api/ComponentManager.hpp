@@ -7,6 +7,7 @@
 #include <memory>
 #include <cassert>
 #include <typeindex>
+#include <utility>
 
 namespace ECS
 {
@@ -44,7 +45,13 @@ namespace ECS
         template<typename T>
         void RemoveComponent(Entity entity)
         {
-            GetComponentArray<T>()->RemoveData(entity);
+            GetComponentArray<T>()->NotifyAndRemoveData(entity);
+        }
+
+        template<typename T>
+        void SetComponentRemovedCallback(typename ComponentArray<T>::RemovedCallback callback)
+        {
+            GetComponentArray<T>()->SetRemovedCallback(std::move(callback));
         }
 
         template<typename T>

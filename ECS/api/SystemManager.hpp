@@ -33,7 +33,18 @@ namespace ECS
             assert(m_Systems.find(typeId) != m_Systems.end() &&
                 "System used before being registered!");
 
-            m_Signatures.insert({ typeId, signature });
+            m_Signatures.insert_or_assign(typeId, signature);
+        }
+
+        // Adds or removes one entity from system T to match T's signature.
+        template<typename T>
+        void EntityChangedSignatureFor(Entity entity, Signature signature)
+        {
+            const std::type_index typeId = typeid(T);
+            assert(m_Systems.find(typeId) != m_Systems.end() &&
+                "System used before being registered!");
+
+            UpdateMembership(*m_Systems.at(typeId), m_Signatures[typeId], entity, signature);
         }
 
         template<typename T>
@@ -70,30 +81,27 @@ namespace ECS
         {
             for (auto const& pair : m_Systems)
             {
-                auto const& typeId          = pair.first;
-                auto const& system          = pair.second;
-                auto const& systemSignature = m_Signatures[typeId];
-
-                if ((systemSignature & signature) == systemSignature)
-                {
-                    auto it = std::find(system->m_Entities.begin(), system->m_Entities.end(), entity);
-                    if (it == system->m_Entities.end())
-                    {
-                        system->m_Entities.push_back(entity);
-                    }
-                }
-                else
-                {
-                    auto it = std::find(system->m_Entities.begin(), system->m_Entities.end(), entity);
-                    if (it != system->m_Entities.end())
-                    {
-                        system->m_Entities.erase(it);
-                    }
-                }
+                UpdateMembership(*pair.second, m_Signatures[pair.first], entity, signature);
             }
         }
 
     private:
+        static void UpdateMembership(System& system, Signature systemSignature, Entity entity, Signature signature)
+        {
+            auto it = std::find(system.m_Entities.begin(), system.m_Entities.end(), entity);
+            if ((systemSignature & signature) == systemSignature)
+            {
+                if (it == system.m_Entities.end())
+                {
+                    system.m_Entities.push_back(entity);
+                }
+            }
+            else if (it != system.m_Entities.end())
+            {
+                system.m_Entities.erase(it);
+            }
+        }
+
         std::unordered_map<std::type_index, Signature>              m_Signatures{};
         std::unordered_map<std::type_index, std::shared_ptr<System>> m_Systems{};
     };
