@@ -9,14 +9,16 @@ function PlayerScript:new()
     return self
 end
 
+-- Turns the entity about its z axis at speed degrees per second.
 function PlayerScript:OnUpdate(dt)
-    local rot = GetRotation()
+    local transform = self.entity.transform
+    local rot = transform.eulerAngles
     if clockWise then
         rot.z = rot.z + speed * dt
     else
         rot.z = rot.z - speed * dt
     end
-    SetRotation(rot)
+    transform.eulerAngles = rot
 end
 
 

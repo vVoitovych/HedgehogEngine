@@ -26,13 +26,13 @@
 #include "HedgehogEngine/api/ECS/systems/MeshSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/RenderSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/LightSystem.hpp"
-#include "HedgehogEngine/api/ECS/systems/ScriptSystem.hpp"
 #include "HedgehogEngine/api/ECS/components/LightComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RenderComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/CameraComponent.hpp"
 #include "Reflection/GuiReflection.hpp"
+#include "HedgehogScripting/api/ScriptSystem.hpp"
 
 #include "DialogueWindows/api/MaterialDialogue.hpp"
 #include "DialogueWindows/api/MeshDialogue.hpp"
@@ -978,7 +978,6 @@ namespace Editor
     {
         auto& engineContext = context.GetEngineContext();
         auto& ecs           = engineContext.GetECS();
-        auto* scriptSystem  = engineContext.GetScriptSystem();
         auto  entity        = m_SelectedEntity.value();
 
         if (!ecs.HasComponent<HedgehogEngine::ScriptComponent>(entity))
@@ -990,7 +989,7 @@ namespace Editor
 
         bool enabled = component.Enable;
         if (ImGui::Checkbox("Enabled", &enabled))
-            component.NewEnable = enabled;
+            component.Enable = enabled;
 
         {
             const std::string& scriptSrc = component.ScriptPath.empty()
@@ -1002,13 +1001,17 @@ namespace Editor
             AcceptSelectionDrop(ContentType::Script);
         }
 
+        ImGui::BeginDisabled(engineContext.GetPlayState() != HedgehogEngine::PlayState::Edit);
         if (ImGui::Button("Load script"))
         {
             std::string scriptPath = DialogueWindows::ScriptChooseDialogue();
             if (!scriptPath.empty())
-                scriptSystem->ChangeScript(entity, ecs, engineContext.GetEventBus(),
-                                           engineContext.GetFileSystem(), scriptPath);
+                (void)AssignScript(context, entity, scriptPath);
         }
+        ImGui::EndDisabled();
+
+        // A parameter edit reaches the running script at once; outside Play it only changes the data.
+        bool paramsChanged = false;
 
         if (!component.Params.empty())
             ImGui::SeparatorText("Parameters");
@@ -1022,8 +1025,8 @@ namespace Editor
                 bool bVal = std::get<bool>(param.value);
                 if (ImGui::Checkbox(name.c_str(), &bVal))
                 {
-                    param.value = bVal;
-                    param.dirty = true;
+                    param.value   = bVal;
+                    paramsChanged = true;
                 }
                 break;
             }
@@ -1032,8 +1035,8 @@ namespace Editor
                 float nVal = std::get<float>(param.value);
                 if (ImGui::DragFloat(name.c_str(), &nVal, 0.05f))
                 {
-                    param.value = nVal;
-                    param.dirty = true;
+                    param.value   = nVal;
+                    paramsChanged = true;
                 }
                 break;
             }
@@ -1041,6 +1044,8 @@ namespace Editor
                 break;
             }
         }
+        if (paramsChanged && m_ScriptSystem)
+            m_ScriptSystem->PushParams(ecs, entity);
 
         if (ImGui::Button("Remove script"))
         {

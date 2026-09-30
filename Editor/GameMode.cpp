@@ -9,6 +9,7 @@
 #include "HedgehogExtract/api/RenderScene.hpp"
 #include "HedgehogExtract/api/SceneExtractor.hpp"
 #include "HedgehogRenderer/Renderer.hpp"
+#include "HedgehogScripting/api/ScriptSystem.hpp"
 
 #include "FileSystem/api/FileSystemManager.hpp"
 
@@ -36,6 +37,9 @@ namespace Editor
             auto&       engineContext = engine.GetEngineContext();
             auto&       settings      = engineContext.GetSettings();
             const auto& fileSystem    = engineContext.GetFileSystem();
+
+            // Before the scene loads, as the Editor does; the engine's ECS owns it.
+            (void)HedgehogScripting::RegisterScriptSystem(engineContext, fileSystem);
 
             if (fileSystem.Exists(ENGINE_SETTINGS_PATH) && !settings.Load(ENGINE_SETTINGS_PATH, fileSystem))
                 LOGWARNING("Game mode: engine settings could not be read, using defaults.");
