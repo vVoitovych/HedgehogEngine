@@ -2,6 +2,7 @@
 
 #include "Sandbox.hpp"
 #include "Bindings/Bindings.hpp"
+#include "Bindings/ScriptHandles.hpp"
 
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
@@ -88,12 +89,13 @@ namespace HedgehogScripting
         }
     }
 
-    ScriptSystem::ScriptSystem(const FS::FileSystemManager& scriptFiles)
+    ScriptSystem::ScriptSystem(HedgehogEngine::EngineContext& context, const FS::FileSystemManager& scriptFiles)
         : m_ScriptFiles(scriptFiles)
     {
         m_Traceback       = OpenSandbox(m_Lua);
         Bindings::RegisterMath(m_Lua);
         Bindings::RegisterLog(m_Lua);
+        Bindings::RegisterEntity(m_Lua, context.GetECS(), context.GetEventBus());
         m_BaseEnvironment = sol::environment(m_Lua, sol::create, m_Lua.globals());
         StartClassSupport();
     }
@@ -238,7 +240,8 @@ namespace HedgehogScripting
                          ClassNameOf(script.ScriptPath) + ":new() did not return a table.");
                 return;
             }
-            script.Self    = made.get<sol::table>();
+            script.Self           = made.get<sol::table>();
+            script.Self["entity"] = Bindings::MakeScriptEntity(ecs, entity);
             script.Faulted = false;
         }
         catch (const std::exception& e)
@@ -551,7 +554,7 @@ namespace HedgehogScripting
                                                        const FS::FileSystemManager&   scriptFiles)
     {
         ECS::ECS& ecs    = context.GetECS();
-        auto      system = ecs.RegisterSystem<ScriptSystem>(scriptFiles);
+        auto      system = ecs.RegisterSystem<ScriptSystem>(context, scriptFiles);
 
         ECS::Signature signature;
         signature.set(ecs.GetComponentType<HedgehogEngine::ScriptComponent>());
