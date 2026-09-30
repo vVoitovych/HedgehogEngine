@@ -2,7 +2,6 @@
 
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogEngine/api/Scene/SceneManager.hpp"
-#include "HedgehogEngine/api/Simulation/ISimulationSystem.hpp"
 #include "HedgehogEngine/api/Simulation/Simulation.hpp"
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
@@ -25,8 +24,10 @@ namespace
 {
     constexpr float STEP = 1.0f / 60.0f;
 
-    // Counts every hook and appends start/stop events to a shared log.
-    class RecordingSystem : public HedgehogEngine::ISimulationSystem
+    // An ECS system counting every play-mode hook and logging start, stop and each step.
+    // The ECS keeps one system per type, so each tag is its own system.
+    template<char Tag>
+    class RecordingSystem : public ECS::System
     {
     public:
         RecordingSystem(std::string name, std::vector<std::string>& log)
@@ -34,10 +35,19 @@ namespace
         {
         }
 
-        void OnPlayStart() override              { m_Log.push_back(m_Name + ".start"); }
-        void OnPlayStop() override               { m_Log.push_back(m_Name + ".stop"); }
-        void FixedUpdate(float fixedDt) override { ++FixedUpdates; LastFixedDt = fixedDt; }
-        void Update(float) override              { ++Updates; }
+        void OnPlayStart(ECS::ECS&) override { m_Log.push_back(m_Name + ".start"); }
+        void OnPlayStop(ECS::ECS&) override  { m_Log.push_back(m_Name + ".stop"); }
+        void OnFixedUpdate(ECS::ECS&, float fixedDt) override
+        {
+            ++FixedUpdates;
+            LastFixedDt = fixedDt;
+            m_Log.push_back(m_Name + ".fixed");
+        }
+        void OnUpdate(ECS::ECS&, float) override
+        {
+            ++Updates;
+            m_Log.push_back(m_Name + ".update");
+        }
 
         int   FixedUpdates = 0;
         int   Updates      = 0;
@@ -54,8 +64,7 @@ TEST_CASE("Simulation - starts in Edit and ticks nothing there or while paused")
     EngineContext context;
     Simulation&   simulation = context.GetSimulation();
     std::vector<std::string> log;
-    auto system = std::make_shared<RecordingSystem>("A", log);
-    simulation.AddSystem(system);
+    auto system = context.GetECS().RegisterSystem<RecordingSystem<'A'>>("A", log);
 
     CHECK(simulation.GetState() == SimulationState::Edit);
     CHECK(simulation.IsEditing());
@@ -87,8 +96,7 @@ TEST_CASE("Simulation - each Tick runs the clock's fixed steps, then one Update"
     EngineContext context;
     Simulation&   simulation = context.GetSimulation();
     std::vector<std::string> log;
-    auto system = std::make_shared<RecordingSystem>("A", log);
-    simulation.AddSystem(system);
+    auto system = context.GetECS().RegisterSystem<RecordingSystem<'A'>>("A", log);
 
     simulation.Play();
     simulation.Tick(1.0f / 30.0f);
@@ -107,13 +115,13 @@ TEST_CASE("Simulation - each Tick runs the clock's fixed steps, then one Update"
     simulation.Stop();
 }
 
-TEST_CASE("Simulation - Play starts systems in order, Stop stops them in reverse")
+TEST_CASE("Simulation - Play starts the ECS systems in registration order, Stop stops them in reverse")
 {
     EngineContext context;
     Simulation&   simulation = context.GetSimulation();
     std::vector<std::string> log;
-    simulation.AddSystem(std::make_shared<RecordingSystem>("A", log));
-    simulation.AddSystem(std::make_shared<RecordingSystem>("B", log));
+    context.GetECS().RegisterSystem<RecordingSystem<'A'>>("A", log);
+    context.GetECS().RegisterSystem<RecordingSystem<'B'>>("B", log);
 
     simulation.Play();
     simulation.Play(); // already playing: nothing
@@ -182,4 +190,21 @@ TEST_CASE("ScriptComponent is data: its path and Params survive Play/Stop and a 
     CHECK(loaded.ScriptPath == "Scripts\\PlayerScript.lua");
     CHECK(std::get<float>(loaded.Params.at("speed").value) == doctest::Approx(7.45f));
     CHECK_FALSE(std::get<bool>(loaded.Params.at("clockWise").value));
+}
+
+TEST_CASE("Simulation - every system's OnFixedUpdate for each step, then every system's OnUpdate")
+{
+    EngineContext context;
+    Simulation&   simulation = context.GetSimulation();
+    std::vector<std::string> log;
+    context.GetECS().RegisterSystem<RecordingSystem<'A'>>("A", log);
+    context.GetECS().RegisterSystem<RecordingSystem<'B'>>("B", log);
+
+    simulation.Play();
+    log.clear();
+    simulation.Tick(1.0f / 30.0f); // two fixed steps
+
+    const std::vector<std::string> expected{ "A.fixed", "B.fixed", "A.fixed", "B.fixed", "A.update", "B.update" };
+    CHECK(log == expected);
+    simulation.Stop();
 }

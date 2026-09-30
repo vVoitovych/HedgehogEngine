@@ -9,7 +9,7 @@
 #include "HedgehogExtract/api/RenderScene.hpp"
 #include "HedgehogExtract/api/SceneExtractor.hpp"
 #include "HedgehogRenderer/Renderer.hpp"
-#include "HedgehogScripting/api/ScriptRuntime.hpp"
+#include "HedgehogScripting/api/ScriptSystem.hpp"
 
 #include "FileSystem/api/FileSystemManager.hpp"
 
@@ -39,9 +39,8 @@ namespace Editor
             auto&       settings      = engineContext.GetSettings();
             const auto& fileSystem    = engineContext.GetFileSystem();
 
-            auto scriptRuntime = std::make_shared<HedgehogScripting::ScriptRuntime>(
-                engineContext.GetECS(), engineContext.GetEventBus(), fileSystem);
-            engineContext.GetSimulation().AddSystem(scriptRuntime);
+            // The ECS owns the system; the Simulation runs it through its play-mode hooks.
+            HedgehogScripting::ScriptSystem::Register(engineContext.GetECS(), engineContext.GetEventBus(), fileSystem);
 
             if (fileSystem.Exists(ENGINE_SETTINGS_PATH) && !settings.Load(ENGINE_SETTINGS_PATH, fileSystem))
                 LOGWARNING("Game mode: engine settings could not be read, using defaults.");

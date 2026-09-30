@@ -43,7 +43,7 @@ namespace
 
     std::string LastError(EngineWorld& world, ECS::Entity entity)
     {
-        const ScriptInstance* instance = world.Runtime->FindInstance(entity);
+        const ScriptInstance* instance = world.Scripts->FindInstance(entity);
         return instance != nullptr ? instance->GetLastError() : "no instance";
     }
 }

@@ -5,7 +5,6 @@
 #include "HedgehogScripting/api/ScriptVM.hpp"
 
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
-#include "HedgehogEngine/api/Simulation/ISimulationSystem.hpp"
 
 #include "ECS/api/ECS.hpp"
 #include "ECS/api/System.hpp"
@@ -28,20 +27,16 @@ namespace HedgehogEngine
 
 namespace HedgehogScripting
 {
-    // Entities with a ScriptComponent and a TransformComponent; kept up to date by the ECS.
-    class ScriptedEntities : public ECS::System
-    {
-    };
-
-    // Runs every ScriptComponent's script in one sandboxed VM, as a gameplay system
-    // of the Simulation. Add it with Simulation::AddSystem.
+    // The ECS system that runs every ScriptComponent's script, in one sandboxed VM. Its
+    // entities are those with a ScriptComponent and a TransformComponent. Register it in the
+    // engine's ECS with ScriptSystem::Register; the Simulation then calls its play-mode hooks.
     //
     // Lifecycle of each entity's script:
     //   - OnPlayStart makes an instance of every enabled script; a script enabled or
     //     added later is made on the next Update.
     //   - On its first Update an instance gets OnStart, then OnEnable.
     //   - Enable/NewEnable toggles give OnDisable and OnEnable.
-    //   - Update(dt) gives every enabled instance OnUpdate(dt).
+    //   - OnUpdate(dt) gives every enabled instance OnUpdate(dt).
     //   - OnDestroy runs when the ScriptComponent is removed or its entity destroyed,
     //     and for every instance on OnPlayStop, before the scene snapshot comes back.
     // Nothing runs in Edit mode or while paused, because the Simulation calls none of
@@ -54,20 +49,27 @@ namespace HedgehogScripting
     // GetRotation/SetRotation still work for one epic, with a deprecation warning the
     // first time each script file uses one.
     //
-    // The runtime owns the ECS's ScriptComponent removal callback while it lives,
-    // replacing any other; it clears it on destruction.
-    class ScriptRuntime : public HedgehogEngine::ISimulationSystem
+    // The system owns the ECS's ScriptComponent removal callback while it lives,
+    // replacing any other; it clears it on destruction. The ECS owns the system.
+    class ScriptSystem : public ECS::System
     {
     public:
-        ScriptRuntime(ECS::ECS& ecs, HedgehogEngine::EventBus& eventBus, const FS::FileSystemManager& fileSystem);
-        ~ScriptRuntime() override;
+        // Registers a ScriptSystem in ecs and sets its signature, picking up entities that
+        // already have a script. The ECS keeps it; the returned pointer is for the
+        // application's editor-side calls (DescribeScript).
+        static std::shared_ptr<ScriptSystem> Register(ECS::ECS& ecs, HedgehogEngine::EventBus& eventBus,
+                                                      const FS::FileSystemManager& fileSystem);
 
-        ScriptRuntime(const ScriptRuntime&)            = delete;
-        ScriptRuntime& operator=(const ScriptRuntime&) = delete;
+        // Use Register; public only so the ECS can construct it.
+        ScriptSystem(ECS::ECS& ecs, HedgehogEngine::EventBus& eventBus, const FS::FileSystemManager& fileSystem);
+        ~ScriptSystem() override;
 
-        void OnPlayStart() override;
-        void OnPlayStop() override;
-        void Update(float deltaTime) override;
+        ScriptSystem(const ScriptSystem&)            = delete;
+        ScriptSystem& operator=(const ScriptSystem&) = delete;
+
+        void OnPlayStart(ECS::ECS& ecs) override;
+        void OnPlayStop(ECS::ECS& ecs) override;
+        void OnUpdate(ECS::ECS& ecs, float deltaTime) override;
 
         // The parameters a script declares (its top-level number and boolean
         // globals), for the inspector in Edit mode, when no instance exists.
@@ -100,7 +102,6 @@ namespace HedgehogScripting
         HedgehogEngine::EventBus&         m_EventBus;
         ScriptVM                          m_VM;
         ScriptClassCache                  m_Classes;
-        std::shared_ptr<ScriptedEntities> m_Entities;
 
         std::unordered_map<ECS::Entity, RunningScript> m_Running;
         // "<script>|<function>" for each legacy function whose deprecation was logged.

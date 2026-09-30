@@ -1,6 +1,6 @@
 #include "doctest/doctest/doctest.h"
 
-#include "HedgehogScripting/api/ScriptRuntime.hpp"
+#include "HedgehogScripting/api/ScriptSystem.hpp"
 #include "HedgehogScripting/api/ScriptVM.hpp"
 
 #include "HedgehogEngine/api/EngineContext.hpp"
@@ -15,11 +15,11 @@
 #include <memory>
 
 using namespace HedgehogEngine;
-using HedgehogScripting::ScriptRuntime;
+using HedgehogScripting::ScriptSystem;
 using HedgehogScripting::ScriptVM;
 
-// The engine as the Editor and game mode run it: an EngineContext with the script
-// runtime added to its Simulation, over the real Assets folder.
+// The engine as the Editor and game mode run it: an EngineContext with the
+// script system registered in its ECS, over the real Assets folder.
 namespace
 {
     constexpr float STEP = 1.0f / 60.0f;
@@ -30,12 +30,11 @@ namespace
     struct PlayableEngine
     {
         EngineContext                  Context;
-        std::shared_ptr<ScriptRuntime> Runtime;
+        std::shared_ptr<ScriptSystem> Scripts;
 
         PlayableEngine()
         {
-            Runtime = std::make_shared<ScriptRuntime>(Context.GetECS(), Context.GetEventBus(), Context.GetFileSystem());
-            Context.GetSimulation().AddSystem(Runtime);
+            Scripts = ScriptSystem::Register(Context.GetECS(), Context.GetEventBus(), Context.GetFileSystem());
         }
 
         void LoadDefaultScene()
@@ -61,7 +60,7 @@ TEST_CASE("Engine scripts - Default.yaml's object turns only in Play, at its sav
 
     engine.Context.GetSimulation().Tick(STEP);
     CHECK(engine.RotationZ(DEFAULT_SCENE_SPINNER) == start); // Edit
-    CHECK(engine.Runtime->GetInstanceCount() == 0u);
+    CHECK(engine.Scripts->GetInstanceCount() == 0u);
 
     LogCapture capture;
     simulation.Play();
@@ -80,7 +79,7 @@ TEST_CASE("Engine scripts - Default.yaml's object turns only in Play, at its sav
 
     simulation.Stop();
     CHECK(engine.RotationZ(DEFAULT_SCENE_SPINNER) == start);
-    CHECK(engine.Runtime->GetInstanceCount() == 0u);
+    CHECK(engine.Scripts->GetInstanceCount() == 0u);
 
     // The saved parameters survive the Stop restore.
     const ScriptComponent& script = engine.Context.GetECS().GetComponent<ScriptComponent>(DEFAULT_SCENE_SPINNER);
@@ -91,11 +90,11 @@ TEST_CASE("Engine scripts - Default.yaml's object turns only in Play, at its sav
 TEST_CASE("Engine scripts - describing a script in Edit lists its parameters and runs nothing")
 {
     PlayableEngine engine;
-    const auto params = engine.Runtime->DescribeScript("Scripts/PlayerScript.lua");
+    const auto params = engine.Scripts->DescribeScript("Scripts/PlayerScript.lua");
 
     CHECK(params.count("speed") == 1u);
     CHECK(params.count("clockWise") == 1u);
-    CHECK(engine.Runtime->GetInstanceCount() == 0u);
+    CHECK(engine.Scripts->GetInstanceCount() == 0u);
 }
 
 TEST_CASE("Engine scripts - 50 Play/Stop cycles keep one VM and no instances between Plays")
@@ -109,9 +108,9 @@ TEST_CASE("Engine scripts - 50 Play/Stop cycles keep one VM and no instances bet
     {
         simulation.Play();
         simulation.Tick(STEP);
-        REQUIRE(engine.Runtime->GetInstanceCount() == 1u);
+        REQUIRE(engine.Scripts->GetInstanceCount() == 1u);
         simulation.Stop();
-        REQUIRE(engine.Runtime->GetInstanceCount() == 0u);
+        REQUIRE(engine.Scripts->GetInstanceCount() == 0u);
     }
     CHECK(ScriptVM::GetOpenStateCount() == 1);
     CHECK(engine.RotationZ(DEFAULT_SCENE_SPINNER) == start);

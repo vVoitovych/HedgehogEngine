@@ -11,7 +11,7 @@
 #include "HedgehogExtract/api/SceneExtractor.hpp"
 #include "HedgehogExtract/api/ScenePicker.hpp"
 #include "HedgehogRenderer/Renderer.hpp"
-#include "HedgehogScripting/api/ScriptRuntime.hpp"
+#include "HedgehogScripting/api/ScriptSystem.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
 
 #include "FileSystem/api/FileSystemManager.hpp"
@@ -94,9 +94,8 @@ namespace Editor
         auto& engineContext = m_Context->GetEngineContext();
 
         // Before EditorGui, whose constructor loads the last scene.
-        m_ScriptRuntime = std::make_shared<HedgehogScripting::ScriptRuntime>(
+        m_ScriptSystem = HedgehogScripting::ScriptSystem::Register(
             engineContext.GetECS(), engineContext.GetEventBus(), engineContext.GetFileSystem());
-        engineContext.GetSimulation().AddSystem(m_ScriptRuntime);
 
         // Engine settings must load before the renderer is constructed: they decide the size of
         // GPU resources it creates there. Loading afterwards leaves the settings dirty for the
@@ -132,7 +131,7 @@ namespace Editor
         }
         m_EditorGui = std::make_unique<EditorGui>(*m_Context);
         m_EditorGui->SetRenderer(m_Renderer.get());
-        m_EditorGui->SetScriptRuntime(m_ScriptRuntime.get());
+        m_EditorGui->SetScriptSystem(m_ScriptSystem.get());
 
         // The panels' targets: zero-sized until their tabs are first drawn.
         for (const char* target : { SCENE_TARGET, GAME_TARGET })

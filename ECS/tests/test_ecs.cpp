@@ -5,7 +5,9 @@
 
 #include <cstdint>
 #include <map>
+#include <memory>
 #include <set>
+#include <string>
 #include <vector>
 
 namespace
@@ -469,4 +471,107 @@ TEST_CASE("ECS::SetSystemSignature - setting it again re-evaluates membership")
     ecs.SetSystemSignature<LateSystem>(signature);
     REQUIRE(system->GetEntities().size() == 1u);
     CHECK(system->GetEntities().front() == velOnly);
+}
+
+// ---------------------------------------------------------------------------
+// Systems: construction, registration order and play-mode hooks
+// ---------------------------------------------------------------------------
+
+namespace
+{
+    // Built with constructor arguments; records which systems ForEachSystem visits.
+    template<int Tag>
+    class NamedSystem : public ECS::System
+    {
+    public:
+        NamedSystem(std::string name, std::vector<std::string>& visits)
+            : Name(std::move(name)), Visits(visits)
+        {
+        }
+
+        void OnUpdate(ECS::ECS&, float) override { Visits.push_back(Name); }
+
+        std::string               Name;
+        std::vector<std::string>& Visits;
+    };
+
+    class Quiet : public ECS::System
+    {
+    };
+}
+
+TEST_CASE("ECS::RegisterSystem - forwards constructor arguments")
+{
+    ECS::ECS                 ecs = MakeEcs();
+    std::vector<std::string> visits;
+
+    auto system = ecs.RegisterSystem<NamedSystem<1>>("first", visits);
+    REQUIRE(system.get() != nullptr);
+    CHECK(system->Name == "first");
+    CHECK(&system->Visits == &visits);
+    CHECK(ecs.GetSystem<NamedSystem<1>>().get() == system.get());
+}
+
+TEST_CASE("ECS::ForEachSystem - visits systems in registration order, and the reverse in reverse")
+{
+    ECS::ECS                 ecs = MakeEcs();
+    std::vector<std::string> visits;
+    ecs.RegisterSystem<NamedSystem<3>>("c", visits);
+    ecs.RegisterSystem<NamedSystem<1>>("a", visits);
+    ecs.RegisterSystem<Quiet>();
+    ecs.RegisterSystem<NamedSystem<2>>("b", visits);
+
+    int count = 0;
+    ecs.ForEachSystem([&](ECS::System& system)
+    {
+        ++count;
+        system.OnUpdate(ecs, 0.0f);
+    });
+    CHECK(count == 4);
+    CHECK(visits == std::vector<std::string>{ "c", "a", "b" });
+
+    visits.clear();
+    ecs.ForEachSystemReverse([&](ECS::System& system) { system.OnUpdate(ecs, 0.0f); });
+    CHECK(visits == std::vector<std::string>{ "b", "a", "c" });
+}
+
+TEST_CASE("ECS::System - play-mode hooks do nothing unless overridden")
+{
+    ECS::ECS    ecs    = MakeEcs();
+    auto        system = ecs.RegisterSystem<Quiet>();
+    ECS::System& base  = *system;
+
+    const ECS::Entity e = ecs.CreateEntity();
+    base.OnPlayStart(ecs);
+    base.OnFixedUpdate(ecs, 1.0f / 60.0f);
+    base.OnUpdate(ecs, 1.0f / 60.0f);
+    base.OnPlayStop(ecs);
+    CHECK(ecs.IsAlive(e));
+    CHECK(system->GetEntities().empty());
+}
+
+TEST_CASE("ECS teardown - systems go before component storage")
+{
+    // A system that uses the component storage from its destructor, as the script system does
+    // when it clears its removal callback.
+    class CallbackOwner : public ECS::System
+    {
+    public:
+        explicit CallbackOwner(ECS::ECS& ecs)
+            : m_Ecs(ecs)
+        {
+            m_Ecs.SetComponentRemovedCallback<Position>([](ECS::Entity, Position&) {});
+        }
+        ~CallbackOwner() override { m_Ecs.SetComponentRemovedCallback<Position>({}); }
+
+    private:
+        ECS::ECS& m_Ecs;
+    };
+
+    auto ecs = std::make_unique<ECS::ECS>();
+    ecs->Init();
+    ecs->RegisterComponent<Position>();
+    ecs->RegisterSystem<CallbackOwner>(*ecs);
+    ecs.reset(); // would touch freed component storage if the order were wrong
+    CHECK(ecs.get() == nullptr);
 }

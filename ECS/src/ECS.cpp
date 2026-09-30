@@ -4,6 +4,13 @@
 
 namespace ECS
 {
+    ECS::~ECS()
+    {
+        m_SystemManager.reset();
+        m_EntityManager.reset();
+        m_ComponentManager.reset();
+    }
+
     void ECS::Init()
     {
         m_ComponentManager = std::make_unique<ComponentManager>();

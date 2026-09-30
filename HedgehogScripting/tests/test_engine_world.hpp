@@ -1,6 +1,6 @@
 #pragma once
 
-#include "HedgehogScripting/api/ScriptRuntime.hpp"
+#include "HedgehogScripting/api/ScriptSystem.hpp"
 
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
@@ -29,7 +29,7 @@
 namespace ScriptingTest
 {
     using namespace HedgehogEngine;
-    using HedgehogScripting::ScriptRuntime;
+    using HedgehogScripting::ScriptSystem;
 
     inline constexpr float STEP = 1.0f / 60.0f;
 
@@ -48,14 +48,14 @@ namespace ScriptingTest
         return text.str();
     }
 
-    // The engine's ECS, scenes, Simulation and transform systems, with a script runtime over a
+    // The engine's ECS, scenes, Simulation and transform systems, with a ScriptSystem over a
     // temp "assets://" holding the test scripts.
     struct EngineWorld
     {
         TempDir                        Dir;
         FS::FileSystemManager          ScriptFiles;
         EngineContext                  Context;
-        std::shared_ptr<ScriptRuntime> Runtime;
+        std::shared_ptr<ScriptSystem> Scripts;
         std::vector<std::string>       Log;
 
         EngineWorld()
@@ -65,9 +65,8 @@ namespace ScriptingTest
             fs->RegisterPath("assets://", Dir.Path());
             REQUIRE(ScriptFiles.Register(std::move(fs)));
 
-            Runtime = std::make_shared<ScriptRuntime>(Context.GetECS(), Context.GetEventBus(), ScriptFiles);
-            Context.GetSimulation().AddSystem(Runtime);
-            Runtime->GetVM().GetState().set_function("Record", [this](const std::string& event) { Log.push_back(event); });
+            Scripts = ScriptSystem::Register(Context.GetECS(), Context.GetEventBus(), ScriptFiles);
+            Scripts->GetVM().GetState().set_function("Record", [this](const std::string& event) { Log.push_back(event); });
         }
 
         ECS::ECS&     Ecs() { return Context.GetECS(); }

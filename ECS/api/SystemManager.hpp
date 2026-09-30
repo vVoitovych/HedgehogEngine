@@ -7,23 +7,47 @@
 #include <memory>
 #include <cassert>
 #include <algorithm>
+#include <type_traits>
 #include <typeindex>
+#include <utility>
+#include <vector>
 
 namespace ECS
 {
     class SystemManager
     {
     public:
-        template<typename T>
-        std::shared_ptr<T> RegisterSystem()
+        // Constructs T from args. Systems are kept in registration order for ForEachSystem.
+        template<typename T, typename... Args>
+        std::shared_ptr<T> RegisterSystem(Args&&... args)
         {
+            static_assert(std::is_base_of_v<System, T>, "A system must derive from ECS::System.");
             const std::type_index typeId = typeid(T);
             assert(m_Systems.find(typeId) == m_Systems.end() &&
                 "System already registered!");
 
-            auto system = std::make_shared<T>();
+            auto system = std::make_shared<T>(std::forward<Args>(args)...);
             m_Systems.insert({ typeId, system });
+            m_Order.push_back(system);
             return system;
+        }
+
+        // Calls fn(System&) for every system in registration order. A system registered by fn
+        // is not visited this time.
+        template<typename Fn>
+        void ForEachSystem(Fn&& fn) const
+        {
+            const size_t count = m_Order.size();
+            for (size_t i = 0; i < count; ++i)
+                fn(*m_Order[i]);
+        }
+
+        // The same, last registered first.
+        template<typename Fn>
+        void ForEachSystemReverse(Fn&& fn) const
+        {
+            for (size_t i = m_Order.size(); i > 0; --i)
+                fn(*m_Order[i - 1]);
         }
 
         template<typename T>
@@ -104,5 +128,6 @@ namespace ECS
 
         std::unordered_map<std::type_index, Signature>              m_Signatures{};
         std::unordered_map<std::type_index, std::shared_ptr<System>> m_Systems{};
+        std::vector<std::shared_ptr<System>>                         m_Order{};
     };
 }

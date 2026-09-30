@@ -26,7 +26,7 @@ namespace HedgehogEngine
     class EventBus;
 }
 
-// Entities as scripts see them. Registered per ScriptRuntime, since they reach into its ECS.
+// Entities as scripts see them. Registered per ScriptSystem, since they reach into its ECS.
 namespace HedgehogScripting::Bindings
 {
     // A script's reference to an entity: its id and the generation the id had when the handle

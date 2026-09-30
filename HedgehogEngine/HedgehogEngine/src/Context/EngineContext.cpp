@@ -56,7 +56,7 @@ namespace HedgehogEngine
 
         // Gameplay systems, the script runtime among them, are added by the application
         // (the Editor, game mode), which sits above the engine.
-        m_Simulation = std::make_unique<Simulation>(*m_SceneManager);
+        m_Simulation = std::make_unique<Simulation>(m_ECS, *m_SceneManager);
 
         m_Settings = std::make_unique<HedgehogSettings::Settings>();
     }

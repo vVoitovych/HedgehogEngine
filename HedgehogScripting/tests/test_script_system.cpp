@@ -1,6 +1,6 @@
 #include "doctest/doctest/doctest.h"
 
-#include "HedgehogScripting/api/ScriptRuntime.hpp"
+#include "HedgehogScripting/api/ScriptSystem.hpp"
 
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RenderComponent.hpp"
@@ -31,7 +31,7 @@
 #include <vector>
 
 using namespace HedgehogEngine;
-using HedgehogScripting::ScriptRuntime;
+using HedgehogScripting::ScriptSystem;
 
 namespace
 {
@@ -72,7 +72,7 @@ function Faulty:OnUpdate(dt) error("always broken") end
         return source;
     }
 
-    // An ECS, a scene, a Simulation and the ScriptRuntime, over a temp "assets://".
+    // An ECS, a scene, a Simulation and the ScriptSystem, over a temp "assets://".
     struct World
     {
         TempDir                                       Dir;
@@ -85,7 +85,7 @@ function Faulty:OnUpdate(dt) error("always broken") end
         std::shared_ptr<RenderSystem>                 Renders;
         std::unique_ptr<SceneManager>                 Scenes;
         std::unique_ptr<Simulation>                   Sim;
-        std::shared_ptr<ScriptRuntime>                Runtime;
+        std::shared_ptr<ScriptSystem>                Scripts;
         std::vector<std::string>                      Log;
 
         World()
@@ -115,11 +115,10 @@ function Faulty:OnUpdate(dt) error("always broken") end
             Registry.RegisterVisitable<ScriptComponent>("ScriptComponent");
 
             Scenes  = std::make_unique<SceneManager>(Ecs, Bus, FileSystem, Registry, *Transforms, *Meshes, *Renders);
-            Sim     = std::make_unique<Simulation>(*Scenes);
-            Runtime = std::make_shared<ScriptRuntime>(Ecs, Bus, FileSystem);
-            Sim->AddSystem(Runtime);
+            Sim     = std::make_unique<Simulation>(Ecs, *Scenes);
+            Scripts = ScriptSystem::Register(Ecs, Bus, FileSystem);
 
-            Runtime->GetVM().GetState().set_function("Record", [this](const std::string& event) { Log.push_back(event); });
+            Scripts->GetVM().GetState().set_function("Record", [this](const std::string& event) { Log.push_back(event); });
         }
 
         template<typename System, typename Component>
@@ -152,7 +151,7 @@ function Faulty:OnUpdate(dt) error("always broken") end
     using Events = std::vector<std::string>;
 }
 
-TEST_CASE("ScriptRuntime - OnStart, OnEnable, then OnUpdate every played frame")
+TEST_CASE("ScriptSystem - OnStart, OnEnable, then OnUpdate every played frame")
 {
     World world;
     world.AddScripted("Scripts/Logger.lua");
@@ -165,14 +164,14 @@ TEST_CASE("ScriptRuntime - OnStart, OnEnable, then OnUpdate every played frame")
     CHECK(world.TakeLog() == Events{ "OnStart", "OnEnable", "OnUpdate", "OnUpdate", "OnUpdate" });
 }
 
-TEST_CASE("ScriptRuntime - nothing runs in Edit or while paused")
+TEST_CASE("ScriptSystem - nothing runs in Edit or while paused")
 {
     World world;
     world.AddScripted("Scripts/Logger.lua");
 
     world.Sim->Tick(STEP);
     CHECK(world.TakeLog().empty());
-    CHECK(world.Runtime->GetInstanceCount() == 0u);
+    CHECK(world.Scripts->GetInstanceCount() == 0u);
 
     world.Sim->Play();
     world.Sim->Tick(STEP);
@@ -188,7 +187,7 @@ TEST_CASE("ScriptRuntime - nothing runs in Edit or while paused")
     CHECK(world.TakeLog() == Events{ "OnUpdate" });
 }
 
-TEST_CASE("ScriptRuntime - toggling Enable gives OnDisable, then OnEnable")
+TEST_CASE("ScriptSystem - toggling Enable gives OnDisable, then OnEnable")
 {
     World world;
     const ECS::Entity entity = world.AddScripted("Scripts/Logger.lua");
@@ -207,7 +206,7 @@ TEST_CASE("ScriptRuntime - toggling Enable gives OnDisable, then OnEnable")
     CHECK(world.TakeLog() == Events{ "OnEnable", "OnUpdate" }); // OnStart only ever once
 }
 
-TEST_CASE("ScriptRuntime - OnDestroy on component removal, entity destruction and Stop")
+TEST_CASE("ScriptSystem - OnDestroy on component removal, entity destruction and Stop")
 {
     World world;
     const ECS::Entity removed   = world.AddScripted("Scripts/Logger.lua");
@@ -216,7 +215,7 @@ TEST_CASE("ScriptRuntime - OnDestroy on component removal, entity destruction an
     world.Sim->Play();
     world.Sim->Tick(STEP);
     (void)world.TakeLog();
-    REQUIRE(world.Runtime->GetInstanceCount() == 3u);
+    REQUIRE(world.Scripts->GetInstanceCount() == 3u);
 
     world.Ecs.RemoveComponent<ScriptComponent>(removed);
     CHECK(world.TakeLog() == Events{ "OnDestroy" });
@@ -226,11 +225,11 @@ TEST_CASE("ScriptRuntime - OnDestroy on component removal, entity destruction an
 
     world.Sim->Stop();
     CHECK(world.TakeLog() == Events{ "OnDestroy" });
-    CHECK(world.Runtime->GetInstanceCount() == 0u);
+    CHECK(world.Scripts->GetInstanceCount() == 0u);
     (void)stopped;
 }
 
-TEST_CASE("ScriptRuntime - a script added during Play starts on the next Update")
+TEST_CASE("ScriptSystem - a script added during Play starts on the next Update")
 {
     World world;
     world.Sim->Play();
@@ -242,7 +241,7 @@ TEST_CASE("ScriptRuntime - a script added during Play starts on the next Update"
     CHECK(world.TakeLog() == Events{ "OnStart", "OnEnable", "OnUpdate" });
 }
 
-TEST_CASE("ScriptRuntime - PlayerScript with speed 2 turns its entity by 2*dt per Update")
+TEST_CASE("ScriptSystem - PlayerScript with speed 2 turns its entity by 2*dt per Update")
 {
     World world;
     const ECS::Entity spinner = world.AddScripted("Scripts\\Spin\\PlayerScript.lua"); // Default.yaml's separator
@@ -261,7 +260,7 @@ TEST_CASE("ScriptRuntime - PlayerScript with speed 2 turns its entity by 2*dt pe
     CHECK(world.Ecs.GetComponent<TransformComponent>(spinner).Rotation.z() == 0.0f);
 }
 
-TEST_CASE("ScriptRuntime - component Params override the script's globals")
+TEST_CASE("ScriptSystem - component Params override the script's globals")
 {
     World world;
     const ECS::Entity spinner = world.AddScripted("Scripts/Spin/PlayerScript.lua");
@@ -277,7 +276,7 @@ TEST_CASE("ScriptRuntime - component Params override the script's globals")
     CHECK(world.Ecs.GetComponent<TransformComponent>(spinner).Rotation.z() == doctest::Approx(0.0).epsilon(1e-4));
 }
 
-TEST_CASE("ScriptRuntime - a faulted instance does not stop the others")
+TEST_CASE("ScriptSystem - a faulted instance does not stop the others")
 {
     World world;
     const ECS::Entity faulty = world.AddScripted("Scripts/Faulty.lua");
@@ -287,12 +286,12 @@ TEST_CASE("ScriptRuntime - a faulted instance does not stop the others")
     for (int i = 0; i < 3; ++i)
         world.Sim->Tick(STEP);
 
-    REQUIRE(world.Runtime->FindInstance(faulty) != nullptr);
-    CHECK(world.Runtime->FindInstance(faulty)->IsFaulted());
+    REQUIRE(world.Scripts->FindInstance(faulty) != nullptr);
+    CHECK(world.Scripts->FindInstance(faulty)->IsFaulted());
     CHECK(world.TakeLog() == Events{ "OnStart", "OnEnable", "OnUpdate", "OnUpdate", "OnUpdate" });
 }
 
-TEST_CASE("ScriptRuntime - Play, Stop and Play again runs fresh instances")
+TEST_CASE("ScriptSystem - Play, Stop and Play again runs fresh instances")
 {
     World world;
     world.AddScripted("Scripts/Logger.lua");
@@ -307,10 +306,10 @@ TEST_CASE("ScriptRuntime - Play, Stop and Play again runs fresh instances")
     CHECK(world.TakeLog() == Events{ "OnStart", "OnEnable", "OnUpdate" });
 }
 
-TEST_CASE("ScriptRuntime - DescribeScript lists a script's parameters without an instance")
+TEST_CASE("ScriptSystem - DescribeScript lists a script's parameters without an instance")
 {
     World world;
-    const auto params = world.Runtime->DescribeScript("Scripts/Spin/PlayerScript.lua");
+    const auto params = world.Scripts->DescribeScript("Scripts/Spin/PlayerScript.lua");
 
     REQUIRE(params.size() == 2u);
     REQUIRE(params.count("speed") == 1u);
@@ -319,5 +318,5 @@ TEST_CASE("ScriptRuntime - DescribeScript lists a script's parameters without an
     REQUIRE(params.count("clockWise") == 1u);
     CHECK(params.at("clockWise").type == ParamType::Boolean);
     CHECK(std::get<bool>(params.at("clockWise").value));
-    CHECK(world.Runtime->GetInstanceCount() == 0u);
+    CHECK(world.Scripts->GetInstanceCount() == 0u);
 }

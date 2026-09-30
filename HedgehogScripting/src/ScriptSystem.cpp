@@ -1,4 +1,4 @@
-#include "HedgehogScripting/api/ScriptRuntime.hpp"
+#include "HedgehogScripting/api/ScriptSystem.hpp"
 
 #include "Bindings/EntityBindings.hpp"
 
@@ -30,8 +30,19 @@ namespace HedgehogScripting
         }
     }
 
-    ScriptRuntime::ScriptRuntime(ECS::ECS& ecs, HedgehogEngine::EventBus& eventBus,
-                                 const FS::FileSystemManager& fileSystem)
+    std::shared_ptr<ScriptSystem> ScriptSystem::Register(ECS::ECS& ecs, HedgehogEngine::EventBus& eventBus,
+                                                         const FS::FileSystemManager& fileSystem)
+    {
+        std::shared_ptr<ScriptSystem> system = ecs.RegisterSystem<ScriptSystem>(ecs, eventBus, fileSystem);
+        ECS::Signature                signature;
+        signature.set(ecs.GetComponentType<ScriptComponent>());
+        signature.set(ecs.GetComponentType<TransformComponent>());
+        ecs.SetSystemSignature<ScriptSystem>(signature); // picks up entities that already match
+        return system;
+    }
+
+    ScriptSystem::ScriptSystem(ECS::ECS& ecs, HedgehogEngine::EventBus& eventBus,
+                               const FS::FileSystemManager& fileSystem)
         : m_ECS(ecs)
         , m_EventBus(eventBus)
         , m_VM(fileSystem)
@@ -40,13 +51,6 @@ namespace HedgehogScripting
     {
         Bindings::RegisterEntity(m_VM.GetState(), m_ECS, m_EventBus, fileSystem);
 
-        m_Entities = m_ECS.HasSystem<ScriptedEntities>() ? m_ECS.GetSystem<ScriptedEntities>()
-                                                         : m_ECS.RegisterSystem<ScriptedEntities>();
-        ECS::Signature signature;
-        signature.set(m_ECS.GetComponentType<ScriptComponent>());
-        signature.set(m_ECS.GetComponentType<TransformComponent>());
-        m_ECS.SetSystemSignature<ScriptedEntities>(signature); // picks up entities that already match
-
         m_ECS.SetComponentRemovedCallback<ScriptComponent>([this](ECS::Entity entity, ScriptComponent&)
         {
             if (m_Running.find(entity) != m_Running.end())
@@ -54,16 +58,16 @@ namespace HedgehogScripting
         });
     }
 
-    ScriptRuntime::~ScriptRuntime()
+    ScriptSystem::~ScriptSystem()
     {
         m_ECS.SetComponentRemovedCallback<ScriptComponent>({});
     }
 
-    void ScriptRuntime::OnPlayStart()
+    void ScriptSystem::OnPlayStart(ECS::ECS& /*ecs*/)
     {
         // No instances exist between Plays, so every script can be read afresh.
         m_Classes.Reload();
-        const std::vector<ECS::Entity> entities = m_Entities->GetEntities();
+        const std::vector<ECS::Entity> entities = GetEntities();
         for (ECS::Entity entity : entities)
         {
             const ScriptComponent& component = m_ECS.GetComponent<ScriptComponent>(entity);
@@ -72,7 +76,7 @@ namespace HedgehogScripting
         }
     }
 
-    void ScriptRuntime::OnPlayStop()
+    void ScriptSystem::OnPlayStop(ECS::ECS& /*ecs*/)
     {
         std::vector<ECS::Entity> running;
         running.reserve(m_Running.size());
@@ -82,9 +86,9 @@ namespace HedgehogScripting
             Destroy(entity);
     }
 
-    void ScriptRuntime::Update(float deltaTime)
+    void ScriptSystem::OnUpdate(ECS::ECS& /*ecs*/, float deltaTime)
     {
-        const std::vector<ECS::Entity> entities = m_Entities->GetEntities();
+        const std::vector<ECS::Entity> entities = GetEntities();
 
         // An entity that lost its transform while keeping its script leaves the set
         // without a removal callback.
@@ -140,7 +144,7 @@ namespace HedgehogScripting
         }
     }
 
-    std::unordered_map<std::string, HedgehogEngine::ScriptParam> ScriptRuntime::DescribeScript(
+    std::unordered_map<std::string, HedgehogEngine::ScriptParam> ScriptSystem::DescribeScript(
         const std::string& scriptPath)
     {
         std::unordered_map<std::string, HedgehogEngine::ScriptParam> params;
@@ -163,23 +167,23 @@ namespace HedgehogScripting
         return params;
     }
 
-    ScriptInstance* ScriptRuntime::FindInstance(ECS::Entity entity)
+    ScriptInstance* ScriptSystem::FindInstance(ECS::Entity entity)
     {
         const auto it = m_Running.find(entity);
         return it == m_Running.end() ? nullptr : &it->second.Instance;
     }
 
-    size_t ScriptRuntime::GetInstanceCount() const
+    size_t ScriptSystem::GetInstanceCount() const
     {
         return m_Running.size();
     }
 
-    ScriptVM& ScriptRuntime::GetVM()
+    ScriptVM& ScriptSystem::GetVM()
     {
         return m_VM;
     }
 
-    std::string ScriptRuntime::ToVirtualPath(const std::string& scriptPath)
+    std::string ScriptSystem::ToVirtualPath(const std::string& scriptPath)
     {
         std::string path = scriptPath;
         std::replace(path.begin(), path.end(), '\\', '/');
@@ -188,7 +192,7 @@ namespace HedgehogScripting
         return std::string(ASSETS_PREFIX) + path;
     }
 
-    void ScriptRuntime::Instantiate(ECS::Entity entity)
+    void ScriptSystem::Instantiate(ECS::Entity entity)
     {
         ScriptComponent& component = m_ECS.GetComponent<ScriptComponent>(entity);
         if (component.ScriptPath.empty())
@@ -207,7 +211,7 @@ namespace HedgehogScripting
         m_Running.emplace(entity, RunningScript{ std::move(*instance) });
     }
 
-    void ScriptRuntime::ApplyParams(ScriptInstance& instance, ScriptComponent& component, bool onlyDirty)
+    void ScriptSystem::ApplyParams(ScriptInstance& instance, ScriptComponent& component, bool onlyDirty)
     {
         sol::table environment = instance.GetEnvironment();
         for (auto& [name, param] : component.Params)
@@ -229,7 +233,7 @@ namespace HedgehogScripting
         }
     }
 
-    void ScriptRuntime::Destroy(ECS::Entity entity)
+    void ScriptSystem::Destroy(ECS::Entity entity)
     {
         const auto it = m_Running.find(entity);
         if (it == m_Running.end())
@@ -238,7 +242,7 @@ namespace HedgehogScripting
         m_Running.erase(entity); // by key: OnDestroy may have changed the map
     }
 
-    std::string ScriptRuntime::EntityName(ECS::Entity entity) const
+    std::string ScriptSystem::EntityName(ECS::Entity entity) const
     {
         if (m_ECS.HasComponent<ECS::HierarchyComponent>(entity))
             return m_ECS.GetComponent<ECS::HierarchyComponent>(entity).Name;

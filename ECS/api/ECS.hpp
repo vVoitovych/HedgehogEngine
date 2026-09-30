@@ -17,6 +17,18 @@ namespace ECS
     class ECS
     {
     public:
+        ECS() = default;
+        // Destroys the systems first: a system may hold a component-removed callback or other
+        // state that refers to the component storage, which must still exist while it goes.
+        ECS_API ~ECS();
+
+        ECS(const ECS&)            = delete;
+        ECS& operator=(const ECS&) = delete;
+        // Movable so a fully built ECS can be returned from a helper; do not move one whose
+        // systems keep a reference to it.
+        ECS(ECS&&) noexcept            = default;
+        ECS& operator=(ECS&&) noexcept = default;
+
         ECS_API void Init();
 
         ECS_API Entity CreateEntity();
@@ -89,10 +101,25 @@ namespace ECS
             return m_ComponentManager->GetComponentType<T>();
         }
 
-        template<typename T>
-        std::shared_ptr<T> RegisterSystem()
+        // Constructs T from args; the ECS owns it from then on.
+        template<typename T, typename... Args>
+        std::shared_ptr<T> RegisterSystem(Args&&... args)
         {
-            return m_SystemManager->RegisterSystem<T>();
+            return m_SystemManager->RegisterSystem<T>(std::forward<Args>(args)...);
+        }
+
+        // Every registered system in registration order; the Simulation runs the play-mode
+        // hooks through these.
+        template<typename Fn>
+        void ForEachSystem(Fn&& fn) const
+        {
+            m_SystemManager->ForEachSystem(std::forward<Fn>(fn));
+        }
+
+        template<typename Fn>
+        void ForEachSystemReverse(Fn&& fn) const
+        {
+            m_SystemManager->ForEachSystemReverse(std::forward<Fn>(fn));
         }
 
         template<typename T>

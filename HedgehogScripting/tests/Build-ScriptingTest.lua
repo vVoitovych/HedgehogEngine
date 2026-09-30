@@ -16,7 +16,7 @@ project "ScriptingTest"
         "%{IncludeDir.yaml_cpp}"
     }
 
-    -- The runtime tests build a scene (SceneManager, the serializer registry) around the runtime.
+    -- The script system tests build a scene (SceneManager, the serializer registry) around it.
     defines { "YAML_CPP_STATIC_DEFINE" }
 
     links

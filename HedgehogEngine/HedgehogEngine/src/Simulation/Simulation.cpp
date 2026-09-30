@@ -1,23 +1,15 @@
 #include "HedgehogEngine/api/Simulation/Simulation.hpp"
 
-#include "Logger/api/Logger.hpp"
+#include "ECS/api/ECS.hpp"
 
-#include <cassert>
-#include <utility>
+#include "Logger/api/Logger.hpp"
 
 namespace HedgehogEngine
 {
-    Simulation::Simulation(SceneManager& sceneManager)
-        : m_SceneManager(sceneManager)
+    Simulation::Simulation(ECS::ECS& ecs, SceneManager& sceneManager)
+        : m_ECS(ecs)
+        , m_SceneManager(sceneManager)
     {
-    }
-
-    void Simulation::AddSystem(std::shared_ptr<ISimulationSystem> system)
-    {
-        assert(system && "Simulation::AddSystem: null system.");
-        m_Systems.push_back(std::move(system));
-        if (m_State != SimulationState::Edit)
-            m_Systems.back()->OnPlayStart();
     }
 
     void Simulation::Play()
@@ -36,8 +28,7 @@ namespace HedgehogEngine
         m_InterpolationAlpha = 0.0f;
         m_State              = SimulationState::Playing;
 
-        for (const auto& system : m_Systems)
-            system->OnPlayStart();
+        m_ECS.ForEachSystem([this](ECS::System& system) { system.OnPlayStart(m_ECS); });
     }
 
     void Simulation::Pause()
@@ -61,8 +52,7 @@ namespace HedgehogEngine
         if (m_State == SimulationState::Edit)
             return;
 
-        for (auto it = m_Systems.rbegin(); it != m_Systems.rend(); ++it)
-            (*it)->OnPlayStop();
+        m_ECS.ForEachSystemReverse([this](ECS::System& system) { system.OnPlayStop(m_ECS); });
 
         m_State = SimulationState::Edit;
         m_Clock.SetPaused(false);
@@ -81,13 +71,9 @@ namespace HedgehogEngine
         const SimulationSteps steps     = m_Clock.Advance(deltaTime);
         const float           fixedStep = m_Clock.GetFixedDeltaTime();
         for (uint32_t step = 0; step < steps.Count; ++step)
-        {
-            for (const auto& system : m_Systems)
-                system->FixedUpdate(fixedStep);
-        }
+            m_ECS.ForEachSystem([&](ECS::System& system) { system.OnFixedUpdate(m_ECS, fixedStep); });
 
-        for (const auto& system : m_Systems)
-            system->Update(deltaTime);
+        m_ECS.ForEachSystem([&](ECS::System& system) { system.OnUpdate(m_ECS, deltaTime); });
 
         m_InterpolationAlpha = steps.Alpha;
     }

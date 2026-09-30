@@ -98,8 +98,8 @@ end
     world.Sim().Play();
     world.Sim().Tick(STEP);
     CHECK(world.Log == std::vector<std::string>{ "done" });
-    REQUIRE(world.Runtime->FindInstance(entity) != nullptr);
-    CHECK(world.Runtime->FindInstance(entity)->GetLastError().empty());
+    REQUIRE(world.Scripts->FindInstance(entity) != nullptr);
+    CHECK(world.Scripts->FindInstance(entity)->GetLastError().empty());
 
     const TransformComponent& transform = world.Ecs().GetComponent<TransformComponent>(entity);
     CHECK(Near(transform.Position, HM::Vector3(2.0f, 2.0f, 2.0f)));
@@ -148,7 +148,7 @@ end
     CHECK(world.Log[3].find("Entity " + std::to_string(child)) != std::string::npos);
     CHECK(world.Log[3].find("no longer exists") != std::string::npos);
 
-    ScriptInstance* instance = world.Runtime->FindInstance(holder);
+    ScriptInstance* instance = world.Scripts->FindInstance(holder);
     REQUIRE(instance != nullptr);
     CHECK(instance->IsFaulted());
     CHECK(instance->GetLastError().find("Entity " + std::to_string(child)) != std::string::npos);

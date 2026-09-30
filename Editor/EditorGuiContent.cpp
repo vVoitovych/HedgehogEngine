@@ -15,7 +15,7 @@
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
 #include "HedgehogEngine/api/ECS/systems/MeshSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/RenderSystem.hpp"
-#include "HedgehogScripting/api/ScriptRuntime.hpp"
+#include "HedgehogScripting/api/ScriptSystem.hpp"
 #include "HedgehogEngine/api/Engine.hpp"
 #include "HedgehogEngine/api/Resource/ResourceCatalog.hpp"
 #include "HedgehogEngine/api/EngineContext.hpp"
@@ -247,8 +247,8 @@ namespace Editor
         auto& script      = engineContext.GetECS().GetComponent<HedgehogEngine::ScriptComponent>(entity);
         script.ScriptPath = virtualPath->substr(ASSETS_PREFIX.size());
         script.Params.clear();
-        if (m_ScriptRuntime != nullptr)
-            script.Params = m_ScriptRuntime->DescribeScript(script.ScriptPath);
+        if (m_ScriptSystem != nullptr)
+            script.Params = m_ScriptSystem->DescribeScript(script.ScriptPath);
         return true;
     }
 

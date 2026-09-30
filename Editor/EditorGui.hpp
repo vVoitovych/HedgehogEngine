@@ -23,7 +23,7 @@ namespace Renderer
 
 namespace HedgehogScripting
 {
-    class ScriptRuntime;
+    class ScriptSystem;
 }
 
 namespace Editor
@@ -88,9 +88,9 @@ namespace Editor
         // from, and register the graph files they open with; set once it exists.
         void SetRenderer(Renderer::Renderer* renderer) { m_Renderer = renderer; }
 
-        // The runtime that plays the scene's scripts; the inspector asks it for a script's
+        // The system that plays the scene's scripts; the inspector asks it for a script's
         // parameters when one is assigned. Set once it exists.
-        void SetScriptRuntime(HedgehogScripting::ScriptRuntime* runtime) { m_ScriptRuntime = runtime; }
+        void SetScriptSystem(HedgehogScripting::ScriptSystem* system) { m_ScriptSystem = system; }
 
         // A benchmark measures the renderer: the Content panel then draws nothing, so its folder
         // scans never land in the numbers, whatever tab the saved layout left active.
@@ -175,7 +175,7 @@ namespace Editor
         // Valid only during Draw(); read by the viewport panel.
         ViewportImages m_ViewportImages;
         Renderer::Renderer*          m_Renderer = nullptr;
-        HedgehogScripting::ScriptRuntime* m_ScriptRuntime = nullptr;
+        HedgehogScripting::ScriptSystem*  m_ScriptSystem  = nullptr;
         std::optional<AssetDrop>          m_AssetDrop;        // this frame's, applied after the panels
         std::optional<ContentOpenRequest> m_SceneToOpen;      // a scene dropped on the hierarchy, awaiting yes
         bool                         m_Benchmarking = false;
