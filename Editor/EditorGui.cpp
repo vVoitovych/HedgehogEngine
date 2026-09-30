@@ -26,6 +26,7 @@
 #include "HedgehogEngine/api/ECS/systems/MeshSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/RenderSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/LightSystem.hpp"
+#include "HedgehogEngine/api/ECS/systems/ScriptSystem.hpp"
 #include "HedgehogEngine/api/ECS/components/LightComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RenderComponent.hpp"
@@ -156,7 +157,7 @@ namespace Editor
         const float menuH = ImGui::GetFrameHeight();
 
         m_DockSystem.Draw(
-            [this, &context]() { DrawToolbarContent(context); },
+            [this]() { DrawToolbarContent(); },
             [this, &context](PanelId panel) { DrawPanelContent(panel, context); },
             menuH);
 
@@ -263,9 +264,7 @@ namespace Editor
 
         if (ImGui::BeginMenu("File"))
         {
-            // Scene files change only in Edit: Stop would overwrite whatever they loaded.
-            const bool editing = engineContext.GetSimulation().IsEditing();
-            if (ImGui::MenuItem("New", nullptr, false, editing))
+            if (ImGui::MenuItem("New"))
             {
                 engineContext.GetSceneManager().ResetScene();
                 m_SelectedEntity.reset();
@@ -276,7 +275,7 @@ namespace Editor
                 if (newName != nullptr)
                     engineContext.GetSceneManager().SetSceneName(newName);
             }
-            if (ImGui::MenuItem("Open", nullptr, false, editing))
+            if (ImGui::MenuItem("Open"))
             {
                 char* path = DialogueWindows::SceneOpenDialogue();
                 if (path != nullptr)
@@ -288,7 +287,7 @@ namespace Editor
                     }
                 }
             }
-            if (ImGui::MenuItem("Save", nullptr, false, editing))
+            if (ImGui::MenuItem("Save"))
             {
                 char* path = DialogueWindows::SceneSaveDialogue();
                 if (path != nullptr)
@@ -407,54 +406,44 @@ namespace Editor
 
     // ─── Toolbar ─────────────────────────────────────────────────────────────
 
-    void EditorGui::DrawToolbarContent(HedgehogEngine::Engine& context)
+    void EditorGui::DrawToolbarContent()
     {
-        auto&                                 engineContext = context.GetEngineContext();
-        HedgehogEngine::Simulation&           simulation    = engineContext.GetSimulation();
-        const HedgehogEngine::SimulationState state         = simulation.GetState();
-
-        const bool isEdit  = (state == HedgehogEngine::SimulationState::Edit);
-        const bool isPlay  = (state == HedgehogEngine::SimulationState::Playing);
-        const bool isPause = (state == HedgehogEngine::SimulationState::Paused);
+        const bool isEdit  = (m_EditorMode == EditorMode::Edit);
+        const bool isPlay  = (m_EditorMode == EditorMode::Play);
+        const bool isPause = (m_EditorMode == EditorMode::Pause);
 
         if (isPlay)  ImGui::BeginDisabled();
         if (ImGui::Button("  Play  "))
-            simulation.Play();
+            m_EditorMode = EditorMode::Play;
         if (isPlay)  ImGui::EndDisabled();
 
         ImGui::SameLine();
 
         if (isEdit)  ImGui::BeginDisabled();
         if (ImGui::Button(isPause ? " Resume " : "  Pause  "))
-        {
-            if (isPause)
-                simulation.Resume();
-            else
-                simulation.Pause();
-        }
+            m_EditorMode = isPause ? EditorMode::Play : EditorMode::Pause;
         if (isEdit)  ImGui::EndDisabled();
 
         ImGui::SameLine();
 
         if (isEdit)  ImGui::BeginDisabled();
         if (ImGui::Button("  Stop  "))
-        {
-            simulation.Stop();
-            // The restored scene keeps its ids, but an entity made during Play is gone.
-            if (m_SelectedEntity && !engineContext.GetECS().IsAlive(*m_SelectedEntity))
-                m_SelectedEntity.reset();
-        }
+            m_EditorMode = EditorMode::Edit;
         if (isEdit)  ImGui::EndDisabled();
 
         ImGui::SameLine();
         ImGui::Text("|");
         ImGui::SameLine();
 
-        const char* modeText = "EDIT";
-        if (isPlay)
-            modeText = "PLAY";
-        else if (isPause)
-            modeText = "PAUSE";
+        const char* modeText = [this]() -> const char*
+        {
+            switch (m_EditorMode)
+            {
+            case EditorMode::Play:  return "PLAY";
+            case EditorMode::Pause: return "PAUSE";
+            default:                return "EDIT";
+            }
+        }();
         ImGui::Text("Mode: %s", modeText);
     }
 
@@ -983,6 +972,7 @@ namespace Editor
     {
         auto& engineContext = context.GetEngineContext();
         auto& ecs           = engineContext.GetECS();
+        auto* scriptSystem  = engineContext.GetScriptSystem();
         auto  entity        = m_SelectedEntity.value();
 
         if (!ecs.HasComponent<HedgehogEngine::ScriptComponent>(entity))
@@ -1006,15 +996,13 @@ namespace Editor
             AcceptSelectionDrop(ContentType::Script);
         }
 
-        // A running instance keeps the script it started with, so the script changes only in Edit.
-        ImGui::BeginDisabled(!engineContext.GetSimulation().IsEditing());
         if (ImGui::Button("Load script"))
         {
             std::string scriptPath = DialogueWindows::ScriptChooseDialogue();
             if (!scriptPath.empty())
-                (void)AssignScript(context, entity, scriptPath);
+                scriptSystem->ChangeScript(entity, ecs, engineContext.GetEventBus(),
+                                           engineContext.GetFileSystem(), scriptPath);
         }
-        ImGui::EndDisabled();
 
         if (!component.Params.empty())
             ImGui::SeparatorText("Parameters");

@@ -9,7 +9,6 @@
 #include "HedgehogExtract/api/RenderScene.hpp"
 #include "HedgehogExtract/api/SceneExtractor.hpp"
 #include "HedgehogRenderer/Renderer.hpp"
-#include "HedgehogScripting/api/ScriptRuntime.hpp"
 
 #include "FileSystem/api/FileSystemManager.hpp"
 
@@ -19,7 +18,6 @@
 
 #include <algorithm>
 #include <cstdlib>
-#include <memory>
 
 namespace Editor
 {
@@ -39,10 +37,6 @@ namespace Editor
             auto&       settings      = engineContext.GetSettings();
             const auto& fileSystem    = engineContext.GetFileSystem();
 
-            auto scriptRuntime = std::make_shared<HedgehogScripting::ScriptRuntime>(
-                engineContext.GetECS(), engineContext.GetEventBus(), fileSystem);
-            engineContext.GetSimulation().AddSystem(scriptRuntime);
-
             if (fileSystem.Exists(ENGINE_SETTINGS_PATH) && !settings.Load(ENGINE_SETTINGS_PATH, fileSystem))
                 LOGWARNING("Game mode: engine settings could not be read, using defaults.");
             settings.CleanDirtyState();
@@ -50,9 +44,6 @@ namespace Editor
             const auto scenePath = fileSystem.ResolvePhysical(GAME_SCENE);
             if (!scenePath || !engineContext.GetSceneManager().LoadScene(scenePath->string()))
                 LOGWARNING("Game mode: could not load '", GAME_SCENE, "'; rendering an empty scene.");
-
-            // A game runs its gameplay: the scene's scripts tick from the first frame.
-            engineContext.GetSimulation().Play();
 
             Renderer::Renderer renderer(engine.GetWindowContext().GetWindow(), fileSystem);
 
@@ -80,7 +71,6 @@ namespace Editor
                 sawImGui = sawImGui || ImGui::GetCurrentContext() != nullptr;
             }
 
-            engineContext.GetSimulation().Stop();
             renderer.Cleanup();
             engine.Cleanup();
             return sawImGui || ImGui::GetCurrentContext() != nullptr;

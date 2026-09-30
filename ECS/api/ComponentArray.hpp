@@ -5,8 +5,6 @@
 #include <unordered_map>
 #include <array>
 #include <cassert>
-#include <functional>
-#include <utility>
 
 namespace ECS
 {
@@ -21,15 +19,6 @@ namespace ECS
     class ComponentArray : public IComponentArray
     {
     public:
-        // Called with the component still in place, just before it is removed.
-        // The callback must not add or remove a T on the same entity.
-        using RemovedCallback = std::function<void(Entity, T&)>;
-
-        void SetRemovedCallback(RemovedCallback callback)
-        {
-            m_RemovedCallback = std::move(callback);
-        }
-
         void InsertData(Entity entity, T component)
         {
             assert(m_EntityToIndexMap.find(entity) == m_EntityToIndexMap.end() &&
@@ -61,16 +50,6 @@ namespace ECS
             --m_Size;
         }
 
-        // Runs the removal callback, then removes the data.
-        void NotifyAndRemoveData(Entity entity)
-        {
-            if (m_RemovedCallback)
-            {
-                m_RemovedCallback(entity, GetData(entity));
-            }
-            RemoveData(entity);
-        }
-
         T& GetData(Entity entity)
         {
             assert(m_EntityToIndexMap.find(entity) != m_EntityToIndexMap.end() &&
@@ -88,7 +67,7 @@ namespace ECS
         {
             if (m_EntityToIndexMap.find(entity) != m_EntityToIndexMap.end())
             {
-                NotifyAndRemoveData(entity);
+                RemoveData(entity);
             }
         }
 
@@ -98,7 +77,5 @@ namespace ECS
         std::unordered_map<size_t, Entity> m_IndexToEntityMap{};
 
         size_t m_Size = 0;
-
-        RemovedCallback m_RemovedCallback{};
     };
 }

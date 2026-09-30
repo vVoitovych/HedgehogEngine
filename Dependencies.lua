@@ -6,8 +6,6 @@ IncludeDir["ImGui"]     = "%{wks.location}/ThirdParty/ImGui"
 IncludeDir["ImGuiNodeEditor"] = "%{wks.location}/ThirdParty/ImGuiNodeEditor/imgui-node-editor"
 IncludeDir["VulkanSDK"] = "%{wks.location}/ThirdParty/vulkan/Include"
 IncludeDir["Tracy"]     = "%{wks.location}/ThirdParty/Tracy/tracy/public"
-IncludeDir["Lua"]       = "%{wks.location}/ThirdParty/Lua/lua"
-IncludeDir["sol2"]      = "%{wks.location}/ThirdParty/sol2/sol2/include"
 
 LibraryDir = {}
 LibraryDir["VulkanSDK"] = "%{wks.location}/ThirdParty/vulkan"

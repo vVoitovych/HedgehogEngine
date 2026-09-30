@@ -27,10 +27,9 @@ namespace ECS
         if (entity == m_RootEntity)
             m_RootEntity = INVALID_ENTITY;
 
-        // Components go first, so removal callbacks still see a live entity.
+        m_EntityManager->DestroyEntity(entity);
         m_ComponentManager->EntityDestroyed(entity);
         m_SystemManager->EntityDestroyed(entity);
-        m_EntityManager->DestroyEntity(entity);
     }
 
     Entity ECS::GetRoot() const
@@ -41,15 +40,5 @@ namespace ECS
     void ECS::SetRoot(Entity entity)
     {
         m_RootEntity = entity;
-    }
-
-    bool ECS::IsAlive(Entity entity) const
-    {
-        return m_EntityManager->IsAlive(entity);
-    }
-
-    uint32_t ECS::GetGeneration(Entity entity) const
-    {
-        return m_EntityManager->GetGeneration(entity);
     }
 }

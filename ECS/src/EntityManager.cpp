@@ -20,7 +20,6 @@ namespace ECS
 
         const Entity result = m_EntityPool.back();
         m_EntityPool.pop_back();
-        m_Alive.set(result);
         ++m_EntityCount;
 
         return result;
@@ -33,16 +32,12 @@ namespace ECS
         assert(it != std::end(m_EntityPool) && "Entity already created.");
         ++m_EntityCount;
         m_EntityPool.erase(it);
-        m_Alive.set(entity);
     }
 
     void EntityManager::DestroyEntity(Entity entity)
     {
         assert(entity < MAX_ENTITIES && "Entity out of range.");
-        assert(m_Alive.test(entity) && "Entity destroyed twice.");
         m_Signatures[entity].reset();
-        m_Alive.reset(entity);
-        ++m_Generations[entity];
         m_EntityPool.push_back(entity);
         --m_EntityCount;
     }
@@ -57,16 +52,5 @@ namespace ECS
     {
         assert(entity < MAX_ENTITIES && "Entity out of range.");
         m_Signatures[entity] = signature;
-    }
-
-    bool EntityManager::IsAlive(Entity entity) const
-    {
-        return entity < MAX_ENTITIES && m_Alive.test(entity);
-    }
-
-    uint32_t EntityManager::GetGeneration(Entity entity) const
-    {
-        assert(entity < MAX_ENTITIES && "Entity out of range.");
-        return m_Generations[entity];
     }
 }

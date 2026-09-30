@@ -15,11 +15,6 @@ if errorlevel 1 (
     echo [ERROR] Module boundary check failed - build and tests were not run.
     exit /b 1
 )
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0CheckModuleBoundaries.ps1" -SelfTest
-if errorlevel 1 (
-    echo [ERROR] Module boundary self-test failed - build and tests were not run.
-    exit /b 1
-)
 
 call "%~dp0Build.bat" %CONFIG%
 if errorlevel 1 (
@@ -30,7 +25,7 @@ if errorlevel 1 (
 set "BINDIR=%~dp0..\Binaries\windows-x86_64\%CONFIG%"
 set FAILED=0
 
-for %%T in (HedgehogMathTest FileSystemTest ECSTest EcsSerializationTest ContentLoaderTest HedgehogExtractTest RenderGraphTest HedgehogEngineTest ScriptingTest) do (
+for %%T in (HedgehogMathTest FileSystemTest ECSTest EcsSerializationTest ContentLoaderTest HedgehogExtractTest RenderGraphTest) do (
     echo.
     echo === Running %%T ^(%CONFIG%^) ===
     if exist "%BINDIR%\%%T.exe" (

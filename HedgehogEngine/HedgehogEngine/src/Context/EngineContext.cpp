@@ -19,6 +19,7 @@
 #include "HedgehogEngine/api/ECS/systems/MeshSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/LightSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/RenderSystem.hpp"
+#include "HedgehogEngine/api/ECS/systems/ScriptSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/CameraSystem.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
@@ -53,10 +54,6 @@ namespace HedgehogEngine
             *m_TransformSystem, *m_MeshSystem, *m_RenderSystem);
 
         m_ResourceCatalog.Update(*m_RenderSystem, *m_MeshSystem);
-
-        // Gameplay systems, the script runtime among them, are added by the application
-        // (the Editor, game mode), which sits above the engine.
-        m_Simulation = std::make_unique<Simulation>(*m_SceneManager);
 
         m_Settings = std::make_unique<HedgehogSettings::Settings>();
     }
@@ -101,6 +98,7 @@ namespace HedgehogEngine
         m_MeshSystem      = m_ECS.RegisterSystem<MeshSystem>();
         m_LightSystem     = m_ECS.RegisterSystem<LightSystem>();
         m_RenderSystem    = m_ECS.RegisterSystem<RenderSystem>();
+        m_ScriptSystem    = m_ECS.RegisterSystem<ScriptSystem>();
         m_CameraSystem    = m_ECS.RegisterSystem<CameraSystem>();
 
         m_TransformSystem->Init(m_EventBus);
@@ -129,6 +127,9 @@ namespace HedgehogEngine
         m_ECS.SetSystemSignature<RenderSystem>(signature);
         signature.reset();
 
+        signature.set(m_ECS.GetComponentType<ScriptComponent>());
+        m_ECS.SetSystemSignature<ScriptSystem>(signature);
+        signature.reset();
 
         signature.set(m_ECS.GetComponentType<CameraComponent>());
         m_ECS.SetSystemSignature<CameraSystem>(signature);
@@ -146,7 +147,7 @@ namespace HedgehogEngine
         m_ComponentRegistry->RegisterReflected<LightComponent>("LightComponent");
         m_ComponentRegistry->RegisterReflected<CameraComponent>("CameraComponent");
 
-        // ScriptComponent: RegisterCustom to write and read its Params
+        // ScriptComponent: RegisterCustom to handle m_Params and InitScript
         m_ComponentRegistry->RegisterCustom("ScriptComponent",
             [](YAML::Emitter& out, const ECS::ECS& ecs, ECS::Entity e)
             {
@@ -177,8 +178,7 @@ namespace HedgehogEngine
                 }
                 out << YAML::EndMap;
             },
-            // Scripts are data here: the application's script runtime runs them in Play.
-            [](ECS::ECS& ecs, ECS::Entity e, const YAML::Node& node)
+            [scriptSystem = m_ScriptSystem, this](ECS::ECS& ecs, ECS::Entity e, const YAML::Node& node)
             {
                 EcsSerialization::ComponentSerializerRegistry::DeserializeWithVisit<ScriptComponent>(ecs, e, node);
                 ScriptComponent& script = ecs.GetComponent<ScriptComponent>(e);
@@ -200,6 +200,7 @@ namespace HedgehogEngine
                         script.Params[paramName] = { type, value, false };
                     }
                 }
+                scriptSystem->InitScript(e, ecs, m_EventBus, m_FileSystem);
             },
             [](const ECS::ECS& ecs, ECS::Entity e) { return ecs.HasComponent<ScriptComponent>(e); }
         );
@@ -209,9 +210,8 @@ namespace HedgehogEngine
     {
         UpdateCamera(windowContext, aspectRatio, dt);
 
-        // Update order is load-bearing: Simulation (gameplay, Play only) → Transform → Hierarchy → Light.
-        // Transform, Hierarchy and Light run in every mode, so edits show in Edit mode too.
-        m_Simulation->Tick(dt);
+        // Update order is load-bearing: Script → Transform → Hierarchy → Light
+        m_ScriptSystem->Update(m_ECS, dt, m_EventBus);
         m_TransformSystem->Update(m_ECS, m_EventBus);
         m_HierarchySystem->Update(m_ECS, m_EventBus);
         m_LightSystem->Update(m_ECS);
@@ -224,9 +224,6 @@ namespace HedgehogEngine
 
     SceneManager& EngineContext::GetSceneManager()             { return *m_SceneManager; }
     const SceneManager& EngineContext::GetSceneManager() const { return *m_SceneManager; }
-
-    Simulation& EngineContext::GetSimulation()             { return *m_Simulation; }
-    const Simulation& EngineContext::GetSimulation() const { return *m_Simulation; }
 
     const FS::FileSystemManager& EngineContext::GetFileSystem() const { return m_FileSystem; }
 
@@ -244,6 +241,7 @@ namespace HedgehogEngine
     MeshSystem*       EngineContext::GetMeshSystem()       const { return m_MeshSystem.get(); }
     LightSystem*      EngineContext::GetLightSystem()      const { return m_LightSystem.get(); }
     RenderSystem*     EngineContext::GetRenderSystem()     const { return m_RenderSystem.get(); }
+    ScriptSystem*     EngineContext::GetScriptSystem()     const { return m_ScriptSystem.get(); }
     CameraSystem*     EngineContext::GetCameraSystem()     const { return m_CameraSystem.get(); }
 
     void EngineContext::UpdateCamera(WindowContext& windowContext, float aspectRatio, float dt)

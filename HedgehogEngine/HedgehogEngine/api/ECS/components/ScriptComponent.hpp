@@ -1,9 +1,13 @@
 #pragma once
 
+#include "ECS/api/Entity.hpp"
+
 #include <optional>
 #include <unordered_map>
 #include <string>
 #include <variant>
+
+struct lua_State;
 
 namespace HedgehogEngine
 {
@@ -20,10 +24,9 @@ namespace HedgehogEngine
         bool dirty = false;
     };
 
-    // Which script an entity runs, and its settings. Pure data: the application's
-    // script runtime turns it into a running instance in Play.
-    struct ScriptComponent
+    class ScriptComponent
     {
+    public:
         bool                                         Enable = true;
         std::optional<bool>                          NewEnable;  // runtime-only
         std::string                                  ScriptPath;
@@ -36,5 +39,11 @@ namespace HedgehogEngine
             v("ScriptEnable", Enable);
             v("ScriptFile",   ScriptPath);
         }
+
+        friend class ScriptSystem;
+
+    private:
+        lua_State* m_LuaState    = nullptr; // runtime-only
+        int        m_InstanceRef = 0;       // runtime-only
     };
 }

@@ -33,7 +33,6 @@ include "HedgehogEngine/RHIImGui/Build-RHIImGui.lua"
 
 include "HedgehogEngine/HedgehogCommon/Build-HedgehogCommon.lua"
 include "HedgehogEngine/HedgehogEngine/Build-HedgehogEngine.lua"
-include "HedgehogEngine/HedgehogEngine/tests/Build-HedgehogEngineTest.lua"
 include "HedgehogEngine/HedgehogRenderer/Build-HedgehogRenderer.lua"
 include "HedgehogEngine/HedgehogRenderer/tests/Build-RenderGraphTest.lua"
 include "HedgehogEngine/HedgehogWindow/Build-HedgehogWindow.lua"
@@ -56,6 +55,3 @@ include "FileSystem/tests/Build-FileSystemTest.lua"
 
 include "HedgehogExtract/Build-HedgehogExtract.lua"
 include "HedgehogExtract/tests/Build-HedgehogExtractTest.lua"
-
-include "HedgehogScripting/Build-HedgehogScripting.lua"
-include "HedgehogScripting/tests/Build-ScriptingTest.lua"

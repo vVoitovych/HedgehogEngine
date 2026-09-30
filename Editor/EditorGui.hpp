@@ -21,11 +21,6 @@ namespace Renderer
     class Renderer;
 }
 
-namespace HedgehogScripting
-{
-    class ScriptRuntime;
-}
-
 namespace Editor
 {
     class ConsolePanel;
@@ -33,6 +28,8 @@ namespace Editor
     class PipelineWindow;
     class ShaderWindow;
     class RenderGraphEditorWindow;
+
+    enum class EditorMode { Edit, Play, Pause };
 
     // The graphs the editor's own views use (RENDERING.md section 7). The inspector lists them
     // apart from the graphs a scene camera would normally pick.
@@ -88,10 +85,6 @@ namespace Editor
         // from, and register the graph files they open with; set once it exists.
         void SetRenderer(Renderer::Renderer* renderer) { m_Renderer = renderer; }
 
-        // The runtime that plays the scene's scripts; the inspector asks it for a script's
-        // parameters when one is assigned. Set once it exists.
-        void SetScriptRuntime(HedgehogScripting::ScriptRuntime* runtime) { m_ScriptRuntime = runtime; }
-
         // A benchmark measures the renderer: the Content panel then draws nothing, so its folder
         // scans never land in the numbers, whatever tab the saved layout left active.
         void SetBenchmarkMode(bool benchmarking) { m_Benchmarking = benchmarking; }
@@ -100,7 +93,7 @@ namespace Editor
         // ── Panel content (drawn into dock areas) ────────────────────────────
         void DrawPanelContent(PanelId panel, HedgehogEngine::Engine& context);
         void DrawMainMenu(HedgehogEngine::Engine& context);
-        void DrawToolbarContent(HedgehogEngine::Engine& context);
+        void DrawToolbarContent();
         void DrawSceneViewContent();
         void DrawContentPanel(HedgehogEngine::Engine& context);
         // What opening a Content panel file means, by type (EditorGuiContent.cpp): a scene
@@ -108,8 +101,6 @@ namespace Editor
         // pipeline, vertex description or graph opens in its tool; anything else, or an asset
         // with nothing suitable selected, opens in the OS default application.
         void OpenContentItem(HedgehogEngine::Engine& context, const ContentOpenRequest& request);
-        // Points the entity's ScriptComponent at a script file and lists its parameters. Edit mode only.
-        bool AssignScript(HedgehogEngine::Engine& context, ECS::Entity entity, const std::string& physicalPath);
         // Drops arrive while panels draw, over lists they are iterating: each is kept here and
         // applied once the frame's panels are drawn (EditorGuiContent.cpp).
         struct AssetDrop
@@ -164,6 +155,7 @@ namespace Editor
         std::optional<ViewportPoint> m_ScenePick;
 
         std::optional<ECS::Entity>             m_SelectedEntity;
+        EditorMode                             m_EditorMode         = EditorMode::Edit;
         bool                                   m_SettingsWindowOpen = false;
         std::unique_ptr<ConsolePanel>            m_ConsolePanel;
         std::unique_ptr<ContentPanel>            m_ContentPanel;
@@ -175,7 +167,6 @@ namespace Editor
         // Valid only during Draw(); read by the viewport panel.
         ViewportImages m_ViewportImages;
         Renderer::Renderer*          m_Renderer = nullptr;
-        HedgehogScripting::ScriptRuntime* m_ScriptRuntime = nullptr;
         std::optional<AssetDrop>          m_AssetDrop;        // this frame's, applied after the panels
         std::optional<ContentOpenRequest> m_SceneToOpen;      // a scene dropped on the hierarchy, awaiting yes
         bool                         m_Benchmarking = false;

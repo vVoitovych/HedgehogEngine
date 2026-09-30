@@ -4,7 +4,6 @@
 #include "HedgehogEngine/api/Events/EventBus.hpp"
 #include "HedgehogEngine/api/Resource/ResourceCatalog.hpp"
 #include "HedgehogEngine/api/Scene/SceneManager.hpp"
-#include "HedgehogEngine/api/Simulation/Simulation.hpp"
 
 #include "ECS/api/ECS.hpp"
 #include "ECS/api/Entity.hpp"
@@ -33,6 +32,7 @@ namespace HedgehogEngine
     class MeshSystem;
     class LightSystem;
     class RenderSystem;
+    class ScriptSystem;
     class CameraSystem;
 
     class EngineContext
@@ -49,9 +49,6 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API SceneManager&       GetSceneManager();
         HEDGEHOG_ENGINE_API const SceneManager& GetSceneManager() const;
 
-        HEDGEHOG_ENGINE_API Simulation&       GetSimulation();
-        HEDGEHOG_ENGINE_API const Simulation& GetSimulation() const;
-
         HEDGEHOG_ENGINE_API HedgehogSettings::Settings&       GetSettings();
         HEDGEHOG_ENGINE_API const HedgehogSettings::Settings& GetSettings() const;
 
@@ -65,6 +62,7 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API MeshSystem*         GetMeshSystem()      const;
         HEDGEHOG_ENGINE_API LightSystem*        GetLightSystem()     const;
         HEDGEHOG_ENGINE_API RenderSystem*       GetRenderSystem()    const;
+        HEDGEHOG_ENGINE_API ScriptSystem*       GetScriptSystem()    const;
         HEDGEHOG_ENGINE_API CameraSystem*       GetCameraSystem()    const;
 
         HEDGEHOG_ENGINE_API const FS::FileSystemManager& GetFileSystem() const;
@@ -89,6 +87,7 @@ namespace HedgehogEngine
         std::shared_ptr<MeshSystem>       m_MeshSystem;
         std::shared_ptr<LightSystem>      m_LightSystem;
         std::shared_ptr<RenderSystem>     m_RenderSystem;
+        std::shared_ptr<ScriptSystem>     m_ScriptSystem;
         std::shared_ptr<CameraSystem>     m_CameraSystem;
 
         ResourceCatalog m_ResourceCatalog;
@@ -99,7 +98,5 @@ namespace HedgehogEngine
         // Constructed after ECS/systems/component-registry are ready (it creates the scene root
         // and needs live system references) — see EngineContext.cpp for the ordering.
         std::unique_ptr<SceneManager> m_SceneManager;
-        // Holds a reference to the SceneManager, so it is declared (and destroyed) after it.
-        std::unique_ptr<Simulation>   m_Simulation;
     };
 }

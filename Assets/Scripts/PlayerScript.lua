@@ -10,14 +10,13 @@ function PlayerScript:new()
 end
 
 function PlayerScript:OnUpdate(dt)
-    local transform = self.entity.transform
-    local angles = transform.eulerAngles
+    local rot = GetRotation()
     if clockWise then
-        angles.z = angles.z + speed * dt
+        rot.z = rot.z + speed * dt
     else
-        angles.z = angles.z - speed * dt
+        rot.z = rot.z - speed * dt
     end
-    transform.eulerAngles = angles
+    SetRotation(rot)
 end
 
 

@@ -15,9 +15,7 @@ project "Editor"
       "../HedgehogEngine/RHIImGui/api",
       "%{IncludeDir.ImGui}".."/imgui",
       "%{IncludeDir.ImGuiNodeEditor}",
-      "%{IncludeDir.yaml_cpp}",
-      "%{IncludeDir.Lua}",
-      "%{IncludeDir.sol2}"
+      "%{IncludeDir.yaml_cpp}"
    }
 
    defines { "YAML_CPP_STATIC_DEFINE" }
@@ -26,8 +24,6 @@ project "Editor"
       "HedgehogEngine",
       "HedgehogCommon",
       "HedgehogExtract",
-      "HedgehogScripting",
-      "Lua",
       "HedgehogRenderer",
       "RHIImGui",
       "HedgehogWindow",
