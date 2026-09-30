@@ -7,6 +7,7 @@
 #include <memory>
 #include <cassert>
 #include <typeindex>
+#include <utility>
 
 namespace ECS
 {
@@ -44,7 +45,13 @@ namespace ECS
         template<typename T>
         void RemoveComponent(Entity entity)
         {
-            GetComponentArray<T>()->RemoveData(entity);
+            GetComponentArray<T>()->NotifyAndRemoveData(entity);
+        }
+
+        template<typename T>
+        void SetComponentRemovedCallback(typename ComponentArray<T>::RemovedCallback callback)
+        {
+            GetComponentArray<T>()->SetRemovedCallback(std::move(callback));
         }
 
         template<typename T>
@@ -59,8 +66,14 @@ namespace ECS
             return GetComponentArray<T>()->HasData(entity);
         }
 
+        // Every removal callback of the entity runs before any of its components is removed,
+        // so a callback can still read the entity's other components.
         void EntityDestroyed(Entity entity)
         {
+            for (auto const& pair : m_ComponentArrays)
+            {
+                pair.second->NotifyEntityDestroyed(entity);
+            }
             for (auto const& pair : m_ComponentArrays)
             {
                 pair.second->EntityDestroyed(entity);
