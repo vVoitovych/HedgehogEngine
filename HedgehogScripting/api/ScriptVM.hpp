@@ -2,9 +2,11 @@
 
 #include "HedgehogScripting/api/Sol.hpp"
 
+#include <exception>
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 
 namespace FS
 {
@@ -25,6 +27,7 @@ namespace HedgehogScripting
     {
     public:
         explicit ScriptVM(const FS::FileSystemManager& fileSystem);
+        ~ScriptVM();
 
         ScriptVM(const ScriptVM&)            = delete;
         ScriptVM& operator=(const ScriptVM&) = delete;
@@ -42,10 +45,35 @@ namespace HedgehogScripting
         [[nodiscard]] bool RunFile(const std::string& virtualPath);
 
         // Calls a loaded function with the traceback handler installed.
-        [[nodiscard]] bool Call(const sol::protected_function& function);
+        template<typename... Args>
+        [[nodiscard]] bool Call(const sol::protected_function& function, Args&&... args)
+        {
+            try
+            {
+                sol::protected_function withTraceback = function;
+                withTraceback.set_error_handler(m_Traceback);
+
+                const sol::protected_function_result result = withTraceback(std::forward<Args>(args)...);
+                if (result.valid())
+                    return true;
+                const sol::error error = result;
+                Fail(error.what());
+            }
+            catch (const std::exception& e)
+            {
+                Fail(std::string("ScriptVM::Call: ") + e.what());
+            }
+            return false;
+        }
 
         sol::state&        GetState();
         const std::string& GetLastError() const;
+        // debug.traceback, for callers that make their own protected calls and
+        // report errors their own way.
+        const sol::protected_function& GetTracebackHandler() const;
+
+        // Live ScriptVMs, each owning one lua_State; for leak and "one VM" checks.
+        static int GetOpenStateCount();
 
     private:
         void OpenSandbox();
