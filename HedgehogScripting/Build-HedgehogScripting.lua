@@ -8,12 +8,16 @@ project "HedgehogScripting"
    includedirs
    {
       "..",
+      "../HedgehogEngine",
       ".",
       "%{IncludeDir.Lua}",
       "%{IncludeDir.sol2}",
    }
 
    links {
+      "HedgehogEngine",
+      "ECS",
+      "HedgehogMath",
       "FileSystem",
       "Logger",
       "Lua",

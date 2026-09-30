@@ -9,6 +9,7 @@ project "ScriptingTest"
     {
         "../../ThirdParty",
         "../..",                -- so "HedgehogScripting/...", "FileSystem/..." and "Logger/..." resolve
+        "../../HedgehogEngine", -- so "HedgehogEngine/api/..." resolves
         ".",
         "%{IncludeDir.Lua}",
         "%{IncludeDir.sol2}"
@@ -17,6 +18,9 @@ project "ScriptingTest"
     links
     {
         "HedgehogScripting",
+        "HedgehogEngine",
+        "ECS",
+        "HedgehogMath",
         "FileSystem",
         "Logger",
         "Lua"
