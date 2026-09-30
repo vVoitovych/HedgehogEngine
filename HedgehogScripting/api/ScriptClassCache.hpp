@@ -48,6 +48,10 @@ namespace HedgehogScripting
         // its class table and its default values. Nothing is instantiated.
         [[nodiscard]] std::optional<sol::table> GetDefaults(const std::string& scriptPath);
 
+        // Forgets every compiled class and loads the base script again, so edited files
+        // are read afresh. Instances made before must not be used afterwards.
+        void Reload();
+
         [[nodiscard]] bool IsBaseLoaded() const;
         // Script files compiled so far, the base included. A cached file is never recompiled.
         [[nodiscard]] int GetCompileCount() const;
@@ -59,6 +63,7 @@ namespace HedgehogScripting
             sol::table Class;
         };
 
+        void               LoadBase();
         const ScriptClass* FindOrCompile(const std::string& scriptPath, const std::string& entityName);
         void               LogError(const std::string& entityName, const std::string& scriptPath,
                                     const std::string& message) const;

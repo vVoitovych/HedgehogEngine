@@ -9,6 +9,7 @@
 #include "HedgehogExtract/api/RenderScene.hpp"
 #include "HedgehogExtract/api/SceneExtractor.hpp"
 #include "HedgehogRenderer/Renderer.hpp"
+#include "HedgehogScripting/api/ScriptRuntime.hpp"
 
 #include "FileSystem/api/FileSystemManager.hpp"
 
@@ -18,6 +19,7 @@
 
 #include <algorithm>
 #include <cstdlib>
+#include <memory>
 
 namespace Editor
 {
@@ -36,6 +38,10 @@ namespace Editor
             auto&       engineContext = engine.GetEngineContext();
             auto&       settings      = engineContext.GetSettings();
             const auto& fileSystem    = engineContext.GetFileSystem();
+
+            auto scriptRuntime = std::make_shared<HedgehogScripting::ScriptRuntime>(
+                engineContext.GetECS(), engineContext.GetEventBus(), fileSystem);
+            engineContext.GetSimulation().AddSystem(scriptRuntime);
 
             if (fileSystem.Exists(ENGINE_SETTINGS_PATH) && !settings.Load(ENGINE_SETTINGS_PATH, fileSystem))
                 LOGWARNING("Game mode: engine settings could not be read, using defaults.");

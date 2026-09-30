@@ -57,6 +57,8 @@ namespace HedgehogScripting
 
     void ScriptRuntime::OnPlayStart()
     {
+        // No instances exist between Plays, so every script can be read afresh.
+        m_Classes.Reload();
         const std::vector<ECS::Entity> entities = m_Entities->GetEntities();
         for (ECS::Entity entity : entities)
         {
@@ -138,6 +140,8 @@ namespace HedgehogScripting
         const std::string& scriptPath)
     {
         std::unordered_map<std::string, HedgehogEngine::ScriptParam> params;
+        if (m_Running.empty())
+            m_Classes.Reload(); // pick up edits to the file; never while instances depend on the cache
         const std::optional<sol::table> defaults = m_Classes.GetDefaults(ToVirtualPath(scriptPath));
         if (!defaults)
             return params;
