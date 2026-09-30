@@ -6,7 +6,6 @@
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
-#include "HedgehogEngine/api/ECS/systems/ScriptSystem.hpp"
 #include "HedgehogEngine/api/Simulation/Simulation.hpp"
 
 #include "FileSystem/api/PathUtils.hpp"
@@ -91,7 +90,6 @@ TEST_CASE("Engine scripts - describing a script in Edit lists its parameters and
     CHECK(params.count("speed") == 1u);
     CHECK(params.count("clockWise") == 1u);
     CHECK(engine.Runtime->GetInstanceCount() == 0u);
-    CHECK(ScriptSystem::GetOpenLuaStateCount() == 0);
 }
 
 TEST_CASE("Engine scripts - 50 Play/Stop cycles keep one VM and no instances between Plays")
@@ -110,6 +108,5 @@ TEST_CASE("Engine scripts - 50 Play/Stop cycles keep one VM and no instances bet
         REQUIRE(engine.Runtime->GetInstanceCount() == 0u);
     }
     CHECK(ScriptVM::GetOpenStateCount() == 1);
-    CHECK(ScriptSystem::GetOpenLuaStateCount() == 0);
     CHECK(engine.RotationZ(DEFAULT_SCENE_SPINNER) == start);
 }

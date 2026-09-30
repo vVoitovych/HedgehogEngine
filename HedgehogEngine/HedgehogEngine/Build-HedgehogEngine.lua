@@ -30,7 +30,6 @@ project "HedgehogEngine"
         "ECS",
         "EcsSerialization",
         "FileSystem",
-        "Lua",
         "yaml-cpp"
     }
 

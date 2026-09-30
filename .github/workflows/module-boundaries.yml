@@ -1,7 +1,8 @@
 name: Module boundaries
 
 # Fails a pull request that breaks a module boundary: an include reaching into another module's
-# src/, or HedgehogRenderer including the ECS, the engine module or ImGui. The same script runs
+# src/, HedgehogRenderer including the ECS, the engine module or ImGui, or the engine module
+# including Lua, sol2, Jolt or HedgehogScripting. The same script (and its self-test) runs
 # first in Scripts\RunTests.bat. It reads #include strings only, so no submodules or build are
 # needed.
 
@@ -22,3 +23,6 @@ jobs:
       - name: Check module boundaries
         shell: powershell
         run: .\Scripts\CheckModuleBoundaries.ps1
+      - name: Self-test the boundary rules
+        shell: powershell
+        run: .\Scripts\CheckModuleBoundaries.ps1 -SelfTest
