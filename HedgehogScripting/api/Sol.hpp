@@ -18,3 +18,12 @@
 #endif
 
 #include "sol/sol.hpp"
+
+#include "HedgehogMath/api/Vector.hpp"
+
+// HM::Vector has begin/end/size, so sol2 would push it as a container (a table-like proxy) and
+// ignore the Vector3 usertype. Every translation unit must agree on this, hence it lives here.
+template<>
+struct sol::is_container<HM::Vector3> : std::false_type
+{
+};

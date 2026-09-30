@@ -35,14 +35,14 @@ function Recorder:OnUpdate(dt) print("OnUpdate " .. label .. " speed " .. speed)
 function Recorder:OnDestroy() print("OnDestroy " .. label) end
 )lua";
 
-    // The script events in the captured log, in order, with the "[INFO]" prefix and trailing
-    // space removed.
+    // The script events in the captured log, in order, without print's "[INFO][Script] <file>:<line>: "
+    // prefix and trailing space.
     std::vector<std::string> Events(const LogCapture& log)
     {
         std::vector<std::string> events;
-        for (std::string line : log.Lines("[INFO]On"))
+        for (std::string line : log.Lines(": On"))
         {
-            line = line.substr(line.find("On"));
+            line = line.substr(line.find(": On") + 2);
             while (!line.empty() && line.back() == ' ')
                 line.pop_back();
             events.push_back(line);

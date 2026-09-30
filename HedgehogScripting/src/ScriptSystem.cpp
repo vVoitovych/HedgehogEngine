@@ -1,6 +1,7 @@
 #include "HedgehogScripting/api/ScriptSystem.hpp"
 
 #include "Sandbox.hpp"
+#include "Bindings/Bindings.hpp"
 
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
@@ -91,6 +92,8 @@ namespace HedgehogScripting
         : m_ScriptFiles(scriptFiles)
     {
         m_Traceback       = OpenSandbox(m_Lua);
+        Bindings::RegisterMath(m_Lua);
+        Bindings::RegisterLog(m_Lua);
         m_BaseEnvironment = sol::environment(m_Lua, sol::create, m_Lua.globals());
         StartClassSupport();
     }
