@@ -8,6 +8,11 @@ project "HedgehogEngine"
         "**.hpp", "**.cpp"
     }
 
+    removefiles
+    {
+        "tests/**.hpp", "tests/**.cpp"
+    }
+
     includedirs
     {
         "%{IncludeDir.yaml_cpp}",
