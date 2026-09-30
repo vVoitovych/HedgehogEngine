@@ -19,7 +19,6 @@
 #include "HedgehogEngine/api/ECS/systems/MeshSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/LightSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/RenderSystem.hpp"
-#include "HedgehogEngine/api/ECS/systems/ScriptSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/CameraSystem.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
@@ -64,11 +63,6 @@ namespace HedgehogEngine
         // Systems hear that play ends, but the scene is going away, so it is not restored.
         if (m_PlayState != PlayState::Edit)
             m_ECS.NotifyPlayStop();
-
-        // Tearing down the ECS runs no removal callbacks, so close the scripts still open.
-        const std::vector<ECS::Entity> scripted = m_ScriptSystem->GetEntities();
-        for (ECS::Entity entity : scripted)
-            m_ScriptSystem->ClearScriptComponent(entity, m_ECS);
     }
 
     void EngineContext::InitFileSystem()
@@ -102,19 +96,11 @@ namespace HedgehogEngine
         m_ECS.RegisterComponent<ScriptComponent>();
         m_ECS.RegisterComponent<CameraComponent>();
 
-        // Closes a script's lua_State whenever its component goes: removal, entity deletion,
-        // a scene load, or Stop restoring the Play snapshot.
-        m_ECS.SetComponentRemovedCallback<ScriptComponent>([](ECS::Entity, ScriptComponent& script)
-        {
-            ScriptSystem::ReleaseScript(script);
-        });
-
         m_TransformSystem = m_ECS.RegisterSystem<TransformSystem>();
         m_HierarchySystem = m_ECS.RegisterSystem<HierarchySystem>();
         m_MeshSystem      = m_ECS.RegisterSystem<MeshSystem>();
         m_LightSystem     = m_ECS.RegisterSystem<LightSystem>();
         m_RenderSystem    = m_ECS.RegisterSystem<RenderSystem>();
-        m_ScriptSystem    = m_ECS.RegisterSystem<ScriptSystem>(m_EventBus);
         m_CameraSystem    = m_ECS.RegisterSystem<CameraSystem>();
 
         m_TransformSystem->Init(m_EventBus);
@@ -143,10 +129,6 @@ namespace HedgehogEngine
         m_ECS.SetSystemSignature<RenderSystem>(signature);
         signature.reset();
 
-        signature.set(m_ECS.GetComponentType<ScriptComponent>());
-        m_ECS.SetSystemSignature<ScriptSystem>(signature);
-        signature.reset();
-
         signature.set(m_ECS.GetComponentType<CameraComponent>());
         m_ECS.SetSystemSignature<CameraSystem>(signature);
 
@@ -163,7 +145,8 @@ namespace HedgehogEngine
         m_ComponentRegistry->RegisterReflected<LightComponent>("LightComponent");
         m_ComponentRegistry->RegisterReflected<CameraComponent>("CameraComponent");
 
-        // ScriptComponent: RegisterCustom to handle m_Params and InitScript
+        // ScriptComponent: RegisterCustom to handle Params. Scripts run in the application's
+        // script system; loading a scene only reads the data.
         m_ComponentRegistry->RegisterCustom("ScriptComponent",
             [](YAML::Emitter& out, const ECS::ECS& ecs, ECS::Entity e)
             {
@@ -194,7 +177,7 @@ namespace HedgehogEngine
                 }
                 out << YAML::EndMap;
             },
-            [scriptSystem = m_ScriptSystem, this](ECS::ECS& ecs, ECS::Entity e, const YAML::Node& node)
+            [](ECS::ECS& ecs, ECS::Entity e, const YAML::Node& node)
             {
                 EcsSerialization::ComponentSerializerRegistry::DeserializeWithVisit<ScriptComponent>(ecs, e, node);
                 ScriptComponent& script = ecs.GetComponent<ScriptComponent>(e);
@@ -216,7 +199,6 @@ namespace HedgehogEngine
                         script.Params[paramName] = { type, value, false };
                     }
                 }
-                scriptSystem->InitScript(e, ecs, m_EventBus, m_FileSystem);
             },
             [](const ECS::ECS& ecs, ECS::Entity e) { return ecs.HasComponent<ScriptComponent>(e); }
         );
@@ -320,7 +302,6 @@ namespace HedgehogEngine
     MeshSystem*       EngineContext::GetMeshSystem()       const { return m_MeshSystem.get(); }
     LightSystem*      EngineContext::GetLightSystem()      const { return m_LightSystem.get(); }
     RenderSystem*     EngineContext::GetRenderSystem()     const { return m_RenderSystem.get(); }
-    ScriptSystem*     EngineContext::GetScriptSystem()     const { return m_ScriptSystem.get(); }
     CameraSystem*     EngineContext::GetCameraSystem()     const { return m_CameraSystem.get(); }
 
     void EngineContext::UpdateCamera(WindowContext& windowContext, float aspectRatio, float dt)

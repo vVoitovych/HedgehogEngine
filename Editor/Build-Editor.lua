@@ -15,7 +15,10 @@ project "Editor"
       "../HedgehogEngine/RHIImGui/api",
       "%{IncludeDir.ImGui}".."/imgui",
       "%{IncludeDir.ImGuiNodeEditor}",
-      "%{IncludeDir.yaml_cpp}"
+      "%{IncludeDir.yaml_cpp}",
+      -- HedgehogScripting's ScriptSystem header includes sol2, which includes Lua.
+      "%{IncludeDir.Lua}",
+      "%{IncludeDir.sol2}"
    }
 
    defines { "YAML_CPP_STATIC_DEFINE" }
@@ -24,6 +27,8 @@ project "Editor"
       "HedgehogEngine",
       "HedgehogCommon",
       "HedgehogExtract",
+      "HedgehogScripting",
+      "Lua",
       "HedgehogRenderer",
       "RHIImGui",
       "HedgehogWindow",

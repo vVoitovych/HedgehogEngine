@@ -21,6 +21,11 @@ namespace Renderer
     class Renderer;
 }
 
+namespace HedgehogScripting
+{
+    class ScriptSystem;
+}
+
 namespace Editor
 {
     class ConsolePanel;
@@ -83,6 +88,10 @@ namespace Editor
         // from, and register the graph files they open with; set once it exists.
         void SetRenderer(Renderer::Renderer* renderer) { m_Renderer = renderer; }
 
+        // The script system the inspector lists script parameters with and pushes live edits to.
+        // Not owned: the engine's ECS owns it.
+        void SetScriptSystem(HedgehogScripting::ScriptSystem* scriptSystem) { m_ScriptSystem = scriptSystem; }
+
         // A benchmark measures the renderer: the Content panel then draws nothing, so its folder
         // scans never land in the numbers, whatever tab the saved layout left active.
         void SetBenchmarkMode(bool benchmarking) { m_Benchmarking = benchmarking; }
@@ -118,6 +127,9 @@ namespace Editor
         // False when the selected entity has nowhere to put the file.
         bool AssignToSelection(HedgehogEngine::Engine& context, const ContentOpenRequest& request,
                                const std::string& physicalPath);
+        // Edit mode only: points entity's ScriptComponent at the script and lists its parameters,
+        // running none of its code. False, logged, when refused.
+        bool AssignScript(HedgehogEngine::Engine& context, ECS::Entity entity, const std::string& physicalPath);
         void DrawSceneHierarchy(HedgehogEngine::Engine& context);
         void DrawHierarchyNode(HedgehogEngine::Engine& context, ECS::Entity entity, int& index);
         void DrawInspector(HedgehogEngine::Engine& context);
@@ -164,6 +176,7 @@ namespace Editor
         // Valid only during Draw(); read by the viewport panel.
         ViewportImages m_ViewportImages;
         Renderer::Renderer*          m_Renderer = nullptr;
+        HedgehogScripting::ScriptSystem* m_ScriptSystem = nullptr;
         std::optional<AssetDrop>          m_AssetDrop;        // this frame's, applied after the panels
         std::optional<ContentOpenRequest> m_SceneToOpen;      // a scene dropped on the hierarchy, awaiting yes
         bool                         m_Benchmarking = false;

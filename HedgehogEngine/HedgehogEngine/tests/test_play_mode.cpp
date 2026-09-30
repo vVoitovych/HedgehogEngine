@@ -3,7 +3,6 @@
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogEngine/api/Scene/SceneManager.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
-#include "HedgehogEngine/api/ECS/systems/ScriptSystem.hpp"
 
 #include "ECS/api/ECS.hpp"
 #include "ECS/api/System.hpp"
@@ -64,11 +63,6 @@ namespace
     public:
         using RecordingSystem::RecordingSystem;
     };
-
-    float RotationZ(EngineContext& context, ECS::Entity entity)
-    {
-        return context.GetECS().GetComponent<TransformComponent>(entity).Rotation.z();
-    }
 }
 
 TEST_CASE("Play mode - no event reaches a system in Edit or while paused")
@@ -200,35 +194,4 @@ TEST_CASE("Play mode - Stop restores the scene as it was on Play, after OnPlaySt
     CHECK(ecs.IsAlive(doomed));
     if (spawned != doomed)
         CHECK_FALSE(ecs.IsAlive(spawned));
-}
-
-TEST_CASE("Play mode - Default.yaml's PlayerScript turns only in Play and Stop puts it back")
-{
-    EngineContext context;
-    const auto    scenePath = context.GetFileSystem().ResolvePhysical("assets://Scenes/Default.yaml");
-    REQUIRE(scenePath.has_value());
-    REQUIRE(context.GetSceneManager().LoadScene(scenePath->string()));
-
-    const auto& scripted = context.GetScriptSystem()->GetEntities();
-    REQUIRE(scripted.size() == 1);
-    const ECS::Entity player = scripted.front();
-    const float       start  = RotationZ(context, player);
-
-    for (int frame = 0; frame < 60; ++frame)
-        context.UpdatePlayMode(STEP);
-    CHECK(RotationZ(context, player) == start);
-
-    // speed 7.45, counter-clockwise: one second of play turns it by -7.45.
-    REQUIRE(context.Play());
-    for (int frame = 0; frame < 60; ++frame)
-        context.UpdatePlayMode(STEP);
-    CHECK(RotationZ(context, player) - start == doctest::Approx(-7.45f).epsilon(0.01f / 7.45f));
-
-    REQUIRE(context.Pause());
-    const float paused = RotationZ(context, player);
-    context.UpdatePlayMode(STEP);
-    CHECK(RotationZ(context, player) == paused);
-
-    REQUIRE(context.Stop());
-    CHECK(RotationZ(context, player) == start);
 }

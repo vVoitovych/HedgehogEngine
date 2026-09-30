@@ -15,11 +15,11 @@
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
 #include "HedgehogEngine/api/ECS/systems/MeshSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/RenderSystem.hpp"
-#include "HedgehogEngine/api/ECS/systems/ScriptSystem.hpp"
 #include "HedgehogEngine/api/Engine.hpp"
 #include "HedgehogEngine/api/Resource/ResourceCatalog.hpp"
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogRenderer/Renderer.hpp"
+#include "HedgehogScripting/api/ScriptSystem.hpp"
 
 #include "ECS/api/ECS.hpp"
 #include "ECS/api/components/Hierarchy.hpp"
@@ -151,8 +151,8 @@ namespace Editor
         case ContentType::Script:
             if (!ecs.HasComponent<HedgehogEngine::ScriptComponent>(entity))
                 return false;
-            engineContext.GetScriptSystem()->ChangeScript(entity, ecs, engineContext.GetEventBus(), engineContext.GetFileSystem(),
-                                                          physicalPath);
+            if (!AssignScript(context, entity, physicalPath))
+                return true; // refused, and said why; nothing to open instead
             break;
         case ContentType::RenderGraph:
         {
@@ -170,6 +170,33 @@ namespace Editor
         // in the next frame's catalog update; the inspector reads it this frame, so sync now.
         engineContext.GetResourceCatalog().Update(*engineContext.GetRenderSystem(), *engineContext.GetMeshSystem());
         LOGINFO("Content: assigned '", request.VirtualPath, "' to the selected entity.");
+        return true;
+    }
+
+    bool EditorGui::AssignScript(HedgehogEngine::Engine& context, ECS::Entity entity, const std::string& physicalPath)
+    {
+        auto& engineContext = context.GetEngineContext();
+        auto& ecs           = engineContext.GetECS();
+        if (engineContext.GetPlayState() != HedgehogEngine::PlayState::Edit)
+        {
+            LOGWARNING("Scripts are assigned in Edit mode; stop playing first.");
+            return false;
+        }
+        if (!m_ScriptSystem || !ecs.HasComponent<HedgehogEngine::ScriptComponent>(entity))
+            return false;
+
+        const auto virtualPath = engineContext.GetFileSystem().ToVirtualPath(physicalPath);
+        if (!virtualPath || !virtualPath->starts_with(ASSETS_PREFIX))
+        {
+            LOGERROR("Editor: '", physicalPath, "' is not under assets://, so it cannot be a script.");
+            return false;
+        }
+
+        // The component keeps the path under assets://, as scenes store it; the parameters come
+        // from the file's top-level globals, and no script code runs until Play.
+        auto& script      = ecs.GetComponent<HedgehogEngine::ScriptComponent>(entity);
+        script.ScriptPath = virtualPath->substr(ASSETS_PREFIX.size());
+        script.Params     = m_ScriptSystem->DescribeScript(*virtualPath);
         return true;
     }
 
