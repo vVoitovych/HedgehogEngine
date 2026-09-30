@@ -22,6 +22,7 @@ project "ScriptingTest"
     links
     {
         "HedgehogScripting",
+        "HedgehogExtract", -- the component tests check what the extractor sees
         "HedgehogEngine",
         "EcsSerialization",
         "ECS",
