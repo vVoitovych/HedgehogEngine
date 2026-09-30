@@ -4,6 +4,16 @@
 
 namespace ECS
 {
+    ECS::~ECS()
+    {
+        m_SystemManager.reset();
+        m_EntityManager.reset();
+        m_ComponentManager.reset();
+    }
+
+    ECS::ECS(ECS&& other) noexcept            = default;
+    ECS& ECS::operator=(ECS&& other) noexcept = default;
+
     void ECS::Init()
     {
         m_ComponentManager = std::make_unique<ComponentManager>();
@@ -51,5 +61,35 @@ namespace ECS
     uint32_t ECS::GetGeneration(Entity entity) const
     {
         return m_EntityManager->GetGeneration(entity);
+    }
+
+    void ECS::NotifyPlayStart()
+    {
+        m_SystemManager->ForEachSystem([this](System& system) { system.OnPlayStart(*this); });
+    }
+
+    void ECS::NotifyPlayPause()
+    {
+        m_SystemManager->ForEachSystem([this](System& system) { system.OnPlayPause(*this); });
+    }
+
+    void ECS::NotifyPlayResume()
+    {
+        m_SystemManager->ForEachSystem([this](System& system) { system.OnPlayResume(*this); });
+    }
+
+    void ECS::NotifyPlayStop()
+    {
+        m_SystemManager->ForEachSystemReverse([this](System& system) { system.OnPlayStop(*this); });
+    }
+
+    void ECS::RunFixedUpdate(float fixedDeltaTime)
+    {
+        m_SystemManager->ForEachSystem([&](System& system) { system.OnFixedUpdate(*this, fixedDeltaTime); });
+    }
+
+    void ECS::RunUpdate(float deltaTime)
+    {
+        m_SystemManager->ForEachSystem([&](System& system) { system.OnUpdate(*this, deltaTime); });
     }
 }

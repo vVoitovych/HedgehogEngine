@@ -17,6 +17,18 @@ namespace ECS
     class ECS
     {
     public:
+        ECS() = default;
+        // Destroys the systems before the entity and component storage: a system may hold a
+        // component-removed callback or other state that refers to that storage.
+        ECS_API ~ECS();
+
+        ECS(const ECS&)            = delete;
+        ECS& operator=(const ECS&) = delete;
+        // Movable so a fully built ECS can be returned from a helper. Do not move one whose
+        // systems keep a reference to it.
+        ECS_API ECS(ECS&& other) noexcept;
+        ECS_API ECS& operator=(ECS&& other) noexcept;
+
         ECS_API void Init();
 
         ECS_API Entity CreateEntity();
@@ -89,10 +101,11 @@ namespace ECS
             return m_ComponentManager->GetComponentType<T>();
         }
 
-        template<typename T>
-        std::shared_ptr<T> RegisterSystem()
+        // Constructs T from args; the ECS owns it from then on.
+        template<typename T, typename... Args>
+        std::shared_ptr<T> RegisterSystem(Args&&... args)
         {
-            return m_SystemManager->RegisterSystem<T>();
+            return m_SystemManager->RegisterSystem<T>(std::forward<Args>(args)...);
         }
 
         template<typename T>
@@ -121,6 +134,16 @@ namespace ECS
         {
             return m_SystemManager->GetSystem<T>();
         }
+
+        // Play-mode events, forwarded to every registered system in registration order
+        // (NotifyPlayStop in reverse). The ECS keeps no play state and checks nothing: the caller
+        // that drives play mode decides when each event is due.
+        ECS_API void NotifyPlayStart();
+        ECS_API void NotifyPlayPause();
+        ECS_API void NotifyPlayResume();
+        ECS_API void NotifyPlayStop();
+        ECS_API void RunFixedUpdate(float fixedDeltaTime);
+        ECS_API void RunUpdate(float deltaTime);
 
     private:
         std::unique_ptr<ComponentManager> m_ComponentManager;

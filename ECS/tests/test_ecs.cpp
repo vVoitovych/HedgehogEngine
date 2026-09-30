@@ -5,7 +5,9 @@
 
 #include <cstdint>
 #include <map>
+#include <memory>
 #include <set>
+#include <string>
 #include <vector>
 
 namespace
@@ -498,4 +500,147 @@ TEST_CASE("ECS removed callback - on DestroyEntity every callback still sees the
     CHECK(positionSawVelocity);
     CHECK(velocitySawPosition);
     CHECK_FALSE(ecs.IsAlive(e));
+}
+
+// ---------------------------------------------------------------------------
+// Systems: construction arguments, registration order and play-mode events
+// ---------------------------------------------------------------------------
+
+namespace
+{
+    // Logs every hook as "<name>.<hook>"; the ECS keeps one system per type, so each tag is its
+    // own system.
+    template<int Tag>
+    class RecordingSystem : public ECS::System
+    {
+    public:
+        RecordingSystem(std::string name, std::vector<std::string>& log)
+            : Name(std::move(name)), Log(log)
+        {
+        }
+
+        void OnPlayStart(ECS::ECS&) override  { Log.push_back(Name + ".start"); }
+        void OnPlayPause(ECS::ECS&) override  { Log.push_back(Name + ".pause"); }
+        void OnPlayResume(ECS::ECS&) override { Log.push_back(Name + ".resume"); }
+        void OnPlayStop(ECS::ECS&) override   { Log.push_back(Name + ".stop"); }
+        void OnFixedUpdate(ECS::ECS&, float fixedDeltaTime) override
+        {
+            Log.push_back(Name + ".fixed");
+            LastFixedDeltaTime = fixedDeltaTime;
+        }
+        void OnUpdate(ECS::ECS&, float deltaTime) override
+        {
+            Log.push_back(Name + ".update");
+            LastDeltaTime = deltaTime;
+        }
+
+        std::string               Name;
+        std::vector<std::string>& Log;
+        float                     LastFixedDeltaTime = 0.0f;
+        float                     LastDeltaTime      = 0.0f;
+    };
+
+    // Overrides nothing.
+    class PlainSystem : public ECS::System
+    {
+    };
+
+    // Uses the component storage from its destructor, as a system clearing its removal
+    // callback would.
+    class CallbackOwner : public ECS::System
+    {
+    public:
+        explicit CallbackOwner(ECS::ECS& ecs)
+            : m_Ecs(&ecs)
+        {
+            m_Ecs->SetComponentRemovedCallback<Position>([](ECS::Entity, Position&) {});
+        }
+        ~CallbackOwner() override
+        {
+            m_Ecs->SetComponentRemovedCallback<Position>({});
+            DestroyedWithStorageAlive = true;
+        }
+
+        static inline bool DestroyedWithStorageAlive = false;
+
+    private:
+        ECS::ECS* m_Ecs;
+    };
+}
+
+TEST_CASE("ECS::RegisterSystem - forwards constructor arguments")
+{
+    ECS::ECS                 ecs = MakeEcs();
+    std::vector<std::string> log;
+
+    auto system = ecs.RegisterSystem<RecordingSystem<1>>("first", log);
+    REQUIRE(system.get() != nullptr);
+    CHECK(system->Name == "first");
+    CHECK(&system->Log == &log);
+    CHECK(ecs.GetSystem<RecordingSystem<1>>().get() == system.get());
+}
+
+TEST_CASE("ECS play events - each reaches every system in registration order, stop in reverse")
+{
+    ECS::ECS                 ecs = MakeEcs();
+    std::vector<std::string> log;
+    ecs.RegisterSystem<RecordingSystem<1>>("A", log);
+    ecs.RegisterSystem<PlainSystem>();
+    auto b = ecs.RegisterSystem<RecordingSystem<2>>("B", log);
+
+    ecs.NotifyPlayStart();
+    ecs.RunFixedUpdate(1.0f / 60.0f);
+    ecs.RunUpdate(1.0f / 30.0f);
+    ecs.NotifyPlayPause();
+    ecs.NotifyPlayResume();
+    ecs.NotifyPlayStop();
+
+    const std::vector<std::string> expected{ "A.start",  "B.start",  "A.fixed",  "B.fixed",
+                                             "A.update", "B.update", "A.pause",  "B.pause",
+                                             "A.resume", "B.resume", "B.stop",   "A.stop" };
+    CHECK(log == expected);
+    CHECK(b->LastFixedDeltaTime == 1.0f / 60.0f);
+    CHECK(b->LastDeltaTime == 1.0f / 30.0f);
+}
+
+TEST_CASE("ECS play events - the ECS keeps no play state and forwards every call as it comes")
+{
+    // Deciding when an event is due belongs to whoever drives play mode, not to the ECS.
+    ECS::ECS                 ecs = MakeEcs();
+    std::vector<std::string> log;
+    ecs.RegisterSystem<RecordingSystem<1>>("A", log);
+
+    ecs.RunUpdate(0.5f);
+    ecs.NotifyPlayStop();
+    ecs.NotifyPlayStop();
+    CHECK(log == std::vector<std::string>{ "A.update", "A.stop", "A.stop" });
+}
+
+TEST_CASE("ECS::System - a system that overrides no event is left untouched")
+{
+    ECS::ECS ecs   = MakeEcs();
+    auto     plain = ecs.RegisterSystem<PlainSystem>();
+
+    const ECS::Entity e = ecs.CreateEntity();
+    ecs.NotifyPlayStart();
+    ecs.RunFixedUpdate(1.0f / 60.0f);
+    ecs.RunUpdate(1.0f / 60.0f);
+    ecs.NotifyPlayPause();
+    ecs.NotifyPlayResume();
+    ecs.NotifyPlayStop();
+
+    CHECK(ecs.IsAlive(e));
+    CHECK(plain->GetEntities().empty());
+}
+
+TEST_CASE("ECS teardown - systems are destroyed while the component storage still exists")
+{
+    CallbackOwner::DestroyedWithStorageAlive = false;
+    {
+        auto ecs = std::make_unique<ECS::ECS>();
+        ecs->Init();
+        ecs->RegisterComponent<Position>();
+        ecs->RegisterSystem<CallbackOwner>(*ecs);
+    }
+    CHECK(CallbackOwner::DestroyedWithStorageAlive);
 }
