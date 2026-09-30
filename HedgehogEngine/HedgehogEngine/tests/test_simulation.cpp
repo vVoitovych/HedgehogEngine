@@ -6,7 +6,6 @@
 #include "HedgehogEngine/api/Simulation/Simulation.hpp"
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
-#include "HedgehogEngine/api/ECS/systems/ScriptSystem.hpp"
 
 #include "ECS/api/ECS.hpp"
 
@@ -18,7 +17,6 @@
 
 using HedgehogEngine::EngineContext;
 using HedgehogEngine::ScriptComponent;
-using HedgehogEngine::ScriptSystem;
 using HedgehogEngine::Simulation;
 using HedgehogEngine::SimulationState;
 using HedgehogEngine::TransformComponent;
@@ -49,18 +47,6 @@ namespace
         std::string               m_Name;
         std::vector<std::string>& m_Log;
     };
-
-    // A game object running Assets/Scripts/PlayerScript.lua, which spins its Z rotation.
-    ECS::Entity CreateScriptedObject(EngineContext& context)
-    {
-        const ECS::Entity entity = context.GetSceneManager().CreateGameObject();
-        ScriptComponent   script;
-        script.ScriptPath = "Scripts/PlayerScript.lua";
-        context.GetECS().AddComponent(entity, script);
-        context.GetScriptSystem()->InitScript(entity, context.GetECS(), context.GetEventBus(),
-                                              context.GetFileSystem());
-        return entity;
-    }
 }
 
 TEST_CASE("Simulation - starts in Edit and ticks nothing there or while paused")
@@ -165,52 +151,35 @@ TEST_CASE("Simulation - Stop restores the scene as it was on Play")
         CHECK_FALSE(ecs.IsAlive(spawned));
 }
 
-TEST_CASE("Scripts get no lua_State from the engine: not on scene load, not on Stop")
+TEST_CASE("ScriptComponent is data: its path and Params survive Play/Stop and a scene load")
 {
-    // Scripts run only through the script runtime, which the application adds on Play.
-    const int baseline = ScriptSystem::GetOpenLuaStateCount();
-    {
-        EngineContext context;
-        Simulation&   simulation = context.GetSimulation();
+    // Nothing in the engine runs scripts; the application's script runtime does, in Play.
+    EngineContext context;
+    Simulation&   simulation = context.GetSimulation();
+    ECS::ECS&     ecs        = context.GetECS();
 
-        const ECS::Entity scripted = context.GetSceneManager().CreateGameObject();
-        ScriptComponent   script;
-        script.ScriptPath = "Scripts/PlayerScript.lua";
-        context.GetECS().AddComponent(scripted, script);
+    const ECS::Entity scripted = context.GetSceneManager().CreateGameObject();
+    ScriptComponent   script;
+    script.ScriptPath      = "Scripts/PlayerScript.lua";
+    script.Params["speed"] = { HedgehogEngine::ParamType::Number, 3.0f, false };
+    ecs.AddComponent(scripted, script);
 
-        simulation.Play();
-        simulation.Tick(STEP);
-        simulation.Stop(); // restores the snapshot through the scene deserializer
-        CHECK(ScriptSystem::GetOpenLuaStateCount() == baseline);
-        REQUIRE(context.GetECS().HasComponent<ScriptComponent>(scripted));
-        CHECK(context.GetECS().GetComponent<ScriptComponent>(scripted).ScriptPath == "Scripts/PlayerScript.lua");
+    simulation.Play();
+    simulation.Tick(STEP);
+    simulation.Stop(); // restores the snapshot through the scene deserializer
 
-        const auto scene = FS::GetEngineRootDirectory() / "Assets" / "Scenes" / "Default.yaml";
-        REQUIRE(context.GetSceneManager().LoadScene(scene.string()));
-        CHECK(ScriptSystem::GetOpenLuaStateCount() == baseline);
-    }
-    CHECK(ScriptSystem::GetOpenLuaStateCount() == baseline);
-}
+    REQUIRE(ecs.HasComponent<ScriptComponent>(scripted));
+    const ScriptComponent& restored = ecs.GetComponent<ScriptComponent>(scripted);
+    CHECK(restored.ScriptPath == "Scripts/PlayerScript.lua");
+    REQUIRE(restored.Params.count("speed") == 1u);
+    CHECK(std::get<float>(restored.Params.at("speed").value) == 3.0f);
 
-TEST_CASE("ScriptComponent removal closes the script's lua_State exactly once")
-{
-    const int baseline = ScriptSystem::GetOpenLuaStateCount();
-    {
-        EngineContext context;
-        const ECS::Entity scripted = CreateScriptedObject(context);
-        REQUIRE(ScriptSystem::GetOpenLuaStateCount() == baseline + 1);
-
-        context.GetECS().RemoveComponent<ScriptComponent>(scripted);
-        CHECK(ScriptSystem::GetOpenLuaStateCount() == baseline);
-
-        const ECS::Entity deleted = CreateScriptedObject(context);
-        REQUIRE(ScriptSystem::GetOpenLuaStateCount() == baseline + 1);
-        context.GetSceneManager().DeleteGameObject(deleted);
-        CHECK(ScriptSystem::GetOpenLuaStateCount() == baseline);
-
-        (void)CreateScriptedObject(context);
-        REQUIRE(ScriptSystem::GetOpenLuaStateCount() == baseline + 1);
-    }
-    // Destroying the context closes the scripts still open.
-    CHECK(ScriptSystem::GetOpenLuaStateCount() == baseline);
+    const auto scene = FS::GetEngineRootDirectory() / "Assets" / "Scenes" / "Default.yaml";
+    REQUIRE(context.GetSceneManager().LoadScene(scene.string()));
+    const ECS::Entity player = 1; // Default.yaml's scripted object
+    REQUIRE(ecs.HasComponent<ScriptComponent>(player));
+    const ScriptComponent& loaded = ecs.GetComponent<ScriptComponent>(player);
+    CHECK(loaded.ScriptPath == "Scripts\\PlayerScript.lua");
+    CHECK(std::get<float>(loaded.Params.at("speed").value) == doctest::Approx(7.45f));
+    CHECK_FALSE(std::get<bool>(loaded.Params.at("clockWise").value));
 }

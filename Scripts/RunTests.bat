@@ -15,6 +15,11 @@ if errorlevel 1 (
     echo [ERROR] Module boundary check failed - build and tests were not run.
     exit /b 1
 )
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0CheckModuleBoundaries.ps1" -SelfTest
+if errorlevel 1 (
+    echo [ERROR] Module boundary self-test failed - build and tests were not run.
+    exit /b 1
+)
 
 call "%~dp0Build.bat" %CONFIG%
 if errorlevel 1 (
