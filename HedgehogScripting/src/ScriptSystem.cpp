@@ -47,10 +47,10 @@ namespace HedgehogScripting
                 return ...
             end
 
-            local function run(env, chunk)
+            local function run(env, chunk, ...)
                 local previous = current
                 current = env
-                return restore(previous, chunk())
+                return restore(previous, chunk(...))
             end
 
             local function invoke(env, target, method, ...)
@@ -99,6 +99,7 @@ namespace HedgehogScripting
         Bindings::RegisterEntity(m_Lua, context);
         Bindings::RegisterComponents(m_Lua, context);
         Bindings::RegisterScene(m_Lua, context, m_PendingDestroys);
+        RegisterEvents();
         m_BaseEnvironment = sol::environment(m_Lua, sol::create, m_Lua.globals());
         StartClassSupport();
     }
@@ -392,6 +393,7 @@ namespace HedgehogScripting
 
         EntityScript script = std::move(it->second);
         m_Scripts.erase(it);
+        DropSubscriptions(entity);
         if (!script.Self.valid())
             return;
         if (script.Enabled && !script.Faulted)
@@ -417,6 +419,8 @@ namespace HedgehogScripting
         m_Scripts.clear();
         m_PendingRemovals.clear();
         m_PendingDestroys.clear();
+        m_Subscriptions.clear();
+        m_QueuedEvents.clear();
 
         // Chain in front of whatever removal callback the engine keeps for ScriptComponent, for
         // the length of Play.
@@ -452,6 +456,8 @@ namespace HedgehogScripting
     {
         SyncScripts(ecs);
         InvokeAll("OnUpdate", deltaTime);
+        // Events wait for every OnUpdate, so no handler runs inside another script's call.
+        DispatchEvents();
         for (const ECS::Entity entity : std::exchange(m_PendingRemovals, {}))
             DestroyScript(entity);
         Bindings::FlushDestroys(m_Context, m_PendingDestroys);
@@ -469,6 +475,8 @@ namespace HedgehogScripting
         m_Scripts.clear();
         m_PendingRemovals.clear();
         m_PendingDestroys.clear(); // OnDestroy may queue more; Stop's restore discards them anyway
+        m_Subscriptions.clear();
+        m_QueuedEvents.clear();
 
         if (m_CallbackEcs == &ecs)
         {
@@ -530,6 +538,14 @@ namespace HedgehogScripting
     size_t ScriptSystem::GetScriptCount() const
     {
         return m_Scripts.size();
+    }
+
+    size_t ScriptSystem::GetSubscriptionCount() const
+    {
+        size_t count = 0;
+        for (const auto& [name, subscriptions] : m_Subscriptions)
+            count += subscriptions.size();
+        return count;
     }
 
     int ScriptSystem::GetCompileCount() const

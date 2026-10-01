@@ -88,6 +88,8 @@ namespace HedgehogScripting
 
         // Entities with a live script instance.
         [[nodiscard]] size_t GetScriptCount() const;
+        // Live Events.subscribe subscriptions, across every event name.
+        [[nodiscard]] size_t GetSubscriptionCount() const;
         // Script files compiled since construction, the base script included.
         [[nodiscard]] int GetCompileCount() const;
         // The entity whose script is running right now, if any.
@@ -118,6 +120,22 @@ namespace HedgehogScripting
             bool        Faulted = false; // skipped until the next Play
         };
 
+        // A script's Events.subscribe: the handler runs in its owner's environment.
+        struct EventSubscription
+        {
+            uint64_t                Id    = 0;
+            ECS::Entity             Owner = 0;
+            uint32_t                Generation = 0;
+            sol::protected_function Handler;
+        };
+
+        // An Events.publish waiting for the end of the frame's update hook.
+        struct QueuedEvent
+        {
+            std::string Name;
+            sol::object Payload;
+        };
+
         using RemovedCallback = std::function<void(ECS::Entity, HedgehogEngine::ScriptComponent&)>;
 
         void               StartClassSupport();
@@ -129,6 +147,11 @@ namespace HedgehogScripting
         void               DestroyScript(ECS::Entity entity);
         void               OnScriptRemoved(ECS::Entity entity);
         void               ApplyParams(ECS::ECS& ecs, ECS::Entity entity, EntityScript& script);
+        // Script events (ScriptSystemEvents.cpp): the Events table, and delivery of the queued
+        // events to their subscribers once every script's OnUpdate has run.
+        void               RegisterEvents();
+        void               DispatchEvents();
+        void               DropSubscriptions(ECS::Entity owner);
         // Runs method on every enabled, healthy script, faulting a script whose call fails.
         template<typename... Args>
         void               InvokeAll(std::string_view method, Args&&... args);
@@ -167,6 +190,11 @@ namespace HedgehogScripting
         // Entities scripts asked to destroy, deleted once every script in the hook has run, so
         // nothing is destroyed while the scripts are being walked.
         std::vector<Bindings::ScriptEntity>           m_PendingDestroys;
+
+        // Script events, by name, in subscription order; events published since the last dispatch.
+        std::unordered_map<std::string, std::vector<EventSubscription>> m_Subscriptions;
+        std::vector<QueuedEvent>                                        m_QueuedEvents;
+        uint64_t                                                        m_NextSubscriptionId = 1;
     };
 
     // Registers the script system in the engine's ECS with its signature (ScriptComponent and
