@@ -44,7 +44,7 @@ namespace
 
 TEST_CASE("Math bindings - Lua Vector3 and Quat results equal HedgehogMath's within 1e-5")
 {
-    // The C++ answers, handed to the script as parameters; the script asserts against them.
+    // The C++ answers, handed to the script as declared properties; the script asserts against them.
     const HM::Vector3    sum   = HM::Vector3(1.0f, 2.0f, 3.0f) + HM::Vector3(1.0f, 1.0f, 1.0f);
     const HM::Vector3    cross = HM::Cross(HM::Vector3(1.0f, 0.0f, 0.0f), HM::Vector3(0.0f, 1.0f, 0.0f));
     const HM::Vector3    turn  = HM::Quaternion::FromEuler(0.0f, 90.0f, 0.0f) * HM::Vector3(1.0f, 0.0f, 0.0f);
@@ -53,20 +53,22 @@ TEST_CASE("Math bindings - Lua Vector3 and Quat results equal HedgehogMath's wit
     const HM::Quaternion half  = HM::Quaternion::Slerp(a, b, 0.5f);
 
     EngineWorld world;
-    world.WriteScript("MathCheck.lua", ScriptWithOnStart("MathCheck", R"lua(
+    const std::string declared = "Properties = { sumLength = 0, crossX = 0, crossY = 0, crossZ = 0, turnX = 0, turnY = 0, "
+                                 "turnZ = 0, halfX = 0, halfY = 0, halfZ = 0, halfW = 0 }\n";
+    world.WriteScript("MathCheck.lua", declared + ScriptWithOnStart("MathCheck", R"lua(
     local function near(x, y) return math.abs(x - y) <= 1e-5 end
 
     local length = (Vector3(1, 2, 3) + Vector3(1, 1, 1)):length()
-    assert(near(length, sumLength), "length " .. length)
+    assert(near(length, self.sumLength), "length " .. length)
 
     local c = Vector3(1, 0, 0):cross(Vector3(0, 1, 0))
-    assert(near(c.x, crossX) and near(c.y, crossY) and near(c.z, crossZ), "cross " .. tostring(c))
+    assert(near(c.x, self.crossX) and near(c.y, self.crossY) and near(c.z, self.crossZ), "cross " .. tostring(c))
 
     local r = Quat.fromEuler(0, 90, 0) * Vector3(1, 0, 0)
-    assert(near(r.x, turnX) and near(r.y, turnY) and near(r.z, turnZ), "turn " .. tostring(r))
+    assert(near(r.x, self.turnX) and near(r.y, self.turnY) and near(r.z, self.turnZ), "turn " .. tostring(r))
 
     local s = Quat.slerp(Quat.fromEuler(0, 0, 0), Quat.fromEuler(30, 90, -45), 0.5)
-    assert(near(s.x, halfX) and near(s.y, halfY) and near(s.z, halfZ) and near(s.w, halfW), "slerp " .. tostring(s))
+    assert(near(s.x, self.halfX) and near(s.y, self.halfY) and near(s.z, self.halfZ) and near(s.w, self.halfW), "slerp " .. tostring(s))
 
     print("math checked")
 )lua"));
