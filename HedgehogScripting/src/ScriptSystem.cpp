@@ -91,12 +91,14 @@ namespace HedgehogScripting
 
     ScriptSystem::ScriptSystem(HedgehogEngine::EngineContext& context, const FS::FileSystemManager& scriptFiles)
         : m_ScriptFiles(scriptFiles)
+        , m_Context(context)
     {
         m_Traceback       = OpenSandbox(m_Lua);
         Bindings::RegisterMath(m_Lua);
         Bindings::RegisterLog(m_Lua);
         Bindings::RegisterEntity(m_Lua, context);
         Bindings::RegisterComponents(m_Lua, context);
+        Bindings::RegisterScene(m_Lua, context, m_PendingDestroys);
         m_BaseEnvironment = sol::environment(m_Lua, sol::create, m_Lua.globals());
         StartClassSupport();
     }
@@ -414,6 +416,7 @@ namespace HedgehogScripting
         m_Classes.clear();
         m_Scripts.clear();
         m_PendingRemovals.clear();
+        m_PendingDestroys.clear();
 
         // Chain in front of whatever removal callback the engine keeps for ScriptComponent, for
         // the length of Play.
@@ -442,6 +445,7 @@ namespace HedgehogScripting
         InvokeAll("OnFixedUpdate", fixedDeltaTime);
         for (const ECS::Entity entity : std::exchange(m_PendingRemovals, {}))
             DestroyScript(entity);
+        Bindings::FlushDestroys(m_Context, m_PendingDestroys);
     }
 
     void ScriptSystem::OnUpdate(ECS::ECS& ecs, float deltaTime)
@@ -450,6 +454,7 @@ namespace HedgehogScripting
         InvokeAll("OnUpdate", deltaTime);
         for (const ECS::Entity entity : std::exchange(m_PendingRemovals, {}))
             DestroyScript(entity);
+        Bindings::FlushDestroys(m_Context, m_PendingDestroys);
     }
 
     void ScriptSystem::OnPlayStop(ECS::ECS& ecs)
@@ -463,6 +468,7 @@ namespace HedgehogScripting
             DestroyScript(entity);
         m_Scripts.clear();
         m_PendingRemovals.clear();
+        m_PendingDestroys.clear(); // OnDestroy may queue more; Stop's restore discards them anyway
 
         if (m_CallbackEcs == &ecs)
         {

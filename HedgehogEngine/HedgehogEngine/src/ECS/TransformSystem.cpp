@@ -28,6 +28,10 @@ namespace HedgehogEngine
     {
         for (auto const& entity : m_PendingEntities)
         {
+            // Destroyed (or stripped of its transform) since the change was published, e.g. a game
+            // object created and deleted in the same frame.
+            if (!ecs.IsAlive(entity) || !ecs.HasComponent<TransformComponent>(entity))
+                continue;
             auto& transform = ecs.GetComponent<TransformComponent>(entity);
 
             HM::Matrix4x4 translation = HM::Matrix4x4::GetTranslation(transform.Position);
