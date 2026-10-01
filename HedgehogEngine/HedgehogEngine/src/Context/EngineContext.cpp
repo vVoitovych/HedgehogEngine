@@ -196,7 +196,7 @@ namespace HedgehogEngine
                         case ParamType::Number:  value = data["ParamValue"].as<float>(); break;
                         default: break;
                         }
-                        script.Params[paramName] = { type, value, false };
+                        script.Params[paramName] = { type, value };
                     }
                 }
             },

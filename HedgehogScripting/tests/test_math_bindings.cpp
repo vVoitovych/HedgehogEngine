@@ -30,7 +30,7 @@ namespace
 
     void SetNumber(ScriptComponent& component, const std::string& name, float value)
     {
-        component.Params[name] = { ParamType::Number, value, false };
+        component.Params[name] = { ParamType::Number, value };
     }
 
     // Plays one frame of world with the scripts it holds, then stops.

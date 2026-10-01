@@ -52,12 +52,12 @@ function Recorder:OnDestroy() print("OnDestroy " .. label) end
 
     void SetNumber(ScriptComponent& component, const std::string& name, float value)
     {
-        component.Params[name] = { ParamType::Number, value, false };
+        component.Params[name] = { ParamType::Number, value };
     }
 
     void SetBool(ScriptComponent& component, const std::string& name, bool value)
     {
-        component.Params[name] = { ParamType::Boolean, value, false };
+        component.Params[name] = { ParamType::Boolean, value };
     }
 }
 
