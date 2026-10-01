@@ -192,11 +192,13 @@ namespace Editor
             return false;
         }
 
-        // The component keeps the path under assets://, as scenes store it; the parameters come
-        // from the file's top-level globals, and no script code runs until Play.
+        // The component keeps the path under assets://, as scenes store it; the properties start
+        // at the script's declared defaults, and no script code runs until Play.
         auto& script      = ecs.GetComponent<HedgehogEngine::ScriptComponent>(entity);
         script.ScriptPath = virtualPath->substr(ASSETS_PREFIX.size());
-        script.Properties = m_ScriptSystem->DescribeScript(*virtualPath);
+        script.Properties.clear();
+        for (const HedgehogScripting::ScriptPropertyDeclaration& declaration : m_ScriptSystem->DescribeScript(*virtualPath))
+            script.Properties.push_back(declaration.Default);
         return true;
     }
 

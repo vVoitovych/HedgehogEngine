@@ -101,6 +101,7 @@ namespace HedgehogScripting
         Bindings::RegisterScene(m_Lua, context, m_PendingDestroys);
         RegisterEvents();
         RegisterCoroutines();
+        RegisterPropertyHelpers();
         Bindings::RegisterTime(m_Lua, context.GetFixedStepClock(), m_DeltaTime, m_Frame);
         m_BaseEnvironment = sol::environment(m_Lua, sol::create, m_Lua.globals());
         StartClassSupport();
@@ -189,7 +190,8 @@ namespace HedgehogScripting
                 return nullptr;
             }
 
-            const auto [it, inserted] = m_Classes.emplace(scriptPath, ScriptClass{ defaults, classObject.as<sol::table>() });
+            const auto [it, inserted] = m_Classes.emplace(
+                scriptPath, ScriptClass{ defaults, classObject.as<sol::table>(), ReadDeclarations(defaults, scriptPath) });
             return &it->second;
         }
         catch (const std::exception& e)
@@ -228,7 +230,6 @@ namespace HedgehogScripting
         try
         {
             script.Environment = m_NewEnvironment(scriptClass->Defaults).get<sol::table>();
-            ApplyProperties(ecs, entity, script);
 
             m_RunningEntity = entity;
             const sol::protected_function_result made =
@@ -248,46 +249,13 @@ namespace HedgehogScripting
             }
             script.Self           = made.get<sol::table>();
             script.Self["entity"] = Bindings::MakeScriptEntity(ecs, entity);
+            ApplyProperties(ecs, entity, script, true);
             script.Faulted = false;
         }
         catch (const std::exception& e)
         {
             m_RunningEntity.reset();
             LogError(script.EntityName, script.ScriptPath, e.what());
-        }
-    }
-
-    void ScriptSystem::ApplyProperties(ECS::ECS& ecs, ECS::Entity entity, EntityScript& script)
-    {
-        using HedgehogEngine::ScriptPropertyType;
-        const auto& component = ecs.GetComponent<HedgehogEngine::ScriptComponent>(entity);
-        for (const HedgehogEngine::ScriptProperty& property : component.Properties)
-        {
-            switch (property.Type)
-            {
-            case ScriptPropertyType::Number:
-                script.Environment[property.Name] = std::get<float>(property.Value);
-                break;
-            case ScriptPropertyType::Bool:
-                script.Environment[property.Name] = std::get<bool>(property.Value);
-                break;
-            case ScriptPropertyType::Vector3:
-            case ScriptPropertyType::Color:
-                script.Environment[property.Name] = std::get<HM::Vector3>(property.Value);
-                break;
-            case ScriptPropertyType::String:
-            case ScriptPropertyType::AssetRef:
-                script.Environment[property.Name] = std::get<std::string>(property.Value);
-                break;
-            case ScriptPropertyType::EntityRef:
-            {
-                // A reference to an entity that is gone is an invalid handle, not nil.
-                const ECS::Entity target = std::get<ECS::Entity>(property.Value);
-                script.Environment[property.Name] =
-                    target < ECS::MAX_ENTITIES && ecs.IsAlive(target) ? Bindings::MakeScriptEntity(ecs, target) : Bindings::ScriptEntity{};
-                break;
-            }
-            }
         }
     }
 
@@ -514,22 +482,20 @@ namespace HedgehogScripting
     void ScriptSystem::PushProperties(ECS::ECS& ecs, ECS::Entity entity)
     {
         const auto it = m_Scripts.find(entity);
-        if (it == m_Scripts.end() || !it->second.Environment.valid())
+        if (it == m_Scripts.end() || !it->second.Self.valid())
             return;
-        ApplyProperties(ecs, entity, it->second);
+        ApplyProperties(ecs, entity, it->second, false);
     }
 
-    std::vector<HedgehogEngine::ScriptProperty> ScriptSystem::DescribeScript(const std::string& scriptPath)
+    std::vector<ScriptPropertyDeclaration> ScriptSystem::DescribeScript(const std::string& scriptPath)
     {
-        using HedgehogEngine::ScriptPropertyType;
-        std::vector<HedgehogEngine::ScriptProperty> params;
         const std::string path = NormalizeScriptPath(scriptPath);
         if (!EnsureBaseLoaded())
-            return params;
+            return {};
 
         const std::optional<sol::protected_function> chunk = LoadScriptFile(m_Lua, m_ScriptFiles, path, m_Traceback);
         if (!chunk)
-            return params;
+            return {};
         sol::set_environment(m_Proxy, *chunk);
 
         try
@@ -542,26 +508,15 @@ namespace HedgehogScripting
             {
                 const sol::error error = ran;
                 LogError("DescribeScript", path, error.what());
-                return params;
+                return {};
             }
-            for (const auto& [key, value] : defaults)
-            {
-                if (key.get_type() != sol::type::string)
-                    continue;
-                if (value.get_type() == sol::type::number)
-                    params.push_back({ key.as<std::string>(), ScriptPropertyType::Number, value.as<float>(), {} });
-                else if (value.get_type() == sol::type::boolean)
-                    params.push_back({ key.as<std::string>(), ScriptPropertyType::Bool, value.as<bool>(), {} });
-            }
-            // Lua tables have no order; the inspector lists them by name.
-            std::sort(params.begin(), params.end(),
-                      [](const auto& a, const auto& b) { return a.Name < b.Name; });
+            return ReadDeclarations(defaults, path);
         }
         catch (const std::exception& e)
         {
             LogError("DescribeScript", path, e.what());
         }
-        return params;
+        return {};
     }
 
     size_t ScriptSystem::GetScriptCount() const

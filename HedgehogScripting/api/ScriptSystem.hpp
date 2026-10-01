@@ -1,5 +1,6 @@
 #pragma once
 
+#include "HedgehogScripting/api/ScriptPropertyDeclaration.hpp"
 #include "HedgehogScripting/api/Sol.hpp"
 
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
@@ -48,8 +49,12 @@ namespace HedgehogScripting
     // environment). The file's top-level globals are the class defaults: every entity gets its
     // own shallow copy of them, so `speed = 1.0` is per entity while the methods are shared.
     //
+    // A script declares the values the inspector shows in a top-level `Properties` table; each
+    // entity's values (its ScriptComponent's saved ones where the type matches, else the
+    // declared defaults) are set on its `self` before OnStart.
+    //
     // Driven by the ECS play-mode events. OnPlayStart makes an instance for every entity with a
-    // script path, with its ScriptComponent Properties as globals. Both update events first sync the
+    // script path, its property values on self. Both update events first sync the
     // scripts with the ECS: a component added during Play gets an instance, an entity that left
     // the system gets OnDisable and OnDestroy, and the component's Enable against the system's own
     // view of it gives OnStart (once, on the first enable), OnEnable and OnDisable. Then
@@ -78,14 +83,13 @@ namespace HedgehogScripting
         void OnFixedUpdate(ECS::ECS& ecs, float fixedDeltaTime) override;
         void OnUpdate(ECS::ECS& ecs, float deltaTime) override;
 
-        // Re-applies entity's ScriptComponent Properties as globals of its script, for live
+        // Re-applies entity's ScriptComponent Properties to its script's self, for live
         // inspector edits. Does nothing outside Play or for an entity with no script.
         void PushProperties(ECS::ECS& ecs, ECS::Entity entity);
 
-        // The number and boolean top-level globals of the script at scriptPath, as Number and
-        // Bool ScriptProperties sorted by name, for the inspector. Compiles a throwaway class and
-        // runs no method.
-        [[nodiscard]] std::vector<HedgehogEngine::ScriptProperty> DescribeScript(const std::string& scriptPath);
+        // The script's declared Properties, sorted by name, with their defaults, for the
+        // inspector. Compiles a throwaway class and runs no method.
+        [[nodiscard]] std::vector<ScriptPropertyDeclaration> DescribeScript(const std::string& scriptPath);
 
         // Entities with a live script instance.
         [[nodiscard]] size_t GetScriptCount() const;
@@ -106,8 +110,9 @@ namespace HedgehogScripting
         // A compiled script file: its top-level globals and its class table.
         struct ScriptClass
         {
-            sol::table Defaults;
-            sol::table Class;
+            sol::table                             Defaults;
+            sol::table                             Class;
+            std::vector<ScriptPropertyDeclaration> Declarations; // sorted by name
         };
 
         // What a suspended coroutine waits for before its next resume.
@@ -169,7 +174,13 @@ namespace HedgehogScripting
         // OnDisable (if enabled and not faulted) and OnDestroy (if it has an instance), then drop it.
         void               DestroyScript(ECS::Entity entity);
         void               OnScriptRemoved(ECS::Entity entity);
-        void               ApplyProperties(ECS::ECS& ecs, ECS::Entity entity, EntityScript& script);
+        // Declared properties (ScriptSystemProperties.cpp): the Color, EntityRef and AssetRef
+        // declaration helpers, reading a compiled file's `Properties`, and setting each entity's
+        // values on its self, warning (when warn is set) about saved values that do not fit.
+        void               RegisterPropertyHelpers();
+        std::vector<ScriptPropertyDeclaration> ReadDeclarations(const sol::table& defaults,
+                                                                const std::string& scriptPath) const;
+        void               ApplyProperties(ECS::ECS& ecs, ECS::Entity entity, EntityScript& script, bool warn);
         // Script events (ScriptSystemEvents.cpp): the Events table, and delivery of the queued
         // events to their subscribers once every script's OnUpdate has run.
         void               RegisterEvents();

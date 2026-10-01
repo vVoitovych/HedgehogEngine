@@ -107,10 +107,10 @@ TEST_CASE("Engine scripts - DescribeScript on the shipped PlayerScript lists its
     LogCapture   log;
     const auto   params = scene.Scripts->DescribeScript("Scripts/PlayerScript.lua");
     REQUIRE(params.size() == 2); // sorted by name
-    CHECK(params[0].Name == "clockWise");
-    CHECK(params[0].Type == HedgehogEngine::ScriptPropertyType::Bool);
-    CHECK(params[1].Name == "speed");
-    CHECK(params[1].Type == HedgehogEngine::ScriptPropertyType::Number);
+    CHECK(params[0].Default.Name == "clockWise");
+    CHECK(params[0].Default.Type == HedgehogEngine::ScriptPropertyType::Bool);
+    CHECK(params[1].Default.Name == "speed");
+    CHECK(params[1].Default.Type == HedgehogEngine::ScriptPropertyType::Number);
     CHECK(log.Text().empty());
 }
 
