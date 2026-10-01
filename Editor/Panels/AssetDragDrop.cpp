@@ -72,6 +72,11 @@ namespace Editor
 
     std::optional<ContentOpenRequest> AcceptAssetDrop(std::initializer_list<ContentType> accepted)
     {
+        return AcceptAssetDrop(std::span<const ContentType>(accepted.begin(), accepted.size()));
+    }
+
+    std::optional<ContentOpenRequest> AcceptAssetDrop(std::span<const ContentType> accepted)
+    {
         if (!ImGui::BeginDragDropTarget())
             return std::nullopt;
 

@@ -6,6 +6,7 @@
 
 #include <initializer_list>
 #include <optional>
+#include <span>
 #include <string>
 
 namespace Editor
@@ -21,6 +22,7 @@ namespace Editor
     // Makes the last item a drop target for assets of the accepted types: a matching asset
     // highlights it, any other shows a not-allowed cursor. Returns the asset released on it.
     [[nodiscard]] std::optional<ContentOpenRequest> AcceptAssetDrop(std::initializer_list<ContentType> accepted);
+    [[nodiscard]] std::optional<ContentOpenRequest> AcceptAssetDrop(std::span<const ContentType> accepted);
 
     // A type's icon as the Content panel draws it, and the drag preview reuses it: the picture icon
     // (an ImGui texture id), or without one a coloured tile with the type's glyph.

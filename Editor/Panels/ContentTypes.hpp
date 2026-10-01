@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <optional>
 #include <string_view>
 
 namespace Editor
@@ -34,4 +35,8 @@ namespace Editor
 
     // The type's name, for tooltips ("Material").
     [[nodiscard]] const char* GetContentTypeName(ContentType type);
+
+    // The type GetContentTypeName calls name, ignoring case ("mesh" is Mesh); nullopt for any
+    // other name. Scripts name the asset type an AssetRef property takes this way.
+    [[nodiscard]] std::optional<ContentType> FindContentTypeByName(std::string_view name);
 }
