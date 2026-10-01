@@ -100,6 +100,7 @@ namespace HedgehogScripting
         Bindings::RegisterComponents(m_Lua, context);
         Bindings::RegisterScene(m_Lua, context, m_PendingDestroys);
         RegisterEvents();
+        RegisterCoroutines();
         Bindings::RegisterTime(m_Lua, context.GetFixedStepClock(), m_DeltaTime, m_Frame);
         m_BaseEnvironment = sol::environment(m_Lua, sol::create, m_Lua.globals());
         StartClassSupport();
@@ -422,8 +423,9 @@ namespace HedgehogScripting
         m_PendingDestroys.clear();
         m_Subscriptions.clear();
         m_QueuedEvents.clear();
-        m_DeltaTime = 0.0f;
-        m_Frame     = 0;
+        m_DeltaTime     = 0.0f;
+        m_Frame         = 0;
+        m_CoroutineTime = 0.0;
 
         // Chain in front of whatever removal callback the engine keeps for ScriptComponent, for
         // the length of Play.
@@ -460,8 +462,10 @@ namespace HedgehogScripting
     {
         m_DeltaTime = deltaTime;
         ++m_Frame;
+        m_CoroutineTime += deltaTime;
         SyncScripts(ecs);
         InvokeAll("OnUpdate", deltaTime);
+        ResumeCoroutines();
         // Events wait for every OnUpdate, so no handler runs inside another script's call.
         DispatchEvents();
         for (const ECS::Entity entity : std::exchange(m_PendingRemovals, {}))
@@ -551,6 +555,14 @@ namespace HedgehogScripting
         size_t count = 0;
         for (const auto& [name, subscriptions] : m_Subscriptions)
             count += subscriptions.size();
+        return count;
+    }
+
+    size_t ScriptSystem::GetCoroutineCount() const
+    {
+        size_t count = 0;
+        for (const auto& [entity, script] : m_Scripts)
+            count += script.Coroutines.size();
         return count;
     }
 

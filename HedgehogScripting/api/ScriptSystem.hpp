@@ -57,6 +57,7 @@ namespace HedgehogScripting
     // OnStart, OnEnable, the fixed steps and then OnUpdate. Removing the component or destroying
     // the entity during Play gives OnDisable and OnDestroy (a removal callback chained in front of
     // the engine's own for the length of Play), and OnPlayStop gives them to every script.
+    // Coroutines a script starts are resumed after every OnUpdate and die with their script.
     //
     // A script error is logged once as "[Script] <entity> (<assets://path>): <message>" with a
     // traceback. An error in OnStart, OnEnable, OnFixedUpdate or OnUpdate faults the script: it is
@@ -90,6 +91,8 @@ namespace HedgehogScripting
         [[nodiscard]] size_t GetScriptCount() const;
         // Live Events.subscribe subscriptions, across every event name.
         [[nodiscard]] size_t GetSubscriptionCount() const;
+        // Live startCoroutine coroutines, across every script.
+        [[nodiscard]] size_t GetCoroutineCount() const;
         // Script files compiled since construction, the base script included.
         [[nodiscard]] int GetCompileCount() const;
         // The entity whose script is running right now, if any.
@@ -107,17 +110,37 @@ namespace HedgehogScripting
             sol::table Class;
         };
 
+        // What a suspended coroutine waits for before its next resume.
+        enum class WakeKind
+        {
+            Frames,  // FramesLeft more OnUpdates
+            Seconds, // m_CoroutineTime reaching WakeTime
+            Until,   // Predicate returning true
+        };
+
+        // A startCoroutine coroutine: a Lua thread of the one state, owned by an EntityScript.
+        struct ScriptCoroutine
+        {
+            uint64_t                Id = 0;
+            sol::object             Thread;
+            WakeKind                Wake       = WakeKind::Frames;
+            double                  WakeTime   = 0.0;
+            int                     FramesLeft = 0; // a new coroutine first runs at the next resume pass
+            sol::protected_function Predicate;
+        };
+
         // One entity's script instance.
         struct EntityScript
         {
-            std::string ScriptPath;
-            uint32_t    Generation = 0;
-            std::string EntityName;
-            sol::table  Environment;
-            sol::table  Self;
-            bool        Started = false; // OnStart has run
-            bool        Enabled = false; // the system's view of the component's Enable
-            bool        Faulted = false; // skipped until the next Play
+            std::string                  ScriptPath;
+            uint32_t                     Generation = 0;
+            std::string                  EntityName;
+            sol::table                   Environment;
+            sol::table                   Self;
+            bool                         Started = false; // OnStart has run
+            bool                         Enabled = false; // the system's view of the component's Enable
+            bool                         Faulted = false; // skipped until the next Play
+            std::vector<ScriptCoroutine> Coroutines;      // in start order; they die with the script
         };
 
         // A script's Events.subscribe: the handler runs in its owner's environment.
@@ -152,6 +175,15 @@ namespace HedgehogScripting
         void               RegisterEvents();
         void               DispatchEvents();
         void               DropSubscriptions(ECS::Entity owner);
+        // Coroutines (ScriptSystemCoroutines.cpp): startCoroutine, stopCoroutine and the wait
+        // functions, and the pass that resumes the due ones once every script's OnUpdate has run.
+        void               RegisterCoroutines();
+        void               ResumeCoroutines();
+        // Resumes one coroutine in its owner's environment and records what it waits for next;
+        // a coroutine that finished or failed is removed.
+        void               StepCoroutine(ECS::Entity owner, uint64_t id);
+        ScriptCoroutine*   FindCoroutine(ECS::Entity owner, uint64_t id);
+        void               EraseCoroutine(ECS::Entity owner, uint64_t id);
         // Runs method on every enabled, healthy script, faulting a script whose call fails.
         template<typename... Args>
         void               InvokeAll(std::string_view method, Args&&... args);
@@ -200,6 +232,14 @@ namespace HedgehogScripting
         std::unordered_map<std::string, std::vector<EventSubscription>> m_Subscriptions;
         std::vector<QueuedEvent>                                        m_QueuedEvents;
         uint64_t                                                        m_NextSubscriptionId = 1;
+
+        // Coroutine support: makes a thread wait can yield from, and resumes one, reporting what it
+        // yielded. m_CoroutineTime is the scaled time OnUpdate has passed since Play, which wait
+        // counts, so Pause freezes it and Time.timeScale scales it.
+        sol::protected_function m_SpawnCoroutine;
+        sol::protected_function m_StepCoroutine;
+        uint64_t                m_NextCoroutineId = 1;
+        double                  m_CoroutineTime   = 0.0;
     };
 
     // Registers the script system in the engine's ECS with its signature (ScriptComponent and
