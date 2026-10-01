@@ -113,4 +113,16 @@ namespace Editor
         }
         return "File";
     }
+
+    std::optional<ContentType> FindContentTypeByName(std::string_view name)
+    {
+        const std::string wanted = ToLower(name);
+        for (size_t index = 0; index < CONTENT_TYPE_COUNT; ++index)
+        {
+            const auto type = static_cast<ContentType>(index);
+            if (ToLower(GetContentTypeName(type)) == wanted)
+                return type;
+        }
+        return std::nullopt;
+    }
 }

@@ -6,6 +6,8 @@
 #include "Tools/PipelineWindow.hpp"
 #include "Tools/ShaderWindow.hpp"
 #include "Panels/AssetDragDrop.hpp"
+#include "Panels/EntityDragDrop.hpp"
+#include "Panels/ScriptPropertyFields.hpp"
 #include "Tools/RenderGraphEditor/GraphFileReference.hpp"
 #include "Tools/RenderGraphEditor/RenderGraphEditorWindow.hpp"
 
@@ -55,32 +57,6 @@
 namespace
 {
     constexpr std::string_view ASSETS_PREFIX = "assets://";
-
-    // A script property's value as text, for the types the inspector shows read-only.
-    std::string DescribePropertyValue(const HedgehogEngine::ScriptProperty& property)
-    {
-        using HedgehogEngine::ScriptPropertyType;
-        switch (property.Type)
-        {
-        case ScriptPropertyType::Vector3:
-        case ScriptPropertyType::Color:
-        {
-            const HM::Vector3& v = std::get<HM::Vector3>(property.Value);
-            return "(" + std::to_string(v.x()) + ", " + std::to_string(v.y()) + ", " + std::to_string(v.z()) + ")";
-        }
-        case ScriptPropertyType::String:
-            return std::get<std::string>(property.Value);
-        case ScriptPropertyType::AssetRef:
-            return std::get<std::string>(property.Value) + " (" + property.AssetType + ")";
-        case ScriptPropertyType::EntityRef:
-            return "entity " + std::to_string(std::get<ECS::Entity>(property.Value));
-        case ScriptPropertyType::Number:
-            return std::to_string(std::get<float>(property.Value));
-        case ScriptPropertyType::Bool:
-            return std::get<bool>(property.Value) ? "true" : "false";
-        }
-        return {};
-    }
 
     void SetupLightComponentGuiOverrides()
     {
@@ -544,6 +520,7 @@ namespace Editor
 
             if (ImGui::IsItemClicked())
                 toggleSelection();
+            DragEntitySource(entity, component.Name);
             if (const auto drop = AcceptAssetDrop({ ContentType::Mesh, ContentType::Scene }))
                 m_AssetDrop = AssetDrop{ *drop, true, entity };
             ++index;
@@ -564,6 +541,7 @@ namespace Editor
 
             if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
                 toggleSelection();
+            DragEntitySource(entity, component.Name);
             if (const auto drop = AcceptAssetDrop({ ContentType::Mesh, ContentType::Scene }))
                 m_AssetDrop = AssetDrop{ *drop, true, entity };
             ++index;
@@ -1037,43 +1015,10 @@ namespace Editor
         }
         ImGui::EndDisabled();
 
-        // A property edit reaches the running script at once; outside Play it only changes the data.
-        bool propertiesChanged = false;
-
-        if (!component.Properties.empty())
-            ImGui::SeparatorText("Properties");
-
-        for (HedgehogEngine::ScriptProperty& property : component.Properties)
-        {
-            switch (property.Type)
-            {
-            case HedgehogEngine::ScriptPropertyType::Bool:
-            {
-                bool bVal = std::get<bool>(property.Value);
-                if (ImGui::Checkbox(property.Name.c_str(), &bVal))
-                {
-                    property.Value    = bVal;
-                    propertiesChanged = true;
-                }
-                break;
-            }
-            case HedgehogEngine::ScriptPropertyType::Number:
-            {
-                float nVal = std::get<float>(property.Value);
-                if (ImGui::DragFloat(property.Name.c_str(), &nVal, 0.05f))
-                {
-                    property.Value    = nVal;
-                    propertiesChanged = true;
-                }
-                break;
-            }
-            default:
-                // Shown read-only until the inspector edits every property type.
-                ImGui::TextDisabled("%s: %s", property.Name.c_str(), DescribePropertyValue(property).c_str());
-                break;
-            }
-        }
-        if (propertiesChanged && m_ScriptSystem)
+        // A property edit reaches the running script at once; outside Play it only changes the
+        // data, and Stop's restore puts back whatever was edited during Play.
+        const auto* declarations = FindScriptDeclarations(engineContext.GetFileSystem(), component.ScriptPath);
+        if (DrawScriptProperties(component, declarations, ecs) && m_ScriptSystem)
             m_ScriptSystem->PushProperties(ecs, entity);
 
         if (ImGui::Button("Remove script"))
@@ -1081,6 +1026,28 @@ namespace Editor
             if (ecs.HasComponent<HedgehogEngine::ScriptComponent>(entity))
                 ecs.RemoveComponent<HedgehogEngine::ScriptComponent>(entity);
         }
+    }
+
+    const std::vector<HedgehogScripting::ScriptPropertyDeclaration>* EditorGui::FindScriptDeclarations(
+        const FS::FileSystemManager& fileSystem, const std::string& scriptPath)
+    {
+        if (!m_ScriptSystem || scriptPath.empty())
+            return nullptr;
+        const std::string virtualPath = HedgehogScripting::ScriptSystem::NormalizeScriptPath(scriptPath);
+        const auto        physical    = fileSystem.ResolvePhysical(virtualPath);
+        if (!physical)
+            return nullptr;
+        std::error_code error;
+        const auto      writeTime = std::filesystem::last_write_time(*physical, error);
+        if (error)
+            return nullptr;
+
+        const auto cached = m_ScriptDeclarations.find(virtualPath);
+        if (cached != m_ScriptDeclarations.end() && cached->second.WriteTime == writeTime)
+            return &cached->second.Declarations;
+        ScriptDeclarations& described = m_ScriptDeclarations[virtualPath];
+        described = ScriptDeclarations{ writeTime, m_ScriptSystem->DescribeScript(virtualPath) };
+        return &described.Declarations;
     }
 
     // ─── Settings window ─────────────────────────────────────────────────────

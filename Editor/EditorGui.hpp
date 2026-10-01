@@ -7,9 +7,14 @@
 
 #include "FileSystem/api/FileSystemManager.hpp"
 
+#include "HedgehogScripting/api/ScriptPropertyDeclaration.hpp"
+
+#include <filesystem>
 #include <memory>
 #include <optional>
 #include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace HedgehogEngine
 {
@@ -141,6 +146,10 @@ namespace Editor
         void DrawCameraComponent(HedgehogEngine::Engine& context);
         void DrawCameraGraph(std::string& graphName);
         void DrawScriptComponent(HedgehogEngine::Engine& context);
+        // The script's property declarations for the inspector, described again only when the
+        // file changes on disk; nullptr when there is no script system or no such file.
+        const std::vector<HedgehogScripting::ScriptPropertyDeclaration>* FindScriptDeclarations(
+            const FS::FileSystemManager& fileSystem, const std::string& scriptPath);
 
         // ── Floating dialogs ─────────────────────────────────────────────────
         void DrawSettingsWindow(HedgehogEngine::Engine& context);
@@ -179,6 +188,15 @@ namespace Editor
         HedgehogScripting::ScriptSystem* m_ScriptSystem = nullptr;
         std::optional<AssetDrop>          m_AssetDrop;        // this frame's, applied after the panels
         std::optional<ContentOpenRequest> m_SceneToOpen;      // a scene dropped on the hierarchy, awaiting yes
+
+        // What DescribeScript last returned for each script, by assets:// path, with the file's
+        // write time then: the inspector draws every frame, so a script is described once per change.
+        struct ScriptDeclarations
+        {
+            std::filesystem::file_time_type                          WriteTime;
+            std::vector<HedgehogScripting::ScriptPropertyDeclaration> Declarations;
+        };
+        std::unordered_map<std::string, ScriptDeclarations> m_ScriptDeclarations;
         bool                         m_Benchmarking = false;
     };
 }
