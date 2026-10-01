@@ -8,7 +8,9 @@
 #include "ECS/api/Entity.hpp"
 #include "ECS/api/System.hpp"
 
+#include <chrono>
 #include <cstdint>
+#include <filesystem>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -63,6 +65,8 @@ namespace HedgehogScripting
     // the entity during Play gives OnDisable and OnDestroy (a removal callback chained in front of
     // the engine's own for the length of Play), and OnPlayStop gives them to every script.
     // Coroutines a script starts are resumed after every OnUpdate and die with their script.
+    // ReloadChangedScripts swaps a running script whose file changed on disk for the new code,
+    // keeping its state (ScriptSystemReload.cpp).
     //
     // A script error is logged once as "[Script] <entity> (<assets://path>): <message>" with a
     // traceback. An error in OnStart, OnEnable, OnFixedUpdate or OnUpdate faults the script: it is
@@ -82,6 +86,19 @@ namespace HedgehogScripting
         void OnPlayStop(ECS::ECS& ecs) override;
         void OnFixedUpdate(ECS::ECS& ecs, float fixedDeltaTime) override;
         void OnUpdate(ECS::ECS& ecs, float deltaTime) override;
+
+        // Hot reload: at most once per RELOAD_POLL_INTERVAL, compares each compiled script file's
+        // write time with the one it was compiled from. A changed file no running script uses is
+        // dropped, so it is compiled afresh when next needed. One that running scripts use is
+        // compiled again and each of its scripts swapped onto the new class: a new environment and
+        // self, the old self's plain state copied over (numbers, booleans, strings, userdata such
+        // as Vector3 and Entity handles, and tables of these, cycles included; functions are not),
+        // the properties applied again, coroutines stopped, then OnReload() if the class has one.
+        // OnStart does not run again, a faulted script gets a fresh start, and a file that no
+        // longer compiles keeps the old class running and logs its error once. The Editor calls
+        // it every frame; now is a parameter so tests need not wait.
+        static constexpr std::chrono::milliseconds RELOAD_POLL_INTERVAL{ 1000 };
+        void ReloadChangedScripts(ECS::ECS& ecs, std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now());
 
         // Re-applies entity's ScriptComponent Properties to its script's self, for live
         // inspector edits. Does nothing outside Play or for an entity with no script.
@@ -113,6 +130,8 @@ namespace HedgehogScripting
             sol::table                             Defaults;
             sol::table                             Class;
             std::vector<ScriptPropertyDeclaration> Declarations; // sorted by name
+            std::filesystem::path                  PhysicalPath; // empty when it has none (no reload)
+            std::filesystem::file_time_type        WriteTime;    // of the file this was compiled from
         };
 
         // What a suspended coroutine waits for before its next resume.
@@ -169,6 +188,8 @@ namespace HedgehogScripting
         void               StartClassSupport();
         bool               EnsureBaseLoaded();
         const ScriptClass* FindOrCompile(const std::string& scriptPath, const std::string& entityName);
+        // Compiles scriptPath into a class without storing it; nullopt, logged, when it fails.
+        std::optional<ScriptClass> CompileClass(const std::string& scriptPath, const std::string& entityName);
         void               CreateScript(ECS::ECS& ecs, ECS::Entity entity);
         void               SyncScripts(ECS::ECS& ecs);
         // OnDisable (if enabled and not faulted) and OnDestroy (if it has an instance), then drop it.
@@ -195,6 +216,11 @@ namespace HedgehogScripting
         void               StepCoroutine(ECS::Entity owner, uint64_t id);
         ScriptCoroutine*   FindCoroutine(ECS::Entity owner, uint64_t id);
         void               EraseCoroutine(ECS::Entity owner, uint64_t id);
+        // Hot reload (ScriptSystemReload.cpp): the Lua state copier, and the swap of one class's
+        // running scripts onto its recompiled version.
+        void               RegisterReload();
+        void               ReloadClass(ECS::ECS& ecs, const std::string& scriptPath);
+        void               SwapScript(ECS::ECS& ecs, ECS::Entity entity, const ScriptClass& scriptClass);
         // Runs method on every enabled, healthy script, faulting a script whose call fails.
         template<typename... Args>
         void               InvokeAll(std::string_view method, Args&&... args);
@@ -247,6 +273,11 @@ namespace HedgehogScripting
         // Coroutine support: makes a thread wait can yield from, and resumes one, reporting what it
         // yielded. m_CoroutineTime is the scaled time OnUpdate has passed since Play, which wait
         // counts, so Pause freezes it and Time.timeScale scales it.
+        // Copies the plain state of one self into another (see ReloadChangedScripts), and when
+        // the script files were last compared with the disk.
+        sol::protected_function                              m_CopyState;
+        std::optional<std::chrono::steady_clock::time_point> m_LastReloadPoll;
+
         sol::protected_function m_SpawnCoroutine;
         sol::protected_function m_StepCoroutine;
         uint64_t                m_NextCoroutineId = 1;

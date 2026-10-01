@@ -95,8 +95,7 @@ namespace Editor
 
         // After the engine's own systems, so its play-mode events come after theirs, and before
         // EditorGui loads the last scene. The engine's ECS owns it; the editor only points at it.
-        HedgehogScripting::ScriptSystem* scriptSystem =
-            HedgehogScripting::RegisterScriptSystem(engineContext, engineContext.GetFileSystem()).get();
+        m_ScriptSystem = HedgehogScripting::RegisterScriptSystem(engineContext, engineContext.GetFileSystem()).get();
 
         // Engine settings must load before the renderer is constructed: they decide the size of
         // GPU resources it creates there. Loading afterwards leaves the settings dirty for the
@@ -132,7 +131,7 @@ namespace Editor
         }
         m_EditorGui = std::make_unique<EditorGui>(*m_Context);
         m_EditorGui->SetRenderer(m_Renderer.get());
-        m_EditorGui->SetScriptSystem(scriptSystem);
+        m_EditorGui->SetScriptSystem(m_ScriptSystem);
 
         // The panels' targets: zero-sized until their tabs are first drawn.
         for (const char* target : { SCENE_TARGET, GAME_TARGET })
@@ -215,6 +214,8 @@ namespace Editor
     {
         const float dt = GetFrameTime();
         m_Context->GetWindowContext().HandleInput();
+        // A script saved on disk takes effect without leaving Play (polled at most once a second).
+        m_ScriptSystem->ReloadChangedScripts(m_Context->GetEngineContext().GetECS());
         m_Context->UpdateContext(dt, GetSceneAspectRatio());
 
         m_ImGui->BeginFrame();

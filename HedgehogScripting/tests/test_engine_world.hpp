@@ -14,6 +14,8 @@
 #include "FileSystem/api/FileSystemManager.hpp"
 #include "FileSystem/tests/test_helpers.hpp"
 
+#include <chrono>
+#include <filesystem>
 #include <memory>
 #include <string>
 
@@ -43,6 +45,16 @@ public:
     void WriteScript(const std::string& name, const std::string& source) const
     {
         m_Dir.WriteFile("Scripts/" + name, source);
+    }
+
+    // Writes Scripts/<name> again and moves its write time a few seconds on, so a hot-reload
+    // poll sees the change however coarse the file system's clock is.
+    void RewriteScript(const std::string& name, const std::string& source) const
+    {
+        const std::filesystem::path path   = m_Dir.Path() / "Scripts" / name;
+        const auto                  before = std::filesystem::last_write_time(path);
+        m_Dir.WriteFile("Scripts/" + name, source);
+        std::filesystem::last_write_time(path, before + std::chrono::seconds(5));
     }
 
     // A new game object (Transform and Hierarchy) running scriptPath.

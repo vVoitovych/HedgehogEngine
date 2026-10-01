@@ -102,6 +102,7 @@ namespace HedgehogScripting
         RegisterEvents();
         RegisterCoroutines();
         RegisterPropertyHelpers();
+        RegisterReload();
         Bindings::RegisterTime(m_Lua, context.GetFixedStepClock(), m_DeltaTime, m_Frame);
         m_BaseEnvironment = sol::environment(m_Lua, sol::create, m_Lua.globals());
         StartClassSupport();
@@ -163,11 +164,29 @@ namespace HedgehogScripting
     {
         if (const auto it = m_Classes.find(scriptPath); it != m_Classes.end())
             return &it->second;
+        std::optional<ScriptClass> compiled = CompileClass(scriptPath, entityName);
+        if (!compiled)
+            return nullptr;
+        return &m_Classes.insert_or_assign(scriptPath, std::move(*compiled)).first->second;
+    }
+
+    std::optional<ScriptSystem::ScriptClass> ScriptSystem::CompileClass(const std::string& scriptPath,
+                                                                        const std::string& entityName)
+    {
+        // The file's write time first, so an edit saved while it compiles is seen next time.
+        ScriptClass compiled;
+        if (const auto physical = m_ScriptFiles.ResolvePhysical(scriptPath))
+        {
+            std::error_code error;
+            compiled.WriteTime = std::filesystem::last_write_time(*physical, error);
+            if (!error)
+                compiled.PhysicalPath = *physical;
+        }
 
         const std::optional<sol::protected_function> chunk =
             LoadScriptFile(m_Lua, m_ScriptFiles, scriptPath, m_Traceback);
         if (!chunk)
-            return nullptr;
+            return std::nullopt;
         ++m_CompileCount;
         sol::set_environment(m_Proxy, *chunk);
 
@@ -179,7 +198,7 @@ namespace HedgehogScripting
             {
                 const sol::error error = ran;
                 LogError(entityName, scriptPath, error.what());
-                return nullptr;
+                return std::nullopt;
             }
 
             const std::string className   = ClassNameOf(scriptPath);
@@ -187,17 +206,18 @@ namespace HedgehogScripting
             if (classObject.get_type() != sol::type::table)
             {
                 LogError(entityName, scriptPath, "the script does not define the class '" + className + "'.");
-                return nullptr;
+                return std::nullopt;
             }
 
-            const auto [it, inserted] = m_Classes.emplace(
-                scriptPath, ScriptClass{ defaults, classObject.as<sol::table>(), ReadDeclarations(defaults, scriptPath) });
-            return &it->second;
+            compiled.Defaults     = defaults;
+            compiled.Class        = classObject.as<sol::table>();
+            compiled.Declarations = ReadDeclarations(defaults, scriptPath);
+            return compiled;
         }
         catch (const std::exception& e)
         {
             LogError(entityName, scriptPath, e.what());
-            return nullptr;
+            return std::nullopt;
         }
     }
 
@@ -288,6 +308,9 @@ namespace HedgehogScripting
         m_RunningEntity.reset();
         return succeeded;
     }
+
+    // ScriptSystemReload.cpp calls OnReload through it.
+    template bool ScriptSystem::Invoke<>(ECS::Entity, EntityScript&, std::string_view);
 
     template<typename... Args>
     void ScriptSystem::InvokeAll(std::string_view method, Args&&... args)
