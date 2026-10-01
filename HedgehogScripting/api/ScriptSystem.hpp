@@ -191,6 +191,11 @@ namespace HedgehogScripting
         // nothing is destroyed while the scripts are being walked.
         std::vector<Bindings::ScriptEntity>           m_PendingDestroys;
 
+        // What Time.deltaTime and Time.frame read: the current hook's dt and the OnUpdate calls
+        // since Play.
+        float    m_DeltaTime = 0.0f;
+        uint64_t m_Frame     = 0;
+
         // Script events, by name, in subscription order; events published since the last dispatch.
         std::unordered_map<std::string, std::vector<EventSubscription>> m_Subscriptions;
         std::vector<QueuedEvent>                                        m_QueuedEvents;

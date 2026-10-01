@@ -2,11 +2,13 @@
 
 #include "HedgehogScripting/api/Sol.hpp"
 
+#include <cstdint>
 #include <vector>
 
 namespace HedgehogEngine
 {
     class EngineContext;
+    struct FixedStepClock;
 }
 
 // The engine types and functions the ScriptSystem gives its scripts, as globals.
@@ -41,4 +43,11 @@ namespace HedgehogScripting::Bindings
     // their children up to the grandparent, and empties the queue. A scripted one gets OnDestroy
     // through the ScriptComponent removal callback.
     void FlushDestroys(HedgehogEngine::EngineContext& context, std::vector<ScriptEntity>& pendingDestroys);
+
+    // The Time table: deltaTime (the hook's dt: OnUpdate's scaled dt, or the fixed dt inside
+    // OnFixedUpdate), fixedDeltaTime, time (the clock's scaled simulated time), frame (OnUpdate
+    // calls since Play) and timeScale, the only writable field, clamped to [0, 100] and stored in
+    // the clock. Every read sees the current values. All three must outlive lua.
+    void RegisterTime(sol::state& lua, HedgehogEngine::FixedStepClock& clock, const float& deltaTime,
+                      const uint64_t& frame);
 }

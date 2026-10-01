@@ -100,6 +100,7 @@ namespace HedgehogScripting
         Bindings::RegisterComponents(m_Lua, context);
         Bindings::RegisterScene(m_Lua, context, m_PendingDestroys);
         RegisterEvents();
+        Bindings::RegisterTime(m_Lua, context.GetFixedStepClock(), m_DeltaTime, m_Frame);
         m_BaseEnvironment = sol::environment(m_Lua, sol::create, m_Lua.globals());
         StartClassSupport();
     }
@@ -421,6 +422,8 @@ namespace HedgehogScripting
         m_PendingDestroys.clear();
         m_Subscriptions.clear();
         m_QueuedEvents.clear();
+        m_DeltaTime = 0.0f;
+        m_Frame     = 0;
 
         // Chain in front of whatever removal callback the engine keeps for ScriptComponent, for
         // the length of Play.
@@ -445,6 +448,7 @@ namespace HedgehogScripting
 
     void ScriptSystem::OnFixedUpdate(ECS::ECS& ecs, float fixedDeltaTime)
     {
+        m_DeltaTime = fixedDeltaTime;
         SyncScripts(ecs);
         InvokeAll("OnFixedUpdate", fixedDeltaTime);
         for (const ECS::Entity entity : std::exchange(m_PendingRemovals, {}))
@@ -454,6 +458,8 @@ namespace HedgehogScripting
 
     void ScriptSystem::OnUpdate(ECS::ECS& ecs, float deltaTime)
     {
+        m_DeltaTime = deltaTime;
+        ++m_Frame;
         SyncScripts(ecs);
         InvokeAll("OnUpdate", deltaTime);
         // Events wait for every OnUpdate, so no handler runs inside another script's call.
