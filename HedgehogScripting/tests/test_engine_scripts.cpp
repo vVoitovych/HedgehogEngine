@@ -93,7 +93,9 @@ TEST_CASE("Engine scripts - loading a scene runs no script code and keeps its sc
 
     const auto& script = scene.Context.GetECS().GetComponent<ScriptComponent>(*player);
     CHECK(script.ScriptPath == "Scripts\\PlayerScript.lua");
-    CHECK(std::get<float>(script.Params.at("speed").value) == doctest::Approx(7.45f));
+    const auto* speed = HedgehogEngine::FindScriptProperty(script, "speed");
+    REQUIRE(speed != nullptr);
+    CHECK(std::get<float>(speed->Value) == doctest::Approx(7.45f));
     CHECK(scene.Scripts->GetScriptCount() == 0);
     CHECK(log.Lines("[Script]").empty());
     CHECK(log.Lines("[ERROR]").empty());
@@ -104,9 +106,11 @@ TEST_CASE("Engine scripts - DescribeScript on the shipped PlayerScript lists its
     ShippedScene scene;
     LogCapture   log;
     const auto   params = scene.Scripts->DescribeScript("Scripts/PlayerScript.lua");
-    REQUIRE(params.size() == 2);
-    CHECK(params.at("speed").type == HedgehogEngine::ParamType::Number);
-    CHECK(params.at("clockWise").type == HedgehogEngine::ParamType::Boolean);
+    REQUIRE(params.size() == 2); // sorted by name
+    CHECK(params[0].Name == "clockWise");
+    CHECK(params[0].Type == HedgehogEngine::ScriptPropertyType::Bool);
+    CHECK(params[1].Name == "speed");
+    CHECK(params[1].Type == HedgehogEngine::ScriptPropertyType::Number);
     CHECK(log.Text().empty());
 }
 
@@ -120,9 +124,9 @@ TEST_CASE("Engine scripts - a speed edited during Play takes effect at once")
     scene.Frames(1);
     const float before = scene.RotationZ(*player);
 
-    auto& script                    = scene.Context.GetECS().GetComponent<ScriptComponent>(*player);
-    script.Params.at("speed").value = 60.0f;
-    scene.Scripts->PushParams(scene.Context.GetECS(), *player);
+    auto& script = scene.Context.GetECS().GetComponent<ScriptComponent>(*player);
+    HedgehogEngine::FindScriptProperty(script, "speed")->Value = 60.0f;
+    scene.Scripts->PushProperties(scene.Context.GetECS(), *player);
     scene.Frames(1);
     CHECK(scene.RotationZ(*player) - before == doctest::Approx(-1.0f).epsilon(1e-3));
     REQUIRE(scene.Context.Stop());

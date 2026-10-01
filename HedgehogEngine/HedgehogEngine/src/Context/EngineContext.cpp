@@ -25,6 +25,7 @@
 #include "HedgehogEngine/api/ECS/components/LightComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RenderComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
+#include "HedgehogEngine/api/Scene/ScriptComponentSerializer.hpp"
 #include "HedgehogEngine/api/ECS/components/CameraComponent.hpp"
 #include "ECS/api/components/Hierarchy.hpp"
 
@@ -145,63 +146,8 @@ namespace HedgehogEngine
         m_ComponentRegistry->RegisterReflected<LightComponent>("LightComponent");
         m_ComponentRegistry->RegisterReflected<CameraComponent>("CameraComponent");
 
-        // ScriptComponent: RegisterCustom to handle Params. Scripts run in the application's
-        // script system; loading a scene only reads the data.
-        m_ComponentRegistry->RegisterCustom("ScriptComponent",
-            [](YAML::Emitter& out, const ECS::ECS& ecs, ECS::Entity e)
-            {
-                ScriptComponent& script = ecs.GetComponent<ScriptComponent>(e);
-                out << YAML::Key << "ScriptComponent" << YAML::BeginMap;
-                EcsSerialization::YamlWriter w{out};
-                script.Visit(w);
-                if (!script.Params.empty())
-                {
-                    out << YAML::Key << "ScriptParams" << YAML::BeginMap;
-                    for (const auto& [name, param] : script.Params)
-                    {
-                        out << YAML::Key << name << YAML::BeginMap;
-                        out << YAML::Key << "ParamType" << YAML::Value << static_cast<size_t>(param.type);
-                        switch (param.type)
-                        {
-                        case ParamType::Boolean:
-                            out << YAML::Key << "ParamValue" << YAML::Value << std::get<bool>(param.value);
-                            break;
-                        case ParamType::Number:
-                            out << YAML::Key << "ParamValue" << YAML::Value << std::get<float>(param.value);
-                            break;
-                        default: break;
-                        }
-                        out << YAML::EndMap;
-                    }
-                    out << YAML::EndMap;
-                }
-                out << YAML::EndMap;
-            },
-            [](ECS::ECS& ecs, ECS::Entity e, const YAML::Node& node)
-            {
-                EcsSerialization::ComponentSerializerRegistry::DeserializeWithVisit<ScriptComponent>(ecs, e, node);
-                ScriptComponent& script = ecs.GetComponent<ScriptComponent>(e);
-                const YAML::Node params = node["ScriptParams"];
-                if (params && params.IsMap())
-                {
-                    for (const auto& param : params)
-                    {
-                        std::string               paramName = param.first.as<std::string>();
-                        const YAML::Node          data      = param.second;
-                        ParamType                 type      = static_cast<ParamType>(data["ParamType"].as<size_t>());
-                        std::variant<bool, float> value;
-                        switch (type)
-                        {
-                        case ParamType::Boolean: value = data["ParamValue"].as<bool>();  break;
-                        case ParamType::Number:  value = data["ParamValue"].as<float>(); break;
-                        default: break;
-                        }
-                        script.Params[paramName] = { type, value };
-                    }
-                }
-            },
-            [](const ECS::ECS& ecs, ECS::Entity e) { return ecs.HasComponent<ScriptComponent>(e); }
-        );
+        // Scripts run in the application's script system; loading a scene only reads the data.
+        RegisterScriptComponentSerializer(*m_ComponentRegistry);
     }
 
     void EngineContext::UpdateContext(WindowContext& windowContext, float aspectRatio, float dt)

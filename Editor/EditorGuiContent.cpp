@@ -196,7 +196,7 @@ namespace Editor
         // from the file's top-level globals, and no script code runs until Play.
         auto& script      = ecs.GetComponent<HedgehogEngine::ScriptComponent>(entity);
         script.ScriptPath = virtualPath->substr(ASSETS_PREFIX.size());
-        script.Params     = m_ScriptSystem->DescribeScript(*virtualPath);
+        script.Properties = m_ScriptSystem->DescribeScript(*virtualPath);
         return true;
     }
 
