@@ -95,7 +95,8 @@ namespace HedgehogScripting
         m_Traceback       = OpenSandbox(m_Lua);
         Bindings::RegisterMath(m_Lua);
         Bindings::RegisterLog(m_Lua);
-        Bindings::RegisterEntity(m_Lua, context.GetECS(), context.GetEventBus());
+        Bindings::RegisterEntity(m_Lua, context);
+        Bindings::RegisterComponents(m_Lua, context);
         m_BaseEnvironment = sol::environment(m_Lua, sol::create, m_Lua.globals());
         StartClassSupport();
     }

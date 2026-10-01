@@ -2,14 +2,9 @@
 
 #include "HedgehogScripting/api/Sol.hpp"
 
-namespace ECS
-{
-    class ECS;
-}
-
 namespace HedgehogEngine
 {
-    class EventBus;
+    class EngineContext;
 }
 
 // The engine types and functions the ScriptSystem gives its scripts, as globals.
@@ -23,6 +18,13 @@ namespace HedgehogScripting::Bindings
     void RegisterLog(sol::state& lua);
 
     // Entity (ScriptEntity) and Transform (ScriptComponentRef<TransformComponent>) usertypes over
-    // ecs; Transform writes publish TransformChangedEvent on eventBus. Both must outlive lua.
-    void RegisterEntity(sol::state& lua, ECS::ECS& ecs, HedgehogEngine::EventBus& eventBus);
+    // context's ECS; Transform writes publish TransformChangedEvent on its EventBus. Entity also
+    // gets getX/hasX/addX for the Light, Camera and Mesh components. context must outlive lua.
+    void RegisterEntity(sol::state& lua, HedgehogEngine::EngineContext& context);
+
+    // Light, Camera and Mesh (ScriptComponentRef<T>) usertypes and the LightType,
+    // CameraProjectionType and CameraTargetMode enum tables. Writes go straight to the ECS;
+    // castShadows goes through LightSystem::SetShadowCasting and mesh.path through
+    // MeshSystem::LoadMesh, as in the inspector. context must outlive lua.
+    void RegisterComponents(sol::state& lua, HedgehogEngine::EngineContext& context);
 }
