@@ -21,6 +21,11 @@ namespace Renderer
     class Renderer;
 }
 
+namespace HedgehogScripting
+{
+    class ScriptSystem;
+}
+
 namespace Editor
 {
     class EditorGui;
@@ -64,6 +69,7 @@ namespace Editor
         std::unique_ptr<Renderer::Renderer> m_Renderer;
         std::unique_ptr<ImGuiLayer>         m_ImGui;
         std::unique_ptr<EditorGui>          m_EditorGui;
+        HedgehogScripting::ScriptSystem*    m_ScriptSystem = nullptr; // owned by the engine's ECS
 
         // The Content panel's pictures, uploaded once the device exists, and their ImGui ids.
         ContentIcons   m_ContentIcons;
