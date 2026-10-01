@@ -3,6 +3,8 @@
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogEngine/api/Scene/SceneManager.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
+#include "HedgehogEngine/api/ECS/systems/HierarchySystem.hpp"
+#include "HedgehogEngine/api/ECS/systems/TransformSystem.hpp"
 
 #include "ECS/api/ECS.hpp"
 #include "ECS/api/components/Hierarchy.hpp"
@@ -131,4 +133,23 @@ TEST_CASE("SceneManager snapshot - a malformed snapshot returns false")
     broken.Yaml      = "Scene name: [unclosed";
     broken.SceneName = "Broken";
     CHECK_FALSE(scenes.RestoreSnapshot(broken));
+}
+
+TEST_CASE("SceneManager - a game object created and deleted in one frame is skipped by the transform update")
+{
+    EngineContext context;
+    SceneManager& scenes = context.GetSceneManager();
+    ECS::ECS&     ecs    = context.GetECS();
+
+    // Both publish a transform change; the deleted one must not be read when it is processed.
+    const ECS::Entity kept    = scenes.CreateGameObject();
+    const ECS::Entity deleted = scenes.CreateGameObject();
+    ecs.GetComponent<TransformComponent>(kept).Position = HM::Vector3(1.0f, 2.0f, 3.0f);
+    scenes.DeleteGameObject(deleted);
+
+    context.GetTransformSystem()->Update(ecs, context.GetEventBus());
+    context.GetHierarchySystem()->Update(ecs, context.GetEventBus());
+
+    CHECK_FALSE(ecs.IsAlive(deleted));
+    CHECK(ecs.GetComponent<TransformComponent>(kept).ObjMatrix[3].x() == doctest::Approx(1.0f));
 }

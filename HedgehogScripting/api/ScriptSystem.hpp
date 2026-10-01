@@ -33,6 +33,11 @@ namespace HedgehogEngine
 
 namespace HedgehogScripting
 {
+    namespace Bindings
+    {
+        struct ScriptEntity;
+    }
+
     // The script system (ADR-022): runs the Lua script of every entity with a ScriptComponent and
     // a TransformComponent. The component holds only data; every piece of runtime state lives
     // here: one sandboxed Lua state, each script file's class compiled once per Play, and each
@@ -133,7 +138,8 @@ namespace HedgehogScripting
         bool Invoke(ECS::Entity entity, EntityScript& script, std::string_view method, Args&&... args);
         void LogError(const std::string& entityName, const std::string& scriptPath, const std::string& message) const;
 
-        const FS::FileSystemManager& m_ScriptFiles;
+        const FS::FileSystemManager&   m_ScriptFiles;
+        HedgehogEngine::EngineContext& m_Context; // its SceneManager deletes the queued entities
 
         sol::state              m_Lua;
         sol::protected_function m_Traceback;
@@ -158,6 +164,9 @@ namespace HedgehogScripting
         RemovedCallback                               m_PreviousRemovedCallback;
         // Entities removed while one of their own script calls was running; handled after it.
         std::vector<ECS::Entity>                      m_PendingRemovals;
+        // Entities scripts asked to destroy, deleted once every script in the hook has run, so
+        // nothing is destroyed while the scripts are being walked.
+        std::vector<Bindings::ScriptEntity>           m_PendingDestroys;
     };
 
     // Registers the script system in the engine's ECS with its signature (ScriptComponent and
