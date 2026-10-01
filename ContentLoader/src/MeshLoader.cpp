@@ -25,7 +25,7 @@ namespace ContentLoader
 
         if (extension == ".obj")
             return LoadObj(path);
-        if (extension == ".gltf")
+        if (extension == ".gltf" || extension == ".glb")
             return LoadGltfMesh(path);
 
         LOGERROR("Unsupported mesh file format: ", extension);
