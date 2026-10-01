@@ -12,7 +12,7 @@
 
 #include <string>
 
-using HedgehogEngine::ParamType;
+using HedgehogEngine::ScriptPropertyType;
 using HedgehogEngine::ScriptComponent;
 
 namespace
@@ -30,7 +30,7 @@ namespace
 
     void SetNumber(ScriptComponent& component, const std::string& name, float value)
     {
-        component.Params[name] = { ParamType::Number, value };
+        HedgehogEngine::SetScriptProperty(component, { name, ScriptPropertyType::Number, value, {} });
     }
 
     // Plays one frame of world with the scripts it holds, then stops.

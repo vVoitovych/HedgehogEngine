@@ -49,7 +49,7 @@ namespace HedgehogScripting
     // own shallow copy of them, so `speed = 1.0` is per entity while the methods are shared.
     //
     // Driven by the ECS play-mode events. OnPlayStart makes an instance for every entity with a
-    // script path, with its ScriptComponent Params as globals. Both update events first sync the
+    // script path, with its ScriptComponent Properties as globals. Both update events first sync the
     // scripts with the ECS: a component added during Play gets an instance, an entity that left
     // the system gets OnDisable and OnDestroy, and the component's Enable against the system's own
     // view of it gives OnStart (once, on the first enable), OnEnable and OnDisable. Then
@@ -78,14 +78,14 @@ namespace HedgehogScripting
         void OnFixedUpdate(ECS::ECS& ecs, float fixedDeltaTime) override;
         void OnUpdate(ECS::ECS& ecs, float deltaTime) override;
 
-        // Re-applies entity's ScriptComponent Params as globals of its script, for live
+        // Re-applies entity's ScriptComponent Properties as globals of its script, for live
         // inspector edits. Does nothing outside Play or for an entity with no script.
-        void PushParams(ECS::ECS& ecs, ECS::Entity entity);
+        void PushProperties(ECS::ECS& ecs, ECS::Entity entity);
 
-        // The number and boolean top-level globals of the script at scriptPath, as ScriptParams,
-        // for the inspector. Compiles a throwaway class and runs no method.
-        [[nodiscard]] std::unordered_map<std::string, HedgehogEngine::ScriptParam> DescribeScript(
-            const std::string& scriptPath);
+        // The number and boolean top-level globals of the script at scriptPath, as Number and
+        // Bool ScriptProperties sorted by name, for the inspector. Compiles a throwaway class and
+        // runs no method.
+        [[nodiscard]] std::vector<HedgehogEngine::ScriptProperty> DescribeScript(const std::string& scriptPath);
 
         // Entities with a live script instance.
         [[nodiscard]] size_t GetScriptCount() const;
@@ -169,7 +169,7 @@ namespace HedgehogScripting
         // OnDisable (if enabled and not faulted) and OnDestroy (if it has an instance), then drop it.
         void               DestroyScript(ECS::Entity entity);
         void               OnScriptRemoved(ECS::Entity entity);
-        void               ApplyParams(ECS::ECS& ecs, ECS::Entity entity, EntityScript& script);
+        void               ApplyProperties(ECS::ECS& ecs, ECS::Entity entity, EntityScript& script);
         // Script events (ScriptSystemEvents.cpp): the Events table, and delivery of the queued
         // events to their subscribers once every script's OnUpdate has run.
         void               RegisterEvents();

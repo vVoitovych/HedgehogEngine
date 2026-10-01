@@ -228,7 +228,7 @@ namespace HedgehogScripting
         try
         {
             script.Environment = m_NewEnvironment(scriptClass->Defaults).get<sol::table>();
-            ApplyParams(ecs, entity, script);
+            ApplyProperties(ecs, entity, script);
 
             m_RunningEntity = entity;
             const sol::protected_function_result made =
@@ -257,21 +257,36 @@ namespace HedgehogScripting
         }
     }
 
-    void ScriptSystem::ApplyParams(ECS::ECS& ecs, ECS::Entity entity, EntityScript& script)
+    void ScriptSystem::ApplyProperties(ECS::ECS& ecs, ECS::Entity entity, EntityScript& script)
     {
+        using HedgehogEngine::ScriptPropertyType;
         const auto& component = ecs.GetComponent<HedgehogEngine::ScriptComponent>(entity);
-        for (const auto& [name, param] : component.Params)
+        for (const HedgehogEngine::ScriptProperty& property : component.Properties)
         {
-            switch (param.type)
+            switch (property.Type)
             {
-            case HedgehogEngine::ParamType::Boolean:
-                script.Environment[name] = std::get<bool>(param.value);
+            case ScriptPropertyType::Number:
+                script.Environment[property.Name] = std::get<float>(property.Value);
                 break;
-            case HedgehogEngine::ParamType::Number:
-                script.Environment[name] = std::get<float>(param.value);
+            case ScriptPropertyType::Bool:
+                script.Environment[property.Name] = std::get<bool>(property.Value);
                 break;
-            default:
+            case ScriptPropertyType::Vector3:
+            case ScriptPropertyType::Color:
+                script.Environment[property.Name] = std::get<HM::Vector3>(property.Value);
                 break;
+            case ScriptPropertyType::String:
+            case ScriptPropertyType::AssetRef:
+                script.Environment[property.Name] = std::get<std::string>(property.Value);
+                break;
+            case ScriptPropertyType::EntityRef:
+            {
+                // A reference to an entity that is gone is an invalid handle, not nil.
+                const ECS::Entity target = std::get<ECS::Entity>(property.Value);
+                script.Environment[property.Name] =
+                    target < ECS::MAX_ENTITIES && ecs.IsAlive(target) ? Bindings::MakeScriptEntity(ecs, target) : Bindings::ScriptEntity{};
+                break;
+            }
             }
         }
     }
@@ -496,17 +511,18 @@ namespace HedgehogScripting
         }
     }
 
-    void ScriptSystem::PushParams(ECS::ECS& ecs, ECS::Entity entity)
+    void ScriptSystem::PushProperties(ECS::ECS& ecs, ECS::Entity entity)
     {
         const auto it = m_Scripts.find(entity);
         if (it == m_Scripts.end() || !it->second.Environment.valid())
             return;
-        ApplyParams(ecs, entity, it->second);
+        ApplyProperties(ecs, entity, it->second);
     }
 
-    std::unordered_map<std::string, HedgehogEngine::ScriptParam> ScriptSystem::DescribeScript(const std::string& scriptPath)
+    std::vector<HedgehogEngine::ScriptProperty> ScriptSystem::DescribeScript(const std::string& scriptPath)
     {
-        std::unordered_map<std::string, HedgehogEngine::ScriptParam> params;
+        using HedgehogEngine::ScriptPropertyType;
+        std::vector<HedgehogEngine::ScriptProperty> params;
         const std::string path = NormalizeScriptPath(scriptPath);
         if (!EnsureBaseLoaded())
             return params;
@@ -533,10 +549,13 @@ namespace HedgehogScripting
                 if (key.get_type() != sol::type::string)
                     continue;
                 if (value.get_type() == sol::type::number)
-                    params[key.as<std::string>()] = { HedgehogEngine::ParamType::Number, value.as<float>() };
+                    params.push_back({ key.as<std::string>(), ScriptPropertyType::Number, value.as<float>(), {} });
                 else if (value.get_type() == sol::type::boolean)
-                    params[key.as<std::string>()] = { HedgehogEngine::ParamType::Boolean, value.as<bool>() };
+                    params.push_back({ key.as<std::string>(), ScriptPropertyType::Bool, value.as<bool>(), {} });
             }
+            // Lua tables have no order; the inspector lists them by name.
+            std::sort(params.begin(), params.end(),
+                      [](const auto& a, const auto& b) { return a.Name < b.Name; });
         }
         catch (const std::exception& e)
         {

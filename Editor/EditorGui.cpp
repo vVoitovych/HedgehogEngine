@@ -49,11 +49,38 @@
 #include "imgui.h"
 
 #include <algorithm>
+#include <string>
 #include <string_view>
 
 namespace
 {
     constexpr std::string_view ASSETS_PREFIX = "assets://";
+
+    // A script property's value as text, for the types the inspector shows read-only.
+    std::string DescribePropertyValue(const HedgehogEngine::ScriptProperty& property)
+    {
+        using HedgehogEngine::ScriptPropertyType;
+        switch (property.Type)
+        {
+        case ScriptPropertyType::Vector3:
+        case ScriptPropertyType::Color:
+        {
+            const HM::Vector3& v = std::get<HM::Vector3>(property.Value);
+            return "(" + std::to_string(v.x()) + ", " + std::to_string(v.y()) + ", " + std::to_string(v.z()) + ")";
+        }
+        case ScriptPropertyType::String:
+            return std::get<std::string>(property.Value);
+        case ScriptPropertyType::AssetRef:
+            return std::get<std::string>(property.Value) + " (" + property.AssetType + ")";
+        case ScriptPropertyType::EntityRef:
+            return "entity " + std::to_string(std::get<ECS::Entity>(property.Value));
+        case ScriptPropertyType::Number:
+            return std::to_string(std::get<float>(property.Value));
+        case ScriptPropertyType::Bool:
+            return std::get<bool>(property.Value) ? "true" : "false";
+        }
+        return {};
+    }
 
     void SetupLightComponentGuiOverrides()
     {
@@ -1010,42 +1037,44 @@ namespace Editor
         }
         ImGui::EndDisabled();
 
-        // A parameter edit reaches the running script at once; outside Play it only changes the data.
-        bool paramsChanged = false;
+        // A property edit reaches the running script at once; outside Play it only changes the data.
+        bool propertiesChanged = false;
 
-        if (!component.Params.empty())
-            ImGui::SeparatorText("Parameters");
+        if (!component.Properties.empty())
+            ImGui::SeparatorText("Properties");
 
-        for (auto& [name, param] : component.Params)
+        for (HedgehogEngine::ScriptProperty& property : component.Properties)
         {
-            switch (param.type)
+            switch (property.Type)
             {
-            case HedgehogEngine::ParamType::Boolean:
+            case HedgehogEngine::ScriptPropertyType::Bool:
             {
-                bool bVal = std::get<bool>(param.value);
-                if (ImGui::Checkbox(name.c_str(), &bVal))
+                bool bVal = std::get<bool>(property.Value);
+                if (ImGui::Checkbox(property.Name.c_str(), &bVal))
                 {
-                    param.value   = bVal;
-                    paramsChanged = true;
+                    property.Value    = bVal;
+                    propertiesChanged = true;
                 }
                 break;
             }
-            case HedgehogEngine::ParamType::Number:
+            case HedgehogEngine::ScriptPropertyType::Number:
             {
-                float nVal = std::get<float>(param.value);
-                if (ImGui::DragFloat(name.c_str(), &nVal, 0.05f))
+                float nVal = std::get<float>(property.Value);
+                if (ImGui::DragFloat(property.Name.c_str(), &nVal, 0.05f))
                 {
-                    param.value   = nVal;
-                    paramsChanged = true;
+                    property.Value    = nVal;
+                    propertiesChanged = true;
                 }
                 break;
             }
             default:
+                // Shown read-only until the inspector edits every property type.
+                ImGui::TextDisabled("%s: %s", property.Name.c_str(), DescribePropertyValue(property).c_str());
                 break;
             }
         }
-        if (paramsChanged && m_ScriptSystem)
-            m_ScriptSystem->PushParams(ecs, entity);
+        if (propertiesChanged && m_ScriptSystem)
+            m_ScriptSystem->PushProperties(ecs, entity);
 
         if (ImGui::Button("Remove script"))
         {

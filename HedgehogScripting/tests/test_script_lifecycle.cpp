@@ -6,10 +6,12 @@
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
 
+#include "ECS/api/components/Hierarchy.hpp"
+
 #include <string>
 #include <vector>
 
-using HedgehogEngine::ParamType;
+using HedgehogEngine::ScriptPropertyType;
 using HedgehogEngine::ScriptComponent;
 
 namespace
@@ -52,12 +54,12 @@ function Recorder:OnDestroy() print("OnDestroy " .. label) end
 
     void SetNumber(ScriptComponent& component, const std::string& name, float value)
     {
-        component.Params[name] = { ParamType::Number, value };
+        HedgehogEngine::SetScriptProperty(component, { name, ScriptPropertyType::Number, value, {} });
     }
 
     void SetBool(ScriptComponent& component, const std::string& name, bool value)
     {
-        component.Params[name] = { ParamType::Boolean, value };
+        HedgehogEngine::SetScriptProperty(component, { name, ScriptPropertyType::Bool, value, {} });
     }
 }
 
@@ -211,7 +213,7 @@ TEST_CASE("Script lifecycle - a faulted script logs once, is skipped, and runs a
     }
 }
 
-TEST_CASE("Script lifecycle - Params are the entity's globals at OnStart, and PushParams updates them")
+TEST_CASE("Script lifecycle - Properties are the entity's globals at OnStart, and PushProperties updates them")
 {
     EngineWorld world;
     world.WriteScript("Recorder.lua", RECORDER);
@@ -223,7 +225,7 @@ TEST_CASE("Script lifecycle - Params are the entity's globals at OnStart, and Pu
     }
 
     // Outside Play there is no script to push to.
-    world.Scripts->PushParams(world.Ecs(), entity);
+    world.Scripts->PushProperties(world.Ecs(), entity);
 
     LogCapture log;
     REQUIRE(world.Context.Play());
@@ -235,10 +237,48 @@ TEST_CASE("Script lifecycle - Params are the entity's globals at OnStart, and Pu
     world.Context.UpdatePlayMode(STEP * 0.1f);
     CHECK(log.Lines("OnUpdate r speed 7.5").size() == 2); // not pushed yet
 
-    world.Scripts->PushParams(world.Ecs(), entity);
+    world.Scripts->PushProperties(world.Ecs(), entity);
     world.Context.UpdatePlayMode(STEP * 0.1f);
     CHECK(log.Lines("OnUpdate r speed 2.0").size() == 1);
     REQUIRE(world.Stop());
+}
+
+TEST_CASE("Script lifecycle - every property type reaches the script as its Lua value")
+{
+    EngineWorld world;
+    world.WriteScript("Typed.lua", R"lua(
+Typed = setmetatable({}, { __index = ActorScript })
+Typed.__index = Typed
+function Typed:new() return setmetatable(ActorScript:new(), Typed) end
+function Typed:OnStart()
+    print("offset " .. tostring(offset == Vector3(1, 2, 3)) .. " tint " .. tostring(tint == Vector3(0.5, 0.25, 1)))
+    print("greeting " .. greeting .. " model " .. model)
+    print("target " .. target.name .. " gone " .. tostring(gone:isValid()))
+end
+)lua");
+    const ECS::Entity target = world.Context.GetSceneManager().CreateGameObject();
+    world.Ecs().GetComponent<ECS::HierarchyComponent>(target).Name = "Target";
+    const ECS::Entity entity = world.AddScripted("Scripts/Typed.lua");
+    {
+        auto& component = world.Ecs().GetComponent<ScriptComponent>(entity);
+        component.Properties = {
+            { "offset", ScriptPropertyType::Vector3, HM::Vector3(1.0f, 2.0f, 3.0f), {} },
+            { "tint", ScriptPropertyType::Color, HM::Vector3(0.5f, 0.25f, 1.0f), {} },
+            { "greeting", ScriptPropertyType::String, std::string("hi"), {} },
+            { "model", ScriptPropertyType::AssetRef, std::string("Models/a.obj"), "Mesh" },
+            { "target", ScriptPropertyType::EntityRef, target, {} },
+            { "gone", ScriptPropertyType::EntityRef, ECS::Entity(ECS::MAX_ENTITIES - 1), {} },
+        };
+    }
+
+    LogCapture log;
+    REQUIRE(world.Context.Play());
+    world.Context.UpdatePlayMode(STEP);
+    REQUIRE(world.Stop());
+    CHECK(log.Lines("offset true tint true").size() == 1);
+    CHECK(log.Lines("greeting hi model Models/a.obj").size() == 1);
+    CHECK(log.Lines("target Target gone false").size() == 1);
+    CHECK(log.Lines("[ERROR]").empty());
 }
 
 TEST_CASE("Script lifecycle - DescribeScript lists the shipped PlayerScript's parameters and logs nothing")
@@ -250,13 +290,13 @@ TEST_CASE("Script lifecycle - DescribeScript lists the shipped PlayerScript's pa
     const auto params = scripts->DescribeScript("Scripts/PlayerScript.lua");
     CHECK(log.Text().empty());
 
-    REQUIRE(params.size() == 2);
-    REQUIRE(params.count("speed") == 1);
-    CHECK(params.at("speed").type == ParamType::Number);
-    CHECK(std::get<float>(params.at("speed").value) == 1.0f);
-    REQUIRE(params.count("clockWise") == 1);
-    CHECK(params.at("clockWise").type == ParamType::Boolean);
-    CHECK(std::get<bool>(params.at("clockWise").value) == true);
+    REQUIRE(params.size() == 2); // sorted by name
+    CHECK(params[0].Name == "clockWise");
+    CHECK(params[0].Type == ScriptPropertyType::Bool);
+    CHECK(std::get<bool>(params[0].Value) == true);
+    CHECK(params[1].Name == "speed");
+    CHECK(params[1].Type == ScriptPropertyType::Number);
+    CHECK(std::get<float>(params[1].Value) == 1.0f);
     CHECK(scripts->GetScriptCount() == 0);
 }
 
