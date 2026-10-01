@@ -1,7 +1,12 @@
 #include "Bindings.hpp"
 #include "ScriptHandles.hpp"
 
+#include "HedgehogEngine/api/EngineContext.hpp"
+#include "HedgehogEngine/api/ECS/components/CameraComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/LightComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
+#include "HedgehogEngine/api/ECS/systems/MeshSystem.hpp"
 #include "HedgehogEngine/api/Events/EventBus.hpp"
 #include "HedgehogEngine/api/Events/TransformEvents.hpp"
 
@@ -10,6 +15,7 @@
 
 #include "ECS/api/components/Hierarchy.hpp"
 
+#include <string>
 #include <vector>
 
 namespace HedgehogScripting::Bindings
@@ -38,9 +44,35 @@ namespace HedgehogScripting::Bindings
             return v.LengthSqr() > 0.0f ? v.Normalize() : v;
         }
 
-        void RegisterEntityType(sol::state& lua, ECS::ECS& ecs)
+        // entity:getX() (the component's handle, or nil), entity:hasX() and entity:addX() (adds a
+        // default one, runs onAdd, and returns its handle; an existing one is returned as is).
+        template<typename T, typename OnAdd>
+        void AddComponentAccess(sol::usertype<ScriptEntity>& type, ECS::ECS& ecs, const std::string& name, OnAdd onAdd)
         {
-            lua.new_usertype<ScriptEntity>(
+            type["get" + name] = [&ecs](const ScriptEntity& e, sol::this_state state) -> sol::object
+            {
+                RequireValid(ecs, e);
+                if (!ecs.HasComponent<T>(e.Id))
+                    return sol::lua_nil;
+                return sol::make_object(state, ScriptComponentRef<T>{ e });
+            };
+            type["has" + name] = [&ecs](const ScriptEntity& e)
+            {
+                RequireValid(ecs, e);
+                return ecs.HasComponent<T>(e.Id);
+            };
+            type["add" + name] = [&ecs, onAdd](const ScriptEntity& e)
+            {
+                RequireValid(ecs, e);
+                if (!ecs.HasComponent<T>(e.Id))
+                    onAdd(e.Id);
+                return ScriptComponentRef<T>{ e };
+            };
+        }
+
+        sol::usertype<ScriptEntity> RegisterEntityType(sol::state& lua, ECS::ECS& ecs)
+        {
+            return lua.new_usertype<ScriptEntity>(
                 "Entity", sol::no_constructor,
 
                 "id", sol::readonly_property([](const ScriptEntity& e) { return e.Id; }),
@@ -147,9 +179,31 @@ namespace HedgehogScripting::Bindings
         }
     }
 
-    void RegisterEntity(sol::state& lua, ECS::ECS& ecs, HedgehogEngine::EventBus& eventBus)
+    void RegisterEntity(sol::state& lua, HedgehogEngine::EngineContext& context)
     {
-        RegisterEntityType(lua, ecs);
+        ECS::ECS&                 ecs      = context.GetECS();
+        HedgehogEngine::EventBus& eventBus = context.GetEventBus();
+
+        sol::usertype<ScriptEntity> entity = RegisterEntityType(lua, ecs);
         RegisterTransformType(lua, ecs, eventBus);
+
+        // Added as the editor's Add Component menu adds them. A new light learns its position
+        // and direction from its world matrix, so its transform is marked changed.
+        AddComponentAccess<HedgehogEngine::LightComponent>(entity, ecs, "Light", [&ecs, &eventBus](ECS::Entity id)
+        {
+            ecs.AddComponent(id, HedgehogEngine::LightComponent{});
+            if (ecs.HasComponent<TransformComponent>(id))
+                eventBus.Publish(HedgehogEngine::TransformChangedEvent{ id });
+        });
+        AddComponentAccess<HedgehogEngine::CameraComponent>(entity, ecs, "Camera", [&ecs](ECS::Entity id)
+        {
+            ecs.AddComponent(id, HedgehogEngine::CameraComponent{});
+        });
+        AddComponentAccess<HedgehogEngine::MeshComponent>(entity, ecs, "Mesh", [&context](ECS::Entity id)
+        {
+            ECS::ECS& world = context.GetECS();
+            world.AddComponent(id, HedgehogEngine::MeshComponent{ HedgehogEngine::MeshSystem::sDefaultMeshPath });
+            context.GetMeshSystem()->Update(world, id, context.GetFileSystem());
+        });
     }
 }

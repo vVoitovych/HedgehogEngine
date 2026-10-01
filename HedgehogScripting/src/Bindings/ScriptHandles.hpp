@@ -50,14 +50,14 @@ namespace HedgehogScripting::Bindings
             throw std::runtime_error(Describe(handle) + " no longer exists");
     }
 
-    // The component, looked up now. Throws, naming the entity, when the handle is stale or the
-    // entity has no T.
+    // The component, looked up now. Throws, naming the entity (and the component, by its
+    // reflected type name), when the handle is stale or the entity has no T.
     template<typename T>
     [[nodiscard]] T& Resolve(ECS::ECS& ecs, const ScriptComponentRef<T>& ref)
     {
         RequireValid(ecs, ref.Entity);
         if (!ecs.HasComponent<T>(ref.Entity.Id))
-            throw std::runtime_error(Describe(ref.Entity) + " has no such component");
+            throw std::runtime_error(Describe(ref.Entity) + " has no " + T::s_TypeName);
         return ecs.GetComponent<T>(ref.Entity.Id);
     }
 }
