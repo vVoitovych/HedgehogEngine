@@ -508,9 +508,9 @@ namespace HedgehogScripting
                 if (key.get_type() != sol::type::string)
                     continue;
                 if (value.get_type() == sol::type::number)
-                    params[key.as<std::string>()] = { HedgehogEngine::ParamType::Number, value.as<float>(), false };
+                    params[key.as<std::string>()] = { HedgehogEngine::ParamType::Number, value.as<float>() };
                 else if (value.get_type() == sol::type::boolean)
-                    params[key.as<std::string>()] = { HedgehogEngine::ParamType::Boolean, value.as<bool>(), false };
+                    params[key.as<std::string>()] = { HedgehogEngine::ParamType::Boolean, value.as<bool>() };
             }
         }
         catch (const std::exception& e)

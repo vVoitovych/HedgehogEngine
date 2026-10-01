@@ -6,10 +6,10 @@
 #   2. HedgehogRenderer never includes the ECS, the engine module or ImGui: no file under
 #      HedgehogEngine/HedgehogRenderer/ may include "ECS/...", "HedgehogEngine/HedgehogEngine/...",
 #      "HedgehogEngine/api/...", "imgui.h" or "imgui_impl_*".
-#   3. The engine module never binds scripts itself (ADR-022): no file under
-#      HedgehogEngine/HedgehogEngine/, tests included, may include sol2 ("sol/...") or
-#      HedgehogScripting ("HedgehogScripting/..."), the library above it that owns scripting.
-#      Lua joins this rule once the legacy script system that includes it is deleted.
+#   3. The engine module never runs scripts itself (ADR-022): no file under
+#      HedgehogEngine/HedgehogEngine/, tests included, may include Lua ("Lua/...", "lua.h",
+#      "lualib.h", "lauxlib.h", "lua.hpp"), sol2 ("sol/...") or HedgehogScripting
+#      ("HedgehogScripting/..."), the library above it that owns scripting.
 #
 # All rules match #include strings, never file-system paths: the path
 # HedgehogEngine/HedgehogCommon/... contains "HedgehogEngine/" and must not match rule 2.
@@ -39,6 +39,8 @@ $RendererForbidden  = @(
     @{ Pattern = '(^|[/\\])imgui_impl_[^/\\]*$';       Reason = 'the renderer must not include ImGui' }
 )
 $EngineForbidden    = @(
+    @{ Pattern = '(^|[/\\])Lua[/\\]';                  Reason = 'the engine module must not include Lua' },
+    @{ Pattern = '(^|[/\\])(lua\.h|lualib\.h|lauxlib\.h|lua\.hpp)$'; Reason = 'the engine module must not include Lua' },
     @{ Pattern = '(^|[/\\])sol[/\\]';                  Reason = 'the engine module must not include sol2' },
     @{ Pattern = '(^|[/\\])HedgehogScripting[/\\]';    Reason = 'the engine module must not depend on HedgehogScripting above it' }
 )
@@ -135,6 +137,8 @@ function Invoke-SelfTest
     $temp    = Join-Path ([IO.Path]::GetTempPath()) ('boundary_selftest_' + [Guid]::NewGuid().ToString('N'))
     $modules = @('HedgehogEngine\HedgehogEngine', 'HedgehogEngine\HedgehogRenderer', 'Editor', 'HedgehogScripting')
     $cases   = @(
+        @{ Module = 'HedgehogEngine\HedgehogEngine';   Include = 'ThirdParty/Lua/lua/lua.h' },
+        @{ Module = 'HedgehogEngine\HedgehogEngine';   Include = 'lauxlib.h' },
         @{ Module = 'HedgehogEngine\HedgehogEngine';   Include = 'sol/sol.hpp' },
         @{ Module = 'HedgehogEngine\HedgehogEngine';   Include = 'HedgehogScripting/api/ScriptSystem.hpp' },
         @{ Module = 'HedgehogEngine\HedgehogRenderer'; Include = 'ECS/api/ECS.hpp' },
@@ -152,8 +156,9 @@ function Invoke-SelfTest
             # An include every module may make.
             Set-Content -LiteralPath (Join-Path $dir 'Clean.cpp') -Value '#include "HedgehogMath/api/Vector.hpp"' -Encoding Ascii
         }
-        # The scripting library may include sol2; that is where it belongs.
+        # The scripting library may include sol2 and Lua; that is where they belong.
         Set-Content -LiteralPath (Join-Path (Join-Path $temp 'HedgehogScripting') 'Sol.cpp') -Value '#include "sol/sol.hpp"' -Encoding Ascii
+        Set-Content -LiteralPath (Join-Path (Join-Path $temp 'HedgehogScripting') 'Lua.cpp') -Value '#include "lua.h"' -Encoding Ascii
 
         $clean = Get-Violations $temp
         if ($clean.Violations.Count -ne 0)

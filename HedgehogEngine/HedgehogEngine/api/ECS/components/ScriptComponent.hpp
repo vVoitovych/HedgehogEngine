@@ -1,13 +1,8 @@
 #pragma once
 
-#include "ECS/api/Entity.hpp"
-
-#include <optional>
-#include <unordered_map>
 #include <string>
+#include <unordered_map>
 #include <variant>
-
-struct lua_State;
 
 namespace HedgehogEngine
 {
@@ -19,16 +14,15 @@ namespace HedgehogEngine
 
     struct ScriptParam
     {
-        ParamType type;
+        ParamType                 type;
         std::variant<bool, float> value;
-        bool dirty = false;
     };
 
-    class ScriptComponent
+    // Which script an entity runs, whether it is enabled, and its parameter values. Data only:
+    // the script system that runs it keeps all runtime state.
+    struct ScriptComponent
     {
-    public:
         bool                                         Enable = true;
-        std::optional<bool>                          NewEnable;  // runtime-only
         std::string                                  ScriptPath;
         std::unordered_map<std::string, ScriptParam> Params;
 
@@ -39,11 +33,5 @@ namespace HedgehogEngine
             v("ScriptEnable", Enable);
             v("ScriptFile",   ScriptPath);
         }
-
-        friend class ScriptSystem;
-
-    private:
-        lua_State* m_LuaState    = nullptr; // runtime-only
-        int        m_InstanceRef = 0;       // runtime-only
     };
 }
