@@ -122,13 +122,15 @@ namespace Renderer
         m_WrittenTargets.clear();
 
         // The shadows are fitted to one view's camera, but cast by every scene instance: an object
-        // the view culls or hides still shadows what it shows.
+        // the view culls or hides still shadows what it shows. The scene list holds the skinned
+        // instances too; the shared phase splits them out again.
         const View*           shadowView  = SelectShadowView(views);
         const GraphFrameData* shadowFrame = nullptr;
         if (shadowView)
         {
             m_ShadowViewFrame                  = m_ViewFrames[static_cast<size_t>(shadowView - views.data())];
             m_ShadowViewFrame.OpaqueInstances  = m_SceneFrame.OpaqueInstances;
+            m_ShadowViewFrame.SkinnedInstances = {};
             m_ShadowViewFrame.OverlayInstances = {};
             shadowFrame                        = &m_ShadowViewFrame;
         }

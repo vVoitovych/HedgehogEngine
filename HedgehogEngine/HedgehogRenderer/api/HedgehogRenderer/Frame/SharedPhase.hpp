@@ -58,8 +58,10 @@ namespace Renderer
         //
         //  - Scene upload: packs lights into one uniform for every view (services' ring).
         //  - Shadow atlas: one Shadow pass into a D32Float atlas, its cascades fitted to shadowView's
-        //    camera, drawing every opaque instance on a caster layer. shadowView is the primary view's
-        //    frame data (SelectShadowView); with none, no atlas is declared and nothing is imported.
+        //    camera, drawing every opaque instance on a caster layer (skinned ones posed by the
+        //    frame's joint palette, uploaded before this is called). shadowView is the primary
+        //    view's frame data (SelectShadowView); with none, no atlas is declared and nothing is
+        //    imported.
         //
         // The shadow pass captures this object's frame context, so it must outlive graph's Execute().
         // The caller's own frame context is restored before returning.
@@ -70,8 +72,9 @@ namespace Renderer
 
     private:
         const PassBuilderRegistry&      m_Registry;
-        std::vector<HX::RenderInstance> m_Casters;     // reused: steady-state frames allocate nothing
-        GraphFrameData                  m_ShadowFrame; // shadowView with only the casters
+        std::vector<HX::RenderInstance> m_Casters;        // rigid; reused: steady-state frames allocate nothing
+        std::vector<HX::RenderInstance> m_SkinnedCasters; // JointCount > 0, drawn with the frame's palette
+        GraphFrameData                  m_ShadowFrame;    // shadowView with only the casters
         GraphFrameContext               m_ShadowContext;
     };
 

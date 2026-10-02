@@ -146,6 +146,7 @@ namespace Renderer
         DepthPrepassSkinned,        // DepthPrepass for SkinnedInstances: palette at set 1
         ForwardSkinned,             // Forward for SkinnedInstances: palette at set 3
         ForwardSkinnedDoubleSided,  // ForwardSkinned with cullBackFaces: false
+        ShadowSkinned,              // Shadow for SkinnedInstances: palette at set 1
     };
 
     // The long-lived GPU objects the engine passes use but do not own: pipelines, and per-frame
