@@ -148,6 +148,17 @@ TEST_CASE("Animation - a skinned mesh exposes its skeleton and clips through the
 
     CHECK(meshOf(cube).GetSkeleton() == nullptr);
     CHECK(meshOf(cube).GetAnimationClips().empty());
+
+    // The per-vertex skinning streams reach the renderer through the catalog's mesh view.
+    const auto& catalog   = context.GetResourceCatalog();
+    const auto  indexOf   = [&](ECS::Entity entity)
+    { return static_cast<size_t>(*context.GetECS().GetComponent<MeshComponent>(entity).MeshIndex); };
+    const auto  skinnedView = catalog.GetMesh(indexOf(skinned));
+    CHECK(skinnedView.joints.size() == skinnedView.positions.size());
+    CHECK(skinnedView.weights.size() == skinnedView.positions.size());
+    const auto  cubeView = catalog.GetMesh(indexOf(cube));
+    CHECK(cubeView.joints.empty());
+    CHECK(cubeView.weights.empty());
 }
 
 TEST_CASE("Animation - Edit mode shows the bind pose, or the clip at a preview time; a static mesh gets no palette")

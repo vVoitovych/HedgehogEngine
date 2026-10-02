@@ -6,14 +6,31 @@
 #include "HedgehogEngine/api/ECS/systems/RenderSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/LightSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/CameraSystem.hpp"
+#include "HedgehogEngine/api/ECS/components/AnimatorComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/CameraComponent.hpp"
+
+#include <algorithm>
+#include <vector>
 
 namespace
 {
     // The local bounds of a mesh the caller has no bounds for (see RenderInstance::WorldBounds).
     const HM::AABB kUnitLocalBounds(HM::Vector3(-0.5f, -0.5f, -0.5f), HM::Vector3(0.5f, 0.5f, 0.5f));
+
+    // A skinned instance's local bounds are its mesh's bind-pose bounds grown on every side by
+    // this fraction of their largest extent, so a pose that stays near the bind pose is not culled.
+    // A pose reaching further out can still be culled: exact animated bounds are not computed.
+    constexpr float SKINNED_BOUNDS_MARGIN = 0.5f;
+
+    HM::AABB InflateForSkinning(const HM::AABB& bounds)
+    {
+        const HM::Vector3 half   = bounds.GetHalfExtents();
+        const float       margin = 2.0f * std::max({ half.x(), half.y(), half.z() }) * SKINNED_BOUNDS_MARGIN;
+        const HM::Vector3 grow(margin, margin, margin);
+        return HM::AABB(bounds.GetMin() - grow, bounds.GetMax() + grow);
+    }
 
     HX::LightType ToExtractLightType(HedgehogEngine::LightType type)
     {
@@ -92,11 +109,25 @@ namespace HX
 
             RenderInstance instance;
             instance.WorldMatrix   = transformComponent.ObjMatrix;
-            instance.WorldBounds   = localBounds.Transform(transformComponent.ObjMatrix);
             instance.MeshIndex     = *meshComponent.MeshIndex;
             instance.MaterialIndex = *renderComponent.MaterialIndex;
             instance.Layer         = renderComponent.Layer;
             instance.SourceId      = static_cast<uint64_t>(entity);
+
+            const std::vector<HM::Matrix4x4>* palette = nullptr;
+            if (ecs.HasComponent<HedgehogEngine::AnimatorComponent>(entity))
+                palette = &ecs.GetComponent<HedgehogEngine::AnimatorComponent>(entity).Palette;
+            if (palette && !palette->empty())
+            {
+                instance.PaletteOffset = static_cast<uint32_t>(outScene.JointMatrices.size());
+                instance.JointCount    = static_cast<uint32_t>(palette->size());
+                outScene.JointMatrices.insert(outScene.JointMatrices.end(), palette->begin(), palette->end());
+                instance.WorldBounds = InflateForSkinning(localBounds).Transform(transformComponent.ObjMatrix);
+            }
+            else
+            {
+                instance.WorldBounds = localBounds.Transform(transformComponent.ObjMatrix);
+            }
             outScene.Instances.push_back(instance);
         }
     }

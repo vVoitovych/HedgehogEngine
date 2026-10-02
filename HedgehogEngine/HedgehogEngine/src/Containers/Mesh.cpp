@@ -36,6 +36,8 @@ namespace HedgehogEngine
         if (mesh->Skin)
         {
             m_Skeleton = HedgehogAnimation::BuildSkeleton(*mesh->Skin);
+            m_Joints   = mesh->Joints;
+            m_Weights  = mesh->Weights;
             if (const auto clips = ContentLoader::LoadAnimations(fileName, fileSystem))
                 for (const ContentLoader::LoadedAnimationClip& clip : *clips)
                     m_AnimationClips.push_back(HedgehogAnimation::BuildAnimationClip(clip));
@@ -51,6 +53,8 @@ namespace HedgehogEngine
         m_TexCoords.clear();
         m_Normals.clear();
         m_IndicesData.clear();
+        m_Joints.clear();
+        m_Weights.clear();
         m_IndexCount = 0;
         m_Skeleton.reset();
         m_AnimationClips.clear();
@@ -60,6 +64,8 @@ namespace HedgehogEngine
     const std::vector<HM::Vector2>& Mesh::GetTexCoords() const { return m_TexCoords; }
     const std::vector<HM::Vector3>& Mesh::GetNormals()   const { return m_Normals; }
     const std::vector<uint32_t>&    Mesh::GetIndices()   const { return m_IndicesData; }
+    const std::vector<HM::Vector4u>& Mesh::GetJoints()   const { return m_Joints; }
+    const std::vector<HM::Vector4>&  Mesh::GetWeights()  const { return m_Weights; }
 
     const HedgehogAnimation::Skeleton* Mesh::GetSkeleton() const
     {

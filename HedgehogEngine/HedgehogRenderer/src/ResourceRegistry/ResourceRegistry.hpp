@@ -54,6 +54,10 @@ namespace HR
         const RHI::IRHIBuffer& GetTexCoordsBuffer() const;
         const RHI::IRHIBuffer& GetNormalsBuffer()   const;
         const RHI::IRHIBuffer& GetIndexBuffer()     const;
+        // Skinning streams, one entry per vertex like the position stream: joint indices (uint4)
+        // and weights (float4), zero for static meshes (AppendSkinningStreams).
+        const RHI::IRHIBuffer& GetJointsBuffer()    const;
+        const RHI::IRHIBuffer& GetWeightsBuffer()   const;
 
         // The geometry buffers exist once at least one mesh has been synced.
         size_t GetMeshCount()     const { return m_MeshGeometryInfos.size(); }
@@ -87,6 +91,8 @@ namespace HR
         std::vector<float>    m_CpuTexCoords;
         std::vector<float>    m_CpuNormals;
         std::vector<uint32_t> m_CpuIndices;
+        std::vector<uint32_t> m_CpuJoints;
+        std::vector<float>    m_CpuWeights;
         bool                  m_MeshDataDirty       = false;
         size_t                m_RegisteredMeshCount = 0;
 
@@ -98,6 +104,8 @@ namespace HR
         std::unique_ptr<RHI::IRHIBuffer> m_TexCoordsBuffer;
         std::unique_ptr<RHI::IRHIBuffer> m_NormalsBuffer;
         std::unique_ptr<RHI::IRHIBuffer> m_IndexBuffer;
+        std::unique_ptr<RHI::IRHIBuffer> m_JointsBuffer;
+        std::unique_ptr<RHI::IRHIBuffer> m_WeightsBuffer;
 
         // Material GPU resources — layout is non-owning (owned by the render pass that defined it)
         const RHI::IRHIDescriptorSetLayout*      m_MaterialLayout = nullptr;

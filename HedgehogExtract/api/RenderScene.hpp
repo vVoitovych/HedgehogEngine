@@ -61,6 +61,11 @@ namespace HX
         // The originating ECS::Entity. Used only by editor picking (ScenePicker) — never by
         // culling, sorting, or draw submission.
         uint64_t SourceId = 0;
+
+        // A skinned instance's palette: JointCount skinning matrices starting at PaletteOffset in
+        // RenderScene::JointMatrices. A static instance has JointCount 0.
+        uint32_t PaletteOffset = 0;
+        uint32_t JointCount    = 0;
     };
 
     struct RenderLight
@@ -110,11 +115,15 @@ namespace HX
         std::vector<RenderLight>    Lights;
         std::vector<RenderCamera>   Cameras;
 
+        // Every skinned instance's palette, back to back (RenderInstance::PaletteOffset).
+        std::vector<HM::Matrix4x4> JointMatrices;
+
         void Clear()
         {
             Instances.clear();
             Lights.clear();
             Cameras.clear();
+            JointMatrices.clear();
         }
     };
 }

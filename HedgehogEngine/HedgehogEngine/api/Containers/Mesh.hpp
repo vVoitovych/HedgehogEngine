@@ -28,6 +28,11 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API const std::vector<HM::Vector3>& GetNormals()   const;
         HEDGEHOG_ENGINE_API const std::vector<uint32_t>&    GetIndices()   const;
 
+        // A skinned mesh's four joint indices (into its skeleton) and weights per vertex; empty
+        // for a static mesh.
+        HEDGEHOG_ENGINE_API const std::vector<HM::Vector4u>& GetJoints()  const;
+        HEDGEHOG_ENGINE_API const std::vector<HM::Vector4>&  GetWeights() const;
+
         // A skinned mesh's skeleton, or nullptr for a static mesh, and the animation clips of
         // its file (none for a static mesh), loaded with the mesh.
         HEDGEHOG_ENGINE_API const HedgehogAnimation::Skeleton*                    GetSkeleton() const;
@@ -46,6 +51,9 @@ namespace HedgehogEngine
         std::vector<HM::Vector3> m_Normals;
 
         std::vector<uint32_t> m_IndicesData;
+
+        std::vector<HM::Vector4u> m_Joints;
+        std::vector<HM::Vector4>  m_Weights;
 
         std::optional<HedgehogAnimation::Skeleton>     m_Skeleton;
         std::vector<HedgehogAnimation::AnimationClip> m_AnimationClips;
