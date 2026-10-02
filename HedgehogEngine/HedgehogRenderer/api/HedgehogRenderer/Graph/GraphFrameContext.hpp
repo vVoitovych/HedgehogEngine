@@ -88,6 +88,18 @@ namespace Renderer
         // the compiler orders their writers first and makes them readable to the UI.
         UiCallback                 Ui;
         std::span<const RGTexture> UiSampledTargets;
+
+        // The game UI (RenderScene::Ui), drawn by the GameUi pass over the view it is in: the frame's
+        // draw commands, its vertices and 16-bit indices uploaded once per frame, a texture set per
+        // RenderScene::UiTextures entry (indexed by UiDrawCommand::Texture; null for one not loaded)
+        // and the white texture a solid fill samples. Positions are pixels of a UiTargetSize target,
+        // stretched over whatever colour target the pass draws into.
+        std::span<const HX::UiDrawCommand>             UiCommands;
+        RHI::IRHIBuffer*                               UiVertices = nullptr;
+        RHI::IRHIBuffer*                               UiIndices  = nullptr;
+        std::span<const RHI::IRHIDescriptorSet* const> UiTextureSets;
+        const RHI::IRHIDescriptorSet*                  UiSolidTexture = nullptr;
+        HM::Vector2                                    UiTargetSize   = HM::Vector2(0.0f, 0.0f);
     };
 
     // The graph-path forward shader's uniforms (GraphForward/Base.vert and .frag), laid out for
@@ -147,6 +159,7 @@ namespace Renderer
         ForwardSkinned,             // Forward for SkinnedInstances: palette at set 3
         ForwardSkinnedDoubleSided,  // ForwardSkinned with cullBackFaces: false
         ShadowSkinned,              // Shadow for SkinnedInstances: palette at set 1
+        GameUi,                     // UiDrawList quads, alpha-blended, no depth: texture at set 0
     };
 
     // The long-lived GPU objects the engine passes use but do not own: pipelines, and per-frame

@@ -28,3 +28,7 @@ passes:
       shadowMap: shadowAtlas
     parameters:
       cullBackFaces: true
+  - type: GameUi
+    name: GameUi
+    bindings:
+      color: color

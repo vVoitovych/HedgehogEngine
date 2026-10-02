@@ -147,6 +147,8 @@ namespace Editor
         void DrawCameraGraph(std::string& graphName);
         void DrawScriptComponent(HedgehogEngine::Engine& context);
         void DrawAnimatorComponent(HedgehogEngine::Engine& context);
+        // The five game UI components, each with its reflected fields and a Remove button.
+        void DrawUiComponents(HedgehogEngine::Engine& context);
         // The script's property declarations for the inspector, described again only when the
         // file changes on disk; nullptr when there is no script system or no such file.
         const std::vector<HedgehogScripting::ScriptPropertyDeclaration>* FindScriptDeclarations(

@@ -87,6 +87,12 @@ namespace Renderer
             m_Services.ProvideMaterialLayout(m_Device, registry);
         }
 
+        // Gives the resource registry the GameUi shader's texture layout (set 0).
+        void ProvideUiTextureLayout(HR::ResourceRegistry& registry) { m_Services.ProvideUiTextureLayout(registry); }
+
+        // Loads the textures scene's UI draws with that the registry does not have yet.
+        void SyncUiTextures(const HX::RenderScene& scene, HR::ResourceRegistry& registry);
+
         // The swapchain was recreated; "main" and swapchain-relative targets follow at this
         // frame's end.
         void NotifySwapchainResized() { m_Targets.NotifySwapchainResized(); }
@@ -130,6 +136,9 @@ namespace Renderer
         void           RecordPassTimings(const RenderGraphRuntime& graph);
         void           FillSceneFrame(const HX::RenderScene& scene, const HR::ResourceRegistry& resources,
                                       const HedgehogSettings::Settings& settings);
+        // The game UI: its texture sets, its geometry uploaded into this frame slot, its commands.
+        void           FillUiFrame(const HX::RenderScene& scene, const HR::ResourceRegistry& resources,
+                                   GraphFrameData& frame);
         // The view's frame: its camera, and the instances its layer mask and frustum keep.
         GraphFrameData MakeViewFrame(const View& view, ViewInstances& instances) const;
         // What the presenting view wrote: main directly, the viewport, or nothing that presents.
@@ -183,6 +192,7 @@ namespace Renderer
         GraphFrameData                           m_ShadowViewFrame; // the shadow view, unculled
         std::vector<MeshDrawRange>               m_Meshes;
         std::vector<const RHI::IRHIDescriptorSet*> m_MaterialSets;
+        std::vector<const RHI::IRHIDescriptorSet*> m_UiTextureSets; // per RenderScene::UiTextures entry
         std::vector<GraphFrameData>              m_ViewFrames;
         std::vector<GraphFrameContext>           m_ViewContexts;
         std::vector<RGTexture>                   m_OutputTargets;

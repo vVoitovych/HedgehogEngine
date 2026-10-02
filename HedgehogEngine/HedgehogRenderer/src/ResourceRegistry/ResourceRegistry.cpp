@@ -10,10 +10,41 @@
 #include "RHI/api/IRHIDescriptor.hpp"
 #include "RHI/api/IRHICommandList.hpp"
 
+#include "Logger/api/Logger.hpp"
+
 #include <cassert>
 
 namespace HR
 {
+    namespace
+    {
+        // A sampled R8G8B8A8Srgb texture holding width x height pixels, uploaded and ready to read.
+        std::unique_ptr<RHI::IRHITexture> UploadRgba8(RHI::IRHIDevice& device, const void* pixels, uint32_t width,
+                                                      uint32_t height)
+        {
+            const size_t imgSize = static_cast<size_t>(width) * height * 4;
+            auto staging = device.CreateBuffer(imgSize, RHI::BufferUsage::TransferSrc, RHI::MemoryUsage::CpuToGpu);
+            staging->CopyData(pixels, imgSize);
+
+            RHI::TextureDesc desc;
+            desc.Width  = width;
+            desc.Height = height;
+            desc.Format = RHI::Format::R8G8B8A8Srgb;
+            desc.Usage  = RHI::TextureUsage::Sampled | RHI::TextureUsage::TransferDst;
+            auto texture = device.CreateTexture(desc);
+
+            device.ExecuteImmediately([&](RHI::IRHICommandList& cmd)
+            {
+                const RHI::TextureBarrier toCopy{ texture.get(), RHI::ResourceState::Undefined, RHI::ResourceState::CopyDst };
+                cmd.Barrier({ &toCopy, 1 }, {});
+                cmd.CopyBufferToTexture(*staging, *texture);
+                const RHI::TextureBarrier toRead{ texture.get(), RHI::ResourceState::CopyDst, RHI::ResourceState::ShaderResource };
+                cmd.Barrier({ &toRead, 1 }, {});
+            });
+            return texture;
+        }
+    }
+
     ResourceRegistry::ResourceRegistry(RHI::IRHIDevice& device)
     {
         RHI::SamplerDesc samplerDesc;
@@ -159,29 +190,66 @@ namespace HR
         constexpr uint8_t FALLBACK_PIXEL[4] = { 255, 0, 255, 255 };
         const uint32_t texW    = loaded ? static_cast<uint32_t>(loader.GetWidth())  : 1u;
         const uint32_t texH    = loaded ? static_cast<uint32_t>(loader.GetHeight()) : 1u;
-        const size_t   imgSize = texW * texH * 4;
-
-        auto staging = device.CreateBuffer(imgSize, RHI::BufferUsage::TransferSrc, RHI::MemoryUsage::CpuToGpu);
-        staging->CopyData(loaded ? loader.GetData() : FALLBACK_PIXEL, imgSize);
-
-        RHI::TextureDesc desc;
-        desc.Width  = texW;
-        desc.Height = texH;
-        desc.Format = RHI::Format::R8G8B8A8Srgb;
-        desc.Usage  = RHI::TextureUsage::Sampled | RHI::TextureUsage::TransferDst;
-        auto texture  = device.CreateTexture(desc);
-
-        device.ExecuteImmediately([&](RHI::IRHICommandList& cmd)
-        {
-            const RHI::TextureBarrier toCopy{ texture.get(), RHI::ResourceState::Undefined, RHI::ResourceState::CopyDst };
-            cmd.Barrier({ &toCopy, 1 }, {});
-            cmd.CopyBufferToTexture(*staging, *texture);
-            const RHI::TextureBarrier toRead{ texture.get(), RHI::ResourceState::CopyDst, RHI::ResourceState::ShaderResource };
-            cmd.Barrier({ &toRead, 1 }, {});
-        });
+        auto texture = UploadRgba8(device, loaded ? loader.GetData() : FALLBACK_PIXEL, texW, texH);
 
         auto [result, _] = m_TextureCache.emplace(path, std::move(texture));
         return *result->second;
+    }
+
+    void ResourceRegistry::SetUiTextureLayout(RHI::IRHIDevice& device, const RHI::IRHIDescriptorSetLayout& layout)
+    {
+        assert(m_UiTextureSets.empty() && "SetUiTextureLayout must be called before any UI texture is synced");
+        m_UiTextureLayout = &layout;
+        // One more set than the budget: the white solid-fill texture's.
+        m_UiTexturePool = device.CreateDescriptorPool(
+            MAX_UI_TEXTURE_SETS + 1, { { RHI::DescriptorType::CombinedImageSampler, MAX_UI_TEXTURE_SETS + 1 } });
+
+        RHI::SamplerDesc samplerDesc;
+        samplerDesc.MinFilter    = RHI::Filter::Linear;
+        samplerDesc.MagFilter    = RHI::Filter::Linear;
+        samplerDesc.AddressModeU = RHI::AddressMode::ClampToEdge;
+        samplerDesc.AddressModeV = RHI::AddressMode::ClampToEdge;
+        samplerDesc.AddressModeW = RHI::AddressMode::ClampToEdge;
+        m_UiSampler = device.CreateSampler(samplerDesc);
+    }
+
+    void ResourceRegistry::SyncUiTextures(std::span<const std::string> paths, RHI::IRHIDevice& device,
+                                          const FS::FileSystemManager& fileSystem)
+    {
+        assert(m_UiTextureLayout && "SetUiTextureLayout must be called before SyncUiTextures");
+        if (!m_UiSolidSet)
+        {
+            constexpr uint8_t WHITE_PIXEL[4] = { 255, 255, 255, 255 };
+            m_UiSolidTexture = UploadRgba8(device, WHITE_PIXEL, 1, 1);
+            m_UiSolidSet     = device.AllocateDescriptorSet(*m_UiTexturePool, *m_UiTextureLayout);
+            m_UiSolidSet->WriteTexture(0, *m_UiSolidTexture, *m_UiSampler);
+            m_UiSolidSet->Flush();
+        }
+
+        for (const std::string& path : paths)
+        {
+            if (m_UiTextureSets.contains(path))
+                continue;
+            if (m_UiTextureSets.size() >= MAX_UI_TEXTURE_SETS)
+            {
+                if (!m_WarnedUiTextureLimit)
+                    LOGWARNING("ResourceRegistry: more than", MAX_UI_TEXTURE_SETS, "UI textures;", path,
+                               "and later ones draw as solid fills.");
+                m_WarnedUiTextureLimit = true;
+                continue;
+            }
+            RHI::IRHITexture& texture = GetOrCreateTexture(path, device, fileSystem);
+            auto              set     = device.AllocateDescriptorSet(*m_UiTexturePool, *m_UiTextureLayout);
+            set->WriteTexture(0, texture, *m_UiSampler);
+            set->Flush();
+            m_UiTextureSets.emplace(path, std::move(set));
+        }
+    }
+
+    const RHI::IRHIDescriptorSet* ResourceRegistry::FindUiTextureSet(const std::string& path) const
+    {
+        const auto found = m_UiTextureSets.find(path);
+        return found != m_UiTextureSets.end() ? found->second.get() : nullptr;
     }
 
     void ResourceRegistry::CreateMaterialGpu(float transparency, const std::string& texturePath,
@@ -241,6 +309,12 @@ namespace HR
         device.WaitIdle();
 
         m_Materials.clear();       // descriptor sets freed before pool
+        m_UiTextureSets.clear();
+        m_UiSolidSet.reset();
+        m_UiSolidTexture.reset();
+        m_UiTexturePool.reset();
+        m_UiSampler.reset();
+        m_UiTextureLayout = nullptr;
         m_TextureCache.clear();
         m_LinearSampler.reset();
         m_MaterialPool.reset();

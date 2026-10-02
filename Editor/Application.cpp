@@ -241,6 +241,11 @@ namespace Editor
         HX::SceneExtractor{}.Extract(engineContext.GetECS(), *engineContext.GetRenderSystem(),
                                      *engineContext.GetLightSystem(), *engineContext.GetCameraSystem(),
                                      m_RenderScene, m_MeshBounds.GetBounds());
+        // The game UI, laid out for the game panel the game view draws into.
+        HX::SceneExtractor{}.ExtractUi(engineContext.GetECS(), *engineContext.GetUiSystem(),
+                                       HM::Vector2(static_cast<float>(m_EditorGui->GetGameViewWidth()),
+                                                   static_cast<float>(m_EditorGui->GetGameViewHeight())),
+                                       m_RenderScene);
 
         const Renderer::ViewDesc sceneView = MakeSceneView(engineContext.GetCamera());
         PickAndHighlight(*sceneView.Camera);

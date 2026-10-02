@@ -47,6 +47,8 @@ namespace Renderer
             fileSystem);
         // The registry allocates material sets in the forward shader's set-1 layout.
         m_FrameRenderer->ProvideMaterialLayout(*m_Resources);
+        // And UI texture sets in the GameUi shader's set-0 layout.
+        m_FrameRenderer->ProvideUiTextureLayout(*m_Resources);
 
         if (onDeviceReady)
             onDeviceReady({ m_RHIContext->GetRHIDevice(), m_RHIContext->GetRHISwapchain().GetFormat() });
@@ -182,6 +184,7 @@ namespace Renderer
             m_FrameRenderer->NotifySwapchainResized();
         }
 
+        m_FrameRenderer->SyncUiTextures(scene, *m_Resources);
         m_FrameRenderer->Render(scene, *m_Resources, settings, ui);
         HH_PROFILE_FRAME();
     }

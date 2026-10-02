@@ -232,7 +232,7 @@ namespace RGTest
             Commands.push_back("pipeline");
         }
         void SetViewport(const RHI::Viewport& viewport) override { Viewports.push_back(viewport); }
-        void SetScissor(const RHI::Scissor&) override {}
+        void SetScissor(const RHI::Scissor& scissor) override { Scissors.push_back(scissor); }
 
         void BindVertexBuffers(uint32_t, const std::vector<RHI::IRHIBuffer*>& buffers,
                                const std::vector<size_t>&) override
@@ -273,6 +273,7 @@ namespace RGTest
         std::vector<RHI::RenderingInfo>  Renderings;
         int                              EndRenderingCount  = 0;
         std::vector<RHI::Viewport>       Viewports;
+        std::vector<RHI::Scissor>        Scissors;
         int                              DescriptorSetBinds = 0;
         std::vector<uint32_t>            BoundSetIndices;
         std::vector<uint32_t>            DrawnIndexCounts;

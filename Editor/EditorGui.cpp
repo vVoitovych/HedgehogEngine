@@ -34,6 +34,11 @@
 #include "HedgehogEngine/api/ECS/components/RenderComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/CameraComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/UiButtonComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/UiCanvasComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/UiImageComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/UiRectComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/UiTextComponent.hpp"
 #include "Reflection/GuiReflection.hpp"
 #include "HedgehogScripting/api/ScriptSystem.hpp"
 
@@ -58,6 +63,27 @@
 namespace
 {
     constexpr std::string_view ASSETS_PREFIX = "assets://";
+
+    // An Add Component menu item that adds a default T to the selected entity, when it has none.
+    template<typename T>
+    void AddComponentMenuItem(ECS::ECS& ecs, const std::optional<ECS::Entity>& selected, const char* label)
+    {
+        if (ImGui::MenuItem(label) && selected.has_value() && !ecs.HasComponent<T>(*selected))
+            ecs.AddComponent(*selected, T{});
+    }
+
+    // A component's reflected fields under a collapsing header, with a button that removes it.
+    template<typename T>
+    void DrawReflectedComponent(ECS::ECS& ecs, ECS::Entity entity, const char* header)
+    {
+        if (!ecs.HasComponent<T>(entity) || !ImGui::CollapsingHeader(header, ImGuiTreeNodeFlags_DefaultOpen))
+            return;
+        ImGui::PushID(header);
+        Reflection::RenderComponentGui(&ecs.GetComponent<T>(entity), T::GetProperties());
+        if (ImGui::Button("Remove"))
+            ecs.RemoveComponent<T>(entity);
+        ImGui::PopID();
+    }
 
     void SetupLightComponentGuiOverrides()
     {
@@ -357,6 +383,12 @@ namespace Editor
                     if (!ecs.HasComponent<HedgehogEngine::AnimatorComponent>(e))
                         ecs.AddComponent(e, HedgehogEngine::AnimatorComponent{});
                 }
+                ImGui::Separator();
+                AddComponentMenuItem<HedgehogEngine::UiCanvasComponent>(ecs, m_SelectedEntity, "UI canvas component");
+                AddComponentMenuItem<HedgehogEngine::UiRectComponent>(ecs, m_SelectedEntity, "UI rect component");
+                AddComponentMenuItem<HedgehogEngine::UiImageComponent>(ecs, m_SelectedEntity, "UI image component");
+                AddComponentMenuItem<HedgehogEngine::UiTextComponent>(ecs, m_SelectedEntity, "UI text component");
+                AddComponentMenuItem<HedgehogEngine::UiButtonComponent>(ecs, m_SelectedEntity, "UI button component");
                 ImGui::EndMenu();
             }
 
@@ -569,6 +601,7 @@ namespace Editor
             DrawRenderComponent(context);
             DrawScriptComponent(context);
             DrawAnimatorComponent(context);
+            DrawUiComponents(context);
         }
         else
         {
@@ -912,6 +945,17 @@ namespace Editor
 
         if (ImGui::Button("Remove animator"))
             ecs.RemoveComponent<HedgehogEngine::AnimatorComponent>(entity);
+    }
+
+    void EditorGui::DrawUiComponents(HedgehogEngine::Engine& context)
+    {
+        auto&             ecs    = context.GetEngineContext().GetECS();
+        const ECS::Entity entity = m_SelectedEntity.value();
+        DrawReflectedComponent<HedgehogEngine::UiCanvasComponent>(ecs, entity, "UI canvas");
+        DrawReflectedComponent<HedgehogEngine::UiRectComponent>(ecs, entity, "UI rect");
+        DrawReflectedComponent<HedgehogEngine::UiImageComponent>(ecs, entity, "UI image");
+        DrawReflectedComponent<HedgehogEngine::UiTextComponent>(ecs, entity, "UI text");
+        DrawReflectedComponent<HedgehogEngine::UiButtonComponent>(ecs, entity, "UI button");
     }
 
     // Hand-drawn instead of the reflected text field, so a camera picks from the graphs that exist,

@@ -73,6 +73,8 @@ namespace Editor
                 extractor.Extract(engineContext.GetECS(), *engineContext.GetRenderSystem(),
                                   *engineContext.GetLightSystem(), *engineContext.GetCameraSystem(), renderScene,
                                   meshBounds.GetBounds());
+                extractor.ExtractUi(engineContext.GetECS(), *engineContext.GetUiSystem(),
+                                    HM::Vector2(static_cast<float>(width), static_cast<float>(height)), renderScene);
 
                 renderer.SyncResources(engineContext.GetResourceCatalog());
                 renderer.RenderFrame(renderScene, settings);

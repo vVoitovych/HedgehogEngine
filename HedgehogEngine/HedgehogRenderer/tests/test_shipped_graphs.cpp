@@ -79,11 +79,16 @@ namespace
         return colorWritten;
     }
 
-    // Hand-written twin of game.graph.
+    // Hand-written twin of game.graph: the view's passes, then the game UI over them.
     void BuildViewGraphByHand(RenderGraphRuntime& graph)
     {
         RGTexture       depthWritten;
-        const RGTexture colorWritten = BuildViewPasses(graph, depthWritten);
+        const RGTexture litColor = BuildViewPasses(graph, depthWritten);
+
+        RGTexture colorWritten;
+        graph.AddPass<TargetData>("GameUi",
+            [&](RGPassBuilder& pass, TargetData& data) { colorWritten = data.Target = pass.ColorTarget(litColor); },
+            NO_EXECUTE);
         graph.BindOutput(graph.AddOutputSlot("color", RHI::Format::R16G16B16A16Unorm,
                                              RGSizePolicy::MakeRelativeToResult(1.0f)), colorWritten);
     }
@@ -196,6 +201,7 @@ TEST_CASE("Oracle: each shipped graph compiles to the same plan as its hand-writ
 
     const std::string gameTwin = PlanOf(&BuildViewGraphByHand);
     CHECK(gameTwin.find("compile failed") == std::string::npos);
+    CHECK(gameTwin.find("pass GameUi") != std::string::npos);
     CHECK(PlanOf(registry, *library.Find("game")) == gameTwin);
 
     const std::string resultTwin = PlanOf(&BuildResultGraphByHand);

@@ -1,0 +1,19 @@
+# HX::UiVertex: a pixel position, a UV and an RGBA8 colour, interleaved.
+bindings:
+  - binding: 0
+    stride: 20
+    input_rate: per_vertex
+
+attributes:
+  - location: 0
+    binding: 0
+    format: r32g32_float
+    offset: 0
+  - location: 1
+    binding: 0
+    format: r32g32_float
+    offset: 8
+  - location: 2
+    binding: 0
+    format: r8g8b8a8_unorm
+    offset: 16
