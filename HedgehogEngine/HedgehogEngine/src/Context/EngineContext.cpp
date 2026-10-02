@@ -242,7 +242,8 @@ namespace HedgehogEngine
     {
         // The same scaled time OnUpdate got; nothing advances while paused.
         const float scaled = m_PlayState == PlayState::Playing ? std::max(dt * m_Clock.TimeScale, 0.0f) : 0.0f;
-        m_AnimationSystem->Update(m_ECS, m_ResourceCatalog.GetMeshContainer(), m_PlayState != PlayState::Edit, scaled);
+        m_AnimationSystem->Update(m_ECS, m_ResourceCatalog.GetMeshContainer(), m_EventBus, m_PlayState != PlayState::Edit,
+                                  scaled);
     }
 
     ResourceCatalog& EngineContext::GetResourceCatalog()             { return m_ResourceCatalog; }

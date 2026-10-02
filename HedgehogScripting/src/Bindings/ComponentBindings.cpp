@@ -2,15 +2,19 @@
 #include "ScriptHandles.hpp"
 
 #include "HedgehogEngine/api/EngineContext.hpp"
+#include "HedgehogEngine/api/ECS/components/AnimatorComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/CameraComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/LightComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
+#include "HedgehogEngine/api/ECS/systems/AnimationSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/LightSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/MeshSystem.hpp"
 
 #include "FileSystem/api/FileSystemManager.hpp"
 
+#include <cmath>
 #include <cstdint>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -19,6 +23,7 @@ namespace HedgehogScripting::Bindings
 {
     namespace
     {
+        using HedgehogEngine::AnimatorComponent;
         using HedgehogEngine::CameraComponent;
         using HedgehogEngine::CameraProjectionType;
         using HedgehogEngine::CameraTargetMode;
@@ -144,6 +149,67 @@ namespace HedgehogScripting::Bindings
                     }),
                 sol::meta_function::to_string, ToText<MeshComponent>("Mesh"));
         }
+
+        // Plays the clips of the entity's skinned mesh through AnimationSystem, so a script and the
+        // animator's saved fields drive the same state.
+        void RegisterAnimator(sol::state& lua, HedgehogEngine::EngineContext& context)
+        {
+            using AnimatorRef = ScriptComponentRef<AnimatorComponent>;
+            ECS::ECS&                        ecs        = context.GetECS();
+            HedgehogEngine::AnimationSystem& animations = *context.GetAnimationSystem();
+            lua.new_usertype<AnimatorRef>(
+                "Animator", sol::no_constructor,
+                // play(clip, fade?): from the clip's start, crossfading over fade seconds
+                // (CrossfadeTime when left out). An unknown clip logs a warning naming it and keeps
+                // the current one; returns whether the clip was found.
+                "play", [&ecs, &animations, &context](const AnimatorRef& ref, const std::string& clip,
+                                                      std::optional<float> fade)
+                {
+                    (void)Resolve(ecs, ref);
+                    if (fade && (!std::isfinite(*fade) || *fade < 0.0f))
+                        throw std::runtime_error("a crossfade time must be a finite number of seconds, not below 0");
+                    return animations.Play(ecs, context.GetResourceCatalog().GetMeshContainer(), ref.Entity.Id, clip, fade);
+                },
+                "stop", [&ecs, &animations](const AnimatorRef& ref)
+                {
+                    (void)Resolve(ecs, ref);
+                    animations.Stop(ecs, ref.Entity.Id);
+                },
+                // False once a non-looping clip has reached its end.
+                "isPlaying", [&ecs](const AnimatorRef& ref)
+                {
+                    const AnimatorComponent& animator = Resolve(ecs, ref);
+                    return animator.Playing && !animator.Finished;
+                },
+                "getClipNames", [&ecs, &animations, &context](const AnimatorRef& ref)
+                {
+                    (void)Resolve(ecs, ref);
+                    return sol::as_table(animations.GetClipNames(ecs, context.GetResourceCatalog().GetMeshContainer(),
+                                                                 ref.Entity.Id));
+                },
+                // The clip playing now, or nil.
+                "clip", sol::readonly_property([&ecs](const AnimatorRef& ref, sol::this_state state) -> sol::object
+                {
+                    const AnimatorComponent& animator = Resolve(ecs, ref);
+                    if (!animator.Playing || animator.CurrentClip.empty())
+                        return sol::lua_nil;
+                    return sol::make_object(state, animator.CurrentClip);
+                }),
+                "speed", Field(ecs, &AnimatorComponent::Speed),
+                "loop",  Field(ecs, &AnimatorComponent::Loop),
+                // Seconds into the current clip. Setting it lets a finished clip finish again.
+                "time", sol::property(
+                    [&ecs](const AnimatorRef& ref) { return Resolve(ecs, ref).Time; },
+                    [&ecs](const AnimatorRef& ref, float time)
+                    {
+                        if (!std::isfinite(time))
+                            throw std::runtime_error("an animation time must be a finite number");
+                        AnimatorComponent& animator = Resolve(ecs, ref);
+                        animator.Time     = time;
+                        animator.Finished = false;
+                    }),
+                sol::meta_function::to_string, ToText<AnimatorComponent>("Animator"));
+        }
     }
 
     void RegisterComponents(sol::state& lua, HedgehogEngine::EngineContext& context)
@@ -152,5 +218,6 @@ namespace HedgehogScripting::Bindings
         RegisterLight(lua, context.GetECS(), *context.GetLightSystem());
         RegisterCamera(lua, context.GetECS());
         RegisterMesh(lua, context.GetECS(), *context.GetMeshSystem(), context.GetFileSystem());
+        RegisterAnimator(lua, context);
     }
 }

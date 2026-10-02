@@ -2,6 +2,7 @@
 #include "ScriptHandles.hpp"
 
 #include "HedgehogEngine/api/EngineContext.hpp"
+#include "HedgehogEngine/api/ECS/components/AnimatorComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/CameraComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/LightComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
@@ -204,6 +205,10 @@ namespace HedgehogScripting::Bindings
             ECS::ECS& world = context.GetECS();
             world.AddComponent(id, HedgehogEngine::MeshComponent{ HedgehogEngine::MeshSystem::sDefaultMeshPath });
             context.GetMeshSystem()->Update(world, id, context.GetFileSystem());
+        });
+        AddComponentAccess<HedgehogEngine::AnimatorComponent>(entity, ecs, "Animator", [&ecs](ECS::Entity id)
+        {
+            ecs.AddComponent(id, HedgehogEngine::AnimatorComponent{});
         });
     }
 }

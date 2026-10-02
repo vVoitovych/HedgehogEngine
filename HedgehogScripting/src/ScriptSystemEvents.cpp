@@ -1,5 +1,10 @@
 #include "HedgehogScripting/api/ScriptSystem.hpp"
 
+#include "Bindings/ScriptHandles.hpp"
+
+#include "HedgehogEngine/api/EngineContext.hpp"
+#include "HedgehogEngine/api/Events/AnimationEvents.hpp"
+
 #include "Logger/api/Logger.hpp"
 
 #include <algorithm>
@@ -104,6 +109,17 @@ namespace HedgehogScripting
                 m_RunningEntity.reset();
             }
         }
+    }
+
+    void ScriptSystem::QueueAnimationFinished(const HedgehogEngine::AnimationFinishedEvent& event)
+    {
+        // Published by AnimationSystem after this frame's script hooks: delivered next frame.
+        ECS::ECS& ecs = m_Context.GetECS();
+        if (!ecs.IsAlive(event.Entity))
+            return;
+        sol::table payload = m_Lua.create_table_with("entity", Bindings::MakeScriptEntity(ecs, event.Entity),
+                                                     "clip", event.Clip);
+        m_QueuedEvents.push_back(QueuedEvent{ "AnimationFinished", std::move(payload) });
     }
 
     void ScriptSystem::DropSubscriptions(ECS::Entity owner)

@@ -25,13 +25,14 @@ namespace HedgehogScripting::Bindings
 
     // Entity (ScriptEntity) and Transform (ScriptComponentRef<TransformComponent>) usertypes over
     // context's ECS; Transform writes publish TransformChangedEvent on its EventBus. Entity also
-    // gets getX/hasX/addX for the Light, Camera and Mesh components. context must outlive lua.
+    // gets getX/hasX/addX for the Light, Camera, Mesh and Animator components. context must outlive lua.
     void RegisterEntity(sol::state& lua, HedgehogEngine::EngineContext& context);
 
     // Light, Camera and Mesh (ScriptComponentRef<T>) usertypes and the LightType,
     // CameraProjectionType and CameraTargetMode enum tables. Writes go straight to the ECS;
     // castShadows goes through LightSystem::SetShadowCasting and mesh.path through
-    // MeshSystem::LoadMesh, as in the inspector. context must outlive lua.
+    // MeshSystem::LoadMesh, as in the inspector. Animator (play, stop, isPlaying, getClipNames,
+    // clip, speed, loop, time) goes through AnimationSystem. context must outlive lua.
     void RegisterComponents(sol::state& lua, HedgehogEngine::EngineContext& context);
 
     // The Scene table (find, findAll, spawn, destroy) and entity:destroy(), over context's

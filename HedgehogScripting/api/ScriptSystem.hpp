@@ -32,6 +32,7 @@ namespace FS
 namespace HedgehogEngine
 {
     class EngineContext;
+    struct AnimationFinishedEvent;
 }
 
 namespace HedgehogScripting
@@ -207,6 +208,9 @@ namespace HedgehogScripting
         void               RegisterEvents();
         void               DispatchEvents();
         void               DropSubscriptions(ECS::Entity owner);
+        // Queues the engine's AnimationFinishedEvent as the script event "AnimationFinished",
+        // payload { entity = <Entity>, clip = <name> }.
+        void               QueueAnimationFinished(const HedgehogEngine::AnimationFinishedEvent& event);
         // Coroutines (ScriptSystemCoroutines.cpp): startCoroutine, stopCoroutine and the wait
         // functions, and the pass that resumes the due ones once every script's OnUpdate has run.
         void               RegisterCoroutines();

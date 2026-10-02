@@ -11,10 +11,13 @@
 
 #include "HedgehogMath/api/Matrix.hpp"
 
+#include <optional>
+#include <string>
 #include <vector>
 
 namespace HedgehogEngine
 {
+    class EventBus;
     class MeshContainer;
 
     // Fills each animated entity's skinning palette (AnimatorComponent + MeshComponent).
@@ -31,8 +34,24 @@ namespace HedgehogEngine
         // (crossfading over CrossfadeTime from where the old clip was), advances by dt * Speed and
         // fills Palette. In Edit (not playing) it shows Clip at PreviewTime when set, else the
         // bind pose, and forgets its play state. An entity whose mesh has no skeleton gets an
-        // empty palette; an unknown clip name shows the bind pose and warns once.
-        HEDGEHOG_ENGINE_API void Update(ECS::ECS& ecs, const MeshContainer& meshes, bool playing, float dt);
+        // empty palette; an unknown clip name shows the bind pose and warns once. A non-looping
+        // clip that reaches its end publishes AnimationFinishedEvent on bus once.
+        HEDGEHOG_ENGINE_API void Update(ECS::ECS& ecs, const MeshContainer& meshes, EventBus& bus, bool playing,
+                                        float dt);
+
+        // Plays clip on entity's animator from its start, crossfading out of the current one over
+        // fade seconds (CrossfadeTime when not given). Playing the current clip again restarts it
+        // without a fade. A clip the entity's mesh does not have logs a warning naming it and
+        // keeps the current clip; returns whether the clip was found.
+        HEDGEHOG_ENGINE_API bool Play(ECS::ECS& ecs, const MeshContainer& meshes, ECS::Entity entity,
+                                      const std::string& clip, std::optional<float> fade = std::nullopt);
+
+        // Stops entity's animator: no clip plays and the mesh shows its bind pose.
+        HEDGEHOG_ENGINE_API void Stop(ECS::ECS& ecs, ECS::Entity entity);
+
+        // The names of the clips of entity's mesh, in file order; empty without a skinned mesh.
+        HEDGEHOG_ENGINE_API std::vector<std::string> GetClipNames(const ECS::ECS& ecs, const MeshContainer& meshes,
+                                                                  ECS::Entity entity) const;
 
     private:
         void Evaluate(AnimatorComponent& animator, const HedgehogAnimation::Skeleton& skeleton,
