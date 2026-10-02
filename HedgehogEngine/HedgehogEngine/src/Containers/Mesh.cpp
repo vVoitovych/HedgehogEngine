@@ -1,5 +1,6 @@
 #include "HedgehogEngine/api/Containers/Mesh.hpp"
 
+#include "ContentLoader/api/AnimationLoader.hpp"
 #include "ContentLoader/api/MeshLoader.hpp"
 #include "Logger/api/Logger.hpp"
 
@@ -32,6 +33,14 @@ namespace HedgehogEngine
 
         m_IndexCount = static_cast<uint32_t>(m_IndicesData.size());
 
+        if (mesh->Skin)
+        {
+            m_Skeleton = HedgehogAnimation::BuildSkeleton(*mesh->Skin);
+            if (const auto clips = ContentLoader::LoadAnimations(fileName, fileSystem))
+                for (const ContentLoader::LoadedAnimationClip& clip : *clips)
+                    m_AnimationClips.push_back(HedgehogAnimation::BuildAnimationClip(clip));
+        }
+
         LOGINFO("Model [", fileName, "] loaded with ", m_Positions.size(), " vertices and ", m_IndicesData.size(), " indices!");
         return true;
     }
@@ -43,12 +52,24 @@ namespace HedgehogEngine
         m_Normals.clear();
         m_IndicesData.clear();
         m_IndexCount = 0;
+        m_Skeleton.reset();
+        m_AnimationClips.clear();
     }
 
     const std::vector<HM::Vector3>& Mesh::GetPositions() const { return m_Positions; }
     const std::vector<HM::Vector2>& Mesh::GetTexCoords() const { return m_TexCoords; }
     const std::vector<HM::Vector3>& Mesh::GetNormals()   const { return m_Normals; }
     const std::vector<uint32_t>&    Mesh::GetIndices()   const { return m_IndicesData; }
+
+    const HedgehogAnimation::Skeleton* Mesh::GetSkeleton() const
+    {
+        return m_Skeleton ? &*m_Skeleton : nullptr;
+    }
+
+    const std::vector<HedgehogAnimation::AnimationClip>& Mesh::GetAnimationClips() const
+    {
+        return m_AnimationClips;
+    }
 
     uint32_t Mesh::GetIndexCount()   const { return m_IndexCount; }
     uint32_t Mesh::GetFirstIndex()   const { return m_FirstIndex; }
