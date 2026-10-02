@@ -12,8 +12,8 @@ namespace ContentLoader
 
 namespace
 {
-    // The rotation of a pure rotation matrix in the engine's row-vector convention (row i is the
-    // image of axis i).
+    // The rotation of a pure rotation matrix. Matrix4x4 stores columns, so r[i] is the image of
+    // axis i.
     HM::Quaternion RotationFromMatrix(const HM::Matrix4x4& r)
     {
         // m(i, j) is the column-vector matrix, the transpose of r.
