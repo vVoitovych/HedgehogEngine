@@ -44,6 +44,17 @@ namespace Renderer
     void DrawOpaqueInstances(RHI::IRHICommandList& cmd, const RHI::IRHIPipeline& pipeline,
                              const GraphFrameData& frame);
 
+    // Whether the frame has skinned instances and everything drawing them needs: the skinning
+    // vertex streams and the joint palette.
+    bool CanDrawSkinned(const GraphFrameData& frame);
+
+    // Binds the positions and skinning streams (the skinned depth pipeline's vertex description)
+    // and draws every skinned instance with its model matrix and palette offset as the push
+    // constants. The caller binds pipeline and its sets first. Instances whose mesh has no draw
+    // range are skipped.
+    void DrawSkinnedInstances(RHI::IRHICommandList& cmd, const RHI::IRHIPipeline& pipeline,
+                              const GraphFrameData& frame);
+
     // Starts depth-only dynamic rendering into target, cleared to 1. Returns its size.
     uint32_t BeginDepthRendering(RHI::IRHICommandList& cmd, RHI::IRHITexture& target);
 

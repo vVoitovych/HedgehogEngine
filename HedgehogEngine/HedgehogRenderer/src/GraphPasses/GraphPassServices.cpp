@@ -13,6 +13,7 @@
 #include "RHI/api/IRHIDevice.hpp"
 #include "RHI/api/IRHIPipeline.hpp"
 
+#include <algorithm>
 #include <cassert>
 
 namespace Renderer
@@ -23,6 +24,12 @@ namespace Renderer
         constexpr const char* SHADOW_SHADER        = "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/ShadowmapPass.shader";
         constexpr const char* FORWARD_SHADER       = "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/GraphForward.shader";
         constexpr const char* GIZMO_SHADER         = "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/Gizmo.shader";
+        constexpr const char* DEPTH_PREPASS_SKINNED_SHADER =
+            "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/DepthPrepassSkinned.shader";
+        constexpr const char* FORWARD_SKINNED_SHADER =
+            "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/GraphForwardSkinned.shader";
+
+        static_assert(sizeof(HM::Matrix4x4) == 16 * sizeof(float), "The palette uploads matrices as they are.");
 
         // The formats every engine graph asset declares: D32Float depth and shadow maps, and a
         // R16G16B16A16Unorm colour output for the scene and game views.
@@ -52,12 +59,16 @@ namespace Renderer
     }
 
     GraphPassServices::GraphPassServices(RHI::IRHIDevice& device, const FS::FileSystemManager& fileSystem)
+        : m_Device(device)
     {
         const ShaderPipelineDesc depthShader   = ShaderLoader::Load(device, DEPTH_PREPASS_SHADER, fileSystem);
         const ShaderPipelineDesc shadowShader  = ShaderLoader::Load(device, SHADOW_SHADER, fileSystem);
         const ShaderPipelineDesc forwardShader = ShaderLoader::Load(device, FORWARD_SHADER, fileSystem);
         const ShaderPipelineDesc gizmoShader   = ShaderLoader::Load(device, GIZMO_SHADER, fileSystem);
+        const ShaderPipelineDesc depthSkinnedShader   = ShaderLoader::Load(device, DEPTH_PREPASS_SKINNED_SHADER, fileSystem);
+        const ShaderPipelineDesc forwardSkinnedShader = ShaderLoader::Load(device, FORWARD_SKINNED_SHADER, fileSystem);
         assert(!depthShader.Layout.DescriptorSets.empty() && forwardShader.Layout.DescriptorSets.size() >= 3);
+        assert(depthSkinnedShader.Layout.DescriptorSets.size() >= 2 && forwardSkinnedShader.Layout.DescriptorSets.size() >= 4);
 
         // Both depth-only shaders and the gizmo shader declare the same set 0: one viewProj uniform buffer.
         CreateRing(device, m_ViewProjRing, depthShader.Layout.DescriptorSets[0], UNIFORMS_PER_FRAME, sizeof(float) * 16);
@@ -82,6 +93,26 @@ namespace Renderer
                                                       RHI::CullMode::None);
         m_GizmoPipeline = CreatePipeline(device, gizmoShader, { m_ViewProjRing.Layout.get() }, { COLOR_FORMAT },
                                          gizmoShader.Pipeline.CullMode);
+
+        // The depth prepass's set 1 and forward's set 3 declare the same binding: one palette set
+        // binds to both. One set per frame in flight.
+        const std::vector<RHI::DescriptorBinding>& paletteBindings = forwardSkinnedShader.Layout.DescriptorSets[3];
+        m_PaletteLayout = device.CreateDescriptorSetLayout(paletteBindings);
+        m_PalettePool   = device.CreateDescriptorPool(HedgehogEngine::MAX_FRAMES_IN_FLIGHT,
+                                                      PipelineLoader::MakePoolSizes(paletteBindings,
+                                                                                    HedgehogEngine::MAX_FRAMES_IN_FLIGHT));
+        for (PaletteSlot& palette : m_Palettes)
+            palette.Set = device.AllocateDescriptorSet(*m_PalettePool, *m_PaletteLayout);
+
+        std::vector<const RHI::IRHIDescriptorSetLayout*> forwardSkinnedLayouts = forwardLayouts;
+        forwardSkinnedLayouts.push_back(m_PaletteLayout.get());
+        m_DepthPrepassSkinnedPipeline = CreatePipeline(device, depthSkinnedShader,
+                                                       { m_ViewProjRing.Layout.get(), m_PaletteLayout.get() }, {},
+                                                       depthSkinnedShader.Pipeline.CullMode);
+        m_ForwardSkinnedPipeline = CreatePipeline(device, forwardSkinnedShader, forwardSkinnedLayouts, { COLOR_FORMAT },
+                                                  forwardSkinnedShader.Pipeline.CullMode);
+        m_ForwardSkinnedDoubleSidedPipeline = CreatePipeline(device, forwardSkinnedShader, forwardSkinnedLayouts,
+                                                             { COLOR_FORMAT }, RHI::CullMode::None);
 
         m_GizmoBoxLines = device.CreateBuffer(sizeof(GIZMO_BOX_LINES), RHI::BufferUsage::VertexBuffer,
                                               RHI::MemoryUsage::CpuToGpu);
@@ -138,6 +169,9 @@ namespace Renderer
             case EnginePipeline::Forward:            return *m_ForwardPipeline;
             case EnginePipeline::ForwardDoubleSided: return *m_ForwardDoubleSidedPipeline;
             case EnginePipeline::Gizmo:              return *m_GizmoPipeline;
+            case EnginePipeline::DepthPrepassSkinned:       return *m_DepthPrepassSkinnedPipeline;
+            case EnginePipeline::ForwardSkinned:            return *m_ForwardSkinnedPipeline;
+            case EnginePipeline::ForwardSkinnedDoubleSided: return *m_ForwardSkinnedDoubleSidedPipeline;
         }
         assert(false && "GraphPassServices::GetPipeline: unknown pipeline.");
         return *m_DepthPrepassPipeline;
@@ -169,5 +203,24 @@ namespace Renderer
     const RHI::IRHIDescriptorSet& GraphPassServices::AllocateSceneLightsUniform(const SceneLightsUniform& uniform)
     {
         return Allocate(m_SceneLightsRing, &uniform, sizeof(uniform));
+    }
+
+    const RHI::IRHIDescriptorSet* GraphPassServices::UploadJointPalette(std::span<const HM::Matrix4x4> matrices)
+    {
+        if (matrices.empty())
+            return nullptr;
+
+        // This slot's fence has signaled, so its buffer is no longer read and may be replaced.
+        PaletteSlot& palette = m_Palettes[m_FrameIndex];
+        if (matrices.size() > palette.Capacity)
+        {
+            palette.Capacity = std::max({ matrices.size(), palette.Capacity * 2, MIN_PALETTE_CAPACITY });
+            palette.Buffer   = m_Device.CreateBuffer(palette.Capacity * sizeof(HM::Matrix4x4),
+                                                     RHI::BufferUsage::StorageBuffer, RHI::MemoryUsage::CpuToGpu);
+            palette.Set->WriteStorageBuffer(0, *palette.Buffer);
+            palette.Set->Flush();
+        }
+        palette.Buffer->CopyData(matrices.data(), matrices.size_bytes());
+        return palette.Set.get();
     }
 }

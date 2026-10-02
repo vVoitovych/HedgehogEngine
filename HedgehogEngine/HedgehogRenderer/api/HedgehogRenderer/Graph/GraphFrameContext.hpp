@@ -45,8 +45,19 @@ namespace Renderer
         float                      ShadowCascadeSplitLambda = 0.5f;
 
         // Opaque instances only: what the depth prepass, shadow and forward passes draw. For a view,
-        // those on a layer in its mask whose bounds its frustum can see (ViewCulling.hpp).
+        // those on a layer in its mask whose bounds its frustum can see (ViewCulling.hpp), and only
+        // the rigid ones: a view's skinned instances are in SkinnedInstances. The shadow view keeps
+        // every scene instance here, skinned ones too, drawn in their bind pose.
         std::span<const HX::RenderInstance> OpaqueInstances;
+
+        // A view's opaque instances with a joint palette (RenderInstance::JointCount > 0), culled like
+        // OpaqueInstances. The depth prepass and forward pass draw them after the rigid ones, with the
+        // skinned pipelines and JointPalette.
+        std::span<const HX::RenderInstance> SkinnedInstances;
+
+        // The frame's RenderScene::JointMatrices, uploaded once as a storage buffer (the skinned
+        // pipelines' palette set). Null when no instance is skinned.
+        const RHI::IRHIDescriptorSet* JointPalette = nullptr;
 
         // The view's editor-layer instances (HX::EDITOR_LAYER), culled like OpaqueInstances: only the
         // Gizmo pass reads them, drawing their bounds. Never scene geometry, never shadow casters.
@@ -109,6 +120,17 @@ namespace Renderer
     // dropped, as the legacy forward pass did.
     [[nodiscard]] SceneLightsUniform MakeSceneLightsUniform(std::span<const HX::RenderLight> lights);
 
+    // The skinned pipelines' push constants: the rigid ones' model matrix, then where the
+    // instance's palette starts in the frame's JointPalette.
+    struct SkinnedPushConstants
+    {
+        float    Model[16];
+        uint32_t PaletteOffset = 0;
+    };
+    static_assert(sizeof(SkinnedPushConstants) == 68, "The skinned shaders' push constant block is 68 bytes.");
+
+    [[nodiscard]] SkinnedPushConstants MakeSkinnedPushConstants(const HX::RenderInstance& instance);
+
     inline constexpr uint32_t GIZMO_BOX_LINE_VERTICES = 24;
 
     // The model matrix that maps the unit cube onto box: the Gizmo pass's per-box push constant.
@@ -121,6 +143,9 @@ namespace Renderer
         Forward,            // back faces culled
         ForwardDoubleSided, // Forward with cullBackFaces: false
         Gizmo,              // unit-cube wireframes (GetGizmoBoxLines), depth-tested, not written
+        DepthPrepassSkinned,        // DepthPrepass for SkinnedInstances: palette at set 1
+        ForwardSkinned,             // Forward for SkinnedInstances: palette at set 3
+        ForwardSkinnedDoubleSided,  // ForwardSkinned with cullBackFaces: false
     };
 
     // The long-lived GPU objects the engine passes use but do not own: pipelines, and per-frame

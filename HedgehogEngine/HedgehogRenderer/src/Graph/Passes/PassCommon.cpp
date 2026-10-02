@@ -3,6 +3,8 @@
 #include "RHI/api/IRHICommandList.hpp"
 #include "RHI/api/IRHITexture.hpp"
 
+#include <algorithm>
+
 namespace Renderer
 {
     void DrawOpaqueInstances(RHI::IRHICommandList& cmd, const RHI::IRHIPipeline& pipeline,
@@ -19,6 +21,36 @@ namespace Renderer
             const MeshDrawRange& mesh = frame.Meshes[instance.MeshIndex];
             cmd.PushConstants(pipeline, RHI::ShaderStage::Vertex, 0, 16 * sizeof(float),
                               instance.WorldMatrix.GetBuffer());
+            cmd.DrawIndexed(mesh.IndexCount, 1, mesh.FirstIndex, static_cast<int32_t>(mesh.VertexOffset), 0);
+        }
+    }
+
+    SkinnedPushConstants MakeSkinnedPushConstants(const HX::RenderInstance& instance)
+    {
+        SkinnedPushConstants constants;
+        std::copy_n(instance.WorldMatrix.GetBuffer(), 16, constants.Model);
+        constants.PaletteOffset = instance.PaletteOffset;
+        return constants;
+    }
+
+    bool CanDrawSkinned(const GraphFrameData& frame)
+    {
+        return !frame.SkinnedInstances.empty() && frame.JointPalette && frame.Positions && frame.Joints
+            && frame.Weights && frame.Indices;
+    }
+
+    void DrawSkinnedInstances(RHI::IRHICommandList& cmd, const RHI::IRHIPipeline& pipeline,
+                              const GraphFrameData& frame)
+    {
+        cmd.BindVertexBuffers(0, { frame.Positions, frame.Joints, frame.Weights }, { 0, 0, 0 });
+        cmd.BindIndexBuffer(*frame.Indices, RHI::IndexType::Uint32);
+        for (const HX::RenderInstance& instance : frame.SkinnedInstances)
+        {
+            if (instance.MeshIndex >= frame.Meshes.size())
+                continue;
+            const MeshDrawRange&       mesh      = frame.Meshes[instance.MeshIndex];
+            const SkinnedPushConstants constants = MakeSkinnedPushConstants(instance);
+            cmd.PushConstants(pipeline, RHI::ShaderStage::Vertex, 0, sizeof(constants), &constants);
             cmd.DrawIndexed(mesh.IndexCount, 1, mesh.FirstIndex, static_cast<int32_t>(mesh.VertexOffset), 0);
         }
     }

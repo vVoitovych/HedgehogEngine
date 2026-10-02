@@ -21,8 +21,9 @@ namespace
         "r32g32_float",
         "r32g32b32_float",
         "r32g32b32a32_float",
+        "r32g32b32a32_uint",
     };
-    constexpr int k_FormatCount = 4;
+    constexpr int k_FormatCount = 5;
 
     constexpr const char* k_InputRateNames[] = {
         "per_vertex",

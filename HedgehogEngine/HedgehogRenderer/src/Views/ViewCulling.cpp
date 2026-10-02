@@ -18,6 +18,7 @@ namespace Renderer
                            const HM::Matrix4x4& viewProj, ViewInstances& out)
     {
         out.Opaque.clear();
+        out.Skinned.clear();
         out.Overlay.clear();
 
         HM::Frustum frustum;
@@ -28,6 +29,8 @@ namespace Renderer
                 continue;
             if (instance.Layer == HX::EDITOR_LAYER)
                 out.Overlay.push_back(instance);
+            else if (instance.JointCount > 0)
+                out.Skinned.push_back(instance);
             else
                 out.Opaque.push_back(instance);
         }

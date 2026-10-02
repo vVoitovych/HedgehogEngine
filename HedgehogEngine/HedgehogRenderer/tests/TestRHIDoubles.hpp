@@ -11,7 +11,9 @@
 #include "RHI/api/IRHITexture.hpp"
 
 #include <cassert>
+#include <cstring>
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace RGTest
@@ -208,7 +210,11 @@ namespace RGTest
         void Begin(bool) override {}
         void End() override {}
 
-        void BeginRendering(const RHI::RenderingInfo& info) override { Renderings.push_back(info); }
+        void BeginRendering(const RHI::RenderingInfo& info) override
+        {
+            Renderings.push_back(info);
+            Commands.push_back("begin");
+        }
         void EndRendering() override { ++EndRenderingCount; }
 
         void Barrier(std::span<const RHI::TextureBarrier> textureBarriers,
@@ -220,24 +226,43 @@ namespace RGTest
             Calls.push_back(std::move(call));
         }
 
-        void BindPipeline(const RHI::IRHIPipeline&) override {}
+        void BindPipeline(const RHI::IRHIPipeline& pipeline) override
+        {
+            BoundPipelines.push_back(&pipeline);
+            Commands.push_back("pipeline");
+        }
         void SetViewport(const RHI::Viewport& viewport) override { Viewports.push_back(viewport); }
         void SetScissor(const RHI::Scissor&) override {}
 
-        void BindVertexBuffers(uint32_t, const std::vector<RHI::IRHIBuffer*>&,
-                               const std::vector<size_t>&) override {}
-        void BindIndexBuffer(const RHI::IRHIBuffer&, RHI::IndexType, size_t) override {}
-        void BindDescriptorSet(const RHI::IRHIPipeline&, uint32_t setIndex, const RHI::IRHIDescriptorSet&) override
+        void BindVertexBuffers(uint32_t, const std::vector<RHI::IRHIBuffer*>& buffers,
+                               const std::vector<size_t>&) override
+        {
+            Commands.push_back("vertex " + std::to_string(buffers.size()));
+        }
+        void BindIndexBuffer(const RHI::IRHIBuffer&, RHI::IndexType, size_t) override { Commands.push_back("index"); }
+        void BindDescriptorSet(const RHI::IRHIPipeline&, uint32_t setIndex, const RHI::IRHIDescriptorSet& set) override
         {
             ++DescriptorSetBinds;
             BoundSetIndices.push_back(setIndex);
+            BoundSets.push_back(&set);
+            Commands.push_back("set " + std::to_string(setIndex));
         }
-        void PushConstants(const RHI::IRHIPipeline&, RHI::ShaderStage, uint32_t, uint32_t, const void*) override {}
+        void PushConstants(const RHI::IRHIPipeline&, RHI::ShaderStage, uint32_t, uint32_t size, const void* data) override
+        {
+            Commands.push_back("push " + std::to_string(size));
+            if (size > 64) // the skinned pipelines' palette offset, after the model matrix
+            {
+                uint32_t offset = 0;
+                std::memcpy(&offset, static_cast<const char*>(data) + 64, sizeof(offset));
+                PushedPaletteOffsets.push_back(offset);
+            }
+        }
 
         void Draw(uint32_t vertexCount, uint32_t, uint32_t, uint32_t) override { DrawnVertexCounts.push_back(vertexCount); }
         void DrawIndexed(uint32_t indexCount, uint32_t, uint32_t, int32_t, uint32_t) override
         {
             DrawnIndexCounts.push_back(indexCount);
+            Commands.push_back("draw " + std::to_string(indexCount));
         }
 
         void CopyBufferToBuffer(const RHI::IRHIBuffer&, RHI::IRHIBuffer&, size_t, size_t, size_t) override {}
@@ -252,5 +277,13 @@ namespace RGTest
         std::vector<uint32_t>            BoundSetIndices;
         std::vector<uint32_t>            DrawnIndexCounts;
         std::vector<uint32_t>            DrawnVertexCounts;
+
+        // Every rendering begun, pipeline, vertex/index buffer, descriptor set, push constant and
+        // indexed draw, in order, as "begin", "pipeline", "vertex <count>", "index", "set <index>",
+        // "push <bytes>" and "draw <index count>".
+        std::vector<std::string>                   Commands;
+        std::vector<const RHI::IRHIPipeline*>      BoundPipelines;
+        std::vector<const RHI::IRHIDescriptorSet*> BoundSets;
+        std::vector<uint32_t>                      PushedPaletteOffsets;
     };
 }

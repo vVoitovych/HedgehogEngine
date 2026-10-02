@@ -23,6 +23,7 @@
 
 #include "ECS/api/ECS.hpp"
 #include "ECS/api/components/Hierarchy.hpp"
+#include "HedgehogEngine/api/ECS/components/AnimatorComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
 #include "HedgehogEngine/api/Events/TransformEvents.hpp"
 #include "HedgehogEngine/api/ECS/systems/MeshSystem.hpp"
@@ -350,6 +351,12 @@ namespace Editor
                     if (!ecs.HasComponent<HedgehogEngine::ScriptComponent>(e))
                         ecs.AddComponent(e, HedgehogEngine::ScriptComponent{});
                 }
+                if (ImGui::MenuItem("Animator component") && m_SelectedEntity.has_value())
+                {
+                    ECS::Entity e = m_SelectedEntity.value();
+                    if (!ecs.HasComponent<HedgehogEngine::AnimatorComponent>(e))
+                        ecs.AddComponent(e, HedgehogEngine::AnimatorComponent{});
+                }
                 ImGui::EndMenu();
             }
 
@@ -561,6 +568,7 @@ namespace Editor
             DrawMeshComponent(context);
             DrawRenderComponent(context);
             DrawScriptComponent(context);
+            DrawAnimatorComponent(context);
         }
         else
         {
@@ -887,6 +895,23 @@ namespace Editor
             if (ecs.HasComponent<HedgehogEngine::CameraComponent>(entity))
                 ecs.RemoveComponent<HedgehogEngine::CameraComponent>(entity);
         }
+    }
+
+    void EditorGui::DrawAnimatorComponent(HedgehogEngine::Engine& context)
+    {
+        auto& ecs    = context.GetEngineContext().GetECS();
+        auto  entity = m_SelectedEntity.value();
+
+        if (!ecs.HasComponent<HedgehogEngine::AnimatorComponent>(entity))
+            return;
+        if (!ImGui::CollapsingHeader("Animator", ImGuiTreeNodeFlags_DefaultOpen))
+            return;
+
+        auto& animator = ecs.GetComponent<HedgehogEngine::AnimatorComponent>(entity);
+        Reflection::RenderComponentGui(&animator, HedgehogEngine::AnimatorComponent::GetProperties());
+
+        if (ImGui::Button("Remove animator"))
+            ecs.RemoveComponent<HedgehogEngine::AnimatorComponent>(entity);
     }
 
     // Hand-drawn instead of the reflected text field, so a camera picks from the graphs that exist,
