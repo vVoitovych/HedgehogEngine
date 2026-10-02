@@ -7,6 +7,7 @@
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
+#include "HedgehogEngine/api/Events/AnimationEvents.hpp"
 
 #include "ECS/api/ECS.hpp"
 #include "ECS/api/components/Hierarchy.hpp"
@@ -100,6 +101,10 @@ namespace HedgehogScripting
         Bindings::RegisterComponents(m_Lua, context);
         Bindings::RegisterScene(m_Lua, context, m_PendingDestroys);
         RegisterEvents();
+        // Systems live in the ECS, which the context destroys before its EventBus, as the
+        // engine's own subscribers do.
+        context.GetEventBus().Subscribe<HedgehogEngine::AnimationFinishedEvent>(
+            [this](const HedgehogEngine::AnimationFinishedEvent& event) { QueueAnimationFinished(event); });
         RegisterCoroutines();
         RegisterPropertyHelpers();
         RegisterReload();

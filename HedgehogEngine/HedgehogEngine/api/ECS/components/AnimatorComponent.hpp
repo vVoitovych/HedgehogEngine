@@ -26,6 +26,9 @@ HH_BEGIN_COMPONENT(AnimatorComponent)
     std::string PreviousClip;                // runtime: the clip faded out of, empty when not fading
     float       PreviousTime = 0.0f;         // runtime
     float       FadeElapsed  = 0.0f;         // runtime
+    float       FadeDuration = 0.0f;         // runtime: the current crossfade's length
+    std::optional<float> RequestedFade;      // runtime: the next switch's fade time (AnimationSystem::Play)
+    bool        Finished     = false;        // runtime: a non-looping current clip reached its end
     std::string WarnedClip;                  // runtime: the unknown clip name already warned about
     std::optional<float> PreviewTime;        // runtime: in Edit mode, the time to show (else the bind pose)
     std::vector<HM::Matrix4x4> Palette;      // runtime: one skinning matrix per joint
