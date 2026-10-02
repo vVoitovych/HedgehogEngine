@@ -30,7 +30,7 @@ if errorlevel 1 (
 set "BINDIR=%~dp0..\Binaries\windows-x86_64\%CONFIG%"
 set FAILED=0
 
-for %%T in (HedgehogMathTest FileSystemTest ECSTest EcsSerializationTest ContentLoaderTest HedgehogExtractTest RenderGraphTest HedgehogEngineTest ScriptingTest) do (
+for %%T in (HedgehogMathTest FileSystemTest ECSTest EcsSerializationTest ContentLoaderTest HedgehogExtractTest RenderGraphTest HedgehogEngineTest ScriptingTest AnimationTest) do (
     echo.
     echo === Running %%T ^(%CONFIG%^) ===
     if exist "%BINDIR%\%%T.exe" (

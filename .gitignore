@@ -625,6 +625,8 @@ Binaries
 /HedgehogEngine/HedgehogEngine/tests/HedgehogEngineTest.vcxproj*
 /HedgehogScripting/HedgehogScripting.vcxproj*
 /HedgehogScripting/tests/ScriptingTest.vcxproj*
+/HedgehogAnimation/HedgehogAnimation.vcxproj*
+/HedgehogAnimation/tests/AnimationTest.vcxproj*
 /ThirdParty/Tracy/Tracy.vcxproj
 /HedgehogEngine/RHIImGui/*.vcxproj*
 

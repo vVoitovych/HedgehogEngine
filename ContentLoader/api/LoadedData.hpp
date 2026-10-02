@@ -31,7 +31,7 @@ namespace ContentLoader
     {
         std::string   Name;
         int32_t       Parent = -1;
-        // Mesh space to the joint's space in the bind pose, in the engine's row-vector convention.
+        // Mesh space to the joint's space in the bind pose. Matrix4x4 stores columns, as glTF does.
         HM::Matrix4x4 InverseBindMatrix = HM::Matrix4x4::GetIdentity();
         // The joint node's local transform in the bind pose, relative to its parent joint's node.
         HM::Vector3    Translation = HM::Vector3(0.0f, 0.0f, 0.0f);
