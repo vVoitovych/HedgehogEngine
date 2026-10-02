@@ -16,6 +16,7 @@ project "HedgehogExtract"
       "ECS",
       "HedgehogEngine",
       "HedgehogMath",
+      "HedgehogUI",
    }
 
    targetdir (IntermediatesDir)

@@ -21,6 +21,12 @@
 #include "HedgehogEngine/api/ECS/systems/RenderSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/CameraSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/AnimationSystem.hpp"
+#include "HedgehogEngine/api/ECS/systems/UiSystem.hpp"
+#include "HedgehogEngine/api/ECS/components/UiButtonComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/UiCanvasComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/UiImageComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/UiRectComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/UiTextComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/AnimatorComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
@@ -99,6 +105,11 @@ namespace HedgehogEngine
         m_ECS.RegisterComponent<ScriptComponent>();
         m_ECS.RegisterComponent<CameraComponent>();
         m_ECS.RegisterComponent<AnimatorComponent>();
+        m_ECS.RegisterComponent<UiCanvasComponent>();
+        m_ECS.RegisterComponent<UiRectComponent>();
+        m_ECS.RegisterComponent<UiImageComponent>();
+        m_ECS.RegisterComponent<UiTextComponent>();
+        m_ECS.RegisterComponent<UiButtonComponent>();
 
         m_TransformSystem = m_ECS.RegisterSystem<TransformSystem>();
         m_HierarchySystem = m_ECS.RegisterSystem<HierarchySystem>();
@@ -107,6 +118,7 @@ namespace HedgehogEngine
         m_RenderSystem    = m_ECS.RegisterSystem<RenderSystem>();
         m_CameraSystem    = m_ECS.RegisterSystem<CameraSystem>();
         m_AnimationSystem = m_ECS.RegisterSystem<AnimationSystem>();
+        m_UiSystem        = m_ECS.RegisterSystem<UiSystem>();
 
         m_TransformSystem->Init(m_EventBus);
         m_HierarchySystem->Init(m_EventBus);
@@ -141,6 +153,10 @@ namespace HedgehogEngine
         signature.set(m_ECS.GetComponentType<AnimatorComponent>());
         signature.set(m_ECS.GetComponentType<MeshComponent>());
         m_ECS.SetSystemSignature<AnimationSystem>(signature);
+        signature.reset();
+
+        signature.set(m_ECS.GetComponentType<UiCanvasComponent>());
+        m_ECS.SetSystemSignature<UiSystem>(signature);
 
         RegisterComponents();
     }
@@ -155,6 +171,11 @@ namespace HedgehogEngine
         m_ComponentRegistry->RegisterReflected<LightComponent>("LightComponent");
         m_ComponentRegistry->RegisterReflected<CameraComponent>("CameraComponent");
         m_ComponentRegistry->RegisterReflected<AnimatorComponent>("AnimatorComponent");
+        m_ComponentRegistry->RegisterReflected<UiCanvasComponent>("UiCanvasComponent");
+        m_ComponentRegistry->RegisterReflected<UiRectComponent>("UiRectComponent");
+        m_ComponentRegistry->RegisterReflected<UiImageComponent>("UiImageComponent");
+        m_ComponentRegistry->RegisterReflected<UiTextComponent>("UiTextComponent");
+        m_ComponentRegistry->RegisterReflected<UiButtonComponent>("UiButtonComponent");
 
         // Scripts run in the application's script system; loading a scene only reads the data.
         RegisterScriptComponentSerializer(*m_ComponentRegistry);
@@ -270,6 +291,7 @@ namespace HedgehogEngine
     RenderSystem*     EngineContext::GetRenderSystem()     const { return m_RenderSystem.get(); }
     CameraSystem*     EngineContext::GetCameraSystem()     const { return m_CameraSystem.get(); }
     AnimationSystem*  EngineContext::GetAnimationSystem()  const { return m_AnimationSystem.get(); }
+    UiSystem*         EngineContext::GetUiSystem()         const { return m_UiSystem.get(); }
 
     void EngineContext::UpdateCamera(WindowContext& windowContext, float aspectRatio, float dt)
     {
