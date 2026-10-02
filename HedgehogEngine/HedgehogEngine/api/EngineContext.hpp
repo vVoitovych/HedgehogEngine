@@ -35,6 +35,7 @@ namespace HedgehogEngine
     class LightSystem;
     class RenderSystem;
     class CameraSystem;
+    class AnimationSystem;
 
     // Edit: gameplay does not run. Playing: every frame runs the fixed steps and the update.
     // Paused: nothing runs, and the scene waits to be resumed or stopped.
@@ -74,6 +75,11 @@ namespace HedgehogEngine
         // so tests can drive frames without a window.
         HEDGEHOG_ENGINE_API void UpdatePlayMode(float dt);
 
+        // Fills every animator's skinning palette for this frame: advanced by the frame's scaled
+        // time while Playing, held while Paused, the bind pose (or a preview time) in Edit.
+        // UpdateContext calls it right after UpdatePlayMode; public for the same reason.
+        HEDGEHOG_ENGINE_API void UpdateAnimation(float dt);
+
         HEDGEHOG_ENGINE_API ResourceCatalog&       GetResourceCatalog();
         HEDGEHOG_ENGINE_API const ResourceCatalog& GetResourceCatalog() const;
 
@@ -94,6 +100,7 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API LightSystem*        GetLightSystem()     const;
         HEDGEHOG_ENGINE_API RenderSystem*       GetRenderSystem()    const;
         HEDGEHOG_ENGINE_API CameraSystem*       GetCameraSystem()    const;
+        HEDGEHOG_ENGINE_API AnimationSystem*    GetAnimationSystem() const;
 
         HEDGEHOG_ENGINE_API const FS::FileSystemManager& GetFileSystem() const;
 
@@ -118,6 +125,7 @@ namespace HedgehogEngine
         std::shared_ptr<LightSystem>      m_LightSystem;
         std::shared_ptr<RenderSystem>     m_RenderSystem;
         std::shared_ptr<CameraSystem>     m_CameraSystem;
+        std::shared_ptr<AnimationSystem>  m_AnimationSystem;
 
         ResourceCatalog m_ResourceCatalog;
 

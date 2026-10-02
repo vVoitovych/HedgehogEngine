@@ -1,0 +1,43 @@
+{
+ "asset": {"version":"2.0","generator":"HedgehogEngine HE-154 test asset"},
+ "scene": 0,
+ "scenes": [{"nodes":[0,1]}],
+ "nodes": [
+  {"name":"Strip","mesh":0,"skin":0},
+  {"name":"Root","children":[2]},
+  {"name":"Tip","translation":[0,1,0]}
+ ],
+ "meshes": [{"name":"Strip","primitives":[{"attributes":{"POSITION":0,"NORMAL":1,"TEXCOORD_0":2,"JOINTS_0":3,"WEIGHTS_0":4},"indices":5}]}],
+ "skins": [{"joints":[1,2],"inverseBindMatrices":6}],
+ "animations": [
+  {"name":"Bend","samplers":[{"input":7,"output":8,"interpolation":"LINEAR"}],"channels":[{"sampler":0,"target":{"node":2,"path":"rotation"}}]},
+  {"name":"Lift","samplers":[{"input":9,"output":10,"interpolation":"LINEAR"}],"channels":[{"sampler":0,"target":{"node":1,"path":"translation"}}]}
+ ],
+ "buffers": [{"byteLength":536,"uri":"data:application/octet-stream;base64,AACAvgAAAAAAAAAAAACAPgAAAAAAAAAAAACAvgAAgD8AAAAAAACAPgAAgD8AAAAAAACAvgAAAEAAAAAAAACAPgAAAEAAAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAAA/AACAPwAAAD8AAAAAAACAPwAAgD8AAIA/AAAAAAAAAAAAAQAAAAEAAAEAAAABAAAAAACAPwAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAAAAAAAA/AAAAPwAAAAAAAAAAAAAAPwAAAD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAAAAAAABAAMAAAADAAIAAgADAAUAAgAFAAQAAACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAAAAAAAAAAACAPwAAgD8AAAAAAAAAAAAAAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAIC/AAAAAAAAgD8AAAAAAACAPwAAAAAAAAAAFe/DPl6DbD8AAAAAAAAAAPMENT/zBDU/AAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAACAPwAAAAA="}],
+ "bufferViews": [
+  {"buffer":0,"byteOffset":0,"byteLength":72},
+  {"buffer":0,"byteOffset":72,"byteLength":72},
+  {"buffer":0,"byteOffset":144,"byteLength":48},
+  {"buffer":0,"byteOffset":192,"byteLength":24},
+  {"buffer":0,"byteOffset":216,"byteLength":96},
+  {"buffer":0,"byteOffset":312,"byteLength":24},
+  {"buffer":0,"byteOffset":336,"byteLength":128},
+  {"buffer":0,"byteOffset":464,"byteLength":8},
+  {"buffer":0,"byteOffset":472,"byteLength":32},
+  {"buffer":0,"byteOffset":504,"byteLength":8},
+  {"buffer":0,"byteOffset":512,"byteLength":24}
+ ],
+ "accessors": [
+  {"bufferView":0,"componentType":5126,"count":6,"type":"VEC3","min":[-0.25,0,0],"max":[0.25,2,0]},
+  {"bufferView":1,"componentType":5126,"count":6,"type":"VEC3"},
+  {"bufferView":2,"componentType":5126,"count":6,"type":"VEC2"},
+  {"bufferView":3,"componentType":5121,"count":6,"type":"VEC4"},
+  {"bufferView":4,"componentType":5126,"count":6,"type":"VEC4"},
+  {"bufferView":5,"componentType":5123,"count":12,"type":"SCALAR"},
+  {"bufferView":6,"componentType":5126,"count":2,"type":"MAT4"},
+  {"bufferView":7,"componentType":5126,"count":2,"type":"SCALAR","min":[0.0],"max":[1.0]},
+  {"bufferView":8,"componentType":5126,"count":2,"type":"VEC4"},
+  {"bufferView":9,"componentType":5126,"count":2,"type":"SCALAR","min":[0.0],"max":[2.0]},
+  {"bufferView":10,"componentType":5126,"count":2,"type":"VEC3"}
+ ]
+}

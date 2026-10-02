@@ -20,6 +20,8 @@
 #include "HedgehogEngine/api/ECS/systems/LightSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/RenderSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/CameraSystem.hpp"
+#include "HedgehogEngine/api/ECS/systems/AnimationSystem.hpp"
+#include "HedgehogEngine/api/ECS/components/AnimatorComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/LightComponent.hpp"
@@ -96,6 +98,7 @@ namespace HedgehogEngine
         m_ECS.RegisterComponent<RenderComponent>();
         m_ECS.RegisterComponent<ScriptComponent>();
         m_ECS.RegisterComponent<CameraComponent>();
+        m_ECS.RegisterComponent<AnimatorComponent>();
 
         m_TransformSystem = m_ECS.RegisterSystem<TransformSystem>();
         m_HierarchySystem = m_ECS.RegisterSystem<HierarchySystem>();
@@ -103,6 +106,7 @@ namespace HedgehogEngine
         m_LightSystem     = m_ECS.RegisterSystem<LightSystem>();
         m_RenderSystem    = m_ECS.RegisterSystem<RenderSystem>();
         m_CameraSystem    = m_ECS.RegisterSystem<CameraSystem>();
+        m_AnimationSystem = m_ECS.RegisterSystem<AnimationSystem>();
 
         m_TransformSystem->Init(m_EventBus);
         m_HierarchySystem->Init(m_EventBus);
@@ -132,6 +136,11 @@ namespace HedgehogEngine
 
         signature.set(m_ECS.GetComponentType<CameraComponent>());
         m_ECS.SetSystemSignature<CameraSystem>(signature);
+        signature.reset();
+
+        signature.set(m_ECS.GetComponentType<AnimatorComponent>());
+        signature.set(m_ECS.GetComponentType<MeshComponent>());
+        m_ECS.SetSystemSignature<AnimationSystem>(signature);
 
         RegisterComponents();
     }
@@ -145,6 +154,7 @@ namespace HedgehogEngine
         m_ComponentRegistry->RegisterReflected<RenderComponent>("RenderComponent");
         m_ComponentRegistry->RegisterReflected<LightComponent>("LightComponent");
         m_ComponentRegistry->RegisterReflected<CameraComponent>("CameraComponent");
+        m_ComponentRegistry->RegisterReflected<AnimatorComponent>("AnimatorComponent");
 
         // Scripts run in the application's script system; loading a scene only reads the data.
         RegisterScriptComponentSerializer(*m_ComponentRegistry);
@@ -154,9 +164,11 @@ namespace HedgehogEngine
     {
         UpdateCamera(windowContext, aspectRatio, dt);
 
-        // Update order is load-bearing: gameplay (Play only) → Transform → Hierarchy → Light.
-        // Transform, Hierarchy and Light run in every mode, so edits show in Edit mode too.
+        // Update order is load-bearing: gameplay (Play only) → Animation → Transform → Hierarchy
+        // → Light. Animation runs after every script hook of the frame (see AnimationSystem), and
+        // it, Transform, Hierarchy and Light run in every mode, so edits show in Edit mode too.
         UpdatePlayMode(dt);
+        UpdateAnimation(dt);
         m_TransformSystem->Update(m_ECS, m_EventBus);
         m_HierarchySystem->Update(m_ECS, m_EventBus);
         m_LightSystem->Update(m_ECS);
@@ -226,6 +238,13 @@ namespace HedgehogEngine
         m_ECS.RunUpdate(std::max(dt * m_Clock.TimeScale, 0.0f));
     }
 
+    void EngineContext::UpdateAnimation(float dt)
+    {
+        // The same scaled time OnUpdate got; nothing advances while paused.
+        const float scaled = m_PlayState == PlayState::Playing ? std::max(dt * m_Clock.TimeScale, 0.0f) : 0.0f;
+        m_AnimationSystem->Update(m_ECS, m_ResourceCatalog.GetMeshContainer(), m_PlayState != PlayState::Edit, scaled);
+    }
+
     ResourceCatalog& EngineContext::GetResourceCatalog()             { return m_ResourceCatalog; }
     const ResourceCatalog& EngineContext::GetResourceCatalog() const { return m_ResourceCatalog; }
 
@@ -249,6 +268,7 @@ namespace HedgehogEngine
     LightSystem*      EngineContext::GetLightSystem()      const { return m_LightSystem.get(); }
     RenderSystem*     EngineContext::GetRenderSystem()     const { return m_RenderSystem.get(); }
     CameraSystem*     EngineContext::GetCameraSystem()     const { return m_CameraSystem.get(); }
+    AnimationSystem*  EngineContext::GetAnimationSystem()  const { return m_AnimationSystem.get(); }
 
     void EngineContext::UpdateCamera(WindowContext& windowContext, float aspectRatio, float dt)
     {
