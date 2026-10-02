@@ -28,6 +28,8 @@ namespace Renderer
             "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/DepthPrepassSkinned.shader";
         constexpr const char* FORWARD_SKINNED_SHADER =
             "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/GraphForwardSkinned.shader";
+        constexpr const char* SHADOW_SKINNED_SHADER =
+            "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/ShadowmapPassSkinned.shader";
 
         static_assert(sizeof(HM::Matrix4x4) == 16 * sizeof(float), "The palette uploads matrices as they are.");
 
@@ -67,6 +69,7 @@ namespace Renderer
         const ShaderPipelineDesc gizmoShader   = ShaderLoader::Load(device, GIZMO_SHADER, fileSystem);
         const ShaderPipelineDesc depthSkinnedShader   = ShaderLoader::Load(device, DEPTH_PREPASS_SKINNED_SHADER, fileSystem);
         const ShaderPipelineDesc forwardSkinnedShader = ShaderLoader::Load(device, FORWARD_SKINNED_SHADER, fileSystem);
+        const ShaderPipelineDesc shadowSkinnedShader  = ShaderLoader::Load(device, SHADOW_SKINNED_SHADER, fileSystem);
         assert(!depthShader.Layout.DescriptorSets.empty() && forwardShader.Layout.DescriptorSets.size() >= 3);
         assert(depthSkinnedShader.Layout.DescriptorSets.size() >= 2 && forwardSkinnedShader.Layout.DescriptorSets.size() >= 4);
 
@@ -94,7 +97,7 @@ namespace Renderer
         m_GizmoPipeline = CreatePipeline(device, gizmoShader, { m_ViewProjRing.Layout.get() }, { COLOR_FORMAT },
                                          gizmoShader.Pipeline.CullMode);
 
-        // The depth prepass's set 1 and forward's set 3 declare the same binding: one palette set
+        // The depth prepass's and shadow's set 1 and forward's set 3 declare the same binding: one palette set
         // binds to both. One set per frame in flight.
         const std::vector<RHI::DescriptorBinding>& paletteBindings = forwardSkinnedShader.Layout.DescriptorSets[3];
         m_PaletteLayout = device.CreateDescriptorSetLayout(paletteBindings);
@@ -109,6 +112,9 @@ namespace Renderer
         m_DepthPrepassSkinnedPipeline = CreatePipeline(device, depthSkinnedShader,
                                                        { m_ViewProjRing.Layout.get(), m_PaletteLayout.get() }, {},
                                                        depthSkinnedShader.Pipeline.CullMode);
+        m_ShadowSkinnedPipeline = CreatePipeline(device, shadowSkinnedShader,
+                                                 { m_ViewProjRing.Layout.get(), m_PaletteLayout.get() }, {},
+                                                 shadowSkinnedShader.Pipeline.CullMode);
         m_ForwardSkinnedPipeline = CreatePipeline(device, forwardSkinnedShader, forwardSkinnedLayouts, { COLOR_FORMAT },
                                                   forwardSkinnedShader.Pipeline.CullMode);
         m_ForwardSkinnedDoubleSidedPipeline = CreatePipeline(device, forwardSkinnedShader, forwardSkinnedLayouts,
@@ -172,6 +178,7 @@ namespace Renderer
             case EnginePipeline::DepthPrepassSkinned:       return *m_DepthPrepassSkinnedPipeline;
             case EnginePipeline::ForwardSkinned:            return *m_ForwardSkinnedPipeline;
             case EnginePipeline::ForwardSkinnedDoubleSided: return *m_ForwardSkinnedDoubleSidedPipeline;
+            case EnginePipeline::ShadowSkinned:             return *m_ShadowSkinnedPipeline;
         }
         assert(false && "GraphPassServices::GetPipeline: unknown pipeline.");
         return *m_DepthPrepassPipeline;

@@ -168,6 +168,66 @@ TEST_CASE("Shadow casters come from the caster mask, never from the view's layer
     CHECK(cmd.DrawnIndexCounts == std::vector<uint32_t>{ 36, 36 }); // layers 0 and 5
 }
 
+TEST_CASE("Skinned casters are split out and drawn posed into every cascade, after the rigid ones")
+{
+    const PassBuilderRegistry registry = MakeEngineRegistry();
+
+    // As FrameRenderer hands it over: every scene instance in one list, skinned ones included.
+    // Layer 3 does not cast, skinned or not.
+    const auto skinned = [](uint32_t layer, uint32_t paletteOffset)
+    {
+        HX::RenderInstance instance = Instance(1, layer);
+        instance.PaletteOffset      = paletteOffset;
+        instance.JointCount         = 2;
+        return instance;
+    };
+    const HX::RenderInstance instances[] = { Instance(0, 0), skinned(0, 4), skinned(3, 6), Instance(0, 3) };
+
+    TestBuffer        positions(1024);
+    TestBuffer        indices(1024);
+    TestBuffer        joints(1024);
+    TestBuffer        weights(1024);
+    FakeDescriptorSet palette;
+    const MeshDrawRange meshes[] = { { 0, 36, 0 }, { 36, 120, 24 } };
+    GraphFrameData shadowView  = MakeFrame(2);
+    shadowView.OpaqueInstances = instances;
+    shadowView.Meshes          = meshes;
+    shadowView.Positions       = &positions;
+    shadowView.Indices         = &indices;
+    shadowView.Joints          = &joints;
+    shadowView.Weights         = &weights;
+    shadowView.JointPalette    = &palette;
+
+    SharedPhaseSettings settings;
+    settings.ShadowAtlasSize  = 512;
+    settings.ShadowCasterMask = ~(1u << 3);
+
+    TestDevice         device;
+    RenderGraphRuntime graph(device, ARENA_BYTES);
+    FakeServices       services;
+    SharedPhase        shared(registry);
+    const SharedPhaseOutputs outputs = shared.Declare(graph, services, &shadowView, {}, settings);
+    graph.BindOutput(graph.AddOutputSlot("atlas", RHI::Format::D32Float, RGSizePolicy::MakeAbsolute(512, 512)),
+                     outputs.Imports.at(SHADOW_ATLAS_IMPORT));
+
+    RecordingCommandList cmd;
+    REQUIRE(graph.Execute(cmd));
+    const std::vector<std::string> expected = {
+        "begin", "pipeline",
+        "set 0", "vertex 1", "index", "push 64", "draw 36",              // cascade 0, rigid
+        "set 0", "vertex 1", "index", "push 64", "draw 36",              // cascade 1, rigid
+        "pipeline", "set 1",
+        "set 0", "vertex 3", "index", "push 68", "draw 120",             // cascade 0, skinned
+        "set 0", "vertex 3", "index", "push 68", "draw 120",             // cascade 1, skinned
+    };
+    CHECK(cmd.Commands == expected);
+    CHECK(cmd.BoundPipelines == std::vector<const RHI::IRHIPipeline*>{
+                                    &services.GetPipeline(EnginePipeline::Shadow),
+                                    &services.GetPipeline(EnginePipeline::ShadowSkinned) });
+    CHECK(cmd.PushedPaletteOffsets == std::vector<uint32_t>{ 4, 4 });
+    CHECK(cmd.Viewports.size() == 4); // each cascade's tile, for the rigid and the skinned draws
+}
+
 TEST_CASE("The scene lights are uploaded once per frame, with or without a shadow view")
 {
     const PassBuilderRegistry registry = MakeEngineRegistry();

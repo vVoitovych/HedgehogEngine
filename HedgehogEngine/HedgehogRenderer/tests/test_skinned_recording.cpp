@@ -118,10 +118,11 @@ namespace
         return CommandList(cmd.Commands.begin() + begins[index], cmd.Commands.begin() + end);
     }
 
-    // What the depth prepass and forward pass recorded for these two rigid instances before
-    // skinning existed: one pipeline, the shared streams, 64-byte push constants.
+    // What the depth prepass, shadow pass (one cascade) and forward pass recorded for these two
+    // rigid instances before skinning existed: one pipeline, the shared streams, 64-byte push constants.
     const CommandList RIGID_PREPASS = { "begin", "pipeline", "set 0", "vertex 1", "index",
                                         "push 64", "draw 36", "push 64", "draw 120" };
+    const CommandList RIGID_SHADOW  = RIGID_PREPASS;
     const CommandList RIGID_FORWARD = { "begin", "pipeline", "vertex 3", "index", "set 0", "set 2",
                                         "set 1", "push 64", "draw 36", "set 1", "push 64", "draw 120" };
 }
@@ -140,6 +141,7 @@ TEST_CASE("A view with only rigid instances records exactly the commands it did 
     RecordingCommandList cmd;
     Record(frame, services, cmd);
     CHECK(Rendering(cmd, 0) == RIGID_PREPASS);
+    CHECK(Rendering(cmd, 1) == RIGID_SHADOW);
     CHECK(Rendering(cmd, 2) == RIGID_FORWARD);
     CHECK(std::find(cmd.BoundSets.begin(), cmd.BoundSets.end(), &scene.Palette) == cmd.BoundSets.end());
     CHECK(cmd.PushedPaletteOffsets.empty());
@@ -165,6 +167,12 @@ TEST_CASE("Skinned instances draw after the rigid ones with the skinned pipeline
                                     "push 68", "draw 120", "push 68", "draw 36" });
     CHECK(Rendering(cmd, 0) == prepass);
 
+    // The shadow pass binds the palette once, then each cascade's viewProj again.
+    CommandList shadow = RIGID_SHADOW;
+    shadow.insert(shadow.end(), { "pipeline", "set 1", "set 0", "vertex 3", "index",
+                                  "push 68", "draw 120", "push 68", "draw 36" });
+    CHECK(Rendering(cmd, 1) == shadow);
+
     CommandList forward = RIGID_FORWARD;
     forward.insert(forward.end(), { "pipeline", "vertex 5", "set 0", "set 2", "set 3",
                                     "set 1", "push 68", "draw 120", "push 68", "draw 36" });
@@ -175,10 +183,11 @@ TEST_CASE("Skinned instances draw after the rigid ones with the skinned pipeline
         return std::count(cmd.BoundPipelines.begin(), cmd.BoundPipelines.end(), &services.GetPipeline(pipeline));
     };
     CHECK(bound(EnginePipeline::DepthPrepassSkinned) == 1);
+    CHECK(bound(EnginePipeline::ShadowSkinned) == 1);
     CHECK(bound(EnginePipeline::ForwardSkinned) == 1);
     CHECK(bound(EnginePipeline::ForwardSkinnedDoubleSided) == 0);
-    CHECK(std::count(cmd.BoundSets.begin(), cmd.BoundSets.end(), &scene.Palette) == 2);
-    CHECK(cmd.PushedPaletteOffsets == std::vector<uint32_t>{ 0, 2, 0, 2 });
+    CHECK(std::count(cmd.BoundSets.begin(), cmd.BoundSets.end(), &scene.Palette) == 3);
+    CHECK(cmd.PushedPaletteOffsets == std::vector<uint32_t>{ 0, 2, 0, 2, 0, 2 });
 }
 
 TEST_CASE("A double-sided forward pass draws skinned instances with the double-sided skinned pipeline")
@@ -220,6 +229,7 @@ TEST_CASE("Without a joint palette or the skinning streams, skinned instances ar
         RecordingCommandList cmd;
         Record(*frame, services, cmd);
         CHECK(Rendering(cmd, 0) == RIGID_PREPASS);
+        CHECK(Rendering(cmd, 1) == RIGID_SHADOW);
         CHECK(Rendering(cmd, 2) == RIGID_FORWARD);
     }
 }

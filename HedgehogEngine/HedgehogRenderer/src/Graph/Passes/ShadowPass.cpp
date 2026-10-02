@@ -7,6 +7,8 @@
 #include "RHI/api/IRHICommandList.hpp"
 #include "RHI/api/IRHITexture.hpp"
 
+#include <array>
+
 namespace Renderer
 {
     namespace
@@ -24,14 +26,34 @@ namespace Renderer
 
                 const uint32_t       size     = BeginDepthRendering(cmd, shadowMap);
                 const ShadowCascades cascades = ComputeShadowCascades(frame, size);
+                std::array<const RHI::IRHIDescriptorSet*, MAX_SHADOW_CASCADES> viewProj{};
                 cmd.BindPipeline(pipeline);
                 for (uint32_t i = 0; i < cascades.Count; ++i)
                 {
                     const ShadowCascadeViewport& tile = cascades.Viewports[i];
                     cmd.SetViewport({ tile.X, tile.Y, tile.Width, tile.Height, 0.0f, 1.0f });
                     cmd.SetScissor({ 0, 0, size, size });
-                    cmd.BindDescriptorSet(pipeline, 0, data.Context->Services->AllocateViewProjUniform(cascades.ViewProj[i]));
+                    viewProj[i] = &data.Context->Services->AllocateViewProjUniform(cascades.ViewProj[i]);
+                    cmd.BindDescriptorSet(pipeline, 0, *viewProj[i]);
                     DrawOpaqueInstances(cmd, pipeline, frame);
+                }
+
+                // Skinned casters after every cascade's rigid ones, so the skinned pipeline is bound
+                // once. Its push constants differ, so each cascade's set 0 is bound again.
+                if (CanDrawSkinned(frame))
+                {
+                    const RHI::IRHIPipeline& skinned =
+                        data.Context->Services->GetPipeline(EnginePipeline::ShadowSkinned);
+                    cmd.BindPipeline(skinned);
+                    cmd.BindDescriptorSet(skinned, 1, *frame.JointPalette);
+                    for (uint32_t i = 0; i < cascades.Count; ++i)
+                    {
+                        const ShadowCascadeViewport& tile = cascades.Viewports[i];
+                        cmd.SetViewport({ tile.X, tile.Y, tile.Width, tile.Height, 0.0f, 1.0f });
+                        cmd.SetScissor({ 0, 0, size, size });
+                        cmd.BindDescriptorSet(skinned, 0, *viewProj[i]);
+                        DrawSkinnedInstances(cmd, skinned, frame);
+                    }
                 }
                 cmd.EndRendering();
             });

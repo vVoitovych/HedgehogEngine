@@ -131,6 +131,7 @@ namespace Renderer
         std::unique_ptr<RHI::IRHIPipeline> m_DepthPrepassSkinnedPipeline;
         std::unique_ptr<RHI::IRHIPipeline> m_ForwardSkinnedPipeline;
         std::unique_ptr<RHI::IRHIPipeline> m_ForwardSkinnedDoubleSidedPipeline;
+        std::unique_ptr<RHI::IRHIPipeline> m_ShadowSkinnedPipeline;
         std::unique_ptr<RHI::IRHIBuffer>   m_GizmoBoxLines;
 
         uint32_t m_FrameIndex = 0;

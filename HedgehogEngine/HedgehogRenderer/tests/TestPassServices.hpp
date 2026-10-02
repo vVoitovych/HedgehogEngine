@@ -40,6 +40,7 @@ namespace RGTest
                 case Renderer::EnginePipeline::DepthPrepassSkinned:       return m_DepthSkinned;
                 case Renderer::EnginePipeline::ForwardSkinned:            return m_ForwardSkinned;
                 case Renderer::EnginePipeline::ForwardSkinnedDoubleSided: return m_ForwardSkinnedDoubleSided;
+                case Renderer::EnginePipeline::ShadowSkinned:             return m_ShadowSkinned;
                 default:                                     return m_Forward;
             }
         }
@@ -72,6 +73,7 @@ namespace RGTest
         FakePipeline      m_DepthSkinned;
         FakePipeline      m_ForwardSkinned;
         FakePipeline      m_ForwardSkinnedDoubleSided;
+        FakePipeline      m_ShadowSkinned;
         TestBuffer        m_GizmoBoxLines{ Renderer::GIZMO_BOX_LINE_VERTICES * 12 };
         FakeDescriptorSet m_Set;
         FakeDescriptorSet m_SceneLights;

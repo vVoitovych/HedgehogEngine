@@ -27,15 +27,22 @@ namespace Renderer
         if (!shadowView)
             return outputs;
 
-        // Casters come from the caster mask alone, never from the view's layer mask.
+        // Casters come from the caster mask alone, never from the view's layer mask, and are split
+        // rigid and skinned as a view's instances are, from either of shadowView's lists.
         m_Casters.clear();
-        for (const HX::RenderInstance& instance : shadowView->OpaqueInstances)
+        m_SkinnedCasters.clear();
+        for (const std::span<const HX::RenderInstance> instances :
+             { shadowView->OpaqueInstances, shadowView->SkinnedInstances })
         {
-            if (CastsShadow(instance, settings.ShadowCasterMask))
-                m_Casters.push_back(instance);
+            for (const HX::RenderInstance& instance : instances)
+            {
+                if (CastsShadow(instance, settings.ShadowCasterMask))
+                    (instance.JointCount > 0 ? m_SkinnedCasters : m_Casters).push_back(instance);
+            }
         }
-        m_ShadowFrame                 = *shadowView;
-        m_ShadowFrame.OpaqueInstances = m_Casters;
+        m_ShadowFrame                  = *shadowView;
+        m_ShadowFrame.OpaqueInstances  = m_Casters;
+        m_ShadowFrame.SkinnedInstances = m_SkinnedCasters;
         m_ShadowContext               = { &services, &m_ShadowFrame };
 
         const RGSizePolicy size = RGSizePolicy::MakeAbsolute(settings.ShadowAtlasSize, settings.ShadowAtlasSize);
