@@ -213,6 +213,7 @@ namespace Renderer
             m_MaterialSets.push_back(&resources.GetMaterialDescriptorSet(static_cast<uint32_t>(i)));
 
         GraphFrameData frame;
+        FillUiFrame(scene, resources, frame);
         // Every visible instance is drawn as opaque: RenderScene carries no material type yet.
         m_FrameInstances = scene.Instances;
         CollectSceneInstances(scene.Instances, m_SceneInstances);
@@ -247,6 +248,27 @@ namespace Renderer
         frame.ShadowCascadeCount       = shadowmap.GetCascadesCount();
         frame.ShadowCascadeSplitLambda = shadowmap.GetCascadeSplitLambda();
         m_SceneFrame = frame;
+    }
+
+    void FrameRenderer::SyncUiTextures(const HX::RenderScene& scene, HR::ResourceRegistry& registry)
+    {
+        registry.SyncUiTextures(scene.UiTextures, m_Device, m_FileSystem);
+    }
+
+    void FrameRenderer::FillUiFrame(const HX::RenderScene& scene, const HR::ResourceRegistry& resources,
+                                    GraphFrameData& frame)
+    {
+        m_UiTextureSets.clear();
+        for (const std::string& path : scene.UiTextures)
+            m_UiTextureSets.push_back(resources.FindUiTextureSet(path));
+
+        const GraphPassServices::UiGeometry geometry = m_Services.UploadUiGeometry(scene.Ui);
+        frame.UiCommands     = scene.Ui.Commands;
+        frame.UiVertices     = geometry.Vertices;
+        frame.UiIndices      = geometry.Indices;
+        frame.UiTextureSets  = m_UiTextureSets;
+        frame.UiSolidTexture = resources.GetUiSolidTextureSet();
+        frame.UiTargetSize   = scene.UiTargetSize;
     }
 
     GraphFrameData FrameRenderer::MakeViewFrame(const View& view, ViewInstances& instances) const

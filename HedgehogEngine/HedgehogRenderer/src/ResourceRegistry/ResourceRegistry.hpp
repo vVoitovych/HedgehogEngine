@@ -8,6 +8,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <span>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -46,6 +47,21 @@ namespace HR
                                const RHI::IRHIDescriptorSetLayout& layout,
                                uint32_t                            maxSets,
                                const std::vector<RHI::PoolSize>&   poolSizes);
+
+        // The game UI's textures: sets of the GameUi shader's set 0 (one combined image sampler),
+        // MAX_UI_TEXTURE_SETS of them. Called once, before any SyncUiTextures call.
+        static constexpr uint32_t MAX_UI_TEXTURE_SETS = 256;
+        void SetUiTextureLayout(RHI::IRHIDevice& device, const RHI::IRHIDescriptorSetLayout& layout);
+
+        // Loads every path under assets:// in paths not loaded yet (a missing file gets the magenta
+        // placeholder, as a material's does) and gives it a UI texture set, and makes the white
+        // solid-fill set on the first call. Paths past MAX_UI_TEXTURE_SETS get no set (one warning).
+        void SyncUiTextures(std::span<const std::string> paths, RHI::IRHIDevice& device,
+                            const FS::FileSystemManager& fileSystem);
+
+        // The UI texture set of a synced path, or nullptr; and the white texture's set for a solid fill.
+        const RHI::IRHIDescriptorSet* FindUiTextureSet(const std::string& path) const;
+        const RHI::IRHIDescriptorSet* GetUiSolidTextureSet() const { return m_UiSolidSet.get(); }
 
         void SyncMeshes(const HedgehogEngine::IResourceCatalog& catalog, RHI::IRHIDevice& device);
         void SyncMaterials(HedgehogEngine::IResourceCatalog& catalog, RHI::IRHIDevice& device);
@@ -116,5 +132,14 @@ namespace HR
         // Shared texture cache and sampler
         std::unordered_map<std::string, std::unique_ptr<RHI::IRHITexture>> m_TextureCache;
         std::unique_ptr<RHI::IRHISampler>                                  m_LinearSampler;
+
+        // Game UI textures: sampled clamped to their edges, one set each, and the white pixel.
+        const RHI::IRHIDescriptorSetLayout*                                       m_UiTextureLayout = nullptr;
+        std::unique_ptr<RHI::IRHIDescriptorPool>                                  m_UiTexturePool;
+        std::unique_ptr<RHI::IRHISampler>                                         m_UiSampler;
+        std::unordered_map<std::string, std::unique_ptr<RHI::IRHIDescriptorSet>> m_UiTextureSets;
+        std::unique_ptr<RHI::IRHITexture>                                         m_UiSolidTexture;
+        std::unique_ptr<RHI::IRHIDescriptorSet>                                   m_UiSolidSet;
+        bool                                                                      m_WarnedUiTextureLimit = false;
     };
 }

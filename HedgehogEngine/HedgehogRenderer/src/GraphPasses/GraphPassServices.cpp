@@ -30,6 +30,7 @@ namespace Renderer
             "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/GraphForwardSkinned.shader";
         constexpr const char* SHADOW_SKINNED_SHADER =
             "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/ShadowmapPassSkinned.shader";
+        constexpr const char* GAME_UI_SHADER = "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/GameUi.shader";
 
         static_assert(sizeof(HM::Matrix4x4) == 16 * sizeof(float), "The palette uploads matrices as they are.");
 
@@ -120,6 +121,16 @@ namespace Renderer
         m_ForwardSkinnedDoubleSidedPipeline = CreatePipeline(device, forwardSkinnedShader, forwardSkinnedLayouts,
                                                              { COLOR_FORMAT }, RHI::CullMode::None);
 
+        // The game UI draws into the colour target alone: no depth attachment.
+        const ShaderPipelineDesc gameUiShader = ShaderLoader::Load(device, GAME_UI_SHADER, fileSystem);
+        assert(!gameUiShader.Layout.DescriptorSets.empty());
+        m_UiTextureLayout = device.CreateDescriptorSetLayout(gameUiShader.Layout.DescriptorSets[0]);
+        RHI::GraphicsPipelineDesc gameUiDesc = gameUiShader.Pipeline;
+        gameUiDesc.DescriptorSetLayouts   = { m_UiTextureLayout.get() };
+        gameUiDesc.ColorAttachmentFormats = { COLOR_FORMAT };
+        gameUiDesc.DepthAttachmentFormat  = RHI::Format::Undefined;
+        m_GameUiPipeline = device.CreateGraphicsPipeline(gameUiDesc);
+
         m_GizmoBoxLines = device.CreateBuffer(sizeof(GIZMO_BOX_LINES), RHI::BufferUsage::VertexBuffer,
                                               RHI::MemoryUsage::CpuToGpu);
         m_GizmoBoxLines->CopyData(GIZMO_BOX_LINES, sizeof(GIZMO_BOX_LINES));
@@ -166,6 +177,11 @@ namespace Renderer
         registry.SetMaterialLayout(device, *m_MaterialLayout, HedgehogEngine::MAX_MATERIAL_COUNT, m_MaterialPoolSizes);
     }
 
+    void GraphPassServices::ProvideUiTextureLayout(HR::ResourceRegistry& registry) const
+    {
+        registry.SetUiTextureLayout(m_Device, *m_UiTextureLayout);
+    }
+
     const RHI::IRHIPipeline& GraphPassServices::GetPipeline(EnginePipeline pipeline) const
     {
         switch (pipeline)
@@ -179,6 +195,7 @@ namespace Renderer
             case EnginePipeline::ForwardSkinned:            return *m_ForwardSkinnedPipeline;
             case EnginePipeline::ForwardSkinnedDoubleSided: return *m_ForwardSkinnedDoubleSidedPipeline;
             case EnginePipeline::ShadowSkinned:             return *m_ShadowSkinnedPipeline;
+            case EnginePipeline::GameUi:                    return *m_GameUiPipeline;
         }
         assert(false && "GraphPassServices::GetPipeline: unknown pipeline.");
         return *m_DepthPrepassPipeline;
@@ -229,5 +246,29 @@ namespace Renderer
         }
         palette.Buffer->CopyData(matrices.data(), matrices.size_bytes());
         return palette.Set.get();
+    }
+
+    GraphPassServices::UiGeometry GraphPassServices::UploadUiGeometry(const HX::UiDrawList& list)
+    {
+        if (list.Indices.empty())
+            return {};
+
+        // This slot's fence has signaled, so its buffers are no longer read and may be replaced.
+        UiGeometrySlot& slot = m_UiGeometry[m_FrameIndex];
+        if (list.Vertices.size() > slot.VertexCapacity)
+        {
+            slot.VertexCapacity = std::max({ list.Vertices.size(), slot.VertexCapacity * 2, MIN_UI_VERTEX_CAPACITY });
+            slot.Vertices = m_Device.CreateBuffer(slot.VertexCapacity * sizeof(HX::UiVertex),
+                                                  RHI::BufferUsage::VertexBuffer, RHI::MemoryUsage::CpuToGpu);
+        }
+        if (list.Indices.size() > slot.IndexCapacity)
+        {
+            slot.IndexCapacity = std::max({ list.Indices.size(), slot.IndexCapacity * 2, MIN_UI_INDEX_CAPACITY });
+            slot.Indices = m_Device.CreateBuffer(slot.IndexCapacity * sizeof(uint16_t), RHI::BufferUsage::IndexBuffer,
+                                                 RHI::MemoryUsage::CpuToGpu);
+        }
+        slot.Vertices->CopyData(list.Vertices.data(), list.Vertices.size() * sizeof(HX::UiVertex));
+        slot.Indices->CopyData(list.Indices.data(), list.Indices.size() * sizeof(uint16_t));
+        return { slot.Vertices.get(), slot.Indices.get() };
     }
 }

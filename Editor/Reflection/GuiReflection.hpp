@@ -63,7 +63,10 @@ namespace Reflection
                 changed = ImGui::DragFloat3(prop.name, FieldPtr<HM::Vector3>(comp, prop)->GetBuffer());
             break;
         case TypeTag::Vec4:
-            changed = ImGui::DragFloat4(prop.name, FieldPtr<HM::Vector4>(comp, prop)->GetBuffer());
+            if (HasFlag(prop.flags, PropertyFlags::IsColor))
+                changed = ImGui::ColorEdit4(prop.name, FieldPtr<HM::Vector4>(comp, prop)->GetBuffer());
+            else
+                changed = ImGui::DragFloat4(prop.name, FieldPtr<HM::Vector4>(comp, prop)->GetBuffer());
             break;
         case TypeTag::Enum:
             if (prop.enumLabels && prop.enumLabelCount > 0)

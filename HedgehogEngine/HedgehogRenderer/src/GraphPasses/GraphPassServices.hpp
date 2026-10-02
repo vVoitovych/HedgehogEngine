@@ -5,6 +5,7 @@
 #include "RHI/api/RHITypes.hpp"
 
 #include "HedgehogCommon/api/RendererSettings.hpp"
+#include "HedgehogExtract/api/UiDrawList.hpp"
 #include "HedgehogMath/api/Matrix.hpp"
 
 #include <array>
@@ -54,6 +55,9 @@ namespace Renderer
         static constexpr uint32_t SCENE_LIGHTS_PER_FRAME = 1;
         // The joint palette's first capacity, in matrices; it grows on demand.
         static constexpr size_t MIN_PALETTE_CAPACITY = 256;
+        // The game UI buffers' first capacities, in vertices and indices; they grow on demand.
+        static constexpr size_t MIN_UI_VERTEX_CAPACITY = 4096;
+        static constexpr size_t MIN_UI_INDEX_CAPACITY  = 6144;
 
         GraphPassServices(RHI::IRHIDevice& device, const FS::FileSystemManager& fileSystem);
         ~GraphPassServices() override;
@@ -69,6 +73,10 @@ namespace Renderer
         // material sets from.
         void ProvideMaterialLayout(RHI::IRHIDevice& device, HR::ResourceRegistry& registry) const;
 
+        // Gives the resource registry the GameUi shader's set 0 (one texture) to allocate UI texture
+        // sets from.
+        void ProvideUiTextureLayout(HR::ResourceRegistry& registry) const;
+
         const RHI::IRHIPipeline&      GetPipeline(EnginePipeline pipeline) const override;
         RHI::IRHIBuffer&              GetGizmoBoxLines() override;
         const RHI::IRHIDescriptorSet& AllocateViewProjUniform(const HM::Matrix4x4& viewProj) override;
@@ -79,6 +87,18 @@ namespace Renderer
         // it when too small, and returns the palette set the skinned pipelines bind (set 1 for the
         // depth prepass, set 3 for forward). Once per frame, after BeginFrame; nullptr when empty.
         const RHI::IRHIDescriptorSet* UploadJointPalette(std::span<const HM::Matrix4x4> matrices);
+
+        // The frame's game UI geometry in this frame slot's buffers (GraphFrameData::UiVertices and
+        // UiIndices). Both null when the list has no indices.
+        struct UiGeometry
+        {
+            RHI::IRHIBuffer* Vertices = nullptr;
+            RHI::IRHIBuffer* Indices  = nullptr;
+        };
+
+        // Uploads list's vertices and indices into this frame slot's buffers, growing them when too
+        // small. Once per frame, after BeginFrame.
+        UiGeometry UploadUiGeometry(const HX::UiDrawList& list);
 
     private:
         struct UniformSlot
@@ -123,6 +143,18 @@ namespace Renderer
         std::unique_ptr<RHI::IRHIDescriptorPool>                          m_PalettePool;
         std::array<PaletteSlot, HedgehogEngine::MAX_FRAMES_IN_FLIGHT>     m_Palettes;
 
+        // One frame in flight's game UI vertex and index buffers.
+        struct UiGeometrySlot
+        {
+            std::unique_ptr<RHI::IRHIBuffer> Vertices;
+            std::unique_ptr<RHI::IRHIBuffer> Indices;
+            size_t                           VertexCapacity = 0;
+            size_t                           IndexCapacity  = 0;
+        };
+
+        std::unique_ptr<RHI::IRHIDescriptorSetLayout>                    m_UiTextureLayout; // GameUi's set 0
+        std::array<UiGeometrySlot, HedgehogEngine::MAX_FRAMES_IN_FLIGHT> m_UiGeometry;
+
         std::unique_ptr<RHI::IRHIPipeline> m_DepthPrepassPipeline;
         std::unique_ptr<RHI::IRHIPipeline> m_ShadowPipeline;
         std::unique_ptr<RHI::IRHIPipeline> m_ForwardPipeline;
@@ -132,6 +164,7 @@ namespace Renderer
         std::unique_ptr<RHI::IRHIPipeline> m_ForwardSkinnedPipeline;
         std::unique_ptr<RHI::IRHIPipeline> m_ForwardSkinnedDoubleSidedPipeline;
         std::unique_ptr<RHI::IRHIPipeline> m_ShadowSkinnedPipeline;
+        std::unique_ptr<RHI::IRHIPipeline> m_GameUiPipeline;
         std::unique_ptr<RHI::IRHIBuffer>   m_GizmoBoxLines;
 
         uint32_t m_FrameIndex = 0;

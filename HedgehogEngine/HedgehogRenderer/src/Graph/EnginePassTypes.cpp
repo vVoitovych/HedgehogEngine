@@ -2,6 +2,7 @@
 
 #include "Passes/DepthPrepassPass.hpp"
 #include "Passes/ForwardPass.hpp"
+#include "Passes/GameUiPass.hpp"
 #include "Passes/GizmoPass.hpp"
 #include "Passes/ShadowPass.hpp"
 #include "Passes/UiPass.hpp"
@@ -19,6 +20,7 @@ namespace Renderer
             && registry.Register("Shadow", GetShadowPassType())
             && registry.Register("Forward", GetForwardPassType())
             && registry.Register("Gizmo", GetGizmoPassType())
+            && registry.Register("GameUi", GetGameUiPassType())
             && registry.Register("Ui", GetUiPassType());
         assert(registered && "RegisterEnginePassTypes: an engine pass type was already registered.");
     }

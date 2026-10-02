@@ -101,9 +101,10 @@ TEST_CASE("An output no pass writes is tagged with its slot")
     TestDevice device;
     GraphAsset asset = LoadShipped(registry, "game");
 
-    // Forward draws into a transient instead of the output.
+    // Forward and the game UI over it draw into a transient instead of the output.
     asset.Resources.push_back({ "scratch", RHI::Format::R16G16B16A16Unorm, RGSizePolicy::MakeRelativeToResult(1.0f) });
     std::ranges::find(FindPass(asset, "Forward").Bindings, "color", &GraphAssetBinding::Slot)->Resource = "scratch";
+    std::ranges::find(FindPass(asset, "GameUi").Bindings, "color", &GraphAssetBinding::Slot)->Resource = "scratch";
 
     const std::vector<GraphDiagnostic> diagnostics = DiagnoseGraphAsset(asset, registry, device);
     CAPTURE(Describe(diagnostics));
