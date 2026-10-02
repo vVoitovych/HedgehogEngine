@@ -13,6 +13,7 @@
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RenderComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/UiTextComponent.hpp"
 #include "HedgehogEngine/api/ECS/systems/MeshSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/RenderSystem.hpp"
 #include "HedgehogEngine/api/Engine.hpp"
@@ -46,6 +47,7 @@ namespace Editor
             case ContentType::Material:
             case ContentType::Texture:  return "Render (with a material)";
             case ContentType::Script:   return "Script";
+            case ContentType::Font:     return "UI text";
             default:                    return nullptr;
             }
         }
@@ -97,6 +99,7 @@ namespace Editor
         case ContentType::Material:
         case ContentType::Texture:
         case ContentType::Script:
+        case ContentType::Font:
             if (AssignToSelection(context, request, physicalPath))
                 return;
             LOGINFO("Content: select an entity with a ", RequiredComponent(request.Type), " component to assign '",
@@ -153,6 +156,11 @@ namespace Editor
                 return false;
             if (!AssignScript(context, entity, physicalPath))
                 return true; // refused, and said why; nothing to open instead
+            break;
+        case ContentType::Font:
+            if (!ecs.HasComponent<HedgehogEngine::UiTextComponent>(entity))
+                return false;
+            ecs.GetComponent<HedgehogEngine::UiTextComponent>(entity).Font = relativePath;
             break;
         case ContentType::RenderGraph:
         {

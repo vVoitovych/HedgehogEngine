@@ -9,11 +9,15 @@
 #include "HedgehogEngine/api/ECS/components/UiCanvasComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/UiImageComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/UiRectComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/UiTextComponent.hpp"
+#include "HedgehogEngine/api/Containers/FontContainer.hpp"
 #include "HedgehogEngine/api/ECS/systems/UiSystem.hpp"
 #include "HedgehogUI/api/RectTransform.hpp"
+#include "HedgehogUI/api/TextLayout.hpp"
 #include "HedgehogUI/api/UiDraw.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <optional>
 #include <utility>
 
@@ -23,6 +27,7 @@ namespace
     using HedgehogEngine::UiCanvasComponent;
     using HedgehogEngine::UiImageComponent;
     using HedgehogEngine::UiRectComponent;
+    using HedgehogEngine::UiTextComponent;
 
     // What every element of one canvas shares.
     struct CanvasPass
@@ -31,6 +36,7 @@ namespace
         float           Scale = 1.0f; // pixels per canvas unit
         HX::UiRect      Scissor;      // the whole target, in pixels
         HX::RenderScene& Scene;
+        HedgehogEngine::FontContainer* Fonts = nullptr;
     };
 
     bool OnEditorLayer(const ECS::ECS& ecs, ECS::Entity entity)
@@ -69,6 +75,38 @@ namespace
         return static_cast<uint32_t>(textures.size() - 1);
     }
 
+    // The slot of font index in fonts, appending it when new, as a UI_FONT_TEXTURE Texture value.
+    uint32_t FontTexture(std::vector<uint32_t>& fonts, size_t font)
+    {
+        const auto found = std::find(fonts.begin(), fonts.end(), static_cast<uint32_t>(font));
+        if (found != fonts.end())
+            return HX::UI_FONT_TEXTURE | static_cast<uint32_t>(found - fonts.begin());
+        fonts.push_back(static_cast<uint32_t>(font));
+        return HX::UI_FONT_TEXTURE | static_cast<uint32_t>(fonts.size() - 1);
+    }
+
+    // An element's text, laid out in rect (canvas units) with its font baked at its size in pixels.
+    void EmitText(const CanvasPass& pass, const UiTextComponent& text, const HX::UiRect& rect)
+    {
+        if (!pass.Fonts || text.Text.empty())
+            return;
+        const long pixelSize = std::lround(text.FontSize * pass.Scale);
+        if (pixelSize <= 0)
+            return;
+        const std::optional<size_t> font = pass.Fonts->FindOrBake(text.Font, static_cast<uint32_t>(pixelSize));
+        if (!font)
+            return;
+
+        HUI::TextStyle style;
+        style.Align         = static_cast<HUI::TextAlign>(text.Align);
+        style.VerticalAlign = static_cast<HUI::TextVerticalAlign>(text.VerticalAlign);
+        style.Wrap          = text.Wrap;
+        style.Color         = HUI::PackColor(text.Color.x(), text.Color.y(), text.Color.z(), text.Color.w());
+        style.Texture       = FontTexture(pass.Scene.UiFonts, *font);
+        HUI::LayoutText(pass.Scene.Ui, pass.Fonts->GetFont(*font), text.Text, HUI::ToPixels(rect, pass.Scale), style,
+                        pass.Scissor);
+    }
+
     HUI::RectTransform ToRectTransform(const UiRectComponent& rect)
     {
         return { rect.AnchorMin, rect.AnchorMax, rect.Pivot, rect.Offset, rect.Size };
@@ -99,6 +137,8 @@ namespace
             quad.Texture = TextureIndex(pass.Scene.UiTextures, image.Texture);
             HUI::AppendQuad(pass.Scene.Ui, quad, pass.Scissor);
         }
+        if (ecs.HasComponent<UiTextComponent>(entity))
+            EmitText(pass, ecs.GetComponent<UiTextComponent>(entity), rect);
         EmitChildren(pass, entity, rect);
     }
 
@@ -110,7 +150,8 @@ namespace
             EmitElement(pass, child, parentRect);
     }
 
-    void EmitCanvas(const ECS::ECS& ecs, ECS::Entity entity, const HM::Vector2& targetSize, HX::RenderScene& scene)
+    void EmitCanvas(const ECS::ECS& ecs, ECS::Entity entity, const HM::Vector2& targetSize, HX::RenderScene& scene,
+                    HedgehogEngine::FontContainer* fonts)
     {
         const UiCanvasComponent& canvas = ecs.GetComponent<UiCanvasComponent>(entity);
         HUI::CanvasScaler        scaler;
@@ -121,7 +162,7 @@ namespace
         scaler.MatchWidthOrHeight  = canvas.MatchWidthOrHeight;
 
         const float      scale = HUI::ComputeCanvasScale(scaler, targetSize);
-        const CanvasPass pass{ ecs, scale, { 0.0f, 0.0f, targetSize.x(), targetSize.y() }, scene };
+        const CanvasPass pass{ ecs, scale, { 0.0f, 0.0f, targetSize.x(), targetSize.y() }, scene, fonts };
         EmitChildren(pass, entity, HUI::CanvasRect(targetSize, scale));
     }
 }
@@ -129,7 +170,8 @@ namespace
 namespace HX
 {
     void SceneExtractor::ExtractUi(const ECS::ECS& ecs, const HedgehogEngine::UiSystem& uiSystem,
-                                   const HM::Vector2& targetSize, RenderScene& outScene) const
+                                   const HM::Vector2& targetSize, RenderScene& outScene,
+                                   HedgehogEngine::FontContainer* fonts) const
     {
         outScene.UiTargetSize = targetSize;
         if (!(targetSize.x() > 0.0f && targetSize.y() > 0.0f))
@@ -156,7 +198,7 @@ namespace HX
 
             const ECS::Entity entity = next->second;
             if (ecs.GetComponent<UiCanvasComponent>(entity).IsEnabled && !OnEditorLayer(ecs, entity))
-                EmitCanvas(ecs, entity, targetSize, outScene);
+                EmitCanvas(ecs, entity, targetSize, outScene, fonts);
         }
     }
 }

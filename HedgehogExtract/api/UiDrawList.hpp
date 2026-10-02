@@ -11,6 +11,10 @@ namespace HX
     // A Texture value meaning "no texture": the quad is its vertex colour alone.
     inline constexpr uint32_t UI_NO_TEXTURE = UINT32_MAX;
 
+    // Set in a Texture value whose low bits index RenderScene::UiFonts (a font atlas, white with the
+    // glyphs' coverage in alpha) rather than RenderScene::UiTextures.
+    inline constexpr uint32_t UI_FONT_TEXTURE = 0x80000000u;
+
     struct UiRect
     {
         float X      = 0.0f;
@@ -32,7 +36,7 @@ namespace HX
     // so a list longer than 65536 vertices spans several commands), clipped to Scissor.
     struct UiDrawCommand
     {
-        uint32_t Texture      = UI_NO_TEXTURE; // an index the extractor assigns, or UI_NO_TEXTURE
+        uint32_t Texture      = UI_NO_TEXTURE; // an index the extractor assigns (UI_FONT_TEXTURE for a font), or UI_NO_TEXTURE
         UiRect   Scissor;
         uint32_t VertexOffset = 0;
         uint32_t FirstIndex   = 0;

@@ -19,6 +19,7 @@ project "HedgehogExtractTest"
         "HedgehogUI",
         "HedgehogEngine",
         "ECS",
+        "FileSystem",
         "HedgehogMath"
     }
 

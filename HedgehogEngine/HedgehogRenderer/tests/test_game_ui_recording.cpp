@@ -150,3 +150,31 @@ TEST_CASE("GameUi - pixels of the UI's target map onto clip space, and scissors 
     CHECK(own.X == 10);
     CHECK(own.Width == 20);
 }
+
+TEST_CASE("GameUi - text samples its font's atlas, and a font without one draws nothing")
+{
+    TestBuffer        vertices(1024);
+    TestBuffer        indices(1024);
+    FakeDescriptorSet solid;
+    FakeDescriptorSet font;
+
+    const HX::UiRect        whole      = { 0.0f, 0.0f, 64.0f, 64.0f };
+    const HX::UiDrawCommand commands[] = {
+        Command(HX::UI_FONT_TEXTURE | 0u, 0, 12, whole),
+        Command(HX::UI_FONT_TEXTURE | 1u, 12, 6, whole), // a font past the registry's budget
+        Command(HX::UI_FONT_TEXTURE | 5u, 18, 6, whole), // not in the frame at all
+    };
+    const RHI::IRHIDescriptorSet* fonts[] = { &font, nullptr };
+
+    GraphFrameData frame;
+    frame.UiCommands     = commands;
+    frame.UiVertices     = &vertices;
+    frame.UiIndices      = &indices;
+    frame.UiFontSets     = fonts;
+    frame.UiSolidTexture = &solid;
+
+    RecordingCommandList cmd;
+    RecordGameUi(frame, cmd);
+    CHECK(cmd.DrawnIndexCounts == std::vector<uint32_t>{ 12 });
+    CHECK(cmd.BoundSets == std::vector<const RHI::IRHIDescriptorSet*>{ &font });
+}

@@ -34,6 +34,8 @@ namespace Editor
             ExtensionType{ ".pl",       ContentType::Pipeline },
             ExtensionType{ ".vdes",     ContentType::VertexDescription },
             ExtensionType{ ".graph",    ContentType::RenderGraph },
+            ExtensionType{ ".ttf",      ContentType::Font },
+            ExtensionType{ ".otf",      ContentType::Font },
         };
 
         constexpr std::string_view SCENE_EXTENSION = ".yaml";
@@ -90,6 +92,7 @@ namespace Editor
         case ContentType::Pipeline:          return "PL";
         case ContentType::VertexDescription: return "VD";
         case ContentType::RenderGraph:       return "RG";
+        case ContentType::Font:              return "FNT";
         case ContentType::Other:             return "?";
         }
         return "?";
@@ -109,6 +112,7 @@ namespace Editor
         case ContentType::Pipeline:          return "Pipeline";
         case ContentType::VertexDescription: return "Vertex description";
         case ContentType::RenderGraph:       return "Render graph";
+        case ContentType::Font:              return "Font";
         case ContentType::Other:             return "File";
         }
         return "File";

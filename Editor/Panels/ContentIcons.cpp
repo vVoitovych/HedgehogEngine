@@ -29,6 +29,7 @@ namespace Editor
             case ContentType::Pipeline:
             case ContentType::VertexDescription:
             case ContentType::RenderGraph:
+            case ContentType::Font:
             case ContentType::Other:             return nullptr;
             }
             return nullptr;

@@ -59,8 +59,16 @@ namespace HR
         void SyncUiTextures(std::span<const std::string> paths, RHI::IRHIDevice& device,
                             const FS::FileSystemManager& fileSystem);
 
+        // Uploads every font atlas the catalog baked since the last call (fonts are only appended) as a
+        // white texture with the glyphs' coverage in alpha, each with a UI texture set. Fonts past
+        // MAX_UI_FONT_SETS get no set (one warning), so their text is not drawn.
+        static constexpr uint32_t MAX_UI_FONT_SETS = 64;
+        void SyncFonts(const HedgehogEngine::IResourceCatalog& catalog, RHI::IRHIDevice& device);
+
         // The UI texture set of a synced path, or nullptr; and the white texture's set for a solid fill.
         const RHI::IRHIDescriptorSet* FindUiTextureSet(const std::string& path) const;
+        // The set of the catalog's font index, or nullptr when it has none.
+        const RHI::IRHIDescriptorSet* FindUiFontSet(size_t font) const;
         const RHI::IRHIDescriptorSet* GetUiSolidTextureSet() const { return m_UiSolidSet.get(); }
 
         void SyncMeshes(const HedgehogEngine::IResourceCatalog& catalog, RHI::IRHIDevice& device);
@@ -141,5 +149,9 @@ namespace HR
         std::unique_ptr<RHI::IRHITexture>                                         m_UiSolidTexture;
         std::unique_ptr<RHI::IRHIDescriptorSet>                                   m_UiSolidSet;
         bool                                                                      m_WarnedUiTextureLimit = false;
+
+        // Font atlases, by the catalog's font index; past MAX_UI_FONT_SETS the set is null.
+        std::vector<std::unique_ptr<RHI::IRHITexture>>       m_FontTextures;
+        std::vector<std::unique_ptr<RHI::IRHIDescriptorSet>> m_FontSets;
     };
 }

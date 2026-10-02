@@ -110,6 +110,30 @@ Scene:
                   Color: [1, 1, 1, 1]
                 Children:
                   []
+              - Entity: 10
+                Name: Title
+                Parent: 5
+                TransformComponent:
+                  Position: [0, 0, 0]
+                  Rotation: [0, 0, 0]
+                  Scale: [1, 1, 1]
+                UiRectComponent:
+                  Visible: true
+                  AnchorMin: [0, 0]
+                  AnchorMax: [1, 1]
+                  Pivot: [0, 0]
+                  Offset: [140, 0]
+                  Size: [-160, 0]
+                UiTextComponent:
+                  Text: Hedgehog Engine HUD
+                  Font: Fonts\Karla-Regular.ttf
+                  FontSize: 56
+                  Color: [0.95, 0.85, 0.6, 1]
+                  Align: 0
+                  VerticalAlign: 1
+                  Wrap: false
+                Children:
+                  []
           - Entity: 7
             Name: HealthBack
             Parent: 4
@@ -147,6 +171,30 @@ Scene:
                   Color: [0.85, 0.15, 0.15, 1]
                 Children:
                   []
+              - Entity: 11
+                Name: HealthLabel
+                Parent: 7
+                TransformComponent:
+                  Position: [0, 0, 0]
+                  Rotation: [0, 0, 0]
+                  Scale: [1, 1, 1]
+                UiRectComponent:
+                  Visible: true
+                  AnchorMin: [0, 0]
+                  AnchorMax: [1, 1]
+                  Pivot: [0, 0]
+                  Offset: [0, 0]
+                  Size: [0, 0]
+                UiTextComponent:
+                  Text: HP 70 / 100
+                  Font: Fonts\Karla-Regular.ttf
+                  FontSize: 32
+                  Color: [1, 1, 1, 1]
+                  Align: 1
+                  VerticalAlign: 1
+                  Wrap: false
+                Children:
+                  []
           - Entity: 9
             Name: PlayButton
             Parent: 4
@@ -170,5 +218,13 @@ Scene:
               HoverTint: [0.9, 0.9, 0.9, 1]
               PressedTint: [0.7, 0.7, 0.7, 1]
               DisabledTint: [0.5, 0.5, 0.5, 0.5]
+            UiTextComponent:
+              Text: PLAY
+              Font: Fonts\Karla-Regular.ttf
+              FontSize: 48
+              Color: [0.05, 0.1, 0.2, 1]
+              Align: 1
+              VerticalAlign: 1
+              Wrap: false
             Children:
               []

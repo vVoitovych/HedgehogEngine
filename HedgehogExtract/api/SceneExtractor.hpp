@@ -16,6 +16,7 @@ namespace HedgehogEngine
     class LightSystem;
     class CameraSystem;
     class UiSystem;
+    class FontContainer;
 }
 
 namespace HX
@@ -53,9 +54,13 @@ namespace HX
         // editor layer (a RenderComponent with HX::EDITOR_LAYER) emits nothing, nor do its children,
         // and so does a child without a UiRectComponent or with a UiCanvasComponent of its own. An
         // element's UiImageComponent draws its rect, tinted by its UiButtonComponent's state; texture
-        // paths are numbered in outScene.UiTextures. Sets outScene.UiTargetSize.
+        // paths are numbered in outScene.UiTextures. Sets outScene.UiTargetSize. With fonts, an
+        // element's UiTextComponent draws its text over the image, laid out in the element's rect with
+        // its font baked at its FontSize in target pixels (fonts->FindOrBake, so a new font or size is
+        // baked here), the fonts it uses numbered in outScene.UiFonts; without fonts, or with a font
+        // that does not load, text draws nothing.
         void ExtractUi(const ECS::ECS& ecs, const HedgehogEngine::UiSystem& uiSystem, const HM::Vector2& targetSize,
-                       RenderScene& outScene) const;
+                       RenderScene& outScene, HedgehogEngine::FontContainer* fonts = nullptr) const;
 
     private:
         void ExtractInstances(const ECS::ECS& ecs, const HedgehogEngine::RenderSystem& renderSystem,

@@ -200,9 +200,9 @@ namespace HR
     {
         assert(m_UiTextureSets.empty() && "SetUiTextureLayout must be called before any UI texture is synced");
         m_UiTextureLayout = &layout;
-        // One more set than the budget: the white solid-fill texture's.
-        m_UiTexturePool = device.CreateDescriptorPool(
-            MAX_UI_TEXTURE_SETS + 1, { { RHI::DescriptorType::CombinedImageSampler, MAX_UI_TEXTURE_SETS + 1 } });
+        // The textures' and fonts' budgets, and one more: the white solid-fill texture's.
+        constexpr uint32_t UI_SETS = MAX_UI_TEXTURE_SETS + MAX_UI_FONT_SETS + 1;
+        m_UiTexturePool = device.CreateDescriptorPool(UI_SETS, { { RHI::DescriptorType::CombinedImageSampler, UI_SETS } });
 
         RHI::SamplerDesc samplerDesc;
         samplerDesc.MinFilter    = RHI::Filter::Linear;
@@ -244,6 +244,40 @@ namespace HR
             set->Flush();
             m_UiTextureSets.emplace(path, std::move(set));
         }
+    }
+
+    void ResourceRegistry::SyncFonts(const HedgehogEngine::IResourceCatalog& catalog, RHI::IRHIDevice& device)
+    {
+        assert(m_UiTextureLayout && "SetUiTextureLayout must be called before SyncFonts");
+        std::vector<uint8_t> pixels;
+        for (size_t font = m_FontSets.size(); font < catalog.GetFontCount(); ++font)
+        {
+            if (font >= MAX_UI_FONT_SETS)
+            {
+                if (font == MAX_UI_FONT_SETS)
+                    LOGWARNING("ResourceRegistry: more than", MAX_UI_FONT_SETS, "baked fonts; text in later ones is not drawn.");
+                m_FontTextures.push_back(nullptr);
+                m_FontSets.push_back(nullptr);
+                continue;
+            }
+
+            // White everywhere, the coverage in alpha: the UI shader multiplies the text colour by it.
+            const HedgehogEngine::FontAtlasView atlas = catalog.GetFontAtlas(font);
+            pixels.assign(atlas.Atlas.size() * 4, 255);
+            for (size_t i = 0; i < atlas.Atlas.size(); ++i)
+                pixels[i * 4 + 3] = atlas.Atlas[i];
+            auto texture = UploadRgba8(device, pixels.data(), atlas.AtlasWidth, atlas.AtlasHeight);
+            auto set     = device.AllocateDescriptorSet(*m_UiTexturePool, *m_UiTextureLayout);
+            set->WriteTexture(0, *texture, *m_UiSampler);
+            set->Flush();
+            m_FontTextures.push_back(std::move(texture));
+            m_FontSets.push_back(std::move(set));
+        }
+    }
+
+    const RHI::IRHIDescriptorSet* ResourceRegistry::FindUiFontSet(size_t font) const
+    {
+        return font < m_FontSets.size() ? m_FontSets[font].get() : nullptr;
     }
 
     const RHI::IRHIDescriptorSet* ResourceRegistry::FindUiTextureSet(const std::string& path) const
@@ -310,6 +344,8 @@ namespace HR
 
         m_Materials.clear();       // descriptor sets freed before pool
         m_UiTextureSets.clear();
+        m_FontSets.clear();
+        m_FontTextures.clear();
         m_UiSolidSet.reset();
         m_UiSolidTexture.reset();
         m_UiTexturePool.reset();

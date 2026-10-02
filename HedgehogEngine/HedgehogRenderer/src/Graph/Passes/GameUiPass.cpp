@@ -20,6 +20,20 @@ namespace Renderer
             return HM::Vector2(static_cast<float>(width), static_cast<float>(height));
         }
 
+        // The set a command samples: its font's (nullptr when the font has none, and the command is
+        // skipped), its texture's, or the white texture for a solid fill or a texture that did not load.
+        const RHI::IRHIDescriptorSet* TextureOf(const GraphFrameData& frame, uint32_t texture)
+        {
+            if (texture != HX::UI_NO_TEXTURE && (texture & HX::UI_FONT_TEXTURE) != 0)
+            {
+                const uint32_t font = texture & ~HX::UI_FONT_TEXTURE;
+                return font < frame.UiFontSets.size() ? frame.UiFontSets[font] : nullptr;
+            }
+            if (texture < frame.UiTextureSets.size() && frame.UiTextureSets[texture])
+                return frame.UiTextureSets[texture];
+            return frame.UiSolidTexture;
+        }
+
         void RecordGameUi(TargetPassData& data, RHI::IRHICommandList& cmd)
         {
             if (!data.Context)
@@ -55,12 +69,10 @@ namespace Renderer
 
             for (const HX::UiDrawCommand& command : frame.UiCommands)
             {
-                const RHI::Scissor scissor = MakeGameUiScissor(command.Scissor, uiSize, width, height);
-                if (command.IndexCount == 0 || scissor.Width == 0 || scissor.Height == 0)
+                const RHI::Scissor            scissor = MakeGameUiScissor(command.Scissor, uiSize, width, height);
+                const RHI::IRHIDescriptorSet* texture = TextureOf(frame, command.Texture);
+                if (command.IndexCount == 0 || scissor.Width == 0 || scissor.Height == 0 || !texture)
                     continue;
-                const RHI::IRHIDescriptorSet* texture = frame.UiSolidTexture;
-                if (command.Texture < frame.UiTextureSets.size() && frame.UiTextureSets[command.Texture])
-                    texture = frame.UiTextureSets[command.Texture];
 
                 cmd.SetScissor(scissor);
                 cmd.BindDescriptorSet(pipeline, 0, *texture);

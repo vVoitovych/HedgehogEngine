@@ -8,6 +8,8 @@
 #include "HedgehogExtract/api/MeshBounds.hpp"
 #include "HedgehogExtract/api/RenderScene.hpp"
 #include "HedgehogExtract/api/SceneExtractor.hpp"
+#include "HedgehogEngine/api/Containers/FontContainer.hpp"
+#include "HedgehogEngine/api/Resource/ResourceCatalog.hpp"
 #include "HedgehogRenderer/Renderer.hpp"
 #include "HedgehogScripting/api/ScriptSystem.hpp"
 
@@ -74,7 +76,8 @@ namespace Editor
                                   *engineContext.GetLightSystem(), *engineContext.GetCameraSystem(), renderScene,
                                   meshBounds.GetBounds());
                 extractor.ExtractUi(engineContext.GetECS(), *engineContext.GetUiSystem(),
-                                    HM::Vector2(static_cast<float>(width), static_cast<float>(height)), renderScene);
+                                    HM::Vector2(static_cast<float>(width), static_cast<float>(height)), renderScene,
+                                    &engineContext.GetResourceCatalog().GetFontContainer());
 
                 renderer.SyncResources(engineContext.GetResourceCatalog());
                 renderer.RenderFrame(renderScene, settings);

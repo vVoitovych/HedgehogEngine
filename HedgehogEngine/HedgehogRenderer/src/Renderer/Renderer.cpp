@@ -150,6 +150,7 @@ namespace Renderer
         auto& device = m_RHIContext->GetRHIDevice();
         m_Resources->SyncMeshes(catalog, device);
         m_Resources->SyncMaterials(catalog, device);
+        m_Resources->SyncFonts(catalog, device);
     }
 
     ViewId Renderer::CreateView(ViewDesc desc)

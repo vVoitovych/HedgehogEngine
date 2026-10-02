@@ -5,6 +5,7 @@
 #include "HedgehogEngine/api/Containers/TextureContainer.hpp"
 #include "HedgehogEngine/api/Containers/MaterialContainer.hpp"
 #include "HedgehogEngine/api/Containers/MaterialData.hpp"
+#include "HedgehogEngine/api/Containers/FontContainer.hpp"
 
 namespace HedgehogEngine
 {
@@ -13,6 +14,7 @@ namespace HedgehogEngine
         , m_MeshContainer(std::make_unique<MeshContainer>())
         , m_TextureContainer(std::make_unique<TextureContainer>())
         , m_MaterialContainer(std::make_unique<MaterialContainer>())
+        , m_FontContainer(std::make_unique<FontContainer>(fileSystem))
     {
     }
 
@@ -31,6 +33,8 @@ namespace HedgehogEngine
     TextureContainer& ResourceCatalog::GetTextureContainer() { return *m_TextureContainer; }
     const MaterialContainer& ResourceCatalog::GetMaterialContainer() const { return *m_MaterialContainer; }
     MaterialContainer& ResourceCatalog::GetMaterialContainer() { return *m_MaterialContainer; }
+    const FontContainer& ResourceCatalog::GetFontContainer() const { return *m_FontContainer; }
+    FontContainer& ResourceCatalog::GetFontContainer() { return *m_FontContainer; }
 
     size_t ResourceCatalog::GetMeshCount() const
     {
@@ -73,6 +77,17 @@ namespace HedgehogEngine
     void ResourceCatalog::RegisterTexturePath(const std::string& path)
     {
         m_TextureContainer->RegisterTexturePath(path);
+    }
+
+    size_t ResourceCatalog::GetFontCount() const
+    {
+        return m_FontContainer->GetFontCount();
+    }
+
+    FontAtlasView ResourceCatalog::GetFontAtlas(size_t index) const
+    {
+        const ContentLoader::LoadedFont& font = m_FontContainer->GetFont(index);
+        return FontAtlasView{ font.AtlasWidth, font.AtlasHeight, font.Atlas };
     }
 
     const FS::FileSystemManager& ResourceCatalog::GetFileSystem() const
