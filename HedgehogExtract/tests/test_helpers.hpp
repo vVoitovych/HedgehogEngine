@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ECS/api/ECS.hpp"
+#include "HedgehogEngine/api/ECS/components/AnimatorComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RenderComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
@@ -34,6 +35,7 @@ namespace HXTest
             ecs.RegisterComponent<HedgehogEngine::TransformComponent>();
             ecs.RegisterComponent<HedgehogEngine::LightComponent>();
             ecs.RegisterComponent<HedgehogEngine::CameraComponent>();
+            ecs.RegisterComponent<HedgehogEngine::AnimatorComponent>();
 
             renderSystem = ecs.RegisterSystem<HedgehogEngine::RenderSystem>();
             lightSystem  = ecs.RegisterSystem<HedgehogEngine::LightSystem>();

@@ -58,6 +58,10 @@ namespace Renderer
         RHI::IRHIBuffer*              TexCoords = nullptr;
         RHI::IRHIBuffer*              Normals   = nullptr;
         RHI::IRHIBuffer*              Indices   = nullptr;
+        // Skinning streams, aligned with Positions: four joint indices (uint4) and four weights
+        // (float4) per vertex, zero for static meshes. No pass reads them yet.
+        RHI::IRHIBuffer*              Joints    = nullptr;
+        RHI::IRHIBuffer*              Weights   = nullptr;
         std::span<const MeshDrawRange> Meshes;
 
         // Each material's descriptor set (the forward shader's set 1), indexed by

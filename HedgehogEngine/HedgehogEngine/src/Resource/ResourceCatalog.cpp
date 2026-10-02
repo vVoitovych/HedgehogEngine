@@ -46,6 +46,8 @@ namespace HedgehogEngine
             mesh.GetNormals(),
             mesh.GetTexCoords(),
             mesh.GetIndices(),
+            mesh.GetJoints(),
+            mesh.GetWeights(),
             mesh.GetFirstIndex(),
             mesh.GetIndexCount(),
             mesh.GetVertexOffset()

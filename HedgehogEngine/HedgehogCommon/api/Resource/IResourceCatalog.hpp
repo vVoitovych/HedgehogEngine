@@ -23,6 +23,10 @@ namespace HedgehogEngine
         const std::vector<HM::Vector2>& texCoords;
         const std::vector<uint32_t>&    indices;
 
+        // A skinned mesh's per-vertex joint indices and weights; both empty for a static mesh.
+        const std::vector<HM::Vector4u>& joints;
+        const std::vector<HM::Vector4>&  weights;
+
         uint32_t firstIndex;
         uint32_t indexCount;
         uint32_t vertexOffset;

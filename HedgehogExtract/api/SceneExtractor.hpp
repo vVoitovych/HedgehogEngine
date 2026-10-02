@@ -32,6 +32,10 @@ namespace HX
         //
         // meshLocalBounds is indexed by MeshComponent::MeshIndex (MeshBoundsCache::GetBounds); an
         // instance whose mesh it does not cover gets a unit cube as its local bounds.
+        //
+        // An instance with an AnimatorComponent whose palette is filled is skinned: its palette is
+        // appended to outScene.JointMatrices (RenderInstance::PaletteOffset/JointCount) and its local
+        // bounds are inflated (SKINNED_BOUNDS_MARGIN in SceneExtractor.cpp).
         void Extract(
             const ECS::ECS&                     ecs,
             const HedgehogEngine::RenderSystem&  renderSystem,
