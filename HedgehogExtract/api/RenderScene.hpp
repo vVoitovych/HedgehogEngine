@@ -4,6 +4,8 @@
 #include "HedgehogMath/api/Matrix.hpp"
 #include "HedgehogMath/api/AABB.hpp"
 
+#include "HedgehogExtract/api/UiDrawList.hpp"
+
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -118,12 +120,20 @@ namespace HX
         // Every skinned instance's palette, back to back (RenderInstance::PaletteOffset).
         std::vector<HM::Matrix4x4> JointMatrices;
 
+        // The game UI, in pixels of a target UiTargetSize across (SceneExtractor::ExtractUi). A draw
+        // command's Texture indexes UiTextures, the texture paths under assets:// it uses.
+        UiDrawList               Ui;
+        std::vector<std::string> UiTextures;
+        HM::Vector2              UiTargetSize = HM::Vector2(0.0f, 0.0f);
+
         void Clear()
         {
             Instances.clear();
             Lights.clear();
             Cameras.clear();
             JointMatrices.clear();
+            Ui.Clear();
+            UiTextures.clear();
         }
     };
 }

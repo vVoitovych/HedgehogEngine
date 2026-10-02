@@ -36,6 +36,7 @@ namespace HedgehogEngine
     class RenderSystem;
     class CameraSystem;
     class AnimationSystem;
+    class UiSystem;
 
     // Edit: gameplay does not run. Playing: every frame runs the fixed steps and the update.
     // Paused: nothing runs, and the scene waits to be resumed or stopped.
@@ -101,6 +102,7 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API RenderSystem*       GetRenderSystem()    const;
         HEDGEHOG_ENGINE_API CameraSystem*       GetCameraSystem()    const;
         HEDGEHOG_ENGINE_API AnimationSystem*    GetAnimationSystem() const;
+        HEDGEHOG_ENGINE_API UiSystem*           GetUiSystem()        const;
 
         HEDGEHOG_ENGINE_API const FS::FileSystemManager& GetFileSystem() const;
 
@@ -126,6 +128,7 @@ namespace HedgehogEngine
         std::shared_ptr<RenderSystem>     m_RenderSystem;
         std::shared_ptr<CameraSystem>     m_CameraSystem;
         std::shared_ptr<AnimationSystem>  m_AnimationSystem;
+        std::shared_ptr<UiSystem>         m_UiSystem;
 
         ResourceCatalog m_ResourceCatalog;
 
