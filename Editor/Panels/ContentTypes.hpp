@@ -20,6 +20,7 @@ namespace Editor
         Pipeline,
         VertexDescription,
         RenderGraph,
+        Font,
         Other,
     };
 

@@ -261,12 +261,16 @@ namespace Renderer
         m_UiTextureSets.clear();
         for (const std::string& path : scene.UiTextures)
             m_UiTextureSets.push_back(resources.FindUiTextureSet(path));
+        m_UiFontSets.clear();
+        for (const uint32_t font : scene.UiFonts)
+            m_UiFontSets.push_back(resources.FindUiFontSet(font));
 
         const GraphPassServices::UiGeometry geometry = m_Services.UploadUiGeometry(scene.Ui);
         frame.UiCommands     = scene.Ui.Commands;
         frame.UiVertices     = geometry.Vertices;
         frame.UiIndices      = geometry.Indices;
         frame.UiTextureSets  = m_UiTextureSets;
+        frame.UiFontSets     = m_UiFontSets;
         frame.UiSolidTexture = resources.GetUiSolidTextureSet();
         frame.UiTargetSize   = scene.UiTargetSize;
     }

@@ -193,6 +193,7 @@ namespace Renderer
         std::vector<MeshDrawRange>               m_Meshes;
         std::vector<const RHI::IRHIDescriptorSet*> m_MaterialSets;
         std::vector<const RHI::IRHIDescriptorSet*> m_UiTextureSets; // per RenderScene::UiTextures entry
+        std::vector<const RHI::IRHIDescriptorSet*> m_UiFontSets;    // per RenderScene::UiFonts entry
         std::vector<GraphFrameData>              m_ViewFrames;
         std::vector<GraphFrameContext>           m_ViewContexts;
         std::vector<RGTexture>                   m_OutputTargets;

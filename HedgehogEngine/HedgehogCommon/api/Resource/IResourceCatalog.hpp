@@ -4,6 +4,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -40,6 +41,14 @@ namespace HedgehogEngine
         bool               isDirty;
     };
 
+    // Zero-copy view onto a baked font's coverage atlas: AtlasWidth x AtlasHeight bytes, row by row.
+    struct FontAtlasView
+    {
+        uint32_t                 AtlasWidth  = 0;
+        uint32_t                 AtlasHeight = 0;
+        std::span<const uint8_t> Atlas;
+    };
+
     // Read-mostly contract the renderer consumes to sync its GPU-side mesh/material/texture
     // resources, without depending on the concrete HedgehogEngine containers.
     class IResourceCatalog
@@ -55,6 +64,11 @@ namespace HedgehogEngine
         virtual void          ClearMaterialDirty(size_t index) = 0;
 
         virtual void RegisterTexturePath(const std::string& path) = 0;
+
+        // Fonts baked so far, by the index the UI's draw commands name (HX::RenderScene::UiFonts).
+        // Fonts are only ever appended.
+        virtual size_t        GetFontCount() const = 0;
+        virtual FontAtlasView GetFontAtlas(size_t index) const = 0;
 
         virtual const FS::FileSystemManager& GetFileSystem() const = 0;
     };

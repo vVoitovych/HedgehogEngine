@@ -72,14 +72,16 @@ namespace
             ecs.AddComponent(*selected, T{});
     }
 
-    // A component's reflected fields under a collapsing header, with a button that removes it.
-    template<typename T>
-    void DrawReflectedComponent(ECS::ECS& ecs, ECS::Entity entity, const char* header)
+    // A component's reflected fields under a collapsing header, then whatever extra draws, then a
+    // button that removes it.
+    template<typename T, typename Extra = void (*)()>
+    void DrawReflectedComponent(ECS::ECS& ecs, ECS::Entity entity, const char* header, Extra extra = [] {})
     {
         if (!ecs.HasComponent<T>(entity) || !ImGui::CollapsingHeader(header, ImGuiTreeNodeFlags_DefaultOpen))
             return;
         ImGui::PushID(header);
         Reflection::RenderComponentGui(&ecs.GetComponent<T>(entity), T::GetProperties());
+        extra();
         if (ImGui::Button("Remove"))
             ecs.RemoveComponent<T>(entity);
         ImGui::PopID();
@@ -954,7 +956,11 @@ namespace Editor
         DrawReflectedComponent<HedgehogEngine::UiCanvasComponent>(ecs, entity, "UI canvas");
         DrawReflectedComponent<HedgehogEngine::UiRectComponent>(ecs, entity, "UI rect");
         DrawReflectedComponent<HedgehogEngine::UiImageComponent>(ecs, entity, "UI image");
-        DrawReflectedComponent<HedgehogEngine::UiTextComponent>(ecs, entity, "UI text");
+        DrawReflectedComponent<HedgehogEngine::UiTextComponent>(ecs, entity, "UI text", [&]
+        {
+            ImGui::TextDisabled("Drop a font (.ttf, .otf) here");
+            AcceptSelectionDrop(ContentType::Font);
+        });
         DrawReflectedComponent<HedgehogEngine::UiButtonComponent>(ecs, entity, "UI button");
     }
 

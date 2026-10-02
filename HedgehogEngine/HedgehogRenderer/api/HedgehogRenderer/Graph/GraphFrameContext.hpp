@@ -92,12 +92,15 @@ namespace Renderer
         // The game UI (RenderScene::Ui), drawn by the GameUi pass over the view it is in: the frame's
         // draw commands, its vertices and 16-bit indices uploaded once per frame, a texture set per
         // RenderScene::UiTextures entry (indexed by UiDrawCommand::Texture; null for one not loaded)
-        // and the white texture a solid fill samples. Positions are pixels of a UiTargetSize target,
-        // stretched over whatever colour target the pass draws into.
+        // and the white texture a solid fill samples; and a set per RenderScene::UiFonts entry (indexed
+        // by a UI_FONT_TEXTURE command's low bits; null for a font without one, whose text is not
+        // drawn). Positions are pixels of a UiTargetSize target, stretched over whatever colour target
+        // the pass draws into.
         std::span<const HX::UiDrawCommand>             UiCommands;
         RHI::IRHIBuffer*                               UiVertices = nullptr;
         RHI::IRHIBuffer*                               UiIndices  = nullptr;
         std::span<const RHI::IRHIDescriptorSet* const> UiTextureSets;
+        std::span<const RHI::IRHIDescriptorSet* const> UiFontSets;
         const RHI::IRHIDescriptorSet*                  UiSolidTexture = nullptr;
         HM::Vector2                                    UiTargetSize   = HM::Vector2(0.0f, 0.0f);
     };

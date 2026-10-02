@@ -10,9 +10,14 @@
 #include "HedgehogEngine/api/ECS/components/UiRectComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/UiTextComponent.hpp"
 #include "HedgehogEngine/api/ECS/systems/UiSystem.hpp"
+#include "HedgehogEngine/api/Containers/FontContainer.hpp"
+
+#include "FileSystem/api/FileSystem.hpp"
+#include "FileSystem/api/FileSystemManager.hpp"
 
 #include "doctest/doctest/doctest.h"
 
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <vector>
@@ -260,4 +265,96 @@ TEST_CASE("UI extraction - no target area draws nothing, and Clear empties the U
     CHECK(scene.Ui.Vertices.empty());
     CHECK(scene.Ui.Commands.empty());
     CHECK(scene.UiTextures.empty());
+}
+
+namespace
+{
+    // ContentLoader's test font, Karla-Regular.ttf (SIL OFL 1.1), mounted as assets://.
+    struct Fonts
+    {
+        FS::FileSystemManager files;
+        std::unique_ptr<FontContainer> container;
+
+        Fonts()
+        {
+            auto fileSystem = std::make_unique<FS::FileSystem>();
+            fileSystem->RegisterPath("assets://", std::filesystem::path(__FILE__).parent_path() /
+                                                      "../../ContentLoader/tests/data");
+            REQUIRE(files.Register(std::move(fileSystem)));
+            container = std::make_unique<FontContainer>(files);
+        }
+    };
+
+    void AddText(UiFixture& fixture, ECS::Entity entity, const std::string& text, float size,
+                 const std::string& font = "Karla-Regular.ttf")
+    {
+        UiTextComponent component;
+        component.Text     = text;
+        component.Font     = font;
+        component.FontSize = size;
+        fixture.ecs.AddComponent(entity, component);
+    }
+}
+
+TEST_CASE("UI extraction - text lays its glyphs out in the element's rect with its font's atlas")
+{
+    UiFixture         fixture;
+    Fonts             fonts;
+    const ECS::Entity canvas = fixture.AddCanvas();
+    const ECS::Entity label  = fixture.AddElement(canvas, { 100.0f, 50.0f }, { 300.0f, 60.0f });
+    AddText(fixture, label, "Hi", 24.0f);
+
+    HX::RenderScene scene;
+    HX::SceneExtractor{}.ExtractUi(fixture.ecs, *fixture.uiSystem, TARGET, scene, fonts.container.get());
+
+    // The element's image, then a quad per glyph over it.
+    REQUIRE(QuadCount(scene) == 3);
+    REQUIRE(scene.Ui.Commands.size() == 2);
+    CHECK(scene.Ui.Commands[0].Texture == HX::UI_NO_TEXTURE);
+    CHECK(scene.Ui.Commands[1].Texture == (HX::UI_FONT_TEXTURE | 0u));
+    CHECK(scene.Ui.Commands[1].Scissor == HX::UiRect{ 100.0f, 50.0f, 300.0f, 60.0f });
+    CHECK(scene.UiFonts == std::vector<uint32_t>{ 0 });
+    REQUIRE(fonts.container->GetFontCount() == 1);
+    CHECK(fonts.container->GetFont(0).PixelHeight == 24.0f);
+    for (size_t quad = 1; quad < 3; ++quad)
+    {
+        const HX::UiRect glyph = QuadRect(scene, quad);
+        CHECK(glyph.X >= 100.0f);
+        CHECK(glyph.Y >= 50.0f);
+        CHECK(glyph.X + glyph.Width <= 400.0f);
+    }
+
+    // Without a font container, or with a font that does not load, the text draws nothing.
+    CHECK(QuadCount(fixture.Extract()) == 1);
+    fixture.ecs.GetComponent<UiTextComponent>(label).Font = "Missing.ttf";
+    HX::RenderScene missing;
+    HX::SceneExtractor{}.ExtractUi(fixture.ecs, *fixture.uiSystem, TARGET, missing, fonts.container.get());
+    CHECK(QuadCount(missing) == 1);
+    CHECK(missing.UiFonts.empty());
+}
+
+TEST_CASE("UI extraction - texts with one font and size share an atlas, baked at the canvas's pixel size")
+{
+    UiFixture         fixture;
+    Fonts             fonts;
+    const ECS::Entity canvas = fixture.AddCanvas();
+    auto&             scaler = fixture.ecs.GetComponent<UiCanvasComponent>(canvas);
+    scaler.ScaleMode           = UiCanvasScaleMode::ScaleWithTargetSize;
+    scaler.ReferenceResolution = HM::Vector2(1600.0f, 1200.0f); // half scale at 800x600
+
+    AddText(fixture, fixture.AddElement(canvas, { 0.0f, 0.0f }, { 400.0f, 100.0f }, {}, false), "Score", 40.0f);
+    AddText(fixture, fixture.AddElement(canvas, { 0.0f, 200.0f }, { 400.0f, 100.0f }, {}, false), "Lives", 40.0f);
+    AddText(fixture, fixture.AddElement(canvas, { 0.0f, 400.0f }, { 400.0f, 100.0f }, {}, false), "Time", 60.0f);
+
+    HX::RenderScene scene;
+    HX::SceneExtractor{}.ExtractUi(fixture.ecs, *fixture.uiSystem, TARGET, scene, fonts.container.get());
+    REQUIRE(fonts.container->GetFontCount() == 2);
+    CHECK(fonts.container->GetFont(0).PixelHeight == 20.0f);
+    CHECK(fonts.container->GetFont(1).PixelHeight == 30.0f);
+    CHECK(scene.UiFonts == std::vector<uint32_t>{ 0, 1 });
+
+    // A second frame bakes nothing new.
+    scene.Clear();
+    HX::SceneExtractor{}.ExtractUi(fixture.ecs, *fixture.uiSystem, TARGET, scene, fonts.container.get());
+    CHECK(fonts.container->GetFontCount() == 2);
 }

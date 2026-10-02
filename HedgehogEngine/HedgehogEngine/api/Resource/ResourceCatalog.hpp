@@ -21,6 +21,7 @@ namespace HedgehogEngine
     class MeshContainer;
     class TextureContainer;
     class MaterialContainer;
+    class FontContainer;
 
     // Owns the three CPU-side resource containers (mesh/texture/material) and implements
     // IResourceCatalog, the narrow read-mostly contract consumed by the renderer. The Editor
@@ -44,6 +45,8 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API TextureContainer&        GetTextureContainer();
         HEDGEHOG_ENGINE_API const MaterialContainer& GetMaterialContainer() const;
         HEDGEHOG_ENGINE_API MaterialContainer&       GetMaterialContainer();
+        HEDGEHOG_ENGINE_API const FontContainer&     GetFontContainer()     const;
+        HEDGEHOG_ENGINE_API FontContainer&           GetFontContainer();
 
         // IResourceCatalog — virtual dispatch, no export macro needed across the DLL boundary.
         size_t                       GetMeshCount() const override;
@@ -53,6 +56,8 @@ namespace HedgehogEngine
         void                         ClearMaterialDirty(size_t index) override;
         void                         RegisterTexturePath(const std::string& path) override;
         const FS::FileSystemManager& GetFileSystem() const override;
+        size_t                       GetFontCount() const override;
+        FontAtlasView                GetFontAtlas(size_t index) const override;
 
     private:
         const FS::FileSystemManager& m_FileSystem;
@@ -60,5 +65,6 @@ namespace HedgehogEngine
         std::unique_ptr<MeshContainer>     m_MeshContainer;
         std::unique_ptr<TextureContainer>  m_TextureContainer;
         std::unique_ptr<MaterialContainer> m_MaterialContainer;
+        std::unique_ptr<FontContainer>     m_FontContainer;
     };
 }

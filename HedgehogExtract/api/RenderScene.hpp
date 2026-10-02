@@ -121,9 +121,11 @@ namespace HX
         std::vector<HM::Matrix4x4> JointMatrices;
 
         // The game UI, in pixels of a target UiTargetSize across (SceneExtractor::ExtractUi). A draw
-        // command's Texture indexes UiTextures, the texture paths under assets:// it uses.
+        // command's Texture indexes UiTextures, the texture paths under assets:// it uses, or with
+        // UI_FONT_TEXTURE set UiFonts, the resource catalog's font indices.
         UiDrawList               Ui;
         std::vector<std::string> UiTextures;
+        std::vector<uint32_t>    UiFonts;
         HM::Vector2              UiTargetSize = HM::Vector2(0.0f, 0.0f);
 
         void Clear()
@@ -134,6 +136,7 @@ namespace HX
             JointMatrices.clear();
             Ui.Clear();
             UiTextures.clear();
+            UiFonts.clear();
         }
     };
 }

@@ -9,6 +9,8 @@
 #include "HedgehogEngine/HedgehogSettings/api/LayerSettings.hpp"
 #include "HedgehogCommon/api/Camera.hpp"
 #include "HedgehogExtract/api/SceneExtractor.hpp"
+#include "HedgehogEngine/api/Containers/FontContainer.hpp"
+#include "HedgehogEngine/api/Resource/ResourceCatalog.hpp"
 #include "HedgehogExtract/api/ScenePicker.hpp"
 #include "HedgehogRenderer/Renderer.hpp"
 #include "HedgehogScripting/api/ScriptSystem.hpp"
@@ -245,7 +247,7 @@ namespace Editor
         HX::SceneExtractor{}.ExtractUi(engineContext.GetECS(), *engineContext.GetUiSystem(),
                                        HM::Vector2(static_cast<float>(m_EditorGui->GetGameViewWidth()),
                                                    static_cast<float>(m_EditorGui->GetGameViewHeight())),
-                                       m_RenderScene);
+                                       m_RenderScene, &engineContext.GetResourceCatalog().GetFontContainer());
 
         const Renderer::ViewDesc sceneView = MakeSceneView(engineContext.GetCamera());
         PickAndHighlight(*sceneView.Camera);
