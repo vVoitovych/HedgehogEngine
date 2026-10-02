@@ -62,3 +62,6 @@ include "HedgehogScripting/tests/Build-ScriptingTest.lua"
 
 include "HedgehogAnimation/Build-HedgehogAnimation.lua"
 include "HedgehogAnimation/tests/Build-AnimationTest.lua"
+
+include "HedgehogUI/Build-HedgehogUI.lua"
+include "HedgehogUI/tests/Build-UiTest.lua"
