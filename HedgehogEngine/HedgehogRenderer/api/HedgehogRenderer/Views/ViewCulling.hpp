@@ -15,13 +15,14 @@ namespace Renderer
     // clears, never shrinks, so a steady-state frame allocates nothing.
     struct ViewInstances
     {
-        std::vector<HX::RenderInstance> Opaque;  // GraphFrameData::OpaqueInstances
+        std::vector<HX::RenderInstance> Opaque;  // GraphFrameData::OpaqueInstances: the rigid ones
+        std::vector<HX::RenderInstance> Skinned; // GraphFrameData::SkinnedInstances: JointCount > 0
         std::vector<HX::RenderInstance> Overlay; // GraphFrameData::OverlayInstances: the editor layer
     };
 
     // Keeps the instances on a layer in layerMask whose world bounds intersect the frustum of
     // viewProj (a Vulkan-style projection times the view matrix). Editor-layer instances go to
-    // Overlay, every other one to Opaque.
+    // Overlay, every other one to Skinned when it has a joint palette, else to Opaque.
     void CullViewInstances(std::span<const HX::RenderInstance> instances, uint32_t layerMask,
                            const HM::Matrix4x4& viewProj, ViewInstances& out);
 

@@ -15,6 +15,7 @@ namespace
     inline constexpr uint32_t DEFAULT_GAME_MODE_FRAMES   = 120;
     inline constexpr uint32_t BENCHMARK_WARMUP_FRAMES    = 120;
     inline constexpr const char* DEFAULT_BENCHMARK_SCENE = "benchmark.yaml";
+    inline constexpr const char* DEFAULT_GAME_MODE_SCENE = "Default.yaml";
 
     // Returns the frame count if the flag was passed (with an optional numeric
     // frame-count argument), or 0 when the flag is absent.
@@ -37,13 +38,13 @@ namespace
         return 0;
     }
 
-    // The scene file after --benchmark (and its optional frame count): the first of the next two
-    // arguments that ends in ".yaml", or the default benchmark scene.
-    std::string ParseBenchmarkScene(int argc, char* argv[])
+    // The scene file after flag (and its optional frame count): the first of the next two
+    // arguments that ends in ".yaml", or defaultScene.
+    std::string ParseSceneArgument(int argc, char* argv[], const char* flag, const char* defaultScene)
     {
         for (int i = 1; i < argc; ++i)
         {
-            if (std::strcmp(argv[i], "--benchmark") != 0)
+            if (std::strcmp(argv[i], flag) != 0)
                 continue;
             for (int j = i + 1; j < argc && j <= i + 2; ++j)
             {
@@ -52,7 +53,7 @@ namespace
                     return argument;
             }
         }
-        return DEFAULT_BENCHMARK_SCENE;
+        return defaultScene;
     }
 
     int RunSmokeTest(uint32_t frames)
@@ -110,12 +111,14 @@ int main(int argc, char* argv[])
     const uint32_t gameModeFrames = ParseFrameCountFlag(
         argc, argv, "--game-mode", DEFAULT_GAME_MODE_FRAMES);
     if (gameModeFrames > 0)
-        return Editor::RunGameMode(gameModeFrames);
+        return Editor::RunGameMode(gameModeFrames,
+                                   ParseSceneArgument(argc, argv, "--game-mode", DEFAULT_GAME_MODE_SCENE));
 
     const uint32_t benchmarkFrames = ParseFrameCountFlag(
         argc, argv, "--benchmark", DEFAULT_BENCHMARK_FRAMES);
     if (benchmarkFrames > 0)
-        return RunBenchmark(benchmarkFrames, ParseBenchmarkScene(argc, argv));
+        return RunBenchmark(benchmarkFrames,
+                            ParseSceneArgument(argc, argv, "--benchmark", DEFAULT_BENCHMARK_SCENE));
 
     // Only the interactive editor opens maximized; the automated runs above keep the fixed-size
     // window their results are defined at (PERFORMANCE.md).

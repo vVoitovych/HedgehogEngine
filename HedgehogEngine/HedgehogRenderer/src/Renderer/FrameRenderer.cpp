@@ -226,6 +226,7 @@ namespace Renderer
             frame.Indices   = const_cast<RHI::IRHIBuffer*>(&resources.GetIndexBuffer());
             frame.Joints    = const_cast<RHI::IRHIBuffer*>(&resources.GetJointsBuffer());
             frame.Weights   = const_cast<RHI::IRHIBuffer*>(&resources.GetWeightsBuffer());
+            frame.JointPalette = m_Services.UploadJointPalette(scene.JointMatrices);
         }
         else
         {
@@ -263,6 +264,7 @@ namespace Renderer
             // Every instance, the editor layer included: the view's mask decides what it sees.
             CullViewInstances(m_FrameInstances, view.Desc.LayerMask, frame.Proj * frame.View, instances);
             frame.OpaqueInstances  = instances.Opaque;
+            frame.SkinnedInstances = instances.Skinned;
             frame.OverlayInstances = instances.Overlay;
         }
         const HM::Vector4& position = camera.WorldMatrix[3]; // the translation column

@@ -10,7 +10,7 @@ namespace Renderer
 {
     namespace
     {
-        constexpr std::array<FormatVocabularyEntry, 16> FORMAT_VOCABULARY =
+        constexpr std::array<FormatVocabularyEntry, 17> FORMAT_VOCABULARY =
         {{
             { "R8Unorm",            RHI::Format::R8Unorm },
             { "R8G8B8A8Unorm",      RHI::Format::R8G8B8A8Unorm },
@@ -24,6 +24,7 @@ namespace Renderer
             { "R32G32Float",        RHI::Format::R32G32Float },
             { "R32G32B32Float",     RHI::Format::R32G32B32Float },
             { "R32G32B32A32Float",  RHI::Format::R32G32B32A32Float },
+            { "R32G32B32A32Uint",   RHI::Format::R32G32B32A32Uint },
             { "D16Unorm",           RHI::Format::D16Unorm },
             { "D32Float",           RHI::Format::D32Float },
             { "D24UnormS8Uint",     RHI::Format::D24UnormS8Uint },

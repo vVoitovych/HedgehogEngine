@@ -106,3 +106,27 @@ TEST_CASE("Re-culling the same scene reuses the view's capacity")
         CHECK(culled.Overlay.capacity() == overlay);
     }
 }
+
+TEST_CASE("Skinned instances are culled like the rest and kept apart from the rigid ones")
+{
+    const auto skinned = [](uint64_t sourceId, const HM::Vector3& centre)
+    {
+        HX::RenderInstance instance = At(sourceId, centre);
+        instance.JointCount         = 2;
+        return instance;
+    };
+    const HX::RenderInstance instances[] = { At(1, HM::Vector3(0.0f, 0.0f, -10.0f)),
+                                             skinned(2, HM::Vector3(1.0f, 0.0f, -10.0f)),
+                                             skinned(3, HM::Vector3(0.0f, 0.0f, 10.0f)) }; // behind
+
+    ViewInstances view;
+    CullViewInstances(instances, 0xFFFFFFFFu, ViewProj(), view);
+    CHECK(Ids(view.Opaque) == std::vector<uint64_t>{ 1 });
+    CHECK(Ids(view.Skinned) == std::vector<uint64_t>{ 2 });
+    CHECK(view.Overlay.empty());
+
+    // The shadow casters keep every scene instance, skinned ones too.
+    std::vector<HX::RenderInstance> scene;
+    CollectSceneInstances(instances, scene);
+    CHECK(Ids(scene) == std::vector<uint64_t>{ 1, 2, 3 });
+}

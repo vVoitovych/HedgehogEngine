@@ -15,6 +15,7 @@ RHI::Format VertexDescLoader::ParseFormat(const std::string& s)
     if (s == "r32g32_float")        return RHI::Format::R32G32Float;
     if (s == "r32g32b32_float")     return RHI::Format::R32G32B32Float;
     if (s == "r32g32b32a32_float")  return RHI::Format::R32G32B32A32Float;
+    if (s == "r32g32b32a32_uint")   return RHI::Format::R32G32B32A32Uint;
 
     LOGERROR("VertexDescLoader: unknown format '", s, "'");
     assert(false && "Unknown format in .vdes file");

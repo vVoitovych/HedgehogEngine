@@ -25,13 +25,13 @@ namespace Editor
     namespace
     {
         constexpr const char* ENGINE_SETTINGS_PATH = "engine://engine_settings.yaml";
-        constexpr const char* GAME_SCENE           = "engine://Assets/Scenes/Default.yaml";
+        constexpr const char* SCENE_DIRECTORY      = "engine://Assets/Scenes/";
 
         // A fixed step keeps runs comparable: nothing here measures time.
         constexpr float FRAME_TIME = 1.0f / 60.0f;
 
         // Renders frames and reports whether an ImGui context ever existed.
-        bool RenderFrames(uint32_t frames)
+        bool RenderFrames(uint32_t frames, const std::string& sceneFile)
         {
             HedgehogEngine::Engine engine;
             auto&       engineContext = engine.GetEngineContext();
@@ -45,16 +45,17 @@ namespace Editor
                 LOGWARNING("Game mode: engine settings could not be read, using defaults.");
             settings.CleanDirtyState();
 
-            const auto scenePath = fileSystem.ResolvePhysical(GAME_SCENE);
+            const std::string scene     = SCENE_DIRECTORY + sceneFile;
+            const auto        scenePath = fileSystem.ResolvePhysical(scene);
             if (!scenePath || !engineContext.GetSceneManager().LoadScene(scenePath->string()))
-                LOGWARNING("Game mode: could not load '", GAME_SCENE, "'; rendering an empty scene.");
+                LOGWARNING("Game mode: could not load '", scene, "'; rendering an empty scene.");
 
             // A game runs its gameplay: the scene's scripts play from the first frame.
             (void)engineContext.Play();
 
             Renderer::Renderer renderer(engine.GetWindowContext().GetWindow(), fileSystem);
 
-            HX::RenderScene          scene;
+            HX::RenderScene          renderScene;
             HX::MeshBoundsCache      meshBounds;
             const HX::SceneExtractor extractor;
             bool                     sawImGui = ImGui::GetCurrentContext() != nullptr;
@@ -68,13 +69,13 @@ namespace Editor
                 engine.UpdateContext(FRAME_TIME, static_cast<float>(std::max(width, 1)) / static_cast<float>(std::max(height, 1)));
 
                 meshBounds.Update(engineContext.GetResourceCatalog());
-                scene.Clear();
+                renderScene.Clear();
                 extractor.Extract(engineContext.GetECS(), *engineContext.GetRenderSystem(),
-                                  *engineContext.GetLightSystem(), *engineContext.GetCameraSystem(), scene,
+                                  *engineContext.GetLightSystem(), *engineContext.GetCameraSystem(), renderScene,
                                   meshBounds.GetBounds());
 
                 renderer.SyncResources(engineContext.GetResourceCatalog());
-                renderer.RenderFrame(scene, settings);
+                renderer.RenderFrame(renderScene, settings);
                 sawImGui = sawImGui || ImGui::GetCurrentContext() != nullptr;
             }
 
@@ -85,14 +86,14 @@ namespace Editor
         }
     }
 
-    int RunGameMode(uint32_t frames)
+    int RunGameMode(uint32_t frames, const std::string& sceneFile)
     {
-        LOGINFO("Game mode: rendering ", frames, " frame(s) through the render graph...");
+        LOGINFO("Game mode: rendering ", frames, " frame(s) of ", sceneFile, " through the render graph...");
         if (!Renderer::AreValidationLayersEnabled())
             LOGWARNING("Game mode: Vulkan validation layers are disabled in this build; only a crash-free run "
                        "is being verified. Use a Debug build for full coverage.");
 
-        const bool sawImGui = RenderFrames(frames);
+        const bool sawImGui = RenderFrames(frames, sceneFile);
 
         // Counted after teardown, so errors such as leaked Vulkan objects are included.
         const uint32_t errors   = Renderer::GetValidationErrorCount();

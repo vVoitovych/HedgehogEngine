@@ -32,6 +32,7 @@ inline VkFormat ToVkFormat(Format format)
         case Format::R32G32Float:       return VK_FORMAT_R32G32_SFLOAT;
         case Format::R32G32B32Float:    return VK_FORMAT_R32G32B32_SFLOAT;
         case Format::R32G32B32A32Float: return VK_FORMAT_R32G32B32A32_SFLOAT;
+        case Format::R32G32B32A32Uint:  return VK_FORMAT_R32G32B32A32_UINT;
         case Format::D16Unorm:          return VK_FORMAT_D16_UNORM;
         case Format::D32Float:          return VK_FORMAT_D32_SFLOAT;
         case Format::D24UnormS8Uint:    return VK_FORMAT_D24_UNORM_S8_UINT;
@@ -57,6 +58,7 @@ inline Format FromVkFormat(VkFormat vkFormat)
         case VK_FORMAT_R32G32_SFLOAT:        return Format::R32G32Float;
         case VK_FORMAT_R32G32B32_SFLOAT:     return Format::R32G32B32Float;
         case VK_FORMAT_R32G32B32A32_SFLOAT:  return Format::R32G32B32A32Float;
+        case VK_FORMAT_R32G32B32A32_UINT:    return Format::R32G32B32A32Uint;
         case VK_FORMAT_D16_UNORM:            return Format::D16Unorm;
         case VK_FORMAT_D32_SFLOAT:           return Format::D32Float;
         case VK_FORMAT_D24_UNORM_S8_UINT:    return Format::D24UnormS8Uint;
