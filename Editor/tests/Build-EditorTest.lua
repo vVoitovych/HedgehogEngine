@@ -10,7 +10,12 @@ project "EditorTest"
         "**.hpp",
         "**.cpp",
         "../Docking/DockLayout.hpp",
-        "../Docking/DockLayout.cpp"
+        "../Docking/DockLayout.cpp",
+        "../Panels/EditorIcons.hpp",
+        "../Panels/EntityIcon.hpp",
+        "../Panels/EntityIcon.cpp",
+        "../Panels/TextSearch.hpp",
+        "../Panels/TextSearch.cpp"
     }
 
     includedirs

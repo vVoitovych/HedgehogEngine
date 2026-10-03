@@ -1,6 +1,8 @@
 #include "EditorGui.hpp"
 #include "EditorTheme.hpp"
 #include "Widgets/IconWidgets.hpp"
+#include "Panels/EntityIcon.hpp"
+#include "Panels/TextSearch.hpp"
 #include "Panels/ConsolePanel.hpp"
 #include "Panels/ContentPanel.hpp"
 #include "Tools/VertexDescriptionWindow.hpp"
@@ -148,6 +150,12 @@ namespace
 
 namespace Editor
 {
+    namespace
+    {
+        // Spaces at the start of a hierarchy row's label, where its icon is drawn.
+        constexpr const char* HIERARCHY_ICON_PAD = "        ";
+    }
+
     EditorGui::EditorGui(HedgehogEngine::Engine& context)
         : m_ConsolePanel(std::make_unique<ConsolePanel>())
         , m_VertexDescWindow(std::make_unique<VertexDescriptionWindow>())
@@ -601,26 +609,45 @@ namespace Editor
     {
         auto& engineContext = context.GetEngineContext();
         auto& sceneManager  = engineContext.GetSceneManager();
+        auto& ecs           = engineContext.GetECS();
 
-        ImGui::SeparatorText(sceneManager.GetSceneName().c_str());
-
-        const ImVec2 fullWidth = ImVec2(-FLT_MIN, 0.0f);
-        if (ImGui::Button("Create object", fullWidth))
-            sceneManager.CreateGameObject(m_SelectedEntity);
-
-        if (ImGui::Button("Delete object", fullWidth))
+        // Header: "+" opens the create menu, the search field takes the rest of the row.
+        const ImVec4 iconTint = ImGui::GetStyle().Colors[ImGuiCol_Text];
+        if (IconButton("##HierarchyCreate", GetIcon(EditorIcon::Plus), ICON_SIZE_SMALL, iconTint))
+            ImGui::OpenPopup("##HierarchyCreateMenu");
+        ImGui::SetItemTooltip("Create");
+        if (ImGui::BeginPopup("##HierarchyCreateMenu"))
         {
-            if (m_SelectedEntity.has_value() && m_SelectedEntity.value() != sceneManager.GetRootEntity())
-            {
-                sceneManager.DeleteGameObject(m_SelectedEntity.value());
-                m_SelectedEntity.reset();
-            }
+            if (ImGui::MenuItem("Create game object"))
+                sceneManager.CreateGameObject(m_SelectedEntity);
+            ImGui::EndPopup();
         }
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(-FLT_MIN);
+        ImGui::InputTextWithHint("##HierarchySearch", "Search...", m_HierarchySearch, sizeof(m_HierarchySearch));
 
-        ImGui::Separator();
+        const ECS::Entity root = sceneManager.GetRootEntity();
+        const std::string_view search(m_HierarchySearch);
+        const bool filtering = !search.empty();
+        if (filtering)
+            MarkHierarchyMatches(ecs, root, search);
 
-        int index = 0;
-        DrawHierarchyNode(context, sceneManager.GetRootEntity(), index);
+        // A filtered tree keeps its open state apart, so clearing the search restores the tree.
+        ImGui::PushID(filtering ? "filtered" : "tree");
+        DrawHierarchyNode(context, root, filtering);
+        ImGui::PopID();
+
+        // Edits picked in a row's menu apply once the tree, which iterates the children, is drawn.
+        if (m_HierarchyCreateUnder)
+            sceneManager.CreateGameObject(*m_HierarchyCreateUnder);
+        if (m_HierarchyDelete && ecs.IsAlive(*m_HierarchyDelete))
+        {
+            sceneManager.DeleteGameObject(*m_HierarchyDelete);
+            if (m_SelectedEntity && !ecs.IsAlive(*m_SelectedEntity))
+                m_SelectedEntity.reset();
+        }
+        m_HierarchyCreateUnder.reset();
+        m_HierarchyDelete.reset();
 
         // The space under the tree takes drops too: a mesh dropped there goes under the root.
         const ImVec2 space = ImGui::GetContentRegionAvail();
@@ -629,61 +656,86 @@ namespace Editor
             m_AssetDrop = AssetDrop{ *drop, true, std::nullopt };
     }
 
-    void EditorGui::DrawHierarchyNode(HedgehogEngine::Engine& context, ECS::Entity entity, int& index)
+    bool EditorGui::MarkHierarchyMatches(ECS::ECS& ecs, ECS::Entity entity, std::string_view search)
     {
-        auto& ecs       = context.GetEngineContext().GetECS();
-        auto& component = ecs.GetComponent<ECS::HierarchyComponent>(entity);
+        if (m_HierarchyMatches.size() != ECS::MAX_ENTITIES)
+            m_HierarchyMatches.assign(ECS::MAX_ENTITIES, 0);
 
-        ImGuiTreeNodeFlags nodeFlags =
-            ImGuiTreeNodeFlags_OpenOnArrow |
-            ImGuiTreeNodeFlags_DefaultOpen;
+        const auto& component = ecs.GetComponent<ECS::HierarchyComponent>(entity);
+        bool shown = ContainsIgnoringCase(component.Name, search);
+        for (const ECS::Entity child : component.Children)
+            shown = MarkHierarchyMatches(ecs, child, search) || shown;
+        m_HierarchyMatches[entity] = shown ? 1 : 0;
+        return shown;
+    }
 
-        const bool isSelected =
-            m_SelectedEntity.has_value() && (entity == m_SelectedEntity.value());
-        if (isSelected)
+    void EditorGui::DrawHierarchyNode(HedgehogEngine::Engine& context, ECS::Entity entity, bool filtering)
+    {
+        auto&       engineContext = context.GetEngineContext();
+        auto&       ecs           = engineContext.GetECS();
+        const auto& component     = ecs.GetComponent<ECS::HierarchyComponent>(entity);
+        const bool  isRoot        = entity == engineContext.GetSceneManager().GetRootEntity();
+
+        // While searching, only matches and their ancestors show, the ancestors open.
+        if (filtering && !isRoot && !m_HierarchyMatches[entity])
+            return;
+
+        ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen |
+                                       ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_FramePadding;
+        if (m_SelectedEntity == entity)
             nodeFlags |= ImGuiTreeNodeFlags_Selected;
-
-        auto toggleSelection = [&]()
-        {
-            if (m_SelectedEntity.has_value() && m_SelectedEntity.value() == entity)
-                m_SelectedEntity.reset();
-            else
-                m_SelectedEntity = entity;
-        };
-
-        if (!component.Children.empty())
-        {
-            const bool nodeOpen = ImGui::TreeNodeEx(
-                reinterpret_cast<void*>(static_cast<intptr_t>(index)),
-                nodeFlags, "%s", component.Name.c_str());
-
-            if (ImGui::IsItemClicked())
-                toggleSelection();
-            DragEntitySource(entity, component.Name);
-            if (const auto drop = AcceptAssetDrop({ ContentType::Mesh, ContentType::Scene }))
-                m_AssetDrop = AssetDrop{ *drop, true, entity };
-            ++index;
-
-            if (nodeOpen)
-            {
-                for (auto child : component.Children)
-                    DrawHierarchyNode(context, child, index);
-                ImGui::TreePop();
-            }
-        }
-        else
-        {
+        const bool hasChildren = !component.Children.empty();
+        if (!hasChildren)
             nodeFlags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-            ImGui::TreeNodeEx(
-                reinterpret_cast<void*>(static_cast<intptr_t>(index)),
-                nodeFlags, "%s", component.Name.c_str());
+        else if (filtering)
+            ImGui::SetNextItemOpen(true);
 
-            if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
-                toggleSelection();
-            DragEntitySource(entity, component.Name);
-            if (const auto drop = AcceptAssetDrop({ ContentType::Mesh, ContentType::Scene }))
-                m_AssetDrop = AssetDrop{ *drop, true, entity };
-            ++index;
+        EditorIcon icon = EditorIcon::Scene;
+        if (!isRoot)
+        {
+            EntityTraits traits;
+            traits.HasCamera        = ecs.HasComponent<HedgehogEngine::CameraComponent>(entity);
+            traits.HasLight         = ecs.HasComponent<HedgehogEngine::LightComponent>(entity);
+            traits.HasUiCanvas      = ecs.HasComponent<HedgehogEngine::UiCanvasComponent>(entity);
+            traits.HasUiElement     = ecs.HasComponent<HedgehogEngine::UiRectComponent>(entity);
+            traits.HasAudioSource   = ecs.HasComponent<HedgehogEngine::AudioSourceComponent>(entity);
+            traits.HasAudioListener = ecs.HasComponent<HedgehogEngine::AudioListenerComponent>(entity);
+            traits.HasMesh          = ecs.HasComponent<HedgehogEngine::MeshComponent>(entity);
+            traits.HasChildren      = hasChildren;
+            icon = ChooseEntityIcon(traits);
+        }
+
+        // The label leaves room for the icon, drawn over it once the row is placed. The root row
+        // shows the scene's name (a copy, so only the root row allocates).
+        const std::string sceneName = isRoot ? engineContext.GetSceneManager().GetSceneName() : std::string();
+        const char*       name      = isRoot ? sceneName.c_str() : component.Name.c_str();
+        const float       labelX    = ImGui::GetCursorScreenPos().x + ImGui::GetTreeNodeToLabelSpacing();
+        const bool        nodeOpen  = ImGui::TreeNodeEx(reinterpret_cast<void*>(static_cast<intptr_t>(entity)),
+                                                        nodeFlags, "%s%s", HIERARCHY_ICON_PAD, name);
+        const ImVec2      rowMin    = ImGui::GetItemRectMin();
+        const float       rowH      = ImGui::GetItemRectSize().y;
+        DrawIcon(*ImGui::GetWindowDrawList(), GetIcon(icon), ImVec2(labelX, rowMin.y + (rowH - ICON_SIZE_SMALL) * 0.5f),
+                 ICON_SIZE_SMALL, ImGui::GetColorU32(ImGuiCol_Text));
+
+        if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
+            m_SelectedEntity = (m_SelectedEntity == entity) ? std::nullopt : std::optional<ECS::Entity>(entity);
+        if (ImGui::BeginPopupContextItem())
+        {
+            if (ImGui::MenuItem("Create child"))
+                m_HierarchyCreateUnder = entity;
+            if (ImGui::MenuItem("Delete", nullptr, false, !isRoot))
+                m_HierarchyDelete = entity;
+            ImGui::EndPopup();
+        }
+        DragEntitySource(entity, component.Name);
+        if (const auto drop = AcceptAssetDrop({ ContentType::Mesh, ContentType::Scene }))
+            m_AssetDrop = AssetDrop{ *drop, true, entity };
+
+        if (hasChildren && nodeOpen)
+        {
+            for (const ECS::Entity child : component.Children)
+                DrawHierarchyNode(context, child, filtering);
+            ImGui::TreePop();
         }
     }
 

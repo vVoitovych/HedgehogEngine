@@ -1,5 +1,7 @@
 #include "ContentPanel.hpp"
 
+#include "TextSearch.hpp"
+
 #include "AssetDragDrop.hpp"
 
 #include "Platform/ShellActions.hpp"
@@ -9,7 +11,6 @@
 #include "imgui.h"
 
 #include <algorithm>
-#include <cctype>
 
 namespace Editor
 {
@@ -30,15 +31,6 @@ namespace Editor
         std::string JoinPath(const std::string& folder, const std::string& name)
         {
             return folder.ends_with("://") ? folder + name : folder + "/" + name;
-        }
-
-        bool ContainsIgnoringCase(std::string_view text, std::string_view pattern)
-        {
-            const auto equal = [](char a, char b)
-            {
-                return std::tolower(static_cast<unsigned char>(a)) == std::tolower(static_cast<unsigned char>(b));
-            };
-            return std::ranges::search(text, pattern, equal).begin() != text.end() || pattern.empty();
         }
 
         // The longest start of text that fits in width, with "..." when cut.
