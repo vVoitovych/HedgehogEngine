@@ -136,6 +136,7 @@ namespace Editor
         void DrawMainMenu(HedgehogEngine::Engine& context);
         // The Add component items, enabled while an entity is selected; shared with the inspector.
         void DrawAddComponentItems(HedgehogEngine::Engine& context);
+        void CreateMaterial(HedgehogEngine::EngineContext& engineContext);
         void DrawToolbarContent(HedgehogEngine::Engine& context);
         // The icon's ImGui texture id, or nullptr when it did not load.
         [[nodiscard]] void* GetIcon(EditorIcon icon) const { return m_ViewportImages.EditorIcons[static_cast<size_t>(icon)]; }

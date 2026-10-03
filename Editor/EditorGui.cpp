@@ -212,6 +212,7 @@ namespace Editor
         if (m_Settings.Load("engine://editor_settings.yaml", *m_FileSystem)
             && m_Settings.dockLayout.IsValid())
             m_DockSystem.GetLayout() = m_Settings.dockLayout;
+        m_ContentPanel->SetIconSize(m_Settings.ContentIconSize);
 
 
         SetupLightComponentGuiOverrides();
@@ -224,7 +225,8 @@ namespace Editor
 
     EditorGui::~EditorGui()
     {
-        m_Settings.dockLayout = m_DockSystem.GetLayout();
+        m_Settings.dockLayout      = m_DockSystem.GetLayout();
+        m_Settings.ContentIconSize = m_ContentPanel->GetIconSize();
         // m_FileSystem is non-owning; the engine context (and thus FileSystemManager) is still
         // alive here because EditorGui is destroyed first among the Application's members.
         if (m_FileSystem)
@@ -293,8 +295,18 @@ namespace Editor
     {
         if (m_Benchmarking)
             ImGui::TextDisabled("Hidden while benchmarking.");
-        else if (const std::optional<ContentOpenRequest> request = m_ContentPanel->Draw(m_ViewportImages.ContentIcons))
-            OpenContentItem(context, *request);
+        else
+        {
+            ContentPanelIcons icons;
+            icons.Types  = m_ViewportImages.ContentIcons;
+            icons.Folder = GetIcon(EditorIcon::Folder);
+            icons.Plus   = GetIcon(EditorIcon::Plus);
+            const ContentPanelRequest request = m_ContentPanel->Draw(icons);
+            if (request.Open)
+                OpenContentItem(context, *request.Open);
+            if (request.CreateMaterial)
+                CreateMaterial(context.GetEngineContext());
+        }
     }
 
     void EditorGui::DrawSceneViewContent(HedgehogEngine::Engine& context)
@@ -483,17 +495,7 @@ namespace Editor
         if (ImGui::BeginMenu("Assets"))
         {
             if (ImGui::MenuItem("Create material"))
-            {
-                if (const char* path = DialogueWindows::MaterialCreationDialogue())
-                {
-                    const auto& fs = engineContext.GetFileSystem();
-                    const auto virtualPath = fs.ToVirtualPath(path);
-                    if (virtualPath)
-                        engineContext.GetResourceCatalog().GetMaterialContainer().CreateNewMaterial(fs, *virtualPath);
-                    else
-                        LOGERROR("Material path is not under any registered mount: ", path);
-                }
-            }
+                CreateMaterial(engineContext);
             ImGui::EndMenu();
         }
 
@@ -552,6 +554,20 @@ namespace Editor
         }
 
         ImGui::EndMainMenuBar();
+    }
+
+    // Asks where, then creates a material there (the Assets menu and the Project panel's "+").
+    void EditorGui::CreateMaterial(HedgehogEngine::EngineContext& engineContext)
+    {
+        if (const char* path = DialogueWindows::MaterialCreationDialogue())
+        {
+            const auto& fs = engineContext.GetFileSystem();
+            const auto virtualPath = fs.ToVirtualPath(path);
+            if (virtualPath)
+                engineContext.GetResourceCatalog().GetMaterialContainer().CreateNewMaterial(fs, *virtualPath);
+            else
+                LOGERROR("Material path is not under any registered mount: ", path);
+        }
     }
 
     void EditorGui::DrawAddComponentItems(HedgehogEngine::Engine& context)

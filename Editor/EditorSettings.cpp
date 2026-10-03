@@ -4,6 +4,7 @@
 
 #include "Logger/api/Logger.hpp"
 
+#include <algorithm>
 #include <string>
 
 namespace Editor
@@ -68,6 +69,7 @@ namespace Editor
         out << YAML::EndMap; // dock_layout
 
         out << YAML::Key << "last_scene" << YAML::Value << LastScene;
+        out << YAML::Key << "content_icon_size" << YAML::Value << ContentIconSize;
 
         out << YAML::EndMap; // root
 
@@ -84,6 +86,11 @@ namespace Editor
         try
         {
             YAML::Node root = YAML::Load(*text);
+
+            // Missing: the default; out of range: clamped.
+            ContentIconSize = CONTENT_ICON_SIZE_DEFAULT;
+            if (const YAML::Node size = root["content_icon_size"])
+                ContentIconSize = std::clamp(size.as<float>(CONTENT_ICON_SIZE_DEFAULT), CONTENT_ICON_SIZE_MIN, CONTENT_ICON_SIZE_MAX);
 
             if (auto dock = root["dock_layout"])
             {
