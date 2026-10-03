@@ -15,8 +15,11 @@ project "InputTest"
     links
     {
         "HedgehogInput",
-        "HedgehogMath"
+        "HedgehogMath",
+        "yaml-cpp"
     }
+
+    defines { "YAML_CPP_STATIC_DEFINE" }
 
     targetdir (BinariesDir)
     objdir    (IntermediatesDir)

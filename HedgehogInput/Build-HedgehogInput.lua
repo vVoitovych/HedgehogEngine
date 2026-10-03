@@ -9,11 +9,15 @@ project "HedgehogInput"
    {
       ".",
       "..",
+      "%{IncludeDir.yaml_cpp}",
    }
+
+   defines { "YAML_CPP_STATIC_DEFINE" }
 
    -- HedgehogWindow's headers only: the RawInput snapshot and its key codes.
    links {
       "HedgehogMath",
+      "yaml-cpp",
    }
 
    targetdir (IntermediatesDir)
