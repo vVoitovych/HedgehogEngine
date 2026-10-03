@@ -83,7 +83,7 @@ namespace Editor
                 region.PointerEnabled  = true;
                 region.KeyboardEnabled = true;
                 engineContext.UpdateGameInput(
-                    HInput::MakeGameInput(windowContext.GetWindow().GetRawInput(), region, inputGate));
+                    HInput::MakeGameInput(windowContext.GetWindow().GetRawInput(), region, inputGate), region.PixelSize);
 
                 engine.UpdateContext(FRAME_TIME, static_cast<float>(std::max(width, 1)) / static_cast<float>(std::max(height, 1)));
 

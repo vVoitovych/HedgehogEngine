@@ -230,12 +230,18 @@ namespace HedgehogEngine
         HInput::UpdateActionState(m_InputActions.Editor, editorInput, m_EditorActions);
     }
 
-    void EngineContext::UpdateGameInput(const HW::RawInput& gameInput)
+    void EngineContext::UpdateGameInput(const HW::RawInput& gameInput, const HM::Vector2& gameViewSize)
     {
         if (m_PlayState == PlayState::Playing)
+        {
             HInput::UpdateActionState(m_InputActions.Game, gameInput, m_GameActions);
+            m_UiSystem->UpdateInput(m_ECS, m_InputActions.Game, m_GameActions, gameViewSize, m_EventBus);
+        }
         else
+        {
             HInput::ResetActionState(m_GameActions, m_InputActions.Game);
+            m_UiSystem->ResetInput(m_ECS);
+        }
     }
 
     void EngineContext::ReloadInputActions(std::chrono::steady_clock::time_point now)

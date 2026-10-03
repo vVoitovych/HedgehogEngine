@@ -7,6 +7,7 @@
 
 #include "HedgehogAudio/api/AudioEngine.hpp"
 #include "HedgehogEngine/api/EngineContext.hpp"
+#include "HedgehogEngine/api/Events/UiEvents.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/HedgehogSettings.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/LayerSettings.hpp"
 #include "HedgehogCommon/api/Camera.hpp"
@@ -18,6 +19,7 @@
 #include "HedgehogScripting/api/ScriptSystem.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
 
+#include "ECS/api/components/Hierarchy.hpp"
 #include "FileSystem/api/FileSystemManager.hpp"
 
 #include "Logger/api/Logger.hpp"
@@ -100,6 +102,16 @@ namespace Editor
         // After the engine's own systems, so its play-mode events come after theirs, and before
         // EditorGui loads the last scene. The engine's ECS owns it; the editor only points at it.
         m_ScriptSystem = HedgehogScripting::RegisterScriptSystem(engineContext, engineContext.GetFileSystem()).get();
+
+        // A click on a game UI button (Play mode only) shows in the Console.
+        engineContext.GetEventBus().Subscribe<HedgehogEngine::UiButtonClickedEvent>(
+            [&ecs = engineContext.GetECS()](const HedgehogEngine::UiButtonClickedEvent& event)
+            {
+                const bool named = ecs.IsAlive(event.Entity) && ecs.HasComponent<ECS::HierarchyComponent>(event.Entity);
+                LOGINFO("[UI] Button clicked:", named ? ecs.GetComponent<ECS::HierarchyComponent>(event.Entity).Name
+                                                      : std::string("<unnamed>"),
+                        "( entity", event.Entity, ")");
+            });
 
         // Sounds play only in Play mode; a missing output device leaves the engine silent.
         (void)engineContext.GetAudioEngine().Init(HA::AudioEngineDesc{});
@@ -228,7 +240,8 @@ namespace Editor
         // (both panels as of the last frame).
         const HW::RawInput& raw = m_Context->GetWindowContext().GetWindow().GetRawInput();
         auto&               engineContext = m_Context->GetEngineContext();
-        engineContext.UpdateGameInput(HInput::MakeGameInput(raw, m_EditorGui->GetGameInputRegion(), m_GameInputGate));
+        const HInput::GameInputRegion gameRegion = m_EditorGui->GetGameInputRegion();
+        engineContext.UpdateGameInput(HInput::MakeGameInput(raw, gameRegion, m_GameInputGate), gameRegion.PixelSize);
         engineContext.UpdateEditorInput(HInput::MakeGameInput(raw, m_EditorGui->GetSceneInputRegion(), m_SceneInputGate));
         // A script saved on disk takes effect without leaving Play (polled at most once a second).
         m_ScriptSystem->ReloadChangedScripts(m_Context->GetEngineContext().GetECS());
