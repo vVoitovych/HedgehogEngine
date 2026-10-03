@@ -630,6 +630,8 @@ Binaries
 /HedgehogUI/HedgehogUI.vcxproj*
 /HedgehogUI/tests/UiTest.vcxproj*
 /HedgehogEngine/HedgehogWindow/tests/HedgehogWindowTest.vcxproj*
+/HedgehogInput/HedgehogInput.vcxproj*
+/HedgehogInput/tests/InputTest.vcxproj*
 /ThirdParty/Tracy/Tracy.vcxproj
 /HedgehogEngine/RHIImGui/*.vcxproj*
 
