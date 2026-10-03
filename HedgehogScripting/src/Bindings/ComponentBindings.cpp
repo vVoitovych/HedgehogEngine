@@ -58,12 +58,6 @@ namespace HedgehogScripting::Bindings
                 });
         }
 
-        template<typename T>
-        auto ToText(const char* kind)
-        {
-            return [kind](const ScriptComponentRef<T>& ref) { return std::string(kind) + " of " + Describe(ref.Entity); };
-        }
-
         void RegisterEnums(sol::state& lua)
         {
             lua.new_enum("LightType",

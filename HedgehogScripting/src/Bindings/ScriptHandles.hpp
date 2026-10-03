@@ -60,4 +60,11 @@ namespace HedgehogScripting::Bindings
             throw std::runtime_error(Describe(ref.Entity) + " has no " + T::s_TypeName);
         return ecs.GetComponent<T>(ref.Entity.Id);
     }
+
+    // A component handle's tostring: "<kind> of Entity <id> (generation <g>)".
+    template<typename T>
+    [[nodiscard]] auto ToText(const char* kind)
+    {
+        return [kind](const ScriptComponentRef<T>& ref) { return std::string(kind) + " of " + Describe(ref.Entity); };
+    }
 }

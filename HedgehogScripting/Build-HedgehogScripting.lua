@@ -17,6 +17,7 @@ project "HedgehogScripting"
    links {
       "HedgehogEngine",
       "HedgehogInput",
+      "HedgehogAudio",
       "ECS",
       "HedgehogMath",
       "FileSystem",

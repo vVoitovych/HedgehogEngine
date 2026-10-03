@@ -99,6 +99,7 @@ namespace HedgehogScripting
         Bindings::RegisterLog(m_Lua);
         Bindings::RegisterEntity(m_Lua, context);
         Bindings::RegisterComponents(m_Lua, context);
+        Bindings::RegisterAudio(m_Lua, context);
         Bindings::RegisterScene(m_Lua, context, m_PendingDestroys);
         RegisterEvents();
         // Systems live in the ECS, which the context destroys before its EventBus, as the

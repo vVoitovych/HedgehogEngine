@@ -25,7 +25,7 @@ namespace HedgehogScripting::Bindings
 
     // Entity (ScriptEntity) and Transform (ScriptComponentRef<TransformComponent>) usertypes over
     // context's ECS; Transform writes publish TransformChangedEvent on its EventBus. Entity also
-    // gets getX/hasX/addX for the Light, Camera, Mesh and Animator components. context must outlive lua.
+    // gets getX/hasX/addX for the Light, Camera, Mesh, Animator and AudioSource components. context must outlive lua.
     void RegisterEntity(sol::state& lua, HedgehogEngine::EngineContext& context);
 
     // Light, Camera and Mesh (ScriptComponentRef<T>) usertypes and the LightType,
@@ -34,6 +34,15 @@ namespace HedgehogScripting::Bindings
     // MeshSystem::LoadMesh, as in the inspector. Animator (play, stop, isPlaying, getClipNames,
     // clip, speed, loop, time) goes through AnimationSystem. context must outlive lua.
     void RegisterComponents(sol::state& lua, HedgehogEngine::EngineContext& context);
+
+    // The AudioSource usertype (ScriptComponentRef<AudioSourceComponent>: play, stop, isPlaying,
+    // clip, volume, pitch, loop, spatial, playOnStart, minDistance, maxDistance) through the
+    // engine's AudioSystem, and the Audio table (playOneShot, setMasterVolume, getMasterVolume)
+    // over its AudioEngine. Clips load only from under assets:// through the context's file
+    // system: another mount, a drive or a ".." is a script error. Outside Play mode play, stop,
+    // playOneShot and setMasterVolume do nothing, and the first such call logs a warning.
+    // context must outlive lua.
+    void RegisterAudio(sol::state& lua, HedgehogEngine::EngineContext& context);
 
     // The Scene table (find, findAll, spawn, destroy) and entity:destroy(), over context's
     // SceneManager. Destroying only queues the entity in pendingDestroys; FlushDestroys deletes
