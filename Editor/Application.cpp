@@ -216,6 +216,9 @@ namespace Editor
     {
         const float dt = GetFrameTime();
         m_Context->GetWindowContext().HandleInput();
+        // The game sees the Game tab's part of the window's input (the panel as of the last frame).
+        m_Context->GetEngineContext().UpdateGameInput(HInput::MakeGameInput(
+            m_Context->GetWindowContext().GetWindow().GetRawInput(), m_EditorGui->GetGameInputRegion(), m_GameInputGate));
         // A script saved on disk takes effect without leaving Play (polled at most once a second).
         m_ScriptSystem->ReloadChangedScripts(m_Context->GetEngineContext().GetECS());
         m_Context->UpdateContext(dt, GetSceneAspectRatio());

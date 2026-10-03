@@ -152,6 +152,11 @@ namespace HW
         glfwGetFramebufferSize(m_Impl->Handle, &outWidth, &outHeight);
     }
 
+    void Window::GetWindowSize(int& outWidth, int& outHeight) const
+    {
+        glfwGetWindowSize(m_Impl->Handle, &outWidth, &outHeight);
+    }
+
     const InputState& Window::GetInputState() const
     {
         return m_Impl->InputState;

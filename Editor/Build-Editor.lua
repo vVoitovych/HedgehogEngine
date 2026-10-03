@@ -28,6 +28,7 @@ project "Editor"
       "HedgehogCommon",
       "HedgehogExtract",
       "HedgehogUI",
+      "HedgehogInput",
       "HedgehogScripting",
       "Lua",
       "HedgehogRenderer",

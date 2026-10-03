@@ -5,6 +5,7 @@
 #include "HedgehogEngine/api/WindowContext.hpp"
 #include "HedgehogExtract/api/MeshBounds.hpp"
 #include "HedgehogExtract/api/RenderScene.hpp"
+#include "HedgehogInput/api/GameInputRegion.hpp"
 #include "HedgehogRenderer/Views/View.hpp"
 
 #include <cstdint>
@@ -74,6 +75,8 @@ namespace Editor
         // The Content panel's pictures, uploaded once the device exists, and their ImGui ids.
         ContentIcons   m_ContentIcons;
         ContentIconIds m_ContentIconIds = {};
+        // Which mouse buttons the game holds from presses that began on the Game tab.
+        HInput::GameInputGate m_GameInputGate;
 
         // RENDERING.md section 7: the scene extracted each frame, the scene view (the editor camera
         // into the scene panel's target) and the result view (the editor's UI into the window,

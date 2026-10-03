@@ -37,6 +37,10 @@ namespace HW
 
         HEDGEHOG_WINDOW_API void GetFramebufferSize(int& outWidth, int& outHeight) const;
 
+        // The client area in the cursor's coordinates (GLFW's screen coordinates), which differ from
+        // the framebuffer's pixels under display scaling.
+        HEDGEHOG_WINDOW_API void GetWindowSize(int& outWidth, int& outHeight) const;
+
         HEDGEHOG_WINDOW_API const InputState& GetInputState() const;
         HEDGEHOG_WINDOW_API InputState&       GetInputState();
 
