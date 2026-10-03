@@ -3,6 +3,7 @@
 #include "Docking/DockSystem.hpp"
 #include "EditorSettings.hpp"
 #include "Panels/ContentPanel.hpp"
+#include "Panels/EditorIcons.hpp"
 #include "ECS/api/Entity.hpp"
 
 #include "FileSystem/api/FileSystemManager.hpp"
@@ -52,13 +53,14 @@ namespace Editor
 
     // What the scene and game panels show this frame: ImGui texture ids (nullptr: nothing to show)
     // and, on the render-graph path, how many passes the last frame ran; with the Content panel's
-    // icon for each type.
+    // icon for each type and the editor's line icons.
     struct ViewportImages
     {
         void*          Scene          = nullptr;
         void*          Game           = nullptr;
         size_t         GraphPassCount = 0;
         ContentIconIds ContentIcons   = {};
+        EditorIconIds  EditorIcons    = {};
     };
 
     // A point in a panel's image: (0, 0) its top left corner, (1, 1) its bottom right.
@@ -125,7 +127,11 @@ namespace Editor
         // ── Panel content (drawn into dock areas) ────────────────────────────
         void DrawPanelContent(PanelId panel, HedgehogEngine::Engine& context);
         void DrawMainMenu(HedgehogEngine::Engine& context);
+        // The Add component items, enabled while an entity is selected; shared with the inspector.
+        void DrawAddComponentItems(HedgehogEngine::Engine& context);
         void DrawToolbarContent(HedgehogEngine::Engine& context);
+        // The icon's ImGui texture id, or nullptr when it did not load.
+        [[nodiscard]] void* GetIcon(EditorIcon icon) const { return m_ViewportImages.EditorIcons[static_cast<size_t>(icon)]; }
         void DrawSceneViewContent();
         void DrawContentPanel(HedgehogEngine::Engine& context);
         // What opening a Content panel file means, by type (EditorGuiContent.cpp): a scene

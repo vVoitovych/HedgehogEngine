@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Panels/ContentIcons.hpp"
+#include "Panels/EditorIcons.hpp"
 
 #include "HedgehogEngine/api/WindowContext.hpp"
 #include "HedgehogExtract/api/MeshBounds.hpp"
@@ -75,6 +76,9 @@ namespace Editor
         // The Content panel's pictures, uploaded once the device exists, and their ImGui ids.
         ContentIcons   m_ContentIcons;
         ContentIconIds m_ContentIconIds = {};
+        // The editor's line icons, likewise.
+        EditorIcons   m_EditorIcons;
+        EditorIconIds m_EditorIconIds = {};
         // Which mouse buttons the game holds from presses that began on the Game tab.
         HInput::GameInputGate m_GameInputGate;
         // And those the editor camera holds from presses that began on the Scene tab.
