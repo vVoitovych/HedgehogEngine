@@ -172,6 +172,7 @@ namespace Editor
         // running none of its code. False, logged, when refused.
         bool AssignScript(HedgehogEngine::Engine& context, ECS::Entity entity, const std::string& physicalPath);
         void DrawSceneHierarchy(HedgehogEngine::Engine& context);
+        void DrawDropRow(const char* label, const char* hint, ContentType type);
         // Draws entity's row and, when open, its children; filtering shows only marked entities.
         void DrawHierarchyNode(HedgehogEngine::Engine& context, ECS::Entity entity, bool filtering);
         // Marks entity when its name or a descendant's contains search; returns whether it did.
