@@ -25,3 +25,6 @@
 [submodule "ThirdParty/sol2/sol2"]
 	path = ThirdParty/sol2/sol2
 	url = https://github.com/vVoitovych/sol2.git
+[submodule "ThirdParty/miniaudio/miniaudio"]
+	path = ThirdParty/miniaudio/miniaudio
+	url = https://github.com/vVoitovych/miniaudio.git

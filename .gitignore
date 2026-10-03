@@ -637,3 +637,6 @@ Binaries
 
 # Per-run log files written beside executables
 Logs/
+/HedgehogAudio/HedgehogAudio.vcxproj*
+/HedgehogAudio/tests/AudioTest.vcxproj*
+/ThirdParty/miniaudio/miniaudio.vcxproj*

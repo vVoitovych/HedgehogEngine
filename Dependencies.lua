@@ -8,6 +8,7 @@ IncludeDir["VulkanSDK"] = "%{wks.location}/ThirdParty/vulkan/Include"
 IncludeDir["Lua"]       = "%{wks.location}/ThirdParty/Lua/lua"
 IncludeDir["sol2"]      = "%{wks.location}/ThirdParty/sol2/sol2/include"
 IncludeDir["Tracy"]     = "%{wks.location}/ThirdParty/Tracy/tracy/public"
+IncludeDir["miniaudio"] = "%{wks.location}/ThirdParty/miniaudio/miniaudio"
 
 LibraryDir = {}
 LibraryDir["VulkanSDK"] = "%{wks.location}/ThirdParty/vulkan"
