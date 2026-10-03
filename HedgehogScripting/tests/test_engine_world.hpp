@@ -73,10 +73,10 @@ public:
     ECS::ECS& Ecs() { return Context.GetECS(); }
 
     // One frame with the game's input: the input is evaluated first, as the Editor does before
-    // UpdateContext, then Frame(dt).
-    void Frame(float dt, const HW::RawInput& gameInput)
+    // UpdateContext, then Frame(dt). The UI takes input only over a game view with an area.
+    void Frame(float dt, const HW::RawInput& gameInput, const HM::Vector2& gameViewSize = HM::Vector2(0.0f, 0.0f))
     {
-        Context.UpdateGameInput(gameInput);
+        Context.UpdateGameInput(gameInput, gameViewSize);
         Frame(dt);
     }
 

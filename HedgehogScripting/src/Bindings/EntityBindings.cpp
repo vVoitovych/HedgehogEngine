@@ -4,6 +4,10 @@
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogEngine/api/ECS/components/AnimatorComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/AudioSourceComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/UiButtonComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/UiImageComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/UiRectComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/UiTextComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/CameraComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/LightComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
@@ -215,6 +219,24 @@ namespace HedgehogScripting::Bindings
         AddComponentAccess<HedgehogEngine::AudioSourceComponent>(entity, ecs, "AudioSource", [&ecs](ECS::Entity id)
         {
             ecs.AddComponent(id, HedgehogEngine::AudioSourceComponent{});
+        });
+        // UI parts (their usertypes come from RegisterUi). A rect makes a child of a canvas or of
+        // another element a UI element.
+        AddComponentAccess<HedgehogEngine::UiRectComponent>(entity, ecs, "UiRect", [&ecs](ECS::Entity id)
+        {
+            ecs.AddComponent(id, HedgehogEngine::UiRectComponent{});
+        });
+        AddComponentAccess<HedgehogEngine::UiImageComponent>(entity, ecs, "UiImage", [&ecs](ECS::Entity id)
+        {
+            ecs.AddComponent(id, HedgehogEngine::UiImageComponent{});
+        });
+        AddComponentAccess<HedgehogEngine::UiTextComponent>(entity, ecs, "UiText", [&ecs](ECS::Entity id)
+        {
+            ecs.AddComponent(id, HedgehogEngine::UiTextComponent{});
+        });
+        AddComponentAccess<HedgehogEngine::UiButtonComponent>(entity, ecs, "UiButton", [&ecs](ECS::Entity id)
+        {
+            ecs.AddComponent(id, HedgehogEngine::UiButtonComponent{});
         });
     }
 }

@@ -8,6 +8,7 @@
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
 #include "HedgehogEngine/api/Events/AnimationEvents.hpp"
+#include "HedgehogEngine/api/Events/UiEvents.hpp"
 
 #include "ECS/api/ECS.hpp"
 #include "ECS/api/components/Hierarchy.hpp"
@@ -106,6 +107,10 @@ namespace HedgehogScripting
         // engine's own subscribers do.
         context.GetEventBus().Subscribe<HedgehogEngine::AnimationFinishedEvent>(
             [this](const HedgehogEngine::AnimationFinishedEvent& event) { QueueAnimationFinished(event); });
+        Bindings::RegisterUi(m_Lua, context, [this](const Bindings::ScriptEntity& button, sol::protected_function handler)
+                             { return SubscribeClick(button, std::move(handler)); });
+        context.GetEventBus().Subscribe<HedgehogEngine::UiButtonClickedEvent>(
+            [this](const HedgehogEngine::UiButtonClickedEvent& event) { QueueButtonClicked(event); });
         RegisterCoroutines();
         RegisterPropertyHelpers();
         RegisterReload();

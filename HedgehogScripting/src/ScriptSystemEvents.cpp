@@ -4,6 +4,7 @@
 
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogEngine/api/Events/AnimationEvents.hpp"
+#include "HedgehogEngine/api/Events/UiEvents.hpp"
 
 #include "Logger/api/Logger.hpp"
 
@@ -82,6 +83,9 @@ namespace HedgehogScripting
                                              [id](const EventSubscription& s) { return s.Id == id; });
                 if (it == subscriptions.end())
                     continue;
+                if (it->Source != ECS::INVALID_ENTITY &&
+                    (it->Source != event.Source || it->SourceGeneration != event.SourceGeneration))
+                    continue;
                 const auto owner = m_Scripts.find(it->Owner);
                 if (owner == m_Scripts.end() || owner->second.Generation != it->Generation || owner->second.Faulted)
                     continue;
@@ -120,6 +124,30 @@ namespace HedgehogScripting
         sol::table payload = m_Lua.create_table_with("entity", Bindings::MakeScriptEntity(ecs, event.Entity),
                                                      "clip", event.Clip);
         m_QueuedEvents.push_back(QueuedEvent{ "AnimationFinished", std::move(payload) });
+    }
+
+    void ScriptSystem::QueueButtonClicked(const HedgehogEngine::UiButtonClickedEvent& event)
+    {
+        ECS::ECS& ecs = m_Context.GetECS();
+        if (!ecs.IsAlive(event.Entity))
+            return;
+        const Bindings::ScriptEntity button  = Bindings::MakeScriptEntity(ecs, event.Entity);
+        sol::table                   payload = m_Lua.create_table_with("entity", button);
+        m_QueuedEvents.push_back(QueuedEvent{ "UiButtonClicked", std::move(payload), button.Id, button.Generation });
+    }
+
+    uint64_t ScriptSystem::SubscribeClick(const Bindings::ScriptEntity& button, sol::protected_function handler)
+    {
+        const auto owner = m_RunningEntity.has_value() ? m_Scripts.find(*m_RunningEntity) : m_Scripts.end();
+        if (owner == m_Scripts.end())
+            throw std::runtime_error("onClick must be called from a running script's method");
+        if (!handler.valid())
+            throw std::runtime_error("onClick needs a handler function");
+
+        const uint64_t id = m_NextSubscriptionId++;
+        m_Subscriptions["UiButtonClicked"].push_back(
+            EventSubscription{ id, owner->first, owner->second.Generation, std::move(handler), button.Id, button.Generation });
+        return id;
     }
 
     void ScriptSystem::DropSubscriptions(ECS::Entity owner)

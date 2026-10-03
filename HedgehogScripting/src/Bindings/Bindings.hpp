@@ -3,6 +3,8 @@
 #include "HedgehogScripting/api/Sol.hpp"
 
 #include <cstdint>
+#include <functional>
+#include <string>
 #include <vector>
 
 namespace HedgehogEngine
@@ -25,7 +27,8 @@ namespace HedgehogScripting::Bindings
 
     // Entity (ScriptEntity) and Transform (ScriptComponentRef<TransformComponent>) usertypes over
     // context's ECS; Transform writes publish TransformChangedEvent on its EventBus. Entity also
-    // gets getX/hasX/addX for the Light, Camera, Mesh, Animator and AudioSource components. context must outlive lua.
+    // gets getX/hasX/addX for the Light, Camera, Mesh, Animator, AudioSource, UiRect, UiImage, UiText
+    // and UiButton components. context must outlive lua.
     void RegisterEntity(sol::state& lua, HedgehogEngine::EngineContext& context);
 
     // Light, Camera and Mesh (ScriptComponentRef<T>) usertypes and the LightType,
@@ -60,6 +63,20 @@ namespace HedgehogScripting::Bindings
     // the clock. Every read sees the current values. All three must outlive lua.
     void RegisterTime(sol::state& lua, HedgehogEngine::FixedStepClock& clock, const float& deltaTime,
                       const uint64_t& frame);
+
+    // An asset path as scripts write it (under assets://, prefix optional, either slash), as the path
+    // under assets:// components store. Anything that could reach past assets:// is a script error
+    // naming the asset (singular, e.g. "an audio clip"; plural, "audio clips"): another mount, a
+    // drive, a rooted path or a ".." segment. An empty path is an error too.
+    [[nodiscard]] std::string ToAssetPath(std::string path, const char* singular, const char* plural);
+
+    // UiRect, UiImage, UiText and UiButton (ScriptComponentRef<T>) usertypes (RegisterEntity gives
+    // Entity their getX/hasX/addX). Writes go straight to the ECS, so the next
+    // extraction draws them. button:onClick(fn) subscribes fn to that button's clicks through
+    // subscribeClick and returns the subscription's id (Events.unsubscribe takes it). context must
+    // outlive lua.
+    using ClickSubscriber = std::function<uint64_t(const ScriptEntity& button, sol::protected_function handler)>;
+    void RegisterUi(sol::state& lua, HedgehogEngine::EngineContext& context, ClickSubscriber subscribeClick);
 
     // The Input table over context's game actions (assets://Input/actions.yaml's Game map):
     // isDown, wasPressed, wasReleased, value and consume take an action's name (an unknown one, or
