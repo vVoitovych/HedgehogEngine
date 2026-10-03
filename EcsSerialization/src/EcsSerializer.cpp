@@ -8,6 +8,7 @@
 #include "yaml-cpp/yaml.h"
 
 #include <stdexcept>
+#include <string>
 
 namespace EcsSerialization
 {
@@ -68,6 +69,7 @@ namespace
     {
         YAML::Emitter out;
         out << YAML::BeginMap;
+        out << YAML::Key << "Version"    << YAML::Value << FORMAT_VERSION;
         out << YAML::Key << "Scene name" << YAML::Value << sceneName;
         out << YAML::Key << "Scene"      << YAML::Value << YAML::BeginSeq;
         SerializeEntity(out, ecs, ecs.GetRoot(), registry);
@@ -82,9 +84,50 @@ namespace
                                               const std::string& yamlText,
                                               const std::string& sourceName)
     {
+        YAML::Node document;
         try
         {
-            YAML::Node data = YAML::Load(yamlText);
+            document = YAML::Load(yamlText);
+        }
+        catch (const YAML::Exception& e)
+        {
+            LOGERROR("Failed to parse scene: ", sourceName, " with error: ", e.what());
+            return false;
+        }
+        return DeserializeFromNode(registry, ecs, outSceneName, document, sourceName);
+    }
+
+    YAML::Node EcsSerializer::SerializeToNode(const ComponentSerializerRegistry& registry,
+                                              const ECS::ECS& ecs,
+                                              const std::string& sceneName)
+    {
+        // Components write themselves to an emitter, so the text is the one source of truth.
+        return YAML::Load(SerializeToString(registry, ecs, sceneName));
+    }
+
+    bool EcsSerializer::DeserializeFromNode(const ComponentSerializerRegistry& registry,
+                                            ECS::ECS& ecs,
+                                            std::string& outSceneName,
+                                            const YAML::Node& data,
+                                            const std::string& sourceName)
+    {
+        try
+        {
+            int version = 1;
+            if (const YAML::Node versionNode = data["Version"])
+            {
+                if (!YAML::convert<int>::decode(versionNode, version) || version < 1)
+                {
+                    LOGERROR("Failed to read scene: " + sourceName + " has a Version that is not a positive integer.");
+                    return false;
+                }
+            }
+            if (version > FORMAT_VERSION)
+            {
+                LOGERROR("Failed to read scene: " + sourceName + " is format version " + std::to_string(version) +
+                         ", but this build reads up to version " + std::to_string(FORMAT_VERSION) + ".");
+                return false;
+            }
 
             outSceneName = data["Scene name"].as<std::string>();
 
