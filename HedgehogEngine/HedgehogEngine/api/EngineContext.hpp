@@ -15,6 +15,8 @@
 #include "HedgehogInput/api/InputActionAsset.hpp"
 #include "HedgehogInput/api/InputActionMap.hpp"
 
+#include "HedgehogMath/api/Vector.hpp"
+
 #include <chrono>
 #include <memory>
 #include <optional>
@@ -99,10 +101,13 @@ namespace HedgehogEngine
         // is missing or does not parse). UpdateGameInput evaluates the Game map from the input the
         // application hands it while Playing, and resets the state in Edit and Paused, so nothing
         // there sees an action; the application calls it each frame before UpdateContext, tests
-        // call it directly. A system that handles an action (the game UI) consumes it through
-        // GetGameActionState, right after UpdateGameInput and before UpdatePlayMode.
+        // call it directly. A system that handles an action consumes it through GetGameActionState,
+        // right after UpdateGameInput and before UpdatePlayMode. The game UI does so inside it while
+        // Playing (UiSystem::UpdateInput, over a game view of gameViewSize pixels, the size the UI is
+        // extracted at; a zero size gives the UI no input), and its input is reset in Edit and Paused.
         static constexpr const char* INPUT_ACTIONS_PATH = "assets://Input/actions.yaml";
-        HEDGEHOG_ENGINE_API void UpdateGameInput(const HW::RawInput& gameInput);
+        HEDGEHOG_ENGINE_API void UpdateGameInput(const HW::RawInput& gameInput,
+                                                 const HM::Vector2& gameViewSize = HM::Vector2(0.0f, 0.0f));
 
         // Evaluates the Editor map (the editor camera's actions) from the input the application hands
         // it, in every play state: the Editor calls it each frame with the scene panel's input before
