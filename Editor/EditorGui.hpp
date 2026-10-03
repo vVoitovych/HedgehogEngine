@@ -7,6 +7,7 @@
 
 #include "FileSystem/api/FileSystemManager.hpp"
 
+#include "HedgehogAudio/api/SoundHandle.hpp"
 #include "HedgehogInput/api/GameInputRegion.hpp"
 #include "HedgehogScripting/api/ScriptPropertyDeclaration.hpp"
 
@@ -20,6 +21,7 @@
 namespace HedgehogEngine
 {
     class Engine;
+    class EngineContext;
 }
 
 namespace Renderer
@@ -137,6 +139,9 @@ namespace Editor
         void ApplyAssetDrop(HedgehogEngine::Engine& context);
         // Makes the last inspector widget a drop target for assets of that type, onto the selection.
         void AcceptSelectionDrop(ContentType type);
+        // Plays an audio clip from the Content panel as a 2D one-shot, or stops it when it is the
+        // clip already playing.
+        void PreviewAudio(HedgehogEngine::EngineContext& engineContext, const std::string& virtualPath);
         // A mesh dropped on the hierarchy: a new entity named after the file, with Mesh and Render
         // components (the scene's first material), under parent or the root.
         void CreateMeshEntity(HedgehogEngine::Engine& context, const ContentOpenRequest& mesh,
@@ -212,6 +217,8 @@ namespace Editor
         HedgehogScripting::ScriptSystem* m_ScriptSystem = nullptr;
         std::optional<AssetDrop>          m_AssetDrop;        // this frame's, applied after the panels
         std::optional<ContentOpenRequest> m_SceneToOpen;      // a scene dropped on the hierarchy, awaiting yes
+        HA::SoundHandle                   m_PreviewSound;     // the Content panel's audio preview
+        std::string                       m_PreviewPath;
 
         // What DescribeScript last returned for each script, by assets:// path, with the file's
         // write time then: the inspector draws every frame, so a script is described once per change.

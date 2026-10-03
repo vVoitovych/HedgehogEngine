@@ -36,6 +36,9 @@ namespace Editor
             ExtensionType{ ".graph",    ContentType::RenderGraph },
             ExtensionType{ ".ttf",      ContentType::Font },
             ExtensionType{ ".otf",      ContentType::Font },
+            ExtensionType{ ".wav",      ContentType::Audio },
+            ExtensionType{ ".mp3",      ContentType::Audio },
+            ExtensionType{ ".flac",     ContentType::Audio },
         };
 
         constexpr std::string_view SCENE_EXTENSION = ".yaml";
@@ -93,6 +96,7 @@ namespace Editor
         case ContentType::VertexDescription: return "VD";
         case ContentType::RenderGraph:       return "RG";
         case ContentType::Font:              return "FNT";
+        case ContentType::Audio:             return "AUD";
         case ContentType::Other:             return "?";
         }
         return "?";
@@ -113,6 +117,7 @@ namespace Editor
         case ContentType::VertexDescription: return "Vertex description";
         case ContentType::RenderGraph:       return "Render graph";
         case ContentType::Font:              return "Font";
+        case ContentType::Audio:             return "Audio";
         case ContentType::Other:             return "File";
         }
         return "File";

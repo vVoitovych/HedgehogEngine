@@ -10,6 +10,7 @@
 #include "Tools/VertexDescriptionWindow.hpp"
 
 #include "HedgehogEngine/api/Containers/MaterialContainer.hpp"
+#include "HedgehogEngine/api/ECS/components/AudioSourceComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/CameraComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RenderComponent.hpp"
@@ -25,6 +26,7 @@
 
 #include "ECS/api/ECS.hpp"
 #include "ECS/api/components/Hierarchy.hpp"
+#include "HedgehogAudio/api/AudioEngine.hpp"
 #include "Logger/api/Logger.hpp"
 
 #include "imgui.h"
@@ -49,6 +51,7 @@ namespace Editor
             case ContentType::Texture:  return "Render (with a material)";
             case ContentType::Script:   return "Script";
             case ContentType::Font:     return "UI text";
+            case ContentType::Audio:    return "Audio source";
             default:                    return nullptr;
             }
         }
@@ -94,6 +97,10 @@ namespace Editor
             return;
         case ContentType::VertexDescription:
             m_VertexDescWindow->OpenPath(physicalPath, fileSystem);
+            return;
+        case ContentType::Audio:
+            // An editor tool, so it plays in Edit mode too; the clip goes onto a source by dragging.
+            PreviewAudio(engineContext, request.VirtualPath);
             return;
         case ContentType::RenderGraph:
             if (m_Renderer)
@@ -170,6 +177,11 @@ namespace Editor
                 return false;
             ecs.GetComponent<HedgehogEngine::UiTextComponent>(entity).Font = relativePath;
             break;
+        case ContentType::Audio:
+            if (!ecs.HasComponent<HedgehogEngine::AudioSourceComponent>(entity))
+                return false;
+            ecs.GetComponent<HedgehogEngine::AudioSourceComponent>(entity).Clip = relativePath;
+            break;
         case ContentType::RenderGraph:
         {
             if (!ecs.HasComponent<HedgehogEngine::CameraComponent>(entity) || !m_Renderer)
@@ -222,6 +234,23 @@ namespace Editor
     {
         if (const auto drop = AcceptAssetDrop({ type }))
             m_AssetDrop = AssetDrop{ *drop, false, std::nullopt };
+    }
+
+    void EditorGui::PreviewAudio(HedgehogEngine::EngineContext& engineContext, const std::string& virtualPath)
+    {
+        HA::AudioEngine& audio = engineContext.GetAudioEngine();
+        // Opening the clip that is playing again stops it; any other clip replaces it.
+        const bool stopOnly = audio.IsPlaying(m_PreviewSound) && m_PreviewPath == virtualPath;
+        audio.Stop(m_PreviewSound);
+        m_PreviewSound = {};
+        if (stopOnly)
+            return;
+
+        // A 2D one-shot at full volume. The engine's AudioSystem reclaims it when it ends, and
+        // Stop's StopAll ends it with the scene's sounds.
+        const HA::AudioClipId clip = audio.LoadClip(virtualPath, engineContext.GetFileSystem());
+        m_PreviewSound             = audio.Play(clip, HA::PlayParams{});
+        m_PreviewPath              = virtualPath;
     }
 
     void EditorGui::ApplyAssetDrop(HedgehogEngine::Engine& context)
