@@ -11,6 +11,11 @@
 
 #include "FileSystem/api/FileSystemManager.hpp"
 
+#include "HedgehogInput/api/ActionState.hpp"
+#include "HedgehogInput/api/InputActionAsset.hpp"
+#include "HedgehogInput/api/InputActionMap.hpp"
+
+#include <chrono>
 #include <memory>
 #include <optional>
 
@@ -81,6 +86,23 @@ namespace HedgehogEngine
         // UpdateContext calls it right after UpdatePlayMode; public for the same reason.
         HEDGEHOG_ENGINE_API void UpdateAnimation(float dt);
 
+        // Input actions, from assets://Input/actions.yaml (INPUT_ACTIONS_PATH; the defaults when it
+        // is missing or does not parse). UpdateGameInput evaluates the Game map from the input the
+        // application hands it while Playing, and resets the state in Edit and Paused, so nothing
+        // there sees an action; the application calls it each frame before UpdateContext, tests
+        // call it directly. A system that handles an action (the game UI) consumes it through
+        // GetGameActionState, right after UpdateGameInput and before UpdatePlayMode.
+        static constexpr const char* INPUT_ACTIONS_PATH = "assets://Input/actions.yaml";
+        HEDGEHOG_ENGINE_API void UpdateGameInput(const HW::RawInput& gameInput);
+
+        // Re-reads the actions file once it has been saved (polled at most once a second; now is a
+        // parameter so tests need not wait), resetting the game action state. UpdateContext calls it.
+        HEDGEHOG_ENGINE_API void ReloadInputActions(std::chrono::steady_clock::time_point now);
+
+        [[nodiscard]] HEDGEHOG_ENGINE_API const HInput::InputActionSet& GetInputActions() const;
+        [[nodiscard]] HEDGEHOG_ENGINE_API HInput::ActionState&          GetGameActionState();
+        [[nodiscard]] HEDGEHOG_ENGINE_API const HInput::ActionState&    GetGameActionState() const;
+
         HEDGEHOG_ENGINE_API ResourceCatalog&       GetResourceCatalog();
         HEDGEHOG_ENGINE_API const ResourceCatalog& GetResourceCatalog() const;
 
@@ -110,6 +132,7 @@ namespace HedgehogEngine
         void InitECS();
         void InitFileSystem();
         void RegisterComponents();
+        void LoadInputActions();
         void UpdateCamera(WindowContext& windowContext, float aspectRatio, float dt);
 
     private:
@@ -138,6 +161,10 @@ namespace HedgehogEngine
         // Constructed after ECS/systems/component-registry are ready (it creates the scene root
         // and needs live system references) — see EngineContext.cpp for the ordering.
         std::unique_ptr<SceneManager> m_SceneManager;
+
+        HInput::InputActionSet    m_InputActions;
+        HInput::InputActionsWatch m_InputWatch;
+        HInput::ActionState       m_GameActions;
 
         PlayState                    m_PlayState = PlayState::Edit;
         FixedStepClock               m_Clock;
