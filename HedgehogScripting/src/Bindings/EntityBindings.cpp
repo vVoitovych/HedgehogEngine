@@ -3,6 +3,7 @@
 
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogEngine/api/ECS/components/AnimatorComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/AudioSourceComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/CameraComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/LightComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
@@ -209,6 +210,11 @@ namespace HedgehogScripting::Bindings
         AddComponentAccess<HedgehogEngine::AnimatorComponent>(entity, ecs, "Animator", [&ecs](ECS::Entity id)
         {
             ecs.AddComponent(id, HedgehogEngine::AnimatorComponent{});
+        });
+        // A source added during Play does not start on its own: its script calls play().
+        AddComponentAccess<HedgehogEngine::AudioSourceComponent>(entity, ecs, "AudioSource", [&ecs](ECS::Entity id)
+        {
+            ecs.AddComponent(id, HedgehogEngine::AudioSourceComponent{});
         });
     }
 }
