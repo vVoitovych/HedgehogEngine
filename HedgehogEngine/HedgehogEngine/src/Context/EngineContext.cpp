@@ -361,6 +361,7 @@ namespace HedgehogEngine
     const SceneManager& EngineContext::GetSceneManager() const { return *m_SceneManager; }
 
     const FS::FileSystemManager& EngineContext::GetFileSystem() const { return m_FileSystem; }
+    FS::FileSystemManager& EngineContext::GetFileSystem() { return m_FileSystem; }
 
     EventBus& EngineContext::GetEventBus() { return m_EventBus; }
 
