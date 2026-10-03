@@ -14,8 +14,6 @@
 
 #include <array>
 #include <cassert>
-#include <cmath>
-#include <functional>
 
 namespace HW
 {
@@ -51,7 +49,6 @@ namespace HW
     struct Window::Impl
     {
         GLFWwindow*           Handle       = nullptr;
-        InputState            InputState;
         RawInput              Raw;
         bool                  Resized      = false;
         bool                  IsFullscreen = false;
@@ -59,7 +56,6 @@ namespace HW
         int                   SavedY       = 0;
         int                   SavedWidth   = 1366;
         int                   SavedHeight  = 768;
-        std::function<bool()> GuiCallback;
     };
 
     Window::Window(const WindowDesc& desc)
@@ -165,16 +161,6 @@ namespace HW
         glfwGetWindowSize(m_Impl->Handle, &outWidth, &outHeight);
     }
 
-    const InputState& Window::GetInputState() const
-    {
-        return m_Impl->InputState;
-    }
-
-    InputState& Window::GetInputState()
-    {
-        return m_Impl->InputState;
-    }
-
     void Window::SetIcon(int width, int height, unsigned char* data)
     {
         GLFWimage image;
@@ -182,11 +168,6 @@ namespace HW
         image.height = height;
         image.pixels = data;
         glfwSetWindowIcon(m_Impl->Handle, 1, &image);
-    }
-
-    void Window::SetGuiCallback(std::function<bool()> callback)
-    {
-        m_Impl->GuiCallback = std::move(callback);
     }
 
     GLFWwindow* Window::GetNativeHandle()
@@ -245,93 +226,30 @@ namespace HW
         self->m_Impl->Resized = true;
     }
 
-    void Window::OnKey(GLFWwindow* handle, int key, int /*scancode*/, int action, int mods)
+    void Window::OnKey(GLFWwindow* handle, int key, int /*scancode*/, int action, int /*mods*/)
     {
         auto* self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(handle));
-        InputState& state = self->m_Impl->InputState;
-
-        const bool pressOrRepeat = (action == GLFW_PRESS || action == GLFW_REPEAT);
-        ApplyKeyEvent(self->m_Impl->Raw, key, pressOrRepeat);
-        state.CtrlHeld = (mods & GLFW_MOD_CONTROL) != 0;
-
-        switch (key)
-        {
-        case GLFW_KEY_W: state.KeyW = pressOrRepeat; break;
-        case GLFW_KEY_S: state.KeyS = pressOrRepeat; break;
-        case GLFW_KEY_A: state.KeyA = pressOrRepeat; break;
-        case GLFW_KEY_D: state.KeyD = pressOrRepeat; break;
-        case GLFW_KEY_Q: state.KeyQ = pressOrRepeat; break;
-        case GLFW_KEY_E: state.KeyE = pressOrRepeat; break;
-        case GLFW_KEY_F11:
-            if (action == GLFW_PRESS)
-                self->ToggleFullscreen();
-            break;
-        default: break;
-        }
+        ApplyKeyEvent(self->m_Impl->Raw, key, action == GLFW_PRESS || action == GLFW_REPEAT);
+        if (key == GLFW_KEY_F11 && action == GLFW_PRESS)
+            self->ToggleFullscreen();
     }
 
     void Window::OnMouseButton(GLFWwindow* handle, int button, int action, int /*mods*/)
     {
         auto* self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(handle));
         ApplyMouseButtonEvent(self->m_Impl->Raw, button, action == GLFW_PRESS);
-        if (self->m_Impl->GuiCallback && self->m_Impl->GuiCallback())
-            return;
-
-        InputState& state = self->m_Impl->InputState;
-        const bool anyButtonDown = state.MouseLeft || state.MouseMiddle || state.MouseRight;
-
-        if (action == GLFW_PRESS && !anyButtonDown)
-        {
-            double x = 0.0, y = 0.0;
-            glfwGetCursorPos(handle, &x, &y);
-            state.MousePos   = HM::Vector2(static_cast<float>(x), static_cast<float>(y));
-            state.MouseDelta = HM::Vector2(0.0f, 0.0f);
-        }
-
-        if (button == GLFW_MOUSE_BUTTON_LEFT)
-        {
-            state.MouseLeft = (action == GLFW_PRESS);
-            if (action == GLFW_RELEASE)
-                state.MouseDelta = HM::Vector2(0.0f, 0.0f);
-        }
-        if (button == GLFW_MOUSE_BUTTON_RIGHT)
-        {
-            state.MouseRight = (action == GLFW_PRESS);
-            if (action == GLFW_RELEASE)
-                state.MouseDelta = HM::Vector2(0.0f, 0.0f);
-        }
-        if (button == GLFW_MOUSE_BUTTON_MIDDLE)
-        {
-            state.MouseMiddle = (action == GLFW_PRESS);
-            if (action == GLFW_RELEASE)
-                state.MouseDelta = HM::Vector2(0.0f, 0.0f);
-        }
     }
 
     void Window::OnMouseMove(GLFWwindow* handle, double x, double y)
     {
         auto* self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(handle));
         ApplyCursorEvent(self->m_Impl->Raw, x, y);
-        InputState& state = self->m_Impl->InputState;
-
-        if (state.MouseLeft || state.MouseMiddle || state.MouseRight)
-        {
-            const HM::Vector2 newPos(static_cast<float>(x), static_cast<float>(y));
-            state.MouseDelta = newPos - state.MousePos;
-            state.MousePos   = newPos;
-
-            if (std::abs(state.MouseDelta.x()) < 2.0f)
-                state.MouseDelta.x() = 0.0f;
-            if (std::abs(state.MouseDelta.y()) < 2.0f)
-                state.MouseDelta.y() = 0.0f;
-        }
     }
 
     void Window::OnMouseScroll(GLFWwindow* handle, double x, double y)
     {
         auto* self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(handle));
         ApplyScrollEvent(self->m_Impl->Raw, x, y);
-        self->m_Impl->InputState.ScrollDelta = HM::Vector2(static_cast<float>(x), static_cast<float>(y));
     }
 
     void Window::OnFocus(GLFWwindow* handle, int focused)

@@ -58,7 +58,9 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API EngineContext();
         HEDGEHOG_ENGINE_API ~EngineContext();
 
-        HEDGEHOG_ENGINE_API void UpdateContext(WindowContext& windowContext, float aspectRatio, float dt);
+        // One frame: the editor camera from the Editor actions (UpdateEditorInput), then gameplay
+        // (Play only), animation, transforms, hierarchy and lights. Needs no window.
+        HEDGEHOG_ENGINE_API void UpdateContext(float aspectRatio, float dt);
 
         // Play mode. EngineContext owns the state, the scene snapshot and the clock; the ECS
         // only forwards the events to its systems. Each call returns false and does nothing
@@ -94,6 +96,12 @@ namespace HedgehogEngine
         // GetGameActionState, right after UpdateGameInput and before UpdatePlayMode.
         static constexpr const char* INPUT_ACTIONS_PATH = "assets://Input/actions.yaml";
         HEDGEHOG_ENGINE_API void UpdateGameInput(const HW::RawInput& gameInput);
+
+        // Evaluates the Editor map (the editor camera's actions) from the input the application hands
+        // it, in every play state: the Editor calls it each frame with the scene panel's input before
+        // UpdateContext, which moves the camera from it. --game-mode never calls it, so its camera
+        // stays still.
+        HEDGEHOG_ENGINE_API void UpdateEditorInput(const HW::RawInput& editorInput);
 
         // Re-reads the actions file once it has been saved (polled at most once a second; now is a
         // parameter so tests need not wait), resetting the game action state. UpdateContext calls it.
@@ -133,7 +141,7 @@ namespace HedgehogEngine
         void InitFileSystem();
         void RegisterComponents();
         void LoadInputActions();
-        void UpdateCamera(WindowContext& windowContext, float aspectRatio, float dt);
+        void UpdateCamera(float aspectRatio, float dt);
 
     private:
         FS::FileSystemManager m_FileSystem;
@@ -165,6 +173,7 @@ namespace HedgehogEngine
         HInput::InputActionSet    m_InputActions;
         HInput::InputActionsWatch m_InputWatch;
         HInput::ActionState       m_GameActions;
+        HInput::ActionState       m_EditorActions;
 
         PlayState                    m_PlayState = PlayState::Edit;
         FixedStepClock               m_Clock;

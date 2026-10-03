@@ -146,12 +146,6 @@ namespace Editor
         m_SceneView  = m_Renderer->CreateView(MakeSceneView(engineContext.GetCamera()));
         m_ResultView = m_Renderer->CreateView(MakeResultView());
 
-        // WantCaptureMouse is true even over the scene image (it's an ImGui window); exempt it.
-        m_Context->GetWindowContext().GetWindow().SetGuiCallback([this]()
-        {
-            return ImGui::GetIO().WantCaptureMouse && !m_EditorGui->IsSceneViewHovered();
-        });
-
         LOGINFO("Editor initialized");
     }
 
@@ -216,9 +210,12 @@ namespace Editor
     {
         const float dt = GetFrameTime();
         m_Context->GetWindowContext().HandleInput();
-        // The game sees the Game tab's part of the window's input (the panel as of the last frame).
-        m_Context->GetEngineContext().UpdateGameInput(HInput::MakeGameInput(
-            m_Context->GetWindowContext().GetWindow().GetRawInput(), m_EditorGui->GetGameInputRegion(), m_GameInputGate));
+        // The game sees the Game tab's part of the window's input, the editor camera the Scene tab's
+        // (both panels as of the last frame).
+        const HW::RawInput& raw = m_Context->GetWindowContext().GetWindow().GetRawInput();
+        auto&               engineContext = m_Context->GetEngineContext();
+        engineContext.UpdateGameInput(HInput::MakeGameInput(raw, m_EditorGui->GetGameInputRegion(), m_GameInputGate));
+        engineContext.UpdateEditorInput(HInput::MakeGameInput(raw, m_EditorGui->GetSceneInputRegion(), m_SceneInputGate));
         // A script saved on disk takes effect without leaving Play (polled at most once a second).
         m_ScriptSystem->ReloadChangedScripts(m_Context->GetEngineContext().GetECS());
         m_Context->UpdateContext(dt, GetSceneAspectRatio());

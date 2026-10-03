@@ -183,6 +183,7 @@ namespace Editor
         m_GameViewHeight   = 0;
         m_GameImageSize    = HM::Vector2(0.0f, 0.0f);
         m_GameViewHovered  = false;
+        m_SceneImageSize   = HM::Vector2(0.0f, 0.0f);
 
         m_ViewportImages = images;
 
@@ -244,6 +245,8 @@ namespace Editor
             {
                 ImGui::Image(m_ViewportImages.Scene, avail);
                 m_SceneViewHovered = ImGui::IsItemHovered();
+                m_SceneImageMin    = HM::Vector2(ImGui::GetItemRectMin().x, ImGui::GetItemRectMin().y);
+                m_SceneImageSize   = HM::Vector2(ImGui::GetItemRectSize().x, ImGui::GetItemRectSize().y);
 
                 // A click, not the end of a camera drag.
                 constexpr float CLICK_DRAG_PIXELS = 4.0f;
@@ -290,13 +293,19 @@ namespace Editor
 
         ImGui::EndTabBar();
 
-        // A press focuses the game panel when it lands on its image, and unfocuses it anywhere else.
+        // A press focuses a panel when it lands on its image, and unfocuses it anywhere else; a hidden
+        // panel has no focus.
         const bool anyPress = ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right) ||
                               ImGui::IsMouseClicked(ImGuiMouseButton_Middle);
         if (anyPress)
-            m_GameViewFocused = m_GameViewHovered;
+        {
+            m_GameViewFocused  = m_GameViewHovered;
+            m_SceneViewFocused = m_SceneViewHovered;
+        }
         if (m_GameImageSize.x() <= 0.0f)
             m_GameViewFocused = false;
+        if (m_SceneImageSize.x() <= 0.0f)
+            m_SceneViewFocused = false;
     }
 
     HInput::GameInputRegion EditorGui::GetGameInputRegion() const
@@ -307,6 +316,17 @@ namespace Editor
         region.PixelSize       = HM::Vector2(static_cast<float>(m_GameViewWidth), static_cast<float>(m_GameViewHeight));
         region.PointerEnabled  = m_GameViewHovered;
         region.KeyboardEnabled = m_GameViewFocused && !ImGui::GetIO().WantTextInput;
+        return region;
+    }
+
+    HInput::GameInputRegion EditorGui::GetSceneInputRegion() const
+    {
+        HInput::GameInputRegion region;
+        region.Origin          = m_SceneImageMin;
+        region.Size            = m_SceneImageSize;
+        region.PixelSize       = m_SceneImageSize; // the camera turns by window pixels, as it always has
+        region.PointerEnabled  = m_SceneViewHovered;
+        region.KeyboardEnabled = m_SceneViewFocused && !ImGui::GetIO().WantTextInput;
         return region;
     }
 
