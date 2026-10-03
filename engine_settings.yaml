@@ -9,3 +9,5 @@ shadowmap:
 layers:
   0: Default
   31: Editor
+game:
+  data_version: 1

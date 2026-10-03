@@ -198,7 +198,7 @@ namespace HedgehogEngine
         // Constructed after ECS/systems/component-registry are ready (it creates the scene root
         // and needs live system references) — see EngineContext.cpp for the ordering.
         std::unique_ptr<SceneManager> m_SceneManager;
-        std::unique_ptr<SaveGameManager> m_SaveGames; // after the SceneManager it saves
+        std::unique_ptr<SaveGameManager> m_SaveGames; // after the SceneManager it saves and the Settings it reads
 
         HInput::InputActionSet    m_InputActions;
         HInput::InputActionsWatch m_InputWatch;

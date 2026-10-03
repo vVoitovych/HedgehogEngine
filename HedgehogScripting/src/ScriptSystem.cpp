@@ -117,7 +117,8 @@ namespace HedgehogScripting
         // manager (EngineContext destroys it first), so the section never outlives the system.
         context.GetSaveGames().RegisterSection(
             "Scripts", [this]() { return SaveScriptState(m_Context.GetECS()); },
-            [this](const YAML::Node& section) { LoadScriptState(m_Context.GetECS(), section); });
+            [this](const YAML::Node& section, int savedGameDataVersion)
+            { LoadScriptState(m_Context.GetECS(), section, savedGameDataVersion); });
         context.GetEventBus().Subscribe<HedgehogEngine::GameLoadedEvent>(
             [this](const HedgehogEngine::GameLoadedEvent& event)
             { m_QueuedEvents.push_back(QueuedEvent{ "GameLoaded", m_Lua.create_table_with("slot", event.Slot) }); });

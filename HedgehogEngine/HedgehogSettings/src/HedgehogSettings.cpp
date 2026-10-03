@@ -42,6 +42,16 @@ namespace HedgehogSettings
         return m_LayerSettings;
     }
 
+    int Settings::GetGameDataVersion() const
+    {
+        return m_GameDataVersion;
+    }
+
+    void Settings::SetGameDataVersion(int version)
+    {
+        m_GameDataVersion = version < 1 ? 1 : version;
+    }
+
     bool Settings::Load(const std::string& virtualPath, const FS::FileSystemManager& fileSystem)
     {
         const auto text = fileSystem.ReadTextFile(virtualPath);
@@ -104,6 +114,14 @@ namespace HedgehogSettings
                     }
                 }
             }
+
+            if (const YAML::Node game = root["game"])
+            {
+                if (const YAML::Node n = game["data_version"])
+                {
+                    SetGameDataVersion(n.as<int>());
+                }
+            }
         }
         catch (const YAML::Exception& e)
         {
@@ -144,6 +162,10 @@ namespace HedgehogSettings
                 out << YAML::Key << layer << YAML::Value << name;
             }
         }
+        out << YAML::EndMap;
+
+        out << YAML::Key << "game" << YAML::Value << YAML::BeginMap;
+        out << YAML::Key << "data_version" << YAML::Value << m_GameDataVersion;
         out << YAML::EndMap;
 
         out << YAML::EndMap;

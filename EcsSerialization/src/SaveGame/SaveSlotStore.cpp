@@ -95,6 +95,24 @@ namespace EcsSerialization
         return std::move(result.Value);
     }
 
+    std::optional<SaveGameMetadata> SaveSlotStore::ReadMetadata(const std::string& slot) const
+    {
+        const std::optional<std::filesystem::path> path = SlotPath(slot, "ReadMetadata");
+        if (!path)
+            return std::nullopt;
+
+        const std::optional<std::string> text = ReadText(*path);
+        if (!text)
+        {
+            LOGERROR("[Save] Slot '" + slot + "' does not exist.");
+            return std::nullopt;
+        }
+        SaveGameReadResult<SaveGameMetadata> result = ReadSaveGameMetadata(*text);
+        if (!result.Value)
+            LOGERROR("[Save] Slot '" + slot + "' cannot be read: " + result.Error + ".");
+        return std::move(result.Value);
+    }
+
     std::vector<SaveSlotInfo> SaveSlotStore::List() const
     {
         std::vector<SaveSlotInfo> slots;

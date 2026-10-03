@@ -2,6 +2,7 @@
 
 #include "HedgehogEngine/api/HedgehogEngineApi.hpp"
 
+#include "EcsSerialization/api/SaveGame/SaveMigration.hpp"
 #include "EcsSerialization/api/SaveGame/SaveSlotStore.hpp"
 
 #include <filesystem>
@@ -9,6 +10,11 @@
 #include <optional>
 #include <string>
 #include <vector>
+
+namespace HedgehogSettings
+{
+    class Settings;
+}
 
 namespace HedgehogEngine
 {
@@ -27,23 +33,42 @@ namespace HedgehogEngine
     // the save was made in, whatever scene is open), hands each registered section its data and
     // publishes GameLoadedEvent. Stop drops pending requests, and the editor's Stop still restores
     // the scene from before Play, so a load in Play never reaches the edited scene.
+    //
+    // Versions: every save carries the save format (SAVE_FORMAT_VERSION) and the game's data
+    // version (the settings' GetGameDataVersion). A save newer than either is refused, naming the
+    // versions. An older game data version is migrated on load: the registered C++ steps run in
+    // order on the save's sections before the world is touched (a failing step refuses the load),
+    // then each section's loader gets the saved version (the script system calls each script's
+    // OnMigrate(fromVersion, state) before its OnLoad).
     class SaveGameManager
     {
     public:
         using SaveSection = std::function<YAML::Node()>;
-        using LoadSection = std::function<void(const YAML::Node&)>;
+        // The section's data and the game data version it was saved at (already migrated by the
+        // C++ steps, so the data reads as the current version's unless a module migrates its own).
+        using LoadSection = std::function<void(const YAML::Node&, int savedGameDataVersion)>;
 
         // Until project settings exist, every project saves under this name.
         static constexpr const char* DEFAULT_PROJECT_NAME = "HedgehogEngine";
 
-        HEDGEHOG_ENGINE_API SaveGameManager(SceneManager& scenes, EventBus& eventBus, const FixedStepClock& clock);
+        HEDGEHOG_ENGINE_API SaveGameManager(SceneManager& scenes, EventBus& eventBus, const FixedStepClock& clock,
+                                            const HedgehogSettings::Settings& settings);
 
         // Where the slots live: the Editor's per-project editor folder, --game-mode's game folder,
         // a test's temp folder. Until set, every request fails with an error.
         HEDGEHOG_ENGINE_API void SetSaveDirectory(const std::filesystem::path& directory);
 
-        // Written into each save's metadata (the game's own data version).
-        HEDGEHOG_ENGINE_API void SetGameDataVersion(int version);
+        // The game data version saves are written at and migrated to: the settings' (game:
+        // data_version), read on every call, so a settings reload applies to the next save.
+        [[nodiscard]] HEDGEHOG_ENGINE_API int GetGameDataVersion() const;
+
+        // The C++ step migrating a save's sections from game data version fromVersion to
+        // fromVersion + 1 (see EcsSerialization::SaveMigrationRegistry); a version may have none.
+        HEDGEHOG_ENGINE_API void RegisterMigration(int fromVersion, EcsSerialization::SaveMigrationStep step);
+
+        // Why a save with this header cannot load in this build ("the save is game data version 3,
+        // but this game is version 2"), or empty when it can.
+        [[nodiscard]] HEDGEHOG_ENGINE_API std::string GetUnloadableReason(const EcsSerialization::SaveGameMetadata& metadata) const;
 
         // A section saved and loaded with the world; a name registered again replaces it.
         HEDGEHOG_ENGINE_API void RegisterSection(const std::string& name, SaveSection save, LoadSection load);
@@ -51,7 +76,7 @@ namespace HedgehogEngine
 
         // Queue a save of the current world into slot, or a load of slot, for the end of the
         // frame. False, logged, for an invalid slot name, no save directory, or (load) a slot
-        // that does not exist.
+        // that does not exist or cannot load (GetUnloadableReason).
         HEDGEHOG_ENGINE_API bool RequestSave(const std::string& slot);
         HEDGEHOG_ENGINE_API bool RequestLoad(const std::string& slot);
 
@@ -76,12 +101,13 @@ namespace HedgehogEngine
             LoadSection Load;
         };
 
-        SceneManager&          m_Scenes;
-        EventBus&              m_EventBus;
-        const FixedStepClock&  m_Clock;
+        SceneManager&                     m_Scenes;
+        EventBus&                         m_EventBus;
+        const FixedStepClock&             m_Clock;
+        const HedgehogSettings::Settings& m_Settings;
 
         std::optional<EcsSerialization::SaveSlotStore> m_Store;
-        int                                            m_GameDataVersion = 1;
+        EcsSerialization::SaveMigrationRegistry        m_Migrations;
         std::vector<Section>                           m_Sections;
         std::vector<std::string>                       m_PendingSaves;
         std::optional<std::string>                     m_PendingLoad;

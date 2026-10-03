@@ -5,11 +5,13 @@
 #include "HedgehogEngine/api/Scene/SceneManager.hpp"
 #include "HedgehogEngine/api/Time/FixedStepClock.hpp"
 
+#include "HedgehogSettings/api/HedgehogSettings.hpp"
 #include "Logger/api/Logger.hpp"
 
 #include <algorithm>
 #include <chrono>
 #include <ctime>
+#include <string>
 #include <utility>
 
 namespace HedgehogEngine
@@ -28,16 +30,35 @@ namespace HedgehogEngine
         }
     }
 
-    SaveGameManager::SaveGameManager(SceneManager& scenes, EventBus& eventBus, const FixedStepClock& clock)
+    SaveGameManager::SaveGameManager(SceneManager& scenes, EventBus& eventBus, const FixedStepClock& clock,
+                                     const HedgehogSettings::Settings& settings)
         : m_Scenes(scenes)
         , m_EventBus(eventBus)
         , m_Clock(clock)
+        , m_Settings(settings)
     {
     }
 
     void SaveGameManager::SetSaveDirectory(const std::filesystem::path& directory) { m_Store.emplace(directory); }
 
-    void SaveGameManager::SetGameDataVersion(int version) { m_GameDataVersion = version; }
+    int SaveGameManager::GetGameDataVersion() const { return m_Settings.GetGameDataVersion(); }
+
+    void SaveGameManager::RegisterMigration(int fromVersion, EcsSerialization::SaveMigrationStep step)
+    {
+        m_Migrations.Register(fromVersion, std::move(step));
+    }
+
+    std::string SaveGameManager::GetUnloadableReason(const EcsSerialization::SaveGameMetadata& metadata) const
+    {
+        if (metadata.SaveVersion > EcsSerialization::SAVE_FORMAT_VERSION || metadata.SaveVersion < 1)
+            return "the save is format version " + std::to_string(metadata.SaveVersion) + ", but this build reads versions 1 to " +
+                   std::to_string(EcsSerialization::SAVE_FORMAT_VERSION);
+        const int current = GetGameDataVersion();
+        if (metadata.GameDataVersion > current || metadata.GameDataVersion < 1)
+            return "the save is game data version " + std::to_string(metadata.GameDataVersion) +
+                   ", but this game reads versions 1 to " + std::to_string(current);
+        return {};
+    }
 
     void SaveGameManager::RegisterSection(const std::string& name, SaveSection save, LoadSection load)
     {
@@ -79,6 +100,14 @@ namespace HedgehogEngine
                 LOGERROR("[Save] Slot '" + slot + "' does not exist.");
             return false;
         }
+        const std::optional<EcsSerialization::SaveGameMetadata> metadata = m_Store->ReadMetadata(slot); // logs why not
+        if (!metadata)
+            return false;
+        if (const std::string reason = GetUnloadableReason(*metadata); !reason.empty())
+        {
+            LOGERROR("[Save] Slot '" + slot + "' cannot be loaded: " + reason + ".");
+            return false;
+        }
         m_PendingLoad = slot;
         return true;
     }
@@ -114,7 +143,7 @@ namespace HedgehogEngine
     void SaveGameManager::Save(const std::string& slot)
     {
         EcsSerialization::SaveGameFile save;
-        save.Metadata.GameDataVersion = m_GameDataVersion;
+        save.Metadata.GameDataVersion = GetGameDataVersion();
         save.Metadata.ScenePath       = m_Scenes.GetScenePath();
         save.Metadata.Timestamp       = CurrentTimestamp();
         save.Metadata.PlayTime        = m_Clock.Time;
@@ -128,9 +157,27 @@ namespace HedgehogEngine
 
     void SaveGameManager::Load(const std::string& slot)
     {
-        const std::optional<EcsSerialization::SaveGameFile> save = m_Store->Read(slot); // logs why it failed
+        std::optional<EcsSerialization::SaveGameFile> save = m_Store->Read(slot); // logs why it failed
         if (!save)
             return;
+        if (const std::string reason = GetUnloadableReason(save->Metadata); !reason.empty())
+        {
+            LOGERROR("[Save] Slot '" + slot + "' cannot be loaded: " + reason + ".");
+            return;
+        }
+
+        // Every C++ step runs on the save's own copy before the world is touched, so a failing one
+        // leaves the running game as it was.
+        const int savedVersion = save->Metadata.GameDataVersion;
+        const int current      = GetGameDataVersion();
+        if (const std::string error = m_Migrations.Migrate(*save, savedVersion, current); !error.empty())
+        {
+            LOGERROR("[Save] Slot '" + slot + "' cannot be loaded: migrating game data " + error + ".");
+            return;
+        }
+        if (savedVersion < current)
+            LOGINFO("[Save] Slot '" + slot + "' migrated from game data version " + std::to_string(savedVersion) + " to " +
+                    std::to_string(current) + ".");
         const auto world = save->Sections.find(EcsSerialization::SAVE_SECTION_WORLD);
         if (world == save->Sections.end())
         {
@@ -143,7 +190,7 @@ namespace HedgehogEngine
         for (const Section& section : m_Sections)
         {
             if (const auto data = save->Sections.find(section.Name); data != save->Sections.end())
-                section.Load(data->second);
+                section.Load(data->second, savedVersion);
         }
         LOGINFO("[Save] Loaded slot '" + slot + "'.");
         m_EventBus.Publish(GameLoadedEvent{ slot });

@@ -133,7 +133,11 @@ namespace HedgehogScripting
         // is not running yet is kept until its instance is made (OnPlayStart, or a script added
         // during Play), which then gets them in place of OnStart. An entry for another script, or
         // one that does not read, is skipped with a warning. Kept entries are dropped at Stop.
-        void LoadScriptState(ECS::ECS& ecs, const YAML::Node& section);
+        // When savedGameDataVersion is older than the save manager's GetGameDataVersion(), each
+        // script is first migrated: state = self:OnMigrate(savedGameDataVersion, state), with the
+        // returned table replacing the state (nil keeps it, changed in place); a script without
+        // OnMigrate keeps its state. An OnMigrate that fails faults its script, and OnLoad does not run.
+        void LoadScriptState(ECS::ECS& ecs, const YAML::Node& section, int savedGameDataVersion);
 
         // Entities with a live script instance.
         [[nodiscard]] size_t GetScriptCount() const;
@@ -222,6 +226,7 @@ namespace HedgehogScripting
             std::string ScriptPath;
             sol::table  Properties;
             sol::object State;
+            int         GameDataVersion = 0; // the version it was saved at
         };
 
         using RemovedCallback = std::function<void(ECS::Entity, HedgehogEngine::ScriptComponent&)>;
@@ -272,8 +277,9 @@ namespace HedgehogScripting
         void               RegisterReload();
         void               ReloadClass(ECS::ECS& ecs, const std::string& scriptPath);
         void               SwapScript(ECS::ECS& ecs, ECS::Entity entity, const ScriptClass& scriptClass);
-        // Save games (ScriptSystemSaveState.cpp): the saved properties on self, then OnLoad(state);
-        // false, logged, when OnLoad fails.
+        // Save games (ScriptSystemSaveState.cpp): the saved properties on self, then
+        // OnMigrate(fromVersion, state) for an older game data version, then OnLoad(state); false,
+        // logged, when OnMigrate or OnLoad fails.
         bool               ApplyLoad(ECS::Entity entity, EntityScript& script, const PendingLoad& load);
         // Runs method on every enabled, healthy script, faulting a script whose call fails.
         template<typename... Args>

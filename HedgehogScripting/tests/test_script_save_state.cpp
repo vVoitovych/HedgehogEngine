@@ -100,7 +100,7 @@ TEST_CASE("Script save state - properties and OnSave's table round-trip into run
     // Through text, as a save file carries it, into a fresh Play's running scripts.
     const YAML::Node reread = YAML::Load(YAML::Dump(section));
     REQUIRE(world.World.Context.Play());
-    world.World.Scripts->LoadScriptState(world.World.Ecs(), reread);
+    world.World.Scripts->LoadScriptState(world.World.Ecs(), reread, 1);
     CHECK(log.Lines("loaded ok").size() == 1);
     world.World.Frame(STEP);
     CHECK(log.Lines("started").size() == 1); // a loaded script does not start again
@@ -114,7 +114,7 @@ TEST_CASE("Script save state - a state loaded before Play replaces OnStart when 
     LogCapture       log;
     const YAML::Node section = world.PlayAndSave();
 
-    world.World.Scripts->LoadScriptState(world.World.Ecs(), section); // nothing runs yet
+    world.World.Scripts->LoadScriptState(world.World.Ecs(), section, 1); // nothing runs yet
     CHECK(log.Lines("loaded ok").empty());
     REQUIRE(world.World.Context.Play());
     CHECK(log.Lines("loaded ok").size() == 1);
@@ -172,7 +172,7 @@ TEST_CASE("Script save state - entries that do not fit are skipped with a warnin
 
     LogCapture log;
     REQUIRE(world.World.Context.Play());
-    world.World.Scripts->LoadScriptState(world.World.Ecs(), section);
+    world.World.Scripts->LoadScriptState(world.World.Ecs(), section, 1);
     world.World.Frame(STEP);
     CHECK(log.Lines("the saved state is for assets://Scripts/Other.lua; it is not loaded").size() == 1);
     CHECK(log.Lines("The saved state of entity 12345 is skipped").size() == 1);
