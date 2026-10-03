@@ -22,6 +22,12 @@ namespace EcsSerialization
     class ComponentSerializerRegistry;
 }
 
+// Callers of CaptureWorld and RestoreWorld include yaml-cpp themselves.
+namespace YAML
+{
+    class Node;
+}
+
 namespace HedgehogEngine
 {
     class EventBus;
@@ -63,6 +69,15 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API void ResetScene();
         HEDGEHOG_ENGINE_API void SetSceneName(const std::string& name);
         HEDGEHOG_ENGINE_API std::string GetSceneName() const;
+        // The virtual path of the scene file last loaded or saved; empty for a new scene.
+        [[nodiscard]] HEDGEHOG_ENGINE_API const std::string& GetScenePath() const;
+
+        // The world as a document node, for a save game's World section, and its restore: the
+        // whole tree is replaced, entities come back under their saved ids, and the scene takes
+        // the document's name. sourceName labels log messages. False, logged, when the document
+        // does not read (the tree may then be partial, as with RestoreSnapshot).
+        [[nodiscard]] HEDGEHOG_ENGINE_API YAML::Node CaptureWorld() const;
+        [[nodiscard]] HEDGEHOG_ENGINE_API bool       RestoreWorld(const YAML::Node& world, const std::string& sourceName);
 
         // Restore replaces the whole tree with the captured one. Entities come back
         // with their captured ids, so ids held elsewhere (the editor selection,
@@ -93,6 +108,7 @@ namespace HedgehogEngine
         RenderSystem&    m_RenderSystem;
 
         std::string m_SceneName;
+        std::string m_ScenePath;
         size_t      m_GameObjectIndex = 0;
     };
 }

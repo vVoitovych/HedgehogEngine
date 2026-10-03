@@ -14,6 +14,7 @@
 #include "HedgehogExtract/api/SceneExtractor.hpp"
 #include "HedgehogEngine/api/Containers/FontContainer.hpp"
 #include "HedgehogEngine/api/Resource/ResourceCatalog.hpp"
+#include "HedgehogEngine/api/Save/SaveGameManager.hpp"
 #include "HedgehogExtract/api/ScenePicker.hpp"
 #include "HedgehogRenderer/Renderer.hpp"
 #include "HedgehogScripting/api/ScriptSystem.hpp"
@@ -21,6 +22,7 @@
 
 #include "ECS/api/components/Hierarchy.hpp"
 #include "FileSystem/api/FileSystemManager.hpp"
+#include "FileSystem/api/PathUtils.hpp"
 
 #include "Logger/api/Logger.hpp"
 
@@ -112,6 +114,10 @@ namespace Editor
                                                       : std::string("<unnamed>"),
                         "( entity", event.Entity, ")");
             });
+
+        // Play sessions save into the project's editor folder, so they never overwrite a game's saves.
+        if (const auto saves = FS::GetSavesDirectory(HedgehogEngine::SaveGameManager::DEFAULT_PROJECT_NAME, true))
+            engineContext.GetSaveGames().SetSaveDirectory(*saves);
 
         // Sounds play only in Play mode; a missing output device leaves the engine silent.
         (void)engineContext.GetAudioEngine().Init(HA::AudioEngineDesc{});
