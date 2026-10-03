@@ -39,6 +39,8 @@
 
 #include "EcsSerialization/api/ComponentSerializerRegistry.hpp"
 
+#include "HedgehogInput/api/DefaultInputActions.hpp"
+
 #include "Logger/api/Logger.hpp"
 
 #include <algorithm>
@@ -51,6 +53,7 @@ namespace HedgehogEngine
         : m_ResourceCatalog(m_FileSystem)
     {
         InitFileSystem();
+        LoadInputActions();
 
         m_Camera = std::make_unique<Camera>();
         InitECS();
@@ -181,8 +184,46 @@ namespace HedgehogEngine
         RegisterScriptComponentSerializer(*m_ComponentRegistry);
     }
 
+    void EngineContext::LoadInputActions()
+    {
+        if (!m_FileSystem.Exists(INPUT_ACTIONS_PATH))
+        {
+            LOGINFO("[Input]", INPUT_ACTIONS_PATH, "not found; using the default actions.");
+            m_InputActions = HInput::MakeDefaultInputActions();
+        }
+        else if (std::optional<HInput::InputActionSet> actions = HInput::LoadInputActions(INPUT_ACTIONS_PATH, m_FileSystem))
+        {
+            m_InputActions = std::move(*actions);
+        }
+        else
+        {
+            m_InputActions = HInput::MakeDefaultInputActions(); // the error is logged
+        }
+        m_InputWatch = HInput::WatchInputActions(INPUT_ACTIONS_PATH, m_FileSystem);
+        HInput::ResetActionState(m_GameActions, m_InputActions.Game);
+    }
+
+    void EngineContext::UpdateGameInput(const HW::RawInput& gameInput)
+    {
+        if (m_PlayState == PlayState::Playing)
+            HInput::UpdateActionState(m_InputActions.Game, gameInput, m_GameActions);
+        else
+            HInput::ResetActionState(m_GameActions, m_InputActions.Game);
+    }
+
+    void EngineContext::ReloadInputActions(std::chrono::steady_clock::time_point now)
+    {
+        if (HInput::PollInputActions(m_InputWatch, m_FileSystem, now, m_InputActions))
+            HInput::ResetActionState(m_GameActions, m_InputActions.Game);
+    }
+
+    const HInput::InputActionSet& EngineContext::GetInputActions() const { return m_InputActions; }
+    HInput::ActionState&          EngineContext::GetGameActionState() { return m_GameActions; }
+    const HInput::ActionState&    EngineContext::GetGameActionState() const { return m_GameActions; }
+
     void EngineContext::UpdateContext(WindowContext& windowContext, float aspectRatio, float dt)
     {
+        ReloadInputActions(std::chrono::steady_clock::now());
         UpdateCamera(windowContext, aspectRatio, dt);
 
         // Update order is load-bearing: gameplay (Play only) → Animation → Transform → Hierarchy
@@ -204,6 +245,7 @@ namespace HedgehogEngine
 
         m_PlaySnapshot = m_SceneManager->CaptureSnapshot();
         ResetFixedStepClock(m_Clock);
+        HInput::ResetActionState(m_GameActions, m_InputActions.Game); // a key held into Play presses on its first frame
         m_PlayState = PlayState::Playing;
         m_ECS.NotifyPlayStart();
         return true;
@@ -215,6 +257,7 @@ namespace HedgehogEngine
             return false;
 
         m_PlayState = PlayState::Paused;
+        HInput::ResetActionState(m_GameActions, m_InputActions.Game);
         m_ECS.NotifyPlayPause();
         return true;
     }
@@ -235,6 +278,7 @@ namespace HedgehogEngine
             return false;
 
         m_PlayState = PlayState::Edit;
+        HInput::ResetActionState(m_GameActions, m_InputActions.Game);
         m_ECS.NotifyPlayStop();
         if (m_PlaySnapshot && !m_SceneManager->RestoreSnapshot(*m_PlaySnapshot))
             LOGERROR("EngineContext::Stop: the scene could not be restored to its state before Play.");

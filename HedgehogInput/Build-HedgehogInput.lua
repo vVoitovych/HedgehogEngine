@@ -17,6 +17,8 @@ project "HedgehogInput"
    -- HedgehogWindow's headers only: the RawInput snapshot and its key codes.
    links {
       "HedgehogMath",
+      "FileSystem",
+      "Logger",
       "yaml-cpp",
    }
 

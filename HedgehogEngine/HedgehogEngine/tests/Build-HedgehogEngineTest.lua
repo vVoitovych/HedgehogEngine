@@ -16,6 +16,7 @@ project "HedgehogEngineTest"
     links
     {
         "HedgehogEngine",
+        "HedgehogInput",
         "ECS",
         "HedgehogMath",
         "FileSystem"

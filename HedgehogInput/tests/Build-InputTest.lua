@@ -16,6 +16,8 @@ project "InputTest"
     {
         "HedgehogInput",
         "HedgehogMath",
+        "FileSystem",
+        "Logger",
         "yaml-cpp"
     }
 

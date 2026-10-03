@@ -1,0 +1,33 @@
+Version: 1
+Game:
+  UiNavigateUp:
+    - Key: Up
+  UiNavigateDown:
+    - Key: Down
+  UiNavigateLeft:
+    - Key: Left
+  UiNavigateRight:
+    - Key: Right
+  UiSubmit:
+    - Key: Enter
+    - Key: KeypadEnter
+    - Key: Space
+  UiPointerPress:
+    - MouseButton: Left
+Editor:
+  EditorCameraForward:
+    - KeyAxis: {Negative: S, Positive: W}
+  EditorCameraRight:
+    - KeyAxis: {Negative: A, Positive: D}
+  EditorCameraUp:
+    - KeyAxis: {Negative: Q, Positive: E}
+  EditorCameraLookX:
+    - PointerDelta: X
+      Deadzone: 2
+  EditorCameraLookY:
+    - PointerDelta: Y
+      Deadzone: 2
+  EditorCameraLookHold:
+    - MouseButton: Left
+    - MouseButton: Right
+    - MouseButton: Middle
