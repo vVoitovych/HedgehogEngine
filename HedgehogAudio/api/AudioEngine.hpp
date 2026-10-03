@@ -108,8 +108,13 @@ namespace HA
         // Stops a sound and frees its slot, so its handle goes stale. A stale handle does nothing.
         HEDGEHOG_AUDIO_API void Stop(SoundHandle sound);
         HEDGEHOG_AUDIO_API void StopAll();
-        // True from Play until the sound is stopped or, when it does not loop, reaches its end.
+        // True from Play until the sound is paused, stopped or, when it does not loop, reaches its end.
         [[nodiscard]] HEDGEHOG_AUDIO_API bool IsPlaying(SoundHandle sound) const;
+        // True while the sound holds its slot: playing, paused, or finished and not yet reclaimed by
+        // Update. False for a stale handle.
+        [[nodiscard]] HEDGEHOG_AUDIO_API bool Exists(SoundHandle sound) const;
+        // Pausing holds a sound where it is, keeping its slot; resuming carries on from there.
+        HEDGEHOG_AUDIO_API void SetPaused(SoundHandle sound, bool paused);
         HEDGEHOG_AUDIO_API void SetVolume(SoundHandle sound, float volume); // clamped to at least 0
         HEDGEHOG_AUDIO_API void SetPitch(SoundHandle sound, float pitch);   // ignored unless above 0
         // A spatial sound's place and velocity in the world.

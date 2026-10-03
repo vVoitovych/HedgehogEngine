@@ -27,6 +27,7 @@ project "HedgehogEngine"
         "ContentLoader",
         "HedgehogAnimation",
         "HedgehogInput",
+        "HedgehogAudio",
         "HedgehogMath",
         "Logger",
         "ECS",
