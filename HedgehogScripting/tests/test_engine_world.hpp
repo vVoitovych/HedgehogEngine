@@ -72,6 +72,14 @@ public:
 
     ECS::ECS& Ecs() { return Context.GetECS(); }
 
+    // One frame with the game's input: the input is evaluated first, as the Editor does before
+    // UpdateContext, then Frame(dt).
+    void Frame(float dt, const HW::RawInput& gameInput)
+    {
+        Context.UpdateGameInput(gameInput);
+        Frame(dt);
+    }
+
     // One frame as EngineContext::UpdateContext runs it, less the editor camera (which needs a
     // window): gameplay, then Transform and Hierarchy, so script writes reach ObjMatrix.
     void Frame(float dt)

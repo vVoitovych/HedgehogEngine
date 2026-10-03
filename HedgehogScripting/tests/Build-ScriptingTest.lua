@@ -19,6 +19,7 @@ project "ScriptingTest"
     {
         "HedgehogScripting",
         "HedgehogEngine",
+        "HedgehogInput",
         "ECS",
         "HedgehogMath",
         "FileSystem",

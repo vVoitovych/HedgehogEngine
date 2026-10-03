@@ -109,6 +109,7 @@ namespace HedgehogScripting
         RegisterPropertyHelpers();
         RegisterReload();
         Bindings::RegisterTime(m_Lua, context.GetFixedStepClock(), m_DeltaTime, m_Frame);
+        Bindings::RegisterInput(m_Lua, context);
         m_BaseEnvironment = sol::environment(m_Lua, sol::create, m_Lua.globals());
         StartClassSupport();
     }
