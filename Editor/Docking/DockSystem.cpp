@@ -1,8 +1,10 @@
 #include "DockSystem.hpp"
 
 #include "EditorTheme.hpp"
+#include "Widgets/IconWidgets.hpp"
 
 #include <algorithm>
+#include <cstdio>
 #include <string>
 
 namespace Editor
@@ -10,6 +12,9 @@ namespace Editor
     namespace
     {
         constexpr DockArea DOCKABLE_AREAS[] = { DockArea::Left, DockArea::Right, DockArea::Bottom };
+
+        // Spaces at the start of a tab's label, where its icon is drawn.
+        constexpr const char* TAB_ICON_PAD = "      ";
     }
 
     DockSystem::DockSystem()
@@ -21,8 +26,11 @@ namespace Editor
 
     void DockSystem::Draw(const std::function<void()>& drawToolbar,
                           const DrawFn& drawFn,
-                          float menuBarHeight)
+                          float menuBarHeight,
+                          const DockPanelIcons& icons)
     {
+        m_Icons = icons;
+
         const ImGuiIO& io      = ImGui::GetIO();
         const ImVec2   display = io.DisplaySize;
 
@@ -112,7 +120,7 @@ namespace Editor
     {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 4.0f, 4.0f });
         ImGui::BeginChild(id, size, ImGuiChildFlags_None);
-        DrawDockableArea(area, size, drawFn);
+        DrawDockableArea(area, drawFn);
         ImGui::EndChild();
         ImGui::PopStyleVar();
     }
@@ -132,22 +140,40 @@ namespace Editor
         return horizontal ? delta.y : delta.x;
     }
 
-    void DockSystem::DrawDockableArea(DockArea area, ImVec2 size, const DrawFn& drawFn)
+    // Every docked area draws a tab strip, one tab for a single panel: each tab shows its panel's
+    // icon, and a button at the strip's right end opens the menu of the panel shown.
+    void DockSystem::DrawDockableArea(DockArea area, const DrawFn& drawFn)
     {
         const auto& panels = m_Layout.AreaPanels[static_cast<int>(area)];
         if (panels.empty())
             return;
 
-        if (panels.size() == 1)
-        {
-            const PanelId pid      = panels[0];
-            const ImVec2  titleSz  = { size.x, ImGui::GetFrameHeight() };
+        // The menu button sits at the right end of the tab row, past the tabs' natural width (an
+        // area holds at most every panel, so they never reach it).
+        const ImVec2 rowStart    = ImGui::GetCursorPos();
+        const float  buttonWidth = ICON_SIZE_SMALL + 2.0f * ImGui::GetStyle().FramePadding.x;
+        const float  buttonX     = rowStart.x + std::max(ImGui::GetContentRegionAvail().x - buttonWidth, 0.0f);
 
-            ImGui::PushStyleColor(ImGuiCol_Button,        ImGui::GetStyleColorVec4(ImGuiCol_TitleBg));
-            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGui::GetStyleColorVec4(ImGuiCol_TitleBgActive));
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImGui::GetStyleColorVec4(ImGuiCol_TitleBgActive));
-            ImGui::Button(PanelName(pid), titleSz);
-            ImGui::PopStyleColor(3);
+        if (!ImGui::BeginTabBar("##Tabs", ImGuiTabBarFlags_Reorderable))
+            return;
+
+        const ImU32 iconTint = ImGui::GetColorU32(ImGuiCol_Text);
+        const auto  drawTabIcon = [iconTint](void* icon)
+        {
+            const ImVec2 min = ImGui::GetItemRectMin();
+            const float  y   = min.y + (ImGui::GetItemRectSize().y - ICON_SIZE_SMALL) * 0.5f;
+            DrawIcon(*ImGui::GetWindowDrawList(), icon, ImVec2(min.x + ImGui::GetStyle().FramePadding.x, y),
+                     ICON_SIZE_SMALL, iconTint);
+        };
+
+        std::optional<PanelId> shown;
+        char                   label[64];
+        for (const PanelId pid : panels)
+        {
+            // The label leaves room for the icon; the id after ### stays the panel's saved key.
+            std::snprintf(label, sizeof(label), "%s%s###%s", TAB_ICON_PAD, PanelName(pid), PanelIdToString(pid));
+            const bool open = ImGui::BeginTabItem(label);
+            drawTabIcon(m_Icons.Panels[static_cast<size_t>(pid)]);
 
             if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
             {
@@ -155,30 +181,53 @@ namespace Editor
                 m_DraggingFromArea = area;
             }
 
-            drawFn(pid);
-            return;
-        }
-
-        // Multiple panels: tab bar
-        if (ImGui::BeginTabBar("##Tabs", ImGuiTabBarFlags_Reorderable))
-        {
-            for (PanelId pid : panels)
+            if (open)
             {
-                const bool open = ImGui::BeginTabItem(PanelName(pid));
-
-                if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
-                {
-                    m_DraggingPanel    = pid;
-                    m_DraggingFromArea = area;
-                }
-
-                if (open)
-                {
-                    drawFn(pid);
-                    ImGui::EndTabItem();
-                }
+                shown = pid;
+                drawFn(pid);
+                ImGui::EndTabItem();
             }
-            ImGui::EndTabBar();
+        }
+        ImGui::EndTabBar();
+
+        // Drawn last in the area, so nothing after it needs the cursor back.
+        ImGui::SetCursorPos(ImVec2(buttonX, rowStart.y));
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        const bool openMenu = IconButton("##PanelMenuButton", m_Icons.More, ICON_SIZE_SMALL, ImGui::GetStyle().Colors[ImGuiCol_Text]);
+        ImGui::PopStyleColor();
+        ImGui::SetItemTooltip("Panel menu");
+
+        if (openMenu)
+            ImGui::OpenPopup("##PanelMenu");
+        if (shown && ImGui::BeginPopup("##PanelMenu"))
+        {
+            DrawPanelMenu(area, *shown);
+            ImGui::EndPopup();
+        }
+    }
+
+    // Hide, or move the panel to another area; the area it is in is greyed.
+    void DockSystem::DrawPanelMenu(DockArea area, PanelId panel)
+    {
+        ImGui::TextDisabled("%s", PanelName(panel));
+        ImGui::Separator();
+        if (ImGui::MenuItem("Hide"))
+            m_Layout.HidePanel(panel);
+
+        constexpr struct
+        {
+            DockArea    Area;
+            const char* Label;
+        } TARGETS[] = {
+            { DockArea::Left,     "Move to Left" },
+            { DockArea::Right,    "Move to Right" },
+            { DockArea::Bottom,   "Move to Bottom" },
+            { DockArea::Floating, "Float" },
+        };
+        for (const auto& target : TARGETS)
+        {
+            if (ImGui::MenuItem(target.Label, nullptr, false, target.Area != area))
+                m_Layout.MovePanel(panel, target.Area);
         }
     }
 

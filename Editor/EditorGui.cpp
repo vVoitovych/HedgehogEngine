@@ -1,6 +1,7 @@
 #include "EditorGui.hpp"
 #include "EditorTheme.hpp"
 #include "Widgets/IconWidgets.hpp"
+#include "Widgets/ViewportOverlay.hpp"
 #include "Panels/EntityIcon.hpp"
 #include "Panels/TextSearch.hpp"
 #include "Panels/ConsolePanel.hpp"
@@ -15,6 +16,7 @@
 #include "Tools/RenderGraphEditor/GraphFileReference.hpp"
 #include "Tools/RenderGraphEditor/RenderGraphEditorWindow.hpp"
 
+#include "HedgehogCommon/api/Camera.hpp"
 #include "HedgehogEngine/api/Engine.hpp"
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogEngine/api/WindowContext.hpp"
@@ -206,10 +208,17 @@ namespace Editor
 
         const float menuH = ImGui::GetFrameHeight();
 
+        DockPanelIcons panelIcons;
+        panelIcons.Panels[static_cast<size_t>(PanelId::SceneHierarchy)] = GetIcon(EditorIcon::Hierarchy);
+        panelIcons.Panels[static_cast<size_t>(PanelId::Inspector)]      = GetIcon(EditorIcon::Inspector);
+        panelIcons.Panels[static_cast<size_t>(PanelId::Console)]        = GetIcon(EditorIcon::Console);
+        panelIcons.Panels[static_cast<size_t>(PanelId::Content)]        = GetIcon(EditorIcon::Project);
+        panelIcons.More                                                 = GetIcon(EditorIcon::More);
+
         m_DockSystem.Draw(
             [this, &context]() { DrawToolbarContent(context); },
             [this, &context](PanelId panel) { DrawPanelContent(panel, context); },
-            menuH);
+            menuH, panelIcons);
 
         const auto& fs = context.GetEngineContext().GetFileSystem();
         DrawSettingsWindow(context);
@@ -233,7 +242,7 @@ namespace Editor
         case PanelId::Inspector:      DrawInspector(context);                break;
         case PanelId::Console:        m_ConsolePanel->Draw(m_MonoFont);      break;
         case PanelId::Content:        DrawContentPanel(context);             break;
-        default:                      DrawSceneViewContent();                break;
+        default:                      DrawSceneViewContent(context);         break;
         }
     }
 
@@ -245,13 +254,24 @@ namespace Editor
             OpenContentItem(context, *request);
     }
 
-    void EditorGui::DrawSceneViewContent()
+    void EditorGui::DrawSceneViewContent(HedgehogEngine::Engine& context)
     {
         if (!ImGui::BeginTabBar("##SceneGameTabs"))
             return;
 
+        // A tab's label leaves room for its icon, drawn over it.
+        const auto drawTabIcon = [this](EditorIcon icon)
+        {
+            const ImVec2 min = ImGui::GetItemRectMin();
+            const float  y   = min.y + (ImGui::GetItemRectSize().y - ICON_SIZE_SMALL) * 0.5f;
+            DrawIcon(*ImGui::GetWindowDrawList(), GetIcon(icon), ImVec2(min.x + ImGui::GetStyle().FramePadding.x, y),
+                     ICON_SIZE_SMALL, ImGui::GetColorU32(ImGuiCol_Text));
+        };
+
         // Only the visible tab gets a size: the hidden one stays 0x0, so its view renders nothing.
-        if (ImGui::BeginTabItem("Scene"))
+        const bool sceneOpen = ImGui::BeginTabItem("      Scene###Scene");
+        drawTabIcon(EditorIcon::Scene);
+        if (sceneOpen)
         {
             const ImVec2 avail = ImGui::GetContentRegionAvail();
             m_SceneViewWidth  = static_cast<uint32_t>(std::max(1.0f, avail.x));
@@ -275,18 +295,23 @@ namespace Editor
                     m_ScenePick = ViewportPoint{ (io.MousePos.x - origin.x) / size.x, (io.MousePos.y - origin.y) / size.y };
                 }
             }
-            if (m_ViewportImages.GraphPassCount > 0)
+            // Overlays over the image: the axes as the editor camera sees them, and the pass count.
+            if (m_ViewportImages.Scene)
             {
-                const std::string passes = std::to_string(m_ViewportImages.GraphPassCount) + " render graph passes";
-                const ImVec2      origin = ImGui::GetItemRectMin();
-                ImGui::GetWindowDrawList()->AddText(ImVec2(origin.x + 8.0f, origin.y + 8.0f),
-                                                    ImGui::GetColorU32(Theme::TEXT), passes.c_str());
+                const ImVec2 imageMin  = ImGui::GetItemRectMin();
+                const ImVec2 imageSize = ImGui::GetItemRectSize();
+                ImDrawList&  drawList  = *ImGui::GetWindowDrawList();
+                DrawAxisGizmo(drawList, imageMin, imageSize, context.GetEngineContext().GetCamera().GetViewMatrix());
+                if (m_ViewportImages.GraphPassCount > 0)
+                    DrawPassCount(drawList, imageMin, imageSize, m_ViewportImages.GraphPassCount);
             }
 
             ImGui::EndTabItem();
         }
 
-        if (ImGui::BeginTabItem("Game"))
+        const bool gameOpen = ImGui::BeginTabItem("      Game###Game");
+        drawTabIcon(EditorIcon::Game);
+        if (gameOpen)
         {
             const ImVec2 avail = ImGui::GetContentRegionAvail();
             m_GameViewWidth  = static_cast<uint32_t>(std::max(1.0f, avail.x));
