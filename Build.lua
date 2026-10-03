@@ -42,6 +42,7 @@ include "HedgehogEngine/HedgehogWindow/tests/Build-HedgehogWindowTest.lua"
 include "HedgehogEngine/HedgehogSettings/Build-HedgehogSettings.lua"
 
 include "Editor/Build-Editor.lua"
+include "Editor/tests/Build-EditorTest.lua"
 include "ContentLoader/Build-ContentLoader.lua"
 include "ContentLoader/tests/Build-ContentLoaderTest.lua"
 include "DialogueWindows/Build-DialogueWindows.lua"

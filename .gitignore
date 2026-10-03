@@ -640,3 +640,5 @@ Logs/
 /HedgehogAudio/HedgehogAudio.vcxproj*
 /HedgehogAudio/tests/AudioTest.vcxproj*
 /ThirdParty/miniaudio/miniaudio.vcxproj*
+/Editor/tests/EditorTest.vcxproj
+/Editor/tests/EditorTest.vcxproj.filters

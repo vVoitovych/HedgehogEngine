@@ -4,6 +4,7 @@ project "Editor"
    cppdialect "C++20"
 
    files { "**.hpp", "**.cpp", "**.rc" }
+   removefiles { "tests/**" }
 
    includedirs
    {
