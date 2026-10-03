@@ -21,6 +21,7 @@ namespace Editor
         VertexDescription,
         RenderGraph,
         Font,
+        Audio,
         Other,
     };
 

@@ -1027,7 +1027,11 @@ namespace Editor
             AcceptSelectionDrop(ContentType::Font);
         });
         DrawReflectedComponent<HedgehogEngine::UiButtonComponent>(ecs, entity, "UI button");
-        DrawReflectedComponent<HedgehogEngine::AudioSourceComponent>(ecs, entity, "Audio source");
+        DrawReflectedComponent<HedgehogEngine::AudioSourceComponent>(ecs, entity, "Audio source", [&]
+        {
+            ImGui::TextDisabled("Drop an audio clip (.wav, .mp3, .flac) here");
+            AcceptSelectionDrop(ContentType::Audio);
+        });
         DrawReflectedComponent<HedgehogEngine::AudioListenerComponent>(ecs, entity, "Audio listener");
     }
 

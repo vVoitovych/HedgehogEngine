@@ -33,6 +33,7 @@ namespace Editor
             case ContentType::VertexDescription: return IM_COL32(70, 170, 170, 255);
             case ContentType::RenderGraph:       return IM_COL32(200, 90, 90, 255);
             case ContentType::Font:              return IM_COL32(210, 200, 120, 255);
+            case ContentType::Audio:             return IM_COL32(90, 190, 220, 255);
             case ContentType::Other:             return IM_COL32(120, 120, 120, 255);
             }
             return IM_COL32(120, 120, 120, 255);
