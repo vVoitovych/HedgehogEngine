@@ -3,6 +3,8 @@
 #include "EcsSerialization/api/EcsSerializer.hpp"
 #include "EcsSerialization/api/ComponentSerializerRegistry.hpp"
 
+#include "yaml-cpp/yaml.h"
+
 #include "ECS/api/ECS.hpp"
 #include "ECS/api/components/Hierarchy.hpp"
 
@@ -11,6 +13,10 @@
 #include "FileSystem/tests/test_helpers.hpp"
 
 #include "HedgehogMath/api/Vector.hpp"
+
+#include "HedgehogScripting/tests/test_log_capture.hpp"
+
+#include <string>
 
 namespace
 {
@@ -232,4 +238,121 @@ TEST_CASE("EcsSerializer::Deserialize - valid YAML without scene keys returns fa
 
     CHECK_FALSE(EcsSerialization::EcsSerializer::Deserialize(
         registry, ecs, sceneName, "scene://not_a_scene.yaml", fileSystem));
+}
+
+namespace
+{
+    // An ECS untouched by a refused load: no entity was created.
+    bool IsEmpty(const ECS::ECS& ecs)
+    {
+        for (ECS::Entity entity = 0; entity < 8; ++entity)
+        {
+            if (ecs.IsAlive(entity))
+                return false;
+        }
+        return true;
+    }
+
+    // text with its first line ("Version: ...") replaced by line, or removed when line is empty.
+    std::string WithVersionLine(const std::string& text, const std::string& line)
+    {
+        REQUIRE(text.starts_with("Version: "));
+        const std::string rest = text.substr(text.find('\n') + 1);
+        return line.empty() ? rest : line + "\n" + rest;
+    }
+}
+
+TEST_CASE("EcsSerializer - a document starts with the format version")
+{
+    EcsSerialization::ComponentSerializerRegistry registry;
+    ECS::ECS ecs = MakeEcs();
+    BuildScene(ecs);
+
+    const std::string text = EcsSerialization::EcsSerializer::SerializeToString(registry, ecs, "Versioned");
+    CHECK(text.starts_with("Version: " + std::to_string(EcsSerialization::EcsSerializer::FORMAT_VERSION) +
+                           "\nScene name: Versioned\n"));
+    CHECK(EcsSerialization::EcsSerializer::SerializeToNode(registry, ecs, "Versioned")["Version"].as<int>() ==
+          EcsSerialization::EcsSerializer::FORMAT_VERSION);
+}
+
+TEST_CASE("EcsSerializer - a node round trip equals the string and file round trips")
+{
+    TempDir tmp;
+    FS::FileSystemManager fileSystem;
+    MountScene(fileSystem, tmp.Path());
+
+    EcsSerialization::ComponentSerializerRegistry registry;
+    registry.RegisterVisitable<TestTransform>("TestTransform");
+
+    ECS::ECS source = MakeEcs();
+    BuildScene(source);
+    const std::string text = EcsSerialization::EcsSerializer::SerializeToString(registry, source, "Nodes");
+
+    ECS::ECS    fromNode = MakeEcs();
+    std::string nodeName;
+    REQUIRE(EcsSerialization::EcsSerializer::DeserializeFromNode(
+        registry, fromNode, nodeName, EcsSerialization::EcsSerializer::SerializeToNode(registry, source, "Nodes"), "node"));
+    CHECK(nodeName == "Nodes");
+    CHECK(fromNode.GetRoot() == source.GetRoot());
+
+    REQUIRE(EcsSerialization::EcsSerializer::Serialize(registry, source, "Nodes", "scene://nodes.yaml", fileSystem));
+    ECS::ECS    fromFile = MakeEcs();
+    std::string fileName;
+    REQUIRE(EcsSerialization::EcsSerializer::Deserialize(registry, fromFile, fileName, "scene://nodes.yaml", fileSystem));
+
+    CHECK(EcsSerialization::EcsSerializer::SerializeToString(registry, fromNode, nodeName) == text);
+    CHECK(EcsSerialization::EcsSerializer::SerializeToString(registry, fromFile, fileName) == text);
+}
+
+TEST_CASE("EcsSerializer - a document without a Version is version 1 and loads unchanged")
+{
+    EcsSerialization::ComponentSerializerRegistry registry;
+    registry.RegisterVisitable<TestTransform>("TestTransform");
+
+    ECS::ECS source = MakeEcs();
+    BuildScene(source);
+    const std::string text = EcsSerialization::EcsSerializer::SerializeToString(registry, source, "Legacy");
+
+    ECS::ECS    target = MakeEcs();
+    std::string sceneName;
+    REQUIRE(EcsSerialization::EcsSerializer::DeserializeFromString(
+        registry, target, sceneName, WithVersionLine(text, ""), "legacy"));
+    CHECK(sceneName == "Legacy");
+    CHECK(EcsSerialization::EcsSerializer::SerializeToString(registry, target, sceneName) == text); // saving writes Version
+}
+
+TEST_CASE("EcsSerializer - a newer or unreadable version is refused without touching the ECS")
+{
+    EcsSerialization::ComponentSerializerRegistry registry;
+    registry.RegisterVisitable<TestTransform>("TestTransform");
+
+    ECS::ECS source = MakeEcs();
+    BuildScene(source);
+    const std::string text = EcsSerialization::EcsSerializer::SerializeToString(registry, source, "Future");
+    const int         newer = EcsSerialization::EcsSerializer::FORMAT_VERSION + 1;
+
+    {
+        LogCapture  log;
+        ECS::ECS    target = MakeEcs();
+        std::string sceneName = "unchanged";
+        CHECK_FALSE(EcsSerialization::EcsSerializer::DeserializeFromString(
+            registry, target, sceneName, WithVersionLine(text, "Version: " + std::to_string(newer)), "future.yaml"));
+        CHECK(IsEmpty(target));
+        CHECK(sceneName == "unchanged");
+        CHECK(log.Lines("future.yaml is format version " + std::to_string(newer) +
+                        ", but this build reads up to version " +
+                        std::to_string(EcsSerialization::EcsSerializer::FORMAT_VERSION)).size() == 1);
+    }
+
+    for (const char* bad : { "Version: 0", "Version: -3", "Version: two", "Version: 1.5", "Version: [1]" })
+    {
+        CAPTURE(bad);
+        LogCapture  log;
+        ECS::ECS    target = MakeEcs();
+        std::string sceneName;
+        CHECK_FALSE(EcsSerialization::EcsSerializer::DeserializeFromString(
+            registry, target, sceneName, WithVersionLine(text, bad), "bad.yaml"));
+        CHECK(IsEmpty(target));
+        CHECK(log.Lines("bad.yaml has a Version that is not a positive integer").size() == 1);
+    }
 }
