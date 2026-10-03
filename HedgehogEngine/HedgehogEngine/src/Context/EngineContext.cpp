@@ -21,6 +21,7 @@
 #include "HedgehogEngine/api/ECS/systems/CameraSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/AnimationSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/UiSystem.hpp"
+#include "HedgehogEngine/api/Save/SaveGameManager.hpp"
 #include "HedgehogEngine/api/ECS/systems/AudioSystem.hpp"
 #include "HedgehogEngine/api/ECS/components/AudioListenerComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/AudioSourceComponent.hpp"
@@ -69,6 +70,7 @@ namespace HedgehogEngine
         m_SceneManager = std::make_unique<SceneManager>(
             m_ECS, m_EventBus, m_FileSystem, *m_ComponentRegistry,
             *m_TransformSystem, *m_MeshSystem, *m_RenderSystem);
+        m_SaveGames = std::make_unique<SaveGameManager>(*m_SceneManager, m_EventBus, m_Clock);
 
         m_ResourceCatalog.Update(*m_RenderSystem, *m_MeshSystem);
 
@@ -317,6 +319,7 @@ namespace HedgehogEngine
 
         m_PlayState = PlayState::Edit;
         HInput::ResetActionState(m_GameActions, m_InputActions.Game);
+        m_SaveGames->ClearRequests();
         m_ECS.NotifyPlayStop();
         if (m_PlaySnapshot && !m_SceneManager->RestoreSnapshot(*m_PlaySnapshot))
             LOGERROR("EngineContext::Stop: the scene could not be restored to its state before Play.");
@@ -339,6 +342,8 @@ namespace HedgehogEngine
             m_ECS.RunFixedUpdate(m_Clock.FixedDeltaTime);
         // Scaled like the fixed steps; a negative scale counts as 0, as the clock treats it.
         m_ECS.RunUpdate(std::max(dt * m_Clock.TimeScale, 0.0f));
+        // After every script hook: a save sees the frame's state, a load runs under no script.
+        m_SaveGames->ProcessRequests();
     }
 
     void EngineContext::UpdateAnimation(float dt)
@@ -353,6 +358,7 @@ namespace HedgehogEngine
     const ResourceCatalog& EngineContext::GetResourceCatalog() const { return m_ResourceCatalog; }
 
     SceneManager& EngineContext::GetSceneManager()             { return *m_SceneManager; }
+    SaveGameManager& EngineContext::GetSaveGames()             { return *m_SaveGames; }
     const SceneManager& EngineContext::GetSceneManager() const { return *m_SceneManager; }
 
     const FS::FileSystemManager& EngineContext::GetFileSystem() const { return m_FileSystem; }

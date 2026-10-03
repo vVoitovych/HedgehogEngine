@@ -11,11 +11,13 @@
 #include "HedgehogInput/api/GameInputRegion.hpp"
 #include "HedgehogEngine/api/Containers/FontContainer.hpp"
 #include "HedgehogEngine/api/Resource/ResourceCatalog.hpp"
+#include "HedgehogEngine/api/Save/SaveGameManager.hpp"
 #include "HedgehogRenderer/Renderer.hpp"
 #include "HedgehogAudio/api/AudioEngine.hpp"
 #include "HedgehogScripting/api/ScriptSystem.hpp"
 
 #include "FileSystem/api/FileSystemManager.hpp"
+#include "FileSystem/api/PathUtils.hpp"
 
 #include "Logger/api/Logger.hpp"
 
@@ -45,6 +47,9 @@ namespace Editor
             // Before the scene loads, as the Editor does; the engine's ECS owns it.
             (void)HedgehogScripting::RegisterScriptSystem(engineContext, fileSystem);
             (void)engineContext.GetAudioEngine().Init(HA::AudioEngineDesc{});
+            // A game's own saves folder, never the editor's.
+            if (const auto saves = FS::GetSavesDirectory(HedgehogEngine::SaveGameManager::DEFAULT_PROJECT_NAME, false))
+                engineContext.GetSaveGames().SetSaveDirectory(*saves);
 
             if (fileSystem.Exists(ENGINE_SETTINGS_PATH) && !settings.Load(ENGINE_SETTINGS_PATH, fileSystem))
                 LOGWARNING("Game mode: engine settings could not be read, using defaults.");

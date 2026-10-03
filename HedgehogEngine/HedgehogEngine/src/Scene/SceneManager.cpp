@@ -65,6 +65,7 @@ namespace HedgehogEngine
         DeleteGameObjectAndChildren(m_ECS.GetRoot());
         const bool loaded = EcsSerialization::EcsSerializer::Deserialize(m_ComponentRegistry, m_ECS, m_SceneName,
                                                                           *virtualPath, m_FileSystem);
+        m_ScenePath = *virtualPath;
         RefreshAfterLoad();
         return loaded;
     }
@@ -94,6 +95,22 @@ namespace HedgehogEngine
         return restored;
     }
 
+    YAML::Node SceneManager::CaptureWorld() const
+    {
+        return EcsSerialization::EcsSerializer::SerializeToNode(m_ComponentRegistry, m_ECS, m_SceneName);
+    }
+
+    bool SceneManager::RestoreWorld(const YAML::Node& world, const std::string& sourceName)
+    {
+        DeleteGameObjectAndChildren(m_ECS.GetRoot());
+        std::string sceneName = m_SceneName;
+        const bool  restored  = EcsSerialization::EcsSerializer::DeserializeFromNode(m_ComponentRegistry, m_ECS, sceneName,
+                                                                                    world, sourceName);
+        m_SceneName = sceneName;
+        RefreshAfterLoad();
+        return restored;
+    }
+
     void SceneManager::RefreshAfterLoad()
     {
         for (auto entity : m_TransformSystem.GetEntities())
@@ -113,6 +130,7 @@ namespace HedgehogEngine
             LOGERROR("SceneManager::SaveScene: path is not under any registered mount (path: ", filePath, ")");
             return false;
         }
+        m_ScenePath = *virtualPath;
         return EcsSerialization::EcsSerializer::Serialize(
             m_ComponentRegistry, m_ECS, m_SceneName, *virtualPath, m_FileSystem);
     }
@@ -122,6 +140,7 @@ namespace HedgehogEngine
         DeleteGameObjectAndChildren(m_ECS.GetRoot());
         CreateSceneRoot();
         m_SceneName       = "Default";
+        m_ScenePath.clear();
         m_GameObjectIndex = 0;
     }
 
@@ -133,6 +152,11 @@ namespace HedgehogEngine
     std::string SceneManager::GetSceneName() const
     {
         return m_SceneName;
+    }
+
+    const std::string& SceneManager::GetScenePath() const
+    {
+        return m_ScenePath;
     }
 
     ECS::Entity SceneManager::CreateGameObject(std::optional<ECS::Entity> parent)

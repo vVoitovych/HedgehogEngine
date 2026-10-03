@@ -78,6 +78,15 @@ namespace HedgehogScripting::Bindings
     using ClickSubscriber = std::function<uint64_t(const ScriptEntity& button, sol::protected_function handler)>;
     void RegisterUi(sol::state& lua, HedgehogEngine::EngineContext& context, ClickSubscriber subscribeClick);
 
+    // The Save table over context's SaveGameManager: write(slot) and load(slot) queue a save of
+    // the world (and every registered section, the scripts' state included) or a load, done at the
+    // end of the frame, and return whether it was queued (load: whether the slot exists);
+    // list() returns { name, scene, timestamp, playTime, gameDataVersion, saveVersion } per slot,
+    // by name; exists(slot) and delete(slot). A slot name other than 1 to 64 of A-Z, a-z, 0-9, '_'
+    // and '-' is a script error. Outside Play mode write, load and delete do nothing and return
+    // false, and the first such call logs a warning. context must outlive lua.
+    void RegisterSave(sol::state& lua, HedgehogEngine::EngineContext& context);
+
     // The Input table over context's game actions (assets://Input/actions.yaml's Game map):
     // isDown, wasPressed, wasReleased, value and consume take an action's name (an unknown one, or
     // a non-string, is a script error); pointerPosition and pointerDelta return x and y in game-view

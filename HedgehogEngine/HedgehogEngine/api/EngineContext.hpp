@@ -51,6 +51,7 @@ namespace HedgehogEngine
     class UiSystem;
     class AudioSystem;
     class AudioListenerSystem;
+    class SaveGameManager;
 
     // Edit: gameplay does not run. Playing: every frame runs the fixed steps and the update.
     // Paused: nothing runs, and the scene waits to be resumed or stopped.
@@ -88,8 +89,9 @@ namespace HedgehogEngine
         [[nodiscard]] HEDGEHOG_ENGINE_API const FixedStepClock& GetFixedStepClock() const;
 
         // One frame of gameplay, only while Playing: the clock's fixed steps of OnFixedUpdate,
-        // then one OnUpdate with the scaled frame time. UpdateContext calls it; it is public
-        // so tests can drive frames without a window.
+        // then one OnUpdate with the scaled frame time, then the save and load requests the frame
+        // made (SaveGameManager::ProcessRequests). UpdateContext calls it; it is public so tests
+        // can drive frames without a window.
         HEDGEHOG_ENGINE_API void UpdatePlayMode(float dt);
 
         // Fills every animator's skinning palette for this frame: advanced by the frame's scaled
@@ -128,6 +130,10 @@ namespace HedgehogEngine
 
         HEDGEHOG_ENGINE_API SceneManager&       GetSceneManager();
         HEDGEHOG_ENGINE_API const SceneManager& GetSceneManager() const;
+
+        // Save games in Play mode. Stop drops its pending requests; the application sets its save
+        // directory (the Editor's per-project editor folder, --game-mode's game folder).
+        HEDGEHOG_ENGINE_API SaveGameManager& GetSaveGames();
 
         HEDGEHOG_ENGINE_API HedgehogSettings::Settings&       GetSettings();
         HEDGEHOG_ENGINE_API const HedgehogSettings::Settings& GetSettings() const;
@@ -192,6 +198,7 @@ namespace HedgehogEngine
         // Constructed after ECS/systems/component-registry are ready (it creates the scene root
         // and needs live system references) — see EngineContext.cpp for the ordering.
         std::unique_ptr<SceneManager> m_SceneManager;
+        std::unique_ptr<SaveGameManager> m_SaveGames; // after the SceneManager it saves
 
         HInput::InputActionSet    m_InputActions;
         HInput::InputActionsWatch m_InputWatch;

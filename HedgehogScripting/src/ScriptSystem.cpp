@@ -8,7 +8,9 @@
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
 #include "HedgehogEngine/api/Events/AnimationEvents.hpp"
+#include "HedgehogEngine/api/Events/SaveEvents.hpp"
 #include "HedgehogEngine/api/Events/UiEvents.hpp"
+#include "HedgehogEngine/api/Save/SaveGameManager.hpp"
 
 #include "ECS/api/ECS.hpp"
 #include "ECS/api/components/Hierarchy.hpp"
@@ -111,6 +113,15 @@ namespace HedgehogScripting
                              { return SubscribeClick(button, std::move(handler)); });
         context.GetEventBus().Subscribe<HedgehogEngine::UiButtonClickedEvent>(
             [this](const HedgehogEngine::UiButtonClickedEvent& event) { QueueButtonClicked(event); });
+        // Save games carry the scripts' state. The ECS that owns this system outlives the save
+        // manager (EngineContext destroys it first), so the section never outlives the system.
+        context.GetSaveGames().RegisterSection(
+            "Scripts", [this]() { return SaveScriptState(m_Context.GetECS()); },
+            [this](const YAML::Node& section) { LoadScriptState(m_Context.GetECS(), section); });
+        context.GetEventBus().Subscribe<HedgehogEngine::GameLoadedEvent>(
+            [this](const HedgehogEngine::GameLoadedEvent& event)
+            { m_QueuedEvents.push_back(QueuedEvent{ "GameLoaded", m_Lua.create_table_with("slot", event.Slot) }); });
+        Bindings::RegisterSave(m_Lua, context);
         RegisterCoroutines();
         RegisterPropertyHelpers();
         RegisterReload();
