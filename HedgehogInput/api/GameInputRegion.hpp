@@ -15,7 +15,7 @@ namespace HInput
         HM::Vector2 Size      = HM::Vector2(0.0f, 0.0f); // its size, in the same coordinates
         HM::Vector2 PixelSize = HM::Vector2(0.0f, 0.0f); // its size in the game view's own pixels
         bool        PointerEnabled  = false;             // the pointer may press, release and scroll in it
-        bool        KeyboardEnabled = false;             // keys reach the game
+        bool        KeyboardEnabled = false;             // keys and the gamepad reach the game
     };
 
     // What MakeGameInput remembers between frames, per mouse button: whether the source had it down
@@ -32,7 +32,7 @@ namespace HInput
     // - a mouse button the game holds from a press that began inside until its release, wherever the
     //   cursor goes meanwhile, so presses and releases stay paired; a press that began outside, or
     //   while the pointer was disabled, never reaches the game;
-    // - scroll only while inside, keys only while the keyboard is enabled.
+    // - scroll only while inside, keys and the gamepad only while the keyboard is enabled.
     // A region with no area gives no input at all. gate carries the button state between frames.
     [[nodiscard]] HW::RawInput MakeGameInput(const HW::RawInput& source, const GameInputRegion& region, GameInputGate& gate);
 }

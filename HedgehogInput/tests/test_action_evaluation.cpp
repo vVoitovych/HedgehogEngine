@@ -273,12 +273,19 @@ TEST_CASE("Actions - the defaults have the game's UI actions and the editor came
     const auto key = [](Key k) { return InputBinding{ BindingSource::Key, static_cast<uint16_t>(k) }; };
 
     CHECK(defaults.Game.Actions.size() == 6);
-    CHECK(bindingsOf(defaults.Game, "UiNavigateUp") == std::vector<InputBinding>{ key(Key::Up) });
-    CHECK(bindingsOf(defaults.Game, "UiNavigateDown") == std::vector<InputBinding>{ key(Key::Down) });
-    CHECK(bindingsOf(defaults.Game, "UiNavigateLeft") == std::vector<InputBinding>{ key(Key::Left) });
-    CHECK(bindingsOf(defaults.Game, "UiNavigateRight") == std::vector<InputBinding>{ key(Key::Right) });
+    const auto pad   = [](HW::GamepadButton b) { return InputBinding{ BindingSource::GamepadButton, static_cast<uint16_t>(b) }; };
+    const auto stick = [](HW::GamepadAxis a, float scale)
+    { return InputBinding{ BindingSource::GamepadAxis, static_cast<uint16_t>(a), 0, scale, 0.2f }; };
+    CHECK(bindingsOf(defaults.Game, "UiNavigateUp") ==
+          std::vector<InputBinding>{ key(Key::Up), pad(HW::GamepadButton::DpadUp), stick(HW::GamepadAxis::LeftY, -1.0f) });
+    CHECK(bindingsOf(defaults.Game, "UiNavigateDown") ==
+          std::vector<InputBinding>{ key(Key::Down), pad(HW::GamepadButton::DpadDown), stick(HW::GamepadAxis::LeftY, 1.0f) });
+    CHECK(bindingsOf(defaults.Game, "UiNavigateLeft") ==
+          std::vector<InputBinding>{ key(Key::Left), pad(HW::GamepadButton::DpadLeft), stick(HW::GamepadAxis::LeftX, -1.0f) });
+    CHECK(bindingsOf(defaults.Game, "UiNavigateRight") ==
+          std::vector<InputBinding>{ key(Key::Right), pad(HW::GamepadButton::DpadRight), stick(HW::GamepadAxis::LeftX, 1.0f) });
     CHECK(bindingsOf(defaults.Game, "UiSubmit") ==
-          std::vector<InputBinding>{ key(Key::Enter), key(Key::KeypadEnter), key(Key::Space) });
+          std::vector<InputBinding>{ key(Key::Enter), key(Key::KeypadEnter), key(Key::Space), pad(HW::GamepadButton::A) });
     CHECK(bindingsOf(defaults.Game, "UiPointerPress") ==
           std::vector<InputBinding>{ { BindingSource::MouseButton, static_cast<uint16_t>(MouseButton::Left) } });
 

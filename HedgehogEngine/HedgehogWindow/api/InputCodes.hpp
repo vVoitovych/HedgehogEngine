@@ -147,4 +147,39 @@ namespace HW
     };
 
     inline constexpr size_t MOUSE_BUTTON_COUNT = 8;
+
+    // A gamepad's buttons and axes in GLFW's standard (Xbox-like) layout and order.
+    enum class GamepadButton : uint8_t
+    {
+        A           = 0,
+        B           = 1,
+        X           = 2,
+        Y           = 3,
+        LeftBumper  = 4,
+        RightBumper = 5,
+        Back        = 6,
+        Start       = 7,
+        Guide       = 8,
+        LeftThumb   = 9,
+        RightThumb  = 10,
+        DpadUp      = 11,
+        DpadRight   = 12,
+        DpadDown    = 13,
+        DpadLeft    = 14,
+    };
+
+    inline constexpr size_t GAMEPAD_BUTTON_COUNT = 15;
+
+    // Sticks in [-1, 1] (y down: pushing a stick up gives -1); triggers in [0, 1], 0 at rest.
+    enum class GamepadAxis : uint8_t
+    {
+        LeftX        = 0,
+        LeftY        = 1,
+        RightX       = 2,
+        RightY       = 3,
+        LeftTrigger  = 4,
+        RightTrigger = 5,
+    };
+
+    inline constexpr size_t GAMEPAD_AXIS_COUNT = 6;
 }

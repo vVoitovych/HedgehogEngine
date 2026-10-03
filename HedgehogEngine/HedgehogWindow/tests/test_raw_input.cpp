@@ -2,6 +2,8 @@
 
 #include "HedgehogEngine/HedgehogWindow/api/RawInputEvents.hpp"
 
+#include <array>
+
 using namespace HW;
 
 namespace
@@ -136,4 +138,26 @@ TEST_CASE("RawInput - losing focus releases every key and mouse button")
     CHECK(CountDown(input) == 0);
     ApplyKeyEvent(input, Code(Key::A), DOWN);
     CHECK(IsKeyDown(input, Key::A));
+}
+
+TEST_CASE("RawInput - gamepad triggers read 0 at rest and 1 pressed, and a disconnect clears the pad")
+{
+    RawInput input;
+    std::array<bool, GAMEPAD_BUTTON_COUNT> buttons{};
+    buttons[static_cast<size_t>(GamepadButton::A)] = true;
+    // GLFW gives triggers in [-1, 1]: -1 at rest.
+    const std::array<float, GAMEPAD_AXIS_COUNT> axes = { 0.5f, -0.25f, 0.0f, 0.0f, -1.0f, 1.0f };
+
+    ApplyGamepadState(input, true, buttons, axes);
+    CHECK(input.Gamepad.Connected);
+    CHECK(input.Gamepad.Buttons[static_cast<size_t>(GamepadButton::A)]);
+    CHECK(input.Gamepad.Axes[static_cast<size_t>(GamepadAxis::LeftX)] == 0.5f);
+    CHECK(input.Gamepad.Axes[static_cast<size_t>(GamepadAxis::LeftY)] == -0.25f);
+    CHECK(input.Gamepad.Axes[static_cast<size_t>(GamepadAxis::LeftTrigger)] == 0.0f);
+    CHECK(input.Gamepad.Axes[static_cast<size_t>(GamepadAxis::RightTrigger)] == 1.0f);
+
+    ApplyGamepadState(input, false, {}, {});
+    CHECK_FALSE(input.Gamepad.Connected);
+    CHECK_FALSE(input.Gamepad.Buttons[static_cast<size_t>(GamepadButton::A)]);
+    CHECK(input.Gamepad.Axes[static_cast<size_t>(GamepadAxis::LeftX)] == 0.0f);
 }

@@ -43,6 +43,24 @@ namespace HW
             input.CursorKnown = false;
     }
 
+    void ApplyGamepadState(RawInput& input, bool connected, std::span<const bool> buttons, std::span<const float> axes)
+    {
+        GamepadState& pad = input.Gamepad;
+        pad               = GamepadState{};
+        if (!connected)
+            return;
+        pad.Connected = true;
+        for (size_t i = 0; i < GAMEPAD_BUTTON_COUNT && i < buttons.size(); ++i)
+            pad.Buttons[i] = buttons[i];
+        for (size_t i = 0; i < GAMEPAD_AXIS_COUNT && i < axes.size(); ++i)
+            pad.Axes[i] = axes[i];
+        for (const GamepadAxis trigger : { GamepadAxis::LeftTrigger, GamepadAxis::RightTrigger })
+        {
+            float& value = pad.Axes[static_cast<size_t>(trigger)];
+            value        = (value + 1.0f) * 0.5f;
+        }
+    }
+
     void ApplyFocus(RawInput& input, bool focused)
     {
         input.Focused = focused;

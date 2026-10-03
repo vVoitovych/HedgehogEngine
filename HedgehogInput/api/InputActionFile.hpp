@@ -21,7 +21,8 @@
 //         Deadzone: 2
 //
 // Each action is a list of bindings in file order. A binding has exactly one source (Key,
-// MouseButton, KeyAxis, PointerDelta: X|Y or Scroll: X|Y) and may add Scale and Deadzone.
+// MouseButton, KeyAxis, PointerDelta: X|Y, Scroll: X|Y, GamepadButton or GamepadAxis) and may
+// add Scale and Deadzone.
 namespace HInput
 {
     inline constexpr int INPUT_ACTIONS_VERSION = 1;

@@ -23,6 +23,20 @@ namespace HInput
             return std::abs(value) <= binding.Deadzone ? 0.0f : value * binding.Scale;
         }
 
+        // A stick or trigger value outside the deadzone, rescaled so the deadzone's edge is 0 and full
+        // tilt is 1, then scaled and clamped.
+        float Axis(const HW::RawInput& input, const InputBinding& binding)
+        {
+            if (!input.Gamepad.Connected || binding.Code >= HW::GAMEPAD_AXIS_COUNT)
+                return 0.0f;
+            const float value     = input.Gamepad.Axes[binding.Code];
+            const float magnitude = std::abs(value);
+            if (magnitude <= binding.Deadzone || binding.Deadzone >= 1.0f)
+                return 0.0f;
+            const float rescaled = std::copysign((magnitude - binding.Deadzone) / (1.0f - binding.Deadzone), value);
+            return std::clamp(rescaled * binding.Scale, -1.0f, 1.0f);
+        }
+
         // One binding's value this frame.
         float Evaluate(const InputBinding& binding, const HW::RawInput& input)
         {
@@ -42,6 +56,11 @@ namespace HInput
             case BindingSource::PointerDeltaY: return Movement(input.CursorDelta.y(), binding);
             case BindingSource::ScrollX:       return Movement(input.ScrollDelta.x(), binding);
             case BindingSource::ScrollY:       return Movement(input.ScrollDelta.y(), binding);
+            case BindingSource::GamepadButton:
+                return input.Gamepad.Connected && binding.Code < HW::GAMEPAD_BUTTON_COUNT && input.Gamepad.Buttons[binding.Code]
+                           ? std::clamp(binding.Scale, -1.0f, 1.0f)
+                           : 0.0f;
+            case BindingSource::GamepadAxis:   return Axis(input, binding);
             }
             return 0.0f;
         }

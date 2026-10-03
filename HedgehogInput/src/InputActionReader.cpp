@@ -11,7 +11,8 @@ namespace HInput
 {
     namespace
     {
-        constexpr std::array SOURCE_KEYS = { "Key", "MouseButton", "KeyAxis", "PointerDelta", "Scroll" };
+        constexpr std::array SOURCE_KEYS = { "Key", "MouseButton", "KeyAxis", "PointerDelta", "Scroll", "GamepadButton",
+                                             "GamepadAxis" };
 
         // A parse failure, carrying the message up to ParseInputActions.
         struct ParseError
@@ -111,13 +112,31 @@ namespace HInput
                     binding.Source = BindingSource::KeyAxis;
                     ReadKeyAxis(value, binding, where);
                 }
+                else if (field == "GamepadButton")
+                {
+                    const std::string                      name   = Scalar(value, where);
+                    const std::optional<HW::GamepadButton> button = FindGamepadButton(name);
+                    if (!button)
+                        throw ParseError{ where + ": unknown gamepad button '" + name + "'" };
+                    binding.Source = BindingSource::GamepadButton;
+                    binding.Code   = static_cast<uint16_t>(*button);
+                }
+                else if (field == "GamepadAxis")
+                {
+                    const std::string                    name = Scalar(value, where);
+                    const std::optional<HW::GamepadAxis> axis = FindGamepadAxis(name);
+                    if (!axis)
+                        throw ParseError{ where + ": unknown gamepad axis '" + name + "'" };
+                    binding.Source = BindingSource::GamepadAxis;
+                    binding.Code   = static_cast<uint16_t>(*axis);
+                }
                 else if (field == "PointerDelta")
                     binding.Source = IsX(value, where) ? BindingSource::PointerDeltaX : BindingSource::PointerDeltaY;
                 else
                     binding.Source = IsX(value, where) ? BindingSource::ScrollX : BindingSource::ScrollY;
             }
             if (sources == 0)
-                throw ParseError{ where + ": no source (Key, MouseButton, KeyAxis, PointerDelta or Scroll)" };
+                throw ParseError{ where + ": no source (Key, MouseButton, KeyAxis, PointerDelta, Scroll, GamepadButton or GamepadAxis)" };
             return binding;
         }
 

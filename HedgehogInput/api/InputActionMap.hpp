@@ -19,6 +19,8 @@ namespace HInput
         PointerDeltaY,
         ScrollX,       // the scroll wheel's move this frame
         ScrollY,
+        GamepadButton, // Code is an HW::GamepadButton of the first gamepad: 1 while down
+        GamepadAxis,   // Code is an HW::GamepadAxis: outside Deadzone, rescaled to reach 1 at full tilt
     };
 
     struct InputBinding
@@ -27,7 +29,7 @@ namespace HInput
         uint16_t      Code         = 0;
         uint16_t      NegativeCode = 0;    // KeyAxis only
         float         Scale        = 1.0f; // multiplies the binding's value
-        float         Deadzone     = 0.0f; // pointer and scroll: a move this small or smaller counts as none
+        float         Deadzone     = 0.0f; // pointer, scroll and gamepad axis: a value this small or smaller counts as none
 
         bool operator==(const InputBinding&) const = default;
     };

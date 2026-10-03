@@ -49,6 +49,9 @@ namespace HW
         HEDGEHOG_WINDOW_API const RawInput& GetRawInput() const;
         HEDGEHOG_WINDOW_API RawInput&       GetRawInput();
         HEDGEHOG_WINDOW_API void            BeginInputFrame();
+        // Reads the first connected gamepad (GLFW's standard mapping) into the raw input; call once
+        // a frame, after polling events. With none connected the gamepad reads all zero.
+        HEDGEHOG_WINDOW_API void            PollGamepad();
 
         HEDGEHOG_WINDOW_API void SetIcon(int width, int height, unsigned char* data);
         HEDGEHOG_WINDOW_API void SetGuiCallback(std::function<bool()> callback);

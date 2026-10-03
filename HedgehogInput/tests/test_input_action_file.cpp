@@ -70,7 +70,8 @@ TEST_CASE("Action file - the defaults write, read back equal, and write again by
     CHECK(Contains(text, "KeyAxis: {Negative: S, Positive: W}"));
     CHECK(Contains(text, "PointerDelta: X"));
     CHECK(Contains(text, "Deadzone: 2"));
-    CHECK_FALSE(Contains(text, "Scale")); // the default scale is left out
+    CHECK_FALSE(Contains(text, "Scale: 1\n")); // the default scale is left out
+    CHECK(Contains(text, "Scale: -1"));         // the up and left sticks
 
     const InputActionParseResult parsed = ParseInputActions(text);
     REQUIRE_MESSAGE(parsed.Actions.has_value(), parsed.Error);

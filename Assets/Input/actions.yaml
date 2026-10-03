@@ -2,16 +2,31 @@ Version: 1
 Game:
   UiNavigateUp:
     - Key: Up
+    - GamepadButton: DpadUp
+    - GamepadAxis: LeftY
+      Scale: -1
+      Deadzone: 0.2
   UiNavigateDown:
     - Key: Down
+    - GamepadButton: DpadDown
+    - GamepadAxis: LeftY
+      Deadzone: 0.2
   UiNavigateLeft:
     - Key: Left
+    - GamepadButton: DpadLeft
+    - GamepadAxis: LeftX
+      Scale: -1
+      Deadzone: 0.2
   UiNavigateRight:
     - Key: Right
+    - GamepadButton: DpadRight
+    - GamepadAxis: LeftX
+      Deadzone: 0.2
   UiSubmit:
     - Key: Enter
     - Key: KeypadEnter
     - Key: Space
+    - GamepadButton: A
   UiPointerPress:
     - MouseButton: Left
 Editor:
