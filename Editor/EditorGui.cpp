@@ -79,7 +79,8 @@ namespace
     template<typename T>
     void AddComponentMenuItem(ECS::ECS& ecs, const std::optional<ECS::Entity>& selected, const char* label)
     {
-        if (ImGui::MenuItem(label) && selected.has_value() && !ecs.HasComponent<T>(*selected))
+        const bool addable = selected.has_value() && !ecs.HasComponent<T>(*selected);
+        if (ImGui::MenuItem(label, nullptr, false, addable))
             ecs.AddComponent(*selected, T{});
     }
 
@@ -87,11 +88,13 @@ namespace
     // menu removes it.
     template<typename T, typename Extra = void (*)()>
     void DrawReflectedComponent(ECS::ECS& ecs, ECS::Entity entity, const char* header, void* icon, void* menuIcon,
-                                Extra extra = [] {})
+                                bool T::* enabled = nullptr, Extra extra = [] {})
     {
         if (!ecs.HasComponent<T>(entity))
             return;
-        const Editor::ComponentHeaderResult section = Editor::ComponentHeader(header, { icon, menuIcon });
+        T& component = ecs.GetComponent<T>(entity);
+        const Editor::ComponentHeaderResult section =
+            Editor::ComponentHeader(header, { icon, menuIcon, enabled ? &(component.*enabled) : nullptr });
         if (section.RemoveRequested)
         {
             ecs.RemoveComponent<T>(entity);
@@ -100,7 +103,7 @@ namespace
         if (!section.Open)
             return;
         ImGui::PushID(header);
-        Reflection::RenderComponentGui(&ecs.GetComponent<T>(entity), T::GetProperties());
+        Reflection::RenderComponentGui(&component, T::GetProperties());
         extra();
         ImGui::PopID();
     }
@@ -144,6 +147,18 @@ namespace
     // are skipped by YamlSerializeComponent/YamlDeserializeComponent, not just the GUI. The
     // override below only silences the generic DragInt widget so DrawCameraComponent can draw
     // named checkboxes instead, sourced live from HedgehogSettings::LayerSettings.
+    // A reflected property drawn elsewhere (a section header's checkbox): its row draws nothing,
+    // while it still serialises.
+    template<typename Table>
+    void HideReflectedRow(Table& properties, std::string_view name)
+    {
+        for (auto& prop : properties)
+        {
+            if (name == prop.name)
+                prop.guiOverride = [](void*, const Reflection::PropertyDescriptor&) -> bool { return false; };
+        }
+    }
+
     void SetupCameraComponentGuiOverrides()
     {
         using HedgehogEngine::CameraComponent;
@@ -201,6 +216,8 @@ namespace Editor
 
         SetupLightComponentGuiOverrides();
         SetupCameraComponentGuiOverrides();
+        HideReflectedRow(HedgehogEngine::UiCanvasComponent::GetPropTable_(), "Enabled");
+        HideReflectedRow(HedgehogEngine::AudioListenerComponent::GetPropTable_(), "Active");
 
         LoadLastScene(context);
     }
@@ -544,7 +561,13 @@ namespace Editor
         auto* meshSystem    = engineContext.GetMeshSystem();
         auto* renderSystem  = engineContext.GetRenderSystem();
 
-        if (ImGui::MenuItem("Mesh component") && m_SelectedEntity.has_value())
+        // A component the selected entity already has is greyed.
+        const auto canAdd = [&]<typename T>()
+        {
+            return m_SelectedEntity.has_value() && !ecs.HasComponent<T>(*m_SelectedEntity);
+        };
+
+        if (ImGui::MenuItem("Mesh component", nullptr, false, canAdd.template operator()<HedgehogEngine::MeshComponent>()))
         {
             ECS::Entity e = m_SelectedEntity.value();
             if (!ecs.HasComponent<HedgehogEngine::MeshComponent>(e))
@@ -553,7 +576,7 @@ namespace Editor
                 meshSystem->Update(ecs, e, engineContext.GetFileSystem());
             }
         }
-        if (ImGui::MenuItem("Render component") && m_SelectedEntity.has_value())
+        if (ImGui::MenuItem("Render component", nullptr, false, canAdd.template operator()<HedgehogEngine::RenderComponent>()))
         {
             ECS::Entity e = m_SelectedEntity.value();
             if (!ecs.HasComponent<HedgehogEngine::RenderComponent>(e))
@@ -562,25 +585,25 @@ namespace Editor
                 renderSystem->Update(ecs, e);
             }
         }
-        if (ImGui::MenuItem("Light component") && m_SelectedEntity.has_value())
+        if (ImGui::MenuItem("Light component", nullptr, false, canAdd.template operator()<HedgehogEngine::LightComponent>()))
         {
             ECS::Entity e = m_SelectedEntity.value();
             if (!ecs.HasComponent<HedgehogEngine::LightComponent>(e))
                 ecs.AddComponent(e, HedgehogEngine::LightComponent{});
         }
-        if (ImGui::MenuItem("Camera component") && m_SelectedEntity.has_value())
+        if (ImGui::MenuItem("Camera component", nullptr, false, canAdd.template operator()<HedgehogEngine::CameraComponent>()))
         {
             ECS::Entity e = m_SelectedEntity.value();
             if (!ecs.HasComponent<HedgehogEngine::CameraComponent>(e))
                 ecs.AddComponent(e, HedgehogEngine::CameraComponent{});
         }
-        if (ImGui::MenuItem("Script component") && m_SelectedEntity.has_value())
+        if (ImGui::MenuItem("Script component", nullptr, false, canAdd.template operator()<HedgehogEngine::ScriptComponent>()))
         {
             ECS::Entity e = m_SelectedEntity.value();
             if (!ecs.HasComponent<HedgehogEngine::ScriptComponent>(e))
                 ecs.AddComponent(e, HedgehogEngine::ScriptComponent{});
         }
-        if (ImGui::MenuItem("Animator component") && m_SelectedEntity.has_value())
+        if (ImGui::MenuItem("Animator component", nullptr, false, canAdd.template operator()<HedgehogEngine::AnimatorComponent>()))
         {
             ECS::Entity e = m_SelectedEntity.value();
             if (!ecs.HasComponent<HedgehogEngine::AnimatorComponent>(e))
@@ -792,6 +815,18 @@ namespace Editor
             DrawScriptComponent(context);
             DrawAnimatorComponent(context);
             DrawUiComponents(context);
+
+            // The Component menu's items, from a button under the last section.
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+            if (ImGui::Button("Add Component", ImVec2(-FLT_MIN, 0.0f)))
+                ImGui::OpenPopup("##AddComponent");
+            if (ImGui::BeginPopup("##AddComponent"))
+            {
+                DrawAddComponentItems(context);
+                ImGui::EndPopup();
+            }
         }
         else
         {
@@ -1157,14 +1192,17 @@ namespace Editor
 
         if (!ecs.HasComponent<HedgehogEngine::AnimatorComponent>(entity))
             return;
-        if (!ImGui::CollapsingHeader("Animator", ImGuiTreeNodeFlags_DefaultOpen))
+        const ComponentHeaderResult section = ComponentHeader("Animator", { GetIcon(EditorIcon::Animator), GetIcon(EditorIcon::More) });
+        if (section.RemoveRequested)
+        {
+            ecs.RemoveComponent<HedgehogEngine::AnimatorComponent>(entity);
+            return;
+        }
+        if (!section.Open)
             return;
 
         auto& animator = ecs.GetComponent<HedgehogEngine::AnimatorComponent>(entity);
         Reflection::RenderComponentGui(&animator, HedgehogEngine::AnimatorComponent::GetProperties());
-
-        if (ImGui::Button("Remove animator"))
-            ecs.RemoveComponent<HedgehogEngine::AnimatorComponent>(entity);
     }
 
     void EditorGui::DrawUiComponents(HedgehogEngine::Engine& context)
@@ -1172,21 +1210,32 @@ namespace Editor
         auto&             ecs    = context.GetEngineContext().GetECS();
         const ECS::Entity entity = m_SelectedEntity.value();
         void*             menu   = GetIcon(EditorIcon::More);
-        DrawReflectedComponent<HedgehogEngine::UiCanvasComponent>(ecs, entity, "UI canvas", GetIcon(EditorIcon::UiCanvas), menu);
+        DrawReflectedComponent<HedgehogEngine::UiCanvasComponent>(ecs, entity, "UI canvas", GetIcon(EditorIcon::UiCanvas), menu,
+                                                                  &HedgehogEngine::UiCanvasComponent::IsEnabled);
         DrawReflectedComponent<HedgehogEngine::UiRectComponent>(ecs, entity, "UI rect", GetIcon(EditorIcon::UiRect), menu);
         DrawReflectedComponent<HedgehogEngine::UiImageComponent>(ecs, entity, "UI image", GetIcon(EditorIcon::UiImage), menu);
-        DrawReflectedComponent<HedgehogEngine::UiTextComponent>(ecs, entity, "UI text", GetIcon(EditorIcon::UiText), menu, [&]
+        DrawReflectedComponent<HedgehogEngine::UiTextComponent>(ecs, entity, "UI text", GetIcon(EditorIcon::UiText), menu, nullptr, [&]
         {
-            ImGui::TextDisabled("Drop a font (.ttf, .otf) here");
-            AcceptSelectionDrop(ContentType::Font);
+            DrawDropRow("Font", "Drop a .ttf or .otf here", ContentType::Font);
         });
         DrawReflectedComponent<HedgehogEngine::UiButtonComponent>(ecs, entity, "UI button", GetIcon(EditorIcon::UiButton), menu);
-        DrawReflectedComponent<HedgehogEngine::AudioSourceComponent>(ecs, entity, "Audio source", GetIcon(EditorIcon::AudioSource), menu, [&]
+        DrawReflectedComponent<HedgehogEngine::AudioSourceComponent>(ecs, entity, "Audio source", GetIcon(EditorIcon::AudioSource), menu, nullptr, [&]
         {
-            ImGui::TextDisabled("Drop an audio clip (.wav, .mp3, .flac) here");
-            AcceptSelectionDrop(ContentType::Audio);
+            DrawDropRow("Clip", "Drop a .wav, .mp3 or .flac here", ContentType::Audio);
         });
-        DrawReflectedComponent<HedgehogEngine::AudioListenerComponent>(ecs, entity, "Audio listener", GetIcon(EditorIcon::AudioListener), menu);
+        DrawReflectedComponent<HedgehogEngine::AudioListenerComponent>(ecs, entity, "Audio listener", GetIcon(EditorIcon::AudioListener), menu,
+                                                                       &HedgehogEngine::AudioListenerComponent::IsActive);
+    }
+
+    // A property row whose value is a hint that takes a dropped asset of type for the selection.
+    void EditorGui::DrawDropRow(const char* label, const char* hint, ContentType type)
+    {
+        if (!BeginPropertyTable("##drop"))
+            return;
+        PropertyLabel(label);
+        ImGui::TextDisabled("%s", hint);
+        AcceptSelectionDrop(type);
+        EndPropertyTable();
     }
 
     // Hand-drawn instead of the reflected text field, so a camera picks from the graphs that exist,
@@ -1289,45 +1338,47 @@ namespace Editor
 
         if (!ecs.HasComponent<HedgehogEngine::ScriptComponent>(entity))
             return;
-        if (!ImGui::CollapsingHeader("Script", ImGuiTreeNodeFlags_DefaultOpen))
+
+        // The header's checkbox is the script's Enable.
+        auto&                  component = ecs.GetComponent<HedgehogEngine::ScriptComponent>(entity);
+        ComponentHeaderOptions header{ GetIcon(EditorIcon::Script), GetIcon(EditorIcon::More), &component.Enable };
+        const ComponentHeaderResult section = ComponentHeader("Script", header);
+        if (section.RemoveRequested)
+        {
+            ecs.RemoveComponent<HedgehogEngine::ScriptComponent>(entity);
+            return;
+        }
+        if (!section.Open)
             return;
 
-        auto& component = ecs.GetComponent<HedgehogEngine::ScriptComponent>(entity);
-
-        bool enabled = component.Enable;
-        if (ImGui::Checkbox("Enabled", &enabled))
-            component.Enable = enabled;
-
+        if (BeginPropertyTable("##Script"))
         {
             const std::string& scriptSrc = component.ScriptPath.empty()
                 ? "No script selected" : component.ScriptPath;
             char scriptBuf[256];
             strncpy_s(scriptBuf, scriptSrc.c_str(), sizeof(scriptBuf) - 1);
             scriptBuf[sizeof(scriptBuf) - 1] = '\0';
-            ImGui::InputText("Script", scriptBuf, sizeof(scriptBuf));
+            PropertyLabel("Script");
+            ImGui::InputText("##Script", scriptBuf, sizeof(scriptBuf));
             AcceptSelectionDrop(ContentType::Script);
-        }
 
-        ImGui::BeginDisabled(engineContext.GetPlayState() != HedgehogEngine::PlayState::Edit);
-        if (ImGui::Button("Load script"))
-        {
-            std::string scriptPath = DialogueWindows::ScriptChooseDialogue();
-            if (!scriptPath.empty())
-                (void)AssignScript(context, entity, scriptPath);
+            PropertyLabel("");
+            ImGui::BeginDisabled(engineContext.GetPlayState() != HedgehogEngine::PlayState::Edit);
+            if (ImGui::Button("Load script"))
+            {
+                std::string scriptPath = DialogueWindows::ScriptChooseDialogue();
+                if (!scriptPath.empty())
+                    (void)AssignScript(context, entity, scriptPath);
+            }
+            ImGui::EndDisabled();
+            EndPropertyTable();
         }
-        ImGui::EndDisabled();
 
         // A property edit reaches the running script at once; outside Play it only changes the
         // data, and Stop's restore puts back whatever was edited during Play.
         const auto* declarations = FindScriptDeclarations(engineContext.GetFileSystem(), component.ScriptPath);
         if (DrawScriptProperties(component, declarations, ecs) && m_ScriptSystem)
             m_ScriptSystem->PushProperties(ecs, entity);
-
-        if (ImGui::Button("Remove script"))
-        {
-            if (ecs.HasComponent<HedgehogEngine::ScriptComponent>(entity))
-                ecs.RemoveComponent<HedgehogEngine::ScriptComponent>(entity);
-        }
     }
 
     const std::vector<HedgehogScripting::ScriptPropertyDeclaration>* EditorGui::FindScriptDeclarations(

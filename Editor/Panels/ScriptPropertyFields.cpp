@@ -7,6 +7,8 @@
 #include "ECS/api/ECS.hpp"
 #include "ECS/api/components/Hierarchy.hpp"
 
+#include "Widgets/PropertyFields.hpp"
+
 #include "imgui.h"
 
 #include <algorithm>
@@ -73,10 +75,11 @@ namespace Editor
             return any;
         }
 
-        // The widget for property's type; returns true when it changed property.Value.
+        // The widget for property's type, filling the row's value cell; returns true when it changed
+        // property.Value.
         bool DrawValueWidget(ScriptProperty& property, const ScriptPropertyDeclaration* declaration, const ECS::ECS& ecs)
         {
-            const char* label = property.Name.c_str();
+            const char* label = "##value";
             switch (property.Type)
             {
             case ScriptPropertyType::Number:
@@ -103,8 +106,9 @@ namespace Editor
             {
                 HM::Vector3& vector = std::get<HM::Vector3>(property.Value);
                 float        value[3] = { vector.x(), vector.y(), vector.z() };
-                const bool   changed  = property.Type == ScriptPropertyType::Color ? ImGui::ColorEdit3(label, value)
-                                                                                   : ImGui::DragFloat3(label, value, 0.05f);
+                const bool   changed  = property.Type == ScriptPropertyType::Color
+                                            ? ImGui::ColorEdit3(label, value, ImGuiColorEditFlags_NoLabel)
+                                            : DragVector3Xyz(label, value, 0.05f);
                 if (!changed)
                     return false;
                 property.Value = HM::Vector3(value[0], value[1], value[2]);
@@ -147,25 +151,34 @@ namespace Editor
             return false;
         }
 
-        // One property's row: its widget, the declaration's tooltip and, when it differs from the
-        // declared default, a Reset button. Returns true when it changed property.
+        // One property's row: on the left a Reset button, when it differs from the declared default,
+        // before its name; on the right its widget, with the declaration's tooltip. Returns true
+        // when it changed property.
         bool DrawField(ScriptProperty& property, const ScriptPropertyDeclaration* declaration, const ECS::ECS& ecs)
         {
             ImGui::PushID(property.Name.c_str());
-            bool changed = DrawValueWidget(property, declaration, ecs);
-            if (declaration && !declaration->Tooltip.empty())
-                ImGui::SetItemTooltip("%s", declaration->Tooltip.c_str());
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::AlignTextToFramePadding();
 
+            bool changed = false;
             if (declaration && property.Value != declaration->Default.Value)
             {
-                ImGui::SameLine();
                 if (ImGui::SmallButton("Reset"))
                 {
                     property.Value = declaration->Default.Value;
                     changed        = true;
                 }
                 ImGui::SetItemTooltip("Back to the script's default");
+                ImGui::SameLine();
             }
+            ImGui::TextUnformatted(property.Name.c_str());
+            ImGui::TableSetColumnIndex(1);
+            ImGui::SetNextItemWidth(-FLT_MIN);
+
+            changed |= DrawValueWidget(property, declaration, ecs);
+            if (declaration && !declaration->Tooltip.empty())
+                ImGui::SetItemTooltip("%s", declaration->Tooltip.c_str());
             ImGui::PopID();
             return changed;
         }
@@ -179,6 +192,8 @@ namespace Editor
         if (!any)
             return false;
         ImGui::SeparatorText("Properties");
+        if (!BeginPropertyTable("##ScriptProperties"))
+            return false;
 
         bool changed = false;
         if (!declarations)
@@ -186,6 +201,7 @@ namespace Editor
             for (ScriptProperty& property : component.Properties)
                 if (Holds(property))
                     changed |= DrawField(property, nullptr, ecs);
+            EndPropertyTable();
             return changed;
         }
 
@@ -210,8 +226,12 @@ namespace Editor
             const bool declared = std::ranges::any_of(*declarations, [&](const ScriptPropertyDeclaration& declaration)
                                                       { return declaration.Default.Name == saved.Name; });
             if (!declared)
-                ImGui::TextDisabled("%s: saved, but the script no longer declares it", saved.Name.c_str());
+            {
+                PropertyLabel(saved.Name.c_str());
+                ImGui::TextDisabled("saved, no longer declared");
+            }
         }
+        EndPropertyTable();
         return changed;
     }
 }
