@@ -36,7 +36,10 @@ namespace HInput
         if (game.CursorInside)
             game.ScrollDelta = source.ScrollDelta;
         if (region.KeyboardEnabled)
-            game.Keys = source.Keys;
+        {
+            game.Keys    = source.Keys;
+            game.Gamepad = source.Gamepad;
+        }
         return game;
     }
 }

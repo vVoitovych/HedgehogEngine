@@ -25,14 +25,33 @@ namespace HInput
         std::string_view Name;
     };
 
+    struct NamedGamepadButton
+    {
+        HW::GamepadButton Button;
+        std::string_view  Name;
+    };
+
+    struct NamedGamepadAxis
+    {
+        HW::GamepadAxis  Axis;
+        std::string_view Name;
+    };
+
     // Every key and mouse button, each named once, in code order.
     [[nodiscard]] std::span<const NamedKey>         GetKeyNames();
     [[nodiscard]] std::span<const NamedMouseButton> GetMouseButtonNames();
+    // Gamepad buttons and axes, named by their HW::GamepadButton and HW::GamepadAxis enumerators.
+    [[nodiscard]] std::span<const NamedGamepadButton> GetGamepadButtonNames();
+    [[nodiscard]] std::span<const NamedGamepadAxis>   GetGamepadAxisNames();
 
     [[nodiscard]] std::optional<HW::Key>         FindKey(std::string_view name);
     [[nodiscard]] std::optional<HW::MouseButton> FindMouseButton(std::string_view name);
+    [[nodiscard]] std::optional<HW::GamepadButton> FindGamepadButton(std::string_view name);
+    [[nodiscard]] std::optional<HW::GamepadAxis>   FindGamepadAxis(std::string_view name);
 
     // The name of a key or button code, or an empty view for a code that names none.
     [[nodiscard]] std::string_view GetKeyName(uint16_t code);
     [[nodiscard]] std::string_view GetMouseButtonName(uint16_t code);
+    [[nodiscard]] std::string_view GetGamepadButtonName(uint16_t code);
+    [[nodiscard]] std::string_view GetGamepadAxisName(uint16_t code);
 }

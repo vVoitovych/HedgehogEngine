@@ -12,6 +12,7 @@
     #include "GLFW/glfw3native.h"
 #endif
 
+#include <array>
 #include <cassert>
 #include <cmath>
 #include <functional>
@@ -39,6 +40,13 @@ namespace HW
     static_assert(static_cast<int>(MouseButton::Right) == GLFW_MOUSE_BUTTON_RIGHT);
     static_assert(static_cast<int>(MouseButton::Middle) == GLFW_MOUSE_BUTTON_MIDDLE);
     static_assert(MOUSE_BUTTON_COUNT == GLFW_MOUSE_BUTTON_LAST + 1);
+    static_assert(static_cast<int>(GamepadButton::A) == GLFW_GAMEPAD_BUTTON_A);
+    static_assert(static_cast<int>(GamepadButton::Guide) == GLFW_GAMEPAD_BUTTON_GUIDE);
+    static_assert(static_cast<int>(GamepadButton::DpadLeft) == GLFW_GAMEPAD_BUTTON_DPAD_LEFT);
+    static_assert(GAMEPAD_BUTTON_COUNT == GLFW_GAMEPAD_BUTTON_LAST + 1);
+    static_assert(static_cast<int>(GamepadAxis::LeftY) == GLFW_GAMEPAD_AXIS_LEFT_Y);
+    static_assert(static_cast<int>(GamepadAxis::RightTrigger) == GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER);
+    static_assert(GAMEPAD_AXIS_COUNT == GLFW_GAMEPAD_AXIS_LAST + 1);
 
     struct Window::Impl
     {
@@ -204,6 +212,22 @@ namespace HW
     void Window::BeginInputFrame()
     {
         HW::BeginInputFrame(m_Impl->Raw);
+    }
+
+    void Window::PollGamepad()
+    {
+        for (int joystick = GLFW_JOYSTICK_1; joystick <= GLFW_JOYSTICK_LAST; ++joystick)
+        {
+            GLFWgamepadstate state;
+            if (!glfwJoystickIsGamepad(joystick) || !glfwGetGamepadState(joystick, &state))
+                continue;
+            std::array<bool, GAMEPAD_BUTTON_COUNT> buttons{};
+            for (size_t i = 0; i < GAMEPAD_BUTTON_COUNT; ++i)
+                buttons[i] = state.buttons[i] == GLFW_PRESS;
+            ApplyGamepadState(m_Impl->Raw, true, buttons, state.axes);
+            return;
+        }
+        ApplyGamepadState(m_Impl->Raw, false, {}, {});
     }
 
     void* Window::GetNativeOsHandle() const

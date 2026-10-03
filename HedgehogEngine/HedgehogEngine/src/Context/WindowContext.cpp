@@ -31,6 +31,7 @@ namespace HedgehogEngine
         // The raw input's deltas sum this frame's events.
         m_Window->BeginInputFrame();
         m_WindowManager->PollEvents();
+        m_Window->PollGamepad();
     }
 
     bool WindowContext::ShouldClose() const

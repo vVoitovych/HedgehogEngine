@@ -140,6 +140,41 @@ namespace HInput
             NamedMouseButton{ HW::MouseButton::Button7, "Button7" },
             NamedMouseButton{ HW::MouseButton::Button8, "Button8" },
         };
+
+        constexpr std::array GAMEPAD_BUTTON_NAMES = {
+            NamedGamepadButton{ HW::GamepadButton::A, "A" },
+            NamedGamepadButton{ HW::GamepadButton::B, "B" },
+            NamedGamepadButton{ HW::GamepadButton::X, "X" },
+            NamedGamepadButton{ HW::GamepadButton::Y, "Y" },
+            NamedGamepadButton{ HW::GamepadButton::LeftBumper, "LeftBumper" },
+            NamedGamepadButton{ HW::GamepadButton::RightBumper, "RightBumper" },
+            NamedGamepadButton{ HW::GamepadButton::Back, "Back" },
+            NamedGamepadButton{ HW::GamepadButton::Start, "Start" },
+            NamedGamepadButton{ HW::GamepadButton::Guide, "Guide" },
+            NamedGamepadButton{ HW::GamepadButton::LeftThumb, "LeftThumb" },
+            NamedGamepadButton{ HW::GamepadButton::RightThumb, "RightThumb" },
+            NamedGamepadButton{ HW::GamepadButton::DpadUp, "DpadUp" },
+            NamedGamepadButton{ HW::GamepadButton::DpadRight, "DpadRight" },
+            NamedGamepadButton{ HW::GamepadButton::DpadDown, "DpadDown" },
+            NamedGamepadButton{ HW::GamepadButton::DpadLeft, "DpadLeft" },
+        };
+
+        constexpr std::array GAMEPAD_AXIS_NAMES = {
+            NamedGamepadAxis{ HW::GamepadAxis::LeftX, "LeftX" },
+            NamedGamepadAxis{ HW::GamepadAxis::LeftY, "LeftY" },
+            NamedGamepadAxis{ HW::GamepadAxis::RightX, "RightX" },
+            NamedGamepadAxis{ HW::GamepadAxis::RightY, "RightY" },
+            NamedGamepadAxis{ HW::GamepadAxis::LeftTrigger, "LeftTrigger" },
+            NamedGamepadAxis{ HW::GamepadAxis::RightTrigger, "RightTrigger" },
+        };
+
+        // The entry of table whose Name is name, or nullptr.
+        template<typename Table>
+        auto FindByName(const Table& table, std::string_view name) -> const typename Table::value_type*
+        {
+            const auto found = std::find_if(table.begin(), table.end(), [&](const auto& entry) { return entry.Name == name; });
+            return found != table.end() ? &*found : nullptr;
+        }
     }
 
     std::span<const NamedKey> GetKeyNames()
@@ -150,6 +185,38 @@ namespace HInput
     std::span<const NamedMouseButton> GetMouseButtonNames()
     {
         return MOUSE_BUTTON_NAMES;
+    }
+
+    std::span<const NamedGamepadButton> GetGamepadButtonNames()
+    {
+        return GAMEPAD_BUTTON_NAMES;
+    }
+
+    std::span<const NamedGamepadAxis> GetGamepadAxisNames()
+    {
+        return GAMEPAD_AXIS_NAMES;
+    }
+
+    std::optional<HW::GamepadButton> FindGamepadButton(std::string_view name)
+    {
+        const NamedGamepadButton* found = FindByName(GAMEPAD_BUTTON_NAMES, name);
+        return found ? std::optional(found->Button) : std::nullopt;
+    }
+
+    std::optional<HW::GamepadAxis> FindGamepadAxis(std::string_view name)
+    {
+        const NamedGamepadAxis* found = FindByName(GAMEPAD_AXIS_NAMES, name);
+        return found ? std::optional(found->Axis) : std::nullopt;
+    }
+
+    std::string_view GetGamepadButtonName(uint16_t code)
+    {
+        return code < GAMEPAD_BUTTON_NAMES.size() ? GAMEPAD_BUTTON_NAMES[code].Name : std::string_view{};
+    }
+
+    std::string_view GetGamepadAxisName(uint16_t code)
+    {
+        return code < GAMEPAD_AXIS_NAMES.size() ? GAMEPAD_AXIS_NAMES[code].Name : std::string_view{};
     }
 
     std::optional<HW::Key> FindKey(std::string_view name)

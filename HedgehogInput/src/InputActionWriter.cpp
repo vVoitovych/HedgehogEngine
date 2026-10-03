@@ -38,6 +38,12 @@ namespace HInput
             case BindingSource::ScrollY:
                 out << YAML::Key << "Scroll" << YAML::Value << AxisName(binding.Source);
                 break;
+            case BindingSource::GamepadButton:
+                out << YAML::Key << "GamepadButton" << YAML::Value << std::string(GetGamepadButtonName(binding.Code));
+                break;
+            case BindingSource::GamepadAxis:
+                out << YAML::Key << "GamepadAxis" << YAML::Value << std::string(GetGamepadAxisName(binding.Code));
+                break;
             }
             if (binding.Scale != 1.0f)
                 out << YAML::Key << "Scale" << YAML::Value << binding.Scale;

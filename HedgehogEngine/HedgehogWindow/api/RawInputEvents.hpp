@@ -3,6 +3,8 @@
 #include "HedgehogEngine/HedgehogWindow/api/HedgehogWindowApi.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/RawInput.hpp"
 
+#include <span>
+
 // How input events change a RawInput, as free functions with no GLFW in them: the window's GLFW
 // callbacks forward to these, and tests call them directly. Codes are GLFW's (InputCodes.hpp).
 namespace HW
@@ -31,4 +33,10 @@ namespace HW
     // The window gained or lost keyboard focus. Losing it releases every key and mouse button, since
     // their releases go to another window.
     HEDGEHOG_WINDOW_API void ApplyFocus(RawInput& input, bool focused);
+
+    // The first gamepad's state this frame: buttons and axes in GLFW's order (GAMEPAD_BUTTON_COUNT
+    // and GAMEPAD_AXIS_COUNT of them; extra or missing entries are ignored or left zero). The
+    // triggers come in GLFW's [-1, 1] and are stored as [0, 1], 0 at rest. Not connected zeroes it all.
+    HEDGEHOG_WINDOW_API void ApplyGamepadState(RawInput& input, bool connected, std::span<const bool> buttons,
+                                               std::span<const float> axes);
 }
