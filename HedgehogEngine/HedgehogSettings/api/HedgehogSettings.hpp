@@ -32,6 +32,13 @@ namespace HedgehogSettings
         HEDGEHOG_SETTINGS_API std::unique_ptr<LayerSettings>& GetLayerSettings();
         HEDGEHOG_SETTINGS_API const std::unique_ptr<LayerSettings>& GetLayerSettings() const;
 
+        // The game's own data version, written into every save game (game: data_version). A game
+        // bumps it when the data its saves hold changes shape; older saves are then migrated on
+        // load and newer ones refused. At least 1; a smaller value is clamped.
+        static constexpr int DEFAULT_GAME_DATA_VERSION = 1;
+        [[nodiscard]] HEDGEHOG_SETTINGS_API int GetGameDataVersion() const;
+        HEDGEHOG_SETTINGS_API void SetGameDataVersion(int version);
+
         // Engine settings live in their own file rather than the editor's layout file, so a game
         // build can read them too. A missing file is not an error: the defaults stand and Load
         // returns false.
@@ -55,5 +62,6 @@ namespace HedgehogSettings
     private:
         std::unique_ptr<ShadowmapSettings> m_ShadowmapSettings;
         std::unique_ptr<LayerSettings>     m_LayerSettings;
+        int                                m_GameDataVersion = DEFAULT_GAME_DATA_VERSION;
     };
 }

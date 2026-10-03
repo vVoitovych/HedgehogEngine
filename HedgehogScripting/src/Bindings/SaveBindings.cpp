@@ -70,10 +70,14 @@ namespace HedgehogScripting::Bindings
             sol::table      slots = lua.create_table();
             for (const EcsSerialization::SaveSlotInfo& info : saves.ListSlots())
             {
-                slots.add(lua.create_table_with("name", info.Name, "scene", info.Metadata.ScenePath, "timestamp",
-                                                info.Metadata.Timestamp, "playTime", info.Metadata.PlayTime,
-                                                "gameDataVersion", info.Metadata.GameDataVersion, "saveVersion",
-                                                info.Metadata.SaveVersion));
+                const std::string reason = saves.GetUnloadableReason(info.Metadata);
+                sol::table        slot   = lua.create_table_with(
+                    "name", info.Name, "scene", info.Metadata.ScenePath, "timestamp", info.Metadata.Timestamp, "playTime",
+                    info.Metadata.PlayTime, "gameDataVersion", info.Metadata.GameDataVersion, "saveVersion",
+                    info.Metadata.SaveVersion, "loadable", reason.empty());
+                if (!reason.empty())
+                    slot["reason"] = reason;
+                slots.add(slot);
             }
             return slots;
         };

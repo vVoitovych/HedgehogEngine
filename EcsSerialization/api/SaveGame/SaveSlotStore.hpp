@@ -40,6 +40,10 @@ namespace EcsSerialization
         // not read (ReadSaveGame).
         [[nodiscard]] ECS_SERIALIZATION_API std::optional<SaveGameFile> Read(const std::string& slot) const;
 
+        // The slot's header alone (ReadSaveGameMetadata, so a newer format still reads); nullopt,
+        // logged, when the slot is missing or its header does not read.
+        [[nodiscard]] ECS_SERIALIZATION_API std::optional<SaveGameMetadata> ReadMetadata(const std::string& slot) const;
+
         // Every slot whose header reads, by name; a file whose header does not read is skipped with
         // a warning, and leftover .tmp files are ignored. Empty when the directory does not exist.
         [[nodiscard]] ECS_SERIALIZATION_API std::vector<SaveSlotInfo> List() const;

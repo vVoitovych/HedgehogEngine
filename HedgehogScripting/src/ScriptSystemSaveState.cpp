@@ -3,6 +3,7 @@
 #include "Bindings/ScriptHandles.hpp"
 
 #include "HedgehogEngine/api/EngineContext.hpp"
+#include "HedgehogEngine/api/Save/SaveGameManager.hpp"
 
 #include "ECS/api/ECS.hpp"
 #include "HedgehogMath/api/Quaternion.hpp"
@@ -18,6 +19,7 @@
 #include <exception>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 // Script state in save games: Lua values to YAML and back, plain data only, and the Scripts
@@ -327,7 +329,7 @@ namespace HedgehogScripting
         return section;
     }
 
-    void ScriptSystem::LoadScriptState(ECS::ECS& ecs, const YAML::Node& section)
+    void ScriptSystem::LoadScriptState(ECS::ECS& ecs, const YAML::Node& section, int savedGameDataVersion)
     {
         if (!section.IsMap())
         {
@@ -340,6 +342,7 @@ namespace HedgehogScripting
         {
             ECS::Entity entity = ECS::INVALID_ENTITY;
             PendingLoad load;
+            load.GameDataVersion = savedGameDataVersion;
             try
             {
                 entity           = item.first.as<ECS::Entity>();
@@ -392,6 +395,42 @@ namespace HedgehogScripting
             }
         }
         script.Started = true; // a loaded script carries on: no OnStart
-        return Invoke(entity, script, "OnLoad", load.State);
+
+        sol::object state = load.State;
+        if (load.GameDataVersion < m_Context.GetSaveGames().GetGameDataVersion())
+        {
+            // Called directly rather than through Invoke, which drops what the method returns.
+            const sol::table  environment = script.Environment;
+            const sol::table  self        = script.Self;
+            const std::string entityName  = script.EntityName;
+            const std::string scriptPath  = script.ScriptPath;
+            std::string       error;
+            m_RunningEntity = entity;
+            try
+            {
+                const sol::protected_function_result migrated =
+                    m_Invoke(environment, self, "OnMigrate", load.GameDataVersion, state);
+                if (!migrated.valid())
+                {
+                    const sol::error failure = migrated;
+                    error                    = failure.what();
+                }
+                else if (migrated.return_count() > 0 && migrated.get_type() != sol::type::lua_nil)
+                {
+                    state = migrated.get<sol::object>();
+                }
+            }
+            catch (const std::exception& e)
+            {
+                error = e.what();
+            }
+            m_RunningEntity.reset();
+            if (!error.empty())
+            {
+                LogError(entityName, scriptPath, "OnMigrate failed: " + error);
+                return false;
+            }
+        }
+        return Invoke(entity, script, "OnLoad", std::as_const(state));
     }
 }

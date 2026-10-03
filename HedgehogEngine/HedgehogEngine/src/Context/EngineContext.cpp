@@ -70,11 +70,10 @@ namespace HedgehogEngine
         m_SceneManager = std::make_unique<SceneManager>(
             m_ECS, m_EventBus, m_FileSystem, *m_ComponentRegistry,
             *m_TransformSystem, *m_MeshSystem, *m_RenderSystem);
-        m_SaveGames = std::make_unique<SaveGameManager>(*m_SceneManager, m_EventBus, m_Clock);
+        m_Settings  = std::make_unique<HedgehogSettings::Settings>();
+        m_SaveGames = std::make_unique<SaveGameManager>(*m_SceneManager, m_EventBus, m_Clock, *m_Settings);
 
         m_ResourceCatalog.Update(*m_RenderSystem, *m_MeshSystem);
-
-        m_Settings = std::make_unique<HedgehogSettings::Settings>();
     }
 
     EngineContext::~EngineContext()

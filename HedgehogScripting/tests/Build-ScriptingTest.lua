@@ -20,6 +20,7 @@ project "ScriptingTest"
     {
         "HedgehogScripting",
         "HedgehogEngine",
+        "HedgehogSettings",
         "HedgehogInput",
         "HedgehogAudio",
         "ECS",
