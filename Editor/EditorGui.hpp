@@ -139,7 +139,7 @@ namespace Editor
         void DrawToolbarContent(HedgehogEngine::Engine& context);
         // The icon's ImGui texture id, or nullptr when it did not load.
         [[nodiscard]] void* GetIcon(EditorIcon icon) const { return m_ViewportImages.EditorIcons[static_cast<size_t>(icon)]; }
-        void DrawSceneViewContent();
+        void DrawSceneViewContent(HedgehogEngine::Engine& context);
         void DrawContentPanel(HedgehogEngine::Engine& context);
         // What opening a Content panel file means, by type (EditorGuiContent.cpp): a scene
         // loads; a mesh, material, texture or script goes onto the selected entity; a shader,

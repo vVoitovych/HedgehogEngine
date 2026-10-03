@@ -15,14 +15,22 @@ project "EditorTest"
         "../Panels/EntityIcon.hpp",
         "../Panels/EntityIcon.cpp",
         "../Panels/TextSearch.hpp",
-        "../Panels/TextSearch.cpp"
+        "../Panels/TextSearch.cpp",
+        "../Widgets/AxisGizmo.hpp",
+        "../Widgets/AxisGizmo.cpp"
     }
 
     includedirs
     {
         "../../ThirdParty",
         "..",              -- so "Docking/..." resolves
+        "../..",           -- so "HedgehogMath/api/..." resolves
         "."
+    }
+
+    links
+    {
+        "HedgehogMath"
     }
 
     targetdir (BinariesDir)
