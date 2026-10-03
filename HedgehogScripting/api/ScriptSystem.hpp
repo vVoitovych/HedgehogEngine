@@ -29,6 +29,12 @@ namespace FS
     class FileSystemManager;
 }
 
+// Callers of the save-state functions include yaml-cpp themselves.
+namespace YAML
+{
+    class Node;
+}
+
 namespace HedgehogEngine
 {
     class EngineContext;
@@ -109,6 +115,25 @@ namespace HedgehogScripting
         // The script's declared Properties, sorted by name, with their defaults, for the
         // inspector. Compiles a throwaway class and runs no method.
         [[nodiscard]] std::vector<ScriptPropertyDeclaration> DescribeScript(const std::string& scriptPath);
+
+        // Save games (ScriptSystemSaveState.cpp). The Scripts section of a save: a map from entity id
+        // to { Script: <path>, Properties: { <name>: <value> }, State: <OnSave's table> } for every
+        // live, healthy script, in id order. Properties are each declared property's current value
+        // on self; State is what self:OnSave() returned (left out for nil; any other non-table is an
+        // error). Only plain data saves: nil, booleans, numbers, strings, tables of these with string
+        // or integer keys, Vector3 (!vec3), Quat (!quat) and Entity handles (!entity, the id). A
+        // function, a thread, other userdata, a cyclic table, a key of another kind or nesting deeper
+        // than MAX_SAVE_DEPTH leaves that script out, with one error naming it and where the value
+        // is ("self.speed", "OnSave().items[2]"); the others still save.
+        static constexpr int MAX_SAVE_DEPTH = 32;
+        [[nodiscard]] YAML::Node SaveScriptState(ECS::ECS& ecs);
+
+        // Restores a Scripts section. An entry whose entity runs the same script gets its saved
+        // properties set on self (those still declared), then self:OnLoad(state); one whose script
+        // is not running yet is kept until its instance is made (OnPlayStart, or a script added
+        // during Play), which then gets them in place of OnStart. An entry for another script, or
+        // one that does not read, is skipped with a warning. Kept entries are dropped at Stop.
+        void LoadScriptState(ECS::ECS& ecs, const YAML::Node& section);
 
         // Entities with a live script instance.
         [[nodiscard]] size_t GetScriptCount() const;
@@ -191,6 +216,14 @@ namespace HedgehogScripting
             uint32_t    SourceGeneration = 0;
         };
 
+        // A loaded script state waiting for its entity's instance (LoadScriptState).
+        struct PendingLoad
+        {
+            std::string ScriptPath;
+            sol::table  Properties;
+            sol::object State;
+        };
+
         using RemovedCallback = std::function<void(ECS::Entity, HedgehogEngine::ScriptComponent&)>;
 
         void               StartClassSupport();
@@ -239,6 +272,9 @@ namespace HedgehogScripting
         void               RegisterReload();
         void               ReloadClass(ECS::ECS& ecs, const std::string& scriptPath);
         void               SwapScript(ECS::ECS& ecs, ECS::Entity entity, const ScriptClass& scriptClass);
+        // Save games (ScriptSystemSaveState.cpp): the saved properties on self, then OnLoad(state);
+        // false, logged, when OnLoad fails.
+        bool               ApplyLoad(ECS::Entity entity, EntityScript& script, const PendingLoad& load);
         // Runs method on every enabled, healthy script, faulting a script whose call fails.
         template<typename... Args>
         void               InvokeAll(std::string_view method, Args&&... args);
@@ -294,6 +330,8 @@ namespace HedgehogScripting
         // Copies the plain state of one self into another (see ReloadChangedScripts), and when
         // the script files were last compared with the disk.
         sol::protected_function                              m_CopyState;
+        // Loaded script states waiting for their entity's instance, by entity.
+        std::unordered_map<ECS::Entity, PendingLoad>         m_PendingLoads;
         std::optional<std::chrono::steady_clock::time_point> m_LastReloadPoll;
 
         sol::protected_function m_SpawnCoroutine;

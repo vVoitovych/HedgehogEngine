@@ -283,6 +283,23 @@ namespace HedgehogScripting
             script.Self["entity"] = Bindings::MakeScriptEntity(ecs, entity);
             ApplyProperties(ecs, entity, script, true);
             script.Faulted = false;
+
+            // A loaded save's state replaces OnStart.
+            if (const auto pending = m_PendingLoads.find(entity); pending != m_PendingLoads.end())
+            {
+                const PendingLoad load = std::move(pending->second);
+                m_PendingLoads.erase(pending);
+                if (load.ScriptPath != script.ScriptPath)
+                {
+                    LOGWARNING("[Script] " + script.EntityName + " (" + script.ScriptPath + "): the saved state is for " +
+                               load.ScriptPath + "; it is not loaded.");
+                }
+                else
+                {
+                    if (!ApplyLoad(entity, m_Scripts.at(entity), load))
+                        m_Scripts.at(entity).Faulted = true;
+                }
+            }
         }
         catch (const std::exception& e)
         {
@@ -323,6 +340,8 @@ namespace HedgehogScripting
 
     // ScriptSystemReload.cpp calls OnReload through it.
     template bool ScriptSystem::Invoke<>(ECS::Entity, EntityScript&, std::string_view);
+    // ScriptSystemSaveState.cpp calls OnLoad(state) through it.
+    template bool ScriptSystem::Invoke<const sol::object&>(ECS::Entity, EntityScript&, std::string_view, const sol::object&);
 
     template<typename... Args>
     void ScriptSystem::InvokeAll(std::string_view method, Args&&... args)
@@ -505,6 +524,7 @@ namespace HedgehogScripting
         m_PendingDestroys.clear(); // OnDestroy may queue more; Stop's restore discards them anyway
         m_Subscriptions.clear();
         m_QueuedEvents.clear();
+        m_PendingLoads.clear();
 
         if (m_CallbackEcs == &ecs)
         {
