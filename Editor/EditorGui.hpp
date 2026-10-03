@@ -15,11 +15,18 @@
 #include <filesystem>
 #include <memory>
 #include <optional>
+#include <cstdint>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
 struct ImFont;
+
+namespace ECS
+{
+    class ECS;
+}
 
 namespace HedgehogEngine
 {
@@ -165,7 +172,10 @@ namespace Editor
         // running none of its code. False, logged, when refused.
         bool AssignScript(HedgehogEngine::Engine& context, ECS::Entity entity, const std::string& physicalPath);
         void DrawSceneHierarchy(HedgehogEngine::Engine& context);
-        void DrawHierarchyNode(HedgehogEngine::Engine& context, ECS::Entity entity, int& index);
+        // Draws entity's row and, when open, its children; filtering shows only marked entities.
+        void DrawHierarchyNode(HedgehogEngine::Engine& context, ECS::Entity entity, bool filtering);
+        // Marks entity when its name or a descendant's contains search; returns whether it did.
+        bool MarkHierarchyMatches(ECS::ECS& ecs, ECS::Entity entity, std::string_view search);
         void DrawInspector(HedgehogEngine::Engine& context);
         void DrawEntityTitle(HedgehogEngine::Engine& context);
         void DrawTransformComponent(HedgehogEngine::Engine& context);
@@ -213,6 +223,13 @@ namespace Editor
         std::optional<ViewportPoint> m_ScenePick;
 
         std::optional<ECS::Entity>             m_SelectedEntity;
+
+        // The hierarchy's search text, which entities it shows (one flag per entity id, sized once),
+        // and the edits picked in a row's menu, applied after the tree is drawn.
+        char                       m_HierarchySearch[128] = {};
+        std::vector<uint8_t>       m_HierarchyMatches;
+        std::optional<ECS::Entity> m_HierarchyCreateUnder;
+        std::optional<ECS::Entity> m_HierarchyDelete;
         bool                                   m_SettingsWindowOpen = false;
         std::unique_ptr<ConsolePanel>            m_ConsolePanel;
         std::unique_ptr<ContentPanel>            m_ContentPanel;
