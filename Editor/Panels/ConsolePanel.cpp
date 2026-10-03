@@ -4,6 +4,7 @@
 
 #include "imgui.h"
 
+#include <cstdio>
 #include <sstream>
 
 namespace Editor
@@ -79,11 +80,22 @@ namespace Editor
     {
         ParseCaptured();
 
-        if (ImGui::Button("Clear"))
+        // A compact header: Clear, then Auto-scroll as a toggle, the entry count at the right end.
+        if (ImGui::SmallButton("Clear"))
             Clear();
-
         ImGui::SameLine();
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(ImGui::GetStyle().FramePadding.x, 0.0f));
         ImGui::Checkbox("Auto-scroll", &m_ScrollToBottom);
+        ImGui::PopStyleVar();
+
+        char count[32];
+        std::snprintf(count, sizeof(count), "%zu entries", m_Entries.size());
+        const float countWidth = ImGui::CalcTextSize(count).x;
+        ImGui::SameLine();
+        const float countX = ImGui::GetWindowContentRegionMax().x - countWidth;
+        if (countX > ImGui::GetCursorPosX())
+            ImGui::SetCursorPosX(countX);
+        ImGui::TextDisabled("%s", count);
         ImGui::Separator();
 
         ImGui::BeginChild("##console_entries", ImVec2(0.0f, 0.0f), false,
