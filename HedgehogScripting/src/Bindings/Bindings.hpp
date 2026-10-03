@@ -51,4 +51,11 @@ namespace HedgehogScripting::Bindings
     // the clock. Every read sees the current values. All three must outlive lua.
     void RegisterTime(sol::state& lua, HedgehogEngine::FixedStepClock& clock, const float& deltaTime,
                       const uint64_t& frame);
+
+    // The Input table over context's game actions (assets://Input/actions.yaml's Game map):
+    // isDown, wasPressed, wasReleased, value and consume take an action's name (an unknown one, or
+    // a non-string, is a script error); pointerPosition and pointerDelta return x and y in game-view
+    // pixels, y down; isPointerInside. Consumed actions read as up; nothing is down outside Play.
+    // Every call reads the current state. context must outlive lua.
+    void RegisterInput(sol::state& lua, HedgehogEngine::EngineContext& context);
 }
