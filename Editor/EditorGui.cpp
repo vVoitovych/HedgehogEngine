@@ -181,6 +181,8 @@ namespace Editor
         m_SceneViewHeight  = 0;
         m_GameViewWidth    = 0;
         m_GameViewHeight   = 0;
+        m_GameImageSize    = HM::Vector2(0.0f, 0.0f);
+        m_GameViewHovered  = false;
 
         m_ViewportImages = images;
 
@@ -272,14 +274,40 @@ namespace Editor
             m_GameViewHeight = static_cast<uint32_t>(std::max(1.0f, avail.y));
 
             if (m_ViewportImages.Game)
+            {
                 ImGui::Image(m_ViewportImages.Game, avail);
+                m_GameImageMin    = HM::Vector2(ImGui::GetItemRectMin().x, ImGui::GetItemRectMin().y);
+                m_GameImageSize   = HM::Vector2(ImGui::GetItemRectSize().x, ImGui::GetItemRectSize().y);
+                m_GameViewHovered = ImGui::IsItemHovered();
+            }
             else
+            {
                 ImGui::TextDisabled("No camera is drawn here: add an enabled camera to the scene.");
+            }
 
             ImGui::EndTabItem();
         }
 
         ImGui::EndTabBar();
+
+        // A press focuses the game panel when it lands on its image, and unfocuses it anywhere else.
+        const bool anyPress = ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right) ||
+                              ImGui::IsMouseClicked(ImGuiMouseButton_Middle);
+        if (anyPress)
+            m_GameViewFocused = m_GameViewHovered;
+        if (m_GameImageSize.x() <= 0.0f)
+            m_GameViewFocused = false;
+    }
+
+    HInput::GameInputRegion EditorGui::GetGameInputRegion() const
+    {
+        HInput::GameInputRegion region;
+        region.Origin          = m_GameImageMin;
+        region.Size            = m_GameImageSize;
+        region.PixelSize       = HM::Vector2(static_cast<float>(m_GameViewWidth), static_cast<float>(m_GameViewHeight));
+        region.PointerEnabled  = m_GameViewHovered;
+        region.KeyboardEnabled = m_GameViewFocused && !ImGui::GetIO().WantTextInput;
+        return region;
     }
 
     // ─── Main menu ───────────────────────────────────────────────────────────

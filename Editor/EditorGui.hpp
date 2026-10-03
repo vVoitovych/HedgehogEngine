@@ -7,6 +7,7 @@
 
 #include "FileSystem/api/FileSystemManager.hpp"
 
+#include "HedgehogInput/api/GameInputRegion.hpp"
 #include "HedgehogScripting/api/ScriptPropertyDeclaration.hpp"
 
 #include <filesystem>
@@ -81,6 +82,12 @@ namespace Editor
         uint32_t GetGameViewWidth()     const { return m_GameViewWidth; }
         uint32_t GetGameViewHeight()    const { return m_GameViewHeight; }
         bool     IsSceneViewHovered()   const { return m_SceneViewHovered; }
+
+        // The Game tab's image as the game's input region (in window coordinates, the cursor's), as
+        // of the last Draw: the pointer is the game's while the image is hovered, the keyboard while
+        // the panel has focus (gained by a press on the image, lost by a press anywhere else or by
+        // hiding the tab) and no text field is being edited. No area while the tab is hidden.
+        HInput::GameInputRegion GetGameInputRegion() const;
 
         // Where the scene panel was clicked this frame (pressed and released without dragging the
         // camera), for the application to pick at.
@@ -174,6 +181,10 @@ namespace Editor
         uint32_t m_GameViewWidth    = 0;
         uint32_t m_GameViewHeight   = 0;
         bool     m_SceneViewHovered = false;
+        HM::Vector2 m_GameImageMin  = HM::Vector2(0.0f, 0.0f); // window coordinates
+        HM::Vector2 m_GameImageSize = HM::Vector2(0.0f, 0.0f);
+        bool     m_GameViewHovered  = false;
+        bool     m_GameViewFocused  = false;
         std::optional<ViewportPoint> m_ScenePick;
 
         std::optional<ECS::Entity>             m_SelectedEntity;

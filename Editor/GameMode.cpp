@@ -8,6 +8,7 @@
 #include "HedgehogExtract/api/MeshBounds.hpp"
 #include "HedgehogExtract/api/RenderScene.hpp"
 #include "HedgehogExtract/api/SceneExtractor.hpp"
+#include "HedgehogInput/api/GameInputRegion.hpp"
 #include "HedgehogEngine/api/Containers/FontContainer.hpp"
 #include "HedgehogEngine/api/Resource/ResourceCatalog.hpp"
 #include "HedgehogRenderer/Renderer.hpp"
@@ -61,6 +62,7 @@ namespace Editor
             HX::MeshBoundsCache      meshBounds;
             const HX::SceneExtractor extractor;
             bool                     sawImGui = ImGui::GetCurrentContext() != nullptr;
+            HInput::GameInputGate    inputGate;
 
             auto& windowContext = engine.GetWindowContext();
             for (uint32_t frame = 0; frame < frames && !windowContext.ShouldClose(); ++frame)
@@ -68,6 +70,19 @@ namespace Editor
                 windowContext.HandleInput();
                 int width = 0, height = 0;
                 windowContext.GetWindow().GetFramebufferSize(width, height);
+
+                // The whole window is the game view: the cursor maps from window coordinates to the
+                // framebuffer's pixels, the ones the UI is laid out in.
+                int windowWidth = 0, windowHeight = 0;
+                windowContext.GetWindow().GetWindowSize(windowWidth, windowHeight);
+                HInput::GameInputRegion region;
+                region.Size            = HM::Vector2(static_cast<float>(windowWidth), static_cast<float>(windowHeight));
+                region.PixelSize       = HM::Vector2(static_cast<float>(width), static_cast<float>(height));
+                region.PointerEnabled  = true;
+                region.KeyboardEnabled = true;
+                engineContext.UpdateGameInput(
+                    HInput::MakeGameInput(windowContext.GetWindow().GetRawInput(), region, inputGate));
+
                 engine.UpdateContext(FRAME_TIME, static_cast<float>(std::max(width, 1)) / static_cast<float>(std::max(height, 1)));
 
                 meshBounds.Update(engineContext.GetResourceCatalog());
