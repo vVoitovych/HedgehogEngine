@@ -15,6 +15,8 @@ project "AudioTest"
     links
     {
         "HedgehogAudio",
+        "HedgehogMath",
+        "FileSystem",
         "Logger"
     }
 
