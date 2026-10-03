@@ -1,0 +1,36 @@
+project "HedgehogWindowTest"
+    kind "ConsoleApp"
+    language "C++"
+    cppdialect "C++20"
+
+    files { "**.hpp", "**.cpp" }
+
+    includedirs
+    {
+        "../../../ThirdParty",
+        "../../..",           -- so "HedgehogEngine/HedgehogWindow/api/..." and "HedgehogMath/api/..." resolve
+        "."
+    }
+
+    -- The raw-input event functions only: no window is created, so no display is needed.
+    links
+    {
+        "HedgehogWindow",
+        "HedgehogMath"
+    }
+
+    targetdir (BinariesDir)
+    objdir    (IntermediatesDir)
+
+    filter "system:windows"
+        systemversion "latest"
+
+    filter "configurations:Debug"
+        defines  { "DEBUG" }
+        runtime  "Debug"
+        symbols  "On"
+
+    filter "configurations:Release"
+        defines  { "RELEASE" }
+        runtime  "Release"
+        optimize "On"

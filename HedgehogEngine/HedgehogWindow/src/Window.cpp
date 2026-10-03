@@ -1,5 +1,6 @@
 #include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
 
+#include "HedgehogEngine/HedgehogWindow/api/RawInputEvents.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/WindowDesc.hpp"
 
 #include "Logger/api/Logger.hpp"
@@ -17,10 +18,33 @@
 
 namespace HW
 {
+    // InputCodes.hpp's values are GLFW's: the first and last code of every run of keys.
+    static_assert(static_cast<int>(Key::Space) == GLFW_KEY_SPACE);
+    static_assert(static_cast<int>(Key::Apostrophe) == GLFW_KEY_APOSTROPHE);
+    static_assert(static_cast<int>(Key::Comma) == GLFW_KEY_COMMA && static_cast<int>(Key::Num9) == GLFW_KEY_9);
+    static_assert(static_cast<int>(Key::Semicolon) == GLFW_KEY_SEMICOLON);
+    static_assert(static_cast<int>(Key::Equal) == GLFW_KEY_EQUAL);
+    static_assert(static_cast<int>(Key::A) == GLFW_KEY_A && static_cast<int>(Key::RightBracket) == GLFW_KEY_RIGHT_BRACKET);
+    static_assert(static_cast<int>(Key::GraveAccent) == GLFW_KEY_GRAVE_ACCENT);
+    static_assert(static_cast<int>(Key::World1) == GLFW_KEY_WORLD_1 && static_cast<int>(Key::World2) == GLFW_KEY_WORLD_2);
+    static_assert(static_cast<int>(Key::Escape) == GLFW_KEY_ESCAPE && static_cast<int>(Key::End) == GLFW_KEY_END);
+    static_assert(static_cast<int>(Key::Right) == GLFW_KEY_RIGHT && static_cast<int>(Key::Up) == GLFW_KEY_UP);
+    static_assert(static_cast<int>(Key::CapsLock) == GLFW_KEY_CAPS_LOCK && static_cast<int>(Key::Pause) == GLFW_KEY_PAUSE);
+    static_assert(static_cast<int>(Key::F1) == GLFW_KEY_F1 && static_cast<int>(Key::F25) == GLFW_KEY_F25);
+    static_assert(static_cast<int>(Key::Keypad0) == GLFW_KEY_KP_0 && static_cast<int>(Key::KeypadEqual) == GLFW_KEY_KP_EQUAL);
+    static_assert(static_cast<int>(Key::KeypadEnter) == GLFW_KEY_KP_ENTER);
+    static_assert(static_cast<int>(Key::LeftShift) == GLFW_KEY_LEFT_SHIFT && static_cast<int>(Key::Menu) == GLFW_KEY_MENU);
+    static_assert(KEY_COUNT == GLFW_KEY_LAST + 1);
+    static_assert(static_cast<int>(MouseButton::Left) == GLFW_MOUSE_BUTTON_LEFT);
+    static_assert(static_cast<int>(MouseButton::Right) == GLFW_MOUSE_BUTTON_RIGHT);
+    static_assert(static_cast<int>(MouseButton::Middle) == GLFW_MOUSE_BUTTON_MIDDLE);
+    static_assert(MOUSE_BUTTON_COUNT == GLFW_MOUSE_BUTTON_LAST + 1);
+
     struct Window::Impl
     {
         GLFWwindow*           Handle       = nullptr;
         InputState            InputState;
+        RawInput              Raw;
         bool                  Resized      = false;
         bool                  IsFullscreen = false;
         int                   SavedX       = 0;
@@ -59,6 +83,9 @@ namespace HW
         glfwSetMouseButtonCallback(m_Impl->Handle, OnMouseButton);
         glfwSetCursorPosCallback(m_Impl->Handle, OnMouseMove);
         glfwSetScrollCallback(m_Impl->Handle, OnMouseScroll);
+        glfwSetWindowFocusCallback(m_Impl->Handle, OnFocus);
+        glfwSetCursorEnterCallback(m_Impl->Handle, OnCursorEnter);
+        m_Impl->Raw.Focused = glfwGetWindowAttrib(m_Impl->Handle, GLFW_FOCUSED) != 0;
 
         LOGINFO("Window created: ", desc.Title);
     }
@@ -159,6 +186,21 @@ namespace HW
         return m_Impl->Handle;
     }
 
+    const RawInput& Window::GetRawInput() const
+    {
+        return m_Impl->Raw;
+    }
+
+    RawInput& Window::GetRawInput()
+    {
+        return m_Impl->Raw;
+    }
+
+    void Window::BeginInputFrame()
+    {
+        HW::BeginInputFrame(m_Impl->Raw);
+    }
+
     void* Window::GetNativeOsHandle() const
     {
 #ifdef _WIN32
@@ -180,6 +222,7 @@ namespace HW
         InputState& state = self->m_Impl->InputState;
 
         const bool pressOrRepeat = (action == GLFW_PRESS || action == GLFW_REPEAT);
+        ApplyKeyEvent(self->m_Impl->Raw, key, pressOrRepeat);
         state.CtrlHeld = (mods & GLFW_MOD_CONTROL) != 0;
 
         switch (key)
@@ -201,6 +244,7 @@ namespace HW
     void Window::OnMouseButton(GLFWwindow* handle, int button, int action, int /*mods*/)
     {
         auto* self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(handle));
+        ApplyMouseButtonEvent(self->m_Impl->Raw, button, action == GLFW_PRESS);
         if (self->m_Impl->GuiCallback && self->m_Impl->GuiCallback())
             return;
 
@@ -238,6 +282,7 @@ namespace HW
     void Window::OnMouseMove(GLFWwindow* handle, double x, double y)
     {
         auto* self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(handle));
+        ApplyCursorEvent(self->m_Impl->Raw, x, y);
         InputState& state = self->m_Impl->InputState;
 
         if (state.MouseLeft || state.MouseMiddle || state.MouseRight)
@@ -256,6 +301,19 @@ namespace HW
     void Window::OnMouseScroll(GLFWwindow* handle, double x, double y)
     {
         auto* self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(handle));
+        ApplyScrollEvent(self->m_Impl->Raw, x, y);
         self->m_Impl->InputState.ScrollDelta = HM::Vector2(static_cast<float>(x), static_cast<float>(y));
+    }
+
+    void Window::OnFocus(GLFWwindow* handle, int focused)
+    {
+        auto* self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(handle));
+        ApplyFocus(self->m_Impl->Raw, focused != 0);
+    }
+
+    void Window::OnCursorEnter(GLFWwindow* handle, int entered)
+    {
+        auto* self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(handle));
+        ApplyCursorEnter(self->m_Impl->Raw, entered != 0);
     }
 }

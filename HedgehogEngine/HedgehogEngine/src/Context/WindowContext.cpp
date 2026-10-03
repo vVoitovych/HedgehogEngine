@@ -28,6 +28,8 @@ namespace HedgehogEngine
 
     void WindowContext::HandleInput()
     {
+        // The raw input's deltas sum this frame's events.
+        m_Window->BeginInputFrame();
         m_WindowManager->PollEvents();
     }
 
