@@ -26,6 +26,7 @@ group "ThirdParty"
    include "ThirdParty/YamlCpp/Build-YamlCpp.lua"
    include "ThirdParty/Lua/Build-Lua.lua"
    include "ThirdParty/Tracy/Build-Tracy.lua"
+   include "ThirdParty/miniaudio/Build-miniaudio.lua"
 group ""
 
 include "HedgehogEngine/RHI/Build-RHI.lua"
@@ -69,3 +70,7 @@ include "HedgehogUI/tests/Build-UiTest.lua"
 
 include "HedgehogInput/Build-HedgehogInput.lua"
 include "HedgehogInput/tests/Build-InputTest.lua"
+
+
+include "HedgehogAudio/Build-HedgehogAudio.lua"
+include "HedgehogAudio/tests/Build-AudioTest.lua"
