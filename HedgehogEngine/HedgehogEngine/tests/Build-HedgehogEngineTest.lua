@@ -17,6 +17,7 @@ project "HedgehogEngineTest"
     {
         "HedgehogEngine",
         "HedgehogInput",
+        "HedgehogCommon",
         "ECS",
         "HedgehogMath",
         "FileSystem"

@@ -7,7 +7,6 @@
 #include "HedgehogEngine/api/Containers/MaterialContainer.hpp"
 #include "HedgehogEngine/api/Containers/MaterialData.hpp"
 
-#include "HedgehogEngine/HedgehogWindow/api/InputState.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
 
 #include "HedgehogCommon/api/Camera.hpp"
@@ -201,6 +200,12 @@ namespace HedgehogEngine
         }
         m_InputWatch = HInput::WatchInputActions(INPUT_ACTIONS_PATH, m_FileSystem);
         HInput::ResetActionState(m_GameActions, m_InputActions.Game);
+        HInput::ResetActionState(m_EditorActions, m_InputActions.Editor);
+    }
+
+    void EngineContext::UpdateEditorInput(const HW::RawInput& editorInput)
+    {
+        HInput::UpdateActionState(m_InputActions.Editor, editorInput, m_EditorActions);
     }
 
     void EngineContext::UpdateGameInput(const HW::RawInput& gameInput)
@@ -214,17 +219,20 @@ namespace HedgehogEngine
     void EngineContext::ReloadInputActions(std::chrono::steady_clock::time_point now)
     {
         if (HInput::PollInputActions(m_InputWatch, m_FileSystem, now, m_InputActions))
+        {
             HInput::ResetActionState(m_GameActions, m_InputActions.Game);
+            HInput::ResetActionState(m_EditorActions, m_InputActions.Editor);
+        }
     }
 
     const HInput::InputActionSet& EngineContext::GetInputActions() const { return m_InputActions; }
     HInput::ActionState&          EngineContext::GetGameActionState() { return m_GameActions; }
     const HInput::ActionState&    EngineContext::GetGameActionState() const { return m_GameActions; }
 
-    void EngineContext::UpdateContext(WindowContext& windowContext, float aspectRatio, float dt)
+    void EngineContext::UpdateContext(float aspectRatio, float dt)
     {
         ReloadInputActions(std::chrono::steady_clock::now());
-        UpdateCamera(windowContext, aspectRatio, dt);
+        UpdateCamera(aspectRatio, dt);
 
         // Update order is load-bearing: gameplay (Play only) → Animation → Transform → Hierarchy
         // → Light. Animation runs after every script hook of the frame (see AnimationSystem), and
@@ -337,19 +345,26 @@ namespace HedgehogEngine
     AnimationSystem*  EngineContext::GetAnimationSystem()  const { return m_AnimationSystem.get(); }
     UiSystem*         EngineContext::GetUiSystem()         const { return m_UiSystem.get(); }
 
-    void EngineContext::UpdateCamera(WindowContext& windowContext, float aspectRatio, float dt)
+    void EngineContext::UpdateCamera(float aspectRatio, float dt)
     {
-        const auto& inputState = windowContext.GetWindow().GetInputState();
+        const HInput::InputActionMap& editor = m_InputActions.Editor;
+        const auto value = [&](const char* action)
+        {
+            const std::optional<size_t> index = HInput::FindAction(editor, action);
+            return index ? HInput::GetActionValue(m_EditorActions, *index) : 0.0f;
+        };
+        const auto down = [&](const char* action)
+        {
+            const std::optional<size_t> index = HInput::FindAction(editor, action);
+            return index && HInput::IsActionDown(m_EditorActions, *index);
+        };
 
-        HM::Vector3 posOffset(0.0f, 0.0f, 0.0f);
-        HM::Vector2 dirOffset(inputState.MouseDelta.x(), inputState.MouseDelta.y());
-
-        if (inputState.KeyQ) posOffset.z() = -1.0f;
-        if (inputState.KeyE) posOffset.z() =  1.0f;
-        if (inputState.KeyW) posOffset.x() =  1.0f;
-        if (inputState.KeyS) posOffset.x() = -1.0f;
-        if (inputState.KeyD) posOffset.y() = -1.0f;
-        if (inputState.KeyA) posOffset.y() =  1.0f;
+        // World axes, as the flycam has always moved: x forward (W), y left (A), z up (E).
+        const HM::Vector3 posOffset(value("EditorCameraForward"), -value("EditorCameraRight"), value("EditorCameraUp"));
+        // The pointer turns the camera only while a look button is held.
+        HM::Vector2 dirOffset(0.0f, 0.0f);
+        if (down("EditorCameraLookHold"))
+            dirOffset = HM::Vector2(value("EditorCameraLookX"), value("EditorCameraLookY"));
 
         m_Camera->UpdateCamera(dt, aspectRatio, posOffset, dirOffset);
     }

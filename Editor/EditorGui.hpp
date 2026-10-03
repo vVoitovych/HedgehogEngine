@@ -89,6 +89,11 @@ namespace Editor
         // hiding the tab) and no text field is being edited. No area while the tab is hidden.
         HInput::GameInputRegion GetGameInputRegion() const;
 
+        // The Scene tab's image as the editor camera's input region, by the same rules: the pointer
+        // while the image is hovered (a drag that began on it keeps its button), the keyboard while
+        // the scene panel has focus and no text field is being edited.
+        HInput::GameInputRegion GetSceneInputRegion() const;
+
         // Where the scene panel was clicked this frame (pressed and released without dragging the
         // camera), for the application to pick at.
         std::optional<ViewportPoint> GetScenePick() const { return m_ScenePick; }
@@ -181,6 +186,9 @@ namespace Editor
         uint32_t m_GameViewWidth    = 0;
         uint32_t m_GameViewHeight   = 0;
         bool     m_SceneViewHovered = false;
+        HM::Vector2 m_SceneImageMin  = HM::Vector2(0.0f, 0.0f); // window coordinates
+        HM::Vector2 m_SceneImageSize = HM::Vector2(0.0f, 0.0f);
+        bool        m_SceneViewFocused = false;
         HM::Vector2 m_GameImageMin  = HM::Vector2(0.0f, 0.0f); // window coordinates
         HM::Vector2 m_GameImageSize = HM::Vector2(0.0f, 0.0f);
         bool     m_GameViewHovered  = false;

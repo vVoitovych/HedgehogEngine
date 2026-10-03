@@ -1,7 +1,6 @@
 #pragma once
 
 #include "HedgehogEngine/HedgehogWindow/api/HedgehogWindowApi.hpp"
-#include "HedgehogEngine/HedgehogWindow/api/InputState.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/RawInput.hpp"
 
 #include <functional>
@@ -41,11 +40,9 @@ namespace HW
         // the framebuffer's pixels under display scaling.
         HEDGEHOG_WINDOW_API void GetWindowSize(int& outWidth, int& outHeight) const;
 
-        HEDGEHOG_WINDOW_API const InputState& GetInputState() const;
-        HEDGEHOG_WINDOW_API InputState&       GetInputState();
-
-        // Every key, mouse button, cursor move and scroll the window has received, unfiltered: the
-        // GUI callback gates only the legacy InputState. BeginInputFrame starts the frame's deltas.
+        // Every key, mouse button, cursor move and scroll the window has received, unfiltered:
+        // deciding what reaches the game or the editor camera is the application's job.
+        // BeginInputFrame starts the frame's deltas.
         HEDGEHOG_WINDOW_API const RawInput& GetRawInput() const;
         HEDGEHOG_WINDOW_API RawInput&       GetRawInput();
         HEDGEHOG_WINDOW_API void            BeginInputFrame();
@@ -54,7 +51,6 @@ namespace HW
         HEDGEHOG_WINDOW_API void            PollGamepad();
 
         HEDGEHOG_WINDOW_API void SetIcon(int width, int height, unsigned char* data);
-        HEDGEHOG_WINDOW_API void SetGuiCallback(std::function<bool()> callback);
 
         HEDGEHOG_WINDOW_API GLFWwindow*       GetNativeHandle();
         HEDGEHOG_WINDOW_API const GLFWwindow* GetNativeHandle() const;
