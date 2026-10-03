@@ -7,6 +7,9 @@
 #include "HedgehogCommon/api/RendererSettings.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
 
+#include "FileSystem/api/FileSystemManager.hpp"
+#include "Logger/api/Logger.hpp"
+
 #include "RHI/api/IRHIDevice.hpp"
 #include "RHIImGui/GuiRenderer.hpp"
 #include "RHI/api/IRHITexture.hpp"
@@ -16,9 +19,15 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstring>
 
 namespace Editor
 {
+    namespace
+    {
+        constexpr const char* UI_FONT_PATH = "engine://Assets/Fonts/Karla-Regular.ttf";
+    }
+
     ImGuiLayer::ImGuiLayer(HW::Window& window)
     {
         IMGUI_CHECKVERSION();
@@ -37,6 +46,30 @@ namespace Editor
         desc.ColorFormat   = device.PresentFormat;
         m_Device  = &device.Device;
         m_Backend = RHIImGui::CreateGuiRenderer(device.Device, desc);
+
+        if (device.PresentFormat == RHI::Format::R8G8B8A8Srgb || device.PresentFormat == RHI::Format::B8G8R8A8Srgb)
+            Theme::ConvertToLinear(ImGui::GetStyle());
+    }
+
+    void ImGuiLayer::LoadFonts(const FS::FileSystemManager& fileSystem)
+    {
+        ImFontAtlas& atlas = *ImGui::GetIO().Fonts;
+
+        // The first font added is the default one.
+        const std::optional<std::vector<std::byte>> data = fileSystem.ReadFile(UI_FONT_PATH);
+        if (data && !data->empty())
+        {
+            // The atlas takes ownership and frees the data with ImGui's allocator.
+            void* owned = ImGui::MemAlloc(data->size());
+            std::memcpy(owned, data->data(), data->size());
+            atlas.AddFontFromMemoryTTF(owned, static_cast<int>(data->size()), Theme::FONT_SIZE);
+        }
+        else
+        {
+            LOGWARNING("[Editor] ", UI_FONT_PATH, " could not be read; the UI uses ImGui's default font.");
+        }
+
+        m_MonoFont = atlas.AddFontDefaultBitmap();
     }
 
     void ImGuiLayer::BeginFrame()

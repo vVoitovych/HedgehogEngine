@@ -122,6 +122,7 @@ namespace Editor
 
         // ImGui's context first: the renderer hands it the device to build its GUI renderer on.
         m_ImGui    = std::make_unique<ImGuiLayer>(m_Context->GetWindowContext().GetWindow());
+        m_ImGui->LoadFonts(fileSystem);
         m_Renderer = std::make_unique<Renderer::Renderer>(
             m_Context->GetWindowContext().GetWindow(), engineContext.GetFileSystem(),
             [this, &fileSystem](const Renderer::RendererDevice& device)
@@ -139,6 +140,7 @@ namespace Editor
         m_EditorGui = std::make_unique<EditorGui>(*m_Context);
         m_EditorGui->SetRenderer(m_Renderer.get());
         m_EditorGui->SetScriptSystem(m_ScriptSystem);
+        m_EditorGui->SetMonoFont(m_ImGui->GetMonoFont());
 
         // The panels' targets: zero-sized until their tabs are first drawn.
         for (const char* target : { SCENE_TARGET, GAME_TARGET })

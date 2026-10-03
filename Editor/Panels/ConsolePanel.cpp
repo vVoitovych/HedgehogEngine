@@ -1,5 +1,7 @@
 #include "ConsolePanel.hpp"
 
+#include "EditorTheme.hpp"
+
 #include "imgui.h"
 
 #include <sstream>
@@ -73,7 +75,7 @@ namespace Editor
         std::cout.rdbuf(m_OldCoutBuf);
     }
 
-    void ConsolePanel::Draw()
+    void ConsolePanel::Draw(ImFont* mono)
     {
         ParseCaptured();
 
@@ -87,8 +89,12 @@ namespace Editor
         ImGui::BeginChild("##console_entries", ImVec2(0.0f, 0.0f), false,
             ImGuiWindowFlags_HorizontalScrollbar);
 
+        if (mono)
+            ImGui::PushFont(mono, Theme::MONO_FONT_SIZE);
         for (const auto& entry : m_Entries)
             ImGui::TextColored(LevelColor(entry.Level), "%s", entry.Text.c_str());
+        if (mono)
+            ImGui::PopFont();
 
         if (m_ScrollToBottom && ImGui::GetScrollY() >= ImGui::GetScrollMaxY() - 5.0f)
             ImGui::SetScrollHereY(1.0f);

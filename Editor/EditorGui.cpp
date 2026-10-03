@@ -222,7 +222,7 @@ namespace Editor
         {
         case PanelId::SceneHierarchy: DrawSceneHierarchy(context);          break;
         case PanelId::Inspector:      DrawInspector(context);                break;
-        case PanelId::Console:        m_ConsolePanel->Draw();                break;
+        case PanelId::Console:        m_ConsolePanel->Draw(m_MonoFont);      break;
         case PanelId::Content:        DrawContentPanel(context);             break;
         default:                      DrawSceneViewContent();                break;
         }
