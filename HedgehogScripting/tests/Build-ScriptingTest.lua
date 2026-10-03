@@ -12,7 +12,8 @@ project "ScriptingTest"
         "../../HedgehogEngine", -- so "HedgehogEngine/api/..." resolves
         ".",
         "%{IncludeDir.Lua}",
-        "%{IncludeDir.sol2}"
+        "%{IncludeDir.sol2}",
+        "%{IncludeDir.yaml_cpp}"
     }
 
     links
@@ -25,7 +26,8 @@ project "ScriptingTest"
         "HedgehogMath",
         "FileSystem",
         "Logger",
-        "Lua"
+        "Lua",
+        "yaml-cpp"
     }
 
     targetdir (BinariesDir)
@@ -33,6 +35,7 @@ project "ScriptingTest"
 
     filter "system:windows"
         systemversion "latest"
+        defines { "YAML_CPP_STATIC_DEFINE" }
 
     filter "configurations:Debug"
         defines  { "DEBUG" }

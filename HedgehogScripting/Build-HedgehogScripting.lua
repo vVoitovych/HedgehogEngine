@@ -12,6 +12,7 @@ project "HedgehogScripting"
       ".",
       "%{IncludeDir.Lua}",
       "%{IncludeDir.sol2}",
+      "%{IncludeDir.yaml_cpp}",
    }
 
    links {
@@ -23,6 +24,7 @@ project "HedgehogScripting"
       "FileSystem",
       "Logger",
       "Lua",
+      "yaml-cpp",
    }
 
    targetdir (IntermediatesDir)
@@ -30,7 +32,7 @@ project "HedgehogScripting"
 
    filter "system:windows"
        systemversion "latest"
-       defines { }
+       defines { "YAML_CPP_STATIC_DEFINE" }
        -- sol2's usertypes instantiate enough templates to pass MSVC's default section limit.
        buildoptions { "/bigobj" }
 
