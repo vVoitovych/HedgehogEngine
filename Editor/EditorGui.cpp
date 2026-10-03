@@ -1,6 +1,7 @@
 #include "EditorGui.hpp"
 #include "EditorTheme.hpp"
 #include "Widgets/IconWidgets.hpp"
+#include "Widgets/PropertyFields.hpp"
 #include "Widgets/ViewportOverlay.hpp"
 #include "Panels/EntityIcon.hpp"
 #include "Panels/TextSearch.hpp"
@@ -82,18 +83,25 @@ namespace
             ecs.AddComponent(*selected, T{});
     }
 
-    // A component's reflected fields under a collapsing header, then whatever extra draws, then a
-    // button that removes it.
+    // A component's reflected fields under an icon header, then whatever extra draws; the header's
+    // menu removes it.
     template<typename T, typename Extra = void (*)()>
-    void DrawReflectedComponent(ECS::ECS& ecs, ECS::Entity entity, const char* header, Extra extra = [] {})
+    void DrawReflectedComponent(ECS::ECS& ecs, ECS::Entity entity, const char* header, void* icon, void* menuIcon,
+                                Extra extra = [] {})
     {
-        if (!ecs.HasComponent<T>(entity) || !ImGui::CollapsingHeader(header, ImGuiTreeNodeFlags_DefaultOpen))
+        if (!ecs.HasComponent<T>(entity))
+            return;
+        const Editor::ComponentHeaderResult section = Editor::ComponentHeader(header, { icon, menuIcon });
+        if (section.RemoveRequested)
+        {
+            ecs.RemoveComponent<T>(entity);
+            return;
+        }
+        if (!section.Open)
             return;
         ImGui::PushID(header);
         Reflection::RenderComponentGui(&ecs.GetComponent<T>(entity), T::GetProperties());
         extra();
-        if (ImGui::Button("Remove"))
-            ecs.RemoveComponent<T>(entity);
         ImGui::PopID();
     }
 
@@ -110,7 +118,8 @@ namespace
                 {
                     auto* l = static_cast<LightComponent*>(comp);
                     if (l->LightType == LightType::DirectionLight) return false;
-                    return ImGui::SliderFloat(p.name, &l->Radius, p.sliderMin, p.sliderMax);
+                    Editor::PropertyLabel(p.name);
+                    return ImGui::SliderFloat("##LightRadius", &l->Radius, p.sliderMin, p.sliderMax);
                 };
             }
             else if (std::string_view(prop.name) == "LightConeAngle")
@@ -119,7 +128,8 @@ namespace
                 {
                     auto* l = static_cast<LightComponent*>(comp);
                     if (l->LightType != LightType::SpotLight) return false;
-                    return ImGui::SliderFloat(p.name, &l->ConeAngle, p.sliderMin, p.sliderMax);
+                    Editor::PropertyLabel(p.name);
+                    return ImGui::SliderFloat("##LightConeAngle", &l->ConeAngle, p.sliderMin, p.sliderMax);
                 };
             }
             else if (std::string_view(prop.name) == "CastShadows")
@@ -154,6 +164,21 @@ namespace Editor
 {
     namespace
     {
+        // What the entity has that decides its icon.
+        [[nodiscard]] EntityTraits MakeEntityTraits(ECS::ECS& ecs, ECS::Entity entity)
+        {
+            EntityTraits traits;
+            traits.HasCamera        = ecs.HasComponent<HedgehogEngine::CameraComponent>(entity);
+            traits.HasLight         = ecs.HasComponent<HedgehogEngine::LightComponent>(entity);
+            traits.HasUiCanvas      = ecs.HasComponent<HedgehogEngine::UiCanvasComponent>(entity);
+            traits.HasUiElement     = ecs.HasComponent<HedgehogEngine::UiRectComponent>(entity);
+            traits.HasAudioSource   = ecs.HasComponent<HedgehogEngine::AudioSourceComponent>(entity);
+            traits.HasAudioListener = ecs.HasComponent<HedgehogEngine::AudioListenerComponent>(entity);
+            traits.HasMesh          = ecs.HasComponent<HedgehogEngine::MeshComponent>(entity);
+            traits.HasChildren      = !ecs.GetComponent<ECS::HierarchyComponent>(entity).Children.empty();
+            return traits;
+        }
+
         // Spaces at the start of a hierarchy row's label, where its icon is drawn.
         constexpr const char* HIERARCHY_ICON_PAD = "        ";
     }
@@ -715,20 +740,7 @@ namespace Editor
         else if (filtering)
             ImGui::SetNextItemOpen(true);
 
-        EditorIcon icon = EditorIcon::Scene;
-        if (!isRoot)
-        {
-            EntityTraits traits;
-            traits.HasCamera        = ecs.HasComponent<HedgehogEngine::CameraComponent>(entity);
-            traits.HasLight         = ecs.HasComponent<HedgehogEngine::LightComponent>(entity);
-            traits.HasUiCanvas      = ecs.HasComponent<HedgehogEngine::UiCanvasComponent>(entity);
-            traits.HasUiElement     = ecs.HasComponent<HedgehogEngine::UiRectComponent>(entity);
-            traits.HasAudioSource   = ecs.HasComponent<HedgehogEngine::AudioSourceComponent>(entity);
-            traits.HasAudioListener = ecs.HasComponent<HedgehogEngine::AudioListenerComponent>(entity);
-            traits.HasMesh          = ecs.HasComponent<HedgehogEngine::MeshComponent>(entity);
-            traits.HasChildren      = hasChildren;
-            icon = ChooseEntityIcon(traits);
-        }
+        const EditorIcon icon = isRoot ? EditorIcon::Scene : ChooseEntityIcon(MakeEntityTraits(ecs, entity));
 
         // The label leaves room for the icon, drawn over it once the row is placed. The root row
         // shows the scene's name (a copy, so only the root row allocates).
@@ -788,17 +800,48 @@ namespace Editor
 
     void EditorGui::DrawEntityTitle(HedgehogEngine::Engine& context)
     {
-        auto& ecs       = context.GetEngineContext().GetECS();
-        auto  entity    = m_SelectedEntity.value();
-        auto& hierarchy = ecs.GetComponent<ECS::HierarchyComponent>(entity);
-        if (ImGui::CollapsingHeader("Name", ImGuiTreeNodeFlags_DefaultOpen))
+        auto& engineContext = context.GetEngineContext();
+        auto& ecs           = engineContext.GetECS();
+        auto  entity        = m_SelectedEntity.value();
+        auto& hierarchy     = ecs.GetComponent<ECS::HierarchyComponent>(entity);
+
+        // The entity's icon, then its name filling the row.
+        const float  rowH = ImGui::GetFrameHeight();
+        const ImVec2 at   = ImGui::GetCursorScreenPos();
+        DrawIcon(*ImGui::GetWindowDrawList(), GetIcon(ChooseEntityIcon(MakeEntityTraits(ecs, entity))),
+                 ImVec2(at.x, at.y + (rowH - ICON_SIZE_SMALL) * 0.5f), ICON_SIZE_SMALL, ImGui::GetColorU32(ImGuiCol_Text));
+        ImGui::Dummy(ImVec2(ICON_SIZE_SMALL, rowH));
+        ImGui::SameLine();
+
+        char nameBuf[256];
+        strncpy_s(nameBuf, hierarchy.Name.c_str(), sizeof(nameBuf) - 1);
+        nameBuf[sizeof(nameBuf) - 1] = '\0';
+        ImGui::SetNextItemWidth(-FLT_MIN);
+        if (ImGui::InputText("##name", nameBuf, sizeof(nameBuf)))
+            hierarchy.Name = nameBuf;
+
+        // The layer belongs to the entity's rendering; hand-drawn because layer names are edited at
+        // runtime, so the combo reads them from settings every frame.
+        if (ecs.HasComponent<HedgehogEngine::RenderComponent>(entity) && BeginPropertyTable("##entity"))
         {
-            char nameBuf[256];
-            strncpy_s(nameBuf, hierarchy.Name.c_str(), sizeof(nameBuf) - 1);
-            nameBuf[sizeof(nameBuf) - 1] = '\0';
-            if (ImGui::InputText("##name", nameBuf, sizeof(nameBuf)))
-                hierarchy.Name = nameBuf;
+            auto&       render = ecs.GetComponent<HedgehogEngine::RenderComponent>(entity);
+            const auto& layers = engineContext.GetSettings().GetLayerSettings();
+            PropertyLabel("Layer");
+            if (ImGui::BeginCombo("##Layer", layers->GetLayerDisplayName(render.Layer).c_str()))
+            {
+                for (uint32_t layer = 0; layer < HedgehogSettings::LayerSettings::LAYER_COUNT; ++layer)
+                {
+                    const bool isSelected = (render.Layer == layer);
+                    if (ImGui::Selectable(layers->GetLayerDisplayName(layer).c_str(), isSelected))
+                        render.Layer = layer;
+                    if (isSelected)
+                        ImGui::SetItemDefaultFocus();
+                }
+                ImGui::EndCombo();
+            }
+            EndPropertyTable();
         }
+        ImGui::Spacing();
     }
 
     void EditorGui::DrawTransformComponent(HedgehogEngine::Engine& context)
@@ -807,7 +850,10 @@ namespace Editor
         auto& ecs           = engineContext.GetECS();
         auto  entity        = m_SelectedEntity.value();
 
-        if (!ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
+        ComponentHeaderOptions header;
+        header.Icon      = GetIcon(EditorIcon::Transform);
+        header.Removable = false;
+        if (!ComponentHeader("Transform", header).Open)
             return;
 
         auto& transform = ecs.GetComponent<HedgehogEngine::TransformComponent>(entity);
@@ -892,25 +938,7 @@ namespace Editor
         if (ImGui::Checkbox("Visible", &visible))
             render.IsVisible = visible;
 
-        // Hand-drawn rather than reflected: layer names are edited at runtime, so the combo has
-        // to read them from settings every frame instead of a static label array.
-        const auto& layers = engineContext.GetSettings().GetLayerSettings();
-        if (ImGui::BeginCombo("Layer", layers->GetLayerDisplayName(render.Layer).c_str()))
-        {
-            for (uint32_t layer = 0; layer < HedgehogSettings::LayerSettings::LAYER_COUNT; ++layer)
-            {
-                const bool isSelected = (render.Layer == layer);
-                if (ImGui::Selectable(layers->GetLayerDisplayName(layer).c_str(), isSelected))
-                {
-                    render.Layer = layer;
-                }
-                if (isSelected)
-                {
-                    ImGui::SetItemDefaultFocus();
-                }
-            }
-            ImGui::EndCombo();
-        }
+        // The layer is drawn in the entity header (DrawEntityTitle).
 
         if (!materials.empty())
         {
@@ -1128,21 +1156,22 @@ namespace Editor
     {
         auto&             ecs    = context.GetEngineContext().GetECS();
         const ECS::Entity entity = m_SelectedEntity.value();
-        DrawReflectedComponent<HedgehogEngine::UiCanvasComponent>(ecs, entity, "UI canvas");
-        DrawReflectedComponent<HedgehogEngine::UiRectComponent>(ecs, entity, "UI rect");
-        DrawReflectedComponent<HedgehogEngine::UiImageComponent>(ecs, entity, "UI image");
-        DrawReflectedComponent<HedgehogEngine::UiTextComponent>(ecs, entity, "UI text", [&]
+        void*             menu   = GetIcon(EditorIcon::More);
+        DrawReflectedComponent<HedgehogEngine::UiCanvasComponent>(ecs, entity, "UI canvas", GetIcon(EditorIcon::UiCanvas), menu);
+        DrawReflectedComponent<HedgehogEngine::UiRectComponent>(ecs, entity, "UI rect", GetIcon(EditorIcon::UiRect), menu);
+        DrawReflectedComponent<HedgehogEngine::UiImageComponent>(ecs, entity, "UI image", GetIcon(EditorIcon::UiImage), menu);
+        DrawReflectedComponent<HedgehogEngine::UiTextComponent>(ecs, entity, "UI text", GetIcon(EditorIcon::UiText), menu, [&]
         {
             ImGui::TextDisabled("Drop a font (.ttf, .otf) here");
             AcceptSelectionDrop(ContentType::Font);
         });
-        DrawReflectedComponent<HedgehogEngine::UiButtonComponent>(ecs, entity, "UI button");
-        DrawReflectedComponent<HedgehogEngine::AudioSourceComponent>(ecs, entity, "Audio source", [&]
+        DrawReflectedComponent<HedgehogEngine::UiButtonComponent>(ecs, entity, "UI button", GetIcon(EditorIcon::UiButton), menu);
+        DrawReflectedComponent<HedgehogEngine::AudioSourceComponent>(ecs, entity, "Audio source", GetIcon(EditorIcon::AudioSource), menu, [&]
         {
             ImGui::TextDisabled("Drop an audio clip (.wav, .mp3, .flac) here");
             AcceptSelectionDrop(ContentType::Audio);
         });
-        DrawReflectedComponent<HedgehogEngine::AudioListenerComponent>(ecs, entity, "Audio listener");
+        DrawReflectedComponent<HedgehogEngine::AudioListenerComponent>(ecs, entity, "Audio listener", GetIcon(EditorIcon::AudioListener), menu);
     }
 
     // Hand-drawn instead of the reflected text field, so a camera picks from the graphs that exist,
