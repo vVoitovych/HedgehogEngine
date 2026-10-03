@@ -21,6 +21,9 @@
 #include "HedgehogEngine/api/ECS/systems/CameraSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/AnimationSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/UiSystem.hpp"
+#include "HedgehogEngine/api/ECS/systems/AudioSystem.hpp"
+#include "HedgehogEngine/api/ECS/components/AudioListenerComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/AudioSourceComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/UiButtonComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/UiCanvasComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/UiImageComponent.hpp"
@@ -40,6 +43,8 @@
 
 #include "HedgehogInput/api/DefaultInputActions.hpp"
 
+#include "HedgehogAudio/api/AudioEngine.hpp"
+
 #include "Logger/api/Logger.hpp"
 
 #include <algorithm>
@@ -54,7 +59,8 @@ namespace HedgehogEngine
         InitFileSystem();
         LoadInputActions();
 
-        m_Camera = std::make_unique<Camera>();
+        m_Camera      = std::make_unique<Camera>();
+        m_AudioEngine = std::make_unique<HA::AudioEngine>();
         InitECS();
 
         // SceneManager creates the scene root on construction, so it must come after InitECS
@@ -112,6 +118,8 @@ namespace HedgehogEngine
         m_ECS.RegisterComponent<UiImageComponent>();
         m_ECS.RegisterComponent<UiTextComponent>();
         m_ECS.RegisterComponent<UiButtonComponent>();
+        m_ECS.RegisterComponent<AudioSourceComponent>();
+        m_ECS.RegisterComponent<AudioListenerComponent>();
 
         m_TransformSystem = m_ECS.RegisterSystem<TransformSystem>();
         m_HierarchySystem = m_ECS.RegisterSystem<HierarchySystem>();
@@ -121,6 +129,8 @@ namespace HedgehogEngine
         m_CameraSystem    = m_ECS.RegisterSystem<CameraSystem>();
         m_AnimationSystem = m_ECS.RegisterSystem<AnimationSystem>();
         m_UiSystem        = m_ECS.RegisterSystem<UiSystem>();
+        m_AudioSystem         = m_ECS.RegisterSystem<AudioSystem>(m_ECS, *m_AudioEngine, m_FileSystem);
+        m_AudioListenerSystem = m_ECS.RegisterSystem<AudioListenerSystem>();
 
         m_TransformSystem->Init(m_EventBus);
         m_HierarchySystem->Init(m_EventBus);
@@ -159,6 +169,16 @@ namespace HedgehogEngine
 
         signature.set(m_ECS.GetComponentType<UiCanvasComponent>());
         m_ECS.SetSystemSignature<UiSystem>(signature);
+        signature.reset();
+
+        signature.set(m_ECS.GetComponentType<AudioSourceComponent>());
+        signature.set(m_ECS.GetComponentType<TransformComponent>());
+        m_ECS.SetSystemSignature<AudioSystem>(signature);
+        signature.reset();
+
+        signature.set(m_ECS.GetComponentType<AudioListenerComponent>());
+        signature.set(m_ECS.GetComponentType<TransformComponent>());
+        m_ECS.SetSystemSignature<AudioListenerSystem>(signature);
 
         RegisterComponents();
     }
@@ -178,6 +198,8 @@ namespace HedgehogEngine
         m_ComponentRegistry->RegisterReflected<UiImageComponent>("UiImageComponent");
         m_ComponentRegistry->RegisterReflected<UiTextComponent>("UiTextComponent");
         m_ComponentRegistry->RegisterReflected<UiButtonComponent>("UiButtonComponent");
+        m_ComponentRegistry->RegisterReflected<AudioSourceComponent>("AudioSourceComponent");
+        m_ComponentRegistry->RegisterReflected<AudioListenerComponent>("AudioListenerComponent");
 
         // Scripts run in the application's script system; loading a scene only reads the data.
         RegisterScriptComponentSerializer(*m_ComponentRegistry);
@@ -235,13 +257,15 @@ namespace HedgehogEngine
         UpdateCamera(aspectRatio, dt);
 
         // Update order is load-bearing: gameplay (Play only) → Animation → Transform → Hierarchy
-        // → Light. Animation runs after every script hook of the frame (see AnimationSystem), and
-        // it, Transform, Hierarchy and Light run in every mode, so edits show in Edit mode too.
+        // → Light → Audio. Animation runs after every script hook of the frame (see
+        // AnimationSystem), and it, Transform, Hierarchy and Light run in every mode, so edits show
+        // in Edit mode too. Audio reads the world matrices the frame ended with.
         UpdatePlayMode(dt);
         UpdateAnimation(dt);
         m_TransformSystem->Update(m_ECS, m_EventBus);
         m_HierarchySystem->Update(m_ECS, m_EventBus);
         m_LightSystem->Update(m_ECS);
+        m_AudioSystem->Update(m_ECS, *m_AudioListenerSystem, *m_CameraSystem);
 
         m_ResourceCatalog.Update(*m_RenderSystem, *m_MeshSystem);
     }
@@ -344,6 +368,9 @@ namespace HedgehogEngine
     CameraSystem*     EngineContext::GetCameraSystem()     const { return m_CameraSystem.get(); }
     AnimationSystem*  EngineContext::GetAnimationSystem()  const { return m_AnimationSystem.get(); }
     UiSystem*         EngineContext::GetUiSystem()         const { return m_UiSystem.get(); }
+    AudioSystem*      EngineContext::GetAudioSystem()      const { return m_AudioSystem.get(); }
+
+    HA::AudioEngine& EngineContext::GetAudioEngine() { return *m_AudioEngine; }
 
     void EngineContext::UpdateCamera(float aspectRatio, float dt)
     {

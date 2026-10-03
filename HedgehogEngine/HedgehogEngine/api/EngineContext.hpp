@@ -29,6 +29,11 @@ namespace EcsSerialization
     class ComponentSerializerRegistry;
 }
 
+namespace HA
+{
+    class AudioEngine;
+}
+
 namespace HedgehogEngine
 {
     class WindowContext;
@@ -42,6 +47,8 @@ namespace HedgehogEngine
     class CameraSystem;
     class AnimationSystem;
     class UiSystem;
+    class AudioSystem;
+    class AudioListenerSystem;
 
     // Edit: gameplay does not run. Playing: every frame runs the fixed steps and the update.
     // Paused: nothing runs, and the scene waits to be resumed or stopped.
@@ -133,6 +140,12 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API CameraSystem*       GetCameraSystem()    const;
         HEDGEHOG_ENGINE_API AnimationSystem*    GetAnimationSystem() const;
         HEDGEHOG_ENGINE_API UiSystem*           GetUiSystem()        const;
+        HEDGEHOG_ENGINE_API AudioSystem*        GetAudioSystem()     const;
+
+        // The audio engine AudioSystem plays through. The context never starts it, so tests and
+        // tools stay silent: the application calls Init (the Editor and --game-mode with a device,
+        // tests with NoDevice). Until then every sound is skipped.
+        HEDGEHOG_ENGINE_API HA::AudioEngine& GetAudioEngine();
 
         HEDGEHOG_ENGINE_API const FS::FileSystemManager& GetFileSystem() const;
 
@@ -150,6 +163,9 @@ namespace HedgehogEngine
 
         std::unique_ptr<Camera> m_Camera;
 
+        // Before the ECS, so it outlives AudioSystem and the sounds the components hold.
+        std::unique_ptr<HA::AudioEngine> m_AudioEngine;
+
         ECS::ECS m_ECS;
 
         std::shared_ptr<TransformSystem>  m_TransformSystem;
@@ -160,6 +176,8 @@ namespace HedgehogEngine
         std::shared_ptr<CameraSystem>     m_CameraSystem;
         std::shared_ptr<AnimationSystem>  m_AnimationSystem;
         std::shared_ptr<UiSystem>         m_UiSystem;
+        std::shared_ptr<AudioSystem>         m_AudioSystem;
+        std::shared_ptr<AudioListenerSystem> m_AudioListenerSystem;
 
         ResourceCatalog m_ResourceCatalog;
 

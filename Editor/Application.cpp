@@ -4,6 +4,8 @@
 
 #include "HedgehogEngine/api/Engine.hpp"
 #include "HedgehogEngine/api/WindowContext.hpp"
+
+#include "HedgehogAudio/api/AudioEngine.hpp"
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/HedgehogSettings.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/LayerSettings.hpp"
@@ -98,6 +100,9 @@ namespace Editor
         // After the engine's own systems, so its play-mode events come after theirs, and before
         // EditorGui loads the last scene. The engine's ECS owns it; the editor only points at it.
         m_ScriptSystem = HedgehogScripting::RegisterScriptSystem(engineContext, engineContext.GetFileSystem()).get();
+
+        // Sounds play only in Play mode; a missing output device leaves the engine silent.
+        (void)engineContext.GetAudioEngine().Init(HA::AudioEngineDesc{});
 
         // Engine settings must load before the renderer is constructed: they decide the size of
         // GPU resources it creates there. Loading afterwards leaves the settings dirty for the

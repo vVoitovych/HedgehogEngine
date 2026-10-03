@@ -12,6 +12,7 @@
 #include "HedgehogEngine/api/Containers/FontContainer.hpp"
 #include "HedgehogEngine/api/Resource/ResourceCatalog.hpp"
 #include "HedgehogRenderer/Renderer.hpp"
+#include "HedgehogAudio/api/AudioEngine.hpp"
 #include "HedgehogScripting/api/ScriptSystem.hpp"
 
 #include "FileSystem/api/FileSystemManager.hpp"
@@ -43,6 +44,7 @@ namespace Editor
 
             // Before the scene loads, as the Editor does; the engine's ECS owns it.
             (void)HedgehogScripting::RegisterScriptSystem(engineContext, fileSystem);
+            (void)engineContext.GetAudioEngine().Init(HA::AudioEngineDesc{});
 
             if (fileSystem.Exists(ENGINE_SETTINGS_PATH) && !settings.Load(ENGINE_SETTINGS_PATH, fileSystem))
                 LOGWARNING("Game mode: engine settings could not be read, using defaults.");

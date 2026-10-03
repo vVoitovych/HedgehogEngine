@@ -272,6 +272,23 @@ namespace HA
         return slot && ma_sound_is_playing(&slot->Sound) && !ma_sound_at_end(&slot->Sound);
     }
 
+    bool AudioEngine::Exists(SoundHandle sound) const
+    {
+        return FindSlot(sound) != nullptr;
+    }
+
+    void AudioEngine::SetPaused(SoundHandle sound, bool paused)
+    {
+        SoundSlot* slot = FindSlot(sound);
+        if (!slot)
+            return;
+        // ma_sound_stop keeps the cursor, so starting again resumes.
+        if (paused)
+            ma_sound_stop(&slot->Sound);
+        else if (!ma_sound_at_end(&slot->Sound))
+            ma_sound_start(&slot->Sound);
+    }
+
     void AudioEngine::SetVolume(SoundHandle sound, float volume)
     {
         if (SoundSlot* slot = FindSlot(sound); slot && !std::isnan(volume))

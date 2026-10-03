@@ -40,6 +40,8 @@
 #include "HedgehogEngine/api/ECS/components/UiButtonComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/UiCanvasComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/UiImageComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/AudioListenerComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/AudioSourceComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/UiRectComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/UiTextComponent.hpp"
 #include "Reflection/GuiReflection.hpp"
@@ -444,6 +446,9 @@ namespace Editor
                 AddComponentMenuItem<HedgehogEngine::UiImageComponent>(ecs, m_SelectedEntity, "UI image component");
                 AddComponentMenuItem<HedgehogEngine::UiTextComponent>(ecs, m_SelectedEntity, "UI text component");
                 AddComponentMenuItem<HedgehogEngine::UiButtonComponent>(ecs, m_SelectedEntity, "UI button component");
+                ImGui::Separator();
+                AddComponentMenuItem<HedgehogEngine::AudioSourceComponent>(ecs, m_SelectedEntity, "Audio source component");
+                AddComponentMenuItem<HedgehogEngine::AudioListenerComponent>(ecs, m_SelectedEntity, "Audio listener component");
                 ImGui::EndMenu();
             }
 
@@ -1022,6 +1027,8 @@ namespace Editor
             AcceptSelectionDrop(ContentType::Font);
         });
         DrawReflectedComponent<HedgehogEngine::UiButtonComponent>(ecs, entity, "UI button");
+        DrawReflectedComponent<HedgehogEngine::AudioSourceComponent>(ecs, entity, "Audio source");
+        DrawReflectedComponent<HedgehogEngine::AudioListenerComponent>(ecs, entity, "Audio listener");
     }
 
     // Hand-drawn instead of the reflected text field, so a camera picks from the graphs that exist,
