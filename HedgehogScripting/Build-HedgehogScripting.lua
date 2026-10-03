@@ -31,6 +31,8 @@ project "HedgehogScripting"
    filter "system:windows"
        systemversion "latest"
        defines { }
+       -- sol2's usertypes instantiate enough templates to pass MSVC's default section limit.
+       buildoptions { "/bigobj" }
 
    filter "configurations:Debug"
        defines { "DEBUG" }

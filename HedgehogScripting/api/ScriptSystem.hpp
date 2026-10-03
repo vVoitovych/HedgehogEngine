@@ -33,6 +33,7 @@ namespace HedgehogEngine
 {
     class EngineContext;
     struct AnimationFinishedEvent;
+    struct UiButtonClickedEvent;
 }
 
 namespace HedgehogScripting
@@ -168,20 +169,26 @@ namespace HedgehogScripting
             std::vector<ScriptCoroutine> Coroutines;      // in start order; they die with the script
         };
 
-        // A script's Events.subscribe: the handler runs in its owner's environment.
+        // A script's Events.subscribe: the handler runs in its owner's environment. A subscription
+        // with a Source (a button's onClick) gets only the events that entity raised.
         struct EventSubscription
         {
             uint64_t                Id    = 0;
             ECS::Entity             Owner = 0;
             uint32_t                Generation = 0;
             sol::protected_function Handler;
+            ECS::Entity             Source           = ECS::INVALID_ENTITY;
+            uint32_t                SourceGeneration = 0;
         };
 
-        // An Events.publish waiting for the end of the frame's update hook.
+        // An Events.publish, or an engine event, waiting for the end of the frame's update hook. An
+        // engine event raised by an entity names it as its Source.
         struct QueuedEvent
         {
             std::string Name;
             sol::object Payload;
+            ECS::Entity Source           = ECS::INVALID_ENTITY;
+            uint32_t    SourceGeneration = 0;
         };
 
         using RemovedCallback = std::function<void(ECS::Entity, HedgehogEngine::ScriptComponent&)>;
@@ -211,6 +218,13 @@ namespace HedgehogScripting
         // Queues the engine's AnimationFinishedEvent as the script event "AnimationFinished",
         // payload { entity = <Entity>, clip = <name> }.
         void               QueueAnimationFinished(const HedgehogEngine::AnimationFinishedEvent& event);
+        // Queues the engine's UiButtonClickedEvent as the script event "UiButtonClicked", payload
+        // { entity = <Entity> }, with the button as its Source. Raised by the UI input before the
+        // frame's script hooks, so handlers get it the same frame.
+        void               QueueButtonClicked(const HedgehogEngine::UiButtonClickedEvent& event);
+        // button:onClick(fn): a "UiButtonClicked" subscription of the running script, filtered to
+        // the button. Throws outside a running script's method.
+        uint64_t           SubscribeClick(const Bindings::ScriptEntity& button, sol::protected_function handler);
         // Coroutines (ScriptSystemCoroutines.cpp): startCoroutine, stopCoroutine and the wait
         // functions, and the pass that resumes the due ones once every script's OnUpdate has run.
         void               RegisterCoroutines();

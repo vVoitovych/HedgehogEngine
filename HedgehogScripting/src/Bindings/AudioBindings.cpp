@@ -25,29 +25,6 @@ namespace HedgehogScripting::Bindings
 
         constexpr std::string_view ASSETS_PREFIX = "assets://";
 
-        // A clip path as scripts write it (under assets://, prefix optional, either slash), as the
-        // path under assets:// the component stores. Anything that could reach past assets:// is a
-        // script error: another mount, a drive or a ".." segment.
-        std::string ToClipPath(std::string path)
-        {
-            std::replace(path.begin(), path.end(), '\\', '/');
-            if (path.starts_with(ASSETS_PREFIX))
-                path.erase(0, ASSETS_PREFIX.size());
-            if (path.empty())
-                throw std::runtime_error("an audio clip needs a path under assets://");
-            if (path.find(':') != std::string::npos || path.front() == '/')
-                throw std::runtime_error("audio clips load only from assets://, not '" + path + "'");
-            size_t start = 0;
-            while (start <= path.size())
-            {
-                const size_t end = std::min(path.find('/', start), path.size());
-                if (std::string_view(path).substr(start, end - start) == "..")
-                    throw std::runtime_error("an audio clip path may not leave assets:// ('" + path + "')");
-                start = end + 1;
-            }
-            return path;
-        }
-
         float RequireFinite(float value, const char* what)
         {
             if (!std::isfinite(value))
@@ -102,7 +79,7 @@ namespace HedgehogScripting::Bindings
                 // The path under assets://, prefix optional; the next play() loads it.
                 "clip", sol::property(
                     [&ecs](const AudioSourceRef& ref) { return Resolve(ecs, ref).Clip; },
-                    [&ecs](const AudioSourceRef& ref, const std::string& path) { Resolve(ecs, ref).Clip = ToClipPath(path); }),
+                    [&ecs](const AudioSourceRef& ref, const std::string& path) { Resolve(ecs, ref).Clip = ToAssetPath(path, "an audio clip", "audio clips"); }),
                 // Volume and pitch apply to a playing sound from the next frame, the others at the
                 // next play().
                 "volume", sol::property(
@@ -149,7 +126,7 @@ namespace HedgehogScripting::Bindings
             table["playOneShot"] = [&audio, &files, guard](const std::string& clip, sol::object position,
                                                            sol::optional<float> volume)
             {
-                const std::string path = std::string(ASSETS_PREFIX) + ToClipPath(clip);
+                const std::string path = std::string(ASSETS_PREFIX) + ToAssetPath(clip, "an audio clip", "audio clips");
                 HA::PlayParams    params;
                 if (position.valid() && position != sol::lua_nil)
                 {
