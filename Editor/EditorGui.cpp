@@ -132,8 +132,9 @@ namespace
                     return ImGui::SliderFloat("##LightConeAngle", &l->ConeAngle, p.sliderMin, p.sliderMax);
                 };
             }
-            else if (std::string_view(prop.name) == "CastShadows")
+            else if (std::string_view(prop.name) == "CastShadows" || std::string_view(prop.name) == "LightEnabled")
             {
+                // Cast shadows goes through the light system; Enable is the header's checkbox.
                 prop.guiOverride = [](void*, const Reflection::PropertyDescriptor&) -> bool { return false; };
             }
         }
@@ -150,9 +151,9 @@ namespace
         for (auto& prop : CameraComponent::GetPropTable_())
         {
             // GraphName likewise: DrawCameraGraph lists the renderer's graphs, with Browse... and
-            // Edit, instead of a free-text field.
+            // Edit, instead of a free-text field. Enabled is the camera header's checkbox.
             const std::string_view name(prop.name);
-            if (name == "LayerMask" || name == "GraphName")
+            if (name == "LayerMask" || name == "GraphName" || name == "Enabled")
             {
                 prop.guiOverride = [](void*, const Reflection::PropertyDescriptor&) -> bool { return false; };
             }
@@ -871,14 +872,21 @@ namespace Editor
 
         if (!ecs.HasComponent<HedgehogEngine::MeshComponent>(entity))
             return;
-        if (!ImGui::CollapsingHeader("Mesh", ImGuiTreeNodeFlags_DefaultOpen))
+        const ComponentHeaderResult section = ComponentHeader("Mesh", { GetIcon(EditorIcon::Mesh), GetIcon(EditorIcon::More) });
+        if (section.RemoveRequested)
+        {
+            ecs.RemoveComponent<HedgehogEngine::MeshComponent>(entity);
+            return;
+        }
+        if (!section.Open || !BeginPropertyTable("##Mesh"))
             return;
 
-        auto&    mesh          = ecs.GetComponent<HedgehogEngine::MeshComponent>(entity);
-        const auto& meshPaths  = meshSystem->GetMeshes();
-        uint64_t selectedIndex = mesh.MeshIndex.value_or(0);
+        auto&       mesh          = ecs.GetComponent<HedgehogEngine::MeshComponent>(entity);
+        const auto& meshPaths     = meshSystem->GetMeshes();
+        uint64_t    selectedIndex = mesh.MeshIndex.value_or(0);
 
-        const bool meshComboOpen = ImGui::BeginCombo("mesh", mesh.MeshPath.c_str());
+        PropertyLabel("Mesh");
+        const bool meshComboOpen = ImGui::BeginCombo("##mesh", mesh.MeshPath.c_str());
         AcceptSelectionDrop(ContentType::Mesh);
         if (meshComboOpen)
         {
@@ -896,6 +904,7 @@ namespace Editor
             ImGui::EndCombo();
         }
 
+        PropertyLabel("");
         if (ImGui::Button("Load mesh"))
         {
             if (const char* path = DialogueWindows::MeshOpenDialogue())
@@ -912,11 +921,7 @@ namespace Editor
                 }
             }
         }
-        if (ImGui::Button("Remove mesh"))
-        {
-            if (ecs.HasComponent<HedgehogEngine::MeshComponent>(entity))
-                ecs.RemoveComponent<HedgehogEngine::MeshComponent>(entity);
-        }
+        EndPropertyTable();
     }
 
     void EditorGui::DrawRenderComponent(HedgehogEngine::Engine& context)
@@ -928,22 +933,25 @@ namespace Editor
 
         if (!ecs.HasComponent<HedgehogEngine::RenderComponent>(entity))
             return;
-        if (!ImGui::CollapsingHeader("Rendering", ImGuiTreeNodeFlags_DefaultOpen))
+
+        // The header's checkbox is the component's visibility; the layer is in the entity header.
+        auto&                  render = ecs.GetComponent<HedgehogEngine::RenderComponent>(entity);
+        ComponentHeaderOptions header{ GetIcon(EditorIcon::Material), GetIcon(EditorIcon::More), &render.IsVisible };
+        const ComponentHeaderResult section = ComponentHeader("Rendering", header);
+        if (section.RemoveRequested)
+        {
+            ecs.RemoveComponent<HedgehogEngine::RenderComponent>(entity);
+            return;
+        }
+        if (!section.Open || !BeginPropertyTable("##Rendering"))
             return;
 
-        auto& render        = ecs.GetComponent<HedgehogEngine::RenderComponent>(entity);
         const auto& materials = renderSystem->GetMaterials();
-
-        bool visible = render.IsVisible;
-        if (ImGui::Checkbox("Visible", &visible))
-            render.IsVisible = visible;
-
-        // The layer is drawn in the entity header (DrawEntityTitle).
-
         if (!materials.empty())
         {
             const uint64_t selectedIndex = render.MaterialIndex.value_or(0);
-            const bool materialComboOpen = ImGui::BeginCombo("material", render.Material.c_str());
+            PropertyLabel("Material");
+            const bool materialComboOpen = ImGui::BeginCombo("##material", render.Material.c_str());
             AcceptSelectionDrop(ContentType::Material);
             if (materialComboOpen)
             {
@@ -962,6 +970,7 @@ namespace Editor
             }
         }
 
+        PropertyLabel("");
         if (ImGui::Button("Load material"))
         {
             char* path = DialogueWindows::MaterialOpenDialogue();
@@ -983,20 +992,11 @@ namespace Editor
 
         if (!materials.empty() && render.MaterialIndex.has_value())
         {
+            ImGui::SameLine();
             if (ImGui::Button("Save material"))
                 engineContext.GetResourceCatalog().GetMaterialContainer().SaveMaterial(
                     render.MaterialIndex.value(), engineContext.GetFileSystem());
-        }
 
-        if (ImGui::Button("Remove render"))
-        {
-            if (ecs.HasComponent<HedgehogEngine::RenderComponent>(entity))
-                ecs.RemoveComponent<HedgehogEngine::RenderComponent>(entity);
-        }
-
-        if (!materials.empty() && render.MaterialIndex.has_value())
-        {
-            ImGui::SeparatorText("Material");
             auto& materialContainer = engineContext.GetResourceCatalog().GetMaterialContainer();
             auto& textureContainer  = engineContext.GetResourceCatalog().GetTextureContainer();
             auto& materialData      = materialContainer.GetMaterialDataByIndex(
@@ -1004,14 +1004,16 @@ namespace Editor
 
             const char* typeNames[] = { "Opaque", "Cutoff", "Transparent" };
             int materialType = static_cast<int>(materialData.type);
-            if (ImGui::Combo("Type", &materialType, typeNames, IM_ARRAYSIZE(typeNames)))
+            PropertyLabel("Type");
+            if (ImGui::Combo("##Type", &materialType, typeNames, IM_ARRAYSIZE(typeNames)))
                 materialData.type = static_cast<HedgehogEngine::MaterialType>(materialType);
 
             const auto& texturePaths = textureContainer.GetTexturePathes();
             int selectedTexture      = static_cast<int>(
                 textureContainer.GetTextureIndex(materialData.baseColor));
 
-            const bool textureComboOpen = ImGui::BeginCombo("baseColor", materialData.baseColor.c_str());
+            PropertyLabel("Base colour");
+            const bool textureComboOpen = ImGui::BeginCombo("##baseColor", materialData.baseColor.c_str());
             AcceptSelectionDrop(ContentType::Texture);
             if (textureComboOpen)
             {
@@ -1029,6 +1031,7 @@ namespace Editor
                 ImGui::EndCombo();
             }
 
+            PropertyLabel("");
             if (ImGui::Button("Load texture"))
             {
                 if (const char* texPath = DialogueWindows::TextureOpenDialogue())
@@ -1050,7 +1053,8 @@ namespace Editor
             if (materialData.type == HedgehogEngine::MaterialType::Transparent)
             {
                 float transparency = materialData.transparency;
-                if (ImGui::SliderFloat("Transparency", &transparency, 0.0f, 1.0f))
+                PropertyLabel("Transparency");
+                if (ImGui::SliderFloat("##Transparency", &transparency, 0.0f, 1.0f))
                 {
                     if (materialData.transparency != transparency)
                     {
@@ -1060,6 +1064,7 @@ namespace Editor
                 }
             }
         }
+        EndPropertyTable();
     }
 
     void EditorGui::DrawLightComponent(HedgehogEngine::Engine& context)
@@ -1071,24 +1076,29 @@ namespace Editor
 
         if (!ecs.HasComponent<HedgehogEngine::LightComponent>(entity))
             return;
-        if (!ImGui::CollapsingHeader("Light", ImGuiTreeNodeFlags_DefaultOpen))
-            return;
 
-        auto& light = ecs.GetComponent<HedgehogEngine::LightComponent>(entity);
+        // The header's checkbox is the light's Enable (its reflected row is hidden).
+        auto&                  light = ecs.GetComponent<HedgehogEngine::LightComponent>(entity);
+        ComponentHeaderOptions header{ GetIcon(EditorIcon::Light), GetIcon(EditorIcon::More), &light.Enable };
+        const ComponentHeaderResult section = ComponentHeader("Light", header);
+        if (section.RemoveRequested)
+        {
+            ecs.RemoveComponent<HedgehogEngine::LightComponent>(entity);
+            return;
+        }
+        if (!section.Open)
+            return;
 
         Reflection::RenderComponentGui(&light, HedgehogEngine::LightComponent::GetProperties());
 
-        if (light.LightType == HedgehogEngine::LightType::DirectionLight)
+        // Through the light system, so only one light casts shadows.
+        if (light.LightType == HedgehogEngine::LightType::DirectionLight && BeginPropertyTable("##LightShadows"))
         {
             bool castShadows = light.CastShadows;
-            if (ImGui::Checkbox("Cast shadows", &castShadows))
+            PropertyLabel("Cast shadows");
+            if (ImGui::Checkbox("##CastShadows", &castShadows))
                 lightSystem->SetShadowCasting(ecs, entity, castShadows);
-        }
-
-        if (ImGui::Button("Remove light"))
-        {
-            if (ecs.HasComponent<HedgehogEngine::LightComponent>(entity))
-                ecs.RemoveComponent<HedgehogEngine::LightComponent>(entity);
+            EndPropertyTable();
         }
     }
 
@@ -1100,17 +1110,27 @@ namespace Editor
 
         if (!ecs.HasComponent<HedgehogEngine::CameraComponent>(entity))
             return;
-        if (!ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen))
+
+        // The header's checkbox is the camera's IsEnabled (its reflected row is hidden).
+        auto&                  camera = ecs.GetComponent<HedgehogEngine::CameraComponent>(entity);
+        ComponentHeaderOptions header{ GetIcon(EditorIcon::Camera), GetIcon(EditorIcon::More), &camera.IsEnabled };
+        const ComponentHeaderResult section = ComponentHeader("Camera", header);
+        if (section.RemoveRequested)
+        {
+            ecs.RemoveComponent<HedgehogEngine::CameraComponent>(entity);
+            return;
+        }
+        if (!section.Open)
             return;
 
-        auto& camera = ecs.GetComponent<HedgehogEngine::CameraComponent>(entity);
-
         Reflection::RenderComponentGui(&camera, HedgehogEngine::CameraComponent::GetProperties());
+        if (!BeginPropertyTable("##CameraMore"))
+            return;
         DrawCameraGraph(camera.GraphName);
 
-        // Hand-drawn, like RenderComponent's Layer combo: named checkboxes need live layer
-        // names from settings, which the reflected uint32 widget has no way to source.
-        ImGui::SeparatorText("Layer Mask");
+        // Hand-drawn, like the entity header's Layer combo: named checkboxes need live layer names
+        // from settings, which the reflected uint32 widget has no way to source.
+        PropertyLabel("Layers");
         const auto& layers = engineContext.GetSettings().GetLayerSettings();
         for (uint32_t layer = 0; layer < HedgehogSettings::LayerSettings::LAYER_COUNT; ++layer)
         {
@@ -1124,15 +1144,10 @@ namespace Editor
             }
             ImGui::PopID();
 
-            if (layer % 4 != 3)
+            if (layer % 2 != 1)
                 ImGui::SameLine();
         }
-
-        if (ImGui::Button("Remove camera"))
-        {
-            if (ecs.HasComponent<HedgehogEngine::CameraComponent>(entity))
-                ecs.RemoveComponent<HedgehogEngine::CameraComponent>(entity);
-        }
+        EndPropertyTable();
     }
 
     void EditorGui::DrawAnimatorComponent(HedgehogEngine::Engine& context)
@@ -1194,9 +1209,10 @@ namespace Editor
         const auto isEditorGraph = [](std::string_view name) { return name == SCENE_GRAPH || name == RESULT_GRAPH; };
         const bool usable        = m_Renderer->FindGraphAsset(graphName) != nullptr;
 
+        PropertyLabel("Graph");
         if (!usable)
             ImGui::PushStyleColor(ImGuiCol_Text, MISSING_GRAPH_COLOR);
-        const bool open = ImGui::BeginCombo("GraphName", graphName.empty() ? "(none)" : label(graphName).c_str());
+        const bool open = ImGui::BeginCombo("##GraphName", graphName.empty() ? "(none)" : label(graphName).c_str());
         AcceptSelectionDrop(ContentType::RenderGraph);
         if (!usable)
             ImGui::PopStyleColor();
@@ -1244,7 +1260,8 @@ namespace Editor
             ImGui::EndCombo();
         }
 
-        // On their own line: the inspector is narrow, and the drop-down lines up with the fields above.
+        // On their own row: the inspector is narrow, and the drop-down lines up with the fields above.
+        PropertyLabel("");
         if (ImGui::Button("Browse..."))
         {
             const char* picked = DialogueWindows::RenderGraphOpenDialogue(GetGraphDialoguePath(*m_FileSystem, "").c_str());

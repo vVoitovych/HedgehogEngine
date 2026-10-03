@@ -5,6 +5,7 @@
 #include "imgui.h"
 
 #include <algorithm>
+#include <cmath>
 
 namespace Editor
 {
@@ -80,7 +81,8 @@ namespace Editor
                                              ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding;
         ImGui::PushID(label);
         const ImVec2 start = ImGui::GetCursorScreenPos();
-        result.Open = ImGui::TreeNodeEx("##header", FLAGS, "%*s%s", static_cast<int>(labelIndent / ImGui::CalcTextSize(" ").x) + 1, "", label);
+        const int padSpaces = static_cast<int>(std::ceil(labelIndent / ImGui::CalcTextSize(" ").x)) + 1;
+        result.Open = ImGui::TreeNodeEx("##header", FLAGS, "%*s%s", padSpaces, "", label);
         const ImVec2 headerMin  = ImGui::GetItemRectMin();
         const ImVec2 headerMax  = ImGui::GetItemRectMax();
         const float  headerH    = headerMax.y - headerMin.y;
