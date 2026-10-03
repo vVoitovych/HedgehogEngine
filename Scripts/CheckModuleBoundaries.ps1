@@ -10,6 +10,8 @@
 #      HedgehogEngine/HedgehogEngine/, tests included, may include Lua ("Lua/...", "lua.h",
 #      "lualib.h", "lauxlib.h", "lua.hpp"), sol2 ("sol/...") or HedgehogScripting
 #      ("HedgehogScripting/..."), the library above it that owns scripting.
+#   4. The game runtime never includes ImGui: no file under HedgehogRuntime/ may include
+#      "imgui.h" or "imgui_impl_*", so a Game executable built on it links no editor UI.
 #
 # All rules match #include strings, never file-system paths: the path
 # HedgehogEngine/HedgehogCommon/... contains "HedgehogEngine/" and must not match rule 2.
@@ -37,6 +39,10 @@ $RendererForbidden  = @(
     @{ Pattern = '^HedgehogEngine[/\\]api[/\\]';       Reason = 'the renderer must not include the engine module' },
     @{ Pattern = '(^|[/\\])imgui\.h$';                 Reason = 'the renderer must not include ImGui' },
     @{ Pattern = '(^|[/\\])imgui_impl_[^/\\]*$';       Reason = 'the renderer must not include ImGui' }
+)
+$RuntimeForbidden   = @(
+    @{ Pattern = '(^|[/\\])imgui\.h$';                 Reason = 'the game runtime must not include ImGui' },
+    @{ Pattern = '(^|[/\\])imgui_impl_[^/\\]*$';       Reason = 'the game runtime must not include ImGui' }
 )
 $EngineForbidden    = @(
     @{ Pattern = '(^|[/\\])Lua[/\\]';                  Reason = 'the engine module must not include Lua' },
@@ -85,6 +91,7 @@ function Get-Violations([string]$root)
     $moduleCache  = @{}
     $rendererRoot = Join-Path (Join-Path $root 'HedgehogEngine') 'HedgehogRenderer'
     $engineRoot   = Join-Path (Join-Path $root 'HedgehogEngine') 'HedgehogEngine'
+    $runtimeRoot  = Join-Path $root 'HedgehogRuntime'
     $violations   = New-Object System.Collections.Generic.List[string]
 
     $files = @(Get-ChildItem -LiteralPath $root -Recurse -File -ErrorAction SilentlyContinue |
@@ -100,6 +107,7 @@ function Get-Violations([string]$root)
         $rules    = @()
         if (Test-Under $file.FullName $rendererRoot) { $rules += $RendererForbidden }
         if (Test-Under $file.FullName $engineRoot)   { $rules += $EngineForbidden }
+        if (Test-Under $file.FullName $runtimeRoot)  { $rules += $RuntimeForbidden }
 
         $lineNumber = 0
         foreach ($line in [IO.File]::ReadAllLines($file.FullName))
@@ -135,7 +143,7 @@ function Get-Violations([string]$root)
 function Invoke-SelfTest
 {
     $temp    = Join-Path ([IO.Path]::GetTempPath()) ('boundary_selftest_' + [Guid]::NewGuid().ToString('N'))
-    $modules = @('HedgehogEngine\HedgehogEngine', 'HedgehogEngine\HedgehogRenderer', 'Editor', 'HedgehogScripting')
+    $modules = @('HedgehogEngine\HedgehogEngine', 'HedgehogEngine\HedgehogRenderer', 'Editor', 'HedgehogScripting', 'HedgehogRuntime')
     $cases   = @(
         @{ Module = 'HedgehogEngine\HedgehogEngine';   Include = 'ThirdParty/Lua/lua/lua.h' },
         @{ Module = 'HedgehogEngine\HedgehogEngine';   Include = 'lauxlib.h' },
@@ -143,6 +151,8 @@ function Invoke-SelfTest
         @{ Module = 'HedgehogEngine\HedgehogEngine';   Include = 'HedgehogScripting/api/ScriptSystem.hpp' },
         @{ Module = 'HedgehogEngine\HedgehogRenderer'; Include = 'ECS/api/ECS.hpp' },
         @{ Module = 'HedgehogEngine\HedgehogRenderer'; Include = 'imgui.h' },
+        @{ Module = 'HedgehogRuntime';                 Include = 'imgui.h' },
+        @{ Module = 'HedgehogRuntime';                 Include = 'backends/imgui_impl_glfw.h' },
         @{ Module = 'Editor';                          Include = 'HedgehogEngine/RHI/src/Vulkan/VulkanDevice.hpp' }
     )
     $failures = 0
@@ -156,6 +166,8 @@ function Invoke-SelfTest
             # An include every module may make.
             Set-Content -LiteralPath (Join-Path $dir 'Clean.cpp') -Value '#include "HedgehogMath/api/Vector.hpp"' -Encoding Ascii
         }
+        # The Editor may include ImGui; it owns it.
+        Set-Content -LiteralPath (Join-Path (Join-Path $temp 'Editor') 'Gui.cpp') -Value '#include "imgui.h"' -Encoding Ascii
         # The scripting library may include sol2 and Lua; that is where they belong.
         Set-Content -LiteralPath (Join-Path (Join-Path $temp 'HedgehogScripting') 'Sol.cpp') -Value '#include "sol/sol.hpp"' -Encoding Ascii
         Set-Content -LiteralPath (Join-Path (Join-Path $temp 'HedgehogScripting') 'Lua.cpp') -Value '#include "lua.h"' -Encoding Ascii

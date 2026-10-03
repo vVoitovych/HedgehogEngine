@@ -1,62 +1,42 @@
-project "Editor"
-   kind "ConsoleApp"
+project "HedgehogRuntime"
+   kind "StaticLib"
    language "C++"
    cppdialect "C++20"
 
-   files { "**.hpp", "**.cpp", "**.rc" }
-   removefiles { "tests/**" }
+   files { "api/**.hpp", "src/**.hpp", "src/**.cpp" }
 
    includedirs
    {
-      ".",
       "..",
       "../HedgehogEngine",
-      "../HedgehogEngine/HedgehogEngine/api",
       "../HedgehogEngine/HedgehogRenderer/api",
-      "../HedgehogEngine/RHIImGui/api",
-      "%{IncludeDir.ImGui}".."/imgui",
-      "%{IncludeDir.ImGuiNodeEditor}",
+      ".",
       "%{IncludeDir.yaml_cpp}",
       -- HedgehogScripting's ScriptSystem header includes sol2, which includes Lua.
       "%{IncludeDir.Lua}",
       "%{IncludeDir.sol2}"
    }
 
-   defines { "YAML_CPP_STATIC_DEFINE" }
-
+   -- The editor-free game loop: never ImGui (CheckModuleBoundaries.ps1 rule 4).
    links {
       "HedgehogEngine",
-      "HedgehogCommon",
       "HedgehogExtract",
-      "HedgehogUI",
+      "HedgehogScripting",
+      "HedgehogRenderer",
       "HedgehogInput",
       "HedgehogAudio",
-      "HedgehogScripting",
-      "HedgehogRuntime",
-      "Lua",
-      "HedgehogRenderer",
-      "RHIImGui",
-      "HedgehogWindow",
       "HedgehogSettings",
-      "Logger",
-      "yaml-cpp",
-      "ECS",
-      "DialogueWindows",
-      "ContentLoader",
+      "HedgehogWindow",
       "FileSystem",
-      "imgui",
-      "imgui-node-editor",
-      -- Tracy client (linked into HedgehogRenderer) needs these on Windows.
-      "ws2_32",
-      "dbghelp"
+      "Logger"
    }
 
-   targetdir (BinariesDir)
+   targetdir (IntermediatesDir)
    objdir    (IntermediatesDir)
 
    filter "system:windows"
       systemversion "latest"
-      defines { }
+      defines { "YAML_CPP_STATIC_DEFINE" }
 
    filter "configurations:Debug"
       defines { "DEBUG" }

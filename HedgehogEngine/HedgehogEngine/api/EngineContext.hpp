@@ -159,6 +159,8 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API HA::AudioEngine& GetAudioEngine();
 
         HEDGEHOG_ENGINE_API const FS::FileSystemManager& GetFileSystem() const;
+        // Mutable, so an application can mount its own folders (a game's data) before loading.
+        HEDGEHOG_ENGINE_API FS::FileSystemManager& GetFileSystem();
 
     private:
         void InitECS();
