@@ -1,7 +1,17 @@
 #include "EditorTheme.hpp"
 
+#include <cmath>
+
 namespace Editor::Theme
 {
+    namespace
+    {
+        [[nodiscard]] float SrgbToLinear(float value)
+        {
+            return value <= 0.04045f ? value / 12.92f : std::pow((value + 0.055f) / 1.055f, 2.4f);
+        }
+    }
+
     void Apply(ImGuiStyle& style)
     {
         constexpr ImVec4 CLEAR = { 0.0f, 0.0f, 0.0f, 0.0f };
@@ -39,9 +49,9 @@ namespace Editor::Theme
         c[ImGuiCol_ButtonHovered]              = HOVER;
         c[ImGuiCol_ButtonActive]               = ACCENT_FILL_STRONG;
 
-        c[ImGuiCol_Header]                     = ACCENT_FILL;
+        c[ImGuiCol_Header]                     = SELECTION;
         c[ImGuiCol_HeaderHovered]              = HOVER;
-        c[ImGuiCol_HeaderActive]               = ACCENT_FILL_STRONG;
+        c[ImGuiCol_HeaderActive]               = SELECTION_STRONG;
 
         c[ImGuiCol_Separator]                  = FRAME;
         c[ImGuiCol_SeparatorHovered]           = HOVER;
@@ -53,7 +63,7 @@ namespace Editor::Theme
 
         c[ImGuiCol_InputTextCursor]            = TEXT;
 
-        // A selected tab takes the panel's colour and a silver overline; the rest sit darker.
+        // A selected tab takes the panel's colour and an accent overline; the rest sit darker.
         c[ImGuiCol_Tab]                        = MAIN_BG;
         c[ImGuiCol_TabHovered]                 = HOVER;
         c[ImGuiCol_TabSelected]                = PANEL;
@@ -84,5 +94,28 @@ namespace Editor::Theme
         c[ImGuiCol_NavWindowingHighlight]      = WithAlpha(TEXT, 0.7f);
         c[ImGuiCol_NavWindowingDimBg]          = WithAlpha(MAIN_BG, 0.6f);
         c[ImGuiCol_ModalWindowDimBg]           = WithAlpha(MAIN_BG, 0.6f);
+
+        // Flat panels, softly rounded controls.
+        style.WindowRounding    = 0.0f;
+        style.ChildRounding     = 0.0f;
+        style.FrameRounding     = 3.0f;
+        style.PopupRounding     = 4.0f;
+        style.TabRounding       = 3.0f;
+        style.GrabRounding      = 3.0f;
+        style.ScrollbarRounding = 6.0f;
+        style.ScrollbarSize     = 10.0f;
+        style.FramePadding      = { 6.0f, 4.0f };
+        style.ItemSpacing       = { 6.0f, 4.0f };
+        style.IndentSpacing     = 14.0f;
+        style.WindowBorderSize  = 0.0f;
+        style.FrameBorderSize   = 0.0f;
+        style.TabBarBorderSize  = 1.0f;
+        style.FontSizeBase      = FONT_SIZE;
+    }
+
+    void ConvertToLinear(ImGuiStyle& style)
+    {
+        for (ImVec4& color : style.Colors)
+            color = { SrgbToLinear(color.x), SrgbToLinear(color.y), SrgbToLinear(color.z), color.w };
     }
 }

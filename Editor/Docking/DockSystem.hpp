@@ -53,6 +53,5 @@ namespace Editor
         static constexpr float k_ToolbarHeight     = 32.0f;
         static constexpr float k_MinAreaSize       = 80.0f;
         static constexpr float k_MinCenterWidth    = 200.0f;
-        static constexpr float k_TabBarHeight      = 21.0f;
     };
 }

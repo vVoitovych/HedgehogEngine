@@ -18,6 +18,8 @@
 #include <unordered_map>
 #include <vector>
 
+struct ImFont;
+
 namespace HedgehogEngine
 {
     class Engine;
@@ -115,6 +117,9 @@ namespace Editor
         // A benchmark measures the renderer: the Content panel then draws nothing, so its folder
         // scans never land in the numbers, whatever tab the saved layout left active.
         void SetBenchmarkMode(bool benchmarking) { m_Benchmarking = benchmarking; }
+
+        // The Console's monospace font (ImGuiLayer::GetMonoFont); nullptr keeps the UI font.
+        void SetMonoFont(ImFont* font) { m_MonoFont = font; }
 
     private:
         // ── Panel content (drawn into dock areas) ────────────────────────────
@@ -229,5 +234,6 @@ namespace Editor
         };
         std::unordered_map<std::string, ScriptDeclarations> m_ScriptDeclarations;
         bool                         m_Benchmarking = false;
+        ImFont*                      m_MonoFont     = nullptr;
     };
 }

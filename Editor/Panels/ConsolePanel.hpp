@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+struct ImFont;
+
 namespace Editor
 {
     enum class LogLevel { Info, Verbose, Warning, Error };
@@ -28,7 +30,8 @@ namespace Editor
         ConsolePanel(ConsolePanel&&)                 = delete;
         ConsolePanel& operator=(ConsolePanel&&)      = delete;
 
-        void Draw();
+        // Draws the entries in mono (at Theme::MONO_FONT_SIZE); nullptr keeps the current font.
+        void Draw(ImFont* mono);
         void Clear();
 
     private:

@@ -8,6 +8,13 @@
 #include <unordered_map>
 #include <vector>
 
+struct ImFont;
+
+namespace FS
+{
+    class FileSystemManager;
+}
+
 namespace HW
 {
     class Window;
@@ -53,6 +60,13 @@ namespace Editor
         // the Renderer's DeviceReadyCallback: the device outlives this layer's Shutdown.
         void CreateBackend(const Renderer::RendererDevice& device);
 
+        // Loads the UI font (Karla) as the default and ImGui's bitmap font as the monospace one.
+        // Without the font file the default stays ImGui's own, with one warning. Call before the
+        // first frame.
+        void LoadFonts(const FS::FileSystemManager& fileSystem);
+        // The Console's font, drawn at Theme::MONO_FONT_SIZE; nullptr before LoadFonts.
+        [[nodiscard]] ImFont* GetMonoFont() const { return m_MonoFont; }
+
         // Starts an ImGui frame.
         void BeginFrame();
         // Ends it and builds the draw data the UiCallback records.
@@ -86,7 +100,8 @@ namespace Editor
         static void Record(void* user, RHI::IRHICommandList& cmd, RHI::IRHITexture& target);
         void        ReleaseTextureIds(bool onlyExpired);
 
-        const RHI::IRHIDevice*                        m_Device = nullptr;
+        const RHI::IRHIDevice*                        m_Device   = nullptr;
+        ImFont*                                       m_MonoFont = nullptr;
         std::unique_ptr<RHIImGui::IGuiRenderer>       m_Backend;
         std::unordered_map<std::string, ShownTexture> m_Shown;
         std::vector<RetiredId>                        m_Retired;

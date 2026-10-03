@@ -205,7 +205,7 @@ namespace Editor
         if (panels.size() == 1)
         {
             const PanelId pid      = panels[0];
-            const ImVec2  titleSz  = { size.x, k_TabBarHeight };
+            const ImVec2  titleSz  = { size.x, ImGui::GetFrameHeight() };
 
             ImGui::PushStyleColor(ImGuiCol_Button,        ImGui::GetStyleColorVec4(ImGuiCol_TitleBg));
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGui::GetStyleColorVec4(ImGuiCol_TitleBgActive));
