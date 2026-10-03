@@ -10,6 +10,14 @@ namespace Editor::Theme
         {
             return value <= 0.04045f ? value / 12.92f : std::pow((value + 0.055f) / 1.055f, 2.4f);
         }
+
+        [[nodiscard]] ImVec4 ToLinear(const ImVec4& color)
+        {
+            return { SrgbToLinear(color.x), SrgbToLinear(color.y), SrgbToLinear(color.z), color.w };
+        }
+
+        // Whether ConvertToLinear has run: the render target encodes to sRGB.
+        bool s_LinearOutput = false;
     }
 
     void Apply(ImGuiStyle& style)
@@ -116,6 +124,12 @@ namespace Editor::Theme
     void ConvertToLinear(ImGuiStyle& style)
     {
         for (ImVec4& color : style.Colors)
-            color = { SrgbToLinear(color.x), SrgbToLinear(color.y), SrgbToLinear(color.z), color.w };
+            color = ToLinear(color);
+        s_LinearOutput = true;
+    }
+
+    ImVec4 Resolve(const ImVec4& color)
+    {
+        return s_LinearOutput ? ToLinear(color) : color;
     }
 }

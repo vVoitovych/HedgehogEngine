@@ -129,6 +129,7 @@ namespace Editor
             {
                 m_ImGui->CreateBackend(device);
                 m_ContentIcons.Load(device.Device, fileSystem);
+                m_EditorIcons.Load(device.Device, fileSystem);
             });
         // The icons never change, so neither do their ids.
         for (size_t index = 0; index < CONTENT_TYPE_COUNT; ++index)
@@ -136,6 +137,12 @@ namespace Editor
             const ContentType type = static_cast<ContentType>(index);
             m_ContentIconIds[index] = m_ImGui->GetTextureId(std::string("icon:") + GetContentTypeName(type),
                                                             m_ContentIcons.Get(type));
+        }
+        for (size_t index = 0; index < EDITOR_ICON_COUNT; ++index)
+        {
+            const EditorIcon icon = static_cast<EditorIcon>(index);
+            m_EditorIconIds[index] = m_ImGui->GetTextureId(std::string("icon:ui:") + GetEditorIconFile(icon),
+                                                           m_EditorIcons.Get(icon));
         }
         m_EditorGui = std::make_unique<EditorGui>(*m_Context);
         m_EditorGui->SetRenderer(m_Renderer.get());
@@ -233,6 +240,7 @@ namespace Editor
         images.Game           = m_ImGui->GetTextureId(GAME_TARGET, m_Renderer->GetTargetTexture(GAME_TARGET));
         images.GraphPassCount = m_Renderer->GetLastFramePassCount();
         images.ContentIcons   = m_ContentIconIds;
+        images.EditorIcons    = m_EditorIconIds;
         m_EditorGui->Draw(*m_Context, images);
         m_ImGui->EndFrame();
 
@@ -336,6 +344,7 @@ namespace Editor
 
         m_ImGui->Shutdown();
         m_ContentIcons.Release();
+        m_EditorIcons.Release();
         m_Renderer->Cleanup();
         m_Context->Cleanup();
     }

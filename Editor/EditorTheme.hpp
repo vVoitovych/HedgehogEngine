@@ -51,4 +51,8 @@ namespace Editor::Theme
     // The palette is written in sRGB. An sRGB render target encodes what ImGui writes once more, so
     // for one every style colour is converted to linear first; alpha is left as it is.
     void ConvertToLinear(ImGuiStyle& style);
+
+    // A palette colour as ImGui must be handed it outside the style (a draw-list colour, an image
+    // tint): converted to linear once ConvertToLinear has run, as written otherwise.
+    [[nodiscard]] ImVec4 Resolve(const ImVec4& color);
 }

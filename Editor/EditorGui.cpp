@@ -1,5 +1,6 @@
 #include "EditorGui.hpp"
 #include "EditorTheme.hpp"
+#include "Widgets/IconWidgets.hpp"
 #include "Panels/ConsolePanel.hpp"
 #include "Panels/ContentPanel.hpp"
 #include "Tools/VertexDescriptionWindow.hpp"
@@ -342,12 +343,18 @@ namespace Editor
     void EditorGui::DrawMainMenu(HedgehogEngine::Engine& context)
     {
         auto& engineContext = context.GetEngineContext();
-        auto& ecs           = engineContext.GetECS();
-        auto* meshSystem    = engineContext.GetMeshSystem();
-        auto* renderSystem  = engineContext.GetRenderSystem();
 
         if (!ImGui::BeginMainMenuBar())
             return;
+
+        // The logo and the engine's name lead the bar.
+        if (void* logo = GetIcon(EditorIcon::Logo))
+        {
+            ImGui::Image(logo, ImVec2(ICON_SIZE_SMALL, ICON_SIZE_SMALL));
+            ImGui::SameLine();
+        }
+        ImGui::TextUnformatted("HedgehogEngine");
+        ImGui::Dummy(ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
 
         if (ImGui::BeginMenu("File"))
         {
@@ -390,69 +397,15 @@ namespace Editor
             ImGui::EndMenu();
         }
 
-        if (ImGui::BeginMenu("Create"))
+        if (ImGui::BeginMenu("Edit"))
         {
-            if (ImGui::MenuItem("Create game object"))
-                engineContext.GetSceneManager().CreateGameObject(m_SelectedEntity);
+            if (ImGui::MenuItem("Settings..."))
+                m_SettingsWindowOpen = true;
+            ImGui::EndMenu();
+        }
 
-            ImGui::Separator();
-            if (ImGui::BeginMenu("Add component"))
-            {
-                if (ImGui::MenuItem("Mesh component") && m_SelectedEntity.has_value())
-                {
-                    ECS::Entity e = m_SelectedEntity.value();
-                    if (!ecs.HasComponent<HedgehogEngine::MeshComponent>(e))
-                    {
-                        ecs.AddComponent(e, HedgehogEngine::MeshComponent{ HedgehogEngine::MeshSystem::sDefaultMeshPath });
-                        meshSystem->Update(ecs, e, engineContext.GetFileSystem());
-                    }
-                }
-                if (ImGui::MenuItem("Render component") && m_SelectedEntity.has_value())
-                {
-                    ECS::Entity e = m_SelectedEntity.value();
-                    if (!ecs.HasComponent<HedgehogEngine::RenderComponent>(e))
-                    {
-                        ecs.AddComponent(e, HedgehogEngine::RenderComponent{});
-                        renderSystem->Update(ecs, e);
-                    }
-                }
-                if (ImGui::MenuItem("Light component") && m_SelectedEntity.has_value())
-                {
-                    ECS::Entity e = m_SelectedEntity.value();
-                    if (!ecs.HasComponent<HedgehogEngine::LightComponent>(e))
-                        ecs.AddComponent(e, HedgehogEngine::LightComponent{});
-                }
-                if (ImGui::MenuItem("Camera component") && m_SelectedEntity.has_value())
-                {
-                    ECS::Entity e = m_SelectedEntity.value();
-                    if (!ecs.HasComponent<HedgehogEngine::CameraComponent>(e))
-                        ecs.AddComponent(e, HedgehogEngine::CameraComponent{});
-                }
-                if (ImGui::MenuItem("Script component") && m_SelectedEntity.has_value())
-                {
-                    ECS::Entity e = m_SelectedEntity.value();
-                    if (!ecs.HasComponent<HedgehogEngine::ScriptComponent>(e))
-                        ecs.AddComponent(e, HedgehogEngine::ScriptComponent{});
-                }
-                if (ImGui::MenuItem("Animator component") && m_SelectedEntity.has_value())
-                {
-                    ECS::Entity e = m_SelectedEntity.value();
-                    if (!ecs.HasComponent<HedgehogEngine::AnimatorComponent>(e))
-                        ecs.AddComponent(e, HedgehogEngine::AnimatorComponent{});
-                }
-                ImGui::Separator();
-                AddComponentMenuItem<HedgehogEngine::UiCanvasComponent>(ecs, m_SelectedEntity, "UI canvas component");
-                AddComponentMenuItem<HedgehogEngine::UiRectComponent>(ecs, m_SelectedEntity, "UI rect component");
-                AddComponentMenuItem<HedgehogEngine::UiImageComponent>(ecs, m_SelectedEntity, "UI image component");
-                AddComponentMenuItem<HedgehogEngine::UiTextComponent>(ecs, m_SelectedEntity, "UI text component");
-                AddComponentMenuItem<HedgehogEngine::UiButtonComponent>(ecs, m_SelectedEntity, "UI button component");
-                ImGui::Separator();
-                AddComponentMenuItem<HedgehogEngine::AudioSourceComponent>(ecs, m_SelectedEntity, "Audio source component");
-                AddComponentMenuItem<HedgehogEngine::AudioListenerComponent>(ecs, m_SelectedEntity, "Audio listener component");
-                ImGui::EndMenu();
-            }
-
-            ImGui::Separator();
+        if (ImGui::BeginMenu("Assets"))
+        {
             if (ImGui::MenuItem("Create material"))
             {
                 if (const char* path = DialogueWindows::MaterialCreationDialogue())
@@ -468,7 +421,27 @@ namespace Editor
             ImGui::EndMenu();
         }
 
-        if (ImGui::BeginMenu("Windows"))
+        if (ImGui::BeginMenu("GameObject"))
+        {
+            auto&      sceneManager = engineContext.GetSceneManager();
+            const bool deletable    = m_SelectedEntity.has_value() && *m_SelectedEntity != sceneManager.GetRootEntity();
+            if (ImGui::MenuItem("Create game object"))
+                sceneManager.CreateGameObject(m_SelectedEntity);
+            if (ImGui::MenuItem("Delete", nullptr, false, deletable))
+            {
+                sceneManager.DeleteGameObject(*m_SelectedEntity);
+                m_SelectedEntity.reset();
+            }
+            ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("Component", m_SelectedEntity.has_value()))
+        {
+            DrawAddComponentItems(context);
+            ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("Window"))
         {
             auto& layout = m_DockSystem.GetLayout();
             for (int i = 0; i < PANEL_ID_COUNT; ++i)
@@ -483,11 +456,7 @@ namespace Editor
                         layout.ShowPanel(pid);
                 }
             }
-            ImGui::EndMenu();
-        }
-
-        if (ImGui::BeginMenu("Tools"))
-        {
+            ImGui::Separator();
             if (ImGui::MenuItem("Vertex Descriptions", nullptr, m_VertexDescWindow->Open))
                 m_VertexDescWindow->Open = !m_VertexDescWindow->Open;
             if (ImGui::MenuItem("Pipeline", nullptr, m_PipelineWindow->Open))
@@ -506,13 +475,67 @@ namespace Editor
             ImGui::EndMenu();
         }
 
-        if (ImGui::BeginMenu("Settings"))
-        {
-            if (ImGui::MenuItem("Settings")) { m_SettingsWindowOpen = true; }
-            ImGui::EndMenu();
-        }
-
         ImGui::EndMainMenuBar();
+    }
+
+    void EditorGui::DrawAddComponentItems(HedgehogEngine::Engine& context)
+    {
+        auto& engineContext = context.GetEngineContext();
+        auto& ecs           = engineContext.GetECS();
+        auto* meshSystem    = engineContext.GetMeshSystem();
+        auto* renderSystem  = engineContext.GetRenderSystem();
+
+        if (ImGui::MenuItem("Mesh component") && m_SelectedEntity.has_value())
+        {
+            ECS::Entity e = m_SelectedEntity.value();
+            if (!ecs.HasComponent<HedgehogEngine::MeshComponent>(e))
+            {
+                ecs.AddComponent(e, HedgehogEngine::MeshComponent{ HedgehogEngine::MeshSystem::sDefaultMeshPath });
+                meshSystem->Update(ecs, e, engineContext.GetFileSystem());
+            }
+        }
+        if (ImGui::MenuItem("Render component") && m_SelectedEntity.has_value())
+        {
+            ECS::Entity e = m_SelectedEntity.value();
+            if (!ecs.HasComponent<HedgehogEngine::RenderComponent>(e))
+            {
+                ecs.AddComponent(e, HedgehogEngine::RenderComponent{});
+                renderSystem->Update(ecs, e);
+            }
+        }
+        if (ImGui::MenuItem("Light component") && m_SelectedEntity.has_value())
+        {
+            ECS::Entity e = m_SelectedEntity.value();
+            if (!ecs.HasComponent<HedgehogEngine::LightComponent>(e))
+                ecs.AddComponent(e, HedgehogEngine::LightComponent{});
+        }
+        if (ImGui::MenuItem("Camera component") && m_SelectedEntity.has_value())
+        {
+            ECS::Entity e = m_SelectedEntity.value();
+            if (!ecs.HasComponent<HedgehogEngine::CameraComponent>(e))
+                ecs.AddComponent(e, HedgehogEngine::CameraComponent{});
+        }
+        if (ImGui::MenuItem("Script component") && m_SelectedEntity.has_value())
+        {
+            ECS::Entity e = m_SelectedEntity.value();
+            if (!ecs.HasComponent<HedgehogEngine::ScriptComponent>(e))
+                ecs.AddComponent(e, HedgehogEngine::ScriptComponent{});
+        }
+        if (ImGui::MenuItem("Animator component") && m_SelectedEntity.has_value())
+        {
+            ECS::Entity e = m_SelectedEntity.value();
+            if (!ecs.HasComponent<HedgehogEngine::AnimatorComponent>(e))
+                ecs.AddComponent(e, HedgehogEngine::AnimatorComponent{});
+        }
+        ImGui::Separator();
+        AddComponentMenuItem<HedgehogEngine::UiCanvasComponent>(ecs, m_SelectedEntity, "UI canvas component");
+        AddComponentMenuItem<HedgehogEngine::UiRectComponent>(ecs, m_SelectedEntity, "UI rect component");
+        AddComponentMenuItem<HedgehogEngine::UiImageComponent>(ecs, m_SelectedEntity, "UI image component");
+        AddComponentMenuItem<HedgehogEngine::UiTextComponent>(ecs, m_SelectedEntity, "UI text component");
+        AddComponentMenuItem<HedgehogEngine::UiButtonComponent>(ecs, m_SelectedEntity, "UI button component");
+        ImGui::Separator();
+        AddComponentMenuItem<HedgehogEngine::AudioSourceComponent>(ecs, m_SelectedEntity, "Audio source component");
+        AddComponentMenuItem<HedgehogEngine::AudioListenerComponent>(ecs, m_SelectedEntity, "Audio listener component");
     }
 
     // ─── Toolbar ─────────────────────────────────────────────────────────────
@@ -526,40 +549,50 @@ namespace Editor
         const bool isPlay  = (state == HedgehogEngine::PlayState::Playing);
         const bool isPause = (state == HedgehogEngine::PlayState::Paused);
 
-        if (!isEdit) ImGui::BeginDisabled();
-        if (ImGui::Button("  Play  "))
+        const ImGuiStyle& style      = ImGui::GetStyle();
+        const float       buttonSize = ICON_SIZE_SMALL + 2.0f * style.FramePadding.x;
+        const ImVec4      iconTint   = style.Colors[ImGuiCol_Text];
+        const ImVec4      activeFill = Theme::Resolve(Theme::PLAY_TINT);
+
+        // The play-mode buttons sit in the middle of the row; the one matching the state is filled.
+        const auto playButton = [&](const char* id, EditorIcon icon, bool active, bool enabled, const char* tooltip)
+        {
+            if (active)
+                ImGui::PushStyleColor(ImGuiCol_Button, activeFill);
+            ImGui::BeginDisabled(!enabled);
+            const bool pressed = IconButton(id, GetIcon(icon), ICON_SIZE_SMALL, iconTint);
+            ImGui::EndDisabled();
+            if (active)
+                ImGui::PopStyleColor();
+            ImGui::SetItemTooltip("%s", tooltip);
+            return pressed;
+        };
+
+        const float groupWidth = 3.0f * buttonSize + 2.0f * style.ItemSpacing.x;
+        ImGui::SetCursorPosX(std::max((ImGui::GetWindowWidth() - groupWidth) * 0.5f, style.WindowPadding.x));
+
+        if (playButton("##Play", EditorIcon::Play, isPlay, isEdit, "Play"))
             (void)engineContext.Play();
-        if (!isEdit) ImGui::EndDisabled();
 
         ImGui::SameLine();
-
-        if (isEdit)  ImGui::BeginDisabled();
-        if (ImGui::Button(isPause ? " Resume " : "  Pause  "))
+        if (playButton("##Pause", EditorIcon::Pause, isPause, !isEdit, isPause ? "Resume" : "Pause"))
             (void)(isPause ? engineContext.Resume() : engineContext.Pause());
-        if (isEdit)  ImGui::EndDisabled();
 
         ImGui::SameLine();
-
-        if (isEdit)  ImGui::BeginDisabled();
-        if (ImGui::Button("  Stop  "))
+        if (playButton("##Stop", EditorIcon::Stop, false, !isEdit, "Stop"))
         {
             (void)engineContext.Stop();
             // The restored scene keeps its ids, but an entity made during Play is gone.
             if (m_SelectedEntity && !engineContext.GetECS().IsAlive(*m_SelectedEntity))
                 m_SelectedEntity.reset();
         }
-        if (isEdit)  ImGui::EndDisabled();
 
+        // The settings gear sits at the right edge.
         ImGui::SameLine();
-        ImGui::Text("|");
-        ImGui::SameLine();
-
-        const char* modeText = "EDIT";
-        if (isPlay)
-            modeText = "PLAY";
-        else if (isPause)
-            modeText = "PAUSE";
-        ImGui::Text("Mode: %s", modeText);
+        ImGui::SetCursorPosX(ImGui::GetWindowWidth() - style.WindowPadding.x - buttonSize);
+        if (IconButton("##Settings", GetIcon(EditorIcon::Settings), ICON_SIZE_SMALL, iconTint))
+            m_SettingsWindowOpen = true;
+        ImGui::SetItemTooltip("Settings");
     }
 
     // ─── Scene hierarchy ─────────────────────────────────────────────────────
