@@ -2,6 +2,7 @@
 
 #include "HedgehogEngine/HedgehogWindow/api/HedgehogWindowApi.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/InputState.hpp"
+#include "HedgehogEngine/HedgehogWindow/api/RawInput.hpp"
 
 #include <functional>
 #include <memory>
@@ -39,6 +40,12 @@ namespace HW
         HEDGEHOG_WINDOW_API const InputState& GetInputState() const;
         HEDGEHOG_WINDOW_API InputState&       GetInputState();
 
+        // Every key, mouse button, cursor move and scroll the window has received, unfiltered: the
+        // GUI callback gates only the legacy InputState. BeginInputFrame starts the frame's deltas.
+        HEDGEHOG_WINDOW_API const RawInput& GetRawInput() const;
+        HEDGEHOG_WINDOW_API RawInput&       GetRawInput();
+        HEDGEHOG_WINDOW_API void            BeginInputFrame();
+
         HEDGEHOG_WINDOW_API void SetIcon(int width, int height, unsigned char* data);
         HEDGEHOG_WINDOW_API void SetGuiCallback(std::function<bool()> callback);
 
@@ -54,6 +61,8 @@ namespace HW
         static void OnMouseButton(GLFWwindow* handle, int button, int action, int mods);
         static void OnMouseMove(GLFWwindow* handle, double x, double y);
         static void OnMouseScroll(GLFWwindow* handle, double x, double y);
+        static void OnFocus(GLFWwindow* handle, int focused);
+        static void OnCursorEnter(GLFWwindow* handle, int entered);
 
     private:
         struct Impl;

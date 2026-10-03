@@ -37,6 +37,7 @@ include "HedgehogEngine/HedgehogEngine/tests/Build-HedgehogEngineTest.lua"
 include "HedgehogEngine/HedgehogRenderer/Build-HedgehogRenderer.lua"
 include "HedgehogEngine/HedgehogRenderer/tests/Build-RenderGraphTest.lua"
 include "HedgehogEngine/HedgehogWindow/Build-HedgehogWindow.lua"
+include "HedgehogEngine/HedgehogWindow/tests/Build-HedgehogWindowTest.lua"
 include "HedgehogEngine/HedgehogSettings/Build-HedgehogSettings.lua"
 
 include "Editor/Build-Editor.lua"
