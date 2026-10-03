@@ -1,5 +1,6 @@
 #pragma once
 
+#include "DockLayout.hpp"
 #include "DockTypes.hpp"
 
 #include "imgui.h"
@@ -34,11 +35,9 @@ namespace Editor
         const DockLayoutState& GetLayout() const { return m_Layout; }
 
     private:
-        struct AreaBounds { ImVec2 Pos; ImVec2 Size; };
-
-        AreaBounds ComputeBounds(DockArea area, ImVec2 display, float menuH) const;
-
-        void DrawDockableArea(DockArea area, ImVec2 size, const DrawFn& drawFn);
+        void  DrawDockedArea(DockArea area, const char* id, ImVec2 size, const DrawFn& drawFn);
+        float DrawSplitter(const char* id, const DockRect& rect, bool horizontal);
+        void  DrawDockableArea(DockArea area, ImVec2 size, const DrawFn& drawFn);
         void DrawFloatingPanels(const DrawFn& drawFn);
         void DrawDropZones(ImVec2 display, float menuH);
         DockArea HitTestAreas(ImVec2 mouse, ImVec2 display, float menuH) const;
@@ -48,10 +47,5 @@ namespace Editor
         DockLayoutState        m_Layout;
         std::optional<PanelId> m_DraggingPanel;
         DockArea               m_DraggingFromArea = DockArea::Left;
-
-        static constexpr float k_SplitterThickness = 4.0f;
-        static constexpr float k_ToolbarHeight     = 32.0f;
-        static constexpr float k_MinAreaSize       = 80.0f;
-        static constexpr float k_MinCenterWidth    = 200.0f;
     };
 }

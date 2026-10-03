@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <iterator>
 #include <optional>
 #include <string>
 #include <vector>
@@ -35,14 +36,15 @@ namespace Editor
     {
         switch (id)
         {
-        case PanelId::SceneHierarchy: return "Scene Hierarchy";
+        case PanelId::SceneHierarchy: return "Hierarchy";
         case PanelId::Inspector:      return "Inspector";
         case PanelId::Console:        return "Console";
-        case PanelId::Content:        return "Content";
+        case PanelId::Content:        return "Project";
         default:                      return "Unknown";
         }
     }
 
+    // The key a panel is saved under in editor_settings.yaml; unlike PanelName, never renamed.
     inline constexpr const char* PanelIdToString(PanelId id)
     {
         switch (id)
@@ -75,6 +77,13 @@ namespace Editor
         }
     }
 
+    // The order panels take in a fresh layout: Project before Console, so the bottom dock opens on
+    // Project.
+    inline constexpr PanelId DEFAULT_PANEL_ORDER[] = {
+        PanelId::SceneHierarchy, PanelId::Inspector, PanelId::Content, PanelId::Console
+    };
+    static_assert(std::size(DEFAULT_PANEL_ORDER) == static_cast<size_t>(PanelId::Count));
+
     struct PanelPos { float x = 200.0f; float y = 200.0f; };
 
     struct DockLayoutState
@@ -85,8 +94,8 @@ namespace Editor
         std::array<PanelPos, PANEL_ID_COUNT>              FloatingPositions{};
 
         float LeftWidth    = 280.0f;
-        float RightWidth   = 280.0f;
-        float BottomHeight = 200.0f;
+        float RightWidth   = 340.0f;
+        float BottomHeight = 240.0f;
 
         void InitDefaults()
         {
@@ -99,8 +108,8 @@ namespace Editor
             for (int i = 0; i < PANEL_ID_COUNT; ++i)
                 FloatingPositions[i] = { 150.0f + i * 40.0f, 150.0f + i * 40.0f };
 
-            for (int i = 0; i < PANEL_ID_COUNT; ++i)
-                AreaPanels[static_cast<int>(DefaultPanelArea(static_cast<PanelId>(i)))].push_back(static_cast<PanelId>(i));
+            for (const PanelId id : DEFAULT_PANEL_ORDER)
+                AreaPanels[static_cast<int>(DefaultPanelArea(id))].push_back(id);
         }
 
         bool IsPanelInAnyArea(PanelId id) const

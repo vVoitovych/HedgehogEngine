@@ -7,6 +7,11 @@
 
 namespace Editor
 {
+    namespace
+    {
+        constexpr DockArea DOCKABLE_AREAS[] = { DockArea::Left, DockArea::Right, DockArea::Bottom };
+    }
+
     DockSystem::DockSystem()
     {
         m_Layout.InitDefaults();
@@ -20,7 +25,6 @@ namespace Editor
     {
         const ImGuiIO& io      = ImGui::GetIO();
         const ImVec2   display = io.DisplaySize;
-        const float    H       = display.y - menuBarHeight;
 
         // Resolve pending drag-drop before any window is rendered this frame
         if (m_DraggingPanel.has_value() && ImGui::IsMouseReleased(ImGuiMouseButton_Left))
@@ -31,128 +35,66 @@ namespace Editor
             m_DraggingPanel.reset();
         }
 
-        const float leftW   = m_Layout.LeftWidth;
-        const float rightW  = m_Layout.RightWidth;
-        const float centerW = std::max(k_MinCenterWidth,
-                                       display.x - leftW - rightW - 2.0f * k_SplitterThickness);
-        const float bottomH = m_Layout.BottomHeight;
-        const float sceneH  = std::max(k_MinAreaSize,
-                                       H - k_ToolbarHeight - bottomH - k_SplitterThickness);
+        const DockGeometry geometry = ComputeDockGeometry(m_Layout, display.x, display.y, menuBarHeight);
+
+        // Children are placed in the host window, which starts under the menu bar.
+        const auto place = [menuBarHeight](const DockRect& rect)
+        {
+            ImGui::SetCursorPos({ rect.X, rect.Y - menuBarHeight });
+            return ImVec2(rect.Width, rect.Height);
+        };
 
         // ── Full-workspace host window ────────────────────────────────────────
         ImGui::SetNextWindowPos({ 0.0f, menuBarHeight }, ImGuiCond_Always);
-        ImGui::SetNextWindowSize({ display.x, H }, ImGuiCond_Always);
+        ImGui::SetNextWindowSize({ display.x, std::max(display.y - menuBarHeight, 0.0f) }, ImGuiCond_Always);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 0.0f, 0.0f });
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,   { 0.0f, 0.0f });
-        constexpr ImGuiWindowFlags k_HostFlags =
+        constexpr ImGuiWindowFlags HOST_FLAGS =
             ImGuiWindowFlags_NoTitleBar        | ImGuiWindowFlags_NoResize          |
             ImGuiWindowFlags_NoMove            | ImGuiWindowFlags_NoScrollbar       |
             ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoSavedSettings   |
             ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoFocusOnAppearing;
-        ImGui::Begin("##DockHost", nullptr, k_HostFlags);
+        ImGui::Begin("##DockHost", nullptr, HOST_FLAGS);
         ImGui::PopStyleVar(2);
 
-        // ── LEFT AREA ────────────────────────────────────────────────────────
-        ImGui::SetCursorPos({ 0.0f, 0.0f });
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 4.0f, 4.0f });
-        ImGui::BeginChild("##AreaLeft", { leftW, H }, ImGuiChildFlags_None);
-        DrawDockableArea(DockArea::Left, { leftW, H }, drawFn);
-        ImGui::EndChild();
-        ImGui::PopStyleVar();
-
-        // ── VERTICAL SPLITTER left/center ────────────────────────────────────
-        ImGui::SetCursorPos({ leftW, 0.0f });
-        ImGui::InvisibleButton("##VSplitL", { k_SplitterThickness, H });
-        if (ImGui::IsItemActive())
+        // ── Toolbar row, full width ──────────────────────────────────────────
         {
-            m_Layout.LeftWidth = std::clamp(
-                m_Layout.LeftWidth + io.MouseDelta.x,
-                k_MinAreaSize,
-                display.x - m_Layout.RightWidth - k_MinCenterWidth - 2.0f * k_SplitterThickness);
-        }
-        if (ImGui::IsItemHovered() || ImGui::IsItemActive())
-            ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
-        {
-            const ImVec2 p0  = ImGui::GetItemRectMin();
-            const ImVec2 p1  = ImGui::GetItemRectMax();
-            ImGui::GetWindowDrawList()->AddRectFilled(p0, p1, ImGui::GetColorU32(ImGuiCol_Separator));
+            const ImVec2 size = place(geometry.Toolbar);
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 8.0f, 4.0f });
+            ImGui::BeginChild("##AreaToolbar", size, ImGuiChildFlags_None);
+            drawToolbar();
+            ImGui::EndChild();
+            ImGui::PopStyleVar();
         }
 
-        // ── CENTER COLUMN ────────────────────────────────────────────────────
-        const float centerX = leftW + k_SplitterThickness;
+        DrawDockedArea(DockArea::Left, "##AreaLeft", place(geometry.Left), drawFn);
 
-        // Toolbar
-        ImGui::SetCursorPos({ centerX, 0.0f });
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 8.0f, 4.0f });
-        ImGui::BeginChild("##AreaToolbar", { centerW, k_ToolbarHeight }, ImGuiChildFlags_None);
-        drawToolbar();
-        ImGui::EndChild();
-        ImGui::PopStyleVar();
-
-        // Scene view
-        ImGui::SetCursorPos({ centerX, k_ToolbarHeight });
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 0.0f, 0.0f });
-        ImGui::PushStyleColor(ImGuiCol_ChildBg, Theme::MAIN_BG);
-        ImGui::BeginChild("##AreaCenter", { centerW, sceneH }, ImGuiChildFlags_None);
-        drawFn(PanelId::Count); // sentinel: scene view
-        ImGui::EndChild();
-        ImGui::PopStyleColor();
-        ImGui::PopStyleVar();
-
-        // Horizontal splitter center/bottom
-        ImGui::SetCursorPos({ centerX, k_ToolbarHeight + sceneH });
-        ImGui::InvisibleButton("##HSplitB", { centerW, k_SplitterThickness });
-        if (ImGui::IsItemActive())
+        // ── Scene view ───────────────────────────────────────────────────────
         {
-            m_Layout.BottomHeight = std::clamp(
-                m_Layout.BottomHeight - io.MouseDelta.y,
-                k_MinAreaSize,
-                H - k_ToolbarHeight - k_MinAreaSize - k_SplitterThickness);
-        }
-        if (ImGui::IsItemHovered() || ImGui::IsItemActive())
-            ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeNS);
-        {
-            const ImVec2 p0 = ImGui::GetItemRectMin();
-            const ImVec2 p1 = ImGui::GetItemRectMax();
-            ImGui::GetWindowDrawList()->AddRectFilled(p0, p1, ImGui::GetColorU32(ImGuiCol_Separator));
+            const ImVec2 size = place(geometry.Center);
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 0.0f, 0.0f });
+            ImGui::PushStyleColor(ImGuiCol_ChildBg, Theme::MAIN_BG);
+            ImGui::BeginChild("##AreaCenter", size, ImGuiChildFlags_None);
+            drawFn(PanelId::Count); // sentinel: scene view
+            ImGui::EndChild();
+            ImGui::PopStyleColor();
+            ImGui::PopStyleVar();
         }
 
-        // Bottom area
-        const float bottomY       = k_ToolbarHeight + sceneH + k_SplitterThickness;
-        const float actualBottomH = H - bottomY;
-        ImGui::SetCursorPos({ centerX, bottomY });
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 4.0f, 4.0f });
-        ImGui::BeginChild("##AreaBottom", { centerW, actualBottomH }, ImGuiChildFlags_None);
-        DrawDockableArea(DockArea::Bottom, { centerW, actualBottomH }, drawFn);
-        ImGui::EndChild();
-        ImGui::PopStyleVar();
+        DrawDockedArea(DockArea::Bottom, "##AreaBottom", place(geometry.Bottom), drawFn);
+        DrawDockedArea(DockArea::Right, "##AreaRight", place(geometry.Right), drawFn);
 
-        // ── VERTICAL SPLITTER center/right ───────────────────────────────────
-        const float vSplit2X = centerX + centerW;
-        ImGui::SetCursorPos({ vSplit2X, 0.0f });
-        ImGui::InvisibleButton("##VSplitR", { k_SplitterThickness, H });
-        if (ImGui::IsItemActive())
-        {
-            m_Layout.RightWidth = std::clamp(
-                m_Layout.RightWidth - io.MouseDelta.x,
-                k_MinAreaSize,
-                display.x - m_Layout.LeftWidth - k_MinCenterWidth - 2.0f * k_SplitterThickness);
-        }
-        if (ImGui::IsItemHovered() || ImGui::IsItemActive())
-            ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
-        {
-            const ImVec2 p0 = ImGui::GetItemRectMin();
-            const ImVec2 p1 = ImGui::GetItemRectMax();
-            ImGui::GetWindowDrawList()->AddRectFilled(p0, p1, ImGui::GetColorU32(ImGuiCol_Separator));
-        }
-
-        // ── RIGHT AREA ───────────────────────────────────────────────────────
-        ImGui::SetCursorPos({ vSplit2X + k_SplitterThickness, 0.0f });
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 4.0f, 4.0f });
-        ImGui::BeginChild("##AreaRight", { rightW, H }, ImGuiChildFlags_None);
-        DrawDockableArea(DockArea::Right, { rightW, H }, drawFn);
-        ImGui::EndChild();
-        ImGui::PopStyleVar();
+        // ── Splitters: a drag starts from the size as laid out, so a clamped size never drifts,
+        // and the saved sizes change only when dragged.
+        place(geometry.LeftSplitter);
+        if (const float delta = DrawSplitter("##VSplitL", geometry.LeftSplitter, false); delta != 0.0f)
+            m_Layout.LeftWidth = geometry.Left.Width + delta;
+        place(geometry.BottomSplitter);
+        if (const float delta = DrawSplitter("##HSplitB", geometry.BottomSplitter, true); delta != 0.0f)
+            m_Layout.BottomHeight = geometry.Bottom.Height - delta;
+        place(geometry.RightSplitter);
+        if (const float delta = DrawSplitter("##VSplitR", geometry.RightSplitter, false); delta != 0.0f)
+            m_Layout.RightWidth = geometry.Right.Width - delta;
 
         ImGui::End(); // ##DockHost
 
@@ -166,34 +108,28 @@ namespace Editor
 
     // ─── Private ─────────────────────────────────────────────────────────────
 
-    DockSystem::AreaBounds DockSystem::ComputeBounds(DockArea area, ImVec2 display, float menuH) const
+    void DockSystem::DrawDockedArea(DockArea area, const char* id, ImVec2 size, const DrawFn& drawFn)
     {
-        const float H       = display.y - menuH;
-        const float leftW   = m_Layout.LeftWidth;
-        const float rightW  = m_Layout.RightWidth;
-        const float centerW = std::max(k_MinCenterWidth,
-                                       display.x - leftW - rightW - 2.0f * k_SplitterThickness);
-        const float centerX = leftW + k_SplitterThickness;
-        const float bottomH = m_Layout.BottomHeight;
-        const float sceneH  = std::max(k_MinAreaSize,
-                                       H - k_ToolbarHeight - bottomH - k_SplitterThickness);
-        const float bottomY = menuH + k_ToolbarHeight + sceneH + k_SplitterThickness;
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 4.0f, 4.0f });
+        ImGui::BeginChild(id, size, ImGuiChildFlags_None);
+        DrawDockableArea(area, size, drawFn);
+        ImGui::EndChild();
+        ImGui::PopStyleVar();
+    }
 
-        switch (area)
-        {
-        case DockArea::Left:
-            return { { 0.0f, menuH }, { leftW, H } };
-        case DockArea::TopCenter:
-            return { { centerX, menuH }, { centerW, k_ToolbarHeight } };
-        case DockArea::Center:
-            return { { centerX, menuH + k_ToolbarHeight }, { centerW, sceneH } };
-        case DockArea::Bottom:
-            return { { centerX, bottomY }, { centerW, H - bottomY + menuH } };
-        case DockArea::Right:
-            return { { centerX + centerW + k_SplitterThickness, menuH }, { rightW, H } };
-        default:
-            return { { 0.0f, menuH }, { 0.0f, 0.0f } };
-        }
+    // Draws a splitter at the cursor; returns how far it was dragged this frame along its axis.
+    float DockSystem::DrawSplitter(const char* id, const DockRect& rect, bool horizontal)
+    {
+        ImGui::InvisibleButton(id, { std::max(rect.Width, 1.0f), std::max(rect.Height, 1.0f) });
+        const bool active = ImGui::IsItemActive();
+        if (ImGui::IsItemHovered() || active)
+            ImGui::SetMouseCursor(horizontal ? ImGuiMouseCursor_ResizeNS : ImGuiMouseCursor_ResizeEW);
+        ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(),
+                                                  ImGui::GetColorU32(ImGuiCol_Separator));
+        if (!active)
+            return 0.0f;
+        const ImVec2 delta = ImGui::GetIO().MouseDelta;
+        return horizontal ? delta.y : delta.x;
     }
 
     void DockSystem::DrawDockableArea(DockArea area, ImVec2 size, const DrawFn& drawFn)
@@ -297,32 +233,33 @@ namespace Editor
             ImGui::GetColorU32(Theme::TEXT),
             PanelName(m_DraggingPanel.value()));
 
-        constexpr DockArea k_DockableAreas[] = { DockArea::Left, DockArea::Right, DockArea::Bottom };
-        for (const DockArea targetArea : k_DockableAreas)
+        const DockGeometry geometry = ComputeDockGeometry(m_Layout, display.x, display.y, menuH);
+        for (const DockArea targetArea : DOCKABLE_AREAS)
         {
             // Don't highlight the area the panel is already docked in
             if (targetArea == m_DraggingFromArea)
                 continue;
 
-            const AreaBounds b    = ComputeBounds(targetArea, display, menuH);
-            const ImVec2 bMax     = { b.Pos.x + b.Size.x, b.Pos.y + b.Size.y };
-            const bool   hovered  = IsPointInRect(mousePos, b.Pos, bMax);
+            const DockRect rect    = GetAreaRect(geometry, targetArea);
+            const ImVec2   bMin    = { rect.X, rect.Y };
+            const ImVec2   bMax    = { rect.X + rect.Width, rect.Y + rect.Height };
+            const bool     hovered = IsPointInRect(mousePos, bMin, bMax);
 
             const ImU32 fill    = ImGui::GetColorU32(hovered ? Theme::ACCENT_FILL : Theme::WithAlpha(Theme::TEXT, 0.06f));
             const ImU32 outline = ImGui::GetColorU32(hovered ? Theme::ACCENT : Theme::WithAlpha(Theme::TEXT_MUTED, 0.5f));
 
-            ImGui::GetForegroundDrawList()->AddRectFilled(b.Pos, bMax, fill, 4.0f);
-            ImGui::GetForegroundDrawList()->AddRect(b.Pos, bMax, outline, 4.0f, 0, 2.0f);
+            ImGui::GetForegroundDrawList()->AddRectFilled(bMin, bMax, fill, 4.0f);
+            ImGui::GetForegroundDrawList()->AddRect(bMin, bMax, outline, 4.0f, 0, 2.0f);
         }
     }
 
     DockArea DockSystem::HitTestAreas(ImVec2 mouse, ImVec2 display, float menuH) const
     {
-        constexpr DockArea k_DockableAreas[] = { DockArea::Left, DockArea::Right, DockArea::Bottom };
-        for (const DockArea area : k_DockableAreas)
+        const DockGeometry geometry = ComputeDockGeometry(m_Layout, display.x, display.y, menuH);
+        for (const DockArea area : DOCKABLE_AREAS)
         {
-            const AreaBounds b = ComputeBounds(area, display, menuH);
-            if (IsPointInRect(mouse, b.Pos, { b.Pos.x + b.Size.x, b.Pos.y + b.Size.y }))
+            const DockRect rect = GetAreaRect(geometry, area);
+            if (IsPointInRect(mouse, { rect.X, rect.Y }, { rect.X + rect.Width, rect.Y + rect.Height }))
                 return area;
         }
         // Not over any dock area — release goes to floating
