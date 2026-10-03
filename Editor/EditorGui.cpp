@@ -5,6 +5,7 @@
 #include "Tools/VertexDescriptionWindow.hpp"
 #include "Tools/PipelineWindow.hpp"
 #include "Tools/ShaderWindow.hpp"
+#include "Tools/InputActionsWindow.hpp"
 #include "Panels/AssetDragDrop.hpp"
 #include "Panels/EntityDragDrop.hpp"
 #include "Panels/ScriptPropertyFields.hpp"
@@ -13,6 +14,8 @@
 
 #include "HedgehogEngine/api/Engine.hpp"
 #include "HedgehogEngine/api/EngineContext.hpp"
+#include "HedgehogEngine/api/WindowContext.hpp"
+#include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
 #include "HedgehogEngine/api/Containers/MaterialContainer.hpp"
 #include "HedgehogEngine/api/Containers/MaterialData.hpp"
 #include "HedgehogEngine/api/Containers/MeshContainer.hpp"
@@ -147,6 +150,7 @@ namespace Editor
         , m_VertexDescWindow(std::make_unique<VertexDescriptionWindow>())
         , m_PipelineWindow(std::make_unique<PipelineWindow>())
         , m_ShaderWindow(std::make_unique<ShaderWindow>())
+        , m_InputActionsWindow(std::make_unique<InputActionsWindow>())
         , m_RenderGraphEditorWindow(std::make_unique<RenderGraphEditorWindow>())
     {
         m_FileSystem   = &context.GetEngineContext().GetFileSystem();
@@ -201,6 +205,7 @@ namespace Editor
         m_VertexDescWindow->Draw(fs);
         m_PipelineWindow->Draw(fs);
         m_ShaderWindow->Draw(fs);
+        m_InputActionsWindow->Draw(fs, context.GetWindowContext().GetWindow().GetRawInput());
         m_RenderGraphEditorWindow->Draw(m_Renderer, *m_FileSystem);
 
         DrawOpenSceneDropPopup(context);
@@ -484,6 +489,13 @@ namespace Editor
                 m_PipelineWindow->Open = !m_PipelineWindow->Open;
             if (ImGui::MenuItem("Shader", nullptr, m_ShaderWindow->Open))
                 m_ShaderWindow->Open = !m_ShaderWindow->Open;
+            if (ImGui::MenuItem("Input Actions", nullptr, m_InputActionsWindow->Open))
+            {
+                if (m_InputActionsWindow->Open)
+                    m_InputActionsWindow->Open = false;
+                else
+                    m_InputActionsWindow->OpenFile(context.GetEngineContext().GetFileSystem());
+            }
             if (ImGui::MenuItem("Render Graph Editor", nullptr, m_RenderGraphEditorWindow->Open))
                 m_RenderGraphEditorWindow->Open = !m_RenderGraphEditorWindow->Open;
             ImGui::EndMenu();

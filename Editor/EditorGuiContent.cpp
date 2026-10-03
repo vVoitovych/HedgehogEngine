@@ -6,6 +6,7 @@
 #include "Tools/RenderGraphEditor/GraphFileReference.hpp"
 #include "Tools/RenderGraphEditor/RenderGraphEditorWindow.hpp"
 #include "Tools/ShaderWindow.hpp"
+#include "Tools/InputActionsWindow.hpp"
 #include "Tools/VertexDescriptionWindow.hpp"
 
 #include "HedgehogEngine/api/Containers/MaterialContainer.hpp"
@@ -62,6 +63,13 @@ namespace Editor
             return;
         const std::filesystem::path physical     = std::filesystem::path(*resolved).make_preferred();
         const std::string           physicalPath = physical.string();
+
+        // The project's input actions open in their own editor rather than as a plain YAML file.
+        if (request.VirtualPath == HedgehogEngine::EngineContext::INPUT_ACTIONS_PATH)
+        {
+            m_InputActionsWindow->OpenFile(fileSystem);
+            return;
+        }
 
         switch (request.Type)
         {
