@@ -7,6 +7,7 @@
 #include "HedgehogEngine/api/Save/SaveGameManager.hpp"
 
 #include "HedgehogSettings/api/HedgehogSettings.hpp"
+#include "HedgehogSettings/api/ProjectSettings.hpp"
 
 #include "ECS/api/components/Hierarchy.hpp"
 
@@ -77,7 +78,7 @@ function Keeper:OnDestroy() print("destroyed") end
         // Plays a frame and saves slot at the game data version given.
         void SaveAt(int version, const std::string& slot)
         {
-            World.Context.GetSettings().SetGameDataVersion(version);
+            World.Context.GetSettings().GetProjectSettings().SetGameDataVersion(version);
             REQUIRE(World.Context.Play());
             World.Frame(STEP);
             REQUIRE(SaveGames().RequestSave(slot));
@@ -98,7 +99,7 @@ TEST_CASE("Save migration - a version 1 save loads through a C++ step and the sc
 
     // Version 2: the lamps were rebalanced (a C++ step over the World section), and the script
     // migrates its own state.
-    world.World.Context.GetSettings().SetGameDataVersion(2);
+    world.World.Context.GetSettings().GetProjectSettings().SetGameDataVersion(2);
     world.SaveGames().RegisterMigration(1,
                                         [](EcsSerialization::SaveGameFile& save)
                                         {
@@ -141,7 +142,7 @@ TEST_CASE("Save migration - a newer save, or a step that fails, is refused and t
     MigrationWorld world;
     world.SaveAt(3, "future");
     world.SaveAt(1, "old");
-    world.World.Context.GetSettings().SetGameDataVersion(2);
+    world.World.Context.GetSettings().GetProjectSettings().SetGameDataVersion(2);
     world.SaveGames().RegisterMigration(1, [](EcsSerialization::SaveGameFile&) { return std::string("the inventory is gone"); });
 
     LogCapture log;
@@ -169,7 +170,7 @@ TEST_CASE("Save migration - Save.list reports each slot's versions and whether i
     MigrationWorld world;
     world.SaveAt(3, "future");
     world.SaveAt(1, "old");
-    world.World.Context.GetSettings().SetGameDataVersion(2);
+    world.World.Context.GetSettings().GetProjectSettings().SetGameDataVersion(2);
     world.World.WriteScript("Lister.lua", R"lua(
 Lister = setmetatable({}, { __index = ActorScript })
 Lister.__index = Lister
@@ -204,7 +205,7 @@ function Keeper:OnMigrate(fromVersion, state) error("cannot read version " .. fr
 function Keeper:OnLoad(state) print("loaded") end
 )lua");
     world.SaveAt(1, "old");
-    world.World.Context.GetSettings().SetGameDataVersion(2);
+    world.World.Context.GetSettings().GetProjectSettings().SetGameDataVersion(2);
 
     LogCapture log;
     REQUIRE(world.World.Context.Play());

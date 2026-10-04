@@ -10,6 +10,7 @@
 #include "HedgehogEngine/api/Events/UiEvents.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/HedgehogSettings.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/LayerSettings.hpp"
+#include "HedgehogEngine/HedgehogSettings/api/ProjectSettings.hpp"
 #include "HedgehogCommon/api/Camera.hpp"
 #include "HedgehogExtract/api/SceneExtractor.hpp"
 #include "HedgehogEngine/api/Containers/FontContainer.hpp"
@@ -115,8 +116,15 @@ namespace Editor
                         "( entity", event.Entity, ")");
             });
 
+        // The project names the saves folder and the game data version; a missing file keeps the
+        // defaults until File > Project Settings saves one.
+        auto& project = engineContext.GetSettings().GetProjectSettings();
+        if (engineContext.GetFileSystem().Exists(HedgehogSettings::ProjectSettings::PATH) &&
+            !project.Load(HedgehogSettings::ProjectSettings::PATH, engineContext.GetFileSystem()))
+            LOGWARNING("Project settings could not be read, using the defaults.");
+
         // Play sessions save into the project's editor folder, so they never overwrite a game's saves.
-        if (const auto saves = FS::GetSavesDirectory(HedgehogEngine::SaveGameManager::DEFAULT_PROJECT_NAME, true))
+        if (const auto saves = FS::GetSavesDirectory(project.GetName(), true))
             engineContext.GetSaveGames().SetSaveDirectory(*saves);
 
         // Sounds play only in Play mode; a missing output device leaves the engine silent.

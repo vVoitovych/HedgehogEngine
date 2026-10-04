@@ -6,6 +6,9 @@
 #include "HedgehogEngine/api/Containers/FontContainer.hpp"
 #include "HedgehogEngine/api/Resource/ResourceCatalog.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/HedgehogSettings.hpp"
+#include "HedgehogEngine/HedgehogSettings/api/ProjectSettings.hpp"
+#include "HedgehogEngine/api/Save/SaveGameManager.hpp"
+#include "HedgehogEngine/api/Scene/SceneManager.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
 #include "HedgehogRenderer/Renderer.hpp"
 #include "HedgehogAudio/api/AudioEngine.hpp"
@@ -50,21 +53,31 @@ namespace Runtime
             }
         }
 
-        // Before the scene loads, as the Editor does; the engine's ECS owns it.
-        (void)HedgehogScripting::RegisterScriptSystem(engineContext, fileSystem);
-        (void)engineContext.GetAudioEngine().Init(HA::AudioEngineDesc{});
-        if (const auto saves = FS::GetSavesDirectory(m_Desc.ProjectName, m_Desc.EditorSaves))
-            engineContext.GetSaveGames().SetSaveDirectory(*saves);
-
         // Before the renderer is built: the settings size the GPU resources it creates.
         auto& settings = engineContext.GetSettings();
         if (fileSystem.Exists(m_Desc.SettingsPath) && !settings.Load(m_Desc.SettingsPath, fileSystem))
             LOGWARNING("[Runtime] Engine settings could not be read, using defaults.");
         settings.CleanDirtyState();
+        auto& project = settings.GetProjectSettings();
+        if (!fileSystem.Exists(m_Desc.ProjectPath))
+            LOGINFO("[Runtime] No project settings at ", m_Desc.ProjectPath, "; using the defaults.");
+        else if (!project.Load(m_Desc.ProjectPath, fileSystem))
+            LOGWARNING("[Runtime] Project settings could not be read, using the defaults.");
 
-        const auto scenePath = fileSystem.ResolvePhysical(m_Desc.ScenePath);
+        // Before the scene loads, as the Editor does; the engine's ECS owns it.
+        (void)HedgehogScripting::RegisterScriptSystem(engineContext, fileSystem);
+        (void)engineContext.GetAudioEngine().Init(HA::AudioEngineDesc{});
+        if (const auto saves = FS::GetSavesDirectory(project.GetName(), m_Desc.EditorSaves))
+            engineContext.GetSaveGames().SetSaveDirectory(*saves);
+
+        m_ScenePath = !m_Desc.ScenePath.empty()               ? m_Desc.ScenePath
+                      : !project.GetStartupScene().empty() ? project.GetStartupScene()
+                                                           : m_Desc.FallbackScenePath;
+        const auto scenePath = fileSystem.ResolvePhysical(m_ScenePath);
         if (!scenePath || !engineContext.GetSceneManager().LoadScene(scenePath->string()))
-            LOGWARNING("[Runtime] Could not load '", m_Desc.ScenePath, "'; playing an empty scene.");
+            LOGWARNING("[Runtime] Could not load '", m_ScenePath, "'; playing an empty scene.");
+        else
+            LOGINFO("[Runtime] Playing ", m_ScenePath, ".");
 
         // A game runs its gameplay: the scene's scripts play from the first frame.
         (void)engineContext.Play();
@@ -138,6 +151,8 @@ namespace Runtime
     bool GameRuntime::IsRunning() const { return m_Engine != nullptr; }
 
     uint32_t GameRuntime::GetFrameCount() const { return m_FrameCount; }
+
+    const std::string& GameRuntime::GetScenePath() const { return m_ScenePath; }
 
     HedgehogEngine::EngineContext& GameRuntime::GetEngineContext() { return m_Engine->GetEngineContext(); }
 

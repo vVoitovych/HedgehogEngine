@@ -1,0 +1,9 @@
+name: HedgehogEngine
+startup_scene: assets://Scenes/Default.yaml
+window:
+  title: HedgehogEngine
+  width: 1366
+  height: 768
+  fullscreen: false
+  vsync: true
+game_data_version: 1

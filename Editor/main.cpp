@@ -15,7 +15,8 @@ namespace
     inline constexpr uint32_t DEFAULT_GAME_MODE_FRAMES   = 120;
     inline constexpr uint32_t BENCHMARK_WARMUP_FRAMES    = 120;
     inline constexpr const char* DEFAULT_BENCHMARK_SCENE = "benchmark.yaml";
-    inline constexpr const char* DEFAULT_GAME_MODE_SCENE = "Default.yaml";
+    // None: --game-mode plays the project's startup scene, else Default.yaml.
+    inline constexpr const char* DEFAULT_GAME_MODE_SCENE = "";
 
     // Returns the frame count if the flag was passed (with an optional numeric
     // frame-count argument), or 0 when the flag is absent.

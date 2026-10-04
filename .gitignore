@@ -626,6 +626,7 @@ Binaries
 /HedgehogScripting/HedgehogScripting.vcxproj*
 /HedgehogScripting/tests/ScriptingTest.vcxproj*
 /HedgehogRuntime/HedgehogRuntime.vcxproj*
+/HedgehogEngine/HedgehogSettings/tests/HedgehogSettingsTest.vcxproj*
 /HedgehogAnimation/HedgehogAnimation.vcxproj*
 /HedgehogAnimation/tests/AnimationTest.vcxproj*
 /HedgehogUI/HedgehogUI.vcxproj*

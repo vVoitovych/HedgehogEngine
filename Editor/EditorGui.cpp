@@ -11,6 +11,7 @@
 #include "Tools/PipelineWindow.hpp"
 #include "Tools/ShaderWindow.hpp"
 #include "Tools/InputActionsWindow.hpp"
+#include "Tools/ProjectSettingsWindow.hpp"
 #include "Panels/AssetDragDrop.hpp"
 #include "Panels/EntityDragDrop.hpp"
 #include "Panels/ScriptPropertyFields.hpp"
@@ -205,6 +206,7 @@ namespace Editor
         , m_PipelineWindow(std::make_unique<PipelineWindow>())
         , m_ShaderWindow(std::make_unique<ShaderWindow>())
         , m_InputActionsWindow(std::make_unique<InputActionsWindow>())
+        , m_ProjectSettingsWindow(std::make_unique<ProjectSettingsWindow>())
         , m_RenderGraphEditorWindow(std::make_unique<RenderGraphEditorWindow>())
     {
         m_FileSystem   = &context.GetEngineContext().GetFileSystem();
@@ -271,6 +273,7 @@ namespace Editor
         m_PipelineWindow->Draw(fs);
         m_ShaderWindow->Draw(fs);
         m_InputActionsWindow->Draw(fs, context.GetWindowContext().GetWindow().GetRawInput());
+        m_ProjectSettingsWindow->Draw(context.GetEngineContext());
         m_RenderGraphEditorWindow->Draw(m_Renderer, *m_FileSystem);
 
         DrawOpenSceneDropPopup(context);
@@ -480,6 +483,9 @@ namespace Editor
                         RecordLastScene(path, engineContext.GetFileSystem());
                 }
             }
+            ImGui::Separator();
+            if (ImGui::MenuItem("Project Settings..."))
+                m_ProjectSettingsWindow->Show(engineContext);
             ImGui::Separator();
             if (ImGui::MenuItem("Quit", "Alt+F4")) {}
             ImGui::EndMenu();
