@@ -19,6 +19,8 @@ project "ScriptingTest"
     links
     {
         "HedgehogScripting",
+        "HedgehogLuaDebug",
+        "ws2_32",
         "HedgehogEngine",
         "HedgehogSettings",
         "HedgehogInput",

@@ -93,6 +93,8 @@ namespace HedgehogScripting
         }
     }
 
+    lua_State* ScriptSystem::GetLuaState() { return m_Lua.lua_state(); }
+
     ScriptSystem::ScriptSystem(HedgehogEngine::EngineContext& context, const FS::FileSystemManager& scriptFiles)
         : m_ScriptFiles(scriptFiles)
         , m_Context(context)

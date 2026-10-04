@@ -1,0 +1,65 @@
+{
+    "name": "hedgehog-lua-debug",
+    "displayName": "Hedgehog Lua Debugger",
+    "description": "Attach VS Code to the Lua scripts of a running HedgehogEngine editor or game.",
+    "version": "0.1.0",
+    "publisher": "hedgehog-engine",
+    "private": true,
+    "engines": {
+        "vscode": "^1.80.0"
+    },
+    "categories": [
+        "Debuggers"
+    ],
+    "main": "./extension.js",
+    "activationEvents": [
+        "onDebugResolve:hedgehog-lua"
+    ],
+    "contributes": {
+        "breakpoints": [
+            {
+                "language": "lua"
+            }
+        ],
+        "debuggers": [
+            {
+                "type": "hedgehog-lua",
+                "label": "Hedgehog Lua",
+                "languages": [
+                    "lua"
+                ],
+                "configurationAttributes": {
+                    "attach": {
+                        "properties": {
+                            "port": {
+                                "type": "number",
+                                "default": 4711,
+                                "description": "engine_settings.yaml's lua_debugger.port; the engine listens on 127.0.0.1 only."
+                            }
+                        }
+                    }
+                },
+                "initialConfigurations": [
+                    {
+                        "type": "hedgehog-lua",
+                        "request": "attach",
+                        "name": "Attach to Hedgehog",
+                        "port": 4711
+                    }
+                ],
+                "configurationSnippets": [
+                    {
+                        "label": "Hedgehog Lua: Attach",
+                        "description": "Attach to the Lua scripts of a running editor or game.",
+                        "body": {
+                            "type": "hedgehog-lua",
+                            "request": "attach",
+                            "name": "Attach to Hedgehog",
+                            "port": 4711
+                        }
+                    }
+                ]
+            }
+        ]
+    }
+}

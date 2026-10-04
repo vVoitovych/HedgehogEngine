@@ -54,6 +54,10 @@ namespace HedgehogSettings
         return *m_ProjectSettings;
     }
 
+    LuaDebuggerSettings& Settings::GetLuaDebuggerSettings() { return m_LuaDebuggerSettings; }
+
+    const LuaDebuggerSettings& Settings::GetLuaDebuggerSettings() const { return m_LuaDebuggerSettings; }
+
     bool Settings::Load(const std::string& virtualPath, const FS::FileSystemManager& fileSystem)
     {
         const auto text = fileSystem.ReadTextFile(virtualPath);
@@ -119,6 +123,21 @@ namespace HedgehogSettings
 
             // A "game" section (data_version) from before project settings is ignored and dropped
             // on the next Save: the game data version lives in Project.yaml.
+
+            if (const YAML::Node debugger = root["lua_debugger"])
+            {
+                if (const YAML::Node n = debugger["enabled"])
+                    m_LuaDebuggerSettings.Enabled = n.as<bool>();
+                if (const YAML::Node n = debugger["port"])
+                {
+                    const int port = n.as<int>();
+                    if (port >= 1 && port <= 65535)
+                        m_LuaDebuggerSettings.Port = static_cast<uint16_t>(port);
+                    else
+                        LOGWARNING("Settings::Load: lua_debugger.port ", port, " is not a port; using ",
+                                   LuaDebuggerSettings::DEFAULT_PORT, ".");
+                }
+            }
         }
         catch (const YAML::Exception& e)
         {
@@ -159,6 +178,11 @@ namespace HedgehogSettings
                 out << YAML::Key << layer << YAML::Value << name;
             }
         }
+        out << YAML::EndMap;
+
+        out << YAML::Key << "lua_debugger" << YAML::Value << YAML::BeginMap;
+        out << YAML::Key << "enabled" << YAML::Value << m_LuaDebuggerSettings.Enabled;
+        out << YAML::Key << "port"    << YAML::Value << m_LuaDebuggerSettings.Port;
         out << YAML::EndMap;
 
         out << YAML::EndMap;

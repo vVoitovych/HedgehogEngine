@@ -6,9 +6,11 @@
 
 #include <iostream>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <sstream>
 #include <string>
+#include <vector>
 #include "LoggerApi.hpp"
 
 namespace EngineLogger
@@ -25,11 +27,19 @@ namespace EngineLogger
     };
 
     // Writes each message to the console and to this run's file, Logs/<exe>_<date>_<time>.txt
-    // beside the executable.
+    // beside the executable, and hands it to every sink.
     class Logger
     {
     public:
+        // Called with each message, on the thread that logged it, under the logger's lock: a sink
+        // must be quick and must not log.
+        using Sink = std::function<void(LogLevel level, const std::string& message)>;
+
         LOGGER_API static Logger& Instance();
+
+        // Returns an id for RemoveSink.
+        LOGGER_API int  AddSink(Sink sink);
+        LOGGER_API void RemoveSink(int id);
 
     private:
         LOGGER_API Logger();
@@ -76,6 +86,8 @@ namespace EngineLogger
     private:
         std::unique_ptr<LogColorized> mColoriser;
         std::unique_ptr<LogFile>      mFile;
+        std::vector<std::pair<int, Sink>> mSinks;
+        int                               mNextSinkId = 1;
     };
 }
 

@@ -18,6 +18,7 @@
 #include "HedgehogEngine/api/Save/SaveGameManager.hpp"
 #include "HedgehogExtract/api/ScenePicker.hpp"
 #include "HedgehogRenderer/Renderer.hpp"
+#include "HedgehogScripting/api/ScriptDebugger.hpp"
 #include "HedgehogScripting/api/ScriptSystem.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
 
@@ -146,6 +147,19 @@ namespace Editor
         // Nothing to resize: the renderer below reads these values when it creates its resources.
         settings.CleanDirtyState();
 
+        // VS Code's way into the scripts, when the settings enable it. While a script is stopped
+        // the editor's frame waits inside it: the window keeps handling events and its title says
+        // why it does not redraw.
+        m_ScriptDebugger = HedgehogScripting::StartScriptDebugger(engineContext, *m_ScriptSystem, fileSystem,
+                                                                  settings.GetLuaDebuggerSettings());
+        if (m_ScriptDebugger)
+        {
+            HW::Window& window = m_Context->GetWindowContext().GetWindow();
+            m_ScriptDebugger->SetStopCallbacks(
+                [&window, title = window.GetTitle()](bool stopped) { window.SetTitle(stopped ? title + " - Paused in debugger" : title); },
+                [&window]() { window.PollEvents(); });
+        }
+
         // ImGui's context first: the renderer hands it the device to build its GUI renderer on.
         m_ImGui    = std::make_unique<ImGuiLayer>(m_Context->GetWindowContext().GetWindow());
         m_ImGui->LoadFonts(fileSystem);
@@ -257,6 +271,8 @@ namespace Editor
         const HInput::GameInputRegion gameRegion = m_EditorGui->GetGameInputRegion();
         engineContext.UpdateGameInput(HInput::MakeGameInput(raw, gameRegion, m_GameInputGate), gameRegion.PixelSize);
         engineContext.UpdateEditorInput(HInput::MakeGameInput(raw, m_EditorGui->GetSceneInputRegion(), m_SceneInputGate));
+        if (m_ScriptDebugger)
+            m_ScriptDebugger->Pump();
         // A script saved on disk takes effect without leaving Play (polled at most once a second).
         m_ScriptSystem->ReloadChangedScripts(m_Context->GetEngineContext().GetECS());
         m_Context->UpdateContext(dt, GetSceneAspectRatio());
@@ -363,6 +379,7 @@ namespace Editor
 
     void EditorApplication::Cleanup()
     {
+        m_ScriptDebugger.reset(); // unhooks the script system's Lua state while it still exists
         auto& engineContext = m_Context->GetEngineContext();
         if (!engineContext.GetSettings().Save(ENGINE_SETTINGS_PATH, engineContext.GetFileSystem()))
         {

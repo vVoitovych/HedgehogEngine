@@ -9,3 +9,6 @@ shadowmap:
 layers:
   0: Default
   31: Editor
+lua_debugger:
+  enabled: false
+  port: 4711

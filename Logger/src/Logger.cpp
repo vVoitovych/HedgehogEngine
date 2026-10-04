@@ -59,6 +59,19 @@ namespace EngineLogger
         return instance;
     }
 
+    int Logger::AddSink(Sink sink)
+    {
+        const std::lock_guard lock(WriteMutex());
+        mSinks.emplace_back(mNextSinkId, std::move(sink));
+        return mNextSinkId++;
+    }
+
+    void Logger::RemoveSink(int id)
+    {
+        const std::lock_guard lock(WriteMutex());
+        std::erase_if(mSinks, [id](const auto& entry) { return entry.first == id; });
+    }
+
     void Logger::Write(LogLevel level, const std::string& message)
     {
         const LevelStyle style = StyleOf(level);
@@ -71,5 +84,8 @@ namespace EngineLogger
 
         if (mFile->IsOpen())
             mFile->WriteLine(style.Prefix, message);
+
+        for (const auto& [id, sink] : mSinks)
+            sink(level, message);
     }
 }

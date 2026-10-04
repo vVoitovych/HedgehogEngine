@@ -108,6 +108,9 @@ namespace HedgehogScripting
         static constexpr std::chrono::milliseconds RELOAD_POLL_INTERVAL{ 1000 };
         void ReloadChangedScripts(ECS::ECS& ecs, std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now());
 
+        // The one Lua state every script runs in, for the debugger (ScriptDebugger) to hook.
+        [[nodiscard]] lua_State* GetLuaState();
+
         // Re-applies entity's ScriptComponent Properties to its script's self, for live
         // inspector edits. Does nothing outside Play or for an entity with no script.
         void PushProperties(ECS::ECS& ecs, ECS::Entity entity);

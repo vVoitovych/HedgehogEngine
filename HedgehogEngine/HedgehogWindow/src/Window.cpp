@@ -49,6 +49,7 @@ namespace HW
     struct Window::Impl
     {
         GLFWwindow*           Handle       = nullptr;
+        std::string           Title;
         RawInput              Raw;
         bool                  Resized      = false;
         bool                  IsFullscreen = false;
@@ -78,6 +79,7 @@ namespace HW
 
         GLFWmonitor* monitor = desc.Fullscreen ? glfwGetPrimaryMonitor() : nullptr;
         m_Impl->Handle = glfwCreateWindow(desc.Width, desc.Height, desc.Title.c_str(), monitor, nullptr);
+        m_Impl->Title  = desc.Title;
         assert(m_Impl->Handle != nullptr && "glfwCreateWindow() failed");
 
         glfwSetWindowUserPointer(m_Impl->Handle, this);
@@ -122,6 +124,19 @@ namespace HW
     void Window::WaitEvents() const
     {
         glfwWaitEvents();
+    }
+
+    void Window::PollEvents() const
+    {
+        glfwPollEvents();
+    }
+
+    const std::string& Window::GetTitle() const { return m_Impl->Title; }
+
+    void Window::SetTitle(const std::string& title)
+    {
+        m_Impl->Title = title;
+        glfwSetWindowTitle(m_Impl->Handle, title.c_str());
     }
 
     void Window::ToggleFullscreen()
