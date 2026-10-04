@@ -27,7 +27,7 @@ namespace HedgehogEngine
     // canvas units. Saved and loaded; drawing it waits for font assets in the renderer.
 HH_BEGIN_COMPONENT(UiTextComponent)
     HH_PROP_NAMED(std::string, Text,     "Text",     std::string{},                       None)
-    HH_PROP_NAMED(std::string, Font,     "Font",     std::string{},                       None)
+    HH_PROP_NAMED(std::string, Font,     "Font",     std::string{},                       AssetRef)
     HH_PROP_NAMED(float,       FontSize, "FontSize", 24.0f,                               None)
     HH_PROP_NAMED(HM::Vector4, Color,    "Color",    HM::Vector4(1.0f, 1.0f, 1.0f, 1.0f), IsColor)
 

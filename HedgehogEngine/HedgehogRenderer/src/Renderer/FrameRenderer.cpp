@@ -7,6 +7,8 @@
 
 #include "HedgehogExtract/api/CameraMath.hpp"
 
+#include "HedgehogCommon/api/EngineRenderAssets.hpp"
+
 #include "HedgehogSettings/api/HedgehogSettings.hpp"
 #include "HedgehogSettings/api/ShadowmapingSettings.hpp"
 
@@ -31,7 +33,7 @@ namespace Renderer
 
         // Every graph in the directory is registered; these are the ones the engine itself needs.
         constexpr const char* SHIPPED_GRAPHS[] = { "scene", "game", "result" };
-        constexpr const char* GRAPH_DIRECTORY  = "engine://HedgehogEngine/HedgehogRenderer/assets/Graphs";
+        constexpr std::string_view GRAPH_DIRECTORY = HedgehogEngine::ENGINE_GRAPH_DIRECTORY;
 
         void Transition(RHI::IRHICommandList& cmd, RHI::IRHITexture& texture, RHI::ResourceState before,
                         RHI::ResourceState after)
@@ -54,7 +56,7 @@ namespace Renderer
         , m_Shared(m_Registry)
     {
         RegisterEnginePassTypes(m_Registry);
-        const auto directory = fileSystem.ResolvePhysical(GRAPH_DIRECTORY);
+        const auto directory = fileSystem.ResolvePhysical(std::string(GRAPH_DIRECTORY));
         if (!directory || !m_Library.RegisterDirectory(*directory))
             LOGERROR("FrameRenderer: the graph directory '", GRAPH_DIRECTORY, "' could not be read.");
         for (const char* name : SHIPPED_GRAPHS)

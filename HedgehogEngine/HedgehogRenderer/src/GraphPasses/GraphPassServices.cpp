@@ -4,6 +4,7 @@
 #include "Pipeline/ShaderLoader.hpp"
 #include "ResourceRegistry/ResourceRegistry.hpp"
 
+#include "HedgehogCommon/api/EngineRenderAssets.hpp"
 #include "HedgehogCommon/api/RendererSettings.hpp"
 
 #include "FileSystem/api/FileSystemManager.hpp"
@@ -20,18 +21,6 @@ namespace Renderer
 {
     namespace
     {
-        constexpr const char* DEPTH_PREPASS_SHADER = "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/DepthPrepass.shader";
-        constexpr const char* SHADOW_SHADER        = "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/ShadowmapPass.shader";
-        constexpr const char* FORWARD_SHADER       = "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/GraphForward.shader";
-        constexpr const char* GIZMO_SHADER         = "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/Gizmo.shader";
-        constexpr const char* DEPTH_PREPASS_SKINNED_SHADER =
-            "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/DepthPrepassSkinned.shader";
-        constexpr const char* FORWARD_SKINNED_SHADER =
-            "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/GraphForwardSkinned.shader";
-        constexpr const char* SHADOW_SKINNED_SHADER =
-            "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/ShadowmapPassSkinned.shader";
-        constexpr const char* GAME_UI_SHADER = "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/GameUi.shader";
-
         static_assert(sizeof(HM::Matrix4x4) == 16 * sizeof(float), "The palette uploads matrices as they are.");
 
         // The formats every engine graph asset declares: D32Float depth and shadow maps, and a
@@ -64,13 +53,13 @@ namespace Renderer
     GraphPassServices::GraphPassServices(RHI::IRHIDevice& device, const FS::FileSystemManager& fileSystem)
         : m_Device(device)
     {
-        const ShaderPipelineDesc depthShader   = ShaderLoader::Load(device, DEPTH_PREPASS_SHADER, fileSystem);
-        const ShaderPipelineDesc shadowShader  = ShaderLoader::Load(device, SHADOW_SHADER, fileSystem);
-        const ShaderPipelineDesc forwardShader = ShaderLoader::Load(device, FORWARD_SHADER, fileSystem);
-        const ShaderPipelineDesc gizmoShader   = ShaderLoader::Load(device, GIZMO_SHADER, fileSystem);
-        const ShaderPipelineDesc depthSkinnedShader   = ShaderLoader::Load(device, DEPTH_PREPASS_SKINNED_SHADER, fileSystem);
-        const ShaderPipelineDesc forwardSkinnedShader = ShaderLoader::Load(device, FORWARD_SKINNED_SHADER, fileSystem);
-        const ShaderPipelineDesc shadowSkinnedShader  = ShaderLoader::Load(device, SHADOW_SKINNED_SHADER, fileSystem);
+        const ShaderPipelineDesc depthShader   = ShaderLoader::Load(device, std::string(HedgehogEngine::DEPTH_PREPASS_SHADER), fileSystem);
+        const ShaderPipelineDesc shadowShader  = ShaderLoader::Load(device, std::string(HedgehogEngine::SHADOW_SHADER), fileSystem);
+        const ShaderPipelineDesc forwardShader = ShaderLoader::Load(device, std::string(HedgehogEngine::FORWARD_SHADER), fileSystem);
+        const ShaderPipelineDesc gizmoShader   = ShaderLoader::Load(device, std::string(HedgehogEngine::GIZMO_SHADER), fileSystem);
+        const ShaderPipelineDesc depthSkinnedShader   = ShaderLoader::Load(device, std::string(HedgehogEngine::DEPTH_PREPASS_SKINNED_SHADER), fileSystem);
+        const ShaderPipelineDesc forwardSkinnedShader = ShaderLoader::Load(device, std::string(HedgehogEngine::FORWARD_SKINNED_SHADER), fileSystem);
+        const ShaderPipelineDesc shadowSkinnedShader  = ShaderLoader::Load(device, std::string(HedgehogEngine::SHADOW_SKINNED_SHADER), fileSystem);
         assert(!depthShader.Layout.DescriptorSets.empty() && forwardShader.Layout.DescriptorSets.size() >= 3);
         assert(depthSkinnedShader.Layout.DescriptorSets.size() >= 2 && forwardSkinnedShader.Layout.DescriptorSets.size() >= 4);
 
@@ -122,7 +111,7 @@ namespace Renderer
                                                              { COLOR_FORMAT }, RHI::CullMode::None);
 
         // The game UI draws into the colour target alone: no depth attachment.
-        const ShaderPipelineDesc gameUiShader = ShaderLoader::Load(device, GAME_UI_SHADER, fileSystem);
+        const ShaderPipelineDesc gameUiShader = ShaderLoader::Load(device, std::string(HedgehogEngine::GAME_UI_SHADER), fileSystem);
         assert(!gameUiShader.Layout.DescriptorSets.empty());
         m_UiTextureLayout = device.CreateDescriptorSetLayout(gameUiShader.Layout.DescriptorSets[0]);
         RHI::GraphicsPipelineDesc gameUiDesc = gameUiShader.Pipeline;

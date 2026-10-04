@@ -8,7 +8,7 @@
 namespace HedgehogEngine
 {
 HH_BEGIN_COMPONENT(MeshComponent)
-    HH_PROP_NAMED(std::string, MeshPath, "MeshPath", std::string{}, None)
+    HH_PROP_NAMED(std::string, MeshPath, "MeshPath", std::string{}, AssetRef)
 
     std::optional<uint64_t> MeshIndex;      // runtime-only
     std::string             CachedMeshPath;  // runtime-only
