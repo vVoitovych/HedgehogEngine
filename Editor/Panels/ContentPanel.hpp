@@ -66,6 +66,9 @@ namespace Editor
 
         [[nodiscard]] ContentPanelRequest Draw(const ContentPanelIcons& icons);
 
+        // Shows the file's folder in the grid with the file selected (Select in the prefab bar).
+        void Reveal(const std::string& virtualPath);
+
         // The grid's icon size, clamped to [CONTENT_ICON_SIZE_MIN, CONTENT_ICON_SIZE_MAX].
         [[nodiscard]] float GetIconSize() const { return m_IconSize; }
         void                SetIconSize(float size);

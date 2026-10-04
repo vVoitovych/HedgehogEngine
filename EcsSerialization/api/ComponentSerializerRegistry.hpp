@@ -166,6 +166,13 @@ namespace EcsSerialization
         std::function<void(ECS::ECS&, ECS::Entity, const EntityRemap&)>   RemapEntities;
         // Whether the component writes a key of that name; empty when unknown (a custom one).
         std::function<bool(std::string_view)>                             HasProperty;
+        // Removes the component (reverting a component added on a prefab instance).
+        std::function<void(ECS::ECS&, ECS::Entity)>                       Remove;
+        // Rewrites the entity ids in the component's YAML map (as Serialize writes it) through
+        // remap, as RemapEntities does to the live component; empty for a component that names
+        // no entity. Prefab overrides compare and apply values across a prefab's and an instance's
+        // ids with it.
+        std::function<void(YAML::Node&, const EntityRemap&)>              RemapYaml;
     };
 
     class ComponentSerializerRegistry
@@ -196,7 +203,8 @@ namespace EcsSerialization
                     YamlKeyFinder finder{ name };
                     probe.Visit(finder);
                     return finder.Found;
-                }
+                },
+                [](ECS::ECS& ecs, ECS::Entity e) { ecs.RemoveComponent<T>(e); }
             });
         }
 
@@ -236,6 +244,17 @@ namespace EcsSerialization
                             return true;
                     }
                     return false;
+                },
+                [](ECS::ECS& ecs, ECS::Entity e) { ecs.RemoveComponent<T>(e); },
+                [](YAML::Node& component, const EntityRemap& remap)
+                {
+                    for (const auto& prop : T::GetProperties())
+                    {
+                        if (prop.type != Reflection::TypeTag::Entity || !HasFlag(prop.flags, Reflection::PropertyFlags::EntityRef))
+                            continue;
+                        if (YAML::Node value = component[prop.name]; value && value.IsScalar())
+                            component[prop.name] = remap(value.as<ECS::Entity>());
+                    }
                 }
             });
         }
@@ -245,10 +264,12 @@ namespace EcsSerialization
             std::function<void(YAML::Emitter&, const ECS::ECS&, ECS::Entity)> serialize,
             std::function<void(ECS::ECS&, ECS::Entity, const YAML::Node&)>    deserialize,
             std::function<bool(const ECS::ECS&, ECS::Entity)>                 hasComponent,
-            std::function<void(ECS::ECS&, ECS::Entity, const EntityRemap&)>   remapEntities = {})
+            std::function<void(ECS::ECS&, ECS::Entity, const EntityRemap&)>   remapEntities = {},
+            std::function<void(ECS::ECS&, ECS::Entity)>                       remove        = {},
+            std::function<void(YAML::Node&, const EntityRemap&)>              remapYaml     = {})
         {
             m_Handlers.push_back({ yamlKey, std::move(serialize), std::move(deserialize), std::move(hasComponent),
-                                   std::move(remapEntities) });
+                                   std::move(remapEntities), {}, std::move(remove), std::move(remapYaml) });
         }
 
         const std::vector<ComponentHandler>& GetHandlers() const { return m_Handlers; }

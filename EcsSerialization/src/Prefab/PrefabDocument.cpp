@@ -5,10 +5,15 @@ namespace EcsSerialization
 {
     std::string WritePrefab(const ComponentSerializerRegistry& registry, const ECS::ECS& ecs, ECS::Entity subtreeRoot)
     {
+        return WritePrefabDocument(EcsSerializer::SerializeSubtree(registry, ecs, subtreeRoot));
+    }
+
+    std::string WritePrefabDocument(const YAML::Node& subtreeDocument)
+    {
         YAML::Emitter out;
         out << YAML::BeginMap;
         out << YAML::Key << "Version" << YAML::Value << PREFAB_FORMAT_VERSION;
-        out << YAML::Key << "Root" << YAML::Value << EcsSerializer::SerializeSubtree(registry, ecs, subtreeRoot);
+        out << YAML::Key << "Root" << YAML::Value << subtreeDocument;
         out << YAML::EndMap;
         return std::string(out.c_str()) + "\n";
     }

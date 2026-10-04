@@ -351,3 +351,89 @@ TEST_CASE("Prefabs - Play and Stop bring an edited instance back")
     CHECK(world.Ecs.GetComponent<HedgehogEngine::LightComponent>(bulb).Intensity == 1.75f);
     CHECK(world.Ecs.GetComponent<PrefabInstanceComponent>(bulb).InstanceRoot == lamp);
 }
+
+namespace
+{
+    // The overrides of one component on one node.
+    EcsSerialization::OverrideSet Only(const EcsSerialization::OverrideSet& overrides, uint32_t localId, const std::string& component)
+    {
+        EcsSerialization::OverrideSet found;
+        for (const auto& entry : overrides)
+        {
+            if (entry.LocalId == localId && entry.Component == component)
+                found.push_back(entry);
+        }
+        return found;
+    }
+}
+
+TEST_CASE("Prefab overrides - a fresh instance overrides nothing, an edit is one override that Revert clears")
+{
+    PrefabWorld world;
+    REQUIRE(world.Prefabs().CreatePrefab(world.Lamp, "prefabs://Lamp.prefab"));
+    const ECS::Entity lamp = world.Prefabs().Instantiate("prefabs://Lamp.prefab");
+    const ECS::Entity bulb = world.Hierarchy(lamp).Children[0];
+    // The shade's script names the bulb inside the prefab: its copy's id is not an override.
+    CHECK(world.Prefabs().GetOverrides(bulb).empty());
+    CHECK(world.Prefabs().GetInstanceRoot(bulb) == lamp);
+    CHECK(world.Prefabs().GetInstanceRoot(world.Lamp) == ECS::INVALID_ENTITY);
+
+    world.Ecs.GetComponent<HedgehogEngine::LightComponent>(bulb).Intensity = 0.25f;
+    const EcsSerialization::OverrideSet overrides = world.Prefabs().GetOverrides(bulb);
+    REQUIRE(overrides.size() == 1);
+    CHECK(overrides[0].LocalId == 1);
+    CHECK(overrides[0].Component == "LightComponent");
+    CHECK(overrides[0].Property == "LightIntensity");
+
+    REQUIRE(world.Prefabs().Revert(bulb, overrides));
+    CHECK(world.Ecs.GetComponent<HedgehogEngine::LightComponent>(bulb).Intensity == 2.5f);
+    CHECK(world.Prefabs().GetOverrides(lamp).empty());
+
+    // A component added on the instance is a whole-component override; reverting removes it.
+    world.Ecs.AddComponent(lamp, HedgehogEngine::LightComponent{});
+    const EcsSerialization::OverrideSet added = Only(world.Prefabs().GetOverrides(lamp), 0, "LightComponent");
+    REQUIRE(added.size() == 1);
+    CHECK(added[0].Property.empty());
+    REQUIRE(world.Prefabs().Revert(lamp, added));
+    CHECK_FALSE(world.Ecs.HasComponent<HedgehogEngine::LightComponent>(lamp));
+}
+
+TEST_CASE("Prefab overrides - Apply updates the file and every other instance, which keep their own overrides")
+{
+    PrefabWorld world;
+    REQUIRE(world.Prefabs().CreatePrefab(world.Lamp, "prefabs://Lamp.prefab"));
+    const ECS::Entity editing = world.Prefabs().Instantiate("prefabs://Lamp.prefab");
+    const ECS::Entity plain   = world.Prefabs().Instantiate("prefabs://Lamp.prefab");
+    const ECS::Entity dimmed  = world.Prefabs().Instantiate("prefabs://Lamp.prefab");
+    auto              light   = [&world](ECS::Entity lamp) -> HedgehogEngine::LightComponent&
+    { return world.Ecs.GetComponent<HedgehogEngine::LightComponent>(world.Hierarchy(lamp).Children[0]); };
+    light(dimmed).Intensity = 0.1f;
+
+    // Applied from the bulb, a node below the instance's root.
+    light(editing).Intensity = 1.5f;
+    world.Ecs.GetComponent<TransformComponent>(world.Hierarchy(editing).Children[1]).Scale = HM::Vector3(3.0f, 3.0f, 3.0f);
+    REQUIRE(world.Prefabs().Apply(world.Hierarchy(editing).Children[0], world.Prefabs().GetOverrides(editing)));
+
+    CHECK(world.Prefabs().GetOverrides(editing).empty());
+    CHECK(light(plain).Intensity == 1.5f);
+    CHECK(world.Ecs.GetComponent<TransformComponent>(world.Hierarchy(plain).Children[1]).Scale == HM::Vector3(3.0f, 3.0f, 3.0f));
+    CHECK(light(dimmed).Intensity == 0.1f); // its own override survives
+    CHECK(world.Ecs.GetComponent<TransformComponent>(world.Hierarchy(dimmed).Children[1]).Scale == HM::Vector3(3.0f, 3.0f, 3.0f));
+    CHECK(world.Prefabs().GetOverrides(plain).empty());
+    CHECK(Only(world.Prefabs().GetOverrides(dimmed), 1, "LightComponent").size() == 1);
+
+    // The file holds the applied values: a new instance has them.
+    const ECS::Entity fresh = world.Prefabs().Instantiate("prefabs://Lamp.prefab");
+    CHECK(light(fresh).Intensity == 1.5f);
+
+    // A component added on one instance and applied reaches the others.
+    world.Ecs.AddComponent(editing, HedgehogEngine::LightComponent{});
+    REQUIRE(world.Prefabs().Apply(editing, Only(world.Prefabs().GetOverrides(editing), 0, "LightComponent")));
+    CHECK(world.Ecs.HasComponent<HedgehogEngine::LightComponent>(plain));
+    CHECK(world.Prefabs().GetOverrides(plain).empty());
+
+    LogCapture log;
+    CHECK_FALSE(world.Prefabs().Apply(world.Lamp, {}));
+    CHECK_FALSE(world.Prefabs().Revert(world.Lamp, {}));
+    CHECK(log.Count("is not part of a prefab instance") == 2);
+}

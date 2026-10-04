@@ -202,6 +202,20 @@ namespace HedgehogEngine
                     if (ECS::Entity* target = std::get_if<ECS::Entity>(&property.Value))
                         *target = remap(*target);
                 }
+            },
+            [](ECS::ECS& ecs, ECS::Entity entity) { ecs.RemoveComponent<ScriptComponent>(entity); },
+            [](YAML::Node& component, const EcsSerialization::EntityRemap& remap)
+            {
+                YAML::Node properties = component["ScriptProperties"];
+                if (!properties || !properties.IsMap())
+                    return;
+                for (auto entry : properties)
+                {
+                    YAML::Node property = entry.second;
+                    if (property.IsMap() && property["Type"] && property["Type"].as<std::string>() == TypeName(ScriptPropertyType::EntityRef) &&
+                        property["Value"] && property["Value"].IsScalar())
+                        property["Value"] = remap(property["Value"].as<ECS::Entity>());
+                }
             });
     }
 }

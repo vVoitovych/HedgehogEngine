@@ -387,3 +387,73 @@ TEST_CASE("OverrideSet - values compare as written by the emitter or by hand")
     CHECK_FALSE(EcsSerialization::ValuesEqual(YAML::Load("a"), YAML::Load("[a]")));
     CHECK_FALSE(EcsSerialization::ValuesEqual(YAML::Load("{x: 1}"), YAML::Load("{y: 1}")));
 }
+
+namespace
+{
+    // Names another entity, to test that references compare across prefab and instance ids.
+    struct TestAim
+    {
+        ECS::Entity Target = ECS::INVALID_ENTITY;
+        float       Range  = 1.0f;
+
+        static void* TargetAccessor(void* c) { return &static_cast<TestAim*>(c)->Target; }
+        static void* RangeAccessor(void* c) { return &static_cast<TestAim*>(c)->Range; }
+
+        static std::span<const Reflection::PropertyDescriptor> GetProperties()
+        {
+            static const Reflection::PropertyDescriptor properties[] = {
+                { Reflection::TypeTag::Entity, "Target", TargetAccessor, Reflection::PropertyFlags::EntityRef, 0.0f, 0.0f },
+                { Reflection::TypeTag::Float, "Range", RangeAccessor, Reflection::PropertyFlags::None, 0.0f, 0.0f },
+            };
+            return properties;
+        }
+    };
+}
+
+TEST_CASE("OverrideSet - an entity reference is an override only when it names another entity")
+{
+    EcsSerialization::ComponentSerializerRegistry registry;
+    registry.RegisterReflected<TestAim>("TestAim");
+    TestPrefabs prefabs;
+    registry.SetPrefabProvider(&prefabs);
+
+    // The prefab: a turret whose barrel aims at its base, and whose base aims at nothing.
+    World source;
+    source.Ecs.RegisterComponent<TestAim>();
+    const ECS::Entity turret = source.Add("Turret", ECS::INVALID_ENTITY);
+    const ECS::Entity base   = source.Add("Base", turret);
+    const ECS::Entity barrel = source.Add("Barrel", turret);
+    source.Ecs.AddComponent(base, TestAim{ ECS::INVALID_ENTITY, 1.0f });
+    source.Ecs.AddComponent(barrel, TestAim{ base, 1.0f });
+    const YAML::Node document = EcsSerialization::EcsSerializer::SerializeSubtree(registry, source.Ecs, turret);
+
+    // An instance with other ids, made after other entities so no id matches the prefab's.
+    World world;
+    world.Ecs.RegisterComponent<TestAim>();
+    world.MakeRoot();
+    for (int i = 0; i < 4; ++i)
+        world.Add("Filler", world.Root);
+    std::vector<ECS::Entity>             members;
+    EcsSerialization::InstantiateOptions options;
+    options.LocalEntities = &members;
+    REQUIRE(EcsSerialization::EcsSerializer::InstantiateSubtree(registry, world.Ecs, document, world.Root, "turret", options) !=
+            ECS::INVALID_ENTITY);
+    REQUIRE(members[1] != base);
+
+    // Pointing at its own base, as instantiating left it: no override.
+    CHECK(EcsSerialization::DiffInstance(registry, world.Ecs, members, document, "").empty());
+
+    // Aimed at a scene entity instead: an override of Target alone.
+    world.Ecs.GetComponent<TestAim>(members[2]).Target = world.Children(world.Root)[0];
+    EcsSerialization::OverrideSet overrides = EcsSerialization::DiffInstance(registry, world.Ecs, members, document, "");
+    REQUIRE(overrides.size() == 1);
+    CHECK((overrides[0].LocalId == 2 && overrides[0].Property == "Target"));
+
+    // The mappings both ways.
+    const EcsSerialization::EntityRemap toInstance = EcsSerialization::MakePrefabToInstanceRemap(document, members);
+    const EcsSerialization::EntityRemap toPrefab   = EcsSerialization::MakeInstanceToPrefabRemap(document, members);
+    CHECK(toInstance(base) == members[1]);
+    CHECK(toInstance(9999) == ECS::INVALID_ENTITY);
+    CHECK(toPrefab(members[1]) == base);
+    CHECK(toPrefab(world.Root) == ECS::INVALID_ENTITY);
+}

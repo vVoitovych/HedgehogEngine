@@ -5,6 +5,7 @@
 #include "ECS/api/Entity.hpp"
 
 #include "EcsSerialization/api/Prefab/IPrefabProvider.hpp"
+#include "EcsSerialization/api/Prefab/OverrideSet.hpp"
 
 #include <filesystem>
 #include <map>
@@ -74,6 +75,22 @@ namespace HedgehogEngine
 
         [[nodiscard]] HEDGEHOG_ENGINE_API size_t GetCachedPrefabCount() const;
 
+        // The root of the instance entity belongs to, or INVALID_ENTITY when no prefab made it.
+        [[nodiscard]] HEDGEHOG_ENGINE_API ECS::Entity GetInstanceRoot(ECS::Entity entity) const;
+        // The overrides of the instance entity belongs to, every node of it, against its prefab
+        // (as a scene would save them); empty for an entity of no instance or an unreadable prefab.
+        [[nodiscard]] HEDGEHOG_ENGINE_API EcsSerialization::OverrideSet GetOverrides(ECS::Entity entity);
+
+        // Puts the prefab's values back on the instance entity belongs to: a property gets the
+        // prefab node's value, and a component the instance added is removed. False, logged, when
+        // the entity is of no instance or the prefab does not read.
+        HEDGEHOG_ENGINE_API bool Revert(ECS::Entity entity, const EcsSerialization::OverrideSet& overrides);
+        // Writes the instance's values into the prefab file (from any node of the instance) and
+        // gives them to every other instance of the prefab in the scene that does not override them
+        // itself. False, logged, when the entity is of no instance, the prefab does not read or the
+        // file cannot be written.
+        HEDGEHOG_ENGINE_API bool Apply(ECS::Entity entity, const EcsSerialization::OverrideSet& overrides);
+
         // EcsSerialization::IPrefabProvider, over PrefabInstanceComponent and the cache.
         [[nodiscard]] HEDGEHOG_ENGINE_API std::optional<EcsSerialization::PrefabLink> GetLink(const ECS::ECS& ecs,
                                                                                             ECS::Entity entity) const override;
@@ -97,6 +114,11 @@ namespace HedgehogEngine
 
         // Links instanceRoot and its descendants to the prefab at path, local ids in depth-first order.
         void LinkSubtree(ECS::Entity instanceRoot, const std::string& path);
+
+        // The roots of every instance of the prefab at path in the scene.
+        std::vector<ECS::Entity> FindInstances(const std::string& path) const;
+        // Writes value (one property, or a whole component when property is empty) onto entity.
+        void SetValue(ECS::Entity entity, const EcsSerialization::PropertyOverride& value);
 
     private:
         ECS::ECS&                                      m_ECS;

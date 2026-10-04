@@ -4,20 +4,55 @@
 
 #include "HedgehogMath/api/Vector.hpp"
 
+#include "EditorTheme.hpp"
 #include "Widgets/PropertyFields.hpp"
 
 #include "imgui.h"
 
+#include <algorithm>
 #include <climits>
 #include <cstring>
+#include <optional>
 #include <span>
 #include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace Reflection
 {
+    // The selected prefab instance entity's overridden properties, which the inspector sets while it
+    // draws (ActivePrefabOverrideMarks), so reflected rows show theirs in the prefab colour and
+    // offer Revert and Apply to Prefab on a right-click of the value; the pick waits in Requested.
+    struct PrefabOverrideMarks
+    {
+        struct Request
+        {
+            std::string Component;
+            std::string Property;
+            bool        Apply = false; // else revert
+        };
+
+        std::vector<std::pair<std::string, std::string>> Overridden; // (component key, property)
+        std::optional<Request>                           Requested;
+
+        [[nodiscard]] bool IsOverridden(std::string_view component, std::string_view property) const
+        {
+            return std::any_of(Overridden.begin(), Overridden.end(),
+                               [&](const auto& entry) { return entry.first == component && entry.second == property; });
+        }
+    };
+
+    inline PrefabOverrideMarks*& ActivePrefabOverrideMarks()
+    {
+        static PrefabOverrideMarks* marks = nullptr;
+        return marks;
+    }
+
     // Draws prop as a property row (Widgets/PropertyFields): its name on the left, its widget
-    // filling the right. A guiOverride draws its own row, or nothing.
-    inline bool RenderPropertyWidget(void* comp, const PropertyDescriptor& prop)
+    // filling the right. A guiOverride draws its own row, or nothing. componentKey (the component's
+    // serializer key) lets a prefab instance's overridden row be marked.
+    inline bool RenderPropertyWidget(void* comp, const PropertyDescriptor& prop, const char* componentKey = nullptr)
     {
         if (prop.type == TypeTag::Raw)                  return false;
         if (HasFlag(prop.flags, PropertyFlags::Hidden)) return false;
@@ -25,7 +60,13 @@ namespace Reflection
         if (prop.guiOverride)
             return prop.guiOverride(comp, prop);
 
+        PrefabOverrideMarks* marks      = componentKey ? ActivePrefabOverrideMarks() : nullptr;
+        const bool           overridden = marks && marks->IsOverridden(componentKey, prop.name);
+        if (overridden)
+            ImGui::PushStyleColor(ImGuiCol_Text, Editor::Theme::Resolve(Editor::Theme::PREFAB_TINT));
         Editor::PropertyLabel(prop.name);
+        if (overridden)
+            ImGui::PopStyleColor();
         ImGui::PushID(prop.name);
 
         bool changed = false;
@@ -94,18 +135,30 @@ namespace Reflection
             break;
         }
 
+        if (overridden)
+        {
+            ImGui::SetItemTooltip("Overridden by this prefab instance. Right-click to revert or apply it.");
+            if (ImGui::BeginPopupContextItem("##override"))
+            {
+                if (ImGui::MenuItem("Revert"))
+                    marks->Requested = PrefabOverrideMarks::Request{ componentKey, prop.name, false };
+                if (ImGui::MenuItem("Apply to Prefab"))
+                    marks->Requested = PrefabOverrideMarks::Request{ componentKey, prop.name, true };
+                ImGui::EndPopup();
+            }
+        }
         ImGui::PopID();
         return changed;
     }
 
     // Every property of a component, in one table of property rows.
-    inline bool RenderComponentGui(void* comp, std::span<const PropertyDescriptor> props)
+    inline bool RenderComponentGui(void* comp, std::span<const PropertyDescriptor> props, const char* componentKey = nullptr)
     {
         if (!Editor::BeginPropertyTable("##properties"))
             return false;
         bool anyChanged = false;
         for (const auto& prop : props)
-            anyChanged |= RenderPropertyWidget(comp, prop);
+            anyChanged |= RenderPropertyWidget(comp, prop, componentKey);
         Editor::EndPropertyTable();
         return anyChanged;
     }
