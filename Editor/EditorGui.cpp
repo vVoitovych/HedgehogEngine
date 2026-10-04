@@ -34,6 +34,7 @@
 #include "ECS/api/ECS.hpp"
 #include "ECS/api/components/Hierarchy.hpp"
 #include "HedgehogEngine/api/ECS/components/AnimatorComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/PrefabInstanceComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
 #include "HedgehogEngine/api/Events/TransformEvents.hpp"
 #include "HedgehogEngine/api/ECS/systems/MeshSystem.hpp"
@@ -56,6 +57,7 @@
 
 #include "DialogueWindows/api/MaterialDialogue.hpp"
 #include "DialogueWindows/api/MeshDialogue.hpp"
+#include "DialogueWindows/api/PrefabDialogue.hpp"
 #include "DialogueWindows/api/RenderGraphDialogue.hpp"
 #include "DialogueWindows/api/SceneDialogue.hpp"
 #include "DialogueWindows/api/ScriptDialogue.hpp"
@@ -742,13 +744,16 @@ namespace Editor
             if (m_SelectedEntity && !ecs.IsAlive(*m_SelectedEntity))
                 m_SelectedEntity.reset();
         }
+        if (m_HierarchyCreatePrefab && ecs.IsAlive(*m_HierarchyCreatePrefab))
+            CreatePrefabFrom(context, *m_HierarchyCreatePrefab);
         m_HierarchyCreateUnder.reset();
         m_HierarchyDelete.reset();
+        m_HierarchyCreatePrefab.reset();
 
         // The space under the tree takes drops too: a mesh dropped there goes under the root.
         const ImVec2 space = ImGui::GetContentRegionAvail();
         ImGui::InvisibleButton("##HierarchySpace", ImVec2(std::max(space.x, 1.0f), std::max(space.y, ImGui::GetFrameHeight())));
-        if (const auto drop = AcceptAssetDrop({ ContentType::Mesh, ContentType::Scene }))
+        if (const auto drop = AcceptAssetDrop({ ContentType::Mesh, ContentType::Prefab, ContentType::Scene }))
             m_AssetDrop = AssetDrop{ *drop, true, std::nullopt };
     }
 
@@ -787,18 +792,24 @@ namespace Editor
             ImGui::SetNextItemOpen(true);
 
         const EditorIcon icon = isRoot ? EditorIcon::Scene : ChooseEntityIcon(MakeEntityTraits(ecs, entity));
+        // A prefab instance's root shows its name and icon in the prefab colour.
+        const bool   prefabRoot = ecs.HasComponent<HedgehogEngine::PrefabInstanceComponent>(entity) &&
+                                ecs.GetComponent<HedgehogEngine::PrefabInstanceComponent>(entity).InstanceRoot == entity;
+        const ImVec4 textColor  = prefabRoot ? Theme::Resolve(Theme::PREFAB_TINT) : ImGui::GetStyle().Colors[ImGuiCol_Text];
 
         // The label leaves room for the icon, drawn over it once the row is placed. The root row
         // shows the scene's name (a copy, so only the root row allocates).
         const std::string sceneName = isRoot ? engineContext.GetSceneManager().GetSceneName() : std::string();
         const char*       name      = isRoot ? sceneName.c_str() : component.Name.c_str();
         const float       labelX    = ImGui::GetCursorScreenPos().x + ImGui::GetTreeNodeToLabelSpacing();
+        ImGui::PushStyleColor(ImGuiCol_Text, textColor);
         const bool        nodeOpen  = ImGui::TreeNodeEx(reinterpret_cast<void*>(static_cast<intptr_t>(entity)),
                                                         nodeFlags, "%s%s", HIERARCHY_ICON_PAD, name);
+        ImGui::PopStyleColor();
         const ImVec2      rowMin    = ImGui::GetItemRectMin();
         const float       rowH      = ImGui::GetItemRectSize().y;
         DrawIcon(*ImGui::GetWindowDrawList(), GetIcon(icon), ImVec2(labelX, rowMin.y + (rowH - ICON_SIZE_SMALL) * 0.5f),
-                 ICON_SIZE_SMALL, ImGui::GetColorU32(ImGuiCol_Text));
+                 ICON_SIZE_SMALL, ImGui::GetColorU32(textColor));
 
         if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
             m_SelectedEntity = (m_SelectedEntity == entity) ? std::nullopt : std::optional<ECS::Entity>(entity);
@@ -806,12 +817,14 @@ namespace Editor
         {
             if (ImGui::MenuItem("Create child"))
                 m_HierarchyCreateUnder = entity;
+            if (ImGui::MenuItem("Create Prefab...", nullptr, false, !isRoot))
+                m_HierarchyCreatePrefab = entity;
             if (ImGui::MenuItem("Delete", nullptr, false, !isRoot))
                 m_HierarchyDelete = entity;
             ImGui::EndPopup();
         }
         DragEntitySource(entity, component.Name);
-        if (const auto drop = AcceptAssetDrop({ ContentType::Mesh, ContentType::Scene }))
+        if (const auto drop = AcceptAssetDrop({ ContentType::Mesh, ContentType::Prefab, ContentType::Scene }))
             m_AssetDrop = AssetDrop{ *drop, true, entity };
 
         if (hasChildren && nodeOpen)

@@ -22,6 +22,7 @@ namespace Editor
         RenderGraph,
         Font,
         Audio,
+        Prefab,
         Other,
     };
 

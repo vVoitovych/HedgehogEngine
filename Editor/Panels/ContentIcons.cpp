@@ -29,6 +29,7 @@ namespace Editor
             case ContentType::Script:            return "script_icon.png";
             case ContentType::Shader:            return "shader_icon.png";
             case ContentType::Audio:             return "sound_icon.png";
+            case ContentType::Prefab:            return "prefab_icon.png";
             case ContentType::Pipeline:
             case ContentType::VertexDescription:
             case ContentType::RenderGraph:

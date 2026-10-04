@@ -60,6 +60,14 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API ECS::Entity Instantiate(const std::string& virtualPath,
                                                     std::optional<ECS::Entity> parent = std::nullopt);
 
+        // Makes entity and its descendants an instance of the prefab at virtualPath, as
+        // Instantiate leaves its entities: each gets a PrefabInstanceComponent (replacing any it
+        // had) with its local id in depth-first order, the order a prefab's document numbers its
+        // nodes, entity as the instance root, and the path on entity alone. The editor links an
+        // entity to the prefab just made from it this way. False, logged, for a path that is not
+        // a .prefab or an entity that is not a game object.
+        HEDGEHOG_ENGINE_API bool LinkInstance(ECS::Entity entity, const std::string& virtualPath);
+
         [[nodiscard]] HEDGEHOG_ENGINE_API size_t GetCachedPrefabCount() const;
 
         // The virtual path a prefab is known by, or empty for one that is not a .prefab.
@@ -75,6 +83,9 @@ namespace HedgehogEngine
         // The prefab's subtree document, read again when its file changed; nullptr, logged, when
         // it cannot be read.
         std::shared_ptr<const YAML::Node> Load(const std::string& virtualPath);
+
+        // Links instanceRoot and its descendants to the prefab at path, local ids in depth-first order.
+        void LinkSubtree(ECS::Entity instanceRoot, const std::string& path);
 
     private:
         ECS::ECS&                                            m_ECS;
