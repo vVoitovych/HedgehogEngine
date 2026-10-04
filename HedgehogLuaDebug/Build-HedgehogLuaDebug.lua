@@ -10,11 +10,13 @@ project "HedgehogLuaDebug"
       ".",
       "..",
       -- nlohmann's json.hpp, vendored with tinygltf; included only from src/.
-      "%{wks.location}/ThirdParty"
+      "%{wks.location}/ThirdParty",
+      "%{IncludeDir.Lua}"
    }
 
    links {
       "Logger",
+      "Lua",
       "ws2_32"
    }
 

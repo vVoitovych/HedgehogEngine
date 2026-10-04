@@ -1,5 +1,7 @@
 #include "HedgehogLuaDebug/api/DebugServer.hpp"
 
+#include "HedgehogLuaDebug/api/LuaDebugEngine.hpp"
+
 #include "ProtocolDispatcher.hpp"
 
 namespace LuaDebug
@@ -28,18 +30,24 @@ namespace LuaDebug
     {
         for (const std::string& body : m_Transport->Receive())
         {
-            for (std::string& reply : m_Dispatcher->Handle(body))
+            for (std::string& reply : m_Dispatcher->Handle(body, m_Engine))
                 m_Transport->Send(std::move(reply));
             if (m_Dispatcher->WantsDisconnect())
             {
                 m_Transport->Disconnect();
                 m_Dispatcher->Reset();
+                if (m_Engine)
+                    m_Engine->ClearSession();
                 return;
             }
         }
         // The client went away without a disconnect request: the next one starts afresh.
         if (!m_Transport->IsConnected() && m_Dispatcher->IsAttached())
+        {
             m_Dispatcher->Reset();
+            if (m_Engine)
+                m_Engine->ClearSession();
+        }
     }
 
     bool DebugServer::IsAttached() const { return m_Dispatcher->IsAttached(); }
@@ -47,4 +55,11 @@ namespace LuaDebug
     bool DebugServer::IsConfigured() const { return m_Dispatcher->IsConfigured(); }
 
     ITransport& DebugServer::GetTransport() { return *m_Transport; }
+
+    void DebugServer::SetEngine(LuaDebugEngine* engine) { m_Engine = engine; }
+
+    void DebugServer::SendEvent(const std::string& event, const std::string& bodyJson)
+    {
+        m_Transport->Send(m_Dispatcher->MakeEventMessage(event, bodyJson));
+    }
 }

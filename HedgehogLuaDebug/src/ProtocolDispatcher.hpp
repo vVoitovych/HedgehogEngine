@@ -7,13 +7,19 @@
 
 namespace LuaDebug
 {
+    class LuaDebugEngine;
+
     // The protocol state of one client: turns each request body into the bodies to send back.
     // Pure: no I/O, no Lua; the DebugServer moves the messages.
     class ProtocolDispatcher
     {
     public:
         // The bodies to send for one received body (a response, then any events), in order.
-        [[nodiscard]] std::vector<std::string> Handle(const std::string& body);
+        // The engine handles the debugging commands; without one they fail.
+        [[nodiscard]] std::vector<std::string> Handle(const std::string& body, LuaDebugEngine* engine);
+
+        // An event with a JSON object body, numbered in this session's sequence.
+        [[nodiscard]] std::string MakeEventMessage(const std::string& name, const std::string& bodyJson);
 
         [[nodiscard]] bool IsAttached() const;
         [[nodiscard]] bool IsConfigured() const;
@@ -29,6 +35,10 @@ namespace LuaDebug
     private:
         [[nodiscard]] nlohmann::json MakeResponse(const nlohmann::json& request, bool success);
         [[nodiscard]] nlohmann::json MakeEvent(const std::string& name);
+        // Fills response for setBreakpoints, stackTrace, scopes, continue and pause; false for
+        // any other command.
+        bool HandleEngineCommand(const std::string& command, const nlohmann::json& arguments, LuaDebugEngine& engine,
+                                 nlohmann::json& response);
 
     private:
         int  m_Seq             = 0;

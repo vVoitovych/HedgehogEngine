@@ -1,6 +1,10 @@
 #include "ProtocolDispatcher.hpp"
 
+#include "HedgehogLuaDebug/api/LuaDebugEngine.hpp"
+
 #include "Logger/api/Logger.hpp"
+
+#include <filesystem>
 
 namespace LuaDebug
 {
@@ -9,6 +13,10 @@ namespace LuaDebug
         // The one thread the debugger reports: scripts run on the game thread.
         constexpr int         LUA_THREAD_ID   = 1;
         constexpr const char* LUA_THREAD_NAME = "Lua";
+
+        // Variables references for a frame's scopes; the variables request comes with the
+        // inspection of locals.
+        constexpr int SCOPES_PER_FRAME = 2;
     }
 
     nlohmann::json ProtocolDispatcher::MakeCapabilities()
@@ -45,7 +53,91 @@ namespace LuaDebug
         return { { "seq", ++m_Seq }, { "type", "event" }, { "event", name } };
     }
 
-    std::vector<std::string> ProtocolDispatcher::Handle(const std::string& body)
+    std::string ProtocolDispatcher::MakeEventMessage(const std::string& name, const std::string& bodyJson)
+    {
+        nlohmann::json event = MakeEvent(name);
+        event["body"]        = nlohmann::json::parse(bodyJson, nullptr, false);
+        return event.dump();
+    }
+
+    bool ProtocolDispatcher::HandleEngineCommand(const std::string& command, const nlohmann::json& arguments,
+                                                 LuaDebugEngine& engine, nlohmann::json& response)
+    {
+        if (command == "setBreakpoints")
+        {
+            const std::string path = arguments.contains("source") ? arguments["source"].value("path", std::string()) : std::string();
+            if (path.empty())
+            {
+                response["success"] = false;
+                response["message"] = "setBreakpoints needs source.path";
+                return true;
+            }
+            std::vector<int> lines;
+            for (const nlohmann::json& breakpoint : arguments.value("breakpoints", nlohmann::json::array()))
+                lines.push_back(breakpoint.value("line", 0));
+
+            nlohmann::json placed = nlohmann::json::array();
+            for (const BreakpointResult& result : engine.SetBreakpoints(path, lines))
+            {
+                nlohmann::json breakpoint = { { "verified", result.Verified }, { "line", result.Line } };
+                if (!result.Message.empty())
+                    breakpoint["message"] = result.Message;
+                placed.push_back(std::move(breakpoint));
+            }
+            response["body"] = { { "breakpoints", std::move(placed) } };
+            return true;
+        }
+        if (command == "stackTrace")
+        {
+            if (!engine.IsStopped())
+            {
+                response["success"] = false;
+                response["message"] = "the script is not stopped";
+                return true;
+            }
+            const std::vector<StackFrameInfo> frames = engine.GetStackTrace();
+            const size_t start  = std::min(frames.size(), static_cast<size_t>(std::max(0, arguments.value("startFrame", 0))));
+            const int    levels = arguments.value("levels", 0);
+            const size_t end    = levels > 0 ? std::min(frames.size(), start + static_cast<size_t>(levels)) : frames.size();
+
+            nlohmann::json list = nlohmann::json::array();
+            for (size_t i = start; i < end; ++i)
+            {
+                const StackFrameInfo& frame = frames[i];
+                nlohmann::json        entry = { { "id", frame.Id }, { "name", frame.Name }, { "line", frame.Line }, { "column", 1 } };
+                if (!frame.Path.empty())
+                    entry["source"] = { { "name", std::filesystem::path(frame.Path).filename().string() }, { "path", frame.Path } };
+                else
+                    entry["presentationHint"] = "subtle";
+                list.push_back(std::move(entry));
+            }
+            response["body"] = { { "stackFrames", std::move(list) }, { "totalFrames", frames.size() } };
+            return true;
+        }
+        if (command == "scopes")
+        {
+            const int frame  = arguments.value("frameId", 0);
+            response["body"] = { { "scopes", nlohmann::json::array({
+                                                 { { "name", "Locals" }, { "variablesReference", frame * SCOPES_PER_FRAME }, { "expensive", false } },
+                                                 { { "name", "Upvalues" }, { "variablesReference", frame * SCOPES_PER_FRAME + 1 }, { "expensive", false } },
+                                             }) } };
+            return true;
+        }
+        if (command == "continue")
+        {
+            engine.Continue();
+            response["body"] = { { "allThreadsContinued", true } };
+            return true;
+        }
+        if (command == "pause")
+        {
+            engine.RequestPause();
+            return true;
+        }
+        return false;
+    }
+
+    std::vector<std::string> ProtocolDispatcher::Handle(const std::string& body, LuaDebugEngine* engine)
     {
         const nlohmann::json request = nlohmann::json::parse(body, nullptr, false);
         if (request.is_discarded() || !request.is_object())
@@ -86,7 +178,7 @@ namespace LuaDebug
         {
             m_WantsDisconnect = true;
         }
-        else
+        else if (!engine || !HandleEngineCommand(command, request.value("arguments", nlohmann::json::object()), *engine, response))
         {
             response["success"] = false;
             response["message"] = "unknown command '" + command + "'";
