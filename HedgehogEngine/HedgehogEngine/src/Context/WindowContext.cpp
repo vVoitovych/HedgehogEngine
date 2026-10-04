@@ -9,16 +9,22 @@
 namespace HedgehogEngine
 {
     WindowContext::WindowContext(WindowMode mode)
+        : WindowContext(WindowOptions{ .Mode = mode })
+    {
+    }
+
+    WindowContext::WindowContext(const WindowOptions& options)
     {
         m_WindowManager = std::make_unique<HW::WindowManager>();
 
         HW::WindowDesc desc;
-        desc.Title     = "Hedgehog Engine";
-        desc.X         = 100;
-        desc.Y         = 100;
-        desc.Width     = 1366;
-        desc.Height    = 768;
-        desc.Maximized = mode == WindowMode::Maximized;
+        desc.Title      = options.Title;
+        desc.X          = 100;
+        desc.Y          = 100;
+        desc.Width      = options.Width;
+        desc.Height     = options.Height;
+        desc.Fullscreen = options.Fullscreen;
+        desc.Maximized  = options.Mode == WindowMode::Maximized;
         m_Window = &m_WindowManager->CreateWindow(desc);
     }
 

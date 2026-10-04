@@ -14,6 +14,7 @@ namespace HedgehogEngine
     {
     public:
         HEDGEHOG_ENGINE_API explicit Engine(WindowMode windowMode = WindowMode::Windowed);
+        HEDGEHOG_ENGINE_API explicit Engine(const WindowOptions& windowOptions);
         HEDGEHOG_ENGINE_API ~Engine();
 
         Engine(const Engine&)            = delete;

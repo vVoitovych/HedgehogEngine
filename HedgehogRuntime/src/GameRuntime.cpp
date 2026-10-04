@@ -38,7 +38,30 @@ namespace Runtime
         }
         m_Desc       = desc;
         m_FrameCount = 0;
-        m_Engine     = std::make_unique<HedgehogEngine::Engine>();
+
+        // The project is read before the engine, whose window it may describe, through engine://
+        // alone (the engine's own file system does not exist yet).
+        HedgehogSettings::ProjectSettings project;
+        {
+            FS::FileSystemManager projectFiles;
+            auto                  engineRoot = std::make_unique<FS::FileSystem>();
+            (void)engineRoot->RegisterPath("engine://", FS::GetEngineRootDirectory());
+            (void)projectFiles.Register(std::move(engineRoot));
+            if (!projectFiles.Exists(m_Desc.ProjectPath))
+                LOGINFO("[Runtime] No project settings at ", m_Desc.ProjectPath, "; using the defaults.");
+            else if (!project.Load(m_Desc.ProjectPath, projectFiles))
+                LOGWARNING("[Runtime] Project settings could not be read, using the defaults.");
+        }
+
+        HedgehogEngine::WindowOptions window;
+        if (m_Desc.UseProjectWindow)
+        {
+            window.Title      = project.GetWindowTitle().empty() ? project.GetName() : project.GetWindowTitle();
+            window.Width      = static_cast<int>(project.GetWindowWidth());
+            window.Height     = static_cast<int>(project.GetWindowHeight());
+            window.Fullscreen = project.IsFullscreen();
+        }
+        m_Engine = std::make_unique<HedgehogEngine::Engine>(window);
 
         auto& engineContext = m_Engine->GetEngineContext();
         auto& fileSystem    = engineContext.GetFileSystem();
@@ -58,11 +81,7 @@ namespace Runtime
         if (fileSystem.Exists(m_Desc.SettingsPath) && !settings.Load(m_Desc.SettingsPath, fileSystem))
             LOGWARNING("[Runtime] Engine settings could not be read, using defaults.");
         settings.CleanDirtyState();
-        auto& project = settings.GetProjectSettings();
-        if (!fileSystem.Exists(m_Desc.ProjectPath))
-            LOGINFO("[Runtime] No project settings at ", m_Desc.ProjectPath, "; using the defaults.");
-        else if (!project.Load(m_Desc.ProjectPath, fileSystem))
-            LOGWARNING("[Runtime] Project settings could not be read, using the defaults.");
+        settings.GetProjectSettings() = project;
 
         // Before the scene loads, as the Editor does; the engine's ECS owns it.
         (void)HedgehogScripting::RegisterScriptSystem(engineContext, fileSystem);

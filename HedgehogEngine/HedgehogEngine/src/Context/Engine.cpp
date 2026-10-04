@@ -7,8 +7,13 @@
 namespace HedgehogEngine
 {
     Engine::Engine(WindowMode windowMode)
+        : Engine(WindowOptions{ .Mode = windowMode })
     {
-        m_WindowContext = std::make_unique<WindowContext>(windowMode);
+    }
+
+    Engine::Engine(const WindowOptions& windowOptions)
+    {
+        m_WindowContext = std::make_unique<WindowContext>(windowOptions);
         m_EngineContext = std::make_unique<EngineContext>();
         m_FrameContext  = std::make_unique<FrameContext>();
     }

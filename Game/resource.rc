@@ -1,0 +1,3 @@
+// Resource ID 1: the icon Windows shows for Game.exe. GLFW_ICON: the window's icon.
+1          ICON  "../Editor/editor.ico"
+GLFW_ICON  ICON  "../Editor/editor.ico"
