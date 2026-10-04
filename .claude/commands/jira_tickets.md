@@ -213,7 +213,7 @@ Created: <YYYY-MM-DD>
 
 | Key | Type | Summary | ~Lines | Blocked by | Branch |
 |-----|------|---------|--------|------------|--------|
-| HE-<n> | Task | ... | ~400 | — | HE-<n>-<slug> |
+| HE-<n> | Task | ... | ~400 | — | <epic>/HE-<n>-<slug> |
 ```
 
 ---
@@ -229,7 +229,7 @@ Tell the user:
   command to begin:
 
   ```
-  git switch -c HE-<n>-<slug> master
+  git switch -c <epic>/HE-<n>-<slug> master
   ```
 
 - A reminder that `/plan HE-<n>` produces the implementation plan for it.

@@ -128,9 +128,14 @@ expected rather than a surprise.
 
 | Thing | Format | Example |
 |-------|--------|---------|
-| Branch | `HE-<n>-<short-slug>` | `HE-42-extract-swapchain-manager` |
+| Branch | `<epic>/HE-<n>-<short-slug>` | `renderer/HE-42-extract-swapchain-manager` |
 | Commit subject | `HE-<n>: <imperative summary>` | `HE-42: Move swapchain ownership into SwapchainManager` |
 | PR title | `HE-<n>: <summary>` | `HE-42: Extract SwapchainManager from RHIContext` |
+
+`<epic>` is a short lowercase name for the ticket's epic (`foundations`,
+`physics`, `renderer`, ...), so branches of one epic group together. The ticket
+key stays in the name: the `prepare-commit-msg` hook takes it from there, and
+Jira links the branch to its ticket by it.
 
 All three are scanned by Jira. The PR title is the one that matters most — it
 becomes the squash-merge commit subject, and CI rejects a PR whose title has no
@@ -145,14 +150,17 @@ sparingly; it exists so you never reach for `--no-verify`.
 
 ```
 1. Pick a ticket        HE-42, status To Do
-2. git switch -c HE-42-extract-swapchain-manager master
-3. Work; commit as you go, each subject starting HE-42:
-4. Push and open a PR titled "HE-42: ..."   -> Jira moves HE-42 to In Review
-5. Review, address feedback, merge          -> Jira moves HE-42 to Done
-6. git switch master && git pull
+2. git switch -c renderer/HE-42-extract-swapchain-manager master
+3. Work on that branch
+4. Validate: Scripts\Build.bat Debug and Release, Scripts\RunTests.bat Debug
+   (plus --smoke-test and --game-mode after renderer changes)
+5. Commit, each subject starting HE-42:
+6. Push and open a PR titled "HE-42: ..."   -> Jira moves HE-42 to In Review
+7. Review, address feedback, merge          -> Jira moves HE-42 to Done
+8. git switch master && git pull
 ```
 
-Steps 4 and 6 are the whole point: the ticket state follows the code, and you
+Steps 6 and 7 are the whole point: the ticket state follows the code, and you
 never have to remember to update the board.
 
 ---

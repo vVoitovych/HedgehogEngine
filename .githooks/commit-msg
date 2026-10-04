@@ -34,6 +34,6 @@ Commit rejected: the subject line needs a Jira ticket key.
 Your subject was:
 MESSAGE
 printf '  %s\n\n' "$subject" >&2
-echo "Branch names of the form HE-<number>-<slug> are prefilled automatically." >&2
+echo "Branches named <epic>/HE-<number>-<slug> are prefilled automatically." >&2
 echo "See WORKFLOW.md. Use NO-TICKET: for the rare change with no ticket." >&2
 exit 1
