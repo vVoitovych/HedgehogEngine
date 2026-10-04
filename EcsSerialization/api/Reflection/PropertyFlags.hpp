@@ -13,6 +13,9 @@ namespace Reflection
         // A string naming an asset (a path under assets://, or a graph reference): the asset
         // dependency collector (EcsSerialization/api/Assets) follows it.
         AssetRef = 1 << 3,
+        // An ECS::Entity naming another entity: instantiating a subtree (EcsSerializer::
+        // InstantiateSubtree) points it at the new copy when it names one inside the subtree.
+        EntityRef = 1 << 4,
     };
 
     constexpr PropertyFlags operator|(PropertyFlags a, PropertyFlags b)

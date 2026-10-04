@@ -43,6 +43,8 @@ namespace ECS
         // Changes every time the id is destroyed; pair it with the id to detect a
         // handle to an entity that was destroyed and its id reused.
         ECS_API uint32_t GetGeneration(Entity entity) const;
+        // How many entities are alive; CreateEntity asserts at MAX_ENTITIES.
+        ECS_API size_t   GetEntityCount()             const;
 
         template<typename T>
         void RegisterComponent()

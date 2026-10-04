@@ -192,7 +192,16 @@ namespace HedgehogEngine
 
     void RegisterScriptComponentSerializer(EcsSerialization::ComponentSerializerRegistry& registry)
     {
-        registry.RegisterCustom("ScriptComponent", Serialize, Deserialize,
-                                [](const ECS::ECS& ecs, ECS::Entity entity) { return ecs.HasComponent<ScriptComponent>(entity); });
+        registry.RegisterCustom(
+            "ScriptComponent", Serialize, Deserialize,
+            [](const ECS::ECS& ecs, ECS::Entity entity) { return ecs.HasComponent<ScriptComponent>(entity); },
+            [](ECS::ECS& ecs, ECS::Entity entity, const EcsSerialization::EntityRemap& remap)
+            {
+                for (ScriptProperty& property : ecs.GetComponent<ScriptComponent>(entity).Properties)
+                {
+                    if (ECS::Entity* target = std::get_if<ECS::Entity>(&property.Value))
+                        *target = remap(*target);
+                }
+            });
     }
 }

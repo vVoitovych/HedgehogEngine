@@ -62,6 +62,9 @@ namespace Reflection
             case TypeTag::Vec4:
                 out << YAML::Key << prop.name << YAML::Value << *FieldPtr<HM::Vector4>(comp, prop);
                 break;
+            case TypeTag::Entity:
+                out << YAML::Key << prop.name << YAML::Value << *FieldPtr<ECS::Entity>(comp, prop);
+                break;
             case TypeTag::Enum:
                 {
                     int32_t val = 0;
@@ -128,6 +131,9 @@ namespace Reflection
                     v.z() = field[2].as<float>();
                     v.w() = field[3].as<float>();
                 }
+                break;
+            case TypeTag::Entity:
+                *FieldPtr<ECS::Entity>(comp, prop) = field.as<ECS::Entity>();
                 break;
             case TypeTag::Enum:
                 {

@@ -63,6 +63,11 @@ namespace ECS
         return m_EntityManager->GetGeneration(entity);
     }
 
+    size_t ECS::GetEntityCount() const
+    {
+        return m_EntityManager->GetEntityCount();
+    }
+
     void ECS::NotifyPlayStart()
     {
         m_SystemManager->ForEachSystem([this](System& system) { system.OnPlayStart(*this); });

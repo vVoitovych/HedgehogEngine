@@ -83,6 +83,12 @@ namespace Reflection
             else
               changed = ImGui::DragInt("##v", reinterpret_cast<int*>(prop.accessor(comp)));
             break;
+        case TypeTag::Entity:
+            if (const ECS::Entity entity = *FieldPtr<ECS::Entity>(comp, prop); entity == ECS::INVALID_ENTITY)
+                ImGui::TextDisabled("None");
+            else
+                ImGui::Text("Entity %zu", entity);
+            break;
         default:
             ImGui::TextDisabled("[unsupported]");
             break;
