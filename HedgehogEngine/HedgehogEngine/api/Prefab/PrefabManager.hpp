@@ -53,8 +53,11 @@ namespace HedgehogEngine
         PrefabManager(const PrefabManager&)            = delete;
         PrefabManager& operator=(const PrefabManager&) = delete;
 
-        // Writes entity and its descendants as a prefab at virtualPath. False, logged, for the
-        // scene root, an entity without a hierarchy, a path that is not a .prefab or a failed write.
+        // Writes entity and its descendants as a prefab at virtualPath; a prefab instance inside the
+        // subtree is kept as a reference to its prefab with its overrides (a nested prefab). False,
+        // logged, for the scene root, an entity without a hierarchy, a path that is not a .prefab, a
+        // prefab that would contain itself (the chain named: "[Prefab] a.prefab would contain itself:
+        // a.prefab -> b.prefab -> a.prefab.") or a failed write.
         HEDGEHOG_ENGINE_API bool CreatePrefab(ECS::Entity entity, const std::string& virtualPath);
 
         // A new instance of the prefab under parent (the scene root by default): fresh entities,
@@ -96,6 +99,7 @@ namespace HedgehogEngine
                                                                                             ECS::Entity entity) const override;
         [[nodiscard]] HEDGEHOG_ENGINE_API const char* GetLinkComponentKey() const override;
         [[nodiscard]] HEDGEHOG_ENGINE_API std::shared_ptr<const YAML::Node> LoadPrefab(const std::string& path) override;
+        [[nodiscard]] HEDGEHOG_ENGINE_API std::shared_ptr<const YAML::Node> LoadPrefabDocument(const std::string& path) override;
         HEDGEHOG_ENGINE_API void Link(ECS::ECS& ecs, const std::vector<ECS::Entity>& entities, const std::string& path) override;
 
         // The virtual path a prefab is known by, or empty for one that is not a .prefab.
@@ -108,9 +112,12 @@ namespace HedgehogEngine
             std::filesystem::file_time_type   WriteTime;
         };
 
-        // The prefab's subtree document, read again when its file changed; nullptr, logged, when
-        // it cannot be read.
+        // The prefab's subtree document as its file holds it, read again when its file changed;
+        // nullptr, logged, when it cannot be read.
         std::shared_ptr<const YAML::Node> Load(const std::string& virtualPath);
+        // The prefab with its nested instances resolved (ExpandPrefab, not cached, so a changed
+        // nested prefab shows at once); nullptr, logged, when it cannot be read or expanded.
+        std::shared_ptr<const YAML::Node> LoadExpanded(const std::string& virtualPath);
 
         // Links instanceRoot and its descendants to the prefab at path, local ids in depth-first order.
         void LinkSubtree(ECS::Entity instanceRoot, const std::string& path);

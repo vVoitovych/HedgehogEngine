@@ -10,6 +10,7 @@
 #include "EcsSerialization/api/ComponentSerializerRegistry.hpp"
 #include "EcsSerialization/api/EcsSerializer.hpp"
 #include "EcsSerialization/api/Prefab/PrefabDocument.hpp"
+#include "EcsSerialization/api/Prefab/PrefabExpansion.hpp"
 
 #include "FileSystem/api/FileSystemManager.hpp"
 
@@ -74,7 +75,20 @@ namespace HedgehogEngine
             LOGERROR("[Prefab] " + path + ": entity " + std::to_string(entity) + " is the scene root or not a game object.");
             return false;
         }
-        if (!m_FileSystem.WriteTextFile(path, EcsSerialization::WritePrefab(m_Registry, m_ECS, entity)))
+        // The prefab would contain every prefab whose instance is in the subtree, and what those contain.
+        const std::string text = EcsSerialization::WritePrefab(m_Registry, m_ECS, entity);
+        for (const std::string& nested : EcsSerialization::FindNestedPrefabs(EcsSerialization::ReadPrefab(text).Root.value_or(YAML::Node())))
+        {
+            const std::vector<std::string> chain = EcsSerialization::FindPrefabChain(*this, nested, path);
+            if (!chain.empty())
+            {
+                std::vector<std::string> cycle{ path };
+                cycle.insert(cycle.end(), chain.begin(), chain.end());
+                LOGERROR("[Prefab] " + path + " would contain itself: " + EcsSerialization::DescribePrefabChain(cycle) + ".");
+                return false;
+            }
+        }
+        if (!m_FileSystem.WriteTextFile(path, text))
         {
             LOGERROR("[Prefab] " + path + " could not be written.");
             return false;
@@ -123,19 +137,20 @@ namespace HedgehogEngine
             LOGERROR("[Prefab] '" + virtualPath + "' is not a .prefab path.");
             return ECS::INVALID_ENTITY;
         }
-        const std::shared_ptr<const YAML::Node> root = Load(path);
+        const std::shared_ptr<const YAML::Node> root = LoadExpanded(path);
         if (!root)
             return ECS::INVALID_ENTITY;
 
+        std::vector<ECS::Entity>             entities;
         EcsSerialization::InstantiateOptions options;
-        options.External = EcsSerialization::ExternalReferences::Clear;
+        options.External      = EcsSerialization::ExternalReferences::Clear;
+        options.LocalEntities = &entities;
         const ECS::Entity instance = EcsSerialization::EcsSerializer::InstantiateSubtree(
             m_Registry, m_ECS, *root, parent.value_or(m_ECS.GetRoot()), path, options);
         if (instance == ECS::INVALID_ENTITY)
             return ECS::INVALID_ENTITY; // logged, naming the path
 
-        // The copy keeps the document's depth-first order, so its walk gives the local ids.
-        LinkSubtree(instance, path);
+        Link(m_ECS, entities, path);
         m_SceneManager.RefreshAfterLoad();
         return instance;
     }
@@ -199,7 +214,7 @@ namespace HedgehogEngine
         const ECS::Entity root = GetInstanceRoot(entity);
         if (root == ECS::INVALID_ENTITY)
             return {};
-        const std::shared_ptr<const YAML::Node> prefab = Load(m_ECS.GetComponent<PrefabInstanceComponent>(root).PrefabPath);
+        const std::shared_ptr<const YAML::Node> prefab = LoadExpanded(m_ECS.GetComponent<PrefabInstanceComponent>(root).PrefabPath);
         if (!prefab)
             return {};
         std::vector<ECS::Entity> members;
@@ -231,7 +246,7 @@ namespace HedgehogEngine
             return false;
         }
         const std::string                       path   = m_ECS.GetComponent<PrefabInstanceComponent>(root).PrefabPath;
-        const std::shared_ptr<const YAML::Node> prefab = Load(path);
+        const std::shared_ptr<const YAML::Node> prefab = LoadExpanded(path);
         if (!prefab)
             return false;
         std::vector<ECS::Entity> members;
@@ -293,8 +308,9 @@ namespace HedgehogEngine
             return false;
         }
         const std::string                       path   = m_ECS.GetComponent<PrefabInstanceComponent>(root).PrefabPath;
-        const std::shared_ptr<const YAML::Node> prefab = Load(path);
-        if (!prefab)
+        const std::shared_ptr<const YAML::Node> prefab = LoadExpanded(path);
+        const std::shared_ptr<const YAML::Node> file   = Load(path);
+        if (!prefab || !file)
             return false;
 
         // What every other instance overrides now, before the prefab changes under it.
@@ -318,13 +334,16 @@ namespace HedgehogEngine
         EcsSerialization::CollectInstance(*this, m_ECS, root, members);
         const EcsSerialization::EntityRemap toPrefab = EcsSerialization::MakeInstanceToPrefabRemap(*prefab, members);
 
-        YAML::Node                    document = YAML::Clone(*prefab);
+        // The file's own nodes take values directly; a node of a nested instance (its expansion
+        // names it by PrefabOrigin) takes them as an override on that instance's node.
+        YAML::Node                    document = YAML::Clone(*file);
         const std::vector<YAML::Node> nodes    = EcsSerialization::IndexSubtree(document);
+        const std::vector<YAML::Node> expanded = EcsSerialization::IndexSubtree(*prefab);
         EcsSerialization::OverrideSet written; // the values as the prefab now holds them
         for (const EcsSerialization::PropertyOverride& entry : overrides)
         {
             const EcsSerialization::ComponentHandler* handler = m_Registry.FindHandler(entry.Component);
-            if (entry.LocalId >= nodes.size() || !nodes[entry.LocalId] || !handler)
+            if (entry.LocalId >= expanded.size() || !expanded[entry.LocalId] || !handler)
                 continue;
             // The value as the prefab names entities: the instance's own as their source ids.
             YAML::Node value;
@@ -335,12 +354,40 @@ namespace HedgehogEngine
             if (handler->RemapYaml)
                 handler->RemapYaml(value, toPrefab);
 
+            written.push_back({ entry.LocalId, entry.Component, entry.Property, value });
+            const YAML::Node valueToWrite = entry.Property.empty() ? value : value[entry.Property];
+            if (const YAML::Node origin = expanded[entry.LocalId]["PrefabOrigin"])
+            {
+                const auto instanceNode = origin[0].as<ECS::Entity>();
+                const auto nestedId     = origin[1].as<uint32_t>();
+                if (instanceNode >= nodes.size() || !nodes[instanceNode] || !nodes[instanceNode]["Prefab"])
+                    continue;
+                YAML::Node instance = nodes[instanceNode];
+                YAML::Node kept(YAML::NodeType::Sequence);
+                for (const YAML::Node& own : instance["Overrides"])
+                {
+                    const bool same = own["LocalId"].as<uint32_t>() == nestedId && own["Component"].as<std::string>() == entry.Component &&
+                                      (own["Property"] ? own["Property"].as<std::string>() : std::string()) == entry.Property;
+                    if (!same)
+                        kept.push_back(own);
+                }
+                YAML::Node added(YAML::NodeType::Map);
+                added["LocalId"]   = nestedId;
+                added["Component"] = entry.Component;
+                if (!entry.Property.empty())
+                    added["Property"] = entry.Property;
+                added["Value"] = valueToWrite;
+                kept.push_back(added);
+                instance["Overrides"] = kept;
+                continue;
+            }
+            if (entry.LocalId >= nodes.size() || !nodes[entry.LocalId])
+                continue;
             YAML::Node node = nodes[entry.LocalId];
             if (entry.Property.empty())
-                node[entry.Component] = value;
+                node[entry.Component] = valueToWrite;
             else
-                node[entry.Component][entry.Property] = value[entry.Property];
-            written.push_back({ entry.LocalId, entry.Component, entry.Property, value });
+                node[entry.Component][entry.Property] = valueToWrite;
         }
         if (!m_FileSystem.WriteTextFile(path, EcsSerialization::WritePrefabDocument(document)))
         {
@@ -351,7 +398,7 @@ namespace HedgehogEngine
 
         for (const OtherInstance& instance : others)
         {
-            const EcsSerialization::EntityRemap toInstance = EcsSerialization::MakePrefabToInstanceRemap(document, instance.Members);
+            const EcsSerialization::EntityRemap toInstance = EcsSerialization::MakePrefabToInstanceRemap(*prefab, instance.Members);
             for (const EcsSerialization::PropertyOverride& entry : written)
             {
                 if (entry.LocalId >= instance.Members.size() || instance.Members[entry.LocalId] == ECS::INVALID_ENTITY)
@@ -395,7 +442,23 @@ namespace HedgehogEngine
             LOGERROR("[Prefab] '" + virtualPath + "' is not a .prefab path.");
             return nullptr;
         }
-        return Load(path);
+        return LoadExpanded(path);
+    }
+
+    std::shared_ptr<const YAML::Node> PrefabManager::LoadPrefabDocument(const std::string& virtualPath)
+    {
+        const std::string path = NormalizePrefabPath(virtualPath);
+        return path.empty() ? nullptr : Load(path);
+    }
+
+    std::shared_ptr<const YAML::Node> PrefabManager::LoadExpanded(const std::string& path)
+    {
+        if (!Load(path))
+            return nullptr; // logged
+        EcsSerialization::ExpandedPrefab expanded = EcsSerialization::ExpandPrefab(*this, m_Registry, path);
+        if (!expanded.Document)
+            LOGERROR("[Prefab] " + path + ": " + expanded.Error + ".");
+        return expanded.Document;
     }
 
     void PrefabManager::Link(ECS::ECS& ecs, const std::vector<ECS::Entity>& entities, const std::string& path)

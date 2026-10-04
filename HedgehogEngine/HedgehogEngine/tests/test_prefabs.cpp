@@ -8,6 +8,7 @@
 #include "HedgehogEngine/api/Prefab/PrefabManager.hpp"
 #include "HedgehogEngine/api/Scene/SceneManager.hpp"
 
+#include "EcsSerialization/api/ComponentSerializerRegistry.hpp"
 #include "EcsSerialization/api/EcsSerializer.hpp"
 
 #include "ECS/api/ECS.hpp"
@@ -101,8 +102,10 @@ namespace
         // entity ids differ by design), for comparing a source with an instance.
         std::string Describe(ECS::Entity entity)
         {
-            YAML::Node subtree =
-                EcsSerialization::EcsSerializer::SerializeSubtree(Context.GetComponentRegistry(), Ecs, entity)["Subtree"];
+            // Every entity in full, an instance included, as a registry without the prefab provider writes it.
+            EcsSerialization::ComponentSerializerRegistry registry = Context.GetComponentRegistry();
+            registry.SetPrefabProvider(nullptr);
+            YAML::Node subtree = EcsSerialization::EcsSerializer::SerializeSubtree(registry, Ecs, entity)["Subtree"];
             std::vector<YAML::Node> pending{ subtree[0] };
             while (!pending.empty())
             {
@@ -436,4 +439,159 @@ TEST_CASE("Prefab overrides - Apply updates the file and every other instance, w
     CHECK_FALSE(world.Prefabs().Apply(world.Lamp, {}));
     CHECK_FALSE(world.Prefabs().Revert(world.Lamp, {}));
     CHECK(log.Count("is not part of a prefab instance") == 2);
+}
+
+namespace
+{
+    // Lamp.prefab (Lamp > Bulb, Shade) and Street.prefab (Street > a Lamp instance whose bulb is
+    // overridden to 1.0), built through the editor's flow.
+    struct StreetWorld : PrefabWorld
+    {
+        StreetWorld()
+        {
+            REQUIRE(Prefabs().CreatePrefab(Lamp, "prefabs://Lamp.prefab"));
+            const ECS::Entity street = Context.GetSceneManager().CreateGameObject();
+            Ecs.GetComponent<ECS::HierarchyComponent>(street).Name = "Street";
+            const ECS::Entity lamp = Prefabs().Instantiate("prefabs://Lamp.prefab", street);
+            Ecs.GetComponent<HedgehogEngine::LightComponent>(Hierarchy(lamp).Children[0]).Intensity = 1.0f;
+            REQUIRE(Prefabs().CreatePrefab(street, "prefabs://Street.prefab"));
+        }
+
+        // A street instance's nested lamp, bulb and shade.
+        ECS::Entity NestedLamp(ECS::Entity street) { return Hierarchy(street).Children[0]; }
+        ECS::Entity NestedBulb(ECS::Entity street) { return Hierarchy(NestedLamp(street)).Children[0]; }
+        ECS::Entity NestedShade(ECS::Entity street) { return Hierarchy(NestedLamp(street)).Children[1]; }
+        float       BulbIntensity(ECS::Entity street) { return Ecs.GetComponent<HedgehogEngine::LightComponent>(NestedBulb(street)).Intensity; }
+
+        void RewriteLamp(const std::string& from, const std::string& to)
+        {
+            std::string text = *Context.GetFileSystem().ReadTextFile("prefabs://Lamp.prefab");
+            const size_t at  = text.find(from);
+            REQUIRE(at != std::string::npos);
+            text.replace(at, from.size(), to);
+            const std::filesystem::path file      = Dir.Path() / "Lamp.prefab";
+            const auto                  writeTime = std::filesystem::last_write_time(file);
+            Dir.WriteFile("Lamp.prefab", text);
+            std::filesystem::last_write_time(file, writeTime + std::chrono::seconds(2));
+        }
+    };
+}
+
+TEST_CASE("Nested prefabs - an outer prefab keeps its nested instance as a reference with overrides")
+{
+    StreetWorld world;
+    const std::string text = *world.Context.GetFileSystem().ReadTextFile("prefabs://Street.prefab");
+    const YAML::Node  lamp = YAML::Load(text)["Root"]["Subtree"][0]["Children"][0];
+    CHECK(lamp["Prefab"].as<std::string>() == "prefabs://Lamp.prefab");
+    CHECK(lamp["Entities"].as<std::vector<ECS::Entity>>() == std::vector<ECS::Entity>{ 1, 2, 3 });
+    REQUIRE(lamp["Overrides"].size() == 1);
+    CHECK(lamp["Overrides"][0]["LocalId"].as<int>() == 1);
+    CHECK(lamp["Overrides"][0]["Value"].as<float>() == 1.0f);
+    CHECK(text.find("Bulb") == std::string::npos); // the lamp's own entities are not copied
+
+    // Instantiated, the street holds the whole lamp, one instance numbered in the street's ids.
+    const ECS::Entity street = world.Prefabs().Instantiate("prefabs://Street.prefab");
+    REQUIRE(street != ECS::INVALID_ENTITY);
+    CHECK(world.Hierarchy(world.NestedLamp(street)).Name == world.Hierarchy(world.Lamp).Name);
+    CHECK(world.BulbIntensity(street) == 1.0f);
+    CHECK(world.Ecs.GetComponent<PrefabInstanceComponent>(world.NestedShade(street)).LocalId == 3);
+    CHECK(world.Ecs.GetComponent<PrefabInstanceComponent>(world.NestedShade(street)).InstanceRoot == street);
+    CHECK(world.Prefabs().GetOverrides(street).empty());
+    // The shade's script still names its own bulb.
+    CHECK(ScriptTarget(world.Ecs, world.NestedShade(street), "bulb") == std::to_string(world.NestedBulb(street)));
+}
+
+TEST_CASE("Nested prefabs - editing the inner prefab reaches scene instances of the outer one")
+{
+    StreetWorld world;
+    auto&       scenes = world.Context.GetSceneManager();
+    const ECS::Entity street = world.Prefabs().Instantiate("prefabs://Street.prefab");
+    const std::string scenePath = (world.Dir.Path() / "Town.yaml").string();
+    REQUIRE(scenes.SaveScene(scenePath));
+
+    world.RewriteLamp("Scale: [0.5, 0.5, 0.5]", "Scale: [4, 4, 4]");
+    world.RewriteLamp("LightIntensity: 2.5", "LightIntensity: 9");
+    REQUIRE(scenes.LoadScene(scenePath));
+    CHECK(world.Ecs.GetComponent<TransformComponent>(world.NestedShade(street)).Scale == HM::Vector3(4.0f, 4.0f, 4.0f));
+    CHECK(world.BulbIntensity(street) == 1.0f); // the street's own override of the lamp wins
+}
+
+TEST_CASE("Nested prefabs - an override on a nested entity round-trips through a scene")
+{
+    StreetWorld world;
+    auto&       scenes = world.Context.GetSceneManager();
+    const ECS::Entity street = world.Prefabs().Instantiate("prefabs://Street.prefab");
+    world.Ecs.GetComponent<HedgehogEngine::LightComponent>(world.NestedBulb(street)).Intensity = 0.3f;
+    const EcsSerialization::OverrideSet overrides = world.Prefabs().GetOverrides(street);
+    REQUIRE(overrides.size() == 1);
+    CHECK(overrides[0].LocalId == 2);
+
+    const std::string scenePath = (world.Dir.Path() / "Town.yaml").string();
+    REQUIRE(scenes.SaveScene(scenePath));
+    const std::string text = *world.Context.GetFileSystem().ReadTextFile("prefabs://Town.yaml");
+    REQUIRE(scenes.LoadScene(scenePath));
+    CHECK(world.BulbIntensity(street) == 0.3f);
+    CHECK(scenes.CaptureSnapshot().Yaml == text);
+}
+
+TEST_CASE("Nested prefabs - Apply from a nested entity overrides the nested instance in the outer prefab")
+{
+    StreetWorld world;
+    const ECS::Entity first  = world.Prefabs().Instantiate("prefabs://Street.prefab");
+    const ECS::Entity second = world.Prefabs().Instantiate("prefabs://Street.prefab");
+    world.Ecs.GetComponent<HedgehogEngine::LightComponent>(world.NestedBulb(first)).Intensity = 0.7f;
+    REQUIRE(world.Prefabs().Apply(world.NestedBulb(first), world.Prefabs().GetOverrides(first)));
+
+    CHECK(world.BulbIntensity(second) == 0.7f);
+    CHECK(world.Prefabs().GetOverrides(first).empty());
+    const YAML::Node lamp =
+        YAML::Load(*world.Context.GetFileSystem().ReadTextFile("prefabs://Street.prefab"))["Root"]["Subtree"][0]["Children"][0];
+    REQUIRE(lamp["Overrides"].size() == 1); // replaced, not added beside the old one
+    CHECK(lamp["Overrides"][0]["Value"].as<float>() == 0.7f);
+    // The lamp prefab itself is untouched.
+    CHECK(world.Context.GetFileSystem().ReadTextFile("prefabs://Lamp.prefab")->find("LightIntensity: 2.5") != std::string::npos);
+}
+
+TEST_CASE("Nested prefabs - a prefab that would contain itself is refused at create and at load")
+{
+    StreetWorld world;
+    // A Town holding a Street, saved as Lamp.prefab, would make Lamp -> Street -> Lamp.
+    const ECS::Entity town = world.Context.GetSceneManager().CreateGameObject();
+    REQUIRE(world.Prefabs().Instantiate("prefabs://Street.prefab", town) != ECS::INVALID_ENTITY);
+    {
+        LogCapture log;
+        CHECK_FALSE(world.Prefabs().CreatePrefab(town, "prefabs://Lamp.prefab"));
+        CHECK(log.Count("prefabs://Lamp.prefab would contain itself: prefabs://Lamp.prefab -> prefabs://Street.prefab -> "
+                        "prefabs://Lamp.prefab") == 1);
+    }
+    // Written by hand anyway, the cycle is found when it is read.
+    REQUIRE(world.Prefabs().CreatePrefab(town, "prefabs://Town.prefab"));
+    const std::string           townText  = *world.Context.GetFileSystem().ReadTextFile("prefabs://Town.prefab");
+    const std::filesystem::path lampFile  = world.Dir.Path() / "Lamp.prefab";
+    const auto                  writeTime = std::filesystem::last_write_time(lampFile);
+    world.Dir.WriteFile("Lamp.prefab", townText);
+    std::filesystem::last_write_time(lampFile, writeTime + std::chrono::seconds(2));
+
+    LogCapture   log;
+    const size_t before = world.Ecs.GetEntityCount();
+    CHECK(world.Prefabs().Instantiate("prefabs://Street.prefab") == ECS::INVALID_ENTITY);
+    CHECK(log.Count("prefab cycle: prefabs://Street.prefab -> prefabs://Lamp.prefab -> prefabs://Street.prefab") == 1);
+    CHECK(world.Ecs.GetEntityCount() == before);
+}
+
+TEST_CASE("Nested prefabs - a node the inner prefab gained appears in the outer one")
+{
+    StreetWorld world;
+    // The lamp gains a third child, written as the editor would.
+    const ECS::Entity cap = world.Context.GetSceneManager().CreateGameObject(world.Lamp);
+    world.Ecs.GetComponent<ECS::HierarchyComponent>(cap).Name = "Cap";
+    REQUIRE(world.Prefabs().CreatePrefab(world.Lamp, "prefabs://Lamp.prefab"));
+
+    const ECS::Entity street = world.Prefabs().Instantiate("prefabs://Street.prefab");
+    REQUIRE(street != ECS::INVALID_ENTITY);
+    const auto& children = world.Hierarchy(world.NestedLamp(street)).Children;
+    REQUIRE(children.size() == 3);
+    CHECK(world.Hierarchy(children[2]).Name == "Cap");
+    CHECK(world.Ecs.GetComponent<PrefabInstanceComponent>(children[2]).LocalId == 4); // past the street's own ids
+    CHECK(world.BulbIntensity(street) == 1.0f);
 }

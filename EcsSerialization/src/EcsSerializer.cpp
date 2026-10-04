@@ -59,20 +59,26 @@ namespace
 
     // An instance root: the prefab, the ids by local id, the overrides and the entities added under
     // the instance (a child of the root or of one of its prefab entities that is not one itself).
+    // Inside a prefab (a subtree) the ids are the subtree's local ids, so an instance nested in a
+    // prefab is a reference too, its entities numbered in the outer prefab.
     void SerializeInstance(YAML::Emitter& out, const ECS::ECS& ecs, ECS::Entity root, const std::string& prefabPath,
-                           const YAML::Node& prefab, const ComponentSerializerRegistry& registry, IPrefabProvider& prefabs)
+                           const YAML::Node& prefab, const ComponentSerializerRegistry& registry, IPrefabProvider& prefabs,
+                           const IdMap& toId)
     {
         std::vector<ECS::Entity> members;
         std::vector<ECS::Entity> added;
         CollectInstance(prefabs, ecs, root, members, &added);
+        std::vector<ECS::Entity> ids;
+        for (const ECS::Entity member : members)
+            ids.push_back(member == ECS::INVALID_ENTITY ? ECS::INVALID_ENTITY : toId(member));
 
         const auto& hierarchy = ecs.GetComponent<ECS::HierarchyComponent>(root);
         out << YAML::BeginMap;
-        out << YAML::Key << "Entity"   << YAML::Value << root;
+        out << YAML::Key << "Entity"   << YAML::Value << toId(root);
         out << YAML::Key << "Name"     << YAML::Value << hierarchy.Name;
-        out << YAML::Key << "Parent"   << YAML::Value << hierarchy.Parent;
+        out << YAML::Key << "Parent"   << YAML::Value << toId(hierarchy.Parent);
         out << YAML::Key << "Prefab"   << YAML::Value << prefabPath;
-        out << YAML::Key << "Entities" << YAML::Value << YAML::Flow << members;
+        out << YAML::Key << "Entities" << YAML::Value << YAML::Flow << ids;
         const OverrideSet overrides = DiffInstance(registry, ecs, members, prefab, prefabs.GetLinkComponentKey());
         if (!overrides.empty())
         {
@@ -81,7 +87,7 @@ namespace
         }
         out << YAML::Key << "Children" << YAML::Value << YAML::BeginSeq;
         for (ECS::Entity entity : added)
-            SerializeEntity(out, ecs, entity, registry, SameId, &prefabs);
+            SerializeEntity(out, ecs, entity, registry, toId, &prefabs);
         out << YAML::EndSeq;
         out << YAML::EndMap;
     }
@@ -92,7 +98,7 @@ namespace
         std::string prefabPath;
         if (const std::shared_ptr<const YAML::Node> prefab = FindInstancePrefab(prefabs, ecs, entity, prefabPath))
         {
-            SerializeInstance(out, ecs, entity, prefabPath, *prefab, registry, *prefabs);
+            SerializeInstance(out, ecs, entity, prefabPath, *prefab, registry, *prefabs, toId);
             return;
         }
 
@@ -472,8 +478,8 @@ namespace
         out << YAML::Key << "Version"   << YAML::Value << BASE_FORMAT_VERSION;
         out << YAML::Key << "SourceIds" << YAML::Value << YAML::Flow << sourceIds;
         out << YAML::Key << "Subtree"   << YAML::Value << YAML::BeginSeq;
-        // Written in full: a prefab inside a prefab is not kept as a reference yet.
-        SerializeEntity(out, ecs, subtreeRoot, registry, toLocal, nullptr);
+        // An instance inside it is written as a reference (ExpandPrefab resolves it when read).
+        SerializeEntity(out, ecs, subtreeRoot, registry, toLocal, registry.GetPrefabProvider());
         out << YAML::EndSeq;
         out << YAML::EndMap;
         return out.c_str();
@@ -513,15 +519,16 @@ namespace
                 LOGERROR(failure + ": Subtree is not a sequence of one entity.");
                 return ECS::INVALID_ENTITY;
             }
+            // Local ids index SourceIds; an expanded prefab (ExpandPrefab) may leave some unused.
             const auto   sourceIds = document["SourceIds"].as<std::vector<ECS::Entity>>();
             const size_t count     = CountEntities(subtree[0]);
-            if (count != sourceIds.size())
+            if (count > sourceIds.size())
             {
                 LOGERROR(failure + ": SourceIds lists " + std::to_string(sourceIds.size()) + " entities, but Subtree holds " +
                          std::to_string(count) + ".");
                 return ECS::INVALID_ENTITY;
             }
-            std::vector<bool> seen(count, false);
+            std::vector<bool> seen(sourceIds.size(), false);
             if (const std::string error = CheckLocalIds(subtree[0], seen); !error.empty())
             {
                 LOGERROR(failure + ": " + error + ".");
@@ -533,8 +540,8 @@ namespace
                 return existing && local < existing->size() ? (*existing)[local] : ECS::INVALID_ENTITY;
             };
             size_t fresh = 0;
-            for (size_t i = 0; i < count; ++i)
-                fresh += existingFor(i) == ECS::INVALID_ENTITY ? 1 : 0;
+            for (size_t i = 0; i < seen.size(); ++i)
+                fresh += seen[i] && existingFor(i) == ECS::INVALID_ENTITY ? 1 : 0;
             if (ecs.GetEntityCount() + fresh > ECS::MAX_ENTITIES)
             {
                 LOGERROR(failure + ": its " + std::to_string(count) + " entities do not fit beside the " +
@@ -542,18 +549,24 @@ namespace
                 return ECS::INVALID_ENTITY;
             }
 
-            for (size_t i = 0; i < count; ++i)
+            for (size_t i = 0; i < seen.size(); ++i)
             {
                 const ECS::Entity existing = existingFor(i);
-                localToNew.push_back(existing != ECS::INVALID_ENTITY ? existing : ecs.CreateEntity());
-                if (existing == ECS::INVALID_ENTITY)
+                if (!seen[i])
+                    localToNew.push_back(ECS::INVALID_ENTITY);
+                else
+                    localToNew.push_back(existing != ECS::INVALID_ENTITY ? existing : ecs.CreateEntity());
+                if (seen[i] && existing == ECS::INVALID_ENTITY)
                     created.push_back(localToNew.back());
             }
             InstantiateEntity(ecs, subtree[0], parent, localToNew, registry);
 
             std::unordered_map<ECS::Entity, ECS::Entity> sourceToNew;
-            for (size_t i = 0; i < count; ++i)
-                sourceToNew.emplace(sourceIds[i], localToNew[i]);
+            for (size_t i = 0; i < seen.size(); ++i)
+            {
+                if (seen[i])
+                    sourceToNew.emplace(sourceIds[i], localToNew[i]);
+            }
             const EntityRemap remap = [&](ECS::Entity entity)
             {
                 if (const auto it = sourceToNew.find(entity); it != sourceToNew.end())
@@ -566,6 +579,8 @@ namespace
             };
             for (ECS::Entity entity : localToNew)
             {
+                if (entity == ECS::INVALID_ENTITY)
+                    continue;
                 for (const auto& handler : registry.GetHandlers())
                 {
                     if (handler.RemapEntities && handler.HasComponent(ecs, entity))
@@ -581,10 +596,11 @@ namespace
             return ECS::INVALID_ENTITY;
         }
 
+        const ECS::Entity root = localToNew[document["Subtree"][0]["Entity"].as<ECS::Entity>()];
         if (options.AppendToParent)
-            ecs.GetComponent<ECS::HierarchyComponent>(parent).Children.push_back(localToNew[0]);
+            ecs.GetComponent<ECS::HierarchyComponent>(parent).Children.push_back(root);
         if (options.LocalEntities)
             *options.LocalEntities = localToNew;
-        return localToNew[0];
+        return root;
     }
 }

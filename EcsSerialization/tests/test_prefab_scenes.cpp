@@ -4,6 +4,7 @@
 #include "EcsSerialization/api/EcsSerializer.hpp"
 #include "EcsSerialization/api/Prefab/IPrefabProvider.hpp"
 #include "EcsSerialization/api/Prefab/OverrideSet.hpp"
+#include "EcsSerialization/api/Prefab/PrefabExpansion.hpp"
 
 #include "ECS/api/ECS.hpp"
 #include "ECS/api/components/Hierarchy.hpp"
@@ -90,9 +91,16 @@ namespace
 
         std::shared_ptr<const YAML::Node> LoadPrefab(const std::string& path) override
         {
+            return EcsSerialization::ExpandPrefab(*this, *Registry, path).Document;
+        }
+
+        std::shared_ptr<const YAML::Node> LoadPrefabDocument(const std::string& path) override
+        {
             const auto it = Documents.find(path);
             return it == Documents.end() ? nullptr : it->second;
         }
+
+        const EcsSerialization::ComponentSerializerRegistry* Registry = nullptr;
 
         void Link(ECS::ECS& ecs, const std::vector<ECS::Entity>& entities, const std::string& path) override
         {
@@ -151,6 +159,7 @@ namespace
             Registry.RegisterVisitable<TestTag>("TestTag");
             Registry.RegisterReflected<TestLink>("TestLink");
             Registry.SetPrefabProvider(&Prefabs);
+            Prefabs.Registry = &Registry;
             SetCar(1.0f, "body");
         }
 
@@ -416,6 +425,7 @@ TEST_CASE("OverrideSet - an entity reference is an override only when it names a
     registry.RegisterReflected<TestAim>("TestAim");
     TestPrefabs prefabs;
     registry.SetPrefabProvider(&prefabs);
+    prefabs.Registry = &registry;
 
     // The prefab: a turret whose barrel aims at its base, and whose base aims at nothing.
     World source;

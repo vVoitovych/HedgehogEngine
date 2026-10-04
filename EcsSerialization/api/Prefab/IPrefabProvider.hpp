@@ -37,8 +37,11 @@ namespace EcsSerialization
         [[nodiscard]] virtual std::optional<PrefabLink> GetLink(const ECS::ECS& ecs, ECS::Entity entity) const = 0;
         // The YAML key of the component holding the link, which overrides never include.
         [[nodiscard]] virtual const char* GetLinkComponentKey() const = 0;
-        // The prefab's subtree document, or nullptr, logged, when it cannot be read.
+        // The prefab ready to instantiate (ExpandPrefab: its nested instances resolved), or nullptr,
+        // logged, when it cannot be read or expanded.
         [[nodiscard]] virtual std::shared_ptr<const YAML::Node> LoadPrefab(const std::string& path) = 0;
+        // The prefab's document as its file holds it (nested instances as references), or nullptr.
+        [[nodiscard]] virtual std::shared_ptr<const YAML::Node> LoadPrefabDocument(const std::string& path) = 0;
         // Links the entities a scene load instantiated (index = local id, 0 the root) to the prefab.
         virtual void Link(ECS::ECS& ecs, const std::vector<ECS::Entity>& entities, const std::string& path) = 0;
     };
