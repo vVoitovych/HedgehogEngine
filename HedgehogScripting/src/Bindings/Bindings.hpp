@@ -52,6 +52,16 @@ namespace HedgehogScripting::Bindings
     // them. Call after RegisterEntity. context and pendingDestroys must outlive lua.
     void RegisterScene(sol::state& lua, HedgehogEngine::EngineContext& context, std::vector<ScriptEntity>& pendingDestroys);
 
+    // The Prefab table: Prefab.instantiate(path, position?, rotation?, parent?) instantiates a
+    // .prefab under assets:// (prefix optional; a declared AssetRef("Prefab") property holds one)
+    // through the engine's PrefabManager, under parent or the scene root, with the root placed at
+    // position and turned by rotation (a Quat or Euler degrees), and returns the root's handle:
+    // invalid for a prefab that does not load (the engine logs why) and outside Play, where it does
+    // nothing (the first call warns). Another mount, a drive, a rooted path, a ".." segment, a
+    // stale parent and a rotation of another type are script errors. The instance's scripts start
+    // at the next sync (OnStart on the next fixed step or frame), and Stop's restore removes it.
+    void RegisterPrefab(sol::state& lua, HedgehogEngine::EngineContext& context);
+
     // Deletes the queued entities still alive through SceneManager::DeleteGameObject, which moves
     // their children up to the grandparent, and empties the queue. A scripted one gets OnDestroy
     // through the ScriptComponent removal callback.
