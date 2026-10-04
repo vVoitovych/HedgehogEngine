@@ -91,6 +91,12 @@ namespace EcsSerialization
         [[nodiscard]] ECS_SERIALIZATION_API AssetDependencies CollectScene(const std::string&           sceneVirtualPath,
                                                                            const FS::FileSystemManager& fileSystem) const;
 
+        // The closure of several scenes and of other assets read through their followers (a
+        // game's engine graphs), as one set.
+        [[nodiscard]] ECS_SERIALIZATION_API AssetDependencies Collect(const std::vector<std::string>& scenes,
+                                                                      const std::vector<std::string>& assets,
+                                                                      const FS::FileSystemManager&    fileSystem) const;
+
     private:
         ECS_SERIALIZATION_API void AddReflectedKeys(const std::string& componentKey, std::vector<std::string> keys,
                                                     std::vector<std::string> defaultValues, AssetPathNormalizer normalize);

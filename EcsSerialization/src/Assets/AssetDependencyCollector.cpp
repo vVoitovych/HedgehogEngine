@@ -39,6 +39,7 @@ namespace EcsSerialization
         {
             std::string Path;
             std::string From;
+            bool        IsScene = false;
         };
 
         std::string Describe(const PendingAsset& asset)
@@ -145,9 +146,20 @@ namespace EcsSerialization
     AssetDependencies AssetDependencyCollector::CollectScene(const std::string&           sceneVirtualPath,
                                                              const FS::FileSystemManager& fileSystem) const
     {
+        return Collect({ sceneVirtualPath }, {}, fileSystem);
+    }
+
+    AssetDependencies AssetDependencyCollector::Collect(const std::vector<std::string>& scenes,
+                                                        const std::vector<std::string>& assets,
+                                                        const FS::FileSystemManager&    fileSystem) const
+    {
         AssetDependencies         result;
         std::set<std::string>     visited;
-        std::vector<PendingAsset> pending{ { NormalizeAssetPath(sceneVirtualPath), {} } };
+        std::vector<PendingAsset> pending;
+        for (auto it = assets.rbegin(); it != assets.rend(); ++it)
+            pending.push_back({ NormalizeAssetPath(*it), {}, false });
+        for (auto it = scenes.rbegin(); it != scenes.rend(); ++it)
+            pending.push_back({ NormalizeAssetPath(*it), {}, true });
         while (!pending.empty())
         {
             const PendingAsset asset = std::move(pending.back());
@@ -161,7 +173,7 @@ namespace EcsSerialization
             }
             result.Assets.push_back(asset.Path);
 
-            const bool           isScene  = asset.From.empty();
+            const bool           isScene  = asset.IsScene;
             const AssetFollower* follower = isScene ? nullptr : FindFollower(asset.Path);
             if (!isScene && !follower)
                 continue;
@@ -189,7 +201,7 @@ namespace EcsSerialization
                 result.Warnings.push_back(Describe(asset) + ": " + error);
 
             for (std::string& reference : references)
-                pending.push_back({ std::move(reference), asset.Path });
+                pending.push_back({ std::move(reference), asset.Path, false });
         }
         std::sort(result.Assets.begin(), result.Assets.end());
         return result;

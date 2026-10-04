@@ -1,0 +1,66 @@
+#pragma once
+
+#include <cstddef>
+#include <filesystem>
+#include <optional>
+#include <string>
+#include <vector>
+
+// The cook (epic HE-173): a project's referenced assets copied into a package laid out as the
+// engine mounts it from its root (EngineContext::InitFileSystem), so Game.exe placed beside them
+// finds the project with no other files.
+namespace Cooker
+{
+    // Where a virtual path goes in a package: engine://X at X, assets://X at Assets/X; nullopt
+    // for any other path (another mount, an absolute file), which cannot be packaged.
+    [[nodiscard]] std::optional<std::filesystem::path> ToPackagePath(const std::string& virtualPath);
+
+    struct CookFile
+    {
+        std::string           VirtualPath;
+        std::filesystem::path Source; // in the project
+        std::filesystem::path Target; // relative to the package root
+    };
+
+    // What a cook copies, by target path, or why it cannot run.
+    struct CookPlan
+    {
+        std::vector<CookFile>    Files;
+        std::vector<std::string> Errors;
+    };
+
+    // The project at projectRoot (the folder holding Project.yaml): the closure of its startup
+    // scene and of extraScenes (virtual paths), plus every file the engine loads whatever the
+    // scene (GetEngineRuntimeAssets) and what those reference. A reference that does not exist or
+    // cannot be read, a project without a startup scene and a path that cannot be packaged are
+    // errors naming the file.
+    [[nodiscard]] CookPlan BuildCookPlan(const std::filesystem::path& projectRoot, const std::vector<std::string>& extraScenes = {});
+
+    struct CookResult
+    {
+        size_t                   Copied    = 0;
+        size_t                   Unchanged = 0;
+        size_t                   Removed   = 0;
+        std::vector<std::string> Errors;
+    };
+
+    // The manifest a cook writes into the package root: each file's target, size and hash.
+    constexpr const char* MANIFEST_FILE_NAME = "manifest.yaml";
+
+    // Copies the plan into outDir and writes the manifest. A file whose source has the size and
+    // hash the previous manifest records, and whose copy is still there, is left alone; a file the
+    // previous manifest lists and the plan no longer has is removed, so the package holds the
+    // closure and nothing else.
+    [[nodiscard]] CookResult CookPackage(const CookPlan& plan, const std::filesystem::path& outDir);
+
+    // FNV-1a 64 of a file's bytes, as 16 hex digits; nullopt when it cannot be read.
+    [[nodiscard]] std::optional<std::string> HashFile(const std::filesystem::path& path);
+
+    // A GLSL source (.vert, .frag, .comp) whose .spv beside it is missing or older than it.
+    [[nodiscard]] bool IsShaderStale(const std::filesystem::path& source);
+
+    // Compiles every stale GLSL source under shaderDirectory with glslc, as the Shaders project's
+    // pre-build step does (include root: shaderDirectory). Returns the sources that failed.
+    [[nodiscard]] std::vector<std::string> CompileStaleShaders(const std::filesystem::path& shaderDirectory,
+                                                               const std::filesystem::path& glslc, size_t& compiled);
+}
