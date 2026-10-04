@@ -22,28 +22,38 @@ namespace LuaDebug
 
     void DebugServer::Stop()
     {
+        m_Pending.clear();
         m_Transport->Stop();
         m_Dispatcher->Reset();
     }
 
     void DebugServer::Pump()
     {
-        for (const std::string& body : m_Transport->Receive())
+        for (std::string& body : m_Transport->Receive())
+            m_Pending.push_back(std::move(body));
+        while (!m_Pending.empty())
         {
+            const std::string body       = std::move(m_Pending.front());
+            const bool        wasStopped = m_Engine && m_Engine->IsStopped();
+            m_Pending.pop_front();
             for (std::string& reply : m_Dispatcher->Handle(body, m_Engine))
                 m_Transport->Send(std::move(reply));
             if (m_Dispatcher->WantsDisconnect())
             {
                 m_Transport->Disconnect();
                 m_Dispatcher->Reset();
+                m_Pending.clear();
                 if (m_Engine)
                     m_Engine->ClearSession();
                 return;
             }
+            if (wasStopped && !m_Engine->IsStopped())
+                return;
         }
         // The client went away without a disconnect request: the next one starts afresh.
         if (!m_Transport->IsConnected() && m_Dispatcher->IsAttached())
         {
+            m_Pending.clear();
             m_Dispatcher->Reset();
             if (m_Engine)
                 m_Engine->ClearSession();

@@ -23,9 +23,22 @@ namespace LuaDebug
 
     void InMemoryTransport::Send(std::string body)
     {
+        std::function<void(const std::string&)> client;
+        {
+            std::lock_guard lock(m_Mutex);
+            if (!m_Connected)
+                return;
+            m_Outgoing.push_back(body);
+            client = m_Client;
+        }
+        if (client)
+            client(body);
+    }
+
+    void InMemoryTransport::SetClient(std::function<void(const std::string& body)> client)
+    {
         std::lock_guard lock(m_Mutex);
-        if (m_Connected)
-            m_Outgoing.push_back(std::move(body));
+        m_Client = std::move(client);
     }
 
     bool InMemoryTransport::IsConnected() const

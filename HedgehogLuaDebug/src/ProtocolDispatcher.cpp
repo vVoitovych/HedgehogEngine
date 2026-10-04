@@ -14,14 +14,24 @@ namespace LuaDebug
         constexpr int         LUA_THREAD_ID   = 1;
         constexpr const char* LUA_THREAD_NAME = "Lua";
 
-        // Variables references for a frame's scopes; the variables request comes with the
-        // inspection of locals.
-        constexpr int SCOPES_PER_FRAME = 2;
+        nlohmann::json ToJson(const VariableInfo& variable)
+        {
+            return { { "name", variable.Name },
+                     { "value", variable.Value },
+                     { "type", variable.Type },
+                     { "variablesReference", variable.Reference } };
+        }
+
+        void Fail(nlohmann::json& response, const std::string& message)
+        {
+            response["success"] = false;
+            response["message"] = message;
+        }
     }
 
     nlohmann::json ProtocolDispatcher::MakeCapabilities()
     {
-        // Only what this server does; later tickets turn on breakpoints, stepping and variables.
+        // Only what this server does. Breakpoints, stepping and variables need no capability flag.
         return {
             { "supportsConfigurationDoneRequest", true },
             { "supportsFunctionBreakpoints", false },
@@ -29,8 +39,8 @@ namespace LuaDebug
             { "supportsHitConditionalBreakpoints", false },
             { "supportsLogPoints", false },
             { "supportsDataBreakpoints", false },
-            { "supportsEvaluateForHovers", false },
-            { "supportsSetVariable", false },
+            { "supportsEvaluateForHovers", true },
+            { "supportsSetVariable", true },
             { "supportsStepBack", false },
             { "supportsRestartRequest", false },
             { "supportsTerminateRequest", false },
@@ -116,11 +126,53 @@ namespace LuaDebug
         }
         if (command == "scopes")
         {
-            const int frame  = arguments.value("frameId", 0);
-            response["body"] = { { "scopes", nlohmann::json::array({
-                                                 { { "name", "Locals" }, { "variablesReference", frame * SCOPES_PER_FRAME }, { "expensive", false } },
-                                                 { { "name", "Upvalues" }, { "variablesReference", frame * SCOPES_PER_FRAME + 1 }, { "expensive", false } },
-                                             }) } };
+            nlohmann::json scopes = nlohmann::json::array();
+            for (const ScopeInfo& scope : engine.GetScopes(arguments.value("frameId", 0)))
+                scopes.push_back({ { "name", scope.Name }, { "variablesReference", scope.Reference }, { "expensive", false } });
+            response["body"] = { { "scopes", std::move(scopes) } };
+            return true;
+        }
+        if (command == "variables")
+        {
+            const std::optional<std::vector<VariableInfo>> variables =
+                engine.GetVariables(arguments.value("variablesReference", 0), arguments.value("start", 0), arguments.value("count", 0));
+            if (!variables)
+            {
+                Fail(response, "the variable reference is no longer valid");
+                return true;
+            }
+            nlohmann::json list = nlohmann::json::array();
+            for (const VariableInfo& variable : *variables)
+                list.push_back(ToJson(variable));
+            response["body"] = { { "variables", std::move(list) } };
+            return true;
+        }
+        if (command == "evaluate" || command == "setVariable")
+        {
+            const VariableResult result =
+                command == "evaluate"
+                    ? engine.Evaluate(arguments.value("expression", std::string()), arguments.value("frameId", 0))
+                    : engine.SetVariable(arguments.value("variablesReference", 0), arguments.value("name", std::string()),
+                                         arguments.value("value", std::string()));
+            if (!result.Ok)
+            {
+                Fail(response, result.Error);
+                return true;
+            }
+            nlohmann::json body = ToJson(result.Value);
+            body[command == "evaluate" ? "result" : "value"] = result.Value.Value;
+            body.erase(command == "evaluate" ? "value" : "name");
+            response["body"] = std::move(body);
+            return true;
+        }
+        if (command == "next" || command == "stepIn" || command == "stepOut")
+        {
+            if (!engine.IsStopped())
+            {
+                Fail(response, "the script is not stopped");
+                return true;
+            }
+            engine.Step(command == "next" ? StepKind::Over : command == "stepIn" ? StepKind::In : StepKind::Out);
             return true;
         }
         if (command == "continue")
