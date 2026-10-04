@@ -26,6 +26,8 @@ namespace ECS
         ECS_API bool      IsAlive(Entity entity) const;
         // Bumped each time the id is destroyed, so a recycled id reads differently.
         ECS_API uint32_t  GetGeneration(Entity entity) const;
+        // How many ids are created now; CreateEntity asserts at MAX_ENTITIES.
+        ECS_API size_t    GetEntityCount() const;
 
     private:
         std::vector<Entity>                 m_EntityPool;

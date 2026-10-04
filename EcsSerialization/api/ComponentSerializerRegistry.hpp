@@ -8,6 +8,7 @@
 #include "yaml-cpp/yaml.h"
 
 #include <functional>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -121,12 +122,31 @@ namespace EcsSerialization
         }
     };
 
+    // The entity a component's reference should now name, given the one it names.
+    using EntityRemap = std::function<ECS::Entity(ECS::Entity)>;
+
+    // Rewrites every ECS::Entity property flagged EntityRef through remap.
+    inline void RemapEntityProperties(void* comp, std::span<const Reflection::PropertyDescriptor> props, const EntityRemap& remap)
+    {
+        for (const auto& prop : props)
+        {
+            if (prop.type == Reflection::TypeTag::Entity && HasFlag(prop.flags, Reflection::PropertyFlags::EntityRef))
+            {
+                ECS::Entity& entity = *Reflection::FieldPtr<ECS::Entity>(comp, prop);
+                entity              = remap(entity);
+            }
+        }
+    }
+
     struct ComponentHandler
     {
         std::string YamlKey;
         std::function<void(YAML::Emitter&, const ECS::ECS&, ECS::Entity)> Serialize;
         std::function<void(ECS::ECS&, ECS::Entity, const YAML::Node&)>    Deserialize;
         std::function<bool(const ECS::ECS&, ECS::Entity)>                  HasComponent;
+        // Points the component's entity references at their new ids after a subtree is
+        // instantiated; empty for a component that holds none.
+        std::function<void(ECS::ECS&, ECS::Entity, const EntityRemap&)>   RemapEntities;
     };
 
     class ComponentSerializerRegistry
@@ -175,6 +195,10 @@ namespace EcsSerialization
                 [](const ECS::ECS& ecs, ECS::Entity e)
                 {
                     return ecs.HasComponent<T>(e);
+                },
+                [](ECS::ECS& ecs, ECS::Entity e, const EntityRemap& remap)
+                {
+                    RemapEntityProperties(&ecs.GetComponent<T>(e), T::GetProperties(), remap);
                 }
             });
         }
@@ -183,9 +207,11 @@ namespace EcsSerialization
             const char*                                                        yamlKey,
             std::function<void(YAML::Emitter&, const ECS::ECS&, ECS::Entity)> serialize,
             std::function<void(ECS::ECS&, ECS::Entity, const YAML::Node&)>    deserialize,
-            std::function<bool(const ECS::ECS&, ECS::Entity)>                 hasComponent)
+            std::function<bool(const ECS::ECS&, ECS::Entity)>                 hasComponent,
+            std::function<void(ECS::ECS&, ECS::Entity, const EntityRemap&)>   remapEntities = {})
         {
-            m_Handlers.push_back({ yamlKey, std::move(serialize), std::move(deserialize), std::move(hasComponent) });
+            m_Handlers.push_back({ yamlKey, std::move(serialize), std::move(deserialize), std::move(hasComponent),
+                                   std::move(remapEntities) });
         }
 
         const std::vector<ComponentHandler>& GetHandlers() const { return m_Handlers; }

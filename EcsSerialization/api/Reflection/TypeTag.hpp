@@ -3,6 +3,8 @@
 #include "HedgehogMath/api/Vector.hpp"
 #include "HedgehogMath/api/Matrix.hpp"
 
+#include "ECS/api/Entity.hpp"
+
 #include <cstdint>
 #include <string>
 #include <type_traits>
@@ -21,6 +23,8 @@ namespace Reflection
         Vec3,
         Vec4,
         Enum,
+        // An ECS::Entity id (size_t; no other reflected type is one), written as the number.
+        Entity,
         Raw,
     };
 
@@ -36,6 +40,7 @@ namespace Reflection
     template<> constexpr TypeTag TypeTagOf<HM::Vector3>() { return TypeTag::Vec3;   }
     template<> constexpr TypeTag TypeTagOf<HM::Vector4>() { return TypeTag::Vec4;   }
     template<> constexpr TypeTag TypeTagOf<HM::Matrix4x4>() { return TypeTag::Raw; }
+    template<> constexpr TypeTag TypeTagOf<ECS::Entity>()   { return TypeTag::Entity; }
 
     template<typename T>
     constexpr TypeTag TypeTagOf()

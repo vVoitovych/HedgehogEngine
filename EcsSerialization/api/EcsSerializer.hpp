@@ -18,7 +18,7 @@ namespace EcsSerialization
 {
     class ComponentSerializerRegistry;
 
-    // Scenes, snapshots and (later) saves and prefabs share one path: reading parses text into a
+    // Scenes, snapshots, saves and (through the subtree functions) prefabs share one path: reading parses text into a
     // node and reads that (DeserializeFromNode); writing emits text (SerializeToString), which
     // SerializeToNode parses; the file functions are thin wrappers over the string ones.
     //
@@ -76,5 +76,34 @@ namespace EcsSerialization
             std::string& outSceneName,
             const std::string& virtualPath,
             const FS::FileSystemManager& fileSystem);
+
+        // One entity and its descendants as a document of the same format: "Version", then
+        // "SourceIds" (local id i was SourceIds[i] in the ECS it came from), then "Subtree", the
+        // per-entity YAML scenes use with dense local ids in depth-first order (0 is the subtree's
+        // root, whose Parent is INVALID_ENTITY). Component data keeps the source ids it refers to.
+        [[nodiscard]] ECS_SERIALIZATION_API static std::string SerializeSubtreeToString(
+            const ComponentSerializerRegistry& registry,
+            const ECS::ECS& ecs,
+            ECS::Entity subtreeRoot);
+
+        [[nodiscard]] ECS_SERIALIZATION_API static YAML::Node SerializeSubtree(
+            const ComponentSerializerRegistry& registry,
+            const ECS::ECS& ecs,
+            ECS::Entity subtreeRoot);
+
+        // Creates a fresh entity for each one in a subtree document, rebuilds the hierarchy
+        // through them under parent (appended last to its children) and points every entity
+        // reference (an EntityRef property, or what a handler's RemapEntities rewrites) at the
+        // new copy when it names an entity of the subtree; one outside it is kept while that
+        // entity is alive and becomes INVALID_ENTITY otherwise. Returns the new root, or
+        // INVALID_ENTITY, logging why, for a parent without a hierarchy, a document of an unknown
+        // version, a malformed one or one that does not fit in MAX_ENTITIES; nothing is left
+        // created then. Whole scenes are unaffected.
+        [[nodiscard]] ECS_SERIALIZATION_API static ECS::Entity InstantiateSubtree(
+            const ComponentSerializerRegistry& registry,
+            ECS::ECS& ecs,
+            const YAML::Node& document,
+            ECS::Entity parent,
+            const std::string& sourceName);
     };
 }
