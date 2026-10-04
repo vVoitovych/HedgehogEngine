@@ -25,6 +25,7 @@ namespace Renderer
 
 namespace HedgehogScripting
 {
+    class ScriptDebugger;
     class ScriptSystem;
 }
 
@@ -72,6 +73,8 @@ namespace Editor
         std::unique_ptr<ImGuiLayer>         m_ImGui;
         std::unique_ptr<EditorGui>          m_EditorGui;
         HedgehogScripting::ScriptSystem*    m_ScriptSystem = nullptr; // owned by the engine's ECS
+        // Only when engine_settings.yaml enables the Lua debugger; goes before the script system.
+        std::unique_ptr<HedgehogScripting::ScriptDebugger> m_ScriptDebugger;
 
         // The Content panel's pictures, uploaded once the device exists, and their ImGui ids.
         ContentIcons   m_ContentIcons;

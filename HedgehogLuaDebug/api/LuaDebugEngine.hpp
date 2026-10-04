@@ -2,6 +2,7 @@
 
 #include "HedgehogLuaDebug/api/SourceMapper.hpp"
 
+#include <functional>
 #include <map>
 #include <optional>
 #include <memory>
@@ -89,6 +90,11 @@ namespace LuaDebug
         [[nodiscard]] bool IsHookInstalled() const;
         [[nodiscard]] bool IsStopped() const;
 
+        // What the application does around a stop, on the game thread: stopChanged(true) as it
+        // begins and (false) as it ends, whileStopped every few milliseconds in between (the
+        // editor polls its window there, so it does not appear hung).
+        void SetStopCallbacks(std::function<void(bool stopped)> stopChanged, std::function<void()> whileStopped);
+
         // Replaces the breakpoints of one file (a path as the client names it); each line moves to
         // the next line that has code, and is unverified when none follows.
         std::vector<BreakpointResult> SetBreakpoints(const std::string& path, const std::vector<int>& lines);
@@ -144,6 +150,9 @@ namespace LuaDebug
         int        m_StepDepth     = 0;
 
         std::unique_ptr<VariableStore> m_Variables;
+
+        std::function<void(bool)> m_StopChanged;
+        std::function<void()>     m_WhileStopped;
 
         std::map<std::string, std::set<int>> m_Breakpoints; // by normalized path
     };

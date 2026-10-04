@@ -94,6 +94,12 @@ namespace LuaDebug
 
     bool LuaDebugEngine::IsStopped() const { return m_Stopped; }
 
+    void LuaDebugEngine::SetStopCallbacks(std::function<void(bool stopped)> stopChanged, std::function<void()> whileStopped)
+    {
+        m_StopChanged  = std::move(stopChanged);
+        m_WhileStopped = std::move(whileStopped);
+    }
+
     void LuaDebugEngine::UpdateHook()
     {
         const bool wanted = m_State && (m_PauseRequested || m_Step != StepKind::None || !m_Breakpoints.empty());
@@ -267,6 +273,8 @@ namespace LuaDebug
         m_StoppedState = state;
         m_Variables->Begin(state);
         m_Server.SendEvent("stopped", nlohmann::json{ { "reason", reason }, { "threadId", 1 }, { "allThreadsStopped", true } }.dump());
+        if (m_StopChanged)
+            m_StopChanged(true);
 
         // The game thread waits here, answering the client, until it continues or leaves.
         while (m_Stopped)
@@ -277,9 +285,14 @@ namespace LuaDebug
                 ClearSession();
                 break;
             }
-            if (m_Stopped)
-                std::this_thread::sleep_for(STOPPED_POLL_INTERVAL);
+            if (!m_Stopped)
+                break;
+            if (m_WhileStopped)
+                m_WhileStopped();
+            std::this_thread::sleep_for(STOPPED_POLL_INTERVAL);
         }
+        if (m_StopChanged)
+            m_StopChanged(false);
         // Every variable reference of this stop goes with it.
         m_Variables->Clear();
         m_StoppedState = nullptr;

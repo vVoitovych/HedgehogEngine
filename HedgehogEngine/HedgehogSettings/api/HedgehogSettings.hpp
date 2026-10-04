@@ -1,6 +1,7 @@
 #pragma once
 
 #include "HedgehogSettingsApi.hpp"
+#include "LuaDebuggerSettings.hpp"
 
 #include <memory>
 #include <string>
@@ -38,6 +39,10 @@ namespace HedgehogSettings
         HEDGEHOG_SETTINGS_API ProjectSettings&       GetProjectSettings();
         HEDGEHOG_SETTINGS_API const ProjectSettings& GetProjectSettings() const;
 
+        // lua_debugger: { enabled, port }; read at startup, so a change applies on the next run.
+        HEDGEHOG_SETTINGS_API LuaDebuggerSettings&       GetLuaDebuggerSettings();
+        HEDGEHOG_SETTINGS_API const LuaDebuggerSettings& GetLuaDebuggerSettings() const;
+
         // Engine settings live in their own file rather than the editor's layout file, so a game
         // build can read them too. A missing file is not an error: the defaults stand and Load
         // returns false.
@@ -62,5 +67,6 @@ namespace HedgehogSettings
         std::unique_ptr<ShadowmapSettings> m_ShadowmapSettings;
         std::unique_ptr<LayerSettings>     m_LayerSettings;
         std::unique_ptr<ProjectSettings>   m_ProjectSettings;
+        LuaDebuggerSettings                m_LuaDebuggerSettings;
     };
 }

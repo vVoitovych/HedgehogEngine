@@ -21,6 +21,11 @@ namespace HedgehogEngine
     class EngineContext;
 }
 
+namespace HedgehogScripting
+{
+    class ScriptDebugger;
+}
+
 namespace Renderer
 {
     class Renderer;
@@ -101,6 +106,8 @@ namespace Runtime
         RuntimeDesc                               m_Desc;
         std::unique_ptr<HedgehogEngine::Engine>   m_Engine;
         std::unique_ptr<Renderer::Renderer>       m_Renderer; // declared after the engine: destroyed first
+        // Only when engine_settings.yaml enables the Lua debugger; reset before the engine.
+        std::unique_ptr<HedgehogScripting::ScriptDebugger> m_ScriptDebugger;
 
         HX::RenderScene                           m_RenderScene;
         HX::MeshBoundsCache                       m_MeshBounds;

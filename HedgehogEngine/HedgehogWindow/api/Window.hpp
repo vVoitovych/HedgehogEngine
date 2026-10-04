@@ -5,6 +5,7 @@
 
 #include <functional>
 #include <memory>
+#include <string>
 
 struct GLFWwindow;
 
@@ -30,6 +31,12 @@ namespace HW
 
         // Blocks until at least one event is available (used while minimized to avoid busy-waiting).
         HEDGEHOG_WINDOW_API void WaitEvents() const;
+        // Handles pending events without blocking, outside the frame loop (while a script is
+        // stopped in the debugger, so the window does not appear hung).
+        HEDGEHOG_WINDOW_API void PollEvents() const;
+
+        HEDGEHOG_WINDOW_API const std::string& GetTitle() const;
+        HEDGEHOG_WINDOW_API void               SetTitle(const std::string& title);
 
         HEDGEHOG_WINDOW_API void ToggleFullscreen();
         HEDGEHOG_WINDOW_API bool IsFullscreen() const;

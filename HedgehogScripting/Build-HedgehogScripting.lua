@@ -24,6 +24,8 @@ project "HedgehogScripting"
       "FileSystem",
       "Logger",
       "Lua",
+      "HedgehogLuaDebug",
+      "ws2_32",
       "yaml-cpp",
    }
 

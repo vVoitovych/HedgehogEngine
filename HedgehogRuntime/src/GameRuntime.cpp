@@ -12,6 +12,7 @@
 #include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
 #include "HedgehogRenderer/Renderer.hpp"
 #include "HedgehogAudio/api/AudioEngine.hpp"
+#include "HedgehogScripting/api/ScriptDebugger.hpp"
 #include "HedgehogScripting/api/ScriptSystem.hpp"
 
 #include "FileSystem/api/FileSystem.hpp"
@@ -84,7 +85,19 @@ namespace Runtime
         settings.GetProjectSettings() = project;
 
         // Before the scene loads, as the Editor does; the engine's ECS owns it.
-        (void)HedgehogScripting::RegisterScriptSystem(engineContext, fileSystem);
+        const auto scripts = HedgehogScripting::RegisterScriptSystem(engineContext, fileSystem);
+        // VS Code's way into the scripts, when the settings enable it: while a script is stopped
+        // the window keeps handling events and its title says it is paused.
+        m_ScriptDebugger = HedgehogScripting::StartScriptDebugger(engineContext, *scripts, fileSystem,
+                                                                  settings.GetLuaDebuggerSettings());
+        if (m_ScriptDebugger)
+        {
+            HW::Window& gameWindow = m_Engine->GetWindowContext().GetWindow();
+            m_ScriptDebugger->SetStopCallbacks(
+                [&gameWindow, title = gameWindow.GetTitle()](bool stopped)
+                { gameWindow.SetTitle(stopped ? title + " - Paused in debugger" : title); },
+                [&gameWindow]() { gameWindow.PollEvents(); });
+        }
         (void)engineContext.GetAudioEngine().Init(HA::AudioEngineDesc{});
         if (const auto saves = FS::GetSavesDirectory(project.GetName(), m_Desc.EditorSaves))
             engineContext.GetSaveGames().SetSaveDirectory(*saves);
@@ -118,6 +131,8 @@ namespace Runtime
         auto& engineContext = m_Engine->GetEngineContext();
         auto& window        = windowContext.GetWindow();
         windowContext.HandleInput();
+        if (m_ScriptDebugger)
+            m_ScriptDebugger->Pump();
         int width = 0, height = 0;
         window.GetFramebufferSize(width, height);
 
@@ -160,6 +175,9 @@ namespace Runtime
         if (!m_Engine)
             return;
         (void)m_Engine->GetEngineContext().Stop();
+        if (m_ScriptDebugger)
+            m_ScriptDebugger->Pump(); // the client hears the thread exit
+        m_ScriptDebugger.reset();
         if (m_Renderer)
             m_Renderer->Cleanup();
         m_Engine->Cleanup();

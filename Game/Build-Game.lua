@@ -30,6 +30,7 @@ project "Game"
       "HedgehogInput",
       "HedgehogAudio",
       "HedgehogScripting",
+      "HedgehogLuaDebug",
       "Lua",
       "HedgehogRenderer",
       "HedgehogWindow",
