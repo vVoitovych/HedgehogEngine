@@ -10,11 +10,15 @@ project "HedgehogEngineTest"
         "../../../ThirdParty",
         "../../..",     -- so "HedgehogMath/api/...", "ECS/api/..." and the like resolve
         "../..",        -- so "HedgehogEngine/api/..." resolves
-        "."
+        ".",
+        "%{IncludeDir.yaml_cpp}"
     }
+
+    defines { "YAML_CPP_STATIC_DEFINE" }
 
     links
     {
+        "yaml-cpp",
         "HedgehogEngine",
         "HedgehogInput",
         "HedgehogAudio",

@@ -22,6 +22,8 @@
 #include "HedgehogEngine/api/ECS/systems/AnimationSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/UiSystem.hpp"
 #include "HedgehogEngine/api/Save/SaveGameManager.hpp"
+#include "HedgehogEngine/api/Prefab/PrefabManager.hpp"
+#include "HedgehogEngine/api/ECS/components/PrefabInstanceComponent.hpp"
 #include "HedgehogEngine/api/ECS/systems/AudioSystem.hpp"
 #include "HedgehogEngine/api/ECS/components/AudioListenerComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/AudioSourceComponent.hpp"
@@ -72,6 +74,7 @@ namespace HedgehogEngine
             *m_TransformSystem, *m_MeshSystem, *m_RenderSystem);
         m_Settings  = std::make_unique<HedgehogSettings::Settings>();
         m_SaveGames = std::make_unique<SaveGameManager>(*m_SceneManager, m_EventBus, m_Clock, *m_Settings);
+        m_Prefabs   = std::make_unique<PrefabManager>(m_ECS, m_FileSystem, *m_ComponentRegistry, *m_SceneManager);
 
         m_ResourceCatalog.Update(*m_RenderSystem, *m_MeshSystem);
     }
@@ -121,6 +124,7 @@ namespace HedgehogEngine
         m_ECS.RegisterComponent<UiButtonComponent>();
         m_ECS.RegisterComponent<AudioSourceComponent>();
         m_ECS.RegisterComponent<AudioListenerComponent>();
+        m_ECS.RegisterComponent<PrefabInstanceComponent>();
 
         m_TransformSystem = m_ECS.RegisterSystem<TransformSystem>();
         m_HierarchySystem = m_ECS.RegisterSystem<HierarchySystem>();
@@ -201,6 +205,7 @@ namespace HedgehogEngine
         m_ComponentRegistry->RegisterReflected<UiButtonComponent>("UiButtonComponent");
         m_ComponentRegistry->RegisterReflected<AudioSourceComponent>("AudioSourceComponent");
         m_ComponentRegistry->RegisterReflected<AudioListenerComponent>("AudioListenerComponent");
+        m_ComponentRegistry->RegisterReflected<PrefabInstanceComponent>("PrefabInstanceComponent");
 
         // Scripts run in the application's script system; loading a scene only reads the data.
         RegisterScriptComponentSerializer(*m_ComponentRegistry);
@@ -358,6 +363,12 @@ namespace HedgehogEngine
 
     SceneManager& EngineContext::GetSceneManager()             { return *m_SceneManager; }
     SaveGameManager& EngineContext::GetSaveGames()             { return *m_SaveGames; }
+    PrefabManager&   EngineContext::GetPrefabs()               { return *m_Prefabs; }
+
+    const EcsSerialization::ComponentSerializerRegistry& EngineContext::GetComponentRegistry() const
+    {
+        return *m_ComponentRegistry;
+    }
     const SceneManager& EngineContext::GetSceneManager() const { return *m_SceneManager; }
 
     const FS::FileSystemManager& EngineContext::GetFileSystem() const { return m_FileSystem; }

@@ -90,11 +90,14 @@ namespace HedgehogEngine
 
         HEDGEHOG_ENGINE_API ECS::Entity GetRootEntity() const;
 
+        // Brings the systems in line with a freshly deserialized tree, or entities added from a
+        // document (a prefab instance): every transform marked changed, meshes loaded, render
+        // components refreshed.
+        HEDGEHOG_ENGINE_API void RefreshAfterLoad();
+
     private:
         void        CreateSceneRoot();
         void        DeleteGameObjectAndChildren(ECS::Entity entity);
-        // Brings the systems in line with a freshly deserialized tree.
-        void        RefreshAfterLoad();
         std::string GetUniqueGameObjectName();
 
     private:

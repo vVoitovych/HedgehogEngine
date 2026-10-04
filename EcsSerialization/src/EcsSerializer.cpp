@@ -297,7 +297,8 @@ namespace
                                                   ECS::ECS& ecs,
                                                   const YAML::Node& document,
                                                   ECS::Entity parent,
-                                                  const std::string& sourceName)
+                                                  const std::string& sourceName,
+                                                  const InstantiateOptions& options)
     {
         const std::string failure = "Failed to instantiate " + sourceName;
         if (!ecs.IsAlive(parent) || !ecs.HasComponent<ECS::HierarchyComponent>(parent))
@@ -353,7 +354,8 @@ namespace
                 // One outside the subtree is kept while alive. A dead one's id may have been
                 // reused by a copy, which it never named.
                 const bool isCopy = std::find(localToNew.begin(), localToNew.end(), entity) != localToNew.end();
-                return ecs.IsAlive(entity) && !isCopy ? entity : ECS::INVALID_ENTITY;
+                const bool keep   = options.External == ExternalReferences::Keep && ecs.IsAlive(entity) && !isCopy;
+                return keep ? entity : ECS::INVALID_ENTITY;
             };
             for (ECS::Entity entity : localToNew)
             {
@@ -373,6 +375,8 @@ namespace
         }
 
         ecs.GetComponent<ECS::HierarchyComponent>(parent).Children.push_back(localToNew[0]);
+        if (options.LocalEntities)
+            *options.LocalEntities = localToNew;
         return localToNew[0];
     }
 }

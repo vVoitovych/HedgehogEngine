@@ -52,6 +52,7 @@ namespace HedgehogEngine
     class AudioSystem;
     class AudioListenerSystem;
     class SaveGameManager;
+    class PrefabManager;
 
     // Edit: gameplay does not run. Playing: every frame runs the fixed steps and the update.
     // Paused: nothing runs, and the scene waits to be resumed or stopped.
@@ -135,6 +136,12 @@ namespace HedgehogEngine
         // directory (the Editor's per-project editor folder, --game-mode's game folder).
         HEDGEHOG_ENGINE_API SaveGameManager& GetSaveGames();
 
+        // Prefab assets: create one from a subtree, instantiate one into the scene.
+        HEDGEHOG_ENGINE_API PrefabManager& GetPrefabs();
+
+        // How every component is written to and read from scenes, snapshots, saves and prefabs.
+        [[nodiscard]] HEDGEHOG_ENGINE_API const EcsSerialization::ComponentSerializerRegistry& GetComponentRegistry() const;
+
         HEDGEHOG_ENGINE_API HedgehogSettings::Settings&       GetSettings();
         HEDGEHOG_ENGINE_API const HedgehogSettings::Settings& GetSettings() const;
 
@@ -201,6 +208,7 @@ namespace HedgehogEngine
         // and needs live system references) — see EngineContext.cpp for the ordering.
         std::unique_ptr<SceneManager> m_SceneManager;
         std::unique_ptr<SaveGameManager> m_SaveGames; // after the SceneManager it saves and the Settings it reads
+        std::unique_ptr<PrefabManager>   m_Prefabs;   // after the SceneManager it refreshes
 
         HInput::InputActionSet    m_InputActions;
         HInput::InputActionsWatch m_InputWatch;
