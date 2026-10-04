@@ -35,11 +35,11 @@ namespace HedgehogEngine
     // the scene from before Play, so a load in Play never reaches the edited scene.
     //
     // Versions: every save carries the save format (SAVE_FORMAT_VERSION) and the game's data
-    // version (the settings' GetGameDataVersion). A save newer than either is refused, naming the
-    // versions. An older game data version is migrated on load: the registered C++ steps run in
-    // order on the save's sections before the world is touched (a failing step refuses the load),
-    // then each section's loader gets the saved version (the script system calls each script's
-    // OnMigrate(fromVersion, state) before its OnLoad).
+    // version (the project settings' GetGameDataVersion). A save newer than either is refused,
+    // naming the versions. An older game data version is migrated on load: the registered C++
+    // steps run in order on the save's sections before the world is touched (a failing step
+    // refuses the load), then each section's loader gets the saved version (the script system
+    // calls each script's OnMigrate(fromVersion, state) before its OnLoad).
     class SaveGameManager
     {
     public:
@@ -48,9 +48,6 @@ namespace HedgehogEngine
         // C++ steps, so the data reads as the current version's unless a module migrates its own).
         using LoadSection = std::function<void(const YAML::Node&, int savedGameDataVersion)>;
 
-        // Until project settings exist, every project saves under this name.
-        static constexpr const char* DEFAULT_PROJECT_NAME = "HedgehogEngine";
-
         HEDGEHOG_ENGINE_API SaveGameManager(SceneManager& scenes, EventBus& eventBus, const FixedStepClock& clock,
                                             const HedgehogSettings::Settings& settings);
 
@@ -58,8 +55,8 @@ namespace HedgehogEngine
         // a test's temp folder. Until set, every request fails with an error.
         HEDGEHOG_ENGINE_API void SetSaveDirectory(const std::filesystem::path& directory);
 
-        // The game data version saves are written at and migrated to: the settings' (game:
-        // data_version), read on every call, so a settings reload applies to the next save.
+        // The game data version saves are written at and migrated to: the project settings'
+        // (Project.yaml's game_data_version), read on every call, so an edit applies to the next save.
         [[nodiscard]] HEDGEHOG_ENGINE_API int GetGameDataVersion() const;
 
         // The C++ step migrating a save's sections from game data version fromVersion to

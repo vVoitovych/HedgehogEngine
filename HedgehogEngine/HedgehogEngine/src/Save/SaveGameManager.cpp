@@ -6,6 +6,7 @@
 #include "HedgehogEngine/api/Time/FixedStepClock.hpp"
 
 #include "HedgehogSettings/api/HedgehogSettings.hpp"
+#include "HedgehogSettings/api/ProjectSettings.hpp"
 #include "Logger/api/Logger.hpp"
 
 #include <algorithm>
@@ -41,7 +42,7 @@ namespace HedgehogEngine
 
     void SaveGameManager::SetSaveDirectory(const std::filesystem::path& directory) { m_Store.emplace(directory); }
 
-    int SaveGameManager::GetGameDataVersion() const { return m_Settings.GetGameDataVersion(); }
+    int SaveGameManager::GetGameDataVersion() const { return m_Settings.GetProjectSettings().GetGameDataVersion(); }
 
     void SaveGameManager::RegisterMigration(int fromVersion, EcsSerialization::SaveMigrationStep step)
     {

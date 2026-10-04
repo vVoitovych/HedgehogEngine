@@ -51,6 +51,7 @@ namespace Editor
     class PipelineWindow;
     class ShaderWindow;
     class InputActionsWindow;
+    class ProjectSettingsWindow;
     class RenderGraphEditorWindow;
 
     // The graphs the editor's own views use (RENDERING.md section 7). The inspector lists them
@@ -239,6 +240,7 @@ namespace Editor
         std::unique_ptr<PipelineWindow>          m_PipelineWindow;
         std::unique_ptr<ShaderWindow>            m_ShaderWindow;
         std::unique_ptr<InputActionsWindow>      m_InputActionsWindow;
+        std::unique_ptr<ProjectSettingsWindow>   m_ProjectSettingsWindow;
         std::unique_ptr<RenderGraphEditorWindow> m_RenderGraphEditorWindow;
 
         // Valid only during Draw(); read by the viewport panel.

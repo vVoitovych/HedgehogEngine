@@ -40,6 +40,7 @@ include "HedgehogEngine/HedgehogRenderer/tests/Build-RenderGraphTest.lua"
 include "HedgehogEngine/HedgehogWindow/Build-HedgehogWindow.lua"
 include "HedgehogEngine/HedgehogWindow/tests/Build-HedgehogWindowTest.lua"
 include "HedgehogEngine/HedgehogSettings/Build-HedgehogSettings.lua"
+include "HedgehogEngine/HedgehogSettings/tests/Build-HedgehogSettingsTest.lua"
 
 include "Editor/Build-Editor.lua"
 include "Editor/tests/Build-EditorTest.lua"

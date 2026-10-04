@@ -1,6 +1,6 @@
 #pragma once
 
-#include "HedgehogEngine/api/Save/SaveGameManager.hpp"
+#include "HedgehogEngine/HedgehogSettings/api/ProjectSettings.hpp"
 
 #include "HedgehogExtract/api/MeshBounds.hpp"
 #include "HedgehogExtract/api/RenderScene.hpp"
@@ -38,11 +38,14 @@ namespace Runtime
     // What a game run needs: which scene, for how long, at what step, and where things live.
     struct RuntimeDesc
     {
-        std::string                 ScenePath;                      // virtual, e.g. engine://Assets/Scenes/Default.yaml
+        // The scene to play (virtual, e.g. engine://Assets/Scenes/Hud.yaml). Empty plays the
+        // project's startup scene, or FallbackScenePath when the project names none.
+        std::string                 ScenePath;
+        std::string                 FallbackScenePath = "assets://Scenes/Default.yaml";
         uint32_t                    MaxFrames = 0;                  // 0: until the window closes
         std::optional<float>        FixedFrameTime;                 // every frame's dt; nullopt measures real time
         std::string                 SettingsPath = "engine://engine_settings.yaml"; // read, never written
-        std::string                 ProjectName  = HedgehogEngine::SaveGameManager::DEFAULT_PROJECT_NAME;
+        std::string                 ProjectPath  = HedgehogSettings::ProjectSettings::PATH; // read, never written
         bool                        EditorSaves  = false;           // the project's editor saves folder, not the game's
         std::vector<RuntimeMount>   Mounts;
     };
@@ -65,8 +68,10 @@ namespace Runtime
         GameRuntime(GameRuntime&&)                 = delete;
         GameRuntime& operator=(GameRuntime&&)      = delete;
 
-        // Builds everything and starts Play. A scene that does not load is logged and an empty one
-        // plays. False, logged, when already running or a mount cannot be registered.
+        // Builds everything and starts Play. The project settings name the saves folder (by the
+        // project's name), the game data version and, unless the desc names a scene, the scene. A
+        // scene that does not load is logged and an empty one plays. False, logged, when already
+        // running or a mount cannot be registered.
         bool Init(const RuntimeDesc& desc);
 
         // One frame: input, simulation, extraction, render. False, rendering nothing, once the
@@ -85,6 +90,9 @@ namespace Runtime
         // Valid between Init and Shutdown.
         [[nodiscard]] HedgehogEngine::EngineContext& GetEngineContext();
 
+        // The scene Init played (after the project's startup scene and the fallback were applied).
+        [[nodiscard]] const std::string& GetScenePath() const;
+
     private:
         float NextFrameTime();
 
@@ -98,6 +106,7 @@ namespace Runtime
         HX::SceneExtractor                        m_Extractor;
         HInput::GameInputGate                     m_InputGate;
 
+        std::string                               m_ScenePath;
         uint32_t                                  m_FrameCount = 0;
         std::chrono::steady_clock::time_point     m_LastFrame;
     };

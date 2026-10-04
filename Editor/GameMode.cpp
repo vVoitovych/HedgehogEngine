@@ -14,6 +14,7 @@ namespace Editor
     namespace
     {
         constexpr const char* SCENE_DIRECTORY = "engine://Assets/Scenes/";
+        constexpr const char* FALLBACK_SCENE  = "Default.yaml";
 
         // A fixed step keeps runs comparable: nothing here measures time.
         constexpr float FRAME_TIME = 1.0f / 60.0f;
@@ -29,9 +30,10 @@ namespace Editor
         RunResult RenderFrames(uint32_t frames, const std::string& sceneFile)
         {
             Runtime::RuntimeDesc desc;
-            desc.ScenePath      = SCENE_DIRECTORY + sceneFile;
-            desc.MaxFrames      = frames;
-            desc.FixedFrameTime = FRAME_TIME;
+            desc.ScenePath         = sceneFile.empty() ? std::string() : SCENE_DIRECTORY + sceneFile;
+            desc.FallbackScenePath = std::string(SCENE_DIRECTORY) + FALLBACK_SCENE;
+            desc.MaxFrames         = frames;
+            desc.FixedFrameTime    = FRAME_TIME;
 
             RunResult result;
             result.SawImGui = ImGui::GetCurrentContext() != nullptr;
@@ -49,7 +51,8 @@ namespace Editor
 
     int RunGameMode(uint32_t frames, const std::string& sceneFile)
     {
-        LOGINFO("Game mode: rendering ", frames, " frame(s) of ", sceneFile, " through the render graph...");
+        LOGINFO("Game mode: rendering ", frames, " frame(s) of ", sceneFile.empty() ? "the startup scene" : sceneFile,
+                " through the render graph...");
         if (!Renderer::AreValidationLayersEnabled())
             LOGWARNING("Game mode: Vulkan validation layers are disabled in this build; only a crash-free run "
                        "is being verified. Use a Debug build for full coverage.");

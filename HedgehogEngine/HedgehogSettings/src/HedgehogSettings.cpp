@@ -1,6 +1,7 @@
 #include "HedgehogSettings/api/HedgehogSettings.hpp"
 
 #include "HedgehogSettings/api/LayerSettings.hpp"
+#include "HedgehogSettings/api/ProjectSettings.hpp"
 #include "HedgehogSettings/api/ShadowmapingSettings.hpp"
 
 #include "FileSystem/api/FileSystemManager.hpp"
@@ -16,6 +17,7 @@ namespace HedgehogSettings
     {
         m_ShadowmapSettings = std::make_unique<ShadowmapSettings>();
         m_LayerSettings     = std::make_unique<LayerSettings>();
+        m_ProjectSettings   = std::make_unique<ProjectSettings>();
     }
 
     Settings::~Settings()
@@ -42,14 +44,14 @@ namespace HedgehogSettings
         return m_LayerSettings;
     }
 
-    int Settings::GetGameDataVersion() const
+    ProjectSettings& Settings::GetProjectSettings()
     {
-        return m_GameDataVersion;
+        return *m_ProjectSettings;
     }
 
-    void Settings::SetGameDataVersion(int version)
+    const ProjectSettings& Settings::GetProjectSettings() const
     {
-        m_GameDataVersion = version < 1 ? 1 : version;
+        return *m_ProjectSettings;
     }
 
     bool Settings::Load(const std::string& virtualPath, const FS::FileSystemManager& fileSystem)
@@ -115,13 +117,8 @@ namespace HedgehogSettings
                 }
             }
 
-            if (const YAML::Node game = root["game"])
-            {
-                if (const YAML::Node n = game["data_version"])
-                {
-                    SetGameDataVersion(n.as<int>());
-                }
-            }
+            // A "game" section (data_version) from before project settings is ignored and dropped
+            // on the next Save: the game data version lives in Project.yaml.
         }
         catch (const YAML::Exception& e)
         {
@@ -162,10 +159,6 @@ namespace HedgehogSettings
                 out << YAML::Key << layer << YAML::Value << name;
             }
         }
-        out << YAML::EndMap;
-
-        out << YAML::Key << "game" << YAML::Value << YAML::BeginMap;
-        out << YAML::Key << "data_version" << YAML::Value << m_GameDataVersion;
         out << YAML::EndMap;
 
         out << YAML::EndMap;
