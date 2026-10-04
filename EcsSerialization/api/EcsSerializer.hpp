@@ -7,6 +7,7 @@
 #include "FileSystem/api/FileSystemManager.hpp"
 
 #include <string>
+#include <vector>
 
 // Callers of the node functions include yaml-cpp themselves.
 namespace YAML
@@ -17,6 +18,20 @@ namespace YAML
 namespace EcsSerialization
 {
     class ComponentSerializerRegistry;
+
+    // What InstantiateSubtree does with a reference to an entity outside the subtree.
+    enum class ExternalReferences
+    {
+        Keep,  // kept while that entity is alive (a copy within one scene)
+        Clear  // always INVALID_ENTITY (a prefab, which names nothing outside itself)
+    };
+
+    struct InstantiateOptions
+    {
+        ExternalReferences External = ExternalReferences::Keep;
+        // When set, filled with the new entity of each local id (index = local id).
+        std::vector<ECS::Entity>* LocalEntities = nullptr;
+    };
 
     // Scenes, snapshots, saves and (through the subtree functions) prefabs share one path: reading parses text into a
     // node and reads that (DeserializeFromNode); writing emits text (SerializeToString), which
@@ -95,7 +110,7 @@ namespace EcsSerialization
         // through them under parent (appended last to its children) and points every entity
         // reference (an EntityRef property, or what a handler's RemapEntities rewrites) at the
         // new copy when it names an entity of the subtree; one outside it is kept while that
-        // entity is alive and becomes INVALID_ENTITY otherwise. Returns the new root, or
+        // entity is alive (unless options.External clears it) and becomes INVALID_ENTITY otherwise. Returns the new root, or
         // INVALID_ENTITY, logging why, for a parent without a hierarchy, a document of an unknown
         // version, a malformed one or one that does not fit in MAX_ENTITIES; nothing is left
         // created then. Whole scenes are unaffected.
@@ -104,6 +119,7 @@ namespace EcsSerialization
             ECS::ECS& ecs,
             const YAML::Node& document,
             ECS::Entity parent,
-            const std::string& sourceName);
+            const std::string& sourceName,
+            const InstantiateOptions& options = {});
     };
 }
