@@ -162,6 +162,19 @@ namespace Editor
         return listing;
     }
 
+    void ContentPanel::Reveal(const std::string& virtualPath)
+    {
+        const size_t slash = virtualPath.find_last_of('/');
+        if (slash == std::string::npos)
+            return;
+        std::string folder = virtualPath.substr(0, slash);
+        if (folder.ends_with(":/")) // a file at the top: "assets://Lamp.prefab"
+            folder += '/';
+        Navigate(folder);
+        m_Selected      = virtualPath.substr(slash + 1);
+        m_RevealCurrent = true;
+    }
+
     void ContentPanel::Navigate(const std::string& folder)
     {
         m_Current = folder;

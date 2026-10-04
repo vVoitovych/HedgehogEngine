@@ -1,5 +1,8 @@
 #include "EcsSerialization/api/Prefab/OverrideSet.hpp"
 #include "EcsSerialization/api/ComponentSerializerRegistry.hpp"
+#include "EcsSerialization/api/Prefab/IPrefabProvider.hpp"
+
+#include "ECS/api/components/Hierarchy.hpp"
 
 #include "Logger/api/Logger.hpp"
 
@@ -44,6 +47,34 @@ namespace EcsSerialization
             }
             out << YAML::EndMap;
             return YAML::Load(out.c_str());
+        }
+    }
+
+    void CollectInstance(const IPrefabProvider& prefabs, const ECS::ECS& ecs, ECS::Entity root,
+                         std::vector<ECS::Entity>& members, std::vector<ECS::Entity>* added)
+    {
+        members.clear();
+        if (added)
+            added->clear();
+        std::vector<ECS::Entity> pending{ root };
+        while (!pending.empty())
+        {
+            const ECS::Entity member = pending.back();
+            pending.pop_back();
+            const std::optional<PrefabLink> own   = prefabs.GetLink(ecs, member);
+            const uint32_t                  local = own ? own->LocalId : 0;
+            if (local >= members.size())
+                members.resize(local + 1, ECS::INVALID_ENTITY);
+            members[local] = member;
+            const auto& children = ecs.GetComponent<ECS::HierarchyComponent>(member).Children;
+            for (auto it = children.rbegin(); it != children.rend(); ++it)
+            {
+                const std::optional<PrefabLink> link = prefabs.GetLink(ecs, *it);
+                if (link && link->InstanceRoot == root)
+                    pending.push_back(*it);
+                else if (added)
+                    added->insert(added->begin(), *it);
+            }
         }
     }
 
@@ -96,12 +127,45 @@ namespace EcsSerialization
         return false;
     }
 
+    EntityRemap MakePrefabToInstanceRemap(const YAML::Node& subtreeDocument, const std::vector<ECS::Entity>& entities)
+    {
+        std::vector<ECS::Entity> sourceIds;
+        if (const YAML::Node listed = subtreeDocument["SourceIds"]; listed && listed.IsSequence())
+            sourceIds = listed.as<std::vector<ECS::Entity>>();
+        return [sourceIds = std::move(sourceIds), entities](ECS::Entity id)
+        {
+            for (size_t local = 0; local < sourceIds.size(); ++local)
+            {
+                if (sourceIds[local] == id)
+                    return local < entities.size() ? entities[local] : ECS::INVALID_ENTITY;
+            }
+            return ECS::INVALID_ENTITY; // outside the prefab: instantiating clears it
+        };
+    }
+
+    EntityRemap MakeInstanceToPrefabRemap(const YAML::Node& subtreeDocument, const std::vector<ECS::Entity>& entities)
+    {
+        std::vector<ECS::Entity> sourceIds;
+        if (const YAML::Node listed = subtreeDocument["SourceIds"]; listed && listed.IsSequence())
+            sourceIds = listed.as<std::vector<ECS::Entity>>();
+        return [sourceIds = std::move(sourceIds), entities](ECS::Entity id)
+        {
+            for (size_t local = 0; local < entities.size(); ++local)
+            {
+                if (entities[local] == id && id != ECS::INVALID_ENTITY)
+                    return local < sourceIds.size() ? sourceIds[local] : ECS::INVALID_ENTITY;
+            }
+            return ECS::INVALID_ENTITY; // a prefab names nothing outside itself
+        };
+    }
+
     OverrideSet DiffInstance(const ComponentSerializerRegistry& registry, const ECS::ECS& ecs,
                              const std::vector<ECS::Entity>& entities, const YAML::Node& subtreeDocument,
                              const std::string& skipComponent)
     {
         OverrideSet                   overrides;
-        const std::vector<YAML::Node> nodes = IndexSubtree(subtreeDocument);
+        const std::vector<YAML::Node> nodes   = IndexSubtree(subtreeDocument);
+        const EntityRemap             toLocal = MakePrefabToInstanceRemap(subtreeDocument, entities);
         for (size_t local = 0; local < entities.size() && local < nodes.size(); ++local)
         {
             if (entities[local] == ECS::INVALID_ENTITY || !nodes[local])
@@ -112,13 +176,23 @@ namespace EcsSerialization
             {
                 if (handler.YamlKey == skipComponent)
                     continue;
-                const YAML::Node mine   = instance[handler.YamlKey];
-                const YAML::Node theirs = prefab[handler.YamlKey];
-                if (mine && !theirs)
+                const YAML::Node mine = instance[handler.YamlKey];
+                // The prefab's values with its entity ids as this instance's, so a reference to one
+                // of the instance's own entities compares equal.
+                const bool prefabHas = prefab[handler.YamlKey].IsDefined();
+                YAML::Node theirs;
+                if (prefabHas)
+                {
+                    theirs = YAML::Clone(prefab[handler.YamlKey]);
+                    if (handler.RemapYaml)
+                        handler.RemapYaml(theirs, toLocal);
+                }
+                const YAML::Node& prefabValues = theirs;
+                if (mine && !prefabHas)
                 {
                     overrides.push_back({ static_cast<uint32_t>(local), handler.YamlKey, {}, mine });
                 }
-                else if (!mine && theirs)
+                else if (!mine && prefabHas)
                 {
                     LOGWARNING("[Prefab] Node " + std::to_string(local) + " of an instance has no " + handler.YamlKey +
                                ", which its prefab has; removing a component from an instance is not saved.");
@@ -128,7 +202,7 @@ namespace EcsSerialization
                     for (const auto& property : mine)
                     {
                         const std::string name  = property.first.Scalar();
-                        const YAML::Node  value = theirs[name];
+                        const YAML::Node  value = prefabValues[name];
                         if (!value || !ValuesEqual(property.second, value))
                             overrides.push_back({ static_cast<uint32_t>(local), handler.YamlKey, name, property.second });
                     }

@@ -31,6 +31,9 @@ namespace EcsSerialization
                                                                 const ECS::ECS&                    ecs,
                                                                 ECS::Entity                        subtreeRoot);
 
+    // The text of a prefab whose Root is subtreeDocument (an edited copy of one ReadPrefab returned).
+    [[nodiscard]] ECS_SERIALIZATION_API std::string WritePrefabDocument(const YAML::Node& subtreeDocument);
+
     // Refuses malformed YAML, a Version that is not a positive integer or is newer than
     // PREFAB_FORMAT_VERSION, and a Root that is not a map holding a Subtree sequence.
     [[nodiscard]] ECS_SERIALIZATION_API PrefabReadResult ReadPrefab(const std::string& text);

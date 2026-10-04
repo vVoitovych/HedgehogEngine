@@ -4,9 +4,12 @@
 #include "EditorSettings.hpp"
 #include "Panels/ContentPanel.hpp"
 #include "Panels/EditorIcons.hpp"
+#include "Reflection/GuiReflection.hpp"
 #include "ECS/api/Entity.hpp"
 
 #include "FileSystem/api/FileSystemManager.hpp"
+
+#include "EcsSerialization/api/Prefab/OverrideSet.hpp"
 
 #include "HedgehogAudio/api/SoundHandle.hpp"
 #include "HedgehogInput/api/GameInputRegion.hpp"
@@ -188,6 +191,16 @@ namespace Editor
         bool MarkHierarchyMatches(ECS::ECS& ecs, ECS::Entity entity, std::string_view search);
         void DrawInspector(HedgehogEngine::Engine& context);
         void DrawEntityTitle(HedgehogEngine::Engine& context);
+        // For an entity of a prefab instance: the prefab's name, Select (in the Project panel),
+        // Revert All and Apply All for the whole instance, and the entity's own overrides, each with
+        // Revert and Apply (EditorGuiPrefabs.cpp).
+        void DrawPrefabBar(HedgehogEngine::Engine& context);
+        // Recomputes the selected instance's overrides when they may have changed.
+        void RefreshPrefabOverrides(HedgehogEngine::Engine& context);
+        // Reverts or applies the given overrides of the selected entity's instance.
+        void ChangePrefabOverrides(HedgehogEngine::Engine& context, const EcsSerialization::OverrideSet& overrides, bool apply);
+        // The overridden row a reflected row's menu asked to revert or apply.
+        void HandlePrefabRowRequest(HedgehogEngine::Engine& context);
         void DrawTransformComponent(HedgehogEngine::Engine& context);
         void DrawMeshComponent(HedgehogEngine::Engine& context);
         void DrawRenderComponent(HedgehogEngine::Engine& context);
@@ -257,6 +270,20 @@ namespace Editor
         HedgehogScripting::ScriptSystem* m_ScriptSystem = nullptr;
         std::optional<AssetDrop>          m_AssetDrop;        // this frame's, applied after the panels
         std::optional<ContentOpenRequest> m_SceneToOpen;      // a scene dropped on the hierarchy, awaiting yes
+
+        // The selected entity's prefab instance and its overrides (every node of it), recomputed
+        // when the selection changes, after an inspector edit, a revert or an apply, and every frame
+        // outside Edit; the marks hand the selected node's overrides to the reflected rows.
+        struct PrefabOverrideCache
+        {
+            std::optional<ECS::Entity>    Entity;
+            ECS::Entity                   InstanceRoot = ECS::INVALID_ENTITY;
+            uint32_t                      LocalId      = 0;
+            EcsSerialization::OverrideSet Instance;
+            bool                          Stale = true;
+        };
+        PrefabOverrideCache               m_PrefabOverrides;
+        Reflection::PrefabOverrideMarks   m_PrefabMarks;
         HA::SoundHandle                   m_PreviewSound;     // the Content panel's audio preview
         std::string                       m_PreviewPath;
 

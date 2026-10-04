@@ -1,5 +1,6 @@
 #pragma once
 
+#include "EcsSerialization/api/ComponentSerializerRegistry.hpp"
 #include "EcsSerialization/api/EcsSerializationApi.hpp"
 
 #include "ECS/api/ECS.hpp"
@@ -13,8 +14,6 @@
 
 namespace EcsSerialization
 {
-    class ComponentSerializerRegistry;
-
     // One value a prefab instance holds differently from its prefab: a key of one component's
     // YAML map on the node with that local id. An empty Property is the whole component, which the
     // prefab's node does not have (a component added on the instance).
@@ -28,6 +27,15 @@ namespace EcsSerialization
 
     using OverrideSet = std::vector<PropertyOverride>;
 
+    class IPrefabProvider;
+
+    // The entities of the instance rooted at root by local id (INVALID_ENTITY for a gap): root and
+    // every descendant linked to root, reached through such entities. With added, also the entities
+    // added under the instance (a child of one of its entities that is not one itself), not their
+    // descendants.
+    ECS_SERIALIZATION_API void CollectInstance(const IPrefabProvider& prefabs, const ECS::ECS& ecs, ECS::Entity root,
+                                               std::vector<ECS::Entity>& members, std::vector<ECS::Entity>* added = nullptr);
+
     // The nodes of a subtree document by local id (an absent id left as an undefined node).
     [[nodiscard]] ECS_SERIALIZATION_API std::vector<YAML::Node> IndexSubtree(const YAML::Node& subtreeDocument);
 
@@ -37,13 +45,24 @@ namespace EcsSerialization
 
     // What the instance (entities by local id, INVALID_ENTITY for none) holds differently from the
     // prefab's subtree document, per (local id, component, property), in local id and handler
-    // order. skipComponent (the prefab link) is never compared. A component the prefab's node has
-    // but the instance does not is not an override (v1): one warning names it.
+    // order. skipComponent (the prefab link) is never compared. Entity ids are compared through each
+    // handler's RemapYaml (MakePrefabToInstanceRemap), so a reference to one of the instance's own
+    // entities, or a cleared one to an entity outside the prefab, is not an override. A component
+    // the prefab's node has but the instance does not is not an override (v1): one warning names it.
     [[nodiscard]] ECS_SERIALIZATION_API OverrideSet DiffInstance(const ComponentSerializerRegistry& registry,
                                                                 const ECS::ECS&                    ecs,
                                                                 const std::vector<ECS::Entity>&    entities,
                                                                 const YAML::Node&                  subtreeDocument,
                                                                 const std::string&                 skipComponent);
+
+    // Maps a prefab document's entity ids (its SourceIds) to the instance's (entities by local id);
+    // any other id becomes INVALID_ENTITY, as instantiating leaves it.
+    [[nodiscard]] ECS_SERIALIZATION_API EntityRemap MakePrefabToInstanceRemap(const YAML::Node&               subtreeDocument,
+                                                                             const std::vector<ECS::Entity>& entities);
+    // The other way, for values applied to the prefab: an instance's entity becomes its source id,
+    // any other id INVALID_ENTITY.
+    [[nodiscard]] ECS_SERIALIZATION_API EntityRemap MakeInstanceToPrefabRemap(const YAML::Node&               subtreeDocument,
+                                                                             const std::vector<ECS::Entity>& entities);
 
     // Applies overrides to a freshly instantiated instance. One whose node, component or property
     // no longer exists in the prefab is dropped with a warning naming sourceName.

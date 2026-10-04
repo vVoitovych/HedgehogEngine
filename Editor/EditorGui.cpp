@@ -106,7 +106,7 @@ namespace
         if (!section.Open)
             return;
         ImGui::PushID(header);
-        Reflection::RenderComponentGui(&component, T::GetProperties());
+        Reflection::RenderComponentGui(&component, T::GetProperties(), T::s_TypeName);
         extra();
         ImGui::PopID();
     }
@@ -841,7 +841,11 @@ namespace Editor
     {
         if (m_SelectedEntity.has_value())
         {
+            RefreshPrefabOverrides(context);
             DrawEntityTitle(context);
+            DrawPrefabBar(context);
+            const bool instance = m_PrefabOverrides.InstanceRoot != ECS::INVALID_ENTITY;
+            Reflection::ActivePrefabOverrideMarks() = instance ? &m_PrefabMarks : nullptr;
             DrawTransformComponent(context);
             DrawLightComponent(context);
             DrawCameraComponent(context);
@@ -850,6 +854,11 @@ namespace Editor
             DrawScriptComponent(context);
             DrawAnimatorComponent(context);
             DrawUiComponents(context);
+            Reflection::ActivePrefabOverrideMarks() = nullptr;
+            HandlePrefabRowRequest(context);
+            // An edit in the inspector may have made or undone an override.
+            if (instance && ImGui::IsAnyItemActive())
+                m_PrefabOverrides.Stale = true;
 
             // The Component menu's items, from a button under the last section.
             ImGui::Spacing();
@@ -929,7 +938,7 @@ namespace Editor
 
         auto& transform = ecs.GetComponent<HedgehogEngine::TransformComponent>(entity);
 
-        if (Reflection::RenderComponentGui(&transform, HedgehogEngine::TransformComponent::GetProperties()))
+        if (Reflection::RenderComponentGui(&transform, HedgehogEngine::TransformComponent::GetProperties(), HedgehogEngine::TransformComponent::s_TypeName))
             engineContext.GetEventBus().Publish(HedgehogEngine::TransformChangedEvent{ entity });
     }
 
@@ -1159,7 +1168,7 @@ namespace Editor
         if (!section.Open)
             return;
 
-        Reflection::RenderComponentGui(&light, HedgehogEngine::LightComponent::GetProperties());
+        Reflection::RenderComponentGui(&light, HedgehogEngine::LightComponent::GetProperties(), HedgehogEngine::LightComponent::s_TypeName);
 
         // Through the light system, so only one light casts shadows.
         if (light.LightType == HedgehogEngine::LightType::DirectionLight && BeginPropertyTable("##LightShadows"))
@@ -1193,7 +1202,7 @@ namespace Editor
         if (!section.Open)
             return;
 
-        Reflection::RenderComponentGui(&camera, HedgehogEngine::CameraComponent::GetProperties());
+        Reflection::RenderComponentGui(&camera, HedgehogEngine::CameraComponent::GetProperties(), HedgehogEngine::CameraComponent::s_TypeName);
         if (!BeginPropertyTable("##CameraMore"))
             return;
         DrawCameraGraph(camera.GraphName);
@@ -1237,7 +1246,7 @@ namespace Editor
             return;
 
         auto& animator = ecs.GetComponent<HedgehogEngine::AnimatorComponent>(entity);
-        Reflection::RenderComponentGui(&animator, HedgehogEngine::AnimatorComponent::GetProperties());
+        Reflection::RenderComponentGui(&animator, HedgehogEngine::AnimatorComponent::GetProperties(), HedgehogEngine::AnimatorComponent::s_TypeName);
     }
 
     void EditorGui::DrawUiComponents(HedgehogEngine::Engine& context)

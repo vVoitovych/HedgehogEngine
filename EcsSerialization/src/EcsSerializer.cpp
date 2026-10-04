@@ -64,25 +64,7 @@ namespace
     {
         std::vector<ECS::Entity> members;
         std::vector<ECS::Entity> added;
-        std::vector<ECS::Entity> pending{ root };
-        while (!pending.empty())
-        {
-            const ECS::Entity member = pending.back();
-            pending.pop_back();
-            const uint32_t local = prefabs.GetLink(ecs, member)->LocalId;
-            if (local >= members.size())
-                members.resize(local + 1, ECS::INVALID_ENTITY);
-            members[local] = member;
-            const auto& children = ecs.GetComponent<ECS::HierarchyComponent>(member).Children;
-            for (auto it = children.rbegin(); it != children.rend(); ++it)
-            {
-                const std::optional<PrefabLink> link = prefabs.GetLink(ecs, *it);
-                if (link && link->InstanceRoot == root)
-                    pending.push_back(*it);
-                else
-                    added.insert(added.begin(), *it);
-            }
-        }
+        CollectInstance(prefabs, ecs, root, members, &added);
 
         const auto& hierarchy = ecs.GetComponent<ECS::HierarchyComponent>(root);
         out << YAML::BeginMap;
