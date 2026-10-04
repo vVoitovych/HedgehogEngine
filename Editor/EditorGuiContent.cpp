@@ -2,6 +2,8 @@
 #include "Panels/AssetDragDrop.hpp"
 #include "Panels/ContentPanel.hpp"
 #include "Platform/ShellActions.hpp"
+
+#include "DialogueWindows/api/PrefabDialogue.hpp"
 #include "Tools/PipelineWindow.hpp"
 #include "Tools/RenderGraphEditor/GraphFileReference.hpp"
 #include "Tools/RenderGraphEditor/RenderGraphEditorWindow.hpp"
@@ -19,6 +21,7 @@
 #include "HedgehogEngine/api/ECS/systems/MeshSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/RenderSystem.hpp"
 #include "HedgehogEngine/api/Engine.hpp"
+#include "HedgehogEngine/api/Prefab/PrefabManager.hpp"
 #include "HedgehogEngine/api/Resource/ResourceCatalog.hpp"
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogRenderer/Renderer.hpp"
@@ -40,6 +43,8 @@ namespace Editor
     {
         constexpr std::string_view ASSETS_PREFIX    = "assets://";
         constexpr const char*      OPEN_SCENE_POPUP = "Open dropped scene";
+        // Where Create Prefab... suggests saving, under assets://.
+        constexpr const char*      PREFAB_FOLDER    = "Prefabs";
 
         // What the selected entity needs for a file of this type to go onto it.
         const char* RequiredComponent(ContentType type)
@@ -101,6 +106,9 @@ namespace Editor
         case ContentType::Audio:
             // An editor tool, so it plays in Edit mode too; the clip goes onto a source by dragging.
             PreviewAudio(engineContext, request.VirtualPath);
+            return;
+        case ContentType::Prefab:
+            InstantiatePrefab(context, request.VirtualPath, std::nullopt);
             return;
         case ContentType::RenderGraph:
             if (m_Renderer)
@@ -263,6 +271,8 @@ namespace Editor
         {
             if (drop.Asset.Type == ContentType::Scene)
                 m_SceneToOpen = drop.Asset; // DrawOpenSceneDropPopup asks first
+            else if (drop.Asset.Type == ContentType::Prefab)
+                InstantiatePrefab(context, drop.Asset.VirtualPath, drop.Parent);
             else
                 CreateMeshEntity(context, drop.Asset, drop.Parent);
             return;
@@ -302,6 +312,50 @@ namespace Editor
 
         m_SelectedEntity = entity;
         LOGINFO("Content: created '", ecs.GetComponent<ECS::HierarchyComponent>(entity).Name, "' from '", mesh.VirtualPath, "'.");
+    }
+
+    void EditorGui::InstantiatePrefab(HedgehogEngine::Engine& context, const std::string& virtualPath,
+                                      std::optional<ECS::Entity> parent)
+    {
+        auto&             engineContext = context.GetEngineContext();
+        const ECS::Entity instance      = engineContext.GetPrefabs().Instantiate(virtualPath, parent);
+        if (instance == ECS::INVALID_ENTITY)
+            return; // the prefab manager said why
+        // As when assigning: the containers must know the instance's meshes and materials before
+        // anything reads their indices.
+        engineContext.GetResourceCatalog().Update(*engineContext.GetRenderSystem(), *engineContext.GetMeshSystem());
+        m_SelectedEntity = instance;
+        LOGINFO("Content: instantiated '", virtualPath, "'.");
+    }
+
+    void EditorGui::CreatePrefabFrom(HedgehogEngine::Engine& context, ECS::Entity entity)
+    {
+        auto&       engineContext = context.GetEngineContext();
+        auto&       fileSystem    = engineContext.GetFileSystem();
+        const auto  folder        = fileSystem.ResolvePhysical(std::string(ASSETS_PREFIX) + PREFAB_FOLDER);
+        if (!folder)
+            return;
+        std::error_code error;
+        std::filesystem::create_directories(*folder, error);
+        const std::string& name      = engineContext.GetECS().GetComponent<ECS::HierarchyComponent>(entity).Name;
+        const std::string  suggested = (std::filesystem::path(*folder) / (name + ".prefab")).make_preferred().string();
+
+        const char* picked = DialogueWindows::PrefabSaveDialogue(suggested.c_str());
+        if (!picked)
+            return;
+        std::filesystem::path chosen(picked);
+        if (chosen.extension() != ".prefab")
+            chosen += ".prefab";
+        const auto virtualPath = fileSystem.ToVirtualPath(chosen.string());
+        if (!virtualPath || !virtualPath->starts_with(ASSETS_PREFIX))
+        {
+            LOGERROR("Editor: '", chosen.string(), "' is not under assets://, so it cannot be a prefab.");
+            return;
+        }
+
+        HedgehogEngine::PrefabManager& prefabs = engineContext.GetPrefabs();
+        if (prefabs.CreatePrefab(entity, *virtualPath))
+            (void)prefabs.LinkInstance(entity, *virtualPath); // the source becomes its first instance
     }
 
     void EditorGui::DrawOpenSceneDropPopup(HedgehogEngine::Engine& context)

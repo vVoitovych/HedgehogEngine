@@ -122,29 +122,58 @@ namespace HedgehogEngine
         if (!root)
             return ECS::INVALID_ENTITY;
 
-        std::vector<ECS::Entity>               entities;
         EcsSerialization::InstantiateOptions options;
-        options.External      = EcsSerialization::ExternalReferences::Clear;
-        options.LocalEntities = &entities;
+        options.External = EcsSerialization::ExternalReferences::Clear;
         const ECS::Entity instance = EcsSerialization::EcsSerializer::InstantiateSubtree(
             m_Registry, m_ECS, *root, parent.value_or(m_ECS.GetRoot()), path, options);
         if (instance == ECS::INVALID_ENTITY)
             return ECS::INVALID_ENTITY; // logged, naming the path
 
-        for (size_t localId = 0; localId < entities.size(); ++localId)
-        {
-            PrefabInstanceComponent link;
-            link.PrefabPath   = localId == 0 ? path : std::string{};
-            link.LocalId      = static_cast<uint32_t>(localId);
-            link.InstanceRoot = instance;
-            // A prefab made from an instance carries the old link; this instance replaces it.
-            if (m_ECS.HasComponent<PrefabInstanceComponent>(entities[localId]))
-                m_ECS.GetComponent<PrefabInstanceComponent>(entities[localId]) = link;
-            else
-                m_ECS.AddComponent(entities[localId], link);
-        }
+        // The copy keeps the document's depth-first order, so its walk gives the local ids.
+        LinkSubtree(instance, path);
         m_SceneManager.RefreshAfterLoad();
         return instance;
+    }
+
+    bool PrefabManager::LinkInstance(ECS::Entity entity, const std::string& virtualPath)
+    {
+        const std::string path = NormalizePrefabPath(virtualPath);
+        if (path.empty())
+        {
+            LOGERROR("[Prefab] '" + virtualPath + "' is not a .prefab path.");
+            return false;
+        }
+        if (entity == m_ECS.GetRoot() || !m_ECS.IsAlive(entity) || !m_ECS.HasComponent<ECS::HierarchyComponent>(entity))
+        {
+            LOGERROR("[Prefab] " + path + ": entity " + std::to_string(entity) + " is the scene root or not a game object.");
+            return false;
+        }
+        LinkSubtree(entity, path);
+        return true;
+    }
+
+    void PrefabManager::LinkSubtree(ECS::Entity instanceRoot, const std::string& path)
+    {
+        uint32_t                 localId = 0;
+        std::vector<ECS::Entity> pending{ instanceRoot };
+        while (!pending.empty())
+        {
+            const ECS::Entity current = pending.back();
+            pending.pop_back();
+
+            PrefabInstanceComponent link;
+            link.PrefabPath   = current == instanceRoot ? path : std::string{};
+            link.LocalId      = localId++;
+            link.InstanceRoot = instanceRoot;
+            // An entity linked before (a prefab made from an instance) takes the new link.
+            if (m_ECS.HasComponent<PrefabInstanceComponent>(current))
+                m_ECS.GetComponent<PrefabInstanceComponent>(current) = link;
+            else
+                m_ECS.AddComponent(current, link);
+
+            const auto& children = m_ECS.GetComponent<ECS::HierarchyComponent>(current).Children;
+            pending.insert(pending.end(), children.rbegin(), children.rend());
+        }
     }
 
     size_t PrefabManager::GetCachedPrefabCount() const { return m_Cache.size(); }

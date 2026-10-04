@@ -251,3 +251,47 @@ TEST_CASE("Prefabs - a missing or broken prefab fails naming its path and create
     CHECK(world.Ecs.GetEntityCount() == before);
     CHECK(world.Prefabs().GetCachedPrefabCount() == 0);
 }
+
+TEST_CASE("Prefabs - linking the source makes it an instance with the document's local ids")
+{
+    PrefabWorld world;
+    REQUIRE(world.Prefabs().CreatePrefab(world.Lamp, "prefabs://Lamp.prefab"));
+    REQUIRE(world.Prefabs().LinkInstance(world.Lamp, "prefabs://Lamp.prefab"));
+    const ECS::Entity copy = world.Prefabs().Instantiate("prefabs://Lamp.prefab");
+    REQUIRE(copy != ECS::INVALID_ENTITY);
+
+    // The source's links match the instance's node for node.
+    const std::vector<ECS::Entity> source{ world.Lamp, world.Bulb, world.Shade };
+    const std::vector<ECS::Entity> instance{ copy, world.Hierarchy(copy).Children[0], world.Hierarchy(copy).Children[1] };
+    for (size_t i = 0; i < source.size(); ++i)
+    {
+        CAPTURE(i);
+        const auto& link = world.Ecs.GetComponent<PrefabInstanceComponent>(source[i]);
+        CHECK(link.LocalId == world.Ecs.GetComponent<PrefabInstanceComponent>(instance[i]).LocalId);
+        CHECK(link.InstanceRoot == world.Lamp);
+        CHECK(link.PrefabPath == (i == 0 ? "prefabs://Lamp.prefab" : ""));
+        CHECK(world.Hierarchy(source[i]).Name == world.Hierarchy(instance[i]).Name);
+    }
+
+    LogCapture log;
+    CHECK_FALSE(world.Prefabs().LinkInstance(world.Lamp, "prefabs://Lamp.yaml"));
+    CHECK_FALSE(world.Prefabs().LinkInstance(world.Context.GetSceneManager().GetRootEntity(), "prefabs://Lamp.prefab"));
+    CHECK(log.Count("[Prefab]") == 2);
+}
+
+TEST_CASE("Prefabs - the shipped LampPost prefab instantiates with its mesh and light")
+{
+    EngineContext context;
+    ECS::ECS&     ecs = context.GetECS();
+
+    const ECS::Entity lampPost = context.GetPrefabs().Instantiate("assets://Prefabs/LampPost.prefab");
+    REQUIRE(lampPost != ECS::INVALID_ENTITY);
+    const auto& children = ecs.GetComponent<ECS::HierarchyComponent>(lampPost).Children;
+    REQUIRE(children.size() == 2);
+    CHECK(ecs.GetComponent<ECS::HierarchyComponent>(children[0]).Name == "Post");
+    const ECS::Entity lamp = children[1];
+    REQUIRE(ecs.HasComponent<HedgehogEngine::LightComponent>(lamp));
+    CHECK(ecs.GetComponent<HedgehogEngine::LightComponent>(lamp).LightType == HedgehogEngine::LightType::PointLight);
+    CHECK(ecs.GetComponent<PrefabInstanceComponent>(lamp).LocalId == 2);
+    CHECK(ecs.GetComponent<PrefabInstanceComponent>(lampPost).PrefabPath == "assets://Prefabs/LampPost.prefab");
+}

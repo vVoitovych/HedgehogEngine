@@ -1,0 +1,48 @@
+Version: 1
+Root:
+  Version: 1
+  SourceIds: [0, 1, 2]
+  Subtree:
+    - Entity: 0
+      Name: Lamp Post
+      Parent: 18446744073709551615
+      TransformComponent:
+        Position: [0, 0, 0]
+        Rotation: [0, 0, 0]
+        Scale: [1, 1, 1]
+      Children:
+        - Entity: 1
+          Name: Post
+          Parent: 0
+          TransformComponent:
+            Position: [0, 0, 1.5]
+            Rotation: [0, 0, 0]
+            Scale: [0.15, 0.15, 3]
+          MeshComponent:
+            MeshPath: Models/Default/cube.obj
+          RenderComponent:
+            Visible: true
+            Material: Materials/test3.material
+          Children:
+            []
+        - Entity: 2
+          Name: Lamp
+          Parent: 0
+          TransformComponent:
+            Position: [0, 0, 3.2]
+            Rotation: [0, 0, 0]
+            Scale: [0.4, 0.4, 0.4]
+          MeshComponent:
+            MeshPath: Models/Default/sphere.obj
+          RenderComponent:
+            Visible: true
+            Material: Materials/test1.material
+          LightComponent:
+            LightEnabled: true
+            LightType: 1
+            LightColor: [1, 0.85, 0.6]
+            LightIntensity: 1.5
+            LightRadius: 6
+            LightConeAngle: 2
+          Children:
+            []

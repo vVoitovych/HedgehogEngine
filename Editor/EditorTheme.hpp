@@ -40,6 +40,9 @@ namespace Editor::Theme
     // The play-mode toolbar button that matches the current state.
     inline constexpr ImVec4 PLAY_TINT = FromHex(0x4C8DDB);
 
+    // A prefab instance's root in the hierarchy: its name and icon.
+    inline constexpr ImVec4 PREFAB_TINT = FromHex(0x78B4F0);
+
     // The UI font's size in pixels, before any global scale.
     inline constexpr float FONT_SIZE      = 15.0f;
     // The Console's monospace font is ImGui's bitmap font, crisp only at its own size.

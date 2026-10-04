@@ -166,6 +166,13 @@ namespace Editor
         // components (the scene's first material), under parent or the root.
         void CreateMeshEntity(HedgehogEngine::Engine& context, const ContentOpenRequest& mesh,
                               std::optional<ECS::Entity> parent);
+        // A prefab dropped on the hierarchy (under parent) or opened (at the root): a new instance,
+        // selected.
+        void InstantiatePrefab(HedgehogEngine::Engine& context, const std::string& virtualPath,
+                               std::optional<ECS::Entity> parent);
+        // Hierarchy > Create Prefab...: asks where under assets:// to save entity's subtree
+        // (Prefabs/<name>.prefab suggested), writes it and makes entity an instance of it.
+        void CreatePrefabFrom(HedgehogEngine::Engine& context, ECS::Entity entity);
         void DrawOpenSceneDropPopup(HedgehogEngine::Engine& context);
         // False when the selected entity has nowhere to put the file.
         bool AssignToSelection(HedgehogEngine::Engine& context, const ContentOpenRequest& request,
@@ -233,6 +240,7 @@ namespace Editor
         std::vector<uint8_t>       m_HierarchyMatches;
         std::optional<ECS::Entity> m_HierarchyCreateUnder;
         std::optional<ECS::Entity> m_HierarchyDelete;
+        std::optional<ECS::Entity> m_HierarchyCreatePrefab;
         bool                                   m_SettingsWindowOpen = false;
         std::unique_ptr<ConsolePanel>            m_ConsolePanel;
         std::unique_ptr<ContentPanel>            m_ContentPanel;
