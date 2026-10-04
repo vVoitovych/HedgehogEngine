@@ -43,6 +43,7 @@ include "HedgehogEngine/HedgehogSettings/Build-HedgehogSettings.lua"
 include "HedgehogEngine/HedgehogSettings/tests/Build-HedgehogSettingsTest.lua"
 
 include "Editor/Build-Editor.lua"
+include "Game/Build-Game.lua"
 include "Editor/tests/Build-EditorTest.lua"
 include "ContentLoader/Build-ContentLoader.lua"
 include "ContentLoader/tests/Build-ContentLoaderTest.lua"

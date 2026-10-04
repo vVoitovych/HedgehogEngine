@@ -29,17 +29,36 @@ namespace FS
 #endif
     }
 
+    namespace
+    {
+        std::filesystem::path& EngineRootOverride()
+        {
+            static std::filesystem::path root;
+            return root;
+        }
+    }
+
+    std::filesystem::path FindProjectRoot(const std::filesystem::path& start)
+    {
+        std::error_code error;
+        for (std::filesystem::path directory = start; !directory.empty(); directory = directory.parent_path())
+        {
+            if (std::filesystem::is_regular_file(directory / PROJECT_FILE_NAME, error))
+                return directory;
+            if (directory == directory.parent_path())
+                break;
+        }
+        return start;
+    }
+
     std::filesystem::path GetEngineRootDirectory()
     {
-        const std::filesystem::path exeDir = GetExecutableDirectory();
-        // Binary layout: Binaries/<Platform>/<Config>/exe
-        // Walk up 3 levels to reach the repo root.
-        const std::filesystem::path root = exeDir.parent_path().parent_path().parent_path();
-        assert(std::filesystem::exists(root / "Assets") &&
-               "Engine root not found — the executable must be 3 levels deep "
-               "(Binaries/<Platform>/<Config>/)");
-        return root;
+        if (!EngineRootOverride().empty())
+            return EngineRootOverride();
+        return FindProjectRoot(GetExecutableDirectory());
     }
+
+    void SetEngineRootDirectory(const std::filesystem::path& root) { EngineRootOverride() = root; }
 
     std::optional<std::filesystem::path>
         MakeSavesDirectory(const std::filesystem::path& localAppData, const std::string& projectName, bool editor)

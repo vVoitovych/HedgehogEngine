@@ -45,7 +45,8 @@ namespace Runtime
         uint32_t                    MaxFrames = 0;                  // 0: until the window closes
         std::optional<float>        FixedFrameTime;                 // every frame's dt; nullopt measures real time
         std::string                 SettingsPath = "engine://engine_settings.yaml"; // read, never written
-        std::string                 ProjectPath  = HedgehogSettings::ProjectSettings::PATH; // read, never written
+        std::string                 ProjectPath  = HedgehogSettings::ProjectSettings::PATH; // under engine://; read, never written
+        bool                        UseProjectWindow = false;       // the project's title, size and fullscreen; else 1366x768
         bool                        EditorSaves  = false;           // the project's editor saves folder, not the game's
         std::vector<RuntimeMount>   Mounts;
     };

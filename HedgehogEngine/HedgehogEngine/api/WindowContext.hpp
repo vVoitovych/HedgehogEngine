@@ -3,6 +3,7 @@
 #include "HedgehogEngine/api/HedgehogEngineApi.hpp"
 
 #include <memory>
+#include <string>
 
 namespace HW
 {
@@ -21,10 +22,21 @@ namespace HedgehogEngine
         Maximized
     };
 
+    // The main window as it opens: a game opens the one its project settings describe.
+    struct WindowOptions
+    {
+        std::string Title      = "Hedgehog Engine";
+        int         Width      = 1366;
+        int         Height     = 768;
+        bool        Fullscreen = false; // on the primary monitor; Mode is then ignored
+        WindowMode  Mode       = WindowMode::Windowed;
+    };
+
     class WindowContext
     {
     public:
         HEDGEHOG_ENGINE_API explicit WindowContext(WindowMode mode);
+        HEDGEHOG_ENGINE_API explicit WindowContext(const WindowOptions& options);
         HEDGEHOG_ENGINE_API ~WindowContext();
 
         WindowContext(const WindowContext&)            = delete;

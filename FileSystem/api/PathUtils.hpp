@@ -13,14 +13,25 @@ namespace FS
     // Where save games live: a per-user folder outside the project, mounted as saves://.
     inline constexpr const char* SAVES_ALIAS = "saves://";
 
+    // The file that marks a project's root: the repository in a dev tree, the folder of a packaged game.
+    inline constexpr const char* PROJECT_FILE_NAME = "Project.yaml";
+
     // Returns the directory containing the running executable.
     // Only implemented on Windows; calls GetModuleFileNameA internally.
     FILE_SYSTEM_API std::filesystem::path GetExecutableDirectory();
 
-    // Returns the engine repository root, computed by walking 3 levels up from
-    // the executable directory (Binaries/<Platform>/<Config>/).
-    // Asserts that the resulting path exists.
+    // The nearest of start and its ancestors that holds PROJECT_FILE_NAME, or start itself when
+    // none does.
+    FILE_SYSTEM_API std::filesystem::path FindProjectRoot(const std::filesystem::path& start);
+
+    // The engine:// root: the directory SetEngineRootDirectory named, else FindProjectRoot of the
+    // executable's directory, which finds the repository from Binaries/<Platform>/<Config>/ and a
+    // packaged game's own folder alike, and falls back to the executable's directory.
     FILE_SYSTEM_API std::filesystem::path GetEngineRootDirectory();
+
+    // Overrides GetEngineRootDirectory for the rest of the process (Game.exe --project); call it
+    // before the engine is built. An empty path clears the override.
+    FILE_SYSTEM_API void SetEngineRootDirectory(const std::filesystem::path& root);
 
     // <localAppData>/HedgehogEngine/<projectName>/Saves, and its Editor subfolder for the editor's
     // play sessions, so they never overwrite a shipped game's saves. nullopt for a projectName
