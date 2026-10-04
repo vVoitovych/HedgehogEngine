@@ -20,6 +20,7 @@ project "HedgehogEngineTest"
         "HedgehogAudio",
         "HedgehogCommon",
         "ECS",
+        "EcsSerialization",
         "HedgehogMath",
         "FileSystem"
     }

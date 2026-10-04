@@ -51,7 +51,7 @@ HH_BEGIN_COMPONENT(CameraComponent)
     // "game" rather than "scene": the editor's scene and result views are constructed directly
     // by the editor (RENDERING.md section 7), never through a CameraComponent — an entity
     // carrying this component is always somebody's *game* camera.
-    HH_PROP_NAMED(std::string, GraphName, "GraphName", std::string{"game"}, None)
+    HH_PROP_NAMED(std::string, GraphName, "GraphName", std::string{"game"}, AssetRef)
 
     // Tie-break only among views with no render-target dependency between them
     // (RENDERING.md section 3.3) — not a general draw-order control.

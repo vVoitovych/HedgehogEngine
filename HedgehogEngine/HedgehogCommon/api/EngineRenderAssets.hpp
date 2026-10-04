@@ -1,0 +1,49 @@
+#pragma once
+
+#include <array>
+#include <string_view>
+
+namespace HedgehogEngine
+{
+    // Where the renderer's own assets live, shared by the renderer (which loads them) and the
+    // engine's asset dependency followers (which tell the cook tool to package them).
+
+    // Engine graphs: a camera's GraphName without a path names <name>.graph in this folder.
+    constexpr std::string_view ENGINE_GRAPH_DIRECTORY = "engine://HedgehogEngine/HedgehogRenderer/assets/Graphs";
+
+    constexpr std::string_view DEPTH_PREPASS_SHADER = "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/DepthPrepass.shader";
+    constexpr std::string_view DEPTH_PREPASS_SKINNED_SHADER =
+        "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/DepthPrepassSkinned.shader";
+    constexpr std::string_view SHADOW_SHADER = "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/ShadowmapPass.shader";
+    constexpr std::string_view SHADOW_SKINNED_SHADER =
+        "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/ShadowmapPassSkinned.shader";
+    constexpr std::string_view FORWARD_SHADER = "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/GraphForward.shader";
+    constexpr std::string_view FORWARD_SKINNED_SHADER =
+        "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/GraphForwardSkinned.shader";
+    constexpr std::string_view GIZMO_SHADER   = "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/Gizmo.shader";
+    constexpr std::string_view GAME_UI_SHADER = "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/GameUi.shader";
+
+    // The shaders an engine pass type (as a .graph file names it) draws with. "Shadow" is the
+    // shared phase's pass: a graph that imports the shadow atlas needs it. "Ui" draws the
+    // application's callback and has no shader of its own.
+    struct PassTypeShader
+    {
+        std::string_view PassType;
+        std::string_view Shader;
+    };
+
+    constexpr std::array<PassTypeShader, 9> PASS_TYPE_SHADERS = { {
+        { "DepthPrepass", DEPTH_PREPASS_SHADER },
+        { "DepthPrepass", DEPTH_PREPASS_SKINNED_SHADER },
+        { "Shadow", SHADOW_SHADER },
+        { "Shadow", SHADOW_SKINNED_SHADER },
+        { "Forward", FORWARD_SHADER },
+        { "Forward", FORWARD_SKINNED_SHADER },
+        { "Gizmo", GIZMO_SHADER },
+        { "GameUi", GAME_UI_SHADER },
+        { "Ui", {} },
+    } };
+
+    // The pass type whose shaders a graph importing the shadow atlas needs.
+    constexpr std::string_view SHADOW_PASS_TYPE = "Shadow";
+}

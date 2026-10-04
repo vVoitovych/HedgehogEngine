@@ -10,6 +10,9 @@ namespace Reflection
         Hidden   = 1 << 0,
         IsSlider = 1 << 1,
         IsColor  = 1 << 2,
+        // A string naming an asset (a path under assets://, or a graph reference): the asset
+        // dependency collector (EcsSerialization/api/Assets) follows it.
+        AssetRef = 1 << 3,
     };
 
     constexpr PropertyFlags operator|(PropertyFlags a, PropertyFlags b)

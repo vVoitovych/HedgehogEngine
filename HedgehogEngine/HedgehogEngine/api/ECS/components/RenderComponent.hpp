@@ -10,7 +10,7 @@ namespace HedgehogEngine
 {
 HH_BEGIN_COMPONENT(RenderComponent)
     HH_PROP_NAMED(bool,        IsVisible, "Visible",  true,          None)
-    HH_PROP_NAMED(std::string, Material,  "Material", std::string{}, None)
+    HH_PROP_NAMED(std::string, Material,  "Material", std::string{}, AssetRef)
 
     // Index into HedgehogSettings::LayerSettings, not a mask: an object is in exactly one
     // layer, a camera carries a mask of them (RENDERING.md section 2). Scene files store this
