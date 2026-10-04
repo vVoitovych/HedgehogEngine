@@ -3,9 +3,11 @@
 #include "HedgehogLuaDebug/api/Transport.hpp"
 
 #include <memory>
+#include <string>
 
 namespace LuaDebug
 {
+    class LuaDebugEngine;
     class ProtocolDispatcher;
 
     // The Lua debugger's Debug Adapter Protocol server (epic HE-180). It owns a transport (TCP on
@@ -14,8 +16,10 @@ namespace LuaDebug
     //
     // Requests handled: initialize (the declared capabilities, then the initialized event),
     // attach, configurationDone, threads (one, "Lua") and disconnect (replied to, then the client
-    // is dropped). Any other request gets success: false with a message naming the command; a
-    // message that is not JSON or not a request is logged and ignored.
+    // is dropped), and, through the LuaDebugEngine registered with it, setBreakpoints, stackTrace,
+    // scopes, continue and pause. Any other request gets success: false with a message naming the
+    // command; a message that is not JSON or not a request is logged and ignored. When the client
+    // leaves, the engine's session is cleared (no breakpoints, no stop).
     class DebugServer
     {
     public:
@@ -40,8 +44,14 @@ namespace LuaDebug
 
         [[nodiscard]] ITransport& GetTransport();
 
+        // The engine debugging the VM (it registers itself; nullptr when it goes).
+        void SetEngine(LuaDebugEngine* engine);
+        // Sends an event with a JSON object body, numbered in the session's sequence.
+        void SendEvent(const std::string& event, const std::string& bodyJson);
+
     private:
         std::unique_ptr<ITransport>         m_Transport;
         std::unique_ptr<ProtocolDispatcher> m_Dispatcher;
+        LuaDebugEngine*                     m_Engine = nullptr;
     };
 }

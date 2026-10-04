@@ -9,12 +9,14 @@ project "LuaDebugTest"
     {
         "../../ThirdParty",
         "../..",           -- so "HedgehogLuaDebug/api/..." resolves
+        "%{IncludeDir.Lua}",
         "."
     }
 
     links
     {
         "HedgehogLuaDebug",
+        "Lua",
         "Logger",
         "ws2_32"
     }
