@@ -1,6 +1,8 @@
 #include "HedgehogLuaDebug/api/LuaDebugEngine.hpp"
 #include "HedgehogLuaDebug/api/DebugServer.hpp"
 
+#include "VariableStore.hpp"
+
 #include "tinygltf/json.hpp"
 
 // Lua is compiled as C. Its own headers (ldebug, lobject, lstate) give the line table of every
@@ -42,11 +44,21 @@ namespace LuaDebug
             for (int i = 0; i < proto->sizep; ++i)
                 CollectLines(proto->p[i], lines);
         }
+
+        int StackDepth(lua_State* state)
+        {
+            lua_Debug debug{};
+            int       depth = 0;
+            while (lua_getstack(state, depth, &debug))
+                ++depth;
+            return depth;
+        }
     }
 
     LuaDebugEngine::LuaDebugEngine(DebugServer& server, SourceMapper mapper)
         : m_Server(server)
         , m_Mapper(std::move(mapper))
+        , m_Variables(std::make_unique<VariableStore>())
     {
         m_Server.SetEngine(this);
     }
@@ -70,6 +82,7 @@ namespace LuaDebug
     {
         if (!m_State)
             return;
+        EndStep();
         lua_sethook(m_State, nullptr, 0, 0);
         lua_pushnil(m_State);
         lua_rawsetp(m_State, LUA_REGISTRYINDEX, &ENGINE_KEY);
@@ -83,7 +96,7 @@ namespace LuaDebug
 
     void LuaDebugEngine::UpdateHook()
     {
-        const bool wanted = m_State && (m_PauseRequested || !m_Breakpoints.empty());
+        const bool wanted = m_State && (m_PauseRequested || m_Step != StepKind::None || !m_Breakpoints.empty());
         if (wanted == m_HookInstalled)
             return;
         if (m_State)
@@ -143,8 +156,67 @@ namespace LuaDebug
 
     void LuaDebugEngine::Continue() { m_Stopped = false; }
 
+    void LuaDebugEngine::Step(StepKind kind)
+    {
+        if (!m_Stopped || !m_StoppedState || kind == StepKind::None)
+            return;
+        EndStep();
+        // The stepping thread is anchored, so a coroutine that ends while stepped over is not
+        // collected under the step.
+        lua_pushthread(m_StoppedState);
+        m_StepThreadRef = luaL_ref(m_StoppedState, LUA_REGISTRYINDEX);
+        m_StepThread    = m_StoppedState;
+        m_StepDepth     = StackDepth(m_StoppedState);
+        m_Step          = kind;
+        m_Stopped       = false;
+        UpdateHook();
+    }
+
+    void LuaDebugEngine::EndStep()
+    {
+        if (m_State && m_StepThreadRef != LUA_NOREF)
+            luaL_unref(m_State, LUA_REGISTRYINDEX, m_StepThreadRef);
+        m_StepThreadRef = LUA_NOREF;
+        m_StepThread    = nullptr;
+        m_Step          = StepKind::None;
+    }
+
+    bool LuaDebugEngine::StepReached(lua_State* state) const
+    {
+        if (m_Step == StepKind::In)
+            return true;
+        if (state == m_StepThread)
+        {
+            const int depth = StackDepth(state);
+            return m_Step == StepKind::Over ? depth <= m_StepDepth : depth < m_StepDepth;
+        }
+        // Another thread runs: a coroutine the stepped line resumed (keep going), or the resumer
+        // after the stepped coroutine yielded or ended (a frame boundary: stop).
+        lua_Debug debug{};
+        const int status = lua_status(m_StepThread);
+        return status == LUA_YIELD || (status == LUA_OK && !lua_getstack(m_StepThread, 0, &debug));
+    }
+
+    std::vector<ScopeInfo> LuaDebugEngine::GetScopes(int frameId) { return m_Variables->GetScopes(frameId); }
+
+    std::optional<std::vector<VariableInfo>> LuaDebugEngine::GetVariables(int reference, int start, int count)
+    {
+        return m_Variables->GetVariables(reference, start, count);
+    }
+
+    VariableResult LuaDebugEngine::Evaluate(const std::string& expression, int frameId)
+    {
+        return m_Variables->Evaluate(expression, frameId);
+    }
+
+    VariableResult LuaDebugEngine::SetVariable(int reference, const std::string& name, const std::string& value)
+    {
+        return m_Variables->SetVariable(reference, name, value);
+    }
+
     void LuaDebugEngine::ClearSession()
     {
+        EndStep();
         m_Breakpoints.clear();
         m_PauseRequested = false;
         m_Stopped        = false;
@@ -164,24 +236,36 @@ namespace LuaDebug
     {
         if (m_Stopped)
             return;
+        if (!lua_getinfo(state, "S", debug))
+            return;
+        const auto file = m_Breakpoints.find(m_Mapper.ToPath(debug->source));
+        if (file != m_Breakpoints.end() && file->second.contains(debug->currentline))
+        {
+            EndStep();
+            UpdateHook();
+            StopAndWait(state, "breakpoint");
+            return;
+        }
+        if (m_Step != StepKind::None && StepReached(state))
+        {
+            EndStep();
+            UpdateHook();
+            StopAndWait(state, "step");
+            return;
+        }
         if (m_PauseRequested)
         {
             m_PauseRequested = false;
             UpdateHook();
             StopAndWait(state, "pause");
-            return;
         }
-        if (!lua_getinfo(state, "S", debug))
-            return;
-        const auto file = m_Breakpoints.find(m_Mapper.ToPath(debug->source));
-        if (file != m_Breakpoints.end() && file->second.contains(debug->currentline))
-            StopAndWait(state, "breakpoint");
     }
 
     void LuaDebugEngine::StopAndWait(lua_State* state, const char* reason)
     {
         m_Stopped      = true;
         m_StoppedState = state;
+        m_Variables->Begin(state);
         m_Server.SendEvent("stopped", nlohmann::json{ { "reason", reason }, { "threadId", 1 }, { "allThreadsStopped", true } }.dump());
 
         // The game thread waits here, answering the client, until it continues or leaves.
@@ -196,6 +280,8 @@ namespace LuaDebug
             if (m_Stopped)
                 std::this_thread::sleep_for(STOPPED_POLL_INTERVAL);
         }
+        // Every variable reference of this stop goes with it.
+        m_Variables->Clear();
         m_StoppedState = nullptr;
     }
 

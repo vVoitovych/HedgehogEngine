@@ -1,6 +1,7 @@
 #pragma once
 
 #include <deque>
+#include <functional>
 #include <mutex>
 #include <string>
 #include <vector>
@@ -47,11 +48,15 @@ namespace LuaDebug
         // The client's side.
         void PushFromClient(std::string body);
         [[nodiscard]] std::vector<std::string> TakeSent();
+        // A client that reacts: called with each body the server sends (after it is recorded,
+        // outside the lock, so it may push replies).
+        void SetClient(std::function<void(const std::string& body)> client);
 
     private:
         mutable std::mutex       m_Mutex;
         std::deque<std::string>  m_Incoming;
         std::vector<std::string> m_Outgoing;
+        std::function<void(const std::string&)> m_Client;
         bool                     m_Connected = false;
     };
 }

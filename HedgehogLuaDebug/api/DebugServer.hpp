@@ -2,6 +2,7 @@
 
 #include "HedgehogLuaDebug/api/Transport.hpp"
 
+#include <deque>
 #include <memory>
 #include <string>
 
@@ -34,7 +35,9 @@ namespace LuaDebug
         // Drops any client and stops listening. Safe twice.
         void Stop();
 
-        // Handles every request received since the last call, in order. Call once a frame.
+        // Handles the requests received since the last call, in order, once a frame. A request
+        // that resumes a stopped script (continue, a step) ends the call: what follows it waits
+        // for the next one, so it reaches the next stop rather than this one.
         void Pump();
 
         // A client sent attach and has not left.
@@ -53,5 +56,6 @@ namespace LuaDebug
         std::unique_ptr<ITransport>         m_Transport;
         std::unique_ptr<ProtocolDispatcher> m_Dispatcher;
         LuaDebugEngine*                     m_Engine = nullptr;
+        std::deque<std::string>             m_Pending;
     };
 }

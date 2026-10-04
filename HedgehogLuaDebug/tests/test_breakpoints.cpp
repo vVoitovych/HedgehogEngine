@@ -1,118 +1,10 @@
 #include "doctest/doctest/doctest.h"
 
-#include "HedgehogLuaDebug/api/DebugServer.hpp"
-#include "HedgehogLuaDebug/api/LuaDebugEngine.hpp"
+#include "test_debug_session.hpp"
 
-#include "FileSystem/tests/test_helpers.hpp"
-
-#include "tinygltf/json.hpp"
-
-extern "C"
-{
-#include "lauxlib.h"
-#include "lua.h"
-#include "lualib.h"
-}
-
-#include <algorithm>
-#include <cstring>
-#include <memory>
-#include <string>
-#include <vector>
-
+using LuaDebugTest::DebugSession;
+using LuaDebugTest::SCRIPT;
 using nlohmann::json;
-
-namespace
-{
-    // Line numbers matter: the tests set breakpoints by them.
-    constexpr const char* SCRIPT = "-- A test script.\n"      // 1
-                                   "\n"                       // 2
-                                   "local function add(a, b)\n" // 3
-                                   "    local c = a + b\n"    // 4
-                                   "    return c\n"           // 5
-                                   "end\n"                    // 6
-                                   "\n"                       // 7
-                                   "-- comment\n"             // 8
-                                   "result = add(1, 2)\n";    // 9
-
-    // A VM with the script under a temp assets://, a server over an in-memory transport and an
-    // engine attached to the VM: the client's requests are queued before the script runs and
-    // answered while it is stopped.
-    struct DebugSession
-    {
-        TempDir                      Assets;
-        std::string                  ScriptPath;
-        LuaDebug::InMemoryTransport* Client = nullptr;
-        LuaDebug::DebugServer        Server;
-        LuaDebug::LuaDebugEngine     Engine;
-        lua_State*                   State = luaL_newstate();
-        int                          Seq   = 0;
-
-        DebugSession()
-            : Server(MakeTransport(Client))
-            , Engine(Server, LuaDebug::SourceMapper([this](const std::string& virtualPath) -> std::optional<std::filesystem::path>
-                                                    {
-                                                        const std::string prefix = "assets://";
-                                                        if (!virtualPath.starts_with(prefix))
-                                                            return std::nullopt;
-                                                        return Assets.Path() / virtualPath.substr(prefix.size());
-                                                    }))
-        {
-            ScriptPath = Assets.WriteFile("Scripts/Test.lua", SCRIPT).string();
-            luaL_openlibs(State);
-            REQUIRE(Server.Start());
-            Engine.Attach(State);
-        }
-
-        ~DebugSession()
-        {
-            Engine.Detach();
-            lua_close(State);
-        }
-
-        static std::unique_ptr<LuaDebug::ITransport> MakeTransport(LuaDebug::InMemoryTransport*& client)
-        {
-            auto transport = std::make_unique<LuaDebug::InMemoryTransport>();
-            client         = transport.get();
-            return transport;
-        }
-
-        void Queue(const std::string& command, json arguments = json::object())
-        {
-            Client->PushFromClient(json{ { "seq", ++Seq }, { "type", "request" }, { "command", command }, { "arguments", arguments } }.dump());
-        }
-
-        std::vector<json> Sent()
-        {
-            std::vector<json> messages;
-            for (const std::string& body : Client->TakeSent())
-                messages.push_back(json::parse(body));
-            return messages;
-        }
-
-        json SetBreakpoints(const std::vector<int>& lines)
-        {
-            json breakpoints = json::array();
-            for (const int line : lines)
-                breakpoints.push_back({ { "line", line } });
-            Queue("setBreakpoints", { { "source", { { "path", ScriptPath } } }, { "breakpoints", breakpoints } });
-            Server.Pump();
-            const std::vector<json> sent = Sent();
-            REQUIRE(sent.size() == 1);
-            return sent[0];
-        }
-
-        // Runs the script as the script system loads files: chunk named by its virtual path.
-        void Run()
-        {
-            REQUIRE(luaL_loadbufferx(State, SCRIPT, std::strlen(SCRIPT), "@assets://Scripts/Test.lua", "t") == LUA_OK);
-            REQUIRE(lua_pcall(State, 0, 0, 0) == LUA_OK);
-            lua_getglobal(State, "result");
-            CHECK(lua_tointeger(State, -1) == 3);
-            lua_pop(State, 1);
-        }
-    };
-}
 
 TEST_CASE("Lua debugger - valid lines cover nested functions; breakpoints move to the next one")
 {
@@ -147,6 +39,7 @@ TEST_CASE("Lua debugger - with no breakpoints no hook is installed")
     (void)session.SetBreakpoints({});
     CHECK(lua_gethook(session.State) == nullptr);
     session.Run(); // runs through without stopping
+    CHECK(session.Global("result") == 3);
     CHECK(session.Sent().empty());
 }
 
@@ -183,7 +76,7 @@ TEST_CASE("Lua debugger - a breakpoint in a function stops there and stackTrace 
     CHECK(frames[1]["source"]["path"] == path);
     CHECK(trace["body"]["totalFrames"] == 2);
 
-    CHECK(sent[2]["body"]["scopes"].size() == 2);
+    CHECK(sent[2]["body"]["scopes"].size() == 3);
     CHECK(sent[3]["command"] == "continue");
     CHECK(sent[3]["success"] == true);
 
