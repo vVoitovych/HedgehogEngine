@@ -12,7 +12,7 @@ using HedgehogEngine::EngineContext;
 
 TEST_CASE("Scene versions - every shipped scene, saved before versioning, loads as version 1 and saves with a Version")
 {
-    const std::string version = "Version: " + std::to_string(EcsSerialization::EcsSerializer::FORMAT_VERSION) + "\n";
+    const std::string version = "Version: " + std::to_string(EcsSerialization::EcsSerializer::BASE_FORMAT_VERSION) + "\n";
     for (const char* scene : { "Default.yaml", "Animated.yaml", "Hud.yaml", "benchmark.yaml", "test.yaml" })
     {
         CAPTURE(scene);

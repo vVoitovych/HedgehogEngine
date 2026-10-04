@@ -107,7 +107,7 @@ TEST_CASE("Subtree - the document holds dense local ids and the source ids")
     CarWorld world;
     const YAML::Node document = EcsSerialization::EcsSerializer::SerializeSubtree(world.Registry, world.Ecs, world.Car);
 
-    CHECK(document["Version"].as<int>() == EcsSerialization::EcsSerializer::FORMAT_VERSION);
+    CHECK(document["Version"].as<int>() == EcsSerialization::EcsSerializer::BASE_FORMAT_VERSION);
     CHECK(document["SourceIds"].as<std::vector<ECS::Entity>>() == std::vector<ECS::Entity>{ world.Car, world.WheelA, world.WheelB });
     const YAML::Node car = document["Subtree"][0];
     CHECK(car["Entity"].as<ECS::Entity>() == 0);
@@ -214,7 +214,7 @@ TEST_CASE("Subtree - a bad document or parent creates nothing")
         return text.replace(at, from.size(), to);
     };
     const std::vector<Case> cases = {
-        { "newer version", replace("Version: 1", "Version: 2"), "is format version 2" },
+        { "newer version", replace("Version: 1", "Version: 9"), "is format version 9" },
         { "too few source ids", replace("SourceIds: [" + std::to_string(world.Car) + ", ", "SourceIds: ["), "SourceIds lists 2 entities" },
         { "duplicate local id", replace("Entity: 2", "Entity: 1"), "local id 1 is used twice" },
         { "local id out of range", replace("Entity: 2", "Entity: 7"), "local id 7 is not below" },

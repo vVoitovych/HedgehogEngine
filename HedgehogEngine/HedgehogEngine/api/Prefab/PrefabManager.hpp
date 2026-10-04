@@ -4,11 +4,14 @@
 
 #include "ECS/api/Entity.hpp"
 
+#include "EcsSerialization/api/Prefab/IPrefabProvider.hpp"
+
 #include <filesystem>
 #include <map>
 #include <memory>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace ECS
 {
@@ -36,14 +39,15 @@ namespace HedgehogEngine
 
     // Prefab assets (epic HE-185): .prefab files of EcsSerialization's PrefabDocument format.
     // EngineContext owns one (GetPrefabs). Paths are virtual (NormalizePrefabPath: backslashes to
-    // slashes, no mount meaning assets://) and must end in .prefab.
-    class PrefabManager
+    // slashes, no mount meaning assets://) and must end in .prefab. It is the registry's prefab
+    // provider while it lives, so scenes, snapshots and saves keep instances as references.
+    class PrefabManager : public EcsSerialization::IPrefabProvider
     {
     public:
         HEDGEHOG_ENGINE_API PrefabManager(ECS::ECS& ecs, const FS::FileSystemManager& fileSystem,
-                                          const EcsSerialization::ComponentSerializerRegistry& registry,
+                                          EcsSerialization::ComponentSerializerRegistry& registry,
                                           SceneManager& sceneManager);
-        HEDGEHOG_ENGINE_API ~PrefabManager();
+        HEDGEHOG_ENGINE_API ~PrefabManager() override;
 
         PrefabManager(const PrefabManager&)            = delete;
         PrefabManager& operator=(const PrefabManager&) = delete;
@@ -70,6 +74,13 @@ namespace HedgehogEngine
 
         [[nodiscard]] HEDGEHOG_ENGINE_API size_t GetCachedPrefabCount() const;
 
+        // EcsSerialization::IPrefabProvider, over PrefabInstanceComponent and the cache.
+        [[nodiscard]] HEDGEHOG_ENGINE_API std::optional<EcsSerialization::PrefabLink> GetLink(const ECS::ECS& ecs,
+                                                                                            ECS::Entity entity) const override;
+        [[nodiscard]] HEDGEHOG_ENGINE_API const char* GetLinkComponentKey() const override;
+        [[nodiscard]] HEDGEHOG_ENGINE_API std::shared_ptr<const YAML::Node> LoadPrefab(const std::string& path) override;
+        HEDGEHOG_ENGINE_API void Link(ECS::ECS& ecs, const std::vector<ECS::Entity>& entities, const std::string& path) override;
+
         // The virtual path a prefab is known by, or empty for one that is not a .prefab.
         [[nodiscard]] HEDGEHOG_ENGINE_API static std::string NormalizePrefabPath(const std::string& path);
 
@@ -88,9 +99,9 @@ namespace HedgehogEngine
         void LinkSubtree(ECS::Entity instanceRoot, const std::string& path);
 
     private:
-        ECS::ECS&                                            m_ECS;
-        const FS::FileSystemManager&                         m_FileSystem;
-        const EcsSerialization::ComponentSerializerRegistry& m_Registry;
+        ECS::ECS&                                      m_ECS;
+        const FS::FileSystemManager&                   m_FileSystem;
+        EcsSerialization::ComponentSerializerRegistry& m_Registry;
         SceneManager&                                        m_SceneManager;
 
         std::map<std::string, CachedPrefab> m_Cache;
