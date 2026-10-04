@@ -627,6 +627,8 @@ Binaries
 /HedgehogScripting/tests/ScriptingTest.vcxproj*
 /HedgehogRuntime/HedgehogRuntime.vcxproj*
 /Game/Game.vcxproj*
+/Tools/Cooker/*.vcxproj*
+/Tools/Cooker/tests/*.vcxproj*
 /HedgehogEngine/HedgehogSettings/tests/HedgehogSettingsTest.vcxproj*
 /HedgehogAnimation/HedgehogAnimation.vcxproj*
 /HedgehogAnimation/tests/AnimationTest.vcxproj*

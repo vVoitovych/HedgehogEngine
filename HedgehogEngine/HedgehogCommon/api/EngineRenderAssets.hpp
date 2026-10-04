@@ -10,6 +10,9 @@ namespace HedgehogEngine
 
     // Engine graphs: a camera's GraphName without a path names <name>.graph in this folder.
     constexpr std::string_view ENGINE_GRAPH_DIRECTORY = "engine://HedgehogEngine/HedgehogRenderer/assets/Graphs";
+    // The engine graphs the renderer needs to start: the editor's scene and result views and every
+    // camera's default, game.
+    constexpr std::array<std::string_view, 3> SHIPPED_GRAPHS = { "scene", "game", "result" };
 
     constexpr std::string_view DEPTH_PREPASS_SHADER = "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/DepthPrepass.shader";
     constexpr std::string_view DEPTH_PREPASS_SKINNED_SHADER =

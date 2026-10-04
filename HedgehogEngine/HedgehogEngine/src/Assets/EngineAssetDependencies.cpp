@@ -1,5 +1,7 @@
 #include "HedgehogEngine/api/Assets/EngineAssetDependencies.hpp"
 
+#include "HedgehogEngine/api/EngineContext.hpp"
+
 #include "HedgehogEngine/api/ECS/components/AudioSourceComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/CameraComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
@@ -100,6 +102,22 @@ namespace HedgehogEngine
             }
             return {};
         }
+    }
+
+    std::vector<EngineRuntimeAsset> GetEngineRuntimeAssets()
+    {
+        // MeshSystem's default meshes and MaterialContainer's default texture are loaded at start.
+        std::vector<EngineRuntimeAsset> assets = {
+            { "engine://Project.yaml", true },
+            { "engine://engine_settings.yaml", false },
+            { EngineContext::INPUT_ACTIONS_PATH, false },
+            { "assets://Models/Default/cube.obj", true },
+            { "assets://Models/Default/sphere.obj", true },
+            { "assets://Textures/Default/cells.png", true },
+        };
+        for (const std::string_view graph : SHIPPED_GRAPHS)
+            assets.push_back({ NormalizeGraphReference(std::string(graph)), true });
+        return assets;
     }
 
     std::string NormalizeGraphReference(const std::string& graphName)

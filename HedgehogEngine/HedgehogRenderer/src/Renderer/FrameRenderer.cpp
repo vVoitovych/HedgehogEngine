@@ -31,8 +31,6 @@ namespace Renderer
         // Pass data and closures for one frame: the shared phase plus a few views.
         constexpr size_t GRAPH_ARENA_BYTES = 256 * 1024;
 
-        // Every graph in the directory is registered; these are the ones the engine itself needs.
-        constexpr const char* SHIPPED_GRAPHS[] = { "scene", "game", "result" };
         constexpr std::string_view GRAPH_DIRECTORY = HedgehogEngine::ENGINE_GRAPH_DIRECTORY;
 
         void Transition(RHI::IRHICommandList& cmd, RHI::IRHITexture& texture, RHI::ResourceState before,
@@ -59,7 +57,8 @@ namespace Renderer
         const auto directory = fileSystem.ResolvePhysical(std::string(GRAPH_DIRECTORY));
         if (!directory || !m_Library.RegisterDirectory(*directory))
             LOGERROR("FrameRenderer: the graph directory '", GRAPH_DIRECTORY, "' could not be read.");
-        for (const char* name : SHIPPED_GRAPHS)
+        // Every graph in the directory is registered; these are the ones the engine itself needs.
+        for (const std::string_view name : HedgehogEngine::SHIPPED_GRAPHS)
         {
             if (!m_Library.Find(name))
                 LOGERROR("FrameRenderer: the shipped graph '", name, "' could not be loaded.");
