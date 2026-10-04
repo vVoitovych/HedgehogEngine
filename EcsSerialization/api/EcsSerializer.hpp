@@ -31,19 +31,36 @@ namespace EcsSerialization
         ExternalReferences External = ExternalReferences::Keep;
         // When set, filled with the new entity of each local id (index = local id).
         std::vector<ECS::Entity>* LocalEntities = nullptr;
+        // When set, the entity to use for each local id (index = local id): alive, with no
+        // components yet; INVALID_ENTITY or an id past its end gets a fresh entity. A scene load
+        // keeps an instance's saved ids this way.
+        const std::vector<ECS::Entity>* ExistingEntities = nullptr;
+        // False leaves the parent's children alone (a scene load already listed the root there).
+        bool AppendToParent = true;
     };
 
     // Scenes, snapshots, saves and (through the subtree functions) prefabs share one path: reading parses text into a
     // node and reads that (DeserializeFromNode); writing emits text (SerializeToString), which
     // SerializeToNode parses; the file functions are thin wrappers over the string ones.
     //
-    // A document starts with "Version: <FORMAT_VERSION>". One without a Version is version 1, which
-    // every scene saved before versioning is. A document newer than FORMAT_VERSION, or whose
-    // Version is not a positive integer, is refused before the ECS is touched.
+    // A document starts with "Version: <n>". One without a Version is version 1, which every scene
+    // saved before versioning is. A document newer than FORMAT_VERSION, or whose Version is not a
+    // positive integer, is refused before the ECS is touched.
+    //
+    // Prefab instances (version 2): with a prefab provider on the registry, an instance's root is
+    // written as its prefab's path ("Prefab"), its entities' ids by local id ("Entities"), the
+    // property values it holds differently from the prefab ("Overrides", OverrideSet) and, as its
+    // "Children", only the entities added under it that the prefab does not make. Reading
+    // instantiates the prefab with those ids and applies the overrides, so a changed prefab
+    // reaches every instance and an override survives. A document holding no instance is written
+    // as version 1, byte for byte as before.
     class EcsSerializer
     {
     public:
-        static constexpr int FORMAT_VERSION = 1;
+        static constexpr int BASE_FORMAT_VERSION             = 1;
+        static constexpr int PREFAB_INSTANCES_FORMAT_VERSION = 2;
+        // The newest version this build reads.
+        static constexpr int FORMAT_VERSION = PREFAB_INSTANCES_FORMAT_VERSION;
 
         // The scene under ecs.GetRoot() as a YAML document. The file version writes
         // exactly this text.

@@ -1,5 +1,6 @@
 #include "api/EcsSerializer.hpp"
 #include "api/ComponentSerializerRegistry.hpp"
+#include "api/Prefab/OverrideSet.hpp"
 
 #include "ECS/api/components/Hierarchy.hpp"
 
@@ -9,6 +10,8 @@
 
 #include <algorithm>
 #include <functional>
+#include <memory>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -23,9 +26,94 @@ namespace
 
     ECS::Entity SameId(ECS::Entity entity) { return entity; }
 
-    void SerializeEntity(YAML::Emitter& out, const ECS::ECS& ecs, ECS::Entity entity,
-                         const ComponentSerializerRegistry& registry, const IdMap& toId)
+    // The root of a prefab instance the provider can still read the prefab of, with its document.
+    std::shared_ptr<const YAML::Node> FindInstancePrefab(IPrefabProvider* prefabs, const ECS::ECS& ecs, ECS::Entity entity,
+                                                         std::string& outPath)
     {
+        if (!prefabs)
+            return nullptr;
+        const std::optional<PrefabLink> link = prefabs->GetLink(ecs, entity);
+        if (!link || link->InstanceRoot != entity || link->PrefabPath.empty())
+            return nullptr;
+        outPath = link->PrefabPath;
+        return prefabs->LoadPrefab(link->PrefabPath);
+    }
+
+    bool HasPrefabInstances(IPrefabProvider* prefabs, const ECS::ECS& ecs, ECS::Entity entity)
+    {
+        if (!prefabs)
+            return false;
+        if (const std::optional<PrefabLink> link = prefabs->GetLink(ecs, entity);
+            link && link->InstanceRoot == entity && !link->PrefabPath.empty())
+            return true;
+        for (ECS::Entity child : ecs.GetComponent<ECS::HierarchyComponent>(entity).Children)
+        {
+            if (HasPrefabInstances(prefabs, ecs, child))
+                return true;
+        }
+        return false;
+    }
+
+    void SerializeEntity(YAML::Emitter& out, const ECS::ECS& ecs, ECS::Entity entity,
+                         const ComponentSerializerRegistry& registry, const IdMap& toId, IPrefabProvider* prefabs);
+
+    // An instance root: the prefab, the ids by local id, the overrides and the entities added under
+    // the instance (a child of the root or of one of its prefab entities that is not one itself).
+    void SerializeInstance(YAML::Emitter& out, const ECS::ECS& ecs, ECS::Entity root, const std::string& prefabPath,
+                           const YAML::Node& prefab, const ComponentSerializerRegistry& registry, IPrefabProvider& prefabs)
+    {
+        std::vector<ECS::Entity> members;
+        std::vector<ECS::Entity> added;
+        std::vector<ECS::Entity> pending{ root };
+        while (!pending.empty())
+        {
+            const ECS::Entity member = pending.back();
+            pending.pop_back();
+            const uint32_t local = prefabs.GetLink(ecs, member)->LocalId;
+            if (local >= members.size())
+                members.resize(local + 1, ECS::INVALID_ENTITY);
+            members[local] = member;
+            const auto& children = ecs.GetComponent<ECS::HierarchyComponent>(member).Children;
+            for (auto it = children.rbegin(); it != children.rend(); ++it)
+            {
+                const std::optional<PrefabLink> link = prefabs.GetLink(ecs, *it);
+                if (link && link->InstanceRoot == root)
+                    pending.push_back(*it);
+                else
+                    added.insert(added.begin(), *it);
+            }
+        }
+
+        const auto& hierarchy = ecs.GetComponent<ECS::HierarchyComponent>(root);
+        out << YAML::BeginMap;
+        out << YAML::Key << "Entity"   << YAML::Value << root;
+        out << YAML::Key << "Name"     << YAML::Value << hierarchy.Name;
+        out << YAML::Key << "Parent"   << YAML::Value << hierarchy.Parent;
+        out << YAML::Key << "Prefab"   << YAML::Value << prefabPath;
+        out << YAML::Key << "Entities" << YAML::Value << YAML::Flow << members;
+        const OverrideSet overrides = DiffInstance(registry, ecs, members, prefab, prefabs.GetLinkComponentKey());
+        if (!overrides.empty())
+        {
+            out << YAML::Key << "Overrides" << YAML::Value;
+            WriteOverrides(out, overrides);
+        }
+        out << YAML::Key << "Children" << YAML::Value << YAML::BeginSeq;
+        for (ECS::Entity entity : added)
+            SerializeEntity(out, ecs, entity, registry, SameId, &prefabs);
+        out << YAML::EndSeq;
+        out << YAML::EndMap;
+    }
+
+    void SerializeEntity(YAML::Emitter& out, const ECS::ECS& ecs, ECS::Entity entity,
+                         const ComponentSerializerRegistry& registry, const IdMap& toId, IPrefabProvider* prefabs)
+    {
+        std::string prefabPath;
+        if (const std::shared_ptr<const YAML::Node> prefab = FindInstancePrefab(prefabs, ecs, entity, prefabPath))
+        {
+            SerializeInstance(out, ecs, entity, prefabPath, *prefab, registry, *prefabs);
+            return;
+        }
+
         const auto& hierarchy = ecs.GetComponent<ECS::HierarchyComponent>(entity);
 
         out << YAML::BeginMap;
@@ -41,14 +129,130 @@ namespace
 
         out << YAML::Key << "Children" << YAML::Value << YAML::BeginSeq;
         for (ECS::Entity child : hierarchy.Children)
-            SerializeEntity(out, ecs, child, registry, toId);
+            SerializeEntity(out, ecs, child, registry, toId, prefabs);
         out << YAML::EndSeq;
         out << YAML::EndMap;
     }
 
-    void DeserializeEntity(ECS::ECS& ecs, const YAML::Node& node,
-                           const ComponentSerializerRegistry& registry)
+    // A prefab instance read in the first pass: its root and saved ids are created, so every id the
+    // document names is taken before the second pass creates any fresh one.
+    struct PendingInstance
     {
+        YAML::Node               Node;
+        ECS::Entity              Root = ECS::INVALID_ENTITY;
+        std::vector<ECS::Entity> Reserved; // the saved ids of its other entities, created empty
+    };
+
+    struct SceneLoad
+    {
+        const ComponentSerializerRegistry& Registry;
+        std::string                        SourceName;
+        std::vector<PendingInstance>       Instances;
+    };
+
+    void DeserializeEntity(ECS::ECS& ecs, const YAML::Node& node, SceneLoad& load);
+
+    void ReserveInstance(ECS::ECS& ecs, const YAML::Node& node, SceneLoad& load)
+    {
+        PendingInstance instance{ node, node["Entity"].as<ECS::Entity>(), {} };
+        ecs.CreateEntity(instance.Root);
+        if (const YAML::Node saved = node["Entities"])
+        {
+            for (const YAML::Node& id : saved)
+            {
+                const ECS::Entity entity = id.as<ECS::Entity>();
+                if (entity < ECS::MAX_ENTITIES && !ecs.IsAlive(entity))
+                {
+                    ecs.CreateEntity(entity);
+                    instance.Reserved.push_back(entity);
+                }
+            }
+        }
+        load.Instances.push_back(std::move(instance));
+        // Added entities keep their ids; they are attached once the prefab's entities exist.
+        for (const auto& child : node["Children"])
+            DeserializeEntity(ecs, child, load);
+    }
+
+    // Second pass: the prefab instantiated over the reserved ids, its overrides applied, and the
+    // added entities attached to the entity named as their parent (the root when it is gone).
+    void ResolveInstance(ECS::ECS& ecs, const PendingInstance& instance, SceneLoad& load)
+    {
+        const YAML::Node& node   = instance.Node;
+        const std::string path   = node["Prefab"].as<std::string>();
+        const std::string name   = node["Name"].as<std::string>();
+        const ECS::Entity parent = node["Parent"].as<ECS::Entity>();
+        const std::string what   = load.SourceName + ": instance '" + name + "' of " + path;
+
+        IPrefabProvider*                  prefabs = load.Registry.GetPrefabProvider();
+        std::shared_ptr<const YAML::Node> prefab  = prefabs ? prefabs->LoadPrefab(path) : nullptr;
+        std::vector<ECS::Entity>          members;
+        if (prefab)
+        {
+            std::vector<ECS::Entity> existing{ instance.Root };
+            if (const YAML::Node saved = node["Entities"])
+            {
+                for (size_t local = 1; local < saved.size(); ++local)
+                {
+                    const ECS::Entity id       = saved[local].as<ECS::Entity>();
+                    const bool        reserved = std::find(instance.Reserved.begin(), instance.Reserved.end(), id) !=
+                                          instance.Reserved.end();
+                    existing.push_back(reserved ? id : ECS::INVALID_ENTITY);
+                }
+            }
+            InstantiateOptions options;
+            options.External         = ExternalReferences::Clear;
+            options.LocalEntities    = &members;
+            options.ExistingEntities = &existing;
+            options.AppendToParent   = false;
+            if (EcsSerializer::InstantiateSubtree(load.Registry, ecs, *prefab, parent, path, options) == ECS::INVALID_ENTITY)
+                members.clear();
+        }
+
+        if (members.empty())
+        {
+            LOGERROR("[Prefab] " + what + " could not be instantiated; it loads as an empty game object.");
+            if (!ecs.HasComponent<ECS::HierarchyComponent>(instance.Root))
+                ecs.AddComponent(instance.Root, ECS::HierarchyComponent{});
+            members = { instance.Root };
+        }
+        else
+        {
+            ApplyOverrides(load.Registry, ecs, members, ReadOverrides(node["Overrides"], what), what);
+            prefabs->Link(ecs, members, path);
+        }
+        auto& rootHierarchy  = ecs.GetComponent<ECS::HierarchyComponent>(instance.Root);
+        rootHierarchy.Name   = name;
+        rootHierarchy.Parent = parent;
+
+        for (const ECS::Entity id : instance.Reserved)
+        {
+            if (std::find(members.begin(), members.end(), id) == members.end())
+                ecs.DestroyEntity(id);
+        }
+        for (const auto& child : node["Children"])
+        {
+            const ECS::Entity entity = child["Entity"].as<ECS::Entity>();
+            ECS::Entity       owner  = child["Parent"].as<ECS::Entity>();
+            if (std::find(members.begin(), members.end(), owner) == members.end())
+                owner = instance.Root;
+            // An added child that is an instance itself resolves later (it was reserved after this
+            // one) and sets its own parent then.
+            if (ecs.HasComponent<ECS::HierarchyComponent>(entity))
+                ecs.GetComponent<ECS::HierarchyComponent>(entity).Parent = owner;
+            ecs.GetComponent<ECS::HierarchyComponent>(owner).Children.push_back(entity);
+        }
+    }
+
+    void DeserializeEntity(ECS::ECS& ecs, const YAML::Node& node, SceneLoad& load)
+    {
+        if (node["Prefab"])
+        {
+            ReserveInstance(ecs, node, load);
+            return;
+        }
+        const ComponentSerializerRegistry& registry = load.Registry;
+
         ECS::Entity entity = node["Entity"].as<ECS::Entity>();
         ecs.CreateEntity(entity);
         ecs.AddComponent(entity, ECS::HierarchyComponent{});
@@ -67,7 +271,7 @@ namespace
         for (const auto& child : node["Children"])
         {
             hierarchy.Children.push_back(child["Entity"].as<ECS::Entity>());
-            DeserializeEntity(ecs, child, registry);
+            DeserializeEntity(ecs, child, load);
         }
     }
 
@@ -156,12 +360,15 @@ namespace
                                                   const ECS::ECS& ecs,
                                                   const std::string& sceneName)
     {
+        IPrefabProvider* prefabs = registry.GetPrefabProvider();
+        const int        version = HasPrefabInstances(prefabs, ecs, ecs.GetRoot()) ? PREFAB_INSTANCES_FORMAT_VERSION
+                                                                                   : BASE_FORMAT_VERSION;
         YAML::Emitter out;
         out << YAML::BeginMap;
-        out << YAML::Key << "Version"    << YAML::Value << FORMAT_VERSION;
+        out << YAML::Key << "Version"    << YAML::Value << version;
         out << YAML::Key << "Scene name" << YAML::Value << sceneName;
         out << YAML::Key << "Scene"      << YAML::Value << YAML::BeginSeq;
-        SerializeEntity(out, ecs, ecs.GetRoot(), registry, SameId);
+        SerializeEntity(out, ecs, ecs.GetRoot(), registry, SameId, prefabs);
         out << YAML::EndSeq;
         out << YAML::EndMap;
         return out.c_str();
@@ -210,8 +417,11 @@ namespace
             const YAML::Node sceneData = data["Scene"];
             if (sceneData && sceneData.size() > 0)
             {
+                SceneLoad load{ registry, sourceName, {} };
                 for (const auto& node : sceneData)
-                    DeserializeEntity(ecs, node, registry);
+                    DeserializeEntity(ecs, node, load);
+                for (const PendingInstance& instance : load.Instances)
+                    ResolveInstance(ecs, instance, load);
 
                 // The first node in the scene sequence is the root entity.
                 ecs.SetRoot(sceneData[0]["Entity"].as<ECS::Entity>());
@@ -277,10 +487,11 @@ namespace
 
         YAML::Emitter out;
         out << YAML::BeginMap;
-        out << YAML::Key << "Version"   << YAML::Value << FORMAT_VERSION;
+        out << YAML::Key << "Version"   << YAML::Value << BASE_FORMAT_VERSION;
         out << YAML::Key << "SourceIds" << YAML::Value << YAML::Flow << sourceIds;
         out << YAML::Key << "Subtree"   << YAML::Value << YAML::BeginSeq;
-        SerializeEntity(out, ecs, subtreeRoot, registry, toLocal);
+        // Written in full: a prefab inside a prefab is not kept as a reference yet.
+        SerializeEntity(out, ecs, subtreeRoot, registry, toLocal, nullptr);
         out << YAML::EndSeq;
         out << YAML::EndMap;
         return out.c_str();
@@ -308,6 +519,7 @@ namespace
         }
 
         std::vector<ECS::Entity> localToNew;
+        std::vector<ECS::Entity> created; // destroyed again on failure; existing ones are the caller's
         try
         {
             if (!CheckVersion(document, failure))
@@ -333,7 +545,15 @@ namespace
                 LOGERROR(failure + ": " + error + ".");
                 return ECS::INVALID_ENTITY;
             }
-            if (ecs.GetEntityCount() + count > ECS::MAX_ENTITIES)
+            const auto existingFor = [&options](size_t local)
+            {
+                const std::vector<ECS::Entity>* existing = options.ExistingEntities;
+                return existing && local < existing->size() ? (*existing)[local] : ECS::INVALID_ENTITY;
+            };
+            size_t fresh = 0;
+            for (size_t i = 0; i < count; ++i)
+                fresh += existingFor(i) == ECS::INVALID_ENTITY ? 1 : 0;
+            if (ecs.GetEntityCount() + fresh > ECS::MAX_ENTITIES)
             {
                 LOGERROR(failure + ": its " + std::to_string(count) + " entities do not fit beside the " +
                          std::to_string(ecs.GetEntityCount()) + " alive (at most " + std::to_string(ECS::MAX_ENTITIES) + ").");
@@ -341,7 +561,12 @@ namespace
             }
 
             for (size_t i = 0; i < count; ++i)
-                localToNew.push_back(ecs.CreateEntity());
+            {
+                const ECS::Entity existing = existingFor(i);
+                localToNew.push_back(existing != ECS::INVALID_ENTITY ? existing : ecs.CreateEntity());
+                if (existing == ECS::INVALID_ENTITY)
+                    created.push_back(localToNew.back());
+            }
             InstantiateEntity(ecs, subtree[0], parent, localToNew, registry);
 
             std::unordered_map<ECS::Entity, ECS::Entity> sourceToNew;
@@ -369,12 +594,13 @@ namespace
         catch (const YAML::Exception& e)
         {
             LOGERROR(failure + ": " + e.what());
-            for (ECS::Entity entity : localToNew)
+            for (ECS::Entity entity : created)
                 ecs.DestroyEntity(entity);
             return ECS::INVALID_ENTITY;
         }
 
-        ecs.GetComponent<ECS::HierarchyComponent>(parent).Children.push_back(localToNew[0]);
+        if (options.AppendToParent)
+            ecs.GetComponent<ECS::HierarchyComponent>(parent).Children.push_back(localToNew[0]);
         if (options.LocalEntities)
             *options.LocalEntities = localToNew;
         return localToNew[0];

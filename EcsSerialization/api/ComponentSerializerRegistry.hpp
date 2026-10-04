@@ -3,6 +3,7 @@
 #include "ECS/api/ECS.hpp"
 #include "ECS/api/Entity.hpp"
 #include "HedgehogMath/api/Vector.hpp"
+#include "Prefab/IPrefabProvider.hpp"
 #include "Reflection/YamlReflection.hpp"
 
 #include "yaml-cpp/yaml.h"
@@ -10,6 +11,7 @@
 #include <functional>
 #include <span>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace YAML
@@ -138,15 +140,32 @@ namespace EcsSerialization
         }
     }
 
+    // Collects the keys a Visit names.
+    struct YamlKeyFinder
+    {
+        std::string_view Wanted;
+        bool             Found = false;
+
+        template<typename T>
+        void operator()(const char* key, T&)
+        {
+            Found = Found || Wanted == key;
+        }
+    };
+
     struct ComponentHandler
     {
         std::string YamlKey;
         std::function<void(YAML::Emitter&, const ECS::ECS&, ECS::Entity)> Serialize;
+        // Reads the node into the entity's component, adding it when missing; a key the node
+        // lacks keeps the component's value, so a partial node applies a prefab override.
         std::function<void(ECS::ECS&, ECS::Entity, const YAML::Node&)>    Deserialize;
         std::function<bool(const ECS::ECS&, ECS::Entity)>                  HasComponent;
         // Points the component's entity references at their new ids after a subtree is
         // instantiated; empty for a component that holds none.
         std::function<void(ECS::ECS&, ECS::Entity, const EntityRemap&)>   RemapEntities;
+        // Whether the component writes a key of that name; empty when unknown (a custom one).
+        std::function<bool(std::string_view)>                             HasProperty;
     };
 
     class ComponentSerializerRegistry
@@ -169,6 +188,14 @@ namespace EcsSerialization
                 [](const ECS::ECS& ecs, ECS::Entity e)
                 {
                     return ecs.HasComponent<T>(e);
+                },
+                {},
+                [](std::string_view name)
+                {
+                    T             probe{};
+                    YamlKeyFinder finder{ name };
+                    probe.Visit(finder);
+                    return finder.Found;
                 }
             });
         }
@@ -188,7 +215,8 @@ namespace EcsSerialization
                 },
                 [](ECS::ECS& ecs, ECS::Entity e, const YAML::Node& node)
                 {
-                    ecs.AddComponent(e, T{});
+                    if (!ecs.HasComponent<T>(e))
+                        ecs.AddComponent(e, T{});
                     T& comp = ecs.GetComponent<T>(e);
                     Reflection::YamlDeserializeComponent(&comp, node, T::GetProperties());
                 },
@@ -199,6 +227,15 @@ namespace EcsSerialization
                 [](ECS::ECS& ecs, ECS::Entity e, const EntityRemap& remap)
                 {
                     RemapEntityProperties(&ecs.GetComponent<T>(e), T::GetProperties(), remap);
+                },
+                [](std::string_view name)
+                {
+                    for (const auto& prop : T::GetProperties())
+                    {
+                        if (name == prop.name)
+                            return true;
+                    }
+                    return false;
                 }
             });
         }
@@ -216,6 +253,22 @@ namespace EcsSerialization
 
         const std::vector<ComponentHandler>& GetHandlers() const { return m_Handlers; }
 
+        // The handler writing key, or nullptr.
+        [[nodiscard]] const ComponentHandler* FindHandler(std::string_view key) const
+        {
+            for (const ComponentHandler& handler : m_Handlers)
+            {
+                if (handler.YamlKey == key)
+                    return &handler;
+            }
+            return nullptr;
+        }
+
+        // Who knows about prefab instances (the engine's PrefabManager); null writes and reads
+        // every entity in full. The provider must outlive its use here.
+        void             SetPrefabProvider(IPrefabProvider* provider) { m_PrefabProvider = provider; }
+        IPrefabProvider* GetPrefabProvider() const { return m_PrefabProvider; }
+
         template<typename T>
         static void SerializeWithVisit(YAML::Emitter& out, const ECS::ECS& ecs, ECS::Entity e, const char* key)
         {
@@ -229,7 +282,8 @@ namespace EcsSerialization
         template<typename T>
         static void DeserializeWithVisit(ECS::ECS& ecs, ECS::Entity e, const YAML::Node& node)
         {
-            ecs.AddComponent(e, T{});
+            if (!ecs.HasComponent<T>(e))
+                ecs.AddComponent(e, T{});
             T& comp = ecs.GetComponent<T>(e);
             YamlReader r{node};
             comp.Visit(r);
@@ -237,5 +291,6 @@ namespace EcsSerialization
 
     private:
         std::vector<ComponentHandler> m_Handlers;
+        IPrefabProvider*              m_PrefabProvider = nullptr;
     };
 }

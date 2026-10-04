@@ -269,10 +269,10 @@ TEST_CASE("EcsSerializer - a document starts with the format version")
     BuildScene(ecs);
 
     const std::string text = EcsSerialization::EcsSerializer::SerializeToString(registry, ecs, "Versioned");
-    CHECK(text.starts_with("Version: " + std::to_string(EcsSerialization::EcsSerializer::FORMAT_VERSION) +
+    CHECK(text.starts_with("Version: " + std::to_string(EcsSerialization::EcsSerializer::BASE_FORMAT_VERSION) +
                            "\nScene name: Versioned\n"));
     CHECK(EcsSerialization::EcsSerializer::SerializeToNode(registry, ecs, "Versioned")["Version"].as<int>() ==
-          EcsSerialization::EcsSerializer::FORMAT_VERSION);
+          EcsSerialization::EcsSerializer::BASE_FORMAT_VERSION);
 }
 
 TEST_CASE("EcsSerializer - a node round trip equals the string and file round trips")

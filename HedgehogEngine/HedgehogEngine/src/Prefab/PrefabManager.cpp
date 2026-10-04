@@ -40,15 +40,20 @@ namespace HedgehogEngine
     }
 
     PrefabManager::PrefabManager(ECS::ECS& ecs, const FS::FileSystemManager& fileSystem,
-                                 const EcsSerialization::ComponentSerializerRegistry& registry, SceneManager& sceneManager)
+                                 EcsSerialization::ComponentSerializerRegistry& registry, SceneManager& sceneManager)
         : m_ECS(ecs)
         , m_FileSystem(fileSystem)
         , m_Registry(registry)
         , m_SceneManager(sceneManager)
     {
+        m_Registry.SetPrefabProvider(this);
     }
 
-    PrefabManager::~PrefabManager() = default;
+    PrefabManager::~PrefabManager()
+    {
+        if (m_Registry.GetPrefabProvider() == this)
+            m_Registry.SetPrefabProvider(nullptr);
+    }
 
     std::string PrefabManager::NormalizePrefabPath(const std::string& path)
     {
@@ -177,4 +182,42 @@ namespace HedgehogEngine
     }
 
     size_t PrefabManager::GetCachedPrefabCount() const { return m_Cache.size(); }
+
+    std::optional<EcsSerialization::PrefabLink> PrefabManager::GetLink(const ECS::ECS& ecs, ECS::Entity entity) const
+    {
+        if (!ecs.HasComponent<PrefabInstanceComponent>(entity))
+            return std::nullopt;
+        const auto& link = ecs.GetComponent<PrefabInstanceComponent>(entity);
+        return EcsSerialization::PrefabLink{ link.PrefabPath, link.LocalId, link.InstanceRoot };
+    }
+
+    const char* PrefabManager::GetLinkComponentKey() const { return PrefabInstanceComponent::s_TypeName; }
+
+    std::shared_ptr<const YAML::Node> PrefabManager::LoadPrefab(const std::string& virtualPath)
+    {
+        const std::string path = NormalizePrefabPath(virtualPath);
+        if (path.empty())
+        {
+            LOGERROR("[Prefab] '" + virtualPath + "' is not a .prefab path.");
+            return nullptr;
+        }
+        return Load(path);
+    }
+
+    void PrefabManager::Link(ECS::ECS& ecs, const std::vector<ECS::Entity>& entities, const std::string& path)
+    {
+        for (size_t localId = 0; localId < entities.size(); ++localId)
+        {
+            if (entities[localId] == ECS::INVALID_ENTITY)
+                continue;
+            PrefabInstanceComponent link;
+            link.PrefabPath   = localId == 0 ? NormalizePrefabPath(path) : std::string{};
+            link.LocalId      = static_cast<uint32_t>(localId);
+            link.InstanceRoot = entities[0];
+            if (ecs.HasComponent<PrefabInstanceComponent>(entities[localId]))
+                ecs.GetComponent<PrefabInstanceComponent>(entities[localId]) = link;
+            else
+                ecs.AddComponent(entities[localId], link);
+        }
+    }
 }

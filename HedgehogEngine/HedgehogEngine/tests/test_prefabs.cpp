@@ -295,3 +295,59 @@ TEST_CASE("Prefabs - the shipped LampPost prefab instantiates with its mesh and 
     CHECK(ecs.GetComponent<PrefabInstanceComponent>(lamp).LocalId == 2);
     CHECK(ecs.GetComponent<PrefabInstanceComponent>(lampPost).PrefabPath == "assets://Prefabs/LampPost.prefab");
 }
+
+TEST_CASE("Prefabs - scenes keep instances as references with overrides")
+{
+    PrefabWorld world;
+    auto&       scenes = world.Context.GetSceneManager();
+    REQUIRE(world.Prefabs().CreatePrefab(world.Lamp, "prefabs://Lamp.prefab"));
+    const ECS::Entity plain  = world.Prefabs().Instantiate("prefabs://Lamp.prefab");
+    const ECS::Entity bright = world.Prefabs().Instantiate("prefabs://Lamp.prefab");
+    const ECS::Entity brightBulb = world.Hierarchy(bright).Children[0];
+    world.Ecs.GetComponent<HedgehogEngine::LightComponent>(brightBulb).Intensity = 3.0f;
+
+    const std::string scenePath = (world.Dir.Path() / "Street.yaml").string();
+    REQUIRE(scenes.SaveScene(scenePath));
+    const std::string text = *world.Context.GetFileSystem().ReadTextFile("prefabs://Street.yaml");
+    CHECK(text.starts_with("Version: 2\n"));
+    CHECK(text.find("Prefab: prefabs://Lamp.prefab") != std::string::npos);
+
+    // Load it back: both instances as they were, the scene re-saving to the same text.
+    REQUIRE(scenes.LoadScene(scenePath));
+    CHECK(world.Ecs.GetComponent<HedgehogEngine::LightComponent>(world.Hierarchy(plain).Children[0]).Intensity == 2.5f);
+    CHECK(world.Ecs.GetComponent<HedgehogEngine::LightComponent>(brightBulb).Intensity == 3.0f);
+    CHECK(world.Ecs.GetComponent<PrefabInstanceComponent>(brightBulb).InstanceRoot == bright);
+    CHECK(scenes.CaptureSnapshot().Yaml == text);
+
+    // Change the prefab on disk: the plain instance follows, the overridden bulb keeps its intensity.
+    std::string prefabText = *world.Context.GetFileSystem().ReadTextFile("prefabs://Lamp.prefab");
+    const size_t at = prefabText.find("LightIntensity: 2.5");
+    REQUIRE(at != std::string::npos);
+    prefabText.replace(at, 19, "LightIntensity: 0.5");
+    const std::filesystem::path prefabFile = world.Dir.Path() / "Lamp.prefab";
+    const auto                  writeTime  = std::filesystem::last_write_time(prefabFile);
+    world.Dir.WriteFile("Lamp.prefab", prefabText);
+    std::filesystem::last_write_time(prefabFile, writeTime + std::chrono::seconds(2));
+
+    REQUIRE(scenes.LoadScene(scenePath));
+    CHECK(world.Ecs.GetComponent<HedgehogEngine::LightComponent>(world.Hierarchy(plain).Children[0]).Intensity == 0.5f);
+    CHECK(world.Ecs.GetComponent<HedgehogEngine::LightComponent>(brightBulb).Intensity == 3.0f);
+}
+
+TEST_CASE("Prefabs - Play and Stop bring an edited instance back")
+{
+    PrefabWorld world;
+    REQUIRE(world.Prefabs().CreatePrefab(world.Lamp, "prefabs://Lamp.prefab"));
+    const ECS::Entity lamp = world.Prefabs().Instantiate("prefabs://Lamp.prefab");
+    const ECS::Entity bulb = world.Hierarchy(lamp).Children[0];
+    world.Ecs.GetComponent<HedgehogEngine::LightComponent>(bulb).Intensity = 1.75f;
+
+    REQUIRE(world.Context.Play());
+    world.Ecs.GetComponent<HedgehogEngine::LightComponent>(bulb).Intensity = 0.0f;
+    world.Context.GetSceneManager().DeleteGameObject(lamp);
+    REQUIRE(world.Context.Stop());
+
+    REQUIRE(world.Ecs.IsAlive(bulb));
+    CHECK(world.Ecs.GetComponent<HedgehogEngine::LightComponent>(bulb).Intensity == 1.75f);
+    CHECK(world.Ecs.GetComponent<PrefabInstanceComponent>(bulb).InstanceRoot == lamp);
+}
