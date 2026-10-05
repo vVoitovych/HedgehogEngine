@@ -282,10 +282,10 @@ namespace HedgehogEngine
         ReloadInputActions(std::chrono::steady_clock::now());
         UpdateCamera(aspectRatio, dt);
 
-        // Update order is load-bearing: gameplay (Play only) → Animation → Transform phase
-        // (Transform, then Hierarchy) → Late phase (Light) → Audio. Animation runs after every
-        // script hook of the frame (see AnimationSystem), and it and the phases run in every mode,
-        // so edits show in Edit mode too. Audio reads the world matrices the frame ended with.
+        // Update order is load-bearing: gameplay (Play only) → Animation phase (AnimationSystem) →
+        // Transform phase (Transform, then Hierarchy) → Late phase (Light) → Audio. Animation runs
+        // after every script hook of the frame, and the phases run in every mode, so edits show in
+        // Edit mode too. Audio reads the world matrices the frame ended with.
         UpdatePlayMode(dt);
         UpdateAnimation(dt);
         const ECS::FrameContext frame = MakeFrameContext(dt);
@@ -383,10 +383,7 @@ namespace HedgehogEngine
 
     void EngineContext::UpdateAnimation(float dt)
     {
-        // The same scaled time OnUpdate got; nothing advances while paused.
-        const float scaled = m_PlayState == PlayState::Playing ? std::max(dt * m_Clock.TimeScale, 0.0f) : 0.0f;
-        m_AnimationSystem->Update(m_ECS, m_ResourceCatalog.GetMeshContainer(), m_EventBus, m_PlayState != PlayState::Edit,
-                                  scaled);
+        m_ECS.RunPhase(ECS::SystemPhase::Animation, MakeFrameContext(dt));
     }
 
     ResourceCatalog& EngineContext::GetResourceCatalog()             { return m_ResourceCatalog; }

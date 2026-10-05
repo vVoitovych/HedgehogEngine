@@ -5,6 +5,7 @@
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
 #include "HedgehogEngine/api/Events/AnimationEvents.hpp"
 #include "HedgehogEngine/api/Events/EventBus.hpp"
+#include "HedgehogEngine/api/Resource/ResourceCatalog.hpp"
 
 #include "HedgehogAnimation/api/Pose.hpp"
 
@@ -62,6 +63,29 @@ namespace HedgehogEngine
             animator.Finished = true;
             bus.Publish(AnimationFinishedEvent{ entity, animator.CurrentClip });
         }
+    }
+
+    void AnimationSystem::OnRegister(ECS::ECS& ecs)
+    {
+        m_Bus     = ecs.GetServices().Find<EventBus>();
+        m_Catalog = ecs.GetServices().Find<ResourceCatalog>();
+    }
+
+    void AnimationSystem::OnUnregister(ECS::ECS& /*ecs*/)
+    {
+        m_Bus     = nullptr;
+        m_Catalog = nullptr;
+    }
+
+    void AnimationSystem::OnFrame(ECS::ECS& ecs, const ECS::FrameContext& ctx)
+    {
+        if (!m_Bus || !m_Catalog)
+        {
+            return;
+        }
+        // The same scaled time OnUpdate got; nothing advances while paused.
+        const float dt = ctx.Mode == ECS::PlayMode::Playing ? ctx.ScaledDeltaTime : 0.0f;
+        Update(ecs, m_Catalog->GetMeshContainer(), *m_Bus, ctx.Mode != ECS::PlayMode::Edit, dt);
     }
 
     void AnimationSystem::Update(ECS::ECS& ecs, const MeshContainer& meshes, EventBus& bus, bool playing, float dt)

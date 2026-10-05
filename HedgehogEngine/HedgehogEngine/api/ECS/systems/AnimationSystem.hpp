@@ -19,16 +19,26 @@ namespace HedgehogEngine
 {
     class EventBus;
     class MeshContainer;
+    class ResourceCatalog;
 
     // Fills each animated entity's skinning palette (AnimatorComponent + MeshComponent).
     //
-    // It overrides no play-mode event: play-mode events run in registration order, and the engine
-    // registers its systems before the application registers ScriptSystem, so an OnUpdate here
-    // would run before the scripts. EngineContext::UpdateContext calls Update right after
-    // UpdatePlayMode instead, so a clip a script picks in its OnUpdate shows in the same frame.
+    // It runs in the Animation phase, which comes after Simulation, where the play-mode fixed
+    // steps and update (the scripts) run: a clip a script picks in its OnUpdate shows in the same
+    // frame, whatever order the systems were registered in. It overrides no play-mode event.
     class AnimationSystem : public ECS::System
     {
     public:
+        // Finds the EventBus and ResourceCatalog services it updates with; without both, OnFrame
+        // does nothing.
+        HEDGEHOG_ENGINE_API void OnRegister(ECS::ECS& ecs) override;
+        HEDGEHOG_ENGINE_API void OnUnregister(ECS::ECS& ecs) override;
+
+        // Update with the catalog's meshes: playing outside Edit, advancing by the frame's scaled
+        // time while Playing and not at all while Paused.
+        ECS::SystemPhase         GetPhase() const override { return ECS::SystemPhase::Animation; }
+        HEDGEHOG_ENGINE_API void OnFrame(ECS::ECS& ecs, const ECS::FrameContext& ctx) override;
+
         // One frame. In Play (playing, dt the frame's scaled time; 0 while paused) each animator
         // starts on its first frame (playing Clip when PlayOnStart), switches when Clip changes
         // (crossfading over CrossfadeTime from where the old clip was), advances by dt * Speed and
@@ -59,6 +69,9 @@ namespace HedgehogEngine
         void Advance(AnimatorComponent& animator, float dt);
 
     private:
+        EventBus*        m_Bus     = nullptr;
+        ResourceCatalog* m_Catalog = nullptr;
+
         // Scratch poses reused every frame, so steady-state evaluation allocates nothing.
         std::vector<HedgehogAnimation::JointTransform> m_Pose;
         std::vector<HedgehogAnimation::JointTransform> m_FadePose;

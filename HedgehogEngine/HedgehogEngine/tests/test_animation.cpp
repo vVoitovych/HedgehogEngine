@@ -4,6 +4,7 @@
 #include "HedgehogEngine/api/Containers/MeshContainer.hpp"
 #include "HedgehogEngine/api/ECS/components/AnimatorComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
+#include "HedgehogEngine/api/ECS/systems/AnimationSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/MeshSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/RenderSystem.hpp"
 #include "HedgehogEngine/api/EngineContext.hpp"
@@ -225,6 +226,48 @@ TEST_CASE("Animation - a clip a system sets in OnUpdate shows in that frame's pa
     CHECK(Near(LiftOf(Animator(context, entity).Palette[0]), 0.0f));
     CHECK(Near(TurnOf(Animator(context, entity).Palette[1]), 45.0f));
     REQUIRE(context.Stop());
+}
+
+TEST_CASE("Animation - runs in the Animation phase, so a clip set in OnUpdate shows through UpdateContext too")
+{
+    EngineContext context;
+    CHECK(context.GetAnimationSystem()->GetPhase() == ECS::SystemPhase::Animation);
+
+    const auto        switcher = context.GetECS().RegisterSystem<ClipSwitcher>();
+    const ECS::Entity entity   = AddSkinned(context, SKINNED, Playing("Lift"));
+    switcher->Target           = entity;
+
+    REQUIRE(context.Play());
+    for (int frame = 0; frame < 61; ++frame)
+        context.UpdateContext(1.0f, STEP);
+    REQUIRE(Near(LiftOf(Animator(context, entity).Palette[0]), 0.5f));
+
+    switcher->NextClip = "Bend";
+    context.UpdateContext(1.0f, STEP);
+    CHECK(Animator(context, entity).CurrentClip == "Bend");
+    CHECK(Near(LiftOf(Animator(context, entity).Palette[0]), 0.0f));
+    CHECK(Near(TurnOf(Animator(context, entity).Palette[1]), 45.0f));
+
+    // Paused through UpdateContext: the palette holds.
+    REQUIRE(context.Pause());
+    const float turn = TurnOf(Animator(context, entity).Palette[1]);
+    for (int frame = 0; frame < 10; ++frame)
+        context.UpdateContext(1.0f, STEP);
+    CHECK(Near(TurnOf(Animator(context, entity).Palette[1]), turn));
+    REQUIRE(context.Stop());
+}
+
+TEST_CASE("Animation - without its services the system's frame does nothing")
+{
+    ECS::ECS ecs;
+    ecs.Init();
+    ecs.RegisterComponent<AnimatorComponent>();
+    auto system = ecs.RegisterSystem<HedgehogEngine::AnimationSystem>();
+
+    ECS::FrameContext ctx;
+    ctx.Mode = ECS::PlayMode::Playing;
+    ecs.RunPhase(ECS::SystemPhase::Animation, ctx);
+    CHECK(ecs.UnregisterSystem<HedgehogEngine::AnimationSystem>());
 }
 
 TEST_CASE("Animation - changing the clip crossfades from where the old clip was")
