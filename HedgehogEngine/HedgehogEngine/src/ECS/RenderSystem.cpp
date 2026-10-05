@@ -1,9 +1,31 @@
 #include "HedgehogEngine/api/ECS/systems/RenderSystem.hpp"
+#include "HedgehogEngine/api/Resource/ResourceCatalog.hpp"
 
 #include <algorithm>
 
 namespace HedgehogEngine
 {
+    void RenderSystem::OnRegister(ECS::ECS& ecs)
+    {
+        m_Catalog = ecs.GetServices().Find<ResourceCatalog>();
+    }
+
+    void RenderSystem::OnUnregister(ECS::ECS& /*ecs*/)
+    {
+        m_Catalog = nullptr;
+    }
+
+    ECS::SystemPhase RenderSystem::GetPhase() const
+    {
+        return ECS::SystemPhase::Sync;
+    }
+
+    void RenderSystem::OnFrame(ECS::ECS& /*ecs*/, const ECS::FrameContext& /*ctx*/)
+    {
+        if (m_Catalog)
+            m_Catalog->UpdateMaterials(*this);
+    }
+
     void RenderSystem::Update(ECS::ECS& ecs, ECS::Entity entity)
     {
         auto& render = ecs.GetComponent<RenderComponent>(entity);

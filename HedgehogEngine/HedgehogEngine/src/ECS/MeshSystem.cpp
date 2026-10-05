@@ -1,4 +1,5 @@
 #include "HedgehogEngine/api/ECS/systems/MeshSystem.hpp"
+#include "HedgehogEngine/api/Resource/ResourceCatalog.hpp"
 #include "Logger/api/Logger.hpp"
 
 #include <algorithm>
@@ -11,6 +12,27 @@ namespace HedgehogEngine
     {
         AddMeshPath("Models/Default/cube.obj");
         AddMeshPath("Models/Default/sphere.obj");
+    }
+
+    void MeshSystem::OnRegister(ECS::ECS& ecs)
+    {
+        m_Catalog = ecs.GetServices().Find<ResourceCatalog>();
+    }
+
+    void MeshSystem::OnUnregister(ECS::ECS& /*ecs*/)
+    {
+        m_Catalog = nullptr;
+    }
+
+    ECS::SystemPhase MeshSystem::GetPhase() const
+    {
+        return ECS::SystemPhase::Sync;
+    }
+
+    void MeshSystem::OnFrame(ECS::ECS& /*ecs*/, const ECS::FrameContext& /*ctx*/)
+    {
+        if (m_Catalog)
+            m_Catalog->UpdateMeshes(*this);
     }
 
     void MeshSystem::Update(ECS::ECS& ecs, ECS::Entity entity,

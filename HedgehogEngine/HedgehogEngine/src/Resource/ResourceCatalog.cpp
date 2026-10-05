@@ -24,7 +24,17 @@ namespace HedgehogEngine
 
     void ResourceCatalog::Update(const RenderSystem& renderSystem, const MeshSystem& meshSystem)
     {
+        UpdateMaterials(renderSystem);
+        UpdateMeshes(meshSystem);
+    }
+
+    void ResourceCatalog::UpdateMaterials(const RenderSystem& renderSystem)
+    {
         m_MaterialContainer->Update(renderSystem, m_FileSystem);
+    }
+
+    void ResourceCatalog::UpdateMeshes(const MeshSystem& meshSystem)
+    {
         m_MeshContainer->Update(meshSystem, m_FileSystem);
     }
 

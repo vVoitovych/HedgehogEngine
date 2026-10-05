@@ -71,8 +71,9 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API ~EngineContext();
 
         // One frame: the editor camera from the Editor actions (UpdateEditorInput), then one
-        // ECS::RunPhases from Simulation to Late: gameplay and save requests (Play only),
-        // animation, transforms and hierarchy, then lights and audio. Needs no window.
+        // ECS::RunPhases from Simulation to Sync: gameplay and save requests (Play only),
+        // animation, transforms and hierarchy, lights and audio, then the meshes and materials
+        // listed this frame loaded into the resource catalog. Needs no window.
         HEDGEHOG_ENGINE_API void UpdateContext(float aspectRatio, float dt);
 
         // Play mode. EngineContext owns the state, the scene snapshot and the clock; the ECS

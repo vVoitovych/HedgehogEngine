@@ -38,7 +38,12 @@ namespace HedgehogEngine
         ResourceCatalog(ResourceCatalog&&)                 = delete;
         ResourceCatalog& operator=(ResourceCatalog&&)      = delete;
 
+        // Loads the materials and meshes the systems have listed since the last call. The two are
+        // independent: MeshSystem and RenderSystem call their own half in the Sync phase each frame;
+        // Update does both at once, for callers outside the frame (a scene just loaded, a new asset).
         HEDGEHOG_ENGINE_API void Update(const RenderSystem& renderSystem, const MeshSystem& meshSystem);
+        HEDGEHOG_ENGINE_API void UpdateMaterials(const RenderSystem& renderSystem);
+        HEDGEHOG_ENGINE_API void UpdateMeshes(const MeshSystem& meshSystem);
 
         HEDGEHOG_ENGINE_API const MeshContainer&     GetMeshContainer()     const;
         HEDGEHOG_ENGINE_API const TextureContainer&  GetTextureContainer()  const;

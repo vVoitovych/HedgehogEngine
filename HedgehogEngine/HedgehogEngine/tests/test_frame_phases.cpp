@@ -5,6 +5,13 @@
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
 #include "HedgehogEngine/api/ECS/systems/HierarchySystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/LightSystem.hpp"
+#include "HedgehogEngine/api/ECS/systems/MeshSystem.hpp"
+#include "HedgehogEngine/api/ECS/systems/RenderSystem.hpp"
+#include "HedgehogEngine/api/Containers/MaterialContainer.hpp"
+#include "HedgehogEngine/api/Containers/MeshContainer.hpp"
+#include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/RenderComponent.hpp"
+#include "HedgehogEngine/api/Resource/ResourceCatalog.hpp"
 #include "HedgehogEngine/api/ECS/systems/TransformSystem.hpp"
 #include "HedgehogEngine/api/Events/TransformEvents.hpp"
 #include "HedgehogEngine/api/Scene/SceneManager.hpp"
@@ -100,6 +107,40 @@ TEST_CASE("Frame phases - Transform and Hierarchy run in Transform, Light in Lat
     CHECK(context.GetTransformSystem()->GetPhase() == ECS::SystemPhase::Transform);
     CHECK(context.GetHierarchySystem()->GetPhase() == ECS::SystemPhase::Transform);
     CHECK(context.GetLightSystem()->GetPhase() == ECS::SystemPhase::Late);
+    CHECK(context.GetMeshSystem()->GetPhase() == ECS::SystemPhase::Sync);
+    CHECK(context.GetRenderSystem()->GetPhase() == ECS::SystemPhase::Sync);
+}
+
+TEST_CASE("Frame phases - a mesh and a material listed this frame reach the catalog in the Sync phase")
+{
+    EngineContext     context;
+    ECS::ECS&         ecs    = context.GetECS();
+    const ECS::Entity entity = context.GetSceneManager().CreateGameObject();
+    ecs.AddComponent(entity, MeshComponent{});
+    RenderComponent render;
+    render.Material = "Materials/test1.material";
+    ecs.AddComponent(entity, render);
+
+    const ResourceCatalog& catalog   = context.GetResourceCatalog();
+    const size_t           meshes    = catalog.GetMeshContainer().GetMeshCount();
+    const size_t           materials = context.GetRenderSystem()->GetMaterialsCount();
+
+    context.GetMeshSystem()->LoadMesh(ecs, entity, "Models/viking_room.obj");
+    context.GetRenderSystem()->Update(ecs, entity);
+    REQUIRE(context.GetMeshSystem()->GetMeshes().size() == meshes + 1);
+    REQUIRE(context.GetRenderSystem()->GetMaterialsCount() == materials + 1);
+    CHECK(catalog.GetMeshContainer().GetMeshCount() == meshes); // listed, not loaded yet
+
+    context.UpdateContext(1.0f, STEP);
+    CHECK(catalog.GetMeshContainer().GetMeshCount() == meshes + 1);
+    CHECK(catalog.GetMaterialContainer().GetMaterialCount() == materials + 1);
+
+    // Without a ResourceCatalog service the systems sync nothing.
+    ECS::ECS bare;
+    bare.Init();
+    auto mesh = bare.RegisterSystem<MeshSystem>();
+    bare.RunPhase(ECS::SystemPhase::Sync, ECS::FrameContext{});
+    CHECK(mesh->GetMeshes().size() == 2);
 }
 
 TEST_CASE("Frame phases - one UpdateContext runs gameplay, then local, then world matrices, then lights")
