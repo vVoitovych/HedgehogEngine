@@ -79,12 +79,14 @@ TEST_CASE("Time bindings - timeScale 0 stops the fixed steps and holds Time.time
 
     LogCapture log;
     REQUIRE(world.Context.Play());
-    world.Frame(1.0f / 60.0f); // the step for this frame was taken before OnStart set the scale
+    // The frame's step and scaled time were set before OnStart changed the scale, which applies
+    // from the next frame.
+    world.Frame(1.0f / 60.0f);
     world.Frame(1.0f / 60.0f);
     world.Frame(1.0f / 60.0f);
     const std::vector<std::string> expected = {
         "fixed",
-        "update 1 dt 0.000 deltaTime 0.000 time 0.017",
+        "update 1 dt 0.017 deltaTime 0.017 time 0.017",
         "update 2 dt 0.000 deltaTime 0.000 time 0.017",
         "update 3 dt 0.000 deltaTime 0.000 time 0.017",
     };

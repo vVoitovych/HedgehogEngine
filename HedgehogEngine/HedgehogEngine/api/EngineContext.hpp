@@ -69,8 +69,9 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API EngineContext();
         HEDGEHOG_ENGINE_API ~EngineContext();
 
-        // One frame: the editor camera from the Editor actions (UpdateEditorInput), then gameplay
-        // (Play only), animation, transforms, hierarchy and lights. Needs no window.
+        // One frame: the editor camera from the Editor actions (UpdateEditorInput), then one
+        // ECS::RunPhases from Simulation to Late: gameplay and save requests (Play only),
+        // animation, transforms and hierarchy, then lights and audio. Needs no window.
         HEDGEHOG_ENGINE_API void UpdateContext(float aspectRatio, float dt);
 
         // Play mode. EngineContext owns the state, the scene snapshot and the clock; the ECS
@@ -89,15 +90,17 @@ namespace HedgehogEngine
         [[nodiscard]] HEDGEHOG_ENGINE_API FixedStepClock&       GetFixedStepClock();
         [[nodiscard]] HEDGEHOG_ENGINE_API const FixedStepClock& GetFixedStepClock() const;
 
-        // One frame of gameplay, only while Playing: the clock's fixed steps of OnFixedUpdate,
-        // then one OnUpdate with the scaled frame time, then the save and load requests the frame
-        // made (SaveGameManager::ProcessRequests). UpdateContext calls it; it is public so tests
-        // can drive frames without a window.
+        // Runs the Simulation phase alone. While Playing it advances the clock and runs its fixed
+        // steps of OnFixedUpdate, then one OnUpdate with the scaled frame time, then the save and
+        // load requests the frame made (SaveRequestSystem, SaveGameManager::ProcessRequests);
+        // outside Play it does nothing. UpdateContext runs the same phase itself (calling both
+        // would advance the clock twice); this is public so tests can drive gameplay without a
+        // window.
         HEDGEHOG_ENGINE_API void UpdatePlayMode(float dt);
 
         // Runs the Animation phase (AnimationSystem), which fills every animator's skinning palette
         // for this frame: advanced by the frame's scaled time while Playing, held while Paused, the
-        // bind pose (or a preview time) in Edit. UpdateContext calls it right after UpdatePlayMode;
+        // bind pose (or a preview time) in Edit. UpdateContext runs this phase right after Simulation;
         // public for the same reason.
         HEDGEHOG_ENGINE_API void UpdateAnimation(float dt);
 
@@ -174,6 +177,9 @@ namespace HedgehogEngine
         void RegisterServices();
         // What this frame's phases get: dt, its scaled form, the fixed step and the play mode.
         [[nodiscard]] ECS::FrameContext MakeFrameContext(float dt) const;
+        // MakeFrameContext, with the clock advanced (Playing only) and its steps as FixedSteps.
+        // Called once per frame, by whichever entry runs the Simulation phase.
+        [[nodiscard]] ECS::FrameContext BeginFrame(float dt);
         void InitECS();
         void InitFileSystem();
         void RegisterComponents();

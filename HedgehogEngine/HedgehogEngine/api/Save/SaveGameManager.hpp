@@ -26,9 +26,10 @@ namespace HedgehogEngine
     // "World") and every section another module registers (the script system's "Scripts"), so
     // the engine never depends on what is above it.
     //
-    // Requests wait for the end of the frame's gameplay: EngineContext::UpdatePlayMode calls
-    // ProcessRequests after the fixed steps and the update, so a save sees a consistent state and
-    // a load never tears the world down under a running script. Saves run first, in request order;
+    // Requests wait for the end of the frame's gameplay: the engine's SaveRequestSystem calls
+    // ProcessRequests in the Simulation phase, after every system's fixed steps and update, so a
+    // save sees a consistent state and a load never tears the world down under a running script.
+    // Saves run first, in request order;
     // then the last load requested, which replaces the whole world with the saved one (the world
     // the save was made in, whatever scene is open), hands each registered section its data and
     // publishes GameLoadedEvent. Stop drops pending requests, and the editor's Stop still restores

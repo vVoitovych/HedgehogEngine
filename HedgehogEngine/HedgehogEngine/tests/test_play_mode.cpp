@@ -3,9 +3,14 @@
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogEngine/api/Scene/SceneManager.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
+#include "HedgehogEngine/api/Events/EventBus.hpp"
+#include "HedgehogEngine/api/Events/SaveEvents.hpp"
+#include "HedgehogEngine/api/Save/SaveGameManager.hpp"
 
 #include "ECS/api/ECS.hpp"
 #include "ECS/api/System.hpp"
+
+#include "FileSystem/tests/test_helpers.hpp"
 
 #include <optional>
 #include <string>
@@ -13,6 +18,7 @@
 
 using HedgehogEngine::EngineContext;
 using HedgehogEngine::PlayState;
+using HedgehogEngine::SaveGameManager;
 using HedgehogEngine::TransformComponent;
 
 namespace
@@ -62,6 +68,68 @@ namespace
     {
     public:
         using RecordingSystem::RecordingSystem;
+    };
+
+    // Asks for a save in its first OnUpdate and for a load of that save in its second.
+    class SaveRequester : public ECS::System
+    {
+    public:
+        SaveRequester(SaveGameManager& saves, std::vector<std::string>& log)
+            : m_Saves(saves)
+            , m_Log(log)
+        {
+        }
+
+        void OnUpdate(ECS::ECS&, float) override
+        {
+            m_Log.push_back("requester.update");
+            ++m_Updates;
+            if (m_Updates == 1)
+                CHECK(m_Saves.RequestSave("slot"));
+            else if (m_Updates == 2)
+                CHECK(m_Saves.RequestLoad("slot"));
+        }
+
+    private:
+        SaveGameManager&          m_Saves;
+        std::vector<std::string>& m_Log;
+        int                       m_Updates = 0;
+    };
+
+    // Registered after SaveRequester: whether the slot exists yet when its own update runs.
+    class LaterSystem : public ECS::System
+    {
+    public:
+        LaterSystem(SaveGameManager& saves, std::vector<std::string>& log)
+            : m_Saves(saves)
+            , m_Log(log)
+        {
+        }
+
+        void OnUpdate(ECS::ECS&, float) override
+        {
+            m_Log.push_back(m_Saves.SlotExists("slot") ? "later.update(saved)" : "later.update");
+        }
+
+    private:
+        SaveGameManager&          m_Saves;
+        std::vector<std::string>& m_Log;
+    };
+
+    // Marks where the Animation phase runs in the frame.
+    class AnimationProbe : public ECS::System
+    {
+    public:
+        explicit AnimationProbe(std::vector<std::string>& log)
+            : m_Log(log)
+        {
+        }
+
+        ECS::SystemPhase GetPhase() const override { return ECS::SystemPhase::Animation; }
+        void OnFrame(ECS::ECS&, const ECS::FrameContext&) override { m_Log.push_back("animation"); }
+
+    private:
+        std::vector<std::string>& m_Log;
     };
 }
 
@@ -194,4 +262,49 @@ TEST_CASE("Play mode - Stop restores the scene as it was on Play, after OnPlaySt
     CHECK(ecs.IsAlive(doomed));
     if (spawned != doomed)
         CHECK_FALSE(ecs.IsAlive(spawned));
+}
+
+TEST_CASE("Play mode - UpdateContext advances the clock once and runs gameplay once per frame")
+{
+    EngineContext            context;
+    std::vector<std::string> log;
+    auto system = context.GetECS().RegisterSystem<RecordingSystem>("A", log);
+
+    context.UpdateContext(1.0f, 2.0f * STEP);
+    CHECK(context.GetFixedStepClock().FrameCount == 0);
+    CHECK(system->DeltaTimes.empty());
+
+    REQUIRE(context.Play());
+    context.UpdateContext(1.0f, 2.0f * STEP);
+    CHECK(context.GetFixedStepClock().FrameCount == 1);
+    CHECK(context.GetFixedStepClock().StepCount == 2);
+    CHECK(system->FixedDeltaTimes.size() == 2);
+    REQUIRE(system->DeltaTimes.size() == 1);
+    CHECK(system->DeltaTimes[0] == doctest::Approx(2.0f * STEP));
+}
+
+TEST_CASE("Play mode - save and load requests run after every system's update and before Animation")
+{
+    TempDir                  saves;
+    std::vector<std::string> log;
+    EngineContext            context;
+    SaveGameManager&         manager = context.GetSaveGames();
+    manager.SetSaveDirectory(saves.Path());
+    ECS::ECS& ecs = context.GetECS();
+    // Registered after the engine's systems, SaveRequestSystem included, as ScriptSystem is.
+    ecs.RegisterSystem<SaveRequester>(manager, log);
+    ecs.RegisterSystem<LaterSystem>(manager, log);
+    ecs.RegisterSystem<AnimationProbe>(log);
+    context.GetEventBus().Subscribe<HedgehogEngine::GameLoadedEvent>(
+        [&](const HedgehogEngine::GameLoadedEvent& loaded) { log.push_back("loaded " + loaded.Slot); });
+
+    REQUIRE(context.Play());
+    context.UpdateContext(1.0f, STEP);
+    // The save is written after the later system's update, before Animation.
+    CHECK(log == std::vector<std::string>{ "requester.update", "later.update", "animation" });
+    CHECK(manager.SlotExists("slot"));
+
+    log.clear();
+    context.UpdateContext(1.0f, STEP);
+    CHECK(log == std::vector<std::string>{ "requester.update", "later.update(saved)", "loaded slot", "animation" });
 }

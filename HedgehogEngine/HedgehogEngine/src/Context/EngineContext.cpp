@@ -22,6 +22,7 @@
 #include "HedgehogEngine/api/ECS/systems/AnimationSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/UiSystem.hpp"
 #include "HedgehogEngine/api/Save/SaveGameManager.hpp"
+#include "../Save/SaveRequestSystem.hpp"
 #include "HedgehogEngine/api/Prefab/PrefabManager.hpp"
 #include "HedgehogEngine/api/ECS/components/PrefabInstanceComponent.hpp"
 #include "HedgehogEngine/api/ECS/systems/AudioSystem.hpp"
@@ -76,6 +77,10 @@ namespace HedgehogEngine
         m_Settings  = std::make_unique<HedgehogSettings::Settings>();
         m_ECS.GetServices().Register(*m_Settings);
         m_SaveGames = std::make_unique<SaveGameManager>(*m_SceneManager, m_EventBus, m_Clock, *m_Settings);
+        m_ECS.GetServices().Register(*m_SaveGames);
+        // Registered last, as it needs the manager; the Simulation phase runs every system's
+        // gameplay before any OnFrame, so its place in the order does not matter.
+        m_ECS.RegisterSystem<SaveRequestSystem>();
         m_Prefabs   = std::make_unique<PrefabManager>(m_ECS, m_FileSystem, *m_ComponentRegistry, *m_SceneManager);
 
         m_ResourceCatalog.Update(*m_RenderSystem, *m_MeshSystem);
@@ -89,6 +94,7 @@ namespace HedgehogEngine
 
         // These are destroyed before the ECS (they are declared after it), so no system may find
         // them while the ECS unregisters its systems.
+        m_ECS.GetServices().Unregister<SaveGameManager>();
         m_ECS.GetServices().Unregister<HedgehogSettings::Settings>();
         m_ECS.GetServices().Unregister<ResourceCatalog>();
     }
@@ -282,16 +288,12 @@ namespace HedgehogEngine
         ReloadInputActions(std::chrono::steady_clock::now());
         UpdateCamera(aspectRatio, dt);
 
-        // Update order is load-bearing: gameplay (Play only) → Animation phase (AnimationSystem) →
-        // Transform phase (Transform, then Hierarchy) → Late phase (Light, then Audio, in
-        // registration order). Animation runs after every script hook of the frame, and the phases
-        // run in every mode, so edits show in Edit mode too. Audio reads the world matrices the
-        // frame ended with.
-        UpdatePlayMode(dt);
-        UpdateAnimation(dt);
-        const ECS::FrameContext frame = MakeFrameContext(dt);
-        m_ECS.RunPhase(ECS::SystemPhase::Transform, frame);
-        m_ECS.RunPhase(ECS::SystemPhase::Late, frame);
+        // The phases in frame order: Simulation (Play only: the fixed steps and the update of every
+        // system, then the save and load requests) → Animation (AnimationSystem) → Transform
+        // (Transform, then Hierarchy) → Late (Light, then Audio, in registration order). Animation
+        // runs after every script hook of the frame, and the phases run in every mode, so edits
+        // show in Edit mode too. Audio reads the world matrices the frame ended with.
+        m_ECS.RunPhases(ECS::SystemPhase::Simulation, ECS::SystemPhase::Late, BeginFrame(dt));
 
         m_ResourceCatalog.Update(*m_RenderSystem, *m_MeshSystem);
     }
@@ -352,16 +354,16 @@ namespace HedgehogEngine
 
     void EngineContext::UpdatePlayMode(float dt)
     {
-        if (m_PlayState != PlayState::Playing)
-            return;
+        m_ECS.RunPhase(ECS::SystemPhase::Simulation, BeginFrame(dt));
+    }
 
-        const uint32_t steps = AdvanceFixedStepClock(m_Clock, dt);
-        for (uint32_t step = 0; step < steps; ++step)
-            m_ECS.RunFixedUpdate(m_Clock.FixedDeltaTime);
-        // Scaled like the fixed steps; a negative scale counts as 0, as the clock treats it.
-        m_ECS.RunUpdate(std::max(dt * m_Clock.TimeScale, 0.0f));
-        // After every script hook: a save sees the frame's state, a load runs under no script.
-        m_SaveGames->ProcessRequests();
+    ECS::FrameContext EngineContext::BeginFrame(float dt)
+    {
+        ECS::FrameContext frame = MakeFrameContext(dt);
+        // The clock moves only while Playing, once per frame, before any system runs.
+        if (m_PlayState == PlayState::Playing)
+            frame.FixedSteps = AdvanceFixedStepClock(m_Clock, dt);
+        return frame;
     }
 
     ECS::FrameContext EngineContext::MakeFrameContext(float dt) const
@@ -371,7 +373,7 @@ namespace HedgehogEngine
         // A negative time scale counts as 0, as the clock treats it.
         frame.ScaledDeltaTime = std::max(dt * m_Clock.TimeScale, 0.0f);
         frame.FixedDeltaTime  = m_Clock.FixedDeltaTime;
-        frame.FixedSteps      = 0; // the fixed steps still run in UpdatePlayMode
+        frame.FixedSteps      = 0; // BeginFrame advances the clock
         switch (m_PlayState)
         {
         case PlayState::Playing: frame.Mode = ECS::PlayMode::Playing; break;
