@@ -7,6 +7,7 @@
 #include "HedgehogEngine/api/ECS/components/UiRectComponent.hpp"
 #include "HedgehogEngine/api/Events/EventBus.hpp"
 #include "HedgehogEngine/api/Events/UiEvents.hpp"
+#include "HedgehogEngine/api/Input/GameInputFrame.hpp"
 
 #include "ECS/api/components/Hierarchy.hpp"
 #include "HedgehogSettings/api/LayerSettings.hpp"
@@ -96,6 +97,36 @@ namespace HedgehogEngine
                                        return false;
                                    }
                                });
+        }
+    }
+
+    void UiSystem::OnRegister(ECS::ECS& ecs)
+    {
+        m_Bus   = ecs.GetServices().Find<EventBus>();
+        m_Input = ecs.GetServices().Find<GameInputFrame>();
+    }
+
+    void UiSystem::OnUnregister(ECS::ECS& /*ecs*/)
+    {
+        m_Bus   = nullptr;
+        m_Input = nullptr;
+    }
+
+    ECS::SystemPhase UiSystem::GetPhase() const
+    {
+        return ECS::SystemPhase::Input;
+    }
+
+    void UiSystem::OnFrame(ECS::ECS& ecs, const ECS::FrameContext& ctx)
+    {
+        if (ctx.Mode != ECS::PlayMode::Playing)
+        {
+            ResetInput(ecs);
+            return;
+        }
+        if (m_Bus && m_Input && m_Input->Map && m_Input->Actions)
+        {
+            UpdateInput(ecs, *m_Input->Map, *m_Input->Actions, m_Input->ViewSize, *m_Bus);
         }
     }
 

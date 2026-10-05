@@ -18,12 +18,20 @@
 namespace HedgehogEngine
 {
     class EventBus;
+    struct GameInputFrame;
 
     // The entity view over every UiCanvasComponent: the roots extraction walks to build the frame's
-    // UI draw list, and the roots of the game UI's input handling.
+    // UI draw list, and the roots of the game UI's input handling, which runs in the Input phase
+    // (EngineContext::UpdateGameInput runs it): UpdateInput while Playing, from the EventBus and
+    // GameInputFrame services found in OnRegister (nothing without them), and ResetInput otherwise.
     class UiSystem : public ECS::System
     {
     public:
+        HEDGEHOG_ENGINE_API void OnRegister(ECS::ECS& ecs) override;
+        HEDGEHOG_ENGINE_API void OnUnregister(ECS::ECS& ecs) override;
+        [[nodiscard]] HEDGEHOG_ENGINE_API ECS::SystemPhase GetPhase() const override;
+        HEDGEHOG_ENGINE_API void OnFrame(ECS::ECS& ecs, const ECS::FrameContext& ctx) override;
+
         // The Game map actions the UI handles.
         static constexpr const char* POINTER_PRESS_ACTION  = "UiPointerPress";
         static constexpr const char* SUBMIT_ACTION         = "UiSubmit";
@@ -82,5 +90,8 @@ namespace HedgehogEngine
         std::optional<TrackedEntity> m_Hovered;
         std::optional<TrackedEntity> m_Pressed;
         std::optional<TrackedEntity> m_Focused;
+
+        EventBus*             m_Bus   = nullptr;
+        const GameInputFrame* m_Input = nullptr;
     };
 }
