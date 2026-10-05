@@ -95,9 +95,10 @@ namespace HedgehogEngine
         // can drive frames without a window.
         HEDGEHOG_ENGINE_API void UpdatePlayMode(float dt);
 
-        // Fills every animator's skinning palette for this frame: advanced by the frame's scaled
-        // time while Playing, held while Paused, the bind pose (or a preview time) in Edit.
-        // UpdateContext calls it right after UpdatePlayMode; public for the same reason.
+        // Runs the Animation phase (AnimationSystem), which fills every animator's skinning palette
+        // for this frame: advanced by the frame's scaled time while Playing, held while Paused, the
+        // bind pose (or a preview time) in Edit. UpdateContext calls it right after UpdatePlayMode;
+        // public for the same reason.
         HEDGEHOG_ENGINE_API void UpdateAnimation(float dt);
 
         // Input actions, from assets://Input/actions.yaml (INPUT_ACTIONS_PATH; the defaults when it
