@@ -125,6 +125,24 @@ namespace ECS
             return system;
         }
 
+        // Takes system T out of the ECS: calls its OnUnregister, then removes it from every phase,
+        // event and signature, so it no longer runs and HasSystem<T> is false. The ECS lets go of it;
+        // a caller that kept its own pointer keeps the object, which no longer runs. T can be
+        // registered again afterwards. Returns false, changing nothing, when T is not registered or
+        // while the ECS is dispatching (a system cannot be removed from inside a phase, a play-mode
+        // event or an update; do it between frames).
+        template<typename T>
+        [[nodiscard]] bool UnregisterSystem()
+        {
+            if (IsDispatching() || !m_SystemManager->HasSystem<T>())
+            {
+                return false;
+            }
+            m_SystemManager->GetSystem<T>()->OnUnregister(*this);
+            m_SystemManager->UnregisterSystem<T>();
+            return true;
+        }
+
         template<typename T>
         void SetSystemSignature(Signature signature)
         {
