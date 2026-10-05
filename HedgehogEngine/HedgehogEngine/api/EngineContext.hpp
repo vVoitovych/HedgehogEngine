@@ -30,6 +30,7 @@ namespace HedgehogSettings
 namespace EcsSerialization
 {
     class ComponentSerializerRegistry;
+    class ComponentTypeRegistry;
 }
 
 namespace HA
@@ -149,6 +150,11 @@ namespace HedgehogEngine
         // How every component is written to and read from scenes, snapshots, saves and prefabs.
         [[nodiscard]] HEDGEHOG_ENGINE_API const EcsSerialization::ComponentSerializerRegistry& GetComponentRegistry() const;
 
+        // Every component type: the engine's 16 in serializer order, then any an application or
+        // plugin adds. Also the ECS's ComponentTypeRegistry service. Menus and the inspector list it.
+        [[nodiscard]] HEDGEHOG_ENGINE_API EcsSerialization::ComponentTypeRegistry&       GetComponentTypes();
+        [[nodiscard]] HEDGEHOG_ENGINE_API const EcsSerialization::ComponentTypeRegistry& GetComponentTypes() const;
+
         HEDGEHOG_ENGINE_API HedgehogSettings::Settings&       GetSettings();
         HEDGEHOG_ENGINE_API const HedgehogSettings::Settings& GetSettings() const;
 
@@ -185,7 +191,6 @@ namespace HedgehogEngine
         [[nodiscard]] ECS::FrameContext BeginFrame(float dt);
         void InitECS();
         void InitFileSystem();
-        void RegisterComponents();
         void LoadInputActions();
         void UpdateCamera(float aspectRatio, float dt);
 
@@ -216,6 +221,7 @@ namespace HedgehogEngine
 
         std::unique_ptr<HedgehogSettings::Settings>                    m_Settings;
         std::unique_ptr<EcsSerialization::ComponentSerializerRegistry> m_ComponentRegistry;
+        std::unique_ptr<EcsSerialization::ComponentTypeRegistry>       m_ComponentTypes; // writes into the one above
 
         // Constructed after ECS/systems/component-registry are ready (it creates the scene root
         // and needs live system references) — see EngineContext.cpp for the ordering.
