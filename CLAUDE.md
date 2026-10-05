@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Every change starts as a Jira ticket in project `HE` and lands as one pull request under ~1000 changed lines.** Read `WORKFLOW.md` before starting any work — it defines the ticket model, the sizing rule, branch and commit conventions, and the Jira/GitHub automation.
 
 The short form:
-- Branch `HE-<n>-<slug>` off `master`; no long-lived integration branches.
+- Branch `<epic>/HE-<n>-<slug>` (e.g. `physics/HE-301-rigidbody-component`) off `master`; no long-lived integration branches.
 - Commit subjects and PR titles start `HE-<n>: `. A `commit-msg` hook and the `ticket-check` CI job enforce this; Jira uses it to move the ticket to **In Review** on PR creation and **Done** on merge.
 - Break a problem into tickets with `/jira-tickets <problem>` before writing code.
 
