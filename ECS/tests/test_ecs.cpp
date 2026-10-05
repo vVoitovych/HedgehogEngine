@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <map>
+#include <utility>
 #include <memory>
 #include <set>
 #include <string>
@@ -57,6 +58,73 @@ TEST_CASE("ECS::CreateEntity - returns distinct in-range ids")
         CHECK(e < ECS::MAX_ENTITIES);
         CHECK(ids.insert(e).second); // no duplicates
     }
+}
+
+namespace
+{
+    // One distinct component type per N, to fill every component id.
+    template<size_t N>
+    struct Numbered
+    {
+        size_t Value = N;
+    };
+
+    template<size_t... N>
+    void RegisterNumbered(ECS::ECS& ecs, std::index_sequence<N...>)
+    {
+        (ecs.RegisterComponent<Numbered<N>>(), ...);
+    }
+
+    struct LastTypeSystem : ECS::System
+    {
+    };
+}
+
+TEST_CASE("ECS limits - MAX_ENTITIES entities are created, each with distinct data")
+{
+    ECS::ECS ecs = MakeEcs();
+
+    std::set<ECS::Entity> ids;
+    for (size_t i = 0; i < ECS::MAX_ENTITIES; ++i)
+    {
+        const ECS::Entity e = ecs.CreateEntity();
+        REQUIRE(e < ECS::MAX_ENTITIES);
+        ids.insert(e);
+        ecs.AddComponent(e, Position{ static_cast<float>(e), 0.0f, 0.0f });
+    }
+    CHECK(ids.size() == ECS::MAX_ENTITIES);
+    CHECK(ecs.GetEntityCount() == ECS::MAX_ENTITIES);
+    // Creating one more asserts ("Too many entities."), so it is not exercised here.
+
+    for (const ECS::Entity e : ids)
+    {
+        REQUIRE(ecs.GetComponent<Position>(e).x == static_cast<float>(e));
+    }
+}
+
+TEST_CASE("ECS limits - MAX_COMPONENTS component types register and the last id works in a signature")
+{
+    static_assert(ECS::MAX_ENTITIES == 4096);
+    static_assert(ECS::MAX_COMPONENTS == 64);
+
+    ECS::ECS ecs;
+    ecs.Init();
+    RegisterNumbered(ecs, std::make_index_sequence<ECS::MAX_COMPONENTS>{});
+
+    using Last = Numbered<ECS::MAX_COMPONENTS - 1>;
+    CHECK(ecs.GetComponentType<Last>() == ECS::MAX_COMPONENTS - 1);
+
+    auto           system = ecs.RegisterSystem<LastTypeSystem>();
+    ECS::Signature signature;
+    signature.set(ecs.GetComponentType<Last>());
+    ecs.SetSystemSignature<LastTypeSystem>(signature);
+
+    const ECS::Entity holder = ecs.CreateEntity();
+    const ECS::Entity other  = ecs.CreateEntity();
+    ecs.AddComponent(holder, Last{});
+    ecs.AddComponent(other, Numbered<0>{});
+    CHECK(system->GetEntities() == std::vector<ECS::Entity>{ holder });
+    CHECK(ecs.GetComponent<Last>(holder).Value == ECS::MAX_COMPONENTS - 1);
 }
 
 TEST_CASE("ECS::CreateEntity(explicit) - id is removed from the pool")
