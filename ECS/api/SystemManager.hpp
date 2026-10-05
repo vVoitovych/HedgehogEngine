@@ -113,6 +113,19 @@ namespace ECS
             return system;
         }
 
+        // Whether any registered system's signature requires the component type.
+        bool UsesComponentType(ComponentType type) const
+        {
+            for (const auto& pair : m_Signatures)
+            {
+                if (pair.second.test(type))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         template<typename T>
         bool HasSystem() const
         {

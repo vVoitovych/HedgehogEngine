@@ -56,6 +56,33 @@ namespace ECS
             m_ComponentManager->RegisterComponent<T>();
         }
 
+        // Takes component type T out of the ECS: removes it from every entity holding one (each
+        // removal runs T's removal callback, as RemoveComponent does, and updates system membership),
+        // then drops its storage and frees its id, which the next RegisterComponent reuses. Returns
+        // false, changing nothing, when T is not registered or when a registered system's signature
+        // requires T (unregister that system first, or it would silently lose its entities).
+        template<typename T>
+        [[nodiscard]] bool UnregisterComponent()
+        {
+            if (!m_ComponentManager->IsRegistered<T>() ||
+                m_SystemManager->UsesComponentType(m_ComponentManager->GetComponentType<T>()))
+            {
+                return false;
+            }
+            for (const Entity entity : m_ComponentManager->GetEntitiesWith<T>())
+            {
+                RemoveComponent<T>(entity);
+            }
+            m_ComponentManager->UnregisterComponent<T>();
+            return true;
+        }
+
+        template<typename T>
+        [[nodiscard]] bool IsComponentRegistered() const
+        {
+            return m_ComponentManager->IsRegistered<T>();
+        }
+
         template<typename T>
         void AddComponent(Entity entity, T component)
         {
