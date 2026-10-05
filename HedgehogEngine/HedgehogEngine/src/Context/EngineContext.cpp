@@ -23,6 +23,7 @@
 #include "HedgehogEngine/api/ECS/systems/UiSystem.hpp"
 #include "HedgehogEngine/api/Save/SaveGameManager.hpp"
 #include "../Save/SaveRequestSystem.hpp"
+#include "EngineComponents.hpp"
 #include "HedgehogEngine/api/Prefab/PrefabManager.hpp"
 #include "HedgehogEngine/api/ECS/components/PrefabInstanceComponent.hpp"
 #include "HedgehogEngine/api/ECS/systems/AudioSystem.hpp"
@@ -39,11 +40,11 @@
 #include "HedgehogEngine/api/ECS/components/LightComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RenderComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
-#include "HedgehogEngine/api/Scene/ScriptComponentSerializer.hpp"
 #include "HedgehogEngine/api/ECS/components/CameraComponent.hpp"
 #include "ECS/api/components/Hierarchy.hpp"
 
 #include "EcsSerialization/api/ComponentSerializerRegistry.hpp"
+#include "EcsSerialization/api/ComponentTypeRegistry.hpp"
 
 #include "HedgehogInput/api/DefaultInputActions.hpp"
 
@@ -95,6 +96,7 @@ namespace HedgehogEngine
         // These are destroyed before the ECS (they are declared after it), so no system may find
         // them while the ECS unregisters its systems.
         m_ECS.GetServices().Unregister<SaveGameManager>();
+        m_ECS.GetServices().Unregister<EcsSerialization::ComponentTypeRegistry>();
         m_ECS.GetServices().Unregister<GameInputFrame>();
         m_ECS.GetServices().Unregister<HedgehogSettings::Settings>();
         m_ECS.GetServices().Unregister<ResourceCatalog>();
@@ -137,22 +139,12 @@ namespace HedgehogEngine
     {
         m_ECS.Init();
 
-        m_ECS.RegisterComponent<TransformComponent>();
-        m_ECS.RegisterComponent<ECS::HierarchyComponent>();
-        m_ECS.RegisterComponent<MeshComponent>();
-        m_ECS.RegisterComponent<LightComponent>();
-        m_ECS.RegisterComponent<RenderComponent>();
-        m_ECS.RegisterComponent<ScriptComponent>();
-        m_ECS.RegisterComponent<CameraComponent>();
-        m_ECS.RegisterComponent<AnimatorComponent>();
-        m_ECS.RegisterComponent<UiCanvasComponent>();
-        m_ECS.RegisterComponent<UiRectComponent>();
-        m_ECS.RegisterComponent<UiImageComponent>();
-        m_ECS.RegisterComponent<UiTextComponent>();
-        m_ECS.RegisterComponent<UiButtonComponent>();
-        m_ECS.RegisterComponent<AudioSourceComponent>();
-        m_ECS.RegisterComponent<AudioListenerComponent>();
-        m_ECS.RegisterComponent<PrefabInstanceComponent>();
+        // Every component type, in the ECS and the serializers at once, before the systems whose
+        // signatures name them.
+        m_ComponentRegistry = std::make_unique<EcsSerialization::ComponentSerializerRegistry>();
+        m_ComponentTypes    = std::make_unique<EcsSerialization::ComponentTypeRegistry>(m_ECS, *m_ComponentRegistry);
+        m_ECS.GetServices().Register(*m_ComponentTypes);
+        RegisterEngineComponents(*m_ComponentTypes);
 
         m_TransformSystem = m_ECS.RegisterSystem<TransformSystem>();
         m_HierarchySystem = m_ECS.RegisterSystem<HierarchySystem>();
@@ -208,31 +200,6 @@ namespace HedgehogEngine
         signature.set(m_ECS.GetComponentType<AudioListenerComponent>());
         signature.set(m_ECS.GetComponentType<TransformComponent>());
         m_ECS.SetSystemSignature<AudioListenerSystem>(signature);
-
-        RegisterComponents();
-    }
-
-    void EngineContext::RegisterComponents()
-    {
-        m_ComponentRegistry = std::make_unique<EcsSerialization::ComponentSerializerRegistry>();
-
-        m_ComponentRegistry->RegisterReflected<TransformComponent>("TransformComponent");
-        m_ComponentRegistry->RegisterReflected<MeshComponent>("MeshComponent");
-        m_ComponentRegistry->RegisterReflected<RenderComponent>("RenderComponent");
-        m_ComponentRegistry->RegisterReflected<LightComponent>("LightComponent");
-        m_ComponentRegistry->RegisterReflected<CameraComponent>("CameraComponent");
-        m_ComponentRegistry->RegisterReflected<AnimatorComponent>("AnimatorComponent");
-        m_ComponentRegistry->RegisterReflected<UiCanvasComponent>("UiCanvasComponent");
-        m_ComponentRegistry->RegisterReflected<UiRectComponent>("UiRectComponent");
-        m_ComponentRegistry->RegisterReflected<UiImageComponent>("UiImageComponent");
-        m_ComponentRegistry->RegisterReflected<UiTextComponent>("UiTextComponent");
-        m_ComponentRegistry->RegisterReflected<UiButtonComponent>("UiButtonComponent");
-        m_ComponentRegistry->RegisterReflected<AudioSourceComponent>("AudioSourceComponent");
-        m_ComponentRegistry->RegisterReflected<AudioListenerComponent>("AudioListenerComponent");
-        m_ComponentRegistry->RegisterReflected<PrefabInstanceComponent>("PrefabInstanceComponent");
-
-        // Scripts run in the application's script system; loading a scene only reads the data.
-        RegisterScriptComponentSerializer(*m_ComponentRegistry);
     }
 
     void EngineContext::LoadInputActions()
@@ -401,6 +368,8 @@ namespace HedgehogEngine
     {
         return *m_ComponentRegistry;
     }
+    EcsSerialization::ComponentTypeRegistry&       EngineContext::GetComponentTypes() { return *m_ComponentTypes; }
+    const EcsSerialization::ComponentTypeRegistry& EngineContext::GetComponentTypes() const { return *m_ComponentTypes; }
     const SceneManager& EngineContext::GetSceneManager() const { return *m_SceneManager; }
 
     const FS::FileSystemManager& EngineContext::GetFileSystem() const { return m_FileSystem; }
