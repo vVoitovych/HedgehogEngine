@@ -293,12 +293,11 @@ namespace HedgehogEngine
 
         // The phases in frame order: Simulation (Play only: the fixed steps and the update of every
         // system, then the save and load requests) → Animation (AnimationSystem) → Transform
-        // (Transform, then Hierarchy) → Late (Light, then Audio, in registration order). Animation
-        // runs after every script hook of the frame, and the phases run in every mode, so edits
-        // show in Edit mode too. Audio reads the world matrices the frame ended with.
-        m_ECS.RunPhases(ECS::SystemPhase::Simulation, ECS::SystemPhase::Late, BeginFrame(dt));
-
-        m_ResourceCatalog.Update(*m_RenderSystem, *m_MeshSystem);
+        // (Transform, then Hierarchy) → Late (Light, then Audio, in registration order) → Sync
+        // (Mesh, then Render: the catalog loads the meshes and materials listed this frame).
+        // Animation runs after every script hook of the frame, and the phases run in every mode, so
+        // edits show in Edit mode too. Audio reads the world matrices the frame ended with.
+        m_ECS.RunPhases(ECS::SystemPhase::Simulation, ECS::SystemPhase::Sync, BeginFrame(dt));
     }
 
     bool EngineContext::Play()
