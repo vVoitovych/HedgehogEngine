@@ -2,6 +2,7 @@
 
 #include "HedgehogEngine/api/HedgehogEngineApi.hpp"
 #include "HedgehogEngine/api/Events/EventBus.hpp"
+#include "HedgehogEngine/api/Input/GameInputFrame.hpp"
 #include "HedgehogEngine/api/Resource/ResourceCatalog.hpp"
 #include "HedgehogEngine/api/Scene/SceneManager.hpp"
 #include "HedgehogEngine/api/Time/FixedStepClock.hpp"
@@ -108,10 +109,11 @@ namespace HedgehogEngine
         // is missing or does not parse). UpdateGameInput evaluates the Game map from the input the
         // application hands it while Playing, and resets the state in Edit and Paused, so nothing
         // there sees an action; the application calls it each frame before UpdateContext, tests
-        // call it directly. A system that handles an action consumes it through GetGameActionState,
-        // right after UpdateGameInput and before UpdatePlayMode. The game UI does so inside it while
-        // Playing (UiSystem::UpdateInput, over a game view of gameViewSize pixels, the size the UI is
-        // extracted at; a zero size gives the UI no input), and its input is reset in Edit and Paused.
+        // call it directly. It then writes the GameInputFrame service (the map, the action state and
+        // gameViewSize, the size the UI is extracted at) and runs the ECS's Input phase, whose
+        // systems handle actions and consume them, so gameplay in the Simulation phase no longer
+        // sees them. The game UI is one (UiSystem: UpdateInput while Playing, a zero size giving it
+        // no input; its input reset in Edit and Paused).
         static constexpr const char* INPUT_ACTIONS_PATH = "assets://Input/actions.yaml";
         HEDGEHOG_ENGINE_API void UpdateGameInput(const HW::RawInput& gameInput,
                                                  const HM::Vector2& gameViewSize = HM::Vector2(0.0f, 0.0f));
@@ -224,6 +226,7 @@ namespace HedgehogEngine
         HInput::InputActionsWatch m_InputWatch;
         HInput::ActionState       m_GameActions;
         HInput::ActionState       m_EditorActions;
+        GameInputFrame            m_GameInput; // a service: the Input phase's view of the above
 
         PlayState                    m_PlayState = PlayState::Edit;
         FixedStepClock               m_Clock;

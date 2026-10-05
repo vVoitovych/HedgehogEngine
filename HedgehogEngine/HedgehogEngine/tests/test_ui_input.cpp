@@ -9,6 +9,8 @@
 #include "HedgehogEngine/api/ECS/systems/UiSystem.hpp"
 #include "HedgehogEngine/api/Events/UiEvents.hpp"
 
+#include "HedgehogEngine/api/Input/GameInputFrame.hpp"
+
 #include "ECS/api/ECS.hpp"
 #include "HedgehogInput/api/ActionState.hpp"
 
@@ -84,6 +86,34 @@ namespace
         input.MouseButtons[static_cast<size_t>(HW::MouseButton::Left)] = down;
         return input;
     }
+
+    // An Input-phase system registered after UiSystem: what the pointer press looks like to it.
+    class PressWatcher : public ECS::System
+    {
+    public:
+        explicit PressWatcher(size_t press)
+            : m_Press(press)
+        {
+        }
+
+        void OnRegister(ECS::ECS& ecs) override { m_Input = ecs.GetServices().Find<GameInputFrame>(); }
+        ECS::SystemPhase GetPhase() const override { return ECS::SystemPhase::Input; }
+
+        void OnFrame(ECS::ECS&, const ECS::FrameContext& ctx) override
+        {
+            ++Frames;
+            Playing = ctx.Mode == ECS::PlayMode::Playing;
+            Pressed = m_Input && m_Input->Actions && HInput::WasActionPressed(*m_Input->Actions, m_Press);
+        }
+
+        int  Frames  = 0;
+        bool Playing = false;
+        bool Pressed = false;
+
+    private:
+        size_t                m_Press = 0;
+        const GameInputFrame* m_Input = nullptr;
+    };
 
     HW::RawInput WithKey(HW::Key key)
     {
@@ -278,4 +308,26 @@ TEST_CASE("UI input - nothing happens outside Play, and states reset when Play e
     CHECK(world.State(edited) == UiButtonState::Normal);
     world.Context.UpdateGameInput(Pointer(150.0f, 120.0f));
     CHECK(world.Clicks.empty());
+}
+
+TEST_CASE("UI input - UiSystem runs in the Input phase, before later Input systems see the actions")
+{
+    UiWorld           world;
+    const ECS::Entity button = world.Button(100.0f, 100.0f);
+    CHECK(world.Context.GetUiSystem()->GetPhase() == ECS::SystemPhase::Input);
+    auto watcher = world.Context.GetECS().RegisterSystem<PressWatcher>(world.Action("UiPointerPress"));
+
+    world.Frame(Pointer(500.0f, 500.0f, true)); // off the UI: the press reaches the watcher
+    CHECK(watcher->Frames == 1);
+    CHECK(watcher->Playing);
+    CHECK(watcher->Pressed);
+    world.Frame(Pointer(500.0f, 500.0f));
+
+    world.Frame(Pointer(150.0f, 120.0f, true)); // over the button: the UI consumed it first
+    CHECK(world.State(button) == UiButtonState::Pressed);
+    CHECK_FALSE(watcher->Pressed);
+
+    // UpdateContext does not run the Input phase.
+    world.Context.UpdateContext(1.0f, 1.0f / 60.0f);
+    CHECK(watcher->Frames == 3);
 }

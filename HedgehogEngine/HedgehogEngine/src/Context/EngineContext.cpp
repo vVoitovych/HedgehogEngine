@@ -95,6 +95,7 @@ namespace HedgehogEngine
         // These are destroyed before the ECS (they are declared after it), so no system may find
         // them while the ECS unregisters its systems.
         m_ECS.GetServices().Unregister<SaveGameManager>();
+        m_ECS.GetServices().Unregister<GameInputFrame>();
         m_ECS.GetServices().Unregister<HedgehogSettings::Settings>();
         m_ECS.GetServices().Unregister<ResourceCatalog>();
     }
@@ -108,6 +109,9 @@ namespace HedgehogEngine
         services.Register(m_FileSystem);
         services.Register(*m_AudioEngine);
         services.Register(m_ResourceCatalog);
+        m_GameInput.Map     = &m_InputActions.Game;
+        m_GameInput.Actions = &m_GameActions;
+        services.Register(m_GameInput);
     }
 
     void EngineContext::InitFileSystem()
@@ -259,15 +263,14 @@ namespace HedgehogEngine
     void EngineContext::UpdateGameInput(const HW::RawInput& gameInput, const HM::Vector2& gameViewSize)
     {
         if (m_PlayState == PlayState::Playing)
-        {
             HInput::UpdateActionState(m_InputActions.Game, gameInput, m_GameActions);
-            m_UiSystem->UpdateInput(m_ECS, m_InputActions.Game, m_GameActions, gameViewSize, m_EventBus);
-        }
         else
-        {
             HInput::ResetActionState(m_GameActions, m_InputActions.Game);
-            m_UiSystem->ResetInput(m_ECS);
-        }
+
+        // The Input phase (the game UI) handles and consumes actions before any gameplay sees them.
+        // It runs before the frame's time is known, so its context carries no time.
+        m_GameInput.ViewSize = gameViewSize;
+        m_ECS.RunPhase(ECS::SystemPhase::Input, MakeFrameContext(0.0f));
     }
 
     void EngineContext::ReloadInputActions(std::chrono::steady_clock::time_point now)
