@@ -14,14 +14,18 @@ namespace HedgehogEngine
     class TransformSystem : public ECS::System
     {
     public:
-        /// Subscribe to TransformChangedEvent. Call once after system registration.
-        HEDGEHOG_ENGINE_API void Init(EventBus& bus);
+        // Subscribes to TransformChangedEvent on the ECS's EventBus service, when one is registered.
+        HEDGEHOG_ENGINE_API void OnRegister(ECS::ECS& ecs) override;
+        HEDGEHOG_ENGINE_API void OnUnregister(ECS::ECS& ecs) override;
 
         /// Process pending entities and publish LocalMatrixUpdatedEvent for each.
         HEDGEHOG_ENGINE_API void Update(ECS::ECS& ecs, EventBus& bus);
 
     private:
         void OnTransformChanged(const TransformChangedEvent& event);
+
+        EventBus*      m_Bus          = nullptr;
+        SubscriptionId m_Subscription = SubscriptionId::Invalid;
 
         std::vector<ECS::Entity> m_PendingEntities;
     };

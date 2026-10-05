@@ -170,6 +170,7 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API FS::FileSystemManager& GetFileSystem();
 
     private:
+        void RegisterServices();
         void InitECS();
         void InitFileSystem();
         void RegisterComponents();

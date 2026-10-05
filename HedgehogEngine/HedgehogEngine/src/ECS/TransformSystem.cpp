@@ -9,12 +9,23 @@
 
 namespace HedgehogEngine
 {
-    void TransformSystem::Init(EventBus& bus)
+    void TransformSystem::OnRegister(ECS::ECS& ecs)
     {
-        bus.Subscribe<TransformChangedEvent>([this](const TransformChangedEvent& e)
+        m_Bus = ecs.GetServices().Find<EventBus>();
+        if (m_Bus)
         {
-            OnTransformChanged(e);
-        });
+            m_Subscription = m_Bus->Subscribe<TransformChangedEvent>([this](const TransformChangedEvent& e) { OnTransformChanged(e); });
+        }
+    }
+
+    void TransformSystem::OnUnregister(ECS::ECS& /*ecs*/)
+    {
+        if (m_Bus)
+        {
+            m_Bus->Unsubscribe(m_Subscription);
+        }
+        m_Bus          = nullptr;
+        m_Subscription = SubscriptionId::Invalid;
     }
 
     void TransformSystem::OnTransformChanged(const TransformChangedEvent& event)

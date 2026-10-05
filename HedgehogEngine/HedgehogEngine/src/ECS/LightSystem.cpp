@@ -5,12 +5,23 @@
 
 namespace HedgehogEngine
 {
-    void LightSystem::Init(EventBus& bus)
+    void LightSystem::OnRegister(ECS::ECS& ecs)
     {
-        bus.Subscribe<WorldMatrixUpdatedEvent>([this](const WorldMatrixUpdatedEvent& e)
+        m_Bus = ecs.GetServices().Find<EventBus>();
+        if (m_Bus)
         {
-            OnWorldMatrixUpdated(e);
-        });
+            m_Subscription = m_Bus->Subscribe<WorldMatrixUpdatedEvent>([this](const WorldMatrixUpdatedEvent& e) { OnWorldMatrixUpdated(e); });
+        }
+    }
+
+    void LightSystem::OnUnregister(ECS::ECS& /*ecs*/)
+    {
+        if (m_Bus)
+        {
+            m_Bus->Unsubscribe(m_Subscription);
+        }
+        m_Bus          = nullptr;
+        m_Subscription = SubscriptionId::Invalid;
     }
 
     void LightSystem::OnWorldMatrixUpdated(const WorldMatrixUpdatedEvent& event)
