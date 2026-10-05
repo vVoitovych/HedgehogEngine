@@ -4,6 +4,7 @@
 #include "HedgehogScripting/api/Sol.hpp"
 
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
+#include "HedgehogEngine/api/Events/EventBus.hpp"
 
 #include "ECS/api/Entity.hpp"
 #include "ECS/api/System.hpp"
@@ -89,6 +90,13 @@ namespace HedgehogScripting
 
         ScriptSystem(const ScriptSystem&)            = delete;
         ScriptSystem& operator=(const ScriptSystem&) = delete;
+
+        // Unregistering (UnregisterSystem, or the ECS's teardown) ends every running script as Stop
+        // does, which puts the engine's ScriptComponent removal callback back, and lets go of the
+        // engine's events and the save manager's "Scripts" section (found through the ECS's
+        // services, so a manager already gone at teardown is skipped): nothing reaches this
+        // system afterwards.
+        void OnUnregister(ECS::ECS& ecs) override;
 
         void OnPlayStart(ECS::ECS& ecs) override;
         void OnPlayStop(ECS::ECS& ecs) override;
@@ -317,6 +325,8 @@ namespace HedgehogScripting
         // the callback it replaced, put back at OnPlayStop.
         ECS::ECS*                                     m_CallbackEcs = nullptr;
         RemovedCallback                               m_PreviousRemovedCallback;
+        // The engine events this system subscribed to, dropped in OnUnregister.
+        std::vector<HedgehogEngine::SubscriptionId>   m_BusSubscriptions;
         // Entities removed while one of their own script calls was running; handled after it.
         std::vector<ECS::Entity>                      m_PendingRemovals;
         // Entities scripts asked to destroy, deleted once every script in the hook has run, so
