@@ -4,7 +4,8 @@ REM Package the project as a playable game folder: Build\<ProjectName>\
 REM Usage: PackageGame.bat
 REM
 REM Builds Release, cooks the project's referenced assets with the Cooker, copies
-REM Game.exe and the DLLs it loads (no editor, test or ImGui binaries, no .pdb),
+REM Game.exe and the DLLs it loads (no editor, test or ImGui binaries, no .pdb)
+REM and LICENSE.txt with THIRD_PARTY_NOTICES.md,
 REM then copies the package to a temporary folder and runs Game.exe --frames 120
 REM there as a check. Exits nonzero if any step or the check fails. The package
 REM needs only the Vulkan runtime and the VC++ redistributable on the target.
@@ -41,6 +42,16 @@ if errorlevel 1 (
 echo === Copying the game executable ===
 for %%F in (Game.exe glfw.dll Logger.dll FileSystem.dll HedgehogMath.dll HedgehogCommon.dll ECS.dll EcsSerialization.dll ContentLoader.dll HedgehogSettings.dll HedgehogWindow.dll HedgehogAudio.dll HedgehogEngine.dll) do (
     copy /y "%BIN%\%%F" "%OUT%\" >nul
+    if errorlevel 1 (
+        echo [ERROR] Could not copy %%F.
+        goto :fail
+    )
+)
+
+REM The engine's licence and the third-party notices must travel with every game.
+echo === Copying the licence notices ===
+for %%F in (LICENSE.txt THIRD_PARTY_NOTICES.md) do (
+    copy /y "%ROOT%\%%F" "%OUT%\" >nul
     if errorlevel 1 (
         echo [ERROR] Could not copy %%F.
         goto :fail
