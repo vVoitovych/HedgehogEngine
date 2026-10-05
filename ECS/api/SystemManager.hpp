@@ -87,6 +87,32 @@ namespace ECS
             UpdateMembership(*m_Systems.at(typeId), m_Signatures[typeId], entity, signature);
         }
 
+        // Removes system T from the type map, the registration order, its phase and the signatures,
+        // and empties its entity list. Returns the removed system (nullptr when T is not registered):
+        // the ECS lets go of it, but a caller that keeps its own pointer keeps the object alive.
+        // Must not run while the systems are being visited.
+        template<typename T>
+        std::shared_ptr<System> UnregisterSystem()
+        {
+            const std::type_index typeId = typeid(T);
+            const auto            found  = m_Systems.find(typeId);
+            if (found == m_Systems.end())
+            {
+                return nullptr;
+            }
+
+            std::shared_ptr<System> system = found->second;
+            m_Systems.erase(found);
+            m_Signatures.erase(typeId);
+            EraseSystem(m_Order, system);
+            for (std::vector<std::shared_ptr<System>>& phase : m_Phases)
+            {
+                EraseSystem(phase, system);
+            }
+            system->m_Entities.clear();
+            return system;
+        }
+
         template<typename T>
         bool HasSystem() const
         {
@@ -126,6 +152,11 @@ namespace ECS
         }
 
     private:
+        static void EraseSystem(std::vector<std::shared_ptr<System>>& systems, const std::shared_ptr<System>& system)
+        {
+            systems.erase(std::remove(systems.begin(), systems.end(), system), systems.end());
+        }
+
         static void UpdateMembership(System& system, Signature systemSignature, Entity entity, Signature signature)
         {
             auto it = std::find(system.m_Entities.begin(), system.m_Entities.end(), entity);
