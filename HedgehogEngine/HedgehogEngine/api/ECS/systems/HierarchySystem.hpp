@@ -19,6 +19,10 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API void OnRegister(ECS::ECS& ecs) override;
         HEDGEHOG_ENGINE_API void OnUnregister(ECS::ECS& ecs) override;
 
+        // Runs Update in the Transform phase, in every play mode, with the EventBus service.
+        ECS::SystemPhase         GetPhase() const override { return ECS::SystemPhase::Transform; }
+        HEDGEHOG_ENGINE_API void OnFrame(ECS::ECS& ecs, const ECS::FrameContext& ctx) override;
+
         /// Cascade world matrices for all queued subtrees; publishes WorldMatrixUpdatedEvent per entity.
         HEDGEHOG_ENGINE_API void Update(ECS::ECS& ecs, EventBus& bus);
 

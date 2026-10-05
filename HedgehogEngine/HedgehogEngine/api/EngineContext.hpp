@@ -171,6 +171,8 @@ namespace HedgehogEngine
 
     private:
         void RegisterServices();
+        // What this frame's phases get: dt, its scaled form, the fixed step and the play mode.
+        [[nodiscard]] ECS::FrameContext MakeFrameContext(float dt) const;
         void InitECS();
         void InitFileSystem();
         void RegisterComponents();

@@ -14,6 +14,11 @@ namespace HedgehogEngine
         }
     }
 
+    void LightSystem::OnFrame(ECS::ECS& ecs, const ECS::FrameContext& /*ctx*/)
+    {
+        Update(ecs);
+    }
+
     void LightSystem::OnUnregister(ECS::ECS& /*ecs*/)
     {
         if (m_Bus)
