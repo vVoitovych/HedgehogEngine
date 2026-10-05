@@ -115,5 +115,31 @@ Graph-path per-pass rows (`benchmark.yaml`, one run): `Shadow` 0.051, `DepthPrep
 0.010, `Forward` 0.015, `Gizmo` 0.000 (nothing selected), `Ui` 0.032,
 `RenderFrame(total)` 1.680 ms avg.
 
+### 2026-10-05 (HE-262) — MAX_ENTITIES 512 → 4096, MAX_COMPONENTS 16 → 64
+
+Every registered component type keeps a fixed array of `MAX_ENTITIES` components and every
+entity a `MAX_COMPONENTS`-bit signature, so this change costs memory, not frame time. Before =
+master at cc688f7, after = this change; Release, 600 frames, 3 runs each, same machine (RTX 2070),
+runs not interleaved. `RenderFrame(total)` and `Frame(wall)` are averages per run, in ms.
+
+| Scene            | `RenderFrame(total)` before (runs) | after (runs)         | Median before → after |
+|------------------|------------------------------------|----------------------|----------------------:|
+| `benchmark.yaml` | 1.943, 1.968, 1.936                | 1.897, 1.941, 1.760  | 1.943 → 1.897 |
+| `Default.yaml`   | 1.950, 1.944, 1.947                | 1.879, 1.930, 1.973  | 1.947 → 1.930 |
+
+| Scene            | `Frame(wall)` before (runs) | after (runs)        | Median before → after |
+|------------------|-----------------------------|---------------------|----------------------:|
+| `benchmark.yaml` | 2.404, 2.407, 2.374         | 2.317, 2.400, 2.152 | 2.404 → 2.317 |
+| `Default.yaml`   | 2.285, 2.301, 2.280         | 2.211, 2.304, 2.309 | 2.285 → 2.304 |
+
+No frame-time change beyond run-to-run noise (the per-frame paths never loop over
+`MAX_ENTITIES`). Memory and test time do grow:
+
+- `Game.exe --frames 300` peak working set (3 runs): 339.5, 339.6, 340.4 MB → 343.7, 342.8,
+  344.0 MB, about **+4 MB** for the engine's 16 component arrays at 4096 entries.
+- `Scripts\RunTests.bat Debug` wall time, build already up to date: **29 s → 41 s**. Every
+  test that builds an `EngineContext` now allocates the larger arrays, and a few test helpers
+  scan every id up to `MAX_ENTITIES`.
+
 When a change intentionally alters performance, re-run the benchmark and update
 this table (keep the old row set; add a dated entry below it so history accumulates).
