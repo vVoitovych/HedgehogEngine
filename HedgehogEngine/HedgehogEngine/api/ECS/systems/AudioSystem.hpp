@@ -31,21 +31,25 @@ namespace HedgehogEngine
     //
     // OnPlayStart starts every PlayOnStart source with a clip; Pause and Resume hold and carry on
     // its sounds; OnPlayStop stops every sound. Removing a source (RemoveComponent, DestroyEntity)
-    // stops its sound. EngineContext::UpdateContext calls Update after Transform and Hierarchy.
+    // stops its sound. It runs in the Late phase, after Light, so it reads the world matrices the
+    // frame ended with.
     class AudioSystem : public ECS::System
     {
     public:
-        // audio and files must outlive the system; files resolves the clips' assets:// paths.
-        HEDGEHOG_ENGINE_API AudioSystem(ECS::ECS& ecs, HA::AudioEngine& audio, const FS::FileSystemManager& files);
-        HEDGEHOG_ENGINE_API ~AudioSystem() override;
+        // Finds the HA::AudioEngine and FS::FileSystemManager services (the file system resolves
+        // the clips' assets:// paths) and makes removing an AudioSourceComponent stop its sound;
+        // OnUnregister undoes that. Without the audio engine service the system plays nothing.
+        HEDGEHOG_ENGINE_API void OnRegister(ECS::ECS& ecs) override;
+        HEDGEHOG_ENGINE_API void OnUnregister(ECS::ECS& ecs) override;
 
-        AudioSystem(const AudioSystem&)            = delete;
-        AudioSystem& operator=(const AudioSystem&) = delete;
+        // Update, with the AudioListenerSystem and CameraSystem it finds in the ECS.
+        ECS::SystemPhase         GetPhase() const override { return ECS::SystemPhase::Late; }
+        HEDGEHOG_ENGINE_API void OnFrame(ECS::ECS& ecs, const ECS::FrameContext& ctx) override;
 
-        void OnPlayStart(ECS::ECS& ecs) override;
-        void OnPlayPause(ECS::ECS& ecs) override;
-        void OnPlayResume(ECS::ECS& ecs) override;
-        void OnPlayStop(ECS::ECS& ecs) override;
+        HEDGEHOG_ENGINE_API void OnPlayStart(ECS::ECS& ecs) override;
+        HEDGEHOG_ENGINE_API void OnPlayPause(ECS::ECS& ecs) override;
+        HEDGEHOG_ENGINE_API void OnPlayResume(ECS::ECS& ecs) override;
+        HEDGEHOG_ENGINE_API void OnPlayStop(ECS::ECS& ecs) override;
 
         // Starts the entity's source from the beginning (stopping a sound it was playing), at the
         // entity's place, and keeps the sound in its component. An invalid handle when the entity has
@@ -59,8 +63,7 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API void Update(ECS::ECS& ecs, const AudioListenerSystem& listeners, const CameraSystem& cameras);
 
     private:
-        ECS::ECS&                    m_ECS;
-        HA::AudioEngine&             m_Audio;
-        const FS::FileSystemManager& m_Files;
+        HA::AudioEngine*             m_Audio = nullptr;
+        const FS::FileSystemManager* m_Files = nullptr;
     };
 }

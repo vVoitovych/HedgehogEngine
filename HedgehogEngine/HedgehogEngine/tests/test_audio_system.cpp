@@ -4,6 +4,7 @@
 #include "HedgehogEngine/api/ECS/components/AudioSourceComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/CameraComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
+#include "HedgehogEngine/api/ECS/systems/AudioSystem.hpp"
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogEngine/api/Events/TransformEvents.hpp"
 #include "HedgehogEngine/api/Scene/SceneManager.hpp"
@@ -211,4 +212,57 @@ TEST_CASE("AudioSystem - an engine that was never started plays nothing and fail
     context.UpdateContext(1.0f, STEP);
     CHECK_FALSE(ecs.GetComponent<AudioSourceComponent>(entity).Sound.IsValid());
     REQUIRE(context.Stop());
+}
+
+TEST_CASE("AudioSystem - runs in the Late phase and takes its services from the ECS")
+{
+    AudioWorld world;
+    CHECK(world.Context.GetAudioSystem()->GetPhase() == ECS::SystemPhase::Late);
+
+    // A source moved in a frame is heard from its new place in that frame: Audio runs in Late,
+    // after the Transform phase has built the world matrices.
+    const ECS::Entity source = world.SpawnSource(RIGHT);
+    REQUIRE(world.Context.Play());
+    world.Frame();
+    world.Move(source, HM::Vector3(-3.0f, 0.0f, 0.0f), HM::Vector3(0.0f, 0.0f, 0.0f));
+    world.Frame();
+    double left = 0.0, right = 0.0;
+    world.Mix(FRAMES, left, right);
+    CHECK(left > right);
+    REQUIRE(world.Context.Stop());
+}
+
+TEST_CASE("AudioSystem - once unregistered, removing a source no longer reaches it")
+{
+    AudioWorld        world;
+    const ECS::Entity source = world.SpawnSource(RIGHT);
+    REQUIRE(world.Context.Play());
+    world.Frame();
+    const HA::SoundHandle sound = world.Source(source).Sound;
+    REQUIRE(world.Audio().IsPlaying(sound));
+
+    REQUIRE(world.Ecs().UnregisterSystem<AudioSystem>());
+    world.Ecs().RemoveComponent<AudioSourceComponent>(source);
+    // The removal callback went with the system, so nothing stopped the sound.
+    CHECK(world.Audio().IsPlaying(sound));
+    world.Audio().StopAll();
+}
+
+TEST_CASE("AudioSystem - without an audio engine service it registers and plays nothing")
+{
+    ECS::ECS ecs;
+    ecs.Init();
+    ecs.RegisterComponent<TransformComponent>();
+    ecs.RegisterComponent<AudioSourceComponent>();
+    auto system = ecs.RegisterSystem<AudioSystem>();
+
+    const ECS::Entity entity = ecs.CreateEntity();
+    ecs.AddComponent(entity, TransformComponent{});
+    ecs.AddComponent(entity, AudioSourceComponent{});
+    CHECK_FALSE(system->Play(ecs, entity).IsValid());
+    ecs.NotifyPlayStart();
+    ECS::FrameContext ctx;
+    ecs.RunPhase(ECS::SystemPhase::Late, ctx);
+    ecs.RemoveComponent<AudioSourceComponent>(entity);
+    CHECK(ecs.UnregisterSystem<AudioSystem>());
 }
