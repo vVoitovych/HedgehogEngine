@@ -6,13 +6,36 @@ namespace ECS
 {
     ECS::~ECS()
     {
+        Release();
+    }
+
+    ECS::ECS(ECS&& other) noexcept = default;
+
+    ECS& ECS::operator=(ECS&& other) noexcept
+    {
+        if (this != &other)
+        {
+            Release();
+            m_ComponentManager = std::move(other.m_ComponentManager);
+            m_EntityManager    = std::move(other.m_EntityManager);
+            m_SystemManager    = std::move(other.m_SystemManager);
+            m_Services         = std::move(other.m_Services);
+            m_RootEntity       = other.m_RootEntity;
+            other.m_RootEntity = INVALID_ENTITY;
+        }
+        return *this;
+    }
+
+    void ECS::Release()
+    {
+        if (m_SystemManager)
+        {
+            m_SystemManager->ForEachSystemReverse([this](System& system) { system.OnUnregister(*this); });
+        }
         m_SystemManager.reset();
         m_EntityManager.reset();
         m_ComponentManager.reset();
     }
-
-    ECS::ECS(ECS&& other) noexcept            = default;
-    ECS& ECS::operator=(ECS&& other) noexcept = default;
 
     void ECS::Init()
     {

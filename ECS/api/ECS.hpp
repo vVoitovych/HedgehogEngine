@@ -10,6 +10,7 @@
 #include "System.hpp"
 #include "ComponentManager.hpp"
 #include "EntityManager.hpp"
+#include "ServiceRegistry.hpp"
 #include "SystemManager.hpp"
 
 namespace ECS
@@ -18,14 +19,15 @@ namespace ECS
     {
     public:
         ECS() = default;
-        // Destroys the systems before the entity and component storage: a system may hold a
-        // component-removed callback or other state that refers to that storage.
+        // Calls every system's OnUnregister, last registered first, then destroys the systems, all
+        // before the entity and component storage: a system may hold a component-removed callback
+        // or other state that refers to that storage.
         ECS_API ~ECS();
 
         ECS(const ECS&)            = delete;
         ECS& operator=(const ECS&) = delete;
         // Movable so a fully built ECS can be returned from a helper. Do not move one whose
-        // systems keep a reference to it.
+        // systems keep a reference to it. Move-assigning unregisters the target's own systems first.
         ECS_API ECS(ECS&& other) noexcept;
         ECS_API ECS& operator=(ECS&& other) noexcept;
 
@@ -111,11 +113,14 @@ namespace ECS
             return m_ComponentManager->GetComponentType<T>();
         }
 
-        // Constructs T from args; the ECS owns it from then on.
+        // Constructs T from args; the ECS owns it from then on. Calls the system's OnRegister once
+        // it is registered.
         template<typename T, typename... Args>
         std::shared_ptr<T> RegisterSystem(Args&&... args)
         {
-            return m_SystemManager->RegisterSystem<T>(std::forward<Args>(args)...);
+            std::shared_ptr<T> system = m_SystemManager->RegisterSystem<T>(std::forward<Args>(args)...);
+            system->OnRegister(*this);
+            return system;
         }
 
         template<typename T>
@@ -155,10 +160,21 @@ namespace ECS
         ECS_API void RunFixedUpdate(float fixedDeltaTime);
         ECS_API void RunUpdate(float deltaTime);
 
+        // Shared objects systems find by type (see ServiceRegistry). Kept across Init, so services
+        // may be registered before or after it.
+        ServiceRegistry&       GetServices() { return m_Services; }
+        const ServiceRegistry& GetServices() const { return m_Services; }
+
+    private:
+        // Unregisters every system (OnUnregister, last registered first) and destroys the systems,
+        // then the entity and component storage.
+        void Release();
+
     private:
         std::unique_ptr<ComponentManager> m_ComponentManager;
         std::unique_ptr<EntityManager>    m_EntityManager;
         std::unique_ptr<SystemManager>    m_SystemManager;
+        ServiceRegistry                   m_Services;
 
         Entity m_RootEntity{INVALID_ENTITY};
     };
