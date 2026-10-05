@@ -274,6 +274,12 @@ namespace EcsSerialization
 
         const std::vector<ComponentHandler>& GetHandlers() const { return m_Handlers; }
 
+        // Removes the handler writing key; false when there is none.
+        bool Unregister(std::string_view key)
+        {
+            return std::erase_if(m_Handlers, [key](const ComponentHandler& handler) { return handler.YamlKey == key; }) > 0;
+        }
+
         // The handler writing key, or nullptr.
         [[nodiscard]] const ComponentHandler* FindHandler(std::string_view key) const
         {
