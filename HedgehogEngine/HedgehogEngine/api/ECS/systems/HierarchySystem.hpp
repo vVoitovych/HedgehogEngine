@@ -15,14 +15,18 @@ namespace HedgehogEngine
     class HierarchySystem : public ECS::System
     {
     public:
-        /// Subscribe to LocalMatrixUpdatedEvent. Call once after system registration.
-        HEDGEHOG_ENGINE_API void Init(EventBus& bus);
+        // Subscribes to LocalMatrixUpdatedEvent on the ECS's EventBus service, when one is registered.
+        HEDGEHOG_ENGINE_API void OnRegister(ECS::ECS& ecs) override;
+        HEDGEHOG_ENGINE_API void OnUnregister(ECS::ECS& ecs) override;
 
         /// Cascade world matrices for all queued subtrees; publishes WorldMatrixUpdatedEvent per entity.
         HEDGEHOG_ENGINE_API void Update(ECS::ECS& ecs, EventBus& bus);
 
     private:
         void OnLocalMatrixUpdated(const LocalMatrixUpdatedEvent& event);
+
+        EventBus*      m_Bus          = nullptr;
+        SubscriptionId m_Subscription = SubscriptionId::Invalid;
 
         void CascadeSubtree(ECS::ECS& ecs, ECS::Entity parent, bool parentWorldUpdated,
                             const std::unordered_set<ECS::Entity>& pending, EventBus& bus);

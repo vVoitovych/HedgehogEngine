@@ -57,12 +57,22 @@ namespace HedgehogEngine
             GetChannel<TEvent>().Publish(event);
         }
 
+        // How many handlers TEvent has (those subscribed during a publish included, those removed
+        // during one excluded).
+        template<typename TEvent>
+        [[nodiscard]] size_t GetSubscriberCount() const
+        {
+            const auto found = m_Channels.find(std::type_index(typeid(TEvent)));
+            return found == m_Channels.end() ? 0 : found->second->GetSubscriberCount();
+        }
+
     private:
         class IChannel
         {
         public:
             virtual ~IChannel() = default;
-            virtual bool Unsubscribe(SubscriptionId id) = 0;
+            virtual bool   Unsubscribe(SubscriptionId id) = 0;
+            virtual size_t GetSubscriberCount() const     = 0;
         };
 
         template<typename TEvent>
@@ -102,6 +112,19 @@ namespace HedgehogEngine
                     }
                 }
                 return false;
+            }
+
+            size_t GetSubscriberCount() const override
+            {
+                size_t count = 0;
+                for (const std::vector<Entry>* list : { &m_Handlers, &m_Pending })
+                {
+                    for (const Entry& entry : *list)
+                    {
+                        count += entry.Active ? 1 : 0;
+                    }
+                }
+                return count;
             }
 
             void Publish(const TEvent& event)

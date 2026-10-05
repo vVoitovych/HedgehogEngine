@@ -17,8 +17,9 @@ namespace HedgehogEngine
     class LightSystem : public ECS::System
     {
     public:
-        /// Subscribe to WorldMatrixUpdatedEvent. Call once after system registration.
-        HEDGEHOG_ENGINE_API void Init(EventBus& bus);
+        // Subscribes to WorldMatrixUpdatedEvent on the ECS's EventBus service, when one is registered.
+        HEDGEHOG_ENGINE_API void OnRegister(ECS::ECS& ecs) override;
+        HEDGEHOG_ENGINE_API void OnUnregister(ECS::ECS& ecs) override;
 
         HEDGEHOG_ENGINE_API const std::vector<LightComponent>& GetLightComponents(ECS::ECS& ecs);
         HEDGEHOG_ENGINE_API void   Update(ECS::ECS& ecs);
@@ -28,6 +29,9 @@ namespace HedgehogEngine
 
     private:
         void OnWorldMatrixUpdated(const WorldMatrixUpdatedEvent& event);
+
+        EventBus*      m_Bus          = nullptr;
+        SubscriptionId m_Subscription = SubscriptionId::Invalid;
 
     private:
         std::vector<LightComponent> m_LightComponents;

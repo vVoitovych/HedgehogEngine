@@ -64,6 +64,7 @@ namespace HedgehogEngine
 
         m_Camera      = std::make_unique<Camera>();
         m_AudioEngine = std::make_unique<HA::AudioEngine>();
+        RegisterServices();
         InitECS();
 
         // SceneManager creates the scene root on construction, so it must come after InitECS
@@ -73,6 +74,7 @@ namespace HedgehogEngine
             m_ECS, m_EventBus, m_FileSystem, *m_ComponentRegistry,
             *m_TransformSystem, *m_MeshSystem, *m_RenderSystem);
         m_Settings  = std::make_unique<HedgehogSettings::Settings>();
+        m_ECS.GetServices().Register(*m_Settings);
         m_SaveGames = std::make_unique<SaveGameManager>(*m_SceneManager, m_EventBus, m_Clock, *m_Settings);
         m_Prefabs   = std::make_unique<PrefabManager>(m_ECS, m_FileSystem, *m_ComponentRegistry, *m_SceneManager);
 
@@ -84,6 +86,22 @@ namespace HedgehogEngine
         // Systems hear that play ends, but the scene is going away, so it is not restored.
         if (m_PlayState != PlayState::Edit)
             m_ECS.NotifyPlayStop();
+
+        // These are destroyed before the ECS (they are declared after it), so no system may find
+        // them while the ECS unregisters its systems.
+        m_ECS.GetServices().Unregister<HedgehogSettings::Settings>();
+        m_ECS.GetServices().Unregister<ResourceCatalog>();
+    }
+
+    void EngineContext::RegisterServices()
+    {
+        // What systems look up in OnRegister. Each outlives the systems, or is unregistered in
+        // ~EngineContext before it goes; Settings is registered when it is built.
+        ECS::ServiceRegistry& services = m_ECS.GetServices();
+        services.Register(m_EventBus);
+        services.Register(m_FileSystem);
+        services.Register(*m_AudioEngine);
+        services.Register(m_ResourceCatalog);
     }
 
     void EngineContext::InitFileSystem()
@@ -136,10 +154,6 @@ namespace HedgehogEngine
         m_UiSystem        = m_ECS.RegisterSystem<UiSystem>();
         m_AudioSystem         = m_ECS.RegisterSystem<AudioSystem>(m_ECS, *m_AudioEngine, m_FileSystem);
         m_AudioListenerSystem = m_ECS.RegisterSystem<AudioListenerSystem>();
-
-        m_TransformSystem->Init(m_EventBus);
-        m_HierarchySystem->Init(m_EventBus);
-        m_LightSystem->Init(m_EventBus);
 
         ECS::Signature signature;
 

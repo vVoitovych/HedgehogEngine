@@ -5,12 +5,23 @@
 
 namespace HedgehogEngine
 {
-    void HierarchySystem::Init(EventBus& bus)
+    void HierarchySystem::OnRegister(ECS::ECS& ecs)
     {
-        bus.Subscribe<LocalMatrixUpdatedEvent>([this](const LocalMatrixUpdatedEvent& e)
+        m_Bus = ecs.GetServices().Find<EventBus>();
+        if (m_Bus)
         {
-            OnLocalMatrixUpdated(e);
-        });
+            m_Subscription = m_Bus->Subscribe<LocalMatrixUpdatedEvent>([this](const LocalMatrixUpdatedEvent& e) { OnLocalMatrixUpdated(e); });
+        }
+    }
+
+    void HierarchySystem::OnUnregister(ECS::ECS& /*ecs*/)
+    {
+        if (m_Bus)
+        {
+            m_Bus->Unsubscribe(m_Subscription);
+        }
+        m_Bus          = nullptr;
+        m_Subscription = SubscriptionId::Invalid;
     }
 
     void HierarchySystem::OnLocalMatrixUpdated(const LocalMatrixUpdatedEvent& event)
