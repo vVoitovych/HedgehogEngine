@@ -12,6 +12,7 @@
 
 #include <span>
 #include <string>
+#include <vector>
 
 using EcsSerialization::ComponentDesc;
 using EcsSerialization::ComponentInfo;
@@ -250,4 +251,22 @@ TEST_CASE("ComponentTypeRegistry - bad registrations are refused with one error 
     CHECK_FALSE(world.Ecs.IsComponentRegistered<TestSpare>());
     CHECK(world.Types.Find("Spare") == nullptr);
     CHECK(world.Types.GetInfos().size() == 3);
+}
+
+TEST_CASE("ComponentTypeRegistry - GetInfosInOrder sorts by SortOrder, ties in registration order")
+{
+    ECS::ECS                                      ecs;
+    EcsSerialization::ComponentSerializerRegistry serializers;
+    ComponentTypeRegistry                         types(ecs, serializers);
+    ecs.Init();
+    REQUIRE(types.RegisterReflected<TestLamp>(ComponentDesc{ .Key = "TestLamp", .SortOrder = 20 }));
+    REQUIRE(types.RegisterCustom<TestTag>(ComponentDesc{ .Key = "TestTag", .SortOrder = 10 }, RegisterTestTagSerializer));
+    REQUIRE(types.RegisterUnserialized<TestSpare>(ComponentDesc{ .Key = "TestSpare", .SortOrder = 10 }));
+
+    std::vector<std::string> keys;
+    for (const ComponentInfo* info : types.GetInfosInOrder())
+        keys.push_back(info->Key);
+    CHECK(keys == std::vector<std::string>{ "TestTag", "TestSpare", "TestLamp" });
+    // Registration order is untouched: it is the order serializers write in.
+    CHECK(types.GetInfos().front().Key == "TestLamp");
 }

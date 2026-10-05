@@ -7,6 +7,7 @@
 #include "ECS/api/ECS.hpp"
 #include "ECS/api/Entity.hpp"
 
+#include <algorithm>
 #include <functional>
 #include <span>
 #include <string>
@@ -20,11 +21,13 @@ namespace EcsSerialization
     struct ComponentDesc
     {
         std::string Key;              // the YAML key, unique in the registry
-        std::string DisplayName;      // the label menus and the inspector show
+        std::string DisplayName;      // what it is called: the inspector's header ("UI canvas")
         std::string Category;         // groups menu entries ("", "UI", "Audio", ...)
+        int         SortOrder = 0;    // where menus and the inspector list it, ascending
         std::string Icon;             // an icon name the editor maps to its own icons
-        bool        Addable   = true; // offered by Add Component
-        bool        Removable = true; // offered by the inspector's Remove component
+        bool        Addable     = true; // offered by Add Component
+        bool        Removable   = true; // offered by the inspector's Remove component
+        bool        Inspectable = true; // drawn by the inspector
         // A reflected bool property switching the component on and off (the inspector's header
         // checkbox), or empty.
         std::string EnabledProperty;
@@ -103,8 +106,19 @@ namespace EcsSerialization
         // system requires the type). Pointers from Find and GetInfos are invalidated.
         ECS_SERIALIZATION_API bool Unregister(std::string_view key);
 
-        // In registration order.
+        // In registration order (the order serializers write a scene's components in).
         [[nodiscard]] const std::vector<ComponentInfo>& GetInfos() const { return m_Infos; }
+        // By SortOrder, ties in registration order: the order menus and the inspector list them in.
+        [[nodiscard]] std::vector<const ComponentInfo*> GetInfosInOrder() const
+        {
+            std::vector<const ComponentInfo*> ordered;
+            ordered.reserve(m_Infos.size());
+            for (const ComponentInfo& info : m_Infos)
+                ordered.push_back(&info);
+            std::stable_sort(ordered.begin(), ordered.end(),
+                             [](const ComponentInfo* a, const ComponentInfo* b) { return a->SortOrder < b->SortOrder; });
+            return ordered;
+        }
         // nullptr for an unknown key.
         [[nodiscard]] ECS_SERIALIZATION_API const ComponentInfo* Find(std::string_view key) const;
 
