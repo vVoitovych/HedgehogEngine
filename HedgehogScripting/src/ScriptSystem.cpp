@@ -13,6 +13,7 @@
 #include "HedgehogEngine/api/Save/SaveGameManager.hpp"
 
 #include "ECS/api/ECS.hpp"
+#include "EcsSerialization/api/SaveGame/SaveGameFile.hpp"
 #include "ECS/api/components/Hierarchy.hpp"
 
 #include "FileSystem/api/FileSystemManager.hpp"
@@ -110,21 +111,21 @@ namespace HedgehogScripting
         RegisterEvents();
         // Systems live in the ECS, which the context destroys before its EventBus, as the
         // engine's own subscribers do.
-        context.GetEventBus().Subscribe<HedgehogEngine::AnimationFinishedEvent>(
-            [this](const HedgehogEngine::AnimationFinishedEvent& event) { QueueAnimationFinished(event); });
+        HedgehogEngine::EventBus& bus = context.GetEventBus();
+        m_BusSubscriptions.push_back(bus.Subscribe<HedgehogEngine::AnimationFinishedEvent>(
+            [this](const HedgehogEngine::AnimationFinishedEvent& event) { QueueAnimationFinished(event); }));
         Bindings::RegisterUi(m_Lua, context, [this](const Bindings::ScriptEntity& button, sol::protected_function handler)
                              { return SubscribeClick(button, std::move(handler)); });
-        context.GetEventBus().Subscribe<HedgehogEngine::UiButtonClickedEvent>(
-            [this](const HedgehogEngine::UiButtonClickedEvent& event) { QueueButtonClicked(event); });
-        // Save games carry the scripts' state. The ECS that owns this system outlives the save
-        // manager (EngineContext destroys it first), so the section never outlives the system.
+        m_BusSubscriptions.push_back(bus.Subscribe<HedgehogEngine::UiButtonClickedEvent>(
+            [this](const HedgehogEngine::UiButtonClickedEvent& event) { QueueButtonClicked(event); }));
+        // Save games carry the scripts' state, until OnUnregister drops the section.
         context.GetSaveGames().RegisterSection(
-            "Scripts", [this]() { return SaveScriptState(m_Context.GetECS()); },
+            EcsSerialization::SAVE_SECTION_SCRIPTS, [this]() { return SaveScriptState(m_Context.GetECS()); },
             [this](const YAML::Node& section, int savedGameDataVersion)
             { LoadScriptState(m_Context.GetECS(), section, savedGameDataVersion); });
-        context.GetEventBus().Subscribe<HedgehogEngine::GameLoadedEvent>(
+        m_BusSubscriptions.push_back(bus.Subscribe<HedgehogEngine::GameLoadedEvent>(
             [this](const HedgehogEngine::GameLoadedEvent& event)
-            { m_QueuedEvents.push_back(QueuedEvent{ "GameLoaded", m_Lua.create_table_with("slot", event.Slot) }); });
+            { m_QueuedEvents.push_back(QueuedEvent{ "GameLoaded", m_Lua.create_table_with("slot", event.Slot) }); }));
         Bindings::RegisterSave(m_Lua, context);
         RegisterCoroutines();
         RegisterPropertyHelpers();
@@ -141,6 +142,24 @@ namespace HedgehogScripting
         // engine's removal callback back, since ours points at this system.
         if (m_CallbackEcs != nullptr)
             m_CallbackEcs->SetComponentRemovedCallback<HedgehogEngine::ScriptComponent>(std::move(m_PreviousRemovedCallback));
+    }
+
+    void ScriptSystem::OnUnregister(ECS::ECS& ecs)
+    {
+        // Unregistered mid-Play: the scripts end as at Stop, and the removal callback goes back.
+        if (m_CallbackEcs == &ecs)
+            OnPlayStop(ecs);
+
+        // The context's EventBus and save manager may already be gone at teardown; their services
+        // are unregistered first, so only live ones are found.
+        if (HedgehogEngine::EventBus* bus = ecs.GetServices().Find<HedgehogEngine::EventBus>())
+        {
+            for (const HedgehogEngine::SubscriptionId id : m_BusSubscriptions)
+                bus->Unsubscribe(id);
+        }
+        m_BusSubscriptions.clear();
+        if (HedgehogEngine::SaveGameManager* saves = ecs.GetServices().Find<HedgehogEngine::SaveGameManager>())
+            saves->UnregisterSection(EcsSerialization::SAVE_SECTION_SCRIPTS);
     }
 
     void ScriptSystem::StartClassSupport()
