@@ -282,15 +282,15 @@ namespace HedgehogEngine
         ReloadInputActions(std::chrono::steady_clock::now());
         UpdateCamera(aspectRatio, dt);
 
-        // Update order is load-bearing: gameplay (Play only) → Animation → Transform → Hierarchy
-        // → Light → Audio. Animation runs after every script hook of the frame (see
-        // AnimationSystem), and it, Transform, Hierarchy and Light run in every mode, so edits show
-        // in Edit mode too. Audio reads the world matrices the frame ended with.
+        // Update order is load-bearing: gameplay (Play only) → Animation → Transform phase
+        // (Transform, then Hierarchy) → Late phase (Light) → Audio. Animation runs after every
+        // script hook of the frame (see AnimationSystem), and it and the phases run in every mode,
+        // so edits show in Edit mode too. Audio reads the world matrices the frame ended with.
         UpdatePlayMode(dt);
         UpdateAnimation(dt);
-        m_TransformSystem->Update(m_ECS, m_EventBus);
-        m_HierarchySystem->Update(m_ECS, m_EventBus);
-        m_LightSystem->Update(m_ECS);
+        const ECS::FrameContext frame = MakeFrameContext(dt);
+        m_ECS.RunPhase(ECS::SystemPhase::Transform, frame);
+        m_ECS.RunPhase(ECS::SystemPhase::Late, frame);
         m_AudioSystem->Update(m_ECS, *m_AudioListenerSystem, *m_CameraSystem);
 
         m_ResourceCatalog.Update(*m_RenderSystem, *m_MeshSystem);
@@ -362,6 +362,23 @@ namespace HedgehogEngine
         m_ECS.RunUpdate(std::max(dt * m_Clock.TimeScale, 0.0f));
         // After every script hook: a save sees the frame's state, a load runs under no script.
         m_SaveGames->ProcessRequests();
+    }
+
+    ECS::FrameContext EngineContext::MakeFrameContext(float dt) const
+    {
+        ECS::FrameContext frame;
+        frame.DeltaTime       = dt;
+        // A negative time scale counts as 0, as the clock treats it.
+        frame.ScaledDeltaTime = std::max(dt * m_Clock.TimeScale, 0.0f);
+        frame.FixedDeltaTime  = m_Clock.FixedDeltaTime;
+        frame.FixedSteps      = 0; // the fixed steps still run in UpdatePlayMode
+        switch (m_PlayState)
+        {
+        case PlayState::Playing: frame.Mode = ECS::PlayMode::Playing; break;
+        case PlayState::Paused:  frame.Mode = ECS::PlayMode::Paused;  break;
+        case PlayState::Edit:    frame.Mode = ECS::PlayMode::Edit;    break;
+        }
+        return frame;
     }
 
     void EngineContext::UpdateAnimation(float dt)

@@ -21,6 +21,10 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API void OnRegister(ECS::ECS& ecs) override;
         HEDGEHOG_ENGINE_API void OnUnregister(ECS::ECS& ecs) override;
 
+        // Runs Update in the Late phase, in every play mode.
+        ECS::SystemPhase         GetPhase() const override { return ECS::SystemPhase::Late; }
+        HEDGEHOG_ENGINE_API void OnFrame(ECS::ECS& ecs, const ECS::FrameContext& ctx) override;
+
         HEDGEHOG_ENGINE_API const std::vector<LightComponent>& GetLightComponents(ECS::ECS& ecs);
         HEDGEHOG_ENGINE_API void   Update(ECS::ECS& ecs);
 

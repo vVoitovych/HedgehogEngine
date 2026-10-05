@@ -18,6 +18,15 @@ namespace HedgehogEngine
         }
     }
 
+    void TransformSystem::OnFrame(ECS::ECS& ecs, const ECS::FrameContext& /*ctx*/)
+    {
+        if (!m_Bus)
+        {
+            return; // no EventBus service: nothing subscribed, nothing to publish to
+        }
+        Update(ecs, *m_Bus);
+    }
+
     void TransformSystem::OnUnregister(ECS::ECS& /*ecs*/)
     {
         if (m_Bus)
