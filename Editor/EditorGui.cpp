@@ -32,6 +32,7 @@
 #include "HedgehogEngine/HedgehogSettings/api/ShadowmapingSettings.hpp"
 
 #include "ECS/api/ECS.hpp"
+#include "EcsSerialization/api/ComponentTypeRegistry.hpp"
 #include "ECS/api/components/Hierarchy.hpp"
 #include "HedgehogEngine/api/ECS/components/AnimatorComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/PrefabInstanceComponent.hpp"
@@ -73,19 +74,11 @@
 #include <algorithm>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace
 {
     constexpr std::string_view ASSETS_PREFIX = "assets://";
-
-    // An Add Component menu item that adds a default T to the selected entity, when it has none.
-    template<typename T>
-    void AddComponentMenuItem(ECS::ECS& ecs, const std::optional<ECS::Entity>& selected, const char* label)
-    {
-        const bool addable = selected.has_value() && !ecs.HasComponent<T>(*selected);
-        if (ImGui::MenuItem(label, nullptr, false, addable))
-            ecs.AddComponent(*selected, T{});
-    }
 
     // A component's reflected fields under an icon header, then whatever extra draws; the header's
     // menu removes it.
@@ -580,68 +573,31 @@ namespace Editor
 
     void EditorGui::DrawAddComponentItems(HedgehogEngine::Engine& context)
     {
-        auto& engineContext = context.GetEngineContext();
-        auto& ecs           = engineContext.GetECS();
-        auto* meshSystem    = engineContext.GetMeshSystem();
-        auto* renderSystem  = engineContext.GetRenderSystem();
+        auto&       engineContext = context.GetEngineContext();
+        auto&       ecs           = engineContext.GetECS();
+        const auto& infos         = engineContext.GetComponentTypes().GetInfos();
 
-        // A component the selected entity already has is greyed.
-        const auto canAdd = [&]<typename T>()
+        // Every addable component type, grouped by category in the order the groups first appear,
+        // each group in registration order; a component the selected entity already has is greyed.
+        std::vector<std::string_view> categories;
+        for (const EcsSerialization::ComponentInfo& info : infos)
         {
-            return m_SelectedEntity.has_value() && !ecs.HasComponent<T>(*m_SelectedEntity);
-        };
-
-        if (ImGui::MenuItem("Mesh component", nullptr, false, canAdd.template operator()<HedgehogEngine::MeshComponent>()))
+            if (info.Addable && std::find(categories.begin(), categories.end(), info.Category) == categories.end())
+                categories.push_back(info.Category);
+        }
+        for (size_t group = 0; group < categories.size(); ++group)
         {
-            ECS::Entity e = m_SelectedEntity.value();
-            if (!ecs.HasComponent<HedgehogEngine::MeshComponent>(e))
+            if (group > 0)
+                ImGui::Separator();
+            for (const EcsSerialization::ComponentInfo& info : infos)
             {
-                ecs.AddComponent(e, HedgehogEngine::MeshComponent{ HedgehogEngine::MeshSystem::sDefaultMeshPath });
-                meshSystem->Update(ecs, e, engineContext.GetFileSystem());
+                if (!info.Addable || info.Category != categories[group])
+                    continue;
+                const bool canAdd = m_SelectedEntity.has_value() && !info.Has(ecs, *m_SelectedEntity);
+                if (ImGui::MenuItem(info.DisplayName.c_str(), nullptr, false, canAdd))
+                    info.AddDefault(ecs, *m_SelectedEntity);
             }
         }
-        if (ImGui::MenuItem("Render component", nullptr, false, canAdd.template operator()<HedgehogEngine::RenderComponent>()))
-        {
-            ECS::Entity e = m_SelectedEntity.value();
-            if (!ecs.HasComponent<HedgehogEngine::RenderComponent>(e))
-            {
-                ecs.AddComponent(e, HedgehogEngine::RenderComponent{});
-                renderSystem->Update(ecs, e);
-            }
-        }
-        if (ImGui::MenuItem("Light component", nullptr, false, canAdd.template operator()<HedgehogEngine::LightComponent>()))
-        {
-            ECS::Entity e = m_SelectedEntity.value();
-            if (!ecs.HasComponent<HedgehogEngine::LightComponent>(e))
-                ecs.AddComponent(e, HedgehogEngine::LightComponent{});
-        }
-        if (ImGui::MenuItem("Camera component", nullptr, false, canAdd.template operator()<HedgehogEngine::CameraComponent>()))
-        {
-            ECS::Entity e = m_SelectedEntity.value();
-            if (!ecs.HasComponent<HedgehogEngine::CameraComponent>(e))
-                ecs.AddComponent(e, HedgehogEngine::CameraComponent{});
-        }
-        if (ImGui::MenuItem("Script component", nullptr, false, canAdd.template operator()<HedgehogEngine::ScriptComponent>()))
-        {
-            ECS::Entity e = m_SelectedEntity.value();
-            if (!ecs.HasComponent<HedgehogEngine::ScriptComponent>(e))
-                ecs.AddComponent(e, HedgehogEngine::ScriptComponent{});
-        }
-        if (ImGui::MenuItem("Animator component", nullptr, false, canAdd.template operator()<HedgehogEngine::AnimatorComponent>()))
-        {
-            ECS::Entity e = m_SelectedEntity.value();
-            if (!ecs.HasComponent<HedgehogEngine::AnimatorComponent>(e))
-                ecs.AddComponent(e, HedgehogEngine::AnimatorComponent{});
-        }
-        ImGui::Separator();
-        AddComponentMenuItem<HedgehogEngine::UiCanvasComponent>(ecs, m_SelectedEntity, "UI canvas component");
-        AddComponentMenuItem<HedgehogEngine::UiRectComponent>(ecs, m_SelectedEntity, "UI rect component");
-        AddComponentMenuItem<HedgehogEngine::UiImageComponent>(ecs, m_SelectedEntity, "UI image component");
-        AddComponentMenuItem<HedgehogEngine::UiTextComponent>(ecs, m_SelectedEntity, "UI text component");
-        AddComponentMenuItem<HedgehogEngine::UiButtonComponent>(ecs, m_SelectedEntity, "UI button component");
-        ImGui::Separator();
-        AddComponentMenuItem<HedgehogEngine::AudioSourceComponent>(ecs, m_SelectedEntity, "Audio source component");
-        AddComponentMenuItem<HedgehogEngine::AudioListenerComponent>(ecs, m_SelectedEntity, "Audio listener component");
     }
 
     // ─── Toolbar ─────────────────────────────────────────────────────────────

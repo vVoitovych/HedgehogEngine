@@ -12,6 +12,7 @@ project "EditorTest"
         "../Docking/DockLayout.hpp",
         "../Docking/DockLayout.cpp",
         "../Panels/EditorIcons.hpp",
+        "../Panels/EditorIconNames.cpp",
         "../Panels/EntityIcon.hpp",
         "../Panels/EntityIcon.cpp",
         "../Panels/TextSearch.hpp",
