@@ -7,6 +7,7 @@
 #include <cassert>
 #include <functional>
 #include <utility>
+#include <vector>
 
 namespace ECS
 {
@@ -90,6 +91,18 @@ namespace ECS
         bool HasData(Entity entity) const
         {
             return m_EntityToIndexMap.find(entity) != m_EntityToIndexMap.end();
+        }
+
+        // Every entity holding a T, in storage order (a copy, so the caller may remove them).
+        std::vector<Entity> GetEntities() const
+        {
+            std::vector<Entity> entities;
+            entities.reserve(m_Size);
+            for (size_t index = 0; index < m_Size; ++index)
+            {
+                entities.push_back(m_IndexToEntityMap.at(index));
+            }
+            return entities;
         }
 
         void NotifyEntityDestroyed(Entity entity) override
