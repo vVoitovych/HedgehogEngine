@@ -3,6 +3,8 @@
 #include <array>
 #include <cstddef>
 #include <memory>
+#include <optional>
+#include <string_view>
 
 namespace FS
 {
@@ -60,6 +62,10 @@ namespace Editor
 
     // The icon's file name, which also names its texture id.
     [[nodiscard]] const char* GetEditorIconFile(EditorIcon icon);
+
+    // The icon a name stands for: its file name without ".png" (the names the component type
+    // registry uses, "mesh", "ui_canvas", ...). Nullopt for an empty or unknown name.
+    [[nodiscard]] std::optional<EditorIcon> FindEditorIcon(std::string_view name);
 
     // The icon textures, uploaded once when the device is ready. An icon whose file does not load
     // logs one warning and has no texture; where it would be drawn, nothing is.
