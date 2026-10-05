@@ -7,6 +7,7 @@
 #include <memory>
 #include <cassert>
 #include <algorithm>
+#include <array>
 #include <type_traits>
 #include <typeindex>
 #include <utility>
@@ -30,6 +31,7 @@ namespace ECS
             auto system = std::make_shared<T>(std::forward<Args>(args)...);
             m_Systems.insert({ typeId, system });
             m_Order.push_back(system);
+            m_Phases[static_cast<size_t>(system->GetPhase())].push_back(system);
             return system;
         }
 
@@ -43,7 +45,20 @@ namespace ECS
                 fn(*m_Order[i]);
         }
 
-        // The same, last registered first.
+        // Calls fn(System&) for every system of one phase in registration order. A system
+        // registered while visiting is not visited this time.
+        template<typename Fn>
+        void ForEachSystemInPhase(SystemPhase phase, Fn&& fn) const
+        {
+            const std::vector<std::shared_ptr<System>>& systems = m_Phases[static_cast<size_t>(phase)];
+            const size_t                                count   = systems.size();
+            for (size_t i = 0; i < count; ++i)
+            {
+                fn(*systems[i]);
+            }
+        }
+
+        // The same as ForEachSystem, last registered first.
         template<typename Fn>
         void ForEachSystemReverse(Fn&& fn) const
         {
@@ -130,5 +145,7 @@ namespace ECS
         std::unordered_map<std::type_index, Signature>              m_Signatures{};
         std::unordered_map<std::type_index, std::shared_ptr<System>> m_Systems{};
         std::vector<std::shared_ptr<System>>                         m_Order{};
+        // The systems of each phase, in registration order.
+        std::array<std::vector<std::shared_ptr<System>>, SYSTEM_PHASE_COUNT> m_Phases{};
     };
 }
