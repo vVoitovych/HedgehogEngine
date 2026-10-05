@@ -4,6 +4,24 @@
 
 namespace ECS
 {
+    class ECS::DispatchScope
+    {
+    public:
+        explicit DispatchScope(ECS& ecs)
+            : m_Ecs(ecs)
+        {
+            ++m_Ecs.m_DispatchDepth;
+        }
+
+        ~DispatchScope() { --m_Ecs.m_DispatchDepth; }
+
+        DispatchScope(const DispatchScope&)            = delete;
+        DispatchScope& operator=(const DispatchScope&) = delete;
+
+    private:
+        ECS& m_Ecs;
+    };
+
     ECS::~ECS()
     {
         Release();
@@ -21,6 +39,7 @@ namespace ECS
             m_SystemManager    = std::move(other.m_SystemManager);
             m_Services         = std::move(other.m_Services);
             m_RootEntity       = other.m_RootEntity;
+            m_DispatchDepth    = 0;
             other.m_RootEntity = INVALID_ENTITY;
         }
         return *this;
@@ -93,31 +112,65 @@ namespace ECS
 
     void ECS::NotifyPlayStart()
     {
+        DispatchScope scope(*this);
         m_SystemManager->ForEachSystem([this](System& system) { system.OnPlayStart(*this); });
     }
 
     void ECS::NotifyPlayPause()
     {
+        DispatchScope scope(*this);
         m_SystemManager->ForEachSystem([this](System& system) { system.OnPlayPause(*this); });
     }
 
     void ECS::NotifyPlayResume()
     {
+        DispatchScope scope(*this);
         m_SystemManager->ForEachSystem([this](System& system) { system.OnPlayResume(*this); });
     }
 
     void ECS::NotifyPlayStop()
     {
+        DispatchScope scope(*this);
         m_SystemManager->ForEachSystemReverse([this](System& system) { system.OnPlayStop(*this); });
     }
 
     void ECS::RunFixedUpdate(float fixedDeltaTime)
     {
+        DispatchScope scope(*this);
         m_SystemManager->ForEachSystem([&](System& system) { system.OnFixedUpdate(*this, fixedDeltaTime); });
     }
 
     void ECS::RunUpdate(float deltaTime)
     {
+        DispatchScope scope(*this);
         m_SystemManager->ForEachSystem([&](System& system) { system.OnUpdate(*this, deltaTime); });
+    }
+
+    void ECS::RunPhase(SystemPhase phase, const FrameContext& ctx)
+    {
+        DispatchScope scope(*this);
+        if (phase == SystemPhase::Simulation && ctx.Mode == PlayMode::Playing)
+        {
+            for (uint32_t step = 0; step < ctx.FixedSteps; ++step)
+            {
+                RunFixedUpdate(ctx.FixedDeltaTime);
+            }
+            RunUpdate(ctx.ScaledDeltaTime);
+        }
+        m_SystemManager->ForEachSystemInPhase(phase, [&](System& system) { system.OnFrame(*this, ctx); });
+    }
+
+    void ECS::RunPhases(SystemPhase first, SystemPhase last, const FrameContext& ctx)
+    {
+        assert(first <= last && "RunPhases: first comes after last.");
+        for (size_t phase = static_cast<size_t>(first); phase <= static_cast<size_t>(last); ++phase)
+        {
+            RunPhase(static_cast<SystemPhase>(phase), ctx);
+        }
+    }
+
+    bool ECS::IsDispatching() const
+    {
+        return m_DispatchDepth > 0;
     }
 }

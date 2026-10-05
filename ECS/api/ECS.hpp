@@ -10,8 +10,10 @@
 #include "System.hpp"
 #include "ComponentManager.hpp"
 #include "EntityManager.hpp"
+#include "FrameContext.hpp"
 #include "ServiceRegistry.hpp"
 #include "SystemManager.hpp"
+#include "SystemPhase.hpp"
 
 namespace ECS
 {
@@ -160,6 +162,16 @@ namespace ECS
         ECS_API void RunFixedUpdate(float fixedDeltaTime);
         ECS_API void RunUpdate(float deltaTime);
 
+        // The frame. RunPhase runs one phase: for Simulation while ctx.Mode is Playing, first
+        // ctx.FixedSteps x RunFixedUpdate(ctx.FixedDeltaTime) and one RunUpdate(ctx.ScaledDeltaTime)
+        // (every system, registration order, as above), then OnFrame of each system of the phase, in
+        // registration order and every play mode. RunPhases runs first..last inclusive, in order.
+        ECS_API void RunPhase(SystemPhase phase, const FrameContext& ctx);
+        ECS_API void RunPhases(SystemPhase first, SystemPhase last, const FrameContext& ctx);
+
+        // True while the ECS is calling into systems (a phase, a play-mode event or an update).
+        [[nodiscard]] ECS_API bool IsDispatching() const;
+
         // Shared objects systems find by type (see ServiceRegistry). Kept across Init, so services
         // may be registered before or after it.
         ServiceRegistry&       GetServices() { return m_Services; }
@@ -170,6 +182,9 @@ namespace ECS
         // then the entity and component storage.
         void Release();
 
+        // Counts nested dispatches for IsDispatching.
+        class DispatchScope;
+
     private:
         std::unique_ptr<ComponentManager> m_ComponentManager;
         std::unique_ptr<EntityManager>    m_EntityManager;
@@ -177,5 +192,6 @@ namespace ECS
         ServiceRegistry                   m_Services;
 
         Entity m_RootEntity{INVALID_ENTITY};
+        int    m_DispatchDepth = 0;
     };
 }

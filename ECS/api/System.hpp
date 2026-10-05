@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Entity.hpp"
+#include "FrameContext.hpp"
+#include "SystemPhase.hpp"
 
 #include <vector>
 
@@ -23,6 +25,12 @@ namespace ECS
         // is still readable): undo what OnRegister did. Both do nothing by default.
         virtual void OnRegister(ECS& /*ecs*/) {}
         virtual void OnUnregister(ECS& /*ecs*/) {}
+
+        // The frame. ECS::RunPhase calls OnFrame on every system of the phase GetPhase names, in
+        // every play mode (check ctx.Mode for work that belongs to Play only). The phase is read once,
+        // at registration. By default a system runs in Late and does nothing there.
+        virtual SystemPhase GetPhase() const { return SystemPhase::Late; }
+        virtual void        OnFrame(ECS& /*ecs*/, const FrameContext& /*ctx*/) {}
 
         // Play-mode events. The ECS forwards them to every registered system in registration order
         // (OnPlayStop in reverse): gameplay is a component plus a system that overrides them. Each
