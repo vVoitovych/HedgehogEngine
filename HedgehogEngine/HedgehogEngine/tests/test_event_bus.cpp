@@ -179,3 +179,56 @@ TEST_CASE("EventBus::Unsubscribe - works across channels from inside a handler")
     bus.Publish(Pong{});
     CHECK(log.empty());
 }
+
+TEST_CASE("EventBus::GetTotalSubscriberCount - counts live handlers over every channel")
+{
+    EventBus bus;
+    CHECK(bus.GetTotalSubscriberCount() == 0);
+
+    const SubscriptionId ping = bus.Subscribe<Ping>([](const Ping&) {});
+    bus.Subscribe<Ping>([](const Ping&) {});
+    bus.Subscribe<Pong>([](const Pong&) {});
+    CHECK(bus.GetTotalSubscriberCount() == 3);
+
+    CHECK(bus.Unsubscribe(ping));
+    CHECK(bus.GetTotalSubscriberCount() == 2);
+}
+
+TEST_CASE("EventBus::GetTotalSubscriberCount - mid-publish, pending handlers count and removed ones do not")
+{
+    EventBus             bus;
+    size_t               during = 0;
+    const SubscriptionId pong   = bus.Subscribe<Pong>([](const Pong&) {});
+    bus.Subscribe<Ping>([&](const Ping&)
+    {
+        bus.Subscribe<Ping>([](const Ping&) {}); // pending until the publish ends
+        CHECK(bus.Unsubscribe(pong));
+        during = bus.GetTotalSubscriberCount();
+    });
+
+    bus.Publish(Ping{});
+    CHECK(during == 2);
+    CHECK(bus.GetTotalSubscriberCount() == 2);
+}
+
+TEST_CASE("EventBus - a handler may use an event type no one has used yet")
+{
+    struct Fresh
+    {
+        int Value = 0;
+    };
+
+    EventBus bus;
+    Log      log;
+    bus.Subscribe<Ping>([&](const Ping&)
+    {
+        // Creates the Fresh channel while the Ping channel is publishing.
+        bus.Subscribe<Fresh>([&](const Fresh& fresh) { log.push_back("fresh" + std::to_string(fresh.Value)); });
+        bus.Publish(Fresh{ 3 });
+        log.push_back("ping");
+    });
+
+    bus.Publish(Ping{});
+    bus.Publish(Fresh{ 4 });
+    CHECK(log == Log{ "fresh3", "ping", "fresh4" });
+}
