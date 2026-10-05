@@ -102,3 +102,22 @@ TEST_CASE("Engine components - AddDefault gives what the editor menu adds")
         CHECK_MESSAGE(info.Has(ecs, entity), info.Key);
     }
 }
+
+TEST_CASE("Engine components - the inspector order, and what the inspector draws")
+{
+    EngineContext context;
+
+    std::vector<std::string> shown;
+    for (const ComponentInfo* info : context.GetComponentTypes().GetInfosInOrder())
+    {
+        if (info->Inspectable)
+            shown.push_back(info->DisplayName);
+    }
+    const std::vector<std::string> expected = {
+        "Transform", "Light",   "Camera",    "Mesh",    "Render",       "Script",         "Animator", "UI canvas",
+        "UI rect",   "UI image", "UI text",  "UI button", "Audio source", "Audio listener",
+    };
+    CHECK(shown == expected);
+    CHECK_FALSE(context.GetComponentTypes().Find("HierarchyComponent")->Inspectable);
+    CHECK_FALSE(context.GetComponentTypes().Find("PrefabInstanceComponent")->Inspectable);
+}

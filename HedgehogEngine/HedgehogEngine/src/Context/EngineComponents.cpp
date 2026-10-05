@@ -57,45 +57,59 @@ namespace HedgehogEngine
 
     void RegisterEngineComponents(EcsSerialization::ComponentTypeRegistry& types)
     {
+        // SortOrder is the inspector's order (Transform, Light, Camera, Mesh, Rendering, Script,
+        // Animator, then the UI and audio sections), which the Add Component menu follows too.
         bool registered = true;
-        registered &= types.RegisterReflected<TransformComponent>(
-            ComponentDesc{ .Key = "TransformComponent", .DisplayName = "Transform", .Icon = "transform", .Addable = false, .Removable = false });
+        registered &= types.RegisterReflected<TransformComponent>(ComponentDesc{
+            .Key = "TransformComponent", .DisplayName = "Transform", .SortOrder = 0, .Icon = "transform", .Addable = false, .Removable = false });
         // Written by the scene serializer itself, through the hierarchy provider.
-        registered &= types.RegisterUnserialized<ECS::HierarchyComponent>(
-            ComponentDesc{ .Key = "HierarchyComponent", .DisplayName = "Hierarchy", .Addable = false, .Removable = false });
+        registered &= types.RegisterUnserialized<ECS::HierarchyComponent>(ComponentDesc{
+            .Key = "HierarchyComponent", .DisplayName = "Hierarchy", .Addable = false, .Removable = false, .Inspectable = false });
         registered &= types.RegisterReflected<MeshComponent>(
-            ComponentDesc{ .Key = "MeshComponent", .DisplayName = "Mesh component", .Icon = "mesh", .AddDefault = AddDefaultMesh });
-        registered &= types.RegisterReflected<RenderComponent>(ComponentDesc{
-            .Key = "RenderComponent", .DisplayName = "Render component", .Icon = "material", .EnabledProperty = "Visible", .AddDefault = AddDefaultRender });
-        registered &= types.RegisterReflected<LightComponent>(
-            ComponentDesc{ .Key = "LightComponent", .DisplayName = "Light component", .Icon = "light", .EnabledProperty = "LightEnabled" });
-        registered &= types.RegisterReflected<CameraComponent>(
-            ComponentDesc{ .Key = "CameraComponent", .DisplayName = "Camera component", .Icon = "camera", .EnabledProperty = "Enabled" });
+            ComponentDesc{ .Key = "MeshComponent", .DisplayName = "Mesh", .SortOrder = 30, .Icon = "mesh", .AddDefault = AddDefaultMesh });
+        registered &= types.RegisterReflected<RenderComponent>(ComponentDesc{ .Key             = "RenderComponent",
+                                                                              .DisplayName     = "Render",
+                                                                              .SortOrder       = 40,
+                                                                              .Icon            = "material",
+                                                                              .EnabledProperty = "Visible",
+                                                                              .AddDefault      = AddDefaultRender });
+        registered &= types.RegisterReflected<LightComponent>(ComponentDesc{
+            .Key = "LightComponent", .DisplayName = "Light", .SortOrder = 10, .Icon = "light", .EnabledProperty = "LightEnabled" });
+        registered &= types.RegisterReflected<CameraComponent>(ComponentDesc{
+            .Key = "CameraComponent", .DisplayName = "Camera", .SortOrder = 20, .Icon = "camera", .EnabledProperty = "Enabled" });
         registered &= types.RegisterReflected<AnimatorComponent>(
-            ComponentDesc{ .Key = "AnimatorComponent", .DisplayName = "Animator component", .Icon = "animator" });
-        registered &= types.RegisterReflected<UiCanvasComponent>(ComponentDesc{
-            .Key = "UiCanvasComponent", .DisplayName = "UI canvas component", .Category = UI_CATEGORY, .Icon = "ui_canvas", .EnabledProperty = "Enabled" });
-        registered &= types.RegisterReflected<UiRectComponent>(
-            ComponentDesc{ .Key = "UiRectComponent", .DisplayName = "UI rect component", .Category = UI_CATEGORY, .Icon = "ui_rect" });
-        registered &= types.RegisterReflected<UiImageComponent>(
-            ComponentDesc{ .Key = "UiImageComponent", .DisplayName = "UI image component", .Category = UI_CATEGORY, .Icon = "ui_image" });
-        registered &= types.RegisterReflected<UiTextComponent>(
-            ComponentDesc{ .Key = "UiTextComponent", .DisplayName = "UI text component", .Category = UI_CATEGORY, .Icon = "ui_text" });
-        registered &= types.RegisterReflected<UiButtonComponent>(
-            ComponentDesc{ .Key = "UiButtonComponent", .DisplayName = "UI button component", .Category = UI_CATEGORY, .Icon = "ui_button" });
+            ComponentDesc{ .Key = "AnimatorComponent", .DisplayName = "Animator", .SortOrder = 60, .Icon = "animator" });
+        registered &= types.RegisterReflected<UiCanvasComponent>(ComponentDesc{ .Key             = "UiCanvasComponent",
+                                                                                .DisplayName     = "UI canvas",
+                                                                                .Category        = UI_CATEGORY,
+                                                                                .SortOrder       = 100,
+                                                                                .Icon            = "ui_canvas",
+                                                                                .EnabledProperty = "Enabled" });
+        registered &= types.RegisterReflected<UiRectComponent>(ComponentDesc{
+            .Key = "UiRectComponent", .DisplayName = "UI rect", .Category = UI_CATEGORY, .SortOrder = 101, .Icon = "ui_rect" });
+        registered &= types.RegisterReflected<UiImageComponent>(ComponentDesc{
+            .Key = "UiImageComponent", .DisplayName = "UI image", .Category = UI_CATEGORY, .SortOrder = 102, .Icon = "ui_image" });
+        registered &= types.RegisterReflected<UiTextComponent>(ComponentDesc{
+            .Key = "UiTextComponent", .DisplayName = "UI text", .Category = UI_CATEGORY, .SortOrder = 103, .Icon = "ui_text" });
+        registered &= types.RegisterReflected<UiButtonComponent>(ComponentDesc{
+            .Key = "UiButtonComponent", .DisplayName = "UI button", .Category = UI_CATEGORY, .SortOrder = 104, .Icon = "ui_button" });
         registered &= types.RegisterReflected<AudioSourceComponent>(ComponentDesc{
-            .Key = "AudioSourceComponent", .DisplayName = "Audio source component", .Category = AUDIO_CATEGORY, .Icon = "audio_source" });
-        registered &= types.RegisterReflected<AudioListenerComponent>(
-            ComponentDesc{ .Key           = "AudioListenerComponent",
-                           .DisplayName   = "Audio listener component",
-                           .Category      = AUDIO_CATEGORY,
-                           .Icon          = "audio_listener",
-                           .EnabledProperty = "Active" });
-        registered &= types.RegisterReflected<PrefabInstanceComponent>(
-            ComponentDesc{ .Key = "PrefabInstanceComponent", .DisplayName = "Prefab instance", .Addable = false, .Removable = false });
+            .Key = "AudioSourceComponent", .DisplayName = "Audio source", .Category = AUDIO_CATEGORY, .SortOrder = 200, .Icon = "audio_source" });
+        registered &= types.RegisterReflected<AudioListenerComponent>(ComponentDesc{ .Key             = "AudioListenerComponent",
+                                                                                     .DisplayName     = "Audio listener",
+                                                                                     .Category        = AUDIO_CATEGORY,
+                                                                                     .SortOrder       = 201,
+                                                                                     .Icon            = "audio_listener",
+                                                                                     .EnabledProperty = "Active" });
+        registered &= types.RegisterReflected<PrefabInstanceComponent>(ComponentDesc{ .Key         = "PrefabInstanceComponent",
+                                                                                      .DisplayName = "Prefab instance",
+                                                                                      .Addable     = false,
+                                                                                      .Removable   = false,
+                                                                                      .Inspectable = false });
         // Scripts run in the application's script system; loading a scene only reads the data.
         registered &= types.RegisterCustom<ScriptComponent>(
-            ComponentDesc{ .Key = "ScriptComponent", .DisplayName = "Script component", .Icon = "script" }, RegisterScriptComponentSerializer);
+            ComponentDesc{ .Key = "ScriptComponent", .DisplayName = "Script", .SortOrder = 50, .Icon = "script" },
+            RegisterScriptComponentSerializer);
         assert(registered && "RegisterEngineComponents: an engine component type was refused.");
         (void)registered;
     }

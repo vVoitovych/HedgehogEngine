@@ -80,30 +80,6 @@ namespace
 {
     constexpr std::string_view ASSETS_PREFIX = "assets://";
 
-    // A component's reflected fields under an icon header, then whatever extra draws; the header's
-    // menu removes it.
-    template<typename T, typename Extra = void (*)()>
-    void DrawReflectedComponent(ECS::ECS& ecs, ECS::Entity entity, const char* header, void* icon, void* menuIcon,
-                                bool T::* enabled = nullptr, Extra extra = [] {})
-    {
-        if (!ecs.HasComponent<T>(entity))
-            return;
-        T& component = ecs.GetComponent<T>(entity);
-        const Editor::ComponentHeaderResult section =
-            Editor::ComponentHeader(header, { icon, menuIcon, enabled ? &(component.*enabled) : nullptr });
-        if (section.RemoveRequested)
-        {
-            ecs.RemoveComponent<T>(entity);
-            return;
-        }
-        if (!section.Open)
-            return;
-        ImGui::PushID(header);
-        Reflection::RenderComponentGui(&component, T::GetProperties(), T::s_TypeName);
-        extra();
-        ImGui::PopID();
-    }
-
     void SetupLightComponentGuiOverrides()
     {
         using HedgehogEngine::LightComponent;
@@ -143,17 +119,6 @@ namespace
     // are skipped by YamlSerializeComponent/YamlDeserializeComponent, not just the GUI. The
     // override below only silences the generic DragInt widget so DrawCameraComponent can draw
     // named checkboxes instead, sourced live from HedgehogSettings::LayerSettings.
-    // A reflected property drawn elsewhere (a section header's checkbox): its row draws nothing,
-    // while it still serialises.
-    template<typename Table>
-    void HideReflectedRow(Table& properties, std::string_view name)
-    {
-        for (auto& prop : properties)
-        {
-            if (name == prop.name)
-                prop.guiOverride = [](void*, const Reflection::PropertyDescriptor&) -> bool { return false; };
-        }
-    }
 
     void SetupCameraComponentGuiOverrides()
     {
@@ -214,8 +179,21 @@ namespace Editor
 
         SetupLightComponentGuiOverrides();
         SetupCameraComponentGuiOverrides();
-        HideReflectedRow(HedgehogEngine::UiCanvasComponent::GetPropTable_(), "Enabled");
-        HideReflectedRow(HedgehogEngine::AudioListenerComponent::GetPropTable_(), "Active");
+        // Hand-drawn sections by component key; every other registered component gets the generic
+        // reflected section, with these extra rows after its own.
+        m_InspectorDrawers = {
+            { "TransformComponent", &EditorGui::DrawTransformComponent },
+            { "LightComponent", &EditorGui::DrawLightComponent },
+            { "CameraComponent", &EditorGui::DrawCameraComponent },
+            { "MeshComponent", &EditorGui::DrawMeshComponent },
+            { "RenderComponent", &EditorGui::DrawRenderComponent },
+            { "ScriptComponent", &EditorGui::DrawScriptComponent },
+            { "AnimatorComponent", &EditorGui::DrawAnimatorComponent },
+        };
+        m_InspectorExtraRows = {
+            { "UiTextComponent", [this] { DrawDropRow("Font", "Drop a .ttf or .otf here", ContentType::Font); } },
+            { "AudioSourceComponent", [this] { DrawDropRow("Clip", "Drop a .wav, .mp3 or .flac here", ContentType::Audio); } },
+        };
 
         LoadLastScene(context);
     }
@@ -573,29 +551,30 @@ namespace Editor
 
     void EditorGui::DrawAddComponentItems(HedgehogEngine::Engine& context)
     {
-        auto&       engineContext = context.GetEngineContext();
-        auto&       ecs           = engineContext.GetECS();
-        const auto& infos         = engineContext.GetComponentTypes().GetInfos();
+        auto&      engineContext = context.GetEngineContext();
+        auto&      ecs           = engineContext.GetECS();
+        const auto infos         = engineContext.GetComponentTypes().GetInfosInOrder();
 
-        // Every addable component type, grouped by category in the order the groups first appear,
-        // each group in registration order; a component the selected entity already has is greyed.
+        // Every addable component type as "<name> component", grouped by category in the order the
+        // groups first appear, each group in SortOrder; one the selected entity has is greyed.
         std::vector<std::string_view> categories;
-        for (const EcsSerialization::ComponentInfo& info : infos)
+        for (const EcsSerialization::ComponentInfo* info : infos)
         {
-            if (info.Addable && std::find(categories.begin(), categories.end(), info.Category) == categories.end())
-                categories.push_back(info.Category);
+            if (info->Addable && std::find(categories.begin(), categories.end(), info->Category) == categories.end())
+                categories.push_back(info->Category);
         }
         for (size_t group = 0; group < categories.size(); ++group)
         {
             if (group > 0)
                 ImGui::Separator();
-            for (const EcsSerialization::ComponentInfo& info : infos)
+            for (const EcsSerialization::ComponentInfo* info : infos)
             {
-                if (!info.Addable || info.Category != categories[group])
+                if (!info->Addable || info->Category != categories[group])
                     continue;
-                const bool canAdd = m_SelectedEntity.has_value() && !info.Has(ecs, *m_SelectedEntity);
-                if (ImGui::MenuItem(info.DisplayName.c_str(), nullptr, false, canAdd))
-                    info.AddDefault(ecs, *m_SelectedEntity);
+                const std::string label  = info->DisplayName + " component";
+                const bool        canAdd = m_SelectedEntity.has_value() && !info->Has(ecs, *m_SelectedEntity);
+                if (ImGui::MenuItem(label.c_str(), nullptr, false, canAdd))
+                    info->AddDefault(ecs, *m_SelectedEntity);
             }
         }
     }
@@ -802,14 +781,18 @@ namespace Editor
             DrawPrefabBar(context);
             const bool instance = m_PrefabOverrides.InstanceRoot != ECS::INVALID_ENTITY;
             Reflection::ActivePrefabOverrideMarks() = instance ? &m_PrefabMarks : nullptr;
-            DrawTransformComponent(context);
-            DrawLightComponent(context);
-            DrawCameraComponent(context);
-            DrawMeshComponent(context);
-            DrawRenderComponent(context);
-            DrawScriptComponent(context);
-            DrawAnimatorComponent(context);
-            DrawUiComponents(context);
+            // Every inspectable component the entity has, in SortOrder: a hand-drawn section when
+            // one is keyed to the type, else the generic reflected section.
+            auto& ecs = context.GetEngineContext().GetECS();
+            for (const EcsSerialization::ComponentInfo* info : context.GetEngineContext().GetComponentTypes().GetInfosInOrder())
+            {
+                if (!info->Inspectable || !info->Has(ecs, *m_SelectedEntity))
+                    continue;
+                if (const auto drawer = m_InspectorDrawers.find(info->Key); drawer != m_InspectorDrawers.end())
+                    (this->*drawer->second)(context);
+                else
+                    DrawRegisteredComponent(context, *info);
+            }
             Reflection::ActivePrefabOverrideMarks() = nullptr;
             HandlePrefabRowRequest(context);
             // An edit in the inspector may have made or undone an override.
@@ -1205,26 +1188,43 @@ namespace Editor
         Reflection::RenderComponentGui(&animator, HedgehogEngine::AnimatorComponent::GetProperties(), HedgehogEngine::AnimatorComponent::s_TypeName);
     }
 
-    void EditorGui::DrawUiComponents(HedgehogEngine::Engine& context)
+    // A registered component's reflected rows under its icon header (its enabled property as the
+    // header's checkbox), then any extra rows keyed to it; the header's menu removes it.
+    void EditorGui::DrawRegisteredComponent(HedgehogEngine::Engine& context, const EcsSerialization::ComponentInfo& info)
     {
-        auto&             ecs    = context.GetEngineContext().GetECS();
-        const ECS::Entity entity = m_SelectedEntity.value();
-        void*             menu   = GetIcon(EditorIcon::More);
-        DrawReflectedComponent<HedgehogEngine::UiCanvasComponent>(ecs, entity, "UI canvas", GetIcon(EditorIcon::UiCanvas), menu,
-                                                                  &HedgehogEngine::UiCanvasComponent::IsEnabled);
-        DrawReflectedComponent<HedgehogEngine::UiRectComponent>(ecs, entity, "UI rect", GetIcon(EditorIcon::UiRect), menu);
-        DrawReflectedComponent<HedgehogEngine::UiImageComponent>(ecs, entity, "UI image", GetIcon(EditorIcon::UiImage), menu);
-        DrawReflectedComponent<HedgehogEngine::UiTextComponent>(ecs, entity, "UI text", GetIcon(EditorIcon::UiText), menu, nullptr, [&]
+        auto&             ecs       = context.GetEngineContext().GetECS();
+        const ECS::Entity entity    = m_SelectedEntity.value();
+        void*             component = info.Get(ecs, entity);
+
+        // The enabled property is the header's checkbox, so its own row draws nothing (it still
+        // serialises). Set once per type, when first drawn.
+        if (!info.EnabledProperty.empty() && m_HiddenEnabledRows.insert(info.Key).second)
         {
-            DrawDropRow("Font", "Drop a .ttf or .otf here", ContentType::Font);
-        });
-        DrawReflectedComponent<HedgehogEngine::UiButtonComponent>(ecs, entity, "UI button", GetIcon(EditorIcon::UiButton), menu);
-        DrawReflectedComponent<HedgehogEngine::AudioSourceComponent>(ecs, entity, "Audio source", GetIcon(EditorIcon::AudioSource), menu, nullptr, [&]
+            for (const Reflection::PropertyDescriptor& prop : info.Properties)
+            {
+                // The descriptors live in the component's mutable property table.
+                if (info.EnabledProperty == prop.name)
+                    const_cast<Reflection::PropertyDescriptor&>(prop).guiOverride =
+                        [](void*, const Reflection::PropertyDescriptor&) -> bool { return false; };
+            }
+        }
+
+        const std::optional<EditorIcon> icon = FindEditorIcon(info.Icon);
+        ComponentHeaderOptions          header{ icon ? GetIcon(*icon) : nullptr, GetIcon(EditorIcon::More), info.Enabled(component) };
+        header.Removable                    = info.Removable;
+        const ComponentHeaderResult section = ComponentHeader(info.DisplayName.c_str(), header);
+        if (section.RemoveRequested)
         {
-            DrawDropRow("Clip", "Drop a .wav, .mp3 or .flac here", ContentType::Audio);
-        });
-        DrawReflectedComponent<HedgehogEngine::AudioListenerComponent>(ecs, entity, "Audio listener", GetIcon(EditorIcon::AudioListener), menu,
-                                                                       &HedgehogEngine::AudioListenerComponent::IsActive);
+            info.Remove(ecs, entity);
+            return;
+        }
+        if (!section.Open)
+            return;
+        ImGui::PushID(info.Key.c_str());
+        Reflection::RenderComponentGui(component, info.Properties, info.Key.c_str());
+        if (const auto extra = m_InspectorExtraRows.find(info.Key); extra != m_InspectorExtraRows.end())
+            extra->second();
+        ImGui::PopID();
     }
 
     // A property row whose value is a hint that takes a dropped asset of type for the selection.

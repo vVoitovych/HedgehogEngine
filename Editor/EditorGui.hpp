@@ -16,12 +16,14 @@
 #include "HedgehogScripting/api/ScriptPropertyDeclaration.hpp"
 
 #include <filesystem>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <cstdint>
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 struct ImFont;
@@ -45,6 +47,11 @@ namespace Renderer
 namespace HedgehogScripting
 {
     class ScriptSystem;
+}
+
+namespace EcsSerialization
+{
+    struct ComponentInfo;
 }
 
 namespace Editor
@@ -209,8 +216,9 @@ namespace Editor
         void DrawCameraGraph(std::string& graphName);
         void DrawScriptComponent(HedgehogEngine::Engine& context);
         void DrawAnimatorComponent(HedgehogEngine::Engine& context);
-        // The five game UI components, each with its reflected fields and a Remove button.
-        void DrawUiComponents(HedgehogEngine::Engine& context);
+        // A registered component with no hand-drawn section: its icon header (enable checkbox,
+        // Remove) and reflected rows, then its extra rows (m_InspectorExtraRows).
+        void DrawRegisteredComponent(HedgehogEngine::Engine& context, const EcsSerialization::ComponentInfo& info);
         // The script's property declarations for the inspector, described again only when the
         // file changes on disk; nullptr when there is no script system or no such file.
         const std::vector<HedgehogScripting::ScriptPropertyDeclaration>* FindScriptDeclarations(
@@ -284,6 +292,13 @@ namespace Editor
         };
         PrefabOverrideCache               m_PrefabOverrides;
         Reflection::PrefabOverrideMarks   m_PrefabMarks;
+
+        // The inspector's hand-drawn sections and the generic sections' extra rows, by component key.
+        using InspectorDrawer = void (EditorGui::*)(HedgehogEngine::Engine&);
+        std::unordered_map<std::string, InspectorDrawer>       m_InspectorDrawers;
+        std::unordered_map<std::string, std::function<void()>> m_InspectorExtraRows;
+        // Types whose enabled property's row is already hidden behind the header's checkbox.
+        std::unordered_set<std::string>                        m_HiddenEnabledRows;
         HA::SoundHandle                   m_PreviewSound;     // the Content panel's audio preview
         std::string                       m_PreviewPath;
 
