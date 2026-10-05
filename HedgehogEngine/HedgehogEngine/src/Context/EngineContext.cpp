@@ -152,7 +152,7 @@ namespace HedgehogEngine
         m_CameraSystem    = m_ECS.RegisterSystem<CameraSystem>();
         m_AnimationSystem = m_ECS.RegisterSystem<AnimationSystem>();
         m_UiSystem        = m_ECS.RegisterSystem<UiSystem>();
-        m_AudioSystem         = m_ECS.RegisterSystem<AudioSystem>(m_ECS, *m_AudioEngine, m_FileSystem);
+        m_AudioSystem         = m_ECS.RegisterSystem<AudioSystem>();
         m_AudioListenerSystem = m_ECS.RegisterSystem<AudioListenerSystem>();
 
         ECS::Signature signature;
@@ -283,15 +283,15 @@ namespace HedgehogEngine
         UpdateCamera(aspectRatio, dt);
 
         // Update order is load-bearing: gameplay (Play only) → Animation phase (AnimationSystem) →
-        // Transform phase (Transform, then Hierarchy) → Late phase (Light) → Audio. Animation runs
-        // after every script hook of the frame, and the phases run in every mode, so edits show in
-        // Edit mode too. Audio reads the world matrices the frame ended with.
+        // Transform phase (Transform, then Hierarchy) → Late phase (Light, then Audio, in
+        // registration order). Animation runs after every script hook of the frame, and the phases
+        // run in every mode, so edits show in Edit mode too. Audio reads the world matrices the
+        // frame ended with.
         UpdatePlayMode(dt);
         UpdateAnimation(dt);
         const ECS::FrameContext frame = MakeFrameContext(dt);
         m_ECS.RunPhase(ECS::SystemPhase::Transform, frame);
         m_ECS.RunPhase(ECS::SystemPhase::Late, frame);
-        m_AudioSystem->Update(m_ECS, *m_AudioListenerSystem, *m_CameraSystem);
 
         m_ResourceCatalog.Update(*m_RenderSystem, *m_MeshSystem);
     }
