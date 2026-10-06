@@ -2,6 +2,7 @@
 
 #include "GltfModel.hpp"
 
+#include "FileSystem/api/PathUtils.hpp"
 #include "Logger/api/Logger.hpp"
 
 #include <algorithm>
@@ -126,7 +127,7 @@ namespace ContentLoader
     std::optional<std::vector<LoadedAnimationClip>> LoadAnimations(const std::string&           fileName,
                                                                    const FS::FileSystemManager& fileSystem)
     {
-        const std::string virtualPath = "assets://" + fileName;
+        const std::string virtualPath = FS::ToAssetVirtualPath(fileName);
         const auto        physPath    = fileSystem.ResolvePhysical(virtualPath);
         if (!physPath)
         {

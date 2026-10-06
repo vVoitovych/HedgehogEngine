@@ -35,7 +35,8 @@ for %%T in (HedgehogMathTest FileSystemTest ECSTest EcsSerializationTest Content
     echo === Running %%T ^(%CONFIG%^) ===
     if exist "%BINDIR%\%%T.exe" (
         "%BINDIR%\%%T.exe"
-        if errorlevel 1 (
+        REM A crash exits with a negative code, which "if errorlevel 1" misses.
+        if !errorlevel! neq 0 (
             echo [FAILED] %%T
             set /a FAILED+=1
         )

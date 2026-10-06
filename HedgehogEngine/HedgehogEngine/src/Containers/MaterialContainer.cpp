@@ -40,7 +40,7 @@ namespace HedgehogEngine
         MaterialData newData;
         newData.type         = MaterialType::Opaque;
         newData.transparency = 1.0f;
-        newData.baseColor    = m_DefaultCellTexture;
+        newData.baseColor    = DEFAULT_CELL_TEXTURE;
         newData.path         = virtualPath.substr(ASSETS_PREFIX.size());
 
         MaterialSerializer::Serialize(newData, virtualPath, fileSystem);

@@ -15,6 +15,9 @@ namespace HedgehogEngine
     class MaterialContainer
     {
     public:
+        // A new material's base colour, in the engine's Content folder; loaded at start.
+        static constexpr const char* DEFAULT_CELL_TEXTURE = "engine://Content/Textures/Default/cells.png";
+
         MaterialContainer()  = default;
         ~MaterialContainer() = default;
 
@@ -39,8 +42,6 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API const MaterialData& GetMaterialDataByIndex(size_t index) const;
 
     private:
-        const std::string m_DefaultCellTexture = "Textures\\Default\\cells.png";
-
         std::vector<MaterialData> m_Materials;
     };
 }

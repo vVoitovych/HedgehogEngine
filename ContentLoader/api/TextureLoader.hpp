@@ -19,6 +19,7 @@ namespace ContentLoader
         TextureLoader(TextureLoader&&)                 = delete;
         TextureLoader& operator=(TextureLoader&&)      = delete;
 
+        // file is under assets:// unless it names a mount (FS::ToAssetVirtualPath).
         // Returns false (after logging) when the file cannot be read or decoded;
         // GetData() stays null in that case.
         CONTENT_LOADER_API bool LoadTexture(const std::string& file,

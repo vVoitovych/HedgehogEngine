@@ -16,7 +16,7 @@ Scene:
           Rotation: [0, 0, 0]
           Scale: [1, 1, 1]
         MeshComponent:
-          MeshPath: Models\Default\cube.obj
+          MeshPath: engine://Content/Models/Default/cube.obj
         RenderComponent:
           Visible: true
           Material: Materials\test3.material
@@ -31,7 +31,7 @@ Scene:
           Rotation: [0, 0, 0]
           Scale: [1, 1, 1]
         MeshComponent:
-          MeshPath: Models\Default\cube.obj
+          MeshPath: engine://Content/Models/Default/cube.obj
         RenderComponent:
           Visible: true
           Material: Materials\test3.material

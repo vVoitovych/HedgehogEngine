@@ -1,5 +1,6 @@
 #include "api/FontLoader.hpp"
 
+#include "FileSystem/api/PathUtils.hpp"
 #include "Logger/api/Logger.hpp"
 
 #define STB_TRUETYPE_IMPLEMENTATION
@@ -106,7 +107,7 @@ namespace ContentLoader
     std::optional<LoadedFont> LoadFont(const std::string& fileName, float pixelHeight,
                                        const FS::FileSystemManager& fileSystem)
     {
-        const std::string path = "assets://" + fileName;
+        const std::string path = FS::ToAssetVirtualPath(fileName);
         if (!(pixelHeight > 0.0f))
         {
             LOGERROR("Font", path, "cannot be baked at a pixel height of", pixelHeight);

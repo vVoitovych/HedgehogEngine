@@ -28,9 +28,9 @@ Scene:
               Rotation: [0, 5, 50.5]
               Scale: [1, 1, 1]
             MeshComponent:
-              MeshPath: Models\Default\sphere.obj
+              MeshPath: engine://Content/Models/Default/sphere.obj
               MeshIndex: 2
-              CachedMeshPath: Models\Default\sphere.obj
+              CachedMeshPath: engine://Content/Models/Default/sphere.obj
             Children:
               []
       - Entity: 3

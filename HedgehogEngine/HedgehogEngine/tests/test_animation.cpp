@@ -22,6 +22,7 @@
 using HedgehogEngine::AnimatorComponent;
 using HedgehogEngine::EngineContext;
 using HedgehogEngine::MeshComponent;
+using HedgehogEngine::MeshSystem;
 
 namespace
 {
@@ -131,7 +132,7 @@ TEST_CASE("Animation - a skinned mesh exposes its skeleton and clips through the
 {
     EngineContext context;
     const ECS::Entity skinned = AddSkinned(context, SKINNED, std::nullopt);
-    const ECS::Entity cube    = AddSkinned(context, "Models/Default/cube.obj", std::nullopt);
+    const ECS::Entity cube    = AddSkinned(context, MeshSystem::sDefaultMeshPath, std::nullopt);
 
     const auto& meshes  = context.GetResourceCatalog().GetMeshContainer();
     const auto  meshOf  = [&](ECS::Entity entity) -> const HedgehogEngine::Mesh&
@@ -166,7 +167,7 @@ TEST_CASE("Animation - Edit mode shows the bind pose, or the clip at a preview t
 {
     EngineContext     context;
     const ECS::Entity entity = AddSkinned(context, SKINNED, Playing("Lift"));
-    const ECS::Entity cube   = AddSkinned(context, "Models/Default/cube.obj", Playing("Lift"));
+    const ECS::Entity cube   = AddSkinned(context, MeshSystem::sDefaultMeshPath, Playing("Lift"));
 
     context.UpdateAnimation(STEP);
     REQUIRE(Animator(context, entity).Palette.size() == 2u);

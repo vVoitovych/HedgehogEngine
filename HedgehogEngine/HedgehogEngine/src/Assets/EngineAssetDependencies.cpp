@@ -1,6 +1,8 @@
 #include "HedgehogEngine/api/Assets/EngineAssetDependencies.hpp"
 
 #include "HedgehogEngine/api/EngineContext.hpp"
+#include "HedgehogEngine/api/Containers/MaterialContainer.hpp"
+#include "HedgehogEngine/api/ECS/systems/MeshSystem.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/HedgehogSettings.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/ProjectSettings.hpp"
 
@@ -24,7 +26,7 @@ namespace HedgehogEngine
     namespace
     {
         // HedgehogScripting's base class, which every script runs on (the engine cannot include it).
-        constexpr std::string_view BASE_SCRIPT_PATH = "assets://Scripts/Base/ActorScript.lua";
+        constexpr std::string_view BASE_SCRIPT_PATH = "engine://Content/Scripts/Base/ActorScript.lua";
         constexpr std::string_view GRAPH_EXTENSION  = ".graph";
 
         using EcsSerialization::NormalizeAssetPath;
@@ -116,9 +118,9 @@ namespace HedgehogEngine
             { "engine://Engine.yaml", false },
             { HedgehogSettings::Settings::PATH, false },
             { EngineContext::INPUT_ACTIONS_PATH, false },
-            { "assets://Models/Default/cube.obj", true },
-            { "assets://Models/Default/sphere.obj", true },
-            { "assets://Textures/Default/cells.png", true },
+            { MeshSystem::sDefaultMeshPath, true },
+            { MeshSystem::sDefaultSpherePath, true },
+            { MaterialContainer::DEFAULT_CELL_TEXTURE, true },
         };
         for (const std::string_view graph : SHIPPED_GRAPHS)
             assets.push_back({ NormalizeGraphReference(std::string(graph)), true });

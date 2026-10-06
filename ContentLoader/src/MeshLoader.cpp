@@ -3,6 +3,7 @@
 #include "ObjLoader.hpp"
 #include "GltfMeshLoader.hpp"
 
+#include "FileSystem/api/PathUtils.hpp"
 #include "Logger/api/Logger.hpp"
 
 #include <filesystem>
@@ -12,7 +13,7 @@ namespace ContentLoader
     std::optional<LoadedMesh> LoadMesh(const std::string& fileName,
                                         const FS::FileSystemManager& fileSystem)
     {
-        const std::string virtualPath = "assets://" + fileName;
+        const std::string virtualPath = FS::ToAssetVirtualPath(fileName);
         const auto physPath = fileSystem.ResolvePhysical(virtualPath);
         if (!physPath)
         {

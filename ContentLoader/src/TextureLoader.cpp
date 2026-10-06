@@ -1,5 +1,6 @@
 #include "api/TextureLoader.hpp"
 
+#include "FileSystem/api/PathUtils.hpp"
 #include "Logger/api/Logger.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -26,7 +27,7 @@ namespace ContentLoader
     bool TextureLoader::LoadTexture(const std::string& file,
                                      const FS::FileSystemManager& fileSystem)
     {
-        return LoadFromVirtualPath("assets://" + file, fileSystem);
+        return LoadFromVirtualPath(FS::ToAssetVirtualPath(file), fileSystem);
     }
 
     bool TextureLoader::LoadFromVirtualPath(const std::string& virtualPath,

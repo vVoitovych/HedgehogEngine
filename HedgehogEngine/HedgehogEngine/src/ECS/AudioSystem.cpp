@@ -10,6 +10,7 @@
 #include "HedgehogAudio/api/AudioPose.hpp"
 
 #include "FileSystem/api/FileSystemManager.hpp"
+#include "FileSystem/api/PathUtils.hpp"
 
 #include <algorithm>
 #include <optional>
@@ -19,13 +20,11 @@ namespace HedgehogEngine
 {
     namespace
     {
-        constexpr const char* ASSETS_PREFIX = "assets://";
-
         // A clip path as written in the inspector: under assets://, prefix optional, either slash.
         std::string ToVirtualPath(std::string path)
         {
             std::replace(path.begin(), path.end(), '\\', '/');
-            return path.find("://") == std::string::npos ? ASSETS_PREFIX + path : path;
+            return FS::ToAssetVirtualPath(path);
         }
 
         HA::PlayParams MakePlayParams(const AudioSourceComponent& source, const HA::AudioPose& pose)
