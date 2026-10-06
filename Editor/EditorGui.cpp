@@ -161,8 +161,9 @@ namespace Editor
         constexpr const char* HIERARCHY_ICON_PAD = "        ";
     }
 
-    EditorGui::EditorGui(HedgehogEngine::Engine& context)
-        : m_ConsolePanel(std::make_unique<ConsolePanel>())
+    EditorGui::EditorGui(HedgehogEngine::Engine& context, bool recordRecentProject)
+        : m_RecordRecentProject(recordRecentProject)
+        , m_ConsolePanel(std::make_unique<ConsolePanel>())
         , m_VertexDescWindow(std::make_unique<VertexDescriptionWindow>())
         , m_PipelineWindow(std::make_unique<PipelineWindow>())
         , m_ShaderWindow(std::make_unique<ShaderWindow>())
@@ -180,7 +181,8 @@ namespace Editor
         // The open project goes to the front of the recent list, keeping the scene it last had open.
         m_ProjectRoot = FS::GetProjectRootDirectory();
         (void)RemoveMissingProjects(m_Settings.RecentProjects);
-        (void)TouchRecentProject(m_Settings.RecentProjects, m_ProjectRoot);
+        if (m_RecordRecentProject)
+            (void)TouchRecentProject(m_Settings.RecentProjects, m_ProjectRoot);
 
 
         SetupLightComponentGuiOverrides();
@@ -1550,7 +1552,10 @@ namespace Editor
     {
         if (RecentProject* project = FindRecentProject(m_Settings.RecentProjects, m_ProjectRoot))
             return *project;
-        return TouchRecentProject(m_Settings.RecentProjects, m_ProjectRoot);
+        if (m_RecordRecentProject)
+            return TouchRecentProject(m_Settings.RecentProjects, m_ProjectRoot);
+        m_UnrecordedProject.Path = m_ProjectRoot;
+        return m_UnrecordedProject;
     }
 
     void EditorGui::RecordLastScene(const std::string& nativePath, const FS::FileSystemManager& fileSystem)

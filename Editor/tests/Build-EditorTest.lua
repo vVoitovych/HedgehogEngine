@@ -22,7 +22,9 @@ project "EditorTest"
         "../Tools/PluginNameCheck.hpp",
         "../Tools/PluginNameCheck.cpp",
         "../Project/RecentProjects.hpp",
-        "../Project/RecentProjects.cpp"
+        "../Project/RecentProjects.cpp",
+        "../Project/StartupProject.hpp",
+        "../Project/StartupProject.cpp"
     }
 
     includedirs

@@ -91,7 +91,9 @@ namespace Editor
     class EditorGui
     {
     public:
-        explicit EditorGui(HedgehogEngine::Engine& context);
+        // recordRecentProject: put the open project at the front of the recent list (the
+        // interactive editor); otherwise the list keeps its order and the project its entry, if any.
+        EditorGui(HedgehogEngine::Engine& context, bool recordRecentProject);
         ~EditorGui();
 
         EditorGui(const EditorGui&)            = delete;
@@ -228,8 +230,8 @@ namespace Editor
         void DrawSettingsWindow(HedgehogEngine::Engine& context);
 
         // ── Last-scene persistence ───────────────────────────────────────────
-        // The open project's entry in the recent list (added when missing): its LastScene is the
-        // scene this project reopens with.
+        // The open project's entry in the recent list (added when missing and recorded, else a
+        // scratch entry outside the list): its LastScene is the scene this project reopens with.
         RecentProject& CurrentProject();
         void RecordLastScene(const std::string& nativePath, const FS::FileSystemManager& fileSystem);
         void LoadLastScene(HedgehogEngine::Engine& context);
@@ -241,6 +243,8 @@ namespace Editor
 
         EditorSettings m_Settings;
         std::filesystem::path m_ProjectRoot; // the open project's folder
+        bool                  m_RecordRecentProject = false;
+        RecentProject         m_UnrecordedProject; // CurrentProject() of a project not in the list
         DockSystem     m_DockSystem;
 
         uint32_t m_SceneViewWidth   = 0;
