@@ -5,7 +5,9 @@
 #include "Logger/api/Logger.hpp"
 
 #include <algorithm>
+#include <fstream>
 #include <string>
+#include <system_error>
 
 namespace Editor
 {
@@ -68,13 +70,37 @@ namespace Editor
 
         out << YAML::EndMap; // dock_layout
 
-        out << YAML::Key << "last_scene" << YAML::Value << LastScene;
         out << YAML::Key << "content_icon_size" << YAML::Value << ContentIconSize;
+
+        out << YAML::Key << "recent_projects" << YAML::Value << YAML::BeginSeq;
+        for (const RecentProject& project : RecentProjects)
+            out << YAML::BeginMap << YAML::Key << "path" << YAML::Value << project.Path.generic_string()
+                << YAML::Key << "last_scene" << YAML::Value << project.LastScene << YAML::EndMap;
+        out << YAML::EndSeq;
 
         out << YAML::EndMap; // root
 
-        if (!fileSystem.WriteTextFile(virtualPath, out.c_str()))
-            LOGERROR("EditorSettings::Save: failed to write '", virtualPath, "'.");
+        const std::optional<std::filesystem::path> path = fileSystem.ResolvePhysical(virtualPath);
+        if (!path)
+        {
+            LOGERROR("EditorSettings::Save: '", virtualPath, "' is not under a mount.");
+            return;
+        }
+        std::filesystem::path temporary = *path;
+        temporary += ".tmp";
+        {
+            std::ofstream file(temporary, std::ios::binary | std::ios::trunc);
+            file << out.c_str() << '\n';
+            if (!file)
+            {
+                LOGERROR("EditorSettings::Save: failed to write '", temporary.string(), "'.");
+                return;
+            }
+        }
+        std::error_code error;
+        std::filesystem::rename(temporary, *path, error);
+        if (error)
+            LOGERROR("EditorSettings::Save: failed to replace '", path->string(), "': ", error.message());
     }
 
     bool EditorSettings::Load(const std::string& virtualPath, const FS::FileSystemManager& fileSystem)
@@ -154,8 +180,20 @@ namespace Editor
                 dockLayout.InitDefaults();
             }
 
-            if (auto n = root["last_scene"])
-                LastScene = n.as<std::string>();
+            // An entry without a path is skipped; the list is kept as written, at most the limit.
+            RecentProjects.clear();
+            if (const YAML::Node recent = root["recent_projects"]; recent && recent.IsSequence())
+            {
+                for (const YAML::Node& entry : recent)
+                {
+                    const std::string folder = entry["path"] ? entry["path"].as<std::string>("") : "";
+                    if (folder.empty() || FindRecentProject(RecentProjects, folder) ||
+                        RecentProjects.size() == MAX_RECENT_PROJECTS)
+                        continue;
+                    RecentProjects.push_back({ NormalizeProjectPath(folder),
+                                               entry["last_scene"] ? entry["last_scene"].as<std::string>("") : "" });
+                }
+            }
 
             return true;
         }

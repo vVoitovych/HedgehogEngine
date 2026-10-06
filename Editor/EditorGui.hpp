@@ -228,6 +228,9 @@ namespace Editor
         void DrawSettingsWindow(HedgehogEngine::Engine& context);
 
         // ── Last-scene persistence ───────────────────────────────────────────
+        // The open project's entry in the recent list (added when missing): its LastScene is the
+        // scene this project reopens with.
+        RecentProject& CurrentProject();
         void RecordLastScene(const std::string& nativePath, const FS::FileSystemManager& fileSystem);
         void LoadLastScene(HedgehogEngine::Engine& context);
 
@@ -237,6 +240,7 @@ namespace Editor
         const FS::FileSystemManager* m_FileSystem = nullptr;
 
         EditorSettings m_Settings;
+        std::filesystem::path m_ProjectRoot; // the open project's folder
         DockSystem     m_DockSystem;
 
         uint32_t m_SceneViewWidth   = 0;

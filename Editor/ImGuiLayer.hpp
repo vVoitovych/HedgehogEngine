@@ -3,6 +3,7 @@
 #include "HedgehogRenderer/Graph/UiCallback.hpp"
 
 #include <cstdint>
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -48,7 +49,8 @@ namespace Editor
     class ImGuiLayer
     {
     public:
-        explicit ImGuiLayer(HW::Window& window);
+        // iniPath is where ImGui keeps its window state: the editor's per-user folder, never a project.
+        ImGuiLayer(HW::Window& window, const std::filesystem::path& iniPath);
         ~ImGuiLayer();
 
         ImGuiLayer(const ImGuiLayer&)            = delete;
@@ -100,6 +102,7 @@ namespace Editor
         static void Record(void* user, RHI::IRHICommandList& cmd, RHI::IRHITexture& target);
         void        ReleaseTextureIds(bool onlyExpired);
 
+        std::string                                   m_IniPath; // ImGui keeps the pointer
         const RHI::IRHIDevice*                        m_Device   = nullptr;
         ImFont*                                       m_MonoFont = nullptr;
         std::unique_ptr<RHIImGui::IGuiRenderer>       m_Backend;

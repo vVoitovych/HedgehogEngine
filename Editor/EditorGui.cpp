@@ -32,6 +32,7 @@
 #include "HedgehogEngine/HedgehogSettings/api/ShadowmapingSettings.hpp"
 
 #include "ECS/api/ECS.hpp"
+#include "FileSystem/api/PathUtils.hpp"
 #include "EcsSerialization/api/ComponentTypeRegistry.hpp"
 #include "ECS/api/components/Hierarchy.hpp"
 #include "HedgehogEngine/api/ECS/components/AnimatorComponent.hpp"
@@ -171,10 +172,15 @@ namespace Editor
     {
         m_FileSystem   = &context.GetEngineContext().GetFileSystem();
         m_ContentPanel = std::make_unique<ContentPanel>(*m_FileSystem);
-        if (m_Settings.Load("engine://editor_settings.yaml", *m_FileSystem)
+        // A first run, with no file yet, keeps the default layout.
+        if (m_Settings.Load(EditorSettings::PATH, *m_FileSystem)
             && m_Settings.dockLayout.IsValid())
             m_DockSystem.GetLayout() = m_Settings.dockLayout;
         m_ContentPanel->SetIconSize(m_Settings.ContentIconSize);
+        // The open project goes to the front of the recent list, keeping the scene it last had open.
+        m_ProjectRoot = FS::GetProjectRootDirectory();
+        (void)RemoveMissingProjects(m_Settings.RecentProjects);
+        (void)TouchRecentProject(m_Settings.RecentProjects, m_ProjectRoot);
 
 
         SetupLightComponentGuiOverrides();
@@ -205,7 +211,7 @@ namespace Editor
         // m_FileSystem is non-owning; the engine context (and thus FileSystemManager) is still
         // alive here because EditorGui is destroyed first among the Application's members.
         if (m_FileSystem)
-            m_Settings.Save("engine://editor_settings.yaml", *m_FileSystem);
+            m_Settings.Save(EditorSettings::PATH, *m_FileSystem);
     }
 
     // ─── Top-level entry ─────────────────────────────────────────────────────
@@ -1426,11 +1432,11 @@ namespace Editor
         if (ImGui::CollapsingHeader("Editor"))
         {
             if (ImGui::Button("Save settings"))
-                m_Settings.Save("engine://editor_settings.yaml",
+                m_Settings.Save(EditorSettings::PATH,
                                 context.GetEngineContext().GetFileSystem());
             ImGui::SameLine();
             if (ImGui::Button("Load settings"))
-                m_Settings.Load("engine://editor_settings.yaml",
+                m_Settings.Load(EditorSettings::PATH,
                                 context.GetEngineContext().GetFileSystem());
         }
 
@@ -1538,7 +1544,14 @@ namespace Editor
         ImGui::End();
     }
 
-    // ─── Last-scene persistence ──────────────────────────────────────────────
+    // ─── Last-scene persistence (per project, in its recent-projects entry) ──
+
+    RecentProject& EditorGui::CurrentProject()
+    {
+        if (RecentProject* project = FindRecentProject(m_Settings.RecentProjects, m_ProjectRoot))
+            return *project;
+        return TouchRecentProject(m_Settings.RecentProjects, m_ProjectRoot);
+    }
 
     void EditorGui::RecordLastScene(const std::string& nativePath, const FS::FileSystemManager& fileSystem)
     {
@@ -1549,33 +1562,33 @@ namespace Editor
             return;
         }
 
-        m_Settings.LastScene = *virtualPath;
-        m_Settings.Save("engine://editor_settings.yaml", fileSystem);
+        CurrentProject().LastScene = *virtualPath;
+        m_Settings.Save(EditorSettings::PATH, fileSystem);
     }
 
     void EditorGui::LoadLastScene(HedgehogEngine::Engine& context)
     {
-        if (m_Settings.LastScene.empty())
+        if (CurrentProject().LastScene.empty())
             return;
 
-        if (!m_FileSystem->Exists(m_Settings.LastScene))
+        if (!m_FileSystem->Exists(CurrentProject().LastScene))
         {
             LOGWARNING("EditorGui::LoadLastScene: stored scene not found, starting with an empty scene (path: ",
-                       m_Settings.LastScene, ")");
-            m_Settings.LastScene.clear();
-            m_Settings.Save("engine://editor_settings.yaml", *m_FileSystem);
+                       CurrentProject().LastScene, ")");
+            CurrentProject().LastScene.clear();
+            m_Settings.Save(EditorSettings::PATH, *m_FileSystem);
             return;
         }
 
         // LoadScene expects a native path (the dialog's contract), so resolve back from virtual.
-        const auto physicalPath = m_FileSystem->ResolvePhysical(m_Settings.LastScene);
+        const auto physicalPath = m_FileSystem->ResolvePhysical(CurrentProject().LastScene);
         if (physicalPath && context.GetEngineContext().GetSceneManager().LoadScene(physicalPath->string()))
             return;
 
         LOGWARNING("EditorGui::LoadLastScene: failed to load stored scene, starting with an empty scene (path: ",
-                   m_Settings.LastScene, ")");
+                   CurrentProject().LastScene, ")");
         context.GetEngineContext().GetSceneManager().ResetScene();
-        m_Settings.LastScene.clear();
-        m_Settings.Save("engine://editor_settings.yaml", *m_FileSystem);
+        CurrentProject().LastScene.clear();
+        m_Settings.Save(EditorSettings::PATH, *m_FileSystem);
     }
 }

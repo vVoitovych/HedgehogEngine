@@ -24,6 +24,7 @@
 #include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
 
 #include "ECS/api/components/Hierarchy.hpp"
+#include "FileSystem/api/FileSystem.hpp"
 #include "FileSystem/api/FileSystemManager.hpp"
 #include "FileSystem/api/PathUtils.hpp"
 
@@ -35,6 +36,7 @@
 #include <cassert>
 #include <chrono>
 #include <cstdio>
+#include <filesystem>
 #include <numeric>
 #include <vector>
 
@@ -104,6 +106,19 @@ namespace Editor
 
         auto& engineContext = m_Context->GetEngineContext();
 
+        // The editor's personal state (its layout, imgui.ini, the recent projects) is per user and
+        // outside any project: user:// at <LocalAppData>/HedgehogEngine/Editor, created if missing.
+        const std::filesystem::path userDirectory =
+            FS::GetEditorUserDirectory().value_or(std::filesystem::temp_directory_path() / "HedgehogEngine" / "Editor");
+        std::error_code userError;
+        std::filesystem::create_directories(userDirectory, userError);
+        if (userError)
+            LOGERROR("The editor's folder ", userDirectory.string(), " cannot be created: ", userError.message());
+        auto userFiles = std::make_unique<FS::FileSystem>();
+        if (!userFiles->RegisterPath(EditorSettings::USER_ALIAS, userDirectory) ||
+            !engineContext.GetFileSystem().Register(std::move(userFiles)))
+            LOGERROR("The editor's folder ", userDirectory.string(), " cannot be mounted as ", EditorSettings::USER_ALIAS);
+
         // After the engine's own systems, so its play-mode events come after theirs, and before
         // EditorGui loads the last scene. The engine's ECS owns it; the editor only points at it.
         m_ScriptSystem = HedgehogScripting::RegisterScriptSystem(engineContext, engineContext.GetFileSystem()).get();
@@ -168,7 +183,8 @@ namespace Editor
         }
 
         // ImGui's context first: the renderer hands it the device to build its GUI renderer on.
-        m_ImGui    = std::make_unique<ImGuiLayer>(m_Context->GetWindowContext().GetWindow());
+        m_ImGui    = std::make_unique<ImGuiLayer>(m_Context->GetWindowContext().GetWindow(),
+                                                  userDirectory / EditorSettings::IMGUI_INI);
         m_ImGui->LoadFonts(fileSystem);
         m_Renderer = std::make_unique<Renderer::Renderer>(
             m_Context->GetWindowContext().GetWindow(), engineContext.GetFileSystem(),
