@@ -14,7 +14,7 @@ Binaries\windows-x86_64\Release\Editor.exe --benchmark [frames] [scene.yaml]
 ```
 
 - Always **Release** — Debug numbers are meaningless and validation layers skew timings.
-- Loads `Assets/Scenes/benchmark.yaml` (5×5 grid of DamagedHelmet instances,
+- Loads `Assets/Scenes/benchmark.yaml` of the sample project, `Projects/FeatureTest` (5×5 grid of DamagedHelmet instances,
   ~364k vertices per geometry pass, one directional light), warms up 120 frames,
   measures 600 (or `[frames]`), then logs a `FrameStats` table and exits. Pass a
   file name under `Assets/Scenes/` (e.g. `Default.yaml`) to measure another scene.

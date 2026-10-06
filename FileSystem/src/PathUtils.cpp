@@ -82,13 +82,23 @@ namespace FS
 
     void SetEngineRootDirectory(const std::filesystem::path& root) { EngineRootOverride() = root; }
 
+    std::filesystem::path FindDefaultProjectRoot(const std::filesystem::path& executableDirectory,
+                                                 const std::filesystem::path& engineRoot)
+    {
+        if (const auto found = FindAncestorHolding(executableDirectory, PROJECT_FILE_NAME))
+            return *found;
+        const std::filesystem::path sample = engineRoot / DEFAULT_PROJECT_DIRECTORY;
+        std::error_code             error;
+        if (std::filesystem::is_regular_file(sample / PROJECT_FILE_NAME, error))
+            return sample.lexically_normal();
+        return engineRoot;
+    }
+
     std::filesystem::path GetProjectRootDirectory()
     {
         if (!ProjectRootOverride().empty())
             return ProjectRootOverride();
-        if (const auto found = FindAncestorHolding(GetExecutableDirectory(), PROJECT_FILE_NAME))
-            return *found;
-        return GetEngineRootDirectory();
+        return FindDefaultProjectRoot(GetExecutableDirectory(), GetEngineRootDirectory());
     }
 
     void SetProjectRootDirectory(const std::filesystem::path& root) { ProjectRootOverride() = root; }

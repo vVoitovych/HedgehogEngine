@@ -271,8 +271,8 @@ TEST_CASE("AudioSystem - a clip named through a mount plays as one under assets:
 {
     AudioWorld        world;
     const ECS::Entity entity = world.SpawnSource(RIGHT);
-    // The engine root is the repository here, so the shipped tone is engine://Assets/Audio/...
-    world.Ecs().GetComponent<AudioSourceComponent>(entity).Clip = "engine://Assets/Audio/Tone440.wav";
+    // The project's own mount names the shipped tone too: project://Assets/Audio/...
+    world.Ecs().GetComponent<AudioSourceComponent>(entity).Clip = "project://Assets/Audio/Tone440.wav";
 
     REQUIRE(world.Context.Play());
     world.Frame();

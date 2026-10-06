@@ -1,7 +1,7 @@
 @echo off
 REM ============================================
-REM Package the project as a playable game folder: Build\<ProjectName>\
-REM Usage: PackageGame.bat
+REM Package a project as a playable game folder: Build\<ProjectName>\
+REM Usage: PackageGame.bat [project folder]   (default: Projects\FeatureTest)
 REM
 REM Builds Release, cooks the project's referenced assets with the Cooker, copies
 REM Game.exe and the DLLs it loads (no editor, test or ImGui binaries, no .pdb)
@@ -12,13 +12,22 @@ REM needs only the Vulkan runtime and the VC++ redistributable on the target.
 REM ============================================
 setlocal enabledelayedexpansion
 
+REM A project named on the command line is relative to the caller's folder.
+set "PROJECT="
+if not "%~1"=="" set "PROJECT=%~f1"
+
 pushd "%~dp0.."
 set "ROOT=%CD%"
 set "BIN=%ROOT%\Binaries\windows-x86_64\Release"
+if not defined PROJECT set "PROJECT=%ROOT%\Projects\FeatureTest"
+if not exist "%PROJECT%\Project.yaml" (
+    echo [ERROR] %PROJECT% holds no Project.yaml.
+    goto :fail
+)
 
 REM The project's name (Project.yaml's name:) names the package folder.
 set "NAME="
-for /f "usebackq tokens=1,* delims=:" %%a in ("%ROOT%\Project.yaml") do (
+for /f "usebackq tokens=1,* delims=:" %%a in ("%PROJECT%\Project.yaml") do (
     if "%%a"=="name" set "NAME=%%b"
 )
 for /f "tokens=* delims= " %%n in ("!NAME!") do set "NAME=%%n"
@@ -33,7 +42,7 @@ call "%ROOT%\Scripts\Build.bat" Release
 if errorlevel 1 goto :fail
 
 echo === Cooking assets ===
-"%BIN%\Cooker.exe" --project "%ROOT%" --out "%OUT%" --binaries "%BIN%" --engine "%ROOT%"
+"%BIN%\Cooker.exe" --project "%PROJECT%" --out "%OUT%" --binaries "%BIN%" --engine "%ROOT%"
 if errorlevel 1 (
     echo [ERROR] The cook failed.
     goto :fail

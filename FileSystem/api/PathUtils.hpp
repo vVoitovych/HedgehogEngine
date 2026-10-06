@@ -59,9 +59,19 @@ namespace FS
     // built. An empty path clears the override.
     FILE_SYSTEM_API void SetEngineRootDirectory(const std::filesystem::path& root);
 
-    // The project:// root: the directory SetProjectRootDirectory named, else the nearest folder
-    // above the executable holding PROJECT_FILE_NAME, else the engine root. In a dev tree and a
-    // package alike both roots are, for now, the same folder.
+    // The sample project a dev tree opens when none is named, relative to the engine root.
+    inline constexpr const char* DEFAULT_PROJECT_DIRECTORY = "Projects/FeatureTest";
+
+    // The project a program in executableDirectory plays when none is named: the nearest folder
+    // at or above it holding PROJECT_FILE_NAME (a package's own folder), else
+    // <engineRoot>/DEFAULT_PROJECT_DIRECTORY when it holds one (the dev tree's sample), else
+    // engineRoot.
+    FILE_SYSTEM_API std::filesystem::path FindDefaultProjectRoot(const std::filesystem::path& executableDirectory,
+                                                                 const std::filesystem::path& engineRoot);
+
+    // The project:// root: the directory SetProjectRootDirectory named, else
+    // FindDefaultProjectRoot of the executable's directory and the engine root. A package is
+    // both roots; in a dev tree the project is Projects/FeatureTest under the engine root.
     FILE_SYSTEM_API std::filesystem::path GetProjectRootDirectory();
 
     // Overrides GetProjectRootDirectory for the rest of the process (an opened project); call it
