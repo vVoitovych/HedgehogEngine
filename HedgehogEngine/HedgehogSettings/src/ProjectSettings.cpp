@@ -6,6 +6,7 @@
 #include "yaml-cpp/yaml.h"
 
 #include <algorithm>
+#include <cctype>
 
 namespace HedgehogSettings
 {
@@ -18,6 +19,29 @@ namespace HedgehogSettings
         {
             std::replace(path.begin(), path.end(), '\\', '/');
             return path;
+        }
+
+        bool EqualIgnoringCase(std::string_view a, std::string_view b)
+        {
+            return a.size() == b.size() &&
+                   std::equal(a.begin(), a.end(), b.begin(),
+                              [](char x, char y) { return std::tolower(static_cast<unsigned char>(x)) == std::tolower(static_cast<unsigned char>(y)); });
+        }
+
+        std::vector<PluginEntry>::iterator FindPlugin(std::vector<PluginEntry>& plugins, std::string_view name)
+        {
+            return std::find_if(plugins.begin(), plugins.end(), [name](const PluginEntry& entry) { return EqualIgnoringCase(entry.Name, name); });
+        }
+
+        // Why name cannot join plugins, or empty.
+        std::string CheckNewPlugin(const std::vector<PluginEntry>& plugins, const std::string& name)
+        {
+            if (!ProjectSettings::IsValidPluginName(name))
+                return "'" + name + "' is not a plugin name (1 to 64 of A-Z, a-z, 0-9, '_' and '-')";
+            const bool listed = std::any_of(plugins.begin(), plugins.end(), [&name](const PluginEntry& entry) { return EqualIgnoringCase(entry.Name, name); });
+            if (listed)
+                return "the plugin '" + name + "' is already listed";
+            return {};
         }
 
         template<typename T>
@@ -65,6 +89,18 @@ namespace HedgehogSettings
             start = end + 1;
         }
         return true;
+    }
+
+    bool ProjectSettings::IsValidPluginName(std::string_view name)
+    {
+        if (name.empty() || name.size() > MAX_PLUGIN_NAME_LENGTH)
+            return false;
+        return std::all_of(name.begin(), name.end(),
+                           [](char c)
+                           {
+                               return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_' ||
+                                      c == '-';
+                           });
     }
 
     const std::string& ProjectSettings::GetName() const { return m_Name; }
@@ -120,6 +156,61 @@ namespace HedgehogSettings
 
     void ProjectSettings::SetGameDataVersion(int version) { Assign(m_GameDataVersion, std::max(version, 1), m_IsDirty); }
 
+    const std::vector<PluginEntry>& ProjectSettings::GetPlugins() const { return m_Plugins; }
+
+    bool ProjectSettings::AddPlugin(const std::string& name, bool enabled)
+    {
+        if (const std::string why = CheckNewPlugin(m_Plugins, name); !why.empty())
+        {
+            LOGWARNING("[Project] " + why + "; it is not added.");
+            return false;
+        }
+        m_Plugins.push_back(PluginEntry{ name, enabled });
+        m_IsDirty = true;
+        return true;
+    }
+
+    bool ProjectSettings::RemovePlugin(const std::string& name)
+    {
+        const auto found = FindPlugin(m_Plugins, name);
+        if (found == m_Plugins.end())
+        {
+            LOGWARNING("[Project] The plugin '" + name + "' is not listed; nothing is removed.");
+            return false;
+        }
+        m_Plugins.erase(found);
+        m_IsDirty = true;
+        return true;
+    }
+
+    bool ProjectSettings::SetPluginEnabled(const std::string& name, bool enabled)
+    {
+        const auto found = FindPlugin(m_Plugins, name);
+        if (found == m_Plugins.end())
+        {
+            LOGWARNING("[Project] The plugin '" + name + "' is not listed; it cannot be enabled or disabled.");
+            return false;
+        }
+        Assign(found->Enabled, enabled, m_IsDirty);
+        return true;
+    }
+
+    bool ProjectSettings::SetPlugins(const std::vector<PluginEntry>& plugins)
+    {
+        std::vector<PluginEntry> accepted;
+        for (const PluginEntry& entry : plugins)
+        {
+            if (const std::string why = CheckNewPlugin(accepted, entry.Name); !why.empty())
+            {
+                LOGWARNING("[Project] " + why + "; the plugin list is not changed.");
+                return false;
+            }
+            accepted.push_back(entry);
+        }
+        Assign(m_Plugins, accepted, m_IsDirty);
+        return true;
+    }
+
     bool ProjectSettings::Load(const std::string& virtualPath, const FS::FileSystemManager& fileSystem)
     {
         if (!fileSystem.Exists(virtualPath))
@@ -151,6 +242,25 @@ namespace HedgehogSettings
             }
             if (const YAML::Node n = root["game_data_version"])
                 loaded.SetGameDataVersion(n.as<int>());
+            if (const YAML::Node plugins = root["plugins"])
+            {
+                if (!plugins.IsSequence())
+                    LOGWARNING("[Project] " + virtualPath + ": plugins is not a list; no plugin is loaded.");
+                for (size_t index = 0; plugins.IsSequence() && index < plugins.size(); ++index)
+                {
+                    const YAML::Node entry    = plugins[index];
+                    bool             enabled  = true;
+                    const bool       readable = entry.IsMap() && entry["name"] && entry["name"].IsScalar() &&
+                                          (!entry["enabled"] || YAML::convert<bool>::decode(entry["enabled"], enabled));
+                    if (!readable)
+                    {
+                        LOGWARNING("[Project] " + virtualPath + ": plugins entry " + std::to_string(index) +
+                                   " is not { name, enabled }; it is skipped.");
+                        continue;
+                    }
+                    (void)loaded.AddPlugin(entry["name"].as<std::string>(), enabled);
+                }
+            }
         }
         catch (const YAML::Exception& e)
         {
@@ -177,6 +287,18 @@ namespace HedgehogSettings
         out << YAML::Key << "vsync" << YAML::Value << m_VSync;
         out << YAML::EndMap;
         out << YAML::Key << "game_data_version" << YAML::Value << m_GameDataVersion;
+        out << YAML::Key << "plugins" << YAML::Value;
+        if (m_Plugins.empty())
+            out << YAML::Flow;
+        out << YAML::BeginSeq;
+        for (const PluginEntry& plugin : m_Plugins)
+        {
+            out << YAML::BeginMap;
+            out << YAML::Key << "name" << YAML::Value << plugin.Name;
+            out << YAML::Key << "enabled" << YAML::Value << plugin.Enabled;
+            out << YAML::EndMap;
+        }
+        out << YAML::EndSeq;
         out << YAML::EndMap;
 
         if (!fileSystem.WriteTextFile(virtualPath, std::string(out.c_str()) + "\n"))

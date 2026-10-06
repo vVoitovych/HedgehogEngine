@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace FS
 {
@@ -13,6 +14,16 @@ namespace FS
 
 namespace HedgehogSettings
 {
+    // A plugin the project lists: its name (the stem of its DLL, <name>.dll) and whether the
+    // editor and the game load it.
+    struct PluginEntry
+    {
+        std::string Name;
+        bool        Enabled = true;
+
+        bool operator==(const PluginEntry&) const = default;
+    };
+
     // What a project is, as a game build runs it (engine://Project.yaml): its name (the folder its
     // saves go in), the scene a game starts with, the game window, and the game's save data version.
     // The editor edits it in File > Project Settings; the game runtime reads it at start.
@@ -30,6 +41,7 @@ namespace HedgehogSettings
         static constexpr uint32_t    MIN_WINDOW_SIZE       = 64;
         static constexpr uint32_t    MAX_WINDOW_SIZE       = 16384;
         static constexpr int         DEFAULT_GAME_DATA_VERSION = 1;
+        static constexpr size_t      MAX_PLUGIN_NAME_LENGTH    = 64;
 
         HEDGEHOG_SETTINGS_API ProjectSettings();
 
@@ -38,6 +50,8 @@ namespace HedgehogSettings
         [[nodiscard]] HEDGEHOG_SETTINGS_API static bool IsValidName(std::string_view name);
         // Empty (no startup scene), or a .yaml file under assets:// with no ".." segment.
         [[nodiscard]] HEDGEHOG_SETTINGS_API static bool IsValidStartupScene(std::string_view virtualPath);
+        // 1 to 64 of A-Z, a-z, 0-9, '_' and '-': a DLL's file name without its extension.
+        [[nodiscard]] HEDGEHOG_SETTINGS_API static bool IsValidPluginName(std::string_view name);
 
         [[nodiscard]] HEDGEHOG_SETTINGS_API const std::string& GetName() const;
         HEDGEHOG_SETTINGS_API bool SetName(const std::string& name);
@@ -65,8 +79,20 @@ namespace HedgehogSettings
         [[nodiscard]] HEDGEHOG_SETTINGS_API int GetGameDataVersion() const;
         HEDGEHOG_SETTINGS_API void SetGameDataVersion(int version);
 
+        // The plugins the project lists, in the order they load. Names are compared ignoring case
+        // (as Windows file names are), so a list never holds one name twice. An invalid name or a
+        // duplicate is refused with a warning and changes nothing; SetPlugins replaces the whole
+        // list only when every entry is acceptable.
+        [[nodiscard]] HEDGEHOG_SETTINGS_API const std::vector<PluginEntry>& GetPlugins() const;
+        HEDGEHOG_SETTINGS_API bool AddPlugin(const std::string& name, bool enabled = true);
+        HEDGEHOG_SETTINGS_API bool RemovePlugin(const std::string& name);
+        // False, with a warning, for a name not listed.
+        HEDGEHOG_SETTINGS_API bool SetPluginEnabled(const std::string& name, bool enabled);
+        HEDGEHOG_SETTINGS_API bool SetPlugins(const std::vector<PluginEntry>& plugins);
+
         // Replaces every setting with the file's, starting from the defaults; a key that is
-        // missing keeps its default, and one whose value is refused keeps it too, with a warning.
+        // missing keeps its default, and one whose value is refused keeps it too, with a warning
+        // (a plugins entry that does not read is skipped, the rest kept).
         // A missing file is not an error: the defaults stand and it returns false. A malformed
         // one logs an error, keeps the settings as they were and returns false.
         [[nodiscard]] HEDGEHOG_SETTINGS_API bool Load(const std::string& virtualPath, const FS::FileSystemManager& fileSystem);
@@ -84,6 +110,7 @@ namespace HedgehogSettings
         bool        m_Fullscreen   = false;
         bool        m_VSync        = true;
         int         m_GameDataVersion = DEFAULT_GAME_DATA_VERSION;
+        std::vector<PluginEntry> m_Plugins;
         bool        m_IsDirty      = false;
     };
 }
