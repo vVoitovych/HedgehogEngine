@@ -36,7 +36,7 @@ Code to it.
 ## Use
 
 Start the editor (scripts run in Play mode) or `Game.exe`, then run **Attach to Hedgehog**. Set
-breakpoints in `Assets/Scripts/*.lua`; Play shows as the `Lua` thread starting, Stop as it exiting.
+breakpoints in the project's `Assets/Scripts/*.lua` (`Projects/FeatureTest/Assets/Scripts` in the dev tree); Play shows as the `Lua` thread starting, Stop as it exiting.
 
 While a script is stopped the whole frame waits inside it: the window keeps handling events, its
 title ends with "Paused in debugger", and it does not redraw until you continue.
@@ -54,7 +54,7 @@ or steps; conditional breakpoints, logpoints and exception breakpoints are not s
 running,
 
 ```
-python Tools/VSCode/hedgehog-lua-debug/dap_check.py Assets/Scripts/PlayerScript.lua 22
+python Tools/VSCode/hedgehog-lua-debug/dap_check.py Projects/FeatureTest/Assets/Scripts/PlayerScript.lua 22
 ```
 
 attaches, stops at the line, prints the stack and locals, steps once, continues and detaches.

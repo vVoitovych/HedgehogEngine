@@ -81,18 +81,34 @@ TEST_CASE("FindAncestorHolding - the nearest folder holding a relative file, or 
     CHECK_FALSE(FS::FindAncestorHolding(deep, "NoSuchFile.txt").has_value());
 }
 
-TEST_CASE("GetProjectRootDirectory - the override wins until cleared; else the repository's project")
+TEST_CASE("FindDefaultProjectRoot - a package's own folder, else the engine's sample, else the engine root")
 {
     TempDir dir;
-    const std::filesystem::path found = FS::GetProjectRootDirectory();
-    // Run from Binaries/<Platform>/<Config>/: the repository holds Project.yaml (and, for now, is
-    // the engine root too).
+    dir.WriteFile("Engine.yaml", "name: HedgehogEngine\n");
+    const std::filesystem::path exe = dir.MakeSubdir("Binaries/windows-x86_64/Debug");
+    CHECK(FS::FindDefaultProjectRoot(exe, dir.Path()) == dir.Path()); // no sample yet
+
+    dir.WriteFile("Projects/FeatureTest/Project.yaml", "name: FeatureTest\n");
+    CHECK(FS::FindDefaultProjectRoot(exe, dir.Path()) == dir.Path() / "Projects" / "FeatureTest");
+
+    // A package beside its executable is its own project, whatever the engine has.
+    dir.WriteFile("Build/MyGame/Project.yaml", "name: MyGame\n");
+    CHECK(FS::FindDefaultProjectRoot(dir.Path() / "Build" / "MyGame", dir.Path()) == dir.Path() / "Build" / "MyGame");
+}
+
+TEST_CASE("GetProjectRootDirectory - the override wins until cleared; else the repository's FeatureTest")
+{
+    TempDir dir;
+    const std::filesystem::path found  = FS::GetProjectRootDirectory();
+    const std::filesystem::path engine = FS::GetEngineRootDirectory();
+    // Run from Binaries/<Platform>/<Config>/: the repository is the engine and its sample project
+    // is Projects/FeatureTest.
     CHECK(std::filesystem::is_regular_file(found / FS::PROJECT_FILE_NAME));
-    CHECK(found == FS::GetEngineRootDirectory());
+    CHECK(found == (engine / FS::DEFAULT_PROJECT_DIRECTORY).lexically_normal());
 
     FS::SetProjectRootDirectory(dir.Path());
     CHECK(FS::GetProjectRootDirectory() == dir.Path());
-    CHECK(FS::GetEngineRootDirectory() == found); // the engine root does not follow the project
+    CHECK(FS::GetEngineRootDirectory() == engine); // the engine root does not follow the project
     FS::SetProjectRootDirectory({});
     CHECK(FS::GetProjectRootDirectory() == found);
 }

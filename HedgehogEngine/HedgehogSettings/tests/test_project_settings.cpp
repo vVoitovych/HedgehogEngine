@@ -170,8 +170,10 @@ TEST_CASE("Project settings - setters mark the settings dirty only when a value 
 
 TEST_CASE("Project settings - the shipped Project.yaml loads with Default.yaml as its startup scene and Spinner enabled")
 {
-    // tests/ -> HedgehogSettings/ -> HedgehogEngine/ -> repository root.
-    const std::filesystem::path root = std::filesystem::path(__FILE__).parent_path().parent_path().parent_path().parent_path();
+    // tests/ -> HedgehogSettings/ -> HedgehogEngine/ -> repository root, whose sample project is
+    // Projects/FeatureTest.
+    const std::filesystem::path root = std::filesystem::path(__FILE__).parent_path().parent_path().parent_path().parent_path() /
+                                       "Projects" / "FeatureTest";
     FS::FileSystemManager files;
     auto                  fs = std::make_unique<FS::FileSystem>();
     fs->RegisterPath("project://", root);
@@ -179,7 +181,7 @@ TEST_CASE("Project settings - the shipped Project.yaml loads with Default.yaml a
 
     ProjectSettings project;
     REQUIRE(project.Load(ProjectSettings::PATH, files));
-    CHECK(project.GetName() == "HedgehogEngine");
+    CHECK(project.GetName() == "FeatureTest");
     CHECK(project.GetStartupScene() == "assets://Scenes/Default.yaml");
     CHECK(project.GetGameDataVersion() == 1);
     // The sample plugin, enabled.

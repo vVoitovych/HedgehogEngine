@@ -204,7 +204,7 @@ TEST_CASE("Asset dependencies - every shipped scene's references exist")
     const std::filesystem::path root = std::filesystem::path(__FILE__).parent_path().parent_path().parent_path().parent_path();
     auto fs = std::make_unique<FS::FileSystem>();
     fs->RegisterPath("engine://", root);
-    fs->RegisterPath("assets://", root / "Assets");
+    fs->RegisterPath("assets://", root / FS::DEFAULT_PROJECT_DIRECTORY / "Assets");
     files.Register(std::move(fs));
 
     AssetDependencyCollector collector;

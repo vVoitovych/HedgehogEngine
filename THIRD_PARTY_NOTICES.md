@@ -708,7 +708,7 @@ The full text of the Apache License 2.0 is at the end of this file.
 
 ## Sample content
 
-Content under `Assets/` made by others. Everything else under `Assets/` was made for the
+Content under `Projects/FeatureTest/Assets/` made by others. Everything else under `Assets/` was made for the
 engine (see the README beside it, where there is one).
 
 ### Viking room

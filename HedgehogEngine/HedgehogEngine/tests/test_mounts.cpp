@@ -32,14 +32,22 @@ namespace
     }
 }
 
-TEST_CASE("Engine mounts - by default the project is the repository, beside the engine")
+TEST_CASE("Engine mounts - by default the project is the engine's Projects/FeatureTest")
 {
     HedgehogEngine::EngineContext context;
     const FS::FileSystemManager& files = context.GetFileSystem();
     CHECK(files.Exists(HedgehogSettings::ProjectSettings::PATH));
     CHECK(files.Exists(HedgehogSettings::Settings::PATH));
     CHECK(files.Exists("engine://Engine.yaml"));
-    CHECK(files.ResolvePhysical("project://Project.yaml") == files.ResolvePhysical("engine://Project.yaml"));
+    CHECK_FALSE(files.Exists("engine://Project.yaml"));
+
+    const std::filesystem::path sample = FS::GetEngineRootDirectory() / FS::DEFAULT_PROJECT_DIRECTORY;
+    CHECK(IsUnder(files.ResolvePhysical(HedgehogSettings::ProjectSettings::PATH), sample));
+    CHECK(IsUnder(files.ResolvePhysical("assets://Scenes/Default.yaml"), sample));
+    CHECK(files.Exists("assets://Scenes/Default.yaml"));
+    // A file of the project is named by the project's mounts, never engine://Projects/...
+    CHECK(files.ToVirtualPath(sample / "Assets" / "Scenes" / "Default.yaml") == "assets://Scenes/Default.yaml");
+    CHECK(files.ToVirtualPath(sample / "Project.yaml") == "project://Project.yaml");
 }
 
 TEST_CASE("Engine mounts - a project elsewhere: project:// and assets:// there, engine:// and shaders:// the engine's")
