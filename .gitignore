@@ -652,3 +652,9 @@ Logs/
 /Editor/tests/EditorTest.vcxproj
 /Editor/tests/EditorTest.vcxproj.filters
 /Plugins/**/*.vcxproj*
+
+# The editor keeps its personal state per user under %LOCALAPPDATA%/HedgehogEngine/Editor;
+# these are leftovers of older runs.
+/editor_settings.yaml
+/imgui.ini
+/Editor/editor_settings.yaml

@@ -28,10 +28,12 @@ namespace Editor
         constexpr const char* UI_FONT_PATH = "engine://Content/Fonts/Karla-Regular.ttf";
     }
 
-    ImGuiLayer::ImGuiLayer(HW::Window& window)
+    ImGuiLayer::ImGuiLayer(HW::Window& window, const std::filesystem::path& iniPath)
+        : m_IniPath(iniPath.string())
     {
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
+        ImGui::GetIO().IniFilename = m_IniPath.c_str();
         Theme::Apply(ImGui::GetStyle());
         ImGui_ImplGlfw_InitForVulkan(window.GetNativeHandle(), true);
     }

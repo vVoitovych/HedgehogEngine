@@ -20,7 +20,9 @@ project "EditorTest"
         "../Widgets/AxisGizmo.hpp",
         "../Widgets/AxisGizmo.cpp",
         "../Tools/PluginNameCheck.hpp",
-        "../Tools/PluginNameCheck.cpp"
+        "../Tools/PluginNameCheck.cpp",
+        "../Project/RecentProjects.hpp",
+        "../Project/RecentProjects.cpp"
     }
 
     includedirs
