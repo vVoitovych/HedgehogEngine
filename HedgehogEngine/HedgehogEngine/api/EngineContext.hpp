@@ -55,6 +55,7 @@ namespace HedgehogEngine
     class AudioListenerSystem;
     class SaveGameManager;
     class PrefabManager;
+    class PluginManager;
 
     // Edit: gameplay does not run. Playing: every frame runs the fixed steps and the update.
     // Paused: nothing runs, and the scene waits to be resumed or stopped.
@@ -147,6 +148,9 @@ namespace HedgehogEngine
         // Prefab assets: create one from a subtree, instantiate one into the scene.
         HEDGEHOG_ENGINE_API PrefabManager& GetPrefabs();
 
+        // Plugin DLLs, loaded and unloaded in Edit mode; the destructor unloads every one.
+        HEDGEHOG_ENGINE_API PluginManager& GetPlugins();
+
         // How every component is written to and read from scenes, snapshots, saves and prefabs.
         [[nodiscard]] HEDGEHOG_ENGINE_API const EcsSerialization::ComponentSerializerRegistry& GetComponentRegistry() const;
 
@@ -228,6 +232,7 @@ namespace HedgehogEngine
         std::unique_ptr<SceneManager> m_SceneManager;
         std::unique_ptr<SaveGameManager> m_SaveGames; // after the SceneManager it saves and the Settings it reads
         std::unique_ptr<PrefabManager>   m_Prefabs;   // after the SceneManager it refreshes
+        std::unique_ptr<PluginManager>   m_Plugins;   // built last; ~EngineContext unloads its plugins first
 
         HInput::InputActionSet    m_InputActions;
         HInput::InputActionsWatch m_InputWatch;

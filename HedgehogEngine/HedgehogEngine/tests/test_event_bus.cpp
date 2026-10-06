@@ -232,3 +232,21 @@ TEST_CASE("EventBus - a handler may use an event type no one has used yet")
     bus.Publish(Fresh{ 4 });
     CHECK(log == Log{ "fresh3", "ping", "fresh4" });
 }
+
+TEST_CASE("EventBus::CountSubscribersWhere - counts the live handlers whose callable type matches")
+{
+    HedgehogEngine::EventBus bus;
+    const HedgehogEngine::SubscriptionId removed = bus.Subscribe<Ping>([](const Ping&) {});
+    bus.Subscribe<Ping>([](const Ping&) {});
+    bus.Subscribe<Pong>([](const Pong&) {});
+    REQUIRE(bus.Unsubscribe(removed));
+
+    std::vector<const std::type_info*> seen;
+    CHECK(bus.CountSubscribersWhere([&seen](const std::type_info& type) {
+              seen.push_back(&type);
+              return true;
+          }) == 2);
+    CHECK(seen.size() == 2);
+    CHECK(*seen[0] != typeid(void)); // the wrapper's type, never an empty function's
+    CHECK(bus.CountSubscribersWhere([](const std::type_info&) { return false; }) == 0);
+}
