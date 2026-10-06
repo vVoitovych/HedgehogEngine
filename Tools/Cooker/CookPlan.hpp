@@ -40,8 +40,13 @@ namespace Cooker
     // root, beside Game.exe and HedgehogEngine.dll, where the engine looks for plugins (virtual
     // path "plugin:<name>"). An enabled plugin whose DLL is not there is an error naming it, so a
     // package never ships without one; a disabled plugin is not packaged.
+    //
+    // engine:// files (the render graphs and their shaders) come from engineRoot, the engine the
+    // game is built with; empty means the project root, as in the dev tree today. engine://X and
+    // project://X both land at X, so two different files with one target are an error naming both.
     [[nodiscard]] CookPlan BuildCookPlan(const std::filesystem::path& projectRoot, const std::vector<std::string>& extraScenes = {},
-                                         const std::filesystem::path& binariesDir = {});
+                                         const std::filesystem::path& binariesDir = {},
+                                         const std::filesystem::path& engineRoot  = {});
 
     // The prefix of a plugin DLL's CookFile::VirtualPath.
     constexpr const char* PLUGIN_PATH_PREFIX = "plugin:";

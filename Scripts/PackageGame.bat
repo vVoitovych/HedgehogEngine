@@ -33,7 +33,7 @@ call "%ROOT%\Scripts\Build.bat" Release
 if errorlevel 1 goto :fail
 
 echo === Cooking assets ===
-"%BIN%\Cooker.exe" --project "%ROOT%" --out "%OUT%" --binaries "%BIN%"
+"%BIN%\Cooker.exe" --project "%ROOT%" --out "%OUT%" --binaries "%BIN%" --engine "%ROOT%"
 if errorlevel 1 (
     echo [ERROR] The cook failed.
     goto :fail
