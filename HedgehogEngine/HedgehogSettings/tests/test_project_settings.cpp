@@ -11,7 +11,9 @@
 #include <filesystem>
 #include <memory>
 #include <string>
+#include <vector>
 
+using HedgehogSettings::PluginEntry;
 using HedgehogSettings::ProjectSettings;
 
 namespace
@@ -40,6 +42,7 @@ namespace
         CHECK_FALSE(project.IsFullscreen());
         CHECK(project.IsVSync());
         CHECK(project.GetGameDataVersion() == 1);
+        CHECK(project.GetPlugins().empty());
     }
 }
 
@@ -179,5 +182,94 @@ TEST_CASE("Project settings - the shipped Project.yaml loads with Default.yaml a
     CHECK(project.GetName() == "HedgehogEngine");
     CHECK(project.GetStartupScene() == "assets://Scenes/Default.yaml");
     CHECK(project.GetGameDataVersion() == 1);
+    CHECK(project.GetPlugins().empty());
     CHECK(std::filesystem::is_regular_file(root / "Assets" / "Scenes" / "Default.yaml"));
+}
+
+TEST_CASE("Project settings - plugins load in order with their flags and save to the same text")
+{
+    ProjectFiles files;
+    files.Dir.WriteFile("Project.yaml", "name: Game\nplugins:\n  - name: Spinner\n    enabled: true\n"
+                                        "  - name: Physics\n    enabled: false\n  - name: Extras\n");
+
+    ProjectSettings project;
+    REQUIRE(project.Load(ProjectSettings::PATH, files.Files));
+    const std::vector<PluginEntry> expected = { { "Spinner", true }, { "Physics", false }, { "Extras", true } };
+    CHECK(project.GetPlugins() == expected);
+
+    REQUIRE(project.Save(ProjectSettings::PATH, files.Files));
+    const auto first = files.Files.ReadTextFile(ProjectSettings::PATH);
+    ProjectSettings again;
+    REQUIRE(again.Load(ProjectSettings::PATH, files.Files));
+    CHECK(again.GetPlugins() == expected);
+    REQUIRE(again.Save(ProjectSettings::PATH, files.Files));
+    CHECK(files.Files.ReadTextFile(ProjectSettings::PATH) == first);
+
+    // No plugins is written as an empty list.
+    ProjectSettings none;
+    REQUIRE(none.Save(ProjectSettings::PATH, files.Files));
+    CHECK(files.Files.ReadTextFile(ProjectSettings::PATH)->find("plugins: []") != std::string::npos);
+}
+
+TEST_CASE("Project settings - bad plugin names are refused by every setter and skipped by Load")
+{
+    ProjectSettings project;
+    LogCapture      log;
+    const std::vector<std::string> names = { "Two Words", "Spinner.dll", "Plugins/Spinner", std::string(65, 'a'), std::string() };
+    for (const std::string& name : names)
+    {
+        CHECK_FALSE(ProjectSettings::IsValidPluginName(name));
+        CHECK_FALSE(project.AddPlugin(name));
+        CHECK_FALSE(project.SetPlugins({ PluginEntry{ "Good" }, PluginEntry{ name } }));
+    }
+    CHECK(project.GetPlugins().empty());
+    CHECK(ProjectSettings::IsValidPluginName(std::string(64, 'a')));
+    CHECK(ProjectSettings::IsValidPluginName("Hedgehog_Test-Plugin2"));
+
+    ProjectFiles files;
+    files.Dir.WriteFile("Project.yaml", "plugins:\n  - name: Good\n  - name: Bad Name\n  - just a string\n"
+                                        "  - name: Flag\n    enabled: maybe\n  - name: Last\n");
+    LogCapture loadLog;
+    ProjectSettings loaded;
+    REQUIRE(loaded.Load(ProjectSettings::PATH, files.Files));
+    const std::vector<PluginEntry> expected = { { "Good", true }, { "Last", true } };
+    CHECK(loaded.GetPlugins() == expected);
+    CHECK(loadLog.Lines("[Project]").size() == 3);
+}
+
+TEST_CASE("Project settings - a plugin listed twice, ignoring case, is refused")
+{
+    ProjectSettings project;
+    LogCapture      log;
+    CHECK(project.AddPlugin("Spinner"));
+    CHECK_FALSE(project.AddPlugin("spinner"));
+    CHECK_FALSE(project.SetPlugins({ PluginEntry{ "Physics" }, PluginEntry{ "PHYSICS" } }));
+    CHECK(project.GetPlugins().size() == 1);
+    CHECK(log.Lines("already listed").size() == 2);
+}
+
+TEST_CASE("Project settings - plugin setters mark the settings dirty only on a change")
+{
+    ProjectSettings project;
+    LogCapture      log;
+    CHECK(project.AddPlugin("Spinner", false));
+    CHECK(project.IsDirty());
+    project.CleanDirtyState();
+
+    CHECK(project.SetPluginEnabled("SPINNER", false)); // found ignoring case, already disabled
+    CHECK_FALSE(project.IsDirty());
+    CHECK(project.SetPluginEnabled("Spinner", true));
+    CHECK(project.IsDirty());
+    CHECK(project.GetPlugins()[0].Enabled);
+    project.CleanDirtyState();
+
+    CHECK(project.SetPlugins(project.GetPlugins()));
+    CHECK_FALSE(project.IsDirty());
+    CHECK_FALSE(project.SetPluginEnabled("Missing", true));
+    CHECK_FALSE(project.RemovePlugin("Missing"));
+    CHECK_FALSE(project.IsDirty());
+
+    CHECK(project.RemovePlugin("spinner"));
+    CHECK(project.IsDirty());
+    CHECK(project.GetPlugins().empty());
 }
