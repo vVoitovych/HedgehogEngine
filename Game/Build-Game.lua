@@ -38,6 +38,7 @@ project "Game"
       "Logger",
       "yaml-cpp",
       "ECS",
+      "EcsSerialization",
       "ContentLoader",
       "FileSystem",
       -- Tracy client (linked into HedgehogRenderer) needs these on Windows.
