@@ -1,9 +1,11 @@
 // Cooker.exe: copies a project's referenced assets into a package folder.
 //
 //   Cooker.exe --project <folder> --out <folder> [--scene <assets://...yaml>]... [--glslc <glslc.exe>]
+//              [--binaries <folder>]
 //
 // The project is the folder holding Project.yaml. The package gets the closure of the startup
-// scene (and of each --scene), the files the engine always loads, and manifest.yaml; a second cook
+// scene (and of each --scene), the files the engine always loads, the DLLs of the plugins the
+// project enables (from --binaries, by default the Cooker's own folder) and manifest.yaml; a second cook
 // copies only what changed and removes what is no longer referenced. Stale engine shaders are
 // compiled first. Exits nonzero, naming the file, when a reference is missing or a copy fails.
 
@@ -25,6 +27,7 @@ namespace
         std::optional<std::filesystem::path> Project;
         std::optional<std::filesystem::path> Out;
         std::optional<std::filesystem::path> Glslc;
+        std::optional<std::filesystem::path> Binaries;
         std::vector<std::string>             Scenes;
         bool                                 Valid = true;
     };
@@ -43,6 +46,8 @@ namespace
                 arguments.Scenes.emplace_back(argv[++i]);
             else if (std::strcmp(argv[i], "--glslc") == 0 && hasValue)
                 arguments.Glslc = argv[++i];
+            else if (std::strcmp(argv[i], "--binaries") == 0 && hasValue)
+                arguments.Binaries = argv[++i];
             else
             {
                 LOGERROR("Cooker: unknown argument '", argv[i], "'.");
@@ -51,7 +56,7 @@ namespace
         }
         if (arguments.Valid && (!arguments.Project || !arguments.Out))
         {
-            LOGERROR("Cooker: usage: Cooker.exe --project <folder> --out <folder> [--scene <assets://...>]... [--glslc <exe>]");
+            LOGERROR("Cooker: usage: Cooker.exe --project <folder> --out <folder> [--scene <assets://...>]... [--glslc <exe>] [--binaries <folder>]");
             arguments.Valid = false;
         }
         return arguments;
@@ -90,7 +95,10 @@ int main(int argc, char* argv[])
     if (!CompileShaders(project, arguments.Glslc))
         return EXIT_FAILURE;
 
-    const Cooker::CookPlan   plan   = Cooker::BuildCookPlan(project, arguments.Scenes);
+    // Plugin DLLs come from the folder the engine was built into, where the Cooker is too.
+    const std::filesystem::path binaries =
+        arguments.Binaries ? std::filesystem::absolute(*arguments.Binaries) : std::filesystem::absolute(argv[0]).parent_path();
+    const Cooker::CookPlan   plan   = Cooker::BuildCookPlan(project, arguments.Scenes, binaries);
     const Cooker::CookResult result = Cooker::CookPackage(plan, out);
     for (const std::string& error : result.Errors)
         LOGERROR("Cooker: ", error);

@@ -7,6 +7,8 @@
 #include <algorithm>
 #include <chrono>
 #include <filesystem>
+#include <fstream>
+#include <iterator>
 #include <string>
 #include <vector>
 
@@ -178,4 +180,65 @@ TEST_CASE("Cooker - a shader is stale when its .spv is missing or older than its
     CHECK(Cooker::HashFile(source) == Cooker::HashFile(source));
     CHECK(Cooker::HashFile(source) != Cooker::HashFile(spirv));
     CHECK_FALSE(Cooker::HashFile(dir.Path() / "missing"));
+}
+
+TEST_CASE("Cooker - the enabled plugins' DLLs are packaged beside the game; a disabled one is not")
+{
+    FixtureProject fixture;
+    TempDir        binaries;
+    binaries.WriteFile("FakePlugin.dll", "fake plugin");
+    binaries.WriteFile("OffPlugin.dll", "off plugin");
+    const std::string project = "name: Fixture\nstartup_scene: assets://Scenes/Level.yaml\nplugins:\n"
+                                "  - name: FakePlugin\n    enabled: true\n  - name: OffPlugin\n    enabled: false\n";
+    fixture.Project.WriteFile("Project.yaml", project);
+
+    const Cooker::CookPlan plan = Cooker::BuildCookPlan(fixture.Project.Path(), {}, binaries.Path());
+    REQUIRE(plan.Errors.empty());
+    const auto plugin = std::find_if(plan.Files.begin(), plan.Files.end(),
+                                     [](const Cooker::CookFile& file) { return file.VirtualPath == "plugin:FakePlugin"; });
+    REQUIRE(plugin != plan.Files.end());
+    CHECK(plugin->Target == std::filesystem::path("FakePlugin.dll"));
+
+    REQUIRE(Cooker::CookPackage(plan, fixture.Out.Path()).Errors.empty());
+    std::vector<std::string> expected = EXPECTED_PACKAGE;
+    expected.push_back("FakePlugin.dll");
+    std::sort(expected.begin(), expected.end());
+    CHECK(fixture.PackagedFiles() == expected);
+    std::ifstream     manifestFile(fixture.Out.Path() / "manifest.yaml");
+    const std::string manifest((std::istreambuf_iterator<char>(manifestFile)), std::istreambuf_iterator<char>());
+    CHECK(manifest.find("path: FakePlugin.dll") != std::string::npos);
+
+    // A rebuilt DLL is copied again.
+    binaries.WriteFile("FakePlugin.dll", "fake plugin, rebuilt");
+    CHECK(Cooker::CookPackage(Cooker::BuildCookPlan(fixture.Project.Path(), {}, binaries.Path()), fixture.Out.Path()).Copied == 1);
+
+    // Disabled, it leaves the package (as does the project file, which changed).
+    fixture.Project.WriteFile("Project.yaml", "name: Fixture\nstartup_scene: assets://Scenes/Level.yaml\nplugins:\n"
+                                              "  - name: FakePlugin\n    enabled: false\n");
+    const Cooker::CookResult disabled = Cooker::CookPackage(Cooker::BuildCookPlan(fixture.Project.Path(), {}, binaries.Path()),
+                                                            fixture.Out.Path());
+    REQUIRE(disabled.Errors.empty());
+    CHECK(disabled.Removed == 1);
+    CHECK_FALSE(std::filesystem::exists(fixture.Out.Path() / "FakePlugin.dll"));
+    CHECK(fixture.PackagedFiles() == EXPECTED_PACKAGE);
+}
+
+TEST_CASE("Cooker - an enabled plugin without its DLL fails the cook, naming it, and copies nothing")
+{
+    FixtureProject fixture;
+    TempDir        binaries;
+    fixture.Project.WriteFile("Project.yaml", "name: Fixture\nstartup_scene: assets://Scenes/Level.yaml\nplugins:\n"
+                                              "  - name: GonePlugin\n    enabled: true\n");
+
+    const Cooker::CookPlan plan = Cooker::BuildCookPlan(fixture.Project.Path(), {}, binaries.Path());
+    REQUIRE(plan.Errors.size() == 1);
+    CHECK(plan.Errors[0] == "The plugin 'GonePlugin' is enabled, but " + (binaries.Path() / "GonePlugin.dll").string() +
+                               " does not exist.");
+    CHECK(Cooker::CookPackage(plan, fixture.Out.Path()).Errors == plan.Errors);
+    CHECK(fixture.PackagedFiles().empty());
+
+    // With no binaries folder at all, the same.
+    const Cooker::CookPlan noFolder = Cooker::BuildCookPlan(fixture.Project.Path());
+    REQUIRE(noFolder.Errors.size() == 1);
+    CHECK(noFolder.Errors[0] == "The plugin 'GonePlugin' is enabled, but no binaries folder was given.");
 }
