@@ -29,10 +29,13 @@
 #include "HedgehogEngine/api/Containers/TextureContainer.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/HedgehogSettings.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/LayerSettings.hpp"
+#include "HedgehogEngine/HedgehogSettings/api/ProjectSettings.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/ShadowmapingSettings.hpp"
 
 #include "ECS/api/ECS.hpp"
+#include "FileSystem/api/FileSystem.hpp"
 #include "FileSystem/api/PathUtils.hpp"
+#include "Project/StartupProject.hpp"
 #include "EcsSerialization/api/ComponentTypeRegistry.hpp"
 #include "ECS/api/components/Hierarchy.hpp"
 #include "HedgehogEngine/api/ECS/components/AnimatorComponent.hpp"
@@ -60,6 +63,7 @@
 #include "DialogueWindows/api/MaterialDialogue.hpp"
 #include "DialogueWindows/api/MeshDialogue.hpp"
 #include "DialogueWindows/api/PrefabDialogue.hpp"
+#include "DialogueWindows/api/ProjectDialogue.hpp"
 #include "DialogueWindows/api/RenderGraphDialogue.hpp"
 #include "DialogueWindows/api/SceneDialogue.hpp"
 #include "DialogueWindows/api/ScriptDialogue.hpp"
@@ -75,6 +79,7 @@
 #include <algorithm>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace
@@ -179,8 +184,8 @@ namespace Editor
             m_DockSystem.GetLayout() = m_Settings.dockLayout;
         m_ContentPanel->SetIconSize(m_Settings.ContentIconSize);
         // The open project goes to the front of the recent list, keeping the scene it last had open.
+        // Entries whose folder is gone stay, shown disabled, until File > Recent Projects clears them.
         m_ProjectRoot = FS::GetProjectRootDirectory();
-        (void)RemoveMissingProjects(m_Settings.RecentProjects);
         if (m_RecordRecentProject)
             (void)TouchRecentProject(m_Settings.RecentProjects, m_ProjectRoot);
 
@@ -467,6 +472,7 @@ namespace Editor
             ImGui::Separator();
             if (ImGui::MenuItem("Project Settings..."))
                 m_ProjectSettingsWindow->Show(engineContext);
+            DrawProjectMenuItems(editing);
             ImGui::Separator();
             if (ImGui::MenuItem("Quit", "Alt+F4")) {}
             ImGui::EndMenu();
@@ -1548,6 +1554,81 @@ namespace Editor
 
     // ─── Last-scene persistence (per project, in its recent-projects entry) ──
 
+    std::optional<std::filesystem::path> EditorGui::TakeProjectRequest()
+    {
+        return std::exchange(m_ProjectRequest, std::nullopt);
+    }
+
+    void EditorGui::DrawProjectMenuItems(bool editing)
+    {
+        // Switching projects rebuilds the editor, which a Play session cannot survive.
+        if (ImGui::MenuItem("Open Project...", nullptr, false, editing))
+        {
+            const std::string start = m_ProjectRoot.parent_path().string();
+            if (const char* folder = DialogueWindows::ProjectOpenDialogue(start.c_str()))
+                RequestProject(folder);
+        }
+        if (!ImGui::BeginMenu("Recent Projects", editing))
+            return;
+
+        std::optional<std::filesystem::path> chosen;
+        bool                                 anyMissing = false;
+        for (const RecentProject& project : m_Settings.RecentProjects)
+        {
+            const bool        open    = IsSameProject(project.Path, m_ProjectRoot);
+            const bool        missing = !IsProjectFolder(project.Path);
+            const std::string path    = project.Path.string();
+            const std::string label   = project.Path.filename().string() + (missing ? " (missing)" : "") + "##" + path;
+            anyMissing |= missing;
+            if (ImGui::MenuItem(label.c_str(), path.c_str(), open, !open && !missing))
+                chosen = project.Path;
+        }
+        if (m_Settings.RecentProjects.empty())
+            ImGui::MenuItem("No recent projects", nullptr, false, false);
+        ImGui::Separator();
+        if (ImGui::MenuItem("Remove Missing Projects", nullptr, false, anyMissing))
+        {
+            (void)RemoveMissingProjects(m_Settings.RecentProjects);
+            m_Settings.Save(EditorSettings::PATH, *m_FileSystem);
+        }
+        ImGui::EndMenu();
+
+        // After the loop: a request reorders the list it walks.
+        if (chosen)
+            RequestProject(*chosen);
+    }
+
+    void EditorGui::RequestProject(const std::filesystem::path& folder)
+    {
+        const std::filesystem::path project = NormalizeProjectPath(folder);
+        if (IsSameProject(project, m_ProjectRoot))
+        {
+            LOGINFO("[Editor] ", project.string(), " is the open project already.");
+            return;
+        }
+
+        // Read through a project:// of its own, as the engine will once rebuilt on it.
+        HedgehogSettings::ProjectSettings settings;
+        FS::FileSystemManager             files;
+        auto                              mount = std::make_unique<FS::FileSystem>();
+        const bool readable = IsProjectFolder(project) && mount->RegisterPath(FS::PROJECT_ALIAS, project) &&
+                              files.Register(std::move(mount)) &&
+                              settings.Load(HedgehogSettings::ProjectSettings::PATH, files);
+        if (!readable)
+        {
+            LOGERROR("[Editor] Cannot open ", project.string(), ": it holds no readable Project.yaml.");
+            return;
+        }
+        if (!DialogueWindows::ConfirmProjectSwitch(settings.GetName().c_str()))
+            return;
+
+        // Saved with the user settings as the editor closes, so the restarted editor (and the next
+        // run) finds it first.
+        (void)TouchRecentProject(m_Settings.RecentProjects, project);
+        m_ProjectRequest = project;
+        LOGINFO("[Editor] Switching to the project at ", project.string(), ".");
+    }
+
     RecentProject& EditorGui::CurrentProject()
     {
         if (RecentProject* project = FindRecentProject(m_Settings.RecentProjects, m_ProjectRoot))
@@ -1573,6 +1654,9 @@ namespace Editor
 
     void EditorGui::LoadLastScene(HedgehogEngine::Engine& context)
     {
+        // A project never opened here (or whose last scene was cleared) starts on its startup scene.
+        if (CurrentProject().LastScene.empty())
+            CurrentProject().LastScene = context.GetEngineContext().GetSettings().GetProjectSettings().GetStartupScene();
         if (CurrentProject().LastScene.empty())
             return;
 

@@ -143,10 +143,19 @@ namespace Editor
         // The Console's monospace font (ImGuiLayer::GetMonoFont); nullptr keeps the UI font.
         void SetMonoFont(ImFont* font) { m_MonoFont = font; }
 
+        // The project File > Open Project... or Recent Projects asked for, once confirmed (taken
+        // once; nullopt otherwise). The application then rebuilds the editor on it.
+        std::optional<std::filesystem::path> TakeProjectRequest();
+
     private:
         // ── Panel content (drawn into dock areas) ────────────────────────────
         void DrawPanelContent(PanelId panel, HedgehogEngine::Engine& context);
         void DrawMainMenu(HedgehogEngine::Engine& context);
+        // File > Open Project... and Recent Projects, enabled in Edit mode only.
+        void DrawProjectMenuItems(bool editing);
+        // Checks folder holds a readable Project.yaml (else one error in the Console), asks before
+        // leaving the open project, then records it first in the recent list and requests it.
+        void RequestProject(const std::filesystem::path& folder);
         // The Add component items, enabled while an entity is selected; shared with the inspector.
         void DrawAddComponentItems(HedgehogEngine::Engine& context);
         void CreateMaterial(HedgehogEngine::EngineContext& engineContext);
@@ -245,6 +254,7 @@ namespace Editor
         std::filesystem::path m_ProjectRoot; // the open project's folder
         bool                  m_RecordRecentProject = false;
         RecentProject         m_UnrecordedProject; // CurrentProject() of a project not in the list
+        std::optional<std::filesystem::path> m_ProjectRequest;
         DockSystem     m_DockSystem;
 
         uint32_t m_SceneViewWidth   = 0;

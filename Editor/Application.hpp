@@ -10,6 +10,8 @@
 #include "HedgehogRenderer/Views/View.hpp"
 
 #include <cstdint>
+#include <filesystem>
+#include <optional>
 #include <memory>
 #include <string>
 
@@ -40,6 +42,12 @@ namespace Editor
     // Returns false, with one error, for a --project that holds no Project.yaml.
     [[nodiscard]] bool SelectStartupProject(const std::string& projectArgument, bool useRecentProjects);
 
+    // How an editor run ended: closed, or asked to reopen on another project.
+    struct RunResult
+    {
+        std::optional<std::filesystem::path> RequestedProject;
+    };
+
     class EditorApplication
     {
     public:
@@ -55,8 +63,10 @@ namespace Editor
         EditorApplication& operator=(EditorApplication&&)      = delete;
 
         // maxFrames == 0 runs until the window is closed; a positive value
-        // renders that many frames and exits (used by the --smoke-test mode).
-        void Run(uint32_t maxFrames = 0);
+        // renders that many frames and exits (used by the --smoke-test mode). A project chosen in
+        // File > Open Project... or Recent Projects ends the run, torn down as on exit, and is
+        // returned: the caller builds a new EditorApplication on it.
+        RunResult Run(uint32_t maxFrames = 0);
 
         // Loads sceneFile (under Assets/Scenes), renders warmupFrames untimed, then measures
         // measureFrames and logs per-pass and frame-time statistics.
@@ -77,6 +87,7 @@ namespace Editor
     private:
         HedgehogEngine::WindowMode m_WindowMode;
         bool                       m_RecordRecentProject = false;
+        RunResult                  m_Result;
 
         std::unique_ptr<HedgehogEngine::Engine>   m_Context;
         std::unique_ptr<Renderer::Renderer> m_Renderer;

@@ -1,12 +1,17 @@
 #include "Application.hpp"
 #include "GameMode.hpp"
 
+#include "Project/StartupProject.hpp"
+
 #include "HedgehogRenderer/Renderer.hpp"
+#include "FileSystem/api/PathUtils.hpp"
 #include "Logger/api/Logger.hpp"
 
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <string>
+#include <vector>
 
 namespace
 {
@@ -68,18 +73,38 @@ namespace
         return {};
     }
 
-    int RunSmokeTest(uint32_t frames)
+    // Round trips --smoke-test makes with --switch-project: each rebuilds the editor on the other
+    // project and back, as File > Open Project... does.
+    inline constexpr int SMOKE_TEST_SWITCH_ROUND_TRIPS = 3;
+
+    int RunSmokeTest(uint32_t frames, const std::string& switchProject)
     {
         LOGINFO("Smoke test: rendering ", frames, " frame(s)...");
         if (!Renderer::AreValidationLayersEnabled())
             LOGWARNING("Smoke test: Vulkan validation layers are disabled in this build; "
                        "only a crash-free run is being verified. Use a Debug build for full coverage.");
 
+        // The editor on its project, then, with --switch-project, rebuilt in this process on the
+        // other project and back, round trip after round trip, exactly as a project switch does.
+        std::vector<std::filesystem::path> projects = { FS::GetProjectRootDirectory() };
+        if (!switchProject.empty())
+        {
+            const std::filesystem::path other = Editor::NormalizeProjectPath(switchProject);
+            if (!Editor::IsProjectFolder(other))
+            {
+                LOGERROR("Smoke test: --switch-project ", switchProject, " holds no Project.yaml.");
+                return EXIT_FAILURE;
+            }
+            for (int trip = 0; trip < SMOKE_TEST_SWITCH_ROUND_TRIPS; ++trip)
+                projects.insert(projects.end(), { other, projects.front() });
+        }
+        for (const std::filesystem::path& project : projects)
         {
             // Scoped so teardown validation errors (e.g. leaked Vulkan objects)
             // are counted before the final verdict.
+            FS::SetProjectRootDirectory(project);
             Editor::EditorApplication app{};
-            app.Run(frames);
+            (void)app.Run(frames);
         }
 
         const uint32_t errors   = Renderer::GetValidationErrorCount();
@@ -130,7 +155,7 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
 
     if (smokeTestFrames > 0)
-        return RunSmokeTest(smokeTestFrames);
+        return RunSmokeTest(smokeTestFrames, ParseValueFlag(argc, argv, "--switch-project"));
 
     if (gameModeFrames > 0)
         return Editor::RunGameMode(gameModeFrames,
@@ -142,8 +167,18 @@ int main(int argc, char* argv[])
 
     // Only the interactive editor opens maximized, and only it records its project as the most
     // recent; the automated runs above keep the fixed-size window their results are defined at
-    // (PERFORMANCE.md).
-    Editor::EditorApplication app{ HedgehogEngine::WindowMode::Maximized, true };
-    app.Run();
-    return EXIT_SUCCESS;
+    // (PERFORMANCE.md). A project chosen from the File menu ends the run: the editor is torn down
+    // as on exit and built again on it, in this process (a relaunch would detach a debugger).
+    for (;;)
+    {
+        Editor::RunResult result;
+        {
+            Editor::EditorApplication app{ HedgehogEngine::WindowMode::Maximized, true };
+            result = app.Run();
+        }
+        if (!result.RequestedProject)
+            return EXIT_SUCCESS;
+        FS::SetProjectRootDirectory(*result.RequestedProject);
+        LOGINFO("[Editor] Reopening on the project at ", result.RequestedProject->string(), ".");
+    }
 }
