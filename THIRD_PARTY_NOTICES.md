@@ -402,7 +402,7 @@ The full text of the Apache License 2.0 is at the end of this file.
 
 ### Karla font
 
-Version 1.000. Used by Assets/Fonts/Karla-Regular.ttf. Licence: SIL OFL 1.1.
+Version 1.000. Used by Content/Fonts/Karla-Regular.ttf. Licence: SIL OFL 1.1.
 
 ```
 Copyright (c) 2011, Jonathan Pinhorn (pinhorn.typedesign@gmail.com), with Reserved Font Names "Karla" and "Karla Tamil".

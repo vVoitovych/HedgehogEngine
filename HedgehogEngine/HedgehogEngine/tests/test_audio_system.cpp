@@ -266,3 +266,17 @@ TEST_CASE("AudioSystem - without an audio engine service it registers and plays 
     ecs.RemoveComponent<AudioSourceComponent>(entity);
     CHECK(ecs.UnregisterSystem<AudioSystem>());
 }
+
+TEST_CASE("AudioSystem - a clip named through a mount plays as one under assets://")
+{
+    AudioWorld        world;
+    const ECS::Entity entity = world.SpawnSource(RIGHT);
+    // The engine root is the repository here, so the shipped tone is engine://Assets/Audio/...
+    world.Ecs().GetComponent<AudioSourceComponent>(entity).Clip = "engine://Assets/Audio/Tone440.wav";
+
+    REQUIRE(world.Context.Play());
+    world.Frame();
+    CHECK(world.Audio().IsPlaying(world.Source(entity).Sound));
+    CHECK(world.Loudness() > 0.0);
+    REQUIRE(world.Context.Stop());
+}

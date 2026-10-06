@@ -19,7 +19,7 @@ Root:
             Rotation: [0, 0, 0]
             Scale: [0.15, 0.15, 3]
           MeshComponent:
-            MeshPath: Models/Default/cube.obj
+            MeshPath: engine://Content/Models/Default/cube.obj
           RenderComponent:
             Visible: true
             Material: Materials/test3.material
@@ -33,7 +33,7 @@ Root:
             Rotation: [0, 0, 0]
             Scale: [0.4, 0.4, 0.4]
           MeshComponent:
-            MeshPath: Models/Default/sphere.obj
+            MeshPath: engine://Content/Models/Default/sphere.obj
           RenderComponent:
             Visible: true
             Material: Materials/test1.material

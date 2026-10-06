@@ -45,7 +45,9 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API void LoadMesh(ECS::ECS& ecs, ECS::Entity entity,
                                           const std::string& relativePath);
 
+        // The engine's default meshes, in its Content folder; loaded at start.
         HEDGEHOG_ENGINE_API static const std::string sDefaultMeshPath;
+        HEDGEHOG_ENGINE_API static const std::string sDefaultSpherePath;
 
     private:
         void CheckMeshPath(MeshComponent& meshComponent, const std::string& fallbackPath,

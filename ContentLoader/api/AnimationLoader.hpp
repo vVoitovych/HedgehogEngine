@@ -11,7 +11,7 @@
 
 namespace ContentLoader
 {
-    // The animation clips of a .gltf or .glb file under assets://, their channels addressed by the
+    // The animation clips of a .gltf or .glb file (under assets:// unless fileName names a mount), their channels addressed by the
     // joint indices LoadMesh gives the same file's skin. Channels that target a node outside the
     // skin, and morph-target weights, are skipped. A file without a skin has no clips. Returns
     // std::nullopt (after logging) when the path cannot be resolved, the format is unsupported,

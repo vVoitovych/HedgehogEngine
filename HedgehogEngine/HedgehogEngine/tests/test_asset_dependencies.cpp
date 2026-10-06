@@ -1,6 +1,8 @@
 #include "doctest/doctest/doctest.h"
 
 #include "HedgehogEngine/api/Assets/EngineAssetDependencies.hpp"
+#include "HedgehogEngine/api/Containers/MaterialContainer.hpp"
+#include "HedgehogEngine/api/ECS/systems/MeshSystem.hpp"
 #include "HedgehogEngine/api/ECS/components/AnimatorComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/AudioSourceComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/CameraComponent.hpp"
@@ -13,6 +15,7 @@
 
 #include "FileSystem/api/FileSystem.hpp"
 #include "FileSystem/api/FileSystemManager.hpp"
+#include "FileSystem/api/PathUtils.hpp"
 #include "FileSystem/tests/test_helpers.hpp"
 
 #include <algorithm>
@@ -144,7 +147,6 @@ TEST_CASE("Asset dependencies - a fixture scene's closure is exactly its meshes,
     project.Dir.WriteFile("Textures/crate.png", "");
     project.Dir.WriteFile("Textures/logo.png", "");
     project.Dir.WriteFile("Scripts/Player.lua", "");
-    project.Dir.WriteFile("Scripts/Base/ActorScript.lua", "");
     project.Dir.WriteFile("Audio/hit.wav", "");
     project.Dir.WriteFile("Audio/music.wav", "");
     project.Dir.WriteFile("Fonts/ui.ttf", "");
@@ -166,7 +168,8 @@ TEST_CASE("Asset dependencies - a fixture scene's closure is exactly its meshes,
         "assets://Models/Crate/Crate.gltf",
         "assets://Models/Crate/crate_normal.png",
         "assets://Scenes/Level.yaml",
-        "assets://Scripts/Base/ActorScript.lua",
+        // The base script every script runs on, in the engine's Content.
+        "engine://Content/Scripts/Base/ActorScript.lua",
         "assets://Scripts/Player.lua",
         "assets://Textures/crate.png",
         "assets://Textures/logo.png",
@@ -206,7 +209,7 @@ TEST_CASE("Asset dependencies - every shipped scene's references exist")
 
     AssetDependencyCollector collector;
     HedgehogEngine::RegisterEngineAssetDependencies(collector);
-    for (const char* scene : { "Default.yaml", "Animated.yaml", "Hud.yaml" })
+    for (const char* scene : { "Default.yaml", "Animated.yaml", "Hud.yaml", "Spinner.yaml" })
     {
         CAPTURE(scene);
         const AssetDependencies result = collector.CollectScene(std::string("assets://Scenes/") + scene, files);
@@ -214,5 +217,25 @@ TEST_CASE("Asset dependencies - every shipped scene's references exist")
         for (const std::string& warning : result.Warnings)
             MESSAGE(warning);
         CHECK(result.Assets.size() > 1);
+    }
+}
+
+TEST_CASE("Asset dependencies - the engine's required runtime assets are in its Content folder and exist")
+{
+    FS::FileSystemManager files;
+    const std::filesystem::path root = std::filesystem::path(__FILE__).parent_path().parent_path().parent_path().parent_path();
+    auto fs = std::make_unique<FS::FileSystem>();
+    fs->RegisterPath("engine://", root);
+    files.Register(std::move(fs));
+
+    for (const std::string& path : { HedgehogEngine::MeshSystem::sDefaultMeshPath, HedgehogEngine::MeshSystem::sDefaultSpherePath,
+                                     std::string(HedgehogEngine::MaterialContainer::DEFAULT_CELL_TEXTURE) })
+    {
+        CAPTURE(path);
+        CHECK(path.starts_with(FS::ENGINE_CONTENT_PREFIX));
+        CHECK(files.Exists(path));
+        const auto runtime = HedgehogEngine::GetEngineRuntimeAssets();
+        CHECK(std::any_of(runtime.begin(), runtime.end(),
+                          [&](const HedgehogEngine::EngineRuntimeAsset& asset) { return asset.Path == path && asset.Required; }));
     }
 }

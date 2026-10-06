@@ -4,6 +4,7 @@
 #include "test_helpers.hpp"
 
 #include <filesystem>
+#include <string>
 
 TEST_CASE("FindProjectRoot - the repository from the Binaries layout")
 {
@@ -94,4 +95,13 @@ TEST_CASE("GetProjectRootDirectory - the override wins until cleared; else the r
     CHECK(FS::GetEngineRootDirectory() == found); // the engine root does not follow the project
     FS::SetProjectRootDirectory({});
     CHECK(FS::GetProjectRootDirectory() == found);
+}
+
+TEST_CASE("ToAssetVirtualPath - a path without a mount is under assets://, one naming a mount is kept")
+{
+    CHECK(FS::ToAssetVirtualPath("Models/crate.obj") == "assets://Models/crate.obj");
+    CHECK(FS::ToAssetVirtualPath("assets://Models/crate.obj") == "assets://Models/crate.obj");
+    CHECK(FS::ToAssetVirtualPath("engine://Content/Models/Default/cube.obj") == "engine://Content/Models/Default/cube.obj");
+    CHECK(FS::ToAssetVirtualPath("project://Project.yaml") == "project://Project.yaml");
+    CHECK(std::string(FS::ENGINE_CONTENT_PREFIX).starts_with("engine://"));
 }

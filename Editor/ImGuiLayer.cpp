@@ -25,7 +25,7 @@ namespace Editor
 {
     namespace
     {
-        constexpr const char* UI_FONT_PATH = "engine://Assets/Fonts/Karla-Regular.ttf";
+        constexpr const char* UI_FONT_PATH = "engine://Content/Fonts/Karla-Regular.ttf";
     }
 
     ImGuiLayer::ImGuiLayer(HW::Window& window)

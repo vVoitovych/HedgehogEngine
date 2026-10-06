@@ -56,7 +56,7 @@ namespace HedgehogScripting
     // entity's private environment and instance.
     //
     // A script file defines a class named after its stem (Scripts/Player.lua defines Player),
-    // usually derived from ActorScript (Scripts/Base/ActorScript.lua, run once in a base
+    // usually derived from ActorScript (engine://Content/Scripts/Base/ActorScript.lua, run once in a base
     // environment). The file's top-level globals are the class defaults: every entity gets its
     // own shallow copy of them, so `speed = 1.0` is per entity while the methods are shared.
     //

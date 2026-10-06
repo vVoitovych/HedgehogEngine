@@ -1,17 +1,19 @@
 #include "HedgehogEngine/api/ECS/systems/MeshSystem.hpp"
 #include "HedgehogEngine/api/Resource/ResourceCatalog.hpp"
+#include "FileSystem/api/PathUtils.hpp"
 #include "Logger/api/Logger.hpp"
 
 #include <algorithm>
 
 namespace HedgehogEngine
 {
-    const std::string MeshSystem::sDefaultMeshPath = "Models/Default/cube.obj";
+    const std::string MeshSystem::sDefaultMeshPath   = "engine://Content/Models/Default/cube.obj";
+    const std::string MeshSystem::sDefaultSpherePath = "engine://Content/Models/Default/sphere.obj";
 
     MeshSystem::MeshSystem()
     {
-        AddMeshPath("Models/Default/cube.obj");
-        AddMeshPath("Models/Default/sphere.obj");
+        AddMeshPath(sDefaultMeshPath);
+        AddMeshPath(sDefaultSpherePath);
     }
 
     void MeshSystem::OnRegister(ECS::ECS& ecs)
@@ -125,7 +127,7 @@ namespace HedgehogEngine
         }
         else
         {
-            if (fileSystem.Exists("assets://" + meshComponent.MeshPath))
+            if (fileSystem.Exists(FS::ToAssetVirtualPath(meshComponent.MeshPath)))
             {
                 meshComponent.CachedMeshPath = meshComponent.MeshPath;
                 meshComponent.MeshIndex      = m_MeshPaths.size();

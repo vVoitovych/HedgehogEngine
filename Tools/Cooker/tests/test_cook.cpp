@@ -31,7 +31,20 @@ Scene:
         Children: []
 )";
 
-    // A project with one scene, the files the engine always loads, and assets nothing references.
+    // The engine files every cook packages: the default meshes and texture in Content, and engine
+    // graphs whose only pass draws with no shader of its own.
+    void WriteEngineFiles(const TempDir& engine)
+    {
+        engine.WriteFile("Content/Models/Default/cube.obj", "o cube\n");
+        engine.WriteFile("Content/Models/Default/sphere.obj", "o sphere\n");
+        engine.WriteFile("Content/Textures/Default/cells.png", "cells");
+        for (const char* graph : { "scene", "game", "result" })
+            engine.WriteFile(std::string("HedgehogEngine/HedgehogRenderer/assets/Graphs/") + graph + ".graph",
+                             "version: 2\npasses:\n  - type: Ui\n    name: Ui\n");
+    }
+
+    // A project with one scene, the files the engine always loads (the project is its own engine
+    // here, as in the dev tree), and assets nothing references.
     struct FixtureProject
     {
         TempDir Project;
@@ -44,13 +57,7 @@ Scene:
             Project.WriteFile("Assets/Models/crate.obj", "o crate\n");
             Project.WriteFile("Assets/Materials/Crate.material", "Type: 0\nBaseColor: Textures/crate.png\nTransparency: 1\n");
             Project.WriteFile("Assets/Textures/crate.png", "crate");
-            Project.WriteFile("Assets/Models/Default/cube.obj", "o cube\n");
-            Project.WriteFile("Assets/Models/Default/sphere.obj", "o sphere\n");
-            Project.WriteFile("Assets/Textures/Default/cells.png", "cells");
-            // Engine graphs whose only pass draws with no shader of its own.
-            for (const char* graph : { "scene", "game", "result" })
-                Project.WriteFile(std::string("HedgehogEngine/HedgehogRenderer/assets/Graphs/") + graph + ".graph",
-                                  "version: 2\npasses:\n  - type: Ui\n    name: Ui\n");
+            WriteEngineFiles(Project);
             // Not referenced: never packaged.
             Project.WriteFile("Assets/Textures/unused.png", "unused");
             Project.WriteFile("Assets/Scenes/Other.yaml", "Scene name: Other\nScene: []\n");
@@ -70,12 +77,12 @@ Scene:
 
     const std::vector<std::string> EXPECTED_PACKAGE = {
         "Assets/Materials/Crate.material",
-        "Assets/Models/Default/cube.obj",
-        "Assets/Models/Default/sphere.obj",
         "Assets/Models/crate.obj",
         "Assets/Scenes/Level.yaml",
-        "Assets/Textures/Default/cells.png",
         "Assets/Textures/crate.png",
+        "Content/Models/Default/cube.obj",
+        "Content/Models/Default/sphere.obj",
+        "Content/Textures/Default/cells.png",
         "HedgehogEngine/HedgehogRenderer/assets/Graphs/game.graph",
         "HedgehogEngine/HedgehogRenderer/assets/Graphs/result.graph",
         "HedgehogEngine/HedgehogRenderer/assets/Graphs/scene.graph",
@@ -158,11 +165,11 @@ TEST_CASE("Cooker - a missing referenced asset fails the cook, naming the file t
     CHECK(fixture.PackagedFiles().empty());
 
     // A required engine file is an error too, and so is a project without a startup scene.
-    std::filesystem::remove(fixture.Project.Path() / "Assets/Models/Default/sphere.obj");
+    std::filesystem::remove(fixture.Project.Path() / "Content/Models/Default/sphere.obj");
     fixture.Project.WriteFile("Project.yaml", "name: Fixture\n");
     const Cooker::CookPlan broken = Cooker::BuildCookPlan(fixture.Project.Path());
     CHECK(std::count(broken.Errors.begin(), broken.Errors.end(), "The project 'Fixture' has no startup scene.") == 1);
-    CHECK(std::count(broken.Errors.begin(), broken.Errors.end(), "assets://Models/Default/sphere.obj does not exist.") == 1);
+    CHECK(std::count(broken.Errors.begin(), broken.Errors.end(), "engine://Content/Models/Default/sphere.obj does not exist.") == 1);
 
     std::filesystem::remove(fixture.Project.Path() / "Project.yaml");
     CHECK(Cooker::BuildCookPlan(fixture.Project.Path()).Errors.size() == 1);
@@ -256,10 +263,9 @@ namespace
         SplitFixture()
         {
             std::filesystem::remove_all(Project.Path() / "HedgehogEngine");
+            std::filesystem::remove_all(Project.Path() / "Content");
             Engine.WriteFile("Engine.yaml", "name: HedgehogEngine\n");
-            for (const char* graph : { "scene", "game", "result" })
-                Engine.WriteFile(std::string("HedgehogEngine/HedgehogRenderer/assets/Graphs/") + graph + ".graph",
-                                 "version: 2\npasses:\n  - type: Ui\n    name: Ui\n");
+            WriteEngineFiles(Engine);
         }
     };
 
@@ -299,7 +305,7 @@ TEST_CASE("Cooker - a project outside the engine cooks with the engine's files f
     std::sort(expected.begin(), expected.end());
     CHECK(fixture.PackagedFiles() == expected);
 
-    // Without the engine folder, the project has no graphs of its own.
+    // Without the engine folder, the project has no graphs or default content of its own.
     const Cooker::CookPlan alone = Cooker::BuildCookPlan(fixture.Project.Path());
     CHECK_FALSE(alone.Errors.empty());
 }

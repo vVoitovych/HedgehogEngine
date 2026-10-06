@@ -16,6 +16,17 @@ namespace FS
     // The project's own files (Project.yaml, its settings), mounted at the project root.
     inline constexpr const char* PROJECT_ALIAS = "project://";
 
+    // The game's assets, mounted at the project's Assets/ folder.
+    inline constexpr const char* ASSETS_ALIAS = "assets://";
+
+    // The engine's own runtime content (default meshes and textures, the base script, the editor
+    // font), at Content/ under the engine root: engine://Content/...
+    inline constexpr const char* ENGINE_CONTENT_PREFIX = "engine://Content/";
+
+    // A component's asset path as a virtual path: one naming a mount ("engine://Content/a.obj")
+    // is kept, any other ("Models\a.obj", "Models/a.obj") goes under assets://.
+    FILE_SYSTEM_API std::string ToAssetVirtualPath(const std::string& path);
+
     // The file that marks a project's root: the repository in a dev tree, the folder of a packaged game.
     inline constexpr const char* PROJECT_FILE_NAME = "Project.yaml";
 

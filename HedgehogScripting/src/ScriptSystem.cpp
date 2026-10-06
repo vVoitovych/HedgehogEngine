@@ -31,7 +31,7 @@ namespace HedgehogScripting
     namespace
     {
         constexpr std::string_view ASSETS_PREFIX    = "assets://";
-        constexpr std::string_view BASE_SCRIPT_PATH = "assets://Scripts/Base/ActorScript.lua";
+        constexpr std::string_view BASE_SCRIPT_PATH = "engine://Content/Scripts/Base/ActorScript.lua";
 
         // Called with the base environment; returns proxy, run, invoke and newEnvironment.
         // Every class file runs under `proxy` as its _ENV, and the proxy forwards to `current`:

@@ -44,6 +44,11 @@ namespace FS
         }
     }
 
+    std::string ToAssetVirtualPath(const std::string& path)
+    {
+        return path.find("://") == std::string::npos ? ASSETS_ALIAS + path : path;
+    }
+
     std::optional<std::filesystem::path> FindAncestorHolding(const std::filesystem::path& start,
                                                              const std::filesystem::path& relativeFile)
     {
