@@ -36,29 +36,88 @@ namespace FS
             static std::filesystem::path root;
             return root;
         }
+
+        std::filesystem::path& ProjectRootOverride()
+        {
+            static std::filesystem::path root;
+            return root;
+        }
     }
 
-    std::filesystem::path FindProjectRoot(const std::filesystem::path& start)
+    std::optional<std::filesystem::path> FindAncestorHolding(const std::filesystem::path& start,
+                                                             const std::filesystem::path& relativeFile)
     {
         std::error_code error;
         for (std::filesystem::path directory = start; !directory.empty(); directory = directory.parent_path())
         {
-            if (std::filesystem::is_regular_file(directory / PROJECT_FILE_NAME, error))
+            if (std::filesystem::is_regular_file(directory / relativeFile, error))
                 return directory;
             if (directory == directory.parent_path())
                 break;
         }
-        return start;
+        return std::nullopt;
+    }
+
+    std::filesystem::path FindProjectRoot(const std::filesystem::path& start)
+    {
+        return FindAncestorHolding(start, PROJECT_FILE_NAME).value_or(start);
+    }
+
+    std::filesystem::path FindEngineRoot(const std::filesystem::path& start)
+    {
+        return FindAncestorHolding(start, ENGINE_ROOT_MARKER).value_or(start);
     }
 
     std::filesystem::path GetEngineRootDirectory()
     {
         if (!EngineRootOverride().empty())
             return EngineRootOverride();
-        return FindProjectRoot(GetExecutableDirectory());
+        return FindEngineRoot(GetExecutableDirectory());
     }
 
     void SetEngineRootDirectory(const std::filesystem::path& root) { EngineRootOverride() = root; }
+
+    std::filesystem::path GetProjectRootDirectory()
+    {
+        if (!ProjectRootOverride().empty())
+            return ProjectRootOverride();
+        if (const auto found = FindAncestorHolding(GetExecutableDirectory(), PROJECT_FILE_NAME))
+            return *found;
+        return GetEngineRootDirectory();
+    }
+
+    void SetProjectRootDirectory(const std::filesystem::path& root) { ProjectRootOverride() = root; }
+
+    std::optional<std::filesystem::path> GetLocalAppDataDirectory()
+    {
+#ifdef _WIN32
+        char*  value  = nullptr;
+        size_t length = 0;
+        if (_dupenv_s(&value, &length, "LOCALAPPDATA") != 0 || value == nullptr)
+        {
+            LOGERROR("GetLocalAppDataDirectory: LOCALAPPDATA is not set.");
+            return std::nullopt;
+        }
+        const std::filesystem::path localAppData(value);
+        std::free(value);
+        return localAppData;
+#else
+        LOGERROR("GetLocalAppDataDirectory is not implemented on this platform.");
+        return std::nullopt;
+#endif
+    }
+
+    std::filesystem::path MakeEditorUserDirectory(const std::filesystem::path& localAppData)
+    {
+        return localAppData / "HedgehogEngine" / "Editor";
+    }
+
+    std::optional<std::filesystem::path> GetEditorUserDirectory()
+    {
+        if (const auto localAppData = GetLocalAppDataDirectory())
+            return MakeEditorUserDirectory(*localAppData);
+        return std::nullopt;
+    }
 
     std::optional<std::filesystem::path>
         MakeSavesDirectory(const std::filesystem::path& localAppData, const std::string& projectName, bool editor)
@@ -77,21 +136,9 @@ namespace FS
 
     std::optional<std::filesystem::path> GetSavesDirectory(const std::string& projectName, bool editor)
     {
-#ifdef _WIN32
-        char*  value  = nullptr;
-        size_t length = 0;
-        if (_dupenv_s(&value, &length, "LOCALAPPDATA") != 0 || value == nullptr)
-        {
-            LOGERROR("GetSavesDirectory: LOCALAPPDATA is not set.");
-            return std::nullopt;
-        }
-        const std::filesystem::path localAppData(value);
-        std::free(value);
-        return MakeSavesDirectory(localAppData, projectName, editor);
-#else
-        LOGERROR("GetSavesDirectory is not implemented on this platform.");
+        if (const auto localAppData = GetLocalAppDataDirectory())
+            return MakeSavesDirectory(*localAppData, projectName, editor);
         return std::nullopt;
-#endif
     }
 
     bool MountSaves(FileSystemManager& manager, const std::filesystem::path& directory)

@@ -552,3 +552,38 @@ TEST_CASE("FileSystemManager::ListDirectory - a file, a missing folder or an unk
     CHECK_FALSE(manager.ListDirectory("assets://missing").has_value());
     CHECK_FALSE(manager.ListDirectory("unknown://").has_value());
 }
+
+// ---------------------------------------------------------------------------
+// FileSystemManager::ToVirtualPath with nested mounts
+// ---------------------------------------------------------------------------
+
+TEST_CASE("FileSystemManager::ToVirtualPath - nested mounts name a file by the most specific one")
+{
+    TempDir tmp;
+    const std::filesystem::path file = tmp.WriteFile("Assets/Models/crate.obj", "o crate\n");
+    tmp.WriteFile("Project.yaml", "name: Test\n");
+
+    // Each order of registration, in separate file systems and in one.
+    for (const bool assetsFirst : { false, true })
+    {
+        CAPTURE(assetsFirst);
+        FS::FileSystemManager separate;
+        if (assetsFirst)
+            REQUIRE(separate.Register(MakeFS("assets://", tmp.Path() / "Assets")));
+        REQUIRE(separate.Register(MakeFS("engine://", tmp.Path())));
+        if (!assetsFirst)
+            REQUIRE(separate.Register(MakeFS("assets://", tmp.Path() / "Assets")));
+        CHECK(separate.ToVirtualPath(file) == "assets://Models/crate.obj");
+        CHECK(separate.ToVirtualPath(tmp.Path() / "Project.yaml") == "engine://Project.yaml");
+    }
+
+    auto both = std::make_unique<FS::FileSystem>();
+    REQUIRE(both->RegisterPath("engine://", tmp.Path()));
+    REQUIRE(both->RegisterPath("project://", tmp.Path()));
+    REQUIRE(both->RegisterPath("assets://", tmp.Path() / "Assets"));
+    FS::FileSystemManager single;
+    REQUIRE(single.Register(std::move(both)));
+    CHECK(single.ToVirtualPath(file) == "assets://Models/crate.obj");
+    // Two mounts on one folder: the alias that sorts first, every time.
+    CHECK(single.ToVirtualPath(tmp.Path() / "Project.yaml") == "engine://Project.yaml");
+}

@@ -1,0 +1,3 @@
+# Marks the engine's root directory: engine:// is the nearest folder above an executable holding
+# this file (FS::GetEngineRootDirectory). A packaged game needs none; its executable sits at its root.
+name: HedgehogEngine
