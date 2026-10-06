@@ -9,6 +9,11 @@
 #include <unordered_map>
 #include <vector>
 
+namespace HedgehogSettings
+{
+    class ProjectSettings;
+}
+
 namespace HedgehogEngine
 {
     class EngineContext;
@@ -51,6 +56,12 @@ namespace HedgehogEngine
         // Unloads every plugin, last loaded first, whatever the play state (the context's
         // destructor).
         HEDGEHOG_ENGINE_API void UnloadAll();
+
+        // Makes the loaded plugins the project's enabled ones: unloads, last loaded first, those no
+        // longer listed or disabled, then loads, in list order, the enabled ones not loaded. A
+        // plugin that fails is logged and the rest go on (a scene's data of a missing plugin stays
+        // kept as unknown components). Returns how many failed.
+        HEDGEHOG_ENGINE_API size_t ApplyProjectPlugins(const HedgehogSettings::ProjectSettings& project);
 
         [[nodiscard]] HEDGEHOG_ENGINE_API std::vector<LoadedPlugin> GetLoaded() const;
         [[nodiscard]] HEDGEHOG_ENGINE_API bool IsLoaded(const std::string& name) const;

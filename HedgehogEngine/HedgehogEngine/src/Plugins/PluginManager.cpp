@@ -135,6 +135,33 @@ namespace HedgehogEngine
         }
     }
 
+    size_t PluginManager::ApplyProjectPlugins(const HedgehogSettings::ProjectSettings& project)
+    {
+        const std::vector<HedgehogSettings::PluginEntry>& entries = project.GetPlugins();
+        const auto isEnabled = [&entries](const std::string& name)
+        {
+            return std::any_of(entries.begin(), entries.end(), [&name](const HedgehogSettings::PluginEntry& entry)
+                               { return entry.Enabled && SameName(entry.Name, name); });
+        };
+
+        size_t failed = 0;
+        std::vector<std::string> unwanted;
+        for (auto plugin = m_Plugins.rbegin(); plugin != m_Plugins.rend(); ++plugin)
+        {
+            if (!isEnabled((*plugin)->Name))
+                unwanted.push_back((*plugin)->Name);
+        }
+        for (const std::string& name : unwanted)
+            failed += Unload(name) ? 0 : 1;
+
+        for (const HedgehogSettings::PluginEntry& entry : entries)
+        {
+            if (entry.Enabled && !IsLoaded(entry.Name))
+                failed += Load(entry.Name) ? 0 : 1;
+        }
+        return failed;
+    }
+
     void PluginManager::UnloadPlugin(Plugin& plugin)
     {
         if (plugin.Info->Unregister)

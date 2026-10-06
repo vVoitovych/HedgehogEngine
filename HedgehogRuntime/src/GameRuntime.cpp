@@ -7,6 +7,7 @@
 #include "HedgehogEngine/api/Resource/ResourceCatalog.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/HedgehogSettings.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/ProjectSettings.hpp"
+#include "HedgehogEngine/api/Plugins/PluginManager.hpp"
 #include "HedgehogEngine/api/Save/SaveGameManager.hpp"
 #include "HedgehogEngine/api/Scene/SceneManager.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
@@ -98,6 +99,10 @@ namespace Runtime
                 { gameWindow.SetTitle(stopped ? title + " - Paused in debugger" : title); },
                 [&gameWindow]() { gameWindow.PollEvents(); });
         }
+        // The project's enabled plugins, as the Editor loads them: after the script system and
+        // before the scene; one that fails is logged and the game plays on without it.
+        (void)engineContext.GetPlugins().ApplyProjectPlugins(project);
+
         (void)engineContext.GetAudioEngine().Init(HA::AudioEngineDesc{});
         if (const auto saves = FS::GetSavesDirectory(project.GetName(), m_Desc.EditorSaves))
             engineContext.GetSaveGames().SetSaveDirectory(*saves);

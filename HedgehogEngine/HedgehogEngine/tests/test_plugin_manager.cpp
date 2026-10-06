@@ -6,6 +6,9 @@
 #include "HedgehogEngine/api/Plugins/PluginManager.hpp"
 #include "HedgehogEngine/api/Scene/SceneManager.hpp"
 
+#include "HedgehogSettings/api/HedgehogSettings.hpp"
+#include "HedgehogSettings/api/ProjectSettings.hpp"
+
 #include "EcsSerialization/api/ComponentTypeRegistry.hpp"
 #include "EcsSerialization/api/UnknownComponents.hpp"
 
@@ -261,6 +264,61 @@ TEST_CASE("PluginManager - an event the plugin created a channel for survives th
     context.GetEventBus().Publish(ManyEvent<0>{});
 }
 
+TEST_CASE("PluginManager::ApplyProjectPlugins - loads the enabled plugins and goes on past one that fails")
+{
+    EngineContext                      context;
+    HedgehogSettings::ProjectSettings& project = context.GetSettings().GetProjectSettings();
+    REQUIRE(project.AddPlugin("Nope"));
+    REQUIRE(project.AddPlugin(TEST_PLUGIN));
+    REQUIRE(project.AddPlugin("HedgehogTestPluginOldApi", false));
+
+    {
+        ErrorLog errors;
+        CHECK(context.GetPlugins().ApplyProjectPlugins(project) == 1);
+        CHECK(errors.HasOne("[Plugin] Nope: cannot open"));
+    }
+    CHECK(context.GetPlugins().IsLoaded(TEST_PLUGIN));
+    CHECK_FALSE(context.GetPlugins().IsLoaded("HedgehogTestPluginOldApi"));
+    CHECK(context.GetComponentTypes().Find(COMPONENT_KEY) != nullptr);
+
+    // Applying again changes nothing but retries the missing one.
+    {
+        ErrorLog errors;
+        CHECK(context.GetPlugins().ApplyProjectPlugins(project) == 1);
+        CHECK(errors.Lines.size() == 1);
+    }
+    CHECK(context.GetPlugins().GetLoaded().size() == 1);
+}
+
+TEST_CASE("PluginManager::ApplyProjectPlugins - disabling or removing a plugin unloads it, enabling loads it")
+{
+    EngineContext                      context;
+    HedgehogSettings::ProjectSettings& project = context.GetSettings().GetProjectSettings();
+    PluginManager&                     plugins = context.GetPlugins();
+    REQUIRE(project.AddPlugin(TEST_PLUGIN));
+    REQUIRE(plugins.ApplyProjectPlugins(project) == 0);
+    REQUIRE(plugins.IsLoaded(TEST_PLUGIN));
+    const ECS::Entity entity = AddPluginEntity(context, 4.0f);
+
+    REQUIRE(project.SetPluginEnabled(TEST_PLUGIN, false));
+    CHECK(plugins.ApplyProjectPlugins(project) == 0);
+    CHECK_FALSE(plugins.IsLoaded(TEST_PLUGIN));
+    CHECK(context.GetComponentTypes().Find(COMPONENT_KEY) == nullptr);
+
+    REQUIRE(project.SetPluginEnabled(TEST_PLUGIN, true));
+    CHECK(plugins.ApplyProjectPlugins(project) == 0);
+    CHECK(plugins.IsLoaded(TEST_PLUGIN));
+    REQUIRE(FindProperty<float>(context, entity, "Value") != nullptr);
+    CHECK(*FindProperty<float>(context, entity, "Value") == doctest::Approx(4.0f));
+
+    REQUIRE(project.RemovePlugin("hedgehogtestplugin"));
+    CHECK(plugins.ApplyProjectPlugins(project) == 0);
+    CHECK(plugins.GetLoaded().empty());
+
+    // A project that lists nothing (the shipped one) loads nothing.
+    CHECK(plugins.ApplyProjectPlugins(HedgehogSettings::ProjectSettings{}) == 0);
+    CHECK(plugins.GetLoaded().empty());
+}
 TEST_CASE("PluginManager - a plugin that leaves a subscription is reported and its DLL stays loaded")
 {
     // The hooks are reached through a second handle to the same module.
