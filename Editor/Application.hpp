@@ -34,10 +34,19 @@ namespace Editor
     class EditorGui;
     class ImGuiLayer;
 
+    // Chooses the project the editor opens (Project/StartupProject: --project's value, else, when
+    // useRecentProjects, the most recent project that still exists, else the dev tree's default)
+    // and makes it the project root, before an EditorApplication or game mode builds the engine.
+    // Returns false, with one error, for a --project that holds no Project.yaml.
+    [[nodiscard]] bool SelectStartupProject(const std::string& projectArgument, bool useRecentProjects);
+
     class EditorApplication
     {
     public:
-        explicit EditorApplication(HedgehogEngine::WindowMode windowMode = HedgehogEngine::WindowMode::Windowed);
+        // recordRecentProject: the interactive editor puts its project at the front of the recent
+        // list; automated runs (--smoke-test, --benchmark) leave the list as it is.
+        explicit EditorApplication(HedgehogEngine::WindowMode windowMode = HedgehogEngine::WindowMode::Windowed,
+                                   bool recordRecentProject = false);
         ~EditorApplication();
 
         EditorApplication(const EditorApplication&)            = delete;
@@ -67,6 +76,7 @@ namespace Editor
 
     private:
         HedgehogEngine::WindowMode m_WindowMode;
+        bool                       m_RecordRecentProject = false;
 
         std::unique_ptr<HedgehogEngine::Engine>   m_Context;
         std::unique_ptr<Renderer::Renderer> m_Renderer;

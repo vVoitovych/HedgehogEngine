@@ -30,6 +30,8 @@
 
 #include "Logger/api/Logger.hpp"
 
+#include "Project/StartupProject.hpp"
+
 #include "imgui.h"
 
 #include <algorithm>
@@ -73,6 +75,14 @@ namespace Editor
             return desc;
         }
 
+        // The editor's per-user folder, <LocalAppData>/HedgehogEngine/Editor (a temp folder when
+        // LocalAppData is not set).
+        std::filesystem::path GetEditorUserFolder()
+        {
+            return FS::GetEditorUserDirectory().value_or(std::filesystem::temp_directory_path() / "HedgehogEngine" /
+                                                         "Editor");
+        }
+
         // The editor's UI into the window. It has no camera, and it reads both panels' targets, so
         // it is ordered after the views that write them.
         Renderer::ViewDesc MakeResultView()
@@ -87,8 +97,38 @@ namespace Editor
 
     }
 
-    EditorApplication::EditorApplication(HedgehogEngine::WindowMode windowMode)
+    bool SelectStartupProject(const std::string& projectArgument, bool useRecentProjects)
+    {
+        // The recent list, read from the per-user settings before the engine (and its file system)
+        // exists; a missing or unreadable file is an empty list.
+        EditorSettings settings;
+        if (useRecentProjects && projectArgument.empty())
+        {
+            FS::FileSystemManager userFiles;
+            auto                  folder = std::make_unique<FS::FileSystem>();
+            if (folder->RegisterPath(EditorSettings::USER_ALIAS, GetEditorUserFolder()) &&
+                userFiles.Register(std::move(folder)) && userFiles.Exists(EditorSettings::PATH))
+                (void)settings.Load(EditorSettings::PATH, userFiles);
+        }
+
+        // With no override yet, the project root is the default: the dev tree's sample, or a
+        // package's own folder.
+        FS::SetProjectRootDirectory({});
+        const StartupProjectChoice choice =
+            ChooseStartupProject(projectArgument, settings.RecentProjects, FS::GetProjectRootDirectory());
+        if (!choice.Error.empty())
+        {
+            LOGERROR("[Editor] ", choice.Error);
+            return false;
+        }
+        FS::SetProjectRootDirectory(choice.Path);
+        LOGINFO("[Editor] Opening the project at ", choice.Path.string(), ".");
+        return true;
+    }
+
+    EditorApplication::EditorApplication(HedgehogEngine::WindowMode windowMode, bool recordRecentProject)
         : m_WindowMode(windowMode)
+        , m_RecordRecentProject(recordRecentProject)
     {
     }
 
@@ -108,8 +148,7 @@ namespace Editor
 
         // The editor's personal state (its layout, imgui.ini, the recent projects) is per user and
         // outside any project: user:// at <LocalAppData>/HedgehogEngine/Editor, created if missing.
-        const std::filesystem::path userDirectory =
-            FS::GetEditorUserDirectory().value_or(std::filesystem::temp_directory_path() / "HedgehogEngine" / "Editor");
+        const std::filesystem::path userDirectory = GetEditorUserFolder();
         std::error_code userError;
         std::filesystem::create_directories(userDirectory, userError);
         if (userError)
@@ -139,6 +178,8 @@ namespace Editor
         if (engineContext.GetFileSystem().Exists(HedgehogSettings::ProjectSettings::PATH) &&
             !project.Load(HedgehogSettings::ProjectSettings::PATH, engineContext.GetFileSystem()))
             LOGWARNING("Project settings could not be read, using the defaults.");
+        // The window names the open project.
+        m_Context->GetWindowContext().GetWindow().SetTitle("HedgehogEngine - " + project.GetName());
 
         // The project's enabled plugins, after the script system and before EditorGui loads the
         // last scene, so their components read; one that fails is logged and the rest load. Shadow
@@ -207,7 +248,7 @@ namespace Editor
             m_EditorIconIds[index] = m_ImGui->GetTextureId(std::string("icon:ui:") + GetEditorIconFile(icon),
                                                            m_EditorIcons.Get(icon));
         }
-        m_EditorGui = std::make_unique<EditorGui>(*m_Context);
+        m_EditorGui = std::make_unique<EditorGui>(*m_Context, m_RecordRecentProject);
         m_EditorGui->SetRenderer(m_Renderer.get());
         m_EditorGui->SetScriptSystem(m_ScriptSystem);
         m_EditorGui->SetMonoFont(m_ImGui->GetMonoFont());
