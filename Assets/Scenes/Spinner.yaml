@@ -1,0 +1,82 @@
+Scene name: Spinner
+Scene:
+  - Entity: 0
+    Name: Root
+    Parent: 0
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    Children:
+      - Entity: 1
+        Name: StillCube
+        Parent: 0
+        TransformComponent:
+          Position: [-1.5, 0, 0]
+          Rotation: [0, 0, 0]
+          Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: Models\Default\cube.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials\test3.material
+          Layer: 0
+        Children:
+          []
+      - Entity: 2
+        Name: SpinningCube
+        Parent: 0
+        TransformComponent:
+          Position: [1.5, 0, 0]
+          Rotation: [0, 0, 0]
+          Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: Models\Default\cube.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials\test3.material
+          Layer: 0
+        SpinnerComponent:
+          Enabled: true
+          Speed: 45
+          Axis: [0, 1, 0]
+        Children:
+          []
+      - Entity: 3
+        Name: Sun
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 0]
+          Rotation: [-45, 30, 0]
+          Scale: [1, 1, 1]
+        LightComponent:
+          LightEnabled: true
+          LightType: 0
+          LightColor: [1, 1, 1]
+          LightIntensity: 1
+          LightRadius: 1
+          LightConeAngle: 2
+          CastShadows: true
+        Children:
+          []
+      - Entity: 4
+        Name: MainCamera
+        Parent: 0
+        TransformComponent:
+          Position: [0, 1, 6]
+          Rotation: [-8, 0, 0]
+          Scale: [1, 1, 1]
+        CameraComponent:
+          Enabled: true
+          ProjectionType: 0
+          Fov: 60
+          OrthoSize: 10
+          NearPlane: 0.1
+          FarPlane: 1000
+          LayerMask: 4294967295
+          TargetMode: 0
+          TargetName: ""
+          GraphName: game
+          Priority: 0
+        Children:
+          []

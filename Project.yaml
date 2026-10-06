@@ -7,3 +7,6 @@ window:
   fullscreen: false
   vsync: true
 game_data_version: 1
+plugins:
+  - name: Spinner
+    enabled: true
