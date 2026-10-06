@@ -270,3 +270,212 @@ TEST_CASE("ComponentTypeRegistry - GetInfosInOrder sorts by SortOrder, ties in r
     // Registration order is untouched: it is the order serializers write in.
     CHECK(types.GetInfos().front().Key == "TestLamp");
 }
+
+namespace
+{
+    // A reflected component with one property of each tag a plugin component typically uses.
+    struct TestRich
+    {
+        float       Speed  = 0.0f;
+        int32_t     Count  = 0;
+        bool        Active = false;
+        std::string Label;
+        HM::Vector3 Axis   = HM::Vector3(0.0f, 0.0f, 0.0f);
+        ECS::Entity Target = ECS::INVALID_ENTITY;
+
+        static void* SpeedAccessor(void* c) { return &static_cast<TestRich*>(c)->Speed; }
+        static void* CountAccessor(void* c) { return &static_cast<TestRich*>(c)->Count; }
+        static void* ActiveAccessor(void* c) { return &static_cast<TestRich*>(c)->Active; }
+        static void* LabelAccessor(void* c) { return &static_cast<TestRich*>(c)->Label; }
+        static void* AxisAccessor(void* c) { return &static_cast<TestRich*>(c)->Axis; }
+        static void* TargetAccessor(void* c) { return &static_cast<TestRich*>(c)->Target; }
+
+        static std::span<const Reflection::PropertyDescriptor> GetProperties()
+        {
+            using Reflection::PropertyFlags;
+            using Reflection::TypeTag;
+            static const Reflection::PropertyDescriptor properties[] = {
+                { TypeTag::Float, "Speed", SpeedAccessor, PropertyFlags::None, 0.0f, 0.0f },
+                { TypeTag::Int, "Count", CountAccessor, PropertyFlags::None, 0.0f, 0.0f },
+                { TypeTag::Bool, "Active", ActiveAccessor, PropertyFlags::None, 0.0f, 0.0f },
+                { TypeTag::String, "Label", LabelAccessor, PropertyFlags::None, 0.0f, 0.0f },
+                { TypeTag::Vec3, "Axis", AxisAccessor, PropertyFlags::None, 0.0f, 0.0f },
+                { TypeTag::Entity, "Target", TargetAccessor, PropertyFlags::EntityRef, 0.0f, 0.0f },
+            };
+            return properties;
+        }
+    };
+
+    // A world whose ECS keeps unknown components, as the engine's does: the store and the hierarchy
+    // registered, the rich component not yet.
+    struct KeepingWorld
+    {
+        ECS::ECS                                      Ecs;
+        EcsSerialization::ComponentSerializerRegistry Serializers;
+        ComponentTypeRegistry                         Types{ Ecs, Serializers };
+        ECS::Entity                                   Root = ECS::INVALID_ENTITY;
+
+        // Without a root, the world is empty for a scene to load into.
+        explicit KeepingWorld(bool withRoot = true)
+        {
+            Ecs.Init();
+            REQUIRE(Types.RegisterUnserialized<EcsSerialization::UnknownComponentsComponent>(ComponentDesc{
+                .Key = EcsSerialization::UNKNOWN_COMPONENTS_KEY, .Addable = false, .Removable = false, .Inspectable = false }));
+            REQUIRE(Types.RegisterUnserialized<ECS::HierarchyComponent>(ComponentDesc{ .Key = "Hierarchy" }));
+            if (!withRoot)
+                return;
+            Root = Ecs.CreateEntity();
+            Ecs.AddComponent(Root, ECS::HierarchyComponent{ "Root", ECS::INVALID_ENTITY, {} });
+            Ecs.SetRoot(Root);
+        }
+
+        ECS::Entity Add(const std::string& name)
+        {
+            const ECS::Entity entity = Ecs.CreateEntity();
+            Ecs.AddComponent(entity, ECS::HierarchyComponent{ name, Root, {} });
+            Ecs.GetComponent<ECS::HierarchyComponent>(Root).Children.push_back(entity);
+            return entity;
+        }
+
+        bool RegisterRich() { return Types.RegisterReflected<TestRich>(ComponentDesc{ .Key = "TestRich" }); }
+
+        size_t KeptCount(ECS::Entity entity)
+        {
+            return Ecs.HasComponent<EcsSerialization::UnknownComponentsComponent>(entity)
+                       ? Ecs.GetComponent<EcsSerialization::UnknownComponentsComponent>(entity).Entries.size()
+                       : 0;
+        }
+
+        std::string Save() { return EcsSerialization::EcsSerializer::SerializeToString(Serializers, Ecs, "Scene"); }
+    };
+
+    TestRich MakeRich(ECS::Entity target)
+    {
+        TestRich rich;
+        rich.Speed  = 2.5f;
+        rich.Count  = -7;
+        rich.Active = true;
+        rich.Label  = "spin me";
+        rich.Axis   = HM::Vector3(0.0f, 1.0f, 0.5f);
+        rich.Target = target;
+        return rich;
+    }
+
+    void CheckRich(const TestRich& rich, ECS::Entity target)
+    {
+        CHECK(rich.Speed == 2.5f);
+        CHECK(rich.Count == -7);
+        CHECK(rich.Active);
+        CHECK(rich.Label == "spin me");
+        CHECK(rich.Axis.y() == 1.0f);
+        CHECK(rich.Axis.z() == 0.5f);
+        CHECK(rich.Target == target);
+    }
+}
+
+TEST_CASE("ComponentTypeRegistry - registering a type adopts the data a scene kept for it")
+{
+    KeepingWorld      world;
+    const ECS::Entity thing = world.Add("Thing");
+    const ECS::Entity other = world.Add("Other");
+    REQUIRE(world.RegisterRich());
+    world.Ecs.AddComponent(thing, MakeRich(other));
+    const std::string withRich = world.Save();
+
+    // Loaded where the type is not registered (its plugin missing): the data is kept.
+    KeepingWorld missing(false);
+    std::string  name;
+    {
+        LogCapture log;
+        REQUIRE(EcsSerialization::EcsSerializer::DeserializeFromString(missing.Serializers, missing.Ecs, name, withRich, "test"));
+        CHECK(log.Lines("component 'TestRich' has no registered type").size() == 1);
+    }
+    CHECK(missing.KeptCount(thing) == 1);
+
+    // Registered now: the entity gets the component with the saved values, and the store goes.
+    REQUIRE(missing.RegisterRich());
+    REQUIRE(missing.Ecs.HasComponent<TestRich>(thing));
+    CheckRich(missing.Ecs.GetComponent<TestRich>(thing), other);
+    CHECK_FALSE(missing.Ecs.HasComponent<EcsSerialization::UnknownComponentsComponent>(thing));
+    CHECK(missing.Save() == withRich);
+}
+
+TEST_CASE("ComponentTypeRegistry - Unregister with Keep keeps the data, and registering again restores it")
+{
+    KeepingWorld      world;
+    const ECS::Entity thing = world.Add("Thing");
+    const ECS::Entity other = world.Add("Other");
+    REQUIRE(world.RegisterRich());
+    world.Ecs.AddComponent(thing, MakeRich(other));
+    const std::string withRich = world.Save();
+
+    REQUIRE(world.Types.Unregister("TestRich", EcsSerialization::UnknownData::Keep));
+    CHECK_FALSE(world.Ecs.IsComponentRegistered<TestRich>());
+    CHECK(world.KeptCount(thing) == 1);
+    CHECK(world.KeptCount(other) == 0);
+    // A scene saved meanwhile still holds the data, written as before.
+    CHECK(world.Save() == withRich);
+
+    REQUIRE(world.RegisterRich());
+    CheckRich(world.Ecs.GetComponent<TestRich>(thing), other);
+    CHECK(world.KeptCount(thing) == 0);
+}
+
+TEST_CASE("ComponentTypeRegistry - Unregister without Keep drops the data as before")
+{
+    KeepingWorld      world;
+    const ECS::Entity thing = world.Add("Thing");
+    REQUIRE(world.RegisterRich());
+    world.Ecs.AddComponent(thing, MakeRich(thing));
+
+    REQUIRE(world.Types.Unregister("TestRich"));
+    CHECK(world.KeptCount(thing) == 0);
+    REQUIRE(world.RegisterRich());
+    CHECK_FALSE(world.Ecs.HasComponent<TestRich>(thing));
+}
+
+TEST_CASE("ComponentTypeRegistry - a refused Unregister with Keep leaves no kept copy")
+{
+    struct RichSystem : ECS::System
+    {
+    };
+
+    KeepingWorld      world;
+    const ECS::Entity thing = world.Add("Thing");
+    REQUIRE(world.RegisterRich());
+    world.Ecs.AddComponent(thing, MakeRich(thing));
+    world.Ecs.RegisterSystem<RichSystem>();
+    ECS::Signature signature;
+    signature.set(world.Ecs.GetComponentType<TestRich>());
+    world.Ecs.SetSystemSignature<RichSystem>(signature);
+
+    CHECK_FALSE(world.Types.Unregister("TestRich", EcsSerialization::UnknownData::Keep));
+    CHECK(world.Ecs.HasComponent<TestRich>(thing));
+    CHECK(world.KeptCount(thing) == 0);
+}
+
+TEST_CASE("ComponentTypeRegistry - a custom component adopts and keeps its data the same way")
+{
+    KeepingWorld      world;
+    const ECS::Entity thing = world.Add("Thing");
+    REQUIRE(world.Types.RegisterCustom<TestTag>(ComponentDesc{ .Key = "TestTag" }, RegisterTestTagSerializer));
+    world.Ecs.AddComponent(thing, TestTag{ "kept" });
+
+    REQUIRE(world.Types.Unregister("TestTag", EcsSerialization::UnknownData::Keep));
+    CHECK(world.KeptCount(thing) == 1);
+    REQUIRE(world.Types.RegisterCustom<TestTag>(ComponentDesc{ .Key = "TestTag" }, RegisterTestTagSerializer));
+    CHECK(world.Ecs.GetComponent<TestTag>(thing).Text == "kept");
+    CHECK(world.KeptCount(thing) == 0);
+}
+
+TEST_CASE("ComponentTypeRegistry - reserved keys are refused")
+{
+    KeepingWorld world;
+    LogCapture   log;
+    for (const char* key : { "Name", "Children", "Prefab", EcsSerialization::UNKNOWN_COMPONENTS_KEY })
+    {
+        CHECK_FALSE(world.Types.RegisterUnserialized<TestSpare>(ComponentDesc{ .Key = key }));
+        CHECK(log.Lines(std::string("'") + key + "' is not registered: the key is reserved").size() == 1);
+    }
+    CHECK_FALSE(world.Ecs.IsComponentRegistered<TestSpare>());
+}
