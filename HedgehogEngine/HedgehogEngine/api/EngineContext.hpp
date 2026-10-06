@@ -150,7 +150,7 @@ namespace HedgehogEngine
         // How every component is written to and read from scenes, snapshots, saves and prefabs.
         [[nodiscard]] HEDGEHOG_ENGINE_API const EcsSerialization::ComponentSerializerRegistry& GetComponentRegistry() const;
 
-        // Every component type: the engine's 16 in serializer order, then any an application or
+        // Every component type: the engine's 17 in serializer order, then any an application or
         // plugin adds. Also the ECS's ComponentTypeRegistry service. Menus and the inspector list it.
         [[nodiscard]] HEDGEHOG_ENGINE_API EcsSerialization::ComponentTypeRegistry&       GetComponentTypes();
         [[nodiscard]] HEDGEHOG_ENGINE_API const EcsSerialization::ComponentTypeRegistry& GetComponentTypes() const;

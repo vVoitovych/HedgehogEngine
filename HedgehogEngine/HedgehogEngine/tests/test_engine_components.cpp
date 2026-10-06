@@ -20,7 +20,7 @@
 using namespace HedgehogEngine;
 using EcsSerialization::ComponentInfo;
 
-TEST_CASE("Engine components - all 16 are registered once, in serializer order, under their YAML keys")
+TEST_CASE("Engine components - all 17 are registered once, in serializer order, under their YAML keys")
 {
     EngineContext                                  context;
     const EcsSerialization::ComponentTypeRegistry& types = context.GetComponentTypes();
@@ -33,17 +33,18 @@ TEST_CASE("Engine components - all 16 are registered once, in serializer order, 
         "TransformComponent", "HierarchyComponent", "MeshComponent",     "RenderComponent",       "LightComponent",
         "CameraComponent",    "AnimatorComponent",  "UiCanvasComponent", "UiRectComponent",       "UiImageComponent",
         "UiTextComponent",    "UiButtonComponent",  "AudioSourceComponent", "AudioListenerComponent",
-        "PrefabInstanceComponent", "ScriptComponent",
+        "PrefabInstanceComponent", "ScriptComponent", "UnknownComponents",
     };
     CHECK(keys == expected);
 
-    // Every key but the hierarchy's (the scene serializer writes it) is a serializer's YAML key, and
-    // the serializers write in the same order.
+    // Every key but the hierarchy's and the unknown store's (the scene serializer writes both) is a
+    // serializer's YAML key, and the serializers write in the same order.
     std::vector<std::string> handlerKeys;
     for (const EcsSerialization::ComponentHandler& handler : context.GetComponentRegistry().GetHandlers())
         handlerKeys.push_back(handler.YamlKey);
     std::vector<std::string> serialized = expected;
     std::erase(serialized, "HierarchyComponent");
+    std::erase(serialized, "UnknownComponents");
     CHECK(handlerKeys == serialized);
 
     std::set<std::string> addable;
