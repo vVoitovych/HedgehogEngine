@@ -19,6 +19,7 @@
 #include "Logger/api/Logger.hpp"
 
 #include <algorithm>
+#include <chrono>
 #include <cstdint>
 #include <cstring>
 #include <filesystem>
@@ -318,6 +319,112 @@ TEST_CASE("PluginManager::ApplyProjectPlugins - disabling or removing a plugin u
     // A project that lists nothing (the shipped one) loads nothing.
     CHECK(plugins.ApplyProjectPlugins(HedgehogSettings::ProjectSettings{}) == 0);
     CHECK(plugins.GetLoaded().empty());
+}
+namespace
+{
+    // A plugin folder of its own holding a copy of the test plugin, for a manager with shadow copies.
+    struct ShadowFixture
+    {
+        TempDir Source;
+
+        ShadowFixture() { Install("HedgehogTestPlugin.dll"); }
+
+        std::filesystem::path Dll() const { return Source.Path() / "HedgehogTestPlugin.dll"; }
+
+        // Overwrites the plugin with a DLL from the engine's folder and moves its write time on.
+        void Install(const char* fromDll) const
+        {
+            std::error_code error;
+            const bool      existed = std::filesystem::exists(Dll());
+            const auto      before  = existed ? std::filesystem::last_write_time(Dll()) : std::filesystem::file_time_type{};
+            REQUIRE(std::filesystem::copy_file(GetEngineModuleDirectory() / fromDll, Dll(),
+                                               std::filesystem::copy_options::overwrite_existing, error));
+            if (existed)
+                std::filesystem::last_write_time(Dll(), before + std::chrono::seconds(2));
+        }
+
+        size_t ShadowCopies(const std::filesystem::path& directory) const
+        {
+            std::error_code error;
+            size_t          count = 0;
+            for (const auto& entry : std::filesystem::directory_iterator(directory, error))
+                count += entry.path().extension() == ".dll" ? 1 : 0;
+            return count;
+        }
+    };
+}
+
+TEST_CASE("PluginManager - a shadow-copied plugin's DLL can be rebuilt; a changed DLL reloads once, keeping its data")
+{
+    EngineContext         context;
+    ShadowFixture         fixture;
+    std::filesystem::path shadows;
+    {
+        PluginManager plugins(context, fixture.Source.Path());
+        plugins.SetShadowCopy(true);
+        shadows = plugins.GetShadowDirectory();
+        REQUIRE(plugins.Load(TEST_PLUGIN));
+        CHECK(fixture.ShadowCopies(shadows) == 1);
+        const ECS::Entity entity = AddPluginEntity(context, 7.5f);
+
+        const auto start = std::chrono::steady_clock::now();
+        CHECK(plugins.ReloadChangedPlugins(start) == 0); // nothing changed yet
+
+        // The plugin's own file is free while it is loaded: a rebuild overwrites it.
+        fixture.Install("HedgehogTestPlugin.dll");
+        CHECK(plugins.ReloadChangedPlugins(start + std::chrono::milliseconds(500)) == 0); // before the interval
+        CHECK(plugins.IsLoaded(TEST_PLUGIN));
+        CHECK(plugins.ReloadChangedPlugins(start + std::chrono::milliseconds(1500)) == 1);
+        CHECK(plugins.ReloadChangedPlugins(start + std::chrono::milliseconds(3000)) == 0); // once only
+        CHECK(plugins.IsLoaded(TEST_PLUGIN));
+        CHECK(fixture.ShadowCopies(shadows) == 1); // the old copy deleted with its unload
+
+        // The value survived, and the reloaded system runs over the entity.
+        REQUIRE(FindProperty<float>(context, entity, "Value") != nullptr);
+        CHECK(*FindProperty<float>(context, entity, "Value") == doctest::Approx(7.5f));
+        context.UpdateContext(1.0f, 1.0f / 60.0f);
+        CHECK(*FindProperty<int32_t>(context, entity, "Ticks") >= 1);
+    }
+    CHECK_FALSE(std::filesystem::exists(shadows));
+}
+
+TEST_CASE("PluginManager::Reload - refused in Play; a refused new DLL leaves the plugin unloaded with its data")
+{
+    EngineContext context;
+    ShadowFixture fixture;
+    PluginManager plugins(context, fixture.Source.Path());
+    plugins.SetShadowCopy(true);
+    REQUIRE(plugins.Load(TEST_PLUGIN));
+    const ECS::Entity entity = AddPluginEntity(context, 3.0f);
+
+    REQUIRE(context.Play());
+    {
+        ErrorLog errors;
+        CHECK_FALSE(plugins.Reload(TEST_PLUGIN));
+        CHECK(errors.HasOne("Edit mode"));
+    }
+    CHECK(plugins.ReloadChangedPlugins(std::chrono::steady_clock::now()) == 0);
+    REQUIRE(context.Stop());
+    CHECK(plugins.IsLoaded(TEST_PLUGIN));
+    CHECK_FALSE(plugins.Reload("NoSuchPlugin"));
+
+    // A rebuild for another plugin API is refused: unloaded, its data kept, one error.
+    fixture.Install("HedgehogTestPluginOldApi.dll");
+    const auto start = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+    {
+        ErrorLog errors;
+        CHECK(plugins.ReloadChangedPlugins(start) == 0);
+        CHECK(errors.HasOne("plugin API version 0"));
+    }
+    CHECK_FALSE(plugins.IsLoaded(TEST_PLUGIN));
+    CHECK(context.GetECS().HasComponent<EcsSerialization::UnknownComponentsComponent>(entity));
+
+    // Rebuilt right, it loads again by itself and the data comes back.
+    fixture.Install("HedgehogTestPlugin.dll");
+    CHECK(plugins.ReloadChangedPlugins(start + std::chrono::seconds(2)) == 1);
+    CHECK(plugins.IsLoaded(TEST_PLUGIN));
+    REQUIRE(FindProperty<float>(context, entity, "Value") != nullptr);
+    CHECK(*FindProperty<float>(context, entity, "Value") == doctest::Approx(3.0f));
 }
 TEST_CASE("PluginManager - a plugin that leaves a subscription is reported and its DLL stays loaded")
 {

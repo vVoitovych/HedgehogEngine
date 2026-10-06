@@ -79,6 +79,11 @@ namespace HedgehogEngine
         return module == static_cast<HMODULE>(m_Handle);
     }
 
+    uint32_t GetCurrentProcessNumber()
+    {
+        return static_cast<uint32_t>(GetCurrentProcessId());
+    }
+
     std::filesystem::path GetEngineModuleDirectory()
     {
         HMODULE module = nullptr;
