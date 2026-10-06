@@ -23,6 +23,7 @@ project "HedgehogEngineTest"
         "HedgehogInput",
         "HedgehogAudio",
         "HedgehogCommon",
+        "HedgehogSettings",
         "ECS",
         "EcsSerialization",
         "HedgehogMath",

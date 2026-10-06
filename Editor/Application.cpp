@@ -11,6 +11,7 @@
 #include "HedgehogEngine/HedgehogSettings/api/HedgehogSettings.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/LayerSettings.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/ProjectSettings.hpp"
+#include "HedgehogEngine/api/Plugins/PluginManager.hpp"
 #include "HedgehogCommon/api/Camera.hpp"
 #include "HedgehogExtract/api/SceneExtractor.hpp"
 #include "HedgehogEngine/api/Containers/FontContainer.hpp"
@@ -123,6 +124,10 @@ namespace Editor
         if (engineContext.GetFileSystem().Exists(HedgehogSettings::ProjectSettings::PATH) &&
             !project.Load(HedgehogSettings::ProjectSettings::PATH, engineContext.GetFileSystem()))
             LOGWARNING("Project settings could not be read, using the defaults.");
+
+        // The project's enabled plugins, after the script system and before EditorGui loads the
+        // last scene, so their components read; one that fails is logged and the rest load.
+        (void)engineContext.GetPlugins().ApplyProjectPlugins(project);
 
         // Play sessions save into the project's editor folder, so they never overwrite a game's saves.
         if (const auto saves = FS::GetSavesDirectory(project.GetName(), true))
