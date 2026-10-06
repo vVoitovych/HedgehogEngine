@@ -40,12 +40,20 @@ namespace
     struct TestPluginService
     {
         int TransformChanges = 0;
+        int PluginEvents     = 0;
+    };
+
+    // An event only the plugin knows, so its bus channel is created by the plugin's code.
+    struct TestPluginEvent
+    {
+        int Value = 0;
     };
 
     TestPluginService g_Service;
+    bool              g_LeaveSubscription = false;
 
-    // Counts frames into its entities' Ticks, and transform changes into the service, through a
-    // subscription it makes in OnRegister and drops in OnUnregister.
+    // Counts frames into its entities' Ticks, and transform changes and its own events into the
+    // service, through subscriptions it makes in OnRegister and drops in OnUnregister.
     class TestPluginSystem : public ECS::System
     {
     public:
@@ -56,13 +64,18 @@ namespace
             {
                 m_Subscription = m_Bus->Subscribe<HedgehogEngine::TransformChangedEvent>(
                     [](const HedgehogEngine::TransformChangedEvent&) { ++g_Service.TransformChanges; });
+                m_EventSubscription =
+                    m_Bus->Subscribe<TestPluginEvent>([](const TestPluginEvent&) { ++g_Service.PluginEvents; });
             }
         }
 
         void OnUnregister(ECS::ECS&) override
         {
             if (m_Bus)
+            {
                 m_Bus->Unsubscribe(m_Subscription);
+                m_Bus->Unsubscribe(m_EventSubscription);
+            }
             m_Bus = nullptr;
         }
 
@@ -76,17 +89,50 @@ namespace
 
     private:
         HedgehogEngine::EventBus*      m_Bus          = nullptr;
-        HedgehogEngine::SubscriptionId m_Subscription = HedgehogEngine::SubscriptionId::Invalid;
+        HedgehogEngine::SubscriptionId m_Subscription      = HedgehogEngine::SubscriptionId::Invalid;
+        HedgehogEngine::SubscriptionId m_EventSubscription = HedgehogEngine::SubscriptionId::Invalid;
     };
 
     bool Register(HedgehogEngine::PluginRegistrar& registrar)
     {
         g_Service = TestPluginService{};
-        return registrar.RegisterReflectedComponent<TestPluginComponent>(EcsSerialization::ComponentDesc{
-                   .Key = "TestPluginComponent", .DisplayName = "Test plugin", .Category = "Test" }) &&
-               registrar.RegisterSystem<TestPluginSystem, TestPluginComponent>() != nullptr &&
-               registrar.RegisterService(g_Service);
+        const bool registered =
+            registrar.RegisterReflectedComponent<TestPluginComponent>(EcsSerialization::ComponentDesc{
+                .Key = "TestPluginComponent", .DisplayName = "Test plugin", .Category = "Test" }) &&
+            registrar.RegisterSystem<TestPluginSystem, TestPluginComponent>() != nullptr &&
+            registrar.RegisterService(g_Service);
+        // The mistake the plugin manager guards against: a subscription nothing ever removes.
+        if (registered && g_LeaveSubscription)
+            registrar.GetEventBus().Subscribe<TestPluginEvent>([](const TestPluginEvent&) { ++g_Service.PluginEvents; });
+        return registered;
     }
 }
 
+// Hooks for the engine's tests, which open the DLL beside the plugin manager to reach them.
+extern "C" __declspec(dllexport) void HedgehogTestPluginLeaveSubscription(bool leave)
+{
+    g_LeaveSubscription = leave;
+}
+
+extern "C" __declspec(dllexport) void HedgehogTestPluginPublishEvent(HedgehogEngine::EventBus* bus)
+{
+    bus->Publish(TestPluginEvent{ 1 });
+}
+
+extern "C" __declspec(dllexport) int HedgehogTestPluginGetEventCount()
+{
+    return g_Service.PluginEvents;
+}
+
+#if defined(HH_TEST_PLUGIN_OLD_API)
+// What an older engine's HH_PLUGIN wrote: plugin API version 0.
+extern "C" __declspec(dllexport) const HedgehogEngine::HedgehogPluginInfo* HedgehogPluginEntry()
+{
+    static const HedgehogEngine::HedgehogPluginInfo info{
+        0, HedgehogEngine::GetCompilerVersion(), HedgehogEngine::GetDebugBuild(), "HedgehogTestPluginOldApi", "0.9.0", &Register, nullptr
+    };
+    return &info;
+}
+#else
 HH_PLUGIN("HedgehogTestPlugin", "1.0.0", &Register, nullptr)
+#endif

@@ -1,5 +1,6 @@
--- A plugin DLL the engine's tests load at runtime (HedgehogEngineTest depends on it). Nothing links it.
-project "HedgehogTestPlugin"
+-- The test plugin built as if for an older engine: it reports plugin API version 0, so the engine
+-- must refuse it. Same source as HedgehogTestPlugin; HedgehogEngineTest depends on it too.
+project "HedgehogTestPluginOldApi"
     kind "SharedLib"
     language "C++"
     cppdialect "C++20"
@@ -14,7 +15,7 @@ project "HedgehogTestPlugin"
         "%{IncludeDir.yaml_cpp}"
     }
 
-    defines { "YAML_CPP_STATIC_DEFINE" }
+    defines { "YAML_CPP_STATIC_DEFINE", "HH_TEST_PLUGIN_OLD_API" }
 
     links
     {

@@ -63,6 +63,22 @@ namespace HedgehogEngine
         m_Handle = nullptr;
     }
 
+    void DynamicLibrary::Release()
+    {
+        m_Handle = nullptr;
+    }
+
+    bool DynamicLibrary::Contains(const void* address) const
+    {
+        if (!m_Handle || !address)
+            return false;
+        HMODULE module = nullptr;
+        if (!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                                static_cast<LPCWSTR>(address), &module))
+            return false;
+        return module == static_cast<HMODULE>(m_Handle);
+    }
+
     std::filesystem::path GetEngineModuleDirectory()
     {
         HMODULE module = nullptr;

@@ -25,6 +25,7 @@
 #include "../Save/SaveRequestSystem.hpp"
 #include "EngineComponents.hpp"
 #include "HedgehogEngine/api/Prefab/PrefabManager.hpp"
+#include "HedgehogEngine/api/Plugins/PluginManager.hpp"
 #include "HedgehogEngine/api/ECS/components/PrefabInstanceComponent.hpp"
 #include "HedgehogEngine/api/ECS/systems/AudioSystem.hpp"
 #include "HedgehogEngine/api/ECS/components/AudioListenerComponent.hpp"
@@ -83,6 +84,7 @@ namespace HedgehogEngine
         // gameplay before any OnFrame, so its place in the order does not matter.
         m_ECS.RegisterSystem<SaveRequestSystem>();
         m_Prefabs   = std::make_unique<PrefabManager>(m_ECS, m_FileSystem, *m_ComponentRegistry, *m_SceneManager);
+        m_Plugins   = std::make_unique<PluginManager>(*this);
 
         m_ResourceCatalog.Update(*m_RenderSystem, *m_MeshSystem);
     }
@@ -92,6 +94,9 @@ namespace HedgehogEngine
         // Systems hear that play ends, but the scene is going away, so it is not restored.
         if (m_PlayState != PlayState::Edit)
             m_ECS.NotifyPlayStop();
+
+        // Plugins go while everything they registered with is still here, last loaded first.
+        m_Plugins->UnloadAll();
 
         // These are destroyed before the ECS (they are declared after it), so no system may find
         // them while the ECS unregisters its systems.
@@ -363,6 +368,7 @@ namespace HedgehogEngine
     SceneManager& EngineContext::GetSceneManager()             { return *m_SceneManager; }
     SaveGameManager& EngineContext::GetSaveGames()             { return *m_SaveGames; }
     PrefabManager&   EngineContext::GetPrefabs()               { return *m_Prefabs; }
+    PluginManager&   EngineContext::GetPlugins()               { return *m_Plugins; }
 
     const EcsSerialization::ComponentSerializerRegistry& EngineContext::GetComponentRegistry() const
     {

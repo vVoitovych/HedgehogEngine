@@ -29,8 +29,8 @@ project "HedgehogEngineTest"
         "FileSystem"
     }
 
-    -- The plugin DLL the tests open at runtime; nothing links it, so it is a build dependency.
-    dependson { "HedgehogTestPlugin" }
+    -- The plugin DLLs the tests open at runtime; nothing links them, so they are build dependencies.
+    dependson { "HedgehogTestPlugin", "HedgehogTestPluginOldApi" }
 
     targetdir (BinariesDir)
     objdir    (IntermediatesDir)

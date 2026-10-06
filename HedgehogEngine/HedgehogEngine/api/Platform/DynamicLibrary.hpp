@@ -44,6 +44,11 @@ namespace HedgehogEngine
         // The exported symbol name, or nullptr (with GetError) when the library has none.
         [[nodiscard]] HEDGEHOG_ENGINE_API void* FindSymbol(const char* name);
         HEDGEHOG_ENGINE_API void Close();
+        // Lets go of the library without closing it: it stays loaded until the process ends. For
+        // a library whose code something still references.
+        HEDGEHOG_ENGINE_API void Release();
+        // Whether address (code or data) lies in this library's image.
+        [[nodiscard]] HEDGEHOG_ENGINE_API bool Contains(const void* address) const;
 
         [[nodiscard]] bool                         IsOpen() const { return m_Handle != nullptr; }
         [[nodiscard]] const std::filesystem::path& GetPath() const { return m_Path; }

@@ -66,8 +66,11 @@ TEST_CASE("Plugin library - a plugin registered, undone and unloaded leaves noth
         PluginRegistrar registrar(*context, info->Name);
         REQUIRE(info->Register(registrar));
         CHECK(context->GetComponentTypes().Find("TestPluginComponent") != nullptr);
-        // The plugin's system subscribed in its OnRegister, with a handler of the plugin's code.
-        CHECK(context->GetEventBus().GetTotalSubscriberCount() == engineSubscribers + 1);
+        // The plugin's system subscribed in its OnRegister, with handlers of the plugin's code.
+        CHECK(context->GetEventBus().GetTotalSubscriberCount() == engineSubscribers + 2);
+        CHECK(context->GetEventBus().CountSubscribersWhere([&library](const std::type_info& type) {
+                  return library.Contains(&type);
+              }) == 2);
 
         const ECS::Entity entity = context->GetSceneManager().CreateGameObject();
         context->GetComponentTypes().Find("TestPluginComponent")->AddDefault(context->GetECS(), entity);
