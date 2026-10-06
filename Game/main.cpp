@@ -89,7 +89,8 @@ int main(int argc, char* argv[])
             LOGERROR("Game: no ", FS::PROJECT_FILE_NAME, " at ", arguments.Project->string(), ".");
             return EXIT_FAILURE;
         }
-        FS::SetEngineRootDirectory(*root);
+        // The project moves; the engine stays where this executable is.
+        FS::SetProjectRootDirectory(*root);
     }
 
     bool started = false;

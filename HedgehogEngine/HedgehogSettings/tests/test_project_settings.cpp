@@ -18,7 +18,7 @@ using HedgehogSettings::ProjectSettings;
 
 namespace
 {
-    // engine:// on a fresh temp directory.
+    // project:// on a fresh temp directory.
     struct ProjectFiles
     {
         TempDir               Dir;
@@ -27,7 +27,7 @@ namespace
         ProjectFiles()
         {
             auto fs = std::make_unique<FS::FileSystem>();
-            fs->RegisterPath("engine://", Dir.Path());
+            fs->RegisterPath("project://", Dir.Path());
             Files.Register(std::move(fs));
         }
     };
@@ -91,7 +91,7 @@ TEST_CASE("Project settings - a missing file keeps the defaults; a malformed one
     LogCapture log;
     CHECK_FALSE(project.Load(ProjectSettings::PATH, files.Files));
     CHECK(project.GetName() == "Kept");
-    CHECK(log.Lines("[Project] engine://Project.yaml is malformed").size() == 1);
+    CHECK(log.Lines("[Project] project://Project.yaml is malformed").size() == 1);
 
     // A file with only some keys gives the defaults for the rest.
     files.Dir.WriteFile("Project.yaml", "name: Partial\nwindow:\n  width: 800\n");
@@ -174,7 +174,7 @@ TEST_CASE("Project settings - the shipped Project.yaml loads with Default.yaml a
     const std::filesystem::path root = std::filesystem::path(__FILE__).parent_path().parent_path().parent_path().parent_path();
     FS::FileSystemManager files;
     auto                  fs = std::make_unique<FS::FileSystem>();
-    fs->RegisterPath("engine://", root);
+    fs->RegisterPath("project://", root);
     files.Register(std::move(fs));
 
     ProjectSettings project;

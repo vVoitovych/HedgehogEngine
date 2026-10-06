@@ -41,14 +41,14 @@ namespace Runtime
         m_Desc       = desc;
         m_FrameCount = 0;
 
-        // The project is read before the engine, whose window it may describe, through engine://
+        // The project is read before the engine, whose window it may describe, through project://
         // alone (the engine's own file system does not exist yet).
         HedgehogSettings::ProjectSettings project;
         {
             FS::FileSystemManager projectFiles;
-            auto                  engineRoot = std::make_unique<FS::FileSystem>();
-            (void)engineRoot->RegisterPath("engine://", FS::GetEngineRootDirectory());
-            (void)projectFiles.Register(std::move(engineRoot));
+            auto                  projectRoot = std::make_unique<FS::FileSystem>();
+            (void)projectRoot->RegisterPath(FS::PROJECT_ALIAS, FS::GetProjectRootDirectory());
+            (void)projectFiles.Register(std::move(projectRoot));
             if (!projectFiles.Exists(m_Desc.ProjectPath))
                 LOGINFO("[Runtime] No project settings at ", m_Desc.ProjectPath, "; using the defaults.");
             else if (!project.Load(m_Desc.ProjectPath, projectFiles))

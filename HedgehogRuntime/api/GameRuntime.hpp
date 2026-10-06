@@ -1,5 +1,6 @@
 #pragma once
 
+#include "HedgehogEngine/HedgehogSettings/api/HedgehogSettings.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/ProjectSettings.hpp"
 
 #include "HedgehogExtract/api/MeshBounds.hpp"
@@ -43,14 +44,14 @@ namespace Runtime
     // What a game run needs: which scene, for how long, at what step, and where things live.
     struct RuntimeDesc
     {
-        // The scene to play (virtual, e.g. engine://Assets/Scenes/Hud.yaml). Empty plays the
+        // The scene to play (virtual, e.g. assets://Scenes/Hud.yaml). Empty plays the
         // project's startup scene, or FallbackScenePath when the project names none.
         std::string                 ScenePath;
         std::string                 FallbackScenePath = "assets://Scenes/Default.yaml";
         uint32_t                    MaxFrames = 0;                  // 0: until the window closes
         std::optional<float>        FixedFrameTime;                 // every frame's dt; nullopt measures real time
-        std::string                 SettingsPath = "engine://engine_settings.yaml"; // read, never written
-        std::string                 ProjectPath  = HedgehogSettings::ProjectSettings::PATH; // under engine://; read, never written
+        std::string                 SettingsPath = HedgehogSettings::Settings::PATH; // read, never written
+        std::string                 ProjectPath  = HedgehogSettings::ProjectSettings::PATH; // under project://; read, never written
         bool                        UseProjectWindow = false;       // the project's title, size and fullscreen; else 1366x768
         bool                        EditorSaves  = false;           // the project's editor saves folder, not the game's
         std::vector<RuntimeMount>   Mounts;

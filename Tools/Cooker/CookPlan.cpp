@@ -26,6 +26,7 @@ namespace Cooker
     namespace
     {
         constexpr std::string_view ENGINE_MOUNT     = "engine://";
+        constexpr std::string_view PROJECT_MOUNT    = "project://";
         constexpr std::string_view ASSETS_MOUNT     = "assets://";
         constexpr const char*      ASSETS_FOLDER    = "Assets";
         constexpr int              MANIFEST_VERSION = 1;
@@ -77,16 +78,19 @@ namespace Cooker
 
     std::optional<std::filesystem::path> ToPackagePath(const std::string& virtualPath)
     {
-        const bool isEngine = virtualPath.starts_with(ENGINE_MOUNT);
-        if (!isEngine && !virtualPath.starts_with(ASSETS_MOUNT))
+        // A package's root is both the engine root and the project root.
+        std::string_view mount;
+        for (const std::string_view candidate : { ENGINE_MOUNT, PROJECT_MOUNT, ASSETS_MOUNT })
+            if (virtualPath.starts_with(candidate))
+                mount = candidate;
+        if (mount.empty())
             return std::nullopt;
 
         // Folded inside its mount, so a ".." cannot reach out of it.
-        const std::filesystem::path relative =
-            std::filesystem::path(virtualPath.substr(isEngine ? ENGINE_MOUNT.size() : ASSETS_MOUNT.size())).lexically_normal();
+        const std::filesystem::path relative = std::filesystem::path(virtualPath.substr(mount.size())).lexically_normal();
         if (relative.empty() || relative.is_absolute() || relative.has_root_name() || *relative.begin() == "..")
             return std::nullopt;
-        return isEngine ? relative : std::filesystem::path(ASSETS_FOLDER) / relative;
+        return mount == ASSETS_MOUNT ? std::filesystem::path(ASSETS_FOLDER) / relative : relative;
     }
 
     CookPlan BuildCookPlan(const std::filesystem::path& projectRoot, const std::vector<std::string>& extraScenes,
@@ -97,6 +101,7 @@ namespace Cooker
         FS::FileSystemManager files;
         auto                  fs = std::make_unique<FS::FileSystem>();
         fs->RegisterPath(std::string(ENGINE_MOUNT), projectRoot);
+        fs->RegisterPath(std::string(PROJECT_MOUNT), projectRoot);
         fs->RegisterPath(std::string(ASSETS_MOUNT), projectRoot / ASSETS_FOLDER);
         files.Register(std::move(fs));
 
@@ -130,7 +135,7 @@ namespace Cooker
             const std::optional<std::filesystem::path> physical = files.ResolvePhysical(asset);
             if (!target || !physical)
             {
-                plan.Errors.push_back(asset + " cannot be packaged: only engine:// and assets:// files can.");
+                plan.Errors.push_back(asset + " cannot be packaged: only engine://, project:// and assets:// files can.");
                 continue;
             }
             plan.Files.push_back({ asset, *physical, *target });

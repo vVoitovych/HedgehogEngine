@@ -34,7 +34,11 @@ namespace HedgehogSettings
         HEDGEHOG_SETTINGS_API std::unique_ptr<LayerSettings>& GetLayerSettings();
         HEDGEHOG_SETTINGS_API const std::unique_ptr<LayerSettings>& GetLayerSettings() const;
 
-        // The project (engine://Project.yaml), loaded and saved on its own: Load and Save here
+        // Where the engine settings live: the project's own folder, since they (layer names, the
+        // shadow map) belong to the game and ship with it.
+        static constexpr const char* PATH = "project://engine_settings.yaml";
+
+        // The project (project://Project.yaml), loaded and saved on its own: Load and Save here
         // touch only engine_settings.yaml.
         HEDGEHOG_SETTINGS_API ProjectSettings&       GetProjectSettings();
         HEDGEHOG_SETTINGS_API const ProjectSettings& GetProjectSettings() const;

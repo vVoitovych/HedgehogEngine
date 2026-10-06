@@ -1,6 +1,8 @@
 #include "HedgehogEngine/api/Assets/EngineAssetDependencies.hpp"
 
 #include "HedgehogEngine/api/EngineContext.hpp"
+#include "HedgehogEngine/HedgehogSettings/api/HedgehogSettings.hpp"
+#include "HedgehogEngine/HedgehogSettings/api/ProjectSettings.hpp"
 
 #include "HedgehogEngine/api/ECS/components/AudioSourceComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/CameraComponent.hpp"
@@ -108,11 +110,11 @@ namespace HedgehogEngine
     {
         // MeshSystem's default meshes and MaterialContainer's default texture are loaded at start.
         std::vector<EngineRuntimeAsset> assets = {
-            { "engine://Project.yaml", true },
+            { HedgehogSettings::ProjectSettings::PATH, true },
             // The engine root's marker: a package holding it is its own engine root, even when
             // it sits inside the repository (Build/<name>), whose marker is further up.
             { "engine://Engine.yaml", false },
-            { "engine://engine_settings.yaml", false },
+            { HedgehogSettings::Settings::PATH, false },
             { EngineContext::INPUT_ACTIONS_PATH, false },
             { "assets://Models/Default/cube.obj", true },
             { "assets://Models/Default/sphere.obj", true },

@@ -42,7 +42,7 @@ namespace Editor
 {
     namespace
     {
-        constexpr const char* ENGINE_SETTINGS_PATH = "engine://engine_settings.yaml";
+        constexpr const char* ENGINE_SETTINGS_PATH = HedgehogSettings::Settings::PATH;
 
         constexpr float RADIANS_TO_DEGREES = 57.2957795f;
 

@@ -24,7 +24,7 @@ namespace HedgehogSettings
         bool operator==(const PluginEntry&) const = default;
     };
 
-    // What a project is, as a game build runs it (engine://Project.yaml): its name (the folder its
+    // What a project is, as a game build runs it (project://Project.yaml): its name (the folder its
     // saves go in), the scene a game starts with, the game window, and the game's save data version.
     // The editor edits it in File > Project Settings; the game runtime reads it at start.
     //
@@ -33,7 +33,7 @@ namespace HedgehogSettings
     class ProjectSettings
     {
     public:
-        static constexpr const char* PATH                  = "engine://Project.yaml";
+        static constexpr const char* PATH                  = "project://Project.yaml";
         static constexpr const char* DEFAULT_NAME          = "HedgehogEngine";
         static constexpr size_t      MAX_NAME_LENGTH       = 64;
         static constexpr uint32_t    DEFAULT_WINDOW_WIDTH  = 1366;

@@ -124,16 +124,22 @@ namespace HedgehogEngine
     void EngineContext::InitFileSystem()
     {
         auto fileSystem = std::make_unique<FS::FileSystem>();
-        const std::filesystem::path root = FS::GetEngineRootDirectory();
+        // The engine's own files (graphs, shaders, its content) under the engine root; the game's
+        // (Project.yaml, its settings, Assets/) under the project root. Both are the repository in a
+        // dev tree today, and a package's own folder.
+        const std::filesystem::path engineRoot  = FS::GetEngineRootDirectory();
+        const std::filesystem::path projectRoot = FS::GetProjectRootDirectory();
 
-        const bool okEngine  = fileSystem->RegisterPath("engine://",  root);
-        const bool okAssets  = fileSystem->RegisterPath("assets://",  root / "Assets");
+        const bool okEngine  = fileSystem->RegisterPath("engine://",  engineRoot);
+        const bool okProject = fileSystem->RegisterPath(FS::PROJECT_ALIAS, projectRoot);
+        const bool okAssets  = fileSystem->RegisterPath("assets://",  projectRoot / "Assets");
         const bool okShaders = fileSystem->RegisterPath("shaders://",
-            root / "HedgehogEngine" / "HedgehogRenderer" / "assets" / "Shaders");
+            engineRoot / "HedgehogEngine" / "HedgehogRenderer" / "assets" / "Shaders");
 
-        if (!okEngine || !okAssets || !okShaders)
+        if (!okEngine || !okProject || !okAssets || !okShaders)
             LOGERROR("EngineContext::InitFileSystem: one or more mount points failed to register — file I/O will be broken.");
         assert(okEngine  && "engine:// mount failed");
+        assert(okProject && "project:// mount failed");
         assert(okAssets  && "assets:// mount failed");
         assert(okShaders && "shaders:// mount failed");
 
