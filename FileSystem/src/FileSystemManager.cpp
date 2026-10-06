@@ -150,20 +150,33 @@ namespace FS
             canonical = std::filesystem::weakly_canonical(absolutePath);
         }
 
+        // Mounts may nest (assets:// inside engine://), so the one with the longest root that
+        // holds the path names it; on a tie the alias that sorts first, so the answer never
+        // depends on map order.
+        const std::string*           bestAlias = nullptr;
+        const std::filesystem::path* bestRoot  = nullptr;
+        size_t                       bestDepth = 0;
         for (const auto& fs : m_FileSystems)
         {
             for (const auto& [alias, physicalRoot] : fs->GetMountPoints())
             {
-                const std::filesystem::path candidatePath = canonical;
-                auto [mountIt, inputIt] = std::mismatch(
-                    physicalRoot.begin(), physicalRoot.end(),
-                    candidatePath.begin(), candidatePath.end());
-                if (mountIt == physicalRoot.end())
+                auto [mountIt, inputIt] =
+                    std::mismatch(physicalRoot.begin(), physicalRoot.end(), canonical.begin(), canonical.end());
+                if (mountIt != physicalRoot.end())
+                    continue;
+                const size_t depth = static_cast<size_t>(std::distance(physicalRoot.begin(), physicalRoot.end()));
+                if (!bestAlias || depth > bestDepth || (depth == bestDepth && alias < *bestAlias))
                 {
-                    const std::filesystem::path rel = candidatePath.lexically_relative(physicalRoot);
-                    return alias + rel.generic_string();
+                    bestAlias = &alias;
+                    bestRoot  = &physicalRoot;
+                    bestDepth = depth;
                 }
             }
+        }
+        if (bestAlias)
+        {
+            const std::filesystem::path rel = canonical.lexically_relative(*bestRoot);
+            return *bestAlias + rel.generic_string();
         }
 
         LOGWARNING("[FileSystemManager] ToVirtualPath: '", absolutePath.string(),

@@ -44,3 +44,12 @@ TEST_CASE("Saves directory - MountSaves creates the folder and mounts it as save
 
     CHECK_FALSE(FS::MountSaves(manager, saves)); // saves:// is taken
 }
+
+TEST_CASE("Editor user directory - HedgehogEngine/Editor under LocalAppData")
+{
+    const std::filesystem::path base = "C:/Users/someone/AppData/Local";
+    CHECK(FS::MakeEditorUserDirectory(base) == base / "HedgehogEngine" / "Editor");
+    const std::optional<std::filesystem::path> real = FS::GetEditorUserDirectory();
+    REQUIRE(real.has_value()); // LOCALAPPDATA is set on Windows
+    CHECK(*real == FS::MakeEditorUserDirectory(*FS::GetLocalAppDataDirectory()));
+}

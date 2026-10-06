@@ -109,6 +109,9 @@ namespace HedgehogEngine
         // MeshSystem's default meshes and MaterialContainer's default texture are loaded at start.
         std::vector<EngineRuntimeAsset> assets = {
             { "engine://Project.yaml", true },
+            // The engine root's marker: a package holding it is its own engine root, even when
+            // it sits inside the repository (Build/<name>), whose marker is further up.
+            { "engine://Engine.yaml", false },
             { "engine://engine_settings.yaml", false },
             { EngineContext::INPUT_ACTIONS_PATH, false },
             { "assets://Models/Default/cube.obj", true },
