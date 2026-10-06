@@ -5,9 +5,16 @@
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
 #include "HedgehogEngine/api/ECS/systems/HierarchySystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/TransformSystem.hpp"
+#include "HedgehogEngine/api/Save/SaveGameManager.hpp"
+
+#include "EcsSerialization/api/UnknownComponents.hpp"
 
 #include "ECS/api/ECS.hpp"
 #include "ECS/api/components/Hierarchy.hpp"
+
+#include "FileSystem/tests/test_helpers.hpp"
+
+#include "yaml-cpp/yaml.h"
 
 #include <algorithm>
 
@@ -152,4 +159,42 @@ TEST_CASE("SceneManager - a game object created and deleted in one frame is skip
 
     CHECK_FALSE(ecs.IsAlive(deleted));
     CHECK(ecs.GetComponent<TransformComponent>(kept).ObjMatrix[3].x() == doctest::Approx(1.0f));
+}
+
+TEST_CASE("Unknown components - kept through Play and Stop and through a save game")
+{
+    using EcsSerialization::UnknownComponent;
+    using EcsSerialization::UnknownComponentsComponent;
+
+    TempDir       saves;
+    EngineContext context;
+    context.GetSaveGames().SetSaveDirectory(saves.Path());
+    ECS::ECS&         ecs    = context.GetECS();
+    const ECS::Entity entity = context.GetSceneManager().CreateGameObject();
+    ecs.AddComponent(entity, UnknownComponentsComponent{ { UnknownComponent{ "SpinnerComponent", "{Speed: 90}" } } });
+
+    const auto speedOf = [&]
+    {
+        REQUIRE(ecs.HasComponent<UnknownComponentsComponent>(entity));
+        const auto& entries = ecs.GetComponent<UnknownComponentsComponent>(entity).Entries;
+        REQUIRE(entries.size() == 1);
+        CHECK(entries[0].Key == "SpinnerComponent");
+        return YAML::Load(entries[0].Yaml)["Speed"].as<int>();
+    };
+
+    // Play's snapshot and Stop's restore.
+    REQUIRE(context.Play());
+    ecs.GetComponent<UnknownComponentsComponent>(entity).Entries.clear();
+    REQUIRE(context.Stop());
+    CHECK(speedOf() == 90);
+
+    // A save game's World section, loaded over a world that lost the data.
+    REQUIRE(context.Play());
+    REQUIRE(context.GetSaveGames().RequestSave("slot"));
+    context.UpdatePlayMode(1.0f / 60.0f);
+    ecs.RemoveComponent<UnknownComponentsComponent>(entity);
+    REQUIRE(context.GetSaveGames().RequestLoad("slot"));
+    context.UpdatePlayMode(1.0f / 60.0f);
+    CHECK(speedOf() == 90);
+    REQUIRE(context.Stop());
 }

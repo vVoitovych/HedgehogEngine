@@ -1,6 +1,7 @@
 #include "api/EcsSerializer.hpp"
 #include "api/ComponentSerializerRegistry.hpp"
 #include "api/Prefab/OverrideSet.hpp"
+#include "api/UnknownComponents.hpp"
 
 #include "ECS/api/components/Hierarchy.hpp"
 
@@ -11,16 +12,77 @@
 #include <algorithm>
 #include <functional>
 #include <memory>
+#include <array>
 #include <optional>
+#include <set>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
 namespace EcsSerialization
 {
+    bool IsReservedEntityKey(std::string_view key)
+    {
+        static constexpr std::array<std::string_view, 8> RESERVED = {
+            "Entity", "Name", "Parent", "Children", "Prefab", "Entities", "Overrides", "PrefabOrigin"
+        };
+        return std::find(RESERVED.begin(), RESERVED.end(), key) != RESERVED.end();
+    }
+
 namespace
 {
+    // The unknown component keys one document has already warned about, so each is reported once.
+    struct UnknownKeys
+    {
+        std::string           SourceName;
+        std::set<std::string> Warned;
+    };
+
+    // Keeps the components of an entity node that no handler reads in its UnknownComponentsComponent,
+    // in document order, when the ECS has that type; drops them otherwise. Warns once per key.
+    void KeepUnknownComponents(ECS::ECS& ecs, ECS::Entity entity, const YAML::Node& node,
+                               const ComponentSerializerRegistry& registry, UnknownKeys& unknown)
+    {
+        if (!node.IsMap())
+            return;
+        const bool                 keep = ecs.IsComponentRegistered<UnknownComponentsComponent>();
+        UnknownComponentsComponent kept;
+        for (const auto& item : node)
+        {
+            const std::string key = item.first.as<std::string>();
+            if (IsReservedEntityKey(key) || registry.FindHandler(key) != nullptr)
+                continue;
+            if (unknown.Warned.insert(key).second)
+            {
+                LOGWARNING("[Scene] " + unknown.SourceName + ": component '" + key +
+                           "' has no registered type (is its plugin loaded?); its data is " + (keep ? "kept." : "dropped."));
+            }
+            if (keep)
+            {
+                YAML::Emitter value;
+                value << item.second;
+                kept.Entries.push_back(UnknownComponent{ key, value.c_str() });
+            }
+        }
+        if (kept.Entries.empty())
+            return;
+        if (ecs.HasComponent<UnknownComponentsComponent>(entity))
+            ecs.GetComponent<UnknownComponentsComponent>(entity) = std::move(kept);
+        else
+            ecs.AddComponent(entity, std::move(kept));
+    }
+
+    // Writes an entity's kept unknown components back, after the known ones.
+    void WriteUnknownComponents(YAML::Emitter& out, const ECS::ECS& ecs, ECS::Entity entity)
+    {
+        if (!ecs.IsComponentRegistered<UnknownComponentsComponent>() || !ecs.HasComponent<UnknownComponentsComponent>(entity))
+            return;
+        for (const UnknownComponent& component : ecs.GetComponent<UnknownComponentsComponent>(entity).Entries)
+            out << YAML::Key << component.Key << YAML::Value << YAML::Load(component.Yaml);
+    }
+
     // The id written for an entity of the hierarchy: itself in a scene, its local id in a subtree.
     using IdMap = std::function<ECS::Entity(ECS::Entity)>;
 
@@ -114,6 +176,7 @@ namespace
             if (handler.HasComponent(ecs, entity))
                 handler.Serialize(out, ecs, entity);
         }
+        WriteUnknownComponents(out, ecs, entity);
 
         out << YAML::Key << "Children" << YAML::Value << YAML::BeginSeq;
         for (ECS::Entity child : hierarchy.Children)
@@ -136,6 +199,7 @@ namespace
         const ComponentSerializerRegistry& Registry;
         std::string                        SourceName;
         std::vector<PendingInstance>       Instances;
+        UnknownKeys                        Unknown;
     };
 
     void DeserializeEntity(ECS::ECS& ecs, const YAML::Node& node, SceneLoad& load);
@@ -251,6 +315,7 @@ namespace
             if (componentNode)
                 handler.Deserialize(ecs, entity, componentNode);
         }
+        KeepUnknownComponents(ecs, entity, node, registry, load.Unknown);
 
         auto& hierarchy    = ecs.GetComponent<ECS::HierarchyComponent>(entity);
         hierarchy.Name   = node["Name"].as<std::string>();
@@ -319,7 +384,8 @@ namespace
     }
 
     void InstantiateEntity(ECS::ECS& ecs, const YAML::Node& node, ECS::Entity parent,
-                           const std::vector<ECS::Entity>& localToNew, const ComponentSerializerRegistry& registry)
+                           const std::vector<ECS::Entity>& localToNew, const ComponentSerializerRegistry& registry,
+                           UnknownKeys& unknown)
     {
         const ECS::Entity entity = localToNew[node["Entity"].as<ECS::Entity>()];
         ecs.AddComponent(entity, ECS::HierarchyComponent{});
@@ -330,6 +396,7 @@ namespace
             if (componentNode)
                 handler.Deserialize(ecs, entity, componentNode);
         }
+        KeepUnknownComponents(ecs, entity, node, registry, unknown);
 
         auto& hierarchy  = ecs.GetComponent<ECS::HierarchyComponent>(entity);
         hierarchy.Name   = node["Name"].as<std::string>();
@@ -339,7 +406,7 @@ namespace
         {
             const ECS::Entity copy = localToNew[child["Entity"].as<ECS::Entity>()];
             ecs.GetComponent<ECS::HierarchyComponent>(entity).Children.push_back(copy);
-            InstantiateEntity(ecs, child, entity, localToNew, registry);
+            InstantiateEntity(ecs, child, entity, localToNew, registry, unknown);
         }
     }
 }
@@ -405,7 +472,7 @@ namespace
             const YAML::Node sceneData = data["Scene"];
             if (sceneData && sceneData.size() > 0)
             {
-                SceneLoad load{ registry, sourceName, {} };
+                SceneLoad load{ registry, sourceName, {}, { sourceName, {} } };
                 for (const auto& node : sceneData)
                     DeserializeEntity(ecs, node, load);
                 for (const PendingInstance& instance : load.Instances)
@@ -559,7 +626,8 @@ namespace
                 if (seen[i] && existing == ECS::INVALID_ENTITY)
                     created.push_back(localToNew.back());
             }
-            InstantiateEntity(ecs, subtree[0], parent, localToNew, registry);
+            UnknownKeys unknown{ sourceName, {} };
+            InstantiateEntity(ecs, subtree[0], parent, localToNew, registry, unknown);
 
             std::unordered_map<ECS::Entity, ECS::Entity> sourceToNew;
             for (size_t i = 0; i < seen.size(); ++i)
