@@ -3,7 +3,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
-#include <memory>
 #include <typeindex>
 #include <unordered_map>
 #include <utility>
@@ -21,6 +20,10 @@ namespace HedgehogEngine
     // subscription order. Subscribing or unsubscribing from inside a handler is safe: a handler
     // added during a publish first runs on the next one, and one removed during a publish is not
     // called again, not even later in the same publish.
+    //
+    // Channels are one concrete, non-virtual type that stores handlers type-erased, so no code of
+    // the module that first used an event (a plugin DLL) stays in the bus: once a subscriber has
+    // unsubscribed, its module may be unloaded.
     class EventBus
     {
     public:
@@ -30,7 +33,8 @@ namespace HedgehogEngine
         SubscriptionId Subscribe(std::function<void(const TEvent&)> handler)
         {
             const SubscriptionId id = static_cast<SubscriptionId>(++m_LastId);
-            GetChannel<TEvent>().Subscribe(id, std::move(handler));
+            GetChannel(std::type_index(typeid(TEvent)))
+                .Subscribe(id, [handler = std::move(handler)](const void* event) { handler(*static_cast<const TEvent*>(event)); });
             return id;
         }
 
@@ -43,7 +47,7 @@ namespace HedgehogEngine
             }
             for (auto& channel : m_Channels)
             {
-                if (channel.second->Unsubscribe(id))
+                if (channel.second.Unsubscribe(id))
                 {
                     return true;
                 }
@@ -54,7 +58,7 @@ namespace HedgehogEngine
         template<typename TEvent>
         void Publish(const TEvent& event)
         {
-            GetChannel<TEvent>().Publish(event);
+            GetChannel(std::type_index(typeid(TEvent))).Publish(&event);
         }
 
         // How many handlers TEvent has (those subscribed during a publish included, those removed
@@ -63,23 +67,26 @@ namespace HedgehogEngine
         [[nodiscard]] size_t GetSubscriberCount() const
         {
             const auto found = m_Channels.find(std::type_index(typeid(TEvent)));
-            return found == m_Channels.end() ? 0 : found->second->GetSubscriberCount();
+            return found == m_Channels.end() ? 0 : found->second.GetSubscriberCount();
+        }
+
+        // The live handlers of every channel, counted as GetSubscriberCount does.
+        [[nodiscard]] size_t GetTotalSubscriberCount() const
+        {
+            size_t count = 0;
+            for (const auto& channel : m_Channels)
+            {
+                count += channel.second.GetSubscriberCount();
+            }
+            return count;
         }
 
     private:
-        class IChannel
+        class Channel
         {
         public:
-            virtual ~IChannel() = default;
-            virtual bool   Unsubscribe(SubscriptionId id) = 0;
-            virtual size_t GetSubscriberCount() const     = 0;
-        };
-
-        template<typename TEvent>
-        class Channel : public IChannel
-        {
-        public:
-            using Handler = std::function<void(const TEvent&)>;
+            // Takes a pointer to the event, of the type the channel is keyed by.
+            using Handler = std::function<void(const void*)>;
 
             void Subscribe(SubscriptionId id, Handler handler)
             {
@@ -89,7 +96,7 @@ namespace HedgehogEngine
                 target.push_back(Entry{ id, std::move(handler), true });
             }
 
-            bool Unsubscribe(SubscriptionId id) override
+            bool Unsubscribe(SubscriptionId id)
             {
                 for (std::vector<Entry>* list : { &m_Handlers, &m_Pending })
                 {
@@ -100,7 +107,7 @@ namespace HedgehogEngine
                         {
                             if (m_PublishDepth > 0)
                             {
-                                entry.Active   = false; // erased when the publish ends
+                                entry.Active  = false; // erased when the publish ends
                                 m_HasRemovals = true;
                             }
                             else
@@ -114,7 +121,7 @@ namespace HedgehogEngine
                 return false;
             }
 
-            size_t GetSubscriberCount() const override
+            size_t GetSubscriberCount() const
             {
                 size_t count = 0;
                 for (const std::vector<Entry>* list : { &m_Handlers, &m_Pending })
@@ -127,7 +134,7 @@ namespace HedgehogEngine
                 return count;
             }
 
-            void Publish(const TEvent& event)
+            void Publish(const void* event)
             {
                 ++m_PublishDepth;
                 for (size_t i = 0; i < m_Handlers.size(); ++i)
@@ -173,19 +180,14 @@ namespace HedgehogEngine
             bool               m_HasRemovals  = false;
         };
 
-        template<typename TEvent>
-        Channel<TEvent>& GetChannel()
+        // Map nodes never move, so a channel stays put while a handler publishes another event
+        // and the map grows.
+        Channel& GetChannel(std::type_index key)
         {
-            const auto key = std::type_index(typeid(TEvent));
-            auto       it  = m_Channels.find(key);
-            if (it == m_Channels.end())
-            {
-                it = m_Channels.emplace(key, std::make_unique<Channel<TEvent>>()).first;
-            }
-            return *static_cast<Channel<TEvent>*>(it->second.get());
+            return m_Channels[key];
         }
 
-        std::unordered_map<std::type_index, std::unique_ptr<IChannel>> m_Channels;
-        uint64_t                                                       m_LastId = 0;
+        std::unordered_map<std::type_index, Channel> m_Channels;
+        uint64_t                                     m_LastId = 0;
     };
 }
