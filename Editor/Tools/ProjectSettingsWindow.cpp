@@ -200,12 +200,13 @@ namespace Editor
 
         // Changes go to the project; Save loads and unloads to match. No plugin code runs here.
         std::optional<std::string> removed;
+        std::optional<std::string> reloaded;
         if (!project.GetPlugins().empty() &&
             ImGui::BeginTable("##Plugins", 3, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_RowBg))
         {
             ImGui::TableSetupColumn("Plugin", ImGuiTableColumnFlags_WidthStretch, 0.35f);
             ImGui::TableSetupColumn("State", ImGuiTableColumnFlags_WidthStretch, 0.65f);
-            ImGui::TableSetupColumn("##Remove", ImGuiTableColumnFlags_WidthFixed);
+            ImGui::TableSetupColumn("##Actions", ImGuiTableColumnFlags_WidthFixed);
             const std::vector<HedgehogSettings::PluginEntry> plugins = project.GetPlugins();
             for (const HedgehogSettings::PluginEntry& plugin : plugins)
             {
@@ -233,6 +234,15 @@ namespace Editor
                     ImGui::SetTooltip("%s", error.c_str());
 
                 ImGui::TableNextColumn();
+                // Reload reads the DLL again (the Editor also does when it is rebuilt); Edit mode only.
+                if (running != loaded.end())
+                {
+                    ImGui::BeginDisabled(context.GetPlayState() != HedgehogEngine::PlayState::Edit);
+                    if (ImGui::SmallButton("Reload"))
+                        reloaded = plugin.Name;
+                    ImGui::EndDisabled();
+                    ImGui::SameLine();
+                }
                 if (ImGui::SmallButton("Remove"))
                     removed = plugin.Name;
                 ImGui::PopID();
@@ -241,6 +251,8 @@ namespace Editor
         }
         if (removed)
             (void)project.RemovePlugin(*removed);
+        if (reloaded)
+            (void)manager.Reload(*reloaded);
 
         // Add: refused while the name is not one or is listed already.
         const std::string problem = CheckNewPluginName(m_PluginNameBuffer, project.GetPlugins());

@@ -9,7 +9,9 @@
 #include "Logger/api/Logger.hpp"
 
 #include <algorithm>
+#include <atomic>
 #include <cctype>
+#include <string>
 #include <typeinfo>
 
 namespace HedgehogEngine
@@ -27,18 +29,45 @@ namespace HedgehogEngine
         {
             return ToLower(a) == ToLower(b);
         }
+
+        // Numbers the managers of one process, so each has its own shadow folder.
+        std::atomic<uint32_t> s_ManagerCount{ 0 };
+
+        std::filesystem::path MakeShadowDirectory()
+        {
+            std::error_code       error;
+            std::filesystem::path temp = std::filesystem::temp_directory_path(error);
+            if (error)
+                temp = std::filesystem::current_path(error);
+            return temp / "HedgehogPlugins" /
+                   (std::to_string(GetCurrentProcessNumber()) + "-" + std::to_string(++s_ManagerCount));
+        }
+    }
+
+    PluginManager::ShadowFile::~ShadowFile()
+    {
+        std::error_code error;
+        if (!Path.empty())
+            std::filesystem::remove(Path, error); // fails, harmlessly, for a DLL kept loaded
     }
 
     PluginManager::PluginManager(EngineContext& engine, std::filesystem::path directory)
         : m_Engine(engine)
         , m_Directory(std::move(directory))
+        , m_ShadowDirectory(MakeShadowDirectory())
     {
     }
 
     PluginManager::~PluginManager()
     {
         UnloadAll();
+        std::error_code error;
+        std::filesystem::remove_all(m_ShadowDirectory, error);
     }
+
+    void PluginManager::SetShadowCopy(bool enabled) { m_ShadowCopy = enabled; }
+    bool PluginManager::IsShadowCopy() const { return m_ShadowCopy; }
+    const std::filesystem::path& PluginManager::GetShadowDirectory() const { return m_ShadowDirectory; }
 
     bool PluginManager::Load(const std::string& name)
     {
@@ -56,8 +85,22 @@ namespace HedgehogEngine
         if (!HedgehogSettings::ProjectSettings::IsValidPluginName(name))
             return Fail(name, "it is not a plugin name (1 to 64 of A-Z, a-z, 0-9, _ and -)");
 
-        auto plugin = std::make_unique<Plugin>();
-        if (!plugin->Library.Open(m_Directory / (name + ".dll")))
+        auto plugin    = std::make_unique<Plugin>();
+        plugin->Source = m_Directory / (name + ".dll");
+        std::filesystem::path opened = plugin->Source;
+        std::error_code       error;
+        // A copy is opened, so the plugin's own DLL stays free to be rebuilt. A missing DLL is
+        // opened as it is, for the usual error.
+        if (m_ShadowCopy && std::filesystem::is_regular_file(plugin->Source, error))
+        {
+            opened = m_ShadowDirectory / (name + "-" + std::to_string(++m_ShadowCount) + ".dll");
+            std::filesystem::create_directories(m_ShadowDirectory, error);
+            if (!std::filesystem::copy_file(plugin->Source, opened, std::filesystem::copy_options::overwrite_existing, error))
+                return Fail(name, "cannot copy " + plugin->Source.string() + " to " + opened.string() + ": " + error.message());
+            plugin->Shadow.Path = opened;
+        }
+        plugin->WriteTime = std::filesystem::last_write_time(plugin->Source, error);
+        if (!plugin->Library.Open(opened))
             return Fail(name, plugin->Library.GetError());
         const auto entry = reinterpret_cast<PluginEntryFunction>(plugin->Library.FindSymbol(PLUGIN_ENTRY_NAME));
         if (!entry)
@@ -100,6 +143,7 @@ namespace HedgehogEngine
         }
 
         m_Errors.erase(ToLower(name));
+        std::erase_if(m_FailedReloads, [&name](const FailedReload& failed) { return SameName(failed.Name, name); });
         LOGINFO("[Plugin] Loaded " + plugin->Name + " " + plugin->Version + ".");
         m_Plugins.push_back(std::move(plugin));
         return true;
@@ -125,6 +169,81 @@ namespace HedgehogEngine
         return true;
     }
 
+    bool PluginManager::Reload(const std::string& name)
+    {
+        if (m_Engine.GetPlayState() != PlayState::Edit)
+        {
+            LOGERROR("[Plugin] " + name + ": plugins reload only in Edit mode.");
+            return false;
+        }
+        const Plugin* plugin = Find(name);
+        if (!plugin)
+        {
+            LOGERROR("[Plugin] " + name + ": it is not loaded.");
+            return false;
+        }
+        const std::string           pluginName = plugin->Name;
+        const std::filesystem::path source     = plugin->Source;
+
+        (void)Unload(pluginName);
+        if (Load(pluginName))
+            return true;
+        // Watched, so a fixed DLL loads once it is rebuilt again.
+        std::error_code error;
+        m_FailedReloads.push_back(FailedReload{ pluginName, source, std::filesystem::last_write_time(source, error) });
+        return false;
+    }
+
+    size_t PluginManager::ReloadChangedPlugins(std::chrono::steady_clock::time_point now)
+    {
+        if (m_Polled && now - m_LastPoll < RELOAD_POLL_INTERVAL)
+            return 0;
+        m_Polled   = true;
+        m_LastPoll = now;
+        if (m_Engine.GetPlayState() != PlayState::Edit)
+            return 0;
+
+        std::error_code          error;
+        std::vector<std::string> changed;
+        for (const std::unique_ptr<Plugin>& plugin : m_Plugins)
+        {
+            const auto writeTime = std::filesystem::last_write_time(plugin->Source, error);
+            if (!error && writeTime != plugin->WriteTime)
+                changed.push_back(plugin->Name);
+        }
+
+        size_t reloaded = 0;
+        for (const std::string& name : changed)
+        {
+            if (Reload(name))
+            {
+                LOGINFO("[Plugin] Reloaded " + name + ".");
+                ++reloaded;
+            }
+        }
+
+        // Failed reloads whose DLL has been rebuilt since; Load drops an entry when it succeeds.
+        const std::vector<FailedReload> failed = m_FailedReloads;
+        for (const FailedReload& entry : failed)
+        {
+            const auto writeTime = std::filesystem::last_write_time(entry.Source, error);
+            if (error || writeTime == entry.WriteTime || IsLoaded(entry.Name))
+                continue;
+            if (Load(entry.Name))
+            {
+                LOGINFO("[Plugin] Reloaded " + entry.Name + ".");
+                ++reloaded;
+            }
+            else
+            {
+                for (FailedReload& watched : m_FailedReloads)
+                    if (SameName(watched.Name, entry.Name))
+                        watched.WriteTime = writeTime; // tried; the next rebuild is
+            }
+        }
+        return reloaded;
+    }
+
     void PluginManager::UnloadAll()
     {
         while (!m_Plugins.empty())
@@ -143,6 +262,9 @@ namespace HedgehogEngine
             return std::any_of(entries.begin(), entries.end(), [&name](const HedgehogSettings::PluginEntry& entry)
                                { return entry.Enabled && SameName(entry.Name, name); });
         };
+
+        // A plugin no longer wanted is not loaded again when its DLL is rebuilt.
+        std::erase_if(m_FailedReloads, [&isEnabled](const FailedReload& entry) { return !isEnabled(entry.Name); });
 
         size_t failed = 0;
         std::vector<std::string> unwanted;

@@ -2,6 +2,7 @@
 
 #include "HedgehogEngine/api/HedgehogEngineApi.hpp"
 
+#include <cstdint>
 #include <filesystem>
 #include <string>
 #include <utility>
@@ -64,4 +65,7 @@ namespace HedgehogEngine
     // The folder holding HedgehogEngine.dll: the shared binaries folder in development, the game's
     // own folder in a package. Plugin DLLs are looked for there.
     [[nodiscard]] HEDGEHOG_ENGINE_API std::filesystem::path GetEngineModuleDirectory();
+
+    // The running process's id, naming its plugin shadow-copy folder.
+    [[nodiscard]] HEDGEHOG_ENGINE_API uint32_t GetCurrentProcessNumber();
 }

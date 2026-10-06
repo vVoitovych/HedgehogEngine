@@ -126,7 +126,9 @@ namespace Editor
             LOGWARNING("Project settings could not be read, using the defaults.");
 
         // The project's enabled plugins, after the script system and before EditorGui loads the
-        // last scene, so their components read; one that fails is logged and the rest load.
+        // last scene, so their components read; one that fails is logged and the rest load. Shadow
+        // copies leave each plugin's own DLL free to be rebuilt while the editor runs.
+        engineContext.GetPlugins().SetShadowCopy(true);
         (void)engineContext.GetPlugins().ApplyProjectPlugins(project);
 
         // Play sessions save into the project's editor folder, so they never overwrite a game's saves.
@@ -280,6 +282,8 @@ namespace Editor
             m_ScriptDebugger->Pump();
         // A script saved on disk takes effect without leaving Play (polled at most once a second).
         m_ScriptSystem->ReloadChangedScripts(m_Context->GetEngineContext().GetECS());
+        // A rebuilt plugin DLL is reloaded in place, in Edit mode (polled at most once a second).
+        (void)m_Context->GetEngineContext().GetPlugins().ReloadChangedPlugins(std::chrono::steady_clock::now());
         m_Context->UpdateContext(dt, GetSceneAspectRatio());
 
         m_ImGui->BeginFrame();
