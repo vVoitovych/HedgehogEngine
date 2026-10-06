@@ -81,6 +81,8 @@ include "HedgehogUI/tests/Build-UiTest.lua"
 group "Plugins"
    include "Plugins/TestPlugin/Build-HedgehogTestPlugin.lua"
    include "Plugins/TestPlugin/Build-HedgehogTestPluginOldApi.lua"
+   include "Plugins/Spinner/Build-Spinner.lua"
+   include "Plugins/Spinner/tests/Build-SpinnerTest.lua"
 group ""
 
 include "HedgehogInput/Build-HedgehogInput.lua"
