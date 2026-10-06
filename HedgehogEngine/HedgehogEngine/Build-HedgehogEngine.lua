@@ -40,6 +40,10 @@ project "HedgehogEngine"
    targetdir (BinariesDir)
    objdir    (IntermediatesDir)
 
+   -- Platform code: one src/Platform/<Name><Platform>.cpp per platform.
+   filter "system:not windows"
+       removefiles { "src/Platform/**Windows.cpp" }
+
    filter "system:windows"
        systemversion "latest"
        defines { "HEDGEHOG_ENGINE_EXPORT", "YAML_CPP_STATIC_DEFINE" }

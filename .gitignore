@@ -651,3 +651,4 @@ Logs/
 /ThirdParty/miniaudio/miniaudio.vcxproj*
 /Editor/tests/EditorTest.vcxproj
 /Editor/tests/EditorTest.vcxproj.filters
+/Plugins/**/*.vcxproj*

@@ -1,5 +1,6 @@
-project "HedgehogEngineTest"
-    kind "ConsoleApp"
+-- A plugin DLL the engine's tests load at runtime (HedgehogEngineTest depends on it). Nothing links it.
+project "HedgehogTestPlugin"
+    kind "SharedLib"
     language "C++"
     cppdialect "C++20"
 
@@ -7,10 +8,9 @@ project "HedgehogEngineTest"
 
     includedirs
     {
-        "../../../ThirdParty",
-        "../../..",     -- so "HedgehogMath/api/...", "ECS/api/..." and the like resolve
-        "../..",        -- so "HedgehogEngine/api/..." resolves
-        ".",
+        "../../ThirdParty",
+        "../..",                 -- so "ECS/api/...", "EcsSerialization/api/..." and the like resolve
+        "../../HedgehogEngine",  -- so "HedgehogEngine/api/..." resolves
         "%{IncludeDir.yaml_cpp}"
     }
 
@@ -18,19 +18,13 @@ project "HedgehogEngineTest"
 
     links
     {
-        "yaml-cpp",
         "HedgehogEngine",
-        "HedgehogInput",
-        "HedgehogAudio",
-        "HedgehogCommon",
         "ECS",
         "EcsSerialization",
         "HedgehogMath",
-        "FileSystem"
+        "Logger",
+        "yaml-cpp"
     }
-
-    -- The plugin DLL the tests open at runtime; nothing links it, so it is a build dependency.
-    dependson { "HedgehogTestPlugin" }
 
     targetdir (BinariesDir)
     objdir    (IntermediatesDir)
