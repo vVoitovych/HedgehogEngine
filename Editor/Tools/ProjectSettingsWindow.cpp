@@ -1,6 +1,8 @@
 #include "ProjectSettingsWindow.hpp"
+#include "PluginNameCheck.hpp"
 
 #include "HedgehogEngine/api/EngineContext.hpp"
+#include "HedgehogEngine/api/Plugins/PluginManager.hpp"
 #include "HedgehogEngine/api/Save/SaveGameManager.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/HedgehogSettings.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/ProjectSettings.hpp"
@@ -12,6 +14,8 @@
 
 #include <algorithm>
 #include <array>
+#include <cctype>
+#include <filesystem>
 
 namespace Editor
 {
@@ -20,6 +24,13 @@ namespace Editor
         constexpr const char* SCENE_FOLDER = "assets://Scenes";
         constexpr const char* NO_SCENE     = "(none: Default.yaml)";
         const ImVec4          ERROR_COLOR(0.95f, 0.35f, 0.35f, 1.0f);
+        const ImVec4          NOTE_COLOR(0.95f, 0.75f, 0.35f, 1.0f);
+
+        bool SameNameIgnoringCase(const std::string& a, const std::string& b)
+        {
+            return std::equal(a.begin(), a.end(), b.begin(), b.end(),
+                              [](unsigned char x, unsigned char y) { return std::tolower(x) == std::tolower(y); });
+        }
 
         // A text field over a std::string, up to 255 bytes.
         bool InputString(const char* label, std::string& value)
@@ -55,10 +66,18 @@ namespace Editor
 
     void ProjectSettingsWindow::Draw(HedgehogEngine::EngineContext& context)
     {
+        // A list saved during Play applies once Play has stopped, whether the window is open or not.
+        if (m_PendingPlugins && context.GetPlayState() == HedgehogEngine::PlayState::Edit)
+        {
+            const HedgehogSettings::ProjectSettings saved = std::move(*m_PendingPlugins);
+            m_PendingPlugins.reset();
+            ApplyPlugins(context, saved);
+        }
+
         if (!Open)
             return;
 
-        ImGui::SetNextWindowSize(ImVec2(520.0f, 360.0f), ImGuiCond_Appearing);
+        ImGui::SetNextWindowSize(ImVec2(560.0f, 520.0f), ImGuiCond_Appearing);
         if (!ImGui::Begin("Project Settings", &Open))
         {
             ImGui::End();
@@ -119,6 +138,8 @@ namespace Editor
         if (ImGui::Checkbox("VSync", &vsync))
             project.SetVSync(vsync);
 
+        DrawPlugins(context);
+
         ImGui::Separator();
         if (ImGui::Button("Save"))
             Save(context);
@@ -146,6 +167,107 @@ namespace Editor
         if (const auto saves = FS::GetSavesDirectory(project.GetName(), true))
             context.GetSaveGames().SetSaveDirectory(*saves);
         m_Status = "Saved.";
+
+        // Plugins load and unload in Edit mode only: in Play the saved list waits for Stop.
+        if (context.GetPlayState() == HedgehogEngine::PlayState::Edit)
+        {
+            m_PendingPlugins.reset();
+            ApplyPlugins(context, project);
+        }
+        else
+        {
+            m_PendingPlugins = project;
+            m_Status         = "Saved; the plugins change when Play stops.";
+        }
+    }
+
+    void ProjectSettingsWindow::ApplyPlugins(HedgehogEngine::EngineContext& context, const HedgehogSettings::ProjectSettings& saved)
+    {
+        const size_t failed = context.GetPlugins().ApplyProjectPlugins(saved);
+        if (failed > 0)
+            m_Status += " " + std::to_string(failed) + " plugin(s) did not load; see Plugins.";
+    }
+
+    void ProjectSettingsWindow::DrawPlugins(HedgehogEngine::EngineContext& context)
+    {
+        HedgehogSettings::ProjectSettings& project = context.GetSettings().GetProjectSettings();
+        HedgehogEngine::PluginManager&     manager = context.GetPlugins();
+        const std::vector<HedgehogEngine::LoadedPlugin> loaded = manager.GetLoaded();
+
+        ImGui::SeparatorText("Plugins");
+        if (project.GetPlugins().empty())
+            ImGui::TextDisabled("None. A plugin is a DLL beside HedgehogEngine.dll; add its name below.");
+
+        // Changes go to the project; Save loads and unloads to match. No plugin code runs here.
+        std::optional<std::string> removed;
+        if (!project.GetPlugins().empty() &&
+            ImGui::BeginTable("##Plugins", 3, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_RowBg))
+        {
+            ImGui::TableSetupColumn("Plugin", ImGuiTableColumnFlags_WidthStretch, 0.35f);
+            ImGui::TableSetupColumn("State", ImGuiTableColumnFlags_WidthStretch, 0.65f);
+            ImGui::TableSetupColumn("##Remove", ImGuiTableColumnFlags_WidthFixed);
+            const std::vector<HedgehogSettings::PluginEntry> plugins = project.GetPlugins();
+            for (const HedgehogSettings::PluginEntry& plugin : plugins)
+            {
+                ImGui::PushID(plugin.Name.c_str());
+                ImGui::TableNextRow();
+
+                ImGui::TableNextColumn();
+                bool enabled = plugin.Enabled;
+                if (ImGui::Checkbox(plugin.Name.c_str(), &enabled))
+                    (void)project.SetPluginEnabled(plugin.Name, enabled);
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip("Loaded by the Editor, --game-mode and the game when enabled.");
+
+                ImGui::TableNextColumn();
+                const auto running = std::find_if(loaded.begin(), loaded.end(), [&plugin](const HedgehogEngine::LoadedPlugin& entry)
+                                                  { return SameNameIgnoringCase(entry.Name, plugin.Name); });
+                const std::string error = manager.GetLastError(plugin.Name);
+                if (running != loaded.end())
+                    ImGui::Text("Loaded %s", running->Version.c_str());
+                else if (!error.empty())
+                    ImGui::TextColored(ERROR_COLOR, "%s", error.c_str());
+                else
+                    ImGui::TextDisabled("Not loaded");
+                if (!error.empty() && ImGui::IsItemHovered())
+                    ImGui::SetTooltip("%s", error.c_str());
+
+                ImGui::TableNextColumn();
+                if (ImGui::SmallButton("Remove"))
+                    removed = plugin.Name;
+                ImGui::PopID();
+            }
+            ImGui::EndTable();
+        }
+        if (removed)
+            (void)project.RemovePlugin(*removed);
+
+        // Add: refused while the name is not one or is listed already.
+        const std::string problem = CheckNewPluginName(m_PluginNameBuffer, project.GetPlugins());
+        const bool        typed   = !m_PluginNameBuffer.empty();
+        if (typed && !problem.empty())
+            ImGui::PushStyleColor(ImGuiCol_Text, ERROR_COLOR);
+        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
+        (void)InputString("##NewPlugin", m_PluginNameBuffer);
+        if (typed && !problem.empty())
+            ImGui::PopStyleColor();
+        ImGui::SameLine();
+        ImGui::BeginDisabled(!problem.empty());
+        if (ImGui::Button("Add plugin") && project.AddPlugin(m_PluginNameBuffer, true))
+            m_PluginNameBuffer.clear();
+        ImGui::EndDisabled();
+        if (typed && !problem.empty())
+            ImGui::TextColored(ERROR_COLOR, "%s", problem.c_str());
+        else if (typed)
+        {
+            const std::filesystem::path dll = manager.GetDirectory() / (m_PluginNameBuffer + ".dll");
+            std::error_code             error;
+            if (!std::filesystem::is_regular_file(dll, error))
+                ImGui::TextColored(NOTE_COLOR, "There is no %s yet; it will not load until it is built.", dll.filename().string().c_str());
+        }
+
+        if (m_PendingPlugins)
+            ImGui::TextColored(NOTE_COLOR, "Saved during Play: the plugins change when Play stops.");
     }
 
     void ProjectSettingsWindow::Revert(HedgehogEngine::EngineContext& context)

@@ -18,7 +18,9 @@ project "EditorTest"
         "../Panels/TextSearch.hpp",
         "../Panels/TextSearch.cpp",
         "../Widgets/AxisGizmo.hpp",
-        "../Widgets/AxisGizmo.cpp"
+        "../Widgets/AxisGizmo.cpp",
+        "../Tools/PluginNameCheck.hpp",
+        "../Tools/PluginNameCheck.cpp"
     }
 
     includedirs
@@ -31,7 +33,8 @@ project "EditorTest"
 
     links
     {
-        "HedgehogMath"
+        "HedgehogMath",
+        "HedgehogSettings"
     }
 
     targetdir (BinariesDir)
