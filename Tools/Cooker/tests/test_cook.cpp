@@ -246,3 +246,83 @@ TEST_CASE("Cooker - an enabled plugin without its DLL fails the cook, naming it,
     REQUIRE(noFolder.Errors.size() == 1);
     CHECK(noFolder.Errors[0] == "The plugin 'GonePlugin' is enabled, but no binaries folder was given.");
 }
+namespace
+{
+    // The fixture with the engine's own files moved out to a separate engine folder.
+    struct SplitFixture : FixtureProject
+    {
+        TempDir Engine;
+
+        SplitFixture()
+        {
+            std::filesystem::remove_all(Project.Path() / "HedgehogEngine");
+            Engine.WriteFile("Engine.yaml", "name: HedgehogEngine\n");
+            for (const char* graph : { "scene", "game", "result" })
+                Engine.WriteFile(std::string("HedgehogEngine/HedgehogRenderer/assets/Graphs/") + graph + ".graph",
+                                 "version: 2\npasses:\n  - type: Ui\n    name: Ui\n");
+        }
+    };
+
+    bool IsUnder(const std::filesystem::path& path, const std::filesystem::path& root)
+    {
+        const std::filesystem::path relative =
+            std::filesystem::weakly_canonical(path).lexically_relative(std::filesystem::weakly_canonical(root));
+        return !relative.empty() && *relative.begin() != "..";
+    }
+
+    // A scene whose one mesh names a file through project://, packaged at the package root.
+    std::string SceneNaming(const std::string& path)
+    {
+        return "Scene name: Clash\nScene:\n  - Entity: 0\n    Name: Root\n    Parent: 0\n    Children:\n"
+               "      - Entity: 1\n        Name: Thing\n        Parent: 0\n        MeshComponent:\n"
+               "          MeshPath: " + path + "\n        Children: []\n";
+    }
+}
+
+TEST_CASE("Cooker - a project outside the engine cooks with the engine's files from the engine folder")
+{
+    SplitFixture fixture;
+    const Cooker::CookPlan plan = Cooker::BuildCookPlan(fixture.Project.Path(), {}, {}, fixture.Engine.Path());
+    REQUIRE(plan.Errors.empty());
+    for (const Cooker::CookFile& file : plan.Files)
+    {
+        CAPTURE(file.VirtualPath);
+        if (file.VirtualPath.starts_with("engine://"))
+            CHECK(IsUnder(file.Source, fixture.Engine.Path()));
+        else
+            CHECK(IsUnder(file.Source, fixture.Project.Path()));
+    }
+
+    REQUIRE(Cooker::CookPackage(plan, fixture.Out.Path()).Errors.empty());
+    std::vector<std::string> expected = EXPECTED_PACKAGE;
+    expected.push_back("Engine.yaml"); // the engine's marker: the package is its own engine root
+    std::sort(expected.begin(), expected.end());
+    CHECK(fixture.PackagedFiles() == expected);
+
+    // Without the engine folder, the project has no graphs of its own.
+    const Cooker::CookPlan alone = Cooker::BuildCookPlan(fixture.Project.Path());
+    CHECK_FALSE(alone.Errors.empty());
+}
+
+TEST_CASE("Cooker - two different files for one package path fail the cook naming both; one file reached twice ships once")
+{
+    SplitFixture fixture;
+    fixture.Project.WriteFile("Engine.yaml", "name: NotTheEngine\n"); // project://Engine.yaml, another file
+    fixture.Project.WriteFile("Assets/Scenes/Clash.yaml", SceneNaming("project://Engine.yaml"));
+
+    const Cooker::CookPlan plan =
+        Cooker::BuildCookPlan(fixture.Project.Path(), { "assets://Scenes/Clash.yaml" }, {}, fixture.Engine.Path());
+    REQUIRE(plan.Errors.size() == 1);
+    CHECK(plan.Errors[0] == "Engine.yaml is both engine://Engine.yaml and project://Engine.yaml, which are different files.");
+    CHECK(Cooker::CookPackage(plan, fixture.Out.Path()).Errors == plan.Errors);
+    CHECK(fixture.PackagedFiles().empty());
+
+    // In one folder both names are the same file: packaged once, no error.
+    FixtureProject together;
+    together.Project.WriteFile("Engine.yaml", "name: HedgehogEngine\n");
+    together.Project.WriteFile("Assets/Scenes/Clash.yaml", SceneNaming("project://Engine.yaml"));
+    const Cooker::CookPlan same = Cooker::BuildCookPlan(together.Project.Path(), { "assets://Scenes/Clash.yaml" });
+    REQUIRE(same.Errors.empty());
+    CHECK(std::count_if(same.Files.begin(), same.Files.end(),
+                        [](const Cooker::CookFile& file) { return file.Target == std::filesystem::path("Engine.yaml"); }) == 1);
+}

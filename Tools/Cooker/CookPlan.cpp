@@ -94,13 +94,15 @@ namespace Cooker
     }
 
     CookPlan BuildCookPlan(const std::filesystem::path& projectRoot, const std::vector<std::string>& extraScenes,
-                           const std::filesystem::path& binariesDir)
+                           const std::filesystem::path& binariesDir, const std::filesystem::path& engineRoot)
     {
         CookPlan plan;
 
+        // The engine's own files (graphs, shaders) from the engine, the game's from the project;
+        // with no engine root given the project is its own engine, as a package or the dev tree is.
         FS::FileSystemManager files;
         auto                  fs = std::make_unique<FS::FileSystem>();
-        fs->RegisterPath(std::string(ENGINE_MOUNT), projectRoot);
+        fs->RegisterPath(std::string(ENGINE_MOUNT), engineRoot.empty() ? projectRoot : engineRoot);
         fs->RegisterPath(std::string(PROJECT_MOUNT), projectRoot);
         fs->RegisterPath(std::string(ASSETS_MOUNT), projectRoot / ASSETS_FOLDER);
         files.Register(std::move(fs));
@@ -140,6 +142,26 @@ namespace Cooker
             }
             plan.Files.push_back({ asset, *physical, *target });
         }
+
+        // A package lays engine://X and project://X both at X: two different files with one
+        // target cannot both ship. One file reached by two names is packaged once.
+        std::map<std::string, const CookFile*> byTarget;
+        std::vector<CookFile>                  unique;
+        for (const CookFile& file : plan.Files)
+        {
+            const std::string key   = file.Target.lexically_normal().generic_string();
+            const auto        found = byTarget.find(key);
+            std::error_code   error;
+            if (found == byTarget.end())
+                byTarget.emplace(key, &file);
+            else if (!std::filesystem::equivalent(found->second->Source, file.Source, error))
+                plan.Errors.push_back(key + " is both " + found->second->VirtualPath + " and " + file.VirtualPath +
+                                      ", which are different files.");
+        }
+        for (const CookFile& file : plan.Files)
+            if (byTarget.at(file.Target.lexically_normal().generic_string()) == &file)
+                unique.push_back(file);
+        plan.Files = std::move(unique);
 
         // The enabled plugins' DLLs, at the package root where the engine looks for them.
         for (const HedgehogSettings::PluginEntry& plugin : project.GetPlugins())

@@ -1,15 +1,19 @@
 // Cooker.exe: copies a project's referenced assets into a package folder.
 //
 //   Cooker.exe --project <folder> --out <folder> [--scene <assets://...yaml>]... [--glslc <glslc.exe>]
-//              [--binaries <folder>]
+//              [--binaries <folder>] [--engine <folder>]
 //
-// The project is the folder holding Project.yaml. The package gets the closure of the startup
+// The project is the folder holding Project.yaml, anywhere on disk; the engine (its render graphs
+// and shaders, and the shader sources compiled first) is --engine, by default the engine this
+// Cooker belongs to (the folder holding Engine.yaml above it). The package gets the closure of the startup
 // scene (and of each --scene), the files the engine always loads, the DLLs of the plugins the
 // project enables (from --binaries, by default the Cooker's own folder) and manifest.yaml; a second cook
 // copies only what changed and removes what is no longer referenced. Stale engine shaders are
 // compiled first. Exits nonzero, naming the file, when a reference is missing or a copy fails.
 
 #include "CookPlan.hpp"
+
+#include "FileSystem/api/PathUtils.hpp"
 
 #include "Logger/api/Logger.hpp"
 
@@ -28,6 +32,7 @@ namespace
         std::optional<std::filesystem::path> Out;
         std::optional<std::filesystem::path> Glslc;
         std::optional<std::filesystem::path> Binaries;
+        std::optional<std::filesystem::path> Engine;
         std::vector<std::string>             Scenes;
         bool                                 Valid = true;
     };
@@ -48,6 +53,8 @@ namespace
                 arguments.Glslc = argv[++i];
             else if (std::strcmp(argv[i], "--binaries") == 0 && hasValue)
                 arguments.Binaries = argv[++i];
+            else if (std::strcmp(argv[i], "--engine") == 0 && hasValue)
+                arguments.Engine = argv[++i];
             else
             {
                 LOGERROR("Cooker: unknown argument '", argv[i], "'.");
@@ -56,19 +63,19 @@ namespace
         }
         if (arguments.Valid && (!arguments.Project || !arguments.Out))
         {
-            LOGERROR("Cooker: usage: Cooker.exe --project <folder> --out <folder> [--scene <assets://...>]... [--glslc <exe>] [--binaries <folder>]");
+            LOGERROR("Cooker: usage: Cooker.exe --project <folder> --out <folder> [--scene <assets://...>]... [--glslc <exe>] [--binaries <folder>] [--engine <folder>]");
             arguments.Valid = false;
         }
         return arguments;
     }
 
-    // The engine's shaders, compiled where the project carries their sources (a dev tree).
-    bool CompileShaders(const std::filesystem::path& project, const std::optional<std::filesystem::path>& glslcArgument)
+    // The engine's shaders, compiled where the engine carries their sources (a dev tree).
+    bool CompileShaders(const std::filesystem::path& engine, const std::optional<std::filesystem::path>& glslcArgument)
     {
-        const std::filesystem::path shaders = project / "HedgehogEngine" / "HedgehogRenderer" / "assets" / "Shaders";
+        const std::filesystem::path shaders = engine / "HedgehogEngine" / "HedgehogRenderer" / "assets" / "Shaders";
         if (!std::filesystem::is_directory(shaders))
             return true;
-        const std::filesystem::path glslc = glslcArgument.value_or(project / "ThirdParty" / "glslc" / "glslc.exe");
+        const std::filesystem::path glslc = glslcArgument.value_or(engine / "ThirdParty" / "glslc" / "glslc.exe");
         if (!std::filesystem::is_regular_file(glslc))
         {
             LOGWARNING("Cooker: no glslc at ", glslc.string(), "; shaders are packaged as they were last compiled.");
@@ -92,13 +99,16 @@ int main(int argc, char* argv[])
 
     const std::filesystem::path project = std::filesystem::absolute(*arguments.Project);
     const std::filesystem::path out     = std::filesystem::absolute(*arguments.Out);
-    if (!CompileShaders(project, arguments.Glslc))
+    // The engine the game is built with: the one this Cooker belongs to unless --engine names one.
+    const std::filesystem::path engine =
+        arguments.Engine ? std::filesystem::absolute(*arguments.Engine) : FS::GetEngineRootDirectory();
+    if (!CompileShaders(engine, arguments.Glslc))
         return EXIT_FAILURE;
 
     // Plugin DLLs come from the folder the engine was built into, where the Cooker is too.
     const std::filesystem::path binaries =
         arguments.Binaries ? std::filesystem::absolute(*arguments.Binaries) : std::filesystem::absolute(argv[0]).parent_path();
-    const Cooker::CookPlan   plan   = Cooker::BuildCookPlan(project, arguments.Scenes, binaries);
+    const Cooker::CookPlan   plan   = Cooker::BuildCookPlan(project, arguments.Scenes, binaries, engine);
     const Cooker::CookResult result = Cooker::CookPackage(plan, out);
     for (const std::string& error : result.Errors)
         LOGERROR("Cooker: ", error);
