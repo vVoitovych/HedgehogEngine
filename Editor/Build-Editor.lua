@@ -42,6 +42,7 @@ project "Editor"
       "Logger",
       "yaml-cpp",
       "ECS",
+      "EcsSerialization",
       "DialogueWindows",
       "ContentLoader",
       "FileSystem",

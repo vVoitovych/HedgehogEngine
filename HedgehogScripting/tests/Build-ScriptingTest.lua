@@ -34,6 +34,9 @@ project "ScriptingTest"
         "yaml-cpp"
     }
 
+    -- The Spinner plugin, which a test loads at runtime; nothing links it.
+    dependson { "Spinner" }
+
     targetdir (BinariesDir)
     objdir    (IntermediatesDir)
 

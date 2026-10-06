@@ -103,4 +103,15 @@ namespace HedgehogScripting::Bindings
     // pixels, y down; isPointerInside. Consumed actions read as up; nothing is down outside Play.
     // Every call reads the current state. context must outlive lua.
     void RegisterInput(sol::state& lua, HedgehogEngine::EngineContext& context);
+
+    // Any registered component by its key, as plugins' components are reached (call after
+    // RegisterEntity): entity:getComponent(key) (nil when absent), hasComponent(key) and
+    // addComponent(key) (its AddDefault; an existing one is returned) give a RegistryComponent of
+    // the handle and the key only, whose fields are the component's reflected properties by name,
+    // looked up again on every access: Bool, Int, UInt, Float, Double, String, Vec3 (a Vector3) and
+    // Entity (an Entity, nil for none) read and write; Enum (a number), Vec2 and Vec4 (tables) only
+    // read. An unregistered key (its plugin unloaded), a stale entity, an unknown property and a
+    // wrong value are script errors naming them. Engine components with their own bindings (Light,
+    // Camera, Mesh, Animator, AudioSource, the UI parts, Transform) are handed out as those.
+    void RegisterRegistryComponents(sol::state& lua, HedgehogEngine::EngineContext& context);
 }
