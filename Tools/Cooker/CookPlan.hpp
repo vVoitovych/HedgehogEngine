@@ -11,8 +11,9 @@
 // finds the project with no other files.
 namespace Cooker
 {
-    // Where a virtual path goes in a package: engine://X at X, assets://X at Assets/X; nullopt
-    // for any other path (another mount, an absolute file), which cannot be packaged.
+    // Where a virtual path goes in a package: engine://X and project://X at X (a package's root is
+    // both roots), assets://X at Assets/X; nullopt for any other path (another mount, an absolute
+    // file), which cannot be packaged.
     [[nodiscard]] std::optional<std::filesystem::path> ToPackagePath(const std::string& virtualPath);
 
     struct CookFile

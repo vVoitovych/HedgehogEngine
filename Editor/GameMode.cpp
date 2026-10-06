@@ -13,7 +13,7 @@ namespace Editor
 {
     namespace
     {
-        constexpr const char* SCENE_DIRECTORY = "engine://Assets/Scenes/";
+        constexpr const char* SCENE_DIRECTORY = "assets://Scenes/";
         constexpr const char* FALLBACK_SCENE  = "Default.yaml";
 
         // A fixed step keeps runs comparable: nothing here measures time.

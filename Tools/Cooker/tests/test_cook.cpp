@@ -88,6 +88,10 @@ TEST_CASE("Cooker - virtual paths map onto the package layout the engine mounts"
 {
     CHECK(Cooker::ToPackagePath("assets://Models/a.obj") == std::filesystem::path("Assets/Models/a.obj"));
     CHECK(Cooker::ToPackagePath("engine://Project.yaml") == std::filesystem::path("Project.yaml"));
+    CHECK(Cooker::ToPackagePath("project://Project.yaml") == std::filesystem::path("Project.yaml"));
+    CHECK(Cooker::ToPackagePath("project://engine_settings.yaml") == std::filesystem::path("engine_settings.yaml"));
+    CHECK_FALSE(Cooker::ToPackagePath("project://../escape.yaml"));
+    CHECK_FALSE(Cooker::ToPackagePath("project://"));
     CHECK(Cooker::ToPackagePath("engine://HedgehogEngine/x/../y.graph") == std::filesystem::path("HedgehogEngine/y.graph"));
     CHECK_FALSE(Cooker::ToPackagePath("shaders://a.spv"));
     CHECK_FALSE(Cooker::ToPackagePath("D:/Graphs/a.graph"));

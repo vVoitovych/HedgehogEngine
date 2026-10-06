@@ -1440,7 +1440,7 @@ namespace Editor
         ImGui::SeparatorText("Engine settings");
         if (ImGui::Button("Save engine settings"))
         {
-            if (!settings.Save("engine://engine_settings.yaml", engineContext.GetFileSystem()))
+            if (!settings.Save(HedgehogSettings::Settings::PATH, engineContext.GetFileSystem()))
             {
                 LOGWARNING("EditorGui: failed to save engine settings.");
             }
@@ -1448,7 +1448,7 @@ namespace Editor
         ImGui::SameLine();
         if (ImGui::Button("Reload engine settings"))
         {
-            if (!settings.Load("engine://engine_settings.yaml", engineContext.GetFileSystem()))
+            if (!settings.Load(HedgehogSettings::Settings::PATH, engineContext.GetFileSystem()))
             {
                 LOGWARNING("EditorGui: no engine settings file to reload.");
             }

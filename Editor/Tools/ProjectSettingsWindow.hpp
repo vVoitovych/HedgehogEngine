@@ -15,7 +15,7 @@ namespace Editor
 {
     // File > Project Settings: edits the engine's ProjectSettings in place (name, startup scene
     // picked from assets://Scenes, game window, game data version, plugins). Save writes
-    // engine://Project.yaml, points the editor's saves at the project's (possibly renamed) folder
+    // project://Project.yaml, points the editor's saves at the project's (possibly renamed) folder
     // and makes the loaded plugins the saved list's enabled ones (in Play, once Play stops); Revert
     // reads the file again. --game-mode and a game build read the saved file.
     class ProjectSettingsWindow
