@@ -12,6 +12,9 @@
 #      ("HedgehogScripting/..."), the library above it that owns scripting.
 #   4. The game never includes ImGui: no file under HedgehogRuntime/ or Game/ may include
 #      "imgui.h" or "imgui_impl_*", so the Game executable links no editor UI.
+#   5. Plugins are engine-side: no file under Plugins/ may include ImGui ("imgui.h",
+#      "imgui_impl_*"), Lua ("Lua/...", "lua.h", "lualib.h", "lauxlib.h", "lua.hpp"), sol2
+#      ("sol/...") or HedgehogScripting ("HedgehogScripting/...").
 #
 # All rules match #include strings, never file-system paths: the path
 # HedgehogEngine/HedgehogCommon/... contains "HedgehogEngine/" and must not match rule 2.
@@ -43,6 +46,14 @@ $RendererForbidden  = @(
 $RuntimeForbidden   = @(
     @{ Pattern = '(^|[/\\])imgui\.h$';                 Reason = 'the game must not include ImGui' },
     @{ Pattern = '(^|[/\\])imgui_impl_[^/\\]*$';       Reason = 'the game must not include ImGui' }
+)
+$PluginForbidden    = @(
+    @{ Pattern = '(^|[/\\])imgui\.h$';                 Reason = 'a plugin must not include ImGui' },
+    @{ Pattern = '(^|[/\\])imgui_impl_[^/\\]*$';       Reason = 'a plugin must not include ImGui' },
+    @{ Pattern = '(^|[/\\])Lua[/\\]';                  Reason = 'a plugin must not include Lua' },
+    @{ Pattern = '(^|[/\\])(lua\.h|lualib\.h|lauxlib\.h|lua\.hpp)$'; Reason = 'a plugin must not include Lua' },
+    @{ Pattern = '(^|[/\\])sol[/\\]';                  Reason = 'a plugin must not include sol2' },
+    @{ Pattern = '(^|[/\\])HedgehogScripting[/\\]';    Reason = 'a plugin must not depend on HedgehogScripting' }
 )
 $EngineForbidden    = @(
     @{ Pattern = '(^|[/\\])Lua[/\\]';                  Reason = 'the engine module must not include Lua' },
@@ -93,6 +104,7 @@ function Get-Violations([string]$root)
     $engineRoot   = Join-Path (Join-Path $root 'HedgehogEngine') 'HedgehogEngine'
     $runtimeRoot  = Join-Path $root 'HedgehogRuntime'
     $gameRoot     = Join-Path $root 'Game'
+    $pluginsRoot  = Join-Path $root 'Plugins'
     $violations   = New-Object System.Collections.Generic.List[string]
 
     $files = @(Get-ChildItem -LiteralPath $root -Recurse -File -ErrorAction SilentlyContinue |
@@ -109,6 +121,7 @@ function Get-Violations([string]$root)
         if (Test-Under $file.FullName $rendererRoot) { $rules += $RendererForbidden }
         if (Test-Under $file.FullName $engineRoot)   { $rules += $EngineForbidden }
         if ((Test-Under $file.FullName $runtimeRoot) -or (Test-Under $file.FullName $gameRoot)) { $rules += $RuntimeForbidden }
+        if (Test-Under $file.FullName $pluginsRoot)  { $rules += $PluginForbidden }
 
         $lineNumber = 0
         foreach ($line in [IO.File]::ReadAllLines($file.FullName))
@@ -144,7 +157,7 @@ function Get-Violations([string]$root)
 function Invoke-SelfTest
 {
     $temp    = Join-Path ([IO.Path]::GetTempPath()) ('boundary_selftest_' + [Guid]::NewGuid().ToString('N'))
-    $modules = @('HedgehogEngine\HedgehogEngine', 'HedgehogEngine\HedgehogRenderer', 'Editor', 'HedgehogScripting', 'HedgehogRuntime', 'Game')
+    $modules = @('HedgehogEngine\HedgehogEngine', 'HedgehogEngine\HedgehogRenderer', 'Editor', 'HedgehogScripting', 'HedgehogRuntime', 'Game', 'Plugins\Spinner')
     $cases   = @(
         @{ Module = 'HedgehogEngine\HedgehogEngine';   Include = 'ThirdParty/Lua/lua/lua.h' },
         @{ Module = 'HedgehogEngine\HedgehogEngine';   Include = 'lauxlib.h' },
@@ -155,6 +168,11 @@ function Invoke-SelfTest
         @{ Module = 'HedgehogRuntime';                 Include = 'imgui.h' },
         @{ Module = 'HedgehogRuntime';                 Include = 'backends/imgui_impl_glfw.h' },
         @{ Module = 'Game';                            Include = 'imgui.h' },
+        @{ Module = 'Plugins\Spinner';                 Include = 'imgui.h' },
+        @{ Module = 'Plugins\Spinner';                 Include = 'backends/imgui_impl_vulkan.h' },
+        @{ Module = 'Plugins\Spinner';                 Include = 'lua.h' },
+        @{ Module = 'Plugins\Spinner';                 Include = 'sol/sol.hpp' },
+        @{ Module = 'Plugins\Spinner';                 Include = 'HedgehogScripting/api/ScriptSystem.hpp' },
         @{ Module = 'Editor';                          Include = 'HedgehogEngine/RHI/src/Vulkan/VulkanDevice.hpp' }
     )
     $failures = 0
