@@ -3,6 +3,7 @@
 #include "JoltConversions.hpp"
 #include "JoltLayers.hpp"
 #include "JoltRuntime.hpp"
+#include "JoltState.hpp"
 
 #include <Jolt/Jolt.h>
 
@@ -34,19 +35,6 @@ namespace HP
             return std::isfinite(vector.x()) && std::isfinite(vector.y()) && std::isfinite(vector.z());
         }
     }
-
-    // Declared in the order things are built, so they are destroyed in reverse: the physics system
-    // before the job system, allocator and filters it refers to.
-    struct JoltState
-    {
-        BroadPhaseLayerMap                   LayerMap;
-        ObjectVsBroadPhaseFilter             BroadPhaseFilter;
-        ObjectLayerPairFilter                PairFilter;
-        std::unique_ptr<JPH::TempAllocator>  TempAllocator;
-        std::unique_ptr<JPH::JobSystem>      JobSystem;
-        std::unique_ptr<JPH::PhysicsSystem>  System;
-        int32_t                              WorkerThreads = 0;
-    };
 
     PhysicsWorld::PhysicsWorld() = default;
 
