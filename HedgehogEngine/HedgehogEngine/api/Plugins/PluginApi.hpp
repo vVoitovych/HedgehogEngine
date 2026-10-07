@@ -8,7 +8,8 @@
 // The version of everything a plugin touches: PluginRegistrar, EngineContext and the engine, ECS
 // and EcsSerialization types a plugin uses. Bump it whenever one of them changes layout or
 // meaning, so plugins built against the old one are refused instead of crashing.
-#define HH_PLUGIN_API_VERSION 1u
+// 2 (HE-310): ECS::System gained OnPostFixedUpdate.
+#define HH_PLUGIN_API_VERSION 2u
 
 namespace HedgehogEngine
 {

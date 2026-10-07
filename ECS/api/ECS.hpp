@@ -204,6 +204,8 @@ namespace ECS
         ECS_API void NotifyPlayPause();
         ECS_API void NotifyPlayResume();
         ECS_API void NotifyPlayStop();
+        // One fixed step: every system's OnFixedUpdate, then every system's OnPostFixedUpdate, both
+        // in registration order.
         ECS_API void RunFixedUpdate(float fixedDeltaTime);
         ECS_API void RunUpdate(float deltaTime);
 

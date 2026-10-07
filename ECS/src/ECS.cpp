@@ -138,6 +138,7 @@ namespace ECS
     {
         DispatchScope scope(*this);
         m_SystemManager->ForEachSystem([&](System& system) { system.OnFixedUpdate(*this, fixedDeltaTime); });
+        m_SystemManager->ForEachSystem([&](System& system) { system.OnPostFixedUpdate(*this, fixedDeltaTime); });
     }
 
     void ECS::RunUpdate(float deltaTime)
