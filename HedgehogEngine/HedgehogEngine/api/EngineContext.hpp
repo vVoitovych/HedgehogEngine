@@ -38,6 +38,11 @@ namespace HA
     class AudioEngine;
 }
 
+namespace HP
+{
+    class PhysicsWorld;
+}
+
 namespace HedgehogEngine
 {
     class WindowContext;
@@ -53,6 +58,8 @@ namespace HedgehogEngine
     class UiSystem;
     class AudioSystem;
     class AudioListenerSystem;
+    class PhysicsSystem;
+    class RigidBodyListSystem;
     class SaveGameManager;
     class PrefabManager;
     class PluginManager;
@@ -154,7 +161,7 @@ namespace HedgehogEngine
         // How every component is written to and read from scenes, snapshots, saves and prefabs.
         [[nodiscard]] HEDGEHOG_ENGINE_API const EcsSerialization::ComponentSerializerRegistry& GetComponentRegistry() const;
 
-        // Every component type: the engine's 17 in serializer order, then any an application or
+        // Every component type: the engine's 19 in serializer order, then any an application or
         // plugin adds. Also the ECS's ComponentTypeRegistry service. Menus and the inspector list it.
         [[nodiscard]] HEDGEHOG_ENGINE_API EcsSerialization::ComponentTypeRegistry&       GetComponentTypes();
         [[nodiscard]] HEDGEHOG_ENGINE_API const EcsSerialization::ComponentTypeRegistry& GetComponentTypes() const;
@@ -176,11 +183,16 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API AnimationSystem*    GetAnimationSystem() const;
         HEDGEHOG_ENGINE_API UiSystem*           GetUiSystem()        const;
         HEDGEHOG_ENGINE_API AudioSystem*        GetAudioSystem()     const;
+        HEDGEHOG_ENGINE_API PhysicsSystem*      GetPhysicsSystem()   const;
 
         // The audio engine AudioSystem plays through. The context never starts it, so tests and
         // tools stay silent: the application calls Init (the Editor and --game-mode with a device,
         // tests with NoDevice). Until then every sound is skipped.
         HEDGEHOG_ENGINE_API HA::AudioEngine& GetAudioEngine();
+
+        // The physics world PhysicsSystem simulates in. It starts at the first Play with a collider,
+        // from the project's physics settings, so a context without colliders never starts Jolt.
+        HEDGEHOG_ENGINE_API HP::PhysicsWorld& GetPhysicsWorld();
 
         HEDGEHOG_ENGINE_API const FS::FileSystemManager& GetFileSystem() const;
         // Mutable, so an application can mount its own folders (a game's data) before loading.
@@ -207,6 +219,8 @@ namespace HedgehogEngine
 
         // Before the ECS, so it outlives AudioSystem and the sounds the components hold.
         std::unique_ptr<HA::AudioEngine> m_AudioEngine;
+        // Likewise, so it outlives PhysicsSystem and the bodies it made.
+        std::unique_ptr<HP::PhysicsWorld> m_PhysicsWorld;
 
         ECS::ECS m_ECS;
 
@@ -220,6 +234,8 @@ namespace HedgehogEngine
         std::shared_ptr<UiSystem>         m_UiSystem;
         std::shared_ptr<AudioSystem>         m_AudioSystem;
         std::shared_ptr<AudioListenerSystem> m_AudioListenerSystem;
+        std::shared_ptr<PhysicsSystem>       m_PhysicsSystem;
+        std::shared_ptr<RigidBodyListSystem> m_RigidBodyListSystem;
 
         ResourceCatalog m_ResourceCatalog;
 

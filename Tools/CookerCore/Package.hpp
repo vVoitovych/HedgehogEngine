@@ -13,10 +13,10 @@ namespace Cooker
 {
     // What Game.exe loads from beside itself, copied from the binaries folder into the package
     // root. A new DLL the game links must be added here.
-    inline constexpr std::array<const char*, 13> GAME_RUNTIME_FILES = {
-        "Game.exe",         "glfw.dll",         "Logger.dll",          "FileSystem.dll",   "HedgehogMath.dll",
-        "HedgehogCommon.dll", "ECS.dll",        "EcsSerialization.dll", "ContentLoader.dll", "HedgehogSettings.dll",
-        "HedgehogWindow.dll", "HedgehogAudio.dll", "HedgehogEngine.dll",
+    inline constexpr std::array<const char*, 14> GAME_RUNTIME_FILES = {
+        "Game.exe",           "glfw.dll",          "Logger.dll",          "FileSystem.dll",    "HedgehogMath.dll",
+        "HedgehogCommon.dll", "ECS.dll",           "EcsSerialization.dll", "ContentLoader.dll", "HedgehogSettings.dll",
+        "HedgehogWindow.dll", "HedgehogAudio.dll", "HedgehogPhysics.dll", "HedgehogEngine.dll",
     };
 
     // The engine's licence and the third-party notices, from the engine root: every game ships them.

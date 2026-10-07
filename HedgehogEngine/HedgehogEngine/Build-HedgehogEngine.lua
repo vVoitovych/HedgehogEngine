@@ -29,6 +29,7 @@ project "HedgehogEngine"
         "HedgehogInput",
         "HedgehogUI",
         "HedgehogAudio",
+        "HedgehogPhysics",
         "HedgehogMath",
         "Logger",
         "ECS",
