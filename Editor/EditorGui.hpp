@@ -61,6 +61,7 @@ namespace Editor
     class PipelineWindow;
     class ShaderWindow;
     class InputActionsWindow;
+    class NewProjectWindow;
     class ProjectSettingsWindow;
     class RenderGraphEditorWindow;
 
@@ -151,11 +152,12 @@ namespace Editor
         // ── Panel content (drawn into dock areas) ────────────────────────────
         void DrawPanelContent(PanelId panel, HedgehogEngine::Engine& context);
         void DrawMainMenu(HedgehogEngine::Engine& context);
-        // File > Open Project... and Recent Projects, enabled in Edit mode only.
+        // File > New Project..., Open Project... and Recent Projects, enabled in Edit mode only.
         void DrawProjectMenuItems(bool editing);
         // Checks folder holds a readable Project.yaml (else one error in the Console), asks before
-        // leaving the open project, then records it first in the recent list and requests it.
-        void RequestProject(const std::filesystem::path& folder);
+        // leaving the open project unless confirm is false (a project New Project just created,
+        // whose window says so), then records it first in the recent list and requests it.
+        void RequestProject(const std::filesystem::path& folder, bool confirm = true);
         // The Add component items, enabled while an entity is selected; shared with the inspector.
         void DrawAddComponentItems(HedgehogEngine::Engine& context);
         void CreateMaterial(HedgehogEngine::EngineContext& engineContext);
@@ -288,6 +290,7 @@ namespace Editor
         std::unique_ptr<ShaderWindow>            m_ShaderWindow;
         std::unique_ptr<InputActionsWindow>      m_InputActionsWindow;
         std::unique_ptr<ProjectSettingsWindow>   m_ProjectSettingsWindow;
+        std::unique_ptr<NewProjectWindow>        m_NewProjectWindow;
         std::unique_ptr<RenderGraphEditorWindow> m_RenderGraphEditorWindow;
 
         // Valid only during Draw(); read by the viewport panel.

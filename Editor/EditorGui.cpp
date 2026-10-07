@@ -11,6 +11,7 @@
 #include "Tools/PipelineWindow.hpp"
 #include "Tools/ShaderWindow.hpp"
 #include "Tools/InputActionsWindow.hpp"
+#include "Tools/NewProjectWindow.hpp"
 #include "Tools/ProjectSettingsWindow.hpp"
 #include "Panels/AssetDragDrop.hpp"
 #include "Panels/EntityDragDrop.hpp"
@@ -174,6 +175,7 @@ namespace Editor
         , m_ShaderWindow(std::make_unique<ShaderWindow>())
         , m_InputActionsWindow(std::make_unique<InputActionsWindow>())
         , m_ProjectSettingsWindow(std::make_unique<ProjectSettingsWindow>())
+        , m_NewProjectWindow(std::make_unique<NewProjectWindow>())
         , m_RenderGraphEditorWindow(std::make_unique<RenderGraphEditorWindow>())
     {
         m_FileSystem   = &context.GetEngineContext().GetFileSystem();
@@ -260,6 +262,10 @@ namespace Editor
         m_ShaderWindow->Draw(fs);
         m_InputActionsWindow->Draw(fs, context.GetWindowContext().GetWindow().GetRawInput());
         m_ProjectSettingsWindow->Draw(context.GetEngineContext());
+        // A created project is opened at once: the window already said the scene's changes go.
+        if (const auto created = m_NewProjectWindow->Draw(context.GetEngineContext().GetPlayState() ==
+                                                          HedgehogEngine::PlayState::Edit))
+            RequestProject(*created, false);
         m_RenderGraphEditorWindow->Draw(m_Renderer, *m_FileSystem);
 
         DrawOpenSceneDropPopup(context);
@@ -1562,6 +1568,8 @@ namespace Editor
     void EditorGui::DrawProjectMenuItems(bool editing)
     {
         // Switching projects rebuilds the editor, which a Play session cannot survive.
+        if (ImGui::MenuItem("New Project...", nullptr, false, editing))
+            m_NewProjectWindow->Show(m_ProjectRoot);
         if (ImGui::MenuItem("Open Project...", nullptr, false, editing))
         {
             const std::string start = m_ProjectRoot.parent_path().string();
@@ -1598,7 +1606,7 @@ namespace Editor
             RequestProject(*chosen);
     }
 
-    void EditorGui::RequestProject(const std::filesystem::path& folder)
+    void EditorGui::RequestProject(const std::filesystem::path& folder, bool confirm)
     {
         const std::filesystem::path project = NormalizeProjectPath(folder);
         if (IsSameProject(project, m_ProjectRoot))
@@ -1619,7 +1627,7 @@ namespace Editor
             LOGERROR("[Editor] Cannot open ", project.string(), ": it holds no readable Project.yaml.");
             return;
         }
-        if (!DialogueWindows::ConfirmProjectSwitch(settings.GetName().c_str()))
+        if (confirm && !DialogueWindows::ConfirmProjectSwitch(settings.GetName().c_str()))
             return;
 
         // Saved with the user settings as the editor closes, so the restarted editor (and the next
