@@ -4,10 +4,12 @@
 #include "HedgehogEngine/api/ECS/components/AudioListenerComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/AudioSourceComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/CameraComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/ColliderComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/LightComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/PrefabInstanceComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RenderComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/RigidBodyComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/UiButtonComponent.hpp"
@@ -36,7 +38,8 @@ namespace HedgehogEngine
         using EcsSerialization::ComponentDesc;
 
         constexpr const char* UI_CATEGORY    = "UI";
-        constexpr const char* AUDIO_CATEGORY = "Audio";
+        constexpr const char* AUDIO_CATEGORY   = "Audio";
+        constexpr const char* PHYSICS_CATEGORY = "Physics";
 
         // The default cube, resolved at once so the mesh shows without waiting for a scene refresh.
         void AddDefaultMesh(ECS::ECS& ecs, ECS::Entity entity)
@@ -59,7 +62,7 @@ namespace HedgehogEngine
     void RegisterEngineComponents(EcsSerialization::ComponentTypeRegistry& types)
     {
         // SortOrder is the inspector's order (Transform, Light, Camera, Mesh, Rendering, Script,
-        // Animator, then the UI and audio sections), which the Add Component menu follows too.
+        // Animator, then the UI, audio and physics sections), which the Add Component menu follows too.
         bool registered = true;
         registered &= types.RegisterReflected<TransformComponent>(ComponentDesc{
             .Key = "TransformComponent", .DisplayName = "Transform", .SortOrder = 0, .Icon = "transform", .Addable = false, .Removable = false });
@@ -102,6 +105,16 @@ namespace HedgehogEngine
                                                                                      .SortOrder       = 201,
                                                                                      .Icon            = "audio_listener",
                                                                                      .EnabledProperty = "Active" });
+        registered &= types.RegisterReflected<RigidBodyComponent>(ComponentDesc{ .Key         = "RigidBodyComponent",
+                                                                                 .DisplayName = "Rigid body",
+                                                                                 .Category    = PHYSICS_CATEGORY,
+                                                                                 .SortOrder   = 300,
+                                                                                 .Icon        = "rigid_body" });
+        registered &= types.RegisterReflected<ColliderComponent>(ComponentDesc{ .Key         = "ColliderComponent",
+                                                                                .DisplayName = "Collider",
+                                                                                .Category    = PHYSICS_CATEGORY,
+                                                                                .SortOrder   = 301,
+                                                                                .Icon        = "collider" });
         registered &= types.RegisterReflected<PrefabInstanceComponent>(ComponentDesc{ .Key         = "PrefabInstanceComponent",
                                                                                       .DisplayName = "Prefab instance",
                                                                                       .Addable     = false,

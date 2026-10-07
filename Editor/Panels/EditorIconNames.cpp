@@ -38,6 +38,8 @@ namespace Editor
         case EditorIcon::UiButton:      return "ui_button.png";
         case EditorIcon::AudioSource:   return "audio_source.png";
         case EditorIcon::AudioListener: return "audio_listener.png";
+        case EditorIcon::RigidBody:     return "rigid_body.png";
+        case EditorIcon::Collider:      return "collider.png";
         case EditorIcon::Count:         break;
         }
         return "";

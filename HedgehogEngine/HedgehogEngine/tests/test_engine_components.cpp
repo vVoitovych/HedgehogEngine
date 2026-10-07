@@ -20,7 +20,7 @@
 using namespace HedgehogEngine;
 using EcsSerialization::ComponentInfo;
 
-TEST_CASE("Engine components - all 17 are registered once, in serializer order, under their YAML keys")
+TEST_CASE("Engine components - all 19 are registered once, in serializer order, under their YAML keys")
 {
     EngineContext                                  context;
     const EcsSerialization::ComponentTypeRegistry& types = context.GetComponentTypes();
@@ -33,7 +33,7 @@ TEST_CASE("Engine components - all 17 are registered once, in serializer order, 
         "TransformComponent", "HierarchyComponent", "MeshComponent",     "RenderComponent",       "LightComponent",
         "CameraComponent",    "AnimatorComponent",  "UiCanvasComponent", "UiRectComponent",       "UiImageComponent",
         "UiTextComponent",    "UiButtonComponent",  "AudioSourceComponent", "AudioListenerComponent",
-        "PrefabInstanceComponent", "ScriptComponent", "UnknownComponents",
+        "RigidBodyComponent", "ColliderComponent", "PrefabInstanceComponent", "ScriptComponent", "UnknownComponents",
     };
     CHECK(keys == expected);
 
@@ -53,13 +53,18 @@ TEST_CASE("Engine components - all 17 are registered once, in serializer order, 
         if (info.Addable)
             addable.insert(info.Key);
     }
-    CHECK(addable.size() == 13);
+    CHECK(addable.size() == 15);
     CHECK_FALSE(types.Find("TransformComponent")->Addable);
     CHECK_FALSE(types.Find("TransformComponent")->Removable);
     CHECK_FALSE(types.Find("PrefabInstanceComponent")->Addable);
     CHECK(types.Find("UiTextComponent")->Category == "UI");
     CHECK(types.Find("AudioSourceComponent")->Category == "Audio");
     CHECK(types.Find("LightComponent")->Category.empty());
+    CHECK(types.Find("RigidBodyComponent")->Category == "Physics");
+    CHECK(types.Find("ColliderComponent")->Category == "Physics");
+    CHECK(types.Find("RigidBodyComponent")->Removable);
+    CHECK(types.Find("ColliderComponent")->Icon == "collider");
+    CHECK(types.Find("RigidBodyComponent")->Icon == "rigid_body");
 }
 
 TEST_CASE("Engine components - AddDefault gives what the editor menu adds")
@@ -116,7 +121,7 @@ TEST_CASE("Engine components - the inspector order, and what the inspector draws
     }
     const std::vector<std::string> expected = {
         "Transform", "Light",   "Camera",    "Mesh",    "Render",       "Script",         "Animator", "UI canvas",
-        "UI rect",   "UI image", "UI text",  "UI button", "Audio source", "Audio listener",
+        "UI rect",   "UI image", "UI text",  "UI button", "Audio source", "Audio listener", "Rigid body", "Collider",
     };
     CHECK(shown == expected);
     CHECK_FALSE(context.GetComponentTypes().Find("HierarchyComponent")->Inspectable);

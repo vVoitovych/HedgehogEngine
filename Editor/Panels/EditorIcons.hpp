@@ -52,6 +52,8 @@ namespace Editor
         UiButton,
         AudioSource,
         AudioListener,
+        RigidBody,
+        Collider,
         Count
     };
 
