@@ -134,10 +134,12 @@ namespace Editor
 
     EditorApplication::~EditorApplication() = default;
 
-    void EditorApplication::Run(uint32_t maxFrames)
+    RunResult EditorApplication::Run(uint32_t maxFrames)
     {
+        m_Result = {};
         Init();
         MainLoop(maxFrames);
+        return m_Result;
     }
 
     void EditorApplication::Init()
@@ -319,6 +321,9 @@ namespace Editor
         {
             ++frameIndex;
             StepFrame();
+            // Another project: this editor is torn down as on exit and the caller builds one on it.
+            if ((m_Result.RequestedProject = m_EditorGui->TakeProjectRequest()))
+                break;
         }
 
         Cleanup();
