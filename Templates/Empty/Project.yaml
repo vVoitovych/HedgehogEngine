@@ -1,0 +1,10 @@
+name: Empty
+startup_scene: assets://Scenes/Main.yaml
+window:
+  title: ""
+  width: 1366
+  height: 768
+  fullscreen: false
+  vsync: true
+game_data_version: 1
+plugins: []
