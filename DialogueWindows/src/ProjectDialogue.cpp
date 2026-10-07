@@ -11,6 +11,11 @@ namespace DialogueWindows
         return tinyfd_selectFolderDialog("Open project (a folder holding Project.yaml)", defaultPath);
     }
 
+    char* ProjectFolderDialogue(const char* title, const char* defaultPath)
+    {
+        return tinyfd_selectFolderDialog(title, defaultPath);
+    }
+
     bool ConfirmProjectSwitch(const char* projectName)
     {
         const std::string message = std::string("Open the project '") + projectName +

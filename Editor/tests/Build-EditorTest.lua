@@ -24,7 +24,9 @@ project "EditorTest"
         "../Project/RecentProjects.hpp",
         "../Project/RecentProjects.cpp",
         "../Project/StartupProject.hpp",
-        "../Project/StartupProject.cpp"
+        "../Project/StartupProject.cpp",
+        "../Tools/NewProjectCheck.hpp",
+        "../Tools/NewProjectCheck.cpp"
     }
 
     includedirs
