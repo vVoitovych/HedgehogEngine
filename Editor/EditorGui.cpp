@@ -17,6 +17,7 @@
 #include "Panels/AssetDragDrop.hpp"
 #include "Panels/EntityDragDrop.hpp"
 #include "Panels/ScriptPropertyFields.hpp"
+#include "Panels/PhysicsSettingsFields.hpp"
 #include "Tools/RenderGraphEditor/GraphFileReference.hpp"
 #include "Tools/RenderGraphEditor/RenderGraphEditorWindow.hpp"
 
@@ -1506,6 +1507,12 @@ namespace Editor
                 }
                 ImGui::PopID();
             }
+        }
+
+        if (ImGui::CollapsingHeader("Physics"))
+        {
+            ImGui::TextWrapped("Applied when Play starts. Bodies store a physics layer's index, never its name.");
+            DrawPhysicsSettingsFields(settings.GetPhysicsSettings());
         }
 
         if (ImGui::CollapsingHeader("Shadows"))
