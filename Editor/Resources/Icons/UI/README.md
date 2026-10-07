@@ -40,6 +40,8 @@ Every icon except the logo is from [Lucide](https://lucide.dev) `lucide-static` 
 | `ui_button.png` | `mouse-pointer-click` |
 | `audio_source.png` | `volume-2` |
 | `audio_listener.png` | `ear` |
+| `rigid_body.png` | `weight` |
+| `collider.png` | `scan` |
 
 `hedgehog_logo.png` is the project's own `Editor/editor.ico`, rendered at 32x32.
 
@@ -51,6 +53,9 @@ put in a page with `color: #fff` (Lucide strokes with `currentColor`) and render
 ```
 msedge --headless --disable-gpu --hide-scrollbars --default-background-color=00000000 --window-size=32,32 --screenshot=<file>.png <page>.html
 ```
+
+While another Edge is running, add `--user-data-dir=<a temp folder>`, or the command hands the page
+to that browser and writes no file.
 
 The logo was rendered the same way from an `<img>` of `editor.ico`.
 
