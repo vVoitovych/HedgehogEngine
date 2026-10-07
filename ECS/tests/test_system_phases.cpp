@@ -37,6 +37,13 @@ namespace
             LastFixedDeltaTime = fixedDeltaTime;
         }
 
+        void OnPostFixedUpdate(ECS::ECS& ecs, float fixedDeltaTime) override
+        {
+            Entries.push_back(Name + ".post");
+            LastPostFixedDeltaTime = fixedDeltaTime;
+            SawDispatchingInPost   = ecs.IsDispatching();
+        }
+
         void OnUpdate(ECS::ECS& /*ecs*/, float deltaTime) override
         {
             Entries.push_back(Name + ".update");
@@ -49,6 +56,8 @@ namespace
         ECS::FrameContext LastContext{};
         float             LastFixedDeltaTime = 0.0f;
         float             LastDeltaTime      = 0.0f;
+        float             LastPostFixedDeltaTime = 0.0f;
+        bool              SawDispatchingInPost   = false;
     };
 
     // Overrides nothing of the frame: runs in Late and does nothing there.
@@ -129,11 +138,29 @@ TEST_CASE("ECS::RunPhase - Simulation while playing runs the fixed steps and the
     const ECS::FrameContext ctx = MakeContext(ECS::PlayMode::Playing, 2);
     ecs.RunPhase(ECS::SystemPhase::Simulation, ctx);
 
-    const Log expected{ "Late.fixed", "Sim.fixed", "Late.fixed", "Sim.fixed", "Late.update", "Sim.update", "Sim.frame" };
+    const Log expected{ "Late.fixed", "Sim.fixed", "Late.post", "Sim.post",   "Late.fixed", "Sim.fixed",
+                        "Late.post",  "Sim.post",  "Late.update", "Sim.update", "Sim.frame" };
     CHECK(log == expected);
     CHECK(sim->LastFixedDeltaTime == ctx.FixedDeltaTime);
     CHECK(sim->LastDeltaTime == ctx.ScaledDeltaTime);
     CHECK(late->LastDeltaTime == ctx.ScaledDeltaTime);
+}
+
+TEST_CASE("ECS::RunFixedUpdate - every system's OnFixedUpdate, then every system's OnPostFixedUpdate, in registration order")
+{
+    ECS::ECS ecs = MakeEcs();
+    Log      log;
+    auto     first = ecs.RegisterSystem<PhaseSystem<1>>("A", ECS::SystemPhase::Late, log);
+    ecs.RegisterSystem<DefaultSystem>();
+    ecs.RegisterSystem<PhaseSystem<2>>("B", ECS::SystemPhase::Simulation, log);
+    ecs.RegisterSystem<PhaseSystem<3>>("C", ECS::SystemPhase::Input, log);
+
+    ecs.RunFixedUpdate(0.25f);
+
+    CHECK(log == Log{ "A.fixed", "B.fixed", "C.fixed", "A.post", "B.post", "C.post" });
+    CHECK(first->LastPostFixedDeltaTime == 0.25f);
+    CHECK(first->SawDispatchingInPost);
+    CHECK_FALSE(ecs.IsDispatching());
 }
 
 TEST_CASE("ECS::RunPhase - Simulation in Edit or Paused runs only its systems' OnFrame")

@@ -43,6 +43,10 @@ namespace ECS
         virtual void OnPlayStop(ECS& /*ecs*/) {}
         // Once per fixed simulation step; zero or more times per frame.
         virtual void OnFixedUpdate(ECS& /*ecs*/, float /*fixedDeltaTime*/) {}
+        // Once per fixed step too, after every system's OnFixedUpdate of that step, whatever the
+        // registration order: each step is gameplay, then this (the physics steps here, so a force a
+        // script adds in its OnFixedUpdate applies in that same step).
+        virtual void OnPostFixedUpdate(ECS& /*ecs*/, float /*fixedDeltaTime*/) {}
         // Once per played frame, after that frame's fixed steps.
         virtual void OnUpdate(ECS& /*ecs*/, float /*deltaTime*/) {}
 
