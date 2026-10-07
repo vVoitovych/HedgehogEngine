@@ -27,6 +27,7 @@ group "ThirdParty"
    include "ThirdParty/Lua/Build-Lua.lua"
    include "ThirdParty/Tracy/Build-Tracy.lua"
    include "ThirdParty/miniaudio/Build-miniaudio.lua"
+   include "ThirdParty/Jolt/Build-Jolt.lua"
 group ""
 
 include "HedgehogEngine/RHI/Build-RHI.lua"

@@ -28,3 +28,6 @@
 [submodule "ThirdParty/miniaudio/miniaudio"]
 	path = ThirdParty/miniaudio/miniaudio
 	url = https://github.com/vVoitovych/miniaudio.git
+[submodule "ThirdParty/Jolt/JoltPhysics"]
+	path = ThirdParty/Jolt/JoltPhysics
+	url = https://github.com/vVoitovych/JoltPhysics.git
