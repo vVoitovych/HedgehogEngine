@@ -21,6 +21,13 @@ namespace Editor
         return reinterpret_cast<INT_PTR>(result) > SHELL_EXECUTE_SUCCESS;
     }
 
+    bool LaunchDetached(const std::filesystem::path& executable, const std::filesystem::path& workingDirectory)
+    {
+        const HINSTANCE result = ShellExecuteW(nullptr, L"open", executable.c_str(), nullptr, workingDirectory.c_str(),
+                                               SW_SHOWNORMAL);
+        return reinterpret_cast<INT_PTR>(result) > SHELL_EXECUTE_SUCCESS;
+    }
+
     bool ShowInExplorer(const std::filesystem::path& item)
     {
         const std::wstring arguments = L"/select,\"" + std::filesystem::path(item).make_preferred().wstring() + L"\"";

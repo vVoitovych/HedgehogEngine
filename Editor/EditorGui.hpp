@@ -61,6 +61,7 @@ namespace Editor
     class PipelineWindow;
     class ShaderWindow;
     class InputActionsWindow;
+    class BuildGameWindow;
     class NewProjectWindow;
     class ProjectSettingsWindow;
     class RenderGraphEditorWindow;
@@ -291,6 +292,7 @@ namespace Editor
         std::unique_ptr<InputActionsWindow>      m_InputActionsWindow;
         std::unique_ptr<ProjectSettingsWindow>   m_ProjectSettingsWindow;
         std::unique_ptr<NewProjectWindow>        m_NewProjectWindow;
+        std::unique_ptr<BuildGameWindow>         m_BuildGameWindow;
         std::unique_ptr<RenderGraphEditorWindow> m_RenderGraphEditorWindow;
 
         // Valid only during Draw(); read by the viewport panel.

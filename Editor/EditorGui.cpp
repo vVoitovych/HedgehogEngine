@@ -11,6 +11,7 @@
 #include "Tools/PipelineWindow.hpp"
 #include "Tools/ShaderWindow.hpp"
 #include "Tools/InputActionsWindow.hpp"
+#include "Tools/BuildGameWindow.hpp"
 #include "Tools/NewProjectWindow.hpp"
 #include "Tools/ProjectSettingsWindow.hpp"
 #include "Panels/AssetDragDrop.hpp"
@@ -176,6 +177,7 @@ namespace Editor
         , m_InputActionsWindow(std::make_unique<InputActionsWindow>())
         , m_ProjectSettingsWindow(std::make_unique<ProjectSettingsWindow>())
         , m_NewProjectWindow(std::make_unique<NewProjectWindow>())
+        , m_BuildGameWindow(std::make_unique<BuildGameWindow>())
         , m_RenderGraphEditorWindow(std::make_unique<RenderGraphEditorWindow>())
     {
         m_FileSystem   = &context.GetEngineContext().GetFileSystem();
@@ -262,6 +264,7 @@ namespace Editor
         m_ShaderWindow->Draw(fs);
         m_InputActionsWindow->Draw(fs, context.GetWindowContext().GetWindow().GetRawInput());
         m_ProjectSettingsWindow->Draw(context.GetEngineContext());
+        m_BuildGameWindow->Draw();
         // A created project is opened at once: the window already said the scene's changes go.
         if (const auto created = m_NewProjectWindow->Draw(context.GetEngineContext().GetPlayState() ==
                                                           HedgehogEngine::PlayState::Edit))
@@ -478,6 +481,9 @@ namespace Editor
             ImGui::Separator();
             if (ImGui::MenuItem("Project Settings..."))
                 m_ProjectSettingsWindow->Show(engineContext);
+            // Packages the project as saved on disk, so Play does not get in its way.
+            if (ImGui::MenuItem("Build Game..."))
+                m_BuildGameWindow->Show(m_ProjectRoot, engineContext.GetSettings().GetProjectSettings().GetName());
             DrawProjectMenuItems(editing);
             ImGui::Separator();
             if (ImGui::MenuItem("Quit", "Alt+F4")) {}
