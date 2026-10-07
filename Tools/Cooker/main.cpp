@@ -1,7 +1,11 @@
-// Cooker.exe: copies a project's referenced assets into a package folder.
+// Cooker.exe: copies a project's referenced assets into a package folder, or, with --package,
+// makes that folder a playable game.
 //
 //   Cooker.exe --project <folder> --out <folder> [--scene <assets://...yaml>]... [--glslc <glslc.exe>]
-//              [--binaries <folder>] [--engine <folder>]
+//              [--binaries <folder>] [--engine <folder>] [--package]
+//
+// --package (CookerCore's PackageGame) adds Game.exe and the runtime DLLs from --binaries and the
+// engine's licences to the cook, and refuses a folder holding editor, test or debug files.
 //
 // The project is the folder holding Project.yaml, anywhere on disk; the engine (its render graphs
 // and shaders, and the shader sources compiled first) is --engine, by default the engine this
@@ -11,7 +15,8 @@
 // copies only what changed and removes what is no longer referenced. Stale engine shaders are
 // compiled first. Exits nonzero, naming the file, when a reference is missing or a copy fails.
 
-#include "CookPlan.hpp"
+#include "CookerCore/CookPlan.hpp"
+#include "CookerCore/Package.hpp"
 
 #include "FileSystem/api/PathUtils.hpp"
 
@@ -34,7 +39,8 @@ namespace
         std::optional<std::filesystem::path> Binaries;
         std::optional<std::filesystem::path> Engine;
         std::vector<std::string>             Scenes;
-        bool                                 Valid = true;
+        bool                                 Package = false;
+        bool                                 Valid   = true;
     };
 
     CookArguments ParseArguments(int argc, char* argv[])
@@ -55,6 +61,8 @@ namespace
                 arguments.Binaries = argv[++i];
             else if (std::strcmp(argv[i], "--engine") == 0 && hasValue)
                 arguments.Engine = argv[++i];
+            else if (std::strcmp(argv[i], "--package") == 0)
+                arguments.Package = true;
             else
             {
                 LOGERROR("Cooker: unknown argument '", argv[i], "'.");
@@ -63,31 +71,34 @@ namespace
         }
         if (arguments.Valid && (!arguments.Project || !arguments.Out))
         {
-            LOGERROR("Cooker: usage: Cooker.exe --project <folder> --out <folder> [--scene <assets://...>]... [--glslc <exe>] [--binaries <folder>] [--engine <folder>]");
+            LOGERROR("Cooker: usage: Cooker.exe --project <folder> --out <folder> [--scene <assets://...>]... [--glslc <exe>] [--binaries <folder>] [--engine <folder>] [--package]");
             arguments.Valid = false;
         }
         return arguments;
     }
 
-    // The engine's shaders, compiled where the engine carries their sources (a dev tree).
-    bool CompileShaders(const std::filesystem::path& engine, const std::optional<std::filesystem::path>& glslcArgument)
+    // Logs a result's warnings and errors; true when it has no error.
+    bool Report(const std::vector<std::string>& warnings, const std::vector<std::string>& errors)
     {
-        const std::filesystem::path shaders = engine / "HedgehogEngine" / "HedgehogRenderer" / "assets" / "Shaders";
-        if (!std::filesystem::is_directory(shaders))
-            return true;
-        const std::filesystem::path glslc = glslcArgument.value_or(engine / "ThirdParty" / "glslc" / "glslc.exe");
-        if (!std::filesystem::is_regular_file(glslc))
-        {
-            LOGWARNING("Cooker: no glslc at ", glslc.string(), "; shaders are packaged as they were last compiled.");
-            return true;
-        }
-        size_t                         compiled = 0;
-        const std::vector<std::string> failed   = Cooker::CompileStaleShaders(shaders, glslc, compiled);
-        for (const std::string& source : failed)
-            LOGERROR("Cooker: ", source, " does not compile.");
-        if (compiled > 0)
-            LOGINFO("Cooker: compiled ", compiled, " stale shader(s).");
-        return failed.empty();
+        for (const std::string& warning : warnings)
+            LOGWARNING("Cooker: ", warning);
+        for (const std::string& error : errors)
+            LOGERROR("Cooker: ", error);
+        if (!errors.empty())
+            LOGERROR("Cooker: the cook failed; ", errors.size(), " error(s).");
+        return errors.empty();
+    }
+
+    int Package(const Cooker::PackageDesc& desc)
+    {
+        const Cooker::PackageResult result = Cooker::PackageGame(desc);
+        if (result.ShadersCompiled > 0)
+            LOGINFO("Cooker: compiled ", result.ShadersCompiled, " stale shader(s).");
+        if (!Report(result.Warnings, result.Errors))
+            return EXIT_FAILURE;
+        LOGINFO("Cooker: packaged ", result.Files, " file(s) in ", desc.OutDir.string(), ": ", result.Copied, " copied, ",
+                result.Unchanged, " unchanged, ", result.Removed, " removed.");
+        return EXIT_SUCCESS;
     }
 }
 
@@ -102,21 +113,23 @@ int main(int argc, char* argv[])
     // The engine the game is built with: the one this Cooker belongs to unless --engine names one.
     const std::filesystem::path engine =
         arguments.Engine ? std::filesystem::absolute(*arguments.Engine) : FS::GetEngineRootDirectory();
-    if (!CompileShaders(engine, arguments.Glslc))
-        return EXIT_FAILURE;
-
-    // Plugin DLLs come from the folder the engine was built into, where the Cooker is too.
+    // Plugin DLLs (and, with --package, Game.exe and the runtime DLLs) come from the folder the
+    // engine was built into, where the Cooker is too.
     const std::filesystem::path binaries =
         arguments.Binaries ? std::filesystem::absolute(*arguments.Binaries) : std::filesystem::absolute(argv[0]).parent_path();
+    if (arguments.Package)
+        return Package({ project, engine, out, binaries, arguments.Scenes, arguments.Glslc.value_or(std::filesystem::path()) });
+
+    const Cooker::ShaderCompileResult shaders = Cooker::CompileEngineShaders(engine, arguments.Glslc.value_or(std::filesystem::path()));
+    if (shaders.Compiled > 0)
+        LOGINFO("Cooker: compiled ", shaders.Compiled, " stale shader(s).");
+    if (!Report(shaders.Warnings, shaders.Errors))
+        return EXIT_FAILURE;
+
     const Cooker::CookPlan   plan   = Cooker::BuildCookPlan(project, arguments.Scenes, binaries, engine);
     const Cooker::CookResult result = Cooker::CookPackage(plan, out);
-    for (const std::string& error : result.Errors)
-        LOGERROR("Cooker: ", error);
-    if (!result.Errors.empty())
-    {
-        LOGERROR("Cooker: the cook failed; ", result.Errors.size(), " error(s).");
+    if (!Report({}, result.Errors))
         return EXIT_FAILURE;
-    }
 
     LOGINFO("Cooker: ", plan.Files.size(), " file(s) in ", out.string(), ": ", result.Copied, " copied, ", result.Unchanged,
             " unchanged, ", result.Removed, " removed.");

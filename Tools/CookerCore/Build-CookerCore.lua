@@ -1,5 +1,8 @@
-project "Cooker"
-   kind "ConsoleApp"
+-- The packaging logic (namespace Cooker): the cook plan, the incremental cook and PackageGame.
+-- A static library so Cooker.exe, its tests and the Editor share one implementation. It logs
+-- nothing: every problem comes back as text for its caller to show.
+project "CookerCore"
+   kind "StaticLib"
    language "C++"
    cppdialect "C++20"
 
@@ -8,7 +11,6 @@ project "Cooker"
    includedirs
    {
       ".",
-      "..",              -- so "CookerCore/..." resolves
       "../..",
       "../../HedgehogEngine",
       "%{IncludeDir.yaml_cpp}"
@@ -17,16 +19,14 @@ project "Cooker"
    defines { "YAML_CPP_STATIC_DEFINE" }
 
    links {
-      "CookerCore",
       "HedgehogEngine",
       "HedgehogSettings",
       "EcsSerialization",
       "FileSystem",
-      "Logger",
       "yaml-cpp"
    }
 
-   targetdir (BinariesDir)
+   targetdir (IntermediatesDir)
    objdir    (IntermediatesDir)
 
    filter "system:windows"
