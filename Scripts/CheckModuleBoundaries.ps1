@@ -15,6 +15,9 @@
 #   5. Plugins are engine-side: no file under Plugins/ may include ImGui ("imgui.h",
 #      "imgui_impl_*"), Lua ("Lua/...", "lua.h", "lualib.h", "lauxlib.h", "lua.hpp"), sol2
 #      ("sol/...") or HedgehogScripting ("HedgehogScripting/...").
+#   6. Jolt Physics stays inside HedgehogPhysics: only files under HedgehogPhysics/src/ may include
+#      "Jolt/..." (ThirdParty/, where Jolt itself lives, is never checked), so no public header and
+#      no other module ever names a Jolt type.
 #
 # All rules match #include strings, never file-system paths: the path
 # HedgehogEngine/HedgehogCommon/... contains "HedgehogEngine/" and must not match rule 2.
@@ -54,6 +57,9 @@ $PluginForbidden    = @(
     @{ Pattern = '(^|[/\\])(lua\.h|lualib\.h|lauxlib\.h|lua\.hpp)$'; Reason = 'a plugin must not include Lua' },
     @{ Pattern = '(^|[/\\])sol[/\\]';                  Reason = 'a plugin must not include sol2' },
     @{ Pattern = '(^|[/\\])HedgehogScripting[/\\]';    Reason = 'a plugin must not depend on HedgehogScripting' }
+)
+$JoltForbidden      = @(
+    @{ Pattern = '(^|[/\\])Jolt[/\\]';                 Reason = 'only HedgehogPhysics/src/ may include Jolt' }
 )
 $EngineForbidden    = @(
     @{ Pattern = '(^|[/\\])Lua[/\\]';                  Reason = 'the engine module must not include Lua' },
@@ -105,6 +111,7 @@ function Get-Violations([string]$root)
     $runtimeRoot  = Join-Path $root 'HedgehogRuntime'
     $gameRoot     = Join-Path $root 'Game'
     $pluginsRoot  = Join-Path $root 'Plugins'
+    $physicsSrc   = Join-Path (Join-Path $root 'HedgehogPhysics') 'src'
     $violations   = New-Object System.Collections.Generic.List[string]
 
     $files = @(Get-ChildItem -LiteralPath $root -Recurse -File -ErrorAction SilentlyContinue |
@@ -122,6 +129,7 @@ function Get-Violations([string]$root)
         if (Test-Under $file.FullName $engineRoot)   { $rules += $EngineForbidden }
         if ((Test-Under $file.FullName $runtimeRoot) -or (Test-Under $file.FullName $gameRoot)) { $rules += $RuntimeForbidden }
         if (Test-Under $file.FullName $pluginsRoot)  { $rules += $PluginForbidden }
+        if (-not (Test-Under $file.FullName $physicsSrc)) { $rules += $JoltForbidden }
 
         $lineNumber = 0
         foreach ($line in [IO.File]::ReadAllLines($file.FullName))
@@ -157,7 +165,7 @@ function Get-Violations([string]$root)
 function Invoke-SelfTest
 {
     $temp    = Join-Path ([IO.Path]::GetTempPath()) ('boundary_selftest_' + [Guid]::NewGuid().ToString('N'))
-    $modules = @('HedgehogEngine\HedgehogEngine', 'HedgehogEngine\HedgehogRenderer', 'Editor', 'HedgehogScripting', 'HedgehogRuntime', 'Game', 'Plugins\Spinner')
+    $modules = @('HedgehogEngine\HedgehogEngine', 'HedgehogEngine\HedgehogRenderer', 'Editor', 'HedgehogScripting', 'HedgehogRuntime', 'Game', 'Plugins\Spinner', 'HedgehogPhysics')
     $cases   = @(
         @{ Module = 'HedgehogEngine\HedgehogEngine';   Include = 'ThirdParty/Lua/lua/lua.h' },
         @{ Module = 'HedgehogEngine\HedgehogEngine';   Include = 'lauxlib.h' },
@@ -173,7 +181,9 @@ function Invoke-SelfTest
         @{ Module = 'Plugins\Spinner';                 Include = 'lua.h' },
         @{ Module = 'Plugins\Spinner';                 Include = 'sol/sol.hpp' },
         @{ Module = 'Plugins\Spinner';                 Include = 'HedgehogScripting/api/ScriptSystem.hpp' },
-        @{ Module = 'Editor';                          Include = 'HedgehogEngine/RHI/src/Vulkan/VulkanDevice.hpp' }
+        @{ Module = 'Editor';                          Include = 'HedgehogEngine/RHI/src/Vulkan/VulkanDevice.hpp' },
+        @{ Module = 'HedgehogPhysics\api';             Include = 'Jolt/Jolt.h' },
+        @{ Module = 'HedgehogEngine\HedgehogEngine';   Include = 'Jolt/Physics/Body/Body.h' }
     )
     $failures = 0
     try
@@ -191,6 +201,12 @@ function Invoke-SelfTest
         # The scripting library may include sol2 and Lua; that is where they belong.
         Set-Content -LiteralPath (Join-Path (Join-Path $temp 'HedgehogScripting') 'Sol.cpp') -Value '#include "sol/sol.hpp"' -Encoding Ascii
         Set-Content -LiteralPath (Join-Path (Join-Path $temp 'HedgehogScripting') 'Lua.cpp') -Value '#include "lua.h"' -Encoding Ascii
+        # HedgehogPhysics' src/ may include Jolt; its api/ is where a planted Jolt include goes.
+        foreach ($folder in @('src', 'api'))
+        {
+            New-Item -ItemType Directory -Force -Path (Join-Path (Join-Path $temp 'HedgehogPhysics') $folder) | Out-Null
+        }
+        Set-Content -LiteralPath (Join-Path (Join-Path (Join-Path $temp 'HedgehogPhysics') 'src') 'World.cpp') -Value '#include "Jolt/Jolt.h"' -Encoding Ascii
 
         $clean = Get-Violations $temp
         if ($clean.Violations.Count -ne 0)
