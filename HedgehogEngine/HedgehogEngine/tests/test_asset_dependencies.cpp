@@ -209,14 +209,25 @@ TEST_CASE("Asset dependencies - every shipped scene's references exist")
 
     AssetDependencyCollector collector;
     HedgehogEngine::RegisterEngineAssetDependencies(collector);
-    for (const char* scene : { "Default.yaml", "Animated.yaml", "Hud.yaml", "Spinner.yaml" })
+    const auto scenes = files.ListDirectory("assets://Scenes");
+    REQUIRE(scenes.has_value());
+    for (const FS::DirectoryEntry& scene : *scenes)
     {
-        CAPTURE(scene);
-        const AssetDependencies result = collector.CollectScene(std::string("assets://Scenes/") + scene, files);
+        CAPTURE(scene.Name);
+        const AssetDependencies result = collector.CollectScene("assets://Scenes/" + scene.Name, files);
         CHECK(result.Warnings.empty());
         for (const std::string& warning : result.Warnings)
             MESSAGE(warning);
         CHECK(result.Assets.size() > 1);
+    }
+
+    // A prefab instance's prefab is reached, and through it what its entities use.
+    const AssetDependencies prefabs = collector.CollectScene("assets://Scenes/Prefabs.yaml", files);
+    for (const char* asset : { "assets://Prefabs/LampPost.prefab", "assets://Materials/test1.material",
+                               "assets://Materials/test3.material", "engine://Content/Models/Default/sphere.obj" })
+    {
+        CAPTURE(asset);
+        CHECK(std::find(prefabs.Assets.begin(), prefabs.Assets.end(), asset) != prefabs.Assets.end());
     }
 }
 

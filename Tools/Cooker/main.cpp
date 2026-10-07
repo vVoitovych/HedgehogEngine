@@ -2,7 +2,9 @@
 // makes that folder a playable game.
 //
 //   Cooker.exe --project <folder> --out <folder> [--scene <assets://...yaml>]... [--glslc <glslc.exe>]
-//              [--binaries <folder>] [--engine <folder>] [--package]
+//              [--binaries <folder>] [--engine <folder>] [--package] [--all-scenes]
+//
+// --all-scenes cooks every scene of the project's Assets/Scenes beside the startup scene.
 //
 // --package (CookerCore's PackageGame) adds Game.exe and the runtime DLLs from --binaries and the
 // engine's licences to the cook, and refuses a folder holding editor, test or debug files.
@@ -39,7 +41,8 @@ namespace
         std::optional<std::filesystem::path> Binaries;
         std::optional<std::filesystem::path> Engine;
         std::vector<std::string>             Scenes;
-        bool                                 Package = false;
+        bool                                 Package   = false;
+        bool                                 AllScenes = false;
         bool                                 Valid   = true;
     };
 
@@ -63,6 +66,8 @@ namespace
                 arguments.Engine = argv[++i];
             else if (std::strcmp(argv[i], "--package") == 0)
                 arguments.Package = true;
+            else if (std::strcmp(argv[i], "--all-scenes") == 0)
+                arguments.AllScenes = true;
             else
             {
                 LOGERROR("Cooker: unknown argument '", argv[i], "'.");
@@ -71,7 +76,7 @@ namespace
         }
         if (arguments.Valid && (!arguments.Project || !arguments.Out))
         {
-            LOGERROR("Cooker: usage: Cooker.exe --project <folder> --out <folder> [--scene <assets://...>]... [--glslc <exe>] [--binaries <folder>] [--engine <folder>] [--package]");
+            LOGERROR("Cooker: usage: Cooker.exe --project <folder> --out <folder> [--scene <assets://...>]... [--glslc <exe>] [--binaries <folder>] [--engine <folder>] [--package] [--all-scenes]");
             arguments.Valid = false;
         }
         return arguments;
@@ -118,7 +123,13 @@ int main(int argc, char* argv[])
     const std::filesystem::path binaries =
         arguments.Binaries ? std::filesystem::absolute(*arguments.Binaries) : std::filesystem::absolute(argv[0]).parent_path();
     if (arguments.Package)
-        return Package({ project, engine, out, binaries, arguments.Scenes, arguments.Glslc.value_or(std::filesystem::path()) });
+        return Package({ project, engine, out, binaries, arguments.Scenes, arguments.Glslc.value_or(std::filesystem::path()),
+                         arguments.AllScenes });
+
+    std::vector<std::string> scenes = arguments.Scenes;
+    if (arguments.AllScenes)
+        for (const std::string& scene : Cooker::ListProjectScenes(project))
+            scenes.push_back(scene);
 
     const Cooker::ShaderCompileResult shaders = Cooker::CompileEngineShaders(engine, arguments.Glslc.value_or(std::filesystem::path()));
     if (shaders.Compiled > 0)
@@ -126,7 +137,7 @@ int main(int argc, char* argv[])
     if (!Report(shaders.Warnings, shaders.Errors))
         return EXIT_FAILURE;
 
-    const Cooker::CookPlan   plan   = Cooker::BuildCookPlan(project, arguments.Scenes, binaries, engine);
+    const Cooker::CookPlan   plan   = Cooker::BuildCookPlan(project, scenes, binaries, engine);
     const Cooker::CookResult result = Cooker::CookPackage(plan, out);
     if (!Report({}, result.Errors))
         return EXIT_FAILURE;

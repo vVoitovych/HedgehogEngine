@@ -47,6 +47,7 @@ namespace Cooker
         std::filesystem::path    BinariesDir; // Game.exe, the runtime DLLs and the plugins' DLLs
         std::vector<std::string> ExtraScenes; // virtual paths cooked beside the startup scene
         std::filesystem::path    Glslc;       // empty: the engine's own
+        bool                     AllScenes = false; // every scene of Assets/Scenes too (ListProjectScenes)
     };
 
     struct PackageResult

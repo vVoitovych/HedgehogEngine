@@ -1,0 +1,81 @@
+Version: 2
+Scene name: Prefabs
+Scene:
+  - Entity: 0
+    Name: Root
+    Parent: 0
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    Children:
+      - Entity: 2
+        Name: Sun
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 0]
+          Rotation: [-45, 30, 0]
+          Scale: [1, 1, 1]
+        LightComponent:
+          LightEnabled: true
+          LightType: 0
+          LightColor: [1, 1, 1]
+          LightIntensity: 1
+          LightRadius: 1
+          LightConeAngle: 2
+          CastShadows: true
+        Children:
+          []
+      - Entity: 3
+        Name: MainCamera
+        Parent: 0
+        TransformComponent:
+          Position: [0, 1, 5]
+          Rotation: [-10, 0, 0]
+          Scale: [1, 1, 1]
+        CameraComponent:
+          Enabled: true
+          ProjectionType: 0
+          Fov: 60
+          OrthoSize: 10
+          NearPlane: 0.1
+          FarPlane: 1000
+          LayerMask: 4294967295
+          TargetMode: 0
+          TargetName: ""
+          GraphName: game
+          Priority: 0
+        Children:
+          []
+      - Entity: 1
+        Name: Lamp Post
+        Parent: 0
+        Prefab: assets://Prefabs/LampPost.prefab
+        Entities: [1, 4, 5]
+        Overrides:
+          - LocalId: 0
+            Component: TransformComponent
+            Property: Position
+            Value: [-1.5, -3, 0]
+        Children:
+          []
+      - Entity: 6
+        Name: Blue Lamp Post
+        Parent: 0
+        Prefab: assets://Prefabs/LampPost.prefab
+        Entities: [6, 7, 8]
+        Overrides:
+          - LocalId: 0
+            Component: TransformComponent
+            Property: Position
+            Value: [1.5, -3, 0]
+          - LocalId: 2
+            Component: LightComponent
+            Property: LightColor
+            Value: [0.6, 0.75, 1]
+          - LocalId: 2
+            Component: LightComponent
+            Property: LightIntensity
+            Value: 3
+        Children:
+          []

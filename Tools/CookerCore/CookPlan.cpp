@@ -93,6 +93,17 @@ namespace Cooker
         return mount == ASSETS_MOUNT ? std::filesystem::path(ASSETS_FOLDER) / relative : relative;
     }
 
+    std::vector<std::string> ListProjectScenes(const std::filesystem::path& projectRoot)
+    {
+        std::vector<std::string> scenes;
+        std::error_code          error;
+        for (const auto& entry : std::filesystem::directory_iterator(projectRoot / ASSETS_FOLDER / "Scenes", error))
+            if (entry.is_regular_file(error) && entry.path().extension() == ".yaml")
+                scenes.push_back(std::string(ASSETS_MOUNT) + "Scenes/" + entry.path().filename().string());
+        std::sort(scenes.begin(), scenes.end());
+        return scenes;
+    }
+
     CookPlan BuildCookPlan(const std::filesystem::path& projectRoot, const std::vector<std::string>& extraScenes,
                            const std::filesystem::path& binariesDir, const std::filesystem::path& engineRoot)
     {

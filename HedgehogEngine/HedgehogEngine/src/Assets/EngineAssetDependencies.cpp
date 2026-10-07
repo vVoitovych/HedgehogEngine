@@ -150,5 +150,15 @@ namespace HedgehogEngine
         collector.AddFollower(std::string(GRAPH_EXTENSION), FollowGraph);
         collector.AddFollower(".shader", FollowShader);
         collector.AddFollower(".gltf", FollowGltf);
+        // A prefab's entities reference meshes, materials and other prefabs like a scene's do.
+        collector.AddFollower(".prefab",
+                              [&collector](const std::string&, const std::string& text, std::vector<std::string>& out)
+                              {
+                                  const YAML::Node root = YAML::Load(text)["Root"];
+                                  if (!root || !root.IsMap())
+                                      return std::string("not a prefab: it has no Root");
+                                  collector.ReadSceneReferences(root, out);
+                                  return std::string();
+                              });
     }
 }

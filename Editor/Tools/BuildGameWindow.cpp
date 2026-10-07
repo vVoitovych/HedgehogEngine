@@ -108,6 +108,7 @@ namespace Editor
         desc.EngineRoot  = FS::GetEngineRootDirectory();
         desc.OutDir      = m_BuiltFolder;
         desc.BinariesDir = m_Binaries;
+        desc.AllScenes   = true; // every scene ships, as PackageGame.bat packages it
         m_Result         = Cooker::PackageGame(desc);
 
         for (const std::string& warning : m_Result->Warnings)

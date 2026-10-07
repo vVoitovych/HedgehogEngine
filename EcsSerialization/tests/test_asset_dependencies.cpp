@@ -133,6 +133,31 @@ TEST_CASE("Asset dependencies - followers are followed, cycles end and missing f
     CHECK(result.Warnings[0] == "assets://Meshes/missing.obj (referenced by assets://Prefabs/B.prefab) does not exist.");
 }
 
+TEST_CASE("Asset dependencies - a prefab instance names its prefab, and a subtree document reads like a scene")
+{
+    AssetFiles files;
+    files.Dir.WriteFile("Scenes/Street.yaml", "Scene name: Street\nScene:\n"
+                                              "  - Entity: 0\n    Name: Root\n    Parent: 0\n    Children:\n"
+                                              "      - Entity: 1\n        Name: Lamp\n        Parent: 0\n"
+                                              "        Prefab: Prefabs\\Lamp.prefab\n        Entities: [1]\n"
+                                              "        Children: []\n");
+    files.Dir.WriteFile("Prefabs/Lamp.prefab", "");
+
+    AssetDependencyCollector collector;
+    const AssetDependencies  result = collector.CollectScene("assets://Scenes/Street.yaml", files.Files);
+    CHECK(result.Assets == std::vector<std::string>{ "assets://Prefabs/Lamp.prefab", "assets://Scenes/Street.yaml" });
+    CHECK(result.Warnings.empty());
+
+    // A prefab's Root holds its entities under Subtree: read as a scene's are.
+    collector.AddReflectedComponent<TestPropComponent>("TestPropComponent");
+    std::vector<std::string> references;
+    collector.ReadSceneReferences(YAML::Load("Subtree:\n  - Entity: 0\n    TestPropComponent:\n      Texture: a.png\n"
+                                             "    Children:\n      - Entity: 1\n        Prefab: Prefabs/Inner.prefab\n"),
+                                  references);
+    CHECK(references == std::vector<std::string>{ "assets://Models/Default.obj", "assets://a.png",
+                                                  "assets://Prefabs/Inner.prefab" });
+}
+
 TEST_CASE("Asset dependencies - an unreadable asset is a warning and the rest is still collected")
 {
     AssetFiles files;
