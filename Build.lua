@@ -93,3 +93,5 @@ include "HedgehogInput/tests/Build-InputTest.lua"
 
 include "HedgehogAudio/Build-HedgehogAudio.lua"
 include "HedgehogAudio/tests/Build-AudioTest.lua"
+include "HedgehogPhysics/Build-HedgehogPhysics.lua"
+include "HedgehogPhysics/tests/Build-PhysicsTest.lua"
