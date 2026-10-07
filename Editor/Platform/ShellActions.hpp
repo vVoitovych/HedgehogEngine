@@ -9,4 +9,7 @@ namespace Editor
 
     // Opens a File Explorer window on the item's folder with the item selected.
     bool ShowInExplorer(const std::filesystem::path& item);
+
+    // Starts executable as a process of its own, in workingDirectory, without waiting for it.
+    bool LaunchDetached(const std::filesystem::path& executable, const std::filesystem::path& workingDirectory);
 }

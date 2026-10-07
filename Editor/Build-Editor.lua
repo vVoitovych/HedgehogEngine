@@ -10,6 +10,7 @@ project "Editor"
    {
       ".",
       "..",
+      "../Tools",        -- so "CookerCore/..." resolves
       "../HedgehogEngine",
       "../HedgehogEngine/HedgehogEngine/api",
       "../HedgehogEngine/HedgehogRenderer/api",
@@ -25,6 +26,7 @@ project "Editor"
    defines { "YAML_CPP_STATIC_DEFINE" }
 
    links {
+      "CookerCore",
       "HedgehogEngine",
       "HedgehogCommon",
       "HedgehogExtract",

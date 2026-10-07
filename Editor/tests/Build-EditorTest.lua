@@ -26,7 +26,9 @@ project "EditorTest"
         "../Project/StartupProject.hpp",
         "../Project/StartupProject.cpp",
         "../Tools/NewProjectCheck.hpp",
-        "../Tools/NewProjectCheck.cpp"
+        "../Tools/NewProjectCheck.cpp",
+        "../Tools/GameBinaries.hpp",
+        "../Tools/GameBinaries.cpp"
     }
 
     includedirs
