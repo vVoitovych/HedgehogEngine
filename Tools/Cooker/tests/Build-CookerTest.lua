@@ -3,15 +3,15 @@ project "CookerTest"
     language "C++"
     cppdialect "C++20"
 
-    -- The cook's logic compiled in directly: the Cooker is an executable.
-    files { "**.hpp", "**.cpp", "../CookPlan.hpp", "../CookPlan.cpp" }
+    -- The cook's logic is the CookerCore library.
+    files { "**.hpp", "**.cpp" }
 
     includedirs
     {
         "../../../ThirdParty",
         "../../..",           -- so "FileSystem/..." and "HedgehogScripting/tests/..." resolve
         "../../../HedgehogEngine",
-        "..",
+        "../../CookerCore",
         "%{IncludeDir.yaml_cpp}"
     }
 
@@ -19,6 +19,7 @@ project "CookerTest"
 
     links
     {
+        "CookerCore",
         "HedgehogEngine",
         "HedgehogSettings",
         "EcsSerialization",

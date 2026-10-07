@@ -3,11 +3,11 @@ REM ============================================
 REM Package a project as a playable game folder: Build\<ProjectName>\
 REM Usage: PackageGame.bat [project folder]   (default: Projects\FeatureTest)
 REM
-REM Builds Release, cooks the project's referenced assets with the Cooker, copies
-REM Game.exe and the DLLs it loads (no editor, test or ImGui binaries, no .pdb)
-REM and LICENSE.txt with THIRD_PARTY_NOTICES.md,
-REM then copies the package to a temporary folder and runs Game.exe --frames 120
-REM there as a check. Exits nonzero if any step or the check fails. The package
+REM Builds Release, then has Cooker.exe --package make the folder: the project's
+REM referenced assets, its plugins, Game.exe and the DLLs it loads (no editor, test or
+REM ImGui binaries, no .pdb) and LICENSE.txt with THIRD_PARTY_NOTICES.md; then copies
+REM the package to a temporary folder and runs Game.exe --frames 120 there as a check.
+REM Exits nonzero if any step or the check fails. The package
 REM needs only the Vulkan runtime and the VC++ redistributable on the target.
 REM ============================================
 setlocal enabledelayedexpansion
@@ -41,40 +41,15 @@ echo === Packaging '%NAME%' into %OUT% ===
 call "%ROOT%\Scripts\Build.bat" Release
 if errorlevel 1 goto :fail
 
-echo === Cooking assets ===
-"%BIN%\Cooker.exe" --project "%PROJECT%" --out "%OUT%" --binaries "%BIN%" --engine "%ROOT%"
+echo === Packaging the game ===
+REM Cooker.exe --package (CookerCore's PackageGame): the project's assets, its enabled plugins,
+REM Game.exe and the runtime DLLs, the licences, and the check that nothing of the editor, the
+REM tests or the sources ships.
+"%BIN%\Cooker.exe" --project "%PROJECT%" --out "%OUT%" --binaries "%BIN%" --engine "%ROOT%" --package
 if errorlevel 1 (
-    echo [ERROR] The cook failed.
+    echo [ERROR] Packaging failed.
     goto :fail
 )
-
-echo === Copying the game executable ===
-for %%F in (Game.exe glfw.dll Logger.dll FileSystem.dll HedgehogMath.dll HedgehogCommon.dll ECS.dll EcsSerialization.dll ContentLoader.dll HedgehogSettings.dll HedgehogWindow.dll HedgehogAudio.dll HedgehogEngine.dll) do (
-    copy /y "%BIN%\%%F" "%OUT%\" >nul
-    if errorlevel 1 (
-        echo [ERROR] Could not copy %%F.
-        goto :fail
-    )
-)
-
-REM The engine's licence and the third-party notices must travel with every game.
-echo === Copying the licence notices ===
-for %%F in (LICENSE.txt THIRD_PARTY_NOTICES.md) do (
-    copy /y "%ROOT%\%%F" "%OUT%\" >nul
-    if errorlevel 1 (
-        echo [ERROR] Could not copy %%F.
-        goto :fail
-    )
-)
-
-REM Nothing of the editor, the tests or the sources may ship. One dir call: a plain
-REM for loop would expand the wildcards against the current folder instead.
-set "FORBIDDEN=0"
-for /f "delims=" %%f in ('dir /s /b /a-d "%OUT%\Editor.exe" "%OUT%\Cooker.exe" "%OUT%\*Test.exe" "%OUT%\*.pdb" "%OUT%\*.ilk" "%OUT%\*.lib" "%OUT%\DialogueWindows.dll" "%OUT%\*imgui*" "%OUT%\*.vert" "%OUT%\*.frag" "%OUT%\*.comp" "%OUT%\*.glsl" 2^>nul') do (
-    echo [ERROR] The package must not contain %%f
-    set "FORBIDDEN=1"
-)
-if "%FORBIDDEN%"=="1" goto :fail
 
 echo === Running the package from another folder ===
 set "CHECK=%TEMP%\HedgehogPackageCheck_%RANDOM%%RANDOM%"

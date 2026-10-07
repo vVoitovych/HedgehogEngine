@@ -629,6 +629,7 @@ Binaries
 /Game/Game.vcxproj*
 /Tools/Cooker/*.vcxproj*
 /Tools/Cooker/tests/*.vcxproj*
+/Tools/CookerCore/*.vcxproj*
 /HedgehogLuaDebug/*.vcxproj*
 /HedgehogLuaDebug/tests/*.vcxproj*
 # Packaged games (Scripts/PackageGame.bat)
