@@ -166,6 +166,7 @@ namespace HP
             LOGERROR("[Physics] A body cannot be made: the world holds its maximum of bodies.");
             return {};
         }
+        m_State->Records[id.GetIndexAndSequenceNumber()] = BodyRecord{ desc.UserData, desc.IsSensor };
         return ToHandle(id);
     }
 
@@ -176,6 +177,7 @@ namespace HP
         JPH::BodyInterface& bodies = m_State->System->GetBodyInterface();
         bodies.RemoveBody(ToBodyID(body));
         bodies.DestroyBody(ToBodyID(body));
+        m_State->Destroyed.push_back(body.Value);
     }
 
     void PhysicsWorld::DestroyAllBodies()
@@ -189,6 +191,8 @@ namespace HP
         JPH::BodyInterface& bodies = m_State->System->GetBodyInterface();
         bodies.RemoveBodies(ids.data(), static_cast<int>(ids.size()));
         bodies.DestroyBodies(ids.data(), static_cast<int>(ids.size()));
+        for (const JPH::BodyID id : ids)
+            m_State->Destroyed.push_back(id.GetIndexAndSequenceNumber());
     }
 
     bool PhysicsWorld::IsValid(BodyHandle body) const

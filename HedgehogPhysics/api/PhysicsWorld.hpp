@@ -2,12 +2,14 @@
 
 #include "HedgehogPhysics/api/BodyHandle.hpp"
 #include "HedgehogPhysics/api/HedgehogPhysicsApi.hpp"
+#include "HedgehogPhysics/api/PhysicsEvents.hpp"
 #include "HedgehogPhysics/api/PhysicsTypes.hpp"
 
 #include "HedgehogMath/api/Vector.hpp"
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <vector>
 
 namespace HP
@@ -73,12 +75,57 @@ namespace HP
         // out's contents: the ones whose pose may have changed.
         HEDGEHOG_PHYSICS_API void                     GetActiveBodies(std::vector<BodyHandle>& out) const;
 
+        // ---- Dynamics. Velocities are in metres (and radians) per second, world space. Each call
+        // wakes the body; a static or stale body is left alone, and so is a kinematic one for
+        // forces, torques and impulses (a kinematic body takes velocities). Non-finite values are
+        // ignored.
+
+        [[nodiscard]] HEDGEHOG_PHYSICS_API HM::Vector3 GetLinearVelocity(BodyHandle body) const;
+        HEDGEHOG_PHYSICS_API void                      SetLinearVelocity(BodyHandle body, const HM::Vector3& velocity);
+        [[nodiscard]] HEDGEHOG_PHYSICS_API HM::Vector3 GetAngularVelocity(BodyHandle body) const;
+        HEDGEHOG_PHYSICS_API void                      SetAngularVelocity(BodyHandle body, const HM::Vector3& velocity);
+        // Newtons (newton metres for a torque), applied over the next step only: Jolt clears forces
+        // after every step, so a lasting force is added before each one.
+        HEDGEHOG_PHYSICS_API void AddForce(BodyHandle body, const HM::Vector3& force);
+        HEDGEHOG_PHYSICS_API void AddForceAtPoint(BodyHandle body, const HM::Vector3& force, const HM::Vector3& point);
+        HEDGEHOG_PHYSICS_API void AddTorque(BodyHandle body, const HM::Vector3& torque);
+        // Newton seconds, changing the velocity at once.
+        HEDGEHOG_PHYSICS_API void AddImpulse(BodyHandle body, const HM::Vector3& impulse);
+        HEDGEHOG_PHYSICS_API void AddImpulseAtPoint(BodyHandle body, const HM::Vector3& impulse, const HM::Vector3& point);
+        HEDGEHOG_PHYSICS_API void AddAngularImpulse(BodyHandle body, const HM::Vector3& impulse);
+        // A dynamic body's mass in kilograms; 0 for any other body.
+        [[nodiscard]] HEDGEHOG_PHYSICS_API float GetMass(BodyHandle body) const;
+
+        // ---- Queries.
+
+        // The nearest body the ray from origin along direction (any length but zero) reaches within
+        // maxDistance metres, on a layer whose bit is set in layerMask; sensors only when asked. A
+        // ray starting inside a body hits it at distance 0. Nothing for a stopped world, a zero or
+        // non-finite direction, or a maxDistance that is not positive and finite.
+        [[nodiscard]] HEDGEHOG_PHYSICS_API std::optional<RayHit> CastRay(const HM::Vector3& origin, const HM::Vector3& direction,
+                                                                         float maxDistance, uint16_t layerMask = ALL_LAYERS_MASK,
+                                                                         bool includeSensors = false) const;
+
+        // ---- Contacts. Every step queues an Enter when two bodies begin touching and an Exit when
+        // they part or one is destroyed (in the next step); bodies kept apart by the collision matrix
+        // give none.
+
+        // Appends the events queued since the last drain to out, sorted by type, then the user data
+        // and handles of A and B, so the order never depends on Jolt's threads. Drain after every
+        // step: the queue grows until drained.
+        HEDGEHOG_PHYSICS_API void DrainContactEvents(std::vector<ContactEvent>& out);
+
         // Advances the world by dt seconds in one collision step. False, doing nothing, when
         // stopped or for a dt that is not positive and finite; false too when Jolt ran out of room
         // for its body pairs or contacts (logged).
         HEDGEHOG_PHYSICS_API bool Step(float dt);
 
     private:
+        // A live dynamic body, or with kinematicToo a kinematic one too.
+        [[nodiscard]] bool IsMotion(BodyHandle body, bool kinematicToo) const;
+        // Turns the contacts Jolt queued during a step into the world's events (after every step).
+        void               CollectContacts();
+
         std::unique_ptr<JoltState> m_State;
     };
 }

@@ -74,6 +74,7 @@ namespace HP
         state->System        = std::make_unique<JPH::PhysicsSystem>();
         state->System->Init(desc.MaxBodies, 0, pairs, pairs, state->LayerMap, state->BroadPhaseFilter, state->PairFilter);
         state->System->SetGravity(ToJolt(desc.Gravity));
+        state->System->SetContactListener(&state->Contacts);
 
         m_State = std::move(state);
         return true;
@@ -127,6 +128,7 @@ namespace HP
             return false;
         const JPH::EPhysicsUpdateError error =
             m_State->System->Update(dt, 1, m_State->TempAllocator.get(), m_State->JobSystem.get());
+        CollectContacts();
         if (error == JPH::EPhysicsUpdateError::None)
             return true;
         LOGERROR("[Physics] The step ran out of room (Jolt error", static_cast<uint32_t>(error), "); raise the world's MaxBodies.");
