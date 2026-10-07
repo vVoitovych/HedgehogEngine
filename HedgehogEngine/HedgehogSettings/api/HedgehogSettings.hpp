@@ -2,6 +2,7 @@
 
 #include "HedgehogSettingsApi.hpp"
 #include "LuaDebuggerSettings.hpp"
+#include "PhysicsSettings.hpp"
 
 #include <memory>
 #include <string>
@@ -47,6 +48,10 @@ namespace HedgehogSettings
         HEDGEHOG_SETTINGS_API LuaDebuggerSettings&       GetLuaDebuggerSettings();
         HEDGEHOG_SETTINGS_API const LuaDebuggerSettings& GetLuaDebuggerSettings() const;
 
+        // physics: { gravity, layers, collisions, worker_threads }; read by the engine at Play.
+        HEDGEHOG_SETTINGS_API PhysicsSettings&       GetPhysicsSettings();
+        HEDGEHOG_SETTINGS_API const PhysicsSettings& GetPhysicsSettings() const;
+
         // Engine settings live in their own file rather than the editor's layout file, so a game
         // build can read them too. A missing file is not an error: the defaults stand and Load
         // returns false.
@@ -72,5 +77,6 @@ namespace HedgehogSettings
         std::unique_ptr<LayerSettings>     m_LayerSettings;
         std::unique_ptr<ProjectSettings>   m_ProjectSettings;
         LuaDebuggerSettings                m_LuaDebuggerSettings;
+        PhysicsSettings                    m_PhysicsSettings;
     };
 }

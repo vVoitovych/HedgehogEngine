@@ -5,7 +5,7 @@ project "HedgehogSettings"
 
     files
     {
-        "api/**.hpp", "src/**.cpp"
+        "api/**.hpp", "src/**.hpp", "src/**.cpp"
     }
 
     includedirs

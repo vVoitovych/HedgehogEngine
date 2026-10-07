@@ -4,6 +4,8 @@
 #include "HedgehogSettings/api/ProjectSettings.hpp"
 #include "HedgehogSettings/api/ShadowmapingSettings.hpp"
 
+#include "PhysicsSettingsYaml.hpp"
+
 #include "FileSystem/api/FileSystemManager.hpp"
 #include "Logger/api/Logger.hpp"
 
@@ -57,6 +59,10 @@ namespace HedgehogSettings
     LuaDebuggerSettings& Settings::GetLuaDebuggerSettings() { return m_LuaDebuggerSettings; }
 
     const LuaDebuggerSettings& Settings::GetLuaDebuggerSettings() const { return m_LuaDebuggerSettings; }
+
+    PhysicsSettings& Settings::GetPhysicsSettings() { return m_PhysicsSettings; }
+
+    const PhysicsSettings& Settings::GetPhysicsSettings() const { return m_PhysicsSettings; }
 
     bool Settings::Load(const std::string& virtualPath, const FS::FileSystemManager& fileSystem)
     {
@@ -138,6 +144,9 @@ namespace HedgehogSettings
                                    LuaDebuggerSettings::DEFAULT_PORT, ".");
                 }
             }
+
+            if (const YAML::Node physics = root["physics"])
+                ReadPhysicsSettings(physics, m_PhysicsSettings);
         }
         catch (const YAML::Exception& e)
         {
@@ -184,6 +193,9 @@ namespace HedgehogSettings
         out << YAML::Key << "enabled" << YAML::Value << m_LuaDebuggerSettings.Enabled;
         out << YAML::Key << "port"    << YAML::Value << m_LuaDebuggerSettings.Port;
         out << YAML::EndMap;
+
+        out << YAML::Key << "physics" << YAML::Value;
+        WritePhysicsSettings(out, m_PhysicsSettings);
 
         out << YAML::EndMap;
 
