@@ -83,8 +83,9 @@ namespace EcsSerialization
         // The follower for files ending in extension (".material"; matched ignoring case).
         ECS_SERIALIZATION_API void AddFollower(const std::string& extension, AssetFollower follower);
 
-        // Appends what a scene document's components name (for a follower of documents that hold
-        // entities, such as prefabs).
+        // Appends what a scene document's components name, and the prefab each prefab instance
+        // names (its Prefab key); a subtree document (a prefab's Root) is read the same way, for a
+        // follower of documents that hold entities, such as prefabs.
         ECS_SERIALIZATION_API void ReadSceneReferences(const YAML::Node& document, std::vector<std::string>& out) const;
 
         // The closure of the scene at sceneVirtualPath, read through fileSystem.

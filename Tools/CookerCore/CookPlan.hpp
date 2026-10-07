@@ -48,6 +48,10 @@ namespace Cooker
                                          const std::filesystem::path& binariesDir = {},
                                          const std::filesystem::path& engineRoot  = {});
 
+    // Every scene directly in the project's Assets/Scenes folder, as assets://Scenes/<file>.yaml,
+    // sorted: what a package of all its scenes cooks beside the startup scene.
+    [[nodiscard]] std::vector<std::string> ListProjectScenes(const std::filesystem::path& projectRoot);
+
     // The prefix of a plugin DLL's CookFile::VirtualPath.
     constexpr const char* PLUGIN_PATH_PREFIX = "plugin:";
 

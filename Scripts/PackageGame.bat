@@ -42,10 +42,11 @@ call "%ROOT%\Scripts\Build.bat" Release
 if errorlevel 1 goto :fail
 
 echo === Packaging the game ===
-REM Cooker.exe --package (CookerCore's PackageGame): the project's assets, its enabled plugins,
+REM Cooker.exe --package (CookerCore's PackageGame): the assets of every scene of the project
+REM (--all-scenes, as File > Build Game... packages it), its enabled plugins,
 REM Game.exe and the runtime DLLs, the licences, and the check that nothing of the editor, the
 REM tests or the sources ships.
-"%BIN%\Cooker.exe" --project "%PROJECT%" --out "%OUT%" --binaries "%BIN%" --engine "%ROOT%" --package
+"%BIN%\Cooker.exe" --project "%PROJECT%" --out "%OUT%" --binaries "%BIN%" --engine "%ROOT%" --package --all-scenes
 if errorlevel 1 (
     echo [ERROR] Packaging failed.
     goto :fail

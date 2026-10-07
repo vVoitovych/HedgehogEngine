@@ -126,6 +126,13 @@ namespace EcsSerialization
                     ReadEntity(child, out);
                 continue;
             }
+            // A prefab instance's root names its prefab, whose own entities are not in the scene.
+            if (key == "Prefab" && entry.second.IsScalar())
+            {
+                if (std::string path = NormalizeAssetPath(entry.second.as<std::string>()); !path.empty())
+                    out.push_back(std::move(path));
+                continue;
+            }
             const auto readers = m_Readers.find(key);
             if (readers == m_Readers.end() || !entry.second.IsMap())
                 continue;
@@ -136,11 +143,15 @@ namespace EcsSerialization
 
     void AssetDependencyCollector::ReadSceneReferences(const YAML::Node& document, std::vector<std::string>& out) const
     {
-        const YAML::Node scene = document["Scene"];
-        if (!scene || !scene.IsSequence())
-            return;
-        for (const YAML::Node& entity : scene)
-            ReadEntity(entity, out);
+        // A scene's entities, or a subtree's (a prefab's Root).
+        for (const char* key : { "Scene", "Subtree" })
+        {
+            const YAML::Node entities = document[key];
+            if (!entities || !entities.IsSequence())
+                continue;
+            for (const YAML::Node& entity : entities)
+                ReadEntity(entity, out);
+        }
     }
 
     AssetDependencies AssetDependencyCollector::CollectScene(const std::string&           sceneVirtualPath,

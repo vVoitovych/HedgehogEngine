@@ -1,5 +1,6 @@
 #include "doctest/doctest/doctest.h"
 
+#include "CookPlan.hpp"
 #include "Package.hpp"
 
 #include "test_cook_fixture.hpp"
@@ -117,4 +118,24 @@ TEST_CASE("Package - FindForbiddenPackageFiles finds editor, test, debug, ImGui 
     CHECK(found.size() == 12);
     for (const std::filesystem::path& file : found)
         CHECK(file.filename() != "Game.exe");
+}
+
+TEST_CASE("Package - AllScenes ships every scene of Assets/Scenes beside the startup scene")
+{
+    PackageFixture fixture;
+    CHECK(Cooker::ListProjectScenes(fixture.Project.Path()) ==
+          std::vector<std::string>{ "assets://Scenes/Level.yaml", "assets://Scenes/Other.yaml" });
+
+    Cooker::PackageDesc desc = fixture.Desc();
+    desc.AllScenes           = true;
+    const Cooker::PackageResult result = Cooker::PackageGame(desc);
+    REQUIRE(result.Errors.empty());
+    std::vector<std::string> expected = ExpectedPackage();
+    expected.push_back("Assets/Scenes/Other.yaml");
+    std::sort(expected.begin(), expected.end());
+    CHECK(fixture.PackagedFiles() == expected);
+
+    // Without it, a scene nothing references stays out.
+    CHECK(Cooker::PackageGame(fixture.Desc()).Removed == 1);
+    CHECK_FALSE(std::filesystem::exists(fixture.Out.Path() / "Assets" / "Scenes" / "Other.yaml"));
 }
