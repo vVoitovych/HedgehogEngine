@@ -3,6 +3,7 @@
 #include "HedgehogEngine/api/ECS/components/RigidBodyComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
 #include "HedgehogEngine/api/Events/EventBus.hpp"
+#include "HedgehogEngine/api/Events/PhysicsEvents.hpp"
 #include "HedgehogEngine/api/Events/TransformEvents.hpp"
 
 #include "HedgehogPhysics/api/PhysicsWorld.hpp"
@@ -123,6 +124,11 @@ namespace HedgehogEngine
             }
         }
 
+        HP::BodyPose ToBodyPose(const WorldTransform& world)
+        {
+            return { HM::Vector3(world.Matrix[3].x(), world.Matrix[3].y(), world.Matrix[3].z()), world.Rotation };
+        }
+
         // -1 workers: the hardware's threads minus one (at least 0).
         int32_t ResolveWorkerThreads(int32_t configured)
         {
@@ -165,11 +171,10 @@ namespace HedgehogEngine
         if (!StartWorld(ecs))
             return;
         SyncBodies(ecs);
+        FollowTransforms(ecs, fixedDeltaTime);
         if (m_World->Step(fixedDeltaTime))
             WriteBack(ecs);
-        // This step's contacts; nothing hands them out yet, so they are dropped rather than kept.
-        m_Contacts.clear();
-        m_World->DrainContactEvents(m_Contacts);
+        PublishContacts(ecs);
     }
 
     void PhysicsSystem::OnPlayStop(ECS::ECS& ecs)
@@ -225,7 +230,10 @@ namespace HedgehogEngine
         }
         for (const ECS::Entity entity : m_Gone)
         {
-            m_World->DestroyBody(m_Bodies[entity].Body);
+            const TrackedBody& tracked = m_Bodies[entity];
+            if (tracked.IsTrigger)
+                m_GoneTriggers.insert(entity);
+            m_World->DestroyBody(tracked.Body);
             m_Bodies.erase(entity);
             if (ecs.IsAlive(entity) && ecs.HasComponent<RigidBodyComponent>(entity))
                 ecs.GetComponent<RigidBodyComponent>(entity).Body = HP::BodyHandle{};
@@ -250,8 +258,7 @@ namespace HedgehogEngine
         HP::BodyDesc desc;
         desc.Shape         = MakeShape(collider, world.Scale);
         desc.Motion        = ToMotion(rigid);
-        desc.Pose.Position = HM::Vector3(world.Matrix[3].x(), world.Matrix[3].y(), world.Matrix[3].z());
-        desc.Pose.Rotation = world.Rotation;
+        desc.Pose          = ToBodyPose(world);
         desc.Layer         = collider.Layer < 0 ? HP::PHYSICS_LAYER_COUNT : static_cast<uint32_t>(collider.Layer);
         desc.IsSensor      = collider.IsTrigger;
         desc.Friction      = collider.Friction;
@@ -266,8 +273,15 @@ namespace HedgehogEngine
         }
 
         // A refused desc is logged once by the world and kept as a failed body, not retried.
-        TrackedBody tracked{ ecs.GetGeneration(entity), m_World->CreateBody(desc) };
-        m_Bodies[entity] = tracked;
+        const TransformComponent& transform = ecs.GetComponent<TransformComponent>(entity);
+        TrackedBody               tracked;
+        tracked.Generation  = ecs.GetGeneration(entity);
+        tracked.Body        = m_World->CreateBody(desc);
+        tracked.IsTrigger   = collider.IsTrigger;
+        tracked.IsKinematic = desc.Motion == HP::MotionType::Kinematic;
+        tracked.Position    = transform.Position;
+        tracked.Rotation    = transform.Rotation;
+        m_Bodies[entity]    = tracked;
         if (rigid)
         {
             rigid->Body           = tracked.Body;
@@ -296,6 +310,7 @@ namespace HedgehogEngine
             m_World->DrainContactEvents(m_Contacts);
             m_Contacts.clear();
         }
+        m_GoneTriggers.clear();
     }
 
     void PhysicsSystem::WarnRigidBodiesWithoutCollider(ECS::ECS& ecs)
@@ -337,8 +352,151 @@ namespace HedgehogEngine
             TransformComponent& transform = ecs.GetComponent<TransformComponent>(entity);
             transform.Position = HM::Vector3(local.x(), local.y(), local.z());
             transform.Rotation = (parentWorld.Rotation.Inverse() * pose.Rotation).ToEuler();
+            found->second.Position = transform.Position;
+            found->second.Rotation = transform.Rotation;
             if (m_Bus)
                 m_Bus->Publish(TransformChangedEvent{ entity });
+        }
+    }
+
+    void PhysicsSystem::FollowTransforms(ECS::ECS& ecs, float fixedDeltaTime)
+    {
+        for (auto& [entity, tracked] : m_Bodies)
+        {
+            if (!tracked.Body.IsSet())
+                continue;
+            const TransformComponent& transform = ecs.GetComponent<TransformComponent>(entity);
+            if (tracked.IsKinematic)
+            {
+                // A kinematic body follows its transform every step, pushing what is in its way.
+                m_World->MoveKinematic(tracked.Body, ToBodyPose(ComputeWorldTransform(ecs, entity)), fixedDeltaTime);
+                continue;
+            }
+            if (transform.Position == tracked.Position && transform.Rotation == tracked.Rotation)
+                continue;
+            // Gameplay moved it since the body last wrote it: a teleport.
+            m_World->SetPose(tracked.Body, ToBodyPose(ComputeWorldTransform(ecs, entity)));
+            tracked.Position = transform.Position;
+            tracked.Rotation = transform.Rotation;
+        }
+    }
+
+    void PhysicsSystem::PublishContacts(ECS::ECS& ecs)
+    {
+        m_Contacts.clear();
+        m_World->DrainContactEvents(m_Contacts);
+        const auto isTrigger = [&](ECS::Entity entity) {
+            const auto found = m_Bodies.find(entity);
+            return found != m_Bodies.end() ? found->second.IsTrigger : m_GoneTriggers.contains(entity);
+        };
+        for (const HP::ContactEvent& contact : m_Contacts)
+        {
+            const ECS::Entity a     = static_cast<ECS::Entity>(contact.UserDataA);
+            const ECS::Entity b     = static_cast<ECS::Entity>(contact.UserDataB);
+            const bool        enter = contact.Type == HP::ContactEventType::Enter;
+            // A pair whose entity died before its Enter is published never began, for gameplay.
+            if (enter && (!ecs.IsAlive(a) || !ecs.IsAlive(b)))
+                continue;
+            if (!m_Bus)
+                continue;
+            if (contact.IsSensor)
+            {
+                const bool        aIsTrigger = isTrigger(a);
+                const ECS::Entity trigger    = aIsTrigger ? a : b;
+                const ECS::Entity other      = aIsTrigger ? b : a;
+                if (enter)
+                    m_Bus->Publish(TriggerEnterEvent{ trigger, other });
+                else
+                    m_Bus->Publish(TriggerExitEvent{ trigger, other });
+            }
+            else if (enter)
+                m_Bus->Publish(CollisionEnterEvent{ a, b, contact.Point, contact.Normal });
+            else
+                m_Bus->Publish(CollisionExitEvent{ a, b });
+        }
+        m_GoneTriggers.clear();
+    }
+
+    HP::BodyHandle PhysicsSystem::FindBody(ECS::Entity entity) const
+    {
+        if (!m_World || !m_World->IsInitialized())
+            return {};
+        return GetBody(entity);
+    }
+
+    HM::Vector3 PhysicsSystem::GetLinearVelocity(ECS::Entity entity) const
+    {
+        const HP::BodyHandle body = FindBody(entity);
+        return body.IsSet() ? m_World->GetLinearVelocity(body) : HM::Vector3(0.0f, 0.0f, 0.0f);
+    }
+
+    void PhysicsSystem::SetLinearVelocity(ECS::Entity entity, const HM::Vector3& velocity)
+    {
+        if (const HP::BodyHandle body = FindBody(entity); body.IsSet())
+            m_World->SetLinearVelocity(body, velocity);
+    }
+
+    HM::Vector3 PhysicsSystem::GetAngularVelocity(ECS::Entity entity) const
+    {
+        const HP::BodyHandle body = FindBody(entity);
+        return body.IsSet() ? m_World->GetAngularVelocity(body) : HM::Vector3(0.0f, 0.0f, 0.0f);
+    }
+
+    void PhysicsSystem::SetAngularVelocity(ECS::Entity entity, const HM::Vector3& velocity)
+    {
+        if (const HP::BodyHandle body = FindBody(entity); body.IsSet())
+            m_World->SetAngularVelocity(body, velocity);
+    }
+
+    void PhysicsSystem::AddForce(ECS::Entity entity, const HM::Vector3& force)
+    {
+        if (const HP::BodyHandle body = FindBody(entity); body.IsSet())
+            m_World->AddForce(body, force);
+    }
+
+    void PhysicsSystem::AddImpulse(ECS::Entity entity, const HM::Vector3& impulse)
+    {
+        if (const HP::BodyHandle body = FindBody(entity); body.IsSet())
+            m_World->AddImpulse(body, impulse);
+    }
+
+    void PhysicsSystem::AddTorque(ECS::Entity entity, const HM::Vector3& torque)
+    {
+        if (const HP::BodyHandle body = FindBody(entity); body.IsSet())
+            m_World->AddTorque(body, torque);
+    }
+
+    void PhysicsSystem::AddAngularImpulse(ECS::Entity entity, const HM::Vector3& impulse)
+    {
+        if (const HP::BodyHandle body = FindBody(entity); body.IsSet())
+            m_World->AddAngularImpulse(body, impulse);
+    }
+
+    std::optional<PhysicsRayHit> PhysicsSystem::Raycast(const HM::Vector3& origin, const HM::Vector3& direction,
+                                                        float maxDistance, uint16_t layerMask) const
+    {
+        if (!m_World || !m_World->IsInitialized())
+            return std::nullopt;
+        const std::optional<HP::RayHit> hit = m_World->CastRay(origin, direction, maxDistance, layerMask);
+        if (!hit)
+            return std::nullopt;
+        return PhysicsRayHit{ static_cast<ECS::Entity>(hit->UserData), hit->Point, hit->Normal, hit->Distance };
+    }
+
+    void PhysicsSystem::RebuildBody(ECS::ECS& ecs, ECS::Entity entity)
+    {
+        const HP::BodyHandle body = FindBody(entity);
+        if (!body.IsSet() || !ecs.IsAlive(entity) || !ecs.HasComponent<ColliderComponent>(entity))
+            return;
+        const HM::Vector3 linear  = m_World->GetLinearVelocity(body);
+        const HM::Vector3 angular = m_World->GetAngularVelocity(body);
+        m_World->DestroyBody(body);
+        m_Bodies.erase(entity);
+        CreateBody(ecs, entity);
+        if (const HP::BodyHandle rebuilt = GetBody(entity); rebuilt.IsSet())
+        {
+            m_World->SetLinearVelocity(rebuilt, linear);
+            m_World->SetAngularVelocity(rebuilt, angular);
         }
     }
 }

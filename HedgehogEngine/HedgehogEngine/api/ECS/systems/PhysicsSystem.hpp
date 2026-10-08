@@ -8,7 +8,10 @@
 #include "ECS/api/ECS.hpp"
 #include "ECS/api/System.hpp"
 
+#include "HedgehogMath/api/Vector.hpp"
+
 #include <cstdint>
+#include <optional>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -21,6 +24,15 @@ namespace HP
 namespace HedgehogEngine
 {
     class EventBus;
+
+    // What PhysicsSystem::Raycast reached.
+    struct PhysicsRayHit
+    {
+        ECS::Entity Entity   = ECS::INVALID_ENTITY;
+        HM::Vector3 Point    = HM::Vector3(0.0f, 0.0f, 0.0f);
+        HM::Vector3 Normal   = HM::Vector3(0.0f, 0.0f, 0.0f);
+        float       Distance = 0.0f;
+    };
 
     // An entity view of the rigid bodies (RigidBodyComponent + TransformComponent), so the physics
     // system can warn about one without a collider.
@@ -40,6 +52,11 @@ namespace HedgehogEngine
     // Rotation (through its parent's world transform) with a TransformChangedEvent, so the Transform
     // phase applies it that frame. OnPlayStop destroys every body; the world stays started. Pause
     // runs no fixed steps, so it holds.
+    //
+    // Before each step a kinematic body moves to its entity's current world pose (MoveKinematic, so
+    // it pushes dynamic bodies on the way), and a static or dynamic body whose entity's local
+    // Position or Rotation gameplay changed since the body last wrote it is teleported there. After
+    // it the contacts are published as Collision and Trigger events (Events/PhysicsEvents.hpp).
     class PhysicsSystem : public ECS::System
     {
     public:
@@ -61,12 +78,45 @@ namespace HedgehogEngine
         // The entity's body, or an invalid handle.
         [[nodiscard]] HEDGEHOG_ENGINE_API HP::BodyHandle GetBody(ECS::Entity entity) const;
 
+        // ---- Gameplay, by entity. An entity without a body (none, or not in Play) gets nothing done
+        // and zeros back. Velocities are world space, per second; forces and torques act over the
+        // next step only; impulses change the velocity at once. Forces and impulses move only a
+        // dynamic body; velocities also a kinematic one (whose next MoveKinematic overrides them).
+        [[nodiscard]] HEDGEHOG_ENGINE_API HM::Vector3 GetLinearVelocity(ECS::Entity entity) const;
+        HEDGEHOG_ENGINE_API void                      SetLinearVelocity(ECS::Entity entity, const HM::Vector3& velocity);
+        [[nodiscard]] HEDGEHOG_ENGINE_API HM::Vector3 GetAngularVelocity(ECS::Entity entity) const;
+        HEDGEHOG_ENGINE_API void                      SetAngularVelocity(ECS::Entity entity, const HM::Vector3& velocity);
+        HEDGEHOG_ENGINE_API void                      AddForce(ECS::Entity entity, const HM::Vector3& force);
+        HEDGEHOG_ENGINE_API void                      AddImpulse(ECS::Entity entity, const HM::Vector3& impulse);
+        HEDGEHOG_ENGINE_API void                      AddTorque(ECS::Entity entity, const HM::Vector3& torque);
+        HEDGEHOG_ENGINE_API void                      AddAngularImpulse(ECS::Entity entity, const HM::Vector3& impulse);
+
+        // The nearest collider (triggers skipped) the ray reaches within maxDistance on a layer of
+        // layerMask, or nothing; nothing too when the world has not started.
+        [[nodiscard]] HEDGEHOG_ENGINE_API std::optional<PhysicsRayHit>
+        Raycast(const HM::Vector3& origin, const HM::Vector3& direction, float maxDistance, uint16_t layerMask = 0xffffu) const;
+
+        // Makes the entity's body again from its components (a collider or rigid body edited during
+        // Play), keeping its velocities. Nothing for an entity without a body.
+        HEDGEHOG_ENGINE_API void RebuildBody(ECS::ECS& ecs, ECS::Entity entity);
+
     private:
         struct TrackedBody
         {
             uint32_t       Generation = 0;
             HP::BodyHandle Body; // invalid when the world refused it (logged once)
+            bool           IsTrigger = false;
+            bool           IsKinematic = false;
+            // The entity's local transform as the body last saw it (made or written back), so a
+            // change gameplay made since is a teleport.
+            HM::Vector3 Position = HM::Vector3(0.0f, 0.0f, 0.0f);
+            HM::Vector3 Rotation = HM::Vector3(0.0f, 0.0f, 0.0f);
         };
+
+        // The entity's live body, or an invalid handle.
+        [[nodiscard]] HP::BodyHandle FindBody(ECS::Entity entity) const;
+        void                         FollowTransforms(ECS::ECS& ecs, float fixedDeltaTime);
+        void                         PublishContacts(ECS::ECS& ecs);
 
         bool StartWorld(ECS::ECS& ecs);
         void SyncBodies(ECS::ECS& ecs);
@@ -83,6 +133,7 @@ namespace HedgehogEngine
         std::vector<ECS::Entity>                     m_Gone;     // scratch: entities losing a body
         std::vector<HP::BodyHandle>                  m_Active;   // scratch: the awake bodies
         std::vector<HP::ContactEvent>                m_Contacts; // the last step's contact events
+        std::unordered_set<ECS::Entity>              m_GoneTriggers; // destroyed since the last publish
         std::unordered_set<ECS::Entity>              m_WarnedNoCollider; // one warning per entity per Play
         std::unordered_set<ECS::Entity>              m_WarnedScale;      // likewise, a non-uniformly scaled parent
     };
