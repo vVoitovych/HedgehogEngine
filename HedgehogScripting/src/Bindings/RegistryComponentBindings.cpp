@@ -45,7 +45,7 @@ namespace HedgehogScripting::Bindings
             { "LightComponent", "Light" },         { "CameraComponent", "Camera" },     { "MeshComponent", "Mesh" },
             { "AnimatorComponent", "Animator" },   { "AudioSourceComponent", "AudioSource" },
             { "UiRectComponent", "UiRect" },       { "UiImageComponent", "UiImage" },   { "UiTextComponent", "UiText" },
-            { "UiButtonComponent", "UiButton" },
+            { "UiButtonComponent", "UiButton" },   { "RigidBodyComponent", "RigidBody" }, { "ColliderComponent", "Collider" },
         };
 
         const char* FindHandWritten(const std::string& key)
