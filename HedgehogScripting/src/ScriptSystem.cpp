@@ -119,6 +119,7 @@ namespace HedgehogScripting
                              { return SubscribeClick(button, std::move(handler)); });
         m_BusSubscriptions.push_back(bus.Subscribe<HedgehogEngine::UiButtonClickedEvent>(
             [this](const HedgehogEngine::UiButtonClickedEvent& event) { QueueButtonClicked(event); }));
+        SubscribePhysicsEvents(bus);
         // Save games carry the scripts' state, until OnUnregister drops the section.
         context.GetSaveGames().RegisterSection(
             EcsSerialization::SAVE_SECTION_SCRIPTS, [this]() { return SaveScriptState(m_Context.GetECS()); },
