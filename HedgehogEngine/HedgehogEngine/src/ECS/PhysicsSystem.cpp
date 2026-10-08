@@ -157,6 +157,7 @@ namespace HedgehogEngine
         m_WarnedNoCollider.clear();
         m_WarnedScale.clear();
         WarnRigidBodiesWithoutCollider(ecs);
+        ApplySettings(ecs);
         if (GetEntities().empty() || !StartWorld(ecs))
             return;
         SyncBodies(ecs);
@@ -214,6 +215,20 @@ namespace HedgehogEngine
             desc.WorkerThreads = ResolveWorkerThreads(physics.WorkerThreads);
         }
         return m_World->Init(desc);
+    }
+
+    void PhysicsSystem::ApplySettings(ECS::ECS& ecs)
+    {
+        // A world started by an earlier Play takes the settings as they are now: gameplay may have
+        // changed its gravity, and the editor its matrix. Its worker threads stay as they started.
+        if (!m_World || !m_World->IsInitialized())
+            return;
+        if (const auto* settings = ecs.GetServices().Find<HedgehogSettings::Settings>())
+        {
+            const HedgehogSettings::PhysicsSettings& physics = settings->GetPhysicsSettings();
+            m_World->SetGravity(HM::Vector3(physics.Gravity[0], physics.Gravity[1], physics.Gravity[2]));
+            m_World->SetCollisionMatrix(physics.CollisionMasks);
+        }
     }
 
     void PhysicsSystem::SyncBodies(ECS::ECS& ecs)
@@ -498,5 +513,16 @@ namespace HedgehogEngine
             m_World->SetLinearVelocity(rebuilt, linear);
             m_World->SetAngularVelocity(rebuilt, angular);
         }
+    }
+
+    HM::Vector3 PhysicsSystem::GetGravity() const
+    {
+        return m_World ? m_World->GetGravity() : HM::Vector3(0.0f, 0.0f, 0.0f);
+    }
+
+    void PhysicsSystem::SetGravity(const HM::Vector3& gravity)
+    {
+        if (m_World && m_World->IsInitialized())
+            m_World->SetGravity(gravity);
     }
 }

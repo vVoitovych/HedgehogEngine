@@ -47,6 +47,15 @@ namespace HedgehogScripting::Bindings
     // context must outlive lua.
     void RegisterAudio(sol::state& lua, HedgehogEngine::EngineContext& context);
 
+    // The RigidBody and Collider usertypes (ScriptComponentRef<T>) and their RigidBodyType and
+    // ColliderShape enum tables, and the Physics table (raycast, gravity), over the engine's
+    // PhysicsSystem. A field write lands in the component and, during Play, rebuilds the entity's
+    // body (PhysicsSystem::RebuildBody) so it applies at once; velocity, angularVelocity and the
+    // add* pushes act on the body. Outside Play the pushes, velocity writes, raycast and gravity
+    // writes do nothing (velocities read zero) and the first such call logs a warning. Non-finite
+    // values and enum values or layers out of range are script errors. context must outlive lua.
+    void RegisterPhysics(sol::state& lua, HedgehogEngine::EngineContext& context);
+
     // The Scene table (find, findAll, spawn, destroy) and entity:destroy(), over context's
     // SceneManager. Destroying only queues the entity in pendingDestroys; FlushDestroys deletes
     // them. Call after RegisterEntity. context and pendingDestroys must outlive lua.

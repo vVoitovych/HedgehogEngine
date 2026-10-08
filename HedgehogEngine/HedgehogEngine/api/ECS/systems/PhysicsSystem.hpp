@@ -96,6 +96,11 @@ namespace HedgehogEngine
         [[nodiscard]] HEDGEHOG_ENGINE_API std::optional<PhysicsRayHit>
         Raycast(const HM::Vector3& origin, const HM::Vector3& direction, float maxDistance, uint16_t layerMask = 0xffffu) const;
 
+        // The running world's gravity; zero before it starts. Setting it lasts until the next Play,
+        // which reads the physics settings again. Nothing before the world starts.
+        [[nodiscard]] HEDGEHOG_ENGINE_API HM::Vector3 GetGravity() const;
+        HEDGEHOG_ENGINE_API void                      SetGravity(const HM::Vector3& gravity);
+
         // Makes the entity's body again from its components (a collider or rigid body edited during
         // Play), keeping its velocities. Nothing for an entity without a body.
         HEDGEHOG_ENGINE_API void RebuildBody(ECS::ECS& ecs, ECS::Entity entity);
@@ -119,6 +124,7 @@ namespace HedgehogEngine
         void                         PublishContacts(ECS::ECS& ecs);
 
         bool StartWorld(ECS::ECS& ecs);
+        void ApplySettings(ECS::ECS& ecs);
         void SyncBodies(ECS::ECS& ecs);
         void CreateBody(ECS::ECS& ecs, ECS::Entity entity);
         void DestroyBodies(ECS::ECS& ecs);

@@ -4,6 +4,9 @@
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogEngine/api/ECS/components/AnimatorComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/AudioSourceComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/ColliderComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/RigidBodyComponent.hpp"
+#include "HedgehogEngine/api/ECS/systems/PhysicsSystem.hpp"
 #include "HedgehogEngine/api/ECS/components/UiButtonComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/UiImageComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/UiRectComponent.hpp"
@@ -219,6 +222,18 @@ namespace HedgehogScripting::Bindings
         AddComponentAccess<HedgehogEngine::AudioSourceComponent>(entity, ecs, "AudioSource", [&ecs](ECS::Entity id)
         {
             ecs.AddComponent(id, HedgehogEngine::AudioSourceComponent{});
+        });
+        // Physics parts (their usertypes come from RegisterPhysics). A collider gets its body at the
+        // next fixed step; a rigid body added to an entity that has one already makes it move as
+        // its type says from now on.
+        AddComponentAccess<HedgehogEngine::RigidBodyComponent>(entity, ecs, "RigidBody", [&context](ECS::Entity id)
+        {
+            context.GetECS().AddComponent(id, HedgehogEngine::RigidBodyComponent{});
+            context.GetPhysicsSystem()->RebuildBody(context.GetECS(), id);
+        });
+        AddComponentAccess<HedgehogEngine::ColliderComponent>(entity, ecs, "Collider", [&ecs](ECS::Entity id)
+        {
+            ecs.AddComponent(id, HedgehogEngine::ColliderComponent{});
         });
         // UI parts (their usertypes come from RegisterUi). A rect makes a child of a canvas or of
         // another element a UI element.
