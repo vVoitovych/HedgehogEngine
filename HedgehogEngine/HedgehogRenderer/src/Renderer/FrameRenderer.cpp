@@ -274,6 +274,11 @@ namespace Renderer
         frame.UiFontSets     = m_UiFontSets;
         frame.UiSolidTexture = resources.GetUiSolidTextureSet();
         frame.UiTargetSize   = scene.UiTargetSize;
+
+        // Lines go in pairs: an odd last vertex is dropped.
+        const size_t lineVertices  = scene.DebugLines.size() & ~size_t(1);
+        frame.DebugLineVertices    = m_Services.UploadDebugLines(std::span(scene.DebugLines).first(lineVertices));
+        frame.DebugLineVertexCount = frame.DebugLineVertices ? static_cast<uint32_t>(lineVertices) : 0;
     }
 
     GraphFrameData FrameRenderer::MakeViewFrame(const View& view, ViewInstances& instances) const

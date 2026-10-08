@@ -81,6 +81,22 @@ TEST_CASE("RenderScene reuses its capacity across Clear() + re-extraction")
     }
 }
 
+TEST_CASE("RenderScene's debug lines are emptied by Clear() and keep their storage")
+{
+    HX::RenderScene scene;
+    for (int i = 0; i < 64; ++i)
+        scene.DebugLines.push_back({ HM::Vector3(static_cast<float>(i), 0.0f, 0.0f), 0xff0000ffu });
+    const size_t capacity = scene.DebugLines.capacity();
+
+    scene.Clear();
+    CHECK(scene.DebugLines.empty());
+    CHECK(scene.DebugLines.capacity() == capacity);
+    for (int i = 0; i < 64; ++i)
+        scene.DebugLines.push_back({});
+    CHECK(scene.DebugLines.capacity() == capacity);
+    CHECK(scene.DebugLines[0].Color == 0xffffffffu); // white by default
+}
+
 TEST_CASE("ComputeLocalBounds is the smallest box around a mesh's positions")
 {
     const std::vector<HM::Vector3> positions = {

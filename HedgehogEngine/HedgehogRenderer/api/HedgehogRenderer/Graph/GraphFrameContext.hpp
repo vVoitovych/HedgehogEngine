@@ -103,6 +103,11 @@ namespace Renderer
         std::span<const RHI::IRHIDescriptorSet* const> UiFontSets;
         const RHI::IRHIDescriptorSet*                  UiSolidTexture = nullptr;
         HM::Vector2                                    UiTargetSize   = HM::Vector2(0.0f, 0.0f);
+
+        // RenderScene::DebugLines, uploaded once per frame (HX::DebugLineVertex, two per line), which
+        // the Gizmo pass draws after the overlay boxes. Null and 0 when there are none.
+        RHI::IRHIBuffer* DebugLineVertices    = nullptr;
+        uint32_t         DebugLineVertexCount = 0;
     };
 
     // The graph-path forward shader's uniforms (GraphForward/Base.vert and .frag), laid out for
@@ -163,6 +168,7 @@ namespace Renderer
         ForwardSkinnedDoubleSided,  // ForwardSkinned with cullBackFaces: false
         ShadowSkinned,              // Shadow for SkinnedInstances: palette at set 1
         GameUi,                     // UiDrawList quads, alpha-blended, no depth: texture at set 0
+        DebugLines,                 // DebugLineVertex lines, depth-tested, not written: viewProj at set 0
     };
 
     // The long-lived GPU objects the engine passes use but do not own: pipelines, and per-frame

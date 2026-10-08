@@ -108,6 +108,15 @@ namespace HX
         uint64_t SourceId = 0;
     };
 
+    // One end of a world-space debug line: a position and an RGBA8 colour (red in the lowest byte, sRGB,
+    // as UI colours are). Two consecutive vertices make a line.
+    struct DebugLineVertex
+    {
+        HM::Vector3 Position = HM::Vector3(0.0f, 0.0f, 0.0f);
+        uint32_t    Color    = 0xffffffffu;
+    };
+    static_assert(sizeof(DebugLineVertex) == 16, "PositionColor.vdes reads a 12-byte position and a 4-byte colour.");
+
     // Reused across frames: SceneExtractor::Extract calls Clear() (vector::clear(), not
     // reassignment) so steady-state extraction into an already-sized RenderScene allocates
     // nothing.
@@ -128,6 +137,10 @@ namespace HX
         std::vector<uint32_t>    UiFonts;
         HM::Vector2              UiTargetSize = HM::Vector2(0.0f, 0.0f);
 
+        // World-space lines (vertex pairs) the editor's Scene view draws over the scene, in its Gizmo
+        // pass: generic, so whatever fills them (collider wireframes) stays out of the renderer.
+        std::vector<DebugLineVertex> DebugLines;
+
         void Clear()
         {
             Instances.clear();
@@ -137,6 +150,7 @@ namespace HX
             Ui.Clear();
             UiTextures.clear();
             UiFonts.clear();
+            DebugLines.clear();
         }
     };
 }
