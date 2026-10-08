@@ -202,6 +202,8 @@ TEST_CASE("Oracle: each shipped graph compiles to the same plan as its hand-writ
     const std::string gameTwin = PlanOf(&BuildViewGraphByHand);
     CHECK(gameTwin.find("compile failed") == std::string::npos);
     CHECK(gameTwin.find("pass GameUi") != std::string::npos);
+    // Debug lines draw in the Gizmo pass, which only the editor's scene view has.
+    CHECK(gameTwin.find("pass Gizmo") == std::string::npos);
     CHECK(PlanOf(registry, *library.Find("game")) == gameTwin);
 
     const std::string resultTwin = PlanOf(&BuildResultGraphByHand);

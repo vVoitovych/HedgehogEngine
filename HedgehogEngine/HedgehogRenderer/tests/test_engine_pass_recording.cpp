@@ -11,6 +11,8 @@
 
 #include <algorithm>
 #include <cmath>
+#include <utility>
+#include <vector>
 
 using namespace Renderer;
 using namespace RGTest;
@@ -405,4 +407,72 @@ TEST_CASE("The Gizmo pass draws each overlay instance's bounds over the view, an
     const HM::Vector4   high  = model * HM::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
     CHECK(HM::Vector3(low.x(), low.y(), low.z()) == box.GetMin());
     CHECK(HM::Vector3(high.x(), high.y(), high.z()) == box.GetMax());
+}
+
+TEST_CASE("The Gizmo pass draws the frame's debug lines in one draw, after the overlay boxes")
+{
+    PassBuilderRegistry registry;
+    RegisterEnginePassTypes(registry);
+
+    // boxes, lines: what the frame holds.
+    for (const auto& [boxes, lines] : { std::pair{ false, true }, std::pair{ true, true }, std::pair{ false, false } })
+    {
+        CAPTURE(boxes);
+        CAPTURE(lines);
+        HX::RenderInstance overlay[1] = { Instance(0, HX::EDITOR_LAYER) };
+        TestBuffer         lineVertices{ 6 * sizeof(HX::DebugLineVertex) };
+
+        GraphFrameData frame = MakeFrame(1);
+        if (boxes)
+            frame.OverlayInstances = overlay;
+        if (lines)
+        {
+            frame.DebugLineVertices    = &lineVertices;
+            frame.DebugLineVertexCount = 6;
+        }
+        FakeServices      services;
+        GraphFrameContext context{ &services, &frame };
+
+        TestDevice         device;
+        RenderGraphRuntime graph(device, 64 * 1024);
+        graph.SetFrameContext(&context);
+
+        PassInvocation prepass("DepthPrepass");
+        prepass.SetSlot("depth", DeclareDepth(graph, "depth", 64));
+        registry.Find("DepthPrepass")->Build(graph, prepass);
+
+        PassInvocation gizmo("Gizmo");
+        gizmo.SetSlot("color", DeclareColor(graph, "color", RHI::Format::R16G16B16A16Unorm));
+        gizmo.SetSlot("depth", prepass.GetSlot("depth"));
+        registry.Find("Gizmo")->Build(graph, gizmo);
+        graph.BindOutput(graph.AddOutputSlot("color", RHI::Format::R16G16B16A16Unorm, RGSizePolicy::MakeAbsolute(64, 64)),
+                         gizmo.GetSlot("color"));
+
+        RecordingCommandList cmd;
+        REQUIRE(graph.Execute(cmd));
+        if (!boxes && !lines)
+        {
+            CHECK(cmd.Renderings.size() == 1); // the prepass only
+            CHECK(cmd.DrawnVertexCounts.empty());
+            continue;
+        }
+
+        REQUIRE(cmd.Renderings.size() == 2);
+        CHECK(cmd.Renderings[1].ColorAttachments[0].LoadOp == RHI::LoadOp::Load);
+        const RHI::IRHIPipeline& linePipeline = services.GetPipeline(EnginePipeline::DebugLines);
+        const RHI::IRHIPipeline& boxPipeline  = services.GetPipeline(EnginePipeline::Gizmo);
+        REQUIRE(!cmd.BoundPipelines.empty());
+        CHECK(cmd.BoundPipelines.back() == &linePipeline);
+        if (boxes)
+        {
+            REQUIRE(cmd.BoundPipelines.size() >= 2);
+            CHECK(cmd.BoundPipelines[cmd.BoundPipelines.size() - 2] == &boxPipeline);
+            CHECK(cmd.DrawnVertexCounts == std::vector<uint32_t>{ GIZMO_BOX_LINE_VERTICES, 6 });
+        }
+        else
+        {
+            CHECK(std::find(cmd.BoundPipelines.begin(), cmd.BoundPipelines.end(), &boxPipeline) == cmd.BoundPipelines.end());
+            CHECK(cmd.DrawnVertexCounts == std::vector<uint32_t>{ 6 });
+        }
+    }
 }

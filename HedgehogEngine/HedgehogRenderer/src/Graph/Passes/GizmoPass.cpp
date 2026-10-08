@@ -9,16 +9,19 @@ namespace Renderer
 {
     namespace
     {
-        // Draws each overlay instance's world bounds as a wireframe box into color, over what the
-        // view has drawn, tested against its depth but not writing it. A view with no overlay
-        // instances records nothing, so the pass costs nothing until something is selected.
+        // Draws each overlay instance's world bounds as a wireframe box, then the frame's debug lines,
+        // into color over what the view has drawn, tested against its depth but not writing it. A view
+        // with neither records nothing, so the pass costs nothing until something is shown.
         void RecordGizmo(ForwardPassData& data, RHI::IRHICommandList& cmd)
         {
-            if (!data.Context || data.Context->Frame->OverlayInstances.empty())
+            if (!data.Context)
                 return;
-            const GraphFrameData&    frame    = *data.Context->Frame;
+            const GraphFrameData& frame    = *data.Context->Frame;
+            const bool            hasBoxes = !frame.OverlayInstances.empty();
+            const bool            hasLines = frame.DebugLineVertices != nullptr && frame.DebugLineVertexCount >= 2;
+            if (!hasBoxes && !hasLines)
+                return;
             IGraphPassServices&      services = *data.Context->Services;
-            const RHI::IRHIPipeline& pipeline = services.GetPipeline(EnginePipeline::Gizmo);
             RHI::IRHITexture&        color    = *data.Graph->GetTexture(data.Color);
             RHI::IRHITexture&        depth    = *data.Graph->GetTexture(data.Depth);
 
@@ -38,18 +41,32 @@ namespace Renderer
             info.Width            = color.GetWidth();
             info.Height           = color.GetHeight();
             cmd.BeginRendering(info);
-
-            cmd.BindPipeline(pipeline);
             cmd.SetViewport({ 0.0f, 0.0f, static_cast<float>(color.GetWidth()),
                               static_cast<float>(color.GetHeight()), 0.0f, 1.0f });
             cmd.SetScissor({ 0, 0, color.GetWidth(), color.GetHeight() });
-            cmd.BindVertexBuffers(0, { &services.GetGizmoBoxLines() }, { 0 });
-            cmd.BindDescriptorSet(pipeline, 0, services.AllocateViewProjUniform(frame.Proj * frame.View));
-            for (const HX::RenderInstance& instance : frame.OverlayInstances)
+            const RHI::IRHIDescriptorSet& viewProj = services.AllocateViewProjUniform(frame.Proj * frame.View);
+
+            if (hasBoxes)
             {
-                const HM::Matrix4x4 model = MakeGizmoBoxMatrix(instance.WorldBounds);
-                cmd.PushConstants(pipeline, RHI::ShaderStage::Vertex, 0, 16 * sizeof(float), model.GetBuffer());
-                cmd.Draw(GIZMO_BOX_LINE_VERTICES, 1, 0, 0);
+                const RHI::IRHIPipeline& pipeline = services.GetPipeline(EnginePipeline::Gizmo);
+                cmd.BindPipeline(pipeline);
+                cmd.BindVertexBuffers(0, { &services.GetGizmoBoxLines() }, { 0 });
+                cmd.BindDescriptorSet(pipeline, 0, viewProj);
+                for (const HX::RenderInstance& instance : frame.OverlayInstances)
+                {
+                    const HM::Matrix4x4 model = MakeGizmoBoxMatrix(instance.WorldBounds);
+                    cmd.PushConstants(pipeline, RHI::ShaderStage::Vertex, 0, 16 * sizeof(float), model.GetBuffer());
+                    cmd.Draw(GIZMO_BOX_LINE_VERTICES, 1, 0, 0);
+                }
+            }
+            if (hasLines)
+            {
+                // One draw of every line, already in world space.
+                const RHI::IRHIPipeline& pipeline = services.GetPipeline(EnginePipeline::DebugLines);
+                cmd.BindPipeline(pipeline);
+                cmd.BindVertexBuffers(0, { frame.DebugLineVertices }, { 0 });
+                cmd.BindDescriptorSet(pipeline, 0, viewProj);
+                cmd.Draw(frame.DebugLineVertexCount, 1, 0, 0);
             }
             cmd.EndRendering();
         }

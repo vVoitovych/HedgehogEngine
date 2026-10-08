@@ -86,6 +86,10 @@ namespace Renderer
                                                       RHI::CullMode::None);
         m_GizmoPipeline = CreatePipeline(device, gizmoShader, { m_ViewProjRing.Layout.get() }, { COLOR_FORMAT },
                                          gizmoShader.Pipeline.CullMode);
+        // The Gizmo pass's lines: the gizmo's layout (viewProj at set 0) over coloured vertices.
+        const ShaderPipelineDesc linesShader = ShaderLoader::Load(device, std::string(HedgehogEngine::DEBUG_LINES_SHADER), fileSystem);
+        m_DebugLinesPipeline = CreatePipeline(device, linesShader, { m_ViewProjRing.Layout.get() }, { COLOR_FORMAT },
+                                              linesShader.Pipeline.CullMode);
 
         // The depth prepass's and shadow's set 1 and forward's set 3 declare the same binding: one palette set
         // binds to both. One set per frame in flight.
@@ -185,6 +189,7 @@ namespace Renderer
             case EnginePipeline::ForwardSkinnedDoubleSided: return *m_ForwardSkinnedDoubleSidedPipeline;
             case EnginePipeline::ShadowSkinned:             return *m_ShadowSkinnedPipeline;
             case EnginePipeline::GameUi:                    return *m_GameUiPipeline;
+            case EnginePipeline::DebugLines:                return *m_DebugLinesPipeline;
         }
         assert(false && "GraphPassServices::GetPipeline: unknown pipeline.");
         return *m_DepthPrepassPipeline;
@@ -259,5 +264,22 @@ namespace Renderer
         slot.Vertices->CopyData(list.Vertices.data(), list.Vertices.size() * sizeof(HX::UiVertex));
         slot.Indices->CopyData(list.Indices.data(), list.Indices.size() * sizeof(uint16_t));
         return { slot.Vertices.get(), slot.Indices.get() };
+    }
+
+    RHI::IRHIBuffer* GraphPassServices::UploadDebugLines(std::span<const HX::DebugLineVertex> vertices)
+    {
+        if (vertices.empty())
+            return nullptr;
+
+        // This slot's fence has signaled, so its buffer is no longer read and may be replaced.
+        DebugLineSlot& slot = m_DebugLines[m_FrameIndex];
+        if (vertices.size() > slot.Capacity)
+        {
+            slot.Capacity = std::max({ vertices.size(), slot.Capacity * 2, MIN_DEBUG_LINE_VERTEX_CAPACITY });
+            slot.Vertices = m_Device.CreateBuffer(slot.Capacity * sizeof(HX::DebugLineVertex),
+                                                  RHI::BufferUsage::VertexBuffer, RHI::MemoryUsage::CpuToGpu);
+        }
+        slot.Vertices->CopyData(vertices.data(), vertices.size() * sizeof(HX::DebugLineVertex));
+        return slot.Vertices.get();
     }
 }

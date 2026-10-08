@@ -5,6 +5,7 @@
 #include "RHI/api/RHITypes.hpp"
 
 #include "HedgehogCommon/api/RendererSettings.hpp"
+#include "HedgehogExtract/api/RenderScene.hpp"
 #include "HedgehogExtract/api/UiDrawList.hpp"
 #include "HedgehogMath/api/Matrix.hpp"
 
@@ -57,6 +58,7 @@ namespace Renderer
         static constexpr size_t MIN_PALETTE_CAPACITY = 256;
         // The game UI buffers' first capacities, in vertices and indices; they grow on demand.
         static constexpr size_t MIN_UI_VERTEX_CAPACITY = 4096;
+        static constexpr size_t MIN_DEBUG_LINE_VERTEX_CAPACITY = 4096;
         static constexpr size_t MIN_UI_INDEX_CAPACITY  = 6144;
 
         GraphPassServices(RHI::IRHIDevice& device, const FS::FileSystemManager& fileSystem);
@@ -99,6 +101,10 @@ namespace Renderer
         // Uploads list's vertices and indices into this frame slot's buffers, growing them when too
         // small. Once per frame, after BeginFrame.
         UiGeometry UploadUiGeometry(const HX::UiDrawList& list);
+
+        // Uploads the frame's debug lines into this frame slot's vertex buffer, growing it when too
+        // small. Once per frame, after BeginFrame; null when there are none.
+        RHI::IRHIBuffer* UploadDebugLines(std::span<const HX::DebugLineVertex> vertices);
 
     private:
         struct UniformSlot
@@ -155,6 +161,14 @@ namespace Renderer
         std::unique_ptr<RHI::IRHIDescriptorSetLayout>                    m_UiTextureLayout; // GameUi's set 0
         std::array<UiGeometrySlot, HedgehogEngine::MAX_FRAMES_IN_FLIGHT> m_UiGeometry;
 
+        // One frame in flight's debug line vertices.
+        struct DebugLineSlot
+        {
+            std::unique_ptr<RHI::IRHIBuffer> Vertices;
+            size_t                           Capacity = 0;
+        };
+        std::array<DebugLineSlot, HedgehogEngine::MAX_FRAMES_IN_FLIGHT> m_DebugLines;
+
         std::unique_ptr<RHI::IRHIPipeline> m_DepthPrepassPipeline;
         std::unique_ptr<RHI::IRHIPipeline> m_ShadowPipeline;
         std::unique_ptr<RHI::IRHIPipeline> m_ForwardPipeline;
@@ -165,6 +179,7 @@ namespace Renderer
         std::unique_ptr<RHI::IRHIPipeline> m_ForwardSkinnedDoubleSidedPipeline;
         std::unique_ptr<RHI::IRHIPipeline> m_ShadowSkinnedPipeline;
         std::unique_ptr<RHI::IRHIPipeline> m_GameUiPipeline;
+        std::unique_ptr<RHI::IRHIPipeline> m_DebugLinesPipeline;
         std::unique_ptr<RHI::IRHIBuffer>   m_GizmoBoxLines;
 
         uint32_t m_FrameIndex = 0;
