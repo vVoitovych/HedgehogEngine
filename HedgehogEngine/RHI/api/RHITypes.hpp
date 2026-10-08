@@ -19,6 +19,7 @@ enum class Format : uint32_t
     B8G8R8A8Unorm,
     B8G8R8A8Srgb,
     R16Float,
+    R16G16Float,
     R16G16B16A16Unorm,
     R16G16B16A16Float,
     R32Float,
@@ -343,6 +344,31 @@ struct TextureDesc
     uint32_t     ArrayLayers = 1;
 };
 
+// One mip level of one array layer (a cube face is a layer) that a buffer copy writes. A Width or
+// Height of 0 means the level's whole extent; the buffer's texels are tightly packed from
+// BufferOffset.
+struct TextureRegion
+{
+    uint32_t MipLevel     = 0;
+    uint32_t ArrayLayer   = 0;
+    uint32_t Width        = 0;
+    uint32_t Height       = 0;
+    size_t   BufferOffset = 0;
+};
+
+// The levels of a full mip chain for a width x height texture, down to 1x1.
+constexpr uint32_t GetMipLevelCount(uint32_t width, uint32_t height)
+{
+    uint32_t levels  = 1;
+    uint32_t largest = width > height ? width : height;
+    while (largest > 1)
+    {
+        largest >>= 1;
+        ++levels;
+    }
+    return levels;
+}
+
 struct SamplerDesc
 {
     Filter      MinFilter    = Filter::Linear;
@@ -351,6 +377,9 @@ struct SamplerDesc
     AddressMode AddressModeV = AddressMode::Repeat;
     AddressMode AddressModeW = AddressMode::Repeat;
     float       MaxAnisotropy = 16.0f;
+    // Set: a comparison sampler (a depth texture sampled as the fraction of texels passing the
+    // test against the reference value, filtered when linear), as a shadow map is read.
+    std::optional<CompareOp> Compare;
 };
 
 } // namespace RHI

@@ -267,7 +267,25 @@ namespace RGTest
 
         void CopyBufferToBuffer(const RHI::IRHIBuffer&, RHI::IRHIBuffer&, size_t, size_t, size_t) override {}
         void CopyBufferToTexture(const RHI::IRHIBuffer&, RHI::IRHITexture&) override {}
+        void CopyBufferToTexture(const RHI::IRHIBuffer&, RHI::IRHITexture& dst, const RHI::TextureRegion& region) override
+        {
+            RegionCopies.push_back({ &dst, region });
+            Commands.push_back("copy " + std::to_string(region.MipLevel) + " " + std::to_string(region.ArrayLayer));
+        }
+        void GenerateMipmaps(RHI::IRHITexture& texture) override
+        {
+            MipmapGenerations.push_back(&texture);
+            Commands.push_back("mipmaps");
+        }
         void CopyTextureToTexture(const RHI::IRHITexture&, RHI::IRHITexture&) override {}
+
+        struct RegionCopy
+        {
+            const RHI::IRHITexture* Texture = nullptr;
+            RHI::TextureRegion      Region;
+        };
+        std::vector<RegionCopy>              RegionCopies;
+        std::vector<const RHI::IRHITexture*> MipmapGenerations;
 
         std::vector<BarrierCall>         Calls;
         std::vector<RHI::RenderingInfo>  Renderings;
@@ -279,9 +297,10 @@ namespace RGTest
         std::vector<uint32_t>            DrawnIndexCounts;
         std::vector<uint32_t>            DrawnVertexCounts;
 
-        // Every rendering begun, pipeline, vertex/index buffer, descriptor set, push constant and
-        // indexed draw, in order, as "begin", "pipeline", "vertex <count>", "index", "set <index>",
-        // "push <bytes>" and "draw <index count>".
+        // Every rendering begun, pipeline, vertex/index buffer, descriptor set, push constant,
+        // indexed draw, region copy and mipmap generation, in order, as "begin", "pipeline",
+        // "vertex <count>", "index", "set <index>", "push <bytes>", "draw <index count>",
+        // "copy <mip> <layer>" and "mipmaps".
         std::vector<std::string>                   Commands;
         std::vector<const RHI::IRHIPipeline*>      BoundPipelines;
         std::vector<const RHI::IRHIDescriptorSet*> BoundSets;

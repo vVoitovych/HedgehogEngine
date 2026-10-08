@@ -90,6 +90,10 @@ public:
     VkSurfaceKHR     GetSurface()        const { return m_Surface;        }
     VkQueue          GetGraphicsQueue()  const { return m_GraphicsQueue;  }
     VkQueue          GetPresentQueue()   const { return m_PresentQueue;   }
+
+    // Whether an optimally tiled texture of the format can be both source and destination of a
+    // linear blit, as GenerateMipmaps needs.
+    bool SupportsLinearBlit(Format format) const;
     VkCommandPool    GetCommandPool()    const { return m_CommandPool;    }
     VmaAllocator     GetAllocator()      const { return m_Allocator;      }
 

@@ -68,6 +68,10 @@ public:
                             size_t            size) override;
 
     void CopyBufferToTexture(const IRHIBuffer& src, IRHITexture& dst) override;
+    void CopyBufferToTexture(const IRHIBuffer&    src,
+                             IRHITexture&         dst,
+                             const TextureRegion& region) override;
+    void GenerateMipmaps(IRHITexture& texture) override;
 
     void CopyTextureToTexture(const IRHITexture& src, IRHITexture& dst) override;
 

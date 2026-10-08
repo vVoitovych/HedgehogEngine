@@ -33,6 +33,13 @@ TEST_CASE("Every format string resolves to exactly one engine format, and every 
     }
 }
 
+TEST_CASE("The two-channel half-float format, the BRDF lookup table's, has its name")
+{
+    const std::optional<RHI::Format> resolved = ResolveFormat("R16G16Float");
+    REQUIRE(resolved.has_value());
+    CHECK(*resolved == RHI::Format::R16G16Float);
+}
+
 TEST_CASE("Unknown or near-miss format strings are rejected, never defaulted")
 {
     CHECK_FALSE(ResolveFormat("").has_value());

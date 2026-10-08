@@ -18,19 +18,23 @@ namespace HR
 {
     namespace
     {
-        // A sampled R8G8B8A8Srgb texture holding width x height pixels, uploaded and ready to read.
+        // A sampled R8G8B8A8Srgb texture holding width x height pixels, uploaded and ready to read;
+        // with mipmapped, every level of a full mip chain is generated from them.
         std::unique_ptr<RHI::IRHITexture> UploadRgba8(RHI::IRHIDevice& device, const void* pixels, uint32_t width,
-                                                      uint32_t height)
+                                                      uint32_t height, bool mipmapped)
         {
             const size_t imgSize = static_cast<size_t>(width) * height * 4;
             auto staging = device.CreateBuffer(imgSize, RHI::BufferUsage::TransferSrc, RHI::MemoryUsage::CpuToGpu);
             staging->CopyData(pixels, imgSize);
 
             RHI::TextureDesc desc;
-            desc.Width  = width;
-            desc.Height = height;
-            desc.Format = RHI::Format::R8G8B8A8Srgb;
-            desc.Usage  = RHI::TextureUsage::Sampled | RHI::TextureUsage::TransferDst;
+            desc.Width     = width;
+            desc.Height    = height;
+            desc.Format    = RHI::Format::R8G8B8A8Srgb;
+            desc.Usage     = RHI::TextureUsage::Sampled | RHI::TextureUsage::TransferDst;
+            desc.MipLevels = mipmapped ? RHI::GetMipLevelCount(width, height) : 1;
+            if (mipmapped)
+                desc.Usage = desc.Usage | RHI::TextureUsage::TransferSrc;
             auto texture = device.CreateTexture(desc);
 
             device.ExecuteImmediately([&](RHI::IRHICommandList& cmd)
@@ -38,6 +42,11 @@ namespace HR
                 const RHI::TextureBarrier toCopy{ texture.get(), RHI::ResourceState::Undefined, RHI::ResourceState::CopyDst };
                 cmd.Barrier({ &toCopy, 1 }, {});
                 cmd.CopyBufferToTexture(*staging, *texture);
+                if (mipmapped)
+                {
+                    cmd.GenerateMipmaps(*texture);
+                    return;
+                }
                 const RHI::TextureBarrier toRead{ texture.get(), RHI::ResourceState::CopyDst, RHI::ResourceState::ShaderResource };
                 cmd.Barrier({ &toRead, 1 }, {});
             });
@@ -190,7 +199,8 @@ namespace HR
         constexpr uint8_t FALLBACK_PIXEL[4] = { 255, 0, 255, 255 };
         const uint32_t texW    = loaded ? static_cast<uint32_t>(loader.GetWidth())  : 1u;
         const uint32_t texH    = loaded ? static_cast<uint32_t>(loader.GetHeight()) : 1u;
-        auto texture = UploadRgba8(device, loaded ? loader.GetData() : FALLBACK_PIXEL, texW, texH);
+        // Mipmapped, since materials draw it at any distance.
+        auto texture = UploadRgba8(device, loaded ? loader.GetData() : FALLBACK_PIXEL, texW, texH, true);
 
         auto [result, _] = m_TextureCache.emplace(path, std::move(texture));
         return *result->second;
@@ -220,7 +230,7 @@ namespace HR
         if (!m_UiSolidSet)
         {
             constexpr uint8_t WHITE_PIXEL[4] = { 255, 255, 255, 255 };
-            m_UiSolidTexture = UploadRgba8(device, WHITE_PIXEL, 1, 1);
+            m_UiSolidTexture = UploadRgba8(device, WHITE_PIXEL, 1, 1, false);
             m_UiSolidSet     = device.AllocateDescriptorSet(*m_UiTexturePool, *m_UiTextureLayout);
             m_UiSolidSet->WriteTexture(0, *m_UiSolidTexture, *m_UiSampler);
             m_UiSolidSet->Flush();
@@ -266,7 +276,7 @@ namespace HR
             pixels.assign(atlas.Atlas.size() * 4, 255);
             for (size_t i = 0; i < atlas.Atlas.size(); ++i)
                 pixels[i * 4 + 3] = atlas.Atlas[i];
-            auto texture = UploadRgba8(device, pixels.data(), atlas.AtlasWidth, atlas.AtlasHeight);
+            auto texture = UploadRgba8(device, pixels.data(), atlas.AtlasWidth, atlas.AtlasHeight, false);
             auto set     = device.AllocateDescriptorSet(*m_UiTexturePool, *m_UiTextureLayout);
             set->WriteTexture(0, *texture, *m_UiSampler);
             set->Flush();
