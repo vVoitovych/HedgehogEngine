@@ -7,6 +7,7 @@
 #include "VulkanTexture.hpp"
 #include "VulkanTypes.hpp"
 
+#include <algorithm>
 #include <cassert>
 
 namespace RHI
@@ -331,6 +332,89 @@ void VulkanCommandList::CopyBufferToTexture(const IRHIBuffer& src, IRHITexture& 
         vkDst.GetHandle(),
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         1, &region);
+}
+
+void VulkanCommandList::CopyBufferToTexture(const IRHIBuffer& src, IRHITexture& dst, const TextureRegion& region)
+{
+    const auto& vkSrc = static_cast<const VulkanBuffer&>(src);
+    auto&       vkDst = static_cast<VulkanTexture&>(dst);
+    const TextureDesc& desc = vkDst.GetDesc();
+    assert(region.MipLevel < desc.MipLevels && "CopyBufferToTexture: the mip level is out of range.");
+    assert(region.ArrayLayer < desc.ArrayLayers && "CopyBufferToTexture: the array layer is out of range.");
+
+    const uint32_t levelWidth  = std::max(desc.Width >> region.MipLevel, 1u);
+    const uint32_t levelHeight = std::max(desc.Height >> region.MipLevel, 1u);
+
+    VkBufferImageCopy copy{};
+    copy.bufferOffset                    = static_cast<VkDeviceSize>(region.BufferOffset);
+    copy.bufferRowLength                 = 0;
+    copy.bufferImageHeight               = 0;
+    copy.imageSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+    copy.imageSubresource.mipLevel       = region.MipLevel;
+    copy.imageSubresource.baseArrayLayer = region.ArrayLayer;
+    copy.imageSubresource.layerCount     = 1;
+    copy.imageOffset                     = { 0, 0, 0 };
+    copy.imageExtent                     = { region.Width != 0 ? region.Width : levelWidth,
+                                             region.Height != 0 ? region.Height : levelHeight, 1 };
+
+    vkCmdCopyBufferToImage(
+        m_CommandBuffer,
+        vkSrc.GetHandle(),
+        vkDst.GetHandle(),
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        1, &copy);
+}
+
+void VulkanCommandList::GenerateMipmaps(IRHITexture& texture)
+{
+    auto&              vkTexture = static_cast<VulkanTexture&>(texture);
+    const TextureDesc& desc      = vkTexture.GetDesc();
+    assert(m_Device.SupportsLinearBlit(desc.Format) && "GenerateMipmaps: the format cannot be blitted linearly.");
+
+    for (uint32_t level = 1; level < desc.MipLevels; ++level)
+    {
+        // The level before is read from here on.
+        TextureBarrier toSource{ &texture, ResourceState::CopyDst, ResourceState::CopySrc };
+        toSource.Range.BaseMipLevel  = level - 1;
+        toSource.Range.MipLevelCount = 1;
+        Barrier({ &toSource, 1 }, {});
+
+        const int32_t srcWidth  = static_cast<int32_t>(std::max(desc.Width >> (level - 1), 1u));
+        const int32_t srcHeight = static_cast<int32_t>(std::max(desc.Height >> (level - 1), 1u));
+        const int32_t dstWidth  = static_cast<int32_t>(std::max(desc.Width >> level, 1u));
+        const int32_t dstHeight = static_cast<int32_t>(std::max(desc.Height >> level, 1u));
+
+        VkImageBlit2 region{ VK_STRUCTURE_TYPE_IMAGE_BLIT_2 };
+        region.srcSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, level - 1, 0, desc.ArrayLayers };
+        region.srcOffsets[1]  = { srcWidth, srcHeight, 1 };
+        region.dstSubresource = { VK_IMAGE_ASPECT_COLOR_BIT, level, 0, desc.ArrayLayers };
+        region.dstOffsets[1]  = { dstWidth, dstHeight, 1 };
+
+        VkBlitImageInfo2 blitInfo{ VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2 };
+        blitInfo.srcImage       = vkTexture.GetHandle();
+        blitInfo.srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        blitInfo.dstImage       = vkTexture.GetHandle();
+        blitInfo.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        blitInfo.regionCount    = 1;
+        blitInfo.pRegions       = &region;
+        blitInfo.filter         = VK_FILTER_LINEAR;
+        vkCmdBlitImage2(m_CommandBuffer, &blitInfo);
+    }
+
+    // Every level but the last was a blit source; the last is still a copy destination.
+    TextureBarrier toRead[2];
+    uint32_t       count = 0;
+    if (desc.MipLevels > 1)
+    {
+        toRead[count]                     = { &texture, ResourceState::CopySrc, ResourceState::ShaderResource };
+        toRead[count].Range.MipLevelCount = desc.MipLevels - 1;
+        ++count;
+    }
+    toRead[count]                    = { &texture, ResourceState::CopyDst, ResourceState::ShaderResource };
+    toRead[count].Range.BaseMipLevel = desc.MipLevels - 1;
+    toRead[count].Range.MipLevelCount = 1;
+    ++count;
+    Barrier({ toRead, count }, {});
 }
 
 void VulkanCommandList::CopyTextureToTexture(const IRHITexture& src, IRHITexture& dst)

@@ -26,8 +26,9 @@ VulkanSampler::VulkanSampler(VulkanDevice& device, const SamplerDesc& desc)
                                                     props.limits.maxSamplerAnisotropy);
     samplerInfo.borderColor             = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
     samplerInfo.unnormalizedCoordinates = VK_FALSE;
-    samplerInfo.compareEnable           = VK_FALSE;
-    samplerInfo.compareOp               = VK_COMPARE_OP_ALWAYS;
+    samplerInfo.compareEnable           = desc.Compare ? VK_TRUE : VK_FALSE;
+    samplerInfo.compareOp               = desc.Compare ? VulkanTypes::ToVkCompareOp(*desc.Compare)
+                                                       : VK_COMPARE_OP_ALWAYS;
     samplerInfo.mipmapMode              = VK_SAMPLER_MIPMAP_MODE_LINEAR;
     samplerInfo.mipLodBias              = 0.0f;
     samplerInfo.minLod                  = 0.0f;

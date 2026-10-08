@@ -144,6 +144,18 @@ public:
     virtual void CopyBufferToTexture(const IRHIBuffer& src,
                                      IRHITexture&      dst) = 0;
 
+    // Copies tightly packed texels from region.BufferOffset into one mip level of one array layer
+    // (a cube face), which must be in CopyDst.
+    virtual void CopyBufferToTexture(const IRHIBuffer&    src,
+                                     IRHITexture&         dst,
+                                     const TextureRegion& region) = 0;
+
+    // Fills every mip level after the first by halving the one before with a linear blit, in every
+    // array layer. Every level must be in CopyDst with level 0 written, and the texture created with
+    // TransferSrc and TransferDst usage in a format that can be blitted linearly; afterwards every
+    // level is in ShaderResource.
+    virtual void GenerateMipmaps(IRHITexture& texture) = 0;
+
     // Blits src into dst using linear filtering (handles size mismatch).
     // Both textures must already be in TransferSrc / TransferDst layout respectively.
     virtual void CopyTextureToTexture(const IRHITexture& src,

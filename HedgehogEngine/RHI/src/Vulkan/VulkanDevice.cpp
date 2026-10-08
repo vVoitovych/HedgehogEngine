@@ -658,4 +658,13 @@ Format VulkanDevice::GetPreferredDepthFormat() const
     return Format::D32Float;
 }
 
+bool VulkanDevice::SupportsLinearBlit(Format format) const
+{
+    VkFormatProperties properties{};
+    vkGetPhysicalDeviceFormatProperties(m_PhysicalDevice, VulkanTypes::ToVkFormat(format), &properties);
+    constexpr VkFormatFeatureFlags NEEDED = VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT |
+                                            VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT;
+    return (properties.optimalTilingFeatures & NEEDED) == NEEDED;
+}
+
 } // namespace RHI
