@@ -9,6 +9,8 @@
 #include "ECS/api/Entity.hpp"
 #include "ECS/api/System.hpp"
 
+#include "HedgehogMath/api/Vector.hpp"
+
 #include <chrono>
 #include <cstdint>
 #include <filesystem>
@@ -41,6 +43,10 @@ namespace HedgehogEngine
     class EngineContext;
     struct AnimationFinishedEvent;
     struct UiButtonClickedEvent;
+    struct CollisionEnterEvent;
+    struct CollisionExitEvent;
+    struct TriggerEnterEvent;
+    struct TriggerExitEvent;
 }
 
 namespace HedgehogScripting
@@ -229,6 +235,11 @@ namespace HedgehogScripting
             sol::object Payload;
             ECS::Entity Source           = ECS::INVALID_ENTITY;
             uint32_t    SourceGeneration = 0;
+            // A physics event also calls this method of the Source's own script (OnCollisionEnter
+            // ...), with Other and, for a collision Enter, the payload as the contact.
+            std::string Hook;
+            sol::object Other;
+            bool        HookTakesContact = false;
         };
 
         // A loaded script state waiting for its entity's instance (LoadScriptState).
@@ -274,6 +285,17 @@ namespace HedgehogScripting
         // button:onClick(fn): a "UiButtonClicked" subscription of the running script, filtered to
         // the button. Throws outside a running script's method.
         uint64_t           SubscribeClick(const Bindings::ScriptEntity& button, sol::protected_function handler);
+        // The engine's physics events (published in the fixed steps, so delivered the same frame),
+        // queued once per live entity involved, that entity as the Source: "CollisionEnter" and
+        // "CollisionExit" with { entity, other, point, normal } (the normal from entity towards
+        // other; point and normal zero for an Exit), "TriggerEnter" and "TriggerExit" with
+        // { entity, other }, each also calling the entity's own On<Name>(other[, contact]).
+        void               SubscribePhysicsEvents(HedgehogEngine::EventBus& bus);
+        void               QueuePhysicsEvent(const char* name, ECS::Entity self, ECS::Entity other, bool contact,
+                                             const HM::Vector3& point, const HM::Vector3& normal);
+        // Calls the event's hook on its Source's script, when it is running, enabled and not faulted
+        // and defines it; an error is logged and does not fault the script.
+        void               CallEventHook(const QueuedEvent& event);
         // Coroutines (ScriptSystemCoroutines.cpp): startCoroutine, stopCoroutine and the wait
         // functions, and the pass that resumes the due ones once every script's OnUpdate has run.
         void               RegisterCoroutines();

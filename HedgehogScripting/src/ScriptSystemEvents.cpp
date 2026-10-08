@@ -4,6 +4,7 @@
 
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogEngine/api/Events/AnimationEvents.hpp"
+#include "HedgehogEngine/api/Events/PhysicsEvents.hpp"
 #include "HedgehogEngine/api/Events/UiEvents.hpp"
 
 #include "Logger/api/Logger.hpp"
@@ -12,6 +13,7 @@
 #include <exception>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -67,6 +69,7 @@ namespace HedgehogScripting
         // Events a handler publishes land in the emptied queue, for the next frame: no loop.
         for (const QueuedEvent& event : std::exchange(m_QueuedEvents, {}))
         {
+            CallEventHook(event);
             const auto subscribed = m_Subscriptions.find(event.Name);
             if (subscribed == m_Subscriptions.end())
                 continue;
@@ -148,6 +151,88 @@ namespace HedgehogScripting
         m_Subscriptions["UiButtonClicked"].push_back(
             EventSubscription{ id, owner->first, owner->second.Generation, std::move(handler), button.Id, button.Generation });
         return id;
+    }
+
+    void ScriptSystem::SubscribePhysicsEvents(HedgehogEngine::EventBus& bus)
+    {
+        using namespace HedgehogEngine;
+        const HM::Vector3 zero(0.0f, 0.0f, 0.0f);
+        m_BusSubscriptions.push_back(bus.Subscribe<CollisionEnterEvent>([this](const CollisionEnterEvent& event)
+        {
+            QueuePhysicsEvent("CollisionEnter", event.EntityA, event.EntityB, true, event.Point, event.Normal);
+            QueuePhysicsEvent("CollisionEnter", event.EntityB, event.EntityA, true, event.Point, -event.Normal);
+        }));
+        m_BusSubscriptions.push_back(bus.Subscribe<CollisionExitEvent>([this, zero](const CollisionExitEvent& event)
+        {
+            QueuePhysicsEvent("CollisionExit", event.EntityA, event.EntityB, true, zero, zero);
+            QueuePhysicsEvent("CollisionExit", event.EntityB, event.EntityA, true, zero, zero);
+        }));
+        m_BusSubscriptions.push_back(bus.Subscribe<TriggerEnterEvent>([this, zero](const TriggerEnterEvent& event)
+        {
+            QueuePhysicsEvent("TriggerEnter", event.Trigger, event.Other, false, zero, zero);
+            QueuePhysicsEvent("TriggerEnter", event.Other, event.Trigger, false, zero, zero);
+        }));
+        m_BusSubscriptions.push_back(bus.Subscribe<TriggerExitEvent>([this, zero](const TriggerExitEvent& event)
+        {
+            QueuePhysicsEvent("TriggerExit", event.Trigger, event.Other, false, zero, zero);
+            QueuePhysicsEvent("TriggerExit", event.Other, event.Trigger, false, zero, zero);
+        }));
+    }
+
+    void ScriptSystem::QueuePhysicsEvent(const char* name, ECS::Entity self, ECS::Entity other, bool contact,
+                                         const HM::Vector3& point, const HM::Vector3& normal)
+    {
+        // Only a live entity hears its side; an Exit's other side may be gone, its handle invalid.
+        ECS::ECS& ecs = m_Context.GetECS();
+        if (!ecs.IsAlive(self))
+            return;
+        const Bindings::ScriptEntity selfHandle  = Bindings::MakeScriptEntity(ecs, self);
+        const Bindings::ScriptEntity otherHandle = Bindings::MakeScriptEntity(ecs, other);
+        sol::table payload = m_Lua.create_table_with("entity", selfHandle, "other", otherHandle);
+        if (contact)
+        {
+            payload["point"]  = point;
+            payload["normal"] = normal;
+        }
+        QueuedEvent event{ name, payload, selfHandle.Id, selfHandle.Generation };
+        event.Hook             = std::string("On") + name;
+        event.Other            = sol::make_object(m_Lua, otherHandle);
+        event.HookTakesContact = std::string_view(name) == "CollisionEnter";
+        m_QueuedEvents.push_back(std::move(event));
+    }
+
+    void ScriptSystem::CallEventHook(const QueuedEvent& event)
+    {
+        if (event.Hook.empty())
+            return;
+        const auto script = m_Scripts.find(event.Source);
+        if (script == m_Scripts.end() || script->second.Generation != event.SourceGeneration ||
+            !script->second.Enabled || script->second.Faulted)
+            return;
+
+        // Copies: the hook may change the scripts.
+        const sol::table  environment = script->second.Environment;
+        const sol::table  self        = script->second.Self;
+        const std::string entityName  = script->second.EntityName;
+        const std::string scriptPath  = script->second.ScriptPath;
+
+        m_RunningEntity = event.Source;
+        try
+        {
+            const sol::protected_function_result result =
+                event.HookTakesContact ? m_Invoke(environment, self, event.Hook, event.Other, event.Payload)
+                                       : m_Invoke(environment, self, event.Hook, event.Other);
+            if (!result.valid())
+            {
+                const sol::error error = result;
+                LogError(entityName, scriptPath, event.Hook + ": " + error.what());
+            }
+        }
+        catch (const std::exception& e)
+        {
+            LogError(entityName, scriptPath, event.Hook + ": " + e.what());
+        }
+        m_RunningEntity.reset();
     }
 
     void ScriptSystem::DropSubscriptions(ECS::Entity owner)
