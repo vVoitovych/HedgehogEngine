@@ -51,11 +51,13 @@ namespace HedgehogEngine
             }
         }
 
+        // Every map of the material (MaterialSerializer's keys).
         std::string FollowMaterial(const std::string&, const std::string& text, std::vector<std::string>& out)
         {
             const YAML::Node material = YAML::Load(text);
-            if (const YAML::Node baseColor = material["BaseColor"]; baseColor && !baseColor.as<std::string>().empty())
-                out.push_back(NormalizeAssetPath(baseColor.as<std::string>()));
+            for (const char* key : { "BaseColor", "MetallicRoughnessMap", "NormalMap", "OcclusionMap", "EmissiveMap" })
+                if (const YAML::Node map = material[key]; map && map.IsScalar() && !map.as<std::string>().empty())
+                    out.push_back(NormalizeAssetPath(map.as<std::string>()));
             return {};
         }
 

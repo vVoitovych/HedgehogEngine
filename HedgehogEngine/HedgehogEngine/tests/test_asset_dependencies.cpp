@@ -143,8 +143,13 @@ TEST_CASE("Asset dependencies - a fixture scene's closure is exactly its meshes,
         "images": [ { "uri": "crate_normal.png" }, { "bufferView": 0, "mimeType": "image/png" } ] })");
     project.Dir.WriteFile("Models/Crate/Crate.bin", "");
     project.Dir.WriteFile("Models/Crate/crate_normal.png", "");
-    project.Dir.WriteFile("Materials/Crate.material", "Type: 0\nBaseColor: Textures\\crate.png\nTransparency: 1");
+    // Every map of a PBR material.
+    project.Dir.WriteFile("Materials/Crate.material",
+                          "Type: 0\nBaseColor: Textures\\crate.png\nTransparency: 1\nMetallicRoughnessMap: Textures/crate_mr.png\n"
+                          "NormalMap: Textures/crate_n.png\nOcclusionMap: Textures/crate_ao.png\nEmissiveMap: Textures/crate_e.png\n");
     project.Dir.WriteFile("Textures/crate.png", "");
+    for (const char* map : { "Textures/crate_mr.png", "Textures/crate_n.png", "Textures/crate_ao.png", "Textures/crate_e.png" })
+        project.Dir.WriteFile(map, "");
     project.Dir.WriteFile("Textures/logo.png", "");
     project.Dir.WriteFile("Scripts/Player.lua", "");
     project.Dir.WriteFile("Audio/hit.wav", "");
@@ -172,6 +177,10 @@ TEST_CASE("Asset dependencies - a fixture scene's closure is exactly its meshes,
         "engine://Content/Scripts/Base/ActorScript.lua",
         "assets://Scripts/Player.lua",
         "assets://Textures/crate.png",
+        "assets://Textures/crate_ao.png",
+        "assets://Textures/crate_e.png",
+        "assets://Textures/crate_mr.png",
+        "assets://Textures/crate_n.png",
         "assets://Textures/logo.png",
     };
     // The default camera's engine graph "game": depth prepass, forward and game UI, plus the

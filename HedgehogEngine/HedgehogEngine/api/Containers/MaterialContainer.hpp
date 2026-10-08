@@ -11,6 +11,7 @@ namespace HedgehogEngine
 {
     class RenderSystem;
     struct MaterialData;
+    enum class MaterialTextureSlot;
 
     class MaterialContainer
     {
@@ -36,6 +37,8 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API void SaveMaterial(size_t index, const FS::FileSystemManager& fileSystem);
         // relativePath: path without "assets://" prefix, chosen by the caller.
         HEDGEHOG_ENGINE_API void LoadBaseTexture(size_t index, const std::string& relativePath);
+        // Sets one slot's map (empty for none) and marks the material dirty.
+        HEDGEHOG_ENGINE_API void SetTexture(size_t index, MaterialTextureSlot slot, const std::string& path);
 
         HEDGEHOG_ENGINE_API size_t              GetMaterialCount() const;
         HEDGEHOG_ENGINE_API MaterialData&       GetMaterialDataByIndex(size_t index);

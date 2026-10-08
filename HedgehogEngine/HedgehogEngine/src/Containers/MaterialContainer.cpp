@@ -1,6 +1,6 @@
 #include "HedgehogEngine/api/Containers/MaterialContainer.hpp"
 #include "HedgehogEngine/api/Containers/MaterialData.hpp"
-#include "MaterialSerializer.hpp"
+#include "HedgehogEngine/api/Containers/MaterialSerializer.hpp"
 
 #include "HedgehogEngine/api/ECS/systems/RenderSystem.hpp"
 
@@ -38,8 +38,6 @@ namespace HedgehogEngine
         constexpr std::string_view ASSETS_PREFIX = "assets://";
 
         MaterialData newData;
-        newData.type         = MaterialType::Opaque;
-        newData.transparency = 1.0f;
         newData.baseColor    = DEFAULT_CELL_TEXTURE;
         newData.path         = virtualPath.substr(ASSETS_PREFIX.size());
 
@@ -57,9 +55,15 @@ namespace HedgehogEngine
 
     void MaterialContainer::LoadBaseTexture(size_t index, const std::string& relativePath)
     {
-        assert(index < m_Materials.size() && "MaterialContainer::LoadBaseTexture: index out of range");
-        m_Materials[index].baseColor = relativePath;
-        m_Materials[index].isDirty   = true;
+        SetTexture(index, MaterialTextureSlot::BaseColor, relativePath);
+    }
+
+    void MaterialContainer::SetTexture(size_t index, MaterialTextureSlot slot, const std::string& path)
+    {
+        assert(index < m_Materials.size() && "MaterialContainer::SetTexture: index out of range");
+        assert(slot != MaterialTextureSlot::Count && "MaterialContainer::SetTexture: not a slot");
+        GetMaterialTexture(m_Materials[index], slot) = path;
+        m_Materials[index].isDirty                   = true;
     }
 
     size_t MaterialContainer::GetMaterialCount() const
