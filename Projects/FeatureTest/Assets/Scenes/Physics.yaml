@@ -1,0 +1,323 @@
+Scene name: Physics
+Scene:
+  - Entity: 0
+    Name: Root
+    Parent: 0
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    Children:
+      - Entity: 1
+        Name: Floor
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, -0.5]
+          Rotation: [0, 0, 0]
+          Scale: [10, 10, 0.5]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/cube.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/test3.material
+          Layer: 0
+        ColliderComponent:
+          Shape: 0
+          Center: [0, 0, 0]
+          Size: [2, 2, 2]
+          Radius: 0.5
+          Height: 2
+          IsTrigger: false
+          Layer: 0
+          Friction: 0.5
+          Restitution: 0
+        Children:
+          []
+      - Entity: 2
+        Name: StackBottom
+        Parent: 0
+        TransformComponent:
+          Position: [-3, 0, 0.5]
+          Rotation: [0, 0, 0]
+          Scale: [0.5, 0.5, 0.5]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/cube.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/test1.material
+          Layer: 0
+        RigidBodyComponent:
+          BodyType: 2
+          Mass: 1
+          LinearDamping: 0.05
+          AngularDamping: 0.05
+          GravityScale: 1
+        ColliderComponent:
+          Shape: 0
+          Center: [0, 0, 0]
+          Size: [2, 2, 2]
+          Radius: 0.5
+          Height: 2
+          IsTrigger: false
+          Layer: 0
+          Friction: 0.5
+          Restitution: 0
+        Children:
+          []
+      - Entity: 3
+        Name: StackMiddle
+        Parent: 0
+        TransformComponent:
+          Position: [-3, 0, 1.5]
+          Rotation: [0, 0, 0]
+          Scale: [0.5, 0.5, 0.5]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/cube.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/test1.material
+          Layer: 0
+        RigidBodyComponent:
+          BodyType: 2
+          Mass: 1
+          LinearDamping: 0.05
+          AngularDamping: 0.05
+          GravityScale: 1
+        ColliderComponent:
+          Shape: 0
+          Center: [0, 0, 0]
+          Size: [2, 2, 2]
+          Radius: 0.5
+          Height: 2
+          IsTrigger: false
+          Layer: 0
+          Friction: 0.5
+          Restitution: 0
+        Children:
+          []
+      - Entity: 4
+        Name: StackTop
+        Parent: 0
+        TransformComponent:
+          Position: [-3, 0, 2.5]
+          Rotation: [0, 0, 0]
+          Scale: [0.5, 0.5, 0.5]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/cube.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/test1.material
+          Layer: 0
+        RigidBodyComponent:
+          BodyType: 2
+          Mass: 1
+          LinearDamping: 0.05
+          AngularDamping: 0.05
+          GravityScale: 1
+        ColliderComponent:
+          Shape: 0
+          Center: [0, 0, 0]
+          Size: [2, 2, 2]
+          Radius: 0.5
+          Height: 2
+          IsTrigger: false
+          Layer: 0
+          Friction: 0.5
+          Restitution: 0
+        Children:
+          []
+      - Entity: 5
+        Name: Ball
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 5]
+          Rotation: [0, 0, 0]
+          Scale: [0.19642, 0.19642, 0.19642]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/sphere.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/test2.material
+          Layer: 0
+        RigidBodyComponent:
+          BodyType: 2
+          Mass: 1
+          LinearDamping: 0.05
+          AngularDamping: 0.05
+          GravityScale: 1
+        ColliderComponent:
+          Shape: 1
+          Center: [0, 0.5, 0]
+          Size: [2, 2, 2]
+          Radius: 2.54558
+          Height: 2
+          IsTrigger: false
+          Layer: 0
+          Friction: 0.5
+          Restitution: 0.5
+        ScriptComponent:
+          ScriptEnable: true
+          ScriptFile: Scripts/PhysicsDemo.lua
+        Children:
+          []
+      - Entity: 6
+        Name: Zone
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 3]
+          Rotation: [0, 0, 0]
+          Scale: [2, 2, 0.5]
+        ColliderComponent:
+          Shape: 0
+          Center: [0, 0, 0]
+          Size: [2, 2, 2]
+          Radius: 0.5
+          Height: 2
+          IsTrigger: true
+          Layer: 1
+          Friction: 0.5
+          Restitution: 0
+        Children:
+          []
+      - Entity: 7
+        Name: Capsule
+        Parent: 0
+        TransformComponent:
+          Position: [4, 3, 1.5]
+          Rotation: [30, 0, 0]
+          Scale: [1, 1, 1]
+        RigidBodyComponent:
+          BodyType: 2
+          Mass: 1
+          LinearDamping: 0.05
+          AngularDamping: 0.05
+          GravityScale: 1
+        ColliderComponent:
+          Shape: 2
+          Center: [0, 0, 0]
+          Size: [2, 2, 2]
+          Radius: 0.5
+          Height: 2
+          IsTrigger: false
+          Layer: 0
+          Friction: 0.5
+          Restitution: 0
+        Children:
+          - Entity: 8
+            Name: CapsuleMesh
+            Parent: 7
+            TransformComponent:
+              Position: [0, -0.09821, 0]
+              Rotation: [0, 0, 0]
+              Scale: [0.19642, 0.19642, 0.39284]
+            MeshComponent:
+              MeshPath: engine://Content/Models/Default/sphere.obj
+            RenderComponent:
+              Visible: true
+              Material: Materials/test2.material
+              Layer: 0
+            Children:
+              []
+      - Entity: 9
+        Name: Paddle
+        Parent: 0
+        TransformComponent:
+          Position: [2, -4, 0.5]
+          Rotation: [0, 0, 0]
+          Scale: [0.25, 1, 0.5]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/cube.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/test3.material
+          Layer: 0
+        RigidBodyComponent:
+          BodyType: 1
+          Mass: 1
+          LinearDamping: 0.05
+          AngularDamping: 0.05
+          GravityScale: 1
+        ColliderComponent:
+          Shape: 0
+          Center: [0, 0, 0]
+          Size: [2, 2, 2]
+          Radius: 0.5
+          Height: 2
+          IsTrigger: false
+          Layer: 0
+          Friction: 0.5
+          Restitution: 0
+        ScriptComponent:
+          ScriptEnable: true
+          ScriptFile: Scripts/Paddle.lua
+        Children:
+          []
+      - Entity: 10
+        Name: Crate
+        Parent: 0
+        TransformComponent:
+          Position: [4, -4, 0.5]
+          Rotation: [0, 0, 0]
+          Scale: [0.5, 0.5, 0.5]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/cube.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/test1.material
+          Layer: 0
+        RigidBodyComponent:
+          BodyType: 2
+          Mass: 1
+          LinearDamping: 0.05
+          AngularDamping: 0.05
+          GravityScale: 1
+        ColliderComponent:
+          Shape: 0
+          Center: [0, 0, 0]
+          Size: [2, 2, 2]
+          Radius: 0.5
+          Height: 2
+          IsTrigger: false
+          Layer: 0
+          Friction: 0.5
+          Restitution: 0
+        Children:
+          []
+      - Entity: 11
+        Name: Sun
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 0]
+          Rotation: [30, -50, 0]
+          Scale: [1, 1, 1]
+        LightComponent:
+          LightEnabled: true
+          LightType: 0
+          LightColor: [1, 1, 1]
+          LightIntensity: 1
+          LightRadius: 1
+          LightConeAngle: 2
+          CastShadows: true
+        Children:
+          []
+      - Entity: 12
+        Name: MainCamera
+        Parent: 0
+        TransformComponent:
+          Position: [0, -11, 4.5]
+          Rotation: [70, 0, 0]
+          Scale: [1, 1, 1]
+        CameraComponent:
+          Enabled: true
+          ProjectionType: 0
+          Fov: 60
+          OrthoSize: 10
+          NearPlane: 0.1
+          FarPlane: 1000
+          LayerMask: 4294967295
+          TargetMode: 0
+          TargetName: ""
+          GraphName: game
+          Priority: 0
+        Children:
+          []
