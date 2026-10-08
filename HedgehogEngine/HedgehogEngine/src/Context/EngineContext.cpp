@@ -28,6 +28,9 @@
 #include "HedgehogEngine/api/Plugins/PluginManager.hpp"
 #include "HedgehogEngine/api/ECS/components/PrefabInstanceComponent.hpp"
 #include "HedgehogEngine/api/ECS/systems/AudioSystem.hpp"
+#include "HedgehogEngine/api/ECS/systems/PhysicsSystem.hpp"
+#include "HedgehogEngine/api/ECS/components/ColliderComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/RigidBodyComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/AudioListenerComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/AudioSourceComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/UiButtonComponent.hpp"
@@ -50,6 +53,7 @@
 #include "HedgehogInput/api/DefaultInputActions.hpp"
 
 #include "HedgehogAudio/api/AudioEngine.hpp"
+#include "HedgehogPhysics/api/PhysicsWorld.hpp"
 
 #include "Logger/api/Logger.hpp"
 
@@ -67,6 +71,7 @@ namespace HedgehogEngine
 
         m_Camera      = std::make_unique<Camera>();
         m_AudioEngine = std::make_unique<HA::AudioEngine>();
+        m_PhysicsWorld = std::make_unique<HP::PhysicsWorld>();
         RegisterServices();
         InitECS();
 
@@ -115,6 +120,7 @@ namespace HedgehogEngine
         services.Register(m_EventBus);
         services.Register(m_FileSystem);
         services.Register(*m_AudioEngine);
+        services.Register(*m_PhysicsWorld);
         services.Register(m_ResourceCatalog);
         m_GameInput.Map     = &m_InputActions.Game;
         m_GameInput.Actions = &m_GameActions;
@@ -167,6 +173,8 @@ namespace HedgehogEngine
         m_UiSystem        = m_ECS.RegisterSystem<UiSystem>();
         m_AudioSystem         = m_ECS.RegisterSystem<AudioSystem>();
         m_AudioListenerSystem = m_ECS.RegisterSystem<AudioListenerSystem>();
+        m_PhysicsSystem       = m_ECS.RegisterSystem<PhysicsSystem>();
+        m_RigidBodyListSystem = m_ECS.RegisterSystem<RigidBodyListSystem>();
 
         ECS::Signature signature;
 
@@ -211,6 +219,16 @@ namespace HedgehogEngine
         signature.set(m_ECS.GetComponentType<AudioListenerComponent>());
         signature.set(m_ECS.GetComponentType<TransformComponent>());
         m_ECS.SetSystemSignature<AudioListenerSystem>(signature);
+        signature.reset();
+
+        signature.set(m_ECS.GetComponentType<ColliderComponent>());
+        signature.set(m_ECS.GetComponentType<TransformComponent>());
+        m_ECS.SetSystemSignature<PhysicsSystem>(signature);
+        signature.reset();
+
+        signature.set(m_ECS.GetComponentType<RigidBodyComponent>());
+        signature.set(m_ECS.GetComponentType<TransformComponent>());
+        m_ECS.SetSystemSignature<RigidBodyListSystem>(signature);
     }
 
     void EngineContext::LoadInputActions()
@@ -407,6 +425,10 @@ namespace HedgehogEngine
     AudioSystem*      EngineContext::GetAudioSystem()      const { return m_AudioSystem.get(); }
 
     HA::AudioEngine& EngineContext::GetAudioEngine() { return *m_AudioEngine; }
+
+    PhysicsSystem* EngineContext::GetPhysicsSystem() const { return m_PhysicsSystem.get(); }
+
+    HP::PhysicsWorld& EngineContext::GetPhysicsWorld() { return *m_PhysicsWorld; }
 
     void EngineContext::UpdateCamera(float aspectRatio, float dt)
     {
