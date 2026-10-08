@@ -13,6 +13,7 @@ project the dev tree opens when none is named (`Editor.exe`, `--game-mode`, `--b
 | `Audio.yaml` | Audio: a cube playing the looping `Audio/Tone440.wav` to the right of the camera, which carries the audio listener. |
 | `Prefabs.yaml` | Prefabs: two instances of `Prefabs/LampPost.prefab`, the second overriding its lamp's colour and intensity. |
 | `Saves.yaml` | Save games: `Scripts/SaveDemo.lua` turns its cube, saves on frame 30 and loads that save on frame 60, logging both; the cube jumps back to where it was saved. |
+| `Physics.yaml` | Physics: a stack of three boxes, a bouncing ball, a capsule that topples, a kinematic paddle (`Scripts/Paddle.lua`) swinging into a crate, and a trigger zone on the `Trigger` layer (named in `engine_settings.yaml`). `Scripts/PhysicsDemo.lua`, on the ball, pushes it as Play starts, logs the zone it falls through and the first thing it lands on, and casts a ray down onto the stack on frame 10. Turn on the toolbar's Colliders toggle to see every collider. |
 | `benchmark.yaml` | The renderer benchmark: a 5×5 grid of DamagedHelmets (`Editor.exe --benchmark`, see `PERFORMANCE.md`). |
 | `test.yaml` | A small mesh-and-material test scene. |
 
