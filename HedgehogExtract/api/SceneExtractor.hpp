@@ -3,6 +3,8 @@
 #include "HedgehogMath/api/AABB.hpp"
 #include "HedgehogMath/api/Vector.hpp"
 
+#include <cstddef>
+#include <cstdint>
 #include <span>
 
 namespace ECS
@@ -16,6 +18,7 @@ namespace HedgehogEngine
     class LightSystem;
     class CameraSystem;
     class UiSystem;
+    class PhysicsSystem;
     class FontContainer;
 }
 
@@ -30,6 +33,14 @@ namespace HX
     class SceneExtractor
     {
     public:
+        // Collider wireframe colours (RGBA8, red lowest, picked in sRGB; HX::DebugLineVertex).
+        static constexpr uint32_t PHYSICS_DEBUG_STATIC_COLOR    = 0xff80b280; // grey-green: no rigid body, or a static one
+        static constexpr uint32_t PHYSICS_DEBUG_DYNAMIC_COLOR   = 0xff2896ff; // orange
+        static constexpr uint32_t PHYSICS_DEBUG_KINEMATIC_COLOR = 0xffff9650; // blue
+        static constexpr uint32_t PHYSICS_DEBUG_TRIGGER_COLOR   = 0xff3ce6ff; // yellow, whatever the body
+        // Segments of a sphere's circle or a capsule's end circle; a capsule's half arc takes half.
+        static constexpr size_t PHYSICS_DEBUG_CIRCLE_SEGMENTS = 24;
+
         // Does not call outScene.Clear() itself: callers reuse one RenderScene across frames
         // and decide when to clear it (see RenderScene::Clear).
         //
@@ -61,6 +72,17 @@ namespace HX
         // that does not load, text draws nothing.
         void ExtractUi(const ECS::ECS& ecs, const HedgehogEngine::UiSystem& uiSystem, const HM::Vector2& targetSize,
                        RenderScene& outScene, HedgehogEngine::FontContainer* fonts = nullptr) const;
+
+        // Appends the wireframe of every collider of physicsSystem (Collider + Transform) to
+        // outScene.DebugLines in world space, shaped as its body is: through the entity's ObjMatrix,
+        // its world axes made unit length and their lengths its scale, offset by the collider's
+        // Center. A box gives its 12 edges; a sphere (Radius times the largest scale) three great
+        // circles; a capsule along local +Z (Radius and Height / 2 - Radius times the largest scale)
+        // its two end circles, four side lines and four half arcs. Coloured by trigger, then body
+        // kind (the PHYSICS_DEBUG_*_COLOR constants). It reads components only, so it works in Edit
+        // mode too, and allocates nothing once the lines' storage has grown.
+        void ExtractPhysicsDebug(const ECS::ECS& ecs, const HedgehogEngine::PhysicsSystem& physicsSystem,
+                                 RenderScene& outScene) const;
 
     private:
         void ExtractInstances(const ECS::ECS& ecs, const HedgehogEngine::RenderSystem& renderSystem,

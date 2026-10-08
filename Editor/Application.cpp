@@ -377,6 +377,10 @@ namespace Editor
                                        HM::Vector2(static_cast<float>(m_EditorGui->GetGameViewWidth()),
                                                    static_cast<float>(m_EditorGui->GetGameViewHeight())),
                                        m_RenderScene, &engineContext.GetResourceCatalog().GetFontContainer());
+        // The collider wireframes, drawn by the Gizmo pass, so only in the Scene view.
+        if (m_EditorGui->IsPhysicsDebugEnabled())
+            HX::SceneExtractor{}.ExtractPhysicsDebug(engineContext.GetECS(), *engineContext.GetPhysicsSystem(),
+                                                     m_RenderScene);
 
         const Renderer::ViewDesc sceneView = MakeSceneView(engineContext.GetCamera());
         PickAndHighlight(*sceneView.Camera);
