@@ -109,6 +109,8 @@ namespace Editor
         uint32_t GetSceneViewWidth()    const { return m_SceneViewWidth; }
         uint32_t GetSceneViewHeight()   const { return m_SceneViewHeight; }
         uint32_t GetGameViewWidth()     const { return m_GameViewWidth; }
+        // Whether the Scene view shows the collider wireframes (the toolbar's toggle, kept per user).
+        bool IsPhysicsDebugEnabled()    const { return m_Settings.PhysicsDebug; }
         uint32_t GetGameViewHeight()    const { return m_GameViewHeight; }
         bool     IsSceneViewHovered()   const { return m_SceneViewHovered; }
 

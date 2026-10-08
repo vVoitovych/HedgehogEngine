@@ -655,9 +655,14 @@ namespace Editor
                 m_SelectedEntity.reset();
         }
 
-        // The settings gear sits at the right edge.
+        // The collider wireframes' toggle and the settings gear sit at the right edge.
         ImGui::SameLine();
-        ImGui::SetCursorPosX(ImGui::GetWindowWidth() - style.WindowPadding.x - buttonSize);
+        ImGui::SetCursorPosX(ImGui::GetWindowWidth() - style.WindowPadding.x - 2.0f * buttonSize - style.ItemSpacing.x);
+        if (playButton("##Colliders", EditorIcon::Collider, m_Settings.PhysicsDebug, true,
+                       m_Settings.PhysicsDebug ? "Hide colliders" : "Show colliders"))
+            m_Settings.PhysicsDebug = !m_Settings.PhysicsDebug;
+
+        ImGui::SameLine();
         if (IconButton("##Settings", GetIcon(EditorIcon::Settings), ICON_SIZE_SMALL, iconTint))
             m_SettingsWindowOpen = true;
         ImGui::SetItemTooltip("Settings");

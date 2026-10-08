@@ -71,6 +71,7 @@ namespace Editor
         out << YAML::EndMap; // dock_layout
 
         out << YAML::Key << "content_icon_size" << YAML::Value << ContentIconSize;
+        out << YAML::Key << "physics_debug" << YAML::Value << PhysicsDebug;
 
         out << YAML::Key << "recent_projects" << YAML::Value << YAML::BeginSeq;
         for (const RecentProject& project : RecentProjects)
@@ -117,6 +118,9 @@ namespace Editor
             ContentIconSize = CONTENT_ICON_SIZE_DEFAULT;
             if (const YAML::Node size = root["content_icon_size"])
                 ContentIconSize = std::clamp(size.as<float>(CONTENT_ICON_SIZE_DEFAULT), CONTENT_ICON_SIZE_MIN, CONTENT_ICON_SIZE_MAX);
+            PhysicsDebug = false;
+            if (const YAML::Node debug = root["physics_debug"])
+                PhysicsDebug = debug.as<bool>(false);
 
             if (auto dock = root["dock_layout"])
             {

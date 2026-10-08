@@ -23,6 +23,7 @@ namespace Editor
 
         DockLayoutState            dockLayout;
         float                      ContentIconSize = CONTENT_ICON_SIZE_DEFAULT; // the Project grid's icon size
+        bool                       PhysicsDebug    = false; // the Scene view's collider wireframes
         std::vector<RecentProject> RecentProjects; // most recent first, each with its last scene
 
         // Writes <file>.tmp and renames it over the file, so a cut-short write leaves the last one.
