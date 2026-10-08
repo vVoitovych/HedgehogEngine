@@ -70,7 +70,7 @@ TEST_CASE("FeatureTest - every scene loads with its project's plugins, reference
           "restored by Stop")
 {
     const std::vector<std::string> scenes = ListScenes();
-    REQUIRE(scenes.size() >= 8);
+    REQUIRE(scenes.size() >= 9);
 
     for (const std::string& scene : scenes)
     {
@@ -118,6 +118,16 @@ TEST_CASE("FeatureTest - every scene loads with its project's plugins, reference
             CHECK(log.Lines("SaveDemo: saving slot SaveDemo at frame 30: true").size() == 1);
             CHECK(log.Lines("SaveDemo: loading slot SaveDemo at frame 60: true").size() == 1);
             CHECK(log.Lines("SaveDemo: loaded; the entity is back at").size() == 1);
+        }
+
+        // The physics sample: the ray found the stack, the ball fell through the trigger zone, the
+        // first thing it landed on was the floor, and the kinematic paddle pushed the crate.
+        if (scene.ends_with("/Physics.yaml"))
+        {
+            CHECK(log.Lines("PhysicsDemo: the ray down hit StackTop").size() == 1);
+            CHECK(log.Lines("PhysicsDemo: Ball entered the zone Zone").size() == 1);
+            CHECK(log.Lines("PhysicsDemo: ball landed on Floor").size() == 1);
+            CHECK(log.Lines("Paddle: pushed Crate").size() == 1);
         }
     }
 }

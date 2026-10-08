@@ -13,6 +13,7 @@
 #include <filesystem>
 #include <memory>
 #include <string>
+#include <utility>
 
 using HedgehogSettings::PhysicsSettings;
 using HedgehogSettings::Settings;
@@ -193,9 +194,13 @@ TEST_CASE("Physics settings - a pair listed on one side only collides, with one 
     CHECK(both.GetPhysicsSettings().Collides(3, 6));
 }
 
-TEST_CASE("Physics settings - the shipped FeatureTest and template files hold the default section and save as written")
+TEST_CASE("Physics settings - the shipped FeatureTest and template files hold their sections and save as written")
 {
-    for (const char* folder : { "Projects/FeatureTest", "Templates/Empty" })
+    // FeatureTest names layer 1, the trigger layer of its Physics.yaml; the template keeps the defaults.
+    PhysicsSettings featureTest;
+    featureTest.LayerNames[1] = "Trigger";
+    for (const auto& [folder, expected] : { std::pair{ "Projects/FeatureTest", featureTest },
+                                            std::pair{ "Templates/Empty", PhysicsSettings{} } })
     {
         CAPTURE(folder);
         SettingsFiles shipped(RepositoryRoot() / folder);
@@ -206,7 +211,7 @@ TEST_CASE("Physics settings - the shipped FeatureTest and template files hold th
         LogCapture log;
         REQUIRE(settings.Load(PATH, shipped.Files));
         CHECK(log.Lines("[WARN").empty());
-        CHECK(settings.GetPhysicsSettings() == PhysicsSettings{});
+        CHECK(settings.GetPhysicsSettings() == expected);
 
         SettingsFiles copy;
         REQUIRE(settings.Save(PATH, copy.Files));
