@@ -202,6 +202,9 @@ namespace
                 }
         const bool fileTangents = anyPrimitive && allTangents;
 
+        bool materialSeen    = false;
+        bool warnedMaterials = false;
+
         for (size_t meshIndex = 0; meshIndex < model.meshes.size(); ++meshIndex)
         {
             for (const auto& primitive : model.meshes[meshIndex].primitives)
@@ -213,6 +216,18 @@ namespace
                 };
                 if (attribute("POSITION") < 0)
                     continue;
+
+                if (!materialSeen)
+                {
+                    materialSeen           = true;
+                    meshData.MaterialIndex = primitive.material;
+                }
+                else if (primitive.material != meshData.MaterialIndex && !warnedMaterials)
+                {
+                    warnedMaterials = true;
+                    LOGWARNING("GLTF [" + path + "] uses more than one material; the mesh is drawn with its first, material " +
+                               std::to_string(meshData.MaterialIndex) + ".");
+                }
 
                 std::vector<float> positions;
                 std::vector<float> normals;
