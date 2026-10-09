@@ -88,6 +88,8 @@ namespace Renderer
         const RHI::IRHIDescriptorSet& AllocateForwardViewUniform(const ForwardViewUniform& uniform) override;
         const RHI::IRHIDescriptorSet& AllocateSceneLightsUniform(const SceneLightsUniform& uniform) override;
         const RHI::IRHIDescriptorSet& AllocateSampledTexture(const RHI::IRHITexture& texture) override;
+        const RHI::IRHIDescriptorSet& AllocateForwardLighting(const ShadowUniform& shadow,
+                                                              const RHI::IRHITexture& shadowAtlas) override;
 
         // Uploads the frame's RenderScene::JointMatrices into this frame slot's storage buffer, growing
         // it when too small, and returns the palette set the skinned pipelines bind (set 1 for the
@@ -128,7 +130,7 @@ namespace Renderer
 
         static void CreateRing(RHI::IRHIDevice& device, UniformRing& ring, const std::vector<RHI::DescriptorBinding>& layout,
                                uint32_t slotsPerFrame, size_t uniformSize);
-        const RHI::IRHIDescriptorSet& Allocate(UniformRing& ring, const void* data, size_t size);
+        RHI::IRHIDescriptorSet& Allocate(UniformRing& ring, const void* data, size_t size);
 
         // One frame in flight's joint palette: a storage buffer of Capacity matrices and its set.
         struct PaletteSlot
@@ -141,6 +143,9 @@ namespace Renderer
         UniformRing m_ViewProjRing;
         UniformRing m_ForwardRing;
         UniformRing m_SceneLightsRing;
+        // The forward shader's set 3: the shadow uniform, then the atlas (written as handed out).
+        UniformRing                       m_LightingRing;
+        std::unique_ptr<RHI::IRHISampler> m_ShadowSampler; // comparison, linear, clamped
 
         // Per frame in flight, SAMPLED_TEXTURES_PER_FRAME sets of one combined image sampler (the
         // ToneMap shader's set 0), rewritten as they are handed out, and the sampler they use.

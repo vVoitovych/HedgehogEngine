@@ -125,7 +125,7 @@ namespace
     const CommandList RIGID_PREPASS = { "begin", "pipeline", "set 0", "vertex 1", "index",
                                         "push 64", "draw 36", "push 64", "draw 120" };
     const CommandList RIGID_SHADOW  = RIGID_PREPASS;
-    const CommandList RIGID_FORWARD = { "begin", "pipeline", "vertex 4", "index", "set 0", "set 2",
+    const CommandList RIGID_FORWARD = { "begin", "pipeline", "vertex 4", "index", "set 0", "set 2", "set 3",
                                         "set 1", "push 64", "draw 36", "set 1", "push 64", "draw 120" };
 }
 
@@ -176,7 +176,7 @@ TEST_CASE("Skinned instances draw after the rigid ones with the skinned pipeline
     CHECK(Rendering(cmd, 1) == shadow);
 
     CommandList forward = RIGID_FORWARD;
-    forward.insert(forward.end(), { "pipeline", "vertex 6", "set 0", "set 2", "set 3",
+    forward.insert(forward.end(), { "pipeline", "vertex 6", "set 0", "set 2", "set 3", "set 4",
                                     "set 1", "push 68", "draw 120", "push 68", "draw 36" });
     CHECK(Rendering(cmd, 2) == forward);
 
@@ -189,6 +189,12 @@ TEST_CASE("Skinned instances draw after the rigid ones with the skinned pipeline
     CHECK(bound(EnginePipeline::ForwardSkinned) == 1);
     CHECK(bound(EnginePipeline::ForwardSkinnedDoubleSided) == 0);
     CHECK(std::count(cmd.BoundSets.begin(), cmd.BoundSets.end(), &scene.Palette) == 3);
+    // The forward pass's rigid and skinned draws share one shadow set at set 3; its palette is at set 4.
+    CHECK(std::count(cmd.BoundSets.begin(), cmd.BoundSets.end(), &services.GetLightingSet()) == 2);
+    CHECK(services.LightingUploads.size() == 1);
+    CHECK(cmd.BoundSetIndices.back() == 1); // the skinned draws' material
+    const auto palette = std::find(cmd.BoundSets.rbegin(), cmd.BoundSets.rend(), &scene.Palette);
+    CHECK(cmd.BoundSetIndices[cmd.BoundSets.rend() - palette - 1] == 4u);
     CHECK(cmd.PushedPaletteOffsets == std::vector<uint32_t>{ 0, 2, 0, 2, 0, 2 });
 
     // Forward's rigid and skinned draws both read the tangents, right after the normals; the

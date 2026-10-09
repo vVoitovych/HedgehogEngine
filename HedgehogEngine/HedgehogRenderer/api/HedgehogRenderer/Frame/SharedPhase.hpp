@@ -3,6 +3,7 @@
 #include "HedgehogRenderer/Graph/GraphFrameContext.hpp"
 #include "HedgehogRenderer/Graph/GraphInstantiator.hpp"
 #include "HedgehogRenderer/Graph/PassBuilderRegistry.hpp"
+#include "HedgehogRenderer/Graph/ShadowCascades.hpp"
 #include "HedgehogRenderer/Views/View.hpp"
 
 #include "HedgehogExtract/api/RenderScene.hpp"
@@ -36,12 +37,15 @@ namespace Renderer
         // Which layers cast shadows (HedgehogSettings::ShadowmapSettings). Never a view's mask: an
         // object on a layer a view hides still shadows what the view shows.
         uint32_t ShadowCasterMask = 0xFFFFFFFFu;
+        // How the forward pass reads the atlas (HedgehogSettings::ShadowmapSettings).
+        ShadowSampling Sampling;
     };
 
     struct SharedPhaseOutputs
     {
         GraphImports                  Imports;               // pass to GraphInstantiator::Instantiate
         const RHI::IRHIDescriptorSet* SceneLights = nullptr; // set as every view's GraphFrameData::SceneLights
+        const ShadowUniform*          Shadow      = nullptr; // set as every view's GraphFrameData::Shadow; null without an atlas
     };
 
     class SharedPhase
@@ -61,7 +65,8 @@ namespace Renderer
         //    camera, drawing every opaque instance on a caster layer (skinned ones posed by the
         //    frame's joint palette, uploaded before this is called). shadowView is the primary
         //    view's frame data (SelectShadowView); with none, no atlas is declared and nothing is
-        //    imported.
+        //    imported. The cascades are computed here, once, and both the Shadow pass and the
+        //    shadow uniform every forward pass reads (outputs' Shadow) are made from them.
         //
         // The shadow pass captures this object's frame context, so it must outlive graph's Execute().
         // The caller's own frame context is restored before returning.
@@ -75,6 +80,8 @@ namespace Renderer
         std::vector<HX::RenderInstance> m_Casters;        // rigid; reused: steady-state frames allocate nothing
         std::vector<HX::RenderInstance> m_SkinnedCasters; // JointCount > 0, drawn with the frame's palette
         GraphFrameData                  m_ShadowFrame;    // shadowView with only the casters
+        ShadowCascades                  m_Cascades;
+        ShadowUniform                   m_ShadowUniform;
         GraphFrameContext               m_ShadowContext;
     };
 

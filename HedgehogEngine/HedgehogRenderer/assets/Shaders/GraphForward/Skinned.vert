@@ -1,6 +1,6 @@
 #version 450
 
-#define PALETTE_SET 3
+#define PALETTE_SET 4
 #include "../Common/Skinning.glsl"
 
 layout(set = 0, binding = 0) uniform ViewData

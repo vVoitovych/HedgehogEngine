@@ -25,7 +25,8 @@ namespace Renderer
                 RHI::IRHITexture& shadowMap = *data.Graph->GetTexture(data.Target);
 
                 const uint32_t       size     = BeginDepthRendering(cmd, shadowMap);
-                const ShadowCascades cascades = ComputeShadowCascades(frame, size);
+                // The shared phase's cascades, which the forward passes read the atlas with.
+                const ShadowCascades cascades = frame.Cascades ? *frame.Cascades : ComputeShadowCascades(frame, size);
                 std::array<const RHI::IRHIDescriptorSet*, MAX_SHADOW_CASCADES> viewProj{};
                 cmd.BindPipeline(pipeline);
                 for (uint32_t i = 0; i < cascades.Count; ++i)

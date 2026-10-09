@@ -43,6 +43,10 @@ namespace Renderer
         m_ShadowFrame                  = *shadowView;
         m_ShadowFrame.OpaqueInstances  = m_Casters;
         m_ShadowFrame.SkinnedInstances = m_SkinnedCasters;
+        m_Cascades                     = ComputeShadowCascades(m_ShadowFrame, settings.ShadowAtlasSize);
+        m_ShadowFrame.Cascades         = &m_Cascades;
+        m_ShadowUniform = MakeShadowUniform(m_Cascades, shadowView->View, settings.Sampling, settings.ShadowAtlasSize,
+                                            FindShadowedLight(lights));
         m_ShadowContext               = { &services, &m_ShadowFrame };
 
         const RGSizePolicy size = RGSizePolicy::MakeAbsolute(settings.ShadowAtlasSize, settings.ShadowAtlasSize);
@@ -58,6 +62,7 @@ namespace Renderer
         graph.SetFrameContext(callerContext);
 
         outputs.Imports.emplace(SHADOW_ATLAS_IMPORT, shadow.GetSlot("shadowMap"));
+        outputs.Shadow = &m_ShadowUniform;
         return outputs;
     }
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "HedgehogRenderer/Graph/GraphFrameContext.hpp"
+#include "HedgehogRenderer/Graph/ShadowCascades.hpp"
 
 #include "TestRHIDoubles.hpp"
 
@@ -72,6 +73,20 @@ namespace RGTest
 
         const RHI::IRHIDescriptorSet& GetSampledTextureSet() const { return m_SampledTexture; }
 
+        const RHI::IRHIDescriptorSet& AllocateForwardLighting(const Renderer::ShadowUniform& shadow,
+                                                              const RHI::IRHITexture& shadowAtlas) override
+        {
+            LightingUploads.push_back(shadow);
+            LightingAtlases.push_back(&shadowAtlas);
+            return m_Lighting;
+        }
+
+        const RHI::IRHIDescriptorSet& GetLightingSet() const { return m_Lighting; }
+
+        // Every forward pass's shadow uniform and the atlas bound beside it, in order.
+        std::vector<Renderer::ShadowUniform> LightingUploads;
+        std::vector<const RHI::IRHITexture*> LightingAtlases;
+
         std::vector<float>                   UploadedFirstElements;
         int                                  ForwardViewUploads = 0;
         std::vector<int32_t>                 SceneLightCounts;
@@ -93,6 +108,7 @@ namespace RGTest
         FakeDescriptorSet m_Set;
         FakeDescriptorSet m_SceneLights;
         FakeDescriptorSet m_SampledTexture;
+        FakeDescriptorSet m_Lighting;
     };
 
     inline HX::RenderInstance Instance(uint64_t meshIndex, uint32_t layer = 0)

@@ -241,10 +241,17 @@ TEST_CASE("The forward pass records lit draws into its colour target against the
     // The last three draws are the forward ones: the instances with both a mesh and a material.
     const std::vector<uint32_t> forwardDraws(cmd.DrawnIndexCounts.end() - 3, cmd.DrawnIndexCounts.end());
     CHECK(forwardDraws == std::vector<uint32_t>{ 36, 120, 120 });
-    // The view's set 0 and the frame's lights at set 2 once, then set 1 only when the material
-    // changes: A, then B.
-    const std::vector<uint32_t> forwardSets(cmd.BoundSetIndices.end() - 4, cmd.BoundSetIndices.end());
-    CHECK(forwardSets == std::vector<uint32_t>{ 0, 2, 1, 1 });
+    // The view's set 0, the frame's lights at set 2 and the shadow at set 3 once, then set 1 only
+    // when the material changes: A, then B.
+    const std::vector<uint32_t> forwardSets(cmd.BoundSetIndices.end() - 5, cmd.BoundSetIndices.end());
+    CHECK(forwardSets == std::vector<uint32_t>{ 0, 2, 3, 1, 1 });
+    CHECK(*(cmd.BoundSets.end() - 3) == &services.GetLightingSet());
+    // Set 3 holds the shadow atlas the pass samples; without a shadow uniform in the frame, one
+    // that shadows nothing.
+    REQUIRE(services.LightingAtlases.size() == 1);
+    CHECK(services.LightingAtlases[0] == cmd.Renderings[1].DepthAttachment->Texture);
+    CHECK(services.LightingUploads[0].CascadeCount == 0);
+    CHECK(services.LightingUploads[0].LightIndex == -1);
     // Forward binds positions, UVs, normals and tangents, in the vertex description's order.
     REQUIRE_FALSE(cmd.BoundVertexBuffers.empty());
     CHECK(cmd.BoundVertexBuffers.back()
