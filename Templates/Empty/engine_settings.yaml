@@ -6,6 +6,11 @@ shadowmap:
   split2: 25
   split3: 50
   caster_mask: 4294967295
+  depth_bias: 0.0005
+  slope_bias: 0.002
+  normal_offset: 1
+  pcf_radius: 1
+  cascade_blend: 0.1
 layers:
   0: Default
   31: Editor
