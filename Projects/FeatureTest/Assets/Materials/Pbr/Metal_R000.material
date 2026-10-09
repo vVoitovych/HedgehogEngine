@@ -1,0 +1,13 @@
+Type: 0
+BaseColor: ""
+BaseColorFactor: [1, 0.766, 0.336, 1]
+Transparency: 1
+Metallic: 1
+Roughness: 0
+MetallicRoughnessMap: ""
+NormalMap: ""
+NormalScale: 1
+OcclusionMap: ""
+OcclusionStrength: 1
+EmissiveMap: ""
+EmissiveFactor: [0, 0, 0]
