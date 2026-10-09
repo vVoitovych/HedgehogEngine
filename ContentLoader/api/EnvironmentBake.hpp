@@ -9,8 +9,9 @@
 #include <optional>
 #include <string>
 
-// The CPU environment bake, first half: an equirectangular Radiance .hdr turned into a world-space
-// cubemap with its mip chain and its SH9 diffuse irradiance. Pure functions over float buffers.
+// The CPU environment bake: an equirectangular Radiance .hdr turned into a world-space cubemap with
+// its mip chain and its SH9 diffuse irradiance, the cube prefiltered for GGX specular, and the split-sum
+// BRDF table. Pure functions over float buffers; BakeEnvironment is the one entry point the renderer calls.
 //
 // The equirect is Z-up: its top row is +Z, its bottom row -Z, and its horizontal centre looks
 // along +X with +Y a quarter of the width to its left (u = 0.5 + atan2(-y, x) / 2pi, v = acos(z) / pi).
@@ -57,4 +58,34 @@ namespace ContentLoader
 
     // The irradiance (over pi) from sh for a surface facing normal (unit).
     CONTENT_LOADER_API HM::Vector3 EvaluateShIrradiance(const ShIrradiance& sh, const HM::Vector3& normal);
+
+    // The cube prefiltered for image-based specular: mip 0 copied, mip m (of the source's mip count)
+    // the GGX-filtered radiance for roughness m / (mips - 1) (the material's roughness, squared as the
+    // shader squares it), with the view along the normal. Each texel averages sampleCount importance
+    // samples (a Hammersley set), each read from the source mip whose texels match its solid angle
+    // (filtered importance sampling), so few samples stay smooth. source needs its mips (BuildCubeMips).
+    // Faces are filtered on their own, so seams are not blended across faces.
+    CONTENT_LOADER_API FloatCube PrefilterCube(const FloatCube& source, uint32_t sampleCount);
+
+    // The split-sum scale and bias at one point: the GGX specular BRDF with height-correlated Smith
+    // visibility and Schlick's Fresnel, integrated over the hemisphere for a view at N.V (clamped above
+    // 0) and the material's roughness, with sampleCount importance samples.
+    struct BrdfScaleBias
+    {
+        float Scale = 0.0f;
+        float Bias  = 0.0f;
+    };
+
+    CONTENT_LOADER_API BrdfScaleBias IntegrateBrdf(float nDotV, float roughness, uint32_t sampleCount);
+
+    // The whole size x size table (BrdfLut), in half floats.
+    CONTENT_LOADER_API BrdfLut ComputeBrdfLut(uint32_t size, uint32_t sampleCount);
+
+    // Loads file (LoadHdrImage), makes its cube (EquirectToCube, BuildCubeMips), its irradiance
+    // (ProjectShIrradiance) and its prefiltered radiance (PrefilterCube) in half floats, values past
+    // HALF_MAX clamped to it, and logs how long it took. A file that does not load, a face size or
+    // sample count of 0 gives nullopt with one error.
+    CONTENT_LOADER_API std::optional<BakedEnvironment> BakeEnvironment(const std::string& file,
+                                                                       const FS::FileSystemManager& fileSystem,
+                                                                       const EnvironmentBakeDesc& desc = {});
 }
