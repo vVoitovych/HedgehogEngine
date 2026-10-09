@@ -17,6 +17,7 @@ namespace RHI
     class IRHIBuffer;
     class IRHIDescriptorSet;
     class IRHIPipeline;
+    class IRHITexture;
 }
 
 namespace Renderer
@@ -108,6 +109,10 @@ namespace Renderer
         // the Gizmo pass draws after the overlay boxes. Null and 0 when there are none.
         RHI::IRHIBuffer* DebugLineVertices    = nullptr;
         uint32_t         DebugLineVertexCount = 0;
+
+        // The exposure the ToneMap pass scales the view's HDR radiance by, in EV (2^Exposure):
+        // RenderScene::Environment's, or 0 without an environment.
+        float Exposure = 0.0f;
     };
 
     // The graph-path forward shader's uniforms (GraphForward/Base.vert and .frag), laid out for
@@ -169,6 +174,7 @@ namespace Renderer
         ShadowSkinned,              // Shadow for SkinnedInstances: palette at set 1
         GameUi,                     // UiDrawList quads, alpha-blended, no depth: texture at set 0
         DebugLines,                 // DebugLineVertex lines, depth-tested, not written: viewProj at set 0
+        ToneMap,                    // a fullscreen triangle, no depth: the sampled HDR texture at set 0
     };
 
     // The long-lived GPU objects the engine passes use but do not own: pipelines, and per-frame
@@ -196,6 +202,11 @@ namespace Renderer
         // The forward pass's set 2: the frame's lights. One allocation per frame, by the shared
         // phase; every view's forward pass binds the same set.
         virtual const RHI::IRHIDescriptorSet& AllocateSceneLightsUniform(const SceneLightsUniform& uniform) = 0;
+
+        // A descriptor set (set 0, binding 0) sampling texture linearly, clamped to its edge, valid
+        // until this frame slot comes round again: for a texture only known at execute time, as a
+        // graph's transients are. One allocation per pass that samples one, per frame.
+        virtual const RHI::IRHIDescriptorSet& AllocateSampledTexture(const RHI::IRHITexture& texture) = 0;
     };
 
     // Attached to a RenderGraphRuntime for one frame (SetFrameContext). Pass builders capture a

@@ -27,6 +27,7 @@ namespace HedgehogEngine
     constexpr std::string_view GAME_UI_SHADER = "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/GameUi.shader";
     constexpr std::string_view DEBUG_LINES_SHADER =
         "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/DebugLines.shader";
+    constexpr std::string_view TONE_MAP_SHADER = "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/ToneMap.shader";
 
     // The shaders an engine pass type (as a .graph file names it) draws with. "Shadow" is the
     // shared phase's pass: a graph that imports the shadow atlas needs it. "Ui" draws the
@@ -37,13 +38,14 @@ namespace HedgehogEngine
         std::string_view Shader;
     };
 
-    constexpr std::array<PassTypeShader, 10> PASS_TYPE_SHADERS = { {
+    constexpr std::array<PassTypeShader, 11> PASS_TYPE_SHADERS = { {
         { "DepthPrepass", DEPTH_PREPASS_SHADER },
         { "DepthPrepass", DEPTH_PREPASS_SKINNED_SHADER },
         { "Shadow", SHADOW_SHADER },
         { "Shadow", SHADOW_SKINNED_SHADER },
         { "Forward", FORWARD_SHADER },
         { "Forward", FORWARD_SKINNED_SHADER },
+        { "ToneMap", TONE_MAP_SHADER },
         { "Gizmo", GIZMO_SHADER },
         { "Gizmo", DEBUG_LINES_SHADER },
         { "GameUi", GAME_UI_SHADER },

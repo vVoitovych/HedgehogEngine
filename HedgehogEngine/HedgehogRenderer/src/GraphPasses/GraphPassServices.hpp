@@ -21,6 +21,7 @@ namespace RHI
     class IRHIBuffer;
     class IRHIDescriptorPool;
     class IRHIDescriptorSetLayout;
+    class IRHISampler;
 }
 
 namespace FS
@@ -54,6 +55,8 @@ namespace Renderer
         static constexpr uint32_t FORWARD_UNIFORMS_PER_FRAME = 8;
         // Scene-light uploads one frame makes: one, by the shared phase, for every view.
         static constexpr uint32_t SCENE_LIGHTS_PER_FRAME = 1;
+        // Sampled-texture sets one frame may make: a tone map per view, for several views.
+        static constexpr uint32_t SAMPLED_TEXTURES_PER_FRAME = 16;
         // The joint palette's first capacity, in matrices; it grows on demand.
         static constexpr size_t MIN_PALETTE_CAPACITY = 256;
         // The game UI buffers' first capacities, in vertices and indices; they grow on demand.
@@ -84,6 +87,7 @@ namespace Renderer
         const RHI::IRHIDescriptorSet& AllocateViewProjUniform(const HM::Matrix4x4& viewProj) override;
         const RHI::IRHIDescriptorSet& AllocateForwardViewUniform(const ForwardViewUniform& uniform) override;
         const RHI::IRHIDescriptorSet& AllocateSceneLightsUniform(const SceneLightsUniform& uniform) override;
+        const RHI::IRHIDescriptorSet& AllocateSampledTexture(const RHI::IRHITexture& texture) override;
 
         // Uploads the frame's RenderScene::JointMatrices into this frame slot's storage buffer, growing
         // it when too small, and returns the palette set the skinned pipelines bind (set 1 for the
@@ -138,6 +142,14 @@ namespace Renderer
         UniformRing m_ForwardRing;
         UniformRing m_SceneLightsRing;
 
+        // Per frame in flight, SAMPLED_TEXTURES_PER_FRAME sets of one combined image sampler (the
+        // ToneMap shader's set 0), rewritten as they are handed out, and the sampler they use.
+        std::unique_ptr<RHI::IRHIDescriptorSetLayout>                     m_SampledTextureLayout;
+        std::unique_ptr<RHI::IRHIDescriptorPool>                          m_SampledTexturePool;
+        std::vector<std::vector<std::unique_ptr<RHI::IRHIDescriptorSet>>> m_SampledTextureSets; // [frame][slot]
+        uint32_t                                                          m_NextSampledTexture = 0;
+        std::unique_ptr<RHI::IRHISampler>                                 m_LinearClampSampler;
+
         // The forward shader's set 1. Identical to the layout the resource registry allocates
         // material sets from, so those sets bind to these pipelines.
         std::unique_ptr<RHI::IRHIDescriptorSetLayout> m_MaterialLayout;
@@ -180,6 +192,7 @@ namespace Renderer
         std::unique_ptr<RHI::IRHIPipeline> m_ShadowSkinnedPipeline;
         std::unique_ptr<RHI::IRHIPipeline> m_GameUiPipeline;
         std::unique_ptr<RHI::IRHIPipeline> m_DebugLinesPipeline;
+        std::unique_ptr<RHI::IRHIPipeline> m_ToneMapPipeline;
         std::unique_ptr<RHI::IRHIBuffer>   m_GizmoBoxLines;
 
         uint32_t m_FrameIndex = 0;

@@ -5,6 +5,7 @@
 #include "Passes/GameUiPass.hpp"
 #include "Passes/GizmoPass.hpp"
 #include "Passes/ShadowPass.hpp"
+#include "Passes/ToneMapPass.hpp"
 #include "Passes/UiPass.hpp"
 
 #include <cassert>
@@ -19,6 +20,7 @@ namespace Renderer
             registry.Register("DepthPrepass", GetDepthPrepassPassType())
             && registry.Register("Shadow", GetShadowPassType())
             && registry.Register("Forward", GetForwardPassType())
+            && registry.Register("ToneMap", GetToneMapPassType())
             && registry.Register("Gizmo", GetGizmoPassType())
             && registry.Register("GameUi", GetGameUiPassType())
             && registry.Register("Ui", GetUiPassType());

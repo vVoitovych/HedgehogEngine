@@ -193,22 +193,23 @@ TEST_CASE("Asset dependencies - a fixture scene's closure is exactly its meshes,
         "assets://Textures/crate_n.png",
         "assets://Textures/logo.png",
     };
-    // The default camera's engine graph "game": depth prepass, forward and game UI, plus the
+    // The default camera's engine graph "game": depth prepass, forward, tone map and game UI, plus the
     // shadow pass for the shadow atlas it imports; each shader's layout, vertex description and
     // SPIR-V stages.
     for (const char* file : {
              "Graphs/game.graph",
              "Shaders/DepthPrepass.shader", "Shaders/DepthPrepassSkinned.shader", "Shaders/ShadowmapPass.shader",
              "Shaders/ShadowmapPassSkinned.shader", "Shaders/GraphForward.shader", "Shaders/GraphForwardSkinned.shader",
-             "Shaders/GameUi.shader",
+             "Shaders/GameUi.shader", "Shaders/ToneMap.shader",
              "Pipelines/DepthPrepass.pl", "Pipelines/DepthPrepassSkinned.pl", "Pipelines/ShadowmapPass.pl",
              "Pipelines/GraphForward.pl", "Pipelines/GraphForwardSkinned.pl", "Pipelines/GameUi.pl",
+             "Pipelines/ToneMap.pl",
              "VertexDescriptions/PositionOnly.vdes", "VertexDescriptions/SkinnedPositionOnly.vdes",
              "VertexDescriptions/FullMesh.vdes", "VertexDescriptions/SkinnedFullMesh.vdes", "VertexDescriptions/Ui.vdes",
              "Shaders/DepthPrepass/Base.vert.spv", "Shaders/DepthPrepass/Skinned.vert.spv",
              "Shaders/ShadowmapPass/Shadowmap.vert.spv", "Shaders/GraphForward/Base.vert.spv",
              "Shaders/GraphForward/Skinned.vert.spv", "Shaders/GraphForward/Base.frag.spv", "Shaders/GameUi/Quad.vert.spv",
-             "Shaders/GameUi/Quad.frag.spv" })
+             "Shaders/GameUi/Quad.frag.spv", "Shaders/Fullscreen/Triangle.vert.spv", "Shaders/ToneMap/Aces.frag.spv" })
         expected.push_back(renderer + file);
     std::sort(expected.begin(), expected.end());
 

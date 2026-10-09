@@ -14,6 +14,7 @@
 
 #include <chrono>
 #include <string>
+#include <utility>
 
 using namespace Renderer;
 using namespace RGTest;
@@ -55,16 +56,18 @@ namespace
         return imports;
     }
 
-    // The passes game.graph and scene.graph share, straight against the builder API. Returns the lit
-    // colour and sets depthWritten to the prepass depth.
+    // The passes game.graph and scene.graph share, straight against the builder API: the lit HDR
+    // radiance, tone mapped onto the colour. Returns the tone-mapped colour and sets depthWritten to
+    // the prepass depth.
     RGTexture BuildViewPasses(RenderGraphRuntime& graph, RGTexture& depthWritten)
     {
         const RGSizePolicy full = RGSizePolicy::MakeRelativeToResult(1.0f);
         const RGTexture shadowAtlas = graph.ImportTexture("shadowAtlas", RHI::Format::D32Float, true);
         const RGTexture depth       = Declare(graph, "depth", RHI::Format::D32Float, full);
+        const RGTexture hdr         = Declare(graph, "hdr", RHI::Format::R16G16B16A16Float, full);
         const RGTexture color       = Declare(graph, "color", RHI::Format::R16G16B16A16Unorm, full);
 
-        RGTexture colorWritten;
+        RGTexture hdrWritten;
         graph.AddPass<TargetData>("DepthPrepass",
             [&](RGPassBuilder& pass, TargetData& data) { depthWritten = data.Target = pass.DepthTarget(depth); },
             NO_EXECUTE);
@@ -73,6 +76,15 @@ namespace
             {
                 pass.DepthReadOnly(depthWritten);
                 pass.SampleTexture(shadowAtlas);
+                hdrWritten = data.Target = pass.ColorTarget(hdr);
+            },
+            NO_EXECUTE);
+
+        RGTexture colorWritten;
+        graph.AddPass<TargetData>("ToneMap",
+            [&](RGPassBuilder& pass, TargetData& data)
+            {
+                pass.SampleTexture(hdrWritten);
                 colorWritten = data.Target = pass.ColorTarget(color);
             },
             NO_EXECUTE);
@@ -205,6 +217,16 @@ TEST_CASE("Oracle: each shipped graph compiles to the same plan as its hand-writ
     // Debug lines draw in the Gizmo pass, which only the editor's scene view has.
     CHECK(gameTwin.find("pass Gizmo") == std::string::npos);
     CHECK(PlanOf(registry, *library.Find("game")) == gameTwin);
+
+    // Forward renders HDR radiance, ToneMap maps it onto the colour, and the overlays draw after.
+    for (const auto& [twin, overlay] : { std::pair{ &sceneTwin, "pass Gizmo" }, std::pair{ &gameTwin, "pass GameUi" } })
+    {
+        const size_t forward = twin->find("pass Forward");
+        const size_t toneMap = twin->find("pass ToneMap");
+        REQUIRE(toneMap != std::string::npos);
+        CHECK(forward < toneMap);
+        CHECK(toneMap < twin->find(overlay));
+    }
 
     const std::string resultTwin = PlanOf(&BuildResultGraphByHand);
     CHECK(resultTwin.find("compile failed") == std::string::npos);
