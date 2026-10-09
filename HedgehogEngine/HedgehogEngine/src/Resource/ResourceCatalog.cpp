@@ -76,7 +76,11 @@ namespace HedgehogEngine
     MaterialView ResourceCatalog::GetMaterial(size_t index) const
     {
         const MaterialData& data = m_MaterialContainer->GetMaterialDataByIndex(index);
-        return MaterialView{ data.transparency, data.baseColor, data.isDirty };
+        return MaterialView{ data.transparency, data.baseColor,         data.isDirty,
+                             data.baseColorFactor, data.metallic,        data.roughness,
+                             data.metallicRoughnessMap, data.normalMap,  data.normalScale,
+                             data.occlusionMap, data.occlusionStrength, data.emissiveMap,
+                             data.emissiveFactor };
     }
 
     void ResourceCatalog::ClearMaterialDirty(size_t index)

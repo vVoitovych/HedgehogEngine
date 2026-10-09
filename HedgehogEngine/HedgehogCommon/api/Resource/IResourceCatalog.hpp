@@ -34,11 +34,24 @@ namespace HedgehogEngine
     };
 
     // Zero-copy view onto a single material's CPU-side data.
+    // A material's values (HedgehogEngine's MaterialData) for the renderer; map paths are empty for
+    // none.
     struct MaterialView
     {
         float              transparency;
-        const std::string& baseColor;
+        const std::string& baseColor; // the base colour map
         bool               isDirty;
+
+        HM::Vector4        baseColorFactor;
+        float              metallic;
+        float              roughness;
+        const std::string& metallicRoughnessMap;
+        const std::string& normalMap;
+        float              normalScale;
+        const std::string& occlusionMap;
+        float              occlusionStrength;
+        const std::string& emissiveMap;
+        HM::Vector3        emissiveFactor;
     };
 
     // Zero-copy view onto a baked font's coverage atlas: AtlasWidth x AtlasHeight bytes, row by row.
