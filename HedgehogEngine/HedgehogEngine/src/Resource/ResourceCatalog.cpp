@@ -59,6 +59,7 @@ namespace HedgehogEngine
             mesh.GetPositions(),
             mesh.GetNormals(),
             mesh.GetTexCoords(),
+            mesh.GetTangents(),
             mesh.GetIndices(),
             mesh.GetJoints(),
             mesh.GetWeights(),

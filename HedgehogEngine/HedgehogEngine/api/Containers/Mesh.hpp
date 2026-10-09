@@ -26,6 +26,8 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API const std::vector<HM::Vector3>& GetPositions() const;
         HEDGEHOG_ENGINE_API const std::vector<HM::Vector2>& GetTexCoords() const;
         HEDGEHOG_ENGINE_API const std::vector<HM::Vector3>& GetNormals()   const;
+        // One per vertex: xyz along increasing u, orthogonal to the normal; w the handedness.
+        HEDGEHOG_ENGINE_API const std::vector<HM::Vector4>& GetTangents()  const;
         HEDGEHOG_ENGINE_API const std::vector<uint32_t>&    GetIndices()   const;
 
         // A skinned mesh's four joint indices (into its skeleton) and weights per vertex; empty
@@ -49,6 +51,7 @@ namespace HedgehogEngine
         std::vector<HM::Vector3> m_Positions;
         std::vector<HM::Vector2> m_TexCoords;
         std::vector<HM::Vector3> m_Normals;
+        std::vector<HM::Vector4> m_Tangents;
 
         std::vector<uint32_t> m_IndicesData;
 

@@ -1,5 +1,6 @@
 #include "GltfMeshLoader.hpp"
 #include "GltfModel.hpp"
+#include "api/Tangents.hpp"
 
 #include "Logger/api/Logger.hpp"
 
@@ -188,6 +189,19 @@ namespace
                 return std::nullopt;
         }
 
+        // The file's own tangents are used only when every primitive has them, since one mesh is made
+        // of them all; otherwise they are generated for the whole mesh.
+        bool anyPrimitive = false;
+        bool allTangents  = true;
+        for (const auto& mesh : model.meshes)
+            for (const auto& primitive : mesh.primitives)
+                if (primitive.attributes.contains("POSITION"))
+                {
+                    anyPrimitive = true;
+                    allTangents  = allTangents && primitive.attributes.contains("TANGENT");
+                }
+        const bool fileTangents = anyPrimitive && allTangents;
+
         for (size_t meshIndex = 0; meshIndex < model.meshes.size(); ++meshIndex)
         {
             for (const auto& primitive : model.meshes[meshIndex].primitives)
@@ -203,10 +217,12 @@ namespace
                 std::vector<float> positions;
                 std::vector<float> normals;
                 std::vector<float> texCoords;
+                std::vector<float> tangents;
                 std::string        error;
                 if (!ReadAccessor(model, attribute("POSITION"), 3, positions, error) ||
                     (attribute("NORMAL") >= 0 && !ReadAccessor(model, attribute("NORMAL"), 3, normals, error)) ||
-                    (attribute("TEXCOORD_0") >= 0 && !ReadAccessor(model, attribute("TEXCOORD_0"), 2, texCoords, error)))
+                    (attribute("TEXCOORD_0") >= 0 && !ReadAccessor(model, attribute("TEXCOORD_0"), 2, texCoords, error)) ||
+                    (fileTangents && !ReadAccessor(model, attribute("TANGENT"), 4, tangents, error)))
                 {
                     LOGERROR("Vertex data of GLTF [" + path + "] cannot be read: " + error);
                     return std::nullopt;
@@ -224,6 +240,9 @@ namespace
                         vertex.normal = HM::Vector3(normals[i * 3 + 0], normals[i * 3 + 1], normals[i * 3 + 2]);
                     if ((i + 1) * 2 <= texCoords.size())
                         vertex.uv = HM::Vector2(texCoords[i * 2 + 0], texCoords[i * 2 + 1]);
+                    if ((i + 1) * 4 <= tangents.size())
+                        vertex.tangent = HM::Vector4(tangents[i * 4 + 0], tangents[i * 4 + 1], tangents[i * 4 + 2],
+                                                     tangents[i * 4 + 3] < 0.0f ? -1.0f : 1.0f);
 
                     meshData.vertices.push_back(vertex);
                 }
@@ -251,6 +270,9 @@ namespace
                 }
             }
         }
+
+        if (!fileTangents)
+            GenerateTangents(meshData.vertices, meshData.indices);
 
         LOGINFO("Model [", path, "] loaded with ", meshData.vertices.size(), " vertices and ", meshData.indices.size(), " indices!");
 
