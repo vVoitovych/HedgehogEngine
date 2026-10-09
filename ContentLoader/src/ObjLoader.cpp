@@ -1,4 +1,5 @@
 #include "ObjLoader.hpp"
+#include "api/Tangents.hpp"
 #include "Logger/api/Logger.hpp"
 
 #define TINYOBJLOADER_IMPLEMENTATION
@@ -58,6 +59,8 @@ namespace ContentLoader
                 mesh.indices.push_back(uniqueVertices[vertex]);
             }
         }
+
+        GenerateTangents(mesh.vertices, mesh.indices);
 
         LOGINFO("Model [", path, "] loaded with ", mesh.vertices.size(), " vertices and ", mesh.indices.size(), " indices!");
 

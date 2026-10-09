@@ -16,6 +16,10 @@ namespace ContentLoader
         HM::Vector3 position;
         HM::Vector2 uv;
         HM::Vector3 normal;
+        // xyz a unit vector orthogonal to the normal along increasing u, w the handedness (+1 or -1):
+        // glTF's TANGENT, read or generated (GenerateTangents). Not part of the vertex's identity,
+        // since tangents are made after vertices are de-duplicated.
+        HM::Vector4 tangent = HM::Vector4(1.0f, 0.0f, 0.0f, 1.0f);
 
         bool operator==(const LoadedVertexData& other) const
         {

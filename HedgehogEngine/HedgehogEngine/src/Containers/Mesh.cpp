@@ -24,11 +24,13 @@ namespace HedgehogEngine
         m_Positions.reserve(mesh->vertices.size());
         m_TexCoords.reserve(mesh->vertices.size());
         m_Normals.reserve(mesh->vertices.size());
+        m_Tangents.reserve(mesh->vertices.size());
         for (size_t i = 0; i < mesh->vertices.size(); ++i)
         {
             m_Positions.push_back(mesh->vertices[i].position);
             m_Normals.push_back(mesh->vertices[i].normal);
             m_TexCoords.push_back(mesh->vertices[i].uv);
+            m_Tangents.push_back(mesh->vertices[i].tangent);
         }
 
         m_IndexCount = static_cast<uint32_t>(m_IndicesData.size());
@@ -52,6 +54,7 @@ namespace HedgehogEngine
         m_Positions.clear();
         m_TexCoords.clear();
         m_Normals.clear();
+        m_Tangents.clear();
         m_IndicesData.clear();
         m_Joints.clear();
         m_Weights.clear();
@@ -63,6 +66,7 @@ namespace HedgehogEngine
     const std::vector<HM::Vector3>& Mesh::GetPositions() const { return m_Positions; }
     const std::vector<HM::Vector2>& Mesh::GetTexCoords() const { return m_TexCoords; }
     const std::vector<HM::Vector3>& Mesh::GetNormals()   const { return m_Normals; }
+    const std::vector<HM::Vector4>& Mesh::GetTangents()  const { return m_Tangents; }
     const std::vector<uint32_t>&    Mesh::GetIndices()   const { return m_IndicesData; }
     const std::vector<HM::Vector4u>& Mesh::GetJoints()   const { return m_Joints; }
     const std::vector<HM::Vector4>&  Mesh::GetWeights()  const { return m_Weights; }

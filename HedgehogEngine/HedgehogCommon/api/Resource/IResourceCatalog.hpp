@@ -22,6 +22,8 @@ namespace HedgehogEngine
         const std::vector<HM::Vector3>& positions;
         const std::vector<HM::Vector3>& normals;
         const std::vector<HM::Vector2>& texCoords;
+        // One per position: xyz along increasing u, orthogonal to the normal; w the handedness.
+        const std::vector<HM::Vector4>& tangents;
         const std::vector<uint32_t>&    indices;
 
         // A skinned mesh's per-vertex joint indices and weights; both empty for a static mesh.
@@ -33,7 +35,6 @@ namespace HedgehogEngine
         uint32_t vertexOffset;
     };
 
-    // Zero-copy view onto a single material's CPU-side data.
     // A material's values (HedgehogEngine's MaterialData) for the renderer; map paths are empty for
     // none.
     struct MaterialView

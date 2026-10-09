@@ -12,6 +12,7 @@ namespace
         std::vector<HM::Vector3>  Positions;
         std::vector<HM::Vector3>  Normals;
         std::vector<HM::Vector2>  TexCoords;
+        std::vector<HM::Vector4>  Tangents;
         std::vector<uint32_t>     Indices;
         std::vector<HM::Vector4u> Joints;
         std::vector<HM::Vector4>  Weights;
@@ -25,7 +26,7 @@ namespace
 
         HedgehogEngine::MeshView View() const
         {
-            return { Positions, Normals, TexCoords, Indices, Joints, Weights, 0, 0, 0 };
+            return { Positions, Normals, TexCoords, Tangents, Indices, Joints, Weights, 0, 0, 0 };
         }
     };
 }
