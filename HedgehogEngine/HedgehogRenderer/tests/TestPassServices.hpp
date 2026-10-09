@@ -45,6 +45,7 @@ namespace RGTest
                 case Renderer::EnginePipeline::GameUi:                    return m_GameUi;
                 case Renderer::EnginePipeline::DebugLines:                return m_DebugLines;
                 case Renderer::EnginePipeline::ToneMap:                   return m_ToneMap;
+                case Renderer::EnginePipeline::Skybox:                    return m_Skybox;
                 default:                                     return m_Forward;
             }
         }
@@ -108,6 +109,7 @@ namespace RGTest
         FakePipeline      m_GameUi;
         FakePipeline      m_DebugLines;
         FakePipeline      m_ToneMap;
+        FakePipeline      m_Skybox;
         TestBuffer        m_GizmoBoxLines{ Renderer::GIZMO_BOX_LINE_VERTICES * 12 };
         FakeDescriptorSet m_Set;
         FakeDescriptorSet m_SceneLights;

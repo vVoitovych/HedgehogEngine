@@ -38,11 +38,13 @@ namespace Renderer
     EnvironmentUniform MakeNoEnvironmentUniform();
 
     // What the forward pass binds for the environment (set 3, bindings 2 to 4): the uniform, the
-    // prefiltered radiance cube and the split-sum BRDF table. The textures are null in headless tests.
+    // prefiltered radiance cube and the split-sum BRDF table, and whether the Skybox pass draws the
+    // cube (a baked map whose component shows its skybox). The textures are null in headless tests.
     struct ForwardEnvironment
     {
-        EnvironmentUniform       Uniform  = MakeNoEnvironmentUniform();
-        const RHI::IRHITexture*  Radiance = nullptr;
-        const RHI::IRHITexture*  BrdfLut  = nullptr;
+        EnvironmentUniform       Uniform    = MakeNoEnvironmentUniform();
+        const RHI::IRHITexture*  Radiance   = nullptr;
+        const RHI::IRHITexture*  BrdfLut    = nullptr;
+        bool                     ShowSkybox = false;
     };
 }

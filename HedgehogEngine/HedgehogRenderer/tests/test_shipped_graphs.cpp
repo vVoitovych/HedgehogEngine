@@ -57,8 +57,8 @@ namespace
     }
 
     // The passes game.graph and scene.graph share, straight against the builder API: the lit HDR
-    // radiance, tone mapped onto the colour. Returns the tone-mapped colour and sets depthWritten to
-    // the prepass depth.
+    // radiance with the skybox behind it, tone mapped onto the colour. Returns the tone-mapped colour
+    // and sets depthWritten to the prepass depth.
     RGTexture BuildViewPasses(RenderGraphRuntime& graph, RGTexture& depthWritten)
     {
         const RGSizePolicy full = RGSizePolicy::MakeRelativeToResult(1.0f);
@@ -79,12 +79,20 @@ namespace
                 hdrWritten = data.Target = pass.ColorTarget(hdr);
             },
             NO_EXECUTE);
+        RGTexture skyWritten;
+        graph.AddPass<TargetData>("Skybox",
+            [&](RGPassBuilder& pass, TargetData& data)
+            {
+                pass.DepthReadOnly(depthWritten);
+                skyWritten = data.Target = pass.ColorTarget(hdrWritten);
+            },
+            NO_EXECUTE);
 
         RGTexture colorWritten;
         graph.AddPass<TargetData>("ToneMap",
             [&](RGPassBuilder& pass, TargetData& data)
             {
-                pass.SampleTexture(hdrWritten);
+                pass.SampleTexture(skyWritten);
                 colorWritten = data.Target = pass.ColorTarget(color);
             },
             NO_EXECUTE);
@@ -218,13 +226,19 @@ TEST_CASE("Oracle: each shipped graph compiles to the same plan as its hand-writ
     CHECK(gameTwin.find("pass Gizmo") == std::string::npos);
     CHECK(PlanOf(registry, *library.Find("game")) == gameTwin);
 
-    // Forward renders HDR radiance, ToneMap maps it onto the colour, and the overlays draw after.
+    // Forward renders HDR radiance, the Skybox fills the rest, ToneMap maps it onto the colour, and
+    // the overlays draw after.
     for (const auto& [twin, overlay] : { std::pair{ &sceneTwin, "pass Gizmo" }, std::pair{ &gameTwin, "pass GameUi" } })
     {
+        const size_t prepass = twin->find("pass DepthPrepass");
         const size_t forward = twin->find("pass Forward");
+        const size_t skybox  = twin->find("pass Skybox");
         const size_t toneMap = twin->find("pass ToneMap");
+        REQUIRE(skybox != std::string::npos);
         REQUIRE(toneMap != std::string::npos);
-        CHECK(forward < toneMap);
+        CHECK(prepass < forward);
+        CHECK(forward < skybox);
+        CHECK(skybox < toneMap);
         CHECK(toneMap < twin->find(overlay));
     }
 

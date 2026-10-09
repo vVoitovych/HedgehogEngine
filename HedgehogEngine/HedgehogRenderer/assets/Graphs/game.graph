@@ -1,7 +1,8 @@
 # The game view (RENDERING.md section 7): what a camera entity renders, in the editor's game panel
 # and in a game build. The shadow atlas is not the view's own: the shared frame phase renders it
 # once for every view (SharedPhase.hpp), and the graph imports it. Forward renders HDR radiance into
-# hdr, which ToneMap maps onto the LDR colour output the game UI then draws over.
+# hdr, the Skybox fills what it left empty with the environment, and ToneMap maps it onto the LDR
+# colour output the game UI then draws over.
 # Held to a hand-written C++ twin by RenderGraphTest (test_shipped_graphs.cpp).
 version: 2
 outputs:
@@ -32,6 +33,11 @@ passes:
       shadowMap: shadowAtlas
     parameters:
       cullBackFaces: true
+  - type: Skybox
+    name: Skybox
+    bindings:
+      color: hdr
+      depth: depth
   - type: ToneMap
     name: ToneMap
     bindings:
