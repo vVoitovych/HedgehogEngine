@@ -2,6 +2,7 @@
 
 #include "MeshGpuData.hpp"
 #include "MaterialGpuData.hpp"
+#include "MaterialUniform.hpp"
 
 #include "HedgehogCommon/api/Resource/IResourceCatalog.hpp"
 #include "RHI/api/RHITypes.hpp"
@@ -93,21 +94,20 @@ namespace HR
         void Cleanup(RHI::IRHIDevice& device);
 
     private:
+        // The texture of a path, loaded once per colour space: srgb for colour (a base colour or
+        // emissive map, a UI texture), else linear for data (normal, metallic-roughness, occlusion).
         RHI::IRHITexture& GetOrCreateTexture(const std::string& path, RHI::IRHIDevice& device,
-                                              const FS::FileSystemManager& fileSystem);
+                                              const FS::FileSystemManager& fileSystem, bool srgb = true);
 
-        void CreateMaterialGpu(float transparency, const std::string& texturePath,
-                                RHI::IRHIDevice& device, const FS::FileSystemManager& fileSystem);
-        void UpdateMaterialGpu(uint32_t index, float transparency, const std::string& texturePath,
-                               RHI::IRHIDevice& device, const FS::FileSystemManager& fileSystem);
+        void CreateMaterialGpu(const HedgehogEngine::MaterialView& material, RHI::IRHIDevice& device,
+                               const FS::FileSystemManager& fileSystem);
+        void UpdateMaterialGpu(uint32_t index, const HedgehogEngine::MaterialView& material, RHI::IRHIDevice& device,
+                               const FS::FileSystemManager& fileSystem);
+        // Writes the uniform and every slot's texture (its map, else its neutral default) into set.
+        void WriteMaterialSet(MaterialGpuData& gpu, const HedgehogEngine::MaterialView& material, RHI::IRHIDevice& device,
+                              const FS::FileSystemManager& fileSystem);
 
         void FlushMeshUploads(RHI::IRHIDevice& device);
-
-    private:
-        struct MaterialUniform
-        {
-            float Transparency;
-        };
 
     private:
         // Mesh data (CPU side)
@@ -137,9 +137,15 @@ namespace HR
         std::vector<MaterialGpuData>             m_Materials;
         size_t                                   m_RegisteredMaterialCount = 0;
 
-        // Shared texture cache and sampler
+        // Shared texture cache (keyed by path, with a suffix for a linear copy) and sampler
         std::unordered_map<std::string, std::unique_ptr<RHI::IRHITexture>> m_TextureCache;
         std::unique_ptr<RHI::IRHISampler>                                  m_LinearSampler;
+
+        // A material slot without a map samples these 1x1 textures, which leave its factors as they
+        // are: white (sRGB for colour, linear for data) and the flat normal (0.5, 0.5, 1).
+        std::unique_ptr<RHI::IRHITexture> m_WhiteSrgbTexture;
+        std::unique_ptr<RHI::IRHITexture> m_WhiteLinearTexture;
+        std::unique_ptr<RHI::IRHITexture> m_FlatNormalTexture;
 
         // Game UI textures: sampled clamped to their edges, one set each, and the white pixel.
         const RHI::IRHIDescriptorSetLayout*                                       m_UiTextureLayout = nullptr;
