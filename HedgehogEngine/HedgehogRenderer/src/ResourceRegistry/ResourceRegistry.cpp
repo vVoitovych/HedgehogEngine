@@ -258,8 +258,15 @@ namespace HR
 
         for (const std::string& path : paths)
         {
-            if (m_UiTextureSets.contains(path))
+            if (m_UiTextureSpellings.contains(path))
                 continue;
+            // A new spelling of a file already synced shares its set.
+            std::string key = FS::MakeAssetKey(path);
+            if (const auto found = m_UiTextureSets.find(key); found != m_UiTextureSets.end())
+            {
+                m_UiTextureSpellings.emplace(path, found->second.get());
+                continue;
+            }
             if (m_UiTextureSets.size() >= MAX_UI_TEXTURE_SETS)
             {
                 if (!m_WarnedUiTextureLimit)
@@ -272,7 +279,8 @@ namespace HR
             auto              set     = device.AllocateDescriptorSet(*m_UiTexturePool, *m_UiTextureLayout);
             set->WriteTexture(0, texture, *m_UiSampler);
             set->Flush();
-            m_UiTextureSets.emplace(path, std::move(set));
+            m_UiTextureSpellings.emplace(path, set.get());
+            m_UiTextureSets.emplace(std::move(key), std::move(set));
         }
     }
 
@@ -312,8 +320,8 @@ namespace HR
 
     const RHI::IRHIDescriptorSet* ResourceRegistry::FindUiTextureSet(const std::string& path) const
     {
-        const auto found = m_UiTextureSets.find(path);
-        return found != m_UiTextureSets.end() ? found->second.get() : nullptr;
+        const auto found = m_UiTextureSpellings.find(path);
+        return found != m_UiTextureSpellings.end() ? found->second : nullptr;
     }
 
     void ResourceRegistry::CreateMaterialGpu(const HedgehogEngine::MaterialView& material, RHI::IRHIDevice& device,
@@ -388,6 +396,7 @@ namespace HR
         device.WaitIdle();
 
         m_Materials.clear();       // descriptor sets freed before pool
+        m_UiTextureSpellings.clear();
         m_UiTextureSets.clear();
         m_FontSets.clear();
         m_FontTextures.clear();
