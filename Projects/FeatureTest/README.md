@@ -14,7 +14,8 @@ project the dev tree opens when none is named (`Editor.exe`, `--game-mode`, `--b
 | `Prefabs.yaml` | Prefabs: two instances of `Prefabs/LampPost.prefab`, the second overriding its lamp's colour and intensity. |
 | `Saves.yaml` | Save games: `Scripts/SaveDemo.lua` turns its cube, saves on frame 30 and loads that save on frame 60, logging both; the cube jumps back to where it was saved. |
 | `Physics.yaml` | Physics: a stack of three boxes, a bouncing ball, a capsule that topples, a kinematic paddle (`Scripts/Paddle.lua`) swinging into a crate, and a trigger zone on the `Trigger` layer (named in `engine_settings.yaml`). `Scripts/PhysicsDemo.lua`, on the ball, pushes it as Play starts, logs the zone it falls through and the first thing it lands on, and casts a ray down onto the stack on frame 10. Turn on the toolbar's Colliders toggle to see every collider. |
-| `benchmark.yaml` | The renderer benchmark: a 5×5 grid of DamagedHelmets (`Editor.exe --benchmark`, see `PERFORMANCE.md`). |
+| `Pbr.yaml` | Physically based rendering: two rows of spheres, dielectric red and metal gold, from roughness 0 (left) to 1 (right) (`Materials/Pbr`), the DamagedHelmet with its imported material (`Models/DamagedHelmet/DamagedHelmet_Material_MR.material`), a sun casting shadows on the floor, and an `EnvironmentComponent` lighting everything with `Environments/kloofendal_48d_partly_cloudy_puresky_1k.hdr` (Poly Haven, CC0) and showing it as the sky. |
+| `benchmark.yaml` | The renderer benchmark: a 5×5 grid of DamagedHelmets with their imported material (`Editor.exe --benchmark`, see `PERFORMANCE.md`). |
 | `test.yaml` | A small mesh-and-material test scene. |
 
 Every scene here is played by ScriptingTest's `test_feature_test_scenes.cpp`: it loads with the
