@@ -181,6 +181,15 @@ namespace Renderer
         toneMapDesc.DepthAttachmentFormat  = RHI::Format::Undefined;
         m_ToneMapPipeline = device.CreateGraphicsPipeline(toneMapDesc);
 
+        // The skybox: the radiance cube through the same sampled-texture sets (one combined image
+        // sampler at set 0), into the HDR target against the view's depth.
+        const ShaderPipelineDesc skyboxShader = ShaderLoader::Load(device, std::string(HedgehogEngine::SKYBOX_SHADER), fileSystem);
+        RHI::GraphicsPipelineDesc skyboxDesc = skyboxShader.Pipeline;
+        skyboxDesc.DescriptorSetLayouts   = { m_SampledTextureLayout.get() };
+        skyboxDesc.ColorAttachmentFormats = { HDR_FORMAT };
+        skyboxDesc.DepthAttachmentFormat  = DEPTH_FORMAT;
+        m_SkyboxPipeline = device.CreateGraphicsPipeline(skyboxDesc);
+
         m_GizmoBoxLines = device.CreateBuffer(sizeof(GIZMO_BOX_LINES), RHI::BufferUsage::VertexBuffer,
                                               RHI::MemoryUsage::CpuToGpu);
         m_GizmoBoxLines->CopyData(GIZMO_BOX_LINES, sizeof(GIZMO_BOX_LINES));
@@ -250,6 +259,7 @@ namespace Renderer
             case EnginePipeline::GameUi:                    return *m_GameUiPipeline;
             case EnginePipeline::DebugLines:                return *m_DebugLinesPipeline;
             case EnginePipeline::ToneMap:                   return *m_ToneMapPipeline;
+            case EnginePipeline::Skybox:                    return *m_SkyboxPipeline;
         }
         assert(false && "GraphPassServices::GetPipeline: unknown pipeline.");
         return *m_DepthPrepassPipeline;

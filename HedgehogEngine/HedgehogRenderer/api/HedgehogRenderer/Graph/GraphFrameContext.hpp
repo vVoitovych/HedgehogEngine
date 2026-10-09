@@ -185,12 +185,13 @@ namespace Renderer
         ForwardDoubleSided, // Forward with cullBackFaces: false
         Gizmo,              // unit-cube wireframes (GetGizmoBoxLines), depth-tested, not written
         DepthPrepassSkinned,        // DepthPrepass for SkinnedInstances: palette at set 1
-        ForwardSkinned,             // Forward for SkinnedInstances: palette at set 3
+        ForwardSkinned,             // Forward for SkinnedInstances: palette at set 4
         ForwardSkinnedDoubleSided,  // ForwardSkinned with cullBackFaces: false
         ShadowSkinned,              // Shadow for SkinnedInstances: palette at set 1
         GameUi,                     // UiDrawList quads, alpha-blended, no depth: texture at set 0
         DebugLines,                 // DebugLineVertex lines, depth-tested, not written: viewProj at set 0
         ToneMap,                    // a fullscreen triangle, no depth: the sampled HDR texture at set 0
+        Skybox,                     // a fullscreen triangle at the far plane, depth-tested, not written: the cube at set 0
     };
 
     // The long-lived GPU objects the engine passes use but do not own: pipelines, and per-frame

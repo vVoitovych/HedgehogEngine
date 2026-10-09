@@ -143,6 +143,7 @@ namespace Renderer
         if (!map.Radiance)
             return;
         m_Current.Uniform  = MakeEnvironmentUniform(map.Sh, map.MipCount, environment.Intensity, environment.RotationDegrees);
-        m_Current.Radiance = map.Radiance.get();
+        m_Current.Radiance   = map.Radiance.get();
+        m_Current.ShowSkybox = environment.ShowSkybox;
     }
 }
