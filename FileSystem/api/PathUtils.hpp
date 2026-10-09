@@ -27,6 +27,13 @@ namespace FS
     // is kept, any other ("Models\a.obj", "Models/a.obj") goes under assets://.
     FILE_SYSTEM_API std::string ToAssetVirtualPath(const std::string& path);
 
+    // The key one asset file is known by, however a component or material spells it: backslashes as
+    // slashes, "." segments and repeated slashes folded, "assets://" dropped (a path without a mount
+    // is under it) and any other mount kept, case kept. "Models\a.png", "assets://Models/./a.png"
+    // and "Models//a.png" are all "Models/a.png"; "engine://Content\a.png" is
+    // "engine://Content/a.png". ToAssetVirtualPath of the key names the file.
+    FILE_SYSTEM_API std::string MakeAssetKey(const std::string& path);
+
     // The file that marks a project's root: the repository in a dev tree, the folder of a packaged game.
     inline constexpr const char* PROJECT_FILE_NAME = "Project.yaml";
 

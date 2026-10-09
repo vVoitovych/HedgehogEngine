@@ -49,6 +49,32 @@ namespace FS
         return path.find("://") == std::string::npos ? ASSETS_ALIAS + path : path;
     }
 
+    std::string MakeAssetKey(const std::string& path)
+    {
+        // The mount, kept unless it is assets://, then the path's segments.
+        const size_t mountEnd = path.find("://");
+        const size_t rootEnd  = mountEnd == std::string::npos ? 0 : mountEnd + 3;
+        std::string  key      = path.substr(0, rootEnd) == ASSETS_ALIAS ? std::string() : path.substr(0, rootEnd);
+
+        const size_t prefix = key.size();
+        size_t       start  = rootEnd;
+        while (start <= path.size())
+        {
+            size_t end = path.find_first_of("/\\", start);
+            if (end == std::string::npos)
+                end = path.size();
+            const std::string_view segment(path.data() + start, end - start);
+            if (!segment.empty() && segment != ".")
+            {
+                if (key.size() > prefix)
+                    key += '/';
+                key += segment;
+            }
+            start = end + 1;
+        }
+        return key;
+    }
+
     std::optional<std::filesystem::path> FindAncestorHolding(const std::filesystem::path& start,
                                                              const std::filesystem::path& relativeFile)
     {

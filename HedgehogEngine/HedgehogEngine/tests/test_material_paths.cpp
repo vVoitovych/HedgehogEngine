@@ -4,6 +4,7 @@
 #include "HedgehogEngine/api/ECS/components/RenderComponent.hpp"
 #include "HedgehogEngine/api/Containers/MaterialContainer.hpp"
 #include "HedgehogEngine/api/Containers/MaterialData.hpp"
+#include "HedgehogEngine/api/Containers/TextureContainer.hpp"
 #include "HedgehogEngine/api/ECS/systems/MeshSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/RenderSystem.hpp"
 #include "HedgehogEngine/api/Resource/ResourceCatalog.hpp"
@@ -75,4 +76,22 @@ TEST_CASE("Material paths - three spellings of one material load it once, the co
     renderSystem.Update(ecs, entities[1]);
     CHECK(second.MaterialIndex != first.MaterialIndex);
     CHECK(renderSystem.GetMaterials().size() == listed + 2);
+}
+
+TEST_CASE("Texture paths - the editor's texture list holds each file once, however materials spell it")
+{
+    TextureContainer textures;
+    textures.RegisterTexturePath("Models\\DamagedHelmet\\Default_albedo.jpg");
+    textures.RegisterTexturePath("Models/DamagedHelmet/Default_albedo.jpg");
+    textures.RegisterTexturePath("assets://Models/DamagedHelmet/./Default_albedo.jpg");
+    textures.RegisterTexturePath("engine://Content\\Textures\\Default\\cells.png");
+    textures.RegisterTexturePath("engine://Content/Textures/Default/cells.png");
+    textures.RegisterTexturePath(""); // no map: not a texture
+
+    CHECK(textures.GetTexturePathes()
+          == std::vector<std::string>{ "Models/DamagedHelmet/Default_albedo.jpg", "engine://Content/Textures/Default/cells.png" });
+    CHECK(textures.GetTextureIndex("Models\\DamagedHelmet\\Default_albedo.jpg") == 0);
+    CHECK(textures.GetTextureIndex("assets://Models/DamagedHelmet/Default_albedo.jpg") == 0);
+    CHECK(textures.GetTextureIndex("engine://Content/Textures/Default/cells.png") == 1);
+    CHECK(textures.GetTextureIndex("Textures/missing.png") == 2); // not listed: the count
 }
