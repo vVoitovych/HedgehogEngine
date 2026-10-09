@@ -190,7 +190,10 @@ TEST_CASE("glTF material import - the shipped helmet material is exactly what im
     REQUIRE(result.Written
             == std::vector<std::string>{ "assets://Models/DamagedHelmet/DamagedHelmet_Material_MR.material" });
     const std::string imported = ReadFile(dir.Path() / "Models/DamagedHelmet/DamagedHelmet_Material_MR.material");
-    CHECK(imported == ReadFile(helmet / "DamagedHelmet_Material_MR.material"));
+    // The checkout may have given the shipped file CRLF line endings.
+    std::string shipped = ReadFile(helmet / "DamagedHelmet_Material_MR.material");
+    std::erase(shipped, '');
+    CHECK(imported == shipped);
 
     // It names the five maps, which ship beside it.
     for (const char* map : { "Default_albedo.jpg", "Default_metalRoughness.jpg", "Default_normal.jpg", "Default_AO.jpg",
