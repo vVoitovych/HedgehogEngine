@@ -78,6 +78,8 @@ namespace HR
         const RHI::IRHIBuffer& GetPositionsBuffer() const;
         const RHI::IRHIBuffer& GetTexCoordsBuffer() const;
         const RHI::IRHIBuffer& GetNormalsBuffer()   const;
+        // One tangent (float4: xyz, handedness) per vertex, aligned with the positions (AppendTangentStream).
+        const RHI::IRHIBuffer& GetTangentsBuffer()  const;
         const RHI::IRHIBuffer& GetIndexBuffer()     const;
         // Skinning streams, one entry per vertex like the position stream: joint indices (uint4)
         // and weights (float4), zero for static meshes (AppendSkinningStreams).
@@ -114,6 +116,7 @@ namespace HR
         std::vector<float>    m_CpuPositions;
         std::vector<float>    m_CpuTexCoords;
         std::vector<float>    m_CpuNormals;
+        std::vector<float>    m_CpuTangents;
         std::vector<uint32_t> m_CpuIndices;
         std::vector<uint32_t> m_CpuJoints;
         std::vector<float>    m_CpuWeights;
@@ -127,6 +130,7 @@ namespace HR
         std::unique_ptr<RHI::IRHIBuffer> m_PositionsBuffer;
         std::unique_ptr<RHI::IRHIBuffer> m_TexCoordsBuffer;
         std::unique_ptr<RHI::IRHIBuffer> m_NormalsBuffer;
+        std::unique_ptr<RHI::IRHIBuffer> m_TangentsBuffer;
         std::unique_ptr<RHI::IRHIBuffer> m_IndexBuffer;
         std::unique_ptr<RHI::IRHIBuffer> m_JointsBuffer;
         std::unique_ptr<RHI::IRHIBuffer> m_WeightsBuffer;

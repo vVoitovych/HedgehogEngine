@@ -87,12 +87,12 @@ namespace Renderer
             cmd.SetViewport({ 0.0f, 0.0f, static_cast<float>(color.GetWidth()),
                               static_cast<float>(color.GetHeight()), 0.0f, 1.0f });
             cmd.SetScissor({ 0, 0, color.GetWidth(), color.GetHeight() });
-            if (!frame.Positions || !frame.TexCoords || !frame.Normals || !frame.Indices)
+            if (!frame.Positions || !frame.TexCoords || !frame.Normals || !frame.Tangents || !frame.Indices)
             {
                 cmd.EndRendering(); // the clear still happens: an empty scene renders black
                 return;
             }
-            cmd.BindVertexBuffers(0, { frame.Positions, frame.TexCoords, frame.Normals }, { 0, 0, 0 });
+            cmd.BindVertexBuffers(0, { frame.Positions, frame.TexCoords, frame.Normals, frame.Tangents }, { 0, 0, 0, 0 });
             cmd.BindIndexBuffer(*frame.Indices, RHI::IndexType::Uint32);
             const RHI::IRHIDescriptorSet& view = services.AllocateForwardViewUniform(MakeForwardViewUniform(frame));
             cmd.BindDescriptorSet(pipeline, 0, view);
@@ -102,15 +102,16 @@ namespace Renderer
             DrawLitInstances(cmd, pipeline, frame, frame.OpaqueInstances, false);
 
             // Skinned instances after the rigid ones, with the skinning streams bound after the
-            // three the rigid pipeline reads. The skinned layout's push constants differ, so every
+            // four the rigid pipeline reads. The skinned layout's push constants differ, so every
             // set is bound again (the material set by DrawLitInstances).
             if (CanDrawSkinned(frame) && frame.SceneLights)
             {
                 const RHI::IRHIPipeline& skinned = services.GetPipeline(
                     data.CullBackFaces ? EnginePipeline::ForwardSkinned : EnginePipeline::ForwardSkinnedDoubleSided);
                 cmd.BindPipeline(skinned);
-                cmd.BindVertexBuffers(0, { frame.Positions, frame.TexCoords, frame.Normals, frame.Joints, frame.Weights },
-                                      { 0, 0, 0, 0, 0 });
+                cmd.BindVertexBuffers(0, { frame.Positions, frame.TexCoords, frame.Normals, frame.Tangents, frame.Joints,
+                                           frame.Weights },
+                                      { 0, 0, 0, 0, 0, 0 });
                 cmd.BindDescriptorSet(skinned, 0, view);
                 cmd.BindDescriptorSet(skinned, 2, *frame.SceneLights);
                 cmd.BindDescriptorSet(skinned, 3, *frame.JointPalette);

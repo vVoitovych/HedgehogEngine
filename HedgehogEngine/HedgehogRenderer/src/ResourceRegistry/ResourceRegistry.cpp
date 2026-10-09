@@ -1,5 +1,6 @@
 #include "ResourceRegistry.hpp"
 #include "SkinningStreams.hpp"
+#include "TangentStream.hpp"
 
 #include "ContentLoader/api/TextureLoader.hpp"
 
@@ -115,6 +116,7 @@ namespace HR
             }
             for (uint32_t idx : mesh.indices)
                 m_CpuIndices.push_back(idx);
+            AppendTangentStream(mesh, m_CpuTangents);
             AppendSkinningStreams(mesh, m_CpuJoints, m_CpuWeights);
         }
 
@@ -172,6 +174,7 @@ namespace HR
         const size_t posSize = m_CpuPositions.size() * sizeof(float);
         const size_t uvSize  = m_CpuTexCoords.size() * sizeof(float);
         const size_t nrmSize = m_CpuNormals.size()   * sizeof(float);
+        const size_t tanSize = m_CpuTangents.size()  * sizeof(float);
         const size_t idxSize = m_CpuIndices.size()   * sizeof(uint32_t);
         const size_t jntSize = m_CpuJoints.size()    * sizeof(uint32_t);
         const size_t wgtSize = m_CpuWeights.size()   * sizeof(float);
@@ -179,6 +182,7 @@ namespace HR
         m_PositionsBuffer = device.CreateBuffer(posSize, RHI::BufferUsage::VertexBuffer, RHI::MemoryUsage::CpuToGpu);
         m_TexCoordsBuffer = device.CreateBuffer(uvSize,  RHI::BufferUsage::VertexBuffer, RHI::MemoryUsage::CpuToGpu);
         m_NormalsBuffer   = device.CreateBuffer(nrmSize, RHI::BufferUsage::VertexBuffer, RHI::MemoryUsage::CpuToGpu);
+        m_TangentsBuffer  = device.CreateBuffer(tanSize, RHI::BufferUsage::VertexBuffer, RHI::MemoryUsage::CpuToGpu);
         m_IndexBuffer     = device.CreateBuffer(idxSize, RHI::BufferUsage::IndexBuffer,  RHI::MemoryUsage::CpuToGpu);
         m_JointsBuffer    = device.CreateBuffer(jntSize, RHI::BufferUsage::VertexBuffer, RHI::MemoryUsage::CpuToGpu);
         m_WeightsBuffer   = device.CreateBuffer(wgtSize, RHI::BufferUsage::VertexBuffer, RHI::MemoryUsage::CpuToGpu);
@@ -186,6 +190,7 @@ namespace HR
         m_PositionsBuffer->CopyData(m_CpuPositions.data(), posSize);
         m_TexCoordsBuffer->CopyData(m_CpuTexCoords.data(), uvSize);
         m_NormalsBuffer->CopyData(m_CpuNormals.data(),     nrmSize);
+        m_TangentsBuffer->CopyData(m_CpuTangents.data(),   tanSize);
         m_IndexBuffer->CopyData(m_CpuIndices.data(),        idxSize);
         m_JointsBuffer->CopyData(m_CpuJoints.data(),        jntSize);
         m_WeightsBuffer->CopyData(m_CpuWeights.data(),      wgtSize);
@@ -365,6 +370,7 @@ namespace HR
     const RHI::IRHIBuffer& ResourceRegistry::GetPositionsBuffer() const { return *m_PositionsBuffer; }
     const RHI::IRHIBuffer& ResourceRegistry::GetTexCoordsBuffer() const { return *m_TexCoordsBuffer; }
     const RHI::IRHIBuffer& ResourceRegistry::GetNormalsBuffer()   const { return *m_NormalsBuffer;   }
+    const RHI::IRHIBuffer& ResourceRegistry::GetTangentsBuffer()  const { return *m_TangentsBuffer;  }
     const RHI::IRHIBuffer& ResourceRegistry::GetIndexBuffer()     const { return *m_IndexBuffer;     }
     const RHI::IRHIBuffer& ResourceRegistry::GetJointsBuffer()    const { return *m_JointsBuffer;    }
     const RHI::IRHIBuffer& ResourceRegistry::GetWeightsBuffer()   const { return *m_WeightsBuffer;   }
@@ -398,6 +404,7 @@ namespace HR
         m_WeightsBuffer.reset();
         m_JointsBuffer.reset();
         m_IndexBuffer.reset();
+        m_TangentsBuffer.reset();
         m_NormalsBuffer.reset();
         m_TexCoordsBuffer.reset();
         m_PositionsBuffer.reset();

@@ -238,6 +238,7 @@ namespace RGTest
                                const std::vector<size_t>&) override
         {
             Commands.push_back("vertex " + std::to_string(buffers.size()));
+            BoundVertexBuffers.emplace_back(buffers.begin(), buffers.end());
         }
         void BindIndexBuffer(const RHI::IRHIBuffer&, RHI::IndexType, size_t) override { Commands.push_back("index"); }
         void BindDescriptorSet(const RHI::IRHIPipeline&, uint32_t setIndex, const RHI::IRHIDescriptorSet& set) override
@@ -307,6 +308,8 @@ namespace RGTest
         std::vector<const RHI::IRHIPipeline*>      BoundPipelines;
         std::vector<const RHI::IRHIDescriptorSet*> BoundSets;
         std::vector<uint32_t>                      PushedPaletteOffsets;
+        // Every vertex buffer list bound, in order.
+        std::vector<std::vector<const RHI::IRHIBuffer*>> BoundVertexBuffers;
         // Every push constant's bytes, in order.
         std::vector<std::vector<unsigned char>>    PushedData;
     };

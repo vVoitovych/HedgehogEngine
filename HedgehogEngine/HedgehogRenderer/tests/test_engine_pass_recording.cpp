@@ -172,6 +172,7 @@ TEST_CASE("The forward pass records lit draws into its colour target against the
     TestBuffer positions(1024);
     TestBuffer texCoords(1024);
     TestBuffer normals(1024);
+    TestBuffer tangents(1024);
     TestBuffer indices(1024);
     FakeDescriptorSet materialA;
     FakeDescriptorSet materialB;
@@ -197,6 +198,7 @@ TEST_CASE("The forward pass records lit draws into its colour target against the
     frame.Positions       = &positions;
     frame.TexCoords       = &texCoords;
     frame.Normals         = &normals;
+    frame.Tangents        = &tangents;
     frame.Indices         = &indices;
 
     FakeServices      services;
@@ -243,6 +245,10 @@ TEST_CASE("The forward pass records lit draws into its colour target against the
     // changes: A, then B.
     const std::vector<uint32_t> forwardSets(cmd.BoundSetIndices.end() - 4, cmd.BoundSetIndices.end());
     CHECK(forwardSets == std::vector<uint32_t>{ 0, 2, 1, 1 });
+    // Forward binds positions, UVs, normals and tangents, in the vertex description's order.
+    REQUIRE_FALSE(cmd.BoundVertexBuffers.empty());
+    CHECK(cmd.BoundVertexBuffers.back()
+          == std::vector<const RHI::IRHIBuffer*>{ &positions, &texCoords, &normals, &tangents });
 }
 
 namespace

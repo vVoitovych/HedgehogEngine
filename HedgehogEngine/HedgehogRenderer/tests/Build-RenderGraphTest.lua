@@ -23,6 +23,8 @@ project "RenderGraphTest"
         "../src/Frame/**.cpp",
         "../src/ResourceRegistry/SkinningStreams.hpp",
         "../src/ResourceRegistry/SkinningStreams.cpp",
+        "../src/ResourceRegistry/TangentStream.hpp",
+        "../src/ResourceRegistry/TangentStream.cpp",
         "../src/ResourceRegistry/MaterialUniform.hpp",
         "../src/ResourceRegistry/MaterialUniform.cpp"
     }

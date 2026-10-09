@@ -64,14 +64,15 @@ namespace Renderer
         // Gizmo pass reads them, drawing their bounds. Never scene geometry, never shadow casters.
         std::span<const HX::RenderInstance> OverlayInstances;
 
-        // Shared geometry. Meshes is indexed by RenderInstance::MeshIndex. TexCoords and Normals
-        // are only read by the forward pass.
+        // Shared geometry. Meshes is indexed by RenderInstance::MeshIndex. TexCoords, Normals and
+        // Tangents (float4: xyz along increasing u, w the handedness) are only read by the forward pass.
         RHI::IRHIBuffer*              Positions = nullptr;
         RHI::IRHIBuffer*              TexCoords = nullptr;
         RHI::IRHIBuffer*              Normals   = nullptr;
+        RHI::IRHIBuffer*              Tangents  = nullptr;
         RHI::IRHIBuffer*              Indices   = nullptr;
         // Skinning streams, aligned with Positions: four joint indices (uint4) and four weights
-        // (float4) per vertex, zero for static meshes. No pass reads them yet.
+        // (float4) per vertex, zero for static meshes.
         RHI::IRHIBuffer*              Joints    = nullptr;
         RHI::IRHIBuffer*              Weights   = nullptr;
         std::span<const MeshDrawRange> Meshes;
