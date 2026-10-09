@@ -66,7 +66,8 @@ namespace HR
         static constexpr uint32_t MAX_UI_FONT_SETS = 64;
         void SyncFonts(const HedgehogEngine::IResourceCatalog& catalog, RHI::IRHIDevice& device);
 
-        // The UI texture set of a synced path, or nullptr; and the white texture's set for a solid fill.
+        // The UI texture set of a synced path (any spelling SyncUiTextures was given), or nullptr; and the
+        // white texture's set for a solid fill. A lookup of the spelling, allocating nothing.
         const RHI::IRHIDescriptorSet* FindUiTextureSet(const std::string& path) const;
         // The set of the catalog's font index, or nullptr when it has none.
         const RHI::IRHIDescriptorSet* FindUiFontSet(size_t font) const;
@@ -151,11 +152,14 @@ namespace HR
         std::unique_ptr<RHI::IRHITexture> m_WhiteLinearTexture;
         std::unique_ptr<RHI::IRHITexture> m_FlatNormalTexture;
 
-        // Game UI textures: sampled clamped to their edges, one set each, and the white pixel.
+        // Game UI textures: sampled clamped to their edges, one set per file (by FS::MakeAssetKey, so
+        // every spelling of one image shares it and counts once against MAX_UI_TEXTURE_SETS), each
+        // spelling seen pointing at its set, and the white pixel.
         const RHI::IRHIDescriptorSetLayout*                                       m_UiTextureLayout = nullptr;
         std::unique_ptr<RHI::IRHIDescriptorPool>                                  m_UiTexturePool;
         std::unique_ptr<RHI::IRHISampler>                                         m_UiSampler;
-        std::unordered_map<std::string, std::unique_ptr<RHI::IRHIDescriptorSet>> m_UiTextureSets;
+        std::unordered_map<std::string, std::unique_ptr<RHI::IRHIDescriptorSet>> m_UiTextureSets; // by key
+        std::unordered_map<std::string, const RHI::IRHIDescriptorSet*>            m_UiTextureSpellings;
         std::unique_ptr<RHI::IRHITexture>                                         m_UiSolidTexture;
         std::unique_ptr<RHI::IRHIDescriptorSet>                                   m_UiSolidSet;
         bool                                                                      m_WarnedUiTextureLimit = false;
