@@ -100,7 +100,8 @@ namespace Renderer
             assert(frame.SceneLights && "Forward: the shared phase has not uploaded the scene lights.");
             if (frame.SceneLights)
                 cmd.BindDescriptorSet(pipeline, 2, *frame.SceneLights);
-            // The sun's shadow: the frame's shadow uniform (unshadowed without a shadow view) and the atlas.
+            // The sun's shadow: the frame's shadow uniform (unshadowed without a shadow view) and the
+            // atlas; then the environment's image-based lighting.
             ShadowUniform        unshadowed;
             const ShadowUniform* shadow = frame.Shadow;
             if (!shadow)
@@ -109,7 +110,7 @@ namespace Renderer
                 shadow     = &unshadowed;
             }
             const RHI::IRHIDescriptorSet& lighting =
-                services.AllocateForwardLighting(*shadow, *data.Graph->GetTexture(data.ShadowMap));
+                services.AllocateForwardLighting(*shadow, *data.Graph->GetTexture(data.ShadowMap), frame.Environment);
             cmd.BindDescriptorSet(pipeline, 3, lighting);
             DrawLitInstances(cmd, pipeline, frame, frame.OpaqueInstances, false);
 

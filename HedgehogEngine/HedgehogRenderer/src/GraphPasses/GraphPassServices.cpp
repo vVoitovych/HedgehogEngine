@@ -25,6 +25,11 @@ namespace Renderer
     {
         static_assert(sizeof(HM::Matrix4x4) == 16 * sizeof(float), "The palette uploads matrices as they are.");
 
+        // Where the environment uniform sits in a forward lighting slot's buffer: past the shadow
+        // uniform, at a multiple of 256, which every device's uniform offset alignment divides.
+        constexpr size_t ENVIRONMENT_UNIFORM_OFFSET = 512;
+        static_assert(sizeof(ShadowUniform) <= ENVIRONMENT_UNIFORM_OFFSET, "The shadow uniform overlaps the environment's.");
+
         // The formats every engine graph asset declares: D32Float depth and shadow maps, the
         // R16G16B16A16Float HDR target the forward pass renders radiance into, and the
         // R16G16B16A16Unorm colour output of the scene and game views, which the ToneMap pass writes
@@ -74,8 +79,19 @@ namespace Renderer
                    sizeof(ForwardViewUniform));
         CreateRing(device, m_SceneLightsRing, forwardShader.Layout.DescriptorSets[2], SCENE_LIGHTS_PER_FRAME,
                    sizeof(SceneLightsUniform));
+        // Set 3's two uniforms share one buffer per slot: the shadow at 0 (binding 0) and the
+        // environment at ENVIRONMENT_UNIFORM_OFFSET (binding 2).
         CreateRing(device, m_LightingRing, forwardShader.Layout.DescriptorSets[3], FORWARD_UNIFORMS_PER_FRAME,
-                   sizeof(ShadowUniform));
+                   ENVIRONMENT_UNIFORM_OFFSET + sizeof(EnvironmentUniform));
+        for (auto& frame : m_LightingRing.Slots)
+        {
+            for (UniformSlot& slot : frame)
+            {
+                slot.Set->WriteUniformBuffer(0, *slot.Buffer, 0, sizeof(ShadowUniform));
+                slot.Set->WriteUniformBuffer(2, *slot.Buffer, ENVIRONMENT_UNIFORM_OFFSET, sizeof(EnvironmentUniform));
+                slot.Set->Flush();
+            }
+        }
         RHI::SamplerDesc shadowSampler;
         shadowSampler.AddressModeU  = RHI::AddressMode::ClampToEdge;
         shadowSampler.AddressModeV  = RHI::AddressMode::ClampToEdge;
@@ -268,12 +284,21 @@ namespace Renderer
     }
 
     const RHI::IRHIDescriptorSet& GraphPassServices::AllocateForwardLighting(const ShadowUniform& shadow,
-                                                                             const RHI::IRHITexture& shadowAtlas)
+                                                                             const RHI::IRHITexture& shadowAtlas,
+                                                                             const ForwardEnvironment& environment)
     {
-        // Allocate copies the uniform; the atlas is this frame's graph transient, so it is written
-        // into the set each time (this slot's fence has signaled, so the set is no longer read).
-        RHI::IRHIDescriptorSet& set = Allocate(m_LightingRing, &shadow, sizeof(shadow));
+        assert(environment.Radiance && environment.BrdfLut && "Forward: the frame has no environment textures.");
+        // The uniforms are copied; the atlas is this frame's graph transient and the environment may
+        // change, so the textures are written into the set each time (this slot's fence has
+        // signaled, so the set is no longer read).
+        assert(m_LightingRing.Next < m_LightingRing.Slots[m_FrameIndex].size() && "GraphPassServices: out of forward lighting sets.");
+        UniformSlot& slot = m_LightingRing.Slots[m_FrameIndex][m_LightingRing.Next++];
+        slot.Buffer->CopyData(&shadow, sizeof(shadow));
+        slot.Buffer->CopyData(&environment.Uniform, sizeof(environment.Uniform), ENVIRONMENT_UNIFORM_OFFSET);
+        RHI::IRHIDescriptorSet& set = *slot.Set;
         set.WriteTexture(1, shadowAtlas, *m_ShadowSampler);
+        set.WriteTexture(3, *environment.Radiance, *m_LinearClampSampler);
+        set.WriteTexture(4, *environment.BrdfLut, *m_LinearClampSampler);
         set.Flush();
         return set;
     }

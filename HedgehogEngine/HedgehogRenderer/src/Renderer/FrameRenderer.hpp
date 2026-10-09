@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Environment/EnvironmentResources.hpp"
 #include "GraphPasses/GraphPassServices.hpp"
 #include "Profiling/FrameStats.hpp"
 
@@ -93,6 +94,10 @@ namespace Renderer
         // Loads the textures scene's UI draws with that the registry does not have yet.
         void SyncUiTextures(const HX::RenderScene& scene, HR::ResourceRegistry& registry);
 
+        // Makes scene's environment the one the forward passes light with, baking its map the first
+        // time its path is seen.
+        void SyncEnvironment(const HX::RenderScene& scene);
+
         // The swapchain was recreated; "main" and swapchain-relative targets follow at this
         // frame's end.
         void NotifySwapchainResized() { m_Targets.NotifySwapchainResized(); }
@@ -173,6 +178,7 @@ namespace Renderer
         const FS::FileSystemManager& m_FileSystem; // resolves virtual graph paths
 
         GraphPassServices    m_Services;
+        EnvironmentResources m_Environment;
         PassBuilderRegistry  m_Registry;
         GraphAssetLibrary    m_Library;
         GraphInstantiator    m_Instantiator;

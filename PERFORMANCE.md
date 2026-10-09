@@ -192,5 +192,25 @@ interleaved. `benchmark.yaml` has no shadow-casting light (only the set binding 
 At most about 0.05 ms, near run-to-run noise. The `Shadow` pass records in 0.032-0.040 ms and
 `Forward` in 0.014-0.016 ms, as before: the shadow pass already ran every frame.
 
+### 2026-10-09 (HE-331) — Image-based lighting from the scene's environment
+
+Every forward pass now binds the environment (its uniform, the prefiltered radiance cube and the
+BRDF table) in set 3 and adds the split-sum specular and SH diffuse per pixel; a scene without an
+environment binds a black 1x1 cube. Before = master at c3eefa6, after = this change; Release, 600
+frames, 3 runs each, same machine (RTX 2070), same session, not interleaved. The third scene is
+`Physics.yaml` with an `EnvironmentComponent` on a procedural 256x128 sky (a check scene, not
+committed). `Frame(wall)` averages per run, in ms.
+
+| Scene                   | Before (runs)       | After (runs)        | Median before → after |
+|-------------------------|---------------------|---------------------|----------------------:|
+| `benchmark.yaml`        | 2.270, 2.222, 2.254 | 2.319, 2.250, 2.249 | 2.254 → 2.250 |
+| `Physics.yaml`          | 2.130, 2.198, 2.236 | 2.055, 2.099, 2.104 | 2.198 → 2.099 |
+| Physics + environment   | 2.176, 2.063, 2.118 | 2.114, 2.165, 2.098 | 2.118 → 2.114 |
+
+No change beyond run-to-run noise. The environment is baked once per map, at its first frame, on
+the main thread: that sky took 179 ms in Release (1.7 s in Debug), logged as
+`[Environment] Baked <path> ... in <n> ms.`; the BRDF table (64x64, 256 samples) is computed once
+when the renderer starts.
+
 When a change intentionally alters performance, re-run the benchmark and update
 this table (keep the old row set; add a dated entry below it so history accumulates).

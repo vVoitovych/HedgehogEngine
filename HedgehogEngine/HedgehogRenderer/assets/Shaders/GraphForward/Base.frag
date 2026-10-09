@@ -1,8 +1,9 @@
 #version 450
 
 // The forward pass's surfaces, rigid and skinned: glTF metallic-roughness PBR under the scene's
-// lights, the sun shadowed through the cascaded atlas, written as HDR radiance (the ToneMap pass
-// maps it to the view's colour). No ambient term yet, so a surface no light reaches is black.
+// lights, the sun shadowed through the cascaded atlas, and the scene's environment as ambient light,
+// written as HDR radiance (the ToneMap pass maps it to the view's colour). Without an environment
+// there is no ambient term, so a surface no light reaches is black.
 
 layout(location = 0) in vec2 fragTexCoord;
 layout(location = 1) in vec4 inNormal;
@@ -90,8 +91,10 @@ void main()
         radiance += light;
     }
 
-    // The occlusion map darkens ambient light only, as glTF defines it: it is read once image-based
-    // lighting gives an ambient term.
+    // The occlusion map darkens ambient light only, as glTF defines it.
+    const float occlusion = 1.0f + materialData.occlusionStrength * (texture(occlusionMap, fragTexCoord).r - 1.0f);
+    radiance += AmbientLight(surface, occlusion);
+
     radiance += materialData.emissiveFactor.rgb * texture(emissiveMap, fragTexCoord).rgb;
     outColor = vec4(radiance, 1.0f);
 }

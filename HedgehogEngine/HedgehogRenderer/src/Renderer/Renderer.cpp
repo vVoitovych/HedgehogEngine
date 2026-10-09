@@ -186,6 +186,7 @@ namespace Renderer
         }
 
         m_FrameRenderer->SyncUiTextures(scene, *m_Resources);
+        m_FrameRenderer->SyncEnvironment(scene);
         m_FrameRenderer->Render(scene, *m_Resources, settings, ui);
         HH_PROFILE_FRAME();
     }
