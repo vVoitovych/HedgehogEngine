@@ -15,6 +15,8 @@ project "EditorTest"
         "../Panels/EditorIconNames.cpp",
         "../Panels/EntityIcon.hpp",
         "../Panels/EntityIcon.cpp",
+        "../Panels/MaterialSlots.hpp",
+        "../Panels/MaterialSlots.cpp",
         "../Panels/TextSearch.hpp",
         "../Panels/TextSearch.cpp",
         "../Widgets/AxisGizmo.hpp",
@@ -36,6 +38,7 @@ project "EditorTest"
         "../../ThirdParty",
         "..",              -- so "Docking/..." resolves
         "../..",           -- so "HedgehogMath/api/..." resolves
+        "../../HedgehogEngine", -- so "HedgehogEngine/api/..." resolves (MaterialSlots' header-only MaterialData)
         "."
     }
 

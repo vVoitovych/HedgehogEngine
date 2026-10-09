@@ -1,4 +1,5 @@
 #include "ContentPanel.hpp"
+#include "MaterialSlots.hpp"
 
 #include "TextSearch.hpp"
 
@@ -59,6 +60,7 @@ namespace Editor
     ContentPanelRequest ContentPanel::Draw(const ContentPanelIcons& icons)
     {
         m_OpenRequest.reset();
+        m_ImportRequest.reset();
         // A folder deleted while it was shown: fall back to the root.
         if (!GetListing(m_Current).Exists && m_Current != ROOT_FOLDER)
             Navigate(ROOT_FOLDER);
@@ -77,7 +79,8 @@ namespace Editor
         DrawGrid(icons.Types);
         ImGui::EndChild();
 
-        request.Open = m_OpenRequest;
+        request.Open            = m_OpenRequest;
+        request.ImportMaterials = m_ImportRequest;
         return request;
     }
 
@@ -139,6 +142,8 @@ namespace Editor
             Activate(path, type);
         if (ImGui::MenuItem("Show in Explorer", nullptr, false, physical.has_value()))
             (void)ShowInExplorer(*physical);
+        if (IsGltfPath(path) && ImGui::MenuItem("Import materials"))
+            m_ImportRequest = path;
         ImGui::Separator();
         if (ImGui::MenuItem("Copy path (virtual)"))
             ImGui::SetClipboardText(path.c_str());

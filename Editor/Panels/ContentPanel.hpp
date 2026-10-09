@@ -44,6 +44,8 @@ namespace Editor
     {
         std::optional<ContentOpenRequest> Open;
         bool                              CreateMaterial = false;
+        // A glTF whose materials its context menu's Import materials asked to import (a virtual path).
+        std::optional<std::string>        ImportMaterials;
     };
 
     // The Content panel, shown as Project: browses Assets/ through the virtual file system
@@ -53,7 +55,7 @@ namespace Editor
     // (ContentTypes.hpp) with its name and type below. Listings are cached and re-read at most once
     // a second, never every frame. Double-clicking a folder opens it; a file is handed back from
     // Draw() as a request. Each entry's context menu has Open, Show in Explorer and Copy path
-    // (virtual or physical).
+    // (virtual or physical), and a glTF's Import materials.
     class ContentPanel
     {
     public:
@@ -102,6 +104,7 @@ namespace Editor
         float                                    m_IconSize  = CONTENT_ICON_SIZE_DEFAULT;
         float                                    m_TreeWidth = 0.0f; // as the user last resized it
         std::optional<ContentOpenRequest>        m_OpenRequest;   // this frame's
+        std::optional<std::string>               m_ImportRequest; // this frame's
         std::optional<ContentOpenRequest>        m_PendingFolder; // opened after the grid's loop
     };
 }
