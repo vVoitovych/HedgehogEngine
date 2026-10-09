@@ -1,8 +1,8 @@
 #version 450
 
 // The forward pass's surfaces, rigid and skinned: glTF metallic-roughness PBR under the scene's
-// lights, written as HDR radiance (the ToneMap pass maps it to the view's colour). No ambient term
-// yet, so a surface no light reaches is black.
+// lights, the sun shadowed through the cascaded atlas, written as HDR radiance (the ToneMap pass
+// maps it to the view's colour). No ambient term yet, so a surface no light reaches is black.
 
 layout(location = 0) in vec2 fragTexCoord;
 layout(location = 1) in vec4 inNormal;
@@ -12,6 +12,7 @@ layout(location = 3) in vec4 inTangent; // xyz world tangent, w handedness
 #define MAX_LIGHTS_COUNT 16
 
 #include "Common/Pbr.glsl"
+#include "Common/Shadows.glsl"
 
 layout(set = 0, binding = 0) uniform ViewData
 {
@@ -70,6 +71,8 @@ void main()
     const vec4 baseColor         = texture(baseColorMap, fragTexCoord) * materialData.baseColorFactor;
     const vec4 metallicRoughness = texture(metallicRoughnessMap, fragTexCoord);
 
+    const vec3 geometricNormal = normalize(inNormal.xyz);
+
     PbrSurface surface;
     surface.position  = inWorldPosition.xyz;
     surface.normal    = SurfaceNormal();
@@ -80,7 +83,12 @@ void main()
 
     vec3 radiance = vec3(0.0f);
     for (int i = 0; i < sceneLights.lightCount; ++i)
-        radiance += ShadeLight(sceneLights.lights[i], surface);
+    {
+        vec3 light = ShadeLight(sceneLights.lights[i], surface);
+        if (i == shadowData.lightIndex)
+            light *= SunShadow(surface.position, geometricNormal, normalize(sceneLights.lights[i].direction));
+        radiance += light;
+    }
 
     // The occlusion map darkens ambient light only, as glTF defines it: it is read once image-based
     // lighting gives an ambient term.

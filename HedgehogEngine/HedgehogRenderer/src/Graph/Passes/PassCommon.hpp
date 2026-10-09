@@ -19,11 +19,12 @@ namespace RHI
 namespace Renderer
 {
     // The Forward and Gizmo passes: a colour target drawn against the view's depth. Only Forward
-    // reads CullBackFaces.
+    // reads CullBackFaces and samples ShadowMap.
     struct ForwardPassData
     {
         RGTexture                Color{};
         RGTexture                Depth{};
+        RGTexture                ShadowMap{};
         RenderGraphRuntime*      Graph         = nullptr;
         const GraphFrameContext* Context       = nullptr;
         bool                     CullBackFaces = true;

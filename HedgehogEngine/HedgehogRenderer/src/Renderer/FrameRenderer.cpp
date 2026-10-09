@@ -140,6 +140,8 @@ namespace Renderer
         SharedPhaseSettings sharedSettings;
         sharedSettings.ShadowAtlasSize  = shadowmap.GetShadowmapSize();
         sharedSettings.ShadowCasterMask = shadowmap.GetShadowCasterMask();
+        sharedSettings.Sampling         = { shadowmap.GetDepthBias(), shadowmap.GetSlopeBias(), shadowmap.GetNormalOffset(),
+                                            shadowmap.GetPcfRadius(), shadowmap.GetCascadeBlend() };
 
         RenderGraphRuntime&      graph  = *m_Runtimes[m_SlotIndex];
         const SharedPhaseOutputs shared =
@@ -336,6 +338,7 @@ namespace Renderer
         }
         frame.UiSampledTargets = sampled;
         frame.SceneLights      = shared.SceneLights;
+        frame.Shadow           = shared.Shadow;
         context           = { &m_Services, &frame };
         graph.SetFrameContext(&context);
 

@@ -3,6 +3,7 @@
 #include "PassCommon.hpp"
 
 #include "HedgehogRenderer/Graph/GraphAssetVocabulary.hpp"
+#include "HedgehogRenderer/Graph/ShadowCascades.hpp"
 
 #include "RHI/api/IRHICommandList.hpp"
 #include "RHI/api/IRHITexture.hpp"
@@ -99,11 +100,22 @@ namespace Renderer
             assert(frame.SceneLights && "Forward: the shared phase has not uploaded the scene lights.");
             if (frame.SceneLights)
                 cmd.BindDescriptorSet(pipeline, 2, *frame.SceneLights);
+            // The sun's shadow: the frame's shadow uniform (unshadowed without a shadow view) and the atlas.
+            ShadowUniform        unshadowed;
+            const ShadowUniform* shadow = frame.Shadow;
+            if (!shadow)
+            {
+                unshadowed = MakeUnshadowedUniform();
+                shadow     = &unshadowed;
+            }
+            const RHI::IRHIDescriptorSet& lighting =
+                services.AllocateForwardLighting(*shadow, *data.Graph->GetTexture(data.ShadowMap));
+            cmd.BindDescriptorSet(pipeline, 3, lighting);
             DrawLitInstances(cmd, pipeline, frame, frame.OpaqueInstances, false);
 
             // Skinned instances after the rigid ones, with the skinning streams bound after the
-            // four the rigid pipeline reads. The skinned layout's push constants differ, so every
-            // set is bound again (the material set by DrawLitInstances).
+            // four the rigid pipeline reads and the palette at set 4. The skinned layout's push
+            // constants differ, so every set is bound again (the material set by DrawLitInstances).
             if (CanDrawSkinned(frame) && frame.SceneLights)
             {
                 const RHI::IRHIPipeline& skinned = services.GetPipeline(
@@ -114,7 +126,8 @@ namespace Renderer
                                       { 0, 0, 0, 0, 0, 0 });
                 cmd.BindDescriptorSet(skinned, 0, view);
                 cmd.BindDescriptorSet(skinned, 2, *frame.SceneLights);
-                cmd.BindDescriptorSet(skinned, 3, *frame.JointPalette);
+                cmd.BindDescriptorSet(skinned, 3, lighting);
+                cmd.BindDescriptorSet(skinned, 4, *frame.JointPalette);
                 DrawLitInstances(cmd, skinned, frame, frame.SkinnedInstances, true);
             }
             cmd.EndRendering();
@@ -131,7 +144,8 @@ namespace Renderer
                 {
                     data.Depth = invocation.GetSlot("depth");
                     pass.DepthReadOnly(data.Depth);
-                    pass.SampleTexture(invocation.GetSlot("shadowMap"));
+                    data.ShadowMap = invocation.GetSlot("shadowMap");
+                    pass.SampleTexture(data.ShadowMap);
                     data.Color         = pass.ColorTarget(invocation.GetSlot("color"));
                     data.CullBackFaces = cull.value_or(true);
                     data.Graph         = &graph;

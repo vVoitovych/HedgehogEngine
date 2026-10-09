@@ -22,6 +22,9 @@ namespace RHI
 
 namespace Renderer
 {
+    struct ShadowCascades;
+    struct ShadowUniform;
+
     // Where one mesh's indices sit in the shared geometry buffers.
     struct MeshDrawRange
     {
@@ -44,6 +47,13 @@ namespace Renderer
         std::optional<HM::Vector3> ShadowLightDirection;
         uint32_t                   ShadowCascadeCount       = 1;
         float                      ShadowCascadeSplitLambda = 0.5f;
+
+        // The shadow frame's cascades, computed once by the shared phase, which the Shadow pass
+        // renders (it computes them itself when null, as in headless tests).
+        const ShadowCascades* Cascades = nullptr;
+        // Every view's: how its forward pass reads the sun's shadow from the atlas (the same
+        // cascades, SharedPhaseOutputs::Shadow). Null when the frame has no shadow view: unshadowed.
+        const ShadowUniform* Shadow = nullptr;
 
         // Opaque instances only: what the depth prepass, shadow and forward passes draw. For a view,
         // those on a layer in its mask whose bounds its frustum can see (ViewCulling.hpp), and only
@@ -203,6 +213,11 @@ namespace Renderer
         // The forward pass's set 2: the frame's lights. One allocation per frame, by the shared
         // phase; every view's forward pass binds the same set.
         virtual const RHI::IRHIDescriptorSet& AllocateSceneLightsUniform(const SceneLightsUniform& uniform) = 0;
+
+        // The forward pass's set 3: the shadow uniform and the shadow atlas, read through a comparison
+        // sampler. One allocation per forward pass per frame, from its own per-frame ring.
+        virtual const RHI::IRHIDescriptorSet& AllocateForwardLighting(const ShadowUniform& shadow,
+                                                                      const RHI::IRHITexture& shadowAtlas) = 0;
 
         // A descriptor set (set 0, binding 0) sampling texture linearly, clamped to its edge, valid
         // until this frame slot comes round again: for a texture only known at execute time, as a

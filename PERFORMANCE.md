@@ -176,5 +176,21 @@ No change beyond run-to-run noise: `benchmark.yaml`'s materials have no maps, so
 path is skipped, and its few lights keep the per-pixel cost small. The `Forward` pass records in
 0.012-0.014 ms either way.
 
+### 2026-10-09 (HE-328) — PCF sun shadows in the forward pass
+
+Every forward pass now binds the shadow set and, for the sun, picks a cascade and averages 9
+comparison taps at the default PCF radius of 1 (2x2-filtered each). Before = master at 7d2024e,
+after = this change; Release, 600 frames, 3 runs each, same machine (RTX 2070), same session, not
+interleaved. `benchmark.yaml` has no shadow-casting light (only the set binding is new);
+`Physics.yaml`'s sun casts. `Frame(wall)` averages per run, in ms.
+
+| Scene            | Before (runs)       | After (runs)        | Median before → after |
+|------------------|---------------------|---------------------|----------------------:|
+| `benchmark.yaml` | 2.129, 2.155, 2.171 | 2.203, 2.192, 2.212 | 2.155 → 2.203 |
+| `Physics.yaml`   | 1.954, 2.032, 2.046 | 2.053, 2.023, 2.036 | 2.032 → 2.036 |
+
+At most about 0.05 ms, near run-to-run noise. The `Shadow` pass records in 0.032-0.040 ms and
+`Forward` in 0.014-0.016 ms, as before: the shadow pass already ran every frame.
+
 When a change intentionally alters performance, re-run the benchmark and update
 this table (keep the old row set; add a dated entry below it so history accumulates).

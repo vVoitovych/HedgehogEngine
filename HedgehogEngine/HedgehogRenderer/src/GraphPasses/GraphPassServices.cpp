@@ -4,6 +4,8 @@
 #include "Pipeline/ShaderLoader.hpp"
 #include "ResourceRegistry/ResourceRegistry.hpp"
 
+#include "HedgehogRenderer/Graph/ShadowCascades.hpp"
+
 #include "HedgehogCommon/api/EngineRenderAssets.hpp"
 #include "HedgehogCommon/api/RendererSettings.hpp"
 
@@ -63,8 +65,8 @@ namespace Renderer
         const ShaderPipelineDesc depthSkinnedShader   = ShaderLoader::Load(device, std::string(HedgehogEngine::DEPTH_PREPASS_SKINNED_SHADER), fileSystem);
         const ShaderPipelineDesc forwardSkinnedShader = ShaderLoader::Load(device, std::string(HedgehogEngine::FORWARD_SKINNED_SHADER), fileSystem);
         const ShaderPipelineDesc shadowSkinnedShader  = ShaderLoader::Load(device, std::string(HedgehogEngine::SHADOW_SKINNED_SHADER), fileSystem);
-        assert(!depthShader.Layout.DescriptorSets.empty() && forwardShader.Layout.DescriptorSets.size() >= 3);
-        assert(depthSkinnedShader.Layout.DescriptorSets.size() >= 2 && forwardSkinnedShader.Layout.DescriptorSets.size() >= 4);
+        assert(!depthShader.Layout.DescriptorSets.empty() && forwardShader.Layout.DescriptorSets.size() >= 4);
+        assert(depthSkinnedShader.Layout.DescriptorSets.size() >= 2 && forwardSkinnedShader.Layout.DescriptorSets.size() >= 5);
 
         // Both depth-only shaders and the gizmo shader declare the same set 0: one viewProj uniform buffer.
         CreateRing(device, m_ViewProjRing, depthShader.Layout.DescriptorSets[0], UNIFORMS_PER_FRAME, sizeof(float) * 16);
@@ -72,12 +74,21 @@ namespace Renderer
                    sizeof(ForwardViewUniform));
         CreateRing(device, m_SceneLightsRing, forwardShader.Layout.DescriptorSets[2], SCENE_LIGHTS_PER_FRAME,
                    sizeof(SceneLightsUniform));
+        CreateRing(device, m_LightingRing, forwardShader.Layout.DescriptorSets[3], FORWARD_UNIFORMS_PER_FRAME,
+                   sizeof(ShadowUniform));
+        RHI::SamplerDesc shadowSampler;
+        shadowSampler.AddressModeU  = RHI::AddressMode::ClampToEdge;
+        shadowSampler.AddressModeV  = RHI::AddressMode::ClampToEdge;
+        shadowSampler.AddressModeW  = RHI::AddressMode::ClampToEdge;
+        shadowSampler.MaxAnisotropy = 1.0f;
+        shadowSampler.Compare       = RHI::CompareOp::LessOrEqual;
+        m_ShadowSampler = device.CreateSampler(shadowSampler);
         m_MaterialLayout    = device.CreateDescriptorSetLayout(forwardShader.Layout.DescriptorSets[1]);
         m_MaterialPoolSizes = PipelineLoader::MakePoolSizes(forwardShader.Layout.DescriptorSets[1],
                                                             HedgehogEngine::MAX_MATERIAL_COUNT);
 
         const std::vector<const RHI::IRHIDescriptorSetLayout*> forwardLayouts = {
-            m_ForwardRing.Layout.get(), m_MaterialLayout.get(), m_SceneLightsRing.Layout.get() };
+            m_ForwardRing.Layout.get(), m_MaterialLayout.get(), m_SceneLightsRing.Layout.get(), m_LightingRing.Layout.get() };
 
         const RHI::CullMode depthCull = depthShader.Pipeline.CullMode;
         m_DepthPrepassPipeline = CreatePipeline(device, depthShader, { m_ViewProjRing.Layout.get() }, {}, depthCull);
@@ -94,9 +105,9 @@ namespace Renderer
         m_DebugLinesPipeline = CreatePipeline(device, linesShader, { m_ViewProjRing.Layout.get() }, { COLOR_FORMAT },
                                               linesShader.Pipeline.CullMode);
 
-        // The depth prepass's and shadow's set 1 and forward's set 3 declare the same binding: one palette set
+        // The depth prepass's and shadow's set 1 and forward's set 4 declare the same binding: one palette set
         // binds to both. One set per frame in flight.
-        const std::vector<RHI::DescriptorBinding>& paletteBindings = forwardSkinnedShader.Layout.DescriptorSets[3];
+        const std::vector<RHI::DescriptorBinding>& paletteBindings = forwardSkinnedShader.Layout.DescriptorSets[4];
         m_PaletteLayout = device.CreateDescriptorSetLayout(paletteBindings);
         m_PalettePool   = device.CreateDescriptorPool(HedgehogEngine::MAX_FRAMES_IN_FLIGHT,
                                                       PipelineLoader::MakePoolSizes(paletteBindings,
@@ -193,6 +204,7 @@ namespace Renderer
         m_ViewProjRing.Next    = 0;
         m_ForwardRing.Next     = 0;
         m_SceneLightsRing.Next = 0;
+        m_LightingRing.Next    = 0;
         m_NextSampledTexture   = 0;
     }
 
@@ -232,7 +244,7 @@ namespace Renderer
         return *m_GizmoBoxLines;
     }
 
-    const RHI::IRHIDescriptorSet& GraphPassServices::Allocate(UniformRing& ring, const void* data, size_t size)
+    RHI::IRHIDescriptorSet& GraphPassServices::Allocate(UniformRing& ring, const void* data, size_t size)
     {
         assert(ring.Next < ring.Slots[m_FrameIndex].size() && "GraphPassServices: out of uniforms for this frame.");
         UniformSlot& slot = ring.Slots[m_FrameIndex][ring.Next++];
@@ -253,6 +265,17 @@ namespace Renderer
     const RHI::IRHIDescriptorSet& GraphPassServices::AllocateSceneLightsUniform(const SceneLightsUniform& uniform)
     {
         return Allocate(m_SceneLightsRing, &uniform, sizeof(uniform));
+    }
+
+    const RHI::IRHIDescriptorSet& GraphPassServices::AllocateForwardLighting(const ShadowUniform& shadow,
+                                                                             const RHI::IRHITexture& shadowAtlas)
+    {
+        // Allocate copies the uniform; the atlas is this frame's graph transient, so it is written
+        // into the set each time (this slot's fence has signaled, so the set is no longer read).
+        RHI::IRHIDescriptorSet& set = Allocate(m_LightingRing, &shadow, sizeof(shadow));
+        set.WriteTexture(1, shadowAtlas, *m_ShadowSampler);
+        set.Flush();
+        return set;
     }
 
     const RHI::IRHIDescriptorSet& GraphPassServices::AllocateSampledTexture(const RHI::IRHITexture& texture)
