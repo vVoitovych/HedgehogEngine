@@ -141,5 +141,24 @@ No frame-time change beyond run-to-run noise (the per-frame paths never loop ove
   test that builds an `EngineContext` now allocates the larger arrays, and a few test helpers
   scan every id up to `MAX_ENTITIES`.
 
+### 2026-10-09 (HE-325) — HDR target and tone mapping
+
+Every scene and game view now renders Forward into a transient `R16G16B16A16Float` `hdr`
+target and adds a `ToneMap` pass: one fullscreen triangle sampling it into the view's colour
+output. That is one more pass, one more full-size render target and one more full-screen read
+and write per visible view. Before = master at 583464a, after = this change; Release,
+`benchmark.yaml`, 600 frames, 3 runs each, same machine (RTX 2070), same session, not
+interleaved. Averages per run, in ms.
+
+| Row                  | Before (runs)       | After (runs)        | Median before → after |
+|----------------------|---------------------|---------------------|----------------------:|
+| `RenderFrame(total)` | 1.876, 1.921, 1.933 | 2.041, 1.987, 1.991 | 1.921 → 1.991 |
+| `Frame(wall)`        | 2.100, 2.152, 2.178 | 2.324, 2.263, 2.263 | 2.152 → 2.263 |
+
+The `ToneMap` pass records in 0.009-0.010 ms of CPU; the rest of the ~0.1 ms is GPU time
+showing up in `RenderFrame(total)`'s fence wait (the fastest frames went from 0.49-0.52 to
+0.57-0.58 ms of wall time). Well inside the 16.6 ms budget; the cost scales with the views'
+pixel counts, not the scene.
+
 When a change intentionally alters performance, re-run the benchmark and update
 this table (keep the old row set; add a dated entry below it so history accumulates).
