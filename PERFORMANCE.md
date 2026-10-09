@@ -212,5 +212,22 @@ the main thread: that sky took 179 ms in Release (1.7 s in Debug), logged as
 `[Environment] Baked <path> ... in <n> ms.`; the BRDF table (64x64, 256 samples) is computed once
 when the renderer starts.
 
+### 2026-10-09 (HE-332) — The skybox
+
+A `Skybox` pass now runs in every scene and game view, between `Forward` and `ToneMap`; it draws one
+fullscreen triangle only when the scene has a baked environment that shows its skybox. Before =
+master at 130e78b, after = this change; Release, 600 frames, 3 runs each, same machine (RTX 2070),
+same session, not interleaved. The third scene is `Physics.yaml` with an `EnvironmentComponent` on
+a procedural sky (a check scene, not committed), the only one that draws the sky. `Frame(wall)`
+averages per run, in ms.
+
+| Scene                   | Before (runs)       | After (runs)        | Median before → after |
+|-------------------------|---------------------|---------------------|----------------------:|
+| `benchmark.yaml`        | 2.192, 2.185, 2.377 | 2.173, 2.199, 2.205 | 2.192 → 2.199 |
+| `Physics.yaml`          | 2.058, 2.052, 2.120 | 2.040, 2.086, 2.080 | 2.058 → 2.080 |
+| Physics + environment   | 2.121, 2.158, 2.226 | 2.067, 2.071, 2.112 | 2.158 → 2.071 |
+
+No change beyond run-to-run noise; the `Skybox` pass records in 0.007 ms with the sky drawn.
+
 When a change intentionally alters performance, re-run the benchmark and update
 this table (keep the old row set; add a dated entry below it so history accumulates).
