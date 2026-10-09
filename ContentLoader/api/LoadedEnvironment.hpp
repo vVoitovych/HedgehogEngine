@@ -7,7 +7,8 @@
 #include <vector>
 
 // Plain data of the CPU environment bake (EnvironmentBake.hpp): an equirectangular HDR image, the
-// cubemap made from it and its diffuse irradiance as spherical harmonics.
+// cubemap made from it, its diffuse irradiance as spherical harmonics, and what the bake hands the
+// renderer: the prefiltered radiance cube and the BRDF table, in half floats.
 namespace ContentLoader
 {
     // A decoded Radiance .hdr: linear RGB floats, 3 per texel, row 0 the top row.
@@ -55,5 +56,34 @@ namespace ContentLoader
     struct ShIrradiance
     {
         std::array<HM::Vector3, SH_COEFFICIENT_COUNT> Coefficients{};
+    };
+
+    // How BakeEnvironment works: the radiance cube's face size (mip 0; the chain goes down to 1x1) and
+    // the GGX samples per texel of every prefiltered mip.
+    struct EnvironmentBakeDesc
+    {
+        uint32_t FaceSize    = 256;
+        uint32_t SampleCount = 32;
+    };
+
+    // A baked environment, ready to upload: the radiance cube prefiltered for GGX, mip m for roughness
+    // m / (MipCount - 1) (mip 0 the environment itself, which the skybox shows), as half-float RGBA
+    // (4 per texel, row by row, FaceSize >> m texels square, at least 1), Mips[mip][face] in Vulkan's
+    // layer order; and its diffuse irradiance. Not rotated: the renderer turns directions instead.
+    struct BakedEnvironment
+    {
+        uint32_t                                                         FaceSize = 0;
+        uint32_t                                                         MipCount = 0;
+        std::vector<std::array<std::vector<uint16_t>, CUBE_FACE_COUNT>> Mips;
+        ShIrradiance                                                     Sh;
+    };
+
+    // The split-sum BRDF table: for N.V along x and roughness along y (texel centres, (i + 0.5) / Size),
+    // the scale and bias applied to F0 (specular = prefiltered * (F0 * scale + bias)), as half-float RG
+    // (2 per texel, row by row, row 0 roughness near 0).
+    struct BrdfLut
+    {
+        uint32_t              Size = 0;
+        std::vector<uint16_t> Texels;
     };
 }
