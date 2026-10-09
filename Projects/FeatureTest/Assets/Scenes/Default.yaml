@@ -42,7 +42,7 @@ Scene:
               MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
             RenderComponent:
               Visible: true
-              Material: Materials\test2.material
+              Material: Models\DamagedHelmet\DamagedHelmet_Material_MR.material
             Children:
               []
       - Entity: 3
