@@ -227,6 +227,7 @@ namespace Renderer
             frame.Positions = const_cast<RHI::IRHIBuffer*>(&resources.GetPositionsBuffer());
             frame.TexCoords = const_cast<RHI::IRHIBuffer*>(&resources.GetTexCoordsBuffer());
             frame.Normals   = const_cast<RHI::IRHIBuffer*>(&resources.GetNormalsBuffer());
+            frame.Tangents  = const_cast<RHI::IRHIBuffer*>(&resources.GetTangentsBuffer());
             frame.Indices   = const_cast<RHI::IRHIBuffer*>(&resources.GetIndexBuffer());
             frame.Joints    = const_cast<RHI::IRHIBuffer*>(&resources.GetJointsBuffer());
             frame.Weights   = const_cast<RHI::IRHIBuffer*>(&resources.GetWeightsBuffer());

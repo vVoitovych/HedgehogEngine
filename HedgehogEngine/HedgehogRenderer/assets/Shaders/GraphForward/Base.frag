@@ -1,12 +1,17 @@
 #version 450
 
+// The forward pass's surfaces, rigid and skinned: glTF metallic-roughness PBR under the scene's
+// lights, written as HDR radiance (the ToneMap pass maps it to the view's colour). No ambient term
+// yet, so a surface no light reaches is black.
+
 layout(location = 0) in vec2 fragTexCoord;
 layout(location = 1) in vec4 inNormal;
 layout(location = 2) in vec4 inWorldPosition;
+layout(location = 3) in vec4 inTangent; // xyz world tangent, w handedness
 
 #define MAX_LIGHTS_COUNT 16
 
-#include "Common/Lighting.glsl"
+#include "Common/Pbr.glsl"
 
 layout(set = 0, binding = 0) uniform ViewData
 {
@@ -34,6 +39,9 @@ layout(set = 1, binding = 3) uniform sampler2D metallicRoughnessMap;
 layout(set = 1, binding = 4) uniform sampler2D occlusionMap;
 layout(set = 1, binding = 5) uniform sampler2D emissiveMap;
 
+// MaterialTextureBinding's bits in textureFlags.
+const uint NORMAL_MAP_FLAG = 1u << 1;
+
 layout(set = 2, binding = 0) uniform SceneLights
 {
     Light lights[MAX_LIGHTS_COUNT];
@@ -42,17 +50,40 @@ layout(set = 2, binding = 0) uniform SceneLights
 
 layout(location = 0) out vec4 outColor;
 
+// The interpolated normal, bent by the normal map through the tangent basis when the material
+// has one (its xy scaled by normalScale, as glTF defines it).
+vec3 SurfaceNormal()
+{
+    const vec3 normal = normalize(inNormal.xyz);
+    if ((materialData.textureFlags & NORMAL_MAP_FLAG) == 0u)
+        return normal;
+
+    const vec3 tangent   = normalize(inTangent.xyz - normal * dot(normal, inTangent.xyz));
+    const vec3 bitangent = cross(normal, tangent) * (inTangent.w < 0.0f ? -1.0f : 1.0f);
+    vec3 sampled = texture(normalMap, fragTexCoord).xyz * 2.0f - 1.0f;
+    sampled.xy  *= materialData.normalScale;
+    return normalize(mat3(tangent, bitangent, normal) * sampled);
+}
+
 void main()
 {
-    SurfaceData data;
-    data.pos    = inWorldPosition;
-    data.norm   = inNormal;
-    data.albedo = texture(baseColorMap, fragTexCoord) * materialData.baseColorFactor;
-    outColor    = vec4(0.0f, 0.0f, 0.0f, 0.0f);
+    const vec4 baseColor         = texture(baseColorMap, fragTexCoord) * materialData.baseColorFactor;
+    const vec4 metallicRoughness = texture(metallicRoughnessMap, fragTexCoord);
 
+    PbrSurface surface;
+    surface.position  = inWorldPosition.xyz;
+    surface.normal    = SurfaceNormal();
+    surface.view      = normalize(viewData.eyePos.xyz - inWorldPosition.xyz);
+    surface.baseColor = baseColor.rgb;
+    surface.metallic  = clamp(materialData.metallic * metallicRoughness.b, 0.0f, 1.0f);
+    surface.roughness = clamp(materialData.roughness * metallicRoughness.g, 0.0f, 1.0f);
+
+    vec3 radiance = vec3(0.0f);
     for (int i = 0; i < sceneLights.lightCount; ++i)
-    {
-        outColor += CalculateLight(sceneLights.lights[i], data, viewData.eyePos);
-    }
-    outColor.a = 1.0f;
+        radiance += ShadeLight(sceneLights.lights[i], surface);
+
+    // The occlusion map darkens ambient light only, as glTF defines it: it is read once image-based
+    // lighting gives an ambient term.
+    radiance += materialData.emissiveFactor.rgb * texture(emissiveMap, fragTexCoord).rgb;
+    outColor = vec4(radiance, 1.0f);
 }

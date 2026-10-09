@@ -24,6 +24,7 @@ namespace
         TestBuffer        Positions{ 1024 };
         TestBuffer        TexCoords{ 1024 };
         TestBuffer        Normals{ 1024 };
+        TestBuffer        Tangents{ 1024 };
         TestBuffer        Indices{ 1024 };
         TestBuffer        Joints{ 1024 };
         TestBuffer        Weights{ 1024 };
@@ -45,6 +46,7 @@ namespace
             frame.Positions      = &Positions;
             frame.TexCoords      = &TexCoords;
             frame.Normals        = &Normals;
+            frame.Tangents       = &Tangents;
             frame.Indices        = &Indices;
             frame.Joints         = &Joints;
             frame.Weights        = &Weights;
@@ -123,7 +125,7 @@ namespace
     const CommandList RIGID_PREPASS = { "begin", "pipeline", "set 0", "vertex 1", "index",
                                         "push 64", "draw 36", "push 64", "draw 120" };
     const CommandList RIGID_SHADOW  = RIGID_PREPASS;
-    const CommandList RIGID_FORWARD = { "begin", "pipeline", "vertex 3", "index", "set 0", "set 2",
+    const CommandList RIGID_FORWARD = { "begin", "pipeline", "vertex 4", "index", "set 0", "set 2",
                                         "set 1", "push 64", "draw 36", "set 1", "push 64", "draw 120" };
 }
 
@@ -174,7 +176,7 @@ TEST_CASE("Skinned instances draw after the rigid ones with the skinned pipeline
     CHECK(Rendering(cmd, 1) == shadow);
 
     CommandList forward = RIGID_FORWARD;
-    forward.insert(forward.end(), { "pipeline", "vertex 5", "set 0", "set 2", "set 3",
+    forward.insert(forward.end(), { "pipeline", "vertex 6", "set 0", "set 2", "set 3",
                                     "set 1", "push 68", "draw 120", "push 68", "draw 36" });
     CHECK(Rendering(cmd, 2) == forward);
 
@@ -188,6 +190,33 @@ TEST_CASE("Skinned instances draw after the rigid ones with the skinned pipeline
     CHECK(bound(EnginePipeline::ForwardSkinnedDoubleSided) == 0);
     CHECK(std::count(cmd.BoundSets.begin(), cmd.BoundSets.end(), &scene.Palette) == 3);
     CHECK(cmd.PushedPaletteOffsets == std::vector<uint32_t>{ 0, 2, 0, 2, 0, 2 });
+
+    // Forward's rigid and skinned draws both read the tangents, right after the normals; the
+    // skinned ones then the joints and weights, as SkinnedFullMesh.vdes lists them.
+    REQUIRE(cmd.BoundVertexBuffers.size() >= 2);
+    const auto& forwardRigid   = cmd.BoundVertexBuffers[cmd.BoundVertexBuffers.size() - 2];
+    const auto& forwardSkinned = cmd.BoundVertexBuffers.back();
+    CHECK(forwardRigid == std::vector<const RHI::IRHIBuffer*>{ &scene.Positions, &scene.TexCoords, &scene.Normals,
+                                                               &scene.Tangents });
+    CHECK(forwardSkinned == std::vector<const RHI::IRHIBuffer*>{ &scene.Positions, &scene.TexCoords, &scene.Normals,
+                                                                 &scene.Tangents, &scene.Joints, &scene.Weights });
+}
+
+TEST_CASE("Without the tangent stream the forward pass only clears")
+{
+    SkinnedScene             scene;
+    const HX::RenderInstance rigid[]   = { Rigid(0, 0) };
+    const HX::RenderInstance skinned[] = { Skinned(1, 0, 0) };
+
+    GraphFrameData frame   = scene.MakeFrame();
+    frame.OpaqueInstances  = rigid;
+    frame.SkinnedInstances = skinned;
+    frame.Tangents         = nullptr;
+
+    FakeServices         services;
+    RecordingCommandList cmd;
+    Record(frame, services, cmd);
+    CHECK(Rendering(cmd, 2) == CommandList{ "begin", "pipeline" });
 }
 
 TEST_CASE("A double-sided forward pass draws skinned instances with the double-sided skinned pipeline")
