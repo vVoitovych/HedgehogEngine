@@ -43,6 +43,7 @@ namespace RGTest
                 case Renderer::EnginePipeline::ShadowSkinned:             return m_ShadowSkinned;
                 case Renderer::EnginePipeline::GameUi:                    return m_GameUi;
                 case Renderer::EnginePipeline::DebugLines:                return m_DebugLines;
+                case Renderer::EnginePipeline::ToneMap:                   return m_ToneMap;
                 default:                                     return m_Forward;
             }
         }
@@ -63,9 +64,18 @@ namespace RGTest
             return m_SceneLights;
         }
 
-        std::vector<float>   UploadedFirstElements;
-        int                  ForwardViewUploads = 0;
-        std::vector<int32_t> SceneLightCounts;
+        const RHI::IRHIDescriptorSet& AllocateSampledTexture(const RHI::IRHITexture& texture) override
+        {
+            SampledTextures.push_back(&texture);
+            return m_SampledTexture;
+        }
+
+        const RHI::IRHIDescriptorSet& GetSampledTextureSet() const { return m_SampledTexture; }
+
+        std::vector<float>                   UploadedFirstElements;
+        int                                  ForwardViewUploads = 0;
+        std::vector<int32_t>                 SceneLightCounts;
+        std::vector<const RHI::IRHITexture*> SampledTextures;
 
     private:
         FakePipeline      m_Depth;
@@ -78,9 +88,11 @@ namespace RGTest
         FakePipeline      m_ShadowSkinned;
         FakePipeline      m_GameUi;
         FakePipeline      m_DebugLines;
+        FakePipeline      m_ToneMap;
         TestBuffer        m_GizmoBoxLines{ Renderer::GIZMO_BOX_LINE_VERTICES * 12 };
         FakeDescriptorSet m_Set;
         FakeDescriptorSet m_SceneLights;
+        FakeDescriptorSet m_SampledTexture;
     };
 
     inline HX::RenderInstance Instance(uint64_t meshIndex, uint32_t layer = 0)

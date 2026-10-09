@@ -1,6 +1,7 @@
 # The game view (RENDERING.md section 7): what a camera entity renders, in the editor's game panel
 # and in a game build. The shadow atlas is not the view's own: the shared frame phase renders it
-# once for every view (SharedPhase.hpp), and the graph imports it.
+# once for every view (SharedPhase.hpp), and the graph imports it. Forward renders HDR radiance into
+# hdr, which ToneMap maps onto the LDR colour output the game UI then draws over.
 # Held to a hand-written C++ twin by RenderGraphTest (test_shipped_graphs.cpp).
 version: 2
 outputs:
@@ -11,6 +12,9 @@ outputs:
 resources:
   - name: depth
     format: D32Float
+    size: RelativeToResult(1.0)
+  - name: hdr
+    format: R16G16B16A16Float
     size: RelativeToResult(1.0)
 imports:
   - name: shadowAtlas
@@ -23,11 +27,16 @@ passes:
   - type: Forward
     name: Forward
     bindings:
-      color: color
+      color: hdr
       depth: depth
       shadowMap: shadowAtlas
     parameters:
       cullBackFaces: true
+  - type: ToneMap
+    name: ToneMap
+    bindings:
+      hdr: hdr
+      color: color
   - type: GameUi
     name: GameUi
     bindings:

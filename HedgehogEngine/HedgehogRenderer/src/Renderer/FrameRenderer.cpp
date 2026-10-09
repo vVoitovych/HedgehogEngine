@@ -248,6 +248,7 @@ namespace Renderer
         const auto& shadowmap          = *settings.GetShadowmapSettings();
         frame.ShadowCascadeCount       = shadowmap.GetCascadesCount();
         frame.ShadowCascadeSplitLambda = shadowmap.GetCascadeSplitLambda();
+        frame.Exposure                 = scene.Environment.Present ? scene.Environment.Exposure : 0.0f;
         m_SceneFrame = frame;
     }
 

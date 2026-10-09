@@ -23,9 +23,12 @@ namespace Renderer
     {
         static_assert(sizeof(HM::Matrix4x4) == 16 * sizeof(float), "The palette uploads matrices as they are.");
 
-        // The formats every engine graph asset declares: D32Float depth and shadow maps, and a
-        // R16G16B16A16Unorm colour output for the scene and game views.
+        // The formats every engine graph asset declares: D32Float depth and shadow maps, the
+        // R16G16B16A16Float HDR target the forward pass renders radiance into, and the
+        // R16G16B16A16Unorm colour output of the scene and game views, which the ToneMap pass writes
+        // and the gizmos and game UI draw over.
         constexpr RHI::Format DEPTH_FORMAT = RHI::Format::D32Float;
+        constexpr RHI::Format HDR_FORMAT   = RHI::Format::R16G16B16A16Float;
         constexpr RHI::Format COLOR_FORMAT = RHI::Format::R16G16B16A16Unorm;
 
         // The twelve edges of the unit cube [0, 1]^3, two vertices each, as GetGizmoBoxLines hands out.
@@ -80,9 +83,9 @@ namespace Renderer
         m_DepthPrepassPipeline = CreatePipeline(device, depthShader, { m_ViewProjRing.Layout.get() }, {}, depthCull);
         m_ShadowPipeline       = CreatePipeline(device, shadowShader, { m_ViewProjRing.Layout.get() }, {},
                                                 shadowShader.Pipeline.CullMode);
-        m_ForwardPipeline      = CreatePipeline(device, forwardShader, forwardLayouts, { COLOR_FORMAT },
+        m_ForwardPipeline      = CreatePipeline(device, forwardShader, forwardLayouts, { HDR_FORMAT },
                                                 forwardShader.Pipeline.CullMode);
-        m_ForwardDoubleSidedPipeline = CreatePipeline(device, forwardShader, forwardLayouts, { COLOR_FORMAT },
+        m_ForwardDoubleSidedPipeline = CreatePipeline(device, forwardShader, forwardLayouts, { HDR_FORMAT },
                                                       RHI::CullMode::None);
         m_GizmoPipeline = CreatePipeline(device, gizmoShader, { m_ViewProjRing.Layout.get() }, { COLOR_FORMAT },
                                          gizmoShader.Pipeline.CullMode);
@@ -109,10 +112,10 @@ namespace Renderer
         m_ShadowSkinnedPipeline = CreatePipeline(device, shadowSkinnedShader,
                                                  { m_ViewProjRing.Layout.get(), m_PaletteLayout.get() }, {},
                                                  shadowSkinnedShader.Pipeline.CullMode);
-        m_ForwardSkinnedPipeline = CreatePipeline(device, forwardSkinnedShader, forwardSkinnedLayouts, { COLOR_FORMAT },
+        m_ForwardSkinnedPipeline = CreatePipeline(device, forwardSkinnedShader, forwardSkinnedLayouts, { HDR_FORMAT },
                                                   forwardSkinnedShader.Pipeline.CullMode);
         m_ForwardSkinnedDoubleSidedPipeline = CreatePipeline(device, forwardSkinnedShader, forwardSkinnedLayouts,
-                                                             { COLOR_FORMAT }, RHI::CullMode::None);
+                                                             { HDR_FORMAT }, RHI::CullMode::None);
 
         // The game UI draws into the colour target alone: no depth attachment.
         const ShaderPipelineDesc gameUiShader = ShaderLoader::Load(device, std::string(HedgehogEngine::GAME_UI_SHADER), fileSystem);
@@ -123,6 +126,33 @@ namespace Renderer
         gameUiDesc.ColorAttachmentFormats = { COLOR_FORMAT };
         gameUiDesc.DepthAttachmentFormat  = RHI::Format::Undefined;
         m_GameUiPipeline = device.CreateGraphicsPipeline(gameUiDesc);
+
+        // The tone map: the HDR target sampled through a ring of sets, onto the colour output with
+        // no depth attachment.
+        const ShaderPipelineDesc toneMapShader = ShaderLoader::Load(device, std::string(HedgehogEngine::TONE_MAP_SHADER), fileSystem);
+        assert(!toneMapShader.Layout.DescriptorSets.empty());
+        const std::vector<RHI::DescriptorBinding>& sampledBindings = toneMapShader.Layout.DescriptorSets[0];
+        const uint32_t sampledSets = SAMPLED_TEXTURES_PER_FRAME * HedgehogEngine::MAX_FRAMES_IN_FLIGHT;
+        m_SampledTextureLayout = device.CreateDescriptorSetLayout(sampledBindings);
+        m_SampledTexturePool   = device.CreateDescriptorPool(sampledSets, PipelineLoader::MakePoolSizes(sampledBindings, sampledSets));
+        m_SampledTextureSets.resize(HedgehogEngine::MAX_FRAMES_IN_FLIGHT);
+        for (auto& frame : m_SampledTextureSets)
+        {
+            for (uint32_t i = 0; i < SAMPLED_TEXTURES_PER_FRAME; ++i)
+                frame.push_back(device.AllocateDescriptorSet(*m_SampledTexturePool, *m_SampledTextureLayout));
+        }
+        RHI::SamplerDesc clamp;
+        clamp.AddressModeU   = RHI::AddressMode::ClampToEdge;
+        clamp.AddressModeV   = RHI::AddressMode::ClampToEdge;
+        clamp.AddressModeW   = RHI::AddressMode::ClampToEdge;
+        clamp.MaxAnisotropy  = 1.0f;
+        m_LinearClampSampler = device.CreateSampler(clamp);
+
+        RHI::GraphicsPipelineDesc toneMapDesc = toneMapShader.Pipeline;
+        toneMapDesc.DescriptorSetLayouts   = { m_SampledTextureLayout.get() };
+        toneMapDesc.ColorAttachmentFormats = { COLOR_FORMAT };
+        toneMapDesc.DepthAttachmentFormat  = RHI::Format::Undefined;
+        m_ToneMapPipeline = device.CreateGraphicsPipeline(toneMapDesc);
 
         m_GizmoBoxLines = device.CreateBuffer(sizeof(GIZMO_BOX_LINES), RHI::BufferUsage::VertexBuffer,
                                               RHI::MemoryUsage::CpuToGpu);
@@ -163,6 +193,7 @@ namespace Renderer
         m_ViewProjRing.Next    = 0;
         m_ForwardRing.Next     = 0;
         m_SceneLightsRing.Next = 0;
+        m_NextSampledTexture   = 0;
     }
 
     void GraphPassServices::ProvideMaterialLayout(RHI::IRHIDevice& device, HR::ResourceRegistry& registry) const
@@ -190,6 +221,7 @@ namespace Renderer
             case EnginePipeline::ShadowSkinned:             return *m_ShadowSkinnedPipeline;
             case EnginePipeline::GameUi:                    return *m_GameUiPipeline;
             case EnginePipeline::DebugLines:                return *m_DebugLinesPipeline;
+            case EnginePipeline::ToneMap:                   return *m_ToneMapPipeline;
         }
         assert(false && "GraphPassServices::GetPipeline: unknown pipeline.");
         return *m_DepthPrepassPipeline;
@@ -221,6 +253,17 @@ namespace Renderer
     const RHI::IRHIDescriptorSet& GraphPassServices::AllocateSceneLightsUniform(const SceneLightsUniform& uniform)
     {
         return Allocate(m_SceneLightsRing, &uniform, sizeof(uniform));
+    }
+
+    const RHI::IRHIDescriptorSet& GraphPassServices::AllocateSampledTexture(const RHI::IRHITexture& texture)
+    {
+        std::vector<std::unique_ptr<RHI::IRHIDescriptorSet>>& sets = m_SampledTextureSets[m_FrameIndex];
+        assert(m_NextSampledTexture < sets.size() && "GraphPassServices: out of sampled-texture sets for this frame.");
+        // This slot's fence has signaled, so the set is no longer read and may be rewritten.
+        RHI::IRHIDescriptorSet& set = *sets[m_NextSampledTexture++];
+        set.WriteTexture(0, texture, *m_LinearClampSampler);
+        set.Flush();
+        return set;
     }
 
     const RHI::IRHIDescriptorSet* GraphPassServices::UploadJointPalette(std::span<const HM::Matrix4x4> matrices)

@@ -250,6 +250,8 @@ namespace RGTest
         void PushConstants(const RHI::IRHIPipeline&, RHI::ShaderStage, uint32_t, uint32_t size, const void* data) override
         {
             Commands.push_back("push " + std::to_string(size));
+            const auto* bytes = static_cast<const unsigned char*>(data);
+            PushedData.emplace_back(bytes, bytes + size);
             if (size > 64) // the skinned pipelines' palette offset, after the model matrix
             {
                 uint32_t offset = 0;
@@ -305,5 +307,7 @@ namespace RGTest
         std::vector<const RHI::IRHIPipeline*>      BoundPipelines;
         std::vector<const RHI::IRHIDescriptorSet*> BoundSets;
         std::vector<uint32_t>                      PushedPaletteOffsets;
+        // Every push constant's bytes, in order.
+        std::vector<std::vector<unsigned char>>    PushedData;
     };
 }
