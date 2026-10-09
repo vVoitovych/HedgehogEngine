@@ -5,6 +5,7 @@
 #include "HedgehogEngine/api/ECS/components/AudioSourceComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/CameraComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/ColliderComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/EnvironmentComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/LightComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/PrefabInstanceComponent.hpp"
@@ -40,6 +41,7 @@ namespace HedgehogEngine
         constexpr const char* UI_CATEGORY    = "UI";
         constexpr const char* AUDIO_CATEGORY   = "Audio";
         constexpr const char* PHYSICS_CATEGORY = "Physics";
+        constexpr const char* RENDERING_CATEGORY = "Rendering";
 
         // The default cube, resolved at once so the mesh shows without waiting for a scene refresh.
         void AddDefaultMesh(ECS::ECS& ecs, ECS::Entity entity)
@@ -62,7 +64,8 @@ namespace HedgehogEngine
     void RegisterEngineComponents(EcsSerialization::ComponentTypeRegistry& types)
     {
         // SortOrder is the inspector's order (Transform, Light, Camera, Mesh, Rendering, Script,
-        // Animator, then the UI, audio and physics sections), which the Add Component menu follows too.
+        // Animator, then the UI, audio, physics and environment sections), which the Add Component
+        // menu follows too.
         bool registered = true;
         registered &= types.RegisterReflected<TransformComponent>(ComponentDesc{
             .Key = "TransformComponent", .DisplayName = "Transform", .SortOrder = 0, .Icon = "transform", .Addable = false, .Removable = false });
@@ -115,6 +118,13 @@ namespace HedgehogEngine
                                                                                 .Category    = PHYSICS_CATEGORY,
                                                                                 .SortOrder   = 301,
                                                                                 .Icon        = "collider" });
+        // The scene's environment map and exposure; its icon is the scene's globe.
+        registered &= types.RegisterReflected<EnvironmentComponent>(ComponentDesc{ .Key             = "EnvironmentComponent",
+                                                                                   .DisplayName     = "Environment",
+                                                                                   .Category        = RENDERING_CATEGORY,
+                                                                                   .SortOrder       = 400,
+                                                                                   .Icon            = "scene",
+                                                                                   .EnabledProperty = "Enabled" });
         registered &= types.RegisterReflected<PrefabInstanceComponent>(ComponentDesc{ .Key         = "PrefabInstanceComponent",
                                                                                       .DisplayName = "Prefab instance",
                                                                                       .Addable     = false,

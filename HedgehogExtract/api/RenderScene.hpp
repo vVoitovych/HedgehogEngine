@@ -120,6 +120,19 @@ namespace HX
     // Reused across frames: SceneExtractor::Extract calls Clear() (vector::clear(), not
     // reassignment) so steady-state extraction into an already-sized RenderScene allocates
     // nothing.
+    // The scene's environment (HedgehogEngine's EnvironmentComponent), when Present: the map's
+    // virtual path under assets://, its intensity and rotation in degrees about +Z, whether it is
+    // drawn as a skybox, and the exposure in EV the frame is tone mapped with.
+    struct RenderEnvironment
+    {
+        bool        Present = false;
+        std::string MapPath;
+        float       Intensity       = 1.0f;
+        float       RotationDegrees = 0.0f;
+        bool        ShowSkybox      = true;
+        float       Exposure        = 0.0f;
+    };
+
     struct RenderScene
     {
         std::vector<RenderInstance> Instances;
@@ -141,6 +154,10 @@ namespace HX
         // pass: generic, so whatever fills them (collider wireframes) stays out of the renderer.
         std::vector<DebugLineVertex> DebugLines;
 
+        // SceneExtractor::ExtractEnvironment; not Present when the scene has none. Clear keeps the
+        // path's storage.
+        RenderEnvironment Environment;
+
         void Clear()
         {
             Instances.clear();
@@ -151,6 +168,8 @@ namespace HX
             UiTextures.clear();
             UiFonts.clear();
             DebugLines.clear();
+            Environment.Present = false;
+            Environment.MapPath.clear();
         }
     };
 }

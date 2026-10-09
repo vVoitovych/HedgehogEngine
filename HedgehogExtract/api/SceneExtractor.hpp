@@ -19,6 +19,7 @@ namespace HedgehogEngine
     class CameraSystem;
     class UiSystem;
     class PhysicsSystem;
+    class EnvironmentSystem;
     class FontContainer;
 }
 
@@ -83,6 +84,13 @@ namespace HX
         // mode too, and allocates nothing once the lines' storage has grown.
         void ExtractPhysicsDebug(const ECS::ECS& ecs, const HedgehogEngine::PhysicsSystem& physicsSystem,
                                  RenderScene& outScene) const;
+
+        // Fills outScene.Environment from the first enabled EnvironmentComponent of
+        // environmentSystem by entity id, its map normalized under assets:// (backslashes to
+        // slashes, "assets://" added to a path without a mount); leaves it not Present when there is
+        // none. Allocates nothing once the path's storage has grown.
+        void ExtractEnvironment(const ECS::ECS& ecs, const HedgehogEngine::EnvironmentSystem& environmentSystem,
+                                RenderScene& outScene) const;
 
     private:
         void ExtractInstances(const ECS::ECS& ecs, const HedgehogEngine::RenderSystem& renderSystem,

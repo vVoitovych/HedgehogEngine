@@ -40,6 +40,7 @@ namespace Editor
             ExtensionType{ ".mp3",      ContentType::Audio },
             ExtensionType{ ".flac",     ContentType::Audio },
             ExtensionType{ ".prefab",   ContentType::Prefab },
+            ExtensionType{ ".hdr",      ContentType::Environment },
         };
 
         constexpr std::string_view SCENE_EXTENSION = ".yaml";
@@ -99,6 +100,7 @@ namespace Editor
         case ContentType::Font:              return "FNT";
         case ContentType::Audio:             return "AUD";
         case ContentType::Prefab:            return "PFB";
+        case ContentType::Environment:       return "HDR";
         case ContentType::Other:             return "?";
         }
         return "?";
@@ -121,6 +123,7 @@ namespace Editor
         case ContentType::Font:              return "Font";
         case ContentType::Audio:             return "Audio";
         case ContentType::Prefab:            return "Prefab";
+        case ContentType::Environment:       return "Environment";
         case ContentType::Other:             return "File";
         }
         return "File";

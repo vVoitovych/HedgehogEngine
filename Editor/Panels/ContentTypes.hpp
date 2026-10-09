@@ -23,6 +23,7 @@ namespace Editor
         Font,
         Audio,
         Prefab,
+        Environment, // an equirectangular .hdr environment map
         Other,
     };
 

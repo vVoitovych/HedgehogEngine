@@ -10,7 +10,7 @@
 // meaning, so plugins built against the old one are refused instead of crashing.
 // 2 (HE-310): ECS::System gained OnPostFixedUpdate. 3 (HE-312): EngineContext gained the physics
 // world and system.
-#define HH_PLUGIN_API_VERSION 3u
+#define HH_PLUGIN_API_VERSION 4u
 
 namespace HedgehogEngine
 {

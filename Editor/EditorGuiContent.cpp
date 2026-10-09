@@ -14,6 +14,7 @@
 #include "HedgehogEngine/api/Containers/MaterialContainer.hpp"
 #include "HedgehogEngine/api/ECS/components/AudioSourceComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/CameraComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/EnvironmentComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RenderComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
@@ -57,6 +58,7 @@ namespace Editor
             case ContentType::Script:   return "Script";
             case ContentType::Font:     return "UI text";
             case ContentType::Audio:    return "Audio source";
+            case ContentType::Environment: return "Environment";
             default:                    return nullptr;
             }
         }
@@ -123,6 +125,7 @@ namespace Editor
         case ContentType::Texture:
         case ContentType::Script:
         case ContentType::Font:
+        case ContentType::Environment:
             if (AssignToSelection(context, request, physicalPath))
                 return;
             LOGINFO("Content: select an entity with a ", RequiredComponent(request.Type), " component to assign '",
@@ -189,6 +192,11 @@ namespace Editor
             if (!ecs.HasComponent<HedgehogEngine::AudioSourceComponent>(entity))
                 return false;
             ecs.GetComponent<HedgehogEngine::AudioSourceComponent>(entity).Clip = relativePath;
+            break;
+        case ContentType::Environment:
+            if (!ecs.HasComponent<HedgehogEngine::EnvironmentComponent>(entity))
+                return false;
+            ecs.GetComponent<HedgehogEngine::EnvironmentComponent>(entity).Map = relativePath;
             break;
         case ContentType::RenderGraph:
         {
