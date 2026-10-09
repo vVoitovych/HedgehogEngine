@@ -758,6 +758,15 @@ licensed under Creative Commons Attribution 4.0 International
 **The original is non-commercial: a game sold with this model breaks its licence.** It is a
 sample for testing the renderer; keep it out of any commercial game's scenes.
 
+### Kloofendal 48d Partly Cloudy (Pure Sky)
+
+`Assets/Environments/kloofendal_48d_partly_cloudy_puresky_1k.hdr` (the 1K Radiance file, unmodified):
+"Kloofendal 48d Partly Cloudy (Pure Sky)" from Poly Haven
+(https://polyhaven.com/a/kloofendal_48d_partly_cloudy_puresky), photographed by Greg Zaal, sky
+edits by Jarod Guest, released under CC0 1.0 Universal (public domain;
+https://creativecommons.org/publicdomain/zero/1.0/). No attribution is required; it is credited
+here anyway.
+
 ## Apache License 2.0
 
 The full text, for the Vulkan headers and glslc above.

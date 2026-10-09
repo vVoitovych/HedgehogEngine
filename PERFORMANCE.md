@@ -229,5 +229,28 @@ averages per run, in ms.
 
 No change beyond run-to-run noise; the `Skybox` pass records in 0.007 ms with the sky drawn.
 
+### 2026-10-09 (HE-336) — baseline after the PBR epic
+
+The end of the PBR rendering epic (HE-319): HDR with ACES tone mapping, Cook-Torrance shading,
+PCF sun shadows, image-based lighting and the skybox. `benchmark.yaml`'s 25 helmets now draw with
+their imported material (`DamagedHelmet_Material_MR.material`: all five maps, emissive) instead of
+`test2.material` (base colour only), and `Pbr.yaml` is the new scene that uses every feature at
+once (ten spheres, the helmet, a shadowing sun, a 1K `.hdr` environment and its skybox). Release,
+600 frames after a 120-frame warmup, 3 runs each, same machine (NVIDIA GeForce RTX 2070, Windows
+11), same session, default window size. Average and p95 per run, in ms.
+
+| Scene | `Frame(wall)` avg (runs) | `Frame(wall)` p95 (runs) | `RenderFrame(total)` avg (runs) |
+|---|---|---|---|
+| `benchmark.yaml`, `test2.material` (before) | 2.092, 2.093, 2.204 | 2.931, 2.797, 3.565 | 1.879, 1.889, 1.985 |
+| `benchmark.yaml`, imported material (after) | 2.249, 2.154, 2.156 | 3.498, 2.933, 3.595 | 1.998, 1.915, 1.921 |
+| `Pbr.yaml` | 2.010, 1.957, 1.979 | 2.994, 2.840, 2.553 | 1.826, 1.776, 1.797 |
+
+Medians: `benchmark.yaml` 2.093 → 2.156 ms (all five maps sampled and the emissive added, about
++0.06 ms, near run-to-run noise) and `Pbr.yaml` 1.979 ms, about 505 FPS: **about 8× headroom
+under the 16.6 ms budget**. Per-pass recording on `Pbr.yaml` (avg): Shadow 0.034, DepthPrepass
+0.008, Forward 0.017, Skybox 0.006, ToneMap 0.006, Ui 0.024 ms; the rest of `RenderFrame(total)`
+is the fence wait, acquire, submit and present. The environment's first-frame bake is not in
+these numbers (the warmup absorbs it): 1.8 s in Debug for the 1024x512 sky at face 256.
+
 When a change intentionally alters performance, re-run the benchmark and update
 this table (keep the old row set; add a dated entry below it so history accumulates).

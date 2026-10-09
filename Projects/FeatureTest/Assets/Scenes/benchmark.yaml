@@ -19,7 +19,7 @@ Scene:
           MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
         RenderComponent:
           Visible: true
-          Material: Materials\test2.material
+          Material: Models\DamagedHelmet\DamagedHelmet_Material_MR.material
         Children:
           []
       - Entity: 2
@@ -33,7 +33,7 @@ Scene:
           MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
         RenderComponent:
           Visible: true
-          Material: Materials\test2.material
+          Material: Models\DamagedHelmet\DamagedHelmet_Material_MR.material
         Children:
           []
       - Entity: 3
@@ -47,7 +47,7 @@ Scene:
           MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
         RenderComponent:
           Visible: true
-          Material: Materials\test2.material
+          Material: Models\DamagedHelmet\DamagedHelmet_Material_MR.material
         Children:
           []
       - Entity: 4
@@ -61,7 +61,7 @@ Scene:
           MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
         RenderComponent:
           Visible: true
-          Material: Materials\test2.material
+          Material: Models\DamagedHelmet\DamagedHelmet_Material_MR.material
         Children:
           []
       - Entity: 5
@@ -75,7 +75,7 @@ Scene:
           MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
         RenderComponent:
           Visible: true
-          Material: Materials\test2.material
+          Material: Models\DamagedHelmet\DamagedHelmet_Material_MR.material
         Children:
           []
       - Entity: 6
@@ -89,7 +89,7 @@ Scene:
           MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
         RenderComponent:
           Visible: true
-          Material: Materials\test2.material
+          Material: Models\DamagedHelmet\DamagedHelmet_Material_MR.material
         Children:
           []
       - Entity: 7
@@ -103,7 +103,7 @@ Scene:
           MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
         RenderComponent:
           Visible: true
-          Material: Materials\test2.material
+          Material: Models\DamagedHelmet\DamagedHelmet_Material_MR.material
         Children:
           []
       - Entity: 8
@@ -117,7 +117,7 @@ Scene:
           MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
         RenderComponent:
           Visible: true
-          Material: Materials\test2.material
+          Material: Models\DamagedHelmet\DamagedHelmet_Material_MR.material
         Children:
           []
       - Entity: 9
@@ -131,7 +131,7 @@ Scene:
           MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
         RenderComponent:
           Visible: true
-          Material: Materials\test2.material
+          Material: Models\DamagedHelmet\DamagedHelmet_Material_MR.material
         Children:
           []
       - Entity: 10
@@ -145,7 +145,7 @@ Scene:
           MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
         RenderComponent:
           Visible: true
-          Material: Materials\test2.material
+          Material: Models\DamagedHelmet\DamagedHelmet_Material_MR.material
         Children:
           []
       - Entity: 11
@@ -159,7 +159,7 @@ Scene:
           MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
         RenderComponent:
           Visible: true
-          Material: Materials\test2.material
+          Material: Models\DamagedHelmet\DamagedHelmet_Material_MR.material
         Children:
           []
       - Entity: 12
@@ -173,7 +173,7 @@ Scene:
           MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
         RenderComponent:
           Visible: true
-          Material: Materials\test2.material
+          Material: Models\DamagedHelmet\DamagedHelmet_Material_MR.material
         Children:
           []
       - Entity: 13
@@ -187,7 +187,7 @@ Scene:
           MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
         RenderComponent:
           Visible: true
-          Material: Materials\test2.material
+          Material: Models\DamagedHelmet\DamagedHelmet_Material_MR.material
         Children:
           []
       - Entity: 14
@@ -201,7 +201,7 @@ Scene:
           MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
         RenderComponent:
           Visible: true
-          Material: Materials\test2.material
+          Material: Models\DamagedHelmet\DamagedHelmet_Material_MR.material
         Children:
           []
       - Entity: 15
@@ -215,7 +215,7 @@ Scene:
           MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
         RenderComponent:
           Visible: true
-          Material: Materials\test2.material
+          Material: Models\DamagedHelmet\DamagedHelmet_Material_MR.material
         Children:
           []
       - Entity: 16
@@ -229,7 +229,7 @@ Scene:
           MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
         RenderComponent:
           Visible: true
-          Material: Materials\test2.material
+          Material: Models\DamagedHelmet\DamagedHelmet_Material_MR.material
         Children:
           []
       - Entity: 17
@@ -243,7 +243,7 @@ Scene:
           MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
         RenderComponent:
           Visible: true
-          Material: Materials\test2.material
+          Material: Models\DamagedHelmet\DamagedHelmet_Material_MR.material
         Children:
           []
       - Entity: 18
@@ -257,7 +257,7 @@ Scene:
           MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
         RenderComponent:
           Visible: true
-          Material: Materials\test2.material
+          Material: Models\DamagedHelmet\DamagedHelmet_Material_MR.material
         Children:
           []
       - Entity: 19
@@ -271,7 +271,7 @@ Scene:
           MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
         RenderComponent:
           Visible: true
-          Material: Materials\test2.material
+          Material: Models\DamagedHelmet\DamagedHelmet_Material_MR.material
         Children:
           []
       - Entity: 20
@@ -285,7 +285,7 @@ Scene:
           MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
         RenderComponent:
           Visible: true
-          Material: Materials\test2.material
+          Material: Models\DamagedHelmet\DamagedHelmet_Material_MR.material
         Children:
           []
       - Entity: 21
@@ -299,7 +299,7 @@ Scene:
           MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
         RenderComponent:
           Visible: true
-          Material: Materials\test2.material
+          Material: Models\DamagedHelmet\DamagedHelmet_Material_MR.material
         Children:
           []
       - Entity: 22
@@ -313,7 +313,7 @@ Scene:
           MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
         RenderComponent:
           Visible: true
-          Material: Materials\test2.material
+          Material: Models\DamagedHelmet\DamagedHelmet_Material_MR.material
         Children:
           []
       - Entity: 23
@@ -327,7 +327,7 @@ Scene:
           MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
         RenderComponent:
           Visible: true
-          Material: Materials\test2.material
+          Material: Models\DamagedHelmet\DamagedHelmet_Material_MR.material
         Children:
           []
       - Entity: 24
@@ -341,7 +341,7 @@ Scene:
           MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
         RenderComponent:
           Visible: true
-          Material: Materials\test2.material
+          Material: Models\DamagedHelmet\DamagedHelmet_Material_MR.material
         Children:
           []
       - Entity: 25
@@ -355,7 +355,7 @@ Scene:
           MeshPath: Models\DamagedHelmet\DamagedHelmet.gltf
         RenderComponent:
           Visible: true
-          Material: Materials\test2.material
+          Material: Models\DamagedHelmet\DamagedHelmet_Material_MR.material
         Children:
           []
       - Entity: 26

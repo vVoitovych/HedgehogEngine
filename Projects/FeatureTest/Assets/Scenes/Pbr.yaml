@@ -1,0 +1,244 @@
+Scene name: Pbr
+Scene:
+  - Entity: 0
+    Name: Root
+    Parent: 0
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    Children:
+      - Entity: 1
+        Name: Floor
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, -0.5]
+          Rotation: [0, 0, 0]
+          Scale: [12, 8, 0.5]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/cube.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/test3.material
+          Layer: 0
+        Children:
+          []
+      - Entity: 2
+        Name: Dielectric roughness 0
+        Parent: 0
+        TransformComponent:
+          Position: [-4.4, 0, 0.45]
+          Rotation: [0, 0, 0]
+          Scale: [0.16, 0.16, 0.16]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/sphere.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/Pbr/Dielectric_R000.material
+          Layer: 0
+        Children:
+          []
+      - Entity: 3
+        Name: Dielectric roughness 0.25
+        Parent: 0
+        TransformComponent:
+          Position: [-2.2, 0, 0.45]
+          Rotation: [0, 0, 0]
+          Scale: [0.16, 0.16, 0.16]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/sphere.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/Pbr/Dielectric_R025.material
+          Layer: 0
+        Children:
+          []
+      - Entity: 4
+        Name: Dielectric roughness 0.5
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 0.45]
+          Rotation: [0, 0, 0]
+          Scale: [0.16, 0.16, 0.16]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/sphere.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/Pbr/Dielectric_R050.material
+          Layer: 0
+        Children:
+          []
+      - Entity: 5
+        Name: Dielectric roughness 0.75
+        Parent: 0
+        TransformComponent:
+          Position: [2.2, 0, 0.45]
+          Rotation: [0, 0, 0]
+          Scale: [0.16, 0.16, 0.16]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/sphere.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/Pbr/Dielectric_R075.material
+          Layer: 0
+        Children:
+          []
+      - Entity: 6
+        Name: Dielectric roughness 1
+        Parent: 0
+        TransformComponent:
+          Position: [4.4, 0, 0.45]
+          Rotation: [0, 0, 0]
+          Scale: [0.16, 0.16, 0.16]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/sphere.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/Pbr/Dielectric_R100.material
+          Layer: 0
+        Children:
+          []
+      - Entity: 7
+        Name: Metal roughness 0
+        Parent: 0
+        TransformComponent:
+          Position: [-4.4, 0, 1.55]
+          Rotation: [0, 0, 0]
+          Scale: [0.16, 0.16, 0.16]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/sphere.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/Pbr/Metal_R000.material
+          Layer: 0
+        Children:
+          []
+      - Entity: 8
+        Name: Metal roughness 0.25
+        Parent: 0
+        TransformComponent:
+          Position: [-2.2, 0, 1.55]
+          Rotation: [0, 0, 0]
+          Scale: [0.16, 0.16, 0.16]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/sphere.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/Pbr/Metal_R025.material
+          Layer: 0
+        Children:
+          []
+      - Entity: 9
+        Name: Metal roughness 0.5
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 1.55]
+          Rotation: [0, 0, 0]
+          Scale: [0.16, 0.16, 0.16]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/sphere.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/Pbr/Metal_R050.material
+          Layer: 0
+        Children:
+          []
+      - Entity: 10
+        Name: Metal roughness 0.75
+        Parent: 0
+        TransformComponent:
+          Position: [2.2, 0, 1.55]
+          Rotation: [0, 0, 0]
+          Scale: [0.16, 0.16, 0.16]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/sphere.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/Pbr/Metal_R075.material
+          Layer: 0
+        Children:
+          []
+      - Entity: 11
+        Name: Metal roughness 1
+        Parent: 0
+        TransformComponent:
+          Position: [4.4, 0, 1.55]
+          Rotation: [0, 0, 0]
+          Scale: [0.16, 0.16, 0.16]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/sphere.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/Pbr/Metal_R100.material
+          Layer: 0
+        Children:
+          []
+      - Entity: 12
+        Name: Helmet
+        Parent: 0
+        TransformComponent:
+          Position: [0, 1.5, 3.3]
+          Rotation: [90, 0, 0]
+          Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: Models/DamagedHelmet/DamagedHelmet.gltf
+        RenderComponent:
+          Visible: true
+          Material: Models/DamagedHelmet/DamagedHelmet_Material_MR.material
+          Layer: 0
+        Children:
+          []
+      - Entity: 13
+        Name: Sun
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 0]
+          Rotation: [30, -50, 0]
+          Scale: [1, 1, 1]
+        LightComponent:
+          LightEnabled: true
+          LightType: 0
+          LightColor: [1, 0.96, 0.9]
+          LightIntensity: 1.2
+          LightRadius: 1
+          LightConeAngle: 2
+          CastShadows: true
+        Children:
+          []
+      - Entity: 14
+        Name: Sky
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 0]
+          Rotation: [0, 0, 0]
+          Scale: [1, 1, 1]
+        EnvironmentComponent:
+          Enabled: true
+          Map: Environments/kloofendal_48d_partly_cloudy_puresky_1k.hdr
+          Intensity: 1
+          Rotation: 0
+          ShowSkybox: true
+          Exposure: 0
+        Children:
+          []
+      - Entity: 15
+        Name: MainCamera
+        Parent: 0
+        TransformComponent:
+          Position: [0, -9, 3]
+          Rotation: [75, 0, 0]
+          Scale: [1, 1, 1]
+        CameraComponent:
+          Enabled: true
+          ProjectionType: 0
+          Fov: 60
+          OrthoSize: 10
+          NearPlane: 0.1
+          FarPlane: 1000
+          LayerMask: 4294967295
+          TargetMode: 0
+          TargetName: ""
+          GraphName: game
+          Priority: 0
+        Children:
+          []

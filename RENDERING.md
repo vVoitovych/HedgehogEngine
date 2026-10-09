@@ -350,6 +350,42 @@ real work.
 
 ---
 
+## 11. Physically based shading (epic HE-319)
+
+Added after the cutover, on the same graph, as plain passes and descriptor sets.
+
+- **Materials** are glTF's metallic-roughness model (`.material` files, every key optional): a
+  base colour factor and map, metallic and roughness (the factors times the map's B and G), a
+  normal map with its scale, an occlusion map with its strength and an emissive map and colour.
+  A material's set (set 1) is a 64-byte uniform and five combined image samplers; a slot without
+  a map binds a neutral 1x1 texture, so the factors pass through unchanged. Colour maps are sRGB,
+  data maps linear. A glTF's materials are imported as `.material` files beside it, never
+  overwritten.
+- **HDR:** each view graph renders lit radiance into a transient `hdr` (`R16G16B16A16Float`).
+  `ToneMap` maps it onto the view's `color` output (exposure 2^EV, then Narkowicz's ACES fit), and
+  the overlays (Gizmo, GameUi) draw after it, never tone mapped. The editor and game panels read
+  the same `color` as before.
+- **Direct light:** Lambert plus Cook-Torrance (GGX, height-correlated Smith, Schlick), in the pi
+  convention, so a light's intensity still means what a white matte surface facing it shows.
+- **Shadows:** the shared phase computes the cascades once; the Shadow pass renders them and the
+  Forward pass samples the same atlas (PCF with depth, slope and normal-offset biases and a blend
+  between cascades), for the first shadow-casting directional light.
+- **Image-based lighting:** an `EnvironmentComponent` names an equirectangular `.hdr`. The CPU
+  bakes it once per path per session (ContentLoader: a cubemap, GGX-prefiltered mips by roughness,
+  SH9 irradiance, in half floats) and the renderer keeps it; a split-sum BRDF table is computed at
+  start. The forward pass adds SH diffuse and prefiltered specular, times occlusion.
+- **Skybox:** a `Skybox` pass between Forward and ToneMap draws the cube where nothing was drawn
+  (a far-plane triangle, depth-tested, not written).
+- **Forward descriptor sets:** 0 the view, 1 the material, 2 the frame's lights, 3 the per-view
+  lighting (shadow uniform and atlas, environment uniform, radiance cube, BRDF table), 4 the
+  skinned joint palette.
+
+Out of scope, with no interface in the way: shadows for spot and point lights, transparency and
+alpha cutoff, several materials per mesh, glTF extensions, texture compression, GPU or Cooker-side
+baking, reflection probes, bloom and auto-exposure.
+
+---
+
 ## Implementation plan
 
 28 tickets — 5 in phase A, 2 in B, 3 each in C, D and E, 8 in F, 4 in G. Every one leaves
