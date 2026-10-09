@@ -1,5 +1,6 @@
 #pragma once
 
+#include "EnvironmentUniform.hpp"
 #include "RGTypes.hpp"
 #include "UiCallback.hpp"
 
@@ -124,6 +125,10 @@ namespace Renderer
         // The exposure the ToneMap pass scales the view's HDR radiance by, in EV (2^Exposure):
         // RenderScene::Environment's, or 0 without an environment.
         float Exposure = 0.0f;
+
+        // The scene's image-based lighting, which the Forward pass binds in set 3 beside the shadow:
+        // the baked RenderScene::Environment, or the black fallback without one (no ambient light).
+        ForwardEnvironment Environment;
     };
 
     // The graph-path forward shader's uniforms (GraphForward/Base.vert and .frag), laid out for
@@ -215,9 +220,11 @@ namespace Renderer
         virtual const RHI::IRHIDescriptorSet& AllocateSceneLightsUniform(const SceneLightsUniform& uniform) = 0;
 
         // The forward pass's set 3: the shadow uniform and the shadow atlas, read through a comparison
-        // sampler. One allocation per forward pass per frame, from its own per-frame ring.
+        // sampler, then the environment's uniform, prefiltered radiance cube and BRDF table. One
+        // allocation per forward pass per frame, from its own per-frame ring.
         virtual const RHI::IRHIDescriptorSet& AllocateForwardLighting(const ShadowUniform& shadow,
-                                                                      const RHI::IRHITexture& shadowAtlas) = 0;
+                                                                      const RHI::IRHITexture& shadowAtlas,
+                                                                      const ForwardEnvironment& environment) = 0;
 
         // A descriptor set (set 0, binding 0) sampling texture linearly, clamped to its edge, valid
         // until this frame slot comes round again: for a texture only known at execute time, as a

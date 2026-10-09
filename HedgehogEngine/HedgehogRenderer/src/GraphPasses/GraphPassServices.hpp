@@ -89,11 +89,12 @@ namespace Renderer
         const RHI::IRHIDescriptorSet& AllocateSceneLightsUniform(const SceneLightsUniform& uniform) override;
         const RHI::IRHIDescriptorSet& AllocateSampledTexture(const RHI::IRHITexture& texture) override;
         const RHI::IRHIDescriptorSet& AllocateForwardLighting(const ShadowUniform& shadow,
-                                                              const RHI::IRHITexture& shadowAtlas) override;
+                                                              const RHI::IRHITexture& shadowAtlas,
+                                                              const ForwardEnvironment& environment) override;
 
         // Uploads the frame's RenderScene::JointMatrices into this frame slot's storage buffer, growing
         // it when too small, and returns the palette set the skinned pipelines bind (set 1 for the
-        // depth prepass, set 3 for forward). Once per frame, after BeginFrame; nullptr when empty.
+        // depth prepass, set 4 for forward). Once per frame, after BeginFrame; nullptr when empty.
         const RHI::IRHIDescriptorSet* UploadJointPalette(std::span<const HM::Matrix4x4> matrices);
 
         // The frame's game UI geometry in this frame slot's buffers (GraphFrameData::UiVertices and
@@ -143,7 +144,8 @@ namespace Renderer
         UniformRing m_ViewProjRing;
         UniformRing m_ForwardRing;
         UniformRing m_SceneLightsRing;
-        // The forward shader's set 3: the shadow uniform, then the atlas (written as handed out).
+        // The forward shader's set 3: the shadow uniform, the atlas, the environment uniform, the
+        // radiance cube and the BRDF table (the textures written as handed out).
         UniformRing                       m_LightingRing;
         std::unique_ptr<RHI::IRHISampler> m_ShadowSampler; // comparison, linear, clamped
 

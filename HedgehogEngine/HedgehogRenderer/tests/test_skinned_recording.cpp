@@ -158,6 +158,12 @@ TEST_CASE("Skinned instances draw after the rigid ones with the skinned pipeline
     GraphFrameData frame   = scene.MakeFrame();
     frame.OpaqueInstances  = rigid;
     frame.SkinnedInstances = skinned;
+    // A baked environment: its uniform and textures reach set 3 with the shadow.
+    const RGTest::TestTexture radiance(RHI::TextureDesc{});
+    const RGTest::TestTexture brdfLut(RHI::TextureDesc{});
+    frame.Environment.Uniform.Intensity = 2.0f;
+    frame.Environment.Radiance          = &radiance;
+    frame.Environment.BrdfLut           = &brdfLut;
 
     FakeServices         services;
     RecordingCommandList cmd;
@@ -192,6 +198,10 @@ TEST_CASE("Skinned instances draw after the rigid ones with the skinned pipeline
     // The forward pass's rigid and skinned draws share one shadow set at set 3; its palette is at set 4.
     CHECK(std::count(cmd.BoundSets.begin(), cmd.BoundSets.end(), &services.GetLightingSet()) == 2);
     CHECK(services.LightingUploads.size() == 1);
+    REQUIRE(services.EnvironmentUploads.size() == 1);
+    CHECK(services.EnvironmentUploads[0].Uniform.Intensity == 2.0f);
+    CHECK(services.EnvironmentUploads[0].Radiance == &radiance);
+    CHECK(services.EnvironmentUploads[0].BrdfLut == &brdfLut);
     CHECK(cmd.BoundSetIndices.back() == 1); // the skinned draws' material
     const auto palette = std::find(cmd.BoundSets.rbegin(), cmd.BoundSets.rend(), &scene.Palette);
     CHECK(cmd.BoundSetIndices[cmd.BoundSets.rend() - palette - 1] == 4u);

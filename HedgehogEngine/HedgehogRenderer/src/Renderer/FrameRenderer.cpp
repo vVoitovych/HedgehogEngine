@@ -47,6 +47,7 @@ namespace Renderer
         , m_Swapchain(swapchain)
         , m_FileSystem(fileSystem)
         , m_Services(device, fileSystem)
+        , m_Environment(device)
         , m_Library(m_Registry)
         , m_Instantiator(m_Registry)
         , m_Targets(device, swapchain)
@@ -252,7 +253,13 @@ namespace Renderer
         frame.ShadowCascadeCount       = shadowmap.GetCascadesCount();
         frame.ShadowCascadeSplitLambda = shadowmap.GetCascadeSplitLambda();
         frame.Exposure                 = scene.Environment.Present ? scene.Environment.Exposure : 0.0f;
+        frame.Environment              = m_Environment.GetForwardEnvironment();
         m_SceneFrame = frame;
+    }
+
+    void FrameRenderer::SyncEnvironment(const HX::RenderScene& scene)
+    {
+        m_Environment.Sync(scene.Environment, m_Device, m_FileSystem);
     }
 
     void FrameRenderer::SyncUiTextures(const HX::RenderScene& scene, HR::ResourceRegistry& registry)

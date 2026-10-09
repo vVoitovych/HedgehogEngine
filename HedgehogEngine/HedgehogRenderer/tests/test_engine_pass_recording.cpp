@@ -252,6 +252,11 @@ TEST_CASE("The forward pass records lit draws into its colour target against the
     CHECK(services.LightingAtlases[0] == cmd.Renderings[1].DepthAttachment->Texture);
     CHECK(services.LightingUploads[0].CascadeCount == 0);
     CHECK(services.LightingUploads[0].LightIndex == -1);
+    // Without an environment in the frame, one that adds no ambient light, and no textures.
+    REQUIRE(services.EnvironmentUploads.size() == 1);
+    CHECK(services.EnvironmentUploads[0].Uniform.Intensity == 0.0f);
+    CHECK(services.EnvironmentUploads[0].Uniform.Sh[0][0] == 0.0f);
+    CHECK(services.EnvironmentUploads[0].Radiance == nullptr);
     // Forward binds positions, UVs, normals and tangents, in the vertex description's order.
     REQUIRE_FALSE(cmd.BoundVertexBuffers.empty());
     CHECK(cmd.BoundVertexBuffers.back()
