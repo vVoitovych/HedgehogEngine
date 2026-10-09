@@ -5,6 +5,32 @@
 
 namespace HedgehogEngine
 {
+    std::string NormalizeMaterialPath(std::string_view path)
+    {
+        constexpr std::string_view ASSETS_PREFIX = "assets://";
+        if (path.starts_with(ASSETS_PREFIX))
+            path.remove_prefix(ASSETS_PREFIX.size());
+
+        std::string normalized;
+        normalized.reserve(path.size());
+        size_t start = 0;
+        while (start <= path.size())
+        {
+            size_t end = path.find_first_of("/\\", start);
+            if (end == std::string_view::npos)
+                end = path.size();
+            const std::string_view segment = path.substr(start, end - start);
+            if (!segment.empty() && segment != ".")
+            {
+                if (!normalized.empty())
+                    normalized += '/';
+                normalized += segment;
+            }
+            start = end + 1;
+        }
+        return normalized;
+    }
+
     void RenderSystem::OnRegister(ECS::ECS& ecs)
     {
         m_Catalog = ecs.GetServices().Find<ResourceCatalog>();
@@ -31,7 +57,7 @@ namespace HedgehogEngine
         auto& render = ecs.GetComponent<RenderComponent>(entity);
         if (render.MaterialIndex.has_value())
         {
-            if (m_MaterialPaths[render.MaterialIndex.value()] != render.Material)
+            if (m_MaterialPaths[render.MaterialIndex.value()] != NormalizeMaterialPath(render.Material))
                 UpdateMaterialPath(ecs, entity);
         }
         else
@@ -72,7 +98,8 @@ namespace HedgehogEngine
 
         if (!component.Material.empty())
         {
-            auto it = std::find(m_MaterialPaths.begin(), m_MaterialPaths.end(), component.Material);
+            std::string key = NormalizeMaterialPath(component.Material);
+            auto        it  = std::find(m_MaterialPaths.begin(), m_MaterialPaths.end(), key);
             if (it != m_MaterialPaths.end())
             {
                 component.MaterialIndex = static_cast<uint64_t>(it - m_MaterialPaths.begin());
@@ -80,7 +107,7 @@ namespace HedgehogEngine
             else
             {
                 component.MaterialIndex = m_MaterialPaths.size();
-                m_MaterialPaths.push_back(component.Material);
+                m_MaterialPaths.push_back(std::move(key));
             }
         }
     }
