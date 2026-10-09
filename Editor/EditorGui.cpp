@@ -1560,6 +1560,27 @@ namespace Editor
                 if (ImGui::SliderFloat("Split 3", &split3, split2, 100.0f))
                     shadow->SetSplit3(split3);
 
+            // Read by the forward pass when it samples the atlas; saved with the engine settings.
+            ImGui::SeparatorText("Sampling");
+            float depthBias = shadow->GetDepthBias();
+            if (ImGui::DragFloat("Depth bias", &depthBias, 0.0001f, 0.0f, HedgehogSettings::ShadowmapSettings::MAX_DEPTH_BIAS,
+                                 "%.5f", ImGuiSliderFlags_AlwaysClamp))
+                shadow->SetDepthBias(depthBias);
+            float slopeBias = shadow->GetSlopeBias();
+            if (ImGui::DragFloat("Slope bias", &slopeBias, 0.0005f, 0.0f, HedgehogSettings::ShadowmapSettings::MAX_SLOPE_BIAS,
+                                 "%.4f", ImGuiSliderFlags_AlwaysClamp))
+                shadow->SetSlopeBias(slopeBias);
+            float normalOffset = shadow->GetNormalOffset();
+            if (ImGui::SliderFloat("Normal offset (texels)", &normalOffset, 0.0f,
+                                   HedgehogSettings::ShadowmapSettings::MAX_NORMAL_OFFSET))
+                shadow->SetNormalOffset(normalOffset);
+            int pcfRadius = static_cast<int>(shadow->GetPcfRadius());
+            if (ImGui::SliderInt("PCF radius", &pcfRadius, 0, static_cast<int>(HedgehogSettings::ShadowmapSettings::MAX_PCF_RADIUS)))
+                shadow->SetPcfRadius(static_cast<uint32_t>(pcfRadius));
+            float cascadeBlend = shadow->GetCascadeBlend();
+            if (ImGui::SliderFloat("Cascade blend", &cascadeBlend, 0.0f, HedgehogSettings::ShadowmapSettings::MAX_CASCADE_BLEND))
+                shadow->SetCascadeBlend(cascadeBlend);
+
             ImGui::SeparatorText("Debug");
             const auto& shadowDir = engineContext.GetLightSystem()->GetShadowDir();
             if (shadowDir.has_value())

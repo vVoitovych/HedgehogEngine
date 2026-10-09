@@ -11,10 +11,65 @@
 
 #include "yaml-cpp/yaml.h"
 
+#include <algorithm>
+#include <cmath>
 #include <cstdint>
+#include <sstream>
 
 namespace HedgehogSettings
 {
+    namespace
+    {
+        std::string ToText(double value)
+        {
+            std::ostringstream text;
+            text << value;
+            return text.str();
+        }
+
+        // A number of shadowmap: in [0, max], set through set. One that is not a (whole, when whole
+        // is set) finite number keeps its value, and one out of range is clamped, each with one
+        // warning naming the key.
+        template<typename SetFn>
+        void ReadShadowValue(const YAML::Node& shadowmap, const char* key, double max, bool whole, SetFn set)
+        {
+            const YAML::Node node = shadowmap[key];
+            if (!node)
+                return;
+
+            double value = 0.0;
+            if (!node.IsScalar() || !YAML::convert<double>::decode(node, value) || !std::isfinite(value)
+                || (whole && value != std::floor(value)))
+            {
+                LOGWARNING("[Settings] shadowmap." + std::string(key) + ": '" + YAML::Dump(node) + "' is not "
+                           + (whole ? "a whole number" : "a number") + "; it keeps its value.");
+                return;
+            }
+            if (value < 0.0 || value > max)
+            {
+                LOGWARNING("[Settings] shadowmap." + std::string(key) + ": " + ToText(value) + " is outside 0 to "
+                           + ToText(max) + "; it is clamped.");
+                value = std::clamp(value, 0.0, max);
+            }
+            set(value);
+        }
+
+        // The forward pass's shadow sampling values, which ShadowmapSettings documents.
+        void ReadShadowSampling(const YAML::Node& shadowmap, ShadowmapSettings& shadow)
+        {
+            ReadShadowValue(shadowmap, "depth_bias", ShadowmapSettings::MAX_DEPTH_BIAS, false,
+                            [&](double v) { shadow.SetDepthBias(static_cast<float>(v)); });
+            ReadShadowValue(shadowmap, "slope_bias", ShadowmapSettings::MAX_SLOPE_BIAS, false,
+                            [&](double v) { shadow.SetSlopeBias(static_cast<float>(v)); });
+            ReadShadowValue(shadowmap, "normal_offset", ShadowmapSettings::MAX_NORMAL_OFFSET, false,
+                            [&](double v) { shadow.SetNormalOffset(static_cast<float>(v)); });
+            ReadShadowValue(shadowmap, "pcf_radius", ShadowmapSettings::MAX_PCF_RADIUS, true,
+                            [&](double v) { shadow.SetPcfRadius(static_cast<uint32_t>(v)); });
+            ReadShadowValue(shadowmap, "cascade_blend", ShadowmapSettings::MAX_CASCADE_BLEND, false,
+                            [&](double v) { shadow.SetCascadeBlend(static_cast<float>(v)); });
+        }
+    }
+
     Settings::Settings()
     {
         m_ShadowmapSettings = std::make_unique<ShadowmapSettings>();
@@ -110,6 +165,7 @@ namespace HedgehogSettings
                 {
                     m_ShadowmapSettings->SetSplit1(n.as<float>());
                 }
+                ReadShadowSampling(shadowmap, *m_ShadowmapSettings);
             }
 
             // A "rendering" section from before the render graph became the only path
@@ -174,6 +230,11 @@ namespace HedgehogSettings
         out << YAML::Key << "split2"               << YAML::Value << m_ShadowmapSettings->GetSplit2();
         out << YAML::Key << "split3"               << YAML::Value << m_ShadowmapSettings->GetSplit3();
         out << YAML::Key << "caster_mask"          << YAML::Value << m_ShadowmapSettings->GetShadowCasterMask();
+        out << YAML::Key << "depth_bias"           << YAML::Value << m_ShadowmapSettings->GetDepthBias();
+        out << YAML::Key << "slope_bias"           << YAML::Value << m_ShadowmapSettings->GetSlopeBias();
+        out << YAML::Key << "normal_offset"        << YAML::Value << m_ShadowmapSettings->GetNormalOffset();
+        out << YAML::Key << "pcf_radius"           << YAML::Value << m_ShadowmapSettings->GetPcfRadius();
+        out << YAML::Key << "cascade_blend"        << YAML::Value << m_ShadowmapSettings->GetCascadeBlend();
         out << YAML::EndMap;
 
         // Keyed by index, and only named slots are written: the index is the identity that

@@ -1,9 +1,19 @@
 #include "HedgehogSettings/api/ShadowmapingSettings.hpp"
 
 #include <algorithm>
+#include <cmath>
 
 namespace HedgehogSettings
 {
+    namespace
+    {
+        // value clamped to [0, max], or current when value is not finite.
+        float ClampedOr(float value, float max, float current)
+        {
+            return std::isfinite(value) ? std::clamp(value, 0.0f, max) : current;
+        }
+    }
+
     ShadowmapSettings::ShadowmapSettings()
     {
     }
@@ -111,6 +121,56 @@ namespace HedgehogSettings
     void ShadowmapSettings::SetShadowCasterMask(uint32_t mask)
     {
         m_ShadowCasterMask = mask;
+    }
+
+    float ShadowmapSettings::GetDepthBias() const
+    {
+        return m_DepthBias;
+    }
+
+    void ShadowmapSettings::SetDepthBias(float bias)
+    {
+        m_DepthBias = ClampedOr(bias, MAX_DEPTH_BIAS, m_DepthBias);
+    }
+
+    float ShadowmapSettings::GetSlopeBias() const
+    {
+        return m_SlopeBias;
+    }
+
+    void ShadowmapSettings::SetSlopeBias(float bias)
+    {
+        m_SlopeBias = ClampedOr(bias, MAX_SLOPE_BIAS, m_SlopeBias);
+    }
+
+    float ShadowmapSettings::GetNormalOffset() const
+    {
+        return m_NormalOffset;
+    }
+
+    void ShadowmapSettings::SetNormalOffset(float texels)
+    {
+        m_NormalOffset = ClampedOr(texels, MAX_NORMAL_OFFSET, m_NormalOffset);
+    }
+
+    uint32_t ShadowmapSettings::GetPcfRadius() const
+    {
+        return m_PcfRadius;
+    }
+
+    void ShadowmapSettings::SetPcfRadius(uint32_t radius)
+    {
+        m_PcfRadius = std::min(radius, MAX_PCF_RADIUS);
+    }
+
+    float ShadowmapSettings::GetCascadeBlend() const
+    {
+        return m_CascadeBlend;
+    }
+
+    void ShadowmapSettings::SetCascadeBlend(float fraction)
+    {
+        m_CascadeBlend = ClampedOr(fraction, MAX_CASCADE_BLEND, m_CascadeBlend);
     }
 
     bool ShadowmapSettings::IsDirty() const
