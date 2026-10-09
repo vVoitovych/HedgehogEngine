@@ -1,6 +1,7 @@
 #include "EditorGui.hpp"
 #include "Panels/AssetDragDrop.hpp"
 #include "Panels/ContentPanel.hpp"
+#include "Panels/MaterialSlots.hpp"
 #include "Platform/ShellActions.hpp"
 
 #include "DialogueWindows/api/PrefabDialogue.hpp"
@@ -11,6 +12,7 @@
 #include "Tools/InputActionsWindow.hpp"
 #include "Tools/VertexDescriptionWindow.hpp"
 
+#include "HedgehogEngine/api/Assets/GltfMaterialImport.hpp"
 #include "HedgehogEngine/api/Containers/MaterialContainer.hpp"
 #include "HedgehogEngine/api/ECS/components/AudioSourceComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/CameraComponent.hpp"
@@ -306,10 +308,16 @@ namespace Editor
         ecs.GetComponent<ECS::HierarchyComponent>(entity).Name = std::filesystem::path(mesh.VirtualPath).stem().string();
         ecs.AddComponent(entity, HedgehogEngine::MeshComponent{ mesh.VirtualPath.substr(ASSETS_PREFIX.size()) });
         meshSystem->Update(ecs, entity, engineContext.GetFileSystem());
-        // The engine has no default material, and an entity without one is never drawn
-        // (SceneExtractor skips it): use the first material the scene already uses.
+        // A glTF brings its own materials: imported beside it (or found there), the first is the
+        // entity's. Otherwise, as the engine has no default material and an entity without one is
+        // never drawn (SceneExtractor skips it), the first material the scene already uses.
         HedgehogEngine::RenderComponent render;
-        if (!renderSystem->GetMaterials().empty())
+        const std::vector<std::string>  imported = IsGltfPath(mesh.VirtualPath)
+                                                     ? ImportMaterials(engineContext, mesh.VirtualPath).Paths
+                                                     : std::vector<std::string>{};
+        if (!imported.empty() && imported.front().starts_with(ASSETS_PREFIX))
+            render.Material = imported.front().substr(ASSETS_PREFIX.size());
+        else if (!renderSystem->GetMaterials().empty())
             render.Material = renderSystem->GetMaterials().front();
         else
             LOGWARNING("Content: no material is loaded yet; give '", mesh.VirtualPath, "' one so it is drawn.");
@@ -320,6 +328,24 @@ namespace Editor
 
         m_SelectedEntity = entity;
         LOGINFO("Content: created '", ecs.GetComponent<ECS::HierarchyComponent>(entity).Name, "' from '", mesh.VirtualPath, "'.");
+    }
+
+    HedgehogEngine::GltfMaterialImportResult EditorGui::ImportMaterials(HedgehogEngine::EngineContext& engineContext,
+                                                                       const std::string&             gltfPath)
+    {
+        HedgehogEngine::GltfMaterialImportResult result =
+            HedgehogEngine::ImportGltfMaterials(gltfPath, engineContext.GetFileSystem());
+        if (!result.Error.empty())
+            LOGERROR("Content: ", result.Error);
+        else if (result.Paths.empty())
+            LOGINFO("Content: '", gltfPath, "' has no materials to import.");
+        else if (result.Written.empty())
+            LOGINFO("Content: the ", result.Paths.size(), " material(s) of '", gltfPath,
+                    "' are imported already; nothing was written.");
+        else
+            LOGINFO("Content: imported ", result.Written.size(), " of the ", result.Paths.size(), " material(s) of '",
+                    gltfPath, "'.");
+        return result;
     }
 
     void EditorGui::InstantiatePrefab(HedgehogEngine::Engine& context, const std::string& virtualPath,

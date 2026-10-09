@@ -8,6 +8,7 @@
 #include "ECS/api/Entity.hpp"
 
 #include "FileSystem/api/FileSystemManager.hpp"
+#include "HedgehogEngine/api/Assets/GltfMaterialImport.hpp"
 
 #include "EcsSerialization/api/Prefab/OverrideSet.hpp"
 
@@ -189,9 +190,14 @@ namespace Editor
         // clip already playing.
         void PreviewAudio(HedgehogEngine::EngineContext& engineContext, const std::string& virtualPath);
         // A mesh dropped on the hierarchy: a new entity named after the file, with Mesh and Render
-        // components (the scene's first material), under parent or the root.
+        // components, under parent or the root. A glTF's materials are imported and the first is its
+        // material; any other mesh takes the scene's first material.
         void CreateMeshEntity(HedgehogEngine::Engine& context, const ContentOpenRequest& mesh,
                               std::optional<ECS::Entity> parent);
+        // A glTF's Import materials (and its drop on the hierarchy): ImportGltfMaterials, its outcome
+        // logged to the Console (what it wrote, that everything was imported already, or why not).
+        HedgehogEngine::GltfMaterialImportResult ImportMaterials(HedgehogEngine::EngineContext& engineContext,
+                                                                 const std::string&             gltfPath);
         // A prefab dropped on the hierarchy (under parent) or opened (at the root): a new instance,
         // selected.
         void InstantiatePrefab(HedgehogEngine::Engine& context, const std::string& virtualPath,

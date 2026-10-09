@@ -16,6 +16,7 @@
 #include "Tools/ProjectSettingsWindow.hpp"
 #include "Panels/AssetDragDrop.hpp"
 #include "Panels/EntityDragDrop.hpp"
+#include "Panels/MaterialFields.hpp"
 #include "Panels/ScriptPropertyFields.hpp"
 #include "Panels/PhysicsSettingsFields.hpp"
 #include "Tools/RenderGraphEditor/GraphFileReference.hpp"
@@ -306,6 +307,8 @@ namespace Editor
                 OpenContentItem(context, *request.Open);
             if (request.CreateMaterial)
                 CreateMaterial(context.GetEngineContext());
+            if (request.ImportMaterials)
+                (void)ImportMaterials(context.GetEngineContext(), *request.ImportMaterials);
         }
     }
 
@@ -1048,72 +1051,9 @@ namespace Editor
                 engineContext.GetResourceCatalog().GetMaterialContainer().SaveMaterial(
                     render.MaterialIndex.value(), engineContext.GetFileSystem());
 
-            auto& materialContainer = engineContext.GetResourceCatalog().GetMaterialContainer();
-            auto& textureContainer  = engineContext.GetResourceCatalog().GetTextureContainer();
-            auto& materialData      = materialContainer.GetMaterialDataByIndex(
-                render.MaterialIndex.value());
-
-            const char* typeNames[] = { "Opaque", "Cutoff", "Transparent" };
-            int materialType = static_cast<int>(materialData.type);
-            PropertyLabel("Type");
-            if (ImGui::Combo("##Type", &materialType, typeNames, IM_ARRAYSIZE(typeNames)))
-                materialData.type = static_cast<HedgehogEngine::MaterialType>(materialType);
-
-            const auto& texturePaths = textureContainer.GetTexturePathes();
-            int selectedTexture      = static_cast<int>(
-                textureContainer.GetTextureIndex(materialData.baseColor));
-
-            PropertyLabel("Base colour");
-            const bool textureComboOpen = ImGui::BeginCombo("##baseColor", materialData.baseColor.c_str());
-            AcceptSelectionDrop(ContentType::Texture);
-            if (textureComboOpen)
-            {
-                for (int i = 0; i < static_cast<int>(texturePaths.size()); ++i)
-                {
-                    const bool isSelected = (selectedTexture == i);
-                    if (ImGui::Selectable(texturePaths[i].c_str(), isSelected))
-                    {
-                        materialData.baseColor = texturePaths[i];
-                        materialContainer.SetMaterialDirty(render.MaterialIndex.value());
-                    }
-                    if (isSelected)
-                        ImGui::SetItemDefaultFocus();
-                }
-                ImGui::EndCombo();
-            }
-
-            PropertyLabel("");
-            if (ImGui::Button("Load texture"))
-            {
-                if (const char* texPath = DialogueWindows::TextureOpenDialogue())
-                {
-                    const auto& fs = engineContext.GetFileSystem();
-                    const auto virtualPath = fs.ToVirtualPath(texPath);
-                    if (virtualPath)
-                    {
-                        materialContainer.LoadBaseTexture(render.MaterialIndex.value(),
-                                                          virtualPath->substr(ASSETS_PREFIX.size()));
-                    }
-                    else
-                    {
-                        LOGERROR("Texture path is not under any registered mount: ", texPath);
-                    }
-                }
-            }
-
-            if (materialData.type == HedgehogEngine::MaterialType::Transparent)
-            {
-                float transparency = materialData.transparency;
-                PropertyLabel("Transparency");
-                if (ImGui::SliderFloat("##Transparency", &transparency, 0.0f, 1.0f))
-                {
-                    if (materialData.transparency != transparency)
-                    {
-                        materialData.transparency = transparency;
-                        materialContainer.SetMaterialDirty(render.MaterialIndex.value());
-                    }
-                }
-            }
+            DrawMaterialFields(engineContext.GetResourceCatalog().GetMaterialContainer(),
+                               engineContext.GetResourceCatalog().GetTextureContainer(), render.MaterialIndex.value(),
+                               engineContext.GetFileSystem());
         }
         EndPropertyTable();
     }
