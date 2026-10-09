@@ -17,6 +17,22 @@ descriptor_sets:
         type: combined_image_sampler
         stage: fragment
         count: 1
+      - binding: 2
+        type: combined_image_sampler
+        stage: fragment
+        count: 1
+      - binding: 3
+        type: combined_image_sampler
+        stage: fragment
+        count: 1
+      - binding: 4
+        type: combined_image_sampler
+        stage: fragment
+        count: 1
+      - binding: 5
+        type: combined_image_sampler
+        stage: fragment
+        count: 1
   - bindings:
       - binding: 0
         type: uniform_buffer

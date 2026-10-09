@@ -18,10 +18,11 @@ namespace HR
 {
     namespace
     {
-        // A sampled R8G8B8A8Srgb texture holding width x height pixels, uploaded and ready to read;
-        // with mipmapped, every level of a full mip chain is generated from them.
+        // A sampled RGBA8 texture holding width x height pixels, uploaded and ready to read: sRGB, or
+        // linear (Unorm) for data; with mipmapped, every level of a full mip chain is generated from
+        // them.
         std::unique_ptr<RHI::IRHITexture> UploadRgba8(RHI::IRHIDevice& device, const void* pixels, uint32_t width,
-                                                      uint32_t height, bool mipmapped)
+                                                      uint32_t height, bool mipmapped, bool srgb = true)
         {
             const size_t imgSize = static_cast<size_t>(width) * height * 4;
             auto staging = device.CreateBuffer(imgSize, RHI::BufferUsage::TransferSrc, RHI::MemoryUsage::CpuToGpu);
@@ -30,7 +31,7 @@ namespace HR
             RHI::TextureDesc desc;
             desc.Width     = width;
             desc.Height    = height;
-            desc.Format    = RHI::Format::R8G8B8A8Srgb;
+            desc.Format    = srgb ? RHI::Format::R8G8B8A8Srgb : RHI::Format::R8G8B8A8Unorm;
             desc.Usage     = RHI::TextureUsage::Sampled | RHI::TextureUsage::TransferDst;
             desc.MipLevels = mipmapped ? RHI::GetMipLevelCount(width, height) : 1;
             if (mipmapped)
@@ -129,23 +130,31 @@ namespace HR
         const FS::FileSystemManager& fileSystem = catalog.GetFileSystem();
         const size_t total = catalog.GetMaterialCount();
 
+        // Every map a material names, so the editor lists it among the known textures.
+        const auto registerMaps = [&catalog](const HedgehogEngine::MaterialView& material)
+        {
+            for (uint32_t slot = 0; slot < MATERIAL_TEXTURE_BINDING_COUNT; ++slot)
+                if (const std::string& path = GetMaterialTexturePath(material, static_cast<MaterialTextureBinding>(slot));
+                    !path.empty())
+                    catalog.RegisterTexturePath(path);
+        };
+
         for (size_t i = 0; i < m_RegisteredMaterialCount && i < total; ++i)
         {
             const HedgehogEngine::MaterialView mat = catalog.GetMaterial(i);
             if (!mat.isDirty)
                 continue;
 
-            UpdateMaterialGpu(static_cast<uint32_t>(i), mat.transparency, mat.baseColor,
-                              device, fileSystem);
-            catalog.RegisterTexturePath(mat.baseColor);
+            UpdateMaterialGpu(static_cast<uint32_t>(i), mat, device, fileSystem);
+            registerMaps(mat);
             catalog.ClearMaterialDirty(i);
         }
 
         for (size_t i = m_RegisteredMaterialCount; i < total; ++i)
         {
             const HedgehogEngine::MaterialView mat = catalog.GetMaterial(i);
-            CreateMaterialGpu(mat.transparency, mat.baseColor, device, fileSystem);
-            catalog.RegisterTexturePath(mat.baseColor);
+            CreateMaterialGpu(mat, device, fileSystem);
+            registerMaps(mat);
             catalog.ClearMaterialDirty(i);
         }
 
@@ -186,9 +195,12 @@ namespace HR
 
     RHI::IRHITexture& ResourceRegistry::GetOrCreateTexture(const std::string& path,
                                                              RHI::IRHIDevice& device,
-                                                             const FS::FileSystemManager& fileSystem)
+                                                             const FS::FileSystemManager& fileSystem,
+                                                             bool srgb)
     {
-        auto it = m_TextureCache.find(path);
+        // '|' never appears in a path, so a linear copy never collides with one.
+        const std::string key = srgb ? path : path + "|linear";
+        auto it = m_TextureCache.find(key);
         if (it != m_TextureCache.end())
             return *it->second;
 
@@ -200,9 +212,9 @@ namespace HR
         const uint32_t texW    = loaded ? static_cast<uint32_t>(loader.GetWidth())  : 1u;
         const uint32_t texH    = loaded ? static_cast<uint32_t>(loader.GetHeight()) : 1u;
         // Mipmapped, since materials draw it at any distance.
-        auto texture = UploadRgba8(device, loaded ? loader.GetData() : FALLBACK_PIXEL, texW, texH, true);
+        auto texture = UploadRgba8(device, loaded ? loader.GetData() : FALLBACK_PIXEL, texW, texH, true, srgb);
 
-        auto [result, _] = m_TextureCache.emplace(path, std::move(texture));
+        auto [result, _] = m_TextureCache.emplace(key, std::move(texture));
         return *result->second;
     }
 
@@ -296,39 +308,53 @@ namespace HR
         return found != m_UiTextureSets.end() ? found->second.get() : nullptr;
     }
 
-    void ResourceRegistry::CreateMaterialGpu(float transparency, const std::string& texturePath,
-                                              RHI::IRHIDevice& device,
+    void ResourceRegistry::CreateMaterialGpu(const HedgehogEngine::MaterialView& material, RHI::IRHIDevice& device,
                                               const FS::FileSystemManager& fileSystem)
     {
-        MaterialUniform uniform{ transparency };
-        auto ubo = device.CreateBuffer(sizeof(MaterialUniform), RHI::BufferUsage::UniformBuffer,
-                                       RHI::MemoryUsage::CpuToGpu);
-        ubo->CopyData(&uniform, sizeof(uniform));
-
-        auto& texture = GetOrCreateTexture(texturePath, device, fileSystem);
-
-        auto set = device.AllocateDescriptorSet(*m_MaterialPool, *m_MaterialLayout);
-        set->WriteUniformBuffer(0, *ubo);
-        set->WriteTexture(1, texture, *m_LinearSampler);
-        set->Flush();
-
         MaterialGpuData data;
-        data.UniformBuffer = std::move(ubo);
-        data.DescriptorSet = std::move(set);
+        data.UniformBuffer = device.CreateBuffer(sizeof(MaterialUniform), RHI::BufferUsage::UniformBuffer,
+                                                 RHI::MemoryUsage::CpuToGpu);
+        data.DescriptorSet = device.AllocateDescriptorSet(*m_MaterialPool, *m_MaterialLayout);
+        WriteMaterialSet(data, material, device, fileSystem);
         m_Materials.push_back(std::move(data));
     }
 
-    void ResourceRegistry::UpdateMaterialGpu(uint32_t index, float transparency,
-                                              const std::string& texturePath, RHI::IRHIDevice& device,
-                                              const FS::FileSystemManager& fileSystem)
+    void ResourceRegistry::UpdateMaterialGpu(uint32_t index, const HedgehogEngine::MaterialView& material,
+                                              RHI::IRHIDevice& device, const FS::FileSystemManager& fileSystem)
     {
-        MaterialUniform uniform{ transparency };
-        m_Materials[index].UniformBuffer->CopyData(&uniform, sizeof(uniform));
+        WriteMaterialSet(m_Materials[index], material, device, fileSystem);
+    }
 
-        auto& texture = GetOrCreateTexture(texturePath, device, fileSystem);
-        m_Materials[index].DescriptorSet->WriteUniformBuffer(0, *m_Materials[index].UniformBuffer);
-        m_Materials[index].DescriptorSet->WriteTexture(1, texture, *m_LinearSampler);
-        m_Materials[index].DescriptorSet->Flush();
+    void ResourceRegistry::WriteMaterialSet(MaterialGpuData& gpu, const HedgehogEngine::MaterialView& material,
+                                            RHI::IRHIDevice& device, const FS::FileSystemManager& fileSystem)
+    {
+        if (!m_WhiteSrgbTexture)
+        {
+            constexpr uint8_t WHITE[4]       = { 255, 255, 255, 255 };
+            constexpr uint8_t FLAT_NORMAL[4] = { 128, 128, 255, 255 };
+            m_WhiteSrgbTexture   = UploadRgba8(device, WHITE, 1, 1, false, true);
+            m_WhiteLinearTexture = UploadRgba8(device, WHITE, 1, 1, false, false);
+            m_FlatNormalTexture  = UploadRgba8(device, FLAT_NORMAL, 1, 1, false, false);
+        }
+
+        const MaterialUniform uniform = MakeMaterialUniform(material);
+        gpu.UniformBuffer->CopyData(&uniform, sizeof(uniform));
+        gpu.DescriptorSet->WriteUniformBuffer(0, *gpu.UniformBuffer);
+        for (uint32_t slot = 0; slot < MATERIAL_TEXTURE_BINDING_COUNT; ++slot)
+        {
+            const auto         binding = static_cast<MaterialTextureBinding>(slot);
+            const bool         srgb    = IsColorTexture(binding);
+            const std::string& path    = GetMaterialTexturePath(material, binding);
+            RHI::IRHITexture*  texture = nullptr;
+            if (!path.empty())
+                texture = &GetOrCreateTexture(path, device, fileSystem, srgb);
+            else if (binding == MaterialTextureBinding::Normal)
+                texture = m_FlatNormalTexture.get();
+            else
+                texture = srgb ? m_WhiteSrgbTexture.get() : m_WhiteLinearTexture.get();
+            gpu.DescriptorSet->WriteTexture(1 + slot, *texture, *m_LinearSampler);
+        }
+        gpu.DescriptorSet->Flush();
     }
 
     const MeshGeometryInfo& ResourceRegistry::GetMeshGeometryInfo(size_t meshIndex) const
@@ -362,6 +388,9 @@ namespace HR
         m_UiSampler.reset();
         m_UiTextureLayout = nullptr;
         m_TextureCache.clear();
+        m_WhiteSrgbTexture.reset();
+        m_WhiteLinearTexture.reset();
+        m_FlatNormalTexture.reset();
         m_LinearSampler.reset();
         m_MaterialPool.reset();
         m_MaterialLayout = nullptr;

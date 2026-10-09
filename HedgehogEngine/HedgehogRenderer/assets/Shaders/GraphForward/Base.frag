@@ -15,12 +15,24 @@ layout(set = 0, binding = 0) uniform ViewData
     vec4 eyePos;
 } viewData;
 
+// ResourceRegistry's MaterialUniform (std140); a slot without a map samples its neutral default.
 layout(set = 1, binding = 0) uniform MaterialData
 {
+    vec4  baseColorFactor;
+    vec4  emissiveFactor;
+    float metallic;
+    float roughness;
+    float normalScale;
+    float occlusionStrength;
     float transparency;
+    uint  textureFlags;
 } materialData;
 
-layout(set = 1, binding = 1) uniform sampler2D texSampler;
+layout(set = 1, binding = 1) uniform sampler2D baseColorMap;
+layout(set = 1, binding = 2) uniform sampler2D normalMap;
+layout(set = 1, binding = 3) uniform sampler2D metallicRoughnessMap;
+layout(set = 1, binding = 4) uniform sampler2D occlusionMap;
+layout(set = 1, binding = 5) uniform sampler2D emissiveMap;
 
 layout(set = 2, binding = 0) uniform SceneLights
 {
@@ -35,7 +47,7 @@ void main()
     SurfaceData data;
     data.pos    = inWorldPosition;
     data.norm   = inNormal;
-    data.albedo = texture(texSampler, fragTexCoord);
+    data.albedo = texture(baseColorMap, fragTexCoord) * materialData.baseColorFactor;
     outColor    = vec4(0.0f, 0.0f, 0.0f, 0.0f);
 
     for (int i = 0; i < sceneLights.lightCount; ++i)

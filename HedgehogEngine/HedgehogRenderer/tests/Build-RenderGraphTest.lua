@@ -22,7 +22,9 @@ project "RenderGraphTest"
         "../api/HedgehogRenderer/Frame/**.hpp",
         "../src/Frame/**.cpp",
         "../src/ResourceRegistry/SkinningStreams.hpp",
-        "../src/ResourceRegistry/SkinningStreams.cpp"
+        "../src/ResourceRegistry/SkinningStreams.cpp",
+        "../src/ResourceRegistry/MaterialUniform.hpp",
+        "../src/ResourceRegistry/MaterialUniform.cpp"
     }
 
     includedirs
