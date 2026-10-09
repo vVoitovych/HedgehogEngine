@@ -59,6 +59,11 @@ namespace ContentLoader
         std::vector<HM::Vector4u>  Joints;
         std::vector<HM::Vector4>   Weights;
         std::optional<LoadedSkin>  Skin;
+
+        // The glTF material the mesh is drawn with: its first primitive's index into the file's
+        // materials (LoadGltfMaterials), or -1 for none (and for an OBJ file). One mesh is one draw,
+        // so a file whose primitives use several materials keeps the first, with one warning.
+        int32_t MaterialIndex = -1;
     };
 }
 

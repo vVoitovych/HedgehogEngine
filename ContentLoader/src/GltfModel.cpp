@@ -44,10 +44,14 @@ namespace ContentLoader
         }
     }
 
-    bool LoadGltfModel(const std::string& path, tinygltf::Model& model)
+    bool LoadGltfModel(const std::string& path, tinygltf::Model& model, bool decodeImages)
     {
         tinygltf::TinyGLTF loader;
         std::string        err, warn;
+        if (!decodeImages)
+            loader.SetImageLoader([](tinygltf::Image*, const int, std::string*, std::string*, int, int, const unsigned char*,
+                                     int, void*) { return true; },
+                                  nullptr);
 
         const bool success = HasExtension(path, ".glb") ? loader.LoadBinaryFromFile(&model, &err, &warn, path)
                                                         : loader.LoadASCIIFromFile(&model, &err, &warn, path);

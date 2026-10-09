@@ -12,8 +12,10 @@
 // skin's joint order, so a mesh's vertex joints and a clip's channels name joints alike.
 namespace ContentLoader
 {
-    // Loads a .gltf or (by extension) .glb file; logs and returns false on failure.
-    bool LoadGltfModel(const std::string& path, tinygltf::Model& model);
+    // Loads a .gltf or (by extension) .glb file; logs and returns false on failure. Without
+    // decodeImages the images are listed (their uri kept) but not decoded, which is all a reader of
+    // materials needs.
+    bool LoadGltfModel(const std::string& path, tinygltf::Model& model, bool decodeImages = true);
 
     // One component of an accessor element as a double: floats as they are, integers as their
     // value, or scaled to [0, 1] (signed types to [-1, 1]) when the accessor is normalized.
