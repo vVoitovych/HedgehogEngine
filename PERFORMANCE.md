@@ -160,5 +160,21 @@ showing up in `RenderFrame(total)`'s fence wait (the fastest frames went from 0.
 0.57-0.58 ms of wall time). Well inside the 16.6 ms budget; the cost scales with the views'
 pixel counts, not the scene.
 
+### 2026-10-09 (HE-326) — Cook-Torrance PBR shading and the tangent stream
+
+The forward shader now evaluates a GGX specular lobe per light and, for normal-mapped materials,
+a tangent basis; every vertex gains a 16-byte tangent stream. Before = master at 6a5a9b1, after =
+this change; Release, `benchmark.yaml`, 600 frames, 3 runs each, same machine (RTX 2070), same
+session, not interleaved. Averages per run, in ms.
+
+| Row                  | Before (runs)       | After (runs)        | Median before → after |
+|----------------------|---------------------|---------------------|----------------------:|
+| `RenderFrame(total)` | 1.891, 1.961, 1.904 | 1.930, 1.935, 1.896 | 1.904 → 1.930 |
+| `Frame(wall)`        | 2.116, 2.206, 2.152 | 2.193, 2.196, 2.142 | 2.152 → 2.193 |
+
+No change beyond run-to-run noise: `benchmark.yaml`'s materials have no maps, so the normal-map
+path is skipped, and its few lights keep the per-pixel cost small. The `Forward` pass records in
+0.012-0.014 ms either way.
+
 When a change intentionally alters performance, re-run the benchmark and update
 this table (keep the old row set; add a dated entry below it so history accumulates).
