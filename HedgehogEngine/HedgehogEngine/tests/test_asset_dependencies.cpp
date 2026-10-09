@@ -6,6 +6,7 @@
 #include "HedgehogEngine/api/ECS/components/AnimatorComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/AudioSourceComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/CameraComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/EnvironmentComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RenderComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/UiImageComponent.hpp"
@@ -110,6 +111,12 @@ Scene:
           Text: Score
           Font: Fonts/ui.ttf
         Children: []
+      - Entity: 6
+        Name: Sky
+        Parent: 0
+        EnvironmentComponent:
+          Map: Environments/sky.hdr
+        Children: []
 )";
 }
 
@@ -120,6 +127,7 @@ TEST_CASE("Asset dependencies - every asset-naming component property is an Asse
     CHECK(AssetRefNames<AudioSourceComponent>() == std::vector<std::string>{ "Clip" });
     CHECK(AssetRefNames<UiImageComponent>() == std::vector<std::string>{ "Texture" });
     CHECK(AssetRefNames<UiTextComponent>() == std::vector<std::string>{ "Font" });
+    CHECK(AssetRefNames<EnvironmentComponent>() == std::vector<std::string>{ "Map" });
     CHECK(AssetRefNames<CameraComponent>() == std::vector<std::string>{ "GraphName" });
     // An animator's clip names a clip inside its mesh, not a file.
     CHECK(AssetRefNames<AnimatorComponent>().empty());
@@ -155,6 +163,7 @@ TEST_CASE("Asset dependencies - a fixture scene's closure is exactly its meshes,
     project.Dir.WriteFile("Audio/hit.wav", "");
     project.Dir.WriteFile("Audio/music.wav", "");
     project.Dir.WriteFile("Fonts/ui.ttf", "");
+    project.Dir.WriteFile("Environments/sky.hdr", "");
     // A project's own graph: a depth prepass alone, with no shadow atlas import.
     project.Dir.WriteFile("Graphs/Map.graph", "version: 2\npasses:\n  - type: DepthPrepass\n    name: DepthPrepass\n");
 
@@ -166,6 +175,7 @@ TEST_CASE("Asset dependencies - a fixture scene's closure is exactly its meshes,
     std::vector<std::string> expected = {
         "assets://Audio/hit.wav",
         "assets://Audio/music.wav",
+        "assets://Environments/sky.hdr",
         "assets://Fonts/ui.ttf",
         "assets://Graphs/Map.graph",
         "assets://Materials/Crate.material",

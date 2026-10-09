@@ -7,6 +7,7 @@
 #include "HedgehogEngine/HedgehogSettings/api/ProjectSettings.hpp"
 
 #include "HedgehogEngine/api/ECS/components/AudioSourceComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/EnvironmentComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/CameraComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RenderComponent.hpp"
@@ -143,6 +144,7 @@ namespace HedgehogEngine
         collector.AddReflectedComponent<MeshComponent>("MeshComponent");
         collector.AddReflectedComponent<RenderComponent>("RenderComponent");
         collector.AddReflectedComponent<AudioSourceComponent>("AudioSourceComponent");
+        collector.AddReflectedComponent<EnvironmentComponent>("EnvironmentComponent");
         collector.AddReflectedComponent<UiImageComponent>("UiImageComponent");
         collector.AddReflectedComponent<UiTextComponent>("UiTextComponent");
         collector.AddReflectedComponent<CameraComponent>("CameraComponent", NormalizeGraphReference);

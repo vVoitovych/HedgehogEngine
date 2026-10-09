@@ -161,6 +161,7 @@ namespace Runtime
                             *engineContext.GetCameraSystem(), m_RenderScene, m_MeshBounds.GetBounds());
         m_Extractor.ExtractUi(engineContext.GetECS(), *engineContext.GetUiSystem(), region.PixelSize, m_RenderScene,
                               &engineContext.GetResourceCatalog().GetFontContainer());
+        m_Extractor.ExtractEnvironment(engineContext.GetECS(), *engineContext.GetEnvironmentSystem(), m_RenderScene);
 
         m_Renderer->SyncResources(engineContext.GetResourceCatalog());
         m_Renderer->RenderFrame(m_RenderScene, engineContext.GetSettings());

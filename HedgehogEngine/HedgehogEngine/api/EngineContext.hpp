@@ -60,6 +60,7 @@ namespace HedgehogEngine
     class AudioListenerSystem;
     class PhysicsSystem;
     class RigidBodyListSystem;
+    class EnvironmentSystem;
     class SaveGameManager;
     class PrefabManager;
     class PluginManager;
@@ -184,6 +185,8 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API UiSystem*           GetUiSystem()        const;
         HEDGEHOG_ENGINE_API AudioSystem*        GetAudioSystem()     const;
         HEDGEHOG_ENGINE_API PhysicsSystem*      GetPhysicsSystem()   const;
+        // The entity view of the environments, which extraction reads.
+        HEDGEHOG_ENGINE_API EnvironmentSystem*  GetEnvironmentSystem() const;
 
         // The audio engine AudioSystem plays through. The context never starts it, so tests and
         // tools stay silent: the application calls Init (the Editor and --game-mode with a device,
@@ -236,6 +239,7 @@ namespace HedgehogEngine
         std::shared_ptr<AudioListenerSystem> m_AudioListenerSystem;
         std::shared_ptr<PhysicsSystem>       m_PhysicsSystem;
         std::shared_ptr<RigidBodyListSystem> m_RigidBodyListSystem;
+        std::shared_ptr<EnvironmentSystem>   m_EnvironmentSystem;
 
         ResourceCatalog m_ResourceCatalog;
 

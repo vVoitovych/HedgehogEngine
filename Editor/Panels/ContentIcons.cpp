@@ -34,6 +34,7 @@ namespace Editor
             case ContentType::VertexDescription:
             case ContentType::RenderGraph:
             case ContentType::Font:
+            case ContentType::Environment:
             case ContentType::Other:             return nullptr;
             }
             return nullptr;

@@ -211,6 +211,7 @@ namespace Editor
         m_InspectorExtraRows = {
             { "UiTextComponent", [this] { DrawDropRow("Font", "Drop a .ttf or .otf here", ContentType::Font); } },
             { "AudioSourceComponent", [this] { DrawDropRow("Clip", "Drop a .wav, .mp3 or .flac here", ContentType::Audio); } },
+            { "EnvironmentComponent", [this] { DrawDropRow("Map", "Drop an .hdr here", ContentType::Environment); } },
         };
 
         LoadLastScene(context);
