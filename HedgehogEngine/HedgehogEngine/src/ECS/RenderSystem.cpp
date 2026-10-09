@@ -1,34 +1,15 @@
 #include "HedgehogEngine/api/ECS/systems/RenderSystem.hpp"
 #include "HedgehogEngine/api/Resource/ResourceCatalog.hpp"
 
+#include "FileSystem/api/PathUtils.hpp"
+
 #include <algorithm>
 
 namespace HedgehogEngine
 {
     std::string NormalizeMaterialPath(std::string_view path)
     {
-        constexpr std::string_view ASSETS_PREFIX = "assets://";
-        if (path.starts_with(ASSETS_PREFIX))
-            path.remove_prefix(ASSETS_PREFIX.size());
-
-        std::string normalized;
-        normalized.reserve(path.size());
-        size_t start = 0;
-        while (start <= path.size())
-        {
-            size_t end = path.find_first_of("/\\", start);
-            if (end == std::string_view::npos)
-                end = path.size();
-            const std::string_view segment = path.substr(start, end - start);
-            if (!segment.empty() && segment != ".")
-            {
-                if (!normalized.empty())
-                    normalized += '/';
-                normalized += segment;
-            }
-            start = end + 1;
-        }
-        return normalized;
+        return FS::MakeAssetKey(std::string(path));
     }
 
     void RenderSystem::OnRegister(ECS::ECS& ecs)

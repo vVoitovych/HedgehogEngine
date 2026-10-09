@@ -15,10 +15,10 @@ namespace HedgehogEngine
 {
     class ResourceCatalog;
 
-    // The key a material path is listed by: backslashes as slashes, "assets://" dropped (materials
-    // live under it, and the container adds it back), and "." segments and repeated slashes folded,
-    // so "Materials\a.material", "assets://Materials/a.material" and "Materials/./a.material" are one
-    // material. Case is kept.
+    // The key a material path is listed by, FileSystem's MakeAssetKey: backslashes as slashes,
+    // "assets://" dropped (materials live under it, and the container adds it back), and "." segments
+    // and repeated slashes folded, so "Materials\a.material", "assets://Materials/a.material" and
+    // "Materials/./a.material" are one material. Case is kept.
     [[nodiscard]] HEDGEHOG_ENGINE_API std::string NormalizeMaterialPath(std::string_view path);
 
     // Lists the material files RenderComponents name, by NormalizeMaterialPath, so one file loads

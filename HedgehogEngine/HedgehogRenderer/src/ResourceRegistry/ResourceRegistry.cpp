@@ -3,6 +3,7 @@
 #include "TangentStream.hpp"
 
 #include "ContentLoader/api/TextureLoader.hpp"
+#include "FileSystem/api/PathUtils.hpp"
 
 #include "RHI/api/IRHIDevice.hpp"
 #include "RHI/api/IRHIBuffer.hpp"
@@ -203,14 +204,16 @@ namespace HR
                                                              const FS::FileSystemManager& fileSystem,
                                                              bool srgb)
     {
-        // '|' never appears in a path, so a linear copy never collides with one.
-        const std::string key = srgb ? path : path + "|linear";
+        // One copy per file and colour space, however the path is spelt (FS::MakeAssetKey); '|' never
+        // appears in a path, so a linear copy never collides with one.
+        const std::string file = FS::MakeAssetKey(path);
+        const std::string key  = srgb ? file : file + "|linear";
         auto it = m_TextureCache.find(key);
         if (it != m_TextureCache.end())
             return *it->second;
 
         ContentLoader::TextureLoader loader;
-        const bool loaded = loader.LoadTexture(path, fileSystem);
+        const bool loaded = loader.LoadTexture(file, fileSystem);
         // A missing/corrupt texture must not take down rendering: substitute a
         // 1x1 magenta placeholder (cached under the same path like any texture).
         constexpr uint8_t FALLBACK_PIXEL[4] = { 255, 0, 255, 255 };
