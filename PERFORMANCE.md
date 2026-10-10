@@ -267,5 +267,13 @@ alpha cutoff since HE-344. Release, 600 frames after a 120-frame warmup, 3 runs 
 Medians 2.212 → 2.154 and 2.053 → 2.100 ms: no change beyond run-to-run noise; `ForwardTransparent`
 records in 0.000 ms when it has nothing to draw.
 
+### 2026-10-10 (HE-353) — the selection outline
+
+The Scene view's selection is outlined by two passes (`SelectionMask`, `SelectionOutline`) in place
+of the Gizmo pass's bounds box. The benchmark selects nothing, so both record in 0.001 ms; Release,
+`benchmark.yaml`, 600 frames, `Frame(wall)` avg 2.235, 2.211 and 2.209 ms (within run-to-run noise
+of the HE-346 numbers). With a selection the Scene view adds one mesh draw into an R8 mask and one
+fullscreen pass of 25 mask taps; the Game view never runs either.
+
 When a change intentionally alters performance, re-run the benchmark and update
 this table (keep the old row set; add a dated entry below it so history accumulates).
