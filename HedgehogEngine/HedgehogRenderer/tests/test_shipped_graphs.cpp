@@ -131,8 +131,18 @@ namespace
 
         const RGTexture selectionMask =
             Declare(graph, "selectionMask", RHI::Format::R8Unorm, RGSizePolicy::MakeRelativeToResult(1.0f));
+
+        RGTexture maskWritten;
         graph.AddPass<TargetData>("SelectionMask",
-            [&](RGPassBuilder& pass, TargetData& data) { data.Target = pass.ColorTarget(selectionMask); },
+            [&](RGPassBuilder& pass, TargetData& data) { maskWritten = data.Target = pass.ColorTarget(selectionMask); },
+            NO_EXECUTE);
+        RGTexture outlinedColor;
+        graph.AddPass<TargetData>("SelectionOutline",
+            [&](RGPassBuilder& pass, TargetData& data)
+            {
+                pass.SampleTexture(maskWritten);
+                outlinedColor = data.Target = pass.ColorTarget(litColor);
+            },
             NO_EXECUTE);
 
         RGTexture colorWritten;
@@ -140,7 +150,7 @@ namespace
             [&](RGPassBuilder& pass, TargetData& data)
             {
                 pass.DepthReadOnly(depthWritten);
-                colorWritten = data.Target = pass.ColorTarget(litColor);
+                colorWritten = data.Target = pass.ColorTarget(outlinedColor);
             },
             NO_EXECUTE);
         graph.BindOutput(graph.AddOutputSlot("color", RHI::Format::R16G16B16A16Unorm,
