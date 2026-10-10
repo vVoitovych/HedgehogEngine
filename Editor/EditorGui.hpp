@@ -166,6 +166,13 @@ namespace Editor
         void DrawAddComponentItems(HedgehogEngine::Engine& context);
         void CreateMaterial(HedgehogEngine::EngineContext& engineContext);
         void DrawToolbarContent(HedgehogEngine::Engine& context);
+        // The toolbar's Move, Rotate and Scale buttons and the Local/World toggle (EditorGuiSceneTools.cpp).
+        void DrawTransformToolButtons();
+        // Keys 1, 2 and 3 pick Move, Rotate and Scale while the Scene view has focus.
+        void HandleTransformToolKeys();
+        // The selected entity's transform gizmo over the Scene image (window coordinates); a drag
+        // writes its position, rotation or scale. Whether the pointer is over a handle or drags one.
+        bool DrawSceneGizmo(HedgehogEngine::Engine& context, const HM::Vector2& imageMin, const HM::Vector2& imageSize);
         // The icon's ImGui texture id, or nullptr when it did not load.
         [[nodiscard]] void* GetIcon(EditorIcon icon) const { return m_ViewportImages.EditorIcons[static_cast<size_t>(icon)]; }
         void DrawSceneViewContent(HedgehogEngine::Engine& context);
@@ -276,6 +283,7 @@ namespace Editor
         HM::Vector2 m_SceneImageMin  = HM::Vector2(0.0f, 0.0f); // window coordinates
         HM::Vector2 m_SceneImageSize = HM::Vector2(0.0f, 0.0f);
         bool        m_SceneViewFocused = false;
+        bool        m_SceneGizmoActive = false; // the pointer is over a gizmo handle or drags one
         HM::Vector2 m_GameImageMin  = HM::Vector2(0.0f, 0.0f); // window coordinates
         HM::Vector2 m_GameImageSize = HM::Vector2(0.0f, 0.0f);
         bool     m_GameViewHovered  = false;

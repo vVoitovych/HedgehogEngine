@@ -72,6 +72,8 @@ namespace Editor
 
         out << YAML::Key << "content_icon_size" << YAML::Value << ContentIconSize;
         out << YAML::Key << "physics_debug" << YAML::Value << PhysicsDebug;
+        out << YAML::Key << "transform_tool" << YAML::Value << GetTransformToolName(GizmoTool);
+        out << YAML::Key << "transform_space" << YAML::Value << GetTransformSpaceName(GizmoSpace);
 
         out << YAML::Key << "recent_projects" << YAML::Value << YAML::BeginSeq;
         for (const RecentProject& project : RecentProjects)
@@ -121,6 +123,13 @@ namespace Editor
             PhysicsDebug = false;
             if (const YAML::Node debug = root["physics_debug"])
                 PhysicsDebug = debug.as<bool>(false);
+            // Missing or unknown: Move, in Local axes.
+            GizmoTool = TransformTool::Move;
+            if (const YAML::Node tool = root["transform_tool"])
+                GizmoTool = FindTransformTool(tool.as<std::string>("")).value_or(TransformTool::Move);
+            GizmoSpace = TransformSpace::Local;
+            if (const YAML::Node space = root["transform_space"])
+                GizmoSpace = FindTransformSpace(space.as<std::string>("")).value_or(TransformSpace::Local);
 
             if (auto dock = root["dock_layout"])
             {

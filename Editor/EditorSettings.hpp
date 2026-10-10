@@ -3,6 +3,7 @@
 #include "Docking/DockTypes.hpp"
 #include "Panels/ContentPanel.hpp"
 #include "Project/RecentProjects.hpp"
+#include "Widgets/TransformGizmoMath.hpp"
 
 #include "FileSystem/api/FileSystemManager.hpp"
 
@@ -24,6 +25,8 @@ namespace Editor
         DockLayoutState            dockLayout;
         float                      ContentIconSize = CONTENT_ICON_SIZE_DEFAULT; // the Project grid's icon size
         bool                       PhysicsDebug    = false; // the Scene view's collider wireframes
+        TransformTool              GizmoTool       = TransformTool::Move;   // the Scene view's transform tool
+        TransformSpace             GizmoSpace      = TransformSpace::Local; // the axes it moves and turns along
         std::vector<RecentProject> RecentProjects; // most recent first, each with its last scene
 
         // Writes <file>.tmp and renames it over the file, so a cut-short write leaves the last one.
