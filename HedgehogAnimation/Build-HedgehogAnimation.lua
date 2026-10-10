@@ -9,11 +9,16 @@ project "HedgehogAnimation"
    {
       ".",
       "..",
+      "%{IncludeDir.yaml_cpp}",
    }
 
-   -- ContentLoader's headers only: the converters read its plain-data structs.
+   defines { "YAML_CPP_STATIC_DEFINE" }
+
+   -- ContentLoader's headers only: the converters read its plain-data structs. yaml-cpp reads
+   -- and writes animator controller files.
    links {
       "HedgehogMath",
+      "yaml-cpp",
    }
 
    targetdir (IntermediatesDir)
