@@ -1,0 +1,15 @@
+Type: 1
+BaseColor: "Textures/Fence.png"
+BaseColorFactor: [1, 1, 1, 1]
+Transparency: 1
+AlphaCutoff: 0.5
+DoubleSided: true
+Metallic: 0
+Roughness: 0.8
+MetallicRoughnessMap: ""
+NormalMap: ""
+NormalScale: 1
+OcclusionMap: ""
+OcclusionStrength: 1
+EmissiveMap: ""
+EmissiveFactor: [0, 0, 0]
