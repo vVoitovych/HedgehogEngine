@@ -4,6 +4,8 @@
 #include "MaterialGpuData.hpp"
 #include "MaterialUniform.hpp"
 
+#include "HedgehogRenderer/Views/ViewCulling.hpp"
+
 #include "HedgehogCommon/api/Resource/IResourceCatalog.hpp"
 #include "RHI/api/RHITypes.hpp"
 
@@ -90,6 +92,8 @@ namespace HR
         // The geometry buffers exist once at least one mesh has been synced.
         size_t GetMeshCount()     const { return m_MeshGeometryInfos.size(); }
         size_t GetMaterialCount() const { return m_Materials.size(); }
+        // Each material's alpha mode and sidedness, by material index (GraphFrameData::Materials).
+        std::span<const Renderer::MaterialDrawInfo> GetMaterialDrawInfos() const { return m_MaterialDrawInfos; }
 
         const MeshGeometryInfo&       GetMeshGeometryInfo(size_t meshIndex) const;
         const RHI::IRHIDescriptorSet& GetMaterialDescriptorSet(uint32_t index) const;
@@ -140,6 +144,7 @@ namespace HR
         const RHI::IRHIDescriptorSetLayout*      m_MaterialLayout = nullptr;
         std::unique_ptr<RHI::IRHIDescriptorPool> m_MaterialPool;
         std::vector<MaterialGpuData>             m_Materials;
+        std::vector<Renderer::MaterialDrawInfo>  m_MaterialDrawInfos; // aligned with m_Materials
         size_t                                   m_RegisteredMaterialCount = 0;
 
         // Shared texture cache (keyed by path, with a suffix for a linear copy) and sampler

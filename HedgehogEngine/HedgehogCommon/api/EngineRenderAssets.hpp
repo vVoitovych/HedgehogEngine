@@ -17,6 +17,10 @@ namespace HedgehogEngine
     constexpr std::string_view DEPTH_PREPASS_SHADER = "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/DepthPrepass.shader";
     constexpr std::string_view DEPTH_PREPASS_SKINNED_SHADER =
         "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/DepthPrepassSkinned.shader";
+    constexpr std::string_view DEPTH_PREPASS_CUTOFF_SHADER =
+        "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/DepthPrepassCutoff.shader";
+    constexpr std::string_view DEPTH_PREPASS_CUTOFF_SKINNED_SHADER =
+        "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/DepthPrepassCutoffSkinned.shader";
     constexpr std::string_view SHADOW_SHADER = "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/ShadowmapPass.shader";
     constexpr std::string_view SHADOW_SKINNED_SHADER =
         "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/ShadowmapPassSkinned.shader";
@@ -39,9 +43,11 @@ namespace HedgehogEngine
         std::string_view Shader;
     };
 
-    constexpr std::array<PassTypeShader, 12> PASS_TYPE_SHADERS = { {
+    constexpr std::array<PassTypeShader, 14> PASS_TYPE_SHADERS = { {
         { "DepthPrepass", DEPTH_PREPASS_SHADER },
         { "DepthPrepass", DEPTH_PREPASS_SKINNED_SHADER },
+        { "DepthPrepass", DEPTH_PREPASS_CUTOFF_SHADER },
+        { "DepthPrepass", DEPTH_PREPASS_CUTOFF_SKINNED_SHADER },
         { "Shadow", SHADOW_SHADER },
         { "Shadow", SHADOW_SKINNED_SHADER },
         { "Forward", FORWARD_SHADER },

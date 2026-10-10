@@ -8,6 +8,7 @@
 #include "RHI/api/IRHIDescriptor.hpp"
 #include "RHI/api/IRHIPipeline.hpp"
 
+#include <array>
 #include <vector>
 
 // Stand-ins for what the renderer hands the engine passes through a GraphFrameContext, shared by
@@ -31,23 +32,10 @@ namespace RGTest
     class FakeServices final : public Renderer::IGraphPassServices
     {
     public:
+        // A pipeline of its own per EnginePipeline, so a test can tell which one a pass bound.
         const RHI::IRHIPipeline& GetPipeline(Renderer::EnginePipeline pipeline) const override
         {
-            switch (pipeline)
-            {
-                case Renderer::EnginePipeline::DepthPrepass: return m_Depth;
-                case Renderer::EnginePipeline::Shadow:       return m_Shadow;
-                case Renderer::EnginePipeline::Gizmo:        return m_Gizmo;
-                case Renderer::EnginePipeline::DepthPrepassSkinned:       return m_DepthSkinned;
-                case Renderer::EnginePipeline::ForwardSkinned:            return m_ForwardSkinned;
-                case Renderer::EnginePipeline::ForwardSkinnedDoubleSided: return m_ForwardSkinnedDoubleSided;
-                case Renderer::EnginePipeline::ShadowSkinned:             return m_ShadowSkinned;
-                case Renderer::EnginePipeline::GameUi:                    return m_GameUi;
-                case Renderer::EnginePipeline::DebugLines:                return m_DebugLines;
-                case Renderer::EnginePipeline::ToneMap:                   return m_ToneMap;
-                case Renderer::EnginePipeline::Skybox:                    return m_Skybox;
-                default:                                     return m_Forward;
-            }
+            return m_Pipelines.at(static_cast<size_t>(pipeline));
         }
         RHI::IRHIBuffer& GetGizmoBoxLines() override { return m_GizmoBoxLines; }
         const RHI::IRHIDescriptorSet& AllocateViewProjUniform(const HM::Matrix4x4& viewProj) override
@@ -98,18 +86,7 @@ namespace RGTest
         std::vector<const RHI::IRHITexture*> SampledTextures;
 
     private:
-        FakePipeline      m_Depth;
-        FakePipeline      m_Shadow;
-        FakePipeline      m_Forward;
-        FakePipeline      m_Gizmo;
-        FakePipeline      m_DepthSkinned;
-        FakePipeline      m_ForwardSkinned;
-        FakePipeline      m_ForwardSkinnedDoubleSided;
-        FakePipeline      m_ShadowSkinned;
-        FakePipeline      m_GameUi;
-        FakePipeline      m_DebugLines;
-        FakePipeline      m_ToneMap;
-        FakePipeline      m_Skybox;
+        std::array<FakePipeline, 32> m_Pipelines;
         TestBuffer        m_GizmoBoxLines{ Renderer::GIZMO_BOX_LINE_VERTICES * 12 };
         FakeDescriptorSet m_Set;
         FakeDescriptorSet m_SceneLights;

@@ -218,12 +218,13 @@ namespace Renderer
 
         GraphFrameData frame;
         FillUiFrame(scene, resources, frame);
-        // Every visible instance is drawn as opaque: RenderScene carries no material type yet.
+        // Each view sorts its instances by their materials' alpha modes; the shadow casts every one.
         m_FrameInstances = scene.Instances;
         CollectSceneInstances(scene.Instances, m_SceneInstances);
         frame.OpaqueInstances = m_SceneInstances;
         frame.Meshes          = m_Meshes;
         frame.MaterialSets    = m_MaterialSets;
+        frame.Materials       = resources.GetMaterialDrawInfos();
         if (!m_Meshes.empty())
         {
             // The passes bind these but never write them; the command list API takes them non-const.
@@ -307,10 +308,14 @@ namespace Renderer
         if (!m_Meshes.empty())
         {
             // Every instance, the editor layer included: the view's mask decides what it sees.
-            CullViewInstances(m_FrameInstances, view.Desc.LayerMask, frame.Proj * frame.View, instances);
-            frame.OpaqueInstances  = instances.Opaque;
-            frame.SkinnedInstances = instances.Skinned;
-            frame.OverlayInstances = instances.Overlay;
+            CullViewInstances(m_FrameInstances, view.Desc.LayerMask, frame.Proj * frame.View, instances, frame.Materials);
+            frame.OpaqueInstances             = instances.Opaque;
+            frame.SkinnedInstances            = instances.Skinned;
+            frame.CutoffInstances             = instances.Cutoff;
+            frame.SkinnedCutoffInstances      = instances.SkinnedCutoff;
+            frame.TransparentInstances        = instances.Transparent;
+            frame.SkinnedTransparentInstances = instances.SkinnedTransparent;
+            frame.OverlayInstances            = instances.Overlay;
         }
         const HM::Vector4& position = camera.WorldMatrix[3]; // the translation column
         frame.EyePosition = HM::Vector3(position.x(), position.y(), position.z());

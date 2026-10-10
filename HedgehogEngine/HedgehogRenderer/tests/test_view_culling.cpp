@@ -130,3 +130,35 @@ TEST_CASE("Skinned instances are culled like the rest and kept apart from the ri
     CollectSceneInstances(instances, scene);
     CHECK(Ids(scene) == std::vector<uint64_t>{ 1, 2, 3 });
 }
+
+TEST_CASE("Instances are split by their material's alpha mode, rigid and skinned apart")
+{
+    using HedgehogEngine::MaterialAlphaMode;
+    const MaterialDrawInfo materials[] = { { MaterialAlphaMode::Opaque, false },
+                                           { MaterialAlphaMode::Cutoff, false },
+                                           { MaterialAlphaMode::Transparent, true } };
+    std::vector<HX::RenderInstance> instances;
+    for (uint64_t id = 0; id < 8; ++id)
+    {
+        HX::RenderInstance instance = At(id, HM::Vector3(0.0f, 0.0f, -5.0f));
+        instance.MaterialIndex      = id % 4; // material 3 has no draw info: opaque
+        instance.JointCount         = id >= 4 ? 2 : 0;
+        instances.push_back(instance);
+    }
+
+    ViewInstances view;
+    CullViewInstances(instances, 0xFFFFFFFFu, ViewProj(), view, materials);
+    CHECK(Ids(view.Opaque) == std::vector<uint64_t>{ 0, 3 });
+    CHECK(Ids(view.Cutoff) == std::vector<uint64_t>{ 1 });
+    CHECK(Ids(view.Transparent) == std::vector<uint64_t>{ 2 });
+    CHECK(Ids(view.Skinned) == std::vector<uint64_t>{ 4, 7 });
+    CHECK(Ids(view.SkinnedCutoff) == std::vector<uint64_t>{ 5 });
+    CHECK(Ids(view.SkinnedTransparent) == std::vector<uint64_t>{ 6 });
+
+    // Without draw info every instance is opaque, as before alpha modes existed.
+    CullViewInstances(instances, 0xFFFFFFFFu, ViewProj(), view);
+    CHECK(view.Opaque.size() == 4);
+    CHECK(view.Skinned.size() == 4);
+    CHECK(view.Cutoff.empty());
+    CHECK(view.Transparent.empty());
+}

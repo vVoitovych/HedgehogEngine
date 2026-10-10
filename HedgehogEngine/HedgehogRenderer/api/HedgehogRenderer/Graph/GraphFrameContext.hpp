@@ -4,6 +4,8 @@
 #include "RGTypes.hpp"
 #include "UiCallback.hpp"
 
+#include "HedgehogRenderer/Views/ViewCulling.hpp"
+
 #include "HedgehogCommon/api/RendererSettings.hpp"
 #include "HedgehogExtract/api/RenderScene.hpp"
 #include "HedgehogMath/api/Matrix.hpp"
@@ -66,6 +68,21 @@ namespace Renderer
         // OpaqueInstances. The depth prepass and forward pass draw them after the rigid ones, with the
         // skinned pipelines and JointPalette.
         std::span<const HX::RenderInstance> SkinnedInstances;
+
+        // A view's instances whose material is Cutoff (alpha-tested), rigid and skinned, culled like
+        // OpaqueInstances: the depth prepass draws them with the cutoff pipelines, which discard
+        // below the material's cutoff, and the forward pass after the opaque ones.
+        std::span<const HX::RenderInstance> CutoffInstances;
+        std::span<const HX::RenderInstance> SkinnedCutoffInstances;
+
+        // A view's instances whose material is Transparent, rigid and skinned: neither the depth
+        // prepass nor the forward pass draws them.
+        std::span<const HX::RenderInstance> TransparentInstances;
+        std::span<const HX::RenderInstance> SkinnedTransparentInstances;
+
+        // Each material's draw info, indexed by RenderInstance::MaterialIndex: its alpha mode and
+        // whether it is double-sided, which picks the passes' pipelines without back-face culling.
+        std::span<const MaterialDrawInfo> Materials;
 
         // The frame's RenderScene::JointMatrices, uploaded once as a storage buffer (the skinned
         // pipelines' palette set). Null when no instance is skinned.
@@ -192,6 +209,12 @@ namespace Renderer
         DebugLines,                 // DebugLineVertex lines, depth-tested, not written: viewProj at set 0
         ToneMap,                    // a fullscreen triangle, no depth: the sampled HDR texture at set 0
         Skybox,                     // a fullscreen triangle at the far plane, depth-tested, not written: the cube at set 0
+        DepthPrepassDoubleSided,        // DepthPrepass without back-face culling
+        DepthPrepassSkinnedDoubleSided, // DepthPrepassSkinned without back-face culling
+        DepthPrepassCutoff,             // DepthPrepass for CutoffInstances: UVs, the material at set 1, discarding below its cutoff
+        DepthPrepassCutoffDoubleSided,  // DepthPrepassCutoff without back-face culling
+        DepthPrepassCutoffSkinned,      // DepthPrepassCutoff for SkinnedCutoffInstances: palette at set 1, material at set 2
+        DepthPrepassCutoffSkinnedDoubleSided, // DepthPrepassCutoffSkinned without back-face culling
     };
 
     // The long-lived GPU objects the engine passes use but do not own: pipelines, and per-frame
