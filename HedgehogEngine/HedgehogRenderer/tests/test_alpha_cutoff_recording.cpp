@@ -161,7 +161,7 @@ TEST_CASE("Cutoff instances are depth-tested with the cutoff pipelines and their
     CHECK(cmd.BoundVertexBuffers[1] == std::vector<const RHI::IRHIBuffer*>{ &scene.Positions, &scene.TexCoords });
     CHECK(cmd.BoundVertexBuffers[2]
           == std::vector<const RHI::IRHIBuffer*>{ &scene.Positions, &scene.Joints, &scene.Weights, &scene.TexCoords });
-    CHECK(std::count(cmd.BoundSets.begin(), cmd.BoundSets.end(), &scene.Cutoff) == 4); // 2 prepass, 2 forward
+    CHECK(std::count(cmd.BoundSets.begin(), cmd.BoundSets.end(), &scene.Cutoff) == 6); // 2 each: prepass, shadow, forward
 
     // The forward pass draws the cutoff ones after the opaque one with the same pipeline (its shader
     // discards), and the skinned cutoff one with the skinned pipeline. Transparent ones are never drawn.

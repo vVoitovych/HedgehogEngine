@@ -166,6 +166,24 @@ namespace Renderer
         m_DepthPrepassCutoffSkinnedDoubleSidedPipeline = CreatePipeline(device, cutoffSkinnedShader, cutoffSkinnedLayouts,
                                                                         {}, RHI::CullMode::None);
 
+        // The shadow's twins and alpha-tested casters, through the same layouts as the depth prepass's.
+        m_ShadowDoubleSidedPipeline = CreatePipeline(device, shadowShader, { m_ViewProjRing.Layout.get() }, {},
+                                                     RHI::CullMode::None);
+        m_ShadowSkinnedDoubleSidedPipeline = CreatePipeline(
+            device, shadowSkinnedShader, { m_ViewProjRing.Layout.get(), m_PaletteLayout.get() }, {}, RHI::CullMode::None);
+        const ShaderPipelineDesc shadowCutoffShader =
+            ShaderLoader::Load(device, std::string(HedgehogEngine::SHADOW_CUTOFF_SHADER), fileSystem);
+        const ShaderPipelineDesc shadowCutoffSkinnedShader =
+            ShaderLoader::Load(device, std::string(HedgehogEngine::SHADOW_CUTOFF_SKINNED_SHADER), fileSystem);
+        m_ShadowCutoffPipeline = CreatePipeline(device, shadowCutoffShader, cutoffLayouts, {},
+                                                shadowCutoffShader.Pipeline.CullMode);
+        m_ShadowCutoffDoubleSidedPipeline = CreatePipeline(device, shadowCutoffShader, cutoffLayouts, {},
+                                                           RHI::CullMode::None);
+        m_ShadowCutoffSkinnedPipeline = CreatePipeline(device, shadowCutoffSkinnedShader, cutoffSkinnedLayouts, {},
+                                                       shadowCutoffSkinnedShader.Pipeline.CullMode);
+        m_ShadowCutoffSkinnedDoubleSidedPipeline = CreatePipeline(device, shadowCutoffSkinnedShader, cutoffSkinnedLayouts,
+                                                                  {}, RHI::CullMode::None);
+
         // The game UI draws into the colour target alone: no depth attachment.
         const ShaderPipelineDesc gameUiShader = ShaderLoader::Load(device, std::string(HedgehogEngine::GAME_UI_SHADER), fileSystem);
         assert(!gameUiShader.Layout.DescriptorSets.empty());
@@ -288,6 +306,12 @@ namespace Renderer
             case EnginePipeline::DepthPrepassCutoffDoubleSided:        return *m_DepthPrepassCutoffDoubleSidedPipeline;
             case EnginePipeline::DepthPrepassCutoffSkinned:            return *m_DepthPrepassCutoffSkinnedPipeline;
             case EnginePipeline::DepthPrepassCutoffSkinnedDoubleSided: return *m_DepthPrepassCutoffSkinnedDoubleSidedPipeline;
+            case EnginePipeline::ShadowDoubleSided:                    return *m_ShadowDoubleSidedPipeline;
+            case EnginePipeline::ShadowSkinnedDoubleSided:             return *m_ShadowSkinnedDoubleSidedPipeline;
+            case EnginePipeline::ShadowCutoff:                         return *m_ShadowCutoffPipeline;
+            case EnginePipeline::ShadowCutoffDoubleSided:              return *m_ShadowCutoffDoubleSidedPipeline;
+            case EnginePipeline::ShadowCutoffSkinned:                  return *m_ShadowCutoffSkinnedPipeline;
+            case EnginePipeline::ShadowCutoffSkinnedDoubleSided:       return *m_ShadowCutoffSkinnedDoubleSidedPipeline;
         }
         assert(false && "GraphPassServices::GetPipeline: unknown pipeline.");
         return *m_DepthPrepassPipeline;

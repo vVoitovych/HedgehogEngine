@@ -79,6 +79,8 @@ namespace Renderer
         const PassBuilderRegistry&      m_Registry;
         std::vector<HX::RenderInstance> m_Casters;        // rigid; reused: steady-state frames allocate nothing
         std::vector<HX::RenderInstance> m_SkinnedCasters; // JointCount > 0, drawn with the frame's palette
+        std::vector<HX::RenderInstance> m_CutoffCasters;        // a Cutoff material's, alpha-tested
+        std::vector<HX::RenderInstance> m_SkinnedCutoffCasters; // and skinned
         GraphFrameData                  m_ShadowFrame;    // shadowView with only the casters
         ShadowCascades                  m_Cascades;
         ShadowUniform                   m_ShadowUniform;
