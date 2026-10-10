@@ -122,11 +122,18 @@ namespace
                                              RGSizePolicy::MakeRelativeToResult(1.0f)), colorWritten);
     }
 
-    // Hand-written twin of scene.graph: the game view's passes, then the gizmos over them.
+    // Hand-written twin of scene.graph: the game view's passes, the selection's mask, then the
+    // gizmos over them.
     void BuildSceneGraphByHand(RenderGraphRuntime& graph)
     {
         RGTexture       depthWritten;
         const RGTexture litColor = BuildViewPasses(graph, depthWritten);
+
+        const RGTexture selectionMask =
+            Declare(graph, "selectionMask", RHI::Format::R8Unorm, RGSizePolicy::MakeRelativeToResult(1.0f));
+        graph.AddPass<TargetData>("SelectionMask",
+            [&](RGPassBuilder& pass, TargetData& data) { data.Target = pass.ColorTarget(selectionMask); },
+            NO_EXECUTE);
 
         RGTexture colorWritten;
         graph.AddPass<TargetData>("Gizmo",

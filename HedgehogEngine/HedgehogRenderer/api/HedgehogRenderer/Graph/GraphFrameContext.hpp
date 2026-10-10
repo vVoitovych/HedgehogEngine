@@ -225,6 +225,8 @@ namespace Renderer
         ForwardTransparentBackFaces,        // ForwardTransparent culling the front faces: a double-sided one's far side
         ForwardTransparentSkinned,          // ForwardTransparent for SkinnedTransparentInstances: palette at set 4
         ForwardTransparentSkinnedBackFaces, // ForwardTransparentSkinned culling the front faces
+        SelectionMask,        // overlay instances as solid white into an R8 mask: no depth, no culling
+        SelectionMaskSkinned, // SelectionMask for skinned overlay instances: palette at set 1
     };
 
     // The long-lived GPU objects the engine passes use but do not own: pipelines, and per-frame
