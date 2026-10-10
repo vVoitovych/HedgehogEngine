@@ -11,7 +11,7 @@ namespace HedgehogEngine
     struct MaterialData;
 
     // A .material file is YAML: Type (0 Opaque, 1 Cutoff, 2 Transparent), BaseColor (the base colour
-    // map), BaseColorFactor [r, g, b, a], Transparency, Metallic, Roughness, MetallicRoughnessMap,
+    // map), BaseColorFactor [r, g, b, a], Transparency, AlphaCutoff (0 to 1), DoubleSided, Metallic, Roughness, MetallicRoughnessMap,
     // NormalMap, NormalScale, OcclusionMap, OcclusionStrength, EmissiveMap and EmissiveFactor
     // [r, g, b]. Every key is optional: a missing one keeps MaterialData's default and an unreadable
     // one its default with one "[Material] <source>: <key> ..." warning, so a file written before a
