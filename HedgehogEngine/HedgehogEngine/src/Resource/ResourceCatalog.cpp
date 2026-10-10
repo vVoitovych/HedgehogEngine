@@ -81,7 +81,9 @@ namespace HedgehogEngine
                              data.baseColorFactor, data.metallic,        data.roughness,
                              data.metallicRoughnessMap, data.normalMap,  data.normalScale,
                              data.occlusionMap, data.occlusionStrength, data.emissiveMap,
-                             data.emissiveFactor };
+                             data.emissiveFactor,
+                             static_cast<MaterialAlphaMode>(data.type), data.alphaCutoff,
+                             data.doubleSided };
     }
 
     void ResourceCatalog::ClearMaterialDirty(size_t index)

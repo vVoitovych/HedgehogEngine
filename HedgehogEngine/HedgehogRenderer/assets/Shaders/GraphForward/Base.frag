@@ -33,6 +33,8 @@ layout(set = 1, binding = 0) uniform MaterialData
     float occlusionStrength;
     float transparency;
     uint  textureFlags;
+    float alphaCutoff;
+    uint  alphaMode;   // 0 opaque, 1 cutoff, 2 transparent
 } materialData;
 
 layout(set = 1, binding = 1) uniform sampler2D baseColorMap;

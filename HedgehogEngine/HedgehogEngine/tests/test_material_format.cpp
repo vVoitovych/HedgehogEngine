@@ -75,6 +75,8 @@ namespace
         CHECK(material.occlusionStrength == 1.0f);
         CHECK(material.emissiveMap.empty());
         CHECK(material.emissiveFactor == HM::Vector3(0.0f, 0.0f, 0.0f));
+        CHECK(material.alphaCutoff == 0.5f);
+        CHECK_FALSE(material.doubleSided);
     }
 }
 
@@ -107,6 +109,8 @@ TEST_CASE("Material format - every field round-trips, and a second write gives t
     material.type                 = MaterialType::Cutoff;
     material.baseColor            = "Textures/brick.png";
     material.transparency         = 0.25f;
+    material.alphaCutoff          = 0.375f;
+    material.doubleSided          = true;
     material.baseColorFactor      = HM::Vector4(0.5f, 0.25f, 1.0f, 0.75f);
     material.metallic             = 1.0f;
     material.roughness            = 0.125f;
@@ -127,6 +131,8 @@ TEST_CASE("Material format - every field round-trips, and a second write gives t
     CHECK(read.type == MaterialType::Cutoff);
     CHECK(read.baseColor == material.baseColor);
     CHECK(read.transparency == material.transparency);
+    CHECK(read.alphaCutoff == material.alphaCutoff);
+    CHECK(read.doubleSided);
     CHECK(read.baseColorFactor == material.baseColorFactor);
     CHECK(read.metallic == material.metallic);
     CHECK(read.roughness == material.roughness);
@@ -141,7 +147,7 @@ TEST_CASE("Material format - every field round-trips, and a second write gives t
 
     // The keys come in a fixed order.
     std::vector<size_t> positions;
-    for (const char* key : { "Type:", "BaseColor:", "BaseColorFactor:", "Transparency:", "Metallic:", "Roughness:",
+    for (const char* key : { "Type:", "BaseColor:", "BaseColorFactor:", "Transparency:", "AlphaCutoff:", "DoubleSided:", "Metallic:", "Roughness:",
                              "MetallicRoughnessMap:", "NormalMap:", "NormalScale:", "OcclusionMap:",
                              "OcclusionStrength:", "EmissiveMap:", "EmissiveFactor:" })
     {
@@ -184,6 +190,10 @@ TEST_CASE("Material format - an unreadable value keeps its default with one warn
         { "Type: 7\n", "Type" },
         { "Type: 0.5\n", "Type" },
         { "NormalMap: [a, b]\n", "NormalMap" },
+        { "AlphaCutoff: 1.5\n", "AlphaCutoff" },
+        { "AlphaCutoff: -0.1\n", "AlphaCutoff" },
+        { "AlphaCutoff: half\n", "AlphaCutoff" },
+        { "DoubleSided: maybe\n", "DoubleSided" },
     };
     for (const Case& bad : cases)
     {

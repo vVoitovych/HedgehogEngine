@@ -92,11 +92,18 @@ namespace Editor
             material.type = static_cast<HedgehogEngine::MaterialType>(type);
             edited        = true;
         }
+        if (material.type == HedgehogEngine::MaterialType::Cutoff)
+        {
+            PropertyLabel("Alpha cutoff");
+            edited |= ImGui::SliderFloat("##AlphaCutoff", &material.alphaCutoff, 0.0f, 1.0f);
+        }
         if (material.type == HedgehogEngine::MaterialType::Transparent)
         {
             PropertyLabel("Transparency");
             edited |= ImGui::SliderFloat("##Transparency", &material.transparency, 0.0f, 1.0f);
         }
+        PropertyLabel("Double sided");
+        edited |= ImGui::Checkbox("##DoubleSided", &material.doubleSided);
 
         // Factors are linear, as glTF stores them; the emissive colour may pass 1.
         PropertyLabel("Base colour");

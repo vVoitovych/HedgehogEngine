@@ -35,6 +35,14 @@ namespace HedgehogEngine
         uint32_t vertexOffset;
     };
 
+    // How a material uses its alpha, as HedgehogEngine's MaterialType (glTF's OPAQUE, MASK and BLEND).
+    enum class MaterialAlphaMode : uint32_t
+    {
+        Opaque      = 0,
+        Cutoff      = 1,
+        Transparent = 2,
+    };
+
     // A material's values (HedgehogEngine's MaterialData) for the renderer; map paths are empty for
     // none.
     struct MaterialView
@@ -53,6 +61,10 @@ namespace HedgehogEngine
         float              occlusionStrength;
         const std::string& emissiveMap;
         HM::Vector3        emissiveFactor;
+
+        MaterialAlphaMode  alphaMode   = MaterialAlphaMode::Opaque;
+        float              alphaCutoff = 0.5f;
+        bool               doubleSided = false;
     };
 
     // Zero-copy view onto a baked font's coverage atlas: AtlasWidth x AtlasHeight bytes, row by row.

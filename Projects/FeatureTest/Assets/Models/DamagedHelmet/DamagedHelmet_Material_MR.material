@@ -2,6 +2,8 @@ Type: 0
 BaseColor: Models/DamagedHelmet/Default_albedo.jpg
 BaseColorFactor: [1, 1, 1, 1]
 Transparency: 1
+AlphaCutoff: 0.5
+DoubleSided: false
 Metallic: 1
 Roughness: 1
 MetallicRoughnessMap: Models/DamagedHelmet/Default_metalRoughness.jpg

@@ -90,6 +90,8 @@ namespace HedgehogEngine
         out << YAML::Key << "BaseColor" << YAML::Value << material.baseColor;
         WriteVector(out, "BaseColorFactor", material.baseColorFactor);
         out << YAML::Key << "Transparency" << YAML::Value << material.transparency;
+        out << YAML::Key << "AlphaCutoff" << YAML::Value << material.alphaCutoff;
+        out << YAML::Key << "DoubleSided" << YAML::Value << material.doubleSided;
         out << YAML::Key << "Metallic" << YAML::Value << material.metallic;
         out << YAML::Key << "Roughness" << YAML::Value << material.roughness;
         out << YAML::Key << "MetallicRoughnessMap" << YAML::Value << material.metallicRoughnessMap;
@@ -132,6 +134,25 @@ namespace HedgehogEngine
         ReadPath(data, "BaseColor", material.baseColor, source);
         ReadVector(data, "BaseColorFactor", material.baseColorFactor, source);
         ReadNumber(data, "Transparency", material.transparency, source);
+        if (const YAML::Node cutoff = data["AlphaCutoff"])
+        {
+            float value = 0.0f;
+            if (ReadFloat(cutoff, value) && value >= 0.0f && value <= 1.0f)
+                material.alphaCutoff = value;
+            else
+                WarnKey(source, "AlphaCutoff", "a number from 0 to 1");
+        }
+        if (const YAML::Node doubleSided = data["DoubleSided"])
+        {
+            try
+            {
+                material.doubleSided = doubleSided.as<bool>();
+            }
+            catch (const YAML::Exception&)
+            {
+                WarnKey(source, "DoubleSided", "true or false");
+            }
+        }
         ReadNumber(data, "Metallic", material.metallic, source);
         ReadNumber(data, "Roughness", material.roughness, source);
         ReadPath(data, "MetallicRoughnessMap", material.metallicRoughnessMap, source);

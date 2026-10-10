@@ -33,7 +33,8 @@ namespace HR
         float    OcclusionStrength;     // offset 44
         float    Transparency;          // offset 48
         uint32_t TextureFlags;          // offset 52
-        float    Padding[2];            // to 64, a multiple of 16
+        float    AlphaCutoff;           // offset 56
+        uint32_t AlphaMode;             // offset 60, HedgehogEngine::MaterialAlphaMode
     };
     static_assert(sizeof(MaterialUniform) == 64, "MaterialUniform must match Base.frag's std140 block");
 

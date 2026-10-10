@@ -21,6 +21,9 @@ namespace
         std::string Occlusion;
         std::string Emissive;
 
+        HedgehogEngine::MaterialAlphaMode AlphaMode   = HedgehogEngine::MaterialAlphaMode::Opaque;
+        float                             AlphaCutoff = 0.5f;
+
         HedgehogEngine::MaterialView View(float transparency = 1.0f) const
         {
             return { transparency,
@@ -35,7 +38,10 @@ namespace
                      Occlusion,
                      0.4f,
                      Emissive,
-                     HM::Vector3(2.0f, 1.0f, 0.5f) };
+                     HM::Vector3(2.0f, 1.0f, 0.5f),
+                     AlphaMode,
+                     AlphaCutoff,
+                     false };
         }
     };
 }
@@ -50,6 +56,8 @@ TEST_CASE("Material uniform - its std140 offsets match Base.frag's block")
     CHECK(offsetof(MaterialUniform, OcclusionStrength) == 44);
     CHECK(offsetof(MaterialUniform, Transparency) == 48);
     CHECK(offsetof(MaterialUniform, TextureFlags) == 52);
+    CHECK(offsetof(MaterialUniform, AlphaCutoff) == 56);
+    CHECK(offsetof(MaterialUniform, AlphaMode) == 60);
     CHECK(sizeof(MaterialUniform) == 64);
 }
 
@@ -75,6 +83,21 @@ TEST_CASE("Material uniform - the factors are packed and a flag is set per named
     CHECK(uniform.OcclusionStrength == 0.4f);
     CHECK(uniform.Transparency == 0.25f);
     CHECK(uniform.TextureFlags == ((1u << 0) | (1u << 1) | (1u << 4)));
+}
+
+TEST_CASE("Material uniform - the alpha mode and cutoff are packed")
+{
+    MaterialValues values;
+    CHECK(HR::MakeMaterialUniform(values.View()).AlphaMode == 0);
+    CHECK(HR::MakeMaterialUniform(values.View()).AlphaCutoff == 0.5f);
+
+    values.AlphaMode   = HedgehogEngine::MaterialAlphaMode::Cutoff;
+    values.AlphaCutoff = 0.3f;
+    CHECK(HR::MakeMaterialUniform(values.View()).AlphaMode == 1);
+    CHECK(HR::MakeMaterialUniform(values.View()).AlphaCutoff == 0.3f);
+
+    values.AlphaMode = HedgehogEngine::MaterialAlphaMode::Transparent;
+    CHECK(HR::MakeMaterialUniform(values.View()).AlphaMode == 2);
 }
 
 TEST_CASE("Material uniform - a material with no maps sets no flag")
