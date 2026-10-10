@@ -215,6 +215,12 @@ namespace Renderer
         DepthPrepassCutoffDoubleSided,  // DepthPrepassCutoff without back-face culling
         DepthPrepassCutoffSkinned,      // DepthPrepassCutoff for SkinnedCutoffInstances: palette at set 1, material at set 2
         DepthPrepassCutoffSkinnedDoubleSided, // DepthPrepassCutoffSkinned without back-face culling
+        ShadowDoubleSided,              // Shadow without back-face culling
+        ShadowSkinnedDoubleSided,       // ShadowSkinned without back-face culling
+        ShadowCutoff,                   // Shadow for CutoffInstances: the depth prepass's cutoff layout and shaders
+        ShadowCutoffDoubleSided,        // ShadowCutoff without back-face culling
+        ShadowCutoffSkinned,            // ShadowCutoff for SkinnedCutoffInstances: palette at set 1, material at set 2
+        ShadowCutoffSkinnedDoubleSided, // ShadowCutoffSkinned without back-face culling
     };
 
     // The long-lived GPU objects the engine passes use but do not own: pipelines, and per-frame

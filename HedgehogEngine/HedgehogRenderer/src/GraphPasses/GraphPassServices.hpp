@@ -207,6 +207,12 @@ namespace Renderer
         std::unique_ptr<RHI::IRHIPipeline> m_DepthPrepassCutoffDoubleSidedPipeline;
         std::unique_ptr<RHI::IRHIPipeline> m_DepthPrepassCutoffSkinnedPipeline;
         std::unique_ptr<RHI::IRHIPipeline> m_DepthPrepassCutoffSkinnedDoubleSidedPipeline;
+        std::unique_ptr<RHI::IRHIPipeline> m_ShadowDoubleSidedPipeline;
+        std::unique_ptr<RHI::IRHIPipeline> m_ShadowSkinnedDoubleSidedPipeline;
+        std::unique_ptr<RHI::IRHIPipeline> m_ShadowCutoffPipeline;
+        std::unique_ptr<RHI::IRHIPipeline> m_ShadowCutoffDoubleSidedPipeline;
+        std::unique_ptr<RHI::IRHIPipeline> m_ShadowCutoffSkinnedPipeline;
+        std::unique_ptr<RHI::IRHIPipeline> m_ShadowCutoffSkinnedDoubleSidedPipeline;
         std::unique_ptr<RHI::IRHIBuffer>   m_GizmoBoxLines;
 
         uint32_t m_FrameIndex = 0;

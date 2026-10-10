@@ -28,21 +28,37 @@ namespace Renderer
             return outputs;
 
         // Casters come from the caster mask alone, never from the view's layer mask, and are split
-        // rigid and skinned as a view's instances are, from either of shadowView's lists.
+        // rigid and skinned as a view's instances are, from either of shadowView's lists, and by
+        // their material's alpha mode: a Cutoff one casts through its cutoff, a Transparent one
+        // casts nothing.
         m_Casters.clear();
         m_SkinnedCasters.clear();
+        m_CutoffCasters.clear();
+        m_SkinnedCutoffCasters.clear();
         for (const std::span<const HX::RenderInstance> instances :
              { shadowView->OpaqueInstances, shadowView->SkinnedInstances })
         {
             for (const HX::RenderInstance& instance : instances)
             {
-                if (CastsShadow(instance, settings.ShadowCasterMask))
-                    (instance.JointCount > 0 ? m_SkinnedCasters : m_Casters).push_back(instance);
+                if (!CastsShadow(instance, settings.ShadowCasterMask))
+                    continue;
+                const bool skinned = instance.JointCount > 0;
+                const auto mode    = instance.MaterialIndex < shadowView->Materials.size()
+                                         ? shadowView->Materials[instance.MaterialIndex].AlphaMode
+                                         : HedgehogEngine::MaterialAlphaMode::Opaque;
+                if (mode == HedgehogEngine::MaterialAlphaMode::Cutoff)
+                    (skinned ? m_SkinnedCutoffCasters : m_CutoffCasters).push_back(instance);
+                else if (mode != HedgehogEngine::MaterialAlphaMode::Transparent)
+                    (skinned ? m_SkinnedCasters : m_Casters).push_back(instance);
             }
         }
-        m_ShadowFrame                  = *shadowView;
-        m_ShadowFrame.OpaqueInstances  = m_Casters;
-        m_ShadowFrame.SkinnedInstances = m_SkinnedCasters;
+        m_ShadowFrame                             = *shadowView;
+        m_ShadowFrame.OpaqueInstances             = m_Casters;
+        m_ShadowFrame.SkinnedInstances            = m_SkinnedCasters;
+        m_ShadowFrame.CutoffInstances             = m_CutoffCasters;
+        m_ShadowFrame.SkinnedCutoffInstances      = m_SkinnedCutoffCasters;
+        m_ShadowFrame.TransparentInstances        = {};
+        m_ShadowFrame.SkinnedTransparentInstances = {};
         m_Cascades                     = ComputeShadowCascades(m_ShadowFrame, settings.ShadowAtlasSize);
         m_ShadowFrame.Cascades         = &m_Cascades;
         m_ShadowUniform = MakeShadowUniform(m_Cascades, shadowView->View, settings.Sampling, settings.ShadowAtlasSize,

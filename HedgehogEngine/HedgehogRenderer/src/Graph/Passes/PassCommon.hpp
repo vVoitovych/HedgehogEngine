@@ -96,6 +96,15 @@ namespace Renderer
     void DrawSkinnedInstances(RHI::IRHICommandList& cmd, SidedPipeline& pipeline, const GraphFrameData& frame,
                               std::span<const HX::RenderInstance> instances);
 
+    // Draws Cutoff instances with a cutoff pipeline (the depth prepass's or the shadow's), which
+    // samples the base colour through the material set (at materialSet) and discards below the
+    // material's cutoff. Rigid ones read the positions and UVs; skinned ones the positions, joints,
+    // weights and UVs and push their palette offset. The material set is bound again only when it
+    // changes; an instance whose mesh or material has nothing to draw with is skipped. The caller
+    // binds the pipeline and its other sets first.
+    void DrawCutoffInstances(RHI::IRHICommandList& cmd, SidedPipeline& pipeline, const GraphFrameData& frame,
+                             std::span<const HX::RenderInstance> instances, bool skinned, uint32_t materialSet);
+
     // Starts depth-only dynamic rendering into target, cleared to 1. Returns its size.
     uint32_t BeginDepthRendering(RHI::IRHICommandList& cmd, RHI::IRHITexture& target);
 

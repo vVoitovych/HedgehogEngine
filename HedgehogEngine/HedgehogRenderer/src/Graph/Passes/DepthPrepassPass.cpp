@@ -9,48 +9,6 @@ namespace Renderer
 {
     namespace
     {
-        // Draws Cutoff instances with the cutoff pipelines, which sample the base colour through the
-        // material set (at materialSet) and discard below the material's cutoff. Rigid ones read the
-        // positions and UVs; skinned ones the positions, joints, weights and UVs and push their
-        // palette offset. The material set is bound again only when it changes; an instance whose
-        // mesh or material has nothing to draw with is skipped.
-        void DrawCutoffInstances(RHI::IRHICommandList& cmd, SidedPipeline& pipeline, const GraphFrameData& frame,
-                                 std::span<const HX::RenderInstance> instances, bool skinned, uint32_t materialSet)
-        {
-            if (skinned)
-                cmd.BindVertexBuffers(0, { frame.Positions, frame.Joints, frame.Weights, frame.TexCoords }, { 0, 0, 0, 0 });
-            else
-                cmd.BindVertexBuffers(0, { frame.Positions, frame.TexCoords }, { 0, 0 });
-            cmd.BindIndexBuffer(*frame.Indices, RHI::IndexType::Uint32);
-
-            uint64_t boundMaterial = UINT64_MAX;
-            for (const HX::RenderInstance& instance : instances)
-            {
-                if (instance.MeshIndex >= frame.Meshes.size() || instance.MaterialIndex >= frame.MaterialSets.size()
-                    || !frame.MaterialSets[instance.MaterialIndex])
-                {
-                    continue;
-                }
-                const RHI::IRHIPipeline& bound = pipeline.Use(cmd, frame, instance);
-                if (instance.MaterialIndex != boundMaterial)
-                {
-                    cmd.BindDescriptorSet(bound, materialSet, *frame.MaterialSets[instance.MaterialIndex]);
-                    boundMaterial = instance.MaterialIndex;
-                }
-                const MeshDrawRange& mesh = frame.Meshes[instance.MeshIndex];
-                if (skinned)
-                {
-                    const SkinnedPushConstants constants = MakeSkinnedPushConstants(instance);
-                    cmd.PushConstants(bound, RHI::ShaderStage::Vertex, 0, sizeof(constants), &constants);
-                }
-                else
-                {
-                    cmd.PushConstants(bound, RHI::ShaderStage::Vertex, 0, 16 * sizeof(float), instance.WorldMatrix.GetBuffer());
-                }
-                cmd.DrawIndexed(mesh.IndexCount, 1, mesh.FirstIndex, static_cast<int32_t>(mesh.VertexOffset), 0);
-            }
-        }
-
         void BuildDepthPrepass(RenderGraphRuntime& graph, PassInvocation& invocation)
         {
             AddDepthOnlyPass(graph, invocation, "depth", [](TargetPassData& data, RHI::IRHICommandList& cmd)

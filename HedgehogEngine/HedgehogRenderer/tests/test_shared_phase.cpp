@@ -258,3 +258,83 @@ TEST_CASE("The shadow view is the highest-priority view with a camera")
     views[1].Desc.Camera.reset();
     CHECK(SelectShadowView(views) == nullptr);
 }
+
+TEST_CASE("Cutoff casters are alpha-tested into every cascade, and Transparent ones cast nothing")
+{
+    using HedgehogEngine::MaterialAlphaMode;
+    const PassBuilderRegistry registry = MakeEngineRegistry();
+
+    // Materials: 0 opaque, 1 Cutoff, 2 Transparent, 3 Cutoff and double-sided.
+    const MaterialDrawInfo materials[] = { { MaterialAlphaMode::Opaque, false },
+                                           { MaterialAlphaMode::Cutoff, false },
+                                           { MaterialAlphaMode::Transparent, false },
+                                           { MaterialAlphaMode::Cutoff, true } };
+    const auto withMaterial = [](uint64_t mesh, uint64_t material, uint32_t joints = 0)
+    {
+        HX::RenderInstance instance = Instance(mesh);
+        instance.MaterialIndex      = material;
+        instance.JointCount         = joints;
+        return instance;
+    };
+    const HX::RenderInstance instances[] = { withMaterial(0, 0), withMaterial(1, 1), withMaterial(0, 2),
+                                             withMaterial(1, 3), withMaterial(1, 1, 2), withMaterial(0, 2, 2) };
+
+    TestBuffer        positions(1024);
+    TestBuffer        texCoords(1024);
+    TestBuffer        indices(1024);
+    TestBuffer        joints(1024);
+    TestBuffer        weights(1024);
+    FakeDescriptorSet palette;
+    FakeDescriptorSet opaqueSet, cutoffSet, transparentSet, doubleSidedSet;
+    const RHI::IRHIDescriptorSet* sets[] = { &opaqueSet, &cutoffSet, &transparentSet, &doubleSidedSet };
+    const MeshDrawRange meshes[] = { { 0, 36, 0 }, { 36, 120, 24 } };
+    GraphFrameData shadowView  = MakeFrame(2);
+    shadowView.OpaqueInstances = instances;
+    shadowView.Meshes          = meshes;
+    shadowView.MaterialSets    = sets;
+    shadowView.Materials       = materials;
+    shadowView.Positions       = &positions;
+    shadowView.TexCoords       = &texCoords;
+    shadowView.Indices         = &indices;
+    shadowView.Joints          = &joints;
+    shadowView.Weights         = &weights;
+    shadowView.JointPalette    = &palette;
+
+    SharedPhaseSettings settings;
+    settings.ShadowAtlasSize = 512;
+
+    TestDevice         device;
+    RenderGraphRuntime graph(device, ARENA_BYTES);
+    FakeServices       services;
+    SharedPhase        shared(registry);
+    const SharedPhaseOutputs outputs = shared.Declare(graph, services, &shadowView, {}, settings);
+    graph.BindOutput(graph.AddOutputSlot("atlas", RHI::Format::D32Float, RGSizePolicy::MakeAbsolute(512, 512)),
+                     outputs.Imports.at(SHADOW_ATLAS_IMPORT));
+
+    RecordingCommandList cmd;
+    REQUIRE(graph.Execute(cmd));
+    const std::vector<std::string> expected = {
+        "begin", "pipeline",
+        "set 0", "vertex 1", "index", "push 64", "draw 36",                              // cascade 0, opaque
+        "set 0", "vertex 1", "index", "push 64", "draw 36",                              // cascade 1, opaque
+        "pipeline",
+        "set 0", "vertex 2", "index", "set 1", "push 64", "draw 120",                    // cascade 0, cutoff
+        "pipeline", "set 1", "push 64", "draw 120",                                      //   the double-sided one
+        "set 0", "vertex 2", "index", "pipeline", "set 1", "push 64", "draw 120",        // cascade 1, cutoff
+        "pipeline", "set 1", "push 64", "draw 120",
+        "pipeline", "set 1",
+        "set 0", "vertex 4", "index", "set 2", "push 68", "draw 120",                    // cascade 0, skinned cutoff
+        "set 0", "vertex 4", "index", "set 2", "push 68", "draw 120",                    // cascade 1, skinned cutoff
+    };
+    CHECK(cmd.Commands == expected);
+    const auto bound = [&](EnginePipeline pipeline)
+    {
+        return std::count(cmd.BoundPipelines.begin(), cmd.BoundPipelines.end(), &services.GetPipeline(pipeline));
+    };
+    CHECK(bound(EnginePipeline::Shadow) == 1);
+    CHECK(bound(EnginePipeline::ShadowCutoff) == 2); // at the start, and back in cascade 1
+    CHECK(bound(EnginePipeline::ShadowCutoffDoubleSided) == 2);
+    CHECK(bound(EnginePipeline::ShadowCutoffSkinned) == 1);
+    CHECK(bound(EnginePipeline::ShadowSkinned) == 0); // the only skinned opaque-mode caster is Transparent
+    CHECK(std::count(cmd.BoundSets.begin(), cmd.BoundSets.end(), &transparentSet) == 0);
+}
