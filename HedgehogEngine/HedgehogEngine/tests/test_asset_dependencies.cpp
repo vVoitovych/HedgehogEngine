@@ -129,8 +129,8 @@ TEST_CASE("Asset dependencies - every asset-naming component property is an Asse
     CHECK(AssetRefNames<UiTextComponent>() == std::vector<std::string>{ "Font" });
     CHECK(AssetRefNames<EnvironmentComponent>() == std::vector<std::string>{ "Map" });
     CHECK(AssetRefNames<CameraComponent>() == std::vector<std::string>{ "GraphName" });
-    // An animator's clip names a clip inside its mesh, not a file.
-    CHECK(AssetRefNames<AnimatorComponent>().empty());
+    // An animator's controller is a file; its clip names a clip inside its mesh, not a file.
+    CHECK(AssetRefNames<AnimatorComponent>() == std::vector<std::string>{ "Controller" });
 }
 
 TEST_CASE("Asset dependencies - a camera's graph reference names an engine graph or a file")

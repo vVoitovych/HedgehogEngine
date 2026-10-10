@@ -22,7 +22,7 @@ namespace
     }
 }
 
-TEST_CASE("A default AnimatorComponent serialises to exactly its five reflected fields")
+TEST_CASE("A default AnimatorComponent serialises to exactly its six reflected fields")
 {
     AnimatorComponent defaults;
     const std::string expected =
@@ -30,7 +30,8 @@ TEST_CASE("A default AnimatorComponent serialises to exactly its five reflected 
         "Speed: 1\n"
         "Loop: true\n"
         "PlayOnStart: true\n"
-        "CrossfadeTime: 0.2";
+        "CrossfadeTime: 0.2\n"
+        "Controller: \"\"";
     CHECK(Serialize(defaults) == expected);
 }
 
@@ -42,6 +43,7 @@ TEST_CASE("AnimatorComponent round-trips its reflected fields and never writes i
     source.Loop          = false;
     source.PlayOnStart   = false;
     source.CrossfadeTime = 0.35f;
+    source.Controller    = "Animations/Strip.animctrl";
     // Runtime state, set to values a save must not carry.
     source.Started      = true;
     source.Playing      = true;
@@ -65,6 +67,7 @@ TEST_CASE("AnimatorComponent round-trips its reflected fields and never writes i
     CHECK(restored.Loop == false);
     CHECK(restored.PlayOnStart == false);
     CHECK(restored.CrossfadeTime == doctest::Approx(0.35f));
+    CHECK(restored.Controller == "Animations/Strip.animctrl");
     CHECK_FALSE(restored.Started);
     CHECK_FALSE(restored.Playing);
     CHECK(restored.CurrentClip.empty());
