@@ -142,12 +142,20 @@ namespace HR
                     catalog.RegisterTexturePath(path);
         };
 
+        // A frame still in flight may read the uniform and set a dirty material rewrites, so the
+        // device is idled once first (an edit in the inspector dirties its material every frame).
+        bool idled = false;
         for (size_t i = 0; i < m_RegisteredMaterialCount && i < total; ++i)
         {
             const HedgehogEngine::MaterialView mat = catalog.GetMaterial(i);
             if (!mat.isDirty)
                 continue;
 
+            if (!idled)
+            {
+                device.WaitIdle();
+                idled = true;
+            }
             UpdateMaterialGpu(static_cast<uint32_t>(i), mat, device, fileSystem);
             registerMaps(mat);
             catalog.ClearMaterialDirty(i);
