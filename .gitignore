@@ -558,6 +558,7 @@ Binaries
 /Scripts/vulkan_sdk.exe
 /ThirdParty/ImGui/*.vcxproj
 /ThirdParty/ImGuiNodeEditor/*.vcxproj*
+/ThirdParty/ImGuizmo/*.vcxproj*
 /ThirdParty/glfw/*.vcxproj
 /ThirdParty/glfw/*.filters
 /ThirdParty/tinyfiledialogs/*.vcxproj

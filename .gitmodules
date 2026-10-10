@@ -31,3 +31,6 @@
 [submodule "ThirdParty/Jolt/JoltPhysics"]
 	path = ThirdParty/Jolt/JoltPhysics
 	url = https://github.com/vVoitovych/JoltPhysics.git
+[submodule "ThirdParty/ImGuizmo/ImGuizmo"]
+	path = ThirdParty/ImGuizmo/ImGuizmo
+	url = https://github.com/vVoitovych/ImGuizmo.git
