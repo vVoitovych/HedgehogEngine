@@ -210,10 +210,10 @@ namespace Editor
             { "ScriptComponent", &EditorGui::DrawScriptComponent },
             { "AnimatorComponent", &EditorGui::DrawAnimatorComponent },
         };
-        m_InspectorExtraRows = {
-            { "UiTextComponent", [this] { DrawDropRow("Font", "Drop a .ttf or .otf here", ContentType::Font); } },
-            { "AudioSourceComponent", [this] { DrawDropRow("Clip", "Drop a .wav, .mp3 or .flac here", ContentType::Audio); } },
-            { "EnvironmentComponent", [this] { DrawDropRow("Map", "Drop an .hdr here", ContentType::Environment); } },
+        m_InspectorAssetDrops = {
+            { "UiTextComponent", { "Font", ContentType::Font, "a .ttf or .otf font" } },
+            { "AudioSourceComponent", { "Clip", ContentType::Audio, "a .wav, .mp3 or .flac clip" } },
+            { "EnvironmentComponent", { "Map", ContentType::Environment, "an .hdr environment map" } },
         };
 
         LoadLastScene(context);
@@ -1205,22 +1205,21 @@ namespace Editor
         }
         if (!section.Open)
             return;
+        // The component's asset field is also where a file of its type is dropped.
+        Reflection::PropertyWidgetHook assetDrop;
+        if (const auto drop = m_InspectorAssetDrops.find(info.Key); drop != m_InspectorAssetDrops.end())
+        {
+            assetDrop = [this, target = drop->second](const Reflection::PropertyDescriptor& prop)
+            {
+                if (std::string_view(prop.name) != target.Property)
+                    return;
+                ImGui::SetItemTooltip("Drop %s here from the Project panel.", target.Hint);
+                AcceptSelectionDrop(target.Type);
+            };
+        }
         ImGui::PushID(info.Key.c_str());
-        Reflection::RenderComponentGui(component, info.Properties, info.Key.c_str());
-        if (const auto extra = m_InspectorExtraRows.find(info.Key); extra != m_InspectorExtraRows.end())
-            extra->second();
+        Reflection::RenderComponentGui(component, info.Properties, info.Key.c_str(), &assetDrop);
         ImGui::PopID();
-    }
-
-    // A property row whose value is a hint that takes a dropped asset of type for the selection.
-    void EditorGui::DrawDropRow(const char* label, const char* hint, ContentType type)
-    {
-        if (!BeginPropertyTable("##drop"))
-            return;
-        PropertyLabel(label);
-        ImGui::TextDisabled("%s", hint);
-        AcceptSelectionDrop(type);
-        EndPropertyTable();
     }
 
     // Hand-drawn instead of the reflected text field, so a camera picks from the graphs that exist,
