@@ -37,6 +37,27 @@ namespace HedgehogEngine
         UpdateMatrices();
     }
 
+    void Camera::Pan(float dx, float dy)
+    {
+        if (dx == 0.0f && dy == 0.0f)
+            return;
+        // The camera's own up: perpendicular to its view and right, so a pitched camera pans in its
+        // image plane.
+        const HM::Vector3 up    = Cross(m_RightVector, m_Direction).Normalize();
+        const float       scale = PAN_UNITS_PER_PIXEL * m_CameraSpeed / DEFAULT_SPEED;
+        m_Pos -= m_RightVector * (dx * scale);
+        m_Pos += up * (dy * scale);
+        UpdateMatrices();
+    }
+
+    void Camera::Dolly(float steps)
+    {
+        if (steps == 0.0f)
+            return;
+        m_Pos += m_Direction * (steps * DOLLY_UNITS_PER_STEP * m_CameraSpeed / DEFAULT_SPEED);
+        UpdateMatrices();
+    }
+
     void Camera::SetFov(float fov)
     {
         m_FOV = fov;

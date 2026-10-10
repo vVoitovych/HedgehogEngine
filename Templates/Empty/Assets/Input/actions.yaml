@@ -44,5 +44,8 @@ Editor:
       Deadzone: 2
   EditorCameraLookHold:
     - MouseButton: Left
+  EditorCameraPanHold:
     - MouseButton: Right
     - MouseButton: Middle
+  EditorCameraZoom:
+    - Scroll: Y

@@ -289,7 +289,7 @@ TEST_CASE("Actions - the defaults have the game's UI actions and the editor came
     CHECK(bindingsOf(defaults.Game, "UiPointerPress") ==
           std::vector<InputBinding>{ { BindingSource::MouseButton, static_cast<uint16_t>(MouseButton::Left) } });
 
-    CHECK(defaults.Editor.Actions.size() == 6);
+    CHECK(defaults.Editor.Actions.size() == 8);
     const std::vector<InputBinding>& forward = bindingsOf(defaults.Editor, "EditorCameraForward");
     REQUIRE(forward.size() == 1);
     CHECK(forward[0].Source == BindingSource::KeyAxis);
@@ -299,7 +299,13 @@ TEST_CASE("Actions - the defaults have the game's UI actions and the editor came
     CHECK(bindingsOf(defaults.Editor, "EditorCameraUp")[0].NegativeCode == static_cast<uint16_t>(Key::Q));
     CHECK(bindingsOf(defaults.Editor, "EditorCameraLookX")[0].Source == BindingSource::PointerDeltaX);
     CHECK(bindingsOf(defaults.Editor, "EditorCameraLookY")[0].Deadzone == 2.0f);
-    CHECK(bindingsOf(defaults.Editor, "EditorCameraLookHold").size() == 3);
+    // Left drag looks, right (or middle) drag pans, the wheel dollies.
+    CHECK(bindingsOf(defaults.Editor, "EditorCameraLookHold") ==
+          std::vector<InputBinding>{ { BindingSource::MouseButton, static_cast<uint16_t>(MouseButton::Left) } });
+    CHECK(bindingsOf(defaults.Editor, "EditorCameraPanHold") ==
+          std::vector<InputBinding>{ { BindingSource::MouseButton, static_cast<uint16_t>(MouseButton::Right) },
+                                     { BindingSource::MouseButton, static_cast<uint16_t>(MouseButton::Middle) } });
+    CHECK(bindingsOf(defaults.Editor, "EditorCameraZoom") == std::vector<InputBinding>{ { BindingSource::ScrollY } });
 
     // The editor camera's W moves it forward.
     HW::RawInput input;

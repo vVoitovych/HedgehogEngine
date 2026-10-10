@@ -454,10 +454,15 @@ namespace HedgehogEngine
 
         // World axes, as the flycam has always moved: x forward (W), y left (A), z up (E).
         const HM::Vector3 posOffset(value("EditorCameraForward"), -value("EditorCameraRight"), value("EditorCameraUp"));
-        // The pointer turns the camera only while a look button is held.
+        // The pointer turns the camera while the look button (left) is held, and pans it along its
+        // own right and up while the pan button (right) is; the scroll wheel dollies it.
+        const HM::Vector2 pointer(value("EditorCameraLookX"), value("EditorCameraLookY"));
         HM::Vector2 dirOffset(0.0f, 0.0f);
         if (down("EditorCameraLookHold"))
-            dirOffset = HM::Vector2(value("EditorCameraLookX"), value("EditorCameraLookY"));
+            dirOffset = pointer;
+        if (down("EditorCameraPanHold"))
+            m_Camera->Pan(pointer.x(), pointer.y());
+        m_Camera->Dolly(value("EditorCameraZoom"));
 
         m_Camera->UpdateCamera(dt, aspectRatio, posOffset, dirOffset);
     }
