@@ -35,6 +35,10 @@ namespace HedgehogEngine
         "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/GraphForwardTransparent.shader";
     constexpr std::string_view FORWARD_TRANSPARENT_SKINNED_SHADER =
         "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/GraphForwardTransparentSkinned.shader";
+    constexpr std::string_view SELECTION_MASK_SHADER =
+        "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/SelectionMask.shader";
+    constexpr std::string_view SELECTION_MASK_SKINNED_SHADER =
+        "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/SelectionMaskSkinned.shader";
     constexpr std::string_view GIZMO_SHADER   = "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/Gizmo.shader";
     constexpr std::string_view GAME_UI_SHADER = "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/GameUi.shader";
     constexpr std::string_view DEBUG_LINES_SHADER =
@@ -51,7 +55,7 @@ namespace HedgehogEngine
         std::string_view Shader;
     };
 
-    constexpr std::array<PassTypeShader, 18> PASS_TYPE_SHADERS = { {
+    constexpr std::array<PassTypeShader, 20> PASS_TYPE_SHADERS = { {
         { "DepthPrepass", DEPTH_PREPASS_SHADER },
         { "DepthPrepass", DEPTH_PREPASS_SKINNED_SHADER },
         { "DepthPrepass", DEPTH_PREPASS_CUTOFF_SHADER },
@@ -66,6 +70,8 @@ namespace HedgehogEngine
         { "ForwardTransparent", FORWARD_TRANSPARENT_SKINNED_SHADER },
         { "Skybox", SKYBOX_SHADER },
         { "ToneMap", TONE_MAP_SHADER },
+        { "SelectionMask", SELECTION_MASK_SHADER },
+        { "SelectionMask", SELECTION_MASK_SKINNED_SHADER },
         { "Gizmo", GIZMO_SHADER },
         { "Gizmo", DEBUG_LINES_SHADER },
         { "GameUi", GAME_UI_SHADER },

@@ -200,6 +200,22 @@ namespace Renderer
                                                                       forwardSkinnedLayouts, { HDR_FORMAT },
                                                                       RHI::CullMode::Front);
 
+        // The editor's selection mask: one R8 colour target and no depth attachment, through the
+        // depth prepass's layouts (viewProj at set 0, the palette at set 1 when skinned).
+        const auto createMaskPipeline = [&](std::string_view path,
+                                            std::vector<const RHI::IRHIDescriptorSetLayout*> layouts)
+        {
+            const ShaderPipelineDesc  shader = ShaderLoader::Load(device, std::string(path), fileSystem);
+            RHI::GraphicsPipelineDesc desc   = shader.Pipeline;
+            desc.DescriptorSetLayouts   = std::move(layouts);
+            desc.ColorAttachmentFormats = { RHI::Format::R8Unorm };
+            desc.DepthAttachmentFormat  = RHI::Format::Undefined;
+            return device.CreateGraphicsPipeline(desc);
+        };
+        m_SelectionMaskPipeline = createMaskPipeline(HedgehogEngine::SELECTION_MASK_SHADER, { m_ViewProjRing.Layout.get() });
+        m_SelectionMaskSkinnedPipeline = createMaskPipeline(HedgehogEngine::SELECTION_MASK_SKINNED_SHADER,
+                                                            { m_ViewProjRing.Layout.get(), m_PaletteLayout.get() });
+
         // The game UI draws into the colour target alone: no depth attachment.
         const ShaderPipelineDesc gameUiShader = ShaderLoader::Load(device, std::string(HedgehogEngine::GAME_UI_SHADER), fileSystem);
         assert(!gameUiShader.Layout.DescriptorSets.empty());
@@ -332,6 +348,8 @@ namespace Renderer
             case EnginePipeline::ForwardTransparentBackFaces:          return *m_ForwardTransparentBackFacesPipeline;
             case EnginePipeline::ForwardTransparentSkinned:            return *m_ForwardTransparentSkinnedPipeline;
             case EnginePipeline::ForwardTransparentSkinnedBackFaces:   return *m_ForwardTransparentSkinnedBackFacesPipeline;
+            case EnginePipeline::SelectionMask:                        return *m_SelectionMaskPipeline;
+            case EnginePipeline::SelectionMaskSkinned:                 return *m_SelectionMaskSkinnedPipeline;
         }
         assert(false && "GraphPassServices::GetPipeline: unknown pipeline.");
         return *m_DepthPrepassPipeline;
