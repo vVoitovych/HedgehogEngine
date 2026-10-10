@@ -214,6 +214,7 @@ TEST_CASE("Asset dependencies - a fixture scene's closure is exactly its meshes,
              // The depth prepass's alpha-tested shaders, for Cutoff materials.
              "Shaders/DepthPrepassCutoff.shader", "Shaders/DepthPrepassCutoffSkinned.shader",
              "Shaders/ShadowmapPassCutoff.shader", "Shaders/ShadowmapPassCutoffSkinned.shader",
+             "Shaders/GraphForwardTransparent.shader", "Shaders/GraphForwardTransparentSkinned.shader",
              "Pipelines/DepthPrepassCutoff.pl", "Pipelines/DepthPrepassCutoffSkinned.pl",
              "VertexDescriptions/PositionUv.vdes", "VertexDescriptions/SkinnedPositionUv.vdes",
              "Shaders/DepthPrepass/Cutoff.vert.spv", "Shaders/DepthPrepass/Cutoff.frag.spv",

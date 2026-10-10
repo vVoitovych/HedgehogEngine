@@ -319,6 +319,9 @@ namespace Renderer
         }
         const HM::Vector4& position = camera.WorldMatrix[3]; // the translation column
         frame.EyePosition = HM::Vector3(position.x(), position.y(), position.z());
+        // Transparent instances blend back to front.
+        SortBackToFront(instances.Transparent, frame.EyePosition);
+        SortBackToFront(instances.SkinnedTransparent, frame.EyePosition);
         frame.NearPlane   = camera.NearPlane;
         frame.FarPlane    = camera.FarPlane;
         return frame;

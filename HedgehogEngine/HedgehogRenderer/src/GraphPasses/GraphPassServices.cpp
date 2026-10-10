@@ -184,6 +184,22 @@ namespace Renderer
         m_ShadowCutoffSkinnedDoubleSidedPipeline = CreatePipeline(device, shadowCutoffSkinnedShader, cutoffSkinnedLayouts,
                                                                   {}, RHI::CullMode::None);
 
+        // Transparent materials, blended through the forward layouts; their back-face twins cull
+        // the front faces, for a double-sided one's far side.
+        const ShaderPipelineDesc transparentShader =
+            ShaderLoader::Load(device, std::string(HedgehogEngine::FORWARD_TRANSPARENT_SHADER), fileSystem);
+        const ShaderPipelineDesc transparentSkinnedShader =
+            ShaderLoader::Load(device, std::string(HedgehogEngine::FORWARD_TRANSPARENT_SKINNED_SHADER), fileSystem);
+        m_ForwardTransparentPipeline = CreatePipeline(device, transparentShader, forwardLayouts, { HDR_FORMAT },
+                                                      transparentShader.Pipeline.CullMode);
+        m_ForwardTransparentBackFacesPipeline = CreatePipeline(device, transparentShader, forwardLayouts, { HDR_FORMAT },
+                                                               RHI::CullMode::Front);
+        m_ForwardTransparentSkinnedPipeline = CreatePipeline(device, transparentSkinnedShader, forwardSkinnedLayouts,
+                                                             { HDR_FORMAT }, transparentSkinnedShader.Pipeline.CullMode);
+        m_ForwardTransparentSkinnedBackFacesPipeline = CreatePipeline(device, transparentSkinnedShader,
+                                                                      forwardSkinnedLayouts, { HDR_FORMAT },
+                                                                      RHI::CullMode::Front);
+
         // The game UI draws into the colour target alone: no depth attachment.
         const ShaderPipelineDesc gameUiShader = ShaderLoader::Load(device, std::string(HedgehogEngine::GAME_UI_SHADER), fileSystem);
         assert(!gameUiShader.Layout.DescriptorSets.empty());
@@ -312,6 +328,10 @@ namespace Renderer
             case EnginePipeline::ShadowCutoffDoubleSided:              return *m_ShadowCutoffDoubleSidedPipeline;
             case EnginePipeline::ShadowCutoffSkinned:                  return *m_ShadowCutoffSkinnedPipeline;
             case EnginePipeline::ShadowCutoffSkinnedDoubleSided:       return *m_ShadowCutoffSkinnedDoubleSidedPipeline;
+            case EnginePipeline::ForwardTransparent:                   return *m_ForwardTransparentPipeline;
+            case EnginePipeline::ForwardTransparentBackFaces:          return *m_ForwardTransparentBackFacesPipeline;
+            case EnginePipeline::ForwardTransparentSkinned:            return *m_ForwardTransparentSkinnedPipeline;
+            case EnginePipeline::ForwardTransparentSkinnedBackFaces:   return *m_ForwardTransparentSkinnedBackFacesPipeline;
         }
         assert(false && "GraphPassServices::GetPipeline: unknown pipeline.");
         return *m_DepthPrepassPipeline;

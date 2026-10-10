@@ -17,12 +17,14 @@ namespace Renderer
 {
     namespace
     {
-        // Colour cleared to opaque black, drawn against the prepass depth without writing it.
-        void BeginForwardRendering(RHI::IRHICommandList& cmd, RHI::IRHITexture& color, RHI::IRHITexture& depth)
+        // Colour cleared to opaque black (or loaded, to blend over), drawn against the prepass depth
+        // without writing it.
+        void BeginForwardRendering(RHI::IRHICommandList& cmd, RHI::IRHITexture& color, RHI::IRHITexture& depth,
+                                   bool clear = true)
         {
             RHI::RenderingAttachment colorAttachment;
             colorAttachment.Texture     = &color;
-            colorAttachment.LoadOp      = RHI::LoadOp::Clear;
+            colorAttachment.LoadOp      = clear ? RHI::LoadOp::Clear : RHI::LoadOp::Load;
             colorAttachment.StoreOp     = RHI::StoreOp::Store;
             colorAttachment.Clear.Color = { 0.0f, 0.0f, 0.0f, 1.0f };
 
@@ -75,6 +77,21 @@ namespace Renderer
             }
         }
 
+        // Set 3: the sun's shadow (the frame's uniform, unshadowed without a shadow view) and the
+        // atlas, then the environment's image-based lighting.
+        const RHI::IRHIDescriptorSet& AllocateLighting(const ForwardPassData& data, IGraphPassServices& services,
+                                                       const GraphFrameData& frame)
+        {
+            ShadowUniform        unshadowed;
+            const ShadowUniform* shadow = frame.Shadow;
+            if (!shadow)
+            {
+                unshadowed = MakeUnshadowedUniform();
+                shadow     = &unshadowed;
+            }
+            return services.AllocateForwardLighting(*shadow, *data.Graph->GetTexture(data.ShadowMap), frame.Environment);
+        }
+
         void RecordForward(ForwardPassData& data, RHI::IRHICommandList& cmd)
         {
             if (!data.Context)
@@ -107,15 +124,7 @@ namespace Renderer
                 cmd.BindDescriptorSet(pipeline, 2, *frame.SceneLights);
             // The sun's shadow: the frame's shadow uniform (unshadowed without a shadow view) and the
             // atlas; then the environment's image-based lighting.
-            ShadowUniform        unshadowed;
-            const ShadowUniform* shadow = frame.Shadow;
-            if (!shadow)
-            {
-                unshadowed = MakeUnshadowedUniform();
-                shadow     = &unshadowed;
-            }
-            const RHI::IRHIDescriptorSet& lighting =
-                services.AllocateForwardLighting(*shadow, *data.Graph->GetTexture(data.ShadowMap), frame.Environment);
+            const RHI::IRHIDescriptorSet& lighting = AllocateLighting(data, services, frame);
             cmd.BindDescriptorSet(pipeline, 3, lighting);
             DrawLitInstances(cmd, lit, frame, frame.OpaqueInstances, false);
             DrawLitInstances(cmd, lit, frame, frame.CutoffInstances, false);
@@ -141,6 +150,124 @@ namespace Renderer
                 DrawLitInstances(cmd, litSkinned, frame, frame.SkinnedCutoffInstances, true);
             }
             cmd.EndRendering();
+        }
+
+        // Draws Transparent instances blended in the order given (back to front), each lit as the
+        // forward pass lights it. A double-sided one draws its back faces first (through backFaces,
+        // which culls the front), then its front faces, so its near side blends over its far side.
+        void DrawTransparentInstances(RHI::IRHICommandList& cmd, const RHI::IRHIPipeline& frontFaces,
+                                      const RHI::IRHIPipeline& backFaces, const GraphFrameData& frame,
+                                      std::span<const HX::RenderInstance> instances, bool skinned)
+        {
+            const RHI::IRHIPipeline* bound         = &frontFaces;
+            uint64_t                 boundMaterial = UINT64_MAX;
+            const auto draw = [&](const RHI::IRHIPipeline& pipeline, const HX::RenderInstance& instance)
+            {
+                if (bound != &pipeline)
+                {
+                    cmd.BindPipeline(pipeline);
+                    bound = &pipeline;
+                }
+                const MeshDrawRange& mesh = frame.Meshes[instance.MeshIndex];
+                if (skinned)
+                {
+                    const SkinnedPushConstants constants = MakeSkinnedPushConstants(instance);
+                    cmd.PushConstants(pipeline, RHI::ShaderStage::Vertex, 0, sizeof(constants), &constants);
+                }
+                else
+                {
+                    cmd.PushConstants(pipeline, RHI::ShaderStage::Vertex, 0, 16 * sizeof(float),
+                                      instance.WorldMatrix.GetBuffer());
+                }
+                cmd.DrawIndexed(mesh.IndexCount, 1, mesh.FirstIndex, static_cast<int32_t>(mesh.VertexOffset), 0);
+            };
+            for (const HX::RenderInstance& instance : instances)
+            {
+                if (instance.MeshIndex >= frame.Meshes.size() || instance.MaterialIndex >= frame.MaterialSets.size()
+                    || !frame.MaterialSets[instance.MaterialIndex])
+                {
+                    continue;
+                }
+                if (instance.MaterialIndex != boundMaterial)
+                {
+                    cmd.BindDescriptorSet(*bound, 1, *frame.MaterialSets[instance.MaterialIndex]);
+                    boundMaterial = instance.MaterialIndex;
+                }
+                if (IsDoubleSided(frame, instance))
+                    draw(backFaces, instance);
+                draw(frontFaces, instance);
+            }
+        }
+
+        void RecordForwardTransparent(ForwardPassData& data, RHI::IRHICommandList& cmd)
+        {
+            if (!data.Context)
+                return;
+            const GraphFrameData& frame = *data.Context->Frame;
+            const bool rigid   = !frame.TransparentInstances.empty();
+            const bool skinned = CanDrawSkinned(frame, frame.SkinnedTransparentInstances);
+            if ((!rigid && !skinned) || !frame.Positions || !frame.TexCoords || !frame.Normals || !frame.Tangents
+                || !frame.Indices || !frame.SceneLights)
+            {
+                return; // nothing to blend: the HDR target is left as Forward and the Skybox made it
+            }
+            IGraphPassServices& services = *data.Context->Services;
+            RHI::IRHITexture&   color    = *data.Graph->GetTexture(data.Color);
+            RHI::IRHITexture&   depth    = *data.Graph->GetTexture(data.Depth);
+
+            BeginForwardRendering(cmd, color, depth, false);
+            const RHI::IRHIPipeline& pipeline = services.GetPipeline(EnginePipeline::ForwardTransparent);
+            cmd.BindPipeline(pipeline);
+            cmd.SetViewport({ 0.0f, 0.0f, static_cast<float>(color.GetWidth()),
+                              static_cast<float>(color.GetHeight()), 0.0f, 1.0f });
+            cmd.SetScissor({ 0, 0, color.GetWidth(), color.GetHeight() });
+            const RHI::IRHIDescriptorSet& view     = services.AllocateForwardViewUniform(MakeForwardViewUniform(frame));
+            const RHI::IRHIDescriptorSet& lighting = AllocateLighting(data, services, frame);
+            if (rigid)
+            {
+                cmd.BindVertexBuffers(0, { frame.Positions, frame.TexCoords, frame.Normals, frame.Tangents }, { 0, 0, 0, 0 });
+                cmd.BindIndexBuffer(*frame.Indices, RHI::IndexType::Uint32);
+                cmd.BindDescriptorSet(pipeline, 0, view);
+                cmd.BindDescriptorSet(pipeline, 2, *frame.SceneLights);
+                cmd.BindDescriptorSet(pipeline, 3, lighting);
+                DrawTransparentInstances(cmd, pipeline, services.GetPipeline(EnginePipeline::ForwardTransparentBackFaces),
+                                         frame, frame.TransparentInstances, false);
+            }
+            // Skinned instances after the rigid ones, every set bound again for the skinned layout.
+            if (skinned)
+            {
+                const RHI::IRHIPipeline& skinnedPipeline = services.GetPipeline(EnginePipeline::ForwardTransparentSkinned);
+                cmd.BindPipeline(skinnedPipeline);
+                cmd.BindVertexBuffers(0, { frame.Positions, frame.TexCoords, frame.Normals, frame.Tangents, frame.Joints,
+                                           frame.Weights },
+                                      { 0, 0, 0, 0, 0, 0 });
+                cmd.BindIndexBuffer(*frame.Indices, RHI::IndexType::Uint32);
+                cmd.BindDescriptorSet(skinnedPipeline, 0, view);
+                cmd.BindDescriptorSet(skinnedPipeline, 2, *frame.SceneLights);
+                cmd.BindDescriptorSet(skinnedPipeline, 3, lighting);
+                cmd.BindDescriptorSet(skinnedPipeline, 4, *frame.JointPalette);
+                DrawTransparentInstances(cmd, skinnedPipeline,
+                                         services.GetPipeline(EnginePipeline::ForwardTransparentSkinnedBackFaces), frame,
+                                         frame.SkinnedTransparentInstances, true);
+            }
+            cmd.EndRendering();
+        }
+
+        void BuildForwardTransparent(RenderGraphRuntime& graph, PassInvocation& invocation)
+        {
+            graph.AddPass<ForwardPassData>(invocation.GetName(),
+                [&](RGPassBuilder& pass, ForwardPassData& data)
+                {
+                    data.Depth = invocation.GetSlot("depth");
+                    pass.DepthReadOnly(data.Depth);
+                    data.ShadowMap = invocation.GetSlot("shadowMap");
+                    pass.SampleTexture(data.ShadowMap);
+                    data.Color   = pass.ColorTarget(invocation.GetSlot("color"));
+                    data.Graph   = &graph;
+                    data.Context = graph.GetFrameContext();
+                    invocation.SetSlot("color", data.Color);
+                },
+                [](ForwardPassData& data, RHI::IRHICommandList& cmd) { RecordForwardTransparent(data, cmd); });
         }
 
         void BuildForward(RenderGraphRuntime& graph, PassInvocation& invocation)
@@ -169,5 +296,10 @@ namespace Renderer
     PassTypeInfo GetForwardPassType()
     {
         return { { "color", "depth", "shadowMap" }, { { "cullBackFaces", PassParameterKind::Flag } }, &BuildForward };
+    }
+
+    PassTypeInfo GetForwardTransparentPassType()
+    {
+        return { { "color", "depth", "shadowMap" }, {}, &BuildForwardTransparent };
     }
 }

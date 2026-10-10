@@ -21,6 +21,7 @@ namespace Renderer
             registry.Register("DepthPrepass", GetDepthPrepassPassType())
             && registry.Register("Shadow", GetShadowPassType())
             && registry.Register("Forward", GetForwardPassType())
+            && registry.Register("ForwardTransparent", GetForwardTransparentPassType())
             && registry.Register("Skybox", GetSkyboxPassType())
             && registry.Register("ToneMap", GetToneMapPassType())
             && registry.Register("Gizmo", GetGizmoPassType())

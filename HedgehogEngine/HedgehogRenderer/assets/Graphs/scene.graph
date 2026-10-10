@@ -38,6 +38,12 @@ passes:
     bindings:
       color: hdr
       depth: depth
+  - type: ForwardTransparent
+    name: ForwardTransparent
+    bindings:
+      color: hdr
+      depth: depth
+      shadowMap: shadowAtlas
   - type: ToneMap
     name: ToneMap
     bindings:
