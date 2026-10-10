@@ -8,6 +8,8 @@
 #include "HedgehogEngine/api/ECS/systems/MeshSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/RenderSystem.hpp"
 #include "HedgehogEngine/api/EngineContext.hpp"
+#include "HedgehogEngine/api/Events/AnimationEvents.hpp"
+#include "HedgehogEngine/api/Events/EventBus.hpp"
 #include "HedgehogEngine/api/Scene/SceneManager.hpp"
 
 #include "ECS/api/ECS.hpp"
@@ -290,7 +292,7 @@ TEST_CASE("Animation - changing the clip crossfades from where the old clip was"
 
     for (int frame = 0; frame < 30; ++frame)
         Frame(context);
-    CHECK(Animator(context, entity).PreviousClip.empty());
+    CHECK_FALSE(HedgehogAnimation::IsFading(Animator(context, entity).Blend));
     CHECK(Near(LiftOf(Animator(context, entity).Palette[0]), 0.0f));
     REQUIRE(context.Stop());
 }
@@ -306,5 +308,61 @@ TEST_CASE("Animation - an unknown clip shows the bind pose and warns once")
         Frame(context);
     CHECK(console.Count("has no clip 'Dance'") == 1u);
     CHECK(IsIdentity(Animator(context, entity).Palette[0]));
+    REQUIRE(context.Stop());
+}
+
+TEST_CASE("Animation - a switch during a crossfade keeps the unfinished blend, so the pose does not jump")
+{
+    EngineContext     context;
+    const ECS::Entity entity = AddSkinned(context, SKINNED, Playing("Lift", 0.5f));
+
+    REQUIRE(context.Play());
+    for (int frame = 0; frame < 61; ++frame)
+        Frame(context);
+    context.GetECS().GetComponent<AnimatorComponent>(entity).Clip = "Bend";
+    for (int frame = 0; frame < 16; ++frame)
+        Frame(context);
+    const float halfway = LiftOf(Animator(context, entity).Palette[0]);
+    REQUIRE(Near(halfway, 0.3125f));
+
+    // Back to Lift, from its start (no lift): the half-finished Lift-Bend blend fades out instead
+    // of being dropped, so the frame of the switch shows the pose the frame before did.
+    context.GetECS().GetComponent<AnimatorComponent>(entity).Clip = "Lift";
+    Frame(context);
+    CHECK(Animator(context, entity).Blend.Count == 3u);
+    CHECK(Near(LiftOf(Animator(context, entity).Palette[0]), halfway));
+
+    for (int frame = 0; frame < 31; ++frame)
+        Frame(context);
+    CHECK(Animator(context, entity).Blend.Count == 1u);
+    CHECK(Near(LiftOf(Animator(context, entity).Palette[0]), 31.0f * STEP / 2.0f)); // Lift alone, 31 frames in
+    REQUIRE(context.Stop());
+}
+
+TEST_CASE("Animation - Play gives a clip its own loop; without one the animator's Loop applies")
+{
+    EngineContext     context;
+    const ECS::Entity entity = AddSkinned(context, SKINNED, Playing("Lift"));
+    int               finished = 0;
+    context.GetEventBus().Subscribe<HedgehogEngine::AnimationFinishedEvent>(
+        [&](const HedgehogEngine::AnimationFinishedEvent&) { ++finished; });
+
+    REQUIRE(context.Play());
+    Frame(context);
+    auto&      animations = *context.GetAnimationSystem();
+    const auto& meshes    = context.GetResourceCatalog().GetMeshContainer();
+    REQUIRE(animations.Play(context.GetECS(), meshes, entity, "Bend", 0.0f, false));
+    for (int frame = 0; frame < 90; ++frame) // 1.5 s of a 1 s clip
+        Frame(context);
+    CHECK(finished == 1);
+    CHECK(Near(TurnOf(Animator(context, entity).Palette[1]), 90.0f)); // held at its last key
+    CHECK(Animator(context, entity).Loop);                             // the saved field is untouched
+
+    // No loop given: the animator's Loop, so Lift (2 s) wraps and never finishes.
+    REQUIRE(animations.Play(context.GetECS(), meshes, entity, "Lift", 0.0f));
+    for (int frame = 0; frame < 150; ++frame)
+        Frame(context);
+    CHECK(finished == 1);
+    CHECK(HedgehogEngine::AnimationSystem::GetTime(Animator(context, entity)) > 2.0f);
     REQUIRE(context.Stop());
 }

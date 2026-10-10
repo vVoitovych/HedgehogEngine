@@ -275,5 +275,12 @@ of the Gizmo pass's bounds box. The benchmark selects nothing, so both record in
 of the HE-346 numbers). With a selection the Scene view adds one mesh draw into an R8 mask and one
 fullscreen pass of 25 mask taps; the Game view never runs either.
 
+### 2026-10-10 (HE-359) — the animator's blend stack
+
+Animators blend through a stack of up to four clips found by index, in place of two clips found
+by name every frame. `benchmark.yaml` has no animator, so it was measured on `Animated.yaml`
+(two animated strips), Release, 600 frames, `Frame(wall)` avg: before 2.098, 2.061 and 1.998 ms;
+after 1.999, 2.025 and 2.136 ms. The same within run-to-run noise.
+
 When a change intentionally alters performance, re-run the benchmark and update
 this table (keep the old row set; add a dated entry below it so history accumulates).

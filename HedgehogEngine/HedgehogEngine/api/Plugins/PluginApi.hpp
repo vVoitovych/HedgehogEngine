@@ -9,8 +9,9 @@
 // and EcsSerialization types a plugin uses. Bump it whenever one of them changes layout or
 // meaning, so plugins built against the old one are refused instead of crashing.
 // 2 (HE-310): ECS::System gained OnPostFixedUpdate. 3 (HE-312): EngineContext gained the physics
-// world and system.
-#define HH_PLUGIN_API_VERSION 4u
+// world and system. 4 (HE-323): EngineContext gained the environment system. 5 (HE-359):
+// AnimatorComponent's runtime state became a blend stack.
+#define HH_PLUGIN_API_VERSION 5u
 
 namespace HedgehogEngine
 {

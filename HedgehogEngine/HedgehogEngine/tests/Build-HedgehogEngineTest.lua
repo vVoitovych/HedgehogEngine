@@ -20,6 +20,7 @@ project "HedgehogEngineTest"
     {
         "yaml-cpp",
         "HedgehogEngine",
+        "HedgehogAnimation",
         "HedgehogInput",
         "HedgehogAudio",
         "HedgehogCommon",
