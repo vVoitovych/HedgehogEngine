@@ -2,6 +2,7 @@
 #include "EditorTheme.hpp"
 #include "Widgets/IconWidgets.hpp"
 #include "Widgets/PropertyFields.hpp"
+#include "Widgets/TransformGizmo.hpp"
 #include "Widgets/ViewportOverlay.hpp"
 #include "Panels/EntityIcon.hpp"
 #include "Panels/TextSearch.hpp"
@@ -232,7 +233,9 @@ namespace Editor
 
     void EditorGui::Draw(HedgehogEngine::Engine& context, const ViewportImages& images)
     {
+        BeginTransformGizmoFrame();
         m_SceneViewHovered = false;
+        m_SceneGizmoActive = false;
         m_ScenePick.reset();
         m_SceneViewWidth   = 0;
         m_SceneViewHeight  = 0;
@@ -342,10 +345,14 @@ namespace Editor
                 m_SceneImageMin    = HM::Vector2(ImGui::GetItemRectMin().x, ImGui::GetItemRectMin().y);
                 m_SceneImageSize   = HM::Vector2(ImGui::GetItemRectSize().x, ImGui::GetItemRectSize().y);
 
-                // A click, not the end of a camera drag.
+                // The selection's handles, over the image; one under the pointer takes it from the
+                // camera and from picking.
+                m_SceneGizmoActive = DrawSceneGizmo(context, m_SceneImageMin, m_SceneImageSize);
+
+                // A click, not the end of a camera drag or on a handle.
                 constexpr float CLICK_DRAG_PIXELS = 4.0f;
                 const ImGuiIO&  io = ImGui::GetIO();
-                if (m_SceneViewHovered && ImGui::IsMouseReleased(ImGuiMouseButton_Left)
+                if (m_SceneViewHovered && !m_SceneGizmoActive && ImGui::IsMouseReleased(ImGuiMouseButton_Left)
                     && io.MouseDragMaxDistanceSqr[ImGuiMouseButton_Left] < CLICK_DRAG_PIXELS * CLICK_DRAG_PIXELS)
                 {
                     const ImVec2 origin = ImGui::GetItemRectMin();
@@ -405,6 +412,7 @@ namespace Editor
             m_GameViewFocused = false;
         if (m_SceneImageSize.x() <= 0.0f)
             m_SceneViewFocused = false;
+        HandleTransformToolKeys();
     }
 
     HInput::GameInputRegion EditorGui::GetGameInputRegion() const
@@ -424,7 +432,7 @@ namespace Editor
         region.Origin          = m_SceneImageMin;
         region.Size            = m_SceneImageSize;
         region.PixelSize       = m_SceneImageSize; // the camera turns by window pixels, as it always has
-        region.PointerEnabled  = m_SceneViewHovered;
+        region.PointerEnabled  = m_SceneViewHovered && !m_SceneGizmoActive; // a handle's drag is not the camera's
         region.KeyboardEnabled = m_SceneViewFocused && !ImGui::GetIO().WantTextInput;
         return region;
     }
@@ -639,6 +647,10 @@ namespace Editor
             ImGui::SetItemTooltip("%s", tooltip);
             return pressed;
         };
+
+        // The transform tools lead the row.
+        DrawTransformToolButtons();
+        ImGui::SameLine();
 
         const float groupWidth = 3.0f * buttonSize + 2.0f * style.ItemSpacing.x;
         ImGui::SetCursorPosX(std::max((ImGui::GetWindowWidth() - groupWidth) * 0.5f, style.WindowPadding.x));

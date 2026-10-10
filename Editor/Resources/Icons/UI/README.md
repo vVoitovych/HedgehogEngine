@@ -42,6 +42,11 @@ Every icon except the logo is from [Lucide](https://lucide.dev) `lucide-static` 
 | `audio_listener.png` | `ear` |
 | `rigid_body.png` | `weight` |
 | `collider.png` | `scan` |
+| `tool_move.png` | `move` |
+| `tool_rotate.png` | `rotate-3d` |
+| `tool_scale.png` | `scale-3d` |
+| `space_local.png` | `axis-3d` |
+| `space_world.png` | `earth` |
 
 `hedgehog_logo.png` is the project's own `Editor/editor.ico`, rendered at 32x32.
 

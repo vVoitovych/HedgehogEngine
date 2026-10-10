@@ -54,6 +54,11 @@ namespace Editor
         AudioListener,
         RigidBody,
         Collider,
+        ToolMove,
+        ToolRotate,
+        ToolScale,
+        SpaceLocal,
+        SpaceWorld,
         Count
     };
 

@@ -40,6 +40,11 @@ namespace Editor
         case EditorIcon::AudioListener: return "audio_listener.png";
         case EditorIcon::RigidBody:     return "rigid_body.png";
         case EditorIcon::Collider:      return "collider.png";
+        case EditorIcon::ToolMove:      return "tool_move.png";
+        case EditorIcon::ToolRotate:    return "tool_rotate.png";
+        case EditorIcon::ToolScale:     return "tool_scale.png";
+        case EditorIcon::SpaceLocal:    return "space_local.png";
+        case EditorIcon::SpaceWorld:    return "space_world.png";
         case EditorIcon::Count:         break;
         }
         return "";
