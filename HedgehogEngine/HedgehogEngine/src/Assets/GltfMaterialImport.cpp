@@ -7,7 +7,9 @@
 #include "FileSystem/api/PathUtils.hpp"
 #include "Logger/api/Logger.hpp"
 
+#include <algorithm>
 #include <cctype>
+#include <cmath>
 
 namespace HedgehogEngine
 {
@@ -46,7 +48,15 @@ namespace HedgehogEngine
     MaterialData MakeMaterialData(const ContentLoader::LoadedMaterial& material)
     {
         MaterialData data;
-        data.type                 = MaterialType::Opaque;
+        switch (material.AlphaMode)
+        {
+        case ContentLoader::LoadedAlphaMode::Mask:  data.type = MaterialType::Cutoff; break;
+        case ContentLoader::LoadedAlphaMode::Blend: data.type = MaterialType::Transparent; break;
+        default:                                    data.type = MaterialType::Opaque; break;
+        }
+        // glTF allows any cutoff from 0; a material's lies in [0, 1].
+        data.alphaCutoff          = std::isfinite(material.AlphaCutoff) ? std::clamp(material.AlphaCutoff, 0.0f, 1.0f) : 0.5f;
+        data.doubleSided          = material.DoubleSided;
         data.baseColor            = ToMaterialMapPath(material.BaseColorMap);
         data.baseColorFactor      = material.BaseColorFactor;
         data.metallic             = material.Metallic;

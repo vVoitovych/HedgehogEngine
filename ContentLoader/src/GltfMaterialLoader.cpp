@@ -148,6 +148,16 @@ namespace ContentLoader
                 material.EmissiveFactor = HM::Vector3(static_cast<float>(source.emissiveFactor[0]), static_cast<float>(source.emissiveFactor[1]),
                                                       static_cast<float>(source.emissiveFactor[2]));
 
+            if (source.alphaMode == "MASK")
+                material.AlphaMode = LoadedAlphaMode::Mask;
+            else if (source.alphaMode == "BLEND")
+                material.AlphaMode = LoadedAlphaMode::Blend;
+            else if (source.alphaMode != "OPAQUE")
+                LOGWARNING("[Material] " + virtualPath + ": material '" + name + "' has alpha mode '" + source.alphaMode
+                           + "'; it is read as OPAQUE.");
+            material.AlphaCutoff = static_cast<float>(source.alphaCutoff);
+            material.DoubleSided = source.doubleSided;
+
             material.BaseColorMap = ReadMap(model, pbr.baseColorTexture.index, pbr.baseColorTexture.texCoord, virtualPath, name,
                                             "base colour");
             material.MetallicRoughnessMap = ReadMap(model, pbr.metallicRoughnessTexture.index, pbr.metallicRoughnessTexture.texCoord,
