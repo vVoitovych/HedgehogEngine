@@ -2,6 +2,8 @@
 
 #include "HedgehogMath/api/Frustum.hpp"
 
+#include <algorithm>
+
 namespace Renderer
 {
     namespace
@@ -53,6 +55,21 @@ namespace Renderer
                 break;
             }
         }
+    }
+
+    void SortBackToFront(std::span<HX::RenderInstance> instances, const HM::Vector3& eye)
+    {
+        const auto distance = [&eye](const HX::RenderInstance& instance)
+        {
+            return (instance.WorldBounds.GetCenter() - eye).LengthSqr();
+        };
+        std::sort(instances.begin(), instances.end(),
+                  [&](const HX::RenderInstance& a, const HX::RenderInstance& b)
+                  {
+                      const float da = distance(a);
+                      const float db = distance(b);
+                      return da != db ? da > db : a.SourceId < b.SourceId;
+                  });
     }
 
     void CollectSceneInstances(std::span<const HX::RenderInstance> instances, std::vector<HX::RenderInstance>& out)

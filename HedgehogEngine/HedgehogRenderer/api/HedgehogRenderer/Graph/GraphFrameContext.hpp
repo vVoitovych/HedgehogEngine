@@ -75,8 +75,8 @@ namespace Renderer
         std::span<const HX::RenderInstance> CutoffInstances;
         std::span<const HX::RenderInstance> SkinnedCutoffInstances;
 
-        // A view's instances whose material is Transparent, rigid and skinned: neither the depth
-        // prepass nor the forward pass draws them.
+        // A view's instances whose material is Transparent, rigid and skinned, back to front from
+        // the view (SortBackToFront): only the ForwardTransparent pass draws them, blended.
         std::span<const HX::RenderInstance> TransparentInstances;
         std::span<const HX::RenderInstance> SkinnedTransparentInstances;
 
@@ -221,6 +221,10 @@ namespace Renderer
         ShadowCutoffDoubleSided,        // ShadowCutoff without back-face culling
         ShadowCutoffSkinned,            // ShadowCutoff for SkinnedCutoffInstances: palette at set 1, material at set 2
         ShadowCutoffSkinnedDoubleSided, // ShadowCutoffSkinned without back-face culling
+        ForwardTransparent,                 // Forward for TransparentInstances: alpha-blended, depth tested, not written
+        ForwardTransparentBackFaces,        // ForwardTransparent culling the front faces: a double-sided one's far side
+        ForwardTransparentSkinned,          // ForwardTransparent for SkinnedTransparentInstances: palette at set 4
+        ForwardTransparentSkinnedBackFaces, // ForwardTransparentSkinned culling the front faces
     };
 
     // The long-lived GPU objects the engine passes use but do not own: pipelines, and per-frame

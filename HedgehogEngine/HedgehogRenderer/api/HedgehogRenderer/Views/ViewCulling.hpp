@@ -43,6 +43,11 @@ namespace Renderer
                            const HM::Matrix4x4& viewProj, ViewInstances& out,
                            std::span<const MaterialDrawInfo> materials = {});
 
+    // Orders instances back to front from eye, by the distance to their world bounds' centre (ties
+    // by SourceId, so the order is stable from frame to frame): the blending order of transparent
+    // ones. Sorts in place, allocating nothing.
+    void SortBackToFront(std::span<HX::RenderInstance> instances, const HM::Vector3& eye);
+
     // The instances any view could draw as scene geometry: all but the editor layer's. What the
     // shared shadow pass chooses its casters from, before the caster mask (SharedPhase.hpp).
     void CollectSceneInstances(std::span<const HX::RenderInstance> instances, std::vector<HX::RenderInstance>& out);

@@ -87,12 +87,21 @@ namespace
                 skyWritten = data.Target = pass.ColorTarget(hdrWritten);
             },
             NO_EXECUTE);
+        RGTexture blendedWritten;
+        graph.AddPass<TargetData>("ForwardTransparent",
+            [&](RGPassBuilder& pass, TargetData& data)
+            {
+                pass.DepthReadOnly(depthWritten);
+                pass.SampleTexture(shadowAtlas);
+                blendedWritten = data.Target = pass.ColorTarget(skyWritten);
+            },
+            NO_EXECUTE);
 
         RGTexture colorWritten;
         graph.AddPass<TargetData>("ToneMap",
             [&](RGPassBuilder& pass, TargetData& data)
             {
-                pass.SampleTexture(skyWritten);
+                pass.SampleTexture(blendedWritten);
                 colorWritten = data.Target = pass.ColorTarget(color);
             },
             NO_EXECUTE);
@@ -226,19 +235,21 @@ TEST_CASE("Oracle: each shipped graph compiles to the same plan as its hand-writ
     CHECK(gameTwin.find("pass Gizmo") == std::string::npos);
     CHECK(PlanOf(registry, *library.Find("game")) == gameTwin);
 
-    // Forward renders HDR radiance, the Skybox fills the rest, ToneMap maps it onto the colour, and
-    // the overlays draw after.
+    // Forward renders HDR radiance, the Skybox fills the rest, ForwardTransparent blends over both,
+    // ToneMap maps it onto the colour, and the overlays draw after.
     for (const auto& [twin, overlay] : { std::pair{ &sceneTwin, "pass Gizmo" }, std::pair{ &gameTwin, "pass GameUi" } })
     {
         const size_t prepass = twin->find("pass DepthPrepass");
         const size_t forward = twin->find("pass Forward");
         const size_t skybox  = twin->find("pass Skybox");
+        const size_t blended = twin->find("pass ForwardTransparent");
         const size_t toneMap = twin->find("pass ToneMap");
         REQUIRE(skybox != std::string::npos);
         REQUIRE(toneMap != std::string::npos);
         CHECK(prepass < forward);
         CHECK(forward < skybox);
-        CHECK(skybox < toneMap);
+        CHECK(skybox < blended);
+        CHECK(blended < toneMap);
         CHECK(toneMap < twin->find(overlay));
     }
 

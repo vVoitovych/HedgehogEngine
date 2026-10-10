@@ -87,5 +87,6 @@ void main()
     radiance += AmbientLight(surface, occlusion);
 
     radiance += materialData.emissiveFactor.rgb * texture(emissiveMap, fragTexCoord).rgb;
-    outColor = vec4(radiance, 1.0f);
+    // A Transparent material's alpha blends it over what is behind (ForwardTransparent); others are opaque.
+    outColor = vec4(radiance, materialData.alphaMode == ALPHA_MODE_TRANSPARENT ? baseColor.a : 1.0f);
 }
