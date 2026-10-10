@@ -46,8 +46,10 @@ TEST_CASE("AnimatorComponent round-trips its reflected fields and never writes i
     source.Started      = true;
     source.Playing      = true;
     source.CurrentClip  = "Run";
-    source.Time         = 3.0f;
-    source.PreviousClip = "Idle";
+    source.WarnedClip   = "Idle";
+    source.Blend.Count  = 2;
+    source.Blend.Entries[1].Time = 3.0f;
+    source.Blend.FadeDuration    = 0.25f;
     source.PreviewTime  = 0.5f;
     source.Palette.assign(4, HM::Matrix4x4::GetTranslation(1.0f, 2.0f, 3.0f));
 
@@ -66,7 +68,7 @@ TEST_CASE("AnimatorComponent round-trips its reflected fields and never writes i
     CHECK_FALSE(restored.Started);
     CHECK_FALSE(restored.Playing);
     CHECK(restored.CurrentClip.empty());
-    CHECK(restored.Time == 0.0f);
+    CHECK(restored.Blend.Count == 0u);
     CHECK_FALSE(restored.PreviewTime.has_value());
     CHECK(restored.Palette.empty());
 }

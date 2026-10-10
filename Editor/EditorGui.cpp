@@ -44,6 +44,7 @@
 #include "EcsSerialization/api/ComponentTypeRegistry.hpp"
 #include "ECS/api/components/Hierarchy.hpp"
 #include "HedgehogEngine/api/ECS/components/AnimatorComponent.hpp"
+#include "HedgehogEngine/api/ECS/systems/AnimationSystem.hpp"
 #include "HedgehogEngine/api/ECS/components/PrefabInstanceComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
 #include "HedgehogEngine/api/Events/TransformEvents.hpp"
@@ -1170,6 +1171,55 @@ namespace Editor
             return;
 
         auto& animator = ecs.GetComponent<HedgehogEngine::AnimatorComponent>(entity);
+
+        // Clip is picked from the mesh's clips, so its reflected text row draws nothing.
+        static const bool clipRowHidden = []
+        {
+            for (const Reflection::PropertyDescriptor& prop : HedgehogEngine::AnimatorComponent::GetProperties())
+            {
+                // The descriptors live in the component's mutable property table.
+                if (std::string_view(prop.name) == "Clip")
+                    const_cast<Reflection::PropertyDescriptor&>(prop).guiOverride =
+                        [](void*, const Reflection::PropertyDescriptor&) -> bool { return false; };
+            }
+            return true;
+        }();
+        (void)clipRowHidden;
+
+        if (BeginPropertyTable("##animatorClip"))
+        {
+            constexpr ImVec4 MISSING_CLIP_COLOR = { 0.95f, 0.35f, 0.35f, 1.0f };
+            auto&            engineContext      = context.GetEngineContext();
+            const std::vector<std::string> clips = engineContext.GetAnimationSystem()->GetClipNames(
+                ecs, engineContext.GetResourceCatalog().GetMeshContainer(), entity);
+            const bool known = animator.Clip.empty() || std::find(clips.begin(), clips.end(), animator.Clip) != clips.end();
+
+            PropertyLabel("Clip");
+            if (!known)
+                ImGui::PushStyleColor(ImGuiCol_Text, MISSING_CLIP_COLOR);
+            if (ImGui::BeginCombo("##Clip", animator.Clip.empty() ? "(none)" : animator.Clip.c_str()))
+            {
+                if (!known)
+                    ImGui::PopStyleColor();
+                if (ImGui::Selectable("(none)", animator.Clip.empty()))
+                    animator.Clip.clear();
+                for (const std::string& name : clips)
+                {
+                    if (ImGui::Selectable(name.c_str(), name == animator.Clip))
+                        animator.Clip = name;
+                }
+                ImGui::EndCombo();
+            }
+            else if (!known)
+            {
+                ImGui::PopStyleColor();
+            }
+            if (!known)
+                ImGui::SetItemTooltip("The entity's mesh has no clip of this name.");
+            else if (clips.empty())
+                ImGui::SetItemTooltip("The entity's mesh has no animation clips.");
+            EndPropertyTable();
+        }
         Reflection::RenderComponentGui(&animator, HedgehogEngine::AnimatorComponent::GetProperties(), HedgehogEngine::AnimatorComponent::s_TypeName);
     }
 

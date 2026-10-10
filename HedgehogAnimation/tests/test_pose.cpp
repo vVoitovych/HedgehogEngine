@@ -1,5 +1,6 @@
 #include "doctest/doctest/doctest.h"
 
+#include "HedgehogAnimation/api/BlendStack.hpp"
 #include "HedgehogAnimation/api/Pose.hpp"
 
 #include "ContentLoader/api/LoadedAnimation.hpp"
@@ -206,6 +207,13 @@ TEST_CASE("Pose evaluation allocates nothing once the buffers are sized")
     std::vector<JointTransform> blended;
     std::vector<HM::Matrix4x4>  model;
     std::vector<HM::Matrix4x4>  palette;
+    // A blend stack fading through three clips of the same file.
+    const std::vector<AnimationClip> clips = { clip, clip, clip };
+    BlendStack                       stack;
+    PushClip(stack, 0, 1.0f, true, 0.0f);
+    PushClip(stack, 1, 1.5f, false, 1.0f);
+    AdvanceBlendStack(stack, 0.3f, 0.3f);
+    PushClip(stack, 2, 0.5f, true, 1.0f);
 
     const auto evaluate = [&](float time)
     {
@@ -214,6 +222,8 @@ TEST_CASE("Pose evaluation allocates nothing once the buffers are sized")
         BlendPoses(a, b, 0.25f, blended);
         ComputeModelPose(skeleton, blended, model);
         ComputeSkinningPalette(model, skeleton.InverseBind, palette);
+        AdvanceBlendStack(stack, 0.001f, 0.001f);
+        EvaluateBlendStack(stack, skeleton, clips, a, blended);
     };
     evaluate(0.0f); // sizes the buffers
 

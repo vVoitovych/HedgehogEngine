@@ -153,16 +153,18 @@ namespace HedgehogScripting::Bindings
             HedgehogEngine::AnimationSystem& animations = *context.GetAnimationSystem();
             lua.new_usertype<AnimatorRef>(
                 "Animator", sol::no_constructor,
-                // play(clip, fade?): from the clip's start, crossfading over fade seconds
-                // (CrossfadeTime when left out). An unknown clip logs a warning naming it and keeps
-                // the current one; returns whether the clip was found.
+                // play(clip, fade?, loop?): from the clip's start, crossfading over fade seconds
+                // (CrossfadeTime when left out), looping as loop says (the animator's loop when
+                // left out). An unknown clip logs a warning naming it and keeps the current one;
+                // returns whether the clip was found.
                 "play", [&ecs, &animations, &context](const AnimatorRef& ref, const std::string& clip,
-                                                      std::optional<float> fade)
+                                                      std::optional<float> fade, std::optional<bool> loop)
                 {
                     (void)Resolve(ecs, ref);
                     if (fade && (!std::isfinite(*fade) || *fade < 0.0f))
                         throw std::runtime_error("a crossfade time must be a finite number of seconds, not below 0");
-                    return animations.Play(ecs, context.GetResourceCatalog().GetMeshContainer(), ref.Entity.Id, clip, fade);
+                    return animations.Play(ecs, context.GetResourceCatalog().GetMeshContainer(), ref.Entity.Id, clip, fade,
+                                           loop);
                 },
                 "stop", [&ecs, &animations](const AnimatorRef& ref)
                 {
@@ -193,14 +195,12 @@ namespace HedgehogScripting::Bindings
                 "loop",  Field(ecs, &AnimatorComponent::Loop),
                 // Seconds into the current clip. Setting it lets a finished clip finish again.
                 "time", sol::property(
-                    [&ecs](const AnimatorRef& ref) { return Resolve(ecs, ref).Time; },
+                    [&ecs](const AnimatorRef& ref) { return HedgehogEngine::AnimationSystem::GetTime(Resolve(ecs, ref)); },
                     [&ecs](const AnimatorRef& ref, float time)
                     {
                         if (!std::isfinite(time))
                             throw std::runtime_error("an animation time must be a finite number");
-                        AnimatorComponent& animator = Resolve(ecs, ref);
-                        animator.Time     = time;
-                        animator.Finished = false;
+                        HedgehogEngine::AnimationSystem::SetTime(Resolve(ecs, ref), time);
                     }),
                 sol::meta_function::to_string, ToText<AnimatorComponent>("Animator"));
         }

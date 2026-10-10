@@ -22,6 +22,7 @@ project "ScriptingTest"
         "HedgehogLuaDebug",
         "ws2_32",
         "HedgehogEngine",
+        "HedgehogAnimation",
         "HedgehogSettings",
         "HedgehogInput",
         "HedgehogAudio",

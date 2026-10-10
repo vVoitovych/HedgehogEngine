@@ -5,6 +5,7 @@
 
 #include "HedgehogEngine/api/ECS/components/AnimatorComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
+#include "HedgehogEngine/api/ECS/systems/AnimationSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/MeshSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/RenderSystem.hpp"
 
@@ -114,8 +115,8 @@ TEST_CASE("Animation bindings - a script plays a clip, crossfades to another and
 
     Frame(world, 9); // the 10th frame switches to Lift, fading out of Bend over 0.5 s
     CHECK(State(world, dancer).CurrentClip == "Lift");
-    CHECK(State(world, dancer).PreviousClip == "Bend");
-    CHECK(State(world, dancer).FadeDuration == doctest::Approx(0.5f));
+    CHECK(State(world, dancer).Blend.Count == 2u); // Bend fading out
+    CHECK(State(world, dancer).Blend.FadeDuration == doctest::Approx(0.5f));
     CHECK(State(world, dancer).CrossfadeTime == doctest::Approx(0.2f)); // the saved field is untouched
 
     Frame(world); // "Jump" is not a clip of the strip
@@ -123,10 +124,10 @@ TEST_CASE("Animation bindings - a script plays a clip, crossfades to another and
     CHECK(log.Lines("[WARNING][Animation] Entity " + std::to_string(dancer) + " has no clip 'Jump'").size() == 1);
     CHECK(log.Lines("keeping 'Lift'").size() == 1);
     CHECK(State(world, dancer).CurrentClip == "Lift");
-    CHECK(State(world, dancer).PreviousClip == "Bend"); // still fading
+    CHECK(HedgehogAnimation::IsFading(State(world, dancer).Blend)); // still fading
 
     Frame(world, 30); // past the 0.5 s fade
-    CHECK(State(world, dancer).PreviousClip.empty());
+    CHECK_FALSE(HedgehogAnimation::IsFading(State(world, dancer).Blend));
     CHECK(State(world, dancer).CurrentClip == "Lift");
     CHECK(log.Lines("[ERROR]").empty());
 }
@@ -194,7 +195,7 @@ TEST_CASE("Animation bindings - speed, time, stop, addAnimator and refused argum
     CHECK(world.Ecs().HasComponent<AnimatorComponent>(driver));
     CHECK(log.Lines("set 2.0 0.5").size() == 1);
     // Set in OnUpdate, then advanced by the frame at double speed.
-    CHECK(State(world, strip).Time == doctest::Approx(0.5f + 2.0f * STEP));
+    CHECK(HedgehogEngine::AnimationSystem::GetTime(State(world, strip)) == doctest::Approx(0.5f + 2.0f * STEP));
 
     Frame(world); // stopped: no clip, bind pose
     CHECK(log.Lines("stopped nil false").size() == 1);

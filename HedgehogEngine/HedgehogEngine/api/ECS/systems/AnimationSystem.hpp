@@ -41,20 +41,29 @@ namespace HedgehogEngine
 
         // One frame. In Play (playing, dt the frame's scaled time; 0 while paused) each animator
         // starts on its first frame (playing Clip when PlayOnStart), switches when Clip changes
-        // (crossfading over CrossfadeTime from where the old clip was), advances by dt * Speed and
-        // fills Palette. In Edit (not playing) it shows Clip at PreviewTime when set, else the
+        // (crossfading over CrossfadeTime from where the old clips were: a switch during a fade
+        // keeps the unfinished blend fading out, through the animator's BlendStack), advances by
+        // dt * Speed and fills Palette. The current clip loops as Loop says unless Play gave it a
+        // loop of its own; a clip fading out keeps the loop it played with. In Edit (not playing) it shows Clip at PreviewTime when set, else the
         // bind pose, and forgets its play state. An entity whose mesh has no skeleton gets an
         // empty palette; an unknown clip name shows the bind pose and warns once. A non-looping
         // clip that reaches its end publishes AnimationFinishedEvent on bus once.
         HEDGEHOG_ENGINE_API void Update(ECS::ECS& ecs, const MeshContainer& meshes, EventBus& bus, bool playing,
                                         float dt);
 
-        // Plays clip on entity's animator from its start, crossfading out of the current one over
-        // fade seconds (CrossfadeTime when not given). Playing the current clip again restarts it
-        // without a fade. A clip the entity's mesh does not have logs a warning naming it and
-        // keeps the current clip; returns whether the clip was found.
+        // Plays clip on entity's animator from its start, crossfading out of what plays over fade
+        // seconds (CrossfadeTime when not given), looping as loop says (Loop when not given).
+        // Playing the current clip again restarts it without a fade. A clip the entity's mesh
+        // does not have logs a warning naming it and keeps the current clip; returns whether the
+        // clip was found.
         HEDGEHOG_ENGINE_API bool Play(ECS::ECS& ecs, const MeshContainer& meshes, ECS::Entity entity,
-                                      const std::string& clip, std::optional<float> fade = std::nullopt);
+                                      const std::string& clip, std::optional<float> fade = std::nullopt,
+                                      std::optional<bool> loop = std::nullopt);
+
+        // Seconds into the animator's current clip; 0 when nothing plays.
+        [[nodiscard]] HEDGEHOG_ENGINE_API static float GetTime(const AnimatorComponent& animator);
+        // Moves the current clip to time seconds and lets a finished clip finish again.
+        HEDGEHOG_ENGINE_API static void SetTime(AnimatorComponent& animator, float time);
 
         // Stops entity's animator: no clip plays and the mesh shows its bind pose.
         HEDGEHOG_ENGINE_API void Stop(ECS::ECS& ecs, ECS::Entity entity);
@@ -66,7 +75,9 @@ namespace HedgehogEngine
     private:
         void Evaluate(AnimatorComponent& animator, const HedgehogAnimation::Skeleton& skeleton,
                       const std::vector<HedgehogAnimation::AnimationClip>& clips, ECS::Entity entity);
-        void Advance(AnimatorComponent& animator, float dt);
+        // The clips are the mesh's (none when it is not loaded yet); meshIndex names it.
+        void Advance(AnimatorComponent& animator, const std::vector<HedgehogAnimation::AnimationClip>* clips,
+                     std::optional<uint64_t> meshIndex, float dt, ECS::Entity entity);
 
     private:
         EventBus*        m_Bus     = nullptr;
@@ -74,8 +85,7 @@ namespace HedgehogEngine
 
         // Scratch poses reused every frame, so steady-state evaluation allocates nothing.
         std::vector<HedgehogAnimation::JointTransform> m_Pose;
-        std::vector<HedgehogAnimation::JointTransform> m_FadePose;
-        std::vector<HedgehogAnimation::JointTransform> m_Blended;
+        std::vector<HedgehogAnimation::JointTransform> m_Scratch;
         std::vector<HM::Matrix4x4>                     m_ModelPose;
     };
 }
