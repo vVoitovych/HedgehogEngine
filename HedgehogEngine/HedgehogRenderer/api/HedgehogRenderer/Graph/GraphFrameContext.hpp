@@ -189,18 +189,12 @@ namespace Renderer
 
     [[nodiscard]] SkinnedPushConstants MakeSkinnedPushConstants(const HX::RenderInstance& instance);
 
-    inline constexpr uint32_t GIZMO_BOX_LINE_VERTICES = 24;
-
-    // The model matrix that maps the unit cube onto box: the Gizmo pass's per-box push constant.
-    [[nodiscard]] HM::Matrix4x4 MakeGizmoBoxMatrix(const HM::AABB& box);
-
     enum class EnginePipeline
     {
         DepthPrepass,
         Shadow,
         Forward,            // back faces culled
         ForwardDoubleSided, // Forward with cullBackFaces: false
-        Gizmo,              // unit-cube wireframes (GetGizmoBoxLines), depth-tested, not written
         DepthPrepassSkinned,        // DepthPrepass for SkinnedInstances: palette at set 1
         ForwardSkinned,             // Forward for SkinnedInstances: palette at set 4
         ForwardSkinnedDoubleSided,  // ForwardSkinned with cullBackFaces: false
@@ -227,6 +221,7 @@ namespace Renderer
         ForwardTransparentSkinnedBackFaces, // ForwardTransparentSkinned culling the front faces
         SelectionMask,        // overlay instances as solid white into an R8 mask: no depth, no culling
         SelectionMaskSkinned, // SelectionMask for skinned overlay instances: palette at set 1
+        SelectionOutline,     // a fullscreen triangle blending the outline over the colour: the mask at set 0
     };
 
     // The long-lived GPU objects the engine passes use but do not own: pipelines, and per-frame
@@ -238,10 +233,6 @@ namespace Renderer
         virtual ~IGraphPassServices() = default;
 
         virtual const RHI::IRHIPipeline& GetPipeline(EnginePipeline pipeline) const = 0;
-
-        // A vertex buffer of GIZMO_BOX_LINE_VERTICES positions: the twelve edges of the unit cube
-        // [0, 1]^3 as a line list, for the Gizmo pipeline.
-        virtual RHI::IRHIBuffer& GetGizmoBoxLines() = 0;
 
         // A descriptor set (set 0, binding 0) holding viewProj, valid until this frame slot comes
         // round again. One allocation per draw pass (or per shadow cascade) per frame.

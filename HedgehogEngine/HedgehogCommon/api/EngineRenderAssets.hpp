@@ -39,7 +39,8 @@ namespace HedgehogEngine
         "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/SelectionMask.shader";
     constexpr std::string_view SELECTION_MASK_SKINNED_SHADER =
         "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/SelectionMaskSkinned.shader";
-    constexpr std::string_view GIZMO_SHADER   = "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/Gizmo.shader";
+    constexpr std::string_view SELECTION_OUTLINE_SHADER =
+        "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/SelectionOutline.shader";
     constexpr std::string_view GAME_UI_SHADER = "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/GameUi.shader";
     constexpr std::string_view DEBUG_LINES_SHADER =
         "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/DebugLines.shader";
@@ -72,7 +73,7 @@ namespace HedgehogEngine
         { "ToneMap", TONE_MAP_SHADER },
         { "SelectionMask", SELECTION_MASK_SHADER },
         { "SelectionMask", SELECTION_MASK_SKINNED_SHADER },
-        { "Gizmo", GIZMO_SHADER },
+        { "SelectionOutline", SELECTION_OUTLINE_SHADER },
         { "Gizmo", DEBUG_LINES_SHADER },
         { "GameUi", GAME_UI_SHADER },
         { "Ui", {} },

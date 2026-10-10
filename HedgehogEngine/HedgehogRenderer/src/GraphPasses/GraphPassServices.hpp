@@ -83,7 +83,6 @@ namespace Renderer
         void ProvideUiTextureLayout(HR::ResourceRegistry& registry) const;
 
         const RHI::IRHIPipeline&      GetPipeline(EnginePipeline pipeline) const override;
-        RHI::IRHIBuffer&              GetGizmoBoxLines() override;
         const RHI::IRHIDescriptorSet& AllocateViewProjUniform(const HM::Matrix4x4& viewProj) override;
         const RHI::IRHIDescriptorSet& AllocateForwardViewUniform(const ForwardViewUniform& uniform) override;
         const RHI::IRHIDescriptorSet& AllocateSceneLightsUniform(const SceneLightsUniform& uniform) override;
@@ -192,7 +191,6 @@ namespace Renderer
         std::unique_ptr<RHI::IRHIPipeline> m_ShadowPipeline;
         std::unique_ptr<RHI::IRHIPipeline> m_ForwardPipeline;
         std::unique_ptr<RHI::IRHIPipeline> m_ForwardDoubleSidedPipeline;
-        std::unique_ptr<RHI::IRHIPipeline> m_GizmoPipeline;
         std::unique_ptr<RHI::IRHIPipeline> m_DepthPrepassSkinnedPipeline;
         std::unique_ptr<RHI::IRHIPipeline> m_ForwardSkinnedPipeline;
         std::unique_ptr<RHI::IRHIPipeline> m_ForwardSkinnedDoubleSidedPipeline;
@@ -219,7 +217,7 @@ namespace Renderer
         std::unique_ptr<RHI::IRHIPipeline> m_ForwardTransparentSkinnedBackFacesPipeline;
         std::unique_ptr<RHI::IRHIPipeline> m_SelectionMaskPipeline;
         std::unique_ptr<RHI::IRHIPipeline> m_SelectionMaskSkinnedPipeline;
-        std::unique_ptr<RHI::IRHIBuffer>   m_GizmoBoxLines;
+        std::unique_ptr<RHI::IRHIPipeline> m_SelectionOutlinePipeline;
 
         uint32_t m_FrameIndex = 0;
     };

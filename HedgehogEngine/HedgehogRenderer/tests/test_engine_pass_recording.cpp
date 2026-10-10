@@ -367,82 +367,20 @@ TEST_CASE("Without a UI callback the Ui pass clears its target")
     CHECK(cmd.Renderings[0].ColorAttachments[0].LoadOp == RHI::LoadOp::Clear);
 }
 
-TEST_CASE("The Gizmo pass draws each overlay instance's bounds over the view, and nothing without any")
+TEST_CASE("The Gizmo pass draws the frame's debug lines in one draw, and nothing without any")
 {
     PassBuilderRegistry registry;
     RegisterEnginePassTypes(registry);
 
-    for (const bool selected : { true, false })
+    for (const bool lines : { true, false })
     {
-        CAPTURE(selected);
-        HX::RenderInstance overlay[2] = { Instance(0, HX::EDITOR_LAYER), Instance(1, HX::EDITOR_LAYER) };
-        overlay[0].WorldBounds = HM::AABB(HM::Vector3(1.0f, 2.0f, 3.0f), HM::Vector3(3.0f, 3.0f, 7.0f));
-
-        GraphFrameData frame = MakeFrame(1);
-        if (selected)
-            frame.OverlayInstances = overlay;
-        FakeServices      services;
-        GraphFrameContext context{ &services, &frame };
-
-        TestDevice         device;
-        RenderGraphRuntime graph(device, 64 * 1024);
-        graph.SetFrameContext(&context);
-
-        PassInvocation prepass("DepthPrepass");
-        prepass.SetSlot("depth", DeclareDepth(graph, "depth", 64));
-        registry.Find("DepthPrepass")->Build(graph, prepass);
-
-        PassInvocation gizmo("Gizmo");
-        gizmo.SetSlot("color", DeclareColor(graph, "color", RHI::Format::R16G16B16A16Unorm));
-        gizmo.SetSlot("depth", prepass.GetSlot("depth"));
-        registry.Find("Gizmo")->Build(graph, gizmo);
-        graph.BindOutput(graph.AddOutputSlot("color", RHI::Format::R16G16B16A16Unorm, RGSizePolicy::MakeAbsolute(64, 64)),
-                         gizmo.GetSlot("color"));
-
-        RecordingCommandList cmd;
-        REQUIRE(graph.Execute(cmd));
-        if (!selected)
-        {
-            CHECK(cmd.Renderings.size() == 1); // the prepass only
-            CHECK(cmd.DrawnVertexCounts.empty());
-            continue;
-        }
-
-        REQUIRE(cmd.Renderings.size() == 2);
-        const RHI::RenderingInfo& info = cmd.Renderings[1];
-        REQUIRE(info.ColorAttachments.size() == 1);
-        CHECK(info.ColorAttachments[0].LoadOp == RHI::LoadOp::Load); // over the lit scene
-        REQUIRE(info.DepthAttachment.has_value());
-        CHECK(info.DepthAttachment->LoadOp == RHI::LoadOp::Load);
-        CHECK(info.DepthAttachment->Texture == cmd.Renderings[0].DepthAttachment->Texture);
-        CHECK(cmd.DrawnVertexCounts == std::vector<uint32_t>{ GIZMO_BOX_LINE_VERTICES, GIZMO_BOX_LINE_VERTICES });
-    }
-
-    // The unit cube's corners land on the box's.
-    const HM::AABB      box(HM::Vector3(1.0f, 2.0f, 3.0f), HM::Vector3(3.0f, 3.0f, 7.0f));
-    const HM::Matrix4x4 model = MakeGizmoBoxMatrix(box);
-    const HM::Vector4   low   = model * HM::Vector4(0.0f, 0.0f, 0.0f, 1.0f);
-    const HM::Vector4   high  = model * HM::Vector4(1.0f, 1.0f, 1.0f, 1.0f);
-    CHECK(HM::Vector3(low.x(), low.y(), low.z()) == box.GetMin());
-    CHECK(HM::Vector3(high.x(), high.y(), high.z()) == box.GetMax());
-}
-
-TEST_CASE("The Gizmo pass draws the frame's debug lines in one draw, after the overlay boxes")
-{
-    PassBuilderRegistry registry;
-    RegisterEnginePassTypes(registry);
-
-    // boxes, lines: what the frame holds.
-    for (const auto& [boxes, lines] : { std::pair{ false, true }, std::pair{ true, true }, std::pair{ false, false } })
-    {
-        CAPTURE(boxes);
         CAPTURE(lines);
+        // The selection is the SelectionOutline pass's: the Gizmo pass never draws it.
         HX::RenderInstance overlay[1] = { Instance(0, HX::EDITOR_LAYER) };
         TestBuffer         lineVertices{ 6 * sizeof(HX::DebugLineVertex) };
 
-        GraphFrameData frame = MakeFrame(1);
-        if (boxes)
-            frame.OverlayInstances = overlay;
+        GraphFrameData frame   = MakeFrame(1);
+        frame.OverlayInstances = overlay;
         if (lines)
         {
             frame.DebugLineVertices    = &lineVertices;
@@ -468,7 +406,7 @@ TEST_CASE("The Gizmo pass draws the frame's debug lines in one draw, after the o
 
         RecordingCommandList cmd;
         REQUIRE(graph.Execute(cmd));
-        if (!boxes && !lines)
+        if (!lines)
         {
             CHECK(cmd.Renderings.size() == 1); // the prepass only
             CHECK(cmd.DrawnVertexCounts.empty());
@@ -476,21 +414,13 @@ TEST_CASE("The Gizmo pass draws the frame's debug lines in one draw, after the o
         }
 
         REQUIRE(cmd.Renderings.size() == 2);
-        CHECK(cmd.Renderings[1].ColorAttachments[0].LoadOp == RHI::LoadOp::Load);
-        const RHI::IRHIPipeline& linePipeline = services.GetPipeline(EnginePipeline::DebugLines);
-        const RHI::IRHIPipeline& boxPipeline  = services.GetPipeline(EnginePipeline::Gizmo);
-        REQUIRE(!cmd.BoundPipelines.empty());
-        CHECK(cmd.BoundPipelines.back() == &linePipeline);
-        if (boxes)
-        {
-            REQUIRE(cmd.BoundPipelines.size() >= 2);
-            CHECK(cmd.BoundPipelines[cmd.BoundPipelines.size() - 2] == &boxPipeline);
-            CHECK(cmd.DrawnVertexCounts == std::vector<uint32_t>{ GIZMO_BOX_LINE_VERTICES, 6 });
-        }
-        else
-        {
-            CHECK(std::find(cmd.BoundPipelines.begin(), cmd.BoundPipelines.end(), &boxPipeline) == cmd.BoundPipelines.end());
-            CHECK(cmd.DrawnVertexCounts == std::vector<uint32_t>{ 6 });
-        }
+        const RHI::RenderingInfo& info = cmd.Renderings[1];
+        CHECK(info.ColorAttachments[0].LoadOp == RHI::LoadOp::Load); // over the lit scene
+        REQUIRE(info.DepthAttachment.has_value());
+        CHECK(info.DepthAttachment->LoadOp == RHI::LoadOp::Load);
+        CHECK(info.DepthAttachment->Texture == cmd.Renderings[0].DepthAttachment->Texture);
+        CHECK(cmd.BoundPipelines.back() == &services.GetPipeline(EnginePipeline::DebugLines));
+        CHECK(cmd.DrawnVertexCounts == std::vector<uint32_t>{ 6 });
     }
 }
+

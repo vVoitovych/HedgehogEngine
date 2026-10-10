@@ -37,7 +37,6 @@ namespace RGTest
         {
             return m_Pipelines.at(static_cast<size_t>(pipeline));
         }
-        RHI::IRHIBuffer& GetGizmoBoxLines() override { return m_GizmoBoxLines; }
         const RHI::IRHIDescriptorSet& AllocateViewProjUniform(const HM::Matrix4x4& viewProj) override
         {
             UploadedFirstElements.push_back(viewProj.GetBuffer()[0]);
@@ -87,7 +86,6 @@ namespace RGTest
 
     private:
         std::array<FakePipeline, 32> m_Pipelines;
-        TestBuffer        m_GizmoBoxLines{ Renderer::GIZMO_BOX_LINE_VERTICES * 12 };
         FakeDescriptorSet m_Set;
         FakeDescriptorSet m_SceneLights;
         FakeDescriptorSet m_SampledTexture;

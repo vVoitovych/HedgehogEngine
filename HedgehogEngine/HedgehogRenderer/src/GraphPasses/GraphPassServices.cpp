@@ -38,13 +38,6 @@ namespace Renderer
         constexpr RHI::Format HDR_FORMAT   = RHI::Format::R16G16B16A16Float;
         constexpr RHI::Format COLOR_FORMAT = RHI::Format::R16G16B16A16Unorm;
 
-        // The twelve edges of the unit cube [0, 1]^3, two vertices each, as GetGizmoBoxLines hands out.
-        constexpr float GIZMO_BOX_LINES[GIZMO_BOX_LINE_VERTICES][3] = {
-            { 0, 0, 0 }, { 1, 0, 0 },  { 1, 0, 0 }, { 1, 1, 0 },  { 1, 1, 0 }, { 0, 1, 0 },  { 0, 1, 0 }, { 0, 0, 0 },
-            { 0, 0, 1 }, { 1, 0, 1 },  { 1, 0, 1 }, { 1, 1, 1 },  { 1, 1, 1 }, { 0, 1, 1 },  { 0, 1, 1 }, { 0, 0, 1 },
-            { 0, 0, 0 }, { 0, 0, 1 },  { 1, 0, 0 }, { 1, 0, 1 },  { 1, 1, 0 }, { 1, 1, 1 },  { 0, 1, 0 }, { 0, 1, 1 },
-        };
-
         // A pipeline for dynamic rendering from a .shader file, with the given set layouts.
         std::unique_ptr<RHI::IRHIPipeline> CreatePipeline(RHI::IRHIDevice& device, const ShaderPipelineDesc& shader,
                                                           std::vector<const RHI::IRHIDescriptorSetLayout*> layouts,
@@ -66,7 +59,6 @@ namespace Renderer
         const ShaderPipelineDesc depthShader   = ShaderLoader::Load(device, std::string(HedgehogEngine::DEPTH_PREPASS_SHADER), fileSystem);
         const ShaderPipelineDesc shadowShader  = ShaderLoader::Load(device, std::string(HedgehogEngine::SHADOW_SHADER), fileSystem);
         const ShaderPipelineDesc forwardShader = ShaderLoader::Load(device, std::string(HedgehogEngine::FORWARD_SHADER), fileSystem);
-        const ShaderPipelineDesc gizmoShader   = ShaderLoader::Load(device, std::string(HedgehogEngine::GIZMO_SHADER), fileSystem);
         const ShaderPipelineDesc depthSkinnedShader   = ShaderLoader::Load(device, std::string(HedgehogEngine::DEPTH_PREPASS_SKINNED_SHADER), fileSystem);
         const ShaderPipelineDesc forwardSkinnedShader = ShaderLoader::Load(device, std::string(HedgehogEngine::FORWARD_SKINNED_SHADER), fileSystem);
         const ShaderPipelineDesc shadowSkinnedShader  = ShaderLoader::Load(device, std::string(HedgehogEngine::SHADOW_SKINNED_SHADER), fileSystem);
@@ -114,9 +106,7 @@ namespace Renderer
                                                 forwardShader.Pipeline.CullMode);
         m_ForwardDoubleSidedPipeline = CreatePipeline(device, forwardShader, forwardLayouts, { HDR_FORMAT },
                                                       RHI::CullMode::None);
-        m_GizmoPipeline = CreatePipeline(device, gizmoShader, { m_ViewProjRing.Layout.get() }, { COLOR_FORMAT },
-                                         gizmoShader.Pipeline.CullMode);
-        // The Gizmo pass's lines: the gizmo's layout (viewProj at set 0) over coloured vertices.
+        // The Gizmo pass's lines: viewProj at set 0 (Gizmo.pl) over coloured vertices.
         const ShaderPipelineDesc linesShader = ShaderLoader::Load(device, std::string(HedgehogEngine::DEBUG_LINES_SHADER), fileSystem);
         m_DebugLinesPipeline = CreatePipeline(device, linesShader, { m_ViewProjRing.Layout.get() }, { COLOR_FORMAT },
                                               linesShader.Pipeline.CullMode);
@@ -262,9 +252,15 @@ namespace Renderer
         skyboxDesc.DepthAttachmentFormat  = DEPTH_FORMAT;
         m_SkyboxPipeline = device.CreateGraphicsPipeline(skyboxDesc);
 
-        m_GizmoBoxLines = device.CreateBuffer(sizeof(GIZMO_BOX_LINES), RHI::BufferUsage::VertexBuffer,
-                                              RHI::MemoryUsage::CpuToGpu);
-        m_GizmoBoxLines->CopyData(GIZMO_BOX_LINES, sizeof(GIZMO_BOX_LINES));
+        // The editor's selection outline: the mask through the same sampled-texture sets, blended over
+        // the colour output with no depth attachment.
+        const ShaderPipelineDesc outlineShader =
+            ShaderLoader::Load(device, std::string(HedgehogEngine::SELECTION_OUTLINE_SHADER), fileSystem);
+        RHI::GraphicsPipelineDesc outlineDesc = outlineShader.Pipeline;
+        outlineDesc.DescriptorSetLayouts   = { m_SampledTextureLayout.get() };
+        outlineDesc.ColorAttachmentFormats = { COLOR_FORMAT };
+        outlineDesc.DepthAttachmentFormat  = RHI::Format::Undefined;
+        m_SelectionOutlinePipeline = device.CreateGraphicsPipeline(outlineDesc);
     }
 
     // The owner waits for the device to go idle first, as for every other GPU resource.
@@ -323,7 +319,6 @@ namespace Renderer
             case EnginePipeline::Shadow:             return *m_ShadowPipeline;
             case EnginePipeline::Forward:            return *m_ForwardPipeline;
             case EnginePipeline::ForwardDoubleSided: return *m_ForwardDoubleSidedPipeline;
-            case EnginePipeline::Gizmo:              return *m_GizmoPipeline;
             case EnginePipeline::DepthPrepassSkinned:       return *m_DepthPrepassSkinnedPipeline;
             case EnginePipeline::ForwardSkinned:            return *m_ForwardSkinnedPipeline;
             case EnginePipeline::ForwardSkinnedDoubleSided: return *m_ForwardSkinnedDoubleSidedPipeline;
@@ -350,14 +345,10 @@ namespace Renderer
             case EnginePipeline::ForwardTransparentSkinnedBackFaces:   return *m_ForwardTransparentSkinnedBackFacesPipeline;
             case EnginePipeline::SelectionMask:                        return *m_SelectionMaskPipeline;
             case EnginePipeline::SelectionMaskSkinned:                 return *m_SelectionMaskSkinnedPipeline;
+            case EnginePipeline::SelectionOutline:                     return *m_SelectionOutlinePipeline;
         }
         assert(false && "GraphPassServices::GetPipeline: unknown pipeline.");
         return *m_DepthPrepassPipeline;
-    }
-
-    RHI::IRHIBuffer& GraphPassServices::GetGizmoBoxLines()
-    {
-        return *m_GizmoBoxLines;
     }
 
     RHI::IRHIDescriptorSet& GraphPassServices::Allocate(UniformRing& ring, const void* data, size_t size)
