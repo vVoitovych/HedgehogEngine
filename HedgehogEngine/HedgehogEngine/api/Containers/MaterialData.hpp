@@ -7,11 +7,13 @@
 
 namespace HedgehogEngine
 {
+    // How a material's alpha (the base colour map's alpha times baseColorFactor's times transparency)
+    // is used: glTF's OPAQUE, MASK and BLEND.
     enum class MaterialType
     {
-        Opaque,
-        Cutoff,
-        Transparent
+        Opaque,      // alpha ignored
+        Cutoff,      // a fragment whose alpha is below alphaCutoff is discarded
+        Transparent  // alpha-blended over what is behind it
     };
 
     // The texture maps of glTF's metallic-roughness model, in the order a material's slots are listed.
@@ -36,6 +38,8 @@ namespace HedgehogEngine
         MaterialType type = MaterialType::Opaque;
         std::string  baseColor; // the base colour map
         float        transparency = 1.0f;
+        float        alphaCutoff  = 0.5f;  // Cutoff only, in [0, 1]
+        bool         doubleSided  = false; // drawn without back-face culling
 
         HM::Vector4 baseColorFactor = HM::Vector4(1.0f, 1.0f, 1.0f, 1.0f); // linear RGBA
         float       metallic        = 0.0f;

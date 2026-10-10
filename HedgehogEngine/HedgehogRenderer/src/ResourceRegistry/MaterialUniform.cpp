@@ -26,6 +26,8 @@ namespace HR
         uniform.NormalScale       = material.normalScale;
         uniform.OcclusionStrength = material.occlusionStrength;
         uniform.Transparency      = material.transparency;
+        uniform.AlphaCutoff       = material.alphaCutoff;
+        uniform.AlphaMode         = static_cast<uint32_t>(material.alphaMode);
         for (uint32_t slot = 0; slot < MATERIAL_TEXTURE_BINDING_COUNT; ++slot)
             if (!GetMaterialTexturePath(material, static_cast<MaterialTextureBinding>(slot)).empty())
                 uniform.TextureFlags |= 1u << slot;
