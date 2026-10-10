@@ -282,5 +282,13 @@ by name every frame. `benchmark.yaml` has no animator, so it was measured on `An
 (two animated strips), Release, 600 frames, `Frame(wall)` avg: before 2.098, 2.061 and 1.998 ms;
 after 1.999, 2.025 and 2.136 ms. The same within run-to-run noise.
 
+### 2026-10-10 (HE-361) — animator controllers
+
+Every animator now asks whether it has a controller (an empty-string check for those without).
+On `Animated.yaml` (two animators without a controller), Release, 600 frames, `Frame(wall)`
+avg 2.076, 2.032 and 2.047 ms, against HE-359's 1.999, 2.025 and 2.136 ms (the animation system
+is unchanged on master since then): the same within noise. A controller adds one state machine
+step per frame per animator.
+
 When a change intentionally alters performance, re-run the benchmark and update
 this table (keep the old row set; add a dated entry below it so history accumulates).

@@ -6,6 +6,7 @@
 #include "HedgehogEngine/HedgehogSettings/api/HedgehogSettings.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/ProjectSettings.hpp"
 
+#include "HedgehogEngine/api/ECS/components/AnimatorComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/AudioSourceComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/EnvironmentComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/CameraComponent.hpp"
@@ -142,6 +143,7 @@ namespace HedgehogEngine
     void RegisterEngineAssetDependencies(EcsSerialization::AssetDependencyCollector& collector)
     {
         collector.AddReflectedComponent<MeshComponent>("MeshComponent");
+        collector.AddReflectedComponent<AnimatorComponent>("AnimatorComponent");
         collector.AddReflectedComponent<RenderComponent>("RenderComponent");
         collector.AddReflectedComponent<AudioSourceComponent>("AudioSourceComponent");
         collector.AddReflectedComponent<EnvironmentComponent>("EnvironmentComponent");

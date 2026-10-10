@@ -10,6 +10,7 @@
 #include "HedgehogAnimation/api/BlendStack.hpp"
 #include "HedgehogAnimation/api/Pose.hpp"
 
+#include "FileSystem/api/FileSystemManager.hpp"
 #include "Logger/api/Logger.hpp"
 
 namespace HedgehogEngine
@@ -58,6 +59,10 @@ namespace HedgehogEngine
             animator.RequestedLoop.reset();
             animator.CurrentLoop.reset();
             animator.Finished = false;
+            // The controller's file stays cached; its machine starts afresh on the next Play.
+            animator.ControllerState.Ready   = false;
+            animator.ControllerState.Running = false;
+            animator.ControllerState.RequestedState.clear();
         }
 
         bool CurrentLoopOf(const AnimatorComponent& animator)
@@ -115,12 +120,14 @@ namespace HedgehogEngine
     {
         m_Bus     = ecs.GetServices().Find<EventBus>();
         m_Catalog = ecs.GetServices().Find<ResourceCatalog>();
+        m_Files   = ecs.GetServices().Find<FS::FileSystemManager>();
     }
 
     void AnimationSystem::OnUnregister(ECS::ECS& /*ecs*/)
     {
         m_Bus     = nullptr;
         m_Catalog = nullptr;
+        m_Files   = nullptr;
     }
 
     void AnimationSystem::OnFrame(ECS::ECS& ecs, const ECS::FrameContext& ctx)
@@ -131,6 +138,7 @@ namespace HedgehogEngine
         }
         // The same scaled time OnUpdate got; nothing advances while paused.
         const float dt = ctx.Mode == ECS::PlayMode::Playing ? ctx.ScaledDeltaTime : 0.0f;
+        ReloadChangedControllers(std::chrono::steady_clock::now());
         Update(ecs, m_Catalog->GetMeshContainer(), *m_Bus, ctx.Mode != ECS::PlayMode::Edit, dt);
     }
 
@@ -156,7 +164,7 @@ namespace HedgehogEngine
                     else
                         HedgehogAnimation::ClearBlendStack(animator.Blend);
                 }
-                Advance(animator, clips, meshIndex, dt, entity);
+                Advance(animator, clips, meshIndex, dt, entity, &bus);
             }
             else if (animator.Started)
             {
@@ -178,7 +186,20 @@ namespace HedgehogEngine
                                std::optional<float> fade, std::optional<bool> loop)
     {
         AnimatorComponent& animator = ecs.GetComponent<AnimatorComponent>(entity);
-        const Mesh*        loaded   = FindSkinnedMesh(ecs, meshes, entity);
+        if (const HedgehogAnimation::AnimatorController* controller = FindController(animator))
+        {
+            // With a controller a name is a state, entered at the next frame.
+            if (HedgehogAnimation::FindState(*controller, clip) < 0)
+            {
+                LOGWARNING("[Animation] Entity " + std::to_string(entity) + "'s controller " + animator.Controller +
+                           " has no state '" + clip + "'; nothing changes.");
+                return false;
+            }
+            animator.ControllerState.RequestedState = clip;
+            animator.RequestedFade                  = fade;
+            return true;
+        }
+        const Mesh* loaded = FindSkinnedMesh(ecs, meshes, entity);
         if (!loaded || !FindClipIndex(loaded->GetAnimationClips(), clip))
         {
             LOGWARNING("[Animation] Entity " + std::to_string(entity) + " has no clip '" + clip + "' on its mesh; " +
@@ -214,7 +235,16 @@ namespace HedgehogEngine
     void AnimationSystem::Stop(ECS::ECS& ecs, ECS::Entity entity)
     {
         AnimatorComponent& animator = ecs.GetComponent<AnimatorComponent>(entity);
-        const bool         started  = animator.Started;
+        if (animator.ControllerState.Running)
+        {
+            // The machine holds its state and parameters until Play names a state.
+            animator.Playing  = false;
+            animator.Finished = false;
+            animator.CurrentClip.clear();
+            HedgehogAnimation::ClearBlendStack(animator.Blend);
+            return;
+        }
+        const bool started = animator.Started;
         ResetPlayState(animator);
         animator.Started = started; // in Play, an empty Clip keeps it stopped
         animator.Clip.clear();
@@ -246,8 +276,20 @@ namespace HedgehogEngine
     }
 
     void AnimationSystem::Advance(AnimatorComponent& animator, const std::vector<HedgehogAnimation::AnimationClip>* clips,
-                                  std::optional<uint64_t> meshIndex, float dt, ECS::Entity entity)
+                                  std::optional<uint64_t> meshIndex, float dt, ECS::Entity entity, EventBus* bus)
     {
+        // A controller that reads, validates and finds every clip on the mesh picks the clips;
+        // otherwise Clip plays.
+        if (clips)
+        {
+            if (const HedgehogAnimation::AnimatorController* controller = FindController(animator);
+                controller && PrepareController(animator, *controller, *clips, meshIndex, entity))
+            {
+                AdvanceController(animator, *controller, *clips, meshIndex, dt, entity, bus);
+                return;
+            }
+        }
+
         if (!animator.Started)
         {
             animator.Started     = true;
@@ -300,13 +342,20 @@ namespace HedgehogEngine
         }
         else
         {
-            // In Edit the Clip field at the preview time, if one is set, else the bind pose.
+            // In Edit the Clip field (with a controller, its default state's clip) at the preview
+            // time, if one is set, else the bind pose.
             const HedgehogAnimation::AnimationClip* clip = nullptr;
-            if (animator.PreviewTime && !animator.Clip.empty())
+            if (animator.PreviewTime)
             {
-                clip = FindClip(clips, animator.Clip);
-                if (!clip)
-                    WarnMissingClip(animator, entity, animator.Clip);
+                std::string name = animator.Clip;
+                if (const HedgehogAnimation::AnimatorController* controller = FindController(animator))
+                    name = controller->States[controller->DefaultState].Clip;
+                if (!name.empty())
+                {
+                    clip = FindClip(clips, name);
+                    if (!clip)
+                        WarnMissingClip(animator, entity, name);
+                }
             }
             if (clip)
                 HedgehogAnimation::SamplePose(skeleton, *clip, *animator.PreviewTime, animator.Loop, m_Pose);
