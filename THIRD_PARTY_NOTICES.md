@@ -795,6 +795,34 @@ edits by Jarod Guest, released under CC0 1.0 Universal (public domain;
 https://creativecommons.org/publicdomain/zero/1.0/). No attribution is required; it is credited
 here anyway.
 
+### Studio Small 08
+
+`Assets/Environments/studio_small_08_1k.hdr` (the 1K Radiance file, unmodified): "Studio Small 08" from Poly Haven
+(https://polyhaven.com/a/studio_small_08), by Sergej Majboroda, released under CC0 1.0 Universal (public domain;
+https://creativecommons.org/publicdomain/zero/1.0/). No attribution is required; it is credited
+here anyway.
+
+### Venice Sunset
+
+`Assets/Environments/venice_sunset_1k.hdr` (the 1K Radiance file, unmodified): "Venice Sunset" from Poly Haven
+(https://polyhaven.com/a/venice_sunset), by Greg Zaal, released under CC0 1.0 Universal (public domain;
+https://creativecommons.org/publicdomain/zero/1.0/). No attribution is required; it is credited
+here anyway.
+
+### Moonless Golf
+
+`Assets/Environments/moonless_golf_1k.hdr` (the 1K Radiance file, unmodified): "Moonless Golf" from Poly Haven
+(https://polyhaven.com/a/moonless_golf), by Greg Zaal, released under CC0 1.0 Universal (public domain;
+https://creativecommons.org/publicdomain/zero/1.0/). No attribution is required; it is credited
+here anyway.
+
+### Forest Slope
+
+`Assets/Environments/forest_slope_1k.hdr` (the 1K Radiance file, unmodified): "Forest Slope" from Poly Haven
+(https://polyhaven.com/a/forest_slope), by Andreas Mischok, released under CC0 1.0 Universal (public domain;
+https://creativecommons.org/publicdomain/zero/1.0/). No attribution is required; it is credited
+here anyway.
+
 ## Apache License 2.0
 
 The full text, for the Vulkan headers and glslc above.
