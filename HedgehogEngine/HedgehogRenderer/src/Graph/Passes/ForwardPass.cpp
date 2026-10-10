@@ -40,8 +40,10 @@ namespace Renderer
         }
 
         // Draws instances with their materials, rebinding set 1 only when the material changes
-        // between consecutive instances. Skinned instances push their palette offset as well.
-        void DrawLitInstances(RHI::IRHICommandList& cmd, const RHI::IRHIPipeline& pipeline, const GraphFrameData& frame,
+        // between consecutive instances, each through the twin its material's sidedness asks for.
+        // Skinned instances push their palette offset as well. A Cutoff material's fragments below
+        // its cutoff are discarded by the shader.
+        void DrawLitInstances(RHI::IRHICommandList& cmd, SidedPipeline& pipeline, const GraphFrameData& frame,
                               std::span<const HX::RenderInstance> instances, bool skinned)
         {
             uint64_t boundMaterial = UINT64_MAX;
@@ -52,20 +54,21 @@ namespace Renderer
                 {
                     continue;
                 }
+                const RHI::IRHIPipeline& bound = pipeline.Use(cmd, frame, instance);
                 if (instance.MaterialIndex != boundMaterial)
                 {
-                    cmd.BindDescriptorSet(pipeline, 1, *frame.MaterialSets[instance.MaterialIndex]);
+                    cmd.BindDescriptorSet(bound, 1, *frame.MaterialSets[instance.MaterialIndex]);
                     boundMaterial = instance.MaterialIndex;
                 }
                 const MeshDrawRange& mesh = frame.Meshes[instance.MeshIndex];
                 if (skinned)
                 {
                     const SkinnedPushConstants constants = MakeSkinnedPushConstants(instance);
-                    cmd.PushConstants(pipeline, RHI::ShaderStage::Vertex, 0, sizeof(constants), &constants);
+                    cmd.PushConstants(bound, RHI::ShaderStage::Vertex, 0, sizeof(constants), &constants);
                 }
                 else
                 {
-                    cmd.PushConstants(pipeline, RHI::ShaderStage::Vertex, 0, 16 * sizeof(float),
+                    cmd.PushConstants(bound, RHI::ShaderStage::Vertex, 0, 16 * sizeof(float),
                                       instance.WorldMatrix.GetBuffer());
                 }
                 cmd.DrawIndexed(mesh.IndexCount, 1, mesh.FirstIndex, static_cast<int32_t>(mesh.VertexOffset), 0);
@@ -78,13 +81,15 @@ namespace Renderer
                 return;
             const GraphFrameData&    frame    = *data.Context->Frame;
             IGraphPassServices&      services = *data.Context->Services;
-            const RHI::IRHIPipeline& pipeline = services.GetPipeline(
-                data.CullBackFaces ? EnginePipeline::Forward : EnginePipeline::ForwardDoubleSided);
+            // With cullBackFaces: false every instance draws double-sided, else as its material asks.
+            const RHI::IRHIPipeline& doubleSided = services.GetPipeline(EnginePipeline::ForwardDoubleSided);
+            SidedPipeline            lit(data.CullBackFaces ? services.GetPipeline(EnginePipeline::Forward) : doubleSided,
+                                         doubleSided);
             RHI::IRHITexture& color = *data.Graph->GetTexture(data.Color);
             RHI::IRHITexture& depth = *data.Graph->GetTexture(data.Depth);
 
             BeginForwardRendering(cmd, color, depth);
-            cmd.BindPipeline(pipeline);
+            const RHI::IRHIPipeline& pipeline = lit.Bind(cmd);
             cmd.SetViewport({ 0.0f, 0.0f, static_cast<float>(color.GetWidth()),
                               static_cast<float>(color.GetHeight()), 0.0f, 1.0f });
             cmd.SetScissor({ 0, 0, color.GetWidth(), color.GetHeight() });
@@ -112,16 +117,19 @@ namespace Renderer
             const RHI::IRHIDescriptorSet& lighting =
                 services.AllocateForwardLighting(*shadow, *data.Graph->GetTexture(data.ShadowMap), frame.Environment);
             cmd.BindDescriptorSet(pipeline, 3, lighting);
-            DrawLitInstances(cmd, pipeline, frame, frame.OpaqueInstances, false);
+            DrawLitInstances(cmd, lit, frame, frame.OpaqueInstances, false);
+            DrawLitInstances(cmd, lit, frame, frame.CutoffInstances, false);
 
             // Skinned instances after the rigid ones, with the skinning streams bound after the
             // four the rigid pipeline reads and the palette at set 4. The skinned layout's push
             // constants differ, so every set is bound again (the material set by DrawLitInstances).
-            if (CanDrawSkinned(frame) && frame.SceneLights)
+            if ((CanDrawSkinned(frame) || CanDrawSkinned(frame, frame.SkinnedCutoffInstances)) && frame.SceneLights)
             {
-                const RHI::IRHIPipeline& skinned = services.GetPipeline(
-                    data.CullBackFaces ? EnginePipeline::ForwardSkinned : EnginePipeline::ForwardSkinnedDoubleSided);
-                cmd.BindPipeline(skinned);
+                const RHI::IRHIPipeline& skinnedDoubleSided = services.GetPipeline(EnginePipeline::ForwardSkinnedDoubleSided);
+                SidedPipeline            litSkinned(
+                    data.CullBackFaces ? services.GetPipeline(EnginePipeline::ForwardSkinned) : skinnedDoubleSided,
+                    skinnedDoubleSided);
+                const RHI::IRHIPipeline& skinned = litSkinned.Bind(cmd);
                 cmd.BindVertexBuffers(0, { frame.Positions, frame.TexCoords, frame.Normals, frame.Tangents, frame.Joints,
                                            frame.Weights },
                                       { 0, 0, 0, 0, 0, 0 });
@@ -129,7 +137,8 @@ namespace Renderer
                 cmd.BindDescriptorSet(skinned, 2, *frame.SceneLights);
                 cmd.BindDescriptorSet(skinned, 3, lighting);
                 cmd.BindDescriptorSet(skinned, 4, *frame.JointPalette);
-                DrawLitInstances(cmd, skinned, frame, frame.SkinnedInstances, true);
+                DrawLitInstances(cmd, litSkinned, frame, frame.SkinnedInstances, true);
+                DrawLitInstances(cmd, litSkinned, frame, frame.SkinnedCutoffInstances, true);
             }
             cmd.EndRendering();
         }

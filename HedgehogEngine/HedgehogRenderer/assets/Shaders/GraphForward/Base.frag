@@ -22,22 +22,9 @@ layout(set = 0, binding = 0) uniform ViewData
     vec4 eyePos;
 } viewData;
 
-// ResourceRegistry's MaterialUniform (std140); a slot without a map samples its neutral default.
-layout(set = 1, binding = 0) uniform MaterialData
-{
-    vec4  baseColorFactor;
-    vec4  emissiveFactor;
-    float metallic;
-    float roughness;
-    float normalScale;
-    float occlusionStrength;
-    float transparency;
-    uint  textureFlags;
-    float alphaCutoff;
-    uint  alphaMode;   // 0 opaque, 1 cutoff, 2 transparent
-} materialData;
+#define MATERIAL_SET 1
+#include "Common/Material.glsl"
 
-layout(set = 1, binding = 1) uniform sampler2D baseColorMap;
 layout(set = 1, binding = 2) uniform sampler2D normalMap;
 layout(set = 1, binding = 3) uniform sampler2D metallicRoughnessMap;
 layout(set = 1, binding = 4) uniform sampler2D occlusionMap;
@@ -71,7 +58,9 @@ vec3 SurfaceNormal()
 
 void main()
 {
-    const vec4 baseColor         = texture(baseColorMap, fragTexCoord) * materialData.baseColorFactor;
+    const vec4 baseColor = MaterialBaseColor(fragTexCoord);
+    if (IsCutOut(baseColor.a))
+        discard;
     const vec4 metallicRoughness = texture(metallicRoughnessMap, fragTexCoord);
 
     const vec3 geometricNormal = normalize(inNormal.xyz);

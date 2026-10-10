@@ -341,12 +341,14 @@ namespace HR
         data.DescriptorSet = device.AllocateDescriptorSet(*m_MaterialPool, *m_MaterialLayout);
         WriteMaterialSet(data, material, device, fileSystem);
         m_Materials.push_back(std::move(data));
+        m_MaterialDrawInfos.push_back({ material.alphaMode, material.doubleSided });
     }
 
     void ResourceRegistry::UpdateMaterialGpu(uint32_t index, const HedgehogEngine::MaterialView& material,
                                               RHI::IRHIDevice& device, const FS::FileSystemManager& fileSystem)
     {
         WriteMaterialSet(m_Materials[index], material, device, fileSystem);
+        m_MaterialDrawInfos[index] = { material.alphaMode, material.doubleSided };
     }
 
     void ResourceRegistry::WriteMaterialSet(MaterialGpuData& gpu, const HedgehogEngine::MaterialView& material,
@@ -404,6 +406,7 @@ namespace HR
         device.WaitIdle();
 
         m_Materials.clear();       // descriptor sets freed before pool
+        m_MaterialDrawInfos.clear();
         m_UiTextureSpellings.clear();
         m_UiTextureSets.clear();
         m_FontSets.clear();

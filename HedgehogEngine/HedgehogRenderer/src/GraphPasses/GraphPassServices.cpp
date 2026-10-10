@@ -144,6 +144,28 @@ namespace Renderer
         m_ForwardSkinnedDoubleSidedPipeline = CreatePipeline(device, forwardSkinnedShader, forwardSkinnedLayouts,
                                                              { HDR_FORMAT }, RHI::CullMode::None);
 
+        // Double-sided materials' depth, and Cutoff materials': the cutoff shaders read the
+        // material set the forward pass binds (the same layout object), at set 1, or at set 2 after
+        // the palette when skinned.
+        m_DepthPrepassDoubleSidedPipeline = CreatePipeline(device, depthShader, { m_ViewProjRing.Layout.get() }, {},
+                                                           RHI::CullMode::None);
+        m_DepthPrepassSkinnedDoubleSidedPipeline = CreatePipeline(
+            device, depthSkinnedShader, { m_ViewProjRing.Layout.get(), m_PaletteLayout.get() }, {}, RHI::CullMode::None);
+        const ShaderPipelineDesc cutoffShader =
+            ShaderLoader::Load(device, std::string(HedgehogEngine::DEPTH_PREPASS_CUTOFF_SHADER), fileSystem);
+        const ShaderPipelineDesc cutoffSkinnedShader =
+            ShaderLoader::Load(device, std::string(HedgehogEngine::DEPTH_PREPASS_CUTOFF_SKINNED_SHADER), fileSystem);
+        const std::vector<const RHI::IRHIDescriptorSetLayout*> cutoffLayouts = { m_ViewProjRing.Layout.get(),
+                                                                                 m_MaterialLayout.get() };
+        const std::vector<const RHI::IRHIDescriptorSetLayout*> cutoffSkinnedLayouts = {
+            m_ViewProjRing.Layout.get(), m_PaletteLayout.get(), m_MaterialLayout.get() };
+        m_DepthPrepassCutoffPipeline = CreatePipeline(device, cutoffShader, cutoffLayouts, {}, cutoffShader.Pipeline.CullMode);
+        m_DepthPrepassCutoffDoubleSidedPipeline = CreatePipeline(device, cutoffShader, cutoffLayouts, {}, RHI::CullMode::None);
+        m_DepthPrepassCutoffSkinnedPipeline = CreatePipeline(device, cutoffSkinnedShader, cutoffSkinnedLayouts, {},
+                                                             cutoffSkinnedShader.Pipeline.CullMode);
+        m_DepthPrepassCutoffSkinnedDoubleSidedPipeline = CreatePipeline(device, cutoffSkinnedShader, cutoffSkinnedLayouts,
+                                                                        {}, RHI::CullMode::None);
+
         // The game UI draws into the colour target alone: no depth attachment.
         const ShaderPipelineDesc gameUiShader = ShaderLoader::Load(device, std::string(HedgehogEngine::GAME_UI_SHADER), fileSystem);
         assert(!gameUiShader.Layout.DescriptorSets.empty());
@@ -260,6 +282,12 @@ namespace Renderer
             case EnginePipeline::DebugLines:                return *m_DebugLinesPipeline;
             case EnginePipeline::ToneMap:                   return *m_ToneMapPipeline;
             case EnginePipeline::Skybox:                    return *m_SkyboxPipeline;
+            case EnginePipeline::DepthPrepassDoubleSided:              return *m_DepthPrepassDoubleSidedPipeline;
+            case EnginePipeline::DepthPrepassSkinnedDoubleSided:       return *m_DepthPrepassSkinnedDoubleSidedPipeline;
+            case EnginePipeline::DepthPrepassCutoff:                   return *m_DepthPrepassCutoffPipeline;
+            case EnginePipeline::DepthPrepassCutoffDoubleSided:        return *m_DepthPrepassCutoffDoubleSidedPipeline;
+            case EnginePipeline::DepthPrepassCutoffSkinned:            return *m_DepthPrepassCutoffSkinnedPipeline;
+            case EnginePipeline::DepthPrepassCutoffSkinnedDoubleSided: return *m_DepthPrepassCutoffSkinnedDoubleSidedPipeline;
         }
         assert(false && "GraphPassServices::GetPipeline: unknown pipeline.");
         return *m_DepthPrepassPipeline;

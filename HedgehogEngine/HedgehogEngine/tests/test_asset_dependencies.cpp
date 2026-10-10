@@ -210,7 +210,13 @@ TEST_CASE("Asset dependencies - a fixture scene's closure is exactly its meshes,
              "Shaders/ShadowmapPass/Shadowmap.vert.spv", "Shaders/GraphForward/Base.vert.spv",
              "Shaders/GraphForward/Skinned.vert.spv", "Shaders/GraphForward/Base.frag.spv", "Shaders/GameUi/Quad.vert.spv",
              "Shaders/GameUi/Quad.frag.spv", "Shaders/Fullscreen/Triangle.vert.spv", "Shaders/ToneMap/Aces.frag.spv",
-             "Shaders/Skybox/Sky.vert.spv", "Shaders/Skybox/Sky.frag.spv" })
+             "Shaders/Skybox/Sky.vert.spv", "Shaders/Skybox/Sky.frag.spv",
+             // The depth prepass's alpha-tested shaders, for Cutoff materials.
+             "Shaders/DepthPrepassCutoff.shader", "Shaders/DepthPrepassCutoffSkinned.shader",
+             "Pipelines/DepthPrepassCutoff.pl", "Pipelines/DepthPrepassCutoffSkinned.pl",
+             "VertexDescriptions/PositionUv.vdes", "VertexDescriptions/SkinnedPositionUv.vdes",
+             "Shaders/DepthPrepass/Cutoff.vert.spv", "Shaders/DepthPrepass/Cutoff.frag.spv",
+             "Shaders/DepthPrepass/CutoffSkinned.vert.spv", "Shaders/DepthPrepass/CutoffSkinned.frag.spv" })
         expected.push_back(renderer + file);
     std::sort(expected.begin(), expected.end());
 
