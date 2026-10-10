@@ -15,7 +15,8 @@ project "AnimationTest"
     links
     {
         "HedgehogAnimation",
-        "HedgehogMath"
+        "HedgehogMath",
+        "yaml-cpp"
     }
 
     targetdir (BinariesDir)
