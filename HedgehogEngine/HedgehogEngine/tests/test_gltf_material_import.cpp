@@ -71,7 +71,7 @@ namespace
         "\"roughnessFactor\":0.75,\"baseColorTexture\":{\"index\":0},\"metallicRoughnessTexture\":{\"index\":1}},"
         "\"normalTexture\":{\"index\":2,\"scale\":0.5},\"occlusionTexture\":{\"index\":3,\"strength\":0.25},"
         "\"emissiveTexture\":{\"index\":4},\"emissiveFactor\":[1,0.5,0]},"
-        "{\"name\":\"Glass: tinted/clear\"},"
+        "{\"name\":\"Glass: tinted/clear\",\"alphaMode\":\"BLEND\",\"doubleSided\":true},"
         "{}],"
         "\"textures\":[{\"source\":0},{\"source\":1},{\"source\":2},{\"source\":3},{\"source\":4}],"
         "\"images\":[{\"uri\":\"maps/albedo.png\"},{\"uri\":\"maps/mr.png\"},{\"uri\":\"maps/normal.png\"},"
@@ -128,6 +128,38 @@ TEST_CASE("glTF material import - one .material per material beside the file, wi
     CHECK(unnamed.metallic == 1.0f);
     CHECK(unnamed.roughness == 1.0f);
     CHECK(unnamed.baseColor.empty());
+    CHECK(unnamed.type == MaterialType::Opaque);
+    CHECK(unnamed.alphaCutoff == 0.5f);
+    CHECK_FALSE(unnamed.doubleSided);
+
+    // glTF's alpha mode and double-sidedness reach the file.
+    MaterialData glass;
+    MaterialSerializer::Deserialize(glass, expected[1], project.FileSystem);
+    CHECK(glass.type == MaterialType::Transparent);
+    CHECK(glass.doubleSided);
+}
+
+TEST_CASE("glTF material import - each alpha mode maps onto a material type, the cutoff kept in [0, 1]")
+{
+    ContentLoader::LoadedMaterial loaded;
+    CHECK(MakeMaterialData(loaded).type == MaterialType::Opaque);
+
+    loaded.AlphaMode   = ContentLoader::LoadedAlphaMode::Mask;
+    loaded.AlphaCutoff = 0.3f;
+    loaded.DoubleSided = true;
+    MaterialData mask  = MakeMaterialData(loaded);
+    CHECK(mask.type == MaterialType::Cutoff);
+    CHECK(mask.alphaCutoff == 0.3f);
+    CHECK(mask.doubleSided);
+
+    loaded.AlphaMode = ContentLoader::LoadedAlphaMode::Blend;
+    CHECK(MakeMaterialData(loaded).type == MaterialType::Transparent);
+
+    // glTF allows any cutoff from 0; a material keeps one in [0, 1], so the file reads back.
+    loaded.AlphaCutoff = 2.0f;
+    CHECK(MakeMaterialData(loaded).alphaCutoff == 1.0f);
+    loaded.AlphaCutoff = -1.0f;
+    CHECK(MakeMaterialData(loaded).alphaCutoff == 0.0f);
 }
 
 TEST_CASE("glTF material import - importing again writes nothing, and an edited material keeps its edits")
@@ -192,7 +224,7 @@ TEST_CASE("glTF material import - the shipped helmet material is exactly what im
     const std::string imported = ReadFile(dir.Path() / "Models/DamagedHelmet/DamagedHelmet_Material_MR.material");
     // The checkout may have given the shipped file CRLF line endings.
     std::string shipped = ReadFile(helmet / "DamagedHelmet_Material_MR.material");
-    std::erase(shipped, '');
+    std::erase(shipped, '\r');
     CHECK(imported == shipped);
 
     // It names the five maps, which ship beside it.

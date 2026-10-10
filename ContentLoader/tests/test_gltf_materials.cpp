@@ -122,6 +122,40 @@ TEST_CASE("glTF materials - every material in file order, with its values and ma
     CHECK((*fromGlb)[0].BaseColorMap == "assets://maps/albedo.png");
 }
 
+TEST_CASE("glTF materials - alpha mode, cutoff and double-sidedness, with glTF's defaults")
+{
+    GltfBuilder       builder;
+    const std::string rest = Meshes(builder, { 0 }) + ","
+                             "\"materials\":["
+                             "{\"name\":\"Fence\",\"alphaMode\":\"MASK\",\"alphaCutoff\":0.25,\"doubleSided\":true},"
+                             "{\"name\":\"Glass\",\"alphaMode\":\"BLEND\"},"
+                             "{\"name\":\"Solid\",\"alphaMode\":\"OPAQUE\"},"
+                             "{\"name\":\"Plain\"},"
+                             "{\"name\":\"Odd\",\"alphaMode\":\"DITHER\"}]";
+    MaterialFile file("alpha.gltf", builder.Gltf(rest));
+
+    LogCapture log;
+    const auto materials = ContentLoader::LoadGltfMaterials("alpha.gltf", file.FileSystem);
+    REQUIRE(materials.has_value());
+    REQUIRE(materials->size() == 5);
+
+    CHECK((*materials)[0].AlphaMode == ContentLoader::LoadedAlphaMode::Mask);
+    CHECK((*materials)[0].AlphaCutoff == doctest::Approx(0.25f));
+    CHECK((*materials)[0].DoubleSided);
+    CHECK((*materials)[1].AlphaMode == ContentLoader::LoadedAlphaMode::Blend);
+    CHECK((*materials)[1].AlphaCutoff == 0.5f);
+    CHECK_FALSE((*materials)[1].DoubleSided);
+    CHECK((*materials)[2].AlphaMode == ContentLoader::LoadedAlphaMode::Opaque);
+    CHECK((*materials)[3].AlphaMode == ContentLoader::LoadedAlphaMode::Opaque);
+    CHECK((*materials)[3].AlphaCutoff == 0.5f);
+    CHECK_FALSE((*materials)[3].DoubleSided);
+
+    // An unknown mode reads as OPAQUE with one warning naming the file, material and mode.
+    CHECK((*materials)[4].AlphaMode == ContentLoader::LoadedAlphaMode::Opaque);
+    CHECK(log.Lines("[WARNING").size() == 1);
+    CHECK(log.Lines("assets://alpha.gltf: material 'Odd' has alpha mode 'DITHER'").size() == 1);
+}
+
 TEST_CASE("glTF materials - an embedded image is skipped and a second UV set warned, one warning each")
 {
     GltfBuilder builder;
