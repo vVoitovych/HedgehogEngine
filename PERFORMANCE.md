@@ -252,5 +252,20 @@ under the 16.6 ms budget**. Per-pass recording on `Pbr.yaml` (avg): Shadow 0.034
 is the fence wait, acquire, submit and present. The environment's first-frame bake is not in
 these numbers (the warmup absorbs it): 1.8 s in Debug for the 1024x512 sky at face 256.
 
+### 2026-10-10 (HE-346) — the ForwardTransparent pass
+
+A blended pass after the Skybox in every view graph. Neither shipped benchmark scene has a
+Transparent material, so the pass records nothing; the depth prepass and forward shaders also gained
+alpha cutoff since HE-344. Release, 600 frames after a 120-frame warmup, 3 runs each, same session,
+`Frame(wall)` avg in ms.
+
+| Scene | master (before) | HE-346 (after) |
+|---|---|---|
+| `benchmark.yaml` | 2.162, 2.216, 2.212 | 2.257, 2.152, 2.154 |
+| `Pbr.yaml` | 2.027, 2.053, 2.143 | 2.052, 2.100, 2.159 |
+
+Medians 2.212 → 2.154 and 2.053 → 2.100 ms: no change beyond run-to-run noise; `ForwardTransparent`
+records in 0.000 ms when it has nothing to draw.
+
 When a change intentionally alters performance, re-run the benchmark and update
 this table (keep the old row set; add a dated entry below it so history accumulates).
