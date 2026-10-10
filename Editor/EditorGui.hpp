@@ -220,7 +220,6 @@ namespace Editor
         // running none of its code. False, logged, when refused.
         bool AssignScript(HedgehogEngine::Engine& context, ECS::Entity entity, const std::string& physicalPath);
         void DrawSceneHierarchy(HedgehogEngine::Engine& context);
-        void DrawDropRow(const char* label, const char* hint, ContentType type);
         // Draws entity's row and, when open, its children; filtering shows only marked entities.
         void DrawHierarchyNode(HedgehogEngine::Engine& context, ECS::Entity entity, bool filtering);
         // Marks entity when its name or a descendant's contains search; returns whether it did.
@@ -246,7 +245,7 @@ namespace Editor
         void DrawScriptComponent(HedgehogEngine::Engine& context);
         void DrawAnimatorComponent(HedgehogEngine::Engine& context);
         // A registered component with no hand-drawn section: its icon header (enable checkbox,
-        // Remove) and reflected rows, then its extra rows (m_InspectorExtraRows).
+        // Remove) and reflected rows, its asset field taking a dropped file (m_InspectorAssetDrops).
         void DrawRegisteredComponent(HedgehogEngine::Engine& context, const EcsSerialization::ComponentInfo& info);
         // The script's property declarations for the inspector, described again only when the
         // file changes on disk; nullptr when there is no script system or no such file.
@@ -332,10 +331,18 @@ namespace Editor
         PrefabOverrideCache               m_PrefabOverrides;
         Reflection::PrefabOverrideMarks   m_PrefabMarks;
 
-        // The inspector's hand-drawn sections and the generic sections' extra rows, by component key.
+        // The inspector's hand-drawn sections, by component key.
         using InspectorDrawer = void (EditorGui::*)(HedgehogEngine::Engine&);
         std::unordered_map<std::string, InspectorDrawer>       m_InspectorDrawers;
-        std::unordered_map<std::string, std::function<void()>> m_InspectorExtraRows;
+        // A generic section's reflected asset field that takes a file of its type dropped from the
+        // Project panel, by component key.
+        struct InspectorAssetDrop
+        {
+            const char* Property = nullptr; // the reflected property's name
+            ContentType Type     = ContentType::Other;
+            const char* Hint     = ""; // what to drop, for the field's tooltip
+        };
+        std::unordered_map<std::string, InspectorAssetDrop>    m_InspectorAssetDrops;
         // Types whose enabled property's row is already hidden behind the header's checkbox.
         std::unordered_set<std::string>                        m_HiddenEnabledRows;
         HA::SoundHandle                   m_PreviewSound;     // the Content panel's audio preview

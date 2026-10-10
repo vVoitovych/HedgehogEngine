@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <climits>
 #include <cstring>
+#include <functional>
 #include <optional>
 #include <span>
 #include <string>
@@ -49,10 +50,16 @@ namespace Reflection
         return marks;
     }
 
+    // Called right after a reflected row's widget, which is then ImGui's last item, so the caller
+    // can make it a drop target or give it a tooltip.
+    using PropertyWidgetHook = std::function<void(const PropertyDescriptor&)>;
+
     // Draws prop as a property row (Widgets/PropertyFields): its name on the left, its widget
     // filling the right. A guiOverride draws its own row, or nothing. componentKey (the component's
-    // serializer key) lets a prefab instance's overridden row be marked.
-    inline bool RenderPropertyWidget(void* comp, const PropertyDescriptor& prop, const char* componentKey = nullptr)
+    // serializer key) lets a prefab instance's overridden row be marked; afterWidget, when given,
+    // runs once the widget is drawn.
+    inline bool RenderPropertyWidget(void* comp, const PropertyDescriptor& prop, const char* componentKey = nullptr,
+                                     const PropertyWidgetHook* afterWidget = nullptr)
     {
         if (prop.type == TypeTag::Raw)                  return false;
         if (HasFlag(prop.flags, PropertyFlags::Hidden)) return false;
@@ -134,6 +141,8 @@ namespace Reflection
             ImGui::TextDisabled("[unsupported]");
             break;
         }
+        if (afterWidget && *afterWidget)
+            (*afterWidget)(prop);
 
         if (overridden)
         {
@@ -152,13 +161,14 @@ namespace Reflection
     }
 
     // Every property of a component, in one table of property rows.
-    inline bool RenderComponentGui(void* comp, std::span<const PropertyDescriptor> props, const char* componentKey = nullptr)
+    inline bool RenderComponentGui(void* comp, std::span<const PropertyDescriptor> props, const char* componentKey = nullptr,
+                                   const PropertyWidgetHook* afterWidget = nullptr)
     {
         if (!Editor::BeginPropertyTable("##properties"))
             return false;
         bool anyChanged = false;
         for (const auto& prop : props)
-            anyChanged |= RenderPropertyWidget(comp, prop, componentKey);
+            anyChanged |= RenderPropertyWidget(comp, prop, componentKey, afterWidget);
         Editor::EndPropertyTable();
         return anyChanged;
     }
