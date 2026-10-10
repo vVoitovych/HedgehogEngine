@@ -67,8 +67,9 @@ namespace HInput
             { "EditorCameraUp", { KeyAxis(HW::Key::Q, HW::Key::E) } },
             { "EditorCameraLookX", { Pointer(BindingSource::PointerDeltaX) } },
             { "EditorCameraLookY", { Pointer(BindingSource::PointerDeltaY) } },
-            { "EditorCameraLookHold",
-              { Button(HW::MouseButton::Left), Button(HW::MouseButton::Right), Button(HW::MouseButton::Middle) } },
+            { "EditorCameraLookHold", { Button(HW::MouseButton::Left) } },
+            { "EditorCameraPanHold", { Button(HW::MouseButton::Right), Button(HW::MouseButton::Middle) } },
+            { "EditorCameraZoom", { InputBinding{ BindingSource::ScrollY } } },
         };
         return set;
     }

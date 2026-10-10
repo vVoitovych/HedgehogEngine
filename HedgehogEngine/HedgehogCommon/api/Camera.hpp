@@ -28,6 +28,13 @@ namespace HedgehogEngine
             const HM::Vector3& posOffset,
             const HM::Vector2& dirOffset);
 
+        // Moves the camera along its own right and up by a pointer move in pixels (x right, y down),
+        // so the scene follows the pointer: PAN_UNITS_PER_PIXEL at the default speed.
+        HEDGEHOG_COMMON_API void Pan(float dx, float dy);
+        // Moves the camera along its view direction: DOLLY_UNITS_PER_STEP per scroll notch at the
+        // default speed, forward for a positive amount.
+        HEDGEHOG_COMMON_API void Dolly(float steps);
+
         HEDGEHOG_COMMON_API void SetFov(float fov);
         HEDGEHOG_COMMON_API void SetAspect(float aspect);
         HEDGEHOG_COMMON_API void SetNearPlane(float nearPlane);
@@ -42,6 +49,10 @@ namespace HedgehogEngine
         HEDGEHOG_COMMON_API float GetNearPlane() const;
         HEDGEHOG_COMMON_API float GetFarPlane()  const;
 
+        static constexpr float DEFAULT_SPEED        = 10.0f;
+        static constexpr float PAN_UNITS_PER_PIXEL  = 0.02f;
+        static constexpr float DOLLY_UNITS_PER_STEP = 1.0f;
+
     private:
         void UpdateMatrices();
 
@@ -51,8 +62,8 @@ namespace HedgehogEngine
         float m_NearPlane = 0.1f;
         float m_FarPlane  = 1000.0f;
 
-        float m_CameraSpeed       = 10.0f;
-        float m_MouseSensitivity  = 0.01f;
+        float m_CameraSpeed       = DEFAULT_SPEED;
+        float m_MouseSensitivity  = 0.15f; // degrees per pixel
         float m_Yaw               = 0.0f;
         float m_Pitch             = 0.0f;
 
