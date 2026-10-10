@@ -6,7 +6,7 @@
 
 // An animator controller (a .animctrl file, AnimatorControllerFile.hpp), as plain data: the
 // parameters a script or system sets, the states (each playing one clip of the mesh) and the
-// transitions between them, chosen by conditions on the parameters.
+// transitions between them, chosen by conditions on the parameters. StateMachine.hpp runs one.
 namespace HedgehogAnimation
 {
     // A transition's From when it may leave any state.
