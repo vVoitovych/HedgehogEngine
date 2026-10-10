@@ -1,0 +1,169 @@
+Scene name: Transparency
+Scene:
+  - Entity: 0
+    Name: Root
+    Parent: 0
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    Children:
+      - Entity: 1
+        Name: Floor
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, -0.5]
+          Rotation: [0, 0, 0]
+          Scale: [12, 8, 0.5]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/cube.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/Transparency/Ground.material
+          Layer: 0
+        Children:
+          []
+      - Entity: 2
+        Name: Backdrop
+        Parent: 0
+        TransformComponent:
+          Position: [0, 2, 1]
+          Rotation: [0, 0, 0]
+          Scale: [2.2, 0.3, 1]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/cube.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/Transparency/Backdrop.material
+          Layer: 0
+        Children:
+          []
+      - Entity: 3
+        Name: Glass alpha 0.25
+        Parent: 0
+        TransformComponent:
+          Position: [-0.9, 0.2, 1]
+          Rotation: [0, 0, 0]
+          Scale: [0.22, 0.22, 0.22]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/sphere.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/Transparency/Glass_A025.material
+          Layer: 0
+        Children:
+          []
+      - Entity: 4
+        Name: Glass alpha 0.5
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0.2, 1]
+          Rotation: [0, 0, 0]
+          Scale: [0.22, 0.22, 0.22]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/sphere.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/Transparency/Glass_A050.material
+          Layer: 0
+        Children:
+          []
+      - Entity: 5
+        Name: Glass alpha 0.75
+        Parent: 0
+        TransformComponent:
+          Position: [0.9, 0.2, 1]
+          Rotation: [0, 0, 0]
+          Scale: [0.22, 0.22, 0.22]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/sphere.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/Transparency/Glass_A075.material
+          Layer: 0
+        Children:
+          []
+      - Entity: 6
+        Name: Pane
+        Parent: 0
+        TransformComponent:
+          Position: [3.4, 0.5, 1]
+          Rotation: [0, 0, -50]
+          Scale: [1.2, 1, 1]
+        MeshComponent:
+          MeshPath: Models/Plane/plane.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/Transparency/Pane.material
+          Layer: 0
+        Children:
+          []
+      - Entity: 7
+        Name: Fence
+        Parent: 0
+        TransformComponent:
+          Position: [-3.6, 0.5, 1]
+          Rotation: [0, 0, 40]
+          Scale: [1.4, 1, 1]
+        MeshComponent:
+          MeshPath: Models/Plane/plane.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/Transparency/Fence.material
+          Layer: 0
+        Children:
+          []
+      - Entity: 8
+        Name: Sun
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 0]
+          Rotation: [40, -35, 0]
+          Scale: [1, 1, 1]
+        LightComponent:
+          LightEnabled: true
+          LightType: 0
+          LightColor: [1, 0.96, 0.9]
+          LightIntensity: 1.2
+          LightRadius: 1
+          LightConeAngle: 2
+          CastShadows: true
+        Children:
+          []
+      - Entity: 9
+        Name: Sky
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 0]
+          Rotation: [0, 0, 0]
+          Scale: [1, 1, 1]
+        EnvironmentComponent:
+          Enabled: true
+          Map: Environments/kloofendal_48d_partly_cloudy_puresky_1k.hdr
+          Intensity: 1
+          Rotation: 0
+          ShowSkybox: true
+          Exposure: -0.5
+        Children:
+          []
+      - Entity: 10
+        Name: MainCamera
+        Parent: 0
+        TransformComponent:
+          Position: [0, -8, 3]
+          Rotation: [75, 0, 0]
+          Scale: [1, 1, 1]
+        CameraComponent:
+          Enabled: true
+          ProjectionType: 0
+          Fov: 60
+          OrthoSize: 10
+          NearPlane: 0.1
+          FarPlane: 1000
+          LayerMask: 4294967295
+          TargetMode: 0
+          TargetName: ""
+          GraphName: game
+          Priority: 0
+        Children:
+          []

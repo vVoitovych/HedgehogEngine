@@ -380,8 +380,29 @@ Added after the cutover, on the same graph, as plain passes and descriptor sets.
   lighting (shadow uniform and atlas, environment uniform, radiance cube, BRDF table), 4 the
   skinned joint palette.
 
-Out of scope, with no interface in the way: shadows for spot and point lights, transparency and
-alpha cutoff, several materials per mesh, glTF extensions, texture compression, GPU or Cooker-side
+### Alpha modes (epic HE-341)
+
+A material's `Type` is glTF's alpha mode, applied to its alpha (the base colour map's alpha times
+the base colour factor's times `Transparency`); glTF import maps `alphaMode`, `alphaCutoff` and
+`doubleSided` onto it.
+
+- **Opaque** ignores alpha, as before.
+- **Cutoff** (MASK) discards fragments below the material's `AlphaCutoff` in the depth prepass (its
+  own alpha-tested pipelines, which read the UVs and the material set), the forward pass and the
+  shadow pass, so holes are holes in the depth, the lighting and the shadow.
+- **Transparent** (BLEND) is drawn by none of those: each view culls it into its own lists, sorted
+  back to front from the eye by bounds centre, and the `ForwardTransparent` pass, after the Skybox
+  and before ToneMap, blends it (`src_alpha`, `one_minus_src_alpha`) over the HDR target against
+  the prepass depth, which it does not write, lit as Forward lights. It casts no shadow.
+- **DoubleSided** materials draw through each pass's twin pipeline without back-face culling; a
+  double-sided Transparent one draws its back faces first, then its front faces.
+
+Sorting is per instance, rigid ones before skinned ones, and nothing sorts within a mesh;
+order-independent transparency, transmission and coloured shadows are out of scope.
+`Projects/FeatureTest/Assets/Scenes/Transparency.yaml` shows all three modes.
+
+Out of scope, with no interface in the way: shadows for spot and point lights, several materials
+per mesh, glTF extensions, texture compression, GPU or Cooker-side
 baking, reflection probes, bloom and auto-exposure.
 
 ---
