@@ -17,6 +17,7 @@ project "Editor"
       "../HedgehogEngine/RHIImGui/api",
       "%{IncludeDir.ImGui}".."/imgui",
       "%{IncludeDir.ImGuiNodeEditor}",
+      "%{IncludeDir.ImGuizmo}",
       "%{IncludeDir.yaml_cpp}",
       -- HedgehogScripting's ScriptSystem header includes sol2, which includes Lua.
       "%{IncludeDir.Lua}",
@@ -50,6 +51,7 @@ project "Editor"
       "FileSystem",
       "imgui",
       "imgui-node-editor",
+      "ImGuizmo",
       -- Tracy client (linked into HedgehogRenderer) needs these on Windows.
       "ws2_32",
       "dbghelp"
