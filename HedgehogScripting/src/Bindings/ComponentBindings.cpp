@@ -148,15 +148,37 @@ namespace HedgehogScripting::Bindings
         // animator's saved fields drive the same state.
         void RegisterAnimator(sol::state& lua, HedgehogEngine::EngineContext& context)
         {
-            using AnimatorRef = ScriptComponentRef<AnimatorComponent>;
+            using AnimatorRef   = ScriptComponentRef<AnimatorComponent>;
+            using ParameterType = HedgehogAnimation::AnimatorParameterType;
             ECS::ECS&                        ecs        = context.GetECS();
             HedgehogEngine::AnimationSystem& animations = *context.GetAnimationSystem();
+
+            // The index of the animator's controller parameter called name of type; a script error
+            // when there is no controller that runs, or no such parameter.
+            const auto findParameter = [&ecs, &animations](const AnimatorRef& ref, const std::string& name,
+                                                           std::optional<ParameterType> type) -> ParameterType
+            {
+                const AnimatorComponent&                     animator   = Resolve(ecs, ref);
+                const HedgehogAnimation::AnimatorController* controller = animations.GetController(ecs, ref.Entity.Id);
+                if (!controller)
+                    throw std::runtime_error(animator.Controller.empty()
+                                                 ? std::string("the animator has no controller")
+                                                 : "the animator's controller " + animator.Controller + " does not run");
+                const int index = HedgehogAnimation::FindParameter(*controller, name);
+                if (index < 0 || (type && controller->Parameters[index].Type != *type))
+                    throw std::runtime_error(animator.Controller + " has no " +
+                                             (type ? std::string(HedgehogAnimation::GetParameterTypeName(*type)) + " " : "") +
+                                             "parameter '" + name + "'");
+                return controller->Parameters[index].Type;
+            };
+
             lua.new_usertype<AnimatorRef>(
                 "Animator", sol::no_constructor,
-                // play(clip, fade?, loop?): from the clip's start, crossfading over fade seconds
+                // play(name, fade?, loop?): from the clip's start, crossfading over fade seconds
                 // (CrossfadeTime when left out), looping as loop says (the animator's loop when
-                // left out). An unknown clip logs a warning naming it and keeps the current one;
-                // returns whether the clip was found.
+                // left out). With a controller name is a state, entered the next frame (its loop
+                // is the state's). An unknown clip or state logs a warning naming it and keeps
+                // what plays; returns whether it was found.
                 "play", [&ecs, &animations, &context](const AnimatorRef& ref, const std::string& clip,
                                                       std::optional<float> fade, std::optional<bool> loop)
                 {
@@ -193,6 +215,58 @@ namespace HedgehogScripting::Bindings
                 }),
                 "speed", Field(ecs, &AnimatorComponent::Speed),
                 "loop",  Field(ecs, &AnimatorComponent::Loop),
+                // The controller's parameters: a script error without a controller that runs, or
+                // for a name that is not a parameter of that type.
+                "setFloat", [&ecs, &animations, findParameter](const AnimatorRef& ref, const std::string& name, float value)
+                {
+                    (void)findParameter(ref, name, ParameterType::Float);
+                    if (!std::isfinite(value))
+                        throw std::runtime_error("a Float parameter takes a finite number");
+                    (void)animations.SetFloat(ecs, ref.Entity.Id, name, value);
+                },
+                "setInt", [&ecs, &animations, findParameter](const AnimatorRef& ref, const std::string& name, double value)
+                {
+                    (void)findParameter(ref, name, ParameterType::Int);
+                    if (!std::isfinite(value) || value != std::floor(value) || std::abs(value) > 16777216.0)
+                        throw std::runtime_error("an Int parameter takes a whole number");
+                    (void)animations.SetInt(ecs, ref.Entity.Id, name, static_cast<int>(value));
+                },
+                "setBool", [&ecs, &animations, findParameter](const AnimatorRef& ref, const std::string& name, bool value)
+                {
+                    (void)findParameter(ref, name, ParameterType::Bool);
+                    (void)animations.SetBool(ecs, ref.Entity.Id, name, value);
+                },
+                // Sets a trigger, which stays set until a transition testing it fires.
+                "setTrigger", [&ecs, &animations, findParameter](const AnimatorRef& ref, const std::string& name)
+                {
+                    (void)findParameter(ref, name, ParameterType::Trigger);
+                    (void)animations.SetTrigger(ecs, ref.Entity.Id, name);
+                },
+                // A Float or Int as a number, a Bool or Trigger as a boolean.
+                "getParameter", [&ecs, &animations, findParameter](const AnimatorRef& ref, const std::string& name,
+                                                                   sol::this_state state) -> sol::object
+                {
+                    const ParameterType type  = findParameter(ref, name, std::nullopt);
+                    const float         value = animations.GetParameter(ecs, ref.Entity.Id, name).value_or(0.0f);
+                    if (type == ParameterType::Bool || type == ParameterType::Trigger)
+                        return sol::make_object(state, value != 0.0f);
+                    if (type == ParameterType::Int)
+                        return sol::make_object(state, static_cast<int64_t>(value));
+                    return sol::make_object(state, value);
+                },
+                // The state the controller plays, or nil when no controller runs.
+                "state", sol::readonly_property([&ecs, &animations](const AnimatorRef& ref, sol::this_state state) -> sol::object
+                {
+                    (void)Resolve(ecs, ref);
+                    const std::string name = animations.GetStateName(ecs, ref.Entity.Id);
+                    return name.empty() ? sol::object(sol::lua_nil) : sol::make_object(state, name);
+                }),
+                // The controller file the animator names, or nil.
+                "controller", sol::readonly_property([&ecs](const AnimatorRef& ref, sol::this_state state) -> sol::object
+                {
+                    const AnimatorComponent& animator = Resolve(ecs, ref);
+                    return animator.Controller.empty() ? sol::object(sol::lua_nil) : sol::make_object(state, animator.Controller);
+                }),
                 // Seconds into the current clip. Setting it lets a finished clip finish again.
                 "time", sol::property(
                     [&ecs](const AnimatorRef& ref) { return HedgehogEngine::AnimationSystem::GetTime(Resolve(ecs, ref)); },

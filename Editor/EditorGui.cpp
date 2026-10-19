@@ -215,6 +215,7 @@ namespace Editor
             { "UiTextComponent", { "Font", ContentType::Font, "a .ttf or .otf font" } },
             { "AudioSourceComponent", { "Clip", ContentType::Audio, "a .wav, .mp3 or .flac clip" } },
             { "EnvironmentComponent", { "Map", ContentType::Environment, "an .hdr environment map" } },
+            { "AnimatorComponent", { "Controller", ContentType::AnimatorController, "an .animctrl animator controller" } },
         };
 
         LoadLastScene(context);
@@ -1220,7 +1221,9 @@ namespace Editor
                 ImGui::SetItemTooltip("The entity's mesh has no animation clips.");
             EndPropertyTable();
         }
-        Reflection::RenderComponentGui(&animator, HedgehogEngine::AnimatorComponent::GetProperties(), HedgehogEngine::AnimatorComponent::s_TypeName);
+        const Reflection::PropertyWidgetHook controllerDrop = MakeAssetDropHook(HedgehogEngine::AnimatorComponent::s_TypeName);
+        Reflection::RenderComponentGui(&animator, HedgehogEngine::AnimatorComponent::GetProperties(),
+                                       HedgehogEngine::AnimatorComponent::s_TypeName, &controllerDrop);
     }
 
     // A registered component's reflected rows under its icon header (its enabled property as the
@@ -1255,21 +1258,25 @@ namespace Editor
         }
         if (!section.Open)
             return;
-        // The component's asset field is also where a file of its type is dropped.
-        Reflection::PropertyWidgetHook assetDrop;
-        if (const auto drop = m_InspectorAssetDrops.find(info.Key); drop != m_InspectorAssetDrops.end())
-        {
-            assetDrop = [this, target = drop->second](const Reflection::PropertyDescriptor& prop)
-            {
-                if (std::string_view(prop.name) != target.Property)
-                    return;
-                ImGui::SetItemTooltip("Drop %s here from the Project panel.", target.Hint);
-                AcceptSelectionDrop(target.Type);
-            };
-        }
+        const Reflection::PropertyWidgetHook assetDrop = MakeAssetDropHook(info.Key);
         ImGui::PushID(info.Key.c_str());
         Reflection::RenderComponentGui(component, info.Properties, info.Key.c_str(), &assetDrop);
         ImGui::PopID();
+    }
+
+    // The component's asset field is also where a file of its type is dropped.
+    Reflection::PropertyWidgetHook EditorGui::MakeAssetDropHook(const std::string& componentKey)
+    {
+        const auto drop = m_InspectorAssetDrops.find(componentKey);
+        if (drop == m_InspectorAssetDrops.end())
+            return {};
+        return [this, target = drop->second](const Reflection::PropertyDescriptor& prop)
+        {
+            if (std::string_view(prop.name) != target.Property)
+                return;
+            ImGui::SetItemTooltip("Drop %s here from the Project panel.", target.Hint);
+            AcceptSelectionDrop(target.Type);
+        };
     }
 
     // Hand-drawn instead of the reflected text field, so a camera picks from the graphs that exist,

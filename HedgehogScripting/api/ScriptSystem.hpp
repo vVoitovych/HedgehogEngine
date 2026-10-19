@@ -42,6 +42,7 @@ namespace HedgehogEngine
 {
     class EngineContext;
     struct AnimationFinishedEvent;
+    struct AnimatorStateChangedEvent;
     struct UiButtonClickedEvent;
     struct CollisionEnterEvent;
     struct CollisionExitEvent;
@@ -278,6 +279,7 @@ namespace HedgehogScripting
         // Queues the engine's AnimationFinishedEvent as the script event "AnimationFinished",
         // payload { entity = <Entity>, clip = <name> }.
         void               QueueAnimationFinished(const HedgehogEngine::AnimationFinishedEvent& event);
+        void               QueueAnimatorStateChanged(const HedgehogEngine::AnimatorStateChangedEvent& event);
         // Queues the engine's UiButtonClickedEvent as the script event "UiButtonClicked", payload
         // { entity = <Entity> }, with the button as its Source. Raised by the UI input before the
         // frame's script hooks, so handlers get it the same frame.

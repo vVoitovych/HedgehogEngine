@@ -89,6 +89,7 @@ TEST_CASE("ScriptSystem unregister - mid-Play the scripts end, and no engine eve
 
     const HedgehogEngine::EventBus& bus = world.World.Context.GetEventBus();
     CHECK(bus.GetSubscriberCount<HedgehogEngine::AnimationFinishedEvent>() == 0);
+    CHECK(bus.GetSubscriberCount<HedgehogEngine::AnimatorStateChangedEvent>() == 0);
     CHECK(bus.GetSubscriberCount<HedgehogEngine::UiButtonClickedEvent>() == 0);
     CHECK(bus.GetSubscriberCount<HedgehogEngine::GameLoadedEvent>() == 0);
     CHECK(bus.GetSubscriberCount<HedgehogEngine::CollisionEnterEvent>() == 0);

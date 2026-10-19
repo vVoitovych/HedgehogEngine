@@ -24,6 +24,7 @@ namespace Editor
         Audio,
         Prefab,
         Environment, // an equirectangular .hdr environment map
+        AnimatorController, // an .animctrl animator controller
         Other,
     };
 

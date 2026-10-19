@@ -8,6 +8,7 @@ project the dev tree opens when none is named (`Editor.exe`, `--game-mode`, `--b
 |---|---|
 | `Default.yaml` | The startup scene: meshes, materials and textures, lights and shadows, and a script (`Scripts/PlayerScript.lua`) turning the room with properties set in the inspector. |
 | `Animated.yaml` | Skinned animation: two animated `TwoBoneStrip`s (`Models/Animated`) beside a rigid cube. |
+| `StateMachine.yaml` | Animator controllers: a `TwoBoneStrip` whose animator runs `Animations/TwoBoneStrip.animctrl` (Bending and Lifting, switched by the `Lifted` bool over half a second, and the `Wave` trigger starting Bending again from any state); `Scripts/StateMachineDemo.lua` sets `Wave` once after a second, flips `Lifted` every two seconds and logs every state change. |
 | `Hud.yaml` | Game UI: a canvas with a translucent top bar, a logo, a title, a health bar and a button, its text in the engine's Karla font. |
 | `Spinner.yaml` | A plugin: the Spinner sample plugin (`Plugins/Spinner`, enabled in `Project.yaml`) turning one cube beside a still one. |
 | `Audio.yaml` | Audio: a cube playing the looping `Audio/Tone440.wav` to the right of the camera, which carries the audio listener. |
