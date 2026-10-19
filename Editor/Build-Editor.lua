@@ -34,6 +34,7 @@ project "Editor"
       "HedgehogUI",
       "HedgehogInput",
       "HedgehogAudio",
+      "HedgehogAnimation",
       "HedgehogScripting",
       "HedgehogLuaDebug",
       "HedgehogRuntime",

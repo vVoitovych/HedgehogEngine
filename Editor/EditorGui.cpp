@@ -22,6 +22,7 @@
 #include "Panels/PhysicsSettingsFields.hpp"
 #include "Tools/RenderGraphEditor/GraphFileReference.hpp"
 #include "Tools/RenderGraphEditor/RenderGraphEditorWindow.hpp"
+#include "Tools/AnimatorControllerEditor/AnimatorControllerEditorWindow.hpp"
 
 #include "HedgehogCommon/api/Camera.hpp"
 #include "HedgehogEngine/api/Engine.hpp"
@@ -170,6 +171,22 @@ namespace Editor
 
         // Spaces at the start of a hierarchy row's label, where its icon is drawn.
         constexpr const char* HIERARCHY_ICON_PAD = "        ";
+
+        // What the animator controller editor shows of the selected entity's animator.
+        [[nodiscard]] AnimatorPreview MakeAnimatorPreview(HedgehogEngine::EngineContext& engineContext,
+                                                          std::optional<ECS::Entity> selected)
+        {
+            AnimatorPreview preview;
+            auto&           ecs = engineContext.GetECS();
+            if (!selected || !ecs.IsAlive(*selected) || !ecs.HasComponent<HedgehogEngine::AnimatorComponent>(*selected))
+                return preview;
+            HedgehogEngine::AnimationSystem& animation = *engineContext.GetAnimationSystem();
+            const auto& animator = ecs.GetComponent<HedgehogEngine::AnimatorComponent>(*selected);
+            preview.Clips = animation.GetClipNames(ecs, engineContext.GetResourceCatalog().GetMeshContainer(), *selected);
+            if (!animator.Controller.empty())
+                preview.ControllerKey = FS::MakeAssetKey(animator.Controller);
+            return preview;
+        }
     }
 
     EditorGui::EditorGui(HedgehogEngine::Engine& context, bool recordRecentProject)
@@ -183,6 +200,7 @@ namespace Editor
         , m_NewProjectWindow(std::make_unique<NewProjectWindow>())
         , m_BuildGameWindow(std::make_unique<BuildGameWindow>())
         , m_RenderGraphEditorWindow(std::make_unique<RenderGraphEditorWindow>())
+        , m_AnimatorControllerWindow(std::make_unique<AnimatorControllerEditorWindow>())
     {
         m_FileSystem   = &context.GetEngineContext().GetFileSystem();
         m_ContentPanel = std::make_unique<ContentPanel>(*m_FileSystem);
@@ -278,6 +296,7 @@ namespace Editor
                                                           HedgehogEngine::PlayState::Edit))
             RequestProject(*created, false);
         m_RenderGraphEditorWindow->Draw(m_Renderer, *m_FileSystem);
+        m_AnimatorControllerWindow->Draw(fs, MakeAnimatorPreview(context.GetEngineContext(), m_SelectedEntity));
 
         DrawOpenSceneDropPopup(context);
         ApplyAssetDrop(context);
@@ -570,6 +589,8 @@ namespace Editor
             }
             if (ImGui::MenuItem("Render Graph Editor", nullptr, m_RenderGraphEditorWindow->Open))
                 m_RenderGraphEditorWindow->Open = !m_RenderGraphEditorWindow->Open;
+            if (ImGui::MenuItem("Animator Controller", nullptr, m_AnimatorControllerWindow->Open))
+                m_AnimatorControllerWindow->Open = !m_AnimatorControllerWindow->Open;
             ImGui::EndMenu();
         }
 
@@ -1224,6 +1245,8 @@ namespace Editor
         const Reflection::PropertyWidgetHook controllerDrop = MakeAssetDropHook(HedgehogEngine::AnimatorComponent::s_TypeName);
         Reflection::RenderComponentGui(&animator, HedgehogEngine::AnimatorComponent::GetProperties(),
                                        HedgehogEngine::AnimatorComponent::s_TypeName, &controllerDrop);
+        if (!animator.Controller.empty() && ImGui::Button("Edit controller"))
+            m_AnimatorControllerWindow->OpenController(animator.Controller);
     }
 
     // A registered component's reflected rows under its icon header (its enabled property as the

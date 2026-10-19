@@ -57,31 +57,6 @@ namespace Editor
             return PASS_COLOR;
         }
 
-        // The canvas in the editor's palette; the node-kind title colours above stay as they are.
-        void ApplyCanvasTheme(ed::Style& style)
-        {
-            ImVec4* c = style.Colors;
-            c[ed::StyleColor_Bg]                  = Theme::MAIN_BG;
-            c[ed::StyleColor_Grid]                = Theme::WithAlpha(Theme::HOVER, 0.5f);
-            c[ed::StyleColor_NodeBg]              = Theme::WithAlpha(Theme::PANEL, 0.95f);
-            c[ed::StyleColor_NodeBorder]          = Theme::HOVER;
-            c[ed::StyleColor_HovNodeBorder]       = Theme::TEXT_MUTED;
-            c[ed::StyleColor_SelNodeBorder]       = Theme::ACCENT;
-            c[ed::StyleColor_NodeSelRect]         = Theme::WithAlpha(Theme::ACCENT, 0.15f);
-            c[ed::StyleColor_NodeSelRectBorder]   = Theme::WithAlpha(Theme::ACCENT, 0.5f);
-            c[ed::StyleColor_HovLinkBorder]       = Theme::TEXT_MUTED;
-            c[ed::StyleColor_SelLinkBorder]       = Theme::ACCENT;
-            c[ed::StyleColor_HighlightLinkBorder] = Theme::ACCENT;
-            c[ed::StyleColor_LinkSelRect]         = Theme::WithAlpha(Theme::ACCENT, 0.15f);
-            c[ed::StyleColor_LinkSelRectBorder]   = Theme::WithAlpha(Theme::ACCENT, 0.5f);
-            c[ed::StyleColor_PinRect]             = Theme::ACCENT_FILL;
-            c[ed::StyleColor_PinRectBorder]       = Theme::WithAlpha(Theme::ACCENT, 0.5f);
-            c[ed::StyleColor_Flow]                = Theme::ACCENT;
-            c[ed::StyleColor_FlowMarker]          = Theme::ACCENT;
-            c[ed::StyleColor_GroupBg]             = Theme::WithAlpha(Theme::MAIN_BG, 0.6f);
-            c[ed::StyleColor_GroupBorder]         = Theme::HOVER;
-        }
-
         GraphNodePosition AutomaticPosition(const GraphCanvasNode& node)
         {
             return { static_cast<float>(node.Column) * COLUMN_WIDTH, static_cast<float>(node.Row) * ROW_HEIGHT };
