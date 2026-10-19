@@ -185,6 +185,7 @@ namespace Editor
             preview.Clips = animation.GetClipNames(ecs, engineContext.GetResourceCatalog().GetMeshContainer(), *selected);
             if (!animator.Controller.empty())
                 preview.ControllerKey = FS::MakeAssetKey(animator.Controller);
+            preview.ActiveState = animation.GetStateName(ecs, *selected);
             return preview;
         }
     }

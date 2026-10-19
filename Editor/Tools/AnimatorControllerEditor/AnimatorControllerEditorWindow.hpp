@@ -6,6 +6,7 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -22,18 +23,25 @@ namespace FS
 
 namespace Editor
 {
-    // What the editor's selection tells the window: the clips the selected entity's mesh has and,
-    // when it has an animator with a controller, which one, so the window checks the states' clips
-    // against the mesh that runs it.
+    // What the editor's selection tells the window: the clips the selected entity's mesh has (for
+    // the state's clip combo) and, when its animator runs a controller, which one and the state it
+    // is in, so the window can follow it during Play.
     struct AnimatorPreview
     {
         std::vector<std::string> Clips;
         std::string              ControllerKey; // FS::MakeAssetKey of the animator's controller
+        std::string              ActiveState;   // empty when no controller runs
     };
 
     // The animator controller editor (Window > Animator Controller): a .animctrl file drawn as nodes
-    // with imgui-node-editor. States are nodes, with an Entry node leading to the default state and
-    // an Any State node; transitions are links, from a state's right pin to another's left pin.
+    // with imgui-node-editor, and edited there through ControllerEditing. States are nodes, with an
+    // Entry node leading to the default state and an Any State node; transitions are links, from a
+    // state's right pin to another's left pin.
+    //
+    // Editing: right-click the canvas to add a state, or a state to make it the default or delete
+    // it; drag from a state's (or Any State's) right pin to a state to add a transition, or from
+    // Entry to make that state the default; select a link or node and press Delete to remove it.
+    // The side panel edits the parameters and the selected state or transition.
     //
     // Files: New starts an empty, untitled controller; Open... picks any .animctrl under a mount.
     // Save (Ctrl+S) writes it, or asks where for an untitled one; Save As... writes it to a new
@@ -42,7 +50,8 @@ namespace Editor
     //
     // Every edit is checked with ValidateAnimatorController (with the selected mesh's clips when
     // its animator runs this controller): states and transitions at fault are drawn red, and a list
-    // under the canvas names every problem.
+    // under the canvas names every problem. During Play the state the selected animator is in is
+    // outlined, and the transition that led there flows.
     class AnimatorControllerEditorWindow
     {
     public:
@@ -86,14 +95,25 @@ namespace Editor
         bool IsDirty() const { return m_HasController && m_EditedText != m_SavedText; }
 
         // ── Canvas ───────────────────────────────────────────────────────────
-        void DrawCanvas();
-        void DrawStateNode(uint32_t state) const;
+        void DrawCanvas(const AnimatorPreview& preview);
+        void DrawStateNode(uint32_t state, bool active) const;
+        void DrawContextMenus(const AnimatorPreview& preview);
+        void HandleNewLinks();
+        void HandleDeletions();
+        void ReadSelection();
+        void FollowActiveState(const AnimatorPreview& preview);
         void SaveMovedNodes();
         void DrawProblems();
 
-        // After the controller changes: writes the text the dirty check compares, validates, and
-        // keeps the layout to the states that exist. Pass statesChanged when the states are new,
-        // which places their nodes again.
+        // ── Side panel (AnimatorControllerDetailsPanel.cpp) ──────────────────
+        void DrawDetails(const AnimatorPreview& preview);
+        void DrawParameters();
+        void DrawStateDetails(uint32_t state, const AnimatorPreview& preview);
+        void DrawTransitionDetails(uint32_t transition);
+
+        // After an edit: writes the text the dirty check compares, validates, and keeps the layout
+        // to the states that exist. Pass statesChanged when a state was added, removed or renamed,
+        // which renumbers or rekeys the nodes.
         void ApplyEdit(bool statesChanged);
         void Validate();
         bool UsesThisController(const AnimatorPreview& preview) const;
@@ -114,12 +134,21 @@ namespace Editor
         std::unordered_map<uint32_t, std::string> m_TransitionProblems; // transition index to its problems
         std::vector<std::string>                  m_ValidatedClips;     // the clips m_Problems were checked with
 
+        std::optional<uint32_t> m_SelectedState;
+        std::optional<uint32_t> m_SelectedTransition;
+        std::string             m_LastActiveState; // to notice the selected animator change state
+        // Selected on the next canvas frame, once ids an edit renumbered are drawn.
+        std::optional<uint32_t> m_FocusState;
+        std::optional<uint32_t> m_FocusTransition;
+        uint32_t                m_ContextState = 0; // the state whose context menu is open
+
         bool m_PlaceNodes      = false;
         bool m_ClearSelection  = false;
         int  m_FitViewInFrames = 0;
 
-        PendingAction m_Pending = PendingAction::None;
-        std::string   m_PendingPath;
-        std::string   m_LoadPath; // read on the next Draw, which has the file system
+        PendingAction     m_Pending = PendingAction::None;
+        std::string       m_PendingPath;
+        std::string       m_LoadPath; // read on the next Draw, which has the file system
+        GraphNodePosition m_AddPosition;
     };
 }

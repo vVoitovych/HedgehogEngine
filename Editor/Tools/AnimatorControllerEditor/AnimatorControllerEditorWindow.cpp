@@ -3,6 +3,8 @@
 #include "ControllerEditing.hpp"
 #include "Tools/RenderGraphEditor/RenderGraphEditorStyle.hpp"
 
+#include "EditorTheme.hpp"
+
 #include "DialogueWindows/api/AnimatorControllerDialogue.hpp"
 #include "FileSystem/api/FileSystemManager.hpp"
 #include "FileSystem/api/PathUtils.hpp"
@@ -21,12 +23,15 @@ namespace Editor
 {
     namespace
     {
+        using HedgehogAnimation::AnimatorController;
         using HedgehogAnimation::ANY_STATE;
 
+        constexpr float DETAILS_WIDTH        = 360.0f;
         constexpr float COLUMN_WIDTH         = 220.0f;
         constexpr float ROW_HEIGHT           = 130.0f;
         constexpr int   STATES_PER_ROW       = 4;
         constexpr float PROBLEM_BORDER_WIDTH = 2.5f;
+        constexpr float ACTIVE_BORDER_WIDTH  = 3.5f;
         constexpr float LINK_THICKNESS       = 2.0f;
         constexpr size_t MAX_LISTED_ROWS     = 4;
         // As the render graph editor: a new window settles its size before fitting the view sticks.
@@ -36,9 +41,11 @@ namespace Editor
         constexpr ImVec4 ANY_COLOR   = { 0.80f, 0.65f, 1.00f, 1.0f };
         constexpr ImVec4 LINK_COLOR  = { 0.85f, 0.85f, 0.85f, 1.0f };
 
-        constexpr const char* UNSAVED_POPUP   = "Unsaved controller changes";
-        constexpr const char* UNTITLED        = "untitled";
-        constexpr const char* DIALOGUE_FOLDER = "assets://";
+        constexpr const char* ADD_MENU_POPUP   = "AddControllerNode";
+        constexpr const char* STATE_MENU_POPUP = "ControllerStateMenu";
+        constexpr const char* UNSAVED_POPUP    = "Unsaved controller changes";
+        constexpr const char* UNTITLED         = "untitled";
+        constexpr const char* DIALOGUE_FOLDER  = "assets://";
 
         // Canvas ids. Entry and Any State are fixed; state i is node STATE_NODE + i with pins
         // STATE_PIN + 2i (in, on the left) and + 1 (out, on the right); transition t is link
@@ -54,6 +61,25 @@ namespace Editor
 
         uint64_t StateInPin(uint32_t state) { return STATE_PIN + 2u * state; }
         uint64_t StateOutPin(uint32_t state) { return STATE_PIN + 2u * state + 1u; }
+
+        // What a pin id is: Entry's or Any State's pin, or a state's in or out pin.
+        struct PinInfo
+        {
+            enum class Kind { None, Entry, Any, StateIn, StateOut } Type = Kind::None;
+            uint32_t State = 0;
+        };
+
+        PinInfo DecodePin(uint64_t id, size_t stateCount)
+        {
+            if (id == ENTRY_PIN)
+                return { PinInfo::Kind::Entry };
+            if (id == ANY_PIN)
+                return { PinInfo::Kind::Any };
+            if (id < STATE_PIN || id >= STATE_PIN + 2u * stateCount)
+                return {};
+            const uint64_t offset = id - STATE_PIN;
+            return { offset % 2 == 0 ? PinInfo::Kind::StateIn : PinInfo::Kind::StateOut, static_cast<uint32_t>(offset / 2) };
+        }
 
         GraphNodePosition AutomaticStatePosition(uint32_t state)
         {
@@ -126,15 +152,22 @@ namespace Editor
             const float problemsHeight = m_Problems.empty() ? 0.0f
                 : ImGui::GetTextLineHeightWithSpacing() * static_cast<float>(std::min(m_Problems.size(), MAX_LISTED_ROWS) + 1)
                   + ImGui::GetStyle().WindowPadding.y * 2.0f;
-            ImGui::BeginChild("ControllerCanvasRegion", ImVec2(0.0f, -problemsHeight));
-            DrawCanvas();
+            ImGui::BeginGroup();
+            ImGui::BeginChild("ControllerCanvasRegion", ImVec2(-DETAILS_WIDTH, -problemsHeight));
+            DrawCanvas(preview);
             ImGui::EndChild();
             if (!m_Problems.empty())
             {
-                ImGui::BeginChild("ControllerProblems", ImVec2(0.0f, 0.0f), ImGuiChildFlags_Borders);
+                ImGui::BeginChild("ControllerProblems", ImVec2(-DETAILS_WIDTH, 0.0f), ImGuiChildFlags_Borders);
                 DrawProblems();
                 ImGui::EndChild();
             }
+            ImGui::EndGroup();
+            ImGui::SameLine();
+            ImGui::BeginChild("ControllerDetails", ImVec2(0.0f, 0.0f), ImGuiChildFlags_Borders);
+            if (m_HasController)
+                DrawDetails(preview);
+            ImGui::EndChild();
 
             if (IsDirty() && ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)
                 && ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_S))
@@ -190,7 +223,8 @@ namespace Editor
         if (!m_Status.empty())
             ImGui::TextUnformatted(m_Status.c_str());
         else
-            ImGui::TextDisabled("Drag the states to arrange them; their places are saved beside the file.");
+            ImGui::TextDisabled("Right-click to add a state, drag from a right pin to a state to add a transition, "
+                                "Delete removes the selection.");
     }
 
     void AnimatorControllerEditorWindow::DrawUnsavedChangesPopup(const FS::FileSystemManager& fileSystem)
@@ -280,6 +314,7 @@ namespace Editor
         m_Layout        = m_File.empty() ? GraphLayout{} : LoadGraphLayout(GetGraphLayoutFile(m_File)).value_or(GraphLayout{});
         m_HasController = true;
         m_Status.clear();
+        m_LastActiveState.clear();
         ApplyEdit(true);
         m_SavedText       = m_EditedText;
         m_FitViewInFrames = FIT_VIEW_DELAY_FRAMES;
@@ -293,6 +328,7 @@ namespace Editor
         m_Layout        = {};
         m_HasController = true;
         m_Status.clear();
+        m_LastActiveState.clear();
         ApplyEdit(true);
         m_SavedText = m_EditedText;
     }
@@ -377,7 +413,13 @@ namespace Editor
         {
             m_PlaceNodes     = true;
             m_ClearSelection = true;
+            m_SelectedState.reset();
+            m_SelectedTransition.reset();
         }
+        if (m_SelectedState && *m_SelectedState >= m_Edited.States.size())
+            m_SelectedState.reset();
+        if (m_SelectedTransition && *m_SelectedTransition >= m_Edited.Transitions.size())
+            m_SelectedTransition.reset();
 
         // Keep the layout to the nodes that exist, so a deleted state's place is not saved.
         GraphLayout layout;
@@ -417,7 +459,7 @@ namespace Editor
         }
     }
 
-    void AnimatorControllerEditorWindow::DrawCanvas()
+    void AnimatorControllerEditorWindow::DrawCanvas(const AnimatorPreview& preview)
     {
         ed::SetCurrentEditor(m_Canvas);
         ed::Begin("AnimatorControllerCanvas");
@@ -445,10 +487,11 @@ namespace Editor
 
         if (m_HasController)
         {
+            const std::string active = UsesThisController(preview) ? preview.ActiveState : std::string();
             DrawFixedNode(ENTRY_NODE, ENTRY_PIN, "Entry", ENTRY_COLOR);
             DrawFixedNode(ANY_NODE, ANY_PIN, "Any State", ANY_COLOR);
             for (uint32_t s = 0; s < m_Edited.States.size(); ++s)
-                DrawStateNode(s);
+                DrawStateNode(s, !active.empty() && m_Edited.States[s].Name == active);
 
             const size_t stateCount = m_Edited.States.size();
             if (m_Edited.DefaultState < stateCount)
@@ -473,6 +516,18 @@ namespace Editor
                     ed::Resume();
                 }
             }
+            if (m_FocusState && *m_FocusState < stateCount)
+                ed::SelectNode(ed::NodeId(STATE_NODE + *m_FocusState));
+            if (m_FocusTransition && *m_FocusTransition < m_Edited.Transitions.size())
+                ed::SelectLink(ed::LinkId(TRANSITION_LINK + *m_FocusTransition));
+            m_FocusState.reset();
+            m_FocusTransition.reset();
+
+            FollowActiveState(preview);
+            HandleNewLinks();
+            HandleDeletions();
+            DrawContextMenus(preview);
+            ReadSelection();
         }
 
         if (m_FitViewInFrames > 0 && --m_FitViewInFrames == 0)
@@ -482,14 +537,14 @@ namespace Editor
         ed::SetCurrentEditor(nullptr);
     }
 
-    void AnimatorControllerEditorWindow::DrawStateNode(uint32_t state) const
+    void AnimatorControllerEditorWindow::DrawStateNode(uint32_t state, bool active) const
     {
         const HedgehogAnimation::AnimatorState& data = m_Edited.States[state];
         const bool hasProblem = m_StateProblems.contains(state);
-        if (hasProblem)
+        if (hasProblem || active)
         {
-            ed::PushStyleColor(ed::StyleColor_NodeBorder, PROBLEM_COLOR);
-            ed::PushStyleVar(ed::StyleVar_NodeBorderWidth, PROBLEM_BORDER_WIDTH);
+            ed::PushStyleColor(ed::StyleColor_NodeBorder, active ? Theme::PLAY_TINT : PROBLEM_COLOR);
+            ed::PushStyleVar(ed::StyleVar_NodeBorderWidth, active ? ACTIVE_BORDER_WIDTH : PROBLEM_BORDER_WIDTH);
         }
         ed::BeginNode(ed::NodeId(STATE_NODE + state));
         ImGui::TextColored(hasProblem ? PROBLEM_COLOR : PASS_COLOR, "%s", data.Name.c_str());
@@ -503,11 +558,194 @@ namespace Editor
         ImGui::SameLine(0.0f, 60.0f);
         DrawPinArrow(StateOutPin(state), true);
         ed::EndNode();
-        if (hasProblem)
+        if (hasProblem || active)
         {
             ed::PopStyleVar();
             ed::PopStyleColor();
         }
+    }
+
+    void AnimatorControllerEditorWindow::DrawContextMenus(const AnimatorPreview& preview)
+    {
+        // Inside the canvas the mouse position is in canvas space: where a new state goes.
+        const ImVec2 mouse = ImGui::GetMousePos();
+        ed::Suspend();
+        ed::NodeId node;
+        if (ed::ShowBackgroundContextMenu())
+        {
+            m_AddPosition = { std::round(mouse.x), std::round(mouse.y) };
+            ImGui::OpenPopup(ADD_MENU_POPUP);
+        }
+        else if (ed::ShowNodeContextMenu(&node) && node.Get() >= STATE_NODE)
+        {
+            m_ContextState = static_cast<uint32_t>(node.Get() - STATE_NODE);
+            ImGui::OpenPopup(STATE_MENU_POPUP);
+        }
+
+        if (ImGui::BeginPopup(ADD_MENU_POPUP))
+        {
+            if (ImGui::MenuItem("Add state"))
+            {
+                const std::string clip  = preview.Clips.empty() ? "Clip" : preview.Clips.front();
+                const uint32_t    state = AddState(m_Edited, "State", clip);
+                m_Layout[MakeStateNodeKey(m_Edited.States[state].Name)] = m_AddPosition;
+                ApplyEdit(true);
+                m_FocusState = state;
+            }
+            ImGui::EndPopup();
+        }
+        if (ImGui::BeginPopup(STATE_MENU_POPUP))
+        {
+            if (m_ContextState < m_Edited.States.size())
+            {
+                if (ImGui::MenuItem("Make default", nullptr, false, m_ContextState != m_Edited.DefaultState))
+                {
+                    SetDefaultState(m_Edited, m_ContextState);
+                    ApplyEdit(false);
+                }
+                if (ImGui::MenuItem("Delete"))
+                {
+                    const std::string name = m_Edited.States[m_ContextState].Name;
+                    DeleteState(m_Edited, m_ContextState);
+                    RemoveStateNode(m_Layout, name);
+                    ApplyEdit(true);
+                }
+            }
+            ImGui::EndPopup();
+        }
+        ed::Resume();
+    }
+
+    void AnimatorControllerEditorWindow::HandleNewLinks()
+    {
+        if (ed::BeginCreate(LINK_COLOR, LINK_THICKNESS))
+        {
+            ed::PinId startId;
+            ed::PinId endId;
+            if (ed::QueryNewLink(&startId, &endId) && startId && endId)
+            {
+                PinInfo source = DecodePin(startId.Get(), m_Edited.States.size());
+                PinInfo target = DecodePin(endId.Get(), m_Edited.States.size());
+                if (target.Type != PinInfo::Kind::StateIn) // dragged from a state's left pin
+                    std::swap(source, target);
+
+                if (target.Type == PinInfo::Kind::StateIn && source.Type != PinInfo::Kind::None
+                    && source.Type != PinInfo::Kind::StateIn)
+                {
+                    if (ed::AcceptNewItem(ENTRY_COLOR, LINK_THICKNESS))
+                    {
+                        if (source.Type == PinInfo::Kind::Entry)
+                        {
+                            SetDefaultState(m_Edited, target.State);
+                            ApplyEdit(false);
+                        }
+                        else if (const std::optional<uint32_t> added = AddTransition(
+                                     m_Edited, source.Type == PinInfo::Kind::Any ? ANY_STATE : source.State, target.State))
+                        {
+                            ApplyEdit(false);
+                            m_FocusTransition = *added;
+                        }
+                    }
+                }
+                else
+                {
+                    ed::RejectNewItem(PROBLEM_COLOR, LINK_THICKNESS);
+                }
+            }
+        }
+        ed::EndCreate();
+    }
+
+    void AnimatorControllerEditorWindow::HandleDeletions()
+    {
+        std::vector<uint32_t> transitions;
+        std::vector<uint32_t> states;
+        if (ed::BeginDelete())
+        {
+            ed::LinkId link;
+            while (ed::QueryDeletedLink(&link))
+            {
+                const uint64_t id = link.Get();
+                if (id >= TRANSITION_LINK && id < TRANSITION_LINK + m_Edited.Transitions.size())
+                {
+                    if (ed::AcceptDeletedItem())
+                        transitions.push_back(static_cast<uint32_t>(id - TRANSITION_LINK));
+                }
+                else
+                {
+                    ed::RejectDeletedItem(); // Entry's link: drag Entry to another state instead
+                }
+            }
+            ed::NodeId node;
+            while (ed::QueryDeletedNode(&node))
+            {
+                const uint64_t id = node.Get();
+                if (id >= STATE_NODE && id < STATE_NODE + m_Edited.States.size())
+                {
+                    if (ed::AcceptDeletedItem())
+                        states.push_back(static_cast<uint32_t>(id - STATE_NODE));
+                }
+                else
+                {
+                    ed::RejectDeletedItem(); // Entry and Any State stay
+                }
+            }
+        }
+        ed::EndDelete();
+        if (transitions.empty() && states.empty())
+            return;
+
+        // Transitions first, while their indices hold; then states. Both from the back, so an
+        // earlier removal never shifts a later one.
+        std::ranges::sort(transitions, std::greater{});
+        for (const uint32_t transition : transitions)
+            DeleteTransition(m_Edited, transition);
+        std::ranges::sort(states, std::greater{});
+        for (const uint32_t state : states)
+        {
+            const std::string name = m_Edited.States[state].Name;
+            DeleteState(m_Edited, state);
+            RemoveStateNode(m_Layout, name);
+        }
+        ApplyEdit(true);
+    }
+
+    void AnimatorControllerEditorWindow::ReadSelection()
+    {
+        // Read every frame, as the render graph editor does: the canvas's selection is the panel's.
+        m_SelectedState.reset();
+        m_SelectedTransition.reset();
+        ed::NodeId node;
+        ed::LinkId link;
+        if (ed::GetSelectedNodes(&node, 1) == 1 && ed::GetSelectedObjectCount() == 1 && node.Get() >= STATE_NODE)
+            m_SelectedState = static_cast<uint32_t>(node.Get() - STATE_NODE);
+        else if (ed::GetSelectedLinks(&link, 1) == 1 && ed::GetSelectedObjectCount() == 1 && link.Get() >= TRANSITION_LINK)
+            m_SelectedTransition = static_cast<uint32_t>(link.Get() - TRANSITION_LINK);
+    }
+
+    void AnimatorControllerEditorWindow::FollowActiveState(const AnimatorPreview& preview)
+    {
+        const std::string active = UsesThisController(preview) ? preview.ActiveState : std::string();
+        if (active == m_LastActiveState)
+            return;
+        // The transition that led here: the first, in the order they are checked, from the state
+        // the animator was in (or Any State) to the one it is in now.
+        const int from = HedgehogAnimation::FindState(m_Edited, m_LastActiveState);
+        const int to   = HedgehogAnimation::FindState(m_Edited, active);
+        if (from >= 0 && to >= 0)
+        {
+            for (uint32_t t = 0; t < m_Edited.Transitions.size(); ++t)
+            {
+                const HedgehogAnimation::AnimatorTransition& transition = m_Edited.Transitions[t];
+                if (transition.To == static_cast<uint32_t>(to)
+                    && (transition.From == ANY_STATE || transition.From == static_cast<uint32_t>(from)))
+                {
+                    ed::Flow(ed::LinkId(TRANSITION_LINK + t));
+                    break;
+                }
+            }
+        }
+        m_LastActiveState = active;
     }
 
     void AnimatorControllerEditorWindow::SaveMovedNodes()
