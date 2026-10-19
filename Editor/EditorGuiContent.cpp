@@ -8,6 +8,7 @@
 #include "Tools/PipelineWindow.hpp"
 #include "Tools/RenderGraphEditor/GraphFileReference.hpp"
 #include "Tools/RenderGraphEditor/RenderGraphEditorWindow.hpp"
+#include "Tools/AnimatorControllerEditor/AnimatorControllerEditorWindow.hpp"
 #include "Tools/ShaderWindow.hpp"
 #include "Tools/InputActionsWindow.hpp"
 #include "Tools/VertexDescriptionWindow.hpp"
@@ -62,7 +63,6 @@ namespace Editor
             case ContentType::Font:     return "UI text";
             case ContentType::Audio:    return "Audio source";
             case ContentType::Environment: return "Environment";
-            case ContentType::AnimatorController: return "Animator";
             default:                    return nullptr;
             }
         }
@@ -116,6 +116,10 @@ namespace Editor
         case ContentType::Prefab:
             InstantiatePrefab(context, request.VirtualPath, std::nullopt);
             return;
+        case ContentType::AnimatorController:
+            // It goes onto an animator by dragging it to the Controller field.
+            m_AnimatorControllerWindow->OpenController(request.VirtualPath);
+            return;
         case ContentType::RenderGraph:
             if (m_Renderer)
             {
@@ -130,7 +134,6 @@ namespace Editor
         case ContentType::Script:
         case ContentType::Font:
         case ContentType::Environment:
-        case ContentType::AnimatorController:
             if (AssignToSelection(context, request, physicalPath))
                 return;
             LOGINFO("Content: select an entity with a ", RequiredComponent(request.Type), " component to assign '",
