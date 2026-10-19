@@ -32,7 +32,13 @@ project "EditorTest"
         "../Tools/NewProjectCheck.hpp",
         "../Tools/NewProjectCheck.cpp",
         "../Tools/GameBinaries.hpp",
-        "../Tools/GameBinaries.cpp"
+        "../Tools/GameBinaries.cpp",
+        "../Tools/AnimatorControllerEditor/ControllerEditing.hpp",
+        "../Tools/AnimatorControllerEditor/ControllerEditing.cpp",
+        "../Tools/AnimatorControllerEditor/ControllerLayout.hpp",
+        "../Tools/AnimatorControllerEditor/ControllerLayout.cpp",
+        "../Tools/RenderGraphEditor/GraphLayoutFile.hpp",
+        "../Tools/RenderGraphEditor/GraphLayoutFile.cpp"
     }
 
     includedirs
@@ -41,13 +47,19 @@ project "EditorTest"
         "..",              -- so "Docking/..." resolves
         "../..",           -- so "HedgehogMath/api/..." resolves
         "../../HedgehogEngine", -- so "HedgehogEngine/api/..." resolves (MaterialSlots' header-only MaterialData)
+        "%{IncludeDir.yaml_cpp}", -- the layout file
         "."
     }
+
+    defines { "YAML_CPP_STATIC_DEFINE" }
 
     links
     {
         "HedgehogMath",
-        "HedgehogSettings"
+        "HedgehogSettings",
+        "HedgehogAnimation", -- the animator controller model the editing works on
+        "yaml-cpp",
+        "Logger"
     }
 
     targetdir (BinariesDir)
