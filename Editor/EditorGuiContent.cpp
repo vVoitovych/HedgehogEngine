@@ -14,6 +14,7 @@
 
 #include "HedgehogEngine/api/Assets/GltfMaterialImport.hpp"
 #include "HedgehogEngine/api/Containers/MaterialContainer.hpp"
+#include "HedgehogEngine/api/ECS/components/AnimatorComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/AudioSourceComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/CameraComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/EnvironmentComponent.hpp"
@@ -61,6 +62,7 @@ namespace Editor
             case ContentType::Font:     return "UI text";
             case ContentType::Audio:    return "Audio source";
             case ContentType::Environment: return "Environment";
+            case ContentType::AnimatorController: return "Animator";
             default:                    return nullptr;
             }
         }
@@ -128,6 +130,7 @@ namespace Editor
         case ContentType::Script:
         case ContentType::Font:
         case ContentType::Environment:
+        case ContentType::AnimatorController:
             if (AssignToSelection(context, request, physicalPath))
                 return;
             LOGINFO("Content: select an entity with a ", RequiredComponent(request.Type), " component to assign '",
@@ -199,6 +202,11 @@ namespace Editor
             if (!ecs.HasComponent<HedgehogEngine::EnvironmentComponent>(entity))
                 return false;
             ecs.GetComponent<HedgehogEngine::EnvironmentComponent>(entity).Map = relativePath;
+            break;
+        case ContentType::AnimatorController:
+            if (!ecs.HasComponent<HedgehogEngine::AnimatorComponent>(entity))
+                return false;
+            ecs.GetComponent<HedgehogEngine::AnimatorComponent>(entity).Controller = relativePath;
             break;
         case ContentType::RenderGraph:
         {

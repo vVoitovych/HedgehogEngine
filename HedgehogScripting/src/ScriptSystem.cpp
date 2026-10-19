@@ -115,6 +115,8 @@ namespace HedgehogScripting
         HedgehogEngine::EventBus& bus = context.GetEventBus();
         m_BusSubscriptions.push_back(bus.Subscribe<HedgehogEngine::AnimationFinishedEvent>(
             [this](const HedgehogEngine::AnimationFinishedEvent& event) { QueueAnimationFinished(event); }));
+        m_BusSubscriptions.push_back(bus.Subscribe<HedgehogEngine::AnimatorStateChangedEvent>(
+            [this](const HedgehogEngine::AnimatorStateChangedEvent& event) { QueueAnimatorStateChanged(event); }));
         Bindings::RegisterUi(m_Lua, context, [this](const Bindings::ScriptEntity& button, sol::protected_function handler)
                              { return SubscribeClick(button, std::move(handler)); });
         m_BusSubscriptions.push_back(bus.Subscribe<HedgehogEngine::UiButtonClickedEvent>(

@@ -246,6 +246,9 @@ namespace Editor
         void DrawAnimatorComponent(HedgehogEngine::Engine& context);
         // A registered component with no hand-drawn section: its icon header (enable checkbox,
         // Remove) and reflected rows, its asset field taking a dropped file (m_InspectorAssetDrops).
+        // The hook that makes a component's asset field (m_InspectorAssetDrops) a drop target; empty
+        // for a component without one.
+        Reflection::PropertyWidgetHook MakeAssetDropHook(const std::string& componentKey);
         void DrawRegisteredComponent(HedgehogEngine::Engine& context, const EcsSerialization::ComponentInfo& info);
         // The script's property declarations for the inspector, described again only when the
         // file changes on disk; nullptr when there is no script system or no such file.

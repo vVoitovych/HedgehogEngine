@@ -1,0 +1,29 @@
+Version: 1
+Parameters:
+  - Name: Lifted
+    Type: Bool
+  - Name: Wave
+    Type: Trigger
+States:
+  - Name: Bending
+    Clip: Bend
+  - Name: Lifting
+    Clip: Lift
+Default: Bending
+Transitions:
+  - From: Bending
+    To: Lifting
+    Duration: 0.5
+    Conditions:
+      - {Parameter: Lifted, Op: True}
+  - From: Lifting
+    To: Bending
+    Duration: 0.5
+    Conditions:
+      - {Parameter: Lifted, Op: False}
+  - From: Any
+    To: Bending
+    Duration: 0.1
+    CanTransitionToSelf: true
+    Conditions:
+      - {Parameter: Wave, Op: Triggered}

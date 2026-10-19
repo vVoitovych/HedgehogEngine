@@ -129,6 +129,19 @@ namespace HedgehogScripting
         m_QueuedEvents.push_back(QueuedEvent{ "AnimationFinished", std::move(payload) });
     }
 
+    void ScriptSystem::QueueAnimatorStateChanged(const HedgehogEngine::AnimatorStateChangedEvent& event)
+    {
+        // Published by AnimationSystem after this frame's script hooks: delivered next frame.
+        ECS::ECS& ecs = m_Context.GetECS();
+        if (!ecs.IsAlive(event.Entity))
+            return;
+        sol::table payload = m_Lua.create_table_with("entity", Bindings::MakeScriptEntity(ecs, event.Entity), "to",
+                                                     event.To);
+        if (!event.From.empty())
+            payload["from"] = event.From;
+        m_QueuedEvents.push_back(QueuedEvent{ "AnimatorStateChanged", std::move(payload) });
+    }
+
     void ScriptSystem::QueueButtonClicked(const HedgehogEngine::UiButtonClickedEvent& event)
     {
         ECS::ECS& ecs = m_Context.GetECS();
