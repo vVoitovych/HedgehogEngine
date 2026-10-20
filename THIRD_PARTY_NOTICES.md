@@ -532,7 +532,7 @@ These never reach a packaged game.
 
 ### Dear ImGui
 
-Version 1.92.8 (7038887c). Used by Editor. Licence: MIT.
+Version 1.92.9 WIP, docking branch (ca49eff3). Used by Editor. Licence: MIT.
 
 ```
 The MIT License (MIT)
