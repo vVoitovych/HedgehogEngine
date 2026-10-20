@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Docking/DockSystem.hpp"
+#include "Docking/WindowPlacement.hpp"
 #include "EditorSettings.hpp"
 #include "Panels/ContentPanel.hpp"
 #include "Panels/EditorIcons.hpp"
@@ -194,6 +195,7 @@ namespace Editor
         void DrawSceneImage(HedgehogEngine::Engine& context);
         void DrawGameImage();
         void UpdateViewFocus();
+        void KeepAppearingWindowsOnScreen();
         void DrawContentPanel(HedgehogEngine::Engine& context);
         // What opening a Content panel file means, by type (EditorGuiContent.cpp): a scene
         // loads; a mesh, material, texture or script goes onto the selected entity; a shader,
@@ -316,6 +318,7 @@ namespace Editor
         // A view docked back is the tab shown, the next frame.
         enum class ViewTab { None, Scene, Game };
         ViewTab m_SelectViewTab = ViewTab::None;
+        std::vector<ScreenRect> m_MonitorRects; // the monitors' work areas, refilled each frame
         std::optional<ViewportPoint> m_ScenePick;
 
         std::optional<ECS::Entity>             m_SelectedEntity;

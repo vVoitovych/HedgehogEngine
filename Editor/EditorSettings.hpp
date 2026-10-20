@@ -28,6 +28,10 @@ namespace Editor
         TransformTool              GizmoTool       = TransformTool::Move;   // the Scene view's transform tool
         TransformSpace             GizmoSpace      = TransformSpace::Local; // the axes it moves and turns along
         std::vector<RecentProject> RecentProjects; // most recent first, each with its last scene
+        // Whether the Scene and Game views float as windows of their own (EditorGui), instead of
+        // being tabs of the centre area; where those windows are is ImGui's imgui.ini's to keep.
+        bool                       SceneViewFloating = false;
+        bool                       GameViewFloating  = false;
 
         // Writes <file>.tmp and renames it over the file, so a cut-short write leaves the last one.
         void Save(const std::string& virtualPath, const FS::FileSystemManager& fileSystem) const;

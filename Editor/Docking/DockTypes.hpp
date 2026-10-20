@@ -85,6 +85,8 @@ namespace Editor
     static_assert(std::size(DEFAULT_PANEL_ORDER) == static_cast<size_t>(PanelId::Count));
 
     struct PanelPos { float x = 200.0f; float y = 200.0f; };
+    // A floating panel's size until it is resized; then its own, saved with its position.
+    inline constexpr PanelPos DEFAULT_FLOATING_PANEL_SIZE = { 420.0f, 320.0f };
 
     struct DockLayoutState
     {
@@ -92,6 +94,7 @@ namespace Editor
         std::array<int,      DOCK_AREA_COUNT>             ActiveTab{};
         std::array<bool,     PANEL_ID_COUNT>              PanelVisible{};
         std::array<PanelPos, PANEL_ID_COUNT>              FloatingPositions{};
+        std::array<PanelPos, PANEL_ID_COUNT>              FloatingSizes{}; // x the width, y the height
 
         float LeftWidth    = 280.0f;
         float RightWidth   = 340.0f;
@@ -107,6 +110,7 @@ namespace Editor
             // Stagger initial float positions so panels don't stack on each other
             for (int i = 0; i < PANEL_ID_COUNT; ++i)
                 FloatingPositions[i] = { 150.0f + i * 40.0f, 150.0f + i * 40.0f };
+            FloatingSizes.fill(DEFAULT_FLOATING_PANEL_SIZE);
 
             for (const PanelId id : DEFAULT_PANEL_ORDER)
                 AreaPanels[static_cast<int>(DefaultPanelArea(id))].push_back(id);

@@ -68,8 +68,23 @@ namespace Editor
         }
         out << YAML::EndMap; // floating_positions
 
+        // Floating panel last-known sizes
+        out << YAML::Key << "floating_sizes" << YAML::Value << YAML::BeginMap;
+        for (int i = 0; i < PANEL_ID_COUNT; ++i)
+        {
+            const auto& size = dockLayout.FloatingSizes[i];
+            out << YAML::Key << PanelIdToString(static_cast<PanelId>(i))
+                << YAML::Value << YAML::Flow << YAML::BeginSeq
+                << size.x << size.y
+                << YAML::EndSeq;
+        }
+        out << YAML::EndMap; // floating_sizes
+
         out << YAML::EndMap; // dock_layout
 
+        out << YAML::Key << "floating_views" << YAML::Value << YAML::BeginMap
+            << YAML::Key << "scene" << YAML::Value << SceneViewFloating
+            << YAML::Key << "game" << YAML::Value << GameViewFloating << YAML::EndMap;
         out << YAML::Key << "content_icon_size" << YAML::Value << ContentIconSize;
         out << YAML::Key << "physics_debug" << YAML::Value << PhysicsDebug;
         out << YAML::Key << "transform_tool" << YAML::Value << GetTransformToolName(GizmoTool);
@@ -123,6 +138,14 @@ namespace Editor
             PhysicsDebug = false;
             if (const YAML::Node debug = root["physics_debug"])
                 PhysicsDebug = debug.as<bool>(false);
+            // Missing: docked, as tabs.
+            SceneViewFloating = false;
+            GameViewFloating  = false;
+            if (const YAML::Node views = root["floating_views"]; views && views.IsMap())
+            {
+                SceneViewFloating = views["scene"].as<bool>(false);
+                GameViewFloating  = views["game"].as<bool>(false);
+            }
             // Missing or unknown: Move, in Local axes.
             GizmoTool = TransformTool::Move;
             if (const YAML::Node tool = root["transform_tool"])
@@ -185,6 +208,19 @@ namespace Editor
                                 dockLayout.FloatingPositions[i].y = seq[1].as<float>();
                             }
                         }
+                    }
+                }
+                // Missing, or not a positive size: the default size.
+                if (auto sizes = dock["floating_sizes"])
+                {
+                    for (int i = 0; i < PANEL_ID_COUNT; ++i)
+                    {
+                        const YAML::Node seq = sizes[PanelIdToString(static_cast<PanelId>(i))];
+                        if (!seq || !seq.IsSequence() || seq.size() != 2)
+                            continue;
+                        const PanelPos size = { seq[0].as<float>(0.0f), seq[1].as<float>(0.0f) };
+                        if (size.x > 0.0f && size.y > 0.0f)
+                            dockLayout.FloatingSizes[i] = size;
                     }
                 }
             }

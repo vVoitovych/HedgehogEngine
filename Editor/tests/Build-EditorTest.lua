@@ -11,6 +11,10 @@ project "EditorTest"
         "**.cpp",
         "../Docking/DockLayout.hpp",
         "../Docking/DockLayout.cpp",
+        "../Docking/WindowPlacement.hpp",
+        "../Docking/WindowPlacement.cpp",
+        "../EditorSettings.hpp",
+        "../EditorSettings.cpp", -- the saved floating places, read and written
         "../Panels/EditorIcons.hpp",
         "../Panels/EditorIconNames.cpp",
         "../Panels/EntityIcon.hpp",
@@ -59,6 +63,7 @@ project "EditorTest"
         "HedgehogSettings",
         "HedgehogAnimation", -- the animator controller model the editing works on
         "yaml-cpp",
+        "FileSystem",
         "Logger"
     }
 
