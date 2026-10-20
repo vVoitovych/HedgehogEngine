@@ -126,9 +126,11 @@ namespace Editor
         return true;
     }
 
-    EditorApplication::EditorApplication(HedgehogEngine::WindowMode windowMode, bool recordRecentProject)
+    EditorApplication::EditorApplication(HedgehogEngine::WindowMode windowMode, bool recordRecentProject,
+                                         bool imguiViewports)
         : m_WindowMode(windowMode)
         , m_RecordRecentProject(recordRecentProject)
+        , m_ImGuiViewports(imguiViewports)
     {
     }
 
@@ -227,7 +229,7 @@ namespace Editor
 
         // ImGui's context first: the renderer hands it the device to build its GUI renderer on.
         m_ImGui    = std::make_unique<ImGuiLayer>(m_Context->GetWindowContext().GetWindow(),
-                                                  userDirectory / EditorSettings::IMGUI_INI);
+                                                  userDirectory / EditorSettings::IMGUI_INI, m_ImGuiViewports);
         m_ImGui->LoadFonts(fileSystem);
         m_Renderer = std::make_unique<Renderer::Renderer>(
             m_Context->GetWindowContext().GetWindow(), engineContext.GetFileSystem(),
@@ -359,6 +361,7 @@ namespace Editor
         m_ImGui->EndFrame();
 
         Render();
+        m_ImGui->RenderPlatformWindows();
         return dt;
     }
 

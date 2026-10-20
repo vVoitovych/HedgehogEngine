@@ -28,12 +28,14 @@ namespace Editor
         constexpr const char* UI_FONT_PATH = "engine://Content/Fonts/Karla-Regular.ttf";
     }
 
-    ImGuiLayer::ImGuiLayer(HW::Window& window, const std::filesystem::path& iniPath)
+    ImGuiLayer::ImGuiLayer(HW::Window& window, const std::filesystem::path& iniPath, bool viewports)
         : m_IniPath(iniPath.string())
     {
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
         ImGui::GetIO().IniFilename = m_IniPath.c_str();
+        if (viewports)
+            ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
         Theme::Apply(ImGui::GetStyle());
         ImGui_ImplGlfw_InitForVulkan(window.GetNativeHandle(), true);
     }
@@ -93,6 +95,14 @@ namespace Editor
     {
         ImGui::PopItemFlag();
         ImGui::Render();
+    }
+
+    void ImGuiLayer::RenderPlatformWindows()
+    {
+        if ((ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) == 0)
+            return;
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
     }
 
     void* ImGuiLayer::GetTextureId(const std::string& slot, const RHI::IRHITexture* texture)

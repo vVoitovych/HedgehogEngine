@@ -63,6 +63,12 @@ namespace RHIImGui
                 initInfo.PipelineInfoMain.PipelineRenderingCreateInfo = { VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO };
                 initInfo.PipelineInfoMain.PipelineRenderingCreateInfo.colorAttachmentCount    = 1;
                 initInfo.PipelineInfoMain.PipelineRenderingCreateInfo.pColorAttachmentFormats = &m_ColorFormat;
+                // ImGui's own windows outside the main one (multi-viewports, when the application
+                // turns them on) ask their surfaces for the same format first, so the colours, which
+                // the editor's theme converts for an sRGB target, look the same there.
+                initInfo.PipelineInfoForViewports.PipelineRenderingCreateInfo = { VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO };
+                initInfo.PipelineInfoForViewports.PipelineRenderingCreateInfo.colorAttachmentCount    = 1;
+                initInfo.PipelineInfoForViewports.PipelineRenderingCreateInfo.pColorAttachmentFormats = &m_ColorFormat;
                 ImGui_ImplVulkan_Init(&initInfo);
 
                 VkSamplerCreateInfo samplerInfo{};

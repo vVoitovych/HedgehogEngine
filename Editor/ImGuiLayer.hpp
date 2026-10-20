@@ -50,7 +50,10 @@ namespace Editor
     {
     public:
         // iniPath is where ImGui keeps its window state: the editor's per-user folder, never a project.
-        ImGuiLayer(HW::Window& window, const std::filesystem::path& iniPath);
+        // viewports: ImGui windows may leave the main window as OS windows of their own
+        // (ImGuiConfigFlags_ViewportsEnable; --imgui-viewports, for testing until the editor's
+        // layout works in desktop coordinates).
+        ImGuiLayer(HW::Window& window, const std::filesystem::path& iniPath, bool viewports = false);
         ~ImGuiLayer();
 
         ImGuiLayer(const ImGuiLayer&)            = delete;
@@ -73,6 +76,10 @@ namespace Editor
         void BeginFrame();
         // Ends it and builds the draw data the UiCallback records.
         void EndFrame();
+        // With viewports on, updates, renders and presents the ImGui windows outside the main one.
+        // Call once a frame, after the frame EndFrame built has been submitted (RenderFrame), so they
+        // sample textures the frame has finished writing.
+        void RenderPlatformWindows();
 
         // An ImTextureID for texture, shown under slot ("scene", "game"). Stable while the texture is;
         // nullptr for no texture.
