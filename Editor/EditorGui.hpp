@@ -121,6 +121,8 @@ namespace Editor
         // the panel has focus (gained by a press on the image, lost by a press anywhere else or by
         // hiding the tab) and no text field is being edited. No area while the tab is hidden.
         HInput::GameInputRegion GetGameInputRegion() const;
+        // The main window's corner in ImGui's coordinates, which the regions are taken back from.
+        [[nodiscard]] static HM::Vector2 MainWindowOrigin();
 
         // The Scene tab's image as the editor camera's input region, by the same rules: the pointer
         // while the image is hovered (a drag that began on it keeps its button), the keyboard while

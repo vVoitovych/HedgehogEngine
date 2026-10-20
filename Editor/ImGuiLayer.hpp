@@ -51,8 +51,8 @@ namespace Editor
     public:
         // iniPath is where ImGui keeps its window state: the editor's per-user folder, never a project.
         // viewports: ImGui windows may leave the main window as OS windows of their own
-        // (ImGuiConfigFlags_ViewportsEnable; --imgui-viewports, for testing until the editor's
-        // layout works in desktop coordinates).
+        // (ImGuiConfigFlags_ViewportsEnable; the interactive editor's default, off with
+        // --no-imgui-viewports and in the automated runs).
         ImGuiLayer(HW::Window& window, const std::filesystem::path& iniPath, bool viewports = false);
         ~ImGuiLayer();
 

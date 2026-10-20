@@ -31,13 +31,19 @@ namespace Editor
     {
         m_Icons = icons;
 
-        const ImGuiIO& io      = ImGui::GetIO();
-        const ImVec2   display = io.DisplaySize;
+        // The workspace fills the main window. With ImGui's viewports on, ImGui's coordinates are
+        // the desktop's, so the layout, computed from the window's corner, is placed at the main
+        // viewport's position, and the mouse is taken back to the window's coordinates.
+        const ImGuiIO&        io       = ImGui::GetIO();
+        const ImGuiViewport*  viewport = ImGui::GetMainViewport();
+        const ImVec2          display  = viewport->Size;
+        m_Origin                       = viewport->Pos;
 
         // Resolve pending drag-drop before any window is rendered this frame
         if (m_DraggingPanel.has_value() && ImGui::IsMouseReleased(ImGuiMouseButton_Left))
         {
-            const DockArea target = HitTestAreas(io.MousePos, display, menuBarHeight);
+            const ImVec2   mouse  = { io.MousePos.x - m_Origin.x, io.MousePos.y - m_Origin.y };
+            const DockArea target = HitTestAreas(mouse, display, menuBarHeight);
             if (target != m_DraggingFromArea)
                 m_Layout.MovePanel(m_DraggingPanel.value(), target);
             m_DraggingPanel.reset();
@@ -52,8 +58,9 @@ namespace Editor
             return ImVec2(rect.Width, rect.Height);
         };
 
-        // ── Full-workspace host window ────────────────────────────────────────
-        ImGui::SetNextWindowPos({ 0.0f, menuBarHeight }, ImGuiCond_Always);
+        // ── Full-workspace host window, always in the main window ────────────
+        ImGui::SetNextWindowViewport(viewport->ID);
+        ImGui::SetNextWindowPos({ m_Origin.x, m_Origin.y + menuBarHeight }, ImGuiCond_Always);
         ImGui::SetNextWindowSize({ display.x, std::max(display.y - menuBarHeight, 0.0f) }, ImGuiCond_Always);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 0.0f, 0.0f });
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,   { 0.0f, 0.0f });
@@ -276,8 +283,10 @@ namespace Editor
             return;
 
         const ImVec2 mousePos = ImGui::GetIO().MousePos;
+        const ImVec2 mouse    = { mousePos.x - m_Origin.x, mousePos.y - m_Origin.y };
 
-        ImGui::GetForegroundDrawList()->AddText(
+        // On the main window's foreground: the zones are its areas.
+        ImGui::GetForegroundDrawList(ImGui::GetMainViewport())->AddText(
             { mousePos.x + 14.0f, mousePos.y },
             ImGui::GetColorU32(Theme::TEXT),
             PanelName(m_DraggingPanel.value()));
@@ -290,15 +299,15 @@ namespace Editor
                 continue;
 
             const DockRect rect    = GetAreaRect(geometry, targetArea);
-            const ImVec2   bMin    = { rect.X, rect.Y };
-            const ImVec2   bMax    = { rect.X + rect.Width, rect.Y + rect.Height };
-            const bool     hovered = IsPointInRect(mousePos, bMin, bMax);
+            const bool     hovered = IsPointInRect(mouse, { rect.X, rect.Y }, { rect.X + rect.Width, rect.Y + rect.Height });
+            const ImVec2   bMin    = { m_Origin.x + rect.X, m_Origin.y + rect.Y };
+            const ImVec2   bMax    = { bMin.x + rect.Width, bMin.y + rect.Height };
 
             const ImU32 fill    = ImGui::GetColorU32(hovered ? Theme::ACCENT_FILL : Theme::WithAlpha(Theme::TEXT, 0.06f));
             const ImU32 outline = ImGui::GetColorU32(hovered ? Theme::ACCENT : Theme::WithAlpha(Theme::TEXT_MUTED, 0.5f));
 
-            ImGui::GetForegroundDrawList()->AddRectFilled(bMin, bMax, fill, 4.0f);
-            ImGui::GetForegroundDrawList()->AddRect(bMin, bMax, outline, 4.0f, 0, 2.0f);
+            ImGui::GetForegroundDrawList(ImGui::GetMainViewport())->AddRectFilled(bMin, bMax, fill, 4.0f);
+            ImGui::GetForegroundDrawList(ImGui::GetMainViewport())->AddRect(bMin, bMax, outline, 4.0f, 0, 2.0f);
         }
     }
 
