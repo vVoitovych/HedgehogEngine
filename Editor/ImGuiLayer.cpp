@@ -84,10 +84,14 @@ namespace Editor
         m_Backend->NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+        // Since ImGui 1.92.9 a value typed into a drag, slider or input field is written only when
+        // it is validated; the editor keeps writing it as it is typed, as before.
+        ImGui::PushItemFlag(ImGuiItemFlags_LiveEditOnInputScalar, true);
     }
 
     void ImGuiLayer::EndFrame()
     {
+        ImGui::PopItemFlag();
         ImGui::Render();
     }
 

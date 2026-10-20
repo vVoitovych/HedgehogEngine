@@ -4,6 +4,7 @@
 [submodule "ThirdParty/ImGui/imgui"]
 	path = ThirdParty/ImGui/imgui
 	url = https://github.com/vVoitovych/imgui.git
+	branch = docking
 [submodule "ThirdParty/YamlCpp/yaml-cpp"]
 	path = ThirdParty/YamlCpp/yaml-cpp
 	url = https://github.com/vVoitovych/yaml-cpp.git
