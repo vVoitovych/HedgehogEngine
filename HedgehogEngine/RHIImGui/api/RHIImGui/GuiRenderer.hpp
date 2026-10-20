@@ -15,6 +15,12 @@ namespace RHI
 // ImGui's GPU renderer on top of the RHI. It lives outside RHI so that RHI links no UI library, and
 // outside HedgehogRenderer so that the renderer never knows the UI: only the application (the
 // Editor) uses it, recording into the colour target the result view's Ui pass hands it.
+//
+// With ImGuiConfigFlags_ViewportsEnable, ImGui's Vulkan backend also creates, renders and presents a
+// window of its own for every ImGui window outside the main one (a surface and swapchain each, in
+// ColorFormat, on the device's graphics queue); the application drives them with
+// ImGui::UpdatePlatformWindows and RenderPlatformWindowsDefault after its frame is submitted, and
+// they go with the renderer.
 namespace RHIImGui
 {
     // ColorFormat is the format of every texture Render() draws into: the renderer's pipeline is

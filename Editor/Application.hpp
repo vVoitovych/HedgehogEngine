@@ -53,8 +53,9 @@ namespace Editor
     public:
         // recordRecentProject: the interactive editor puts its project at the front of the recent
         // list; automated runs (--smoke-test, --benchmark) leave the list as it is.
+        // imguiViewports: ImGui windows may leave the main window (--imgui-viewports; ImGuiLayer).
         explicit EditorApplication(HedgehogEngine::WindowMode windowMode = HedgehogEngine::WindowMode::Windowed,
-                                   bool recordRecentProject = false);
+                                   bool recordRecentProject = false, bool imguiViewports = false);
         ~EditorApplication();
 
         EditorApplication(const EditorApplication&)            = delete;
@@ -87,6 +88,7 @@ namespace Editor
     private:
         HedgehogEngine::WindowMode m_WindowMode;
         bool                       m_RecordRecentProject = false;
+        bool                       m_ImGuiViewports      = false;
         RunResult                  m_Result;
 
         std::unique_ptr<HedgehogEngine::Engine>   m_Context;
