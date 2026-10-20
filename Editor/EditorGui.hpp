@@ -121,8 +121,11 @@ namespace Editor
         // the panel has focus (gained by a press on the image, lost by a press anywhere else or by
         // hiding the tab) and no text field is being edited. No area while the tab is hidden.
         HInput::GameInputRegion GetGameInputRegion() const;
-        // The main window's corner in ImGui's coordinates, which the regions are taken back from.
-        [[nodiscard]] static HM::Vector2 MainWindowOrigin();
+        // The GLFW window the Game and the Scene views are shown in (a GLFWwindow*), as of the last
+        // Draw: nullptr for the main window. Their input regions are in that window's coordinates,
+        // so its input is the one to read.
+        [[nodiscard]] void* GetGameInputWindow() const { return m_GameWindow.PlatformHandle; }
+        [[nodiscard]] void* GetSceneInputWindow() const { return m_SceneWindow.PlatformHandle; }
 
         // The Scene tab's image as the editor camera's input region, by the same rules: the pointer
         // while the image is hovered (a drag that began on it keeps its button), the keyboard while
@@ -178,7 +181,19 @@ namespace Editor
         bool DrawSceneGizmo(HedgehogEngine::Engine& context, const HM::Vector2& imageMin, const HM::Vector2& imageSize);
         // The icon's ImGui texture id, or nullptr when it did not load.
         [[nodiscard]] void* GetIcon(EditorIcon icon) const { return m_ViewportImages.EditorIcons[static_cast<size_t>(icon)]; }
+        // A window a Scene or Game view is shown in: its corner in ImGui's coordinates (the
+        // desktop's with viewports on) and, outside the main window, its GLFWwindow*.
+        struct ViewWindow
+        {
+            HM::Vector2 Origin         = HM::Vector2(0.0f, 0.0f);
+            void*       PlatformHandle = nullptr;
+        };
+        [[nodiscard]] static ViewWindow CurrentViewWindow();
         void DrawSceneViewContent(HedgehogEngine::Engine& context);
+        void DrawFloatingViews(HedgehogEngine::Engine& context);
+        void DrawSceneImage(HedgehogEngine::Engine& context);
+        void DrawGameImage();
+        void UpdateViewFocus();
         void DrawContentPanel(HedgehogEngine::Engine& context);
         // What opening a Content panel file means, by type (EditorGuiContent.cpp): a scene
         // loads; a mesh, material, texture or script goes onto the selected entity; a shader,
@@ -293,6 +308,14 @@ namespace Editor
         HM::Vector2 m_GameImageSize = HM::Vector2(0.0f, 0.0f);
         bool     m_GameViewHovered  = false;
         bool     m_GameViewFocused  = false;
+        ViewWindow m_SceneWindow;
+        ViewWindow m_GameWindow;
+        // Floating views are windows of their own instead of tabs of the centre area.
+        bool m_SceneFloating = false;
+        bool m_GameFloating  = false;
+        // A view docked back is the tab shown, the next frame.
+        enum class ViewTab { None, Scene, Game };
+        ViewTab m_SelectViewTab = ViewTab::None;
         std::optional<ViewportPoint> m_ScenePick;
 
         std::optional<ECS::Entity>             m_SelectedEntity;

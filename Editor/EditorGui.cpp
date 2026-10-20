@@ -283,6 +283,8 @@ namespace Editor
             [this, &context]() { DrawToolbarContent(context); },
             [this, &context](PanelId panel) { DrawPanelContent(panel, context); },
             menuH, panelIcons);
+        DrawFloatingViews(context);
+        UpdateViewFocus();
 
         const auto& fs = context.GetEngineContext().GetFileSystem();
         DrawSettingsWindow(context);
@@ -337,8 +339,15 @@ namespace Editor
         }
     }
 
+    // The Scene and Game views as tabs of the centre area, those not floating; a tab's right-click
+    // menu floats it.
     void EditorGui::DrawSceneViewContent(HedgehogEngine::Engine& context)
     {
+        if (m_SceneFloating && m_GameFloating)
+        {
+            ImGui::TextDisabled("The Scene and Game views are floating; close their windows to dock them here.");
+            return;
+        }
         if (!ImGui::BeginTabBar("##SceneGameTabs"))
             return;
 
@@ -350,79 +359,141 @@ namespace Editor
             DrawIcon(*ImGui::GetWindowDrawList(), GetIcon(icon), ImVec2(min.x + ImGui::GetStyle().FramePadding.x, y),
                      ICON_SIZE_SMALL, ImGui::GetColorU32(ImGuiCol_Text));
         };
+        const auto floatMenu = [](const char* id, bool& floating)
+        {
+            if (ImGui::BeginPopupContextItem(id))
+            {
+                if (ImGui::MenuItem("Float"))
+                    floating = true;
+                ImGui::EndPopup();
+            }
+        };
 
         // Only the visible tab gets a size: the hidden one stays 0x0, so its view renders nothing.
-        const bool sceneOpen = ImGui::BeginTabItem("      Scene###Scene");
-        drawTabIcon(EditorIcon::Scene);
-        if (sceneOpen)
+        if (!m_SceneFloating)
         {
-            const ImVec2 avail = ImGui::GetContentRegionAvail();
-            m_SceneViewWidth  = static_cast<uint32_t>(std::max(1.0f, avail.x));
-            m_SceneViewHeight = static_cast<uint32_t>(std::max(1.0f, avail.y));
-
-            if (m_ViewportImages.Scene)
+            const bool sceneOpen = ImGui::BeginTabItem("      Scene###Scene", nullptr,
+                                                        m_SelectViewTab == ViewTab::Scene ? ImGuiTabItemFlags_SetSelected : 0);
+            drawTabIcon(EditorIcon::Scene);
+            floatMenu("##SceneTabMenu", m_SceneFloating);
+            if (sceneOpen)
             {
-                ImGui::Image(m_ViewportImages.Scene, avail);
-                m_SceneViewHovered = ImGui::IsItemHovered();
-                m_SceneImageMin    = HM::Vector2(ImGui::GetItemRectMin().x, ImGui::GetItemRectMin().y);
-                m_SceneImageSize   = HM::Vector2(ImGui::GetItemRectSize().x, ImGui::GetItemRectSize().y);
-
-                // The selection's handles, over the image; one under the pointer takes it from the
-                // camera and from picking.
-                m_SceneGizmoActive = DrawSceneGizmo(context, m_SceneImageMin, m_SceneImageSize);
-
-                // A click, not the end of a camera drag or on a handle.
-                constexpr float CLICK_DRAG_PIXELS = 4.0f;
-                const ImGuiIO&  io = ImGui::GetIO();
-                if (m_SceneViewHovered && !m_SceneGizmoActive && ImGui::IsMouseReleased(ImGuiMouseButton_Left)
-                    && io.MouseDragMaxDistanceSqr[ImGuiMouseButton_Left] < CLICK_DRAG_PIXELS * CLICK_DRAG_PIXELS)
-                {
-                    const ImVec2 origin = ImGui::GetItemRectMin();
-                    const ImVec2 size   = ImGui::GetItemRectSize();
-                    m_ScenePick = ViewportPoint{ (io.MousePos.x - origin.x) / size.x, (io.MousePos.y - origin.y) / size.y };
-                }
+                DrawSceneImage(context);
+                ImGui::EndTabItem();
             }
-            // Overlays over the image: the axes as the editor camera sees them, and the pass count.
-            if (m_ViewportImages.Scene)
-            {
-                const ImVec2 imageMin  = ImGui::GetItemRectMin();
-                const ImVec2 imageSize = ImGui::GetItemRectSize();
-                ImDrawList&  drawList  = *ImGui::GetWindowDrawList();
-                DrawAxisGizmo(drawList, imageMin, imageSize, context.GetEngineContext().GetCamera().GetViewMatrix());
-                if (m_ViewportImages.GraphPassCount > 0)
-                    DrawPassCount(drawList, imageMin, imageSize, m_ViewportImages.GraphPassCount);
-            }
-
-            ImGui::EndTabItem();
         }
-
-        const bool gameOpen = ImGui::BeginTabItem("      Game###Game");
-        drawTabIcon(EditorIcon::Game);
-        if (gameOpen)
+        if (!m_GameFloating)
         {
-            const ImVec2 avail = ImGui::GetContentRegionAvail();
-            m_GameViewWidth  = static_cast<uint32_t>(std::max(1.0f, avail.x));
-            m_GameViewHeight = static_cast<uint32_t>(std::max(1.0f, avail.y));
-
-            if (m_ViewportImages.Game)
+            const bool gameOpen = ImGui::BeginTabItem("      Game###Game", nullptr,
+                                                       m_SelectViewTab == ViewTab::Game ? ImGuiTabItemFlags_SetSelected : 0);
+            drawTabIcon(EditorIcon::Game);
+            floatMenu("##GameTabMenu", m_GameFloating);
+            if (gameOpen)
             {
-                ImGui::Image(m_ViewportImages.Game, avail);
-                m_GameImageMin    = HM::Vector2(ImGui::GetItemRectMin().x, ImGui::GetItemRectMin().y);
-                m_GameImageSize   = HM::Vector2(ImGui::GetItemRectSize().x, ImGui::GetItemRectSize().y);
-                m_GameViewHovered = ImGui::IsItemHovered();
+                DrawGameImage();
+                ImGui::EndTabItem();
             }
-            else
-            {
-                ImGui::TextDisabled("No camera is drawn here: add an enabled camera to the scene.");
-            }
-
-            ImGui::EndTabItem();
         }
-
         ImGui::EndTabBar();
+        m_SelectViewTab = ViewTab::None;
+    }
 
-        // A press focuses a panel when it lands on its image, and unfocuses it anywhere else; a hidden
-        // panel has no focus.
+    // A floating Scene or Game view is a window of its own, which may leave the main window; closing
+    // it docks the view back as a tab.
+    void EditorGui::DrawFloatingViews(HedgehogEngine::Engine& context)
+    {
+        const auto floatingWindow = [this](const char* title, bool& floating, ViewTab tab, const auto& drawImage)
+        {
+            if (!floating)
+                return;
+            ImGui::SetNextWindowSize({ 640.0f, 400.0f }, ImGuiCond_FirstUseEver);
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 0.0f, 0.0f });
+            bool open = true;
+            if (ImGui::Begin(title, &open, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
+                drawImage();
+            ImGui::End();
+            ImGui::PopStyleVar();
+            if (!open) // docked back: shown as the selected tab
+            {
+                floating        = false;
+                m_SelectViewTab = tab;
+            }
+        };
+        floatingWindow("Scene###FloatingSceneView", m_SceneFloating, ViewTab::Scene, [&] { DrawSceneImage(context); });
+        floatingWindow("Game###FloatingGameView", m_GameFloating, ViewTab::Game, [&] { DrawGameImage(); });
+    }
+
+    // The window the current ImGui window is in: its corner in ImGui's coordinates and, outside the
+    // main window, its own GLFW window.
+    EditorGui::ViewWindow EditorGui::CurrentViewWindow()
+    {
+        const ImGuiViewport* viewport = ImGui::GetWindowViewport();
+        ViewWindow           window;
+        window.Origin = HM::Vector2(viewport->Pos.x, viewport->Pos.y);
+        if (viewport != ImGui::GetMainViewport())
+            window.PlatformHandle = viewport->PlatformHandle;
+        return window;
+    }
+
+    void EditorGui::DrawSceneImage(HedgehogEngine::Engine& context)
+    {
+        const ImVec2 avail = ImGui::GetContentRegionAvail();
+        m_SceneViewWidth  = static_cast<uint32_t>(std::max(1.0f, avail.x));
+        m_SceneViewHeight = static_cast<uint32_t>(std::max(1.0f, avail.y));
+        if (!m_ViewportImages.Scene)
+            return;
+
+        ImGui::Image(m_ViewportImages.Scene, avail);
+        m_SceneViewHovered = ImGui::IsItemHovered();
+        m_SceneImageMin    = HM::Vector2(ImGui::GetItemRectMin().x, ImGui::GetItemRectMin().y);
+        m_SceneImageSize   = HM::Vector2(ImGui::GetItemRectSize().x, ImGui::GetItemRectSize().y);
+        m_SceneWindow      = CurrentViewWindow();
+
+        // A click, not the end of a camera drag or on a handle; read before the gizmo, which
+        // draws items of its own.
+        const ImVec2 imageMin  = ImGui::GetItemRectMin();
+        const ImVec2 imageSize = ImGui::GetItemRectSize();
+
+        // The selection's handles, over the image; one under the pointer takes it from the
+        // camera and from picking.
+        m_SceneGizmoActive = DrawSceneGizmo(context, m_SceneImageMin, m_SceneImageSize);
+
+        constexpr float CLICK_DRAG_PIXELS = 4.0f;
+        const ImGuiIO&  io = ImGui::GetIO();
+        if (m_SceneViewHovered && !m_SceneGizmoActive && ImGui::IsMouseReleased(ImGuiMouseButton_Left)
+            && io.MouseDragMaxDistanceSqr[ImGuiMouseButton_Left] < CLICK_DRAG_PIXELS * CLICK_DRAG_PIXELS)
+        {
+            m_ScenePick = ViewportPoint{ (io.MousePos.x - imageMin.x) / imageSize.x, (io.MousePos.y - imageMin.y) / imageSize.y };
+        }
+
+        // Overlays over the image: the axes as the editor camera sees them, and the pass count.
+        ImDrawList& drawList = *ImGui::GetWindowDrawList();
+        DrawAxisGizmo(drawList, imageMin, imageSize, context.GetEngineContext().GetCamera().GetViewMatrix());
+        if (m_ViewportImages.GraphPassCount > 0)
+            DrawPassCount(drawList, imageMin, imageSize, m_ViewportImages.GraphPassCount);
+    }
+
+    void EditorGui::DrawGameImage()
+    {
+        const ImVec2 avail = ImGui::GetContentRegionAvail();
+        m_GameViewWidth  = static_cast<uint32_t>(std::max(1.0f, avail.x));
+        m_GameViewHeight = static_cast<uint32_t>(std::max(1.0f, avail.y));
+        if (!m_ViewportImages.Game)
+        {
+            ImGui::TextDisabled("No camera is drawn here: add an enabled camera to the scene.");
+            return;
+        }
+        ImGui::Image(m_ViewportImages.Game, avail);
+        m_GameImageMin    = HM::Vector2(ImGui::GetItemRectMin().x, ImGui::GetItemRectMin().y);
+        m_GameImageSize   = HM::Vector2(ImGui::GetItemRectSize().x, ImGui::GetItemRectSize().y);
+        m_GameViewHovered = ImGui::IsItemHovered();
+        m_GameWindow      = CurrentViewWindow();
+    }
+
+    // A press focuses a view when it lands on its image, and unfocuses it anywhere else, in any
+    // window; a hidden view has no focus.
+    void EditorGui::UpdateViewFocus()
+    {
         const bool anyPress = ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right) ||
                               ImGui::IsMouseClicked(ImGuiMouseButton_Middle);
         if (anyPress)
@@ -437,17 +508,10 @@ namespace Editor
         HandleTransformToolKeys();
     }
 
-    // ImGui's coordinates are the desktop's with its viewports on: the main window's corner there.
-    HM::Vector2 EditorGui::MainWindowOrigin()
-    {
-        const ImVec2 pos = ImGui::GetMainViewport()->Pos;
-        return HM::Vector2(pos.x, pos.y);
-    }
-
     HInput::GameInputRegion EditorGui::GetGameInputRegion() const
     {
         HInput::GameInputRegion region;
-        region.Origin          = m_GameImageMin - MainWindowOrigin();
+        region.Origin          = m_GameImageMin - m_GameWindow.Origin;
         region.Size            = m_GameImageSize;
         region.PixelSize       = HM::Vector2(static_cast<float>(m_GameViewWidth), static_cast<float>(m_GameViewHeight));
         region.PointerEnabled  = m_GameViewHovered;
@@ -458,7 +522,7 @@ namespace Editor
     HInput::GameInputRegion EditorGui::GetSceneInputRegion() const
     {
         HInput::GameInputRegion region;
-        region.Origin          = m_SceneImageMin - MainWindowOrigin();
+        region.Origin          = m_SceneImageMin - m_SceneWindow.Origin;
         region.Size            = m_SceneImageSize;
         region.PixelSize       = m_SceneImageSize; // the camera turns by window pixels, as it always has
         region.PointerEnabled  = m_SceneViewHovered && !m_SceneGizmoActive; // a handle's drag is not the camera's

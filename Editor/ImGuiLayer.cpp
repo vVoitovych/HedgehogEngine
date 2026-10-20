@@ -36,6 +36,9 @@ namespace Editor
         ImGui::GetIO().IniFilename = m_IniPath.c_str();
         if (viewports)
             ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+        // A window moves by its title bar only: a drag on a floating Scene or Game view is the view's
+        // (turning the camera), not a move of its window.
+        ImGui::GetIO().ConfigWindowsMoveFromTitleBarOnly = true;
         Theme::Apply(ImGui::GetStyle());
         ImGui_ImplGlfw_InitForVulkan(window.GetNativeHandle(), true);
     }
