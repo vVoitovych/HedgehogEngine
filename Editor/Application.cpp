@@ -21,7 +21,9 @@
 #include "HedgehogRenderer/Renderer.hpp"
 #include "HedgehogScripting/api/ScriptDebugger.hpp"
 #include "HedgehogScripting/api/ScriptSystem.hpp"
+#include "HedgehogEngine/HedgehogWindow/api/RawInputEvents.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
+#include "HedgehogEngine/HedgehogWindow/api/WindowPolling.hpp"
 
 #include "ECS/api/components/Hierarchy.hpp"
 #include "FileSystem/api/FileSystem.hpp"
@@ -331,17 +333,45 @@ namespace Editor
         Cleanup();
     }
 
+    const HW::RawInput& EditorApplication::ViewInput(void* window, OutsideInput& outside, HInput::GameInputGate& gate,
+                                                     const HW::RawInput& mainInput)
+    {
+        // A view that moved to another window starts that window's input afresh, and its gate with
+        // it: a press held across the move belongs to neither.
+        if (window != outside.Window)
+        {
+            outside = OutsideInput{ window, HW::RawInput{} };
+            gate    = HInput::GameInputGate{};
+        }
+        if (!window)
+            return mainInput;
+
+        HW::BeginInputFrame(outside.Raw);
+        HW::ApplyPolledWindowState(outside.Raw, HW::PollWindowState(window));
+        // Scroll cannot be polled: ImGui hears the window's, while the cursor is over it.
+        if (outside.Raw.CursorInside)
+        {
+            const ImGuiIO& io = ImGui::GetIO();
+            HW::ApplyScrollEvent(outside.Raw, io.MouseWheelH, io.MouseWheel);
+        }
+        outside.Raw.Gamepad = mainInput.Gamepad; // the pad is the process's, not a window's
+        return outside.Raw;
+    }
+
     float EditorApplication::StepFrame()
     {
         const float dt = GetFrameTime();
         m_Context->GetWindowContext().HandleInput();
         // The game sees the Game tab's part of the window's input, the editor camera the Scene tab's
         // (both panels as of the last frame).
+        // A view floating outside the main window reads that window's input instead.
         const HW::RawInput& raw = m_Context->GetWindowContext().GetWindow().GetRawInput();
         auto&               engineContext = m_Context->GetEngineContext();
         const HInput::GameInputRegion gameRegion = m_EditorGui->GetGameInputRegion();
-        engineContext.UpdateGameInput(HInput::MakeGameInput(raw, gameRegion, m_GameInputGate), gameRegion.PixelSize);
-        engineContext.UpdateEditorInput(HInput::MakeGameInput(raw, m_EditorGui->GetSceneInputRegion(), m_SceneInputGate));
+        const HW::RawInput& gameRaw  = ViewInput(m_EditorGui->GetGameInputWindow(), m_GameOutsideInput, m_GameInputGate, raw);
+        const HW::RawInput& sceneRaw = ViewInput(m_EditorGui->GetSceneInputWindow(), m_SceneOutsideInput, m_SceneInputGate, raw);
+        engineContext.UpdateGameInput(HInput::MakeGameInput(gameRaw, gameRegion, m_GameInputGate), gameRegion.PixelSize);
+        engineContext.UpdateEditorInput(HInput::MakeGameInput(sceneRaw, m_EditorGui->GetSceneInputRegion(), m_SceneInputGate));
         if (m_ScriptDebugger)
             m_ScriptDebugger->Pump();
         // A script saved on disk takes effect without leaving Play (polled at most once a second).

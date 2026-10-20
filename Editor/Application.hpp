@@ -6,6 +6,7 @@
 #include "HedgehogEngine/api/WindowContext.hpp"
 #include "HedgehogExtract/api/MeshBounds.hpp"
 #include "HedgehogExtract/api/RenderScene.hpp"
+#include "HedgehogEngine/HedgehogWindow/api/RawInput.hpp"
 #include "HedgehogInput/api/GameInputRegion.hpp"
 #include "HedgehogRenderer/Views/View.hpp"
 
@@ -109,6 +110,18 @@ namespace Editor
         HInput::GameInputGate m_GameInputGate;
         // And those the editor camera holds from presses that began on the Scene tab.
         HInput::GameInputGate m_SceneInputGate;
+        // A view shown outside the main window reads that window's polled input (HW::PollWindowState),
+        // kept from frame to frame for its deltas; Window is the GLFWwindow* it was polled from.
+        struct OutsideInput
+        {
+            void*        Window = nullptr;
+            HW::RawInput Raw;
+        };
+        OutsideInput m_GameOutsideInput;
+        OutsideInput m_SceneOutsideInput;
+        // The input a view's region reads: the main window's, or its outside window's, polled now.
+        const HW::RawInput& ViewInput(void* window, OutsideInput& outside, HInput::GameInputGate& gate,
+                                      const HW::RawInput& mainInput);
 
         // RENDERING.md section 7: the scene extracted each frame, the scene view (the editor camera
         // into the scene panel's target) and the result view (the editor's UI into the window,
