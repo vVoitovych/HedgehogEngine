@@ -20,7 +20,8 @@ namespace Editor
 
     // Manages dockable panel layout: area sizing, tab bars, drag-to-dock.
     // Call Draw() each ImGui frame; it renders the full workspace as a child-window
-    // tree and invokes drawFn for each visible panel.
+    // tree and invokes drawFn for each visible panel. The docked areas always stay in the main
+    // window; with ImGui's viewports on, a floating panel may leave it as an OS window of its own.
     class DockSystem
     {
     public:
@@ -58,5 +59,6 @@ namespace Editor
         std::optional<PanelId> m_DraggingPanel;
         DockArea               m_DraggingFromArea = DockArea::Left;
         DockPanelIcons         m_Icons;
+        ImVec2                 m_Origin = { 0.0f, 0.0f }; // the main window's corner in ImGui's coordinates
     };
 }

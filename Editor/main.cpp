@@ -169,11 +169,11 @@ int main(int argc, char* argv[])
     // recent; the automated runs above keep the fixed-size window their results are defined at
     // (PERFORMANCE.md). A project chosen from the File menu ends the run: the editor is torn down
     // as on exit and built again on it, in this process (a relaunch would detach a debugger).
-    // --imgui-viewports: ImGui windows may leave the main window, for testing the GUI renderer's
-    // own windows until the editor's layout works in desktop coordinates.
-    bool imguiViewports = false;
+    // Floating panels and tool windows may leave the main window as OS windows of their own
+    // (ImGui's viewports); --no-imgui-viewports keeps them inside it.
+    bool imguiViewports = true;
     for (int i = 1; i < argc; ++i)
-        imguiViewports = imguiViewports || std::strcmp(argv[i], "--imgui-viewports") == 0;
+        imguiViewports = imguiViewports && std::strcmp(argv[i], "--no-imgui-viewports") != 0;
     for (;;)
     {
         Editor::RunResult result;

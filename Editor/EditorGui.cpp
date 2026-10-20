@@ -437,10 +437,17 @@ namespace Editor
         HandleTransformToolKeys();
     }
 
+    // ImGui's coordinates are the desktop's with its viewports on: the main window's corner there.
+    HM::Vector2 EditorGui::MainWindowOrigin()
+    {
+        const ImVec2 pos = ImGui::GetMainViewport()->Pos;
+        return HM::Vector2(pos.x, pos.y);
+    }
+
     HInput::GameInputRegion EditorGui::GetGameInputRegion() const
     {
         HInput::GameInputRegion region;
-        region.Origin          = m_GameImageMin;
+        region.Origin          = m_GameImageMin - MainWindowOrigin();
         region.Size            = m_GameImageSize;
         region.PixelSize       = HM::Vector2(static_cast<float>(m_GameViewWidth), static_cast<float>(m_GameViewHeight));
         region.PointerEnabled  = m_GameViewHovered;
@@ -451,7 +458,7 @@ namespace Editor
     HInput::GameInputRegion EditorGui::GetSceneInputRegion() const
     {
         HInput::GameInputRegion region;
-        region.Origin          = m_SceneImageMin;
+        region.Origin          = m_SceneImageMin - MainWindowOrigin();
         region.Size            = m_SceneImageSize;
         region.PixelSize       = m_SceneImageSize; // the camera turns by window pixels, as it always has
         region.PointerEnabled  = m_SceneViewHovered && !m_SceneGizmoActive; // a handle's drag is not the camera's
