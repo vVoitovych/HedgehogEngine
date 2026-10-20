@@ -247,9 +247,12 @@ namespace Editor
         {
             const PanelId pid    = floatingPanels[i];
             auto&         pos    = m_Layout.FloatingPositions[static_cast<int>(pid)];
+            auto&         size   = m_Layout.FloatingSizes[static_cast<int>(pid)];
 
+            // Where it was left, on the desktop with viewports on (so possibly outside the main
+            // window), and as large as it was left.
             ImGui::SetNextWindowPos({ pos.x, pos.y }, ImGuiCond_Appearing);
-            ImGui::SetNextWindowSize({ 420.0f, 320.0f }, ImGuiCond_Appearing);
+            ImGui::SetNextWindowSize({ size.x, size.y }, ImGuiCond_Appearing);
 
             bool open = true;
             const bool visible = ImGui::Begin(PanelName(pid), &open,
@@ -260,6 +263,8 @@ namespace Editor
             const bool   posChanged = (newPos.x != pos.x || newPos.y != pos.y);
             pos.x = newPos.x;
             pos.y = newPos.y;
+            const ImVec2 newSize = ImGui::GetWindowSize();
+            size                 = { newSize.x, newSize.y };
 
             if (posChanged && ImGui::IsMouseDown(ImGuiMouseButton_Left))
             {

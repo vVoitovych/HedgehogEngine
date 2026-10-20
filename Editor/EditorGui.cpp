@@ -82,6 +82,7 @@
 #include "Logger/api/Logger.hpp"
 
 #include "imgui.h"
+#include "imgui_internal.h"
 
 #include <algorithm>
 #include <string>
@@ -210,6 +211,8 @@ namespace Editor
             && m_Settings.dockLayout.IsValid())
             m_DockSystem.GetLayout() = m_Settings.dockLayout;
         m_ContentPanel->SetIconSize(m_Settings.ContentIconSize);
+        m_SceneFloating = m_Settings.SceneViewFloating;
+        m_GameFloating  = m_Settings.GameViewFloating;
         // The open project goes to the front of the recent list, keeping the scene it last had open.
         // Entries whose folder is gone stay, shown disabled, until File > Recent Projects clears them.
         m_ProjectRoot = FS::GetProjectRootDirectory();
@@ -244,6 +247,8 @@ namespace Editor
     {
         m_Settings.dockLayout      = m_DockSystem.GetLayout();
         m_Settings.ContentIconSize = m_ContentPanel->GetIconSize();
+        m_Settings.SceneViewFloating = m_SceneFloating;
+        m_Settings.GameViewFloating  = m_GameFloating;
         // m_FileSystem is non-owning; the engine context (and thus FileSystemManager) is still
         // alive here because EditorGui is destroyed first among the Application's members.
         if (m_FileSystem)
@@ -303,6 +308,36 @@ namespace Editor
 
         DrawOpenSceneDropPopup(context);
         ApplyAssetDrop(context);
+        KeepAppearingWindowsOnScreen();
+    }
+
+    // A window that appears this frame (every window at start, a tool or panel when opened) where
+    // no monitor shows it, saved on a monitor since unplugged, moves onto the main window's monitor.
+    void EditorGui::KeepAppearingWindowsOnScreen()
+    {
+        const ImGuiPlatformIO& platform = ImGui::GetPlatformIO();
+        if (platform.Monitors.empty())
+            return; // known from the first frame on
+        m_MonitorRects.clear();
+        for (const ImGuiPlatformMonitor& monitor : platform.Monitors)
+            m_MonitorRects.push_back({ monitor.WorkPos.x, monitor.WorkPos.y, monitor.WorkSize.x, monitor.WorkSize.y });
+
+        const ImGuiViewport* mainViewport = ImGui::GetMainViewport();
+        const int            mainMonitor  = static_cast<const ImGuiViewportP*>(mainViewport)->PlatformMonitor;
+        const ScreenRect     fallback = mainMonitor >= 0 && mainMonitor < platform.Monitors.Size
+            ? m_MonitorRects[static_cast<size_t>(mainMonitor)]
+            : ScreenRect{ mainViewport->Pos.x, mainViewport->Pos.y, mainViewport->Size.x, mainViewport->Size.y };
+
+        constexpr ImGuiWindowFlags SKIPPED = ImGuiWindowFlags_ChildWindow | ImGuiWindowFlags_Popup |
+                                             ImGuiWindowFlags_Tooltip | ImGuiWindowFlags_NoMove;
+        for (ImGuiWindow* window : GImGui->Windows)
+        {
+            if (!window->Active || !window->Appearing || (window->Flags & SKIPPED) != 0)
+                continue;
+            const ScreenRect rect{ window->Pos.x, window->Pos.y, window->Size.x, window->Size.y };
+            if (const std::optional<ScreenRect> place = FindPlaceOnScreen(rect, m_MonitorRects, fallback))
+                ImGui::SetWindowPos(window, ImVec2(place->X, place->Y), ImGuiCond_Always);
+        }
     }
 
     // ─── Panel dispatch ───────────────────────────────────────────────────────
