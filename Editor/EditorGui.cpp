@@ -273,9 +273,7 @@ namespace Editor
 
         m_ViewportImages = images;
 
-        DrawMainMenu(context);
-
-        const float menuH = ImGui::GetFrameHeight();
+        const float menuH = DrawMainMenu(context);
 
         DockPanelIcons panelIcons;
         panelIcons.Panels[static_cast<size_t>(PanelId::SceneHierarchy)] = GetIcon(EditorIcon::Hierarchy);
@@ -567,20 +565,95 @@ namespace Editor
 
     // ─── Main menu ───────────────────────────────────────────────────────────
 
-    void EditorGui::DrawMainMenu(HedgehogEngine::Engine& context)
+    namespace
     {
-        auto& engineContext = context.GetEngineContext();
+        constexpr float TITLE_BAR_PADDING_Y   = 10.0f; // the menu bar is the window's title bar, so taller
+        constexpr float WINDOW_BUTTON_WIDTH   = 46.0f;
+        constexpr float WINDOW_BUTTON_GLYPH   = 10.0f;
+        constexpr ImVec4 CLOSE_BUTTON_HOVERED = Theme::FromHex(0xC42B1C);
 
-        if (!ImGui::BeginMainMenuBar())
-            return;
+        // Minimize, maximize (restore when maximized) and close at the title bar's right end.
+        void DrawWindowButtons(HW::Window& window, ImVec2 position, float height)
+        {
+            ImDrawList&   drawList = *ImGui::GetWindowDrawList();
+            const ImU32   glyph    = ImGui::GetColorU32(ImGuiCol_Text);
+            const float   half     = WINDOW_BUTTON_GLYPH * 0.5f;
+            for (int button = 0; button < 3; ++button)
+            {
+                const ImVec2 min(position.x + button * WINDOW_BUTTON_WIDTH, position.y);
+                const ImVec2 max(min.x + WINDOW_BUTTON_WIDTH, min.y + height);
+                ImGui::SetCursorScreenPos(min);
+                ImGui::PushID(button);
+                const bool clicked = ImGui::InvisibleButton("##WindowButton", ImVec2(WINDOW_BUTTON_WIDTH, height));
+                ImGui::PopID();
+                if (ImGui::IsItemHovered())
+                    drawList.AddRectFilled(min, max, button == 2 ? ImGui::GetColorU32(Theme::Resolve(CLOSE_BUTTON_HOVERED))
+                                                                 : ImGui::GetColorU32(ImGuiCol_ButtonHovered));
 
-        // The logo and the engine's name lead the bar.
+                const ImVec2 c(std::floor((min.x + max.x) * 0.5f) + 0.5f, std::floor((min.y + max.y) * 0.5f) + 0.5f);
+                if (button == 0)
+                {
+                    drawList.AddLine(ImVec2(c.x - half, c.y), ImVec2(c.x + half, c.y), glyph);
+                    if (clicked)
+                        window.Minimize();
+                }
+                else if (button == 1)
+                {
+                    if (window.IsMaximized())
+                    {
+                        // Restore: a window behind another.
+                        drawList.AddRect(ImVec2(c.x - half, c.y - half + 2.0f), ImVec2(c.x + half - 2.0f, c.y + half), glyph);
+                        drawList.AddLine(ImVec2(c.x - half + 2.0f, c.y - half), ImVec2(c.x + half, c.y - half), glyph);
+                        drawList.AddLine(ImVec2(c.x + half, c.y - half), ImVec2(c.x + half, c.y + half - 2.0f), glyph);
+                    }
+                    else
+                        drawList.AddRect(ImVec2(c.x - half, c.y - half), ImVec2(c.x + half, c.y + half), glyph);
+                    if (clicked)
+                        window.ToggleMaximize();
+                }
+                else
+                {
+                    drawList.AddLine(ImVec2(c.x - half, c.y - half), ImVec2(c.x + half, c.y + half), glyph);
+                    drawList.AddLine(ImVec2(c.x - half, c.y + half), ImVec2(c.x + half, c.y - half), glyph);
+                    if (clicked)
+                        window.RequestClose();
+                }
+            }
+        }
+
+        HW::ClientRect ToClientRect(ImVec2 min, ImVec2 max, ImVec2 origin)
+        {
+            return { static_cast<int>(min.x - origin.x), static_cast<int>(min.y - origin.y),
+                     static_cast<int>(max.x - min.x), static_cast<int>(max.y - min.y) };
+        }
+    }
+
+    float EditorGui::DrawMainMenu(HedgehogEngine::Engine& context)
+    {
+        auto&       engineContext = context.GetEngineContext();
+        HW::Window& window        = context.GetWindowContext().GetWindow();
+
+        // The bar takes its height from the frame padding as it begins; its menus' popups keep the
+        // theme's own.
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(ImGui::GetStyle().FramePadding.x, TITLE_BAR_PADDING_Y));
+        const bool barOpen = ImGui::BeginMainMenuBar();
+        ImGui::PopStyleVar();
+        if (!barOpen)
+            return 0.0f;
+        const ImVec2 barMin    = ImGui::GetWindowPos();
+        const float  barWidth  = ImGui::GetWindowWidth();
+        const float  barHeight = ImGui::GetWindowHeight();
+
+        // The logo and the window's title (the engine and the project) lead the bar.
         if (void* logo = GetIcon(EditorIcon::Logo))
         {
-            ImGui::Image(logo, ImVec2(ICON_SIZE_SMALL, ICON_SIZE_SMALL));
-            ImGui::SameLine();
+            const float  size = barHeight - 10.0f;
+            const ImVec2 at(ImGui::GetCursorScreenPos().x, barMin.y + (barHeight - size) * 0.5f);
+            ImGui::GetWindowDrawList()->AddImage(logo, at, ImVec2(at.x + size, at.y + size));
+            ImGui::Dummy(ImVec2(size, 1.0f));
         }
-        ImGui::TextUnformatted("HedgehogEngine");
+        ImGui::TextUnformatted(window.GetTitle().c_str());
+        const float titleEnd = ImGui::GetItemRectMax().x;
         ImGui::Dummy(ImVec2(ImGui::GetStyle().ItemSpacing.x, 0.0f));
 
         if (ImGui::BeginMenu("File"))
@@ -627,7 +700,8 @@ namespace Editor
                 m_BuildGameWindow->Show(m_ProjectRoot, engineContext.GetSettings().GetProjectSettings().GetName());
             DrawProjectMenuItems(editing);
             ImGui::Separator();
-            if (ImGui::MenuItem("Quit", "Alt+F4")) {}
+            if (ImGui::MenuItem("Quit", "Alt+F4"))
+                window.RequestClose();
             ImGui::EndMenu();
         }
 
@@ -700,8 +774,21 @@ namespace Editor
                 m_AnimatorControllerWindow->Open = !m_AnimatorControllerWindow->Open;
             ImGui::EndMenu();
         }
+        const float menusEnd = ImGui::GetItemRectMax().x;
+
+        const float buttonsX = barMin.x + barWidth - 3.0f * WINDOW_BUTTON_WIDTH;
+        DrawWindowButtons(window, ImVec2(buttonsX, barMin.y), barHeight);
+
+        // The bar's gaps drag the window: the logo and title, and the space between the menus and
+        // the buttons. In the window's own coordinates, so the main viewport's position comes off.
+        const ImVec2 origin = ImGui::GetMainViewport()->Pos;
+        const std::array<HW::ClientRect, 2> captions = {
+            ToClientRect(barMin, ImVec2(titleEnd, barMin.y + barHeight), origin),
+            ToClientRect(ImVec2(menusEnd, barMin.y), ImVec2(buttonsX, barMin.y + barHeight), origin) };
+        window.SetCaptionAreas(captions);
 
         ImGui::EndMainMenuBar();
+        return barHeight;
     }
 
     // Asks where, then creates a material there (the Assets menu and the Project panel's "+").

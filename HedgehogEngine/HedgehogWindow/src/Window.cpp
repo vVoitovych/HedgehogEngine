@@ -14,6 +14,7 @@
 
 #include <array>
 #include <cassert>
+#include <vector>
 
 namespace HW
 {
@@ -46,6 +47,15 @@ namespace HW
     static_assert(static_cast<int>(GamepadAxis::RightTrigger) == GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER);
     static_assert(GAMEPAD_AXIS_COUNT == GLFW_GAMEPAD_AXIS_LAST + 1);
 
+    // What a window drawing its own title bar keeps for its window procedure.
+    struct CustomTitleBar
+    {
+        std::vector<ClientRect> CaptionAreas; // what drags the window
+#ifdef _WIN32
+        LONG_PTR                GlfwProc = 0; // GLFW's window procedure, which ours forwards to
+#endif
+    };
+
     struct Window::Impl
     {
         GLFWwindow*           Handle       = nullptr;
@@ -57,7 +67,63 @@ namespace HW
         int                   SavedY       = 0;
         int                   SavedWidth   = 1366;
         int                   SavedHeight  = 768;
+        CustomTitleBar        TitleBar;
     };
+
+#ifdef _WIN32
+    namespace
+    {
+        constexpr const wchar_t* WINDOW_PROPERTY = L"HedgehogWindow";
+
+        // The resize frame Windows keeps around a window with WS_THICKFRAME (mostly invisible).
+        int FrameThickness(HWND hwnd, bool vertical)
+        {
+            const UINT dpi = GetDpiForWindow(hwnd);
+            return GetSystemMetricsForDpi(vertical ? SM_CYFRAME : SM_CXFRAME, dpi) +
+                   GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi);
+        }
+
+        LRESULT CALLBACK TitleBarProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+        {
+            auto* bar      = static_cast<CustomTitleBar*>(GetPropW(hwnd, WINDOW_PROPERTY));
+            auto  glfwProc = reinterpret_cast<WNDPROC>(bar->GlfwProc);
+            switch (message)
+            {
+            case WM_NCCALCSIZE:
+                if (wParam == TRUE)
+                {
+                    // The default frame on the sides and bottom, none on top: the client area takes
+                    // the caption's place. A maximized window reaches past its monitor by the frame,
+                    // so its top is pushed back in.
+                    auto&      rect = reinterpret_cast<NCCALCSIZE_PARAMS*>(lParam)->rgrc[0];
+                    const LONG top  = rect.top;
+                    const LRESULT result = DefWindowProcW(hwnd, message, wParam, lParam);
+                    rect.top = top + (IsZoomed(hwnd) ? FrameThickness(hwnd, true) : 0);
+                    return result;
+                }
+                break;
+            case WM_NCHITTEST:
+            {
+                const LRESULT hit = DefWindowProcW(hwnd, message, wParam, lParam);
+                if (hit != HTCLIENT)
+                    return hit; // the side and bottom edges, which resize
+                POINT point = { static_cast<short>(LOWORD(lParam)), static_cast<short>(HIWORD(lParam)) };
+                ScreenToClient(hwnd, &point);
+                switch (HitTestTitleBar(point.x, point.y, IsZoomed(hwnd) != 0, FrameThickness(hwnd, true), bar->CaptionAreas))
+                {
+                case TitleBarHit::Top:     return HTTOP;
+                case TitleBarHit::Caption: return HTCAPTION;
+                case TitleBarHit::Client:  return HTCLIENT;
+                }
+                return HTCLIENT;
+            }
+            default:
+                break;
+            }
+            return CallWindowProcW(glfwProc, hwnd, message, wParam, lParam);
+        }
+    }
+#endif
 
     Window::Window(const WindowDesc& desc)
         : m_Impl(std::make_unique<Impl>())
@@ -100,6 +166,14 @@ namespace HW
     {
         if (m_Impl->Handle)
         {
+#ifdef _WIN32
+            if (m_Impl->TitleBar.GlfwProc != 0)
+            {
+                const HWND hwnd = glfwGetWin32Window(m_Impl->Handle);
+                SetWindowLongPtrW(hwnd, GWLP_WNDPROC, m_Impl->TitleBar.GlfwProc);
+                RemovePropW(hwnd, WINDOW_PROPERTY);
+            }
+#endif
             glfwDestroyWindow(m_Impl->Handle);
             m_Impl->Handle = nullptr;
         }
@@ -183,6 +257,47 @@ namespace HW
         image.height = height;
         image.pixels = data;
         glfwSetWindowIcon(m_Impl->Handle, 1, &image);
+    }
+
+    void Window::UseCustomTitleBar()
+    {
+#ifdef _WIN32
+        if (m_Impl->TitleBar.GlfwProc != 0)
+            return;
+        const HWND hwnd = glfwGetWin32Window(m_Impl->Handle);
+        SetPropW(hwnd, WINDOW_PROPERTY, &m_Impl->TitleBar);
+        m_Impl->TitleBar.GlfwProc = SetWindowLongPtrW(hwnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(&TitleBarProc));
+        // Has Windows ask the new procedure for the frame.
+        SetWindowPos(hwnd, nullptr, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+#endif
+    }
+
+    void Window::SetCaptionAreas(std::span<const ClientRect> areas)
+    {
+        m_Impl->TitleBar.CaptionAreas.assign(areas.begin(), areas.end());
+    }
+
+    void Window::Minimize()
+    {
+        glfwIconifyWindow(m_Impl->Handle);
+    }
+
+    void Window::ToggleMaximize()
+    {
+        if (IsMaximized())
+            glfwRestoreWindow(m_Impl->Handle);
+        else
+            glfwMaximizeWindow(m_Impl->Handle);
+    }
+
+    bool Window::IsMaximized() const
+    {
+        return glfwGetWindowAttrib(m_Impl->Handle, GLFW_MAXIMIZED) != 0;
+    }
+
+    void Window::RequestClose()
+    {
+        glfwSetWindowShouldClose(m_Impl->Handle, GLFW_TRUE);
     }
 
     GLFWwindow* Window::GetNativeHandle()

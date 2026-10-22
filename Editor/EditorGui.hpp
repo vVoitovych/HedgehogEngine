@@ -162,7 +162,8 @@ namespace Editor
     private:
         // ── Panel content (drawn into dock areas) ────────────────────────────
         void DrawPanelContent(PanelId panel, HedgehogEngine::Engine& context);
-        void DrawMainMenu(HedgehogEngine::Engine& context);
+        // Returns the bar's height, which the dock layout starts under.
+        float DrawMainMenu(HedgehogEngine::Engine& context);
         // File > New Project..., Open Project... and Recent Projects, enabled in Edit mode only.
         void DrawProjectMenuItems(bool editing);
         // Checks folder holds a readable Project.yaml (else one error in the Console), asks before
