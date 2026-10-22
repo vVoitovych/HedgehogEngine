@@ -2,9 +2,11 @@
 
 #include "HedgehogEngine/HedgehogWindow/api/HedgehogWindowApi.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/RawInput.hpp"
+#include "HedgehogEngine/HedgehogWindow/api/TitleBar.hpp"
 
 #include <functional>
 #include <memory>
+#include <span>
 #include <string>
 
 struct GLFWwindow;
@@ -58,6 +60,18 @@ namespace HW
         HEDGEHOG_WINDOW_API void            PollGamepad();
 
         HEDGEHOG_WINDOW_API void SetIcon(int width, int height, unsigned char* data);
+
+        // The application draws the title bar (Win32; nothing elsewhere): the OS caption is gone,
+        // the client area reaches the window's top and the side and bottom edges still resize.
+        // The caption areas, set every frame in client coordinates, drag the window natively (a
+        // double click maximizes it, dragging to an edge snaps it); the rest stays the application's.
+        HEDGEHOG_WINDOW_API void UseCustomTitleBar();
+        HEDGEHOG_WINDOW_API void SetCaptionAreas(std::span<const ClientRect> areas);
+
+        HEDGEHOG_WINDOW_API void Minimize();
+        HEDGEHOG_WINDOW_API void ToggleMaximize();
+        HEDGEHOG_WINDOW_API bool IsMaximized() const;
+        HEDGEHOG_WINDOW_API void RequestClose();
 
         HEDGEHOG_WINDOW_API GLFWwindow*       GetNativeHandle();
         HEDGEHOG_WINDOW_API const GLFWwindow* GetNativeHandle() const;

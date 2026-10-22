@@ -186,6 +186,8 @@ namespace Editor
             LOGWARNING("Project settings could not be read, using the defaults.");
         // The window names the open project.
         m_Context->GetWindowContext().GetWindow().SetTitle("HedgehogEngine - " + project.GetName());
+        // The main menu bar is the title bar (EditorGui::DrawMainMenu).
+        m_Context->GetWindowContext().GetWindow().UseCustomTitleBar();
 
         // The project's enabled plugins, after the script system and before EditorGui loads the
         // last scene, so their components read; one that fails is logged and the rest load. Shadow
