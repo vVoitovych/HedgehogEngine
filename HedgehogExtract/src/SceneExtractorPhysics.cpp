@@ -1,4 +1,5 @@
 #include "api/SceneExtractor.hpp"
+#include "Profiler/api/Profiler.hpp"
 
 #include "api/RenderScene.hpp"
 
@@ -152,6 +153,7 @@ namespace HX
     void SceneExtractor::ExtractPhysicsDebug(const ECS::ECS& ecs, const HedgehogEngine::PhysicsSystem& physicsSystem,
                                              RenderScene& outScene) const
     {
+        HH_PROFILE_ZONE("Extract: collider lines");
         LineList& lines = outScene.DebugLines;
         for (const ECS::Entity entity : physicsSystem.GetEntities())
         {

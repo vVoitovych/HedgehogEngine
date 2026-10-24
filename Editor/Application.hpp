@@ -82,6 +82,7 @@ namespace Editor
         float GetSceneAspectRatio() const;
 
         float StepFrame();
+        float StepFrameZones(); // StepFrame's work, inside its zone
         void  Render();
         void  PickAndHighlight(const HX::RenderCamera& sceneCamera);
         void  LoadBenchmarkScene(const std::string& sceneFile);

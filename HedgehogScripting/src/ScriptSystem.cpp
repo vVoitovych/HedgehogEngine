@@ -1,4 +1,5 @@
 #include "HedgehogScripting/api/ScriptSystem.hpp"
+#include "Profiler/api/Profiler.hpp"
 
 #include "Sandbox.hpp"
 #include "Bindings/Bindings.hpp"
@@ -398,6 +399,8 @@ namespace HedgehogScripting
             const auto it = m_Scripts.find(entity);
             if (it == m_Scripts.end() || !it->second.Enabled || it->second.Faulted)
                 continue;
+            // Each script under its file's name, interned only while the profiler records.
+            const Profiling::ScopedZone zone(Profiling::IsEnabled() ? Profiling::InternName(it->second.ScriptPath) : nullptr);
             if (!Invoke(entity, it->second, method, args...))
             {
                 if (const auto failed = m_Scripts.find(entity); failed != m_Scripts.end())
@@ -526,6 +529,7 @@ namespace HedgehogScripting
 
     void ScriptSystem::OnFixedUpdate(ECS::ECS& ecs, float fixedDeltaTime)
     {
+        HH_PROFILE_ZONE("Scripts: OnFixedUpdate");
         m_DeltaTime = fixedDeltaTime;
         SyncScripts(ecs);
         InvokeAll("OnFixedUpdate", fixedDeltaTime);
@@ -539,10 +543,15 @@ namespace HedgehogScripting
         m_DeltaTime = deltaTime;
         ++m_Frame;
         m_CoroutineTime += deltaTime;
+        HH_PROFILE_ZONE("Scripts: OnUpdate");
         SyncScripts(ecs);
         InvokeAll("OnUpdate", deltaTime);
-        ResumeCoroutines();
+        {
+            HH_PROFILE_ZONE("Scripts: coroutines");
+            ResumeCoroutines();
+        }
         // Events wait for every OnUpdate, so no handler runs inside another script's call.
+        HH_PROFILE_ZONE("Scripts: events");
         DispatchEvents();
         for (const ECS::Entity entity : std::exchange(m_PendingRemovals, {}))
             DestroyScript(entity);

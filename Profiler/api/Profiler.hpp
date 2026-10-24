@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <string_view>
 #include <vector>
 
 // The engine's CPU profiler: named zones recorded per thread into a ring of recent frames, for the
@@ -63,7 +64,13 @@ namespace Profiling
 
     [[nodiscard]] PROFILER_API uint64_t NowNs();
 
-    // Opens a zone on this thread, returning whether it is recorded (false while disabled); only a
+    // A zone name that lives as long as the process, for names made at run time (a system's type,
+    // a render-graph pass, a script): the same text always gives the same pointer. Recorded frames
+    // hold names, so a name must outlive whatever it came from (a plugin's DLL, a frame's graph).
+    [[nodiscard]] PROFILER_API const char* InternName(std::string_view name);
+
+    // Opens a zone on this thread, returning whether it is recorded (false while disabled, or for a
+    // null name, so a caller may skip making a name while disabled); only a
     // recorded zone is ended. Use HH_PROFILE_ZONE or ScopedZone rather than these.
     [[nodiscard]] PROFILER_API bool BeginZone(const char* name);
     PROFILER_API void               EndZone();

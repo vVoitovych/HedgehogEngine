@@ -28,7 +28,8 @@ project "HedgehogEngineTest"
         "ECS",
         "EcsSerialization",
         "HedgehogMath",
-        "FileSystem"
+        "FileSystem",
+        "Profiler"
     }
 
     -- The plugin DLLs the tests open at runtime; nothing links them, so they are build dependencies.

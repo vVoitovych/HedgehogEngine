@@ -207,3 +207,14 @@ TEST_CASE("Profiler - a zone left open while disabled still ends, and Clear drop
     REQUIRE(GetFrameCount() == 1);
     CHECK(GetFrame(0).Threads.empty());
 }
+
+TEST_CASE("Profiler - an interned name is one pointer per text and outlives its source")
+{
+    std::string source = "Pass: Forward";
+    const char* name   = InternName(source);
+    source             = "something else";
+    CHECK(std::string(name) == "Pass: Forward");
+    CHECK(InternName("Pass: Forward") == name);
+    CHECK(InternName(std::string_view("Pass: Forward!").substr(0, 13)) == name);
+    CHECK(InternName("Pass: Shadow") != name);
+}

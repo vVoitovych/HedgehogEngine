@@ -1,4 +1,5 @@
 #include "api/SceneExtractor.hpp"
+#include "Profiler/api/Profiler.hpp"
 
 #include "api/RenderScene.hpp"
 
@@ -14,6 +15,7 @@ namespace HX
     void SceneExtractor::ExtractEnvironment(const ECS::ECS& ecs, const HedgehogEngine::EnvironmentSystem& environmentSystem,
                                             RenderScene& outScene) const
     {
+        HH_PROFILE_ZONE("Extract: environment");
         RenderEnvironment& environment = outScene.Environment;
         environment.Present            = false;
 

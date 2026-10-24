@@ -1,4 +1,5 @@
 #include "FrameRenderer.hpp"
+#include "Profiler/api/Profiler.hpp"
 
 #include "ResourceRegistry/ResourceRegistry.hpp"
 
@@ -89,6 +90,7 @@ namespace Renderer
 
     void FrameRenderer::WaitForFrameSlot()
     {
+        HH_PROFILE_ZONE("Wait for the GPU");
         m_Slots[m_SlotIndex].Fence->Wait();
     }
 

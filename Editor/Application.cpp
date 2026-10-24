@@ -31,6 +31,7 @@
 #include "FileSystem/api/PathUtils.hpp"
 
 #include "Logger/api/Logger.hpp"
+#include "Profiler/api/Profiler.hpp"
 
 #include "Project/StartupProject.hpp"
 
@@ -148,6 +149,7 @@ namespace Editor
 
     void EditorApplication::Init()
     {
+        Profiling::SetCurrentThreadName("Main");
         m_Context   = std::make_unique<HedgehogEngine::Engine>(m_WindowMode);
 
         auto& engineContext = m_Context->GetEngineContext();
@@ -362,18 +364,30 @@ namespace Editor
 
     float EditorApplication::StepFrame()
     {
+        const float dt = StepFrameZones();
+        // After the frame's zones have ended, so they land in the frame they measure.
+        HH_PROFILE_FRAME();
+        return dt;
+    }
+
+    float EditorApplication::StepFrameZones()
+    {
+        HH_PROFILE_ZONE("Frame");
         const float dt = GetFrameTime();
-        m_Context->GetWindowContext().HandleInput();
-        // The game sees the Game tab's part of the window's input, the editor camera the Scene tab's
-        // (both panels as of the last frame).
-        // A view floating outside the main window reads that window's input instead.
-        const HW::RawInput& raw = m_Context->GetWindowContext().GetWindow().GetRawInput();
-        auto&               engineContext = m_Context->GetEngineContext();
-        const HInput::GameInputRegion gameRegion = m_EditorGui->GetGameInputRegion();
-        const HW::RawInput& gameRaw  = ViewInput(m_EditorGui->GetGameInputWindow(), m_GameOutsideInput, m_GameInputGate, raw);
-        const HW::RawInput& sceneRaw = ViewInput(m_EditorGui->GetSceneInputWindow(), m_SceneOutsideInput, m_SceneInputGate, raw);
-        engineContext.UpdateGameInput(HInput::MakeGameInput(gameRaw, gameRegion, m_GameInputGate), gameRegion.PixelSize);
-        engineContext.UpdateEditorInput(HInput::MakeGameInput(sceneRaw, m_EditorGui->GetSceneInputRegion(), m_SceneInputGate));
+        {
+            HH_PROFILE_ZONE("Input");
+            m_Context->GetWindowContext().HandleInput();
+            // The game sees the Game tab's part of the window's input, the editor camera the Scene tab's
+            // (both panels as of the last frame).
+            // A view floating outside the main window reads that window's input instead.
+            const HW::RawInput& raw = m_Context->GetWindowContext().GetWindow().GetRawInput();
+            auto&               engineContext = m_Context->GetEngineContext();
+            const HInput::GameInputRegion gameRegion = m_EditorGui->GetGameInputRegion();
+            const HW::RawInput& gameRaw  = ViewInput(m_EditorGui->GetGameInputWindow(), m_GameOutsideInput, m_GameInputGate, raw);
+            const HW::RawInput& sceneRaw = ViewInput(m_EditorGui->GetSceneInputWindow(), m_SceneOutsideInput, m_SceneInputGate, raw);
+            engineContext.UpdateGameInput(HInput::MakeGameInput(gameRaw, gameRegion, m_GameInputGate), gameRegion.PixelSize);
+            engineContext.UpdateEditorInput(HInput::MakeGameInput(sceneRaw, m_EditorGui->GetSceneInputRegion(), m_SceneInputGate));
+        }
         if (m_ScriptDebugger)
             m_ScriptDebugger->Pump();
         // A script saved on disk takes effect without leaving Play (polled at most once a second).
@@ -382,17 +396,21 @@ namespace Editor
         (void)m_Context->GetEngineContext().GetPlugins().ReloadChangedPlugins(std::chrono::steady_clock::now());
         m_Context->UpdateContext(dt, GetSceneAspectRatio());
 
-        m_ImGui->BeginFrame();
-        ViewportImages images;
-        images.Scene          = m_ImGui->GetTextureId(SCENE_TARGET, m_Renderer->GetTargetTexture(SCENE_TARGET));
-        images.Game           = m_ImGui->GetTextureId(GAME_TARGET, m_Renderer->GetTargetTexture(GAME_TARGET));
-        images.GraphPassCount = m_Renderer->GetLastFramePassCount();
-        images.ContentIcons   = m_ContentIconIds;
-        images.EditorIcons    = m_EditorIconIds;
-        m_EditorGui->Draw(*m_Context, images);
-        m_ImGui->EndFrame();
+        {
+            HH_PROFILE_ZONE("Editor UI");
+            m_ImGui->BeginFrame();
+            ViewportImages images;
+            images.Scene          = m_ImGui->GetTextureId(SCENE_TARGET, m_Renderer->GetTargetTexture(SCENE_TARGET));
+            images.Game           = m_ImGui->GetTextureId(GAME_TARGET, m_Renderer->GetTargetTexture(GAME_TARGET));
+            images.GraphPassCount = m_Renderer->GetLastFramePassCount();
+            images.ContentIcons   = m_ContentIconIds;
+            images.EditorIcons    = m_EditorIconIds;
+            m_EditorGui->Draw(*m_Context, images);
+            m_ImGui->EndFrame();
+        }
 
         Render();
+        HH_PROFILE_ZONE("Outside windows");
         m_ImGui->RenderPlatformWindows();
         return dt;
     }
@@ -400,6 +418,7 @@ namespace Editor
     // Extract, then render every view through the render graph (RENDERING.md section 7).
     void EditorApplication::Render()
     {
+        HH_PROFILE_ZONE("Render");
         auto& engineContext = m_Context->GetEngineContext();
 
         m_MeshBounds.Update(engineContext.GetResourceCatalog());

@@ -1,4 +1,5 @@
 #include "api/SceneExtractor.hpp"
+#include "Profiler/api/Profiler.hpp"
 
 #include "api/RenderScene.hpp"
 
@@ -173,6 +174,7 @@ namespace HX
                                    const HM::Vector2& targetSize, RenderScene& outScene,
                                    HedgehogEngine::FontContainer* fonts) const
     {
+        HH_PROFILE_ZONE("Extract: UI");
         outScene.UiTargetSize = targetSize;
         if (!(targetSize.x() > 0.0f && targetSize.y() > 0.0f))
             return;

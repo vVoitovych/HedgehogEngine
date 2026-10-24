@@ -1,4 +1,5 @@
 #include "HedgehogEngine/api/ECS/systems/PhysicsSystem.hpp"
+#include "Profiler/api/Profiler.hpp"
 #include "HedgehogEngine/api/ECS/components/ColliderComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RigidBodyComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
@@ -171,9 +172,18 @@ namespace HedgehogEngine
             return;
         if (!StartWorld(ecs))
             return;
-        SyncBodies(ecs);
-        FollowTransforms(ecs, fixedDeltaTime);
-        if (m_World->Step(fixedDeltaTime))
+        {
+            HH_PROFILE_ZONE("Physics: sync bodies");
+            SyncBodies(ecs);
+            FollowTransforms(ecs, fixedDeltaTime);
+        }
+        bool stepped = false;
+        {
+            HH_PROFILE_ZONE("Physics: step");
+            stepped = m_World->Step(fixedDeltaTime);
+        }
+        HH_PROFILE_ZONE("Physics: write back and contacts");
+        if (stepped)
             WriteBack(ecs);
         PublishContacts(ecs);
     }

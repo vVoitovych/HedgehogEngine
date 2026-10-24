@@ -6,9 +6,9 @@ project "RenderGraphTest"
     -- The render graph (RGTypes/GraphDescription/GraphBuilder/RGPassBuilder/GraphCompiler/
     -- FrameArena/ResourcePool/RenderGraphRuntime) has no ImGui, GLFW or window dependency of
     -- its own — only RHI's header-only enums/structs (RHI::Format, IRHIDevice/IRHITexture as
-    -- pure interfaces — a device is never instantiated here) and Logger. Compiling its sources
+    -- pure interfaces — a device is never instantiated here), Logger and Profiler. Compiling its sources
     -- directly, rather than linking the full HedgehogRenderer static lib, keeps this test
-    -- genuinely headless: no Vulkan SDK, no GLFW, no ImGui, and only one DLL to load. The graph
+    -- genuinely headless: no Vulkan SDK, no GLFW, no ImGui, and only two DLLs to load. The graph
     -- asset parser adds yaml-cpp, a static lib, so that stays true.
     files
     {
@@ -50,7 +50,7 @@ project "RenderGraphTest"
 
     -- HedgehogMath (a DLL, built into the same output directory) for the RenderScene the
     -- view tests build views from.
-    links { "Logger", "yaml-cpp", "HedgehogMath" }
+    links { "Logger", "Profiler", "yaml-cpp", "HedgehogMath" }
 
     targetdir (BinariesDir)
     objdir    (IntermediatesDir)

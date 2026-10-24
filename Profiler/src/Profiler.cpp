@@ -5,6 +5,7 @@
 #include <chrono>
 #include <memory>
 #include <mutex>
+#include <set>
 
 namespace Profiling
 {
@@ -89,6 +90,19 @@ namespace Profiling
             std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - epoch).count());
     }
 
+    const char* InternName(std::string_view name)
+    {
+        // Never destroyed: recorded zones point into it until the process ends. std::set's nodes
+        // never move, so each string's characters stay put.
+        static std::mutex*                        mutex = new std::mutex();
+        static std::set<std::string, std::less<>>* names = new std::set<std::string, std::less<>>();
+        const std::lock_guard lock(*mutex);
+        auto found = names->find(name);
+        if (found == names->end())
+            found = names->emplace(name).first;
+        return found->c_str();
+    }
+
     void SetEnabled(bool enabled)
     {
         GetRecorder().Enabled.store(enabled, std::memory_order_relaxed);
@@ -101,7 +115,7 @@ namespace Profiling
 
     bool BeginZone(const char* name)
     {
-        if (!IsEnabled())
+        if (name == nullptr || !IsEnabled())
             return false;
         ThreadBuffer&         thread = CurrentThread();
         const std::lock_guard lock(thread.Mutex);

@@ -1,4 +1,5 @@
 #include "HedgehogRenderer/Graph/RenderGraphRuntime.hpp"
+#include "Profiler/api/Profiler.hpp"
 
 #include "Logger/api/Logger.hpp"
 
@@ -121,6 +122,8 @@ namespace Renderer
 
         for (const CompiledPass& pass : result.Graph.Passes)
         {
+            // Each pass under its name, interned only while the profiler records.
+            const Profiling::ScopedZone zone(Profiling::IsEnabled() ? Profiling::InternName(pass.Name) : nullptr);
             const auto passStart = m_PassTimingEnabled ? std::chrono::steady_clock::now()
                                                        : std::chrono::steady_clock::time_point{};
 
