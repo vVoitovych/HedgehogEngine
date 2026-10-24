@@ -6,6 +6,7 @@
 
 #include <cstdint>
 #include <optional>
+#include <string>
 #include <vector>
 
 namespace Renderer
@@ -47,6 +48,8 @@ namespace Editor
         void             DrawFrameGraph();
         void             DrawTimeline(const Profiling::FrameRecord& frame);
         void             DrawTopZones(const Profiling::FrameRecord& frame);
+        // Asks where, then writes every frame kept with its GPU passes as Chrome trace JSON.
+        void             Export();
 
         bool                    m_Recording = false; // the window turned the profiler on
         bool                    m_Paused    = false;
@@ -58,5 +61,6 @@ namespace Editor
         size_t                   m_GpuNext = 0;
         std::vector<ZoneStat>    m_TopZones;
         std::vector<TimelineBar> m_Bars;
+        std::string              m_ExportStatus; // what the last export did
     };
 }

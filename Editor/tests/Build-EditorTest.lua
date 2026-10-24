@@ -44,7 +44,9 @@ project "EditorTest"
         "../Tools/RenderGraphEditor/GraphLayoutFile.hpp",
         "../Tools/RenderGraphEditor/GraphLayoutFile.cpp",
         "../Tools/Profiler/ProfilerAnalysis.hpp",
-        "../Tools/Profiler/ProfilerAnalysis.cpp"
+        "../Tools/Profiler/ProfilerAnalysis.cpp",
+        "../Tools/Profiler/ChromeTrace.hpp",
+        "../Tools/Profiler/ChromeTrace.cpp"
     }
 
     includedirs
@@ -53,6 +55,7 @@ project "EditorTest"
         "..",              -- so "Docking/..." resolves
         "../..",           -- so "HedgehogMath/api/..." resolves
         "../../HedgehogEngine", -- so "HedgehogEngine/api/..." resolves (MaterialSlots' header-only MaterialData)
+        "../../HedgehogEngine/HedgehogRenderer/api", -- the header-only GpuPassTiming the trace writes
         "%{IncludeDir.yaml_cpp}", -- the layout file
         "."
     }
