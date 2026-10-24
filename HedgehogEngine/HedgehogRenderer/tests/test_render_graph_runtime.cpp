@@ -268,3 +268,59 @@ TEST_CASE("Pass timings are recorded by name in execution order only while enabl
     REQUIRE(runtime.Execute(cmdList));
     CHECK(runtime.GetLastPassTimings().empty());
 }
+
+namespace
+{
+    // Three side-effect passes, each recording one draw so its commands show between timestamps.
+    void DeclareThreePasses(RenderGraphRuntime& runtime)
+    {
+        for (const char* name : { "First", "Second", "Third" })
+        {
+            const RGTexture tex = runtime.CreateTexture(MakeRGDesc(16, 16));
+            runtime.AddPass<OpaquePassData>(
+                name,
+                [tex](RGPassBuilder& pass, OpaquePassData& data)
+                {
+                    data.ColorTarget = pass.ColorTarget(tex);
+                    pass.SetSideEffect();
+                },
+                [](OpaquePassData&, RHI::IRHICommandList& cmd) { cmd.DrawIndexed(3); });
+        }
+    }
+}
+
+TEST_CASE("With GPU timestamps set, Execute stamps before the first pass and after each one")
+{
+    TestDevice         device;
+    RenderGraphRuntime runtime(device, 64 * 1024);
+    TestQueryPool      pool(16);
+    runtime.SetGpuTimestamps(&pool, 4, 10);
+
+    DeclareThreePasses(runtime);
+    RecordingCommandList cmd;
+    REQUIRE(runtime.Execute(cmd));
+    CHECK(cmd.Commands == std::vector<std::string>{ "reset queries 4 4", "timestamp 4", "draw 3", "timestamp 5",
+                                                    "draw 3", "timestamp 6", "draw 3", "timestamp 7" });
+    const std::span<const std::string> timed = runtime.GetLastTimedPassNames();
+    REQUIRE(timed.size() == 3);
+    CHECK(timed[0] == "First");
+    CHECK(timed[1] == "Second");
+    CHECK(timed[2] == "Third");
+
+    // A range too short for every pass times the first ones only.
+    runtime.SetGpuTimestamps(&pool, 0, 3);
+    DeclareThreePasses(runtime);
+    RecordingCommandList shortRange;
+    REQUIRE(runtime.Execute(shortRange));
+    CHECK(shortRange.Commands == std::vector<std::string>{ "reset queries 0 3", "timestamp 0", "draw 3", "timestamp 1",
+                                                           "draw 3", "timestamp 2", "draw 3" });
+    CHECK(runtime.GetLastTimedPassNames().size() == 2);
+
+    // Off again: no query commands, and nothing timed.
+    runtime.SetGpuTimestamps(nullptr, 0, 0);
+    DeclareThreePasses(runtime);
+    RecordingCommandList untimed;
+    REQUIRE(runtime.Execute(untimed));
+    CHECK(untimed.Commands == std::vector<std::string>{ "draw 3", "draw 3", "draw 3" });
+    CHECK(runtime.GetLastTimedPassNames().empty());
+}

@@ -95,6 +95,7 @@ namespace Renderer
     {
         const GraphDescription& description = m_Builder.GetDescription();
         m_LastPassTimings.clear();
+        m_TimedPassCount = 0;
         const CompileResult     result      = m_Compiler.Compile(description);
 
         if (!result.Success)
@@ -108,6 +109,16 @@ namespace Renderer
 
         m_LastExecutedPassCount = result.Graph.Passes.size();
         m_Executing = &description;
+
+        // One timestamp before the first pass, then one after each timed pass.
+        const size_t timedPasses = m_TimestampPool != nullptr && m_TimestampCount >= 2
+                                 ? std::min<size_t>(result.Graph.Passes.size(), m_TimestampCount - 1) : 0;
+        if (timedPasses > 0)
+        {
+            cmdList.ResetQueries(*m_TimestampPool, m_TimestampFirst, static_cast<uint32_t>(timedPasses + 1));
+            cmdList.WriteTimestamp(*m_TimestampPool, m_TimestampFirst);
+        }
+
         for (const CompiledPass& pass : result.Graph.Passes)
         {
             const auto passStart = m_PassTimingEnabled ? std::chrono::steady_clock::now()
@@ -141,6 +152,16 @@ namespace Renderer
 
             const PassExecutionRecord& record = m_PassExecutions[pass.OriginalPassIndex];
             record.Invoke(record.PassData, record.ExecuteState, cmdList);
+
+            if (m_TimedPassCount < timedPasses)
+            {
+                if (m_TimedPassCount < m_LastTimedPassNames.size())
+                    m_LastTimedPassNames[m_TimedPassCount] = pass.Name;
+                else
+                    m_LastTimedPassNames.push_back(pass.Name);
+                ++m_TimedPassCount;
+                cmdList.WriteTimestamp(*m_TimestampPool, m_TimestampFirst + static_cast<uint32_t>(m_TimedPassCount));
+            }
 
             if (m_PassTimingEnabled)
             {

@@ -27,6 +27,14 @@ namespace Renderer
         findOrAddZone(zoneName).SamplesMs.push_back(milliseconds);
     }
 
+    void FrameStats::AddGpuSample(const char* zoneName, double milliseconds)
+    {
+        if (!m_Capturing)
+            return;
+
+        findOrAddZone(zoneName).GpuSamplesMs.push_back(milliseconds);
+    }
+
     void FrameStats::LogReport() const
     {
         if (m_Zones.empty())
@@ -35,12 +43,26 @@ namespace Renderer
             return;
         }
 
-        LOGINFO("FrameStats | zone                 |   avg ms |   min ms |   max ms |   p95 ms | samples");
+        LOGINFO("FrameStats | zone                 |   avg ms |   min ms |   max ms |   p95 ms | samples |  gpu avg ms");
 
         for (const auto& zone : m_Zones)
         {
+            char gpu[32] = "           -";
+            if (!zone.GpuSamplesMs.empty())
+            {
+                const double gpuAvg = std::accumulate(zone.GpuSamplesMs.begin(), zone.GpuSamplesMs.end(), 0.0)
+                                    / static_cast<double>(zone.GpuSamplesMs.size());
+                std::snprintf(gpu, sizeof(gpu), "%12.3f", gpuAvg);
+            }
+
             if (zone.SamplesMs.empty())
+            {
+                char line[192];
+                std::snprintf(line, sizeof(line),
+                    "FrameStats | %-20s | %8s | %8s | %8s | %8s | %7s | %s", zone.Name.c_str(), "-", "-", "-", "-", "-", gpu);
+                LOGINFO(line);
                 continue;
+            }
 
             std::vector<double> sorted = zone.SamplesMs;
             std::sort(sorted.begin(), sorted.end());
@@ -55,8 +77,8 @@ namespace Renderer
 
             char line[192];
             std::snprintf(line, sizeof(line),
-                "FrameStats | %-20s | %8.3f | %8.3f | %8.3f | %8.3f | %7zu",
-                zone.Name.c_str(), avg, min, max, p95, sorted.size());
+                "FrameStats | %-20s | %8.3f | %8.3f | %8.3f | %8.3f | %7zu | %s",
+                zone.Name.c_str(), avg, min, max, p95, sorted.size(), gpu);
             LOGINFO(line);
         }
     }

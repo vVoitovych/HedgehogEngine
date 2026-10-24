@@ -290,5 +290,30 @@ avg 2.076, 2.032 and 2.047 ms, against HE-359's 1.999, 2.025 and 2.136 ms (the a
 is unchanged on master since then): the same within noise. A controller adds one state machine
 step per frame per animator.
 
+### 2026-10-24 (HE-381) — GPU time per render-graph pass
+
+Every frame now writes a GPU timestamp before the first pass and after each one (and, since HE-380,
+at the command list's start and end), and reads the frame slot's previous ones back after its
+fence. Release, `benchmark.yaml`, 600 frames on the RTX 2070, `RenderFrame(total)` CPU avg: before
+(HE-378, HE-380) 1.737 and 1.693 ms; after 1.797, 1.760, 1.736 and 1.749 ms, `Frame(wall)` 2.168,
+2.114, 2.070 and 2.089 ms against 2.094 and 2.055: within run-to-run noise. The GPU column the
+report now has (`gpu avg ms`):
+
+| Pass | GPU avg ms |
+|------|------------|
+| RenderFrame(total) | 0.404 |
+| Shadow | 0.241 |
+| DepthPrepass | 0.032 |
+| Forward | 0.066 |
+| Skybox | 0.001 |
+| ForwardTransparent | 0.001 |
+| ToneMap | 0.013 |
+| SelectionMask | 0.001 |
+| SelectionOutline | 0.001 |
+| Gizmo | 0.001 |
+| Ui | 0.041 |
+
+The shadow atlas is most of the GPU frame; the frame is far below the 16.6 ms budget on both sides.
+
 When a change intentionally alters performance, re-run the benchmark and update
 this table (keep the old row set; add a dated entry below it so history accumulates).
