@@ -12,6 +12,7 @@
 #include "Tools/PipelineWindow.hpp"
 #include "Tools/ShaderWindow.hpp"
 #include "Tools/InputActionsWindow.hpp"
+#include "Tools/Profiler/ProfilerWindow.hpp"
 #include "Tools/BuildGameWindow.hpp"
 #include "Tools/NewProjectWindow.hpp"
 #include "Tools/ProjectSettingsWindow.hpp"
@@ -203,6 +204,7 @@ namespace Editor
         , m_BuildGameWindow(std::make_unique<BuildGameWindow>())
         , m_RenderGraphEditorWindow(std::make_unique<RenderGraphEditorWindow>())
         , m_AnimatorControllerWindow(std::make_unique<AnimatorControllerEditorWindow>())
+        , m_ProfilerWindow(std::make_unique<ProfilerWindow>())
     {
         m_FileSystem   = &context.GetEngineContext().GetFileSystem();
         m_ContentPanel = std::make_unique<ContentPanel>(*m_FileSystem);
@@ -303,6 +305,7 @@ namespace Editor
             RequestProject(*created, false);
         m_RenderGraphEditorWindow->Draw(m_Renderer, *m_FileSystem);
         m_AnimatorControllerWindow->Draw(fs, MakeAnimatorPreview(context.GetEngineContext(), m_SelectedEntity));
+        m_ProfilerWindow->Draw(m_Renderer);
 
         DrawOpenSceneDropPopup(context);
         ApplyAssetDrop(context);
@@ -772,6 +775,8 @@ namespace Editor
                 m_RenderGraphEditorWindow->Open = !m_RenderGraphEditorWindow->Open;
             if (ImGui::MenuItem("Animator Controller", nullptr, m_AnimatorControllerWindow->Open))
                 m_AnimatorControllerWindow->Open = !m_AnimatorControllerWindow->Open;
+            if (ImGui::MenuItem("Profiler", nullptr, m_ProfilerWindow->Open))
+                m_ProfilerWindow->Open = !m_ProfilerWindow->Open;
             ImGui::EndMenu();
         }
         const float menusEnd = ImGui::GetItemRectMax().x;

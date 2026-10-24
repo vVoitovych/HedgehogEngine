@@ -42,7 +42,9 @@ project "EditorTest"
         "../Tools/AnimatorControllerEditor/ControllerLayout.hpp",
         "../Tools/AnimatorControllerEditor/ControllerLayout.cpp",
         "../Tools/RenderGraphEditor/GraphLayoutFile.hpp",
-        "../Tools/RenderGraphEditor/GraphLayoutFile.cpp"
+        "../Tools/RenderGraphEditor/GraphLayoutFile.cpp",
+        "../Tools/Profiler/ProfilerAnalysis.hpp",
+        "../Tools/Profiler/ProfilerAnalysis.cpp"
     }
 
     includedirs
