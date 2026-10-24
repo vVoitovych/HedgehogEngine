@@ -1,4 +1,5 @@
 #include "HedgehogEngine/api/EngineContext.hpp"
+#include "Profiler/api/Profiler.hpp"
 #include "HedgehogEngine/api/WindowContext.hpp"
 
 #include "FileSystem/api/FileSystem.hpp"
@@ -265,6 +266,7 @@ namespace HedgehogEngine
 
     void EngineContext::UpdateGameInput(const HW::RawInput& gameInput, const HM::Vector2& gameViewSize)
     {
+        HH_PROFILE_ZONE("UpdateGameInput");
         if (m_PlayState == PlayState::Playing)
             HInput::UpdateActionState(m_InputActions.Game, gameInput, m_GameActions);
         else
@@ -291,6 +293,7 @@ namespace HedgehogEngine
 
     void EngineContext::UpdateContext(float aspectRatio, float dt)
     {
+        HH_PROFILE_ZONE("UpdateContext");
         ReloadInputActions(std::chrono::steady_clock::now());
         UpdateCamera(aspectRatio, dt);
 

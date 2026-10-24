@@ -1,4 +1,5 @@
 #include "api/SceneExtractor.hpp"
+#include "Profiler/api/Profiler.hpp"
 
 #include "api/RenderScene.hpp"
 
@@ -74,6 +75,7 @@ namespace HX
         RenderScene&                         outScene,
         std::span<const HM::AABB>            meshLocalBounds) const
     {
+        HH_PROFILE_ZONE("Extract: scene");
         ExtractInstances(ecs, renderSystem, meshLocalBounds, outScene);
         ExtractLights(ecs, lightSystem, outScene);
         ExtractCameras(ecs, cameraSystem, outScene);

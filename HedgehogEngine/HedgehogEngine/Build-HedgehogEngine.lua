@@ -32,6 +32,7 @@ project "HedgehogEngine"
         "HedgehogPhysics",
         "HedgehogMath",
         "Logger",
+        "Profiler",
         "ECS",
         "EcsSerialization",
         "FileSystem",

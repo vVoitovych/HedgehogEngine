@@ -315,5 +315,14 @@ report now has (`gpu avg ms`):
 
 The shadow atlas is most of the GPU frame; the frame is far below the 16.6 ms budget on both sides.
 
+### 2026-10-24 (HE-379) — CPU profiling zones across the frame
+
+The frame now opens about 150 `HH_PROFILE_ZONE`s (the frame, input, `UpdateContext`, every ECS phase,
+fixed step and system hook, scripts, physics, extraction, sync, the render-graph passes); with the
+profiler off, as here, each is one call and a check. Release, `benchmark.yaml`, 600 frames,
+`Frame(wall)` avg: before (HE-381) 2.168, 2.114, 2.070 and 2.089 ms; after 2.079, 2.264 and 2.131 ms
+(`RenderFrame(total)` 1.689, 1.856 and 1.762 ms against 1.797, 1.760, 1.736 and 1.749): within
+run-to-run noise.
+
 When a change intentionally alters performance, re-run the benchmark and update
 this table (keep the old row set; add a dated entry below it so history accumulates).

@@ -25,6 +25,7 @@ project "HedgehogScripting"
       "HedgehogMath",
       "FileSystem",
       "Logger",
+      "Profiler",
       "Lua",
       "HedgehogLuaDebug",
       "ws2_32",

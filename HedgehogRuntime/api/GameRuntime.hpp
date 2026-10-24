@@ -102,6 +102,7 @@ namespace Runtime
 
     private:
         float NextFrameTime();
+        void  RunFrameZones(); // RunFrame's work, inside its zone
 
     private:
         RuntimeDesc                               m_Desc;

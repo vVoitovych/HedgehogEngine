@@ -1,9 +1,45 @@
 #include "api/ECS.hpp"
 
+#include "Profiler/api/Profiler.hpp"
+
+#include <array>
 #include <cassert>
+#include <string>
+#include <string_view>
+#include <typeinfo>
+#include <unordered_map>
 
 namespace ECS
 {
+    namespace
+    {
+        // A system's zone name: its class name without its namespaces ("TransformSystem"), looked up
+        // only while the profiler records (by the type's name, which a plugin's unloaded type no
+        // longer needs to outlive: the names are interned).
+        const char* ZoneName(const System& system)
+        {
+            if (!Profiling::IsEnabled())
+                return nullptr;
+            static std::unordered_map<std::string, const char*> names; // the game thread's
+            const char* typeName = typeid(system).name();
+            auto        found    = names.find(typeName);
+            if (found == names.end())
+            {
+                std::string_view shortName = typeName;
+                if (const size_t space = shortName.rfind(' '); space != std::string_view::npos)
+                    shortName.remove_prefix(space + 1); // "class " or "struct "
+                if (const size_t scope = shortName.rfind("::"); scope != std::string_view::npos)
+                    shortName.remove_prefix(scope + 2);
+                found = names.emplace(typeName, Profiling::InternName(shortName)).first;
+            }
+            return found->second;
+        }
+
+        constexpr std::array<const char*, SYSTEM_PHASE_COUNT> PHASE_ZONE_NAMES = {
+            "Phase: Input", "Phase: Simulation", "Phase: Animation", "Phase: Transform", "Phase: Late", "Phase: Sync",
+        };
+    }
+
     class ECS::DispatchScope
     {
     public:
@@ -137,19 +173,38 @@ namespace ECS
     void ECS::RunFixedUpdate(float fixedDeltaTime)
     {
         DispatchScope scope(*this);
-        m_SystemManager->ForEachSystem([&](System& system) { system.OnFixedUpdate(*this, fixedDeltaTime); });
-        m_SystemManager->ForEachSystem([&](System& system) { system.OnPostFixedUpdate(*this, fixedDeltaTime); });
+        HH_PROFILE_ZONE("FixedStep");
+        {
+            HH_PROFILE_ZONE("OnFixedUpdate");
+            m_SystemManager->ForEachSystem([&](System& system)
+            {
+                const Profiling::ScopedZone zone(ZoneName(system));
+                system.OnFixedUpdate(*this, fixedDeltaTime);
+            });
+        }
+        HH_PROFILE_ZONE("OnPostFixedUpdate");
+        m_SystemManager->ForEachSystem([&](System& system)
+        {
+            const Profiling::ScopedZone zone(ZoneName(system));
+            system.OnPostFixedUpdate(*this, fixedDeltaTime);
+        });
     }
 
     void ECS::RunUpdate(float deltaTime)
     {
         DispatchScope scope(*this);
-        m_SystemManager->ForEachSystem([&](System& system) { system.OnUpdate(*this, deltaTime); });
+        HH_PROFILE_ZONE("OnUpdate");
+        m_SystemManager->ForEachSystem([&](System& system)
+        {
+            const Profiling::ScopedZone zone(ZoneName(system));
+            system.OnUpdate(*this, deltaTime);
+        });
     }
 
     void ECS::RunPhase(SystemPhase phase, const FrameContext& ctx)
     {
-        DispatchScope scope(*this);
+        DispatchScope               scope(*this);
+        const Profiling::ScopedZone phaseZone(PHASE_ZONE_NAMES[static_cast<size_t>(phase)]);
         if (phase == SystemPhase::Simulation && ctx.Mode == PlayMode::Playing)
         {
             for (uint32_t step = 0; step < ctx.FixedSteps; ++step)
@@ -158,7 +213,11 @@ namespace ECS
             }
             RunUpdate(ctx.ScaledDeltaTime);
         }
-        m_SystemManager->ForEachSystemInPhase(phase, [&](System& system) { system.OnFrame(*this, ctx); });
+        m_SystemManager->ForEachSystemInPhase(phase, [&](System& system)
+        {
+            const Profiling::ScopedZone zone(ZoneName(system));
+            system.OnFrame(*this, ctx);
+        });
     }
 
     void ECS::RunPhases(SystemPhase first, SystemPhase last, const FrameContext& ctx)

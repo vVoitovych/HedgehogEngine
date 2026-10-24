@@ -5,7 +5,9 @@ project "ECS"
 
    files { "api/**.hpp", "src/**.cpp" }
 
-   includedirs { "." }
+   includedirs { ".", ".." }
+
+   links { "Profiler" }
 
    targetdir (BinariesDir)
    objdir    (IntermediatesDir)

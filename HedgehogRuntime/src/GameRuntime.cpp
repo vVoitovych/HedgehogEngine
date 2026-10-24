@@ -21,6 +21,7 @@
 #include "FileSystem/api/PathUtils.hpp"
 
 #include "Logger/api/Logger.hpp"
+#include "Profiler/api/Profiler.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -33,6 +34,7 @@ namespace Runtime
 
     bool GameRuntime::Init(const RuntimeDesc& desc)
     {
+        Profiling::SetCurrentThreadName("Main");
         if (m_Engine)
         {
             LOGERROR("[Runtime] Init: the game is already running.");
@@ -133,6 +135,17 @@ namespace Runtime
         if ((m_Desc.MaxFrames > 0 && m_FrameCount >= m_Desc.MaxFrames) || windowContext.ShouldClose())
             return false;
 
+        RunFrameZones();
+        // After the frame's zones have ended, so they land in the frame they measure.
+        HH_PROFILE_FRAME();
+        ++m_FrameCount;
+        return true;
+    }
+
+    void GameRuntime::RunFrameZones()
+    {
+        HH_PROFILE_ZONE("Frame");
+        auto& windowContext = m_Engine->GetWindowContext();
         auto& engineContext = m_Engine->GetEngineContext();
         auto& window        = windowContext.GetWindow();
         windowContext.HandleInput();
@@ -165,8 +178,6 @@ namespace Runtime
 
         m_Renderer->SyncResources(engineContext.GetResourceCatalog());
         m_Renderer->RenderFrame(m_RenderScene, engineContext.GetSettings());
-        ++m_FrameCount;
-        return true;
     }
 
     void GameRuntime::Run()
