@@ -21,6 +21,7 @@
 #include "VulkanCommandList.hpp"
 #include "VulkanDescriptor.hpp"
 #include "VulkanPipeline.hpp"
+#include "VulkanQueryPool.hpp"
 #include "VulkanSampler.hpp"
 #include "VulkanShader.hpp"
 #include "VulkanSwapchain.hpp"
@@ -510,6 +511,23 @@ std::unique_ptr<IRHITextureView> VulkanDevice::CreateTextureView(
 std::unique_ptr<IRHISampler> VulkanDevice::CreateSampler(const SamplerDesc& desc) const
 {
     return std::make_unique<VulkanSampler>(const_cast<VulkanDevice&>(*this), desc);
+}
+
+std::unique_ptr<IRHIQueryPool> VulkanDevice::CreateTimestampQueryPool(uint32_t count) const
+{
+    VkPhysicalDeviceProperties properties{};
+    vkGetPhysicalDeviceProperties(m_PhysicalDevice, &properties);
+
+    uint32_t familyCount = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(m_PhysicalDevice, &familyCount, nullptr);
+    std::vector<VkQueueFamilyProperties> families(familyCount);
+    vkGetPhysicalDeviceQueueFamilyProperties(m_PhysicalDevice, &familyCount, families.data());
+
+    const uint32_t validBits = families[m_Indices.GraphicsFamily.value()].timestampValidBits;
+    if (count == 0 || validBits == 0 || properties.limits.timestampPeriod <= 0.0f)
+        return nullptr;
+    return std::make_unique<VulkanQueryPool>(const_cast<VulkanDevice&>(*this), count,
+                                             static_cast<double>(properties.limits.timestampPeriod), validBits);
 }
 
 std::unique_ptr<IRHIShader> VulkanDevice::CreateShader(

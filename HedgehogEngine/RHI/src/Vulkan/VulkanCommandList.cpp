@@ -4,6 +4,7 @@
 #include "VulkanDescriptor.hpp"
 #include "VulkanDevice.hpp"
 #include "VulkanPipeline.hpp"
+#include "VulkanQueryPool.hpp"
 #include "VulkanTexture.hpp"
 #include "VulkanTypes.hpp"
 
@@ -415,6 +416,17 @@ void VulkanCommandList::GenerateMipmaps(IRHITexture& texture)
     toRead[count].Range.MipLevelCount = 1;
     ++count;
     Barrier({ toRead, count }, {});
+}
+
+void VulkanCommandList::ResetQueries(IRHIQueryPool& pool, uint32_t first, uint32_t count)
+{
+    vkCmdResetQueryPool(m_CommandBuffer, static_cast<VulkanQueryPool&>(pool).GetHandle(), first, count);
+}
+
+void VulkanCommandList::WriteTimestamp(IRHIQueryPool& pool, uint32_t index)
+{
+    vkCmdWriteTimestamp2(m_CommandBuffer, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+                         static_cast<VulkanQueryPool&>(pool).GetHandle(), index);
 }
 
 void VulkanCommandList::CopyTextureToTexture(const IRHITexture& src, IRHITexture& dst)

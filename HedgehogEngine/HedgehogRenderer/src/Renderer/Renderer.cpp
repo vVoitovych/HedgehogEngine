@@ -12,6 +12,7 @@
 #include "HedgehogSettings/api/HedgehogSettings.hpp"
 
 #include "FileSystem/api/FileSystemManager.hpp"
+#include "Logger/api/Logger.hpp"
 
 #include "RHI/api/IRHIDevice.hpp"
 #include "RHI/api/IRHISyncPrimitive.hpp"
@@ -62,6 +63,8 @@ namespace Renderer
     {
         auto& device = m_RHIContext->GetRHIDevice();
         device.WaitIdle();
+        if (const std::optional<double> gpuMs = m_FrameRenderer->GetLastGpuFrameMs())
+            LOGINFO("Renderer: the last frame the GPU finished took ", *gpuMs, " ms on the GPU.");
         m_FrameRenderer.reset();
         m_Resources->Cleanup(device);
         m_Resources.reset();
@@ -91,6 +94,11 @@ namespace Renderer
     size_t Renderer::GetLastFramePassCount() const
     {
         return m_FrameRenderer->GetLastFramePassCount();
+    }
+
+    std::optional<double> Renderer::GetLastGpuFrameMs() const
+    {
+        return m_FrameRenderer->GetLastGpuFrameMs();
     }
 
     const std::vector<std::string>& Renderer::GetGraphNames() const

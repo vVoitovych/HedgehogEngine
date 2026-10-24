@@ -91,9 +91,51 @@ namespace RGTest
         size_t m_Size;
     };
 
+    // Timestamps a test writes itself (SetTimestamp); a reset one reads as not yet written.
+    class TestQueryPool final : public RHI::IRHIQueryPool
+    {
+    public:
+        explicit TestQueryPool(uint32_t count) : m_Values(count), m_Written(count, false) {}
+
+        uint32_t GetCount() const override { return static_cast<uint32_t>(m_Values.size()); }
+        double   GetTickPeriodNs() const override { return 2.0; }
+        bool     ReadTimestamps(uint32_t first, std::span<uint64_t> out) const override
+        {
+            if (out.empty() || first + out.size() > m_Values.size())
+                return false;
+            for (size_t i = 0; i < out.size(); ++i)
+            {
+                if (!m_Written[first + i])
+                    return false;
+                out[i] = m_Values[first + i];
+            }
+            return true;
+        }
+
+        void SetTimestamp(uint32_t index, uint64_t ticks)
+        {
+            m_Values[index]  = ticks;
+            m_Written[index] = true;
+        }
+        void Reset(uint32_t first, uint32_t count)
+        {
+            for (uint32_t i = first; i < first + count && i < m_Written.size(); ++i)
+                m_Written[i] = false;
+        }
+
+    private:
+        std::vector<uint64_t> m_Values;
+        std::vector<bool>     m_Written;
+    };
+
     class TestDevice final : public RHI::IRHIDevice
     {
     public:
+        std::unique_ptr<RHI::IRHIQueryPool> CreateTimestampQueryPool(uint32_t count) const override
+        {
+            return std::make_unique<TestQueryPool>(count);
+        }
+
         std::unique_ptr<RHI::IRHIBuffer> CreateBuffer(size_t size, RHI::BufferUsage, RHI::MemoryUsage) const override
         {
             return std::make_unique<TestBuffer>(size);
@@ -281,6 +323,17 @@ namespace RGTest
             Commands.push_back("mipmaps");
         }
         void CopyTextureToTexture(const RHI::IRHITexture&, RHI::IRHITexture&) override {}
+
+        void ResetQueries(RHI::IRHIQueryPool& pool, uint32_t first, uint32_t count) override
+        {
+            if (auto* test = dynamic_cast<TestQueryPool*>(&pool))
+                test->Reset(first, count);
+            Commands.push_back("reset queries " + std::to_string(first) + " " + std::to_string(count));
+        }
+        void WriteTimestamp(RHI::IRHIQueryPool&, uint32_t index) override
+        {
+            Commands.push_back("timestamp " + std::to_string(index));
+        }
 
         struct RegionCopy
         {

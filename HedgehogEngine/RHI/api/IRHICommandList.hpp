@@ -14,6 +14,7 @@ class IRHIBuffer;
 class IRHITexture;
 class IRHIPipeline;
 class IRHIDescriptorSet;
+class IRHIQueryPool;
 
 // One attachment for BeginRendering (Vulkan 1.3 dynamic rendering): a texture view plus its
 // load/store/clear behaviour. The caller transitions Texture into RenderTarget / DepthWrite with
@@ -160,6 +161,15 @@ public:
     // Both textures must already be in TransferSrc / TransferDst layout respectively.
     virtual void CopyTextureToTexture(const IRHITexture& src,
                                       IRHITexture&       dst) = 0;
+
+    // ── Queries ───────────────────────────────────────────────────────────────
+
+    // Makes queries first .. first + count - 1 writable again; outside rendering, before they are
+    // written in this or a later submission.
+    virtual void ResetQueries(IRHIQueryPool& pool, uint32_t first, uint32_t count) = 0;
+
+    // Writes the GPU's clock into the query once every command recorded before it has finished.
+    virtual void WriteTimestamp(IRHIQueryPool& pool, uint32_t index) = 0;
 
 protected:
     IRHICommandList() = default;

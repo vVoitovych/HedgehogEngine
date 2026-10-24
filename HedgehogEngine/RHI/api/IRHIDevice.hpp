@@ -8,6 +8,7 @@
 #include "IRHIShader.hpp"
 #include "IRHIDescriptor.hpp"
 #include "IRHIPipeline.hpp"
+#include "IRHIQueryPool.hpp"
 #include "IRHICommandList.hpp"
 #include "IRHISwapchain.hpp"
 #include "IRHISyncPrimitive.hpp"
@@ -78,6 +79,12 @@ public:
 
     virtual std::unique_ptr<IRHIPipeline>    CreateGraphicsPipeline(
         const GraphicsPipelineDesc& desc) const = 0;
+
+    // ── Queries ───────────────────────────────────────────────────────────────
+
+    // A pool of count GPU timestamps, or nullptr when the graphics queue cannot write timestamps
+    // (GPU timing is then unavailable, and nothing else fails).
+    virtual std::unique_ptr<IRHIQueryPool> CreateTimestampQueryPool(uint32_t count) const = 0;
 
     // ── Command recording ─────────────────────────────────────────────────────
 

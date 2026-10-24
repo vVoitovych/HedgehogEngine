@@ -68,3 +68,31 @@ TEST_CASE("The recording command list records region copies and mipmap generatio
     CHECK(cmd.MipmapGenerations == std::vector<const RHI::IRHITexture*>{ &cube });
     CHECK(cmd.Commands == std::vector<std::string>{ "copy 2 4", "mipmaps" });
 }
+
+TEST_CASE("The recording command list records query resets and timestamps, and a pool reads only what was written")
+{
+    RGTest::TestDevice device;
+    const std::unique_ptr<RHI::IRHIQueryPool> pool = device.CreateTimestampQueryPool(4);
+    REQUIRE(pool != nullptr);
+    CHECK(pool->GetCount() == 4);
+
+    RGTest::RecordingCommandList cmd;
+    cmd.ResetQueries(*pool, 0, 2);
+    cmd.WriteTimestamp(*pool, 0);
+    cmd.WriteTimestamp(*pool, 1);
+    CHECK(cmd.Commands == std::vector<std::string>{ "reset queries 0 2", "timestamp 0", "timestamp 1" });
+
+    auto& test = static_cast<RGTest::TestQueryPool&>(*pool);
+    uint64_t ticks[2] = {};
+    CHECK_FALSE(pool->ReadTimestamps(0, ticks));
+    test.SetTimestamp(0, 100);
+    CHECK_FALSE(pool->ReadTimestamps(0, ticks)); // the second is not written yet
+    test.SetTimestamp(1, 350);
+    REQUIRE(pool->ReadTimestamps(0, ticks));
+    CHECK(ticks[0] == 100);
+    CHECK(ticks[1] == 350);
+    CHECK_FALSE(pool->ReadTimestamps(3, ticks)); // past the pool
+
+    cmd.ResetQueries(*pool, 0, 2);
+    CHECK_FALSE(pool->ReadTimestamps(0, ticks));
+}
