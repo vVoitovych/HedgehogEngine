@@ -89,6 +89,16 @@ namespace EngineLogger
             m_Path = path;
     }
 
+    void LogFile::Discard()
+    {
+        if (!m_Stream.is_open())
+            return;
+        m_Stream.close();
+        std::error_code error;
+        std::filesystem::remove(m_Path, error);
+        m_Path.clear();
+    }
+
     void LogFile::WriteLine(std::string_view prefix, std::string_view message)
     {
         const auto now    = std::chrono::system_clock::now();

@@ -52,6 +52,7 @@ group "Test"
    include "HedgehogInput/tests/Build-InputTest.lua"
    include "HedgehogAudio/tests/Build-AudioTest.lua"
    include "HedgehogPhysics/tests/Build-PhysicsTest.lua"
+   include "Logger/tests/Build-LoggerTest.lua"
 
 group ""
 

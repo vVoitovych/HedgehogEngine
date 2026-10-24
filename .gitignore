@@ -654,6 +654,7 @@ Logs/
 /ThirdParty/Jolt/Jolt.vcxproj*
 /HedgehogPhysics/*.vcxproj*
 /HedgehogPhysics/tests/*.vcxproj*
+/Logger/tests/*.vcxproj*
 /Editor/tests/EditorTest.vcxproj
 /Editor/tests/EditorTest.vcxproj.filters
 /Plugins/**/*.vcxproj*
