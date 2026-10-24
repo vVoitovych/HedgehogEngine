@@ -9,7 +9,9 @@
 #include "RHI/api/IRHIBuffer.hpp"
 #include "RHI/api/IRHICommandList.hpp"
 #include "RHI/api/IRHIDevice.hpp"
+#include "RHI/api/IRHIQueryPool.hpp"
 
+#include <span>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
@@ -137,6 +139,22 @@ namespace Renderer
         void SetPassTimingEnabled(bool enabled) { m_PassTimingEnabled = enabled; }
         const std::vector<PassTiming>& GetLastPassTimings() const { return m_LastPassTimings; }
 
+        // GPU time per pass: while pool is set, Execute resets queries first .. first + count - 1 and
+        // writes one before the first pass and one after each pass, so pass i runs from query
+        // first + i to first + i + 1; past count - 1 passes the rest go untimed. Null turns it off.
+        void SetGpuTimestamps(RHI::IRHIQueryPool* pool, uint32_t first, uint32_t count)
+        {
+            m_TimestampPool  = pool;
+            m_TimestampFirst = first;
+            m_TimestampCount = count;
+        }
+        // The passes the last Execute timed, in order: their timestamps are readable once the GPU
+        // has run that frame. Kept until the next Execute.
+        std::span<const std::string> GetLastTimedPassNames() const
+        {
+            return { m_LastTimedPassNames.data(), m_TimedPassCount };
+        }
+
         // Exposed for tests/diagnostics — verifying AddPass's "no heap churn" claim needs a way
         // to check whether a pointer actually came from this arena.
         const FrameArena& GetArena() const { return m_Arena; }
@@ -178,6 +196,12 @@ namespace Renderer
 
         bool                    m_PassTimingEnabled = false;
         std::vector<PassTiming> m_LastPassTimings; // reused: names fit the small-string buffer
+
+        RHI::IRHIQueryPool*      m_TimestampPool  = nullptr;
+        uint32_t                 m_TimestampFirst = 0;
+        uint32_t                 m_TimestampCount = 0;
+        std::vector<std::string> m_LastTimedPassNames; // the first m_TimedPassCount; kept so their storage is reused
+        size_t                   m_TimedPassCount = 0;
 
         const GraphFrameContext* m_FrameContext = nullptr;
         const GraphDescription*  m_Executing    = nullptr; // set only while Execute() runs passes

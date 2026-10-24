@@ -101,6 +101,11 @@ namespace Renderer
         return m_FrameRenderer->GetLastGpuFrameMs();
     }
 
+    std::span<const GpuPassTiming> Renderer::GetLastPassGpuTimings() const
+    {
+        return m_FrameRenderer->GetLastPassGpuTimings();
+    }
+
     const std::vector<std::string>& Renderer::GetGraphNames() const
     {
         return m_FrameRenderer->GetGraphNames();

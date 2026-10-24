@@ -2,6 +2,7 @@
 
 #include "HedgehogRenderer/Graph/GraphAsset.hpp"
 #include "HedgehogRenderer/Graph/GraphDiagnostics.hpp"
+#include "HedgehogRenderer/Graph/GpuPassTiming.hpp"
 #include "HedgehogRenderer/Graph/PassBuilderRegistry.hpp"
 #include "HedgehogRenderer/Graph/UiCallback.hpp"
 #include "HedgehogRenderer/Views/View.hpp"
@@ -13,6 +14,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -127,6 +129,11 @@ namespace Renderer
         // through timestamps at its command list's start and end; nullopt until one has finished,
         // or when the device has no timestamps.
         std::optional<double> GetLastGpuFrameMs() const;
+
+        // Each render-graph pass's GPU time in that same frame, its barriers included, summed by
+        // name over the views (and the shared phase) that ran it, in the order passes first ran;
+        // empty until then, or without timestamps. Valid until the next RenderFrame.
+        std::span<const GpuPassTiming> GetLastPassGpuTimings() const;
 
         // Every graph asset a view can name (a CameraComponent's GraphName), in sorted order: each
         // "*.graph" file in the engine's graph directory, including files added while running.

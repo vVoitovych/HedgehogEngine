@@ -16,8 +16,11 @@ namespace Renderer
         bool IsCapturing() const { return m_Capturing; }
 
         void AddSample(const char* zoneName, double milliseconds);
+        // The zone's GPU time, shown in its own column; a zone may have either kind or both.
+        void AddGpuSample(const char* zoneName, double milliseconds);
 
-        // Logs avg/min/max/p95 per zone, in first-seen order.
+        // Logs avg/min/max/p95 per zone, in first-seen order, and the average GPU time of the zones
+        // that have one.
         void LogReport() const;
 
     private:
@@ -25,6 +28,7 @@ namespace Renderer
         {
             std::string         Name;
             std::vector<double> SamplesMs;
+            std::vector<double> GpuSamplesMs;
         };
 
         ZoneSeries& findOrAddZone(const char* zoneName);
