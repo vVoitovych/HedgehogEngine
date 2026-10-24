@@ -53,6 +53,7 @@ group "Test"
    include "HedgehogAudio/tests/Build-AudioTest.lua"
    include "HedgehogPhysics/tests/Build-PhysicsTest.lua"
    include "Logger/tests/Build-LoggerTest.lua"
+   include "Profiler/tests/Build-ProfilerTest.lua"
 
 group ""
 
@@ -76,6 +77,7 @@ include "EcsSerialization/Build-EcsSerialization.lua"
 
 include "HedgehogMath/Build-HedgehogMath.lua"
 include "Logger/Build-Logger.lua"
+include "Profiler/Build-Profiler.lua"
 include "FileSystem/Build-FileSystem.lua"
 
 include "HedgehogExtract/Build-HedgehogExtract.lua"

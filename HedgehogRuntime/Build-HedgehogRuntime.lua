@@ -28,7 +28,8 @@ project "HedgehogRuntime"
       "HedgehogSettings",
       "HedgehogWindow",
       "FileSystem",
-      "Logger"
+      "Logger",
+      "Profiler"
    }
 
    targetdir (IntermediatesDir)

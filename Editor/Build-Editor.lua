@@ -44,6 +44,7 @@ project "Editor"
       "HedgehogWindow",
       "HedgehogSettings",
       "Logger",
+      "Profiler",
       "yaml-cpp",
       "ECS",
       "EcsSerialization",

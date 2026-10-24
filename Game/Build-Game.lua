@@ -36,6 +36,7 @@ project "Game"
       "HedgehogWindow",
       "HedgehogSettings",
       "Logger",
+      "Profiler",
       "yaml-cpp",
       "ECS",
       "EcsSerialization",

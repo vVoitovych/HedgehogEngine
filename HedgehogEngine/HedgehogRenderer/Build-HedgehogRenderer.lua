@@ -52,6 +52,7 @@ project "HedgehogRenderer"
         "ContentLoader",
         "FileSystem",
         "Logger",
+        "Profiler",
         "yaml-cpp",
         "Tracy"
     }

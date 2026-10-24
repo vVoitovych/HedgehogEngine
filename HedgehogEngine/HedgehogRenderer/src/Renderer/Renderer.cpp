@@ -1,7 +1,7 @@
 ﻿#include "HedgehogRenderer/Renderer.hpp"
 
 #include "FrameRenderer.hpp"
-#include "Profiling/Profiler.hpp"
+#include "Profiler/api/Profiler.hpp"
 #include "RHIContext/RHIContext.hpp"
 #include "ResourceRegistry/ResourceRegistry.hpp"
 
@@ -171,23 +171,26 @@ namespace Renderer
     void Renderer::RenderFrame(const HX::RenderScene& scene, const HedgehogSettings::Settings& settings,
                                const UiCallback& ui)
     {
-        HH_PROFILE_ZONE("RenderFrame");
-        ScopedCpuSample sample(m_FrameRenderer->GetFrameStats(), "RenderFrame(total)");
-
-        m_FrameRenderer->WaitForFrameSlot();
-
-        // Resize before acquiring, so a resize never costs a frame.
-        if (m_Window.IsResized())
         {
-            m_Window.ResetResizedFlag();
-            m_RHIContext->GetRHIDevice().WaitIdle();
-            m_RHIContext->RecreateSwapchain(m_Window);
-            m_FrameRenderer->NotifySwapchainResized();
-        }
+            HH_PROFILE_ZONE("RenderFrame");
+            ScopedCpuSample sample(m_FrameRenderer->GetFrameStats(), "RenderFrame(total)");
 
-        m_FrameRenderer->SyncUiTextures(scene, *m_Resources);
-        m_FrameRenderer->SyncEnvironment(scene);
-        m_FrameRenderer->Render(scene, *m_Resources, settings, ui);
+            m_FrameRenderer->WaitForFrameSlot();
+
+            // Resize before acquiring, so a resize never costs a frame.
+            if (m_Window.IsResized())
+            {
+                m_Window.ResetResizedFlag();
+                m_RHIContext->GetRHIDevice().WaitIdle();
+                m_RHIContext->RecreateSwapchain(m_Window);
+                m_FrameRenderer->NotifySwapchainResized();
+            }
+
+            m_FrameRenderer->SyncUiTextures(scene, *m_Resources);
+            m_FrameRenderer->SyncEnvironment(scene);
+            m_FrameRenderer->Render(scene, *m_Resources, settings, ui);
+        }
+        // After the frame's zone has ended, so it lands in the frame it measures.
         HH_PROFILE_FRAME();
     }
 }
