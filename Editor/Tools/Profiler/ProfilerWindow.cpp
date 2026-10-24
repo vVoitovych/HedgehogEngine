@@ -1,14 +1,18 @@
 #include "ProfilerWindow.hpp"
+#include "ChromeTrace.hpp"
 
 #include "EditorTheme.hpp"
 
 #include "HedgehogCommon/api/RendererSettings.hpp"
 #include "HedgehogRenderer/Renderer.hpp"
 
+#include "DialogueWindows/api/ProfilerTraceDialogue.hpp"
+
 #include "imgui.h"
 
 #include <algorithm>
 #include <cstdio>
+#include <fstream>
 #include <span>
 #include <string_view>
 
@@ -92,6 +96,13 @@ namespace Editor
                 m_Selected.reset(); // follow the newest frame again
         }
         ImGui::SameLine();
+        if (ImGui::Button("Export..."))
+            Export();
+        if (!m_ExportStatus.empty())
+        {
+            ImGui::SameLine();
+            ImGui::TextDisabled("%s", m_ExportStatus.c_str());
+        }
         const size_t frameCount = Profiling::GetFrameCount();
         if (frameCount == 0)
         {
@@ -275,6 +286,29 @@ namespace Editor
                     pass.GpuMilliseconds, hovered);
             x += w;
         }
+    }
+
+    void ProfilerWindow::Export()
+    {
+        const char* path = DialogueWindows::ProfilerTraceSaveDialogue("profile.json");
+        if (path == nullptr)
+            return;
+
+        // Oldest first; each frame's GPU passes start where its CPU frame does (see TraceGpuFrame).
+        std::vector<const Profiling::FrameRecord*> frames;
+        std::vector<TraceGpuFrame>                 gpuFrames;
+        for (size_t age = Profiling::GetFrameCount(); age > 0; --age)
+        {
+            const Profiling::FrameRecord& frame = Profiling::GetFrame(age - 1);
+            frames.push_back(&frame);
+            if (const GpuSample* gpu = FindGpu(frame.Index))
+                gpuFrames.push_back({ frame.StartNs, gpu->Passes });
+        }
+
+        std::ofstream file(path, std::ios::binary | std::ios::trunc);
+        file << WriteChromeTrace(frames, gpuFrames);
+        m_ExportStatus = file ? "Exported " + std::to_string(frames.size()) + " frames to " + path
+                              : std::string("Could not write ") + path;
     }
 
     void ProfilerWindow::DrawTopZones(const Profiling::FrameRecord& frame)
