@@ -64,6 +64,8 @@ public:
 
     std::unique_ptr<IRHIPipeline>    CreateGraphicsPipeline(const GraphicsPipelineDesc& desc) const override;
 
+    std::unique_ptr<IRHIQueryPool>   CreateTimestampQueryPool(uint32_t count) const override;
+
     std::unique_ptr<IRHICommandList> CreateCommandList() const override;
     std::unique_ptr<IRHISwapchain>   CreateSwapchain(uint32_t width, uint32_t height) const override;
 

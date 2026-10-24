@@ -12,6 +12,7 @@
 #include <filesystem>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -121,6 +122,11 @@ namespace Renderer
         // How many render-graph passes the last RenderFrame executed, across every view: a hidden
         // (zero-area) view contributes none.
         size_t GetLastFramePassCount() const;
+
+        // The GPU time of the newest frame the GPU has finished (MAX_FRAMES_IN_FLIGHT behind),
+        // through timestamps at its command list's start and end; nullopt until one has finished,
+        // or when the device has no timestamps.
+        std::optional<double> GetLastGpuFrameMs() const;
 
         // Every graph asset a view can name (a CameraComponent's GraphName), in sorted order: each
         // "*.graph" file in the engine's graph directory, including files added while running.

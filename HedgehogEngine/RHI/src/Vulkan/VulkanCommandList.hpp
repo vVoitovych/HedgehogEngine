@@ -75,6 +75,9 @@ public:
 
     void CopyTextureToTexture(const IRHITexture& src, IRHITexture& dst) override;
 
+    void ResetQueries(IRHIQueryPool& pool, uint32_t first, uint32_t count) override;
+    void WriteTimestamp(IRHIQueryPool& pool, uint32_t index) override;
+
     // Internal accessor
     VkCommandBuffer GetHandle() const { return m_CommandBuffer; }
 

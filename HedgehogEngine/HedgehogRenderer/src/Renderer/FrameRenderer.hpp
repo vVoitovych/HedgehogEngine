@@ -123,6 +123,11 @@ namespace Renderer
         // How many passes the last frame executed, across every view.
         size_t GetLastFramePassCount() const { return m_LastFramePassCount; }
 
+        // How long the GPU took over the newest frame it has finished (MAX_FRAMES_IN_FLIGHT behind
+        // the CPU), first timestamp to last; nullopt until one has, or when the device has no
+        // timestamps.
+        std::optional<double> GetLastGpuFrameMs() const { return m_LastGpuFrameMs; }
+
         const std::vector<std::string>& GetGraphNames() const { return m_Library.GetNames(); }
         const GraphAssetLibrary&        GetGraphLibrary() const { return m_Library; }
         const PassBuilderRegistry&      GetPassTypes() const { return m_Registry; }
@@ -208,6 +213,12 @@ namespace Renderer
         std::unordered_map<std::string, RGTexture> m_WrittenTargets; // this frame: target -> newest version
 
         size_t m_LastFramePassCount = 0;
+
+        // Two timestamps per frame slot, at the start and end of its command list; null without
+        // timestamp support.
+        std::unique_ptr<RHI::IRHIQueryPool>                         m_FrameTimestamps;
+        std::array<bool, HedgehogEngine::MAX_FRAMES_IN_FLIGHT>      m_SlotTimed{};
+        std::optional<double>                                       m_LastGpuFrameMs;
 
         FrameStats                                 m_Stats;
         std::vector<RenderGraphRuntime::PassTiming> m_PassTotals; // this frame's, by pass name

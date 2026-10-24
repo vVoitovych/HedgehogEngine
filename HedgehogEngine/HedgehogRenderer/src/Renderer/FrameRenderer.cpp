@@ -72,6 +72,9 @@ namespace Renderer
 
         for (auto& runtime : m_Runtimes)
             runtime = std::make_unique<RenderGraphRuntime>(device, GRAPH_ARENA_BYTES);
+        m_FrameTimestamps = device.CreateTimestampQueryPool(2 * HedgehogEngine::MAX_FRAMES_IN_FLIGHT);
+        if (!m_FrameTimestamps)
+            LOGWARNING("FrameRenderer: the GPU's graphics queue has no timestamps; GPU frame times are unavailable.");
         for (FrameSlot& slot : m_Slots)
         {
             slot.Cmd            = device.CreateCommandList();
@@ -97,6 +100,18 @@ namespace Renderer
         slot.Fence->Reset();
         slot.Cmd->Reset();
         slot.Cmd->Begin();
+
+        // The slot's fence has signaled, so the timestamps it wrote last time are there to read.
+        const uint32_t firstTimestamp = 2 * m_SlotIndex;
+        if (m_FrameTimestamps)
+        {
+            uint64_t ticks[2] = {};
+            if (m_SlotTimed[m_SlotIndex] && m_FrameTimestamps->ReadTimestamps(firstTimestamp, ticks))
+                m_LastGpuFrameMs = static_cast<double>(ticks[1] - ticks[0]) * m_FrameTimestamps->GetTickPeriodNs() / 1.0e6;
+            slot.Cmd->ResetQueries(*m_FrameTimestamps, firstTimestamp, 2);
+            slot.Cmd->WriteTimestamp(*m_FrameTimestamps, firstTimestamp);
+            m_SlotTimed[m_SlotIndex] = true;
+        }
 
         // This slot's fence has signaled, so every frame up to MAX_FRAMES_IN_FLIGHT ago is complete.
         ++m_FrameNumber;
@@ -462,6 +477,8 @@ namespace Renderer
             Transition(cmd, image, RHI::ResourceState::RenderTarget, RHI::ResourceState::Present);
         }
 
+        if (m_FrameTimestamps)
+            cmd.WriteTimestamp(*m_FrameTimestamps, 2 * m_SlotIndex + 1);
         cmd.End();
         m_Device.SubmitCommandList(cmd, { slot.ImageAvailable.get() }, { slot.RenderFinished.get() }, slot.Fence.get());
         m_Swapchain.Present(imageIndex, *slot.RenderFinished);
