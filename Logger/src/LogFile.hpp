@@ -7,7 +7,8 @@
 namespace EngineLogger
 {
     // This run's log file: <exe directory>/Logs/<exe name>_<YYYY-MM-DD>_<HH-MM-SS>.txt.
-    // A file that cannot be opened leaves the log console-only.
+    // A file that cannot be opened leaves the log console-only. Every line is flushed as it is
+    // written, so a crash loses nothing; a run that ends normally discards the file (Logger).
     class LogFile
     {
     public:
@@ -18,6 +19,9 @@ namespace EngineLogger
 
         // Writes one line, prefixed with the local time, and flushes it.
         void WriteLine(std::string_view prefix, std::string_view message);
+
+        // Closes the file and deletes it.
+        void Discard();
 
     private:
         void Open();
