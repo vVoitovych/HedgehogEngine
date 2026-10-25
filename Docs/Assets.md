@@ -129,7 +129,7 @@ cache), so a 4K texture takes 85 MB of video memory and its mips are box-filtere
 
 | Supported | Read by | Notes |
 |-----------|---------|-------|
-| OBJ | tinyobjloader (`ContentLoader/src/ObjLoader.cpp`) | Positions, UVs (v flipped), normals; tangents generated. Its `.mtl` materials are parsed by tinyobjloader and then ignored. **Every face must have a UV and a normal**: a missing index (`-1`) is read without a check, out of bounds |
+| OBJ | tinyobjloader (`ContentLoader/src/ObjLoader.cpp`) | Positions, UVs (v flipped), normals; tangents generated. Its `.mtl` materials are parsed by tinyobjloader and then ignored. A face corner without a UV gets (0, 0) and one without a normal a smooth normal, generated from the faces around its vertex (since HE-387) |
 | glTF 2.0 (`.gltf` with external or `data:` buffers, `.glb`) | tinygltf (`ContentLoader/src/GltfModel.cpp`, `GltfMeshLoader.cpp`) | Meshes (all primitives merged, one material: the first primitive's), `TANGENT` or generated tangents, one skin (JOINTS_0/WEIGHTS_0), skeletal animation (Step and Linear; CUBICSPLINE played as Linear), metallic-roughness materials (`GltfMaterialLoader.cpp`: factors, the five maps, alpha mode and double-sidedness). Ignored: morph targets, a second UV set, cameras and lights, every `KHR_`/`EXT_` extension, images embedded in the file (for materials) |
 
 | Wanted | Library | Licence | Priority | Cost | Why |
