@@ -1,7 +1,7 @@
 # Assets
 
 What a HedgehogEngine project is made of: the asset types the engine knows today (section 1) and
-the file formats each one reads (section 2, HE-385). The facts below come from the code as of
+the file formats each one reads (section 2). The facts below come from the code as of
 2026-10-24; each type names where it lives, so the table can be checked against it.
 
 Paths are virtual: `assets://` is the project's `Assets/` folder, `engine://` the engine's root
@@ -96,3 +96,116 @@ it removes a real limit, but there is a workaround. Low: needed only by some gam
 | Low | **Navigation mesh** | AI has nothing to find paths on. | A baked walkable surface per scene |
 | Low | **Video** | No cutscenes or animated UI from video. | A video file played onto a texture |
 | Low | **Shader graph / material template** | A material can only use the one PBR shader; a custom look needs engine code. | A node graph compiled to a `.shader` a material names |
+
+## 2. File formats
+
+For each asset type made outside the engine: the formats it reads today, each with the code that
+reads it, then the formats worth adding, with the library that would read them, its licence and a
+rough cost (S: a day or two, M: a ticket, L: an epic or a large dependency). Formats the engine
+writes itself (scenes, prefabs, materials, controllers, graphs, input actions, project files) are
+its own YAML and are not repeated here.
+
+### 2.1 Textures
+
+| Supported | Read by | Notes |
+|-----------|---------|-------|
+| PNG | stb_image 2.28 (`ContentLoader/src/TextureLoader.cpp`, `stbi_load_from_memory`) | 8 and 16 bits per channel, palettes and grey; always decoded to RGBA8 (`STBI_rgb_alpha`), so 16-bit images lose precision |
+| JPEG | stb_image | Baseline and progressive, 8-bit; no 12-bit or arithmetic coding |
+| TGA | stb_image | Uncompressed and RLE |
+| BMP, PSD, GIF, PNM, PIC | stb_image | Decoded by the same call, but the Content panel calls them Other (`Editor/Panels/ContentTypes.cpp` lists only `.png`, `.jpg`, `.jpeg`, `.tga`), so they cannot be dropped on a material slot; PSD gives only the composited image, GIF only its first frame |
+
+Every texture is uploaded as RGBA8 with a mip chain the GPU generates (`ResourceRegistry`'s texture
+cache), so a 4K texture takes 85 MB of video memory and its mips are box-filtered.
+
+| Wanted | Library | Licence | Priority | Cost | Why |
+|--------|---------|---------|----------|------|-----|
+| KTX2 with Basis Universal (UASTC, ETC1S) | libktx, or basis_universal's transcoder | Apache-2.0 | High | M | GPU-compressed textures transcoded to BC7/BC5/BC4 at load: a quarter of the video memory and much faster loads. Sketchfab and Khronos samples ship it (`KHR_texture_basisu`). Needs texture import settings (section 1.3) to say how to encode |
+| DDS (BC1 to BC7) | A small reader (dds-ktx, single header) | BSD-2-Clause | Medium | S | Ready-made compressed textures, mip chains included, from most DCC tools and asset stores |
+| EXR (half and float) | tinyexr | BSD-3-Clause | Medium | S | Linear data textures and HDR images; Poly Haven publishes its HDRIs and many PBR maps as EXR |
+| BMP, PSD, GIF in the Content panel | (already decoded) | — | Low | S | Add the extensions to `ContentTypes` so the files the loader already reads can be assigned |
+| WebP | libwebp | BSD-3-Clause | Low | S | Smaller lossless and lossy images; some online libraries offer it |
+
+### 2.2 Meshes
+
+| Supported | Read by | Notes |
+|-----------|---------|-------|
+| OBJ | tinyobjloader (`ContentLoader/src/ObjLoader.cpp`) | Positions, UVs (v flipped), normals; tangents generated. Its `.mtl` materials are parsed by tinyobjloader and then ignored. **Every face must have a UV and a normal**: a missing index (`-1`) is read without a check, out of bounds |
+| glTF 2.0 (`.gltf` with external or `data:` buffers, `.glb`) | tinygltf (`ContentLoader/src/GltfModel.cpp`, `GltfMeshLoader.cpp`) | Meshes (all primitives merged, one material: the first primitive's), `TANGENT` or generated tangents, one skin (JOINTS_0/WEIGHTS_0), skeletal animation (Step and Linear; CUBICSPLINE played as Linear), metallic-roughness materials (`GltfMaterialLoader.cpp`: factors, the five maps, alpha mode and double-sidedness). Ignored: morph targets, a second UV set, cameras and lights, every `KHR_`/`EXT_` extension, images embedded in the file (for materials) |
+
+| Wanted | Library | Licence | Priority | Cost | Why |
+|--------|---------|---------|----------|------|-----|
+| FBX | ufbx (single file) | MIT or public domain | High | M | Most asset stores (Unity Asset Store, Mixamo, Quaternius, Kenney) ship FBX; ufbx reads meshes, skins and animation without the Autodesk SDK |
+| glTF extensions: `KHR_texture_transform`, `KHR_materials_emissive_strength`, `KHR_mesh_quantization`, `KHR_materials_clearcoat`/`transmission` | tinygltf already parses them | — | Medium | S each | Sketchfab and Blender exports use them; without them tiled textures, bright emissives and quantized meshes come out wrong |
+| glTF compression: `KHR_draco_mesh_compression`, `EXT_meshopt_compression` | Draco; meshoptimizer | Apache-2.0; MIT | Medium | M | Compressed meshes from Sketchfab and gltfpack; meshoptimizer is also worth having for simplification and LODs |
+| Several materials per mesh | (engine work) | — | Medium | M | A glTF or OBJ with several materials now draws with the first; needs submeshes |
+| OBJ `.mtl` materials | tinyobjloader already reads them | — | Low | S | Import an OBJ's materials as glTF's are imported |
+| USD / USDZ | OpenUSD | Modified Apache-2.0 | Low | L | Film and Apple pipelines; a very large dependency |
+| Collada, 3DS and the rest | Assimp | BSD-3-Clause | Low | M | Older formats; Assimp is large and its quality varies by format, so prefer FBX and glTF |
+
+### 2.3 Animation
+
+| Supported | Read by | Notes |
+|-----------|---------|-------|
+| glTF 2.0 skeletal animation | tinygltf (`ContentLoader/src/GltfAnimationLoader.cpp`) | Translation, rotation and scale channels on the skin's joints; clips live in their mesh's file (section 1.2) |
+
+| Wanted | Library | Licence | Priority | Cost | Why |
+|--------|---------|---------|----------|------|-----|
+| FBX animation | ufbx | MIT or public domain | High | S (with FBX meshes) | Mixamo's library and most store animations are FBX |
+| glTF clips without a mesh | tinygltf | MIT | Medium | S | Animation-only glTF files, once clips have their own asset (section 1.3) |
+| CUBICSPLINE interpolation | (engine work) | — | Low | S | Played as Linear today, with a warning |
+| BVH motion capture | A small reader | — | Low | S | Free mocap libraries (CMU) publish BVH |
+
+### 2.4 Audio
+
+| Supported | Read by | Notes |
+|-----------|---------|-------|
+| WAV | miniaudio 0.11.25 (dr_wav), `HedgehogAudio/src/AudioClipCache.cpp`, `ma_decoder_init_memory` | PCM and float; decoded whole into 32-bit floats at load |
+| FLAC | miniaudio (dr_flac) | Decoded whole at load |
+| MP3 | miniaudio (dr_mp3) | Decoded whole at load |
+
+Every clip is decoded whole into memory: a three-minute stereo track at 48 kHz takes about 70 MB.
+
+| Wanted | Library | Licence | Priority | Cost | Why |
+|--------|---------|---------|----------|------|-----|
+| Ogg Vorbis | stb_vorbis, which miniaudio already integrates | Public domain or MIT | High | S | The usual format for game music and effects (Kenney, OpenGameArt, freesound exports); smaller than MP3 at the same quality |
+| Streaming long clips | miniaudio's streamed `ma_sound` | MIT-0 or public domain | High | M | Music decoded as it plays rather than whole at load |
+| Opus | libopus and opusfile | BSD-3-Clause | Low | M | The best quality per byte, mostly for voice |
+
+### 2.5 Fonts
+
+| Supported | Read by | Notes |
+|-----------|---------|-------|
+| TrueType (`.ttf`) | stb_truetype 1.26 (`ContentLoader/src/FontLoader.cpp`) | Glyph outlines rasterized per pixel size into an atlas; ASCII and Latin-1 only; kerning from `kern` and GPOS |
+| OpenType (`.otf`) | stb_truetype | CFF outlines included; no shaping (ligatures, Arabic, Indic) |
+
+| Wanted | Library | Licence | Priority | Cost | Why |
+|--------|---------|---------|----------|------|-----|
+| More than Latin-1 (Cyrillic, Greek, CJK) | (engine work over stb_truetype) | — | High | M | Bake the codepoints a text uses, not a fixed range; needed by any localisation (section 1.3) |
+| Signed-distance-field atlases | msdfgen | MIT | Medium | M | Sharp text at any size and cheap outlines and shadows, without one atlas per size |
+| Font collections (`.ttc`) | stb_truetype (`stbtt_GetFontOffsetForIndex` with an index) | — | Low | S | Many system and Noto fonts ship as collections; only the first font is read now |
+| WOFF / WOFF2 | woff2 with brotli | MIT | Low | S | Web font files; most fonts are also offered as TTF |
+| Text shaping | HarfBuzz | MIT ("Old MIT") | Low | L | Right-to-left and complex scripts |
+
+### 2.6 Environments
+
+| Supported | Read by | Notes |
+|-----------|---------|-------|
+| Radiance HDR (`.hdr`), equirectangular | stb_image's float loader (`ContentLoader/src/HdrImage.cpp`) | 8-bit images refused; baked into a prefiltered cube and SH at first use (about 190 ms for a 1K sky in Release) |
+
+| Wanted | Library | Licence | Priority | Cost | Why |
+|--------|---------|---------|----------|------|-----|
+| EXR | tinyexr | BSD-3-Clause | Medium | S | Poly Haven, ambientCG and most HDRI sites offer EXR, often with more range than their `.hdr` |
+| A cooked, prefiltered cube (KTX2) | libktx | Apache-2.0 | Medium | M | The Cooker bakes once and the game loads the result, so a scene with an environment starts without the bake |
+| Cube faces (six images, or a cross) | stb_image | — | Low | S | Skyboxes made as cube maps rather than panoramas |
+
+### 2.7 Scripts and shaders
+
+| Supported | Read by | Notes |
+|-----------|---------|-------|
+| Lua 5.4 source (`.lua`) | Lua 5.4.9 with sol2 (`HedgehogScripting`) | Text only: precompiled chunks are refused by the sandbox |
+| GLSL (`.vert`, `.frag`, `.comp`, `.glsl`) | glslc (shaderc), at build and package time | Compiled to SPIR-V; only the engine's shaders, through `.shader` files |
+
+| Wanted | Library | Licence | Priority | Cost | Why |
+|--------|---------|---------|----------|------|-----|
+| Shaders compiled at run time, hot-reloaded | shaderc or glslang | Apache-2.0; BSD-3-Clause and others | Medium | M | Edit a shader and see it without rebuilding, as graphs already reload |
+| HLSL | DirectX Shader Compiler (SPIR-V output) | NCSA (University of Illinois, as LLVM) | Low | M | Shaders written for other engines |
