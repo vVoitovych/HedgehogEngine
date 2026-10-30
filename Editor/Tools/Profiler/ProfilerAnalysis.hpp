@@ -4,9 +4,12 @@
 
 #include "HedgehogRenderer/Graph/GpuPassTiming.hpp"
 
+#include <array>
 #include <cstdint>
+#include <optional>
 #include <span>
 #include <string>
+#include <string_view>
 #include <vector>
 
 // What the Profiler window shows of a recorded frame, worked out without ImGui so EditorTest
@@ -59,4 +62,36 @@ namespace Editor
 
     // The commands summed by pass, in the order the passes first appear.
     void SummarizeCommandsByPass(std::span<const Renderer::GpuCommandTiming> commands, std::vector<PassCommandStat>& out);
+
+    // What a zone's time is spent on, as the CPU Usage chart stacks it (Unity's categories, ours
+    // where the engine differs: Waiting for GPU in place of VSync).
+    enum class ZoneCategory : uint8_t
+    {
+        Rendering,
+        Scripts,
+        Physics,
+        Animation,
+        UI,
+        WaitingForGpu,
+        Others,
+    };
+    inline constexpr size_t ZONE_CATEGORY_COUNT = 7;
+
+    [[nodiscard]] const char* GetZoneCategoryName(ZoneCategory category);
+    // The category's chart colour, 0xRRGGBB in sRGB.
+    [[nodiscard]] uint32_t GetZoneCategoryColor(ZoneCategory category);
+
+    // The category a zone's name puts it in, or none for a zone whose time belongs to its parent's
+    // category: Rendering (Render, RenderFrame, SyncResources, Extract: ...), Scripts (Scripts: ...,
+    // ScriptSystem), Physics (Physics: ..., PhysicsSystem), Animation (Phase: Animation,
+    // AnimationSystem), UI (Editor UI, Outside windows, UiSystem), Waiting for GPU (Wait for the GPU).
+    [[nodiscard]] std::optional<ZoneCategory> CategorizeZone(std::string_view name);
+
+    // Milliseconds per category, indexed by ZoneCategory.
+    using CategoryTimes = std::array<double, ZONE_CATEGORY_COUNT>;
+
+    // The thread's time split by category: each zone's self time (its duration minus the zones
+    // directly nested in it) goes to its own category, else its nearest categorized ancestor's,
+    // else Others, so the categories sum to the thread's top-level zones.
+    [[nodiscard]] CategoryTimes ComputeCategoryTimes(const Profiling::ThreadRecord& thread);
 }
