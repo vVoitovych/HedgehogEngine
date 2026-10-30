@@ -120,6 +120,11 @@ TEST_CASE("Profiler hierarchy - GPU passes with their commands, a pass known onl
     CHECK(tree.Nodes[shadow].Command == -1);
     CHECK(tree.Root().TotalMs == doctest::Approx(3.3));
 
+    // Commands that outlast their pass leave it no self time rather than a negative one.
+    const std::vector<Renderer::GpuCommandTiming> longer = { { "Shadow", GpuCommandKind::DrawIndexed, 36, 1, 1.2 } };
+    BuildGpuTree(passes, longer, 4.0, tree);
+    CHECK(tree.Nodes[Child(tree, 0, "Shadow")].SelfMs == 0.0);
+
     BuildGpuTree(passes, {}, 4.0, tree);
     CHECK(Describe(tree, 0) == std::vector<std::string>{ "Shadow 1.0/1.0/1", "Forward 2.0/2.0/1" });
 }

@@ -47,24 +47,16 @@ namespace Editor
         constexpr const char* MODULE_NAMES[] = { "CPU Usage", "GPU Usage", "Rendering" };
         static_assert(std::size(MODULE_NAMES) == PROFILER_MODULE_COUNT);
 
-        // The Rendering module's counters, from a frame's timed GPU commands, and their colours.
-        constexpr const char* RENDERING_COUNTERS[] = { "Draw calls", "Commands" };
-        constexpr uint32_t    RENDERING_COLORS[]   = { 0x6FB34A, 0x4A90D9 };
-
-        double GetRenderingCounter(std::span<const Renderer::GpuCommandTiming> commands, size_t counter)
-        {
-            if (counter == 1)
-                return static_cast<double>(commands.size());
-            return static_cast<double>(std::count_if(commands.begin(), commands.end(), [](const Renderer::GpuCommandTiming& command)
-            {
-                return command.Kind == Renderer::GpuCommandKind::Draw || command.Kind == Renderer::GpuCommandKind::DrawIndexed;
-            }));
-        }
+        // The Rendering module's counters' colours, by RenderingCounter.
+        constexpr uint32_t RENDERING_COLORS[] = { 0x6FB34A, 0x4A90D9, 0xE8A23A, 0x3FBFB0, 0xA77BD6, 0xD9C548 };
+        static_assert(std::size(RENDERING_COLORS) == RENDERING_COUNTER_COUNT);
 
         std::string FormatValue(double value, bool count)
         {
+            if (count)
+                return FormatCount(static_cast<uint64_t>(std::max(value, 0.0)));
             char text[32];
-            std::snprintf(text, sizeof(text), count ? "%.0f" : "%.2f ms", value);
+            std::snprintf(text, sizeof(text), "%.2f ms", value);
             return text;
         }
 
@@ -425,10 +417,12 @@ namespace Editor
         }
         case ProfilerModule::Rendering:
         {
-            const GpuSample* gpu = FindGpu(frame.Index);
-            for (size_t c = 0; c < std::size(RENDERING_COUNTERS); ++c)
-                m_Series.push_back({ RENDERING_COUNTERS[c], ImGui::GetColorU32(Theme::Resolve(Theme::FromHex(RENDERING_COLORS[c]))),
-                                     !m_HiddenCounters[c], gpu != nullptr ? GetRenderingCounter(gpu->Commands, c) : 0.0 });
+            const GpuSample*        gpu    = FindGpu(frame.Index);
+            const RenderingCounters counts = gpu != nullptr ? CountRendering(gpu->Commands) : RenderingCounters{};
+            for (size_t c = 0; c < RENDERING_COUNTER_COUNT; ++c)
+                m_Series.push_back({ GetRenderingCounterName(static_cast<RenderingCounter>(c)),
+                                     ImGui::GetColorU32(Theme::Resolve(Theme::FromHex(RENDERING_COLORS[c]))), !m_HiddenCounters[c],
+                                     static_cast<double>(counts[c]) });
             break;
         }
         }
@@ -454,9 +448,9 @@ namespace Editor
         }
         else
         {
-            for (size_t c = 0; c < std::size(RENDERING_COUNTERS); ++c)
+            for (size_t c = 0; c < RENDERING_COUNTER_COUNT; ++c)
             {
-                if (std::strcmp(RENDERING_COUNTERS[c], series.Name) == 0)
+                if (std::strcmp(GetRenderingCounterName(static_cast<RenderingCounter>(c)), series.Name) == 0)
                     m_HiddenCounters[c] = !m_HiddenCounters[c];
             }
         }
@@ -548,13 +542,18 @@ namespace Editor
         }
         else
         {
+            // Each counter on its own scale, as triangles run to thousands and draw calls to tens;
+            // the tooltip gives the numbers.
             for (size_t s = 0; s < series; ++s)
             {
                 if (!m_Series[s].Visible)
                     continue;
+                double seriesTop = 1.0;
+                for (size_t age = 0; age < frameCount; ++age)
+                    seriesTop = std::max(seriesTop, m_ChartValues[age * series + s] * 1.1);
                 m_Points.clear();
                 for (size_t age = 0; age < frameCount; ++age)
-                    m_Points.emplace_back(xOf(age), yOf(m_ChartValues[age * series + s]));
+                    m_Points.emplace_back(xOf(age), bottom - static_cast<float>(m_ChartValues[age * series + s] / seriesTop) * height);
                 drawList.AddPolyline(m_Points.data(), static_cast<int>(m_Points.size()), m_Series[s].Color, ImDrawFlags_None, 1.5f);
             }
         }
@@ -791,19 +790,9 @@ namespace Editor
     }
 
     // The timed commands by pass: how many, how many draws and their GPU time.
-    void ProfilerWindow::DrawPassCommands(const GpuSample* gpu)
+    void ProfilerWindow::DrawPassCommands(const GpuSample& gpu)
     {
-        if (!IsModuleShown(ProfilerModule::GpuUsage) && !IsModuleShown(ProfilerModule::Rendering))
-        {
-            ImGui::TextDisabled("Add the GPU Usage module (Profiler Modules) to time every draw, barrier, copy and blit.");
-            return;
-        }
-        if (gpu == nullptr || gpu->Commands.empty())
-        {
-            ImGui::TextDisabled("No timed GPU commands for this frame yet.");
-            return;
-        }
-        SummarizeCommandsByPass(gpu->Commands, m_PassCommands);
+        SummarizeCommandsByPass(gpu.Commands, m_PassCommands);
         constexpr ImGuiTableFlags FLAGS = ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV |
                                           ImGuiTableFlags_ScrollY | ImGuiTableFlags_SizingStretchProp;
         if (!ImGui::BeginTable("##PassCommands", 4, FLAGS))

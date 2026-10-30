@@ -148,15 +148,15 @@ namespace Editor
                 link = &out.Nodes[*link].NextSibling;
             *link = index;
         }
-        // A pass known only from its commands takes their time as its own.
+        // A pass known only from its commands takes their time as its own. A command's time runs
+        // from the timed command before it, so a pass's first one also holds the gap after the
+        // pass before, and its commands may slightly outlast the pass: its self time is then 0.
         ForEachChild(out, 0, [&](uint32_t pass)
         {
             ProfilerNode& node = out.Nodes[pass];
             if (node.TotalMs == 0.0 && node.SelfMs < 0.0)
-            {
                 node.TotalMs = -node.SelfMs;
-                node.SelfMs  = 0.0;
-            }
+            node.SelfMs = std::max(node.SelfMs, 0.0);
         });
         TotalRoot(out);
     }
