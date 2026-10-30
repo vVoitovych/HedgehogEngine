@@ -37,18 +37,24 @@ namespace Editor
             return ImGui::GetColorU32(Theme::Resolve(ImVec4(r, g, b, 1.0f)));
         }
 
-        // A bar with its name inside when it fits, and a tooltip of the name and time when hovered.
-        void DrawBar(ImDrawList& drawList, ImVec2 min, ImVec2 max, const char* name, double ms, bool hovered)
+        // A bar with its name inside when it fits; whether the mouse is over it.
+        bool DrawBarShape(ImDrawList& drawList, ImVec2 min, ImVec2 max, const char* name, ImU32 color, bool hovered)
         {
             max.x = std::max(max.x, min.x + 1.0f);
-            drawList.AddRectFilled(min, max, ZoneColor(name));
+            drawList.AddRectFilled(min, max, color);
             if (max.x - min.x > 30.0f)
             {
                 drawList.PushClipRect(min, max, true);
                 drawList.AddText(ImVec2(min.x + 3.0f, min.y + 1.0f), ImGui::GetColorU32(Theme::Resolve(Theme::MAIN_BG)), name);
                 drawList.PopClipRect();
             }
-            if (hovered && ImGui::IsMouseHoveringRect(min, max))
+            return hovered && ImGui::IsMouseHoveringRect(min, max);
+        }
+
+        // Coloured by its name, with a tooltip of the name and time.
+        void DrawBar(ImDrawList& drawList, ImVec2 min, ImVec2 max, const char* name, double ms, bool hovered)
+        {
+            if (DrawBarShape(drawList, min, max, name, ZoneColor(name), hovered))
                 ImGui::SetTooltip("%s\n%.3f ms", name, ms);
         }
     }
@@ -59,13 +65,15 @@ namespace Editor
             Profiling::SetEnabled(false);
     }
 
-    void ProfilerWindow::Draw(const Renderer::Renderer* renderer)
+    void ProfilerWindow::Draw(Renderer::Renderer* renderer)
     {
         if (!Open)
         {
             if (m_Recording)
             {
                 Profiling::SetEnabled(false);
+                if (renderer != nullptr)
+                    renderer->SetCommandGpuTiming(false);
                 m_Recording = false;
             }
             return;
@@ -79,6 +87,8 @@ namespace Editor
             m_Recording = true;
         }
         Profiling::SetEnabled(!m_Paused);
+        if (renderer != nullptr)
+            renderer->SetCommandGpuTiming(m_TimeCommands && !m_Paused);
         if (!m_Paused && renderer != nullptr)
             CollectGpu(*renderer);
 
@@ -95,6 +105,13 @@ namespace Editor
             if (!m_Paused)
                 m_Selected.reset(); // follow the newest frame again
         }
+        ImGui::SameLine();
+        ImGui::BeginDisabled(renderer == nullptr);
+        ImGui::Checkbox("GPU commands", &m_TimeCommands);
+        ImGui::EndDisabled();
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+            ImGui::SetTooltip("Time every draw, barrier, copy and blit on the GPU (a timestamp after each).\n"
+                              "The GPU overlaps consecutive draws, so one draw's time is approximate.");
         ImGui::SameLine();
         if (ImGui::Button("Export..."))
             Export();
@@ -146,9 +163,24 @@ namespace Editor
                               ImGuiWindowFlags_HorizontalScrollbar))
             DrawTimeline(frame);
         ImGui::EndChild();
-        if (ImGui::BeginChild("##ProfilerTopZones", ImVec2(0.0f, 0.0f), ImGuiChildFlags_Borders))
-            DrawTopZones(frame);
-        ImGui::EndChild();
+        if (ImGui::BeginTabBar("##ProfilerTables"))
+        {
+            if (ImGui::BeginTabItem("CPU zones"))
+            {
+                if (ImGui::BeginChild("##ProfilerTopZones", ImVec2(0.0f, 0.0f), ImGuiChildFlags_Borders))
+                    DrawTopZones(frame);
+                ImGui::EndChild();
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem("GPU commands"))
+            {
+                if (ImGui::BeginChild("##ProfilerPassCommands", ImVec2(0.0f, 0.0f), ImGuiChildFlags_Borders))
+                    DrawPassCommands(gpu);
+                ImGui::EndChild();
+                ImGui::EndTabItem();
+            }
+            ImGui::EndTabBar();
+        }
         ImGui::End();
     }
 
@@ -170,6 +202,8 @@ namespace Editor
         sample.FrameMs    = *frameMs;
         const std::span<const Renderer::GpuPassTiming> passes = renderer.GetLastPassGpuTimings();
         sample.Passes.assign(passes.begin(), passes.end());
+        const std::span<const Renderer::GpuCommandTiming> commands = renderer.GetLastCommandGpuTimings();
+        sample.Commands.assign(commands.begin(), commands.end());
         sample.Valid = true;
     }
 
@@ -286,6 +320,23 @@ namespace Editor
                     pass.GpuMilliseconds, hovered);
             x += w;
         }
+
+        // Each command one after another on the same scale, coloured as its pass.
+        if (gpu->Commands.empty())
+            return;
+        ImGui::TextUnformatted("GPU commands");
+        const ImVec2 commandOrigin = ImGui::GetCursorScreenPos();
+        ImGui::Dummy(ImVec2(width, ROW_HEIGHT));
+        x = commandOrigin.x;
+        for (const Renderer::GpuCommandTiming& command : gpu->Commands)
+        {
+            const float w = static_cast<float>(command.GpuMilliseconds / frameMs) * width;
+            if (DrawBarShape(drawList, ImVec2(x, commandOrigin.y), ImVec2(x + w, commandOrigin.y + ROW_HEIGHT - 2.0f),
+                             Renderer::GetGpuCommandKindName(command.Kind), ZoneColor(command.Pass), hovered))
+                ImGui::SetTooltip("%s\n%s\n%.4f ms", DescribeGpuCommand(command).c_str(), command.Pass,
+                                  command.GpuMilliseconds);
+            x += w;
+        }
     }
 
     void ProfilerWindow::Export()
@@ -302,7 +353,7 @@ namespace Editor
             const Profiling::FrameRecord& frame = Profiling::GetFrame(age - 1);
             frames.push_back(&frame);
             if (const GpuSample* gpu = FindGpu(frame.Index))
-                gpuFrames.push_back({ frame.StartNs, gpu->Passes });
+                gpuFrames.push_back({ frame.StartNs, gpu->Passes, gpu->Commands });
         }
 
         std::ofstream file(path, std::ios::binary | std::ios::trunc);
@@ -336,6 +387,45 @@ namespace Editor
             ImGui::Text("%.3f", stat.SelfMs);
             ImGui::TableNextColumn();
             ImGui::Text("%u", stat.Calls);
+        }
+        ImGui::EndTable();
+    }
+
+    // The timed commands by pass: how many, how many draws and their GPU time.
+    void ProfilerWindow::DrawPassCommands(const GpuSample* gpu)
+    {
+        if (!m_TimeCommands)
+        {
+            ImGui::TextDisabled("Turn on GPU commands to time every draw, barrier, copy and blit.");
+            return;
+        }
+        if (gpu == nullptr || gpu->Commands.empty())
+        {
+            ImGui::TextDisabled("No timed GPU commands for this frame yet.");
+            return;
+        }
+        SummarizeCommandsByPass(gpu->Commands, m_PassCommands);
+        constexpr ImGuiTableFlags FLAGS = ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV |
+                                          ImGuiTableFlags_ScrollY | ImGuiTableFlags_SizingStretchProp;
+        if (!ImGui::BeginTable("##PassCommands", 4, FLAGS))
+            return;
+        ImGui::TableSetupScrollFreeze(0, 1);
+        ImGui::TableSetupColumn("Pass", ImGuiTableColumnFlags_WidthStretch, 3.0f);
+        ImGui::TableSetupColumn("Commands", ImGuiTableColumnFlags_WidthStretch, 1.0f);
+        ImGui::TableSetupColumn("Draws", ImGuiTableColumnFlags_WidthStretch, 1.0f);
+        ImGui::TableSetupColumn("GPU ms", ImGuiTableColumnFlags_WidthStretch, 1.0f);
+        ImGui::TableHeadersRow();
+        for (const PassCommandStat& stat : m_PassCommands)
+        {
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted(stat.Pass.c_str());
+            ImGui::TableNextColumn();
+            ImGui::Text("%u", stat.Commands);
+            ImGui::TableNextColumn();
+            ImGui::Text("%u", stat.Draws);
+            ImGui::TableNextColumn();
+            ImGui::Text("%.3f", stat.GpuMs);
         }
         ImGui::EndTable();
     }

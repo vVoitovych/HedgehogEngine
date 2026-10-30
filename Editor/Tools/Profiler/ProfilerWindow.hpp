@@ -29,8 +29,8 @@ namespace Editor
         ProfilerWindow(const ProfilerWindow&)            = delete;
         ProfilerWindow& operator=(const ProfilerWindow&) = delete;
 
-        // renderer may be null (no GPU timings).
-        void Draw(const Renderer::Renderer* renderer);
+        // renderer may be null (no GPU timings); the window turns its command timing on and off.
+        void Draw(Renderer::Renderer* renderer);
 
     private:
         // The GPU timings the renderer reported, for the frame they belong to (MAX_FRAMES_IN_FLIGHT
@@ -40,6 +40,7 @@ namespace Editor
             uint64_t                             FrameIndex = 0;
             double                               FrameMs    = 0.0;
             std::vector<Renderer::GpuPassTiming> Passes;
+            std::vector<Renderer::GpuCommandTiming> Commands; // empty unless commands were timed
             bool                                 Valid      = false;
         };
 
@@ -48,11 +49,13 @@ namespace Editor
         void             DrawFrameGraph();
         void             DrawTimeline(const Profiling::FrameRecord& frame);
         void             DrawTopZones(const Profiling::FrameRecord& frame);
+        void             DrawPassCommands(const GpuSample* gpu);
         // Asks where, then writes every frame kept with its GPU passes as Chrome trace JSON.
         void             Export();
 
         bool                    m_Recording = false; // the window turned the profiler on
         bool                    m_Paused    = false;
+        bool                    m_TimeCommands = false; // the GPU commands checkbox
         std::optional<uint64_t> m_Selected;          // a frame's Index; the newest when unset
         uint64_t                m_LastCollected = UINT64_MAX;
         uint64_t                m_Shown         = 0;   // the frame the timeline shows, highlighted in the graph
@@ -61,6 +64,7 @@ namespace Editor
         size_t                   m_GpuNext = 0;
         std::vector<ZoneStat>    m_TopZones;
         std::vector<TimelineBar> m_Bars;
+        std::vector<PassCommandStat> m_PassCommands;
         std::string              m_ExportStatus; // what the last export did
     };
 }

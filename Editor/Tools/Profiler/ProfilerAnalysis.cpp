@@ -1,6 +1,7 @@
 #include "ProfilerAnalysis.hpp"
 
 #include <algorithm>
+#include <cstring>
 
 namespace Editor
 {
@@ -84,5 +85,44 @@ namespace Editor
     double GetFrameMs(const Profiling::FrameRecord& frame)
     {
         return frame.EndNs > frame.StartNs ? static_cast<double>(frame.EndNs - frame.StartNs) / NS_PER_MS : 0.0;
+    }
+
+    std::string DescribeGpuCommand(const Renderer::GpuCommandTiming& command)
+    {
+        const auto counted = [](uint32_t count, const char* one, const char* many)
+        {
+            return " " + std::to_string(count) + " " + (count == 1 ? one : many);
+        };
+        std::string text = Renderer::GetGpuCommandKindName(command.Kind);
+        switch (command.Kind)
+        {
+        case Renderer::GpuCommandKind::Draw:        text += counted(command.Count, "vertex", "vertices"); break;
+        case Renderer::GpuCommandKind::DrawIndexed: text += counted(command.Count, "index", "indices"); break;
+        case Renderer::GpuCommandKind::Barrier:     text += counted(command.Count, "transition", "transitions"); break;
+        case Renderer::GpuCommandKind::CopyBuffer:  text += counted(command.Count, "byte", "bytes"); break;
+        default: break;
+        }
+        if (command.Instances > 1)
+            text += " x" + counted(command.Instances, "instance", "instances");
+        return text;
+    }
+
+    void SummarizeCommandsByPass(std::span<const Renderer::GpuCommandTiming> commands, std::vector<PassCommandStat>& out)
+    {
+        out.clear();
+        for (const Renderer::GpuCommandTiming& command : commands)
+        {
+            auto stat = std::find_if(out.begin(), out.end(),
+                                     [&](const PassCommandStat& s) { return std::strcmp(s.Pass.c_str(), command.Pass) == 0; });
+            if (stat == out.end())
+            {
+                out.push_back({ command.Pass });
+                stat = out.end() - 1;
+            }
+            ++stat->Commands;
+            if (command.Kind == Renderer::GpuCommandKind::Draw || command.Kind == Renderer::GpuCommandKind::DrawIndexed)
+                ++stat->Draws;
+            stat->GpuMs += command.GpuMilliseconds;
+        }
     }
 }

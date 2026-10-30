@@ -110,3 +110,42 @@ TEST_CASE("Profiler analysis - the timeline puts each zone on its depth's row ov
 
     CHECK(GetFrameMs(frame) == doctest::Approx(10.0));
 }
+
+TEST_CASE("GPU commands - named by kind, count and instances, and summed by pass in first-seen order")
+{
+    using Renderer::GpuCommandKind;
+    const std::vector<Renderer::GpuCommandTiming> commands = {
+        { "Shadow", GpuCommandKind::Barrier, 1, 1, 0.01 },
+        { "Shadow", GpuCommandKind::DrawIndexed, 36, 1, 0.20 },
+        { "Forward", GpuCommandKind::DrawIndexed, 1, 2, 0.30 },
+        { "Shadow", GpuCommandKind::Draw, 3, 1, 0.05 },
+        { "Forward", GpuCommandKind::Mipmaps, 1, 1, 0.10 },
+    };
+
+    CHECK(DescribeGpuCommand(commands[0]) == "Barrier 1 transition");
+    CHECK(DescribeGpuCommand(commands[1]) == "DrawIndexed 36 indices");
+    CHECK(DescribeGpuCommand(commands[2]) == "DrawIndexed 1 index x 2 instances");
+    CHECK(DescribeGpuCommand(commands[3]) == "Draw 3 vertices");
+    CHECK(DescribeGpuCommand(commands[4]) == "Mipmaps");
+    CHECK(DescribeGpuCommand({ "Upload", GpuCommandKind::CopyBuffer, 48, 1, 0.0 }) == "CopyBuffer 48 bytes");
+
+    // A pass name spelt by another pointer is the same pass.
+    const std::string shadow = "Shadow";
+    std::vector<Renderer::GpuCommandTiming> spelt = commands;
+    spelt[3].Pass = shadow.c_str();
+
+    std::vector<PassCommandStat> stats = { { "stale" } };
+    SummarizeCommandsByPass(spelt, stats);
+    REQUIRE(stats.size() == 2);
+    CHECK(stats[0].Pass == "Shadow");
+    CHECK(stats[0].Commands == 3);
+    CHECK(stats[0].Draws == 2);
+    CHECK(stats[0].GpuMs == doctest::Approx(0.26));
+    CHECK(stats[1].Pass == "Forward");
+    CHECK(stats[1].Commands == 2);
+    CHECK(stats[1].Draws == 1);
+    CHECK(stats[1].GpuMs == doctest::Approx(0.40));
+
+    SummarizeCommandsByPass({}, stats);
+    CHECK(stats.empty());
+}
