@@ -5,6 +5,7 @@
 #include "GraphCompiler.hpp"
 #include "ResourcePool.hpp"
 #include "RGPassBuilder.hpp"
+#include "TimedCommandList.hpp"
 
 #include "RHI/api/IRHIBuffer.hpp"
 #include "RHI/api/IRHICommandList.hpp"
@@ -155,6 +156,20 @@ namespace Renderer
             return { m_LastTimedPassNames.data(), m_TimedPassCount };
         }
 
+        // GPU time per command: while pool is set, Execute records the passes through a
+        // TimedCommandList over queries first .. first + count - 1 (reset there), so each draw,
+        // barrier, copy, blit and mipmap generation gets a timestamp; null turns it off.
+        void SetCommandTimestamps(RHI::IRHIQueryPool* pool, uint32_t first, uint32_t count)
+        {
+            m_CommandTimestampPool  = pool;
+            m_CommandTimestampFirst = first;
+            m_CommandTimestampCount = count;
+        }
+        // The commands the last Execute timed, in order, under the interned names of their passes;
+        // empty when it timed none. Kept until the next Execute.
+        std::span<const GpuCommandTiming> GetLastTimedCommands() const { return m_TimedCommands.GetCommands(); }
+        bool                              IsLastCommandTimingTruncated() const { return m_TimedCommands.IsTruncated(); }
+
         // Exposed for tests/diagnostics — verifying AddPass's "no heap churn" claim needs a way
         // to check whether a pointer actually came from this arena.
         const FrameArena& GetArena() const { return m_Arena; }
@@ -202,6 +217,11 @@ namespace Renderer
         uint32_t                 m_TimestampCount = 0;
         std::vector<std::string> m_LastTimedPassNames; // the first m_TimedPassCount; kept so their storage is reused
         size_t                   m_TimedPassCount = 0;
+
+        RHI::IRHIQueryPool* m_CommandTimestampPool  = nullptr;
+        uint32_t            m_CommandTimestampFirst = 0;
+        uint32_t            m_CommandTimestampCount = 0;
+        TimedCommandList    m_TimedCommands;
 
         const GraphFrameContext* m_FrameContext = nullptr;
         const GraphDescription*  m_Executing    = nullptr; // set only while Execute() runs passes

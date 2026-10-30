@@ -135,6 +135,17 @@ namespace Renderer
         // empty until then, or without timestamps. Valid until the next RenderFrame.
         std::span<const GpuPassTiming> GetLastPassGpuTimings() const;
 
+        // Times each GPU command of the render graph (a draw, barrier, copy, blit or mipmap
+        // generation) with timestamps of its own, from the next frame on; off by default, when a
+        // frame records nothing extra. Turning it on first makes a second timestamp pool; it does
+        // nothing without timestamps.
+        void SetCommandGpuTiming(bool enabled);
+        bool IsCommandGpuTiming() const;
+        // The commands of that same frame in recorded order, each with its pass and GPU time; empty
+        // while command timing is off or until a timed frame has finished. Valid until the next
+        // RenderFrame.
+        std::span<const GpuCommandTiming> GetLastCommandGpuTimings() const;
+
         // Every graph asset a view can name (a CameraComponent's GraphName), in sorted order: each
         // "*.graph" file in the engine's graph directory, including files added while running.
         const std::vector<std::string>& GetGraphNames() const;

@@ -328,6 +328,15 @@ namespace Editor
             && (maxFrames == 0 || frameIndex < maxFrames))
         {
             ++frameIndex;
+            // A run of fixed length (--smoke-test) times every GPU command over its middle third,
+            // so the timed recording, turning it on and off and reading it back run under validation.
+            if (maxFrames > 0 && (frameIndex == maxFrames / 3 || frameIndex == 2 * maxFrames / 3))
+            {
+                const bool timing = !m_Renderer->IsCommandGpuTiming();
+                if (!timing)
+                    LOGINFO("Smoke test: ", m_Renderer->GetLastCommandGpuTimings().size(), " GPU commands timed in the last frame.");
+                m_Renderer->SetCommandGpuTiming(timing);
+            }
             StepFrame();
             // Another project: this editor is torn down as on exit and the caller builds one on it.
             if ((m_Result.RequestedProject = m_EditorGui->TakeProjectRequest()))

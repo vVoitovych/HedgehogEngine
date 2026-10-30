@@ -171,6 +171,10 @@ public:
     // Writes the GPU's clock into the query once every command recorded before it has finished.
     virtual void WriteTimestamp(IRHIQueryPool& pool, uint32_t index) = 0;
 
+    // The list commands really go into: this one, or the one a wrapper (a renderer's command
+    // timer) forwards to, so a backend's native handle is found through a wrapper too.
+    [[nodiscard]] virtual const IRHICommandList& GetRecordingList() const { return *this; }
+
 protected:
     IRHICommandList() = default;
 };

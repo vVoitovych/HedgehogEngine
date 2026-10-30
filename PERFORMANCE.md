@@ -324,5 +324,13 @@ profiler off, as here, each is one call and a check. Release, `benchmark.yaml`, 
 (`RenderFrame(total)` 1.689, 1.856 and 1.762 ms against 1.797, 1.760, 1.736 and 1.749): within
 run-to-run noise.
 
+### 2026-10-30 (HE-389) — per-command GPU timing, off
+
+The render graph can now record its passes through a `TimedCommandList` that writes a timestamp
+after every draw, barrier, copy, blit and mipmap generation (`Renderer::SetCommandGpuTiming`). Off,
+as here and by default, a frame records exactly the commands it did and only clears a list. Release,
+`benchmark.yaml`, 600 frames, `Frame(wall)` avg 2.064, 1.852 and 1.835 ms (`RenderFrame(total)`
+1.476, 1.368 and 1.368 ms), at or below the HE-379 runs above.
+
 When a change intentionally alters performance, re-run the benchmark and update
 this table (keep the old row set; add a dated entry below it so history accumulates).
