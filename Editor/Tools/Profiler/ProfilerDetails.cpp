@@ -96,9 +96,12 @@ namespace Editor
 
         if (!cpu)
         {
-            if (ImGui::BeginChild("##ProfilerPassCommands", ImVec2(0.0f, 0.0f), ImGuiChildFlags_Borders))
-                DrawPassCommands(gpu);
-            ImGui::EndChild();
+            if (gpu == nullptr || gpu->Commands.empty())
+                ImGui::TextDisabled("No timed GPU commands for this frame yet: they arrive a few frames after its CPU zones.");
+            else if (m_ActiveModule == ProfilerModule::GpuUsage)
+                DrawGpuDetails(*gpu);
+            else
+                DrawRenderingDetails(*gpu);
             return;
         }
         DrawSelectedSample(frame);
@@ -247,5 +250,71 @@ namespace Editor
             ImGui::TreePop();
         }
         ImGui::PopID();
+    }
+
+    // Unity's GPU Usage details: each pass with its commands under it, in the order the GPU ran
+    // them, with their GPU time, the time not in a command, and their share of the GPU frame.
+    void ProfilerWindow::DrawGpuDetails(const GpuSample& gpu)
+    {
+        BuildGpuTree(gpu.Passes, gpu.Commands, gpu.FrameMs, m_Tree);
+        constexpr ImGuiTableFlags FLAGS = ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_BordersOuter |
+                                          ImGuiTableFlags_ScrollY | ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchProp |
+                                          ImGuiTableFlags_NoSavedSettings;
+        if (!ImGui::BeginTable("##GpuUsage", 4, FLAGS))
+            return;
+        ImGui::TableSetupScrollFreeze(0, 1);
+        ImGui::TableSetupColumn("Overview", ImGuiTableColumnFlags_WidthStretch, 4.0f);
+        ImGui::TableSetupColumn("GPU ms", ImGuiTableColumnFlags_WidthStretch, 1.0f);
+        ImGui::TableSetupColumn("Self ms", ImGuiTableColumnFlags_WidthStretch, 1.0f);
+        ImGui::TableSetupColumn("GPU %", ImGuiTableColumnFlags_WidthStretch, 1.0f);
+        ImGui::TableHeadersRow();
+        ForEachChild(m_Tree, 0, [&](uint32_t pass) { DrawGpuTreeRow(gpu, pass); });
+        ImGui::EndTable();
+    }
+
+    void ProfilerWindow::DrawGpuTreeRow(const GpuSample& gpu, uint32_t node)
+    {
+        const ProfilerNode& entry = m_Tree.Nodes[node];
+        ImGui::TableNextRow();
+        ImGui::TableNextColumn();
+        ImGui::PushID(static_cast<int>(node));
+        const bool         leaf  = entry.FirstChild == NO_PROFILER_NODE;
+        ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanAllColumns;
+        if (leaf)
+            flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+        const std::string name = entry.Command >= 0 ? DescribeGpuCommand(gpu.Commands[static_cast<size_t>(entry.Command)])
+                                                    : std::string(entry.Name != nullptr ? entry.Name : "");
+        const bool open = ImGui::TreeNodeEx(name.c_str(), flags);
+        ImGui::TableNextColumn();
+        ImGui::Text("%.4f", entry.TotalMs);
+        ImGui::TableNextColumn();
+        ImGui::Text("%.4f", entry.SelfMs);
+        ImGui::TableNextColumn();
+        ImGui::Text("%.1f%%", entry.TotalMs / std::max(m_Tree.FrameMs, 1.0e-9) * 100.0);
+        if (open && !leaf)
+        {
+            ForEachChild(m_Tree, node, [&](uint32_t child) { DrawGpuTreeRow(gpu, child); });
+            ImGui::TreePop();
+        }
+        ImGui::PopID();
+    }
+
+    // Unity's Rendering details: the frame's counters, then the commands by pass.
+    void ProfilerWindow::DrawRenderingDetails(const GpuSample& gpu)
+    {
+        const RenderingCounters counts = CountRendering(gpu.Commands);
+        if (ImGui::BeginTable("##RenderingCounters", 3, ImGuiTableFlags_SizingStretchSame))
+        {
+            for (size_t c = 0; c < RENDERING_COUNTER_COUNT; ++c)
+            {
+                ImGui::TableNextColumn();
+                ImGui::Text("%s: %s", GetRenderingCounterName(static_cast<RenderingCounter>(c)), FormatCount(counts[c]).c_str());
+            }
+            ImGui::EndTable();
+        }
+        ImGui::Spacing();
+        if (ImGui::BeginChild("##ProfilerPassCommands", ImVec2(0.0f, 0.0f), ImGuiChildFlags_Borders))
+            DrawPassCommands(gpu);
+        ImGui::EndChild();
     }
 }

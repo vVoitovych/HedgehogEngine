@@ -93,7 +93,10 @@ namespace Editor
         void             DrawSelectedSample(const Profiling::FrameRecord& frame);
         void             DrawHierarchy(const Profiling::FrameRecord& frame);
         void             DrawTreeRow(uint32_t node, bool tree);
-        void             DrawPassCommands(const GpuSample* gpu);
+        void             DrawPassCommands(const GpuSample& gpu);
+        void             DrawGpuDetails(const GpuSample& gpu);
+        void             DrawGpuTreeRow(const GpuSample& gpu, uint32_t node);
+        void             DrawRenderingDetails(const GpuSample& gpu);
         // Asks where, then writes every frame kept with its GPU passes as Chrome trace JSON.
         void             Export();
 
@@ -106,7 +109,7 @@ namespace Editor
         ProfilerModule          m_ActiveModule = ProfilerModule::CpuUsage; // the one whose name is selected
         std::array<bool, ZONE_CATEGORY_COUNT> m_HiddenCategories{};
         std::vector<std::string> m_HiddenPasses;
-        std::array<bool, 2>     m_HiddenCounters{};
+        std::array<bool, RENDERING_COUNTER_COUNT> m_HiddenCounters{};
         std::vector<std::string> m_GpuLegend; // every pass met since the capture began
 
         // The details pane: CPU Usage's view, the thread its Hierarchy views show, the search and

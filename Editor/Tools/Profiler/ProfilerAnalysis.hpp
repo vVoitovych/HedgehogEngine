@@ -98,4 +98,26 @@ namespace Editor
     // directly nested in it) goes to its own category, else its nearest categorized ancestor's,
     // else Others, so the categories sum to the thread's top-level zones.
     [[nodiscard]] CategoryTimes ComputeCategoryTimes(const Profiling::ThreadRecord& thread);
+
+    // What the Rendering module counts in a frame's timed GPU commands, as Unity's lists its own.
+    enum class RenderingCounter : uint8_t
+    {
+        DrawCalls, // Draw and DrawIndexed
+        Commands,  // every timed command
+        Triangles, // a draw's vertices or indices over 3, times its instances (triangle lists assumed)
+        Vertices,  // a draw's vertices or indices times its instances
+        Barriers,
+        Copies,    // buffer and texture copies, blits and mipmap generations
+    };
+    inline constexpr size_t RENDERING_COUNTER_COUNT = 6;
+
+    [[nodiscard]] const char* GetRenderingCounterName(RenderingCounter counter);
+
+    // Indexed by RenderingCounter.
+    using RenderingCounters = std::array<uint64_t, RENDERING_COUNTER_COUNT>;
+
+    [[nodiscard]] RenderingCounters CountRendering(std::span<const Renderer::GpuCommandTiming> commands);
+
+    // A count as Unity shows one: as it is below ten thousand, else in k or M with one decimal.
+    [[nodiscard]] std::string FormatCount(uint64_t count);
 }

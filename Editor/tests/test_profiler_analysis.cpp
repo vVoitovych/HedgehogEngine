@@ -216,3 +216,37 @@ TEST_CASE("Zone categories - a thread's self times by category, inherited from t
     for (const double ms : empty)
         CHECK(ms == 0.0);
 }
+
+TEST_CASE("Rendering counters - draws, triangles, vertices, barriers and copies of a frame's commands")
+{
+    using Renderer::GpuCommandKind;
+    const std::vector<Renderer::GpuCommandTiming> commands = {
+        { "Shadow", GpuCommandKind::Barrier, 2, 1, 0.0 },
+        { "Shadow", GpuCommandKind::DrawIndexed, 36, 1, 0.0 },
+        { "Forward", GpuCommandKind::DrawIndexed, 36, 4, 0.0 }, // instanced: 12 triangles x 4
+        { "Forward", GpuCommandKind::Draw, 3, 1, 0.0 },
+        { "Upload", GpuCommandKind::CopyBuffer, 64, 1, 0.0 },
+        { "Upload", GpuCommandKind::Mipmaps, 1, 1, 0.0 },
+        { "Present", GpuCommandKind::Blit, 1, 1, 0.0 },
+    };
+    const RenderingCounters counts = CountRendering(commands);
+    const auto at = [&](RenderingCounter counter) { return counts[static_cast<size_t>(counter)]; };
+    CHECK(at(RenderingCounter::DrawCalls) == 3);
+    CHECK(at(RenderingCounter::Commands) == 7);
+    CHECK(at(RenderingCounter::Triangles) == 12 + 48 + 1);
+    CHECK(at(RenderingCounter::Vertices) == 36 + 144 + 3);
+    CHECK(at(RenderingCounter::Barriers) == 1);
+    CHECK(at(RenderingCounter::Copies) == 3);
+
+    const RenderingCounters none = CountRendering({});
+    for (const uint64_t count : none)
+        CHECK(count == 0);
+    for (size_t i = 0; i < RENDERING_COUNTER_COUNT; ++i)
+        CHECK(std::string(GetRenderingCounterName(static_cast<RenderingCounter>(i))) != "?");
+
+    CHECK(FormatCount(0) == "0");
+    CHECK(FormatCount(9999) == "9999");
+    CHECK(FormatCount(12345) == "12.3k");
+    CHECK(FormatCount(2500000) == "2.5M");
+}
+

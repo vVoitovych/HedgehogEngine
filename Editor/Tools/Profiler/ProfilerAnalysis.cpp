@@ -1,6 +1,7 @@
 #include "ProfilerAnalysis.hpp"
 
 #include <algorithm>
+#include <cstdio>
 #include <cstring>
 
 namespace Editor
@@ -206,5 +207,63 @@ namespace Editor
             open.emplace_back(zone, category);
         }
         return times;
+    }
+
+    const char* GetRenderingCounterName(RenderingCounter counter)
+    {
+        switch (counter)
+        {
+        case RenderingCounter::DrawCalls: return "Draw calls";
+        case RenderingCounter::Commands:  return "Commands";
+        case RenderingCounter::Triangles: return "Triangles";
+        case RenderingCounter::Vertices:  return "Vertices";
+        case RenderingCounter::Barriers:  return "Barriers";
+        case RenderingCounter::Copies:    return "Copies";
+        }
+        return "?";
+    }
+
+    RenderingCounters CountRendering(std::span<const Renderer::GpuCommandTiming> commands)
+    {
+        RenderingCounters counts{};
+        const auto add = [&](RenderingCounter counter, uint64_t value) { counts[static_cast<size_t>(counter)] += value; };
+        for (const Renderer::GpuCommandTiming& command : commands)
+        {
+            add(RenderingCounter::Commands, 1);
+            switch (command.Kind)
+            {
+            case Renderer::GpuCommandKind::Draw:
+            case Renderer::GpuCommandKind::DrawIndexed:
+            {
+                const uint64_t instances = std::max<uint32_t>(command.Instances, 1);
+                add(RenderingCounter::DrawCalls, 1);
+                add(RenderingCounter::Triangles, command.Count / 3 * instances);
+                add(RenderingCounter::Vertices, static_cast<uint64_t>(command.Count) * instances);
+                break;
+            }
+            case Renderer::GpuCommandKind::Barrier:
+                add(RenderingCounter::Barriers, 1);
+                break;
+            case Renderer::GpuCommandKind::CopyBuffer:
+            case Renderer::GpuCommandKind::CopyToTexture:
+            case Renderer::GpuCommandKind::Mipmaps:
+            case Renderer::GpuCommandKind::Blit:
+                add(RenderingCounter::Copies, 1);
+                break;
+            }
+        }
+        return counts;
+    }
+
+    std::string FormatCount(uint64_t count)
+    {
+        char text[32];
+        if (count < 10000)
+            std::snprintf(text, sizeof(text), "%llu", static_cast<unsigned long long>(count));
+        else if (count < 1000000)
+            std::snprintf(text, sizeof(text), "%.1fk", static_cast<double>(count) / 1.0e3);
+        else
+            std::snprintf(text, sizeof(text), "%.1fM", static_cast<double>(count) / 1.0e6);
+        return text;
     }
 }
