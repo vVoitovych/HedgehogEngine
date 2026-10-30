@@ -46,7 +46,9 @@ project "EditorTest"
         "../Tools/Profiler/ProfilerAnalysis.hpp",
         "../Tools/Profiler/ProfilerAnalysis.cpp",
         "../Tools/Profiler/ChromeTrace.hpp",
-        "../Tools/Profiler/ChromeTrace.cpp"
+        "../Tools/Profiler/ChromeTrace.cpp",
+        "../Tools/Profiler/TimelineView.hpp",
+        "../Tools/Profiler/TimelineView.cpp"
     }
 
     includedirs
