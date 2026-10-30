@@ -125,4 +125,87 @@ namespace Editor
             stat->GpuMs += command.GpuMilliseconds;
         }
     }
+
+    const char* GetZoneCategoryName(ZoneCategory category)
+    {
+        switch (category)
+        {
+        case ZoneCategory::Rendering:     return "Rendering";
+        case ZoneCategory::Scripts:       return "Scripts";
+        case ZoneCategory::Physics:       return "Physics";
+        case ZoneCategory::Animation:     return "Animation";
+        case ZoneCategory::UI:            return "UI";
+        case ZoneCategory::WaitingForGpu: return "Waiting for GPU";
+        case ZoneCategory::Others:        return "Others";
+        }
+        return "?";
+    }
+
+    uint32_t GetZoneCategoryColor(ZoneCategory category)
+    {
+        switch (category)
+        {
+        case ZoneCategory::Rendering:     return 0x6FB34A;
+        case ZoneCategory::Scripts:       return 0x4A90D9;
+        case ZoneCategory::Physics:       return 0xE8A23A;
+        case ZoneCategory::Animation:     return 0x3FBFB0;
+        case ZoneCategory::UI:            return 0xA77BD6;
+        case ZoneCategory::WaitingForGpu: return 0xD9C548;
+        case ZoneCategory::Others:        return 0x8A8A8A;
+        }
+        return 0x8A8A8A;
+    }
+
+    std::optional<ZoneCategory> CategorizeZone(std::string_view name)
+    {
+        struct Rule
+        {
+            std::string_view Text;
+            bool             Prefix;
+            ZoneCategory     Category;
+        };
+        static constexpr Rule RULES[] = {
+            { "Render", false, ZoneCategory::Rendering },
+            { "RenderFrame", false, ZoneCategory::Rendering },
+            { "SyncResources", false, ZoneCategory::Rendering },
+            { "Extract: ", true, ZoneCategory::Rendering },
+            { "Scripts: ", true, ZoneCategory::Scripts },
+            { "ScriptSystem", false, ZoneCategory::Scripts },
+            { "Physics: ", true, ZoneCategory::Physics },
+            { "PhysicsSystem", false, ZoneCategory::Physics },
+            { "Phase: Animation", false, ZoneCategory::Animation },
+            { "AnimationSystem", false, ZoneCategory::Animation },
+            { "Editor UI", false, ZoneCategory::UI },
+            { "Outside windows", false, ZoneCategory::UI },
+            { "UiSystem", false, ZoneCategory::UI },
+            { "Wait for the GPU", false, ZoneCategory::WaitingForGpu },
+        };
+        for (const Rule& rule : RULES)
+        {
+            if (rule.Prefix ? name.starts_with(rule.Text) : name == rule.Text)
+                return rule.Category;
+        }
+        return std::nullopt;
+    }
+
+    CategoryTimes ComputeCategoryTimes(const Profiling::ThreadRecord& thread)
+    {
+        CategoryTimes times{};
+        // Walking zones in start order with a stack of the open ones and their categories: a zone's
+        // whole duration goes to its category and leaves its parent's, which keeps only self time.
+        std::vector<std::pair<const Profiling::ZoneRecord*, ZoneCategory>> open;
+        for (const Profiling::ZoneRecord* zone : SortByStart(thread))
+        {
+            while (!open.empty() && open.back().first->Depth >= zone->Depth)
+                open.pop_back();
+            const ZoneCategory inherited = open.empty() ? ZoneCategory::Others : open.back().second;
+            const ZoneCategory category  = CategorizeZone(zone->Name ? zone->Name : "").value_or(inherited);
+            const double       ms        = static_cast<double>(zone->DurationNs) / NS_PER_MS;
+            times[static_cast<size_t>(category)] += ms;
+            if (!open.empty())
+                times[static_cast<size_t>(open.back().second)] -= ms;
+            open.emplace_back(zone, category);
+        }
+        return times;
+    }
 }

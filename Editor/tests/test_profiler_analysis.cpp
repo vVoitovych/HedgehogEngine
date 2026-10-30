@@ -149,3 +149,70 @@ TEST_CASE("GPU commands - named by kind, count and instances, and summed by pass
     SummarizeCommandsByPass({}, stats);
     CHECK(stats.empty());
 }
+
+TEST_CASE("Zone categories - names map to their category, others to none")
+{
+    CHECK(CategorizeZone("Render") == ZoneCategory::Rendering);
+    CHECK(CategorizeZone("RenderFrame") == ZoneCategory::Rendering);
+    CHECK(CategorizeZone("SyncResources") == ZoneCategory::Rendering);
+    CHECK(CategorizeZone("Extract: scene") == ZoneCategory::Rendering);
+    CHECK(CategorizeZone("Scripts: OnUpdate") == ZoneCategory::Scripts);
+    CHECK(CategorizeZone("ScriptSystem") == ZoneCategory::Scripts);
+    CHECK(CategorizeZone("Physics: step") == ZoneCategory::Physics);
+    CHECK(CategorizeZone("PhysicsSystem") == ZoneCategory::Physics);
+    CHECK(CategorizeZone("Phase: Animation") == ZoneCategory::Animation);
+    CHECK(CategorizeZone("AnimationSystem") == ZoneCategory::Animation);
+    CHECK(CategorizeZone("Editor UI") == ZoneCategory::UI);
+    CHECK(CategorizeZone("Outside windows") == ZoneCategory::UI);
+    CHECK(CategorizeZone("UiSystem") == ZoneCategory::UI);
+    CHECK(CategorizeZone("Wait for the GPU") == ZoneCategory::WaitingForGpu);
+
+    CHECK_FALSE(CategorizeZone("Frame").has_value());
+    CHECK_FALSE(CategorizeZone("Forward").has_value());     // a pass belongs to its parent's
+    CHECK_FALSE(CategorizeZone("Phase: Transform").has_value());
+    CHECK_FALSE(CategorizeZone("Renderer").has_value());    // whole names only
+    CHECK_FALSE(CategorizeZone("Extract:scene").has_value()); // prefixes with their space
+
+    for (size_t i = 0; i < ZONE_CATEGORY_COUNT; ++i)
+        CHECK(std::string(GetZoneCategoryName(static_cast<ZoneCategory>(i))) != "?");
+    CHECK(GetZoneCategoryColor(ZoneCategory::Rendering) != GetZoneCategoryColor(ZoneCategory::Scripts));
+}
+
+TEST_CASE("Zone categories - a thread's self times by category, inherited from the parent, sum to its top level")
+{
+    // Frame 10 ms: Input 1 ms (uncategorized under Frame: Others), UpdateContext 4 ms holding
+    // Scripts: OnUpdate 1.5 ms (with a 0.5 ms TransformSystem inside, inheriting Scripts) and
+    // Phase: Animation 1 ms, Render 4 ms holding RenderFrame 3 ms, which holds Forward 1 ms
+    // (inherits Rendering) and Wait for the GPU 0.5 ms; Frame's own 1 ms is Others.
+    Profiling::ThreadRecord thread;
+    thread.Zones = {
+        { "Frame", 0, 10 * MS, 0 },
+        { "Input", 0, 1 * MS, 1 },
+        { "UpdateContext", 1 * MS, 4 * MS, 1 },
+        { "Scripts: OnUpdate", 1 * MS, 3 * MS / 2, 2 },
+        { "TransformSystem", 1 * MS, MS / 2, 3 },
+        { "Phase: Animation", 3 * MS, 1 * MS, 2 },
+        { "Render", 5 * MS, 4 * MS, 1 },
+        { "RenderFrame", 5 * MS, 3 * MS, 2 },
+        { "Forward", 5 * MS, 1 * MS, 3 },
+        { "Wait for the GPU", 7 * MS, MS / 2, 3 },
+    };
+
+    const CategoryTimes times = ComputeCategoryTimes(thread);
+    const auto at = [&](ZoneCategory category) { return times[static_cast<size_t>(category)]; };
+    CHECK(at(ZoneCategory::Others) == doctest::Approx(1.0 + 1.0 + 1.5)); // Frame, Input, UpdateContext's own
+    CHECK(at(ZoneCategory::Scripts) == doctest::Approx(1.5));
+    CHECK(at(ZoneCategory::Animation) == doctest::Approx(1.0));
+    CHECK(at(ZoneCategory::Rendering) == doctest::Approx(3.5));
+    CHECK(at(ZoneCategory::WaitingForGpu) == doctest::Approx(0.5));
+    CHECK(at(ZoneCategory::Physics) == doctest::Approx(0.0));
+
+    double sum = 0.0;
+    for (const double ms : times)
+        sum += ms;
+    CHECK(sum == doctest::Approx(10.0));
+
+    const CategoryTimes empty = ComputeCategoryTimes(Profiling::ThreadRecord{});
+    for (const double ms : empty)
+        CHECK(ms == 0.0);
+}
