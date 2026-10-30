@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ProfilerAnalysis.hpp"
+#include "TimelineView.hpp"
 
 #include "HedgehogRenderer/Graph/GpuPassTiming.hpp"
 
@@ -48,6 +49,7 @@ namespace Editor
         const GpuSample* FindGpu(uint64_t frameIndex) const;
         void             DrawFrameGraph();
         void             DrawTimeline(const Profiling::FrameRecord& frame);
+        void             DrawRuler(double frameMs, float width);
         void             DrawTopZones(const Profiling::FrameRecord& frame);
         void             DrawPassCommands(const GpuSample* gpu);
         // Asks where, then writes every frame kept with its GPU passes as Chrome trace JSON.
@@ -56,6 +58,9 @@ namespace Editor
         bool                    m_Recording = false; // the window turned the profiler on
         bool                    m_Paused    = false;
         bool                    m_TimeCommands = false; // the GPU commands checkbox
+        TimelineView            m_View;                 // the part of the shown frame the timeline shows
+        bool                    m_Panning      = false; // a right or middle drag begun over the timeline
+        int                     m_GraphScale   = 0;     // GRAPH_SCALES: Auto, or a fixed top of the frame graph
         std::optional<uint64_t> m_Selected;          // a frame's Index; the newest when unset
         uint64_t                m_LastCollected = UINT64_MAX;
         uint64_t                m_Shown         = 0;   // the frame the timeline shows, highlighted in the graph
