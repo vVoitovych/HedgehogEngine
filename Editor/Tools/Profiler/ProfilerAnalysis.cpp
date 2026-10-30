@@ -77,7 +77,7 @@ namespace Editor
         for (const Profiling::ZoneRecord* zone : SortZonesByStart(thread))
         {
             out.push_back({ toX(zone->StartNs), toX(zone->StartNs + zone->DurationNs), zone->Depth, zone->Name,
-                            static_cast<double>(zone->DurationNs) / NS_PER_MS });
+                            static_cast<double>(zone->DurationNs) / NS_PER_MS, zone });
         }
     }
 

@@ -38,6 +38,7 @@ namespace Editor
         uint32_t    Row   = 0;
         const char* Name  = nullptr;
         double      Ms    = 0.0;
+        const Profiling::ZoneRecord* Zone = nullptr; // the zone it shows
     };
 
     // The thread's zones laid over a frame of the given span, in start order.

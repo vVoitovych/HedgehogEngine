@@ -2,6 +2,7 @@
 #include "ChromeTrace.hpp"
 
 #include "EditorTheme.hpp"
+#include "Panels/TextSearch.hpp"
 
 #include "HedgehogCommon/api/RendererSettings.hpp"
 #include "HedgehogRenderer/Renderer.hpp"
@@ -30,7 +31,6 @@ namespace Editor
         constexpr double FRAME_BUDGET_MS = 1000.0 / 60.0;
         constexpr double MIN_GRAPH_MS    = 2.0 * FRAME_BUDGET_MS;
         constexpr double MIN_GPU_GRAPH_MS = 0.5;
-        constexpr size_t TOP_ZONE_ROWS   = 60;
         constexpr float  RULER_HEIGHT    = 20.0f;
         constexpr float  MIN_TICK_PIXELS = 90.0f;
         constexpr double ZOOM_PER_NOTCH  = 1.25;
@@ -237,35 +237,7 @@ namespace Editor
             ImGui::EndChild();
         }
 
-        if (gpu != nullptr)
-            ImGui::Text("CPU: %.3f ms   GPU: %.3f ms", GetFrameMs(frame), gpu->FrameMs);
-        else
-            ImGui::Text("CPU: %.3f ms   GPU: -", GetFrameMs(frame));
-
-        const float timelineHeight = std::max(ImGui::GetContentRegionAvail().y * 0.55f, 120.0f);
-        // Ctrl+wheel zooms the timeline, so it must not scroll it too.
-        if (ImGui::BeginChild("##ProfilerTimeline", ImVec2(0.0f, timelineHeight), ImGuiChildFlags_Borders,
-                              ImGui::GetIO().KeyCtrl ? ImGuiWindowFlags_NoScrollWithMouse : ImGuiWindowFlags_None))
-            DrawTimeline(frame);
-        ImGui::EndChild();
-        if (ImGui::BeginTabBar("##ProfilerTables"))
-        {
-            if (ImGui::BeginTabItem("CPU zones"))
-            {
-                if (ImGui::BeginChild("##ProfilerTopZones", ImVec2(0.0f, 0.0f), ImGuiChildFlags_Borders))
-                    DrawTopZones(frame);
-                ImGui::EndChild();
-                ImGui::EndTabItem();
-            }
-            if (ImGui::BeginTabItem("GPU commands"))
-            {
-                if (ImGui::BeginChild("##ProfilerPassCommands", ImVec2(0.0f, 0.0f), ImGuiChildFlags_Borders))
-                    DrawPassCommands(gpu);
-                ImGui::EndChild();
-                ImGui::EndTabItem();
-            }
-            ImGui::EndTabBar();
-        }
+        DrawDetails(frame, gpu);
         ImGui::End();
     }
 
@@ -689,9 +661,14 @@ namespace Editor
         const float shift     = left - static_cast<float>(m_View.Begin) * fullWidth;
         DrawRuler(frameMs, width);
 
+        constexpr ImGuiTreeNodeFlags GROUP = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_NoTreePushOnOpen |
+                                             ImGuiTreeNodeFlags_SpanAvailWidth;
+        const ImU32 outline = ImGui::GetColorU32(Theme::Resolve(Theme::TEXT));
+        bool        picked  = false; // a click landed on a sample
         for (const Profiling::ThreadRecord& thread : frame.Threads)
         {
-            ImGui::TextUnformatted(thread.ThreadName.c_str());
+            if (!ImGui::TreeNodeEx(thread.ThreadName.c_str(), GROUP))
+                continue;
             LayoutTimeline(thread, frame.StartNs, frame.EndNs, fullWidth, m_Bars);
             uint32_t rows = 0;
             for (const TimelineBar& bar : m_Bars)
@@ -702,13 +679,33 @@ namespace Editor
             {
                 if (shift + bar.X1 < left || shift + bar.X0 > left + width)
                     continue;
-                const float y = origin.y + static_cast<float>(bar.Row) * ROW_HEIGHT;
-                DrawBar(drawList, ImVec2(shift + bar.X0, y), ImVec2(shift + bar.X1, y + ROW_HEIGHT - 2.0f),
-                        bar.Name, bar.Ms, hovered);
+                const float  y   = origin.y + static_cast<float>(bar.Row) * ROW_HEIGHT;
+                const ImVec2 min(shift + bar.X0, y);
+                const ImVec2 max(shift + bar.X1, y + ROW_HEIGHT - 2.0f);
+                // A search dims the samples it does not match.
+                ImU32 color = ZoneColor(bar.Name);
+                if (m_Search[0] != '\0' && !ContainsIgnoringCase(bar.Name, m_Search))
+                    color = (color & 0x00FFFFFFu) | 0x40000000u;
+                if (DrawBarShape(drawList, min, max, bar.Name, color, hovered))
+                {
+                    ImGui::SetTooltip("%s\n%.3f ms", bar.Name, bar.Ms);
+                    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+                    {
+                        m_SelectedSample = { frame.Index, thread.ThreadIndex, bar.Zone->StartNs, bar.Zone->Name };
+                        picked           = true;
+                    }
+                }
+                if (m_SelectedSample.FrameIndex == frame.Index && m_SelectedSample.ThreadIndex == thread.ThreadIndex &&
+                    m_SelectedSample.StartNs == bar.Zone->StartNs && std::strcmp(m_SelectedSample.Name, bar.Name) == 0)
+                    drawList.AddRect(min, ImVec2(std::max(max.x, min.x + 1.0f), max.y), outline, 0.0f, 0, 2.0f);
             }
         }
+        // A click on no sample drops the selection.
+        if (hovered && !picked && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::IsAnyItemHovered())
+            m_SelectedSample = SelectedSample{};
 
-        ImGui::TextUnformatted("GPU");
+        if (!ImGui::TreeNodeEx("GPU", GROUP))
+            return;
         const GpuSample* gpu = FindGpu(frame.Index);
         if (gpu == nullptr)
         {
@@ -729,7 +726,8 @@ namespace Editor
         // Each command one after another on the same scale, coloured as its pass.
         if (gpu->Commands.empty())
             return;
-        ImGui::TextUnformatted("GPU commands");
+        if (!ImGui::TreeNodeEx("GPU commands", GROUP))
+            return;
         const ImVec2 commandOrigin = ImGui::GetCursorScreenPos();
         ImGui::Dummy(ImVec2(width, ROW_HEIGHT));
         x = shift;
@@ -790,35 +788,6 @@ namespace Editor
         file << WriteChromeTrace(frames, gpuFrames);
         m_ExportStatus = file ? "Exported " + std::to_string(frames.size()) + " frames to " + path
                               : std::string("Could not write ") + path;
-    }
-
-    void ProfilerWindow::DrawTopZones(const Profiling::FrameRecord& frame)
-    {
-        ComputeTopZones(frame, m_TopZones);
-        constexpr ImGuiTableFlags FLAGS = ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV |
-                                          ImGuiTableFlags_ScrollY | ImGuiTableFlags_SizingStretchProp;
-        if (!ImGui::BeginTable("##TopZones", 4, FLAGS))
-            return;
-        ImGui::TableSetupScrollFreeze(0, 1);
-        ImGui::TableSetupColumn("Zone", ImGuiTableColumnFlags_WidthStretch, 3.0f);
-        ImGui::TableSetupColumn("Total ms", ImGuiTableColumnFlags_WidthStretch, 1.0f);
-        ImGui::TableSetupColumn("Self ms", ImGuiTableColumnFlags_WidthStretch, 1.0f);
-        ImGui::TableSetupColumn("Calls", ImGuiTableColumnFlags_WidthStretch, 0.7f);
-        ImGui::TableHeadersRow();
-        for (size_t i = 0; i < std::min(m_TopZones.size(), TOP_ZONE_ROWS); ++i)
-        {
-            const ZoneStat& stat = m_TopZones[i];
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::TextUnformatted(stat.Name.c_str());
-            ImGui::TableNextColumn();
-            ImGui::Text("%.3f", stat.TotalMs);
-            ImGui::TableNextColumn();
-            ImGui::Text("%.3f", stat.SelfMs);
-            ImGui::TableNextColumn();
-            ImGui::Text("%u", stat.Calls);
-        }
-        ImGui::EndTable();
     }
 
     // The timed commands by pass: how many, how many draws and their GPU time.

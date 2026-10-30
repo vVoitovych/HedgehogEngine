@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ProfilerAnalysis.hpp"
+#include "ProfilerHierarchy.hpp"
 #include "TimelineView.hpp"
 
 #include "HedgehogRenderer/Graph/GpuPassTiming.hpp"
@@ -87,7 +88,11 @@ namespace Editor
         bool             IsModuleShown(ProfilerModule module) const { return m_ModuleShown[static_cast<size_t>(module)]; }
         void             DrawTimeline(const Profiling::FrameRecord& frame);
         void             DrawRuler(double frameMs, float width);
-        void             DrawTopZones(const Profiling::FrameRecord& frame);
+        // The details pane under the charts (ProfilerDetails.cpp).
+        void             DrawDetails(const Profiling::FrameRecord& frame, const GpuSample* gpu);
+        void             DrawSelectedSample(const Profiling::FrameRecord& frame);
+        void             DrawHierarchy(const Profiling::FrameRecord& frame);
+        void             DrawTreeRow(uint32_t node, bool tree);
         void             DrawPassCommands(const GpuSample* gpu);
         // Asks where, then writes every frame kept with its GPU passes as Chrome trace JSON.
         void             Export();
@@ -103,6 +108,28 @@ namespace Editor
         std::vector<std::string> m_HiddenPasses;
         std::array<bool, 2>     m_HiddenCounters{};
         std::vector<std::string> m_GpuLegend; // every pass met since the capture began
+
+        // The details pane: CPU Usage's view, the thread its Hierarchy views show, the search and
+        // the sample picked on the timeline (kept while its frame is shown).
+        enum class DetailsView : uint8_t
+        {
+            Timeline,
+            Hierarchy,
+            InvertedHierarchy,
+        };
+        struct SelectedSample
+        {
+            uint64_t    FrameIndex  = UINT64_MAX;
+            uint32_t    ThreadIndex = 0;
+            uint64_t    StartNs     = 0;
+            const char* Name        = nullptr;
+        };
+        DetailsView           m_DetailsView = DetailsView::Timeline;
+        std::string           m_DetailsThread = "Main";
+        char                  m_Search[128]   = {};
+        SelectedSample        m_SelectedSample;
+        ProfilerTree          m_Tree;      // rebuilt every frame a Hierarchy view shows
+        std::vector<uint32_t> m_TreeStack; // scratch
         std::optional<uint64_t> m_Selected;          // a frame's Index; the newest when unset
         uint64_t                m_LastCollected = UINT64_MAX;
         uint64_t                m_Shown         = 0;   // the frame the timeline shows, highlighted in the graph
