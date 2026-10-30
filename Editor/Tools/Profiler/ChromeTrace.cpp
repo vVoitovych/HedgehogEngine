@@ -1,4 +1,5 @@
 #include "ChromeTrace.hpp"
+#include "ProfilerAnalysis.hpp"
 
 #include <algorithm>
 #include <cstdio>
@@ -68,7 +69,9 @@ namespace Editor
                 Out += "\"}}";
             }
 
-            void Complete(int pid, int tid, std::string_view name, double startNs, double durationNs)
+            // pass, when given, goes into the event's args.
+            void Complete(int pid, int tid, std::string_view name, double startNs, double durationNs,
+                          const char* pass = nullptr)
             {
                 Next();
                 Out += "{\"name\":\"";
@@ -77,6 +80,12 @@ namespace Editor
                 AppendMicroseconds(Out, startNs);
                 Out += ",\"dur\":";
                 AppendMicroseconds(Out, durationNs);
+                if (pass != nullptr)
+                {
+                    Out += ",\"args\":{\"pass\":\"";
+                    AppendEscaped(Out, pass);
+                    Out += "\"}";
+                }
                 Out += "}";
             }
         };
@@ -124,10 +133,13 @@ namespace Editor
             }
         }
 
+        constexpr int COMMAND_TRACK = 1;
         if (!gpuFrames.empty())
         {
             writer.Metadata(GPU_PROCESS, 0, "process_name", "GPU");
             writer.Metadata(GPU_PROCESS, 0, "thread_name", "Render graph passes");
+            if (std::any_of(gpuFrames.begin(), gpuFrames.end(), [](const TraceGpuFrame& gpu) { return !gpu.Commands.empty(); }))
+                writer.Metadata(GPU_PROCESS, COMMAND_TRACK, "thread_name", "GPU commands");
         }
         for (const TraceGpuFrame& gpu : gpuFrames)
         {
@@ -136,6 +148,13 @@ namespace Editor
             {
                 const double duration = pass.GpuMilliseconds * 1.0e6;
                 writer.Complete(GPU_PROCESS, 0, pass.Name, start, duration);
+                start += duration;
+            }
+            start = since(gpu.StartNs);
+            for (const Renderer::GpuCommandTiming& command : gpu.Commands)
+            {
+                const double duration = command.GpuMilliseconds * 1.0e6;
+                writer.Complete(GPU_PROCESS, COMMAND_TRACK, DescribeGpuCommand(command), start, duration, command.Pass);
                 start += duration;
             }
         }

@@ -2,7 +2,10 @@
 
 #include "Profiler/api/Profiler.hpp"
 
+#include "HedgehogRenderer/Graph/GpuPassTiming.hpp"
+
 #include <cstdint>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -40,4 +43,20 @@ namespace Editor
 
     // The frame's length in milliseconds.
     [[nodiscard]] double GetFrameMs(const Profiling::FrameRecord& frame);
+
+    // A GPU command as the window names it: its kind, its count in the kind's unit and, for more
+    // than one, its instances ("DrawIndexed 36 indices x 2 instances", "Barrier 1 transition").
+    [[nodiscard]] std::string DescribeGpuCommand(const Renderer::GpuCommandTiming& command);
+
+    // One pass's share of the timed GPU commands.
+    struct PassCommandStat
+    {
+        std::string Pass;
+        uint32_t    Commands = 0;
+        uint32_t    Draws    = 0; // Draw and DrawIndexed
+        double      GpuMs    = 0.0;
+    };
+
+    // The commands summed by pass, in the order the passes first appear.
+    void SummarizeCommandsByPass(std::span<const Renderer::GpuCommandTiming> commands, std::vector<PassCommandStat>& out);
 }
