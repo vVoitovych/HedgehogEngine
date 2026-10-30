@@ -135,6 +135,18 @@ namespace Renderer
             return { m_LastGpuPassTimings.data(), m_GpuPassTimingCount };
         }
 
+        // Times each GPU command (a draw, barrier, copy, blit or mipmap generation) from the next
+        // frame on; turning it on first makes a second timestamp pool, kept until the renderer goes.
+        // Does nothing without timestamps.
+        void SetCommandGpuTiming(bool enabled);
+        bool IsCommandGpuTiming() const { return m_CommandTiming; }
+        // The commands of the newest frame the GPU has finished, in recorded order, each with its
+        // GPU time; empty while command timing is off, or until a timed frame has finished.
+        std::span<const GpuCommandTiming> GetLastCommandGpuTimings() const
+        {
+            return { m_LastCommandTimings.data(), m_CommandTimingCount };
+        }
+
         const std::vector<std::string>& GetGraphNames() const { return m_Library.GetNames(); }
         const GraphAssetLibrary&        GetGraphLibrary() const { return m_Library; }
         const PassBuilderRegistry&      GetPassTypes() const { return m_Registry; }
@@ -227,6 +239,7 @@ namespace Renderer
         static constexpr uint32_t MAX_TIMED_PASSES    = 128;
         static constexpr uint32_t TIMESTAMPS_PER_SLOT = 2 + MAX_TIMED_PASSES + 1;
         void                      ReadGpuTimings(); // the current slot's, after its fence
+        void                      ReadCommandTimings(); // likewise, its commands'
 
         std::unique_ptr<RHI::IRHIQueryPool>                         m_FrameTimestamps;
         std::vector<uint64_t>                                       m_GpuTicks; // scratch
@@ -234,6 +247,15 @@ namespace Renderer
         size_t                                                      m_GpuPassTimingCount = 0;
         std::array<bool, HedgehogEngine::MAX_FRAMES_IN_FLIGHT>      m_SlotTimed{};
         std::optional<double>                                       m_LastGpuFrameMs;
+
+        // Command timing (SetCommandGpuTiming): per frame slot COMMAND_TIMESTAMPS_PER_SLOT
+        // timestamps, the start, then one after each of up to MAX_TIMED_COMMANDS commands.
+        static constexpr uint32_t MAX_TIMED_COMMANDS          = 4096;
+        static constexpr uint32_t COMMAND_TIMESTAMPS_PER_SLOT = MAX_TIMED_COMMANDS + 1;
+        bool                                m_CommandTiming = false;
+        std::unique_ptr<RHI::IRHIQueryPool> m_CommandTimestamps;
+        std::vector<GpuCommandTiming>       m_LastCommandTimings; // the first m_CommandTimingCount
+        size_t                              m_CommandTimingCount = 0;
 
         FrameStats                                 m_Stats;
         std::vector<RenderGraphRuntime::PassTiming> m_PassTotals; // this frame's, by pass name

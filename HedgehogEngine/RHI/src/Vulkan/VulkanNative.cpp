@@ -21,7 +21,7 @@ namespace RHI::VulkanNative
 
     VkCommandBuffer GetCommandBuffer(const IRHICommandList& commandList)
     {
-        return static_cast<const VulkanCommandList&>(commandList).GetHandle();
+        return static_cast<const VulkanCommandList&>(commandList.GetRecordingList()).GetHandle();
     }
 
     VkImageView GetImageView(const IRHITexture& texture)

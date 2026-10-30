@@ -97,6 +97,7 @@ namespace Renderer
         const GraphDescription& description = m_Builder.GetDescription();
         m_LastPassTimings.clear();
         m_TimedPassCount = 0;
+        m_TimedCommands.Clear();
         const CompileResult     result      = m_Compiler.Compile(description);
 
         if (!result.Success)
@@ -120,12 +121,20 @@ namespace Renderer
             cmdList.WriteTimestamp(*m_TimestampPool, m_TimestampFirst);
         }
 
+        // The passes record through the timed list while commands are timed.
+        const bool timeCommands = m_CommandTimestampPool != nullptr && m_CommandTimestampCount >= 2;
+        if (timeCommands)
+            m_TimedCommands.Start(cmdList, *m_CommandTimestampPool, m_CommandTimestampFirst, m_CommandTimestampCount);
+        RHI::IRHICommandList& recorder = timeCommands ? static_cast<RHI::IRHICommandList&>(m_TimedCommands) : cmdList;
+
         for (const CompiledPass& pass : result.Graph.Passes)
         {
             // Each pass under its name, interned only while the profiler records.
             const Profiling::ScopedZone zone(Profiling::IsEnabled() ? Profiling::InternName(pass.Name) : nullptr);
             const auto passStart = m_PassTimingEnabled ? std::chrono::steady_clock::now()
                                                        : std::chrono::steady_clock::time_point{};
+            if (timeCommands)
+                m_TimedCommands.SetPass(Profiling::InternName(pass.Name));
 
             std::vector<RHI::TextureBarrier> textureBarriers;
             textureBarriers.reserve(pass.TextureBarriers.size());
@@ -151,10 +160,10 @@ namespace Renderer
             }
 
             if (!textureBarriers.empty() || !bufferBarriers.empty())
-                cmdList.Barrier(textureBarriers, bufferBarriers);
+                recorder.Barrier(textureBarriers, bufferBarriers);
 
             const PassExecutionRecord& record = m_PassExecutions[pass.OriginalPassIndex];
-            record.Invoke(record.PassData, record.ExecuteState, cmdList);
+            record.Invoke(record.PassData, record.ExecuteState, recorder);
 
             if (m_TimedPassCount < timedPasses)
             {
@@ -174,6 +183,7 @@ namespace Renderer
             }
         }
 
+        m_TimedCommands.Finish();
         ResetForNextFrame();
         return true;
     }

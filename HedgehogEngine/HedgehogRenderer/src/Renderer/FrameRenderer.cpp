@@ -108,6 +108,7 @@ namespace Renderer
         if (m_FrameTimestamps)
         {
             ReadGpuTimings();
+            ReadCommandTimings();
             slot.Cmd->ResetQueries(*m_FrameTimestamps, firstTimestamp, 2);
             slot.Cmd->WriteTimestamp(*m_FrameTimestamps, firstTimestamp);
             m_SlotTimed[m_SlotIndex] = true;
@@ -189,8 +190,13 @@ namespace Renderer
 
         graph.SetPassTimingEnabled(m_Stats.IsCapturing());
         graph.SetGpuTimestamps(m_FrameTimestamps.get(), firstTimestamp + 2, MAX_TIMED_PASSES + 1);
+        graph.SetCommandTimestamps(m_CommandTiming ? m_CommandTimestamps.get() : nullptr,
+                                   COMMAND_TIMESTAMPS_PER_SLOT * m_SlotIndex, COMMAND_TIMESTAMPS_PER_SLOT);
         if (!graph.Execute(*slot.Cmd))
             presented = PresentSource::None;
+        if (graph.IsLastCommandTimingTruncated())
+            ReportOnce("FrameRenderer: the frame has more than " + std::to_string(MAX_TIMED_COMMANDS)
+                       + " GPU commands; those past them are not timed.");
         m_LastFramePassCount = graph.GetLastExecutedPassCount();
         RecordPassTimings(graph);
 
@@ -242,6 +248,37 @@ namespace Renderer
         }
         for (const GpuPassTiming& timing : GetLastPassGpuTimings())
             m_Stats.AddGpuSample(timing.Name.c_str(), timing.GpuMilliseconds);
+    }
+
+    void FrameRenderer::SetCommandGpuTiming(bool enabled)
+    {
+        if (enabled && !m_CommandTimestamps && m_FrameTimestamps)
+            m_CommandTimestamps = m_Device.CreateTimestampQueryPool(COMMAND_TIMESTAMPS_PER_SLOT * HedgehogEngine::MAX_FRAMES_IN_FLIGHT);
+        m_CommandTiming = enabled && m_CommandTimestamps;
+        if (!m_CommandTiming)
+            m_CommandTimingCount = 0;
+    }
+
+    // The commands this slot's runtime timed when it last ran, with their GPU times.
+    void FrameRenderer::ReadCommandTimings()
+    {
+        const std::span<const GpuCommandTiming> commands = m_Runtimes[m_SlotIndex]->GetLastTimedCommands();
+        if (!m_CommandTiming || commands.empty())
+        {
+            m_CommandTimingCount = 0;
+            return;
+        }
+        m_GpuTicks.resize(commands.size() + 1);
+        if (!m_CommandTimestamps->ReadTimestamps(COMMAND_TIMESTAMPS_PER_SLOT * m_SlotIndex, m_GpuTicks))
+        {
+            m_CommandTimingCount = 0;
+            return;
+        }
+        const double msPerTick = m_CommandTimestamps->GetTickPeriodNs() / 1.0e6;
+        m_LastCommandTimings.assign(commands.begin(), commands.end());
+        for (size_t i = 0; i < commands.size(); ++i)
+            m_LastCommandTimings[i].GpuMilliseconds = static_cast<double>(m_GpuTicks[i + 1] - m_GpuTicks[i]) * msPerTick;
+        m_CommandTimingCount = commands.size();
     }
 
     void FrameRenderer::RecordPassTimings(const RenderGraphRuntime& graph)
