@@ -44,6 +44,9 @@ namespace Editor
     void LayoutTimeline(const Profiling::ThreadRecord& thread, uint64_t frameStartNs, uint64_t frameEndNs, float width,
                         std::vector<TimelineBar>& out);
 
+    // The thread's zones by start, a parent before the zones nested in it.
+    [[nodiscard]] std::vector<const Profiling::ZoneRecord*> SortZonesByStart(const Profiling::ThreadRecord& thread);
+
     // The frame's length in milliseconds.
     [[nodiscard]] double GetFrameMs(const Profiling::FrameRecord& frame);
 

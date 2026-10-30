@@ -8,20 +8,19 @@ namespace Editor
     namespace
     {
         constexpr double NS_PER_MS = 1.0e6;
+    }
 
-        // The thread's zones by start, a parent before the zones nested in it.
-        std::vector<const Profiling::ZoneRecord*> SortByStart(const Profiling::ThreadRecord& thread)
+    std::vector<const Profiling::ZoneRecord*> SortZonesByStart(const Profiling::ThreadRecord& thread)
+    {
+        std::vector<const Profiling::ZoneRecord*> zones;
+        zones.reserve(thread.Zones.size());
+        for (const Profiling::ZoneRecord& zone : thread.Zones)
+            zones.push_back(&zone);
+        std::sort(zones.begin(), zones.end(), [](const Profiling::ZoneRecord* a, const Profiling::ZoneRecord* b)
         {
-            std::vector<const Profiling::ZoneRecord*> zones;
-            zones.reserve(thread.Zones.size());
-            for (const Profiling::ZoneRecord& zone : thread.Zones)
-                zones.push_back(&zone);
-            std::sort(zones.begin(), zones.end(), [](const Profiling::ZoneRecord* a, const Profiling::ZoneRecord* b)
-            {
-                return a->StartNs != b->StartNs ? a->StartNs < b->StartNs : a->Depth < b->Depth;
-            });
-            return zones;
-        }
+            return a->StartNs != b->StartNs ? a->StartNs < b->StartNs : a->Depth < b->Depth;
+        });
+        return zones;
     }
 
     void ComputeTopZones(const Profiling::FrameRecord& frame, std::vector<ZoneStat>& out)
@@ -44,7 +43,7 @@ namespace Editor
             // Walking zones in start order with a stack of the open ones: each zone's parent is the
             // innermost one still open, whose self time loses the zone's duration.
             std::vector<std::pair<const Profiling::ZoneRecord*, size_t>> open;
-            for (const Profiling::ZoneRecord* zone : SortByStart(thread))
+            for (const Profiling::ZoneRecord* zone : SortZonesByStart(thread))
             {
                 while (!open.empty() && open.back().first->Depth >= zone->Depth)
                     open.pop_back();
@@ -75,7 +74,7 @@ namespace Editor
             const double offset = ns <= frameStartNs ? 0.0 : static_cast<double>(ns - frameStartNs);
             return static_cast<float>(std::min(offset / span, 1.0)) * width;
         };
-        for (const Profiling::ZoneRecord* zone : SortByStart(thread))
+        for (const Profiling::ZoneRecord* zone : SortZonesByStart(thread))
         {
             out.push_back({ toX(zone->StartNs), toX(zone->StartNs + zone->DurationNs), zone->Depth, zone->Name,
                             static_cast<double>(zone->DurationNs) / NS_PER_MS });
@@ -194,7 +193,7 @@ namespace Editor
         // Walking zones in start order with a stack of the open ones and their categories: a zone's
         // whole duration goes to its category and leaves its parent's, which keeps only self time.
         std::vector<std::pair<const Profiling::ZoneRecord*, ZoneCategory>> open;
-        for (const Profiling::ZoneRecord* zone : SortByStart(thread))
+        for (const Profiling::ZoneRecord* zone : SortZonesByStart(thread))
         {
             while (!open.empty() && open.back().first->Depth >= zone->Depth)
                 open.pop_back();
