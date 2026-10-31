@@ -29,12 +29,16 @@ namespace Renderer
                 cmd.SetScissor({ 0, 0, depth.GetWidth(), depth.GetHeight() });
                 const RHI::IRHIDescriptorSet& viewProj = services.AllocateViewProjUniform(frame.Proj * frame.View);
                 cmd.BindDescriptorSet(pipeline, 0, viewProj);
-                DrawRigidInstances(cmd, opaque, frame, frame.OpaqueInstances);
+                {
+                    const GpuScope scope(cmd, "Opaque");
+                    DrawRigidInstances(cmd, opaque, frame, frame.OpaqueInstances);
+                }
 
                 // Skinned instances after the rigid ones. The skinned layout's push constants differ,
                 // so set 0 is bound again.
                 if (CanDrawSkinned(frame))
                 {
+                    const GpuScope           scope(cmd, "Skinned");
                     SidedPipeline            skinned(services.GetPipeline(EnginePipeline::DepthPrepassSkinned),
                                                      services.GetPipeline(EnginePipeline::DepthPrepassSkinnedDoubleSided));
                     const RHI::IRHIPipeline& bound = skinned.Bind(cmd);
@@ -46,6 +50,7 @@ namespace Renderer
                 // Alpha-tested instances last, through the cutoff pipelines and their materials.
                 if (!frame.CutoffInstances.empty() && frame.Positions && frame.TexCoords && frame.Indices)
                 {
+                    const GpuScope           scope(cmd, "Cutoff");
                     SidedPipeline            cutoff(services.GetPipeline(EnginePipeline::DepthPrepassCutoff),
                                                     services.GetPipeline(EnginePipeline::DepthPrepassCutoffDoubleSided));
                     const RHI::IRHIPipeline& bound = cutoff.Bind(cmd);
@@ -54,7 +59,8 @@ namespace Renderer
                 }
                 if (CanDrawSkinned(frame, frame.SkinnedCutoffInstances) && frame.TexCoords)
                 {
-                    SidedPipeline cutoff(services.GetPipeline(EnginePipeline::DepthPrepassCutoffSkinned),
+                    const GpuScope scope(cmd, "Skinned cutoff");
+                    SidedPipeline  cutoff(services.GetPipeline(EnginePipeline::DepthPrepassCutoffSkinned),
                                          services.GetPipeline(EnginePipeline::DepthPrepassCutoffSkinnedDoubleSided));
                     const RHI::IRHIPipeline& bound = cutoff.Bind(cmd);
                     cmd.BindDescriptorSet(bound, 0, viewProj);

@@ -127,6 +127,39 @@ TEST_CASE("Timed command list - past its capacity commands are still recorded, o
     CHECK_FALSE(timed.IsTruncated());
 }
 
+TEST_CASE("Timed command list - scopes reach the target and are timed at their start and end")
+{
+    TestQueryPool        pool(16);
+    RecordingCommandList target;
+    TimedCommandList     timed;
+    timed.Start(target, pool, 0, 16);
+    timed.SetPass("Shadow");
+
+    timed.BeginScope("Rigid");
+    timed.BeginScope("Cascade 0");
+    timed.DrawIndexed(36, 1, 0, 0, 0);
+    timed.EndScope();
+    timed.EndScope();
+    timed.EndScope(); // no scope open: ignored
+    timed.Finish();
+
+    CHECK(target.Scopes == std::vector<std::string>{ "begin Rigid", "begin Cascade 0", "end", "end" });
+    CHECK(CountTimestamps(target) == 6); // the start, two scope starts, the draw, two scope ends
+
+    const std::span<const GpuCommandTiming> commands = timed.GetCommands();
+    REQUIRE(commands.size() == 5);
+    CHECK(commands[0].Kind == GpuCommandKind::ScopeBegin);
+    CHECK(std::strcmp(commands[0].Scope, "Rigid") == 0);
+    CHECK(std::strcmp(commands[1].Scope, "Cascade 0") == 0);
+    CHECK(commands[2].Kind == GpuCommandKind::DrawIndexed);
+    CHECK(commands[3].Kind == GpuCommandKind::ScopeEnd);
+    CHECK(commands[4].Kind == GpuCommandKind::ScopeEnd);
+    CHECK(IsGpuScopeMarker(commands[0].Kind));
+    CHECK_FALSE(IsGpuScopeMarker(commands[2].Kind));
+    for (const GpuCommandTiming& command : commands)
+        CHECK(std::strcmp(command.Pass, "Shadow") == 0);
+}
+
 TEST_CASE("With command timestamps set, Execute times each pass's barriers and draws under the pass's name")
 {
     TestDevice         device;

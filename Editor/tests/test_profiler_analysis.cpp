@@ -117,6 +117,7 @@ TEST_CASE("GPU commands - named by kind, count and instances, and summed by pass
     const std::vector<Renderer::GpuCommandTiming> commands = {
         { "Shadow", GpuCommandKind::Barrier, 1, 1, 0.01 },
         { "Shadow", GpuCommandKind::DrawIndexed, 36, 1, 0.20 },
+        { "Shadow", GpuCommandKind::ScopeBegin, 0, 0, 0.5, "Rigid" }, // a scope marker: not a command
         { "Forward", GpuCommandKind::DrawIndexed, 1, 2, 0.30 },
         { "Shadow", GpuCommandKind::Draw, 3, 1, 0.05 },
         { "Forward", GpuCommandKind::Mipmaps, 1, 1, 0.10 },
@@ -124,15 +125,16 @@ TEST_CASE("GPU commands - named by kind, count and instances, and summed by pass
 
     CHECK(DescribeGpuCommand(commands[0]) == "Barrier 1 transition");
     CHECK(DescribeGpuCommand(commands[1]) == "DrawIndexed 36 indices");
-    CHECK(DescribeGpuCommand(commands[2]) == "DrawIndexed 1 index x 2 instances");
-    CHECK(DescribeGpuCommand(commands[3]) == "Draw 3 vertices");
-    CHECK(DescribeGpuCommand(commands[4]) == "Mipmaps");
+    CHECK(DescribeGpuCommand(commands[2]) == "Rigid");
+    CHECK(DescribeGpuCommand(commands[3]) == "DrawIndexed 1 index x 2 instances");
+    CHECK(DescribeGpuCommand(commands[4]) == "Draw 3 vertices");
+    CHECK(DescribeGpuCommand(commands[5]) == "Mipmaps");
     CHECK(DescribeGpuCommand({ "Upload", GpuCommandKind::CopyBuffer, 48, 1, 0.0 }) == "CopyBuffer 48 bytes");
 
     // A pass name spelt by another pointer is the same pass.
     const std::string shadow = "Shadow";
     std::vector<Renderer::GpuCommandTiming> spelt = commands;
-    spelt[3].Pass = shadow.c_str();
+    spelt[4].Pass = shadow.c_str();
 
     std::vector<PassCommandStat> stats = { { "stale" } };
     SummarizeCommandsByPass(spelt, stats);
@@ -228,6 +230,8 @@ TEST_CASE("Rendering counters - draws, triangles, vertices, barriers and copies 
         { "Upload", GpuCommandKind::CopyBuffer, 64, 1, 0.0 },
         { "Upload", GpuCommandKind::Mipmaps, 1, 1, 0.0 },
         { "Present", GpuCommandKind::Blit, 1, 1, 0.0 },
+        { "Present", GpuCommandKind::ScopeBegin, 0, 0, 0.0, "ImGui" }, // markers count as nothing
+        { "Present", GpuCommandKind::ScopeEnd, 0, 0, 0.0 },
     };
     const RenderingCounters counts = CountRendering(commands);
     const auto at = [&](RenderingCounter counter) { return counts[static_cast<size_t>(counter)]; };

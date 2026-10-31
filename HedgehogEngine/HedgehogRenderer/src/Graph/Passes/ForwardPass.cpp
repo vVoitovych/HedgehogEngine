@@ -44,10 +44,14 @@ namespace Renderer
         // Draws instances with their materials, rebinding set 1 only when the material changes
         // between consecutive instances, each through the twin its material's sidedness asks for.
         // Skinned instances push their palette offset as well. A Cutoff material's fragments below
-        // its cutoff are discarded by the shader.
+        // its cutoff are discarded by the shader. The draws are a GPU scope named scope, opened
+        // only when there are instances.
         void DrawLitInstances(RHI::IRHICommandList& cmd, SidedPipeline& pipeline, const GraphFrameData& frame,
-                              std::span<const HX::RenderInstance> instances, bool skinned)
+                              std::span<const HX::RenderInstance> instances, bool skinned, const char* scope)
         {
+            if (instances.empty())
+                return;
+            const GpuScope gpuScope(cmd, scope);
             uint64_t boundMaterial = UINT64_MAX;
             for (const HX::RenderInstance& instance : instances)
             {
@@ -126,8 +130,8 @@ namespace Renderer
             // atlas; then the environment's image-based lighting.
             const RHI::IRHIDescriptorSet& lighting = AllocateLighting(data, services, frame);
             cmd.BindDescriptorSet(pipeline, 3, lighting);
-            DrawLitInstances(cmd, lit, frame, frame.OpaqueInstances, false);
-            DrawLitInstances(cmd, lit, frame, frame.CutoffInstances, false);
+            DrawLitInstances(cmd, lit, frame, frame.OpaqueInstances, false, "Opaque");
+            DrawLitInstances(cmd, lit, frame, frame.CutoffInstances, false, "Cutoff");
 
             // Skinned instances after the rigid ones, with the skinning streams bound after the
             // four the rigid pipeline reads and the palette at set 4. The skinned layout's push
@@ -146,8 +150,8 @@ namespace Renderer
                 cmd.BindDescriptorSet(skinned, 2, *frame.SceneLights);
                 cmd.BindDescriptorSet(skinned, 3, lighting);
                 cmd.BindDescriptorSet(skinned, 4, *frame.JointPalette);
-                DrawLitInstances(cmd, litSkinned, frame, frame.SkinnedInstances, true);
-                DrawLitInstances(cmd, litSkinned, frame, frame.SkinnedCutoffInstances, true);
+                DrawLitInstances(cmd, litSkinned, frame, frame.SkinnedInstances, true, "Skinned");
+                DrawLitInstances(cmd, litSkinned, frame, frame.SkinnedCutoffInstances, true, "Skinned cutoff");
             }
             cmd.EndRendering();
         }
@@ -230,6 +234,7 @@ namespace Renderer
                 cmd.BindDescriptorSet(pipeline, 0, view);
                 cmd.BindDescriptorSet(pipeline, 2, *frame.SceneLights);
                 cmd.BindDescriptorSet(pipeline, 3, lighting);
+                const GpuScope scope(cmd, "Transparent");
                 DrawTransparentInstances(cmd, pipeline, services.GetPipeline(EnginePipeline::ForwardTransparentBackFaces),
                                          frame, frame.TransparentInstances, false);
             }
@@ -246,6 +251,7 @@ namespace Renderer
                 cmd.BindDescriptorSet(skinnedPipeline, 2, *frame.SceneLights);
                 cmd.BindDescriptorSet(skinnedPipeline, 3, lighting);
                 cmd.BindDescriptorSet(skinnedPipeline, 4, *frame.JointPalette);
+                const GpuScope scope(cmd, "Skinned transparent");
                 DrawTransparentInstances(cmd, skinnedPipeline,
                                          services.GetPipeline(EnginePipeline::ForwardTransparentSkinnedBackFaces), frame,
                                          frame.SkinnedTransparentInstances, true);

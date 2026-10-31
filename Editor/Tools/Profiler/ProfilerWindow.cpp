@@ -733,7 +733,7 @@ namespace Editor
         for (const Renderer::GpuCommandTiming& command : gpu->Commands)
         {
             const float w = static_cast<float>(command.GpuMilliseconds / frameMs) * fullWidth;
-            if (x + w < left || x > left + width)
+            if (x + w < left || x > left + width || Renderer::IsGpuScopeMarker(command.Kind))
             {
                 x += w;
                 continue;

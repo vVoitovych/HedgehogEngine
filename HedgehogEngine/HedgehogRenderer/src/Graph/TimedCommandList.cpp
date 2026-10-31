@@ -13,19 +13,20 @@ namespace Renderer
         m_Capacity  = capacity;
         m_Pass      = "";
         m_Truncated = false;
+        m_ScopeDepth = 0;
         m_Commands.clear();
         target.ResetQueries(pool, first, capacity);
         target.WriteTimestamp(pool, first);
     }
 
-    void TimedCommandList::Stamp(GpuCommandKind kind, uint32_t count, uint32_t instances)
+    void TimedCommandList::Stamp(GpuCommandKind kind, uint32_t count, uint32_t instances, const char* scope)
     {
         if (m_Commands.size() + 1 >= m_Capacity)
         {
             m_Truncated = true;
             return;
         }
-        m_Commands.push_back({ m_Pass, kind, count, instances, 0.0 });
+        m_Commands.push_back({ m_Pass, kind, count, instances, 0.0, scope });
         m_Target->WriteTimestamp(*m_Pool, m_First + static_cast<uint32_t>(m_Commands.size()));
     }
 
@@ -79,5 +80,21 @@ namespace Renderer
     {
         m_Target->CopyTextureToTexture(src, dst);
         Stamp(GpuCommandKind::Blit, 1, 1);
+    }
+
+    void TimedCommandList::BeginScope(const char* name)
+    {
+        m_Target->BeginScope(name);
+        ++m_ScopeDepth;
+        Stamp(GpuCommandKind::ScopeBegin, 0, 0, name);
+    }
+
+    void TimedCommandList::EndScope()
+    {
+        if (m_ScopeDepth == 0)
+            return;
+        --m_ScopeDepth;
+        m_Target->EndScope();
+        Stamp(GpuCommandKind::ScopeEnd, 0, 0);
     }
 }

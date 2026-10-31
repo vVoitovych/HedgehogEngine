@@ -335,6 +335,11 @@ namespace RGTest
             Commands.push_back("timestamp " + std::to_string(index));
         }
 
+        // Scopes go to Scopes, not Commands, so the passes' command sequences stay as they were.
+        void BeginScope(const char* name) override { Scopes.push_back(std::string("begin ") + name); }
+        void EndScope() override { Scopes.push_back("end"); }
+        std::vector<std::string> Scopes; // "begin <name>" and "end", in order
+
         struct RegionCopy
         {
             const RHI::IRHITexture* Texture = nullptr;

@@ -40,6 +40,20 @@ namespace Renderer
         const GraphFrameContext* Context = nullptr;
     };
 
+    // A named GPU scope (IRHICommandList::BeginScope) over the commands recorded while it lives;
+    // name must outlive the recording (a literal).
+    class GpuScope
+    {
+    public:
+        GpuScope(RHI::IRHICommandList& cmd, const char* name);
+        ~GpuScope();
+        GpuScope(const GpuScope&)            = delete;
+        GpuScope& operator=(const GpuScope&) = delete;
+
+    private:
+        RHI::IRHICommandList& m_Cmd;
+    };
+
     // Whether an instance's material is double-sided (GraphFrameData::Materials); false for a
     // material without draw info.
     bool IsDoubleSided(const GraphFrameData& frame, const HX::RenderInstance& instance);

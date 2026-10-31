@@ -8,6 +8,8 @@
 #include "VulkanTexture.hpp"
 #include "VulkanTypes.hpp"
 
+#include "RHI/api/RHIDiagnostics.hpp"
+
 #include <algorithm>
 #include <cassert>
 
@@ -49,6 +51,7 @@ void VulkanCommandList::Begin(bool oneTimeSubmit)
 
     VkResult result = vkBeginCommandBuffer(m_CommandBuffer, &beginInfo);
     assert(result == VK_SUCCESS && "vkBeginCommandBuffer failed.");
+    m_ScopeDepth = 0;
 }
 
 void VulkanCommandList::End()
@@ -427,6 +430,25 @@ void VulkanCommandList::WriteTimestamp(IRHIQueryPool& pool, uint32_t index)
 {
     vkCmdWriteTimestamp2(m_CommandBuffer, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
                          static_cast<VulkanQueryPool&>(pool).GetHandle(), index);
+}
+
+// Debug labels exist only where VK_EXT_debug_utils is enabled, with the validation layers.
+void VulkanCommandList::BeginScope(const char* name)
+{
+    if (!AreValidationLayersEnabled())
+        return;
+    VkDebugUtilsLabelEXT label{ VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT };
+    label.pLabelName = name;
+    vkCmdBeginDebugUtilsLabelEXT(m_CommandBuffer, &label);
+    ++m_ScopeDepth;
+}
+
+void VulkanCommandList::EndScope()
+{
+    if (m_ScopeDepth == 0) // an EndScope without its BeginScope
+        return;
+    vkCmdEndDebugUtilsLabelEXT(m_CommandBuffer);
+    --m_ScopeDepth;
 }
 
 void VulkanCommandList::CopyTextureToTexture(const IRHITexture& src, IRHITexture& dst)
