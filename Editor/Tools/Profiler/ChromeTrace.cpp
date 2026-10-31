@@ -1,5 +1,4 @@
 #include "ChromeTrace.hpp"
-#include "ProfilerAnalysis.hpp"
 
 #include <algorithm>
 #include <cstdio>
@@ -69,9 +68,7 @@ namespace Editor
                 Out += "\"}}";
             }
 
-            // pass, when given, goes into the event's args.
-            void Complete(int pid, int tid, std::string_view name, double startNs, double durationNs,
-                          const char* pass = nullptr)
+            void Complete(int pid, int tid, std::string_view name, double startNs, double durationNs)
             {
                 Next();
                 Out += "{\"name\":\"";
@@ -80,34 +77,30 @@ namespace Editor
                 AppendMicroseconds(Out, startNs);
                 Out += ",\"dur\":";
                 AppendMicroseconds(Out, durationNs);
-                if (pass != nullptr)
-                {
-                    Out += ",\"args\":{\"pass\":\"";
-                    AppendEscaped(Out, pass);
-                    Out += "\"}";
-                }
                 Out += "}";
             }
         };
     }
 
     std::string WriteChromeTrace(std::span<const Profiling::FrameRecord* const> frames,
-                                 std::span<const TraceGpuFrame>                gpuFrames)
+                                 std::span<const Profiling::ThreadRecord* const> gpuThreads)
     {
         // Every time is from the earliest one, a zone begun before its frame included, so the
         // numbers stay small.
-        uint64_t origin = std::numeric_limits<uint64_t>::max();
+        uint64_t   origin   = std::numeric_limits<uint64_t>::max();
+        const auto earliest = [&](const Profiling::ThreadRecord& thread)
+        {
+            for (const Profiling::ZoneRecord& zone : thread.Zones)
+                origin = std::min(origin, zone.StartNs);
+        };
         for (const Profiling::FrameRecord* frame : frames)
         {
             origin = std::min(origin, frame->StartNs);
             for (const Profiling::ThreadRecord& thread : frame->Threads)
-            {
-                for (const Profiling::ZoneRecord& zone : thread.Zones)
-                    origin = std::min(origin, zone.StartNs);
-            }
+                earliest(thread);
         }
-        for (const TraceGpuFrame& gpu : gpuFrames)
-            origin = std::min(origin, gpu.StartNs);
+        for (const Profiling::ThreadRecord* gpu : gpuThreads)
+            earliest(*gpu);
         if (origin == std::numeric_limits<uint64_t>::max())
             origin = 0;
         const auto since = [origin](uint64_t ns) { return static_cast<double>(ns - origin); };
@@ -133,35 +126,15 @@ namespace Editor
             }
         }
 
-        constexpr int COMMAND_TRACK = 1;
-        if (!gpuFrames.empty())
+        if (!gpuThreads.empty())
         {
             writer.Metadata(GPU_PROCESS, 0, "process_name", "GPU");
-            writer.Metadata(GPU_PROCESS, 0, "thread_name", "Render graph passes");
-            if (std::any_of(gpuFrames.begin(), gpuFrames.end(), [](const TraceGpuFrame& gpu) { return !gpu.Commands.empty(); }))
-                writer.Metadata(GPU_PROCESS, COMMAND_TRACK, "thread_name", "GPU commands");
+            writer.Metadata(GPU_PROCESS, 0, "thread_name", "GPU");
         }
-        for (const TraceGpuFrame& gpu : gpuFrames)
+        for (const Profiling::ThreadRecord* gpu : gpuThreads)
         {
-            double start = since(gpu.StartNs);
-            for (const Renderer::GpuPassTiming& pass : gpu.Passes)
-            {
-                const double duration = pass.GpuMilliseconds * 1.0e6;
-                writer.Complete(GPU_PROCESS, 0, pass.Name, start, duration);
-                start += duration;
-            }
-            start = since(gpu.StartNs);
-            for (const Renderer::GpuCommandTiming& command : gpu.Commands)
-            {
-                const double duration = command.GpuMilliseconds * 1.0e6;
-                if (Renderer::IsGpuScopeMarker(command.Kind)) // its gap still moves the next command on
-                {
-                    start += duration;
-                    continue;
-                }
-                writer.Complete(GPU_PROCESS, COMMAND_TRACK, DescribeGpuCommand(command), start, duration, command.Pass);
-                start += duration;
-            }
+            for (const Profiling::ZoneRecord& zone : gpu->Zones)
+                writer.Complete(GPU_PROCESS, 0, zone.Name, since(zone.StartNs), static_cast<double>(zone.DurationNs));
         }
 
         writer.Out += "]}\n";

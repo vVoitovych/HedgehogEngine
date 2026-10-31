@@ -159,12 +159,6 @@ namespace Editor
             return hovered && ImGui::IsMouseHoveringRect(min, max);
         }
 
-        // Coloured by its name, with a tooltip of the name and time.
-        void DrawBar(ImDrawList& drawList, ImVec2 min, ImVec2 max, const char* name, double ms, bool hovered)
-        {
-            if (DrawBarShape(drawList, min, max, name, ZoneColor(name), hovered))
-                ImGui::SetTooltip("%s\n%.3f ms", name, ms);
-        }
     }
 
     ProfilerWindow::~ProfilerWindow()
@@ -418,7 +412,7 @@ namespace Editor
         case ProfilerModule::Rendering:
         {
             const GpuSample*        gpu    = FindGpu(frame.Index);
-            const RenderingCounters counts = gpu != nullptr ? CountRendering(gpu->Commands) : RenderingCounters{};
+            const RenderingCounters counts = gpu != nullptr ? CountRendering(gpu->Events) : RenderingCounters{};
             for (size_t c = 0; c < RENDERING_COUNTER_COUNT; ++c)
                 m_Series.push_back({ GetRenderingCounterName(static_cast<RenderingCounter>(c)),
                                      ImGui::GetColorU32(Theme::Resolve(Theme::FromHex(RENDERING_COLORS[c]))), !m_HiddenCounters[c],
@@ -617,8 +611,14 @@ namespace Editor
         sample.FrameMs    = *frameMs;
         const std::span<const Renderer::GpuPassTiming> passes = renderer.GetLastPassGpuTimings();
         sample.Passes.assign(passes.begin(), passes.end());
-        const std::span<const Renderer::GpuCommandTiming> commands = renderer.GetLastCommandGpuTimings();
-        sample.Commands.assign(commands.begin(), commands.end());
+        const std::span<const Renderer::GpuTimelineEvent> events = renderer.GetLastGpuTimeline();
+        sample.Events.assign(events.begin(), events.end());
+        sample.HasCommands = std::any_of(events.begin(), events.end(), [](const Renderer::GpuTimelineEvent& event)
+                                         { return event.Kind == Renderer::GpuTimelineEventKind::Command; });
+        // The GPU thread starts where its frame does, while that frame is still kept.
+        const size_t   age        = HedgehogEngine::MAX_FRAMES_IN_FLIGHT;
+        const uint64_t frameStart = age < Profiling::GetFrameCount() ? Profiling::GetFrame(age).StartNs : 0;
+        MakeGpuThread(events, frameStart, sample.Thread);
         sample.Valid = true;
         // The GPU Usage legend: every pass met, in the order first met.
         for (const Renderer::GpuPassTiming& pass : passes)
@@ -634,8 +634,8 @@ namespace Editor
         return sample.Valid && sample.FrameIndex == frameIndex ? &sample : nullptr;
     }
 
-    // Each thread's zones over the frame's span, a row per depth; then the GPU passes one after the
-    // other on the same time scale.
+    // Each thread's zones over the frame's span, a row per depth, the GPU's (its passes, scopes and
+    // commands) last.
     void ProfilerWindow::DrawTimeline(const Profiling::FrameRecord& frame)
     {
         const float  width    = std::max(ImGui::GetContentRegionAvail().x, 100.0f);
@@ -662,12 +662,12 @@ namespace Editor
 
         constexpr ImGuiTreeNodeFlags GROUP = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_NoTreePushOnOpen |
                                              ImGuiTreeNodeFlags_SpanAvailWidth;
-        const ImU32 outline = ImGui::GetColorU32(Theme::Resolve(Theme::TEXT));
-        bool        picked  = false; // a click landed on a sample
-        for (const Profiling::ThreadRecord& thread : frame.Threads)
+        const ImU32 outline    = ImGui::GetColorU32(Theme::Resolve(Theme::TEXT));
+        bool        picked     = false; // a click landed on a sample
+        const auto  drawThread = [&](const Profiling::ThreadRecord& thread)
         {
             if (!ImGui::TreeNodeEx(thread.ThreadName.c_str(), GROUP))
-                continue;
+                return;
             LayoutTimeline(thread, frame.StartNs, frame.EndNs, fullWidth, m_Bars);
             uint32_t rows = 0;
             for (const TimelineBar& bar : m_Bars)
@@ -698,52 +698,16 @@ namespace Editor
                     m_SelectedSample.StartNs == bar.Zone->StartNs && std::strcmp(m_SelectedSample.Name, bar.Name) == 0)
                     drawList.AddRect(min, ImVec2(std::max(max.x, min.x + 1.0f), max.y), outline, 0.0f, 0, 2.0f);
             }
-        }
+        };
+        for (const Profiling::ThreadRecord& thread : frame.Threads)
+            drawThread(thread);
+        if (const GpuSample* gpu = FindGpu(frame.Index))
+            drawThread(gpu->Thread);
+        else if (ImGui::TreeNodeEx(GPU_THREAD_NAME, GROUP))
+            ImGui::TextDisabled("No GPU timings for this frame.");
         // A click on no sample drops the selection.
         if (hovered && !picked && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::IsAnyItemHovered())
             m_SelectedSample = SelectedSample{};
-
-        if (!ImGui::TreeNodeEx("GPU", GROUP))
-            return;
-        const GpuSample* gpu = FindGpu(frame.Index);
-        if (gpu == nullptr)
-        {
-            ImGui::TextDisabled("No GPU timings for this frame.");
-            return;
-        }
-        const ImVec2 origin = ImGui::GetCursorScreenPos();
-        ImGui::Dummy(ImVec2(width, ROW_HEIGHT));
-        float x = shift;
-        for (const Renderer::GpuPassTiming& pass : gpu->Passes)
-        {
-            const float w = static_cast<float>(pass.GpuMilliseconds / frameMs) * fullWidth;
-            DrawBar(drawList, ImVec2(x, origin.y), ImVec2(x + w, origin.y + ROW_HEIGHT - 2.0f), pass.Name.c_str(),
-                    pass.GpuMilliseconds, hovered);
-            x += w;
-        }
-
-        // Each command one after another on the same scale, coloured as its pass.
-        if (gpu->Commands.empty())
-            return;
-        if (!ImGui::TreeNodeEx("GPU commands", GROUP))
-            return;
-        const ImVec2 commandOrigin = ImGui::GetCursorScreenPos();
-        ImGui::Dummy(ImVec2(width, ROW_HEIGHT));
-        x = shift;
-        for (const Renderer::GpuCommandTiming& command : gpu->Commands)
-        {
-            const float w = static_cast<float>(command.GpuMilliseconds / frameMs) * fullWidth;
-            if (x + w < left || x > left + width || Renderer::IsGpuScopeMarker(command.Kind))
-            {
-                x += w;
-                continue;
-            }
-            if (DrawBarShape(drawList, ImVec2(x, commandOrigin.y), ImVec2(x + w, commandOrigin.y + ROW_HEIGHT - 2.0f),
-                             Renderer::GetGpuCommandKindName(command.Kind), ZoneColor(command.Pass), hovered))
-                ImGui::SetTooltip("%s\n%s\n%.4f ms", DescribeGpuCommand(command).c_str(), command.Pass,
-                                  command.GpuMilliseconds);
-            x += w;
-        }
     }
 
     // The view's span of the frame with a tick, its time from the frame's start, every step.
@@ -772,49 +736,20 @@ namespace Editor
         if (path == nullptr)
             return;
 
-        // Oldest first; each frame's GPU passes start where its CPU frame does (see TraceGpuFrame).
-        std::vector<const Profiling::FrameRecord*> frames;
-        std::vector<TraceGpuFrame>                 gpuFrames;
+        // Oldest first; each frame's GPU thread starts where its CPU frame does (MakeGpuThread).
+        std::vector<const Profiling::FrameRecord*>  frames;
+        std::vector<const Profiling::ThreadRecord*> gpuThreads;
         for (size_t age = Profiling::GetFrameCount(); age > 0; --age)
         {
             const Profiling::FrameRecord& frame = Profiling::GetFrame(age - 1);
             frames.push_back(&frame);
             if (const GpuSample* gpu = FindGpu(frame.Index))
-                gpuFrames.push_back({ frame.StartNs, gpu->Passes, gpu->Commands });
+                gpuThreads.push_back(&gpu->Thread);
         }
 
         std::ofstream file(path, std::ios::binary | std::ios::trunc);
-        file << WriteChromeTrace(frames, gpuFrames);
+        file << WriteChromeTrace(frames, gpuThreads);
         m_ExportStatus = file ? "Exported " + std::to_string(frames.size()) + " frames to " + path
                               : std::string("Could not write ") + path;
-    }
-
-    // The timed commands by pass: how many, how many draws and their GPU time.
-    void ProfilerWindow::DrawPassCommands(const GpuSample& gpu)
-    {
-        SummarizeCommandsByPass(gpu.Commands, m_PassCommands);
-        constexpr ImGuiTableFlags FLAGS = ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV |
-                                          ImGuiTableFlags_ScrollY | ImGuiTableFlags_SizingStretchProp;
-        if (!ImGui::BeginTable("##PassCommands", 4, FLAGS))
-            return;
-        ImGui::TableSetupScrollFreeze(0, 1);
-        ImGui::TableSetupColumn("Pass", ImGuiTableColumnFlags_WidthStretch, 3.0f);
-        ImGui::TableSetupColumn("Commands", ImGuiTableColumnFlags_WidthStretch, 1.0f);
-        ImGui::TableSetupColumn("Draws", ImGuiTableColumnFlags_WidthStretch, 1.0f);
-        ImGui::TableSetupColumn("GPU ms", ImGuiTableColumnFlags_WidthStretch, 1.0f);
-        ImGui::TableHeadersRow();
-        for (const PassCommandStat& stat : m_PassCommands)
-        {
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::TextUnformatted(stat.Pass.c_str());
-            ImGui::TableNextColumn();
-            ImGui::Text("%u", stat.Commands);
-            ImGui::TableNextColumn();
-            ImGui::Text("%u", stat.Draws);
-            ImGui::TableNextColumn();
-            ImGui::Text("%.3f", stat.GpuMs);
-        }
-        ImGui::EndTable();
     }
 }

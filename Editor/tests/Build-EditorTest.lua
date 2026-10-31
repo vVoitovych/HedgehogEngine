@@ -59,7 +59,7 @@ project "EditorTest"
         "..",              -- so "Docking/..." resolves
         "../..",           -- so "HedgehogMath/api/..." resolves
         "../../HedgehogEngine", -- so "HedgehogEngine/api/..." resolves (MaterialSlots' header-only MaterialData)
-        "../../HedgehogEngine/HedgehogRenderer/api", -- the header-only GpuPassTiming the trace writes
+        "../../HedgehogEngine/HedgehogRenderer/api", -- the header-only GpuTimeline the GPU thread is made from
         "%{IncludeDir.yaml_cpp}", -- the layout file
         "."
     }
@@ -73,7 +73,8 @@ project "EditorTest"
         "HedgehogAnimation", -- the animator controller model the editing works on
         "yaml-cpp",
         "FileSystem",
-        "Logger"
+        "Logger",
+        "Profiler" -- InternName, for the GPU thread's command names
     }
 
     targetdir (BinariesDir)

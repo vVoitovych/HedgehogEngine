@@ -10,17 +10,21 @@
 #include <cstring>
 
 // The Profiler's details pane, as Unity's: for CPU Usage a Timeline, Hierarchy or Inverted Hierarchy
-// view of the shown frame, a thread selector, a search and the selected sample; for GPU Usage and
-// Rendering their own details.
+// view of the shown frame, a thread selector (the GPU among the threads), a search and the selected
+// sample; for GPU Usage the GPU thread's hierarchy, and for Rendering its counters too.
 namespace Editor
 {
     namespace
     {
         constexpr const char* VIEW_NAMES[] = { "Timeline", "Hierarchy", "Inverted Hierarchy" };
 
-        // The thread the Hierarchy views show: the one named, else the first.
-        const Profiling::ThreadRecord* FindThread(const Profiling::FrameRecord& frame, const std::string& name)
+        // The thread the Hierarchy views show: the one named (the GPU's while the frame has one),
+        // else the first.
+        const Profiling::ThreadRecord* FindThread(const Profiling::FrameRecord& frame, const Profiling::ThreadRecord* gpu,
+                                                  const std::string& name)
         {
+            if (gpu != nullptr && gpu->ThreadName == name)
+                return gpu;
             for (const Profiling::ThreadRecord& thread : frame.Threads)
             {
                 if (thread.ThreadName == name)
@@ -51,7 +55,8 @@ namespace Editor
     // GPU times at its end, then the active module's details.
     void ProfilerWindow::DrawDetails(const Profiling::FrameRecord& frame, const GpuSample* gpu)
     {
-        const bool cpu = m_ActiveModule == ProfilerModule::CpuUsage;
+        const bool                     cpu       = m_ActiveModule == ProfilerModule::CpuUsage;
+        const Profiling::ThreadRecord* gpuThread = gpu != nullptr ? &gpu->Thread : nullptr;
         if (cpu)
         {
             ImGui::SetNextItemWidth(ImGui::CalcTextSize("Inverted Hierarchy").x + ImGui::GetFrameHeight() * 2.0f);
@@ -67,7 +72,7 @@ namespace Editor
             if (m_DetailsView != DetailsView::Timeline)
             {
                 ImGui::SameLine();
-                const Profiling::ThreadRecord* thread = FindThread(frame, m_DetailsThread);
+                const Profiling::ThreadRecord* thread = FindThread(frame, gpuThread, m_DetailsThread);
                 ImGui::SetNextItemWidth(160.0f);
                 if (ImGui::BeginCombo("##DetailsThread", thread != nullptr ? thread->ThreadName.c_str() : "No thread"))
                 {
@@ -76,6 +81,8 @@ namespace Editor
                         if (ImGui::Selectable(option.ThreadName.c_str(), &option == thread))
                             m_DetailsThread = option.ThreadName;
                     }
+                    if (gpuThread != nullptr && ImGui::Selectable(GPU_THREAD_NAME, gpuThread == thread))
+                        m_DetailsThread = GPU_THREAD_NAME;
                     ImGui::EndCombo();
                 }
             }
@@ -96,15 +103,17 @@ namespace Editor
 
         if (!cpu)
         {
-            if (gpu == nullptr || gpu->Commands.empty())
+            // The GPU thread's hierarchy, its times shares of the GPU frame; Rendering's counters first.
+            if (gpu == nullptr || !gpu->HasCommands)
                 ImGui::TextDisabled("No timed GPU commands for this frame yet: they arrive a few frames after its CPU zones.");
-            else if (m_ActiveModule == ProfilerModule::GpuUsage)
-                DrawGpuDetails(*gpu);
-            else
-                DrawRenderingDetails(*gpu);
+            if (gpu == nullptr)
+                return;
+            if (m_ActiveModule == ProfilerModule::Rendering)
+                DrawRenderingCounters(*gpu);
+            DrawHierarchy(gpu->Thread, gpu->FrameMs, false, "");
             return;
         }
-        DrawSelectedSample(frame);
+        DrawSelectedSample(frame, gpu);
         if (m_DetailsView == DetailsView::Timeline)
         {
             // Ctrl+wheel zooms the timeline, so it must not scroll it too.
@@ -113,16 +122,42 @@ namespace Editor
                 DrawTimeline(frame);
             ImGui::EndChild();
         }
+        else if (const Profiling::ThreadRecord* thread = FindThread(frame, gpuThread, m_DetailsThread))
+            DrawHierarchy(*thread, thread == gpuThread ? gpu->FrameMs : GetFrameMs(frame),
+                          m_DetailsView == DetailsView::InvertedHierarchy, m_Search);
         else
-            DrawHierarchy(frame);
+            ImGui::TextDisabled("No zones in this frame.");
     }
 
     // The sample picked on the timeline, while its frame is shown: its name, time, category and how
-    // often its name ran in the frame.
-    void ProfilerWindow::DrawSelectedSample(const Profiling::FrameRecord& frame)
+    // often its name ran in the frame (on the GPU, how often and how long on the GPU).
+    void ProfilerWindow::DrawSelectedSample(const Profiling::FrameRecord& frame, const GpuSample* gpu)
     {
         if (m_SelectedSample.FrameIndex != frame.Index || m_DetailsView != DetailsView::Timeline)
             return;
+        if (gpu != nullptr && m_SelectedSample.ThreadIndex == GPU_THREAD_INDEX)
+        {
+            uint32_t calls = 0;
+            double   ms    = 0.0;
+            for (const Profiling::ZoneRecord& zone : gpu->Thread.Zones)
+            {
+                if (std::strcmp(zone.Name, m_SelectedSample.Name) == 0)
+                {
+                    ++calls;
+                    ms += static_cast<double>(zone.DurationNs) / 1.0e6;
+                }
+            }
+            for (const Profiling::ZoneRecord& zone : gpu->Thread.Zones)
+            {
+                if (zone.StartNs == m_SelectedSample.StartNs && std::strcmp(zone.Name, m_SelectedSample.Name) == 0)
+                {
+                    ImGui::Text("Selected: %s   %.3f ms   GPU: %u call%s, %.3f ms in the frame", zone.Name,
+                                static_cast<double>(zone.DurationNs) / 1.0e6, calls, calls == 1 ? "" : "s", ms);
+                    return;
+                }
+            }
+            return;
+        }
         for (const Profiling::ThreadRecord& thread : frame.Threads)
         {
             if (thread.ThreadIndex != m_SelectedSample.ThreadIndex)
@@ -143,20 +178,14 @@ namespace Editor
         }
     }
 
-    // Unity's Hierarchy and Inverted Hierarchy: the chosen thread's zones as a tree table, sortable
-    // by any column; a search lists the matching rows flat.
-    void ProfilerWindow::DrawHierarchy(const Profiling::FrameRecord& frame)
+    // Unity's Hierarchy and Inverted Hierarchy: the thread's zones as a tree table, sortable by any
+    // column, its percentages of frameMs; a search lists the matching rows flat.
+    void ProfilerWindow::DrawHierarchy(const Profiling::ThreadRecord& thread, double frameMs, bool inverted, const char* search)
     {
-        const Profiling::ThreadRecord* thread = FindThread(frame, m_DetailsThread);
-        if (thread == nullptr)
-        {
-            ImGui::TextDisabled("No zones in this frame.");
-            return;
-        }
-        if (m_DetailsView == DetailsView::Hierarchy)
-            BuildHierarchy(*thread, GetFrameMs(frame), m_Tree);
+        if (inverted)
+            BuildInvertedHierarchy(thread, frameMs, m_Tree);
         else
-            BuildInvertedHierarchy(*thread, GetFrameMs(frame), m_Tree);
+            BuildHierarchy(thread, frameMs, m_Tree);
 
         constexpr ImGuiTableFlags FLAGS = ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_BordersOuter |
                                           ImGuiTableFlags_ScrollY | ImGuiTableFlags_Sortable | ImGuiTableFlags_Resizable |
@@ -187,16 +216,16 @@ namespace Editor
             SortProfilerTree(m_Tree, key, key == ProfilerSortKey::Name ? !ascending : ascending);
         }
 
-        if (m_Search[0] != '\0' && m_DetailsView == DetailsView::InvertedHierarchy)
+        if (search[0] != '\0' && inverted)
         {
             // Inverted, each name is one top-level node (those below it are its callers).
             ForEachChild(m_Tree, 0, [&](uint32_t child)
             {
-                if (ContainsIgnoringCase(m_Tree.Nodes[child].Name, m_Search))
+                if (ContainsIgnoringCase(m_Tree.Nodes[child].Name, search))
                     DrawTreeRow(child, false);
             });
         }
-        else if (m_Search[0] != '\0')
+        else if (search[0] != '\0')
         {
             // Flat: every node matching, in the tree's order.
             std::vector<uint32_t>& stack = m_TreeStack;
@@ -206,7 +235,7 @@ namespace Editor
             {
                 const uint32_t node = stack.back();
                 stack.pop_back();
-                if (node != 0 && ContainsIgnoringCase(m_Tree.Nodes[node].Name, m_Search))
+                if (node != 0 && ContainsIgnoringCase(m_Tree.Nodes[node].Name, search))
                     DrawTreeRow(node, false);
                 const size_t first = stack.size();
                 ForEachChild(m_Tree, node, [&](uint32_t child) { stack.push_back(child); });
@@ -252,57 +281,10 @@ namespace Editor
         ImGui::PopID();
     }
 
-    // Unity's GPU Usage details: each pass with its commands under it, in the order the GPU ran
-    // them, with their GPU time, the time not in a command, and their share of the GPU frame.
-    void ProfilerWindow::DrawGpuDetails(const GpuSample& gpu)
+    // Unity's Rendering counters for the frame, over the GPU thread's hierarchy.
+    void ProfilerWindow::DrawRenderingCounters(const GpuSample& gpu)
     {
-        BuildGpuTree(gpu.Passes, gpu.Commands, gpu.FrameMs, m_Tree);
-        constexpr ImGuiTableFlags FLAGS = ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_BordersOuter |
-                                          ImGuiTableFlags_ScrollY | ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchProp |
-                                          ImGuiTableFlags_NoSavedSettings;
-        if (!ImGui::BeginTable("##GpuUsage", 4, FLAGS))
-            return;
-        ImGui::TableSetupScrollFreeze(0, 1);
-        ImGui::TableSetupColumn("Overview", ImGuiTableColumnFlags_WidthStretch, 4.0f);
-        ImGui::TableSetupColumn("GPU ms", ImGuiTableColumnFlags_WidthStretch, 1.0f);
-        ImGui::TableSetupColumn("Self ms", ImGuiTableColumnFlags_WidthStretch, 1.0f);
-        ImGui::TableSetupColumn("GPU %", ImGuiTableColumnFlags_WidthStretch, 1.0f);
-        ImGui::TableHeadersRow();
-        ForEachChild(m_Tree, 0, [&](uint32_t pass) { DrawGpuTreeRow(gpu, pass); });
-        ImGui::EndTable();
-    }
-
-    void ProfilerWindow::DrawGpuTreeRow(const GpuSample& gpu, uint32_t node)
-    {
-        const ProfilerNode& entry = m_Tree.Nodes[node];
-        ImGui::TableNextRow();
-        ImGui::TableNextColumn();
-        ImGui::PushID(static_cast<int>(node));
-        const bool         leaf  = entry.FirstChild == NO_PROFILER_NODE;
-        ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanAllColumns;
-        if (leaf)
-            flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-        const std::string name = entry.Command >= 0 ? DescribeGpuCommand(gpu.Commands[static_cast<size_t>(entry.Command)])
-                                                    : std::string(entry.Name != nullptr ? entry.Name : "");
-        const bool open = ImGui::TreeNodeEx(name.c_str(), flags);
-        ImGui::TableNextColumn();
-        ImGui::Text("%.4f", entry.TotalMs);
-        ImGui::TableNextColumn();
-        ImGui::Text("%.4f", entry.SelfMs);
-        ImGui::TableNextColumn();
-        ImGui::Text("%.1f%%", entry.TotalMs / std::max(m_Tree.FrameMs, 1.0e-9) * 100.0);
-        if (open && !leaf)
-        {
-            ForEachChild(m_Tree, node, [&](uint32_t child) { DrawGpuTreeRow(gpu, child); });
-            ImGui::TreePop();
-        }
-        ImGui::PopID();
-    }
-
-    // Unity's Rendering details: the frame's counters, then the commands by pass.
-    void ProfilerWindow::DrawRenderingDetails(const GpuSample& gpu)
-    {
-        const RenderingCounters counts = CountRendering(gpu.Commands);
+        const RenderingCounters counts = CountRendering(gpu.Events);
         if (ImGui::BeginTable("##RenderingCounters", 3, ImGuiTableFlags_SizingStretchSame))
         {
             for (size_t c = 0; c < RENDERING_COUNTER_COUNT; ++c)
@@ -313,8 +295,5 @@ namespace Editor
             ImGui::EndTable();
         }
         ImGui::Spacing();
-        if (ImGui::BeginChild("##ProfilerPassCommands", ImVec2(0.0f, 0.0f), ImGuiChildFlags_Borders))
-            DrawPassCommands(gpu);
-        ImGui::EndChild();
     }
 }
