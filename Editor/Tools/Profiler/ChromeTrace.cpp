@@ -154,6 +154,11 @@ namespace Editor
             for (const Renderer::GpuCommandTiming& command : gpu.Commands)
             {
                 const double duration = command.GpuMilliseconds * 1.0e6;
+                if (Renderer::IsGpuScopeMarker(command.Kind)) // its gap still moves the next command on
+                {
+                    start += duration;
+                    continue;
+                }
                 writer.Complete(GPU_PROCESS, COMMAND_TRACK, DescribeGpuCommand(command), start, duration, command.Pass);
                 start += duration;
             }

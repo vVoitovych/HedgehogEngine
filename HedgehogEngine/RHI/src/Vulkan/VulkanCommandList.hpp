@@ -77,6 +77,8 @@ public:
 
     void ResetQueries(IRHIQueryPool& pool, uint32_t first, uint32_t count) override;
     void WriteTimestamp(IRHIQueryPool& pool, uint32_t index) override;
+    void BeginScope(const char* name) override;
+    void EndScope() override;
 
     // Internal accessor
     VkCommandBuffer GetHandle() const { return m_CommandBuffer; }
@@ -84,6 +86,7 @@ public:
 private:
     VulkanDevice&   m_Device;
     VkCommandBuffer m_CommandBuffer = VK_NULL_HANDLE;
+    uint32_t        m_ScopeDepth    = 0; // debug labels open
 };
 
 } // namespace RHI

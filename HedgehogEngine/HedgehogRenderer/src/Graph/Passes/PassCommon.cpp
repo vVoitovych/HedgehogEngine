@@ -176,4 +176,15 @@ namespace Renderer
         cmd.BeginRendering(info);
         return target.GetWidth();
     }
+
+    GpuScope::GpuScope(RHI::IRHICommandList& cmd, const char* name)
+        : m_Cmd(cmd)
+    {
+        m_Cmd.BeginScope(name);
+    }
+
+    GpuScope::~GpuScope()
+    {
+        m_Cmd.EndScope();
+    }
 }

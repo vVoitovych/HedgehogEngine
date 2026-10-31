@@ -93,6 +93,8 @@ namespace Editor
         {
             return " " + std::to_string(count) + " " + (count == 1 ? one : many);
         };
+        if (command.Kind == Renderer::GpuCommandKind::ScopeBegin && command.Scope != nullptr)
+            return command.Scope;
         std::string text = Renderer::GetGpuCommandKindName(command.Kind);
         switch (command.Kind)
         {
@@ -112,6 +114,8 @@ namespace Editor
         out.clear();
         for (const Renderer::GpuCommandTiming& command : commands)
         {
+            if (Renderer::IsGpuScopeMarker(command.Kind))
+                continue;
             auto stat = std::find_if(out.begin(), out.end(),
                                      [&](const PassCommandStat& s) { return std::strcmp(s.Pass.c_str(), command.Pass) == 0; });
             if (stat == out.end())
@@ -229,6 +233,8 @@ namespace Editor
         const auto add = [&](RenderingCounter counter, uint64_t value) { counts[static_cast<size_t>(counter)] += value; };
         for (const Renderer::GpuCommandTiming& command : commands)
         {
+            if (Renderer::IsGpuScopeMarker(command.Kind))
+                continue;
             add(RenderingCounter::Commands, 1);
             switch (command.Kind)
             {
@@ -249,6 +255,8 @@ namespace Editor
             case Renderer::GpuCommandKind::Mipmaps:
             case Renderer::GpuCommandKind::Blit:
                 add(RenderingCounter::Copies, 1);
+                break;
+            default:
                 break;
             }
         }

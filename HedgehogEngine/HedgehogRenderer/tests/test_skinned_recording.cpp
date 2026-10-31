@@ -278,3 +278,25 @@ TEST_CASE("Without a joint palette or the skinning streams, skinned instances ar
         CHECK(Rendering(cmd, 2) == RIGID_FORWARD);
     }
 }
+
+TEST_CASE("The depth prepass, shadow and forward passes name their steps as GPU scopes")
+{
+    SkinnedScene             scene;
+    const HX::RenderInstance rigid[]   = { Rigid(0, 0), Rigid(1, 1) };
+    const HX::RenderInstance skinned[] = { Skinned(1, 0, 0) };
+
+    GraphFrameData frame   = scene.MakeFrame();
+    frame.OpaqueInstances  = rigid;
+    frame.SkinnedInstances = skinned;
+
+    FakeServices         services;
+    RecordingCommandList cmd;
+    Record(frame, services, cmd);
+
+    // The prepass, then the shadow pass's caster groups each holding its cascade, then the
+    // forward pass; the cutoff steps record nothing without cutoff instances.
+    CHECK(cmd.Scopes == std::vector<std::string>{ "begin Opaque", "end", "begin Skinned", "end",
+                                                  "begin Rigid", "begin Cascade 0", "end", "end",
+                                                  "begin Skinned", "begin Cascade 0", "end", "end",
+                                                  "begin Opaque", "end", "begin Skinned", "end" });
+}

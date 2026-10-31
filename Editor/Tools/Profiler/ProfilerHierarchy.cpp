@@ -51,6 +51,19 @@ namespace Editor
             ++node.Calls;
         }
 
+        // A new last child of parent.
+        uint32_t AddChild(ProfilerTree& tree, uint32_t parent, const ProfilerNode& node)
+        {
+            const uint32_t index = static_cast<uint32_t>(tree.Nodes.size());
+            tree.Nodes.push_back(node);
+            tree.Nodes[index].Parent = parent;
+            uint32_t* link = &tree.Nodes[parent].FirstChild;
+            while (*link != NO_PROFILER_NODE)
+                link = &tree.Nodes[*link].NextSibling;
+            *link = index;
+            return index;
+        }
+
         // The root's total: its children's.
         void TotalRoot(ProfilerTree& tree)
         {
@@ -126,27 +139,50 @@ namespace Editor
             ProfilerNode& node = out.Nodes[FindOrAddChild(out, 0, pass.Name.c_str())];
             AddTime(node, pass.GpuMilliseconds, pass.GpuMilliseconds);
         }
+        // open: the pass the last command was in, then the scopes open in it.
+        std::vector<uint32_t> open;
+        std::vector<uint32_t> scopes;
         for (size_t i = 0; i < commands.size(); ++i)
         {
             const Renderer::GpuCommandTiming& command = commands[i];
             const uint32_t pass = FindOrAddChild(out, 0, command.Pass);
+            if (open.empty() || open.front() != pass)
+                open.assign(1, pass);
             if (out.Nodes[pass].Calls == 0)
                 ++out.Nodes[pass].Calls; // a pass known only from its commands
             out.Nodes[pass].SelfMs -= command.GpuMilliseconds;
+            // Every open scope holds the time, a scope's own end's included.
+            for (size_t s = 1; s < open.size(); ++s)
+                out.Nodes[open[s]].TotalMs += command.GpuMilliseconds;
+
+            ProfilerNode node;
+            node.Calls = 1;
+            if (command.Kind == Renderer::GpuCommandKind::ScopeEnd)
+            {
+                if (open.size() > 1) // an end whose start went untimed is ignored
+                    open.pop_back();
+                continue;
+            }
+            if (command.Kind == Renderer::GpuCommandKind::ScopeBegin)
+            {
+                node.Name = command.Scope != nullptr ? command.Scope : "Scope";
+                open.push_back(AddChild(out, open.back(), node));
+                scopes.push_back(open.back());
+                continue;
+            }
             // Each command is a node of its own, so it is added rather than found by name.
-            const uint32_t index = static_cast<uint32_t>(out.Nodes.size());
-            ProfilerNode   node;
             node.Name    = Renderer::GetGpuCommandKindName(command.Kind);
-            node.Parent  = pass;
             node.TotalMs = command.GpuMilliseconds;
             node.SelfMs  = command.GpuMilliseconds;
-            node.Calls   = 1;
             node.Command = static_cast<int32_t>(i);
-            out.Nodes.push_back(node);
-            uint32_t* link = &out.Nodes[pass].FirstChild;
-            while (*link != NO_PROFILER_NODE)
-                link = &out.Nodes[*link].NextSibling;
-            *link = index;
+            AddChild(out, open.back(), node);
+        }
+        // A scope's self time is what its children do not hold: the gap before its end.
+        for (const uint32_t scope : scopes)
+        {
+            double children = 0.0;
+            ForEachChild(out, scope, [&](uint32_t child) { children += out.Nodes[child].TotalMs; });
+            out.Nodes[scope].SelfMs = std::max(out.Nodes[scope].TotalMs - children, 0.0);
         }
         // A pass known only from its commands takes their time as its own. A command's time runs
         // from the timed command before it, so a pass's first one also holds the gap after the

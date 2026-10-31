@@ -51,7 +51,12 @@ namespace Renderer
                     RHI::IRHITexture& target = *data.Graph->GetTexture(data.Target);
                     const UiCallback& ui     = data.Context->Frame->Ui;
                     if (ui)
+                    {
+                        // Its draws go straight into the native list (ImGui's), so they are one
+                        // scope rather than timed one by one.
+                        const GpuScope scope(cmd, "ImGui");
                         ui(cmd, target);
+                    }
                     else
                         ClearColorTarget(cmd, target);
                 });

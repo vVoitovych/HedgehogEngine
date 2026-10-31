@@ -129,6 +129,32 @@ TEST_CASE("Profiler hierarchy - GPU passes with their commands, a pass known onl
     CHECK(Describe(tree, 0) == std::vector<std::string>{ "Shadow 1.0/1.0/1", "Forward 2.0/2.0/1" });
 }
 
+TEST_CASE("Profiler hierarchy - GPU scopes hold the commands recorded inside them")
+{
+    using Renderer::GpuCommandKind;
+    const std::vector<Renderer::GpuPassTiming>    passes   = { { "Shadow", 2.0 } };
+    const std::vector<Renderer::GpuCommandTiming> commands = {
+        { "Shadow", GpuCommandKind::ScopeBegin, 0, 0, 0.1, "Rigid" },
+        { "Shadow", GpuCommandKind::ScopeBegin, 0, 0, 0.0, "Cascade 0" },
+        { "Shadow", GpuCommandKind::DrawIndexed, 36, 1, 0.6 },
+        { "Shadow", GpuCommandKind::ScopeEnd, 0, 0, 0.2 },
+        { "Shadow", GpuCommandKind::ScopeEnd, 0, 0, 0.1 },
+        { "Shadow", GpuCommandKind::ScopeEnd, 0, 0, 0.1 }, // nothing open: ignored
+        { "Shadow", GpuCommandKind::Barrier, 1, 1, 0.3 },
+    };
+
+    ProfilerTree tree;
+    BuildGpuTree(passes, commands, 4.0, tree);
+    // The pass's self time: 2 ms less everything timed in it.
+    CHECK(Describe(tree, 0) == std::vector<std::string>{ "Shadow 2.0/0.6/1" });
+    const uint32_t shadow = Child(tree, 0, "Shadow");
+    CHECK(Describe(tree, shadow) == std::vector<std::string>{ "Rigid 0.9/0.1/1", "Barrier 0.3/0.3/1" });
+    const uint32_t rigid = Child(tree, shadow, "Rigid");
+    CHECK(tree.Nodes[rigid].Command == -1);
+    CHECK(Describe(tree, rigid) == std::vector<std::string>{ "Cascade 0 0.8/0.2/1" });
+    CHECK(Describe(tree, Child(tree, rigid, "Cascade 0")) == std::vector<std::string>{ "DrawIndexed 0.6/0.6/1" });
+}
+
 TEST_CASE("Profiler hierarchy - sorting orders every node's children only")
 {
     ProfilerTree tree;

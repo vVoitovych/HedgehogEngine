@@ -12,7 +12,8 @@ namespace Renderer
 {
     // A command list that records into another one unchanged and, while started, writes a GPU
     // timestamp after every draw, barrier, copy, blit and mipmap generation, remembering what each
-    // was. Timestamp first is written at Start, so command i runs from first + i to first + i + 1.
+    // was, and at the start and end of every scope (as ScopeBegin and ScopeEnd entries). Timestamp
+    // first is written at Start, so command i runs from first + i to first + i + 1.
     // Once capacity - 1 commands are timed, later ones are still recorded, only not timed.
     class TimedCommandList final : public RHI::IRHICommandList
     {
@@ -79,11 +80,15 @@ namespace Renderer
         }
         void WriteTimestamp(RHI::IRHIQueryPool& pool, uint32_t index) override { m_Target->WriteTimestamp(pool, index); }
 
+        // An EndScope with no scope open is ignored.
+        void BeginScope(const char* name) override;
+        void EndScope() override;
+
         // Commands recorded straight into the target's native handle (ImGui's) go untimed.
         [[nodiscard]] const RHI::IRHICommandList& GetRecordingList() const override { return m_Target->GetRecordingList(); }
 
     private:
-        void Stamp(GpuCommandKind kind, uint32_t count, uint32_t instances);
+        void Stamp(GpuCommandKind kind, uint32_t count, uint32_t instances, const char* scope = nullptr);
 
         RHI::IRHICommandList*         m_Target   = nullptr;
         RHI::IRHIQueryPool*           m_Pool     = nullptr;
@@ -91,6 +96,7 @@ namespace Renderer
         uint32_t                      m_Capacity = 0;
         const char*                   m_Pass     = "";
         bool                          m_Truncated = false;
+        uint32_t                      m_ScopeDepth = 0;
         std::vector<GpuCommandTiming> m_Commands; // reused frame to frame
     };
 }

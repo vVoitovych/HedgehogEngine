@@ -50,6 +50,8 @@ namespace Editor
     // Each GPU pass (in order, Name its own) with its commands as children (Name the command's
     // kind, Command its index) under the pass of the same name; a command whose pass is not listed
     // gets a node of its own. A pass's self time is what its commands do not cover, at least 0.
+    // A scope (a ScopeBegin to its ScopeEnd) is a node named by the scope holding the commands
+    // recorded inside it; its time is theirs plus the gap before its end, its self time that gap.
     void BuildGpuTree(std::span<const Renderer::GpuPassTiming> passes, std::span<const Renderer::GpuCommandTiming> commands,
                       double gpuFrameMs, ProfilerTree& out);
 
