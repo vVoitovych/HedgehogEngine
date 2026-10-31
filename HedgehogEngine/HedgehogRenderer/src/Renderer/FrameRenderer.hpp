@@ -6,6 +6,7 @@
 
 #include "HedgehogRenderer/Frame/SharedPhase.hpp"
 #include "HedgehogRenderer/Graph/GpuPassTiming.hpp"
+#include "HedgehogRenderer/Graph/GpuTimeline.hpp"
 #include "HedgehogRenderer/Graph/GraphDiagnostics.hpp"
 #include "HedgehogRenderer/Graph/GraphAssetLibrary.hpp"
 #include "HedgehogRenderer/Graph/GraphInstantiator.hpp"
@@ -134,6 +135,8 @@ namespace Renderer
         {
             return { m_LastGpuPassTimings.data(), m_GpuPassTimingCount };
         }
+        // That frame's passes (one per run), their scopes and commands on one timeline.
+        std::span<const GpuTimelineEvent> GetLastGpuTimeline() const { return m_GpuTimeline; }
 
         // Times each GPU command (a draw, barrier, copy, blit or mipmap generation) from the next
         // frame on; turning it on first makes a second timestamp pool, kept until the renderer goes.
@@ -238,11 +241,14 @@ namespace Renderer
         // support.
         static constexpr uint32_t MAX_TIMED_PASSES    = 128;
         static constexpr uint32_t TIMESTAMPS_PER_SLOT = 2 + MAX_TIMED_PASSES + 1;
-        void                      ReadGpuTimings(); // the current slot's, after its fence
+        bool                      ReadGpuTimings(); // the current slot's, after its fence
         void                      ReadCommandTimings(); // likewise, its commands'
 
         std::unique_ptr<RHI::IRHIQueryPool>                         m_FrameTimestamps;
-        std::vector<uint64_t>                                       m_GpuTicks; // scratch
+        std::vector<uint64_t>                                       m_PassTicks;    // the last frame read's
+        std::vector<uint64_t>                                       m_CommandTicks; // likewise, its commands'
+        uint64_t                                                    m_FrameStartTick = 0;
+        std::vector<GpuTimelineEvent>                               m_GpuTimeline;
         std::vector<GpuPassTiming>                                  m_LastGpuPassTimings; // the first m_GpuPassTimingCount
         size_t                                                      m_GpuPassTimingCount = 0;
         std::array<bool, HedgehogEngine::MAX_FRAMES_IN_FLIGHT>      m_SlotTimed{};

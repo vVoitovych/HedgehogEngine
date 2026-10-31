@@ -107,8 +107,16 @@ namespace Renderer
         const uint32_t firstTimestamp = TIMESTAMPS_PER_SLOT * m_SlotIndex;
         if (m_FrameTimestamps)
         {
-            ReadGpuTimings();
+            const bool passesRead = ReadGpuTimings();
             ReadCommandTimings();
+            if (passesRead)
+            {
+                const std::span<const uint64_t> commandTicks =
+                    m_CommandTimingCount > 0 ? std::span<const uint64_t>(m_CommandTicks) : std::span<const uint64_t>();
+                BuildGpuTimeline(m_FrameStartTick, m_Runtimes[m_SlotIndex]->GetLastTimedPassNames(), m_PassTicks,
+                                 GetLastCommandGpuTimings(), commandTicks, m_FrameTimestamps->GetTickPeriodNs() / 1.0e6,
+                                 m_GpuTimeline);
+            }
             slot.Cmd->ResetQueries(*m_FrameTimestamps, firstTimestamp, 2);
             slot.Cmd->WriteTimestamp(*m_FrameTimestamps, firstTimestamp);
             m_SlotTimed[m_SlotIndex] = true;
@@ -208,30 +216,32 @@ namespace Renderer
     }
 
     // The frame this slot last rendered: its GPU time, and its passes' summed by name (a few dozen
-    // passes, so a linear search). The slot's runtime still names the passes it timed then.
-    void FrameRenderer::ReadGpuTimings()
+    // passes, so a linear search). The slot's runtime still names the passes it timed then. True
+    // when its pass timestamps were read.
+    bool FrameRenderer::ReadGpuTimings()
     {
         const uint32_t first = TIMESTAMPS_PER_SLOT * m_SlotIndex;
         if (!m_SlotTimed[m_SlotIndex])
-            return;
+            return false;
 
         const double msPerTick = m_FrameTimestamps->GetTickPeriodNs() / 1.0e6;
         uint64_t     frame[2]  = {};
         if (m_FrameTimestamps->ReadTimestamps(first, frame))
         {
             m_LastGpuFrameMs = static_cast<double>(frame[1] - frame[0]) * msPerTick;
+            m_FrameStartTick = frame[0];
             m_Stats.AddGpuSample("RenderFrame(total)", *m_LastGpuFrameMs);
         }
 
         const std::span<const std::string> passes = m_Runtimes[m_SlotIndex]->GetLastTimedPassNames();
-        m_GpuTicks.resize(passes.size() + 1);
-        if (passes.empty() || !m_FrameTimestamps->ReadTimestamps(first + 2, m_GpuTicks))
-            return;
+        m_PassTicks.resize(passes.size() + 1);
+        if (passes.empty() || !m_FrameTimestamps->ReadTimestamps(first + 2, m_PassTicks))
+            return false;
 
         m_GpuPassTimingCount = 0;
         for (size_t i = 0; i < passes.size(); ++i)
         {
-            const double ms   = static_cast<double>(m_GpuTicks[i + 1] - m_GpuTicks[i]) * msPerTick;
+            const double ms   = static_cast<double>(m_PassTicks[i + 1] - m_PassTicks[i]) * msPerTick;
             const auto   end  = m_LastGpuPassTimings.begin() + static_cast<std::ptrdiff_t>(m_GpuPassTimingCount);
             const auto   same = std::find_if(m_LastGpuPassTimings.begin(), end,
                 [&](const GpuPassTiming& timing) { return timing.Name == passes[i]; });
@@ -248,6 +258,7 @@ namespace Renderer
         }
         for (const GpuPassTiming& timing : GetLastPassGpuTimings())
             m_Stats.AddGpuSample(timing.Name.c_str(), timing.GpuMilliseconds);
+        return true;
     }
 
     void FrameRenderer::SetCommandGpuTiming(bool enabled)
@@ -268,8 +279,8 @@ namespace Renderer
             m_CommandTimingCount = 0;
             return;
         }
-        m_GpuTicks.resize(commands.size() + 1);
-        if (!m_CommandTimestamps->ReadTimestamps(COMMAND_TIMESTAMPS_PER_SLOT * m_SlotIndex, m_GpuTicks))
+        m_CommandTicks.resize(commands.size() + 1);
+        if (!m_CommandTimestamps->ReadTimestamps(COMMAND_TIMESTAMPS_PER_SLOT * m_SlotIndex, m_CommandTicks))
         {
             m_CommandTimingCount = 0;
             return;
@@ -277,7 +288,7 @@ namespace Renderer
         const double msPerTick = m_CommandTimestamps->GetTickPeriodNs() / 1.0e6;
         m_LastCommandTimings.assign(commands.begin(), commands.end());
         for (size_t i = 0; i < commands.size(); ++i)
-            m_LastCommandTimings[i].GpuMilliseconds = static_cast<double>(m_GpuTicks[i + 1] - m_GpuTicks[i]) * msPerTick;
+            m_LastCommandTimings[i].GpuMilliseconds = static_cast<double>(m_CommandTicks[i + 1] - m_CommandTicks[i]) * msPerTick;
         m_CommandTimingCount = commands.size();
     }
 

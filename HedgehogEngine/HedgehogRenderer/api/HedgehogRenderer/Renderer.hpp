@@ -3,6 +3,7 @@
 #include "HedgehogRenderer/Graph/GraphAsset.hpp"
 #include "HedgehogRenderer/Graph/GraphDiagnostics.hpp"
 #include "HedgehogRenderer/Graph/GpuPassTiming.hpp"
+#include "HedgehogRenderer/Graph/GpuTimeline.hpp"
 #include "HedgehogRenderer/Graph/PassBuilderRegistry.hpp"
 #include "HedgehogRenderer/Graph/UiCallback.hpp"
 #include "HedgehogRenderer/Views/View.hpp"
@@ -134,6 +135,11 @@ namespace Renderer
         // name over the views (and the shared phase) that ran it, in the order passes first ran;
         // empty until then, or without timestamps. Valid until the next RenderFrame.
         std::span<const GpuPassTiming> GetLastPassGpuTimings() const;
+        // That same frame as a timeline: each pass run (one per view that ran it), and, while
+        // command timing is on, the scopes and commands inside it, every time from the frame's
+        // start in GPU order. Empty until then, or without timestamps. Valid until the next
+        // RenderFrame.
+        std::span<const GpuTimelineEvent> GetLastGpuTimeline() const;
 
         // Times each GPU command of the render graph (a draw, barrier, copy, blit or mipmap
         // generation) with timestamps of its own, from the next frame on; off by default, when a

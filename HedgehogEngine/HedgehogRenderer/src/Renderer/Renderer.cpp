@@ -106,6 +106,11 @@ namespace Renderer
         return m_FrameRenderer->GetLastPassGpuTimings();
     }
 
+    std::span<const GpuTimelineEvent> Renderer::GetLastGpuTimeline() const
+    {
+        return m_FrameRenderer->GetLastGpuTimeline();
+    }
+
     void Renderer::SetCommandGpuTiming(bool enabled)
     {
         m_FrameRenderer->SetCommandGpuTiming(enabled);
