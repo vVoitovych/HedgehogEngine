@@ -334,7 +334,8 @@ namespace Editor
             {
                 const bool timing = !m_Renderer->IsCommandGpuTiming();
                 if (!timing)
-                    LOGINFO("Smoke test: ", m_Renderer->GetLastCommandGpuTimings().size(), " GPU commands timed in the last frame.");
+                    LOGINFO("Smoke test: ", m_Renderer->GetLastCommandGpuTimings().size(), " GPU commands timed in the last frame, ",
+                            m_Renderer->GetLastGpuTimeline().size(), " events on its GPU timeline.");
                 m_Renderer->SetCommandGpuTiming(timing);
             }
             StepFrame();
