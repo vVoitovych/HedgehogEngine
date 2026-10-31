@@ -2,7 +2,7 @@
 
 #include "Profiler/api/Profiler.hpp"
 
-#include "HedgehogRenderer/Graph/GpuPassTiming.hpp"
+#include "HedgehogRenderer/Graph/GpuTimeline.hpp"
 
 #include <array>
 #include <cstdint>
@@ -45,27 +45,24 @@ namespace Editor
     void LayoutTimeline(const Profiling::ThreadRecord& thread, uint64_t frameStartNs, uint64_t frameEndNs, float width,
                         std::vector<TimelineBar>& out);
 
-    // The thread's zones by start, a parent before the zones nested in it.
+    // The thread's zones by start, a parent before the zones nested in it, ties in recorded order.
     [[nodiscard]] std::vector<const Profiling::ZoneRecord*> SortZonesByStart(const Profiling::ThreadRecord& thread);
 
     // The frame's length in milliseconds.
     [[nodiscard]] double GetFrameMs(const Profiling::FrameRecord& frame);
 
-    // A GPU command as the window names it: its kind, its count in the kind's unit and, for more
-    // than one, its instances ("DrawIndexed 36 indices x 2 instances", "Barrier 1 transition").
-    [[nodiscard]] std::string DescribeGpuCommand(const Renderer::GpuCommandTiming& command);
+    // A GPU timeline event as the window names it: a pass or scope by its name, a command by its
+    // kind, its count in the kind's unit and, for more than one, its instances ("DrawIndexed 36
+    // indices x 2 instances", "Barrier 1 transition").
+    [[nodiscard]] std::string DescribeGpuEvent(const Renderer::GpuTimelineEvent& event);
 
-    // One pass's share of the timed GPU commands.
-    struct PassCommandStat
-    {
-        std::string Pass;
-        uint32_t    Commands = 0;
-        uint32_t    Draws    = 0; // Draw and DrawIndexed
-        double      GpuMs    = 0.0;
-    };
-
-    // The commands summed by pass, in the order the passes first appear.
-    void SummarizeCommandsByPass(std::span<const Renderer::GpuCommandTiming> commands, std::vector<PassCommandStat>& out);
+    // The GPU as a thread of the frame: the renderer's timeline as zones (each event's start from
+    // frameStartNs, its depth its nesting, a command named by DescribeGpuEvent, interned), in GPU
+    // order, so the timeline, the Hierarchy views and the trace show it as they show a CPU thread.
+    // The GPU's clock is not the CPU's: the zones' lengths and order are exact, not their place.
+    inline constexpr uint32_t    GPU_THREAD_INDEX = UINT32_MAX;
+    inline constexpr const char* GPU_THREAD_NAME  = "GPU";
+    void MakeGpuThread(std::span<const Renderer::GpuTimelineEvent> events, uint64_t frameStartNs, Profiling::ThreadRecord& out);
 
     // What a zone's time is spent on, as the CPU Usage chart stacks it (Unity's categories, ours
     // where the engine differs: Waiting for GPU in place of VSync).
@@ -99,7 +96,8 @@ namespace Editor
     // else Others, so the categories sum to the thread's top-level zones.
     [[nodiscard]] CategoryTimes ComputeCategoryTimes(const Profiling::ThreadRecord& thread);
 
-    // What the Rendering module counts in a frame's timed GPU commands, as Unity's lists its own.
+    // What the Rendering module counts in a frame's timed GPU commands (its timeline's Command
+    // events), as Unity's lists its own.
     enum class RenderingCounter : uint8_t
     {
         DrawCalls, // Draw and DrawIndexed
@@ -116,7 +114,7 @@ namespace Editor
     // Indexed by RenderingCounter.
     using RenderingCounters = std::array<uint64_t, RENDERING_COUNTER_COUNT>;
 
-    [[nodiscard]] RenderingCounters CountRendering(std::span<const Renderer::GpuCommandTiming> commands);
+    [[nodiscard]] RenderingCounters CountRendering(std::span<const Renderer::GpuTimelineEvent> events);
 
     // A count as Unity shows one: as it is below ten thousand, else in k or M with one decimal.
     [[nodiscard]] std::string FormatCount(uint64_t count);

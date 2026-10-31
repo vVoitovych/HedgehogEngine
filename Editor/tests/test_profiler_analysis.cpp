@@ -10,6 +10,29 @@ namespace
 {
     constexpr uint64_t MS = 1000000; // nanoseconds
 
+    using Kind = Renderer::GpuTimelineEventKind;
+
+    Renderer::GpuTimelineEvent Span(Kind kind, const char* name, uint32_t depth, double startMs, double ms)
+    {
+        Renderer::GpuTimelineEvent event;
+        event.Kind       = kind;
+        event.Name       = name;
+        event.Depth      = depth;
+        event.StartMs    = startMs;
+        event.DurationMs = ms;
+        return event;
+    }
+
+    Renderer::GpuTimelineEvent Command(Renderer::GpuCommandKind kind, uint32_t count, uint32_t instances,
+                                       uint32_t depth = 1, double startMs = 0.0, double ms = 0.0)
+    {
+        Renderer::GpuTimelineEvent event = Span(Kind::Command, Renderer::GetGpuCommandKindName(kind), depth, startMs, ms);
+        event.Command   = kind;
+        event.Count     = count;
+        event.Instances = instances;
+        return event;
+    }
+
     // A frame from 0 to 10 ms: on the main thread Frame (0-10) holds Update (1-6), which holds
     // Physics (2-4) and Physics again (4.5-5.5), and Render (6-9); a worker runs Physics (3-7).
     // Zones are listed as the recorder ends them: a child before its parent.
@@ -111,45 +134,43 @@ TEST_CASE("Profiler analysis - the timeline puts each zone on its depth's row ov
     CHECK(GetFrameMs(frame) == doctest::Approx(10.0));
 }
 
-TEST_CASE("GPU commands - named by kind, count and instances, and summed by pass in first-seen order")
+TEST_CASE("GPU timeline - events named by DescribeGpuEvent and made the GPU thread")
 {
     using Renderer::GpuCommandKind;
-    const std::vector<Renderer::GpuCommandTiming> commands = {
-        { "Shadow", GpuCommandKind::Barrier, 1, 1, 0.01 },
-        { "Shadow", GpuCommandKind::DrawIndexed, 36, 1, 0.20 },
-        { "Shadow", GpuCommandKind::ScopeBegin, 0, 0, 0.5, "Rigid" }, // a scope marker: not a command
-        { "Forward", GpuCommandKind::DrawIndexed, 1, 2, 0.30 },
-        { "Shadow", GpuCommandKind::Draw, 3, 1, 0.05 },
-        { "Forward", GpuCommandKind::Mipmaps, 1, 1, 0.10 },
+    const std::vector<Renderer::GpuTimelineEvent> events = {
+        Span(Kind::Pass, "Shadow", 0, 0.0, 2.0),
+        Span(Kind::Scope, "Rigid", 1, 0.5, 1.0),
+        Command(GpuCommandKind::DrawIndexed, 36, 1, 2, 0.5, 0.75),
+        Command(GpuCommandKind::Barrier, 1, 1, 1, 1.5, 0.25),
     };
+    CHECK(DescribeGpuEvent(events[0]) == "Shadow");
+    CHECK(DescribeGpuEvent(events[1]) == "Rigid");
+    CHECK(DescribeGpuEvent(events[2]) == "DrawIndexed 36 indices");
+    CHECK(DescribeGpuEvent(events[3]) == "Barrier 1 transition");
+    CHECK(DescribeGpuEvent(Command(GpuCommandKind::DrawIndexed, 1, 2)) == "DrawIndexed 1 index x 2 instances");
+    CHECK(DescribeGpuEvent(Command(GpuCommandKind::Draw, 3, 1)) == "Draw 3 vertices");
+    CHECK(DescribeGpuEvent(Command(GpuCommandKind::Mipmaps, 1, 1)) == "Mipmaps");
+    CHECK(DescribeGpuEvent(Command(GpuCommandKind::CopyBuffer, 48, 1)) == "CopyBuffer 48 bytes");
 
-    CHECK(DescribeGpuCommand(commands[0]) == "Barrier 1 transition");
-    CHECK(DescribeGpuCommand(commands[1]) == "DrawIndexed 36 indices");
-    CHECK(DescribeGpuCommand(commands[2]) == "Rigid");
-    CHECK(DescribeGpuCommand(commands[3]) == "DrawIndexed 1 index x 2 instances");
-    CHECK(DescribeGpuCommand(commands[4]) == "Draw 3 vertices");
-    CHECK(DescribeGpuCommand(commands[5]) == "Mipmaps");
-    CHECK(DescribeGpuCommand({ "Upload", GpuCommandKind::CopyBuffer, 48, 1, 0.0 }) == "CopyBuffer 48 bytes");
+    // In GPU order, each from the frame's start, a command named by its description (interned).
+    Profiling::ThreadRecord thread;
+    MakeGpuThread(events, 10 * MS, thread);
+    CHECK(thread.ThreadIndex == GPU_THREAD_INDEX);
+    CHECK(thread.ThreadName == "GPU");
+    REQUIRE(thread.Zones.size() == 4);
+    CHECK(std::string(thread.Zones[0].Name) == "Shadow");
+    CHECK(thread.Zones[0].StartNs == 10 * MS);
+    CHECK(thread.Zones[0].DurationNs == 2 * MS);
+    CHECK(thread.Zones[1].Depth == 1);
+    CHECK(thread.Zones[2].Name == Profiling::InternName("DrawIndexed 36 indices"));
+    CHECK(thread.Zones[2].StartNs == 10 * MS + MS / 2);
+    CHECK(thread.Zones[2].DurationNs == 3 * MS / 4);
+    CHECK(thread.Zones[2].Depth == 2);
+    CHECK(thread.Zones[3].StartNs == 11 * MS + MS / 2);
 
-    // A pass name spelt by another pointer is the same pass.
-    const std::string shadow = "Shadow";
-    std::vector<Renderer::GpuCommandTiming> spelt = commands;
-    spelt[4].Pass = shadow.c_str();
-
-    std::vector<PassCommandStat> stats = { { "stale" } };
-    SummarizeCommandsByPass(spelt, stats);
-    REQUIRE(stats.size() == 2);
-    CHECK(stats[0].Pass == "Shadow");
-    CHECK(stats[0].Commands == 3);
-    CHECK(stats[0].Draws == 2);
-    CHECK(stats[0].GpuMs == doctest::Approx(0.26));
-    CHECK(stats[1].Pass == "Forward");
-    CHECK(stats[1].Commands == 2);
-    CHECK(stats[1].Draws == 1);
-    CHECK(stats[1].GpuMs == doctest::Approx(0.40));
-
-    SummarizeCommandsByPass({}, stats);
-    CHECK(stats.empty());
+    // Made again into the same thread: only the new events.
+    MakeGpuThread({}, 0, thread);
+    CHECK(thread.Zones.empty());
 }
 
 TEST_CASE("Zone categories - names map to their category, others to none")
@@ -222,16 +243,16 @@ TEST_CASE("Zone categories - a thread's self times by category, inherited from t
 TEST_CASE("Rendering counters - draws, triangles, vertices, barriers and copies of a frame's commands")
 {
     using Renderer::GpuCommandKind;
-    const std::vector<Renderer::GpuCommandTiming> commands = {
-        { "Shadow", GpuCommandKind::Barrier, 2, 1, 0.0 },
-        { "Shadow", GpuCommandKind::DrawIndexed, 36, 1, 0.0 },
-        { "Forward", GpuCommandKind::DrawIndexed, 36, 4, 0.0 }, // instanced: 12 triangles x 4
-        { "Forward", GpuCommandKind::Draw, 3, 1, 0.0 },
-        { "Upload", GpuCommandKind::CopyBuffer, 64, 1, 0.0 },
-        { "Upload", GpuCommandKind::Mipmaps, 1, 1, 0.0 },
-        { "Present", GpuCommandKind::Blit, 1, 1, 0.0 },
-        { "Present", GpuCommandKind::ScopeBegin, 0, 0, 0.0, "ImGui" }, // markers count as nothing
-        { "Present", GpuCommandKind::ScopeEnd, 0, 0, 0.0 },
+    const std::vector<Renderer::GpuTimelineEvent> commands = {
+        Span(Kind::Pass, "Shadow", 0, 0.0, 1.0), // passes and scopes count as nothing
+        Command(GpuCommandKind::Barrier, 2, 1),
+        Command(GpuCommandKind::DrawIndexed, 36, 1),
+        Span(Kind::Scope, "Instanced", 1, 0.0, 0.0),
+        Command(GpuCommandKind::DrawIndexed, 36, 4, 2), // instanced: 12 triangles x 4
+        Command(GpuCommandKind::Draw, 3, 1),
+        Command(GpuCommandKind::CopyBuffer, 64, 1),
+        Command(GpuCommandKind::Mipmaps, 1, 1),
+        Command(GpuCommandKind::Blit, 1, 1),
     };
     const RenderingCounters counts = CountRendering(commands);
     const auto at = [&](RenderingCounter counter) { return counts[static_cast<size_t>(counter)]; };

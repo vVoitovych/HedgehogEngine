@@ -7,7 +7,7 @@
 
 using namespace Editor;
 
-TEST_CASE("Chrome trace - zones per thread track and GPU passes in order, in microseconds from the first frame")
+TEST_CASE("Chrome trace - zones per thread track and the GPU thread nested on its own track, in microseconds from the first frame")
 {
     constexpr uint64_t MS = 1000000;
     Profiling::FrameRecord frame;
@@ -24,9 +24,13 @@ TEST_CASE("Chrome trace - zones per thread track and GPU passes in order, in mic
     worker.Zones       = { { "Job", 7 * MS, MS, 0 } };
     frame.Threads      = { main, worker };
 
-    const std::vector<Renderer::GpuPassTiming> passes   = { { "Shadow", 0.25 }, { "Forward", 0.5 } };
-    const Profiling::FrameRecord*              frames[] = { &frame };
-    const TraceGpuFrame                        gpu[]    = { { 5 * MS, passes } };
+    // The GPU thread as MakeGpuThread makes it: a pass holding a command, then another pass.
+    Profiling::ThreadRecord gpu;
+    gpu.ThreadName = "GPU";
+    gpu.Zones      = { { "Shadow", 5 * MS, MS / 4, 0 }, { "DrawIndexed 36 indices", 5 * MS, MS / 10, 1 },
+                       { "Forward", 5 * MS + MS / 4, MS / 2, 0 } };
+    const Profiling::FrameRecord*  frames[]     = { &frame };
+    const Profiling::ThreadRecord* gpuThreads[] = { &gpu };
 
     const std::string expected =
         "{\"displayTimeUnit\":\"ms\",\"traceEvents\":["
@@ -37,11 +41,12 @@ TEST_CASE("Chrome trace - zones per thread track and GPU passes in order, in mic
         "{\"name\":\"Frame\",\"ph\":\"X\",\"pid\":1,\"tid\":0,\"ts\":0.000,\"dur\":10000.000},\n"
         "{\"name\":\"Job\",\"ph\":\"X\",\"pid\":1,\"tid\":3,\"ts\":2000.000,\"dur\":1000.000},\n"
         "{\"name\":\"process_name\",\"ph\":\"M\",\"pid\":2,\"tid\":0,\"args\":{\"name\":\"GPU\"}},\n"
-        "{\"name\":\"thread_name\",\"ph\":\"M\",\"pid\":2,\"tid\":0,\"args\":{\"name\":\"Render graph passes\"}},\n"
+        "{\"name\":\"thread_name\",\"ph\":\"M\",\"pid\":2,\"tid\":0,\"args\":{\"name\":\"GPU\"}},\n"
         "{\"name\":\"Shadow\",\"ph\":\"X\",\"pid\":2,\"tid\":0,\"ts\":0.000,\"dur\":250.000},\n"
+        "{\"name\":\"DrawIndexed 36 indices\",\"ph\":\"X\",\"pid\":2,\"tid\":0,\"ts\":0.000,\"dur\":100.000},\n"
         "{\"name\":\"Forward\",\"ph\":\"X\",\"pid\":2,\"tid\":0,\"ts\":250.000,\"dur\":500.000}"
         "]}\n";
-    CHECK(WriteChromeTrace(frames, gpu) == expected);
+    CHECK(WriteChromeTrace(frames, gpuThreads) == expected);
 }
 
 TEST_CASE("Chrome trace - two frames name each thread once, and nothing captured is an empty trace")
@@ -61,34 +66,4 @@ TEST_CASE("Chrome trace - two frames name each thread once, and nothing captured
     CHECK(WriteChromeTrace({}, {}) ==
           "{\"displayTimeUnit\":\"ms\",\"traceEvents\":["
           "{\"name\":\"process_name\",\"ph\":\"M\",\"pid\":1,\"tid\":0,\"args\":{\"name\":\"CPU\"}}]}\n");
-}
-
-TEST_CASE("Chrome trace - a frame's GPU commands go one after another on their own track, their pass in args")
-{
-    constexpr uint64_t MS = 1000000;
-    Profiling::FrameRecord frame;
-    frame.StartNs = 2 * MS;
-    frame.EndNs   = 4 * MS;
-
-    const std::vector<Renderer::GpuPassTiming>    passes   = { { "Forward", 0.5 } };
-    const std::vector<Renderer::GpuCommandTiming> commands = {
-        { "Forward", Renderer::GpuCommandKind::Barrier, 1, 1, 0.125 },
-        { "Forward", Renderer::GpuCommandKind::DrawIndexed, 36, 2, 0.25 },
-    };
-    const Profiling::FrameRecord* frames[] = { &frame };
-    const TraceGpuFrame           gpu[]    = { { 2 * MS, passes, commands } };
-
-    const std::string expected =
-        "{\"displayTimeUnit\":\"ms\",\"traceEvents\":["
-        "{\"name\":\"process_name\",\"ph\":\"M\",\"pid\":1,\"tid\":0,\"args\":{\"name\":\"CPU\"}},\n"
-        "{\"name\":\"process_name\",\"ph\":\"M\",\"pid\":2,\"tid\":0,\"args\":{\"name\":\"GPU\"}},\n"
-        "{\"name\":\"thread_name\",\"ph\":\"M\",\"pid\":2,\"tid\":0,\"args\":{\"name\":\"Render graph passes\"}},\n"
-        "{\"name\":\"thread_name\",\"ph\":\"M\",\"pid\":2,\"tid\":1,\"args\":{\"name\":\"GPU commands\"}},\n"
-        "{\"name\":\"Forward\",\"ph\":\"X\",\"pid\":2,\"tid\":0,\"ts\":0.000,\"dur\":500.000},\n"
-        "{\"name\":\"Barrier 1 transition\",\"ph\":\"X\",\"pid\":2,\"tid\":1,\"ts\":0.000,\"dur\":125.000,"
-        "\"args\":{\"pass\":\"Forward\"}},\n"
-        "{\"name\":\"DrawIndexed 36 indices x 2 instances\",\"ph\":\"X\",\"pid\":2,\"tid\":1,\"ts\":125.000,"
-        "\"dur\":250.000,\"args\":{\"pass\":\"Forward\"}}"
-        "]}\n";
-    CHECK(WriteChromeTrace(frames, gpu) == expected);
 }

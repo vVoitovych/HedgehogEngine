@@ -5,6 +5,7 @@
 #include "TimelineView.hpp"
 
 #include "HedgehogRenderer/Graph/GpuPassTiming.hpp"
+#include "HedgehogRenderer/Graph/GpuTimeline.hpp"
 
 #include "imgui.h"
 
@@ -54,8 +55,10 @@ namespace Editor
         {
             uint64_t                             FrameIndex = 0;
             double                               FrameMs    = 0.0;
-            std::vector<Renderer::GpuPassTiming> Passes;
-            std::vector<Renderer::GpuCommandTiming> Commands; // empty unless commands were timed
+            std::vector<Renderer::GpuPassTiming> Passes;      // by name, for the GPU Usage chart
+            std::vector<Renderer::GpuTimelineEvent> Events;   // the renderer's timeline, for the counters
+            Profiling::ThreadRecord              Thread;      // the same as the GPU thread (MakeGpuThread)
+            bool                                 HasCommands = false; // its commands were timed
             bool                                 Valid      = false;
         };
 
@@ -90,13 +93,11 @@ namespace Editor
         void             DrawRuler(double frameMs, float width);
         // The details pane under the charts (ProfilerDetails.cpp).
         void             DrawDetails(const Profiling::FrameRecord& frame, const GpuSample* gpu);
-        void             DrawSelectedSample(const Profiling::FrameRecord& frame);
-        void             DrawHierarchy(const Profiling::FrameRecord& frame);
+        void             DrawSelectedSample(const Profiling::FrameRecord& frame, const GpuSample* gpu);
+        // The thread's Hierarchy (or Inverted Hierarchy) as a tree table, a search listing it flat.
+        void             DrawHierarchy(const Profiling::ThreadRecord& thread, double frameMs, bool inverted, const char* search);
         void             DrawTreeRow(uint32_t node, bool tree);
-        void             DrawPassCommands(const GpuSample& gpu);
-        void             DrawGpuDetails(const GpuSample& gpu);
-        void             DrawGpuTreeRow(const GpuSample& gpu, uint32_t node);
-        void             DrawRenderingDetails(const GpuSample& gpu);
+        void             DrawRenderingCounters(const GpuSample& gpu);
         // Asks where, then writes every frame kept with its GPU passes as Chrome trace JSON.
         void             Export();
 
@@ -145,7 +146,6 @@ namespace Editor
         std::vector<ImVec2>      m_Points;      // scratch: a counter's line
         std::vector<ZoneStat>    m_TopZones;
         std::vector<TimelineBar> m_Bars;
-        std::vector<PassCommandStat> m_PassCommands;
         std::string              m_ExportStatus; // what the last export did
     };
 }

@@ -1,3 +1,4 @@
+#include "Tools/Profiler/ProfilerAnalysis.hpp"
 #include "Tools/Profiler/ProfilerHierarchy.hpp"
 
 #include "doctest/doctest/doctest.h"
@@ -98,61 +99,47 @@ TEST_CASE("Profiler hierarchy - inverted: self time by name, expanding into its 
     CHECK(tree.Root().TotalMs == doctest::Approx(10.0));
 }
 
-TEST_CASE("Profiler hierarchy - GPU passes with their commands, a pass known only from its commands included")
+TEST_CASE("Profiler hierarchy - the GPU thread: pass runs merged, their scopes and commands under them")
 {
-    using Renderer::GpuCommandKind;
-    const std::vector<Renderer::GpuPassTiming>    passes   = { { "Shadow", 1.0 }, { "Forward", 2.0 } };
-    const std::vector<Renderer::GpuCommandTiming> commands = {
-        { "Shadow", GpuCommandKind::Barrier, 1, 1, 0.1 },
-        { "Shadow", GpuCommandKind::DrawIndexed, 36, 1, 0.6 },
-        { "Forward", GpuCommandKind::DrawIndexed, 12, 1, 1.5 },
-        { "Upload", GpuCommandKind::CopyBuffer, 64, 1, 0.3 },
+    using Kind = Renderer::GpuTimelineEventKind;
+    const auto event = [](Kind kind, const char* name, uint32_t depth, double startMs, double ms)
+    {
+        Renderer::GpuTimelineEvent e;
+        e.Kind       = kind;
+        e.Name       = name;
+        e.Depth      = depth;
+        e.StartMs    = startMs;
+        e.DurationMs = ms;
+        if (kind == Kind::Command)
+        {
+            e.Command = std::string(name) == "Draw" ? Renderer::GpuCommandKind::Draw : Renderer::GpuCommandKind::DrawIndexed;
+            e.Count   = std::string(name) == "Draw" ? 3 : 36;
+        }
+        return e;
     };
+    // Shadow runs twice (two views), each time a Rigid scope of DrawIndexed commands.
+    const std::vector<Renderer::GpuTimelineEvent> events = {
+        event(Kind::Pass, "Shadow", 0, 0.0, 2.0),
+        event(Kind::Scope, "Rigid", 1, 0.0, 1.5),
+        event(Kind::Command, "DrawIndexed", 2, 0.0, 0.6),
+        event(Kind::Command, "DrawIndexed", 2, 0.6, 0.6),
+        event(Kind::Pass, "Forward", 0, 2.0, 1.0),
+        event(Kind::Command, "Draw", 1, 2.0, 0.5),
+        event(Kind::Pass, "Shadow", 0, 3.0, 1.0),
+        event(Kind::Scope, "Rigid", 1, 3.0, 0.5),
+        event(Kind::Command, "DrawIndexed", 2, 3.0, 0.4),
+    };
+    Profiling::ThreadRecord gpu;
+    MakeGpuThread(events, 0, gpu);
 
     ProfilerTree tree;
-    BuildGpuTree(passes, commands, 4.0, tree);
-    CHECK(tree.FrameMs == 4.0);
-    CHECK(Describe(tree, 0) == std::vector<std::string>{ "Shadow 1.0/0.3/1", "Forward 2.0/0.5/1", "Upload 0.3/0.0/1" });
+    BuildHierarchy(gpu, 4.0, tree);
+    CHECK(Describe(tree, 0) == std::vector<std::string>{ "Shadow 3.0/1.0/2", "Forward 1.0/0.5/1" });
     const uint32_t shadow = Child(tree, 0, "Shadow");
-    CHECK(Describe(tree, shadow) == std::vector<std::string>{ "Barrier 0.1/0.1/1", "DrawIndexed 0.6/0.6/1" });
-    CHECK(tree.Nodes[tree.Nodes[shadow].FirstChild].Command == 0);
-    CHECK(tree.Nodes[Child(tree, 0, "Upload")].TotalMs == doctest::Approx(0.3));
-    CHECK(tree.Nodes[shadow].Command == -1);
-    CHECK(tree.Root().TotalMs == doctest::Approx(3.3));
-
-    // Commands that outlast their pass leave it no self time rather than a negative one.
-    const std::vector<Renderer::GpuCommandTiming> longer = { { "Shadow", GpuCommandKind::DrawIndexed, 36, 1, 1.2 } };
-    BuildGpuTree(passes, longer, 4.0, tree);
-    CHECK(tree.Nodes[Child(tree, 0, "Shadow")].SelfMs == 0.0);
-
-    BuildGpuTree(passes, {}, 4.0, tree);
-    CHECK(Describe(tree, 0) == std::vector<std::string>{ "Shadow 1.0/1.0/1", "Forward 2.0/2.0/1" });
-}
-
-TEST_CASE("Profiler hierarchy - GPU scopes hold the commands recorded inside them")
-{
-    using Renderer::GpuCommandKind;
-    const std::vector<Renderer::GpuPassTiming>    passes   = { { "Shadow", 2.0 } };
-    const std::vector<Renderer::GpuCommandTiming> commands = {
-        { "Shadow", GpuCommandKind::ScopeBegin, 0, 0, 0.1, "Rigid" },
-        { "Shadow", GpuCommandKind::ScopeBegin, 0, 0, 0.0, "Cascade 0" },
-        { "Shadow", GpuCommandKind::DrawIndexed, 36, 1, 0.6 },
-        { "Shadow", GpuCommandKind::ScopeEnd, 0, 0, 0.2 },
-        { "Shadow", GpuCommandKind::ScopeEnd, 0, 0, 0.1 },
-        { "Shadow", GpuCommandKind::ScopeEnd, 0, 0, 0.1 }, // nothing open: ignored
-        { "Shadow", GpuCommandKind::Barrier, 1, 1, 0.3 },
-    };
-
-    ProfilerTree tree;
-    BuildGpuTree(passes, commands, 4.0, tree);
-    // The pass's self time: 2 ms less everything timed in it.
-    CHECK(Describe(tree, 0) == std::vector<std::string>{ "Shadow 2.0/0.6/1" });
-    const uint32_t shadow = Child(tree, 0, "Shadow");
-    CHECK(Describe(tree, shadow) == std::vector<std::string>{ "Rigid 0.9/0.1/1", "Barrier 0.3/0.3/1" });
-    const uint32_t rigid = Child(tree, shadow, "Rigid");
-    CHECK(tree.Nodes[rigid].Command == -1);
-    CHECK(Describe(tree, rigid) == std::vector<std::string>{ "Cascade 0 0.8/0.2/1" });
-    CHECK(Describe(tree, Child(tree, rigid, "Cascade 0")) == std::vector<std::string>{ "DrawIndexed 0.6/0.6/1" });
+    CHECK(Describe(tree, shadow) == std::vector<std::string>{ "Rigid 2.0/0.4/2" });
+    CHECK(Describe(tree, Child(tree, shadow, "Rigid")) == std::vector<std::string>{ "DrawIndexed 36 indices 1.6/1.6/3" });
+    CHECK(Describe(tree, Child(tree, 0, "Forward")) == std::vector<std::string>{ "Draw 3 vertices 0.5/0.5/1" });
+    CHECK(tree.Root().TotalMs == doctest::Approx(4.0));
 }
 
 TEST_CASE("Profiler hierarchy - sorting orders every node's children only")

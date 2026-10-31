@@ -1,6 +1,7 @@
 #include "ProfilerAnalysis.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdio>
 #include <cstring>
 
@@ -17,7 +18,7 @@ namespace Editor
         zones.reserve(thread.Zones.size());
         for (const Profiling::ZoneRecord& zone : thread.Zones)
             zones.push_back(&zone);
-        std::sort(zones.begin(), zones.end(), [](const Profiling::ZoneRecord* a, const Profiling::ZoneRecord* b)
+        std::stable_sort(zones.begin(), zones.end(), [](const Profiling::ZoneRecord* a, const Profiling::ZoneRecord* b)
         {
             return a->StartNs != b->StartNs ? a->StartNs < b->StartNs : a->Depth < b->Depth;
         });
@@ -87,16 +88,16 @@ namespace Editor
         return frame.EndNs > frame.StartNs ? static_cast<double>(frame.EndNs - frame.StartNs) / NS_PER_MS : 0.0;
     }
 
-    std::string DescribeGpuCommand(const Renderer::GpuCommandTiming& command)
+    std::string DescribeGpuEvent(const Renderer::GpuTimelineEvent& command)
     {
         const auto counted = [](uint32_t count, const char* one, const char* many)
         {
             return " " + std::to_string(count) + " " + (count == 1 ? one : many);
         };
-        if (command.Kind == Renderer::GpuCommandKind::ScopeBegin && command.Scope != nullptr)
-            return command.Scope;
-        std::string text = Renderer::GetGpuCommandKindName(command.Kind);
-        switch (command.Kind)
+        if (command.Kind != Renderer::GpuTimelineEventKind::Command)
+            return command.Name;
+        std::string text = Renderer::GetGpuCommandKindName(command.Command);
+        switch (command.Command)
         {
         case Renderer::GpuCommandKind::Draw:        text += counted(command.Count, "vertex", "vertices"); break;
         case Renderer::GpuCommandKind::DrawIndexed: text += counted(command.Count, "index", "indices"); break;
@@ -109,24 +110,17 @@ namespace Editor
         return text;
     }
 
-    void SummarizeCommandsByPass(std::span<const Renderer::GpuCommandTiming> commands, std::vector<PassCommandStat>& out)
+    void MakeGpuThread(std::span<const Renderer::GpuTimelineEvent> events, uint64_t frameStartNs, Profiling::ThreadRecord& out)
     {
-        out.clear();
-        for (const Renderer::GpuCommandTiming& command : commands)
+        out.ThreadIndex = GPU_THREAD_INDEX;
+        out.ThreadName  = GPU_THREAD_NAME;
+        out.Zones.clear();
+        for (const Renderer::GpuTimelineEvent& event : events)
         {
-            if (Renderer::IsGpuScopeMarker(command.Kind))
-                continue;
-            auto stat = std::find_if(out.begin(), out.end(),
-                                     [&](const PassCommandStat& s) { return std::strcmp(s.Pass.c_str(), command.Pass) == 0; });
-            if (stat == out.end())
-            {
-                out.push_back({ command.Pass });
-                stat = out.end() - 1;
-            }
-            ++stat->Commands;
-            if (command.Kind == Renderer::GpuCommandKind::Draw || command.Kind == Renderer::GpuCommandKind::DrawIndexed)
-                ++stat->Draws;
-            stat->GpuMs += command.GpuMilliseconds;
+            const char* name = event.Kind == Renderer::GpuTimelineEventKind::Command
+                             ? Profiling::InternName(DescribeGpuEvent(event)) : event.Name;
+            out.Zones.push_back({ name, frameStartNs + static_cast<uint64_t>(std::llround(event.StartMs * NS_PER_MS)),
+                                  static_cast<uint64_t>(std::llround(event.DurationMs * NS_PER_MS)), event.Depth });
         }
     }
 
@@ -227,16 +221,16 @@ namespace Editor
         return "?";
     }
 
-    RenderingCounters CountRendering(std::span<const Renderer::GpuCommandTiming> commands)
+    RenderingCounters CountRendering(std::span<const Renderer::GpuTimelineEvent> events)
     {
         RenderingCounters counts{};
         const auto add = [&](RenderingCounter counter, uint64_t value) { counts[static_cast<size_t>(counter)] += value; };
-        for (const Renderer::GpuCommandTiming& command : commands)
+        for (const Renderer::GpuTimelineEvent& command : events)
         {
-            if (Renderer::IsGpuScopeMarker(command.Kind))
+            if (command.Kind != Renderer::GpuTimelineEventKind::Command)
                 continue;
             add(RenderingCounter::Commands, 1);
-            switch (command.Kind)
+            switch (command.Command)
             {
             case Renderer::GpuCommandKind::Draw:
             case Renderer::GpuCommandKind::DrawIndexed:

@@ -2,15 +2,12 @@
 
 #include "Profiler/api/Profiler.hpp"
 
-#include "HedgehogRenderer/Graph/GpuPassTiming.hpp"
-
 #include <cstdint>
-#include <span>
 #include <vector>
 
 // A recorded frame as the Profiler window's Hierarchy views show it, worked out without ImGui so
-// EditorTest covers it: zones merged by call path, the same inverted, and the GPU passes with
-// their commands.
+// EditorTest covers it: zones merged by call path and the same inverted, of a CPU thread or of
+// the GPU thread (MakeGpuThread).
 namespace Editor
 {
     inline constexpr uint32_t NO_PROFILER_NODE = UINT32_MAX;
@@ -24,7 +21,6 @@ namespace Editor
         double      TotalMs     = 0.0;
         double      SelfMs      = 0.0; // TotalMs minus the children's
         uint32_t    Calls       = 0;
-        int32_t     Command     = -1;  // in a GPU tree, the command's index; -1 elsewhere
     };
 
     // Nodes[0] is the root, nameless, holding the top-level nodes as its children. Nodes are kept
@@ -46,14 +42,6 @@ namespace Editor
     // children are the names it was called from, theirs those they were called from, and so on, each
     // with the self time and calls of the zones reached through it.
     void BuildInvertedHierarchy(const Profiling::ThreadRecord& thread, double frameMs, ProfilerTree& out);
-
-    // Each GPU pass (in order, Name its own) with its commands as children (Name the command's
-    // kind, Command its index) under the pass of the same name; a command whose pass is not listed
-    // gets a node of its own. A pass's self time is what its commands do not cover, at least 0.
-    // A scope (a ScopeBegin to its ScopeEnd) is a node named by the scope holding the commands
-    // recorded inside it; its time is theirs plus the gap before its end, its self time that gap.
-    void BuildGpuTree(std::span<const Renderer::GpuPassTiming> passes, std::span<const Renderer::GpuCommandTiming> commands,
-                      double gpuFrameMs, ProfilerTree& out);
 
     enum class ProfilerSortKey : uint8_t
     {
