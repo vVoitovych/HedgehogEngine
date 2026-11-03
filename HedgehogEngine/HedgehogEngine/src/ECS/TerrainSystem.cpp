@@ -2,19 +2,21 @@
 
 #include "HedgehogEngine/api/Containers/TerrainContainer.hpp"
 #include "HedgehogEngine/api/ECS/components/TerrainComponent.hpp"
+#include "HedgehogEngine/api/ECS/systems/MeshSystem.hpp"
 #include "HedgehogEngine/api/Resource/ResourceCatalog.hpp"
+
+#include <algorithm>
 
 namespace HedgehogEngine
 {
     void TerrainSystem::OnRegister(ECS::ECS& ecs)
     {
-        if (ResourceCatalog* catalog = ecs.GetServices().Find<ResourceCatalog>())
-            m_Terrains = &catalog->GetTerrainContainer();
+        m_Catalog = ecs.GetServices().Find<ResourceCatalog>();
     }
 
     void TerrainSystem::OnUnregister(ECS::ECS& /*ecs*/)
     {
-        m_Terrains = nullptr;
+        m_Catalog = nullptr;
     }
 
     ECS::SystemPhase TerrainSystem::GetPhase() const
@@ -24,8 +26,10 @@ namespace HedgehogEngine
 
     void TerrainSystem::OnFrame(ECS::ECS& ecs, const ECS::FrameContext& /*ctx*/)
     {
-        if (m_Terrains)
-            Update(ecs, *m_Terrains);
+        if (!m_Catalog || !ecs.HasSystem<MeshSystem>())
+            return;
+        Update(ecs, m_Catalog->GetTerrainContainer());
+        UpdateMeshes(ecs, *ecs.GetSystem<MeshSystem>(), *m_Catalog);
     }
 
     void TerrainSystem::Update(ECS::ECS& ecs, TerrainContainer& terrains)
@@ -39,7 +43,26 @@ namespace HedgehogEngine
                 continue;
             const std::optional<size_t> index = terrains.FindOrLoad(terrain.Terrain);
             terrain.TerrainIndex              = index ? static_cast<int32_t>(*index) : -1;
+            terrain.MeshIndex                 = -1;
             terrain.ResolvedTerrain           = terrain.Terrain;
         }
+    }
+
+    void TerrainSystem::UpdateMeshes(ECS::ECS& ecs, MeshSystem& meshes, ResourceCatalog& catalog)
+    {
+        const TerrainContainer& terrains = catalog.GetTerrainContainer();
+        for (const ECS::Entity entity : m_Entities)
+        {
+            TerrainComponent& terrain = ecs.GetComponent<TerrainComponent>(entity);
+            if (terrain.TerrainIndex < 0 || terrain.MeshIndex >= 0)
+                continue;
+            const std::string               path  = MakeTerrainMeshPath(terrains.GetPath(static_cast<size_t>(terrain.TerrainIndex)));
+            const std::vector<std::string>& paths = meshes.GetMeshes();
+            const auto                      found = std::find(paths.begin(), paths.end(), path);
+            terrain.MeshIndex                     = static_cast<int32_t>(found - paths.begin());
+            if (found == paths.end())
+                meshes.AddMeshPath(path);
+        }
+        catalog.UpdateMeshes(meshes);
     }
 }

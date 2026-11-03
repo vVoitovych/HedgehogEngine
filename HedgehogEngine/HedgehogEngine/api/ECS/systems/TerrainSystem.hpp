@@ -7,11 +7,14 @@
 
 namespace HedgehogEngine
 {
+    class MeshSystem;
+    class ResourceCatalog;
     class TerrainContainer;
 
-    // The terrains (TerrainComponent + TransformComponent). In the Sync phase it resolves each
-    // terrain's TerrainIndex from its Terrain path through the ResourceCatalog service's
-    // TerrainContainer (found in OnRegister; nothing without one), loading files on first use.
+    // The terrains (TerrainComponent + TransformComponent). In the Sync phase (after MeshSystem) it
+    // resolves each terrain's TerrainIndex from its Terrain path through the ResourceCatalog
+    // service's TerrainContainer, loading files on first use, then lists each terrain's mesh with the
+    // MeshSystem and has the catalog build it (nothing without the catalog service or MeshSystem).
     class TerrainSystem : public ECS::System
     {
     public:
@@ -22,8 +25,11 @@ namespace HedgehogEngine
 
         // Resolves every terrain whose Terrain path changed since it was last resolved.
         HEDGEHOG_ENGINE_API void Update(ECS::ECS& ecs, TerrainContainer& terrains);
+        // Lists the mesh of every resolved terrain without a MeshIndex, then has the catalog load
+        // new meshes and rebuild sculpted ones (ResourceCatalog::UpdateMeshes).
+        HEDGEHOG_ENGINE_API void UpdateMeshes(ECS::ECS& ecs, MeshSystem& meshes, ResourceCatalog& catalog);
 
     private:
-        TerrainContainer* m_Terrains = nullptr;
+        ResourceCatalog* m_Catalog = nullptr;
     };
 }

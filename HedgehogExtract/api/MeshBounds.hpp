@@ -3,6 +3,7 @@
 #include "HedgehogMath/api/AABB.hpp"
 #include "HedgehogMath/api/Vector.hpp"
 
+#include <cstdint>
 #include <span>
 #include <vector>
 
@@ -17,8 +18,9 @@ namespace HX
     [[nodiscard]] HM::AABB ComputeLocalBounds(std::span<const HM::Vector3> positions);
 
     // Local-space bounds per mesh, indexed like the resource catalog's meshes, for
-    // SceneExtractor::Extract. Meshes are only ever appended to the catalog, so Update computes the
-    // bounds of new meshes only: a steady-state frame touches no vertex data.
+    // SceneExtractor::Extract. Meshes are only ever appended to the catalog, or replaced in place
+    // under a new version (IResourceCatalog::GetMeshVersion), so Update computes the bounds of new
+    // and replaced meshes only: a steady-state frame touches no vertex data.
     class MeshBoundsCache
     {
     public:
@@ -28,5 +30,6 @@ namespace HX
 
     private:
         std::vector<HM::AABB> m_Bounds;
+        std::vector<uint32_t> m_Versions;
     };
 }

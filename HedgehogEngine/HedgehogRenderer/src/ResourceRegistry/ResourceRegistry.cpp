@@ -14,6 +14,7 @@
 
 #include "Logger/api/Logger.hpp"
 
+#include <algorithm>
 #include <cassert>
 
 namespace HR
@@ -84,9 +85,24 @@ namespace HR
 
     void ResourceRegistry::SyncMeshes(const HedgehogEngine::IResourceCatalog& catalog, RHI::IRHIDevice& device)
     {
+        const bool   replaced    = RewriteReplacedMeshes(catalog);
         const size_t totalMeshes = catalog.GetMeshCount();
         if (totalMeshes <= m_RegisteredMeshCount)
+        {
+            if (!replaced || !m_PositionsBuffer)
+                return;
+            // A frame in flight may read the ranges, as SyncMaterials idles for a dirty material (a
+            // sculpting stroke replaces its terrain every frame).
+            device.WaitIdle();
+            for (const auto& [first, count] : m_ReplacedRanges)
+            {
+                m_PositionsBuffer->CopyData(m_CpuPositions.data() + first * 3, count * 3 * sizeof(float), first * 3 * sizeof(float));
+                m_TexCoordsBuffer->CopyData(m_CpuTexCoords.data() + first * 2, count * 2 * sizeof(float), first * 2 * sizeof(float));
+                m_NormalsBuffer->CopyData(m_CpuNormals.data() + first * 3, count * 3 * sizeof(float), first * 3 * sizeof(float));
+                m_TangentsBuffer->CopyData(m_CpuTangents.data() + first * 4, count * 4 * sizeof(float), first * 4 * sizeof(float));
+            }
             return;
+        }
 
         for (size_t i = m_RegisteredMeshCount; i < totalMeshes; ++i)
         {
@@ -97,6 +113,7 @@ namespace HR
             geom.IndexCount   = mesh.indexCount;
             geom.VertexOffset = mesh.vertexOffset;
             m_MeshGeometryInfos.push_back(geom);
+            m_MeshVersions.push_back(catalog.GetMeshVersion(i));
 
             for (const auto& p : mesh.positions)
             {
@@ -124,6 +141,41 @@ namespace HR
         m_RegisteredMeshCount = totalMeshes;
         m_MeshDataDirty = true;
         FlushMeshUploads(device);
+    }
+
+    bool ResourceRegistry::RewriteReplacedMeshes(const HedgehogEngine::IResourceCatalog& catalog)
+    {
+        m_ReplacedRanges.clear();
+        std::vector<float> tangents;
+        for (size_t i = 0; i < m_RegisteredMeshCount; ++i)
+        {
+            const uint32_t version = catalog.GetMeshVersion(i);
+            if (version == m_MeshVersions[i])
+                continue;
+            m_MeshVersions[i] = version;
+
+            // A replaced mesh keeps its vertex count, so it fits the slice it was registered in.
+            const HedgehogEngine::MeshView mesh  = catalog.GetMesh(i);
+            const size_t                   first = m_MeshGeometryInfos[i].VertexOffset;
+            const size_t                   count = mesh.positions.size();
+            if ((first + count) * 3 > m_CpuPositions.size() || mesh.texCoords.size() != count || mesh.normals.size() != count)
+                continue;
+            for (size_t v = 0; v < count; ++v)
+            {
+                for (size_t axis = 0; axis < 3; ++axis)
+                {
+                    m_CpuPositions[(first + v) * 3 + axis] = mesh.positions[v][axis];
+                    m_CpuNormals[(first + v) * 3 + axis]   = mesh.normals[v][axis];
+                }
+                m_CpuTexCoords[(first + v) * 2]     = mesh.texCoords[v].x();
+                m_CpuTexCoords[(first + v) * 2 + 1] = mesh.texCoords[v].y();
+            }
+            tangents.clear();
+            AppendTangentStream(mesh, tangents);
+            std::copy(tangents.begin(), tangents.end(), m_CpuTangents.begin() + static_cast<std::ptrdiff_t>(first * 4));
+            m_ReplacedRanges.emplace_back(first, count);
+        }
+        return !m_ReplacedRanges.empty();
     }
 
     void ResourceRegistry::SyncMaterials(HedgehogEngine::IResourceCatalog& catalog, RHI::IRHIDevice& device)

@@ -20,6 +20,7 @@ namespace HedgehogEngine
     class UiSystem;
     class PhysicsSystem;
     class EnvironmentSystem;
+    class TerrainSystem;
     class FontContainer;
 }
 
@@ -91,6 +92,12 @@ namespace HX
         // none. Allocates nothing once the path's storage has grown.
         void ExtractEnvironment(const ECS::ECS& ecs, const HedgehogEngine::EnvironmentSystem& environmentSystem,
                                 RenderScene& outScene) const;
+
+        // Appends an instance for every enabled terrain of terrainSystem whose mesh is listed
+        // (TerrainComponent::MeshIndex), at its entity's ObjMatrix on its RenderLayer, its bounds
+        // from meshLocalBounds as Extract's are.
+        void ExtractTerrains(const ECS::ECS& ecs, const HedgehogEngine::TerrainSystem& terrainSystem,
+                             RenderScene& outScene, std::span<const HM::AABB> meshLocalBounds = {}) const;
 
     private:
         void ExtractInstances(const ECS::ECS& ecs, const HedgehogEngine::RenderSystem& renderSystem,

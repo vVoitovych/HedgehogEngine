@@ -7,6 +7,9 @@
 #include "HedgehogEngine/api/Containers/MaterialData.hpp"
 #include "HedgehogEngine/api/Containers/FontContainer.hpp"
 #include "HedgehogEngine/api/Containers/TerrainContainer.hpp"
+#include "HedgehogEngine/api/Terrain/TerrainGeometry.hpp"
+
+#include "Logger/api/Logger.hpp"
 
 namespace HedgehogEngine
 {
@@ -37,7 +40,22 @@ namespace HedgehogEngine
 
     void ResourceCatalog::UpdateMeshes(const MeshSystem& meshSystem)
     {
-        m_MeshContainer->Update(meshSystem, m_FileSystem);
+        m_MeshContainer->Update(meshSystem, m_FileSystem, m_TerrainContainer.get());
+
+        for (size_t terrain = 0; terrain < m_TerrainContainer->GetTerrainCount(); ++terrain)
+        {
+            if (!HasAny(m_TerrainContainer->GetDirty(terrain), TerrainDirty::Heights))
+                continue;
+            const std::optional<size_t> mesh =
+                m_MeshContainer->FindMesh(MakeTerrainMeshPath(m_TerrainContainer->GetPath(terrain)));
+            if (!mesh)
+                continue; // no entity draws it yet
+            // A tile keeps its resolution while it is sculpted, so its grid fits its slot.
+            if (!m_MeshContainer->ReplaceGeometry(*mesh, BuildTerrainMesh(m_TerrainContainer->GetTerrain(terrain))))
+                LOGWARNING("[Terrain]", m_TerrainContainer->GetPath(terrain),
+                           "changed resolution; its mesh keeps its old grid until the scene is opened again.");
+            m_TerrainContainer->ClearDirty(terrain, TerrainDirty::Heights);
+        }
     }
 
     const MeshContainer& ResourceCatalog::GetMeshContainer() const { return *m_MeshContainer; }
@@ -53,6 +71,11 @@ namespace HedgehogEngine
     size_t ResourceCatalog::GetMeshCount() const
     {
         return m_MeshContainer->GetMeshCount();
+    }
+
+    uint32_t ResourceCatalog::GetMeshVersion(size_t index) const
+    {
+        return m_MeshContainer->GetMeshVersion(index);
     }
 
     MeshView ResourceCatalog::GetMesh(size_t index) const

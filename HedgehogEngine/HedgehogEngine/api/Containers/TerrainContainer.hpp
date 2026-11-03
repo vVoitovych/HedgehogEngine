@@ -8,10 +8,20 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace HedgehogEngine
 {
+    // A terrain's mesh is listed with the meshes under this prefix and its file's key, so the
+    // MeshContainer builds it from the TerrainContainer instead of reading a file.
+    inline constexpr std::string_view TERRAIN_MESH_PREFIX = "terrain:";
+
+    [[nodiscard]] inline std::string MakeTerrainMeshPath(const std::string& terrainKey)
+    {
+        return std::string(TERRAIN_MESH_PREFIX) + terrainKey;
+    }
+
     // What changed in a terrain since the renderer and physics last took it, a bit each.
     enum class TerrainDirty : uint8_t
     {

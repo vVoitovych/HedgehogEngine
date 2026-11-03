@@ -84,6 +84,10 @@ namespace HedgehogEngine
 
         virtual size_t    GetMeshCount() const = 0;
         virtual MeshView   GetMesh(size_t index) const = 0;
+        // Bumped each time a mesh's geometry is replaced in place (a sculpted terrain), so each
+        // consumer can tell a mesh it already has from a changed one; the vertex and index counts
+        // never change. 0 for a mesh never replaced.
+        virtual uint32_t   GetMeshVersion(size_t /*index*/) const { return 0; }
 
         virtual size_t        GetMaterialCount() const = 0;
         virtual MaterialView  GetMaterial(size_t index) const = 0;

@@ -115,6 +115,9 @@ namespace HR
                               const FS::FileSystemManager& fileSystem);
 
         void FlushMeshUploads(RHI::IRHIDevice& device);
+        // Rewrites the slices of the registered meshes the catalog replaced in place since the last
+        // call (a sculpted terrain); true when any changed.
+        bool RewriteReplacedMeshes(const HedgehogEngine::IResourceCatalog& catalog);
 
     private:
         // Mesh data (CPU side)
@@ -127,6 +130,10 @@ namespace HR
         std::vector<float>    m_CpuWeights;
         bool                  m_MeshDataDirty       = false;
         size_t                m_RegisteredMeshCount = 0;
+        // Each registered mesh's catalog version (IResourceCatalog::GetMeshVersion) as uploaded.
+        std::vector<uint32_t> m_MeshVersions;
+        // The vertex ranges RewriteReplacedMeshes rewrote, as (first vertex, count).
+        std::vector<std::pair<size_t, size_t>> m_ReplacedRanges;
 
         // Per-mesh geometry info (index offset, count, vertex offset)
         std::vector<MeshGeometryInfo> m_MeshGeometryInfos;

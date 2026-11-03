@@ -22,6 +22,10 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API bool LoadData(const std::string& fileName,
                                           const FS::FileSystemManager& fileSystem);
         HEDGEHOG_ENGINE_API void ClearData();
+        // Makes the mesh this static geometry (a procedural one: a terrain tile), dropping any skin.
+        HEDGEHOG_ENGINE_API void SetGeometry(std::vector<HM::Vector3> positions, std::vector<HM::Vector2> texCoords,
+                                             std::vector<HM::Vector3> normals, std::vector<HM::Vector4> tangents,
+                                             std::vector<uint32_t> indices);
 
         HEDGEHOG_ENGINE_API const std::vector<HM::Vector3>& GetPositions() const;
         HEDGEHOG_ENGINE_API const std::vector<HM::Vector2>& GetTexCoords() const;
