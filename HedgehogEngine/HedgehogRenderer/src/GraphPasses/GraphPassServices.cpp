@@ -108,6 +108,13 @@ namespace Renderer
                                                 forwardShader.Pipeline.CullMode);
         m_ForwardDoubleSidedPipeline = CreatePipeline(device, forwardShader, forwardLayouts, { HDR_FORMAT },
                                                       RHI::CullMode::None);
+        // Terrain tiles: the forward pipeline's sets but the terrain's at set 1.
+        const ShaderPipelineDesc terrainShader =
+            ShaderLoader::Load(device, std::string(HedgehogEngine::FORWARD_TERRAIN_SHADER), fileSystem);
+        m_ForwardTerrainPipeline = CreatePipeline(
+            device, terrainShader,
+            { m_ForwardRing.Layout.get(), m_TerrainLayout.get(), m_SceneLightsRing.Layout.get(), m_LightingRing.Layout.get() },
+            { HDR_FORMAT }, terrainShader.Pipeline.CullMode);
         // The Gizmo pass's lines: viewProj at set 0 (Gizmo.pl) over coloured vertices.
         const ShaderPipelineDesc linesShader = ShaderLoader::Load(device, std::string(HedgehogEngine::DEBUG_LINES_SHADER), fileSystem);
         m_DebugLinesPipeline = CreatePipeline(device, linesShader, { m_ViewProjRing.Layout.get() }, { COLOR_FORMAT },
@@ -326,6 +333,7 @@ namespace Renderer
             case EnginePipeline::Shadow:             return *m_ShadowPipeline;
             case EnginePipeline::Forward:            return *m_ForwardPipeline;
             case EnginePipeline::ForwardDoubleSided: return *m_ForwardDoubleSidedPipeline;
+            case EnginePipeline::ForwardTerrain:     return *m_ForwardTerrainPipeline;
             case EnginePipeline::DepthPrepassSkinned:       return *m_DepthPrepassSkinnedPipeline;
             case EnginePipeline::ForwardSkinned:            return *m_ForwardSkinnedPipeline;
             case EnginePipeline::ForwardSkinnedDoubleSided: return *m_ForwardSkinnedDoubleSidedPipeline;

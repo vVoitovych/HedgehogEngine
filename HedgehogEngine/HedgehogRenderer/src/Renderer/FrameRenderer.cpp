@@ -322,6 +322,9 @@ namespace Renderer
         m_MaterialSets.clear();
         for (size_t i = 0; i < resources.GetMaterialCount(); ++i)
             m_MaterialSets.push_back(&resources.GetMaterialDescriptorSet(static_cast<uint32_t>(i)));
+        m_TerrainSets.clear();
+        for (size_t i = 0; i < resources.GetTerrainSetCount(); ++i)
+            m_TerrainSets.push_back(resources.GetTerrainSet(i));
 
         GraphFrameData frame;
         FillUiFrame(scene, resources, frame);
@@ -331,6 +334,7 @@ namespace Renderer
         frame.OpaqueInstances = m_SceneInstances;
         frame.Meshes          = m_Meshes;
         frame.MaterialSets    = m_MaterialSets;
+        frame.TerrainSets     = m_TerrainSets;
         frame.Materials       = resources.GetMaterialDrawInfos();
         if (!m_Meshes.empty())
         {
@@ -423,6 +427,7 @@ namespace Renderer
             frame.TransparentInstances        = instances.Transparent;
             frame.SkinnedTransparentInstances = instances.SkinnedTransparent;
             frame.OverlayInstances            = instances.Overlay;
+            frame.TerrainInstances            = instances.Terrain;
         }
         const HM::Vector4& position = camera.WorldMatrix[3]; // the translation column
         frame.EyePosition = HM::Vector3(position.x(), position.y(), position.z());

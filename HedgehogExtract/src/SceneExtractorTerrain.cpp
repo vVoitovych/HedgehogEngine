@@ -3,6 +3,8 @@
 
 #include "api/RenderScene.hpp"
 
+#include <cstdint>
+
 #include "ECS/api/ECS.hpp"
 #include "HedgehogEngine/api/ECS/components/TerrainComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
@@ -28,10 +30,13 @@ namespace HX
             instance.WorldMatrix = transform.ObjMatrix;
             instance.WorldBounds = meshLocalBounds[meshIndex].Transform(transform.ObjMatrix);
             instance.MeshIndex   = meshIndex;
-            // ponytail: the scene's first material until terrain shading draws the splat layers.
-            instance.MaterialIndex = 0;
+            // No material: the terrain's own layers shade it, and every material lookup treats an
+            // index past the materials as opaque and single-sided.
+            instance.MaterialIndex = UINT64_MAX;
             instance.Layer         = terrain.RenderLayer;
             instance.SourceId      = static_cast<uint64_t>(entity);
+            instance.TerrainIndex  = terrain.TerrainIndex;
+            instance.CastsShadows  = terrain.CastShadows;
             outScene.Instances.push_back(instance);
         }
     }

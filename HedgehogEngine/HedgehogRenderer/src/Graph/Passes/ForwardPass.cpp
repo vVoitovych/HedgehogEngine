@@ -81,6 +81,39 @@ namespace Renderer
             }
         }
 
+        // Terrain tiles through the terrain pipeline, each with its terrain's set at set 1. The
+        // pipeline's set 1 differs from the material pipelines', so sets 0, 2 and 3 are bound again
+        // after it. Tiles whose mesh or terrain set is missing are skipped.
+        void DrawTerrainInstances(RHI::IRHICommandList& cmd, const RHI::IRHIPipeline& pipeline, const GraphFrameData& frame,
+                                  const RHI::IRHIDescriptorSet& view, const RHI::IRHIDescriptorSet& lighting)
+        {
+            if (frame.TerrainInstances.empty() || !frame.SceneLights)
+                return;
+            const GpuScope gpuScope(cmd, "Terrain");
+            cmd.BindPipeline(pipeline);
+            cmd.BindDescriptorSet(pipeline, 0, view);
+            cmd.BindDescriptorSet(pipeline, 2, *frame.SceneLights);
+            cmd.BindDescriptorSet(pipeline, 3, lighting);
+            int32_t boundTerrain = -1;
+            for (const HX::RenderInstance& instance : frame.TerrainInstances)
+            {
+                const size_t terrain = static_cast<size_t>(instance.TerrainIndex);
+                if (instance.MeshIndex >= frame.Meshes.size() || terrain >= frame.TerrainSets.size() ||
+                    !frame.TerrainSets[terrain])
+                {
+                    continue;
+                }
+                if (instance.TerrainIndex != boundTerrain)
+                {
+                    cmd.BindDescriptorSet(pipeline, 1, *frame.TerrainSets[terrain]);
+                    boundTerrain = instance.TerrainIndex;
+                }
+                const MeshDrawRange& mesh = frame.Meshes[instance.MeshIndex];
+                cmd.PushConstants(pipeline, RHI::ShaderStage::Vertex, 0, 16 * sizeof(float), instance.WorldMatrix.GetBuffer());
+                cmd.DrawIndexed(mesh.IndexCount, 1, mesh.FirstIndex, static_cast<int32_t>(mesh.VertexOffset), 0);
+            }
+        }
+
         // Set 3: the sun's shadow (the frame's uniform, unshadowed without a shadow view) and the
         // atlas, then the environment's image-based lighting.
         const RHI::IRHIDescriptorSet& AllocateLighting(const ForwardPassData& data, IGraphPassServices& services,
@@ -132,6 +165,7 @@ namespace Renderer
             cmd.BindDescriptorSet(pipeline, 3, lighting);
             DrawLitInstances(cmd, lit, frame, frame.OpaqueInstances, false, "Opaque");
             DrawLitInstances(cmd, lit, frame, frame.CutoffInstances, false, "Cutoff");
+            DrawTerrainInstances(cmd, services.GetPipeline(EnginePipeline::ForwardTerrain), frame, view, lighting);
 
             // Skinned instances after the rigid ones, with the skinning streams bound after the
             // four the rigid pipeline reads and the palette at set 4. The skinned layout's push

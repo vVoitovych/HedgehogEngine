@@ -88,6 +88,7 @@ namespace HR
         void SyncTerrains(HedgehogEngine::IResourceCatalog& catalog, RHI::IRHIDevice& device);
         // The set of the catalog's terrain index, or nullptr when it has none.
         const RHI::IRHIDescriptorSet* GetTerrainSet(size_t terrain) const;
+        size_t                        GetTerrainSetCount() const { return m_Terrains.size(); }
         void SyncMaterials(HedgehogEngine::IResourceCatalog& catalog, RHI::IRHIDevice& device);
 
         const RHI::IRHIBuffer& GetPositionsBuffer() const;

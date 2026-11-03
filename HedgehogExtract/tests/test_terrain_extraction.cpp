@@ -110,6 +110,8 @@ TEST_CASE("Terrain extraction - an enabled terrain with a mesh is an instance on
 {
     TerrainFixture  fixture;
     const auto      drawn    = fixture.Add(1, 3, true, HM::Vector3(10.0f, 0.0f, 0.0f));
+    fixture.ecs.GetComponent<TerrainComponent>(drawn).TerrainIndex = 4;
+    fixture.ecs.GetComponent<TerrainComponent>(drawn).CastShadows  = false;
     fixture.Add(1, 0, false, HM::Vector3(0.0f, 0.0f, 0.0f));  // disabled
     fixture.Add(-1, 0, true, HM::Vector3(0.0f, 0.0f, 0.0f));  // no mesh listed
     fixture.Add(5, 0, true, HM::Vector3(0.0f, 0.0f, 0.0f));   // mesh not loaded
@@ -123,6 +125,9 @@ TEST_CASE("Terrain extraction - an enabled terrain with a mesh is an instance on
     CHECK(instance.MeshIndex == 1);
     CHECK(instance.Layer == 3);
     CHECK(instance.SourceId == drawn);
+    CHECK(instance.TerrainIndex == 4);
+    CHECK_FALSE(instance.CastsShadows);
+    CHECK(instance.MaterialIndex == UINT64_MAX);
     CHECK(instance.WorldBounds.GetMin().x() == doctest::Approx(10.0f));
     CHECK(instance.WorldBounds.GetMax().x() == doctest::Approx(42.0f));
     CHECK(instance.WorldBounds.GetMax().z() == doctest::Approx(4.0f));
