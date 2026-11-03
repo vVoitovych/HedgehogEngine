@@ -12,6 +12,7 @@
 #include "HedgehogEngine/api/ECS/components/RenderComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RigidBodyComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/TerrainComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/UiButtonComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/UiCanvasComponent.hpp"
@@ -125,6 +126,13 @@ namespace HedgehogEngine
                                                                                    .SortOrder       = 400,
                                                                                    .Icon            = "scene",
                                                                                    .EnabledProperty = "Enabled" });
+        // ponytail: the mesh icon until terrain has one of its own.
+        registered &= types.RegisterReflected<TerrainComponent>(ComponentDesc{ .Key             = "TerrainComponent",
+                                                                               .DisplayName     = "Terrain",
+                                                                               .Category        = RENDERING_CATEGORY,
+                                                                               .SortOrder       = 401,
+                                                                               .Icon            = "mesh",
+                                                                               .EnabledProperty = "Enabled" });
         registered &= types.RegisterReflected<PrefabInstanceComponent>(ComponentDesc{ .Key         = "PrefabInstanceComponent",
                                                                                       .DisplayName = "Prefab instance",
                                                                                       .Addable     = false,
