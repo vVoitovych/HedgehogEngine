@@ -442,6 +442,8 @@ namespace Editor
                                                    static_cast<float>(m_EditorGui->GetGameViewHeight())),
                                        m_RenderScene, &engineContext.GetResourceCatalog().GetFontContainer());
         HX::SceneExtractor{}.ExtractEnvironment(engineContext.GetECS(), *engineContext.GetEnvironmentSystem(), m_RenderScene);
+        HX::SceneExtractor{}.ExtractTerrains(engineContext.GetECS(), *engineContext.GetTerrainSystem(), m_RenderScene,
+                                             m_MeshBounds.GetBounds());
         // The collider wireframes, drawn by the Gizmo pass, so only in the Scene view.
         if (m_EditorGui->IsPhysicsDebugEnabled())
             HX::SceneExtractor{}.ExtractPhysicsDebug(engineContext.GetECS(), *engineContext.GetPhysicsSystem(),

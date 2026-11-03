@@ -44,6 +44,7 @@ namespace HedgehogEngine
         // Update does both at once, for callers outside the frame (a scene just loaded, a new asset).
         HEDGEHOG_ENGINE_API void Update(const RenderSystem& renderSystem, const MeshSystem& meshSystem);
         HEDGEHOG_ENGINE_API void UpdateMaterials(const RenderSystem& renderSystem);
+        // Also rebuilds, in place, the mesh of every terrain whose heights changed.
         HEDGEHOG_ENGINE_API void UpdateMeshes(const MeshSystem& meshSystem);
 
         HEDGEHOG_ENGINE_API const MeshContainer&     GetMeshContainer()     const;
@@ -59,6 +60,7 @@ namespace HedgehogEngine
         // IResourceCatalog — virtual dispatch, no export macro needed across the DLL boundary.
         size_t                       GetMeshCount() const override;
         MeshView                     GetMesh(size_t index) const override;
+        uint32_t                     GetMeshVersion(size_t index) const override;
         size_t                       GetMaterialCount() const override;
         MaterialView                 GetMaterial(size_t index) const override;
         void                         ClearMaterialDirty(size_t index) override;

@@ -21,9 +21,10 @@ HH_BEGIN_COMPONENT(TerrainComponent)
     HH_PROP_NAMED(float,       Friction,     "Friction",     0.5f,          None)
 
     // Runtime only, never written: the terrain's index in the TerrainContainer (-1 for none, or a
-    // file that does not load) and the Terrain path it was resolved from, so a changed path is
-    // resolved again.
+    // file that does not load), its mesh's index in the resource catalog (-1 until listed) and the
+    // Terrain path they were resolved from, so a changed path is resolved again.
     int32_t     TerrainIndex = -1;
+    int32_t     MeshIndex    = -1;
     std::string ResolvedTerrain;
 HH_END_COMPONENT(TerrainComponent)
 }

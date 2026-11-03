@@ -49,6 +49,19 @@ namespace HedgehogEngine
         return true;
     }
 
+    void Mesh::SetGeometry(std::vector<HM::Vector3> positions, std::vector<HM::Vector2> texCoords,
+                           std::vector<HM::Vector3> normals, std::vector<HM::Vector4> tangents,
+                           std::vector<uint32_t> indices)
+    {
+        ClearData();
+        m_Positions   = std::move(positions);
+        m_TexCoords   = std::move(texCoords);
+        m_Normals     = std::move(normals);
+        m_Tangents    = std::move(tangents);
+        m_IndicesData = std::move(indices);
+        m_IndexCount  = static_cast<uint32_t>(m_IndicesData.size());
+    }
+
     void Mesh::ClearData()
     {
         m_Positions.clear();
