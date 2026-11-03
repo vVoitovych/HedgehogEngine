@@ -77,6 +77,9 @@ namespace Renderer
         // Gives the resource registry the material layout (the forward shader's set 1) to allocate
         // material sets from.
         void ProvideMaterialLayout(RHI::IRHIDevice& device, HR::ResourceRegistry& registry) const;
+        // The terrain set's layout (HR::MakeTerrainSetBindings), which the forward pass's terrain
+        // pipeline takes at set 1.
+        void ProvideTerrainLayout(RHI::IRHIDevice& device, HR::ResourceRegistry& registry) const;
 
         // Gives the resource registry the GameUi shader's set 0 (one texture) to allocate UI texture
         // sets from.
@@ -159,6 +162,7 @@ namespace Renderer
         // The forward shader's set 1. Identical to the layout the resource registry allocates
         // material sets from, so those sets bind to these pipelines.
         std::unique_ptr<RHI::IRHIDescriptorSetLayout> m_MaterialLayout;
+        std::unique_ptr<RHI::IRHIDescriptorSetLayout> m_TerrainLayout;
         std::vector<RHI::PoolSize>                    m_MaterialPoolSizes; // for MAX_MATERIAL_COUNT sets
 
         // The skinned pipelines' palette set: one storage buffer.

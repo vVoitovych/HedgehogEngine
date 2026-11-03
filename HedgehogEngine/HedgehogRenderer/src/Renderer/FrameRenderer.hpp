@@ -89,6 +89,10 @@ namespace Renderer
         {
             m_Services.ProvideMaterialLayout(m_Device, registry);
         }
+        void ProvideTerrainLayout(HR::ResourceRegistry& registry)
+        {
+            m_Services.ProvideTerrainLayout(m_Device, registry);
+        }
 
         // Gives the resource registry the GameUi shader's texture layout (set 0).
         void ProvideUiTextureLayout(HR::ResourceRegistry& registry) { m_Services.ProvideUiTextureLayout(registry); }

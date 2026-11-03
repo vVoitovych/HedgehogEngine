@@ -76,6 +76,18 @@ namespace HR
         const RHI::IRHIDescriptorSet* GetUiSolidTextureSet() const { return m_UiSolidSet.get(); }
 
         void SyncMeshes(const HedgehogEngine::IResourceCatalog& catalog, RHI::IRHIDevice& device);
+
+        // Terrain sets (TerrainUniform.hpp), allocated in layout, at most MAX_TERRAIN_SETS of them.
+        // Called once, before any SyncTerrains call.
+        static constexpr uint32_t MAX_TERRAIN_SETS = 64;
+        void SetTerrainLayout(RHI::IRHIDevice& device, const RHI::IRHIDescriptorSetLayout& layout);
+        // Gives every terrain the catalog loaded since the last call its set, and writes a terrain's
+        // set again when its layers changed, uploading its splat map again only when the splat
+        // changed (idling the device once first, as SyncMaterials does). Terrains past
+        // MAX_TERRAIN_SETS get no set (one warning).
+        void SyncTerrains(HedgehogEngine::IResourceCatalog& catalog, RHI::IRHIDevice& device);
+        // The set of the catalog's terrain index, or nullptr when it has none.
+        const RHI::IRHIDescriptorSet* GetTerrainSet(size_t terrain) const;
         void SyncMaterials(HedgehogEngine::IResourceCatalog& catalog, RHI::IRHIDevice& device);
 
         const RHI::IRHIBuffer& GetPositionsBuffer() const;
@@ -115,6 +127,19 @@ namespace HR
                               const FS::FileSystemManager& fileSystem);
 
         void FlushMeshUploads(RHI::IRHIDevice& device);
+
+        struct TerrainGpuData
+        {
+            std::unique_ptr<RHI::IRHIBuffer>        UniformBuffer;
+            std::unique_ptr<RHI::IRHITexture>       Splat;
+            std::unique_ptr<RHI::IRHIDescriptorSet> DescriptorSet;
+        };
+        // Writes the uniform and every map into gpu's set, uploading the splat map first when
+        // uploadSplat (or when it has none yet).
+        void WriteTerrainSet(TerrainGpuData& gpu, const HedgehogEngine::TerrainView& terrain, bool uploadSplat,
+                             RHI::IRHIDevice& device, const FS::FileSystemManager& fileSystem);
+        // The materials' and terrains' neutral defaults, made once.
+        void EnsureDefaultTextures(RHI::IRHIDevice& device);
         // Rewrites the slices of the registered meshes the catalog replaced in place since the last
         // call (a sculpted terrain); true when any changed.
         bool RewriteReplacedMeshes(const HedgehogEngine::IResourceCatalog& catalog);
@@ -163,6 +188,12 @@ namespace HR
         std::unique_ptr<RHI::IRHITexture> m_WhiteSrgbTexture;
         std::unique_ptr<RHI::IRHITexture> m_WhiteLinearTexture;
         std::unique_ptr<RHI::IRHITexture> m_FlatNormalTexture;
+
+        const RHI::IRHIDescriptorSetLayout*  m_TerrainLayout = nullptr;
+        std::unique_ptr<RHI::IRHIDescriptorPool> m_TerrainPool;
+        std::unique_ptr<RHI::IRHISampler>    m_ClampSampler; // the splat map's: no wrap at the tile's edges
+        std::vector<TerrainGpuData>          m_Terrains;     // by catalog terrain index
+        bool                                 m_TerrainBudgetWarned = false;
 
         // Game UI textures: sampled clamped to their edges, one set per file (by FS::MakeAssetKey, so
         // every spelling of one image shares it and counts once against MAX_UI_TEXTURE_SETS), each

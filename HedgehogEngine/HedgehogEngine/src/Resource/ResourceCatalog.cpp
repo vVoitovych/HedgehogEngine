@@ -128,6 +128,36 @@ namespace HedgehogEngine
         return m_FontContainer->GetFontCount();
     }
 
+    size_t ResourceCatalog::GetTerrainCount() const
+    {
+        return m_TerrainContainer->GetTerrainCount();
+    }
+
+    TerrainView ResourceCatalog::GetTerrain(size_t index) const
+    {
+        static_assert(TERRAIN_LAYER_VIEW_COUNT == TERRAIN_LAYER_COUNT);
+        const TerrainData& data  = m_TerrainContainer->GetTerrain(index);
+        const TerrainDirty dirty = m_TerrainContainer->GetDirty(index);
+        TerrainView        view;
+        view.splatResolution = data.SplatResolution;
+        view.splat           = data.Splat;
+        for (uint32_t layer = 0; layer < TERRAIN_LAYER_COUNT; ++layer)
+            view.layers[layer] = TerrainLayerView{ data.Layers[layer].BaseColor, data.Layers[layer].NormalMap,
+                                                   data.Layers[layer].Tiling, data.Layers[layer].Metallic,
+                                                   data.Layers[layer].Roughness };
+        view.splatDirty  = HasAny(dirty, TerrainDirty::Splat);
+        view.layersDirty = HasAny(dirty, TerrainDirty::Layers);
+        return view;
+    }
+
+    void ResourceCatalog::ClearTerrainDirty(size_t index, bool splat, bool layers)
+    {
+        if (splat)
+            m_TerrainContainer->ClearDirty(index, TerrainDirty::Splat);
+        if (layers)
+            m_TerrainContainer->ClearDirty(index, TerrainDirty::Layers);
+    }
+
     FontAtlasView ResourceCatalog::GetFontAtlas(size_t index) const
     {
         const ContentLoader::LoadedFont& font = m_FontContainer->GetFont(index);

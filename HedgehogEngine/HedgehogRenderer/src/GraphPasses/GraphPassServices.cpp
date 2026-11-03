@@ -3,6 +3,7 @@
 #include "Pipeline/PipelineLoader.hpp"
 #include "Pipeline/ShaderLoader.hpp"
 #include "ResourceRegistry/ResourceRegistry.hpp"
+#include "ResourceRegistry/TerrainUniform.hpp"
 
 #include "HedgehogRenderer/Graph/ShadowCascades.hpp"
 
@@ -94,6 +95,7 @@ namespace Renderer
         m_MaterialLayout    = device.CreateDescriptorSetLayout(forwardShader.Layout.DescriptorSets[1]);
         m_MaterialPoolSizes = PipelineLoader::MakePoolSizes(forwardShader.Layout.DescriptorSets[1],
                                                             HedgehogEngine::MAX_MATERIAL_COUNT);
+        m_TerrainLayout     = device.CreateDescriptorSetLayout(HR::MakeTerrainSetBindings());
 
         const std::vector<const RHI::IRHIDescriptorSetLayout*> forwardLayouts = {
             m_ForwardRing.Layout.get(), m_MaterialLayout.get(), m_SceneLightsRing.Layout.get(), m_LightingRing.Layout.get() };
@@ -304,6 +306,11 @@ namespace Renderer
     void GraphPassServices::ProvideMaterialLayout(RHI::IRHIDevice& device, HR::ResourceRegistry& registry) const
     {
         registry.SetMaterialLayout(device, *m_MaterialLayout, HedgehogEngine::MAX_MATERIAL_COUNT, m_MaterialPoolSizes);
+    }
+
+    void GraphPassServices::ProvideTerrainLayout(RHI::IRHIDevice& device, HR::ResourceRegistry& registry) const
+    {
+        registry.SetTerrainLayout(device, *m_TerrainLayout);
     }
 
     void GraphPassServices::ProvideUiTextureLayout(HR::ResourceRegistry& registry) const

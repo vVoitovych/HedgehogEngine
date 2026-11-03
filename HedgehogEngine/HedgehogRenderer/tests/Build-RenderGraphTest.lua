@@ -26,7 +26,9 @@ project "RenderGraphTest"
         "../src/ResourceRegistry/TangentStream.hpp",
         "../src/ResourceRegistry/TangentStream.cpp",
         "../src/ResourceRegistry/MaterialUniform.hpp",
-        "../src/ResourceRegistry/MaterialUniform.cpp"
+        "../src/ResourceRegistry/MaterialUniform.cpp",
+        "../src/ResourceRegistry/TerrainUniform.hpp",
+        "../src/ResourceRegistry/TerrainUniform.cpp"
     }
 
     includedirs

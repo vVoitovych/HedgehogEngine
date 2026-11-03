@@ -68,6 +68,9 @@ namespace HedgehogEngine
         const FS::FileSystemManager& GetFileSystem() const override;
         size_t                       GetFontCount() const override;
         FontAtlasView                GetFontAtlas(size_t index) const override;
+        size_t                       GetTerrainCount() const override;
+        TerrainView                  GetTerrain(size_t index) const override;
+        void                         ClearTerrainDirty(size_t index, bool splat, bool layers) override;
 
     private:
         const FS::FileSystemManager& m_FileSystem;

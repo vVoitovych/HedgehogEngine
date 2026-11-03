@@ -1,6 +1,7 @@
 #include "ResourceRegistry.hpp"
 #include "SkinningStreams.hpp"
 #include "TangentStream.hpp"
+#include "TerrainUniform.hpp"
 
 #include "ContentLoader/api/TextureLoader.hpp"
 #include "FileSystem/api/PathUtils.hpp"
@@ -406,14 +407,7 @@ namespace HR
     void ResourceRegistry::WriteMaterialSet(MaterialGpuData& gpu, const HedgehogEngine::MaterialView& material,
                                             RHI::IRHIDevice& device, const FS::FileSystemManager& fileSystem)
     {
-        if (!m_WhiteSrgbTexture)
-        {
-            constexpr uint8_t WHITE[4]       = { 255, 255, 255, 255 };
-            constexpr uint8_t FLAT_NORMAL[4] = { 128, 128, 255, 255 };
-            m_WhiteSrgbTexture   = UploadRgba8(device, WHITE, 1, 1, false, true);
-            m_WhiteLinearTexture = UploadRgba8(device, WHITE, 1, 1, false, false);
-            m_FlatNormalTexture  = UploadRgba8(device, FLAT_NORMAL, 1, 1, false, false);
-        }
+        EnsureDefaultTextures(device);
 
         const MaterialUniform uniform = MakeMaterialUniform(material);
         gpu.UniformBuffer->CopyData(&uniform, sizeof(uniform));
@@ -431,6 +425,118 @@ namespace HR
             else
                 texture = srgb ? m_WhiteSrgbTexture.get() : m_WhiteLinearTexture.get();
             gpu.DescriptorSet->WriteTexture(1 + slot, *texture, *m_LinearSampler);
+        }
+        gpu.DescriptorSet->Flush();
+    }
+
+    void ResourceRegistry::EnsureDefaultTextures(RHI::IRHIDevice& device)
+    {
+        if (m_WhiteSrgbTexture)
+            return;
+        constexpr uint8_t WHITE[4]       = { 255, 255, 255, 255 };
+        constexpr uint8_t FLAT_NORMAL[4] = { 128, 128, 255, 255 };
+        m_WhiteSrgbTexture   = UploadRgba8(device, WHITE, 1, 1, false, true);
+        m_WhiteLinearTexture = UploadRgba8(device, WHITE, 1, 1, false, false);
+        m_FlatNormalTexture  = UploadRgba8(device, FLAT_NORMAL, 1, 1, false, false);
+    }
+
+    void ResourceRegistry::SetTerrainLayout(RHI::IRHIDevice& device, const RHI::IRHIDescriptorSetLayout& layout)
+    {
+        assert(m_Terrains.empty() && "SetTerrainLayout must be called before any terrain is synced");
+        m_TerrainLayout = &layout;
+        m_TerrainPool   = device.CreateDescriptorPool(
+            MAX_TERRAIN_SETS, { { RHI::DescriptorType::UniformBuffer, MAX_TERRAIN_SETS },
+                                { RHI::DescriptorType::CombinedImageSampler, MAX_TERRAIN_SETS * (TERRAIN_BINDING_COUNT - 1) } });
+
+        RHI::SamplerDesc samplerDesc;
+        samplerDesc.MinFilter    = RHI::Filter::Linear;
+        samplerDesc.MagFilter    = RHI::Filter::Linear;
+        samplerDesc.AddressModeU = RHI::AddressMode::ClampToEdge;
+        samplerDesc.AddressModeV = RHI::AddressMode::ClampToEdge;
+        samplerDesc.AddressModeW = RHI::AddressMode::ClampToEdge;
+        m_ClampSampler           = device.CreateSampler(samplerDesc);
+    }
+
+    void ResourceRegistry::SyncTerrains(HedgehogEngine::IResourceCatalog& catalog, RHI::IRHIDevice& device)
+    {
+        assert(m_TerrainLayout && "SetTerrainLayout must be called before SyncTerrains");
+        const FS::FileSystemManager& fileSystem = catalog.GetFileSystem();
+        const size_t                 total      = catalog.GetTerrainCount();
+
+        bool idled = false;
+        for (size_t i = 0; i < m_Terrains.size() && i < total; ++i)
+        {
+            const HedgehogEngine::TerrainView terrain = catalog.GetTerrain(i);
+            if (!terrain.splatDirty && !terrain.layersDirty)
+                continue;
+            // A frame in flight may sample the splat map or read the uniform a stroke replaces.
+            if (!idled)
+            {
+                device.WaitIdle();
+                idled = true;
+            }
+            WriteTerrainSet(m_Terrains[i], terrain, terrain.splatDirty, device, fileSystem);
+            catalog.ClearTerrainDirty(i, terrain.splatDirty, terrain.layersDirty);
+        }
+
+        for (size_t i = m_Terrains.size(); i < total; ++i)
+        {
+            if (m_Terrains.size() >= MAX_TERRAIN_SETS)
+            {
+                if (!m_TerrainBudgetWarned)
+                    LOGWARNING("[Terrain] More than", MAX_TERRAIN_SETS, "terrains are loaded; the rest are not drawn.");
+                m_TerrainBudgetWarned = true;
+                break;
+            }
+            TerrainGpuData gpu;
+            gpu.UniformBuffer = device.CreateBuffer(sizeof(TerrainUniform), RHI::BufferUsage::UniformBuffer,
+                                                    RHI::MemoryUsage::CpuToGpu);
+            gpu.DescriptorSet = device.AllocateDescriptorSet(*m_TerrainPool, *m_TerrainLayout);
+            const HedgehogEngine::TerrainView terrain = catalog.GetTerrain(i);
+            WriteTerrainSet(gpu, terrain, true, device, fileSystem);
+            m_Terrains.push_back(std::move(gpu));
+            catalog.ClearTerrainDirty(i, true, true);
+        }
+    }
+
+    const RHI::IRHIDescriptorSet* ResourceRegistry::GetTerrainSet(size_t terrain) const
+    {
+        return terrain < m_Terrains.size() ? m_Terrains[terrain].DescriptorSet.get() : nullptr;
+    }
+
+    void ResourceRegistry::WriteTerrainSet(TerrainGpuData& gpu, const HedgehogEngine::TerrainView& terrain, bool uploadSplat,
+                                           RHI::IRHIDevice& device, const FS::FileSystemManager& fileSystem)
+    {
+        EnsureDefaultTextures(device);
+        if (uploadSplat || !gpu.Splat)
+        {
+            const uint32_t resolution = terrain.splatResolution;
+            if (resolution > 0 && terrain.splat.size() == static_cast<size_t>(resolution) * resolution * 4)
+            {
+                gpu.Splat = UploadRgba8(device, terrain.splat.data(), resolution, resolution, false, false);
+            }
+            else
+            {
+                constexpr uint8_t LAYER_0[4] = { 255, 0, 0, 0 };
+                gpu.Splat                    = UploadRgba8(device, LAYER_0, 1, 1, false, false);
+            }
+        }
+
+        const TerrainUniform uniform = MakeTerrainUniform(terrain);
+        gpu.UniformBuffer->CopyData(&uniform, sizeof(uniform));
+        gpu.DescriptorSet->WriteUniformBuffer(0, *gpu.UniformBuffer);
+        gpu.DescriptorSet->WriteTexture(TERRAIN_SPLAT_BINDING, *gpu.Splat, *m_ClampSampler);
+        for (uint32_t layer = 0; layer < HedgehogEngine::TERRAIN_LAYER_VIEW_COUNT; ++layer)
+        {
+            const HedgehogEngine::TerrainLayerView& view      = terrain.layers[layer];
+            RHI::IRHITexture&                       baseColor = view.baseColor.empty()
+                                                                    ? *m_WhiteSrgbTexture
+                                                                    : GetOrCreateTexture(std::string(view.baseColor), device, fileSystem, true);
+            RHI::IRHITexture&                       normal    = view.normalMap.empty()
+                                                                    ? *m_FlatNormalTexture
+                                                                    : GetOrCreateTexture(std::string(view.normalMap), device, fileSystem, false);
+            gpu.DescriptorSet->WriteTexture(TERRAIN_BASE_COLOR_BINDING + layer, baseColor, *m_LinearSampler);
+            gpu.DescriptorSet->WriteTexture(TERRAIN_NORMAL_BINDING + layer, normal, *m_LinearSampler);
         }
         gpu.DescriptorSet->Flush();
     }
