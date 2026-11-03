@@ -229,6 +229,7 @@ namespace Renderer
         GraphFrameData                           m_ShadowViewFrame; // the shadow view, unculled
         std::vector<MeshDrawRange>               m_Meshes;
         std::vector<const RHI::IRHIDescriptorSet*> m_MaterialSets;
+        std::vector<const RHI::IRHIDescriptorSet*> m_TerrainSets; // by terrain index
         std::vector<const RHI::IRHIDescriptorSet*> m_UiTextureSets; // per RenderScene::UiTextures entry
         std::vector<const RHI::IRHIDescriptorSet*> m_UiFontSets;    // per RenderScene::UiFonts entry
         std::vector<GraphFrameData>              m_ViewFrames;

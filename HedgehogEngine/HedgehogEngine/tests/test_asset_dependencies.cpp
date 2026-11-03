@@ -212,6 +212,8 @@ TEST_CASE("Asset dependencies - a fixture scene's closure is exactly its meshes,
              "Shaders/GameUi/Quad.frag.spv", "Shaders/Fullscreen/Triangle.vert.spv", "Shaders/ToneMap/Aces.frag.spv",
              "Shaders/Skybox/Sky.vert.spv", "Shaders/Skybox/Sky.frag.spv",
              // The depth prepass's alpha-tested shaders, for Cutoff materials.
+             // The forward pass's terrain shader.
+             "Shaders/GraphForwardTerrain.shader", "Pipelines/GraphForwardTerrain.pl", "Shaders/GraphForward/Terrain.frag.spv",
              "Shaders/DepthPrepassCutoff.shader", "Shaders/DepthPrepassCutoffSkinned.shader",
              "Shaders/ShadowmapPassCutoff.shader", "Shaders/ShadowmapPassCutoffSkinned.shader",
              "Shaders/GraphForwardTransparent.shader", "Shaders/GraphForwardTransparentSkinned.shader",

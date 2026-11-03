@@ -33,6 +33,12 @@ namespace Renderer
                     const GpuScope scope(cmd, "Opaque");
                     DrawRigidInstances(cmd, opaque, frame, frame.OpaqueInstances);
                 }
+                // Terrain tiles are opaque geometry here; only the forward pass shades them apart.
+                if (!frame.TerrainInstances.empty())
+                {
+                    const GpuScope scope(cmd, "Terrain");
+                    DrawRigidInstances(cmd, opaque, frame, frame.TerrainInstances);
+                }
 
                 // Skinned instances after the rigid ones. The skinned layout's push constants differ,
                 // so set 0 is bound again.

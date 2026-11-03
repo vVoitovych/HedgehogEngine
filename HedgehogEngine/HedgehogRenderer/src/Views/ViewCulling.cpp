@@ -27,6 +27,7 @@ namespace Renderer
         out.Transparent.clear();
         out.SkinnedTransparent.clear();
         out.Overlay.clear();
+        out.Terrain.clear();
 
         HM::Frustum frustum;
         frustum.ExtractPlanes(viewProj);
@@ -37,6 +38,11 @@ namespace Renderer
             if (instance.Layer == HX::EDITOR_LAYER)
             {
                 out.Overlay.push_back(instance);
+                continue;
+            }
+            if (instance.TerrainIndex >= 0)
+            {
+                out.Terrain.push_back(instance);
                 continue;
             }
             const bool skinned = instance.JointCount > 0;
@@ -77,7 +83,7 @@ namespace Renderer
         out.clear();
         for (const HX::RenderInstance& instance : instances)
         {
-            if (instance.Layer != HX::EDITOR_LAYER)
+            if (instance.Layer != HX::EDITOR_LAYER && instance.CastsShadows)
                 out.push_back(instance);
         }
     }

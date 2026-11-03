@@ -95,7 +95,8 @@ namespace HX
 
         // Appends an instance for every enabled terrain of terrainSystem whose mesh is listed
         // (TerrainComponent::MeshIndex), at its entity's ObjMatrix on its RenderLayer, its bounds
-        // from meshLocalBounds as Extract's are.
+        // from meshLocalBounds as Extract's are, with its TerrainIndex and CastShadows and no
+        // material.
         void ExtractTerrains(const ECS::ECS& ecs, const HedgehogEngine::TerrainSystem& terrainSystem,
                              RenderScene& outScene, std::span<const HM::AABB> meshLocalBounds = {}) const;
 

@@ -163,6 +163,7 @@ namespace Renderer
         // material sets from, so those sets bind to these pipelines.
         std::unique_ptr<RHI::IRHIDescriptorSetLayout> m_MaterialLayout;
         std::unique_ptr<RHI::IRHIDescriptorSetLayout> m_TerrainLayout;
+        std::unique_ptr<RHI::IRHIPipeline>            m_ForwardTerrainPipeline;
         std::vector<RHI::PoolSize>                    m_MaterialPoolSizes; // for MAX_MATERIAL_COUNT sets
 
         // The skinned pipelines' palette set: one storage buffer.

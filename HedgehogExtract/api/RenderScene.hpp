@@ -68,6 +68,12 @@ namespace HX
         // RenderScene::JointMatrices. A static instance has JointCount 0.
         uint32_t PaletteOffset = 0;
         uint32_t JointCount    = 0;
+
+        // A terrain tile's TerrainContainer index: the forward pass shades it with that terrain's
+        // layers (GraphFrameData::TerrainSets) instead of a material. -1 for any other instance.
+        int32_t TerrainIndex = -1;
+        // Whether it casts the sun's shadow (a terrain's CastShadows; every mesh does).
+        bool CastsShadows = true;
     };
 
     struct RenderLight

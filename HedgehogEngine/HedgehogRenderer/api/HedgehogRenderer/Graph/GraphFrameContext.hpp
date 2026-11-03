@@ -92,6 +92,14 @@ namespace Renderer
         // Gizmo pass reads them, drawing their bounds. Never scene geometry, never shadow casters.
         std::span<const HX::RenderInstance> OverlayInstances;
 
+        // A view's terrain tiles (RenderInstance::TerrainIndex >= 0), culled like OpaqueInstances:
+        // the depth prepass draws them as opaque instances, the forward pass with the terrain
+        // pipeline and TerrainSets[TerrainIndex]. The shadow casts them among its opaque instances.
+        std::span<const HX::RenderInstance> TerrainInstances;
+        // Each terrain's set (the terrain pipeline's set 1), by TerrainIndex; null for a terrain the
+        // registry has no set for. Owned by the resource registry.
+        std::span<const RHI::IRHIDescriptorSet* const> TerrainSets;
+
         // Shared geometry. Meshes is indexed by RenderInstance::MeshIndex. TexCoords, Normals and
         // Tangents (float4: xyz along increasing u, w the handedness) are only read by the forward pass.
         RHI::IRHIBuffer*              Positions = nullptr;
@@ -222,6 +230,7 @@ namespace Renderer
         SelectionMask,        // overlay instances as solid white into an R8 mask: no depth, no culling
         SelectionMaskSkinned, // SelectionMask for skinned overlay instances: palette at set 1
         SelectionOutline,     // a fullscreen triangle blending the outline over the colour: the mask at set 0
+        ForwardTerrain,       // Forward for TerrainInstances: the terrain's layers at set 1
     };
 
     // The long-lived GPU objects the engine passes use but do not own: pipelines, and per-frame
