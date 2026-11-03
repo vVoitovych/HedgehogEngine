@@ -48,6 +48,8 @@ namespace Renderer
             fileSystem);
         // The registry allocates material sets in the forward shader's set-1 layout.
         m_FrameRenderer->ProvideMaterialLayout(*m_Resources);
+        // And terrain sets in the terrain pipeline's set-1 layout.
+        m_FrameRenderer->ProvideTerrainLayout(*m_Resources);
         // And UI texture sets in the GameUi shader's set-0 layout.
         m_FrameRenderer->ProvideUiTextureLayout(*m_Resources);
 
@@ -184,6 +186,7 @@ namespace Renderer
         auto& device = m_RHIContext->GetRHIDevice();
         m_Resources->SyncMeshes(catalog, device);
         m_Resources->SyncMaterials(catalog, device);
+        m_Resources->SyncTerrains(catalog, device);
         m_Resources->SyncFonts(catalog, device);
     }
 

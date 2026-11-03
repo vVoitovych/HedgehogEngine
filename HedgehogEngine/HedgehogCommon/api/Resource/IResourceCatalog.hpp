@@ -2,10 +2,12 @@
 
 #include "HedgehogMath/api/Vector.hpp"
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <span>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace FS
@@ -75,6 +77,28 @@ namespace HedgehogEngine
         std::span<const uint8_t> Atlas;
     };
 
+    // A terrain's material layers (HedgehogEngine's TerrainData): four, blended by its splat map.
+    inline constexpr uint32_t TERRAIN_LAYER_VIEW_COUNT = 4;
+
+    struct TerrainLayerView
+    {
+        std::string_view baseColor; // under assets://, empty for white
+        std::string_view normalMap; // under assets://, empty for flat
+        float            tiling    = 1.0f;
+        float            metallic  = 0.0f;
+        float            roughness = 1.0f;
+    };
+
+    // Zero-copy view onto one loaded terrain's shading data, valid for the call that produced it.
+    struct TerrainView
+    {
+        uint32_t                                               splatResolution = 0;
+        std::span<const uint8_t>                               splat; // splatResolution^2 RGBA8 weights
+        std::array<TerrainLayerView, TERRAIN_LAYER_VIEW_COUNT> layers;
+        bool                                                   splatDirty  = false;
+        bool                                                   layersDirty = false;
+    };
+
     // Read-mostly contract the renderer consumes to sync its GPU-side mesh/material/texture
     // resources, without depending on the concrete HedgehogEngine containers.
     class IResourceCatalog
@@ -101,5 +125,11 @@ namespace HedgehogEngine
         virtual FontAtlasView GetFontAtlas(size_t index) const = 0;
 
         virtual const FS::FileSystemManager& GetFileSystem() const = 0;
+
+        // The loaded terrains, by TerrainContainer index (only ever appended). The renderer clears
+        // what it took after uploading it.
+        virtual size_t      GetTerrainCount() const { return 0; }
+        virtual TerrainView GetTerrain(size_t /*index*/) const { return {}; }
+        virtual void        ClearTerrainDirty(size_t /*index*/, bool /*splat*/, bool /*layers*/) {}
     };
 }

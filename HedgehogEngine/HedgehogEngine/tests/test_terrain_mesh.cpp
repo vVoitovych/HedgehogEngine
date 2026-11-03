@@ -137,3 +137,32 @@ TEST_CASE("Terrain mesh - a terrain that does not load lists no mesh")
     CHECK(world.Component().MeshIndex == -1);
     CHECK(world.Context.GetMeshSystem()->GetMeshes().size() == meshCount);
 }
+
+TEST_CASE("Terrain mesh - the catalog shows the renderer each terrain's splat and layers, dirty until taken")
+{
+    TerrainWorld world;
+    world.Frame();
+    world.Terrains().GetTerrain(0).Layers[2].BaseColor = "Textures/Rock.png";
+    world.Terrains().GetTerrain(0).Layers[2].Tiling    = 4.0f;
+
+    ResourceCatalog& catalog = world.Context.GetResourceCatalog();
+    REQUIRE(catalog.GetTerrainCount() == 1);
+    TerrainView view = catalog.GetTerrain(0);
+    CHECK(view.splatResolution == 16);
+    CHECK(view.splat.size() == 16 * 16 * 4);
+    CHECK(view.layers[2].baseColor == "Textures/Rock.png");
+    CHECK(view.layers[2].tiling == 4.0f);
+    CHECK(view.splatDirty);
+    CHECK(view.layersDirty);
+
+    catalog.ClearTerrainDirty(0, true, false);
+    view = catalog.GetTerrain(0);
+    CHECK_FALSE(view.splatDirty);
+    CHECK(view.layersDirty);
+    catalog.ClearTerrainDirty(0, false, true);
+    CHECK_FALSE(catalog.GetTerrain(0).layersDirty);
+
+    world.Terrains().MarkDirty(0, TerrainDirty::Splat);
+    CHECK(catalog.GetTerrain(0).splatDirty);
+    CHECK_FALSE(catalog.GetTerrain(0).layersDirty);
+}
