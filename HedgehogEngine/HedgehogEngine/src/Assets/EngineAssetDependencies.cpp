@@ -12,6 +12,8 @@
 #include "HedgehogEngine/api/ECS/components/CameraComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RenderComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/TerrainComponent.hpp"
+#include "HedgehogEngine/api/Terrain/TerrainData.hpp"
 #include "HedgehogEngine/api/ECS/components/UiImageComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/UiTextComponent.hpp"
 
@@ -51,6 +53,19 @@ namespace HedgehogEngine
                 if (type && value && type.as<std::string>() == "AssetRef" && !value.as<std::string>().empty())
                     out.push_back(NormalizeAssetPath(value.as<std::string>()));
             }
+        }
+
+        // Every layer map of the terrain.
+        std::string FollowTerrain(const std::string&, const std::string& text, std::vector<std::string>& out)
+        {
+            const HedgehogEngine::TerrainReadResult terrain = HedgehogEngine::ParseTerrain(text);
+            if (!terrain.Data)
+                return "not a terrain: " + terrain.Error;
+            for (const HedgehogEngine::TerrainLayer& layer : terrain.Data->Layers)
+                for (const std::string* map : { &layer.BaseColor, &layer.NormalMap })
+                    if (!map->empty())
+                        out.push_back(NormalizeAssetPath(*map));
+            return {};
         }
 
         // Every map of the material (MaterialSerializer's keys).
@@ -147,12 +162,14 @@ namespace HedgehogEngine
         collector.AddReflectedComponent<RenderComponent>("RenderComponent");
         collector.AddReflectedComponent<AudioSourceComponent>("AudioSourceComponent");
         collector.AddReflectedComponent<EnvironmentComponent>("EnvironmentComponent");
+        collector.AddReflectedComponent<TerrainComponent>("TerrainComponent");
         collector.AddReflectedComponent<UiImageComponent>("UiImageComponent");
         collector.AddReflectedComponent<UiTextComponent>("UiTextComponent");
         collector.AddReflectedComponent<CameraComponent>("CameraComponent", NormalizeGraphReference);
         collector.AddComponentReader("ScriptComponent", ReadScript);
 
         collector.AddFollower(".material", FollowMaterial);
+        collector.AddFollower(std::string(TERRAIN_EXTENSION), FollowTerrain);
         collector.AddFollower(std::string(GRAPH_EXTENSION), FollowGraph);
         collector.AddFollower(".shader", FollowShader);
         collector.AddFollower(".gltf", FollowGltf);

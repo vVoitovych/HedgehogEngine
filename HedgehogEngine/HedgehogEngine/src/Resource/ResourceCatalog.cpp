@@ -6,6 +6,7 @@
 #include "HedgehogEngine/api/Containers/MaterialContainer.hpp"
 #include "HedgehogEngine/api/Containers/MaterialData.hpp"
 #include "HedgehogEngine/api/Containers/FontContainer.hpp"
+#include "HedgehogEngine/api/Containers/TerrainContainer.hpp"
 
 namespace HedgehogEngine
 {
@@ -15,6 +16,7 @@ namespace HedgehogEngine
         , m_TextureContainer(std::make_unique<TextureContainer>())
         , m_MaterialContainer(std::make_unique<MaterialContainer>())
         , m_FontContainer(std::make_unique<FontContainer>(fileSystem))
+        , m_TerrainContainer(std::make_unique<TerrainContainer>(fileSystem))
     {
     }
 
@@ -45,6 +47,8 @@ namespace HedgehogEngine
     MaterialContainer& ResourceCatalog::GetMaterialContainer() { return *m_MaterialContainer; }
     const FontContainer& ResourceCatalog::GetFontContainer() const { return *m_FontContainer; }
     FontContainer& ResourceCatalog::GetFontContainer() { return *m_FontContainer; }
+    const TerrainContainer& ResourceCatalog::GetTerrainContainer() const { return *m_TerrainContainer; }
+    TerrainContainer& ResourceCatalog::GetTerrainContainer() { return *m_TerrainContainer; }
 
     size_t ResourceCatalog::GetMeshCount() const
     {

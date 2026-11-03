@@ -10,8 +10,9 @@
 // meaning, so plugins built against the old one are refused instead of crashing.
 // 2 (HE-310): ECS::System gained OnPostFixedUpdate. 3 (HE-312): EngineContext gained the physics
 // world and system. 4 (HE-323): EngineContext gained the environment system. 5 (HE-359):
-// AnimatorComponent's runtime state became a blend stack.
-#define HH_PLUGIN_API_VERSION 5u
+// AnimatorComponent's runtime state became a blend stack. 6 (HE-406): EngineContext gained the
+// terrain system and ResourceCatalog the terrain container.
+#define HH_PLUGIN_API_VERSION 6u
 
 namespace HedgehogEngine
 {
