@@ -24,6 +24,7 @@ namespace HP
 namespace HedgehogEngine
 {
     class EventBus;
+    class ResourceCatalog;
 
     // What PhysicsSystem::Raycast reached.
     struct PhysicsRayHit
@@ -42,7 +43,10 @@ namespace HedgehogEngine
 
     // Simulates the colliders (ColliderComponent + TransformComponent) in Play mode through the
     // engine's HP::PhysicsWorld: one body per entity, static without a RigidBodyComponent (or with a
-    // static one), else kinematic or dynamic as it says.
+    // static one), else kinematic or dynamic as it says. Every enabled terrain (the TerrainSystem's
+    // TerrainComponent + TransformComponent entities, whose file loads) without a collider is a static
+    // height-field body too, of its heights at the moment Play starts or the body is made, on its
+    // PhysicsLayer with its Friction.
     //
     // OnPlayStart starts the world from the physics settings when a collider exists (a scene without
     // physics never starts Jolt) and makes the bodies. Each fixed step, in OnPostFixedUpdate, after
@@ -127,16 +131,23 @@ namespace HedgehogEngine
         void ApplySettings(ECS::ECS& ecs);
         void SyncBodies(ECS::ECS& ecs);
         void CreateBody(ECS::ECS& ecs, ECS::Entity entity);
+        void CreateTerrainBody(ECS::ECS& ecs, ECS::Entity entity);
+        // The enabled terrains without a collider whose data loads, appended to out.
+        void CollectTerrains(ECS::ECS& ecs, std::vector<ECS::Entity>& out);
+        // Whether there is anything to simulate: a collider or a terrain.
+        bool HasBodiesToMake(ECS::ECS& ecs);
         void DestroyBodies(ECS::ECS& ecs);
         void WarnRigidBodiesWithoutCollider(ECS::ECS& ecs);
         void WriteBack(ECS::ECS& ecs);
 
         HP::PhysicsWorld* m_World = nullptr;
         EventBus*         m_Bus   = nullptr;
+        ResourceCatalog*  m_Catalog = nullptr; // the terrains' heights
 
         std::unordered_map<ECS::Entity, TrackedBody> m_Bodies;
         std::unordered_set<ECS::Entity>              m_Present;  // scratch: this step's entities
         std::vector<ECS::Entity>                     m_Gone;     // scratch: entities losing a body
+        std::vector<ECS::Entity>                     m_Terrains; // scratch: this step's terrains
         std::vector<HP::BodyHandle>                  m_Active;   // scratch: the awake bodies
         std::vector<HP::ContactEvent>                m_Contacts; // the last step's contact events
         std::unordered_set<ECS::Entity>              m_GoneTriggers; // destroyed since the last publish

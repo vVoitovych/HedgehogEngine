@@ -1,6 +1,11 @@
 #include "HedgehogEngine/api/ECS/systems/PhysicsSystem.hpp"
 #include "Profiler/api/Profiler.hpp"
+#include "HedgehogEngine/api/Containers/TerrainContainer.hpp"
 #include "HedgehogEngine/api/ECS/components/ColliderComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/TerrainComponent.hpp"
+#include "HedgehogEngine/api/ECS/systems/TerrainSystem.hpp"
+#include "HedgehogEngine/api/Resource/ResourceCatalog.hpp"
+#include "HedgehogEngine/api/Terrain/TerrainGeometry.hpp"
 #include "HedgehogEngine/api/ECS/components/RigidBodyComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
 #include "HedgehogEngine/api/Events/EventBus.hpp"
@@ -142,15 +147,17 @@ namespace HedgehogEngine
 
     void PhysicsSystem::OnRegister(ECS::ECS& ecs)
     {
-        m_World = ecs.GetServices().Find<HP::PhysicsWorld>();
-        m_Bus   = ecs.GetServices().Find<EventBus>();
+        m_World   = ecs.GetServices().Find<HP::PhysicsWorld>();
+        m_Bus     = ecs.GetServices().Find<EventBus>();
+        m_Catalog = ecs.GetServices().Find<ResourceCatalog>();
     }
 
     void PhysicsSystem::OnUnregister(ECS::ECS& ecs)
     {
         DestroyBodies(ecs);
-        m_World = nullptr;
-        m_Bus   = nullptr;
+        m_World   = nullptr;
+        m_Bus     = nullptr;
+        m_Catalog = nullptr;
     }
 
     void PhysicsSystem::OnPlayStart(ECS::ECS& ecs)
@@ -159,7 +166,7 @@ namespace HedgehogEngine
         m_WarnedScale.clear();
         WarnRigidBodiesWithoutCollider(ecs);
         ApplySettings(ecs);
-        if (GetEntities().empty() || !StartWorld(ecs))
+        if (!HasBodiesToMake(ecs) || !StartWorld(ecs))
             return;
         SyncBodies(ecs);
     }
@@ -167,8 +174,8 @@ namespace HedgehogEngine
     void PhysicsSystem::OnPostFixedUpdate(ECS::ECS& ecs, float fixedDeltaTime)
     {
         WarnRigidBodiesWithoutCollider(ecs);
-        // A collider added during Play starts the world then.
-        if (GetEntities().empty() && m_Bodies.empty())
+        // A collider or terrain added during Play starts the world then.
+        if (m_Bodies.empty() && !HasBodiesToMake(ecs))
             return;
         if (!StartWorld(ecs))
             return;
@@ -245,6 +252,9 @@ namespace HedgehogEngine
     {
         m_Present.clear();
         m_Present.insert(GetEntities().begin(), GetEntities().end());
+        m_Terrains.clear();
+        CollectTerrains(ecs, m_Terrains);
+        m_Present.insert(m_Terrains.begin(), m_Terrains.end());
 
         // Entities that died, were recycled or lost their collider or transform.
         m_Gone.clear();
@@ -269,6 +279,67 @@ namespace HedgehogEngine
             if (!m_Bodies.contains(entity))
                 CreateBody(ecs, entity);
         }
+        for (const ECS::Entity entity : m_Terrains)
+        {
+            if (!m_Bodies.contains(entity))
+                CreateTerrainBody(ecs, entity);
+        }
+    }
+
+    void PhysicsSystem::CollectTerrains(ECS::ECS& ecs, std::vector<ECS::Entity>& out)
+    {
+        const auto terrains = ecs.GetSystem<TerrainSystem>();
+        if (!terrains || !m_Catalog)
+            return;
+        TerrainContainer& container = m_Catalog->GetTerrainContainer();
+        for (const ECS::Entity entity : terrains->GetEntities())
+        {
+            const TerrainComponent& terrain = ecs.GetComponent<TerrainComponent>(entity);
+            // A collider of its own wins; a file that does not load (logged once) has no heights.
+            if (terrain.Enabled && !ecs.HasComponent<ColliderComponent>(entity) && container.FindOrLoad(terrain.Terrain))
+                out.push_back(entity);
+        }
+    }
+
+    bool PhysicsSystem::HasBodiesToMake(ECS::ECS& ecs)
+    {
+        if (!GetEntities().empty())
+            return true;
+        m_Terrains.clear();
+        CollectTerrains(ecs, m_Terrains);
+        return !m_Terrains.empty();
+    }
+
+    void PhysicsSystem::CreateTerrainBody(ECS::ECS& ecs, ECS::Entity entity)
+    {
+        const TerrainComponent&     terrain   = ecs.GetComponent<TerrainComponent>(entity);
+        TerrainContainer&           container = m_Catalog->GetTerrainContainer();
+        const std::optional<size_t> index     = container.FindOrLoad(terrain.Terrain);
+        if (!index)
+            return;
+        const TerrainData& data = container.GetTerrain(*index);
+        const WorldTransform    world     = ComputeWorldTransform(ecs, entity);
+
+        HP::BodyDesc desc;
+        desc.Shape.Type        = HP::ShapeType::HeightField;
+        desc.Shape.SampleCount = data.Resolution;
+        desc.Shape.CellSize    = GetTerrainSpacing(data);
+        desc.Shape.Heights     = data.Heights;
+        desc.Shape.Scale       = world.Scale;
+        desc.Motion            = HP::MotionType::Static;
+        desc.Pose              = ToBodyPose(world);
+        desc.Layer    = terrain.PhysicsLayer < 0 ? HP::PHYSICS_LAYER_COUNT : static_cast<uint32_t>(terrain.PhysicsLayer);
+        desc.Friction = terrain.Friction;
+        desc.UserData = static_cast<uint64_t>(entity);
+
+        // A refused desc is logged once by the world and kept as a failed body, not retried.
+        const TransformComponent& transform = ecs.GetComponent<TransformComponent>(entity);
+        TrackedBody               tracked;
+        tracked.Generation = ecs.GetGeneration(entity);
+        tracked.Body       = m_World->CreateBody(desc);
+        tracked.Position   = transform.Position;
+        tracked.Rotation   = transform.Rotation;
+        m_Bodies[entity]   = tracked;
     }
 
     void PhysicsSystem::CreateBody(ECS::ECS& ecs, ECS::Entity entity)
@@ -511,8 +582,18 @@ namespace HedgehogEngine
     void PhysicsSystem::RebuildBody(ECS::ECS& ecs, ECS::Entity entity)
     {
         const HP::BodyHandle body = FindBody(entity);
-        if (!body.IsSet() || !ecs.IsAlive(entity) || !ecs.HasComponent<ColliderComponent>(entity))
+        if (!body.IsSet() || !ecs.IsAlive(entity))
             return;
+        if (!ecs.HasComponent<ColliderComponent>(entity))
+        {
+            // A terrain's: made again from its heights as they are now.
+            if (!ecs.HasComponent<TerrainComponent>(entity) || !m_Catalog)
+                return;
+            m_World->DestroyBody(body);
+            m_Bodies.erase(entity);
+            CreateTerrainBody(ecs, entity);
+            return;
+        }
         const HM::Vector3 linear  = m_World->GetLinearVelocity(body);
         const HM::Vector3 angular = m_World->GetAngularVelocity(body);
         m_World->DestroyBody(body);
