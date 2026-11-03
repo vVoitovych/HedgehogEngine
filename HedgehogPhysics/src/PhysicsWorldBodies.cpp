@@ -11,6 +11,7 @@
 #include <Jolt/Physics/Body/BodyLock.h>
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
+#include <Jolt/Physics/Collision/Shape/HeightFieldShape.h>
 #include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
 #include <Jolt/Physics/PhysicsSettings.h>
@@ -27,6 +28,8 @@ namespace HP
     {
         // A non-uniform scale on a sphere or capsule counts as uniform within this.
         constexpr float UNIFORM_SCALE_TOLERANCE = 1e-4f;
+        // The largest error, in metres, Jolt's compression of a height field's samples may make.
+        constexpr float HEIGHT_FIELD_MAX_ERROR = 1e-3f;
 
         JPH::BodyID ToBodyID(BodyHandle handle) { return JPH::BodyID(handle.Value); }
 
@@ -67,6 +70,20 @@ namespace HP
                 if (!IsPositive(shape.Radius) || !std::isfinite(shape.HalfHeight) || shape.HalfHeight < 0.0f)
                     return "a capsule needs a positive radius and a half height of 0 or more";
                 break;
+            case ShapeType::HeightField:
+                if (desc.Motion != MotionType::Static)
+                    return "a height field must be static";
+                if (shape.SampleCount < MIN_HEIGHT_FIELD_SAMPLES)
+                    return "a height field needs at least " + std::to_string(MIN_HEIGHT_FIELD_SAMPLES) + " samples on a side";
+                if (shape.Heights.size() != static_cast<size_t>(shape.SampleCount) * shape.SampleCount)
+                    return "a height field of " + std::to_string(shape.SampleCount) + " samples on a side needs " +
+                           std::to_string(static_cast<size_t>(shape.SampleCount) * shape.SampleCount) + " heights, not " +
+                           std::to_string(shape.Heights.size());
+                if (!IsPositive(shape.CellSize))
+                    return "a height field's cell size must be positive";
+                if (!std::all_of(shape.Heights.begin(), shape.Heights.end(), [](float h) { return std::isfinite(h); }))
+                    return "a height field's heights must be finite";
+                break;
             }
             if (desc.Layer >= PHYSICS_LAYER_COUNT)
                 return "its layer " + std::to_string(desc.Layer) + " is not below " + std::to_string(PHYSICS_LAYER_COUNT);
@@ -86,7 +103,7 @@ namespace HP
             const HM::Vector3 scale   = Abs(shape.Scale);
             const float       largest = std::max({ scale.x(), scale.y(), scale.z() });
             const float       least   = std::min({ scale.x(), scale.y(), scale.z() });
-            if (shape.Type != ShapeType::Box && largest - least > UNIFORM_SCALE_TOLERANCE * largest)
+            if ((shape.Type == ShapeType::Sphere || shape.Type == ShapeType::Capsule) && largest - least > UNIFORM_SCALE_TOLERANCE * largest)
                 LOGWARNING("[Physics] A sphere or capsule cannot be scaled unevenly; it takes its largest scale,", largest, ".");
 
             JPH::Ref<JPH::Shape> base;
@@ -110,6 +127,31 @@ namespace HP
                     base = new JPH::CapsuleShape(shape.HalfHeight * largest, shape.Radius * largest);
                 rotation = JPH::Quat::sRotation(JPH::Vec3::sAxisX(), 0.5f * JPH::JPH_PI);
                 break;
+            case ShapeType::HeightField:
+            {
+                // Jolt's height field is Y-up: its sample (x, y) sits at (x, height, y). Turning its
+                // X to our y, its Y to our z and its Z to our x (a rotation) puts our sample (c, r)
+                // at Jolt's (x = r, y = c), so the samples go in transposed, and Jolt's cell diagonal
+                // from (x, y) to (x + 1, y + 1) is ours from (c, r) to (c + 1, r + 1).
+                const uint32_t     count = shape.SampleCount;
+                std::vector<float> samples(shape.Heights.size());
+                for (uint32_t row = 0; row < count; ++row)
+                    for (uint32_t column = 0; column < count; ++column)
+                        samples[static_cast<size_t>(column) * count + row] = shape.Heights[static_cast<size_t>(row) * count + column];
+                const JPH::Vec3 joltScale(shape.CellSize * scale.y(), scale.z(), shape.CellSize * scale.x());
+                JPH::HeightFieldShapeSettings settings(samples.data(), JPH::Vec3::sZero(), joltScale, count);
+                settings.mBitsPerSample = settings.CalculateBitsPerSampleForError(HEIGHT_FIELD_MAX_ERROR);
+                const JPH::ShapeSettings::ShapeResult result = settings.Create();
+                if (result.HasError())
+                {
+                    LOGERROR("[Physics] A height field cannot be made:", result.GetError().c_str());
+                    return nullptr;
+                }
+                base     = result.Get();
+                rotation = JPH::Mat44(JPH::Vec4(0, 1, 0, 0), JPH::Vec4(0, 0, 1, 0), JPH::Vec4(1, 0, 0, 0),
+                                      JPH::Vec4(0, 0, 0, 1)).GetQuaternion();
+                break;
+            }
             }
 
             const JPH::Vec3 center(shape.Center.x() * scale.x(), shape.Center.y() * scale.y(), shape.Center.z() * scale.z());
@@ -143,7 +185,10 @@ namespace HP
             return {};
         }
 
-        JPH::BodyCreationSettings settings(MakeShape(desc.Shape), JPH::RVec3(ToJolt(desc.Pose.Position)),
+        const JPH::Ref<JPH::Shape> shape = MakeShape(desc.Shape);
+        if (!shape)
+            return {};
+        JPH::BodyCreationSettings settings(shape, JPH::RVec3(ToJolt(desc.Pose.Position)),
                                            ToJolt(desc.Pose.Rotation), ToJolt(desc.Motion),
                                            ToObjectLayer(desc.Layer, desc.Motion != MotionType::Static));
         settings.mIsSensor       = desc.IsSensor;
