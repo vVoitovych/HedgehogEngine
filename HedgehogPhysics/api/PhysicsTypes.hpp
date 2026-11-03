@@ -7,6 +7,7 @@
 
 #include <array>
 #include <cstdint>
+#include <vector>
 
 // Plain data describing a physics world. No Jolt type appears in HedgehogPhysics' headers.
 namespace HP
@@ -31,12 +32,18 @@ namespace HP
     inline constexpr uint32_t DEFAULT_MAX_BODIES = 4096;
     // The most bodies Jolt can address (its BodyID index range).
     inline constexpr uint32_t MAX_BODIES_LIMIT = 1u << 23;
+    // The fewest samples on a side of a height field (Jolt needs two blocks of two).
+    inline constexpr uint32_t MIN_HEIGHT_FIELD_SAMPLES = 4;
 
     enum class ShapeType : uint8_t
     {
         Box,
         Sphere,
         Capsule, // along the body's local +Z, the world's up when the body is not turned
+        // A grid of heights along local +Z (a terrain), on a static body only. Sample (column c,
+        // row r) sits at (c * CellSize, r * CellSize, Heights[r * SampleCount + c]); each cell is
+        // two triangles split along its diagonal from (c, r) to (c + 1, r + 1).
+        HeightField,
     };
 
     // A body's one shape, in the body's local space before its scale.
@@ -47,9 +54,16 @@ namespace HP
         float       Radius      = 0.5f;                          // a sphere's or capsule's
         float       HalfHeight  = 0.5f; // a capsule's cylinder, centre to the centre of an end cap
         HM::Vector3 Center      = HM::Vector3(0.0f, 0.0f, 0.0f); // offset from the body's origin
-        // The entity's world scale, baked into the shape: exact on a box; a sphere or capsule takes
-        // the largest axis (a non-uniform scale is a warning). Negative axes count as positive.
+        // The entity's world scale, baked into the shape: exact on a box and a height field; a
+        // sphere or capsule takes the largest axis (a non-uniform scale is a warning). Negative
+        // axes count as positive.
         HM::Vector3 Scale = HM::Vector3(1.0f, 1.0f, 1.0f);
+
+        // A height field's: SampleCount x SampleCount heights (at least MIN_HEIGHT_FIELD_SAMPLES),
+        // row-major, CellSize apart. Jolt copies them, so they need only live until CreateBody returns.
+        uint32_t           SampleCount = 0;
+        float              CellSize    = 1.0f;
+        std::vector<float> Heights;
     };
 
     enum class MotionType : uint8_t
