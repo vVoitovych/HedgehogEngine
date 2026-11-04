@@ -498,7 +498,24 @@ namespace Editor
 
         constexpr float CLICK_DRAG_PIXELS = 4.0f;
         const ImGuiIO&  io = ImGui::GetIO();
-        if (m_SceneViewHovered && !m_SceneGizmoActive && ImGui::IsMouseReleased(ImGuiMouseButton_Left)
+        // Sculpting: the left button is the brush's, a stroke from a press on the image to its release.
+        m_TerrainBrushPointer.reset();
+        m_TerrainStrokeBegan = false;
+        if (IsTerrainSculpting(context.GetEngineContext()))
+        {
+            if (m_SceneViewHovered && !m_SceneGizmoActive)
+                m_TerrainBrushPointer = ViewportPoint{ (io.MousePos.x - imageMin.x) / imageSize.x,
+                                                       (io.MousePos.y - imageMin.y) / imageSize.y };
+            if (m_TerrainBrushPointer && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+                m_TerrainStrokeBegan = m_TerrainStroke = true;
+        }
+        else
+        {
+            m_TerrainStroke = false;
+        }
+        if (!ImGui::IsMouseDown(ImGuiMouseButton_Left))
+            m_TerrainStroke = false;
+        if (m_SceneViewHovered && !m_SceneGizmoActive && !m_TerrainBrushPointer && ImGui::IsMouseReleased(ImGuiMouseButton_Left)
             && io.MouseDragMaxDistanceSqr[ImGuiMouseButton_Left] < CLICK_DRAG_PIXELS * CLICK_DRAG_PIXELS)
         {
             m_ScenePick = ViewportPoint{ (io.MousePos.x - imageMin.x) / imageSize.x, (io.MousePos.y - imageMin.y) / imageSize.y };
@@ -563,7 +580,11 @@ namespace Editor
         region.Origin          = m_SceneImageMin - m_SceneWindow.Origin;
         region.Size            = m_SceneImageSize;
         region.PixelSize       = m_SceneImageSize; // the camera turns by window pixels, as it always has
-        region.PointerEnabled  = m_SceneViewHovered && !m_SceneGizmoActive; // a handle's drag is not the camera's
+        // A handle's drag is not the camera's, nor is a sculpting stroke (the right and middle drags
+        // still pan, and the wheel dollies, while sculpting).
+        const bool sculptHolds = m_TerrainBrushPointer && !ImGui::IsMouseDown(ImGuiMouseButton_Right) &&
+                                 !ImGui::IsMouseDown(ImGuiMouseButton_Middle);
+        region.PointerEnabled  = m_SceneViewHovered && !m_SceneGizmoActive && (!sculptHolds || ImGui::GetIO().MouseWheel != 0.0f);
         region.KeyboardEnabled = m_SceneViewFocused && !ImGui::GetIO().WantTextInput;
         return region;
     }
