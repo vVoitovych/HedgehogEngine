@@ -17,9 +17,10 @@ namespace Editor
         Lower,   // down likewise
         Smooth,  // towards the average of each sample's neighbours
         Flatten, // towards FlattenHeight, the height where the stroke began
+        Paint,   // the splat towards PaintLayer alone
     };
 
-    inline constexpr const char* TERRAIN_BRUSH_TOOL_NAMES[] = { "Raise", "Lower", "Smooth", "Flatten" };
+    inline constexpr const char* TERRAIN_BRUSH_TOOL_NAMES[] = { "Raise", "Lower", "Smooth", "Flatten", "Paint" };
 
     struct TerrainBrush
     {
@@ -28,6 +29,7 @@ namespace Editor
         float            Strength      = 4.0f; // metres a second for Raise and Lower; how fast the others pull
         float            Falloff       = 0.5f; // the outer fraction of the radius that fades to nothing
         float            FlattenHeight = 0.0f;
+        uint32_t         PaintLayer    = 0; // the layer Paint paints, below TERRAIN_LAYER_COUNT
     };
 
     // The brush's weight at distance from its centre: 1 within (1 - falloff) of the radius, easing
@@ -35,7 +37,10 @@ namespace Editor
     [[nodiscard]] float GetBrushWeight(float distance, float radius, float falloff);
 
     // One frame of a stroke at (x, y) lasting dt seconds: every sample within the radius moves by its
-    // weight, the heights kept in [0, HeightScale]. Whether any height changed.
+    // weight, the heights kept in [0, HeightScale]; Paint instead moves every splat texel within it
+    // towards PaintLayer by Strength * dt * weight of the way, its four weights still summing to 255
+    // (a texel of no weight counts as layer 0, as the shader draws it). Whether any height (Paint:
+    // any splat weight) changed.
     bool ApplyTerrainBrush(HedgehogEngine::TerrainData& data, const TerrainBrush& brush, float x, float y, float dt);
 
     // The brush's outline on the surface: segments points around (x, y) at the radius, each at the
