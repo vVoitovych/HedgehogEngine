@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Tools/Terrain/TerrainBrush.hpp"
 #include "Docking/DockSystem.hpp"
 #include "Docking/WindowPlacement.hpp"
 #include "EditorSettings.hpp"
@@ -39,6 +40,12 @@ namespace HedgehogEngine
 {
     class Engine;
     class EngineContext;
+}
+
+namespace HX
+{
+    struct RenderCamera;
+    struct RenderScene;
 }
 
 namespace Renderer
@@ -137,6 +144,11 @@ namespace Editor
         // Where the scene panel was clicked this frame (pressed and released without dragging the
         // camera), for the application to pick at.
         std::optional<ViewportPoint> GetScenePick() const { return m_ScenePick; }
+        // While sculpting (the selected terrain's Sculpt): the brush under the Scene view's pointer,
+        // a ray from sceneCamera hitting the terrain, drawn as a ring into scene's debug lines, and a
+        // held left button a frame of the stroke (EditorGuiTerrain.cpp).
+        void UpdateTerrainBrush(HedgehogEngine::EngineContext& engineContext, const HX::RenderCamera& sceneCamera,
+                                HX::RenderScene& scene);
 
         std::optional<ECS::Entity> GetSelectedEntity() const { return m_SelectedEntity; }
         void SetSelectedEntity(std::optional<ECS::Entity> entity) { m_SelectedEntity = entity; }
@@ -272,6 +284,9 @@ namespace Editor
         // New terrain...: a default terrain written where the user picks under assets://, named by
         // the entity's terrain component.
         void CreateTerrain(HedgehogEngine::EngineContext& engineContext, ECS::Entity entity);
+        void DrawTerrainBrushFields();
+        // Whether the Scene view sculpts: Sculpt is on in Edit mode, with a selected terrain that loads.
+        bool IsTerrainSculpting(HedgehogEngine::EngineContext& engineContext) const;
         // A registered component with no hand-drawn section: its icon header (enable checkbox,
         // Remove) and reflected rows, its asset field taking a dropped file (m_InspectorAssetDrops).
         // The hook that makes a component's asset field (m_InspectorAssetDrops) a drop target; empty
@@ -390,6 +405,13 @@ namespace Editor
         std::unordered_set<std::string>                        m_HiddenEnabledRows;
         // The terrains (by file key) edited in the inspector since they were last saved.
         std::unordered_set<std::string>                        m_EditedTerrains;
+        // Sculpting: the brush, whether Sculpt is on, the pointer over the Scene image this frame and
+        // whether a stroke (a left press that began on the image) is held.
+        TerrainBrush                 m_TerrainBrush;
+        bool                         m_TerrainSculpt       = false;
+        std::optional<ViewportPoint> m_TerrainBrushPointer;
+        bool                         m_TerrainStroke       = false;
+        bool                         m_TerrainStrokeBegan  = false;
         HA::SoundHandle                   m_PreviewSound;     // the Content panel's audio preview
         std::string                       m_PreviewPath;
 

@@ -450,6 +450,8 @@ namespace Editor
                                                      m_RenderScene);
 
         const Renderer::ViewDesc sceneView = MakeSceneView(engineContext.GetCamera());
+        // The sculpting brush's ring (the Gizmo pass draws debug lines in the Scene view only) and stroke.
+        m_EditorGui->UpdateTerrainBrush(engineContext, *sceneView.Camera, m_RenderScene);
         PickAndHighlight(*sceneView.Camera);
 
         [[maybe_unused]] const bool updated = m_Renderer->UpdateView(m_SceneView, sceneView);

@@ -52,7 +52,9 @@ project "EditorTest"
         "../Tools/Profiler/ProfilerHierarchy.hpp",
         "../Tools/Profiler/ProfilerHierarchy.cpp",
         "../Tools/Terrain/TerrainEditing.hpp",
-        "../Tools/Terrain/TerrainEditing.cpp"
+        "../Tools/Terrain/TerrainEditing.cpp",
+        "../Tools/Terrain/TerrainBrush.hpp",
+        "../Tools/Terrain/TerrainBrush.cpp"
     }
 
     includedirs
