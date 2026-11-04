@@ -42,6 +42,7 @@ namespace Editor
             ExtensionType{ ".prefab",   ContentType::Prefab },
             ExtensionType{ ".hdr",      ContentType::Environment },
             ExtensionType{ ".animctrl", ContentType::AnimatorController },
+            ExtensionType{ ".terrain",  ContentType::Terrain },
         };
 
         constexpr std::string_view SCENE_EXTENSION = ".yaml";
@@ -103,6 +104,7 @@ namespace Editor
         case ContentType::Prefab:            return "PFB";
         case ContentType::Environment:       return "HDR";
         case ContentType::AnimatorController: return "CTL";
+        case ContentType::Terrain:           return "TER";
         case ContentType::Other:             return "?";
         }
         return "?";
@@ -127,6 +129,7 @@ namespace Editor
         case ContentType::Prefab:            return "Prefab";
         case ContentType::Environment:       return "Environment";
         case ContentType::AnimatorController: return "Animator controller";
+        case ContentType::Terrain:           return "Terrain";
         case ContentType::Other:             return "File";
         }
         return "File";

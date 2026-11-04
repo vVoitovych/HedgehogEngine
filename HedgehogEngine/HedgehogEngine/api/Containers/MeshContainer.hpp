@@ -29,7 +29,8 @@ namespace HedgehogEngine
         MeshContainer& operator=(MeshContainer&&)      = delete;
 
         // Loads the meshes MeshSystem listed since the last call: a file each, or, for a
-        // MakeTerrainMeshPath path, the grid of that terrain in terrains (empty without it).
+        // MakeTerrainMeshPath path, the grid of that terrain in terrains as it is now (empty without
+        // it).
         HEDGEHOG_ENGINE_API void Update(const MeshSystem& meshSystem, const FS::FileSystemManager& fileSystem,
                                         TerrainContainer* terrains = nullptr);
 

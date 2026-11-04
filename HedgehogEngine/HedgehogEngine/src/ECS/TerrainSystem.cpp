@@ -54,10 +54,15 @@ namespace HedgehogEngine
         for (const ECS::Entity entity : m_Entities)
         {
             TerrainComponent& terrain = ecs.GetComponent<TerrainComponent>(entity);
-            if (terrain.TerrainIndex < 0 || terrain.MeshIndex >= 0)
+            if (terrain.TerrainIndex < 0)
                 continue;
-            const std::string               path  = MakeTerrainMeshPath(terrains.GetPath(static_cast<size_t>(terrain.TerrainIndex)));
+            // The mesh of the terrain's resolution: one given another resolution is listed again.
+            const size_t                    index = static_cast<size_t>(terrain.TerrainIndex);
+            const std::string               path  = MakeTerrainMeshPath(terrains.GetPath(index), terrains.GetTerrain(index).Resolution);
             const std::vector<std::string>& paths = meshes.GetMeshes();
+            if (terrain.MeshIndex >= 0 && static_cast<size_t>(terrain.MeshIndex) < paths.size() &&
+                paths[static_cast<size_t>(terrain.MeshIndex)] == path)
+                continue;
             const auto                      found = std::find(paths.begin(), paths.end(), path);
             terrain.MeshIndex                     = static_cast<int32_t>(found - paths.begin());
             if (found == paths.end())

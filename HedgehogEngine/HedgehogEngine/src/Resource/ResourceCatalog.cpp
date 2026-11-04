@@ -46,14 +46,14 @@ namespace HedgehogEngine
         {
             if (!HasAny(m_TerrainContainer->GetDirty(terrain), TerrainDirty::Heights))
                 continue;
+            const TerrainData&          data = m_TerrainContainer->GetTerrain(terrain);
             const std::optional<size_t> mesh =
-                m_MeshContainer->FindMesh(MakeTerrainMeshPath(m_TerrainContainer->GetPath(terrain)));
+                m_MeshContainer->FindMesh(MakeTerrainMeshPath(m_TerrainContainer->GetPath(terrain), data.Resolution));
             if (!mesh)
-                continue; // no entity draws it yet
-            // A tile keeps its resolution while it is sculpted, so its grid fits its slot.
-            if (!m_MeshContainer->ReplaceGeometry(*mesh, BuildTerrainMesh(m_TerrainContainer->GetTerrain(terrain))))
-                LOGWARNING("[Terrain]", m_TerrainContainer->GetPath(terrain),
-                           "changed resolution; its mesh keeps its old grid until the scene is opened again.");
+                continue; // no entity draws it yet, or the TerrainSystem lists its new resolution's next
+            // Its resolution is in its mesh's path, so its grid fits its slot.
+            if (!m_MeshContainer->ReplaceGeometry(*mesh, BuildTerrainMesh(data)))
+                LOGWARNING("[Terrain]", m_TerrainContainer->GetPath(terrain), "has heights that do not fit its grid.");
             m_TerrainContainer->ClearDirty(terrain, TerrainDirty::Heights);
         }
     }
