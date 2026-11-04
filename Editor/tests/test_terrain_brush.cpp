@@ -122,3 +122,71 @@ TEST_CASE("Terrain brush - the ring lies on the surface at the radius")
         CHECK(point.z() == doctest::Approx(0.25f * point.x()));
     }
 }
+
+namespace
+{
+    // A 32 m tile whose 32 x 32 splat (1 m texels) is all layer 0.
+    TerrainData MakeSplat()
+    {
+        TerrainData data     = MakeFlat(0.0f);
+        data.SplatResolution = 32;
+        data.Splat.assign(32 * 32 * 4, 0);
+        for (size_t texel = 0; texel < 32 * 32; ++texel)
+            data.Splat[texel * 4] = 255;
+        return data;
+    }
+
+    const uint8_t* Texel(const TerrainData& data, int column, int row) { return &data.Splat[(row * 32 + column) * 4]; }
+
+    int Sum(const uint8_t* weights) { return weights[0] + weights[1] + weights[2] + weights[3]; }
+}
+
+TEST_CASE("Terrain brush - painting moves the texels inside the radius towards the layer, summing to 255")
+{
+    TerrainData  data  = MakeSplat();
+    TerrainBrush brush = Brush(TerrainBrushTool::Paint, 4.0f, 1.0f);
+    brush.PaintLayer   = 2;
+    const std::vector<float> heights = data.Heights;
+    REQUIRE(ApplyTerrainBrush(data, brush, 16.0f, 16.0f, 0.5f));
+    CHECK(data.Heights == heights); // painting leaves the heights alone
+    // Halfway at the centre, nothing at the radius.
+    CHECK(Texel(data, 16, 16)[2] == 128);
+    CHECK(Texel(data, 16, 16)[0] == 127);
+    CHECK(Texel(data, 19, 16)[2] > 0);
+    CHECK(Texel(data, 20, 16)[2] == 0);
+    CHECK(Texel(data, 0, 0)[0] == 255);
+    for (int row = 0; row < 32; ++row)
+        for (int column = 0; column < 32; ++column)
+            REQUIRE(Sum(Texel(data, column, row)) == 255);
+
+    // Held on, the centre becomes the layer alone; another layer then takes it from layer 2.
+    for (int frame = 0; frame < 120; ++frame)
+        ApplyTerrainBrush(data, brush, 16.0f, 16.0f, 1.0f / 60.0f);
+    CHECK(Texel(data, 16, 16)[2] == 255);
+    brush.PaintLayer = 1;
+    REQUIRE(ApplyTerrainBrush(data, brush, 16.0f, 16.0f, 0.5f));
+    CHECK(Texel(data, 16, 16)[1] == 128);
+    CHECK(Texel(data, 16, 16)[2] == 127);
+    CHECK(Sum(Texel(data, 16, 16)) == 255);
+}
+
+TEST_CASE("Terrain brush - painting a blank texel, by the edge, and what changes nothing")
+{
+    TerrainData data = MakeSplat();
+    std::fill(data.Splat.begin(), data.Splat.end(), uint8_t{ 0 }); // no weight draws as layer 0
+    TerrainBrush brush = Brush(TerrainBrushTool::Paint, 3.0f, 100.0f);
+    brush.PaintLayer   = 3;
+    REQUIRE(ApplyTerrainBrush(data, brush, 0.0f, 0.0f, 1.0f));
+    CHECK(Texel(data, 0, 0)[3] == 255);
+    CHECK(Sum(Texel(data, 0, 0)) == 255);
+    CHECK(Sum(Texel(data, 31, 31)) == 0);
+    // Painting a layer already there (a hard 1 m brush on that texel alone), off the tile, a layer
+    // past the last and a zero time.
+    TerrainBrush hard = Brush(TerrainBrushTool::Paint, 1.0f, 100.0f, 0.0f);
+    hard.PaintLayer   = 3;
+    CHECK_FALSE(ApplyTerrainBrush(data, hard, 0.0f, 0.0f, 1.0f));
+    CHECK_FALSE(ApplyTerrainBrush(data, brush, 100.0f, 100.0f, 1.0f));
+    CHECK_FALSE(ApplyTerrainBrush(data, brush, 16.0f, 16.0f, 0.0f));
+    brush.PaintLayer = 4;
+    CHECK_FALSE(ApplyTerrainBrush(data, brush, 16.0f, 16.0f, 1.0f));
+}

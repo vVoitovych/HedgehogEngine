@@ -214,12 +214,20 @@ namespace Editor
             return;
         PropertyLabel("Sculpt");
         ImGui::Checkbox("##Sculpt", &m_TerrainSculpt);
-        ImGui::SetItemTooltip("Left drag in the Scene view sculpts the terrain; right drag still pans the camera.");
+        ImGui::SetItemTooltip("Left drag in the Scene view sculpts or paints the terrain; right drag still pans the camera.");
         ImGui::BeginDisabled(!m_TerrainSculpt);
         PropertyLabel("Tool");
         int tool = static_cast<int>(m_TerrainBrush.Tool);
         if (ImGui::Combo("##Tool", &tool, TERRAIN_BRUSH_TOOL_NAMES, IM_ARRAYSIZE(TERRAIN_BRUSH_TOOL_NAMES)))
             m_TerrainBrush.Tool = static_cast<TerrainBrushTool>(tool);
+        if (m_TerrainBrush.Tool == TerrainBrushTool::Paint)
+        {
+            PropertyLabel("Layer");
+            int layer = static_cast<int>(m_TerrainBrush.PaintLayer);
+            if (ImGui::SliderInt("##PaintLayer", &layer, 0, static_cast<int>(HedgehogEngine::TERRAIN_LAYER_COUNT) - 1))
+                m_TerrainBrush.PaintLayer = static_cast<uint32_t>(layer);
+            ImGui::SetItemTooltip("The layer the brush paints.");
+        }
         PropertyLabel("Radius");
         ImGui::DragFloat("##Radius", &m_TerrainBrush.Radius, 0.1f, 0.5f, 200.0f, "%.1f m");
         PropertyLabel("Strength");
@@ -273,7 +281,8 @@ namespace Editor
         if (m_TerrainStroke &&
             ApplyTerrainBrush(data, m_TerrainBrush, hit->Point.x(), hit->Point.y(), ImGui::GetIO().DeltaTime))
         {
-            terrains.MarkDirty(index, HedgehogEngine::TerrainDirty::Heights);
+            terrains.MarkDirty(index, m_TerrainBrush.Tool == TerrainBrushTool::Paint ? HedgehogEngine::TerrainDirty::Splat
+                                                                                      : HedgehogEngine::TerrainDirty::Heights);
             m_EditedTerrains.insert(terrains.GetPath(index));
         }
 
