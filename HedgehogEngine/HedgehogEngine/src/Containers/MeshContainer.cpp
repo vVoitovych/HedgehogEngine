@@ -40,8 +40,9 @@ namespace HedgehogEngine
             // with MeshSystem::GetMeshes(), and an empty mesh renders nothing.
             if (path.starts_with(TERRAIN_MESH_PREFIX))
             {
+                const std::string_view      key     = GetTerrainMeshKey(path);
                 const std::optional<size_t> terrain =
-                    terrains ? terrains->FindOrLoad(path.substr(TERRAIN_MESH_PREFIX.size())) : std::nullopt;
+                    terrains && !key.empty() ? terrains->FindOrLoad(std::string(key)) : std::nullopt;
                 if (terrain)
                 {
                     TerrainMesh grid = BuildTerrainMesh(terrains->GetTerrain(*terrain));

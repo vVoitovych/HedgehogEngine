@@ -68,8 +68,8 @@ TEST_CASE("Terrain mesh - a terrain's grid is listed and built as a mesh in one 
     REQUIRE(terrain.MeshIndex >= 0);
     const size_t mesh = static_cast<size_t>(terrain.MeshIndex);
     REQUIRE(mesh < world.Meshes().GetMeshCount());
-    CHECK(world.Context.GetMeshSystem()->GetMeshes()[mesh] == "terrain:terrains://Ground.terrain");
-    CHECK(world.Meshes().FindMesh("terrain:terrains://Ground.terrain") == mesh);
+    CHECK(world.Context.GetMeshSystem()->GetMeshes()[mesh] == "terrain:33:terrains://Ground.terrain");
+    CHECK(world.Meshes().FindMesh("terrain:33:terrains://Ground.terrain") == mesh);
 
     const Mesh& grid = world.Meshes().GetMesh(mesh);
     CHECK(grid.GetPositions().size() == 33 * 33);
@@ -118,13 +118,20 @@ TEST_CASE("Terrain mesh - changed heights replace the mesh in place under a new 
     CHECK(grid.GetVertexOffset() == offset);
     CHECK_FALSE(HasAny(world.Terrains().GetDirty(0), TerrainDirty::Heights));
 
-    // Another resolution does not fit the mesh's slot: the mesh keeps its grid.
+    // Another resolution is a mesh of its own, listed and built the next frame; the old one stays.
     data.Resolution = 65;
-    data.Heights.assign(65 * 65, 0.0f);
+    data.Heights.assign(65 * 65, 2.0f);
     world.Terrains().MarkDirty(0, TerrainDirty::Heights);
     world.Frame();
     CHECK(world.Meshes().GetMeshVersion(mesh) == version + 1);
     CHECK(world.Meshes().GetMesh(mesh).GetPositions().size() == 33 * 33);
+    const int32_t resampled = world.Component().MeshIndex;
+    REQUIRE(resampled >= 0);
+    CHECK(resampled != static_cast<int32_t>(mesh));
+    CHECK(world.Meshes().FindMesh("terrain:65:terrains://Ground.terrain") == static_cast<size_t>(resampled));
+    CHECK(world.Meshes().GetMesh(static_cast<size_t>(resampled)).GetPositions().size() == 65 * 65);
+    CHECK(world.Meshes().GetMesh(static_cast<size_t>(resampled)).GetPositions()[0].z() == doctest::Approx(2.0f));
+    CHECK_FALSE(HasAny(world.Terrains().GetDirty(0), TerrainDirty::Heights));
 }
 
 TEST_CASE("Terrain mesh - a terrain that does not load lists no mesh")

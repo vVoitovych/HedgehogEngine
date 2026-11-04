@@ -234,12 +234,14 @@ namespace Editor
             { "RenderComponent", &EditorGui::DrawRenderComponent },
             { "ScriptComponent", &EditorGui::DrawScriptComponent },
             { "AnimatorComponent", &EditorGui::DrawAnimatorComponent },
+            { "TerrainComponent", &EditorGui::DrawTerrainComponent },
         };
         m_InspectorAssetDrops = {
             { "UiTextComponent", { "Font", ContentType::Font, "a .ttf or .otf font" } },
             { "AudioSourceComponent", { "Clip", ContentType::Audio, "a .wav, .mp3 or .flac clip" } },
             { "EnvironmentComponent", { "Map", ContentType::Environment, "an .hdr environment map" } },
             { "AnimatorComponent", { "Controller", ContentType::AnimatorController, "an .animctrl animator controller" } },
+            { "TerrainComponent", { "Terrain", ContentType::Terrain, "a .terrain file" } },
         };
 
         LoadLastScene(context);
@@ -1450,7 +1452,7 @@ namespace Editor
 
     // A registered component's reflected rows under its icon header (its enabled property as the
     // header's checkbox), then any extra rows keyed to it; the header's menu removes it.
-    void EditorGui::DrawRegisteredComponent(HedgehogEngine::Engine& context, const EcsSerialization::ComponentInfo& info)
+    bool EditorGui::DrawRegisteredComponent(HedgehogEngine::Engine& context, const EcsSerialization::ComponentInfo& info)
     {
         auto&             ecs       = context.GetEngineContext().GetECS();
         const ECS::Entity entity    = m_SelectedEntity.value();
@@ -1476,14 +1478,15 @@ namespace Editor
         if (section.RemoveRequested)
         {
             info.Remove(ecs, entity);
-            return;
+            return false;
         }
         if (!section.Open)
-            return;
+            return false;
         const Reflection::PropertyWidgetHook assetDrop = MakeAssetDropHook(info.Key);
         ImGui::PushID(info.Key.c_str());
         Reflection::RenderComponentGui(component, info.Properties, info.Key.c_str(), &assetDrop);
         ImGui::PopID();
+        return true;
     }
 
     // The component's asset field is also where a file of its type is dropped.

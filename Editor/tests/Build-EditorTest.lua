@@ -50,7 +50,9 @@ project "EditorTest"
         "../Tools/Profiler/TimelineView.hpp",
         "../Tools/Profiler/TimelineView.cpp",
         "../Tools/Profiler/ProfilerHierarchy.hpp",
-        "../Tools/Profiler/ProfilerHierarchy.cpp"
+        "../Tools/Profiler/ProfilerHierarchy.cpp",
+        "../Tools/Terrain/TerrainEditing.hpp",
+        "../Tools/Terrain/TerrainEditing.cpp"
     }
 
     includedirs
@@ -74,7 +76,8 @@ project "EditorTest"
         "yaml-cpp",
         "FileSystem",
         "Logger",
-        "Profiler" -- InternName, for the GPU thread's command names
+        "Profiler", -- InternName, for the GPU thread's command names
+        "HedgehogEngine" -- the terrain geometry the terrain editing samples
     }
 
     targetdir (BinariesDir)

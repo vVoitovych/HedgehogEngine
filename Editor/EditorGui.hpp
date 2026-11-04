@@ -266,12 +266,19 @@ namespace Editor
         void DrawCameraGraph(std::string& graphName);
         void DrawScriptComponent(HedgehogEngine::Engine& context);
         void DrawAnimatorComponent(HedgehogEngine::Engine& context);
+        // The generic section, then the loaded terrain's own values (EditorGuiTerrain.cpp).
+        void DrawTerrainComponent(HedgehogEngine::Engine& context);
+        void DrawTerrainData(HedgehogEngine::EngineContext& engineContext, size_t terrain);
+        // New terrain...: a default terrain written where the user picks under assets://, named by
+        // the entity's terrain component.
+        void CreateTerrain(HedgehogEngine::EngineContext& engineContext, ECS::Entity entity);
         // A registered component with no hand-drawn section: its icon header (enable checkbox,
         // Remove) and reflected rows, its asset field taking a dropped file (m_InspectorAssetDrops).
         // The hook that makes a component's asset field (m_InspectorAssetDrops) a drop target; empty
         // for a component without one.
         Reflection::PropertyWidgetHook MakeAssetDropHook(const std::string& componentKey);
-        void DrawRegisteredComponent(HedgehogEngine::Engine& context, const EcsSerialization::ComponentInfo& info);
+        // Whether the section is open with the component still there.
+        bool DrawRegisteredComponent(HedgehogEngine::Engine& context, const EcsSerialization::ComponentInfo& info);
         // The script's property declarations for the inspector, described again only when the
         // file changes on disk; nullptr when there is no script system or no such file.
         const std::vector<HedgehogScripting::ScriptPropertyDeclaration>* FindScriptDeclarations(
@@ -381,6 +388,8 @@ namespace Editor
         std::unordered_map<std::string, InspectorAssetDrop>    m_InspectorAssetDrops;
         // Types whose enabled property's row is already hidden behind the header's checkbox.
         std::unordered_set<std::string>                        m_HiddenEnabledRows;
+        // The terrains (by file key) edited in the inspector since they were last saved.
+        std::unordered_set<std::string>                        m_EditedTerrains;
         HA::SoundHandle                   m_PreviewSound;     // the Content panel's audio preview
         std::string                       m_PreviewPath;
 

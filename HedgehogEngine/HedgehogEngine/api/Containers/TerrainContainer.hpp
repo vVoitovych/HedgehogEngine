@@ -13,13 +13,25 @@
 
 namespace HedgehogEngine
 {
-    // A terrain's mesh is listed with the meshes under this prefix and its file's key, so the
-    // MeshContainer builds it from the TerrainContainer instead of reading a file.
+    // A terrain's mesh is listed with the meshes as terrain:<resolution>:<its file's key>, so the
+    // MeshContainer builds it from the TerrainContainer instead of reading a file, and a terrain
+    // given another resolution is a mesh of its own (meshes are packed back to back, so one cannot
+    // change its vertex count in place).
     inline constexpr std::string_view TERRAIN_MESH_PREFIX = "terrain:";
 
-    [[nodiscard]] inline std::string MakeTerrainMeshPath(const std::string& terrainKey)
+    [[nodiscard]] inline std::string MakeTerrainMeshPath(const std::string& terrainKey, uint32_t resolution)
     {
-        return std::string(TERRAIN_MESH_PREFIX) + terrainKey;
+        return std::string(TERRAIN_MESH_PREFIX) + std::to_string(resolution) + ":" + terrainKey;
+    }
+
+    // The terrain's key a MakeTerrainMeshPath path names; empty for any other path.
+    [[nodiscard]] inline std::string_view GetTerrainMeshKey(std::string_view meshPath)
+    {
+        if (!meshPath.starts_with(TERRAIN_MESH_PREFIX))
+            return {};
+        const std::string_view rest  = meshPath.substr(TERRAIN_MESH_PREFIX.size());
+        const size_t           colon = rest.find(':');
+        return colon == std::string_view::npos ? std::string_view{} : rest.substr(colon + 1);
     }
 
     // What changed in a terrain since the renderer and physics last took it, a bit each.

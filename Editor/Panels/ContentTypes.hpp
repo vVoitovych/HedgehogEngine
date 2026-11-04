@@ -25,6 +25,7 @@ namespace Editor
         Prefab,
         Environment, // an equirectangular .hdr environment map
         AnimatorController, // an .animctrl animator controller
+        Terrain,            // a .terrain tile
         Other,
     };
 
