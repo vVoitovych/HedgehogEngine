@@ -32,6 +32,7 @@ Columns:
 | Mesh | `.obj`, `.gltf`, `.glb` | ContentLoader's `LoadMesh` (tinyobjloader for OBJ, tinygltf); `MeshContainer` | No | assign (onto a mesh, or drop on the hierarchy to make an entity) | Followed from `MeshComponent::MeshPath`; a `.gltf`'s external buffers and images followed |
 | glTF materials | inside `.gltf`/`.glb` | ContentLoader's `LoadGltfMaterials`, written out by `ImportGltfMaterials` | No (an import never overwrites) | create (Import materials in the Content panel's menu, or dropping a glTF on the hierarchy) | As `.material` files, once imported |
 | Animation clips | inside a skinned `.gltf`/`.glb` | ContentLoader's `LoadAnimations`, kept by the `Mesh` | No | preview (the animator's `PreviewTime` in Edit mode), pick (the Clip combo) | With their mesh file |
+| Terrain | `.terrain` (YAML, heights and splat as base64) | `TerrainContainer::FindOrLoad` through `ParseTerrain` (HedgehogEngine), one per file by `FS::MakeAssetKey` | No: an edited tile shows at once, but a file changed on disk is not read again | create (the Terrain section's New terrain...), edit (size, resolution, height scale and layers in the inspector; sculpt and paint in the Scene view; Save terrain), assign (drop on a terrain's `Terrain` field, or open onto the selected one) | Followed from `TerrainComponent::Terrain`; its layers' maps followed in turn |
 | Animator controller | `.animctrl` (YAML) | HedgehogAnimation's `ParseAnimatorController`, cached by `AnimationSystem` | Yes: once a second (`CONTROLLER_POLL_INTERVAL`) | create (New in the editor), edit (Window > Animator Controller, with a `.animctrl.layout` beside it), preview (the active state during Play), assign (drag onto an Animator) | Followed from `AnimatorComponent::Controller` |
 | Script | `.lua` | HedgehogScripting's `ScriptSystem`, through the sandbox's `LoadScriptFile` | Yes: once a second (`RELOAD_POLL_INTERVAL`), also during Play | assign (onto a script component); edited in an outside editor | Followed from `ScriptComponent::ScriptFile` and its AssetRef properties' values (the code itself is not read) |
 | Font | `.ttf`, `.otf` | ContentLoader's `LoadFont` (stb_truetype), baked per size by `FontContainer` | No | assign (onto a UI text) | Followed from `UiTextComponent::Font` |
@@ -92,7 +93,6 @@ it removes a real limit, but there is a workaround. Low: needed only by some gam
 | Medium | **Animation clip** (standalone, and an avatar to retarget) | Clips are tied to the mesh file that holds them. A library of motions shared by several characters needs clips of their own and a mapping between skeletons. | The clip's tracks by joint name; an avatar mapping one skeleton's joints to another's |
 | Medium | **Localisation table** | UI text is written into components in one language. | Keys to strings per language; a UI text names a key |
 | Medium | **Post-process profile** | Exposure lives on the environment; there is no bloom, colour grading, vignette or tone mapping choice to share between scenes. | The tone mapper and its settings, bloom, a colour grading LUT; a camera or volume names one |
-| Low | **Terrain** | Large outdoor ground is now a mesh made elsewhere. | A height map, splat maps of materials, its size; editing tools would follow |
 | Low | **Navigation mesh** | AI has nothing to find paths on. | A baked walkable surface per scene |
 | Low | **Video** | No cutscenes or animated UI from video. | A video file played onto a texture |
 | Low | **Shader graph / material template** | A material can only use the one PBR shader; a custom look needs engine code. | A node graph compiled to a `.shader` a material names |
@@ -198,7 +198,17 @@ Every clip is decoded whole into memory: a three-minute stereo track at 48 kHz t
 | A cooked, prefiltered cube (KTX2) | libktx | Apache-2.0 | Medium | M | The Cooker bakes once and the game loads the result, so a scene with an environment starts without the bake |
 | Cube faces (six images, or a cross) | stb_image | — | Low | S | Skyboxes made as cube maps rather than panoramas |
 
-### 2.7 Scripts and shaders
+### 2.7 Terrain
+
+| Supported | Read by | Notes |
+|-----------|---------|-------|
+| `.terrain` version 1 (`HedgehogEngine/api/Terrain/TerrainData.hpp`) | `ParseTerrain`, strict: every key required | One tile: size, a 2^n + 1 grid of 16-bit heights over [0, HeightScale], an RGBA8 splat of four layers, each layer's base colour, normal map, tiling, metallic and roughness; written byte for byte by `WriteTerrain` |
+
+| Wanted | Library | Licence | Priority | Cost | Why |
+|--------|---------|---------|----------|------|-----|
+| Heightmap import (16-bit PNG or RAW) | stb_image (16-bit PNG) | — | Low | S | Heights made in World Machine, Gaea or a DEM tool |
+
+### 2.8 Scripts and shaders
 
 | Supported | Read by | Notes |
 |-----------|---------|-------|
