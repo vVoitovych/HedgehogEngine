@@ -1,0 +1,173 @@
+Scene name: Terrain
+Scene:
+  - Entity: 0
+    Name: Root
+    Parent: 0
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    Children:
+      - Entity: 1
+        Name: Hills
+        Parent: 0
+        TransformComponent:
+          Position: [-64, -64, 0]
+          Rotation: [0, 0, 0]
+          Scale: [1, 1, 1]
+        TerrainComponent:
+          Enabled: true
+          Terrain: Terrain/Hills.terrain
+          RenderLayer: 0
+          CastShadows: true
+          PhysicsLayer: 0
+          Friction: 0.6
+        Children:
+          []
+      - Entity: 2
+        Name: BoxA
+        Parent: 0
+        TransformComponent:
+          Position: [-6, -20, 20]
+          Rotation: [20, 10, 0]
+          Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/cube.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/test1.material
+          Layer: 0
+        RigidBodyComponent:
+          BodyType: 2
+          Mass: 1
+          LinearDamping: 0.05
+          AngularDamping: 0.05
+          GravityScale: 1
+        ColliderComponent:
+          Shape: 0
+          Center: [0, 0, 0]
+          Size: [2, 2, 2]
+          Radius: 0.5
+          Height: 2
+          IsTrigger: false
+          Layer: 0
+          Friction: 0.5
+          Restitution: 0
+        Children:
+          []
+      - Entity: 3
+        Name: BoxB
+        Parent: 0
+        TransformComponent:
+          Position: [8, -12, 24]
+          Rotation: [0, 30, 15]
+          Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/cube.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/test1.material
+          Layer: 0
+        RigidBodyComponent:
+          BodyType: 2
+          Mass: 1
+          LinearDamping: 0.05
+          AngularDamping: 0.05
+          GravityScale: 1
+        ColliderComponent:
+          Shape: 0
+          Center: [0, 0, 0]
+          Size: [2, 2, 2]
+          Radius: 0.5
+          Height: 2
+          IsTrigger: false
+          Layer: 0
+          Friction: 0.5
+          Restitution: 0
+        Children:
+          []
+      - Entity: 4
+        Name: Ball
+        Parent: 0
+        TransformComponent:
+          Position: [0, -30, 18]
+          Rotation: [0, 0, 0]
+          Scale: [0.39284, 0.39284, 0.39284]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/sphere.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/test2.material
+          Layer: 0
+        RigidBodyComponent:
+          BodyType: 2
+          Mass: 1
+          LinearDamping: 0.05
+          AngularDamping: 0.05
+          GravityScale: 1
+        ColliderComponent:
+          Shape: 1
+          Center: [0, 0.5, 0]
+          Size: [2, 2, 2]
+          Radius: 2.54558
+          Height: 2
+          IsTrigger: false
+          Layer: 0
+          Friction: 0.5
+          Restitution: 0
+        Children:
+          []
+      - Entity: 5
+        Name: Sun
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 0]
+          Rotation: [30, -50, 0]
+          Scale: [1, 1, 1]
+        LightComponent:
+          LightEnabled: true
+          LightType: 0
+          LightColor: [1, 0.96, 0.9]
+          LightIntensity: 1.2
+          LightRadius: 1
+          LightConeAngle: 2
+          CastShadows: true
+        Children:
+          []
+      - Entity: 6
+        Name: Sky
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 0]
+          Rotation: [0, 0, 0]
+          Scale: [1, 1, 1]
+        EnvironmentComponent:
+          Enabled: true
+          Map: Environments/kloofendal_48d_partly_cloudy_puresky_1k.hdr
+          Intensity: 1
+          Rotation: 0
+          ShowSkybox: true
+          Exposure: 0
+        Children:
+          []
+      - Entity: 7
+        Name: MainCamera
+        Parent: 0
+        TransformComponent:
+          Position: [0, -75, 30]
+          Rotation: [72, 0, 0]
+          Scale: [1, 1, 1]
+        CameraComponent:
+          Enabled: true
+          ProjectionType: 0
+          Fov: 60
+          OrthoSize: 10
+          NearPlane: 0.1
+          FarPlane: 1000
+          LayerMask: 4294967295
+          TargetMode: 0
+          TargetName: ""
+          GraphName: game
+          Priority: 0
+        Children:
+          []
