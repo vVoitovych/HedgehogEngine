@@ -31,12 +31,12 @@ namespace Editor
             case ContentType::Audio:             return "sound_icon.png";
             case ContentType::Prefab:            return "prefab_icon.png";
             case ContentType::AnimatorController: return "animation_icon.png";
+            case ContentType::Terrain:           return "terrain_icon.png";
             case ContentType::Pipeline:
             case ContentType::VertexDescription:
             case ContentType::RenderGraph:
             case ContentType::Font:
             case ContentType::Environment:
-            case ContentType::Terrain:
             case ContentType::Other:             return nullptr;
             }
             return nullptr;
