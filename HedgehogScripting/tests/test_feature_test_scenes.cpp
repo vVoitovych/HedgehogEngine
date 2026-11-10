@@ -79,7 +79,6 @@ TEST_CASE("FeatureTest - every scene loads with its project's plugins, reference
         LogCapture log;
         {
             ProjectWorld world(saves.Path());
-            CHECK(world.Context.GetPlugins().IsLoaded("Spinner"));
             const FS::FileSystemManager& files = world.Context.GetFileSystem();
 
             // Every file the scene reaches exists.

@@ -5,7 +5,6 @@
 
 #include "HedgehogEngine/api/ECS/components/LightComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
-#include "HedgehogEngine/api/Plugins/PluginManager.hpp"
 #include "HedgehogEngine/api/Reflection/ComponentMacros.hpp"
 
 #include "EcsSerialization/api/ComponentTypeRegistry.hpp"
@@ -177,26 +176,4 @@ TEST_CASE("Registry component bindings - engine components with their own bindin
     CHECK(world.Ecs().GetComponent<HedgehogEngine::LightComponent>(lamp).Intensity == doctest::Approx(3.0f));
     CHECK(world.Ecs().GetComponent<HedgehogEngine::LightComponent>(lamp).CastShadows);
     CHECK(world.Ecs().GetComponent<HedgehogEngine::TransformComponent>(lamp).Position.z() == doctest::Approx(6.0f));
-}
-
-TEST_CASE("Registry component bindings - a script drives the Spinner plugin's component by key")
-{
-    EngineWorld world;
-    REQUIRE(world.Context.GetPlugins().Load("Spinner"));
-    world.WriteScript("Wind.lua", Script("Wind", R"lua(
-    local spinner = self.entity:addComponent("SpinnerComponent")
-    spinner.Speed = 90
-    spinner.Axis = Vector3(0, 0, 1)
-)lua"));
-    const ECS::Entity wind = world.AddScripted("Scripts/Wind.lua");
-
-    LogCapture log;
-    REQUIRE(world.Context.Play());
-    // The Spinner turns in the Simulation phase, after the scripts' OnStart this frame.
-    for (int i = 0; i < 30; ++i)
-        world.Context.UpdateContext(1.0f, STEP);
-    CHECK(log.Lines("[ERROR]").empty());
-    CHECK(world.Ecs().GetComponent<HedgehogEngine::TransformComponent>(wind).Rotation.z() ==
-          doctest::Approx(45.0f).epsilon(0.05));
-    REQUIRE(world.Stop());
 }

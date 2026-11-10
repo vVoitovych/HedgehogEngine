@@ -168,7 +168,7 @@ TEST_CASE("Project settings - setters mark the settings dirty only when a value 
     CHECK_FALSE(project.IsDirty());
 }
 
-TEST_CASE("Project settings - the shipped Project.yaml loads with Default.yaml as its startup scene and Spinner enabled")
+TEST_CASE("Project settings - the shipped Project.yaml loads with Default.yaml as its startup scene and no plugins")
 {
     // tests/ -> HedgehogSettings/ -> HedgehogEngine/ -> repository root, whose sample project is
     // Projects/FeatureTest.
@@ -184,10 +184,7 @@ TEST_CASE("Project settings - the shipped Project.yaml loads with Default.yaml a
     CHECK(project.GetName() == "FeatureTest");
     CHECK(project.GetStartupScene() == "assets://Scenes/Default.yaml");
     CHECK(project.GetGameDataVersion() == 1);
-    // The sample plugin, enabled.
-    REQUIRE(project.GetPlugins().size() == 1);
-    CHECK(project.GetPlugins()[0].Name == "Spinner");
-    CHECK(project.GetPlugins()[0].Enabled);
+    CHECK(project.GetPlugins().empty());
     CHECK(std::filesystem::is_regular_file(root / "Assets" / "Scenes" / "Default.yaml"));
 }
 
