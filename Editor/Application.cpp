@@ -191,12 +191,6 @@ namespace Editor
         // The main menu bar is the title bar (EditorGui::DrawMainMenu).
         m_Context->GetWindowContext().GetWindow().UseCustomTitleBar();
 
-        // The project's enabled plugins, after the script system and before EditorGui loads the
-        // last scene, so their components read; one that fails is logged and the rest load. Shadow
-        // copies leave each plugin's own DLL free to be rebuilt while the editor runs.
-        engineContext.GetPlugins().SetShadowCopy(true);
-        (void)engineContext.GetPlugins().ApplyProjectPlugins(project);
-
         // Play sessions save into the project's editor folder, so they never overwrite a game's saves.
         if (const auto saves = FS::GetSavesDirectory(project.GetName(), true))
             engineContext.GetSaveGames().SetSaveDirectory(*saves);

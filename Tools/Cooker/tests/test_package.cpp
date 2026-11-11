@@ -14,7 +14,7 @@ using namespace CookTest;
 
 namespace
 {
-    // The fixture project as its own engine (licences beside it) with an enabled plugin, and a
+    // The fixture project as its own engine (licences beside it), and a
     // binaries folder holding what a build leaves there: the game's files and much it must not ship.
     struct PackageFixture : FixtureProject
     {
@@ -22,13 +22,10 @@ namespace
 
         PackageFixture()
         {
-            Project.WriteFile("Project.yaml", "name: Fixture\nstartup_scene: assets://Scenes/Level.yaml\nplugins:\n"
-                                              "  - name: MyPlugin\n    enabled: true\n");
             for (const char* licence : Cooker::LICENCE_FILES)
                 Project.WriteFile(licence, std::string("text of ") + licence);
             for (const char* file : Cooker::GAME_RUNTIME_FILES)
                 Binaries.WriteFile(file, std::string("binary ") + file);
-            Binaries.WriteFile("MyPlugin.dll", "plugin");
             for (const char* other : { "Editor.exe", "Cooker.exe", "CookerTest.exe", "Game.pdb", "Game.ilk",
                                        "HedgehogEngine.lib", "imgui.dll", "DialogueWindows.dll", "Unused.dll" })
                 Binaries.WriteFile(other, "not shipped");
@@ -45,13 +42,12 @@ namespace
         std::vector<std::string> expected = EXPECTED_PACKAGE;
         expected.insert(expected.end(), Cooker::GAME_RUNTIME_FILES.begin(), Cooker::GAME_RUNTIME_FILES.end());
         expected.insert(expected.end(), Cooker::LICENCE_FILES.begin(), Cooker::LICENCE_FILES.end());
-        expected.push_back("MyPlugin.dll");
         std::sort(expected.begin(), expected.end());
         return expected;
     }
 }
 
-TEST_CASE("Package - exactly the closure, Game.exe, the runtime DLLs, the enabled plugins and the licences")
+TEST_CASE("Package - exactly the closure, Game.exe, the runtime DLLs and the licences")
 {
     PackageFixture fixture;
     const Cooker::PackageResult result = Cooker::PackageGame(fixture.Desc());
@@ -60,18 +56,11 @@ TEST_CASE("Package - exactly the closure, Game.exe, the runtime DLLs, the enable
     CHECK(result.Files == ExpectedPackage().size() - 1); // the manifest is written, not packaged
     CHECK(result.Copied == result.Files);
 
-    // A second package copies nothing; a plugin disabled since is removed with its DLL.
+    // A second package copies nothing.
     const Cooker::PackageResult again = Cooker::PackageGame(fixture.Desc());
     REQUIRE(again.Errors.empty());
     CHECK(again.Copied == 0);
     CHECK(again.Unchanged == result.Files);
-
-    fixture.Project.WriteFile("Project.yaml", "name: Fixture\nstartup_scene: assets://Scenes/Level.yaml\nplugins:\n"
-                                              "  - name: MyPlugin\n    enabled: false\n");
-    const Cooker::PackageResult disabled = Cooker::PackageGame(fixture.Desc());
-    REQUIRE(disabled.Errors.empty());
-    CHECK(disabled.Removed == 1);
-    CHECK_FALSE(std::filesystem::exists(fixture.Out.Path() / "MyPlugin.dll"));
 
     // A rebuilt runtime DLL is copied again.
     fixture.Binaries.WriteFile("HedgehogEngine.dll", "rebuilt");

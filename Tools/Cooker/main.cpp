@@ -12,8 +12,7 @@
 // The project is the folder holding Project.yaml, anywhere on disk; the engine (its render graphs
 // and shaders, and the shader sources compiled first) is --engine, by default the engine this
 // Cooker belongs to (the folder holding Engine.yaml above it). The package gets the closure of the startup
-// scene (and of each --scene), the files the engine always loads, the DLLs of the plugins the
-// project enables (from --binaries, by default the Cooker's own folder) and manifest.yaml; a second cook
+// scene (and of each --scene), the files the engine always loads and manifest.yaml; a second cook
 // copies only what changed and removes what is no longer referenced. Stale engine shaders are
 // compiled first. Exits nonzero, naming the file, when a reference is missing or a copy fails.
 
@@ -118,8 +117,8 @@ int main(int argc, char* argv[])
     // The engine the game is built with: the one this Cooker belongs to unless --engine names one.
     const std::filesystem::path engine =
         arguments.Engine ? std::filesystem::absolute(*arguments.Engine) : FS::GetEngineRootDirectory();
-    // Plugin DLLs (and, with --package, Game.exe and the runtime DLLs) come from the folder the
-    // engine was built into, where the Cooker is too.
+    // With --package, Game.exe and the runtime DLLs come from the folder the engine was built
+    // into, where the Cooker is too.
     const std::filesystem::path binaries =
         arguments.Binaries ? std::filesystem::absolute(*arguments.Binaries) : std::filesystem::absolute(argv[0]).parent_path();
     if (arguments.Package)
@@ -137,7 +136,7 @@ int main(int argc, char* argv[])
     if (!Report(shaders.Warnings, shaders.Errors))
         return EXIT_FAILURE;
 
-    const Cooker::CookPlan   plan   = Cooker::BuildCookPlan(project, scenes, binaries, engine);
+    const Cooker::CookPlan   plan   = Cooker::BuildCookPlan(project, scenes, engine);
     const Cooker::CookResult result = Cooker::CookPackage(plan, out);
     if (!Report({}, result.Errors))
         return EXIT_FAILURE;

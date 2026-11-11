@@ -105,7 +105,7 @@ namespace Cooker
     }
 
     CookPlan BuildCookPlan(const std::filesystem::path& projectRoot, const std::vector<std::string>& extraScenes,
-                           const std::filesystem::path& binariesDir, const std::filesystem::path& engineRoot)
+                           const std::filesystem::path& engineRoot)
     {
         CookPlan plan;
 
@@ -174,22 +174,6 @@ namespace Cooker
                 unique.push_back(file);
         plan.Files = std::move(unique);
 
-        // The enabled plugins' DLLs, at the package root where the engine looks for them.
-        for (const HedgehogSettings::PluginEntry& plugin : project.GetPlugins())
-        {
-            if (!plugin.Enabled)
-                continue;
-            const std::filesystem::path dll = binariesDir / (plugin.Name + ".dll");
-            std::error_code             error;
-            if (binariesDir.empty() || !std::filesystem::is_regular_file(dll, error))
-            {
-                plan.Errors.push_back("The plugin '" + plugin.Name + "' is enabled, but " +
-                                      (binariesDir.empty() ? std::string("no binaries folder was given")
-                                                           : dll.string() + " does not exist") + ".");
-                continue;
-            }
-            plan.Files.push_back({ PLUGIN_PATH_PREFIX + plugin.Name, dll, dll.filename() });
-        }
         return plan;
     }
 

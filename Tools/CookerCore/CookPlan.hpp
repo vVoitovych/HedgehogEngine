@@ -36,24 +36,15 @@ namespace Cooker
     // cannot be read, a project without a startup scene and a path that cannot be packaged are
     // errors naming the file.
     //
-    // Each plugin Project.yaml enables is packaged too: <binariesDir>/<name>.dll at the package
-    // root, beside Game.exe and HedgehogEngine.dll, where the engine looks for plugins (virtual
-    // path "plugin:<name>"). An enabled plugin whose DLL is not there is an error naming it, so a
-    // package never ships without one; a disabled plugin is not packaged.
-    //
     // engine:// files (the render graphs and their shaders) come from engineRoot, the engine the
     // game is built with; empty means the project root, as in the dev tree today. engine://X and
     // project://X both land at X, so two different files with one target are an error naming both.
     [[nodiscard]] CookPlan BuildCookPlan(const std::filesystem::path& projectRoot, const std::vector<std::string>& extraScenes = {},
-                                         const std::filesystem::path& binariesDir = {},
-                                         const std::filesystem::path& engineRoot  = {});
+                                         const std::filesystem::path& engineRoot = {});
 
     // Every scene directly in the project's Assets/Scenes folder, as assets://Scenes/<file>.yaml,
     // sorted: what a package of all its scenes cooks beside the startup scene.
     [[nodiscard]] std::vector<std::string> ListProjectScenes(const std::filesystem::path& projectRoot);
-
-    // The prefix of a plugin DLL's CookFile::VirtualPath.
-    constexpr const char* PLUGIN_PATH_PREFIX = "plugin:";
 
     struct CookResult
     {
