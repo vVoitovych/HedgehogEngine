@@ -66,7 +66,7 @@ namespace Profiling
 
     // A zone name that lives as long as the process, for names made at run time (a system's type,
     // a render-graph pass, a script): the same text always gives the same pointer. Recorded frames
-    // hold names, so a name must outlive whatever it came from (a plugin's DLL, a frame's graph).
+    // hold names, so a name must outlive whatever it came from (a frame's graph).
     [[nodiscard]] PROFILER_API const char* InternName(std::string_view name);
 
     // Opens a zone on this thread, returning whether it is recorded (false while disabled, or for a

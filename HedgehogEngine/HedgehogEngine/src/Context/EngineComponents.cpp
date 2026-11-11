@@ -24,7 +24,6 @@
 #include "HedgehogEngine/api/Scene/ScriptComponentSerializer.hpp"
 
 #include "EcsSerialization/api/ComponentTypeRegistry.hpp"
-#include "EcsSerialization/api/UnknownComponents.hpp"
 
 #include "ECS/api/ECS.hpp"
 #include "ECS/api/components/Hierarchy.hpp"
@@ -142,14 +141,6 @@ namespace HedgehogEngine
         registered &= types.RegisterCustom<ScriptComponent>(
             ComponentDesc{ .Key = "ScriptComponent", .DisplayName = "Script", .SortOrder = 50, .Icon = "script" },
             RegisterScriptComponentSerializer);
-        // Keeps the data of components no registered type reads (a plugin that is not loaded), so
-        // scenes, snapshots and saves write it back unchanged. The scene serializer writes it.
-        registered &= types.RegisterUnserialized<EcsSerialization::UnknownComponentsComponent>(
-            ComponentDesc{ .Key         = EcsSerialization::UNKNOWN_COMPONENTS_KEY,
-                           .DisplayName = "Unknown components",
-                           .Addable     = false,
-                           .Removable   = false,
-                           .Inspectable = false });
         assert(registered && "RegisterEngineComponents: an engine component type was refused.");
         (void)registered;
     }

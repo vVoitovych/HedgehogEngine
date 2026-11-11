@@ -1,5 +1,6 @@
 #pragma once
 
+#include "EcsSerializationApi.hpp"
 #include "ECS/api/ECS.hpp"
 #include "ECS/api/Entity.hpp"
 #include "HedgehogMath/api/Vector.hpp"
@@ -175,6 +176,10 @@ namespace EcsSerialization
         std::function<void(YAML::Node&, const EntityRemap&)>              RemapYaml;
     };
 
+    // Whether key is one an entity node uses for itself (Entity, Name, Parent, Children, and a prefab
+    // instance's Prefab, Entities, Overrides and PrefabOrigin) rather than for a component.
+    [[nodiscard]] ECS_SERIALIZATION_API bool IsReservedEntityKey(std::string_view key);
+
     class ComponentSerializerRegistry
     {
     public:
@@ -273,12 +278,6 @@ namespace EcsSerialization
         }
 
         const std::vector<ComponentHandler>& GetHandlers() const { return m_Handlers; }
-
-        // Removes the handler writing key; false when there is none.
-        bool Unregister(std::string_view key)
-        {
-            return std::erase_if(m_Handlers, [key](const ComponentHandler& handler) { return handler.YamlKey == key; }) > 0;
-        }
 
         // The handler writing key, or nullptr.
         [[nodiscard]] const ComponentHandler* FindHandler(std::string_view key) const
