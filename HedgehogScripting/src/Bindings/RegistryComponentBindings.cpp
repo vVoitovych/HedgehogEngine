@@ -24,9 +24,8 @@ namespace HedgehogScripting::Bindings
         using Reflection::PropertyDescriptor;
         using Reflection::TypeTag;
 
-        // A component reached by its registry key, as plugins' components are: the entity's handle
-        // and the key only. Every access looks the type, the component and the property up again,
-        // so nothing of a plugin's (which may unload) is ever kept.
+        // A component reached by its registry key: the entity's handle and the key only. Every
+        // access looks the type, the component and the property up again, so nothing is kept.
         struct RegistryComponentRef
         {
             ScriptEntity Entity;

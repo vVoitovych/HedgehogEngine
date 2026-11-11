@@ -14,8 +14,7 @@ namespace ECS
     namespace
     {
         // A system's zone name: its class name without its namespaces ("TransformSystem"), looked up
-        // only while the profiler records (by the type's name, which a plugin's unloaded type no
-        // longer needs to outlive: the names are interned).
+        // only while the profiler records (the names are interned).
         const char* ZoneName(const System& system)
         {
             if (!Profiling::IsEnabled())
