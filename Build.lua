@@ -92,10 +92,6 @@ include "HedgehogAnimation/Build-HedgehogAnimation.lua"
 
 include "HedgehogUI/Build-HedgehogUI.lua"
 
-group "Plugins"
-   include "Plugins/TestPlugin/Build-HedgehogTestPlugin.lua"
-group ""
-
 include "HedgehogInput/Build-HedgehogInput.lua"
 
 
