@@ -10,11 +10,6 @@
 #include <unordered_map>
 #include <vector>
 
-namespace HedgehogSettings
-{
-    class ProjectSettings;
-}
-
 namespace HedgehogEngine
 {
     class EngineContext;
@@ -81,12 +76,6 @@ namespace HedgehogEngine
         // again. Returns how many reloaded. The Editor calls it every frame.
         static constexpr std::chrono::milliseconds RELOAD_POLL_INTERVAL{ 1000 };
         HEDGEHOG_ENGINE_API size_t ReloadChangedPlugins(std::chrono::steady_clock::time_point now);
-
-        // Makes the loaded plugins the project's enabled ones: unloads, last loaded first, those no
-        // longer listed or disabled, then loads, in list order, the enabled ones not loaded. A
-        // plugin that fails is logged and the rest go on (a scene's data of a missing plugin stays
-        // kept as unknown components). Returns how many failed.
-        HEDGEHOG_ENGINE_API size_t ApplyProjectPlugins(const HedgehogSettings::ProjectSettings& project);
 
         [[nodiscard]] HEDGEHOG_ENGINE_API std::vector<LoadedPlugin> GetLoaded() const;
         [[nodiscard]] HEDGEHOG_ENGINE_API bool IsLoaded(const std::string& name) const;

@@ -4,7 +4,7 @@ REM Package a project as a playable game folder: Build\<ProjectName>\
 REM Usage: PackageGame.bat [project folder]   (default: Projects\FeatureTest)
 REM
 REM Builds Release, then has Cooker.exe --package make the folder: the project's
-REM referenced assets, its plugins, Game.exe and the DLLs it loads (no editor, test or
+REM referenced assets, Game.exe and the DLLs it loads (no editor, test or
 REM ImGui binaries, no .pdb) and LICENSE.txt with THIRD_PARTY_NOTICES.md; then copies
 REM the package to a temporary folder and runs Game.exe --frames 120 there as a check.
 REM Exits nonzero if any step or the check fails. The package
@@ -43,7 +43,7 @@ if errorlevel 1 goto :fail
 
 echo === Packaging the game ===
 REM Cooker.exe --package (CookerCore's PackageGame): the assets of every scene of the project
-REM (--all-scenes, as File > Build Game... packages it), its enabled plugins,
+REM (--all-scenes, as File > Build Game... packages it),
 REM Game.exe and the runtime DLLs, the licences, and the check that nothing of the editor, the
 REM tests or the sources ships.
 "%BIN%\Cooker.exe" --project "%PROJECT%" --out "%OUT%" --binaries "%BIN%" --engine "%ROOT%" --package --all-scenes

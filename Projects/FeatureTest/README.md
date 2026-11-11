@@ -20,8 +20,8 @@ project the dev tree opens when none is named (`Editor.exe`, `--game-mode`, `--b
 | `benchmark.yaml` | The renderer benchmark: a 5×5 grid of DamagedHelmets with their imported material (`Editor.exe --benchmark`, see `PERFORMANCE.md`). |
 | `test.yaml` | A small mesh-and-material test scene. |
 
-Every scene here is played by ScriptingTest's `test_feature_test_scenes.cpp`: it loads with the
-project's plugins, references only files that exist, plays 120 frames without an error or warning,
+Every scene here is played by ScriptingTest's `test_feature_test_scenes.cpp`: it loads, references only files that\r
+exist, plays 120 frames without an error or warning,
 and Stop restores it. A scene added to `Assets/Scenes` is covered with no change to the test.
 
 Try one with `Binaries\windows-x86_64\Debug\Editor.exe --game-mode 600 Audio.yaml`, or open it in

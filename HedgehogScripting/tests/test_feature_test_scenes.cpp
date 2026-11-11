@@ -6,7 +6,6 @@
 
 #include "HedgehogEngine/api/Assets/EngineAssetDependencies.hpp"
 #include "HedgehogEngine/api/EngineContext.hpp"
-#include "HedgehogEngine/api/Plugins/PluginManager.hpp"
 #include "HedgehogEngine/api/Save/SaveGameManager.hpp"
 #include "HedgehogEngine/api/Scene/SceneManager.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/HedgehogSettings.hpp"
@@ -43,7 +42,7 @@ namespace
     }
 
     // The engine as the Editor and game mode set it up for the project: its settings and project
-    // read, the script system registered, its plugins loaded, audio without a device and saves
+    // read, the script system registered, audio without a device and saves
     // into a temp folder.
     struct ProjectWorld
     {
@@ -54,7 +53,6 @@ namespace
             auto& project = Context.GetSettings().GetProjectSettings();
             REQUIRE(project.Load(HedgehogSettings::ProjectSettings::PATH, files));
             Scripts = HedgehogScripting::RegisterScriptSystem(Context, files);
-            CHECK(Context.GetPlugins().ApplyProjectPlugins(project) == 0);
             HA::AudioEngineDesc audio;
             audio.NoDevice = true;
             REQUIRE(Context.GetAudioEngine().Init(audio));
@@ -66,7 +64,7 @@ namespace
     };
 }
 
-TEST_CASE("FeatureTest - every scene loads with its project's plugins, references only existing files, plays and is "
+TEST_CASE("FeatureTest - every scene loads with its project, references only existing files, plays and is "
           "restored by Stop")
 {
     const std::vector<std::string> scenes = ListScenes();

@@ -27,8 +27,6 @@ project "EditorTest"
         "../Widgets/AxisGizmo.cpp",
         "../Widgets/TransformGizmoMath.hpp",
         "../Widgets/TransformGizmoMath.cpp",
-        "../Tools/PluginNameCheck.hpp",
-        "../Tools/PluginNameCheck.cpp",
         "../Project/RecentProjects.hpp",
         "../Project/RecentProjects.cpp",
         "../Project/StartupProject.hpp",

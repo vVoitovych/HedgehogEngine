@@ -4,8 +4,6 @@
 #include "HedgehogEngine/api/Plugins/PluginApi.hpp"
 #include "HedgehogEngine/api/Plugins/PluginRegistrar.hpp"
 
-#include "HedgehogSettings/api/ProjectSettings.hpp"
-
 #include "Logger/api/Logger.hpp"
 
 #include <algorithm>
@@ -23,6 +21,13 @@ namespace HedgehogEngine
             std::transform(text.begin(), text.end(), text.begin(),
                            [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
             return text;
+        }
+
+        // 1 to 64 of A-Z, a-z, 0-9, '_' and '-': a DLL's file name without its extension.
+        bool IsValidPluginName(const std::string& name)
+        {
+            return !name.empty() && name.size() <= 64 &&
+                   std::all_of(name.begin(), name.end(), [](unsigned char c) { return std::isalnum(c) || c == '_' || c == '-'; });
         }
 
         bool SameName(const std::string& a, const std::string& b)
@@ -82,7 +87,7 @@ namespace HedgehogEngine
             LOGERROR("[Plugin] " + name + ": it is already loaded.");
             return false;
         }
-        if (!HedgehogSettings::ProjectSettings::IsValidPluginName(name))
+        if (!IsValidPluginName(name))
             return Fail(name, "it is not a plugin name (1 to 64 of A-Z, a-z, 0-9, _ and -)");
 
         auto plugin    = std::make_unique<Plugin>();
@@ -252,36 +257,6 @@ namespace HedgehogEngine
             m_Plugins.pop_back();
             UnloadPlugin(*plugin);
         }
-    }
-
-    size_t PluginManager::ApplyProjectPlugins(const HedgehogSettings::ProjectSettings& project)
-    {
-        const std::vector<HedgehogSettings::PluginEntry>& entries = project.GetPlugins();
-        const auto isEnabled = [&entries](const std::string& name)
-        {
-            return std::any_of(entries.begin(), entries.end(), [&name](const HedgehogSettings::PluginEntry& entry)
-                               { return entry.Enabled && SameName(entry.Name, name); });
-        };
-
-        // A plugin no longer wanted is not loaded again when its DLL is rebuilt.
-        std::erase_if(m_FailedReloads, [&isEnabled](const FailedReload& entry) { return !isEnabled(entry.Name); });
-
-        size_t failed = 0;
-        std::vector<std::string> unwanted;
-        for (auto plugin = m_Plugins.rbegin(); plugin != m_Plugins.rend(); ++plugin)
-        {
-            if (!isEnabled((*plugin)->Name))
-                unwanted.push_back((*plugin)->Name);
-        }
-        for (const std::string& name : unwanted)
-            failed += Unload(name) ? 0 : 1;
-
-        for (const HedgehogSettings::PluginEntry& entry : entries)
-        {
-            if (entry.Enabled && !IsLoaded(entry.Name))
-                failed += Load(entry.Name) ? 0 : 1;
-        }
-        return failed;
     }
 
     void PluginManager::UnloadPlugin(Plugin& plugin)

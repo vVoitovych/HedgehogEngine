@@ -45,7 +45,7 @@ namespace Cooker
         std::filesystem::path    ProjectRoot; // the folder holding Project.yaml
         std::filesystem::path    EngineRoot;  // the engine the game is built with
         std::filesystem::path    OutDir;      // the package folder
-        std::filesystem::path    BinariesDir; // Game.exe, the runtime DLLs and the plugins' DLLs
+        std::filesystem::path    BinariesDir; // Game.exe and the runtime DLLs
         std::vector<std::string> ExtraScenes; // virtual paths cooked beside the startup scene
         std::filesystem::path    Glslc;       // empty: the engine's own
         bool                     AllScenes = false; // every scene of Assets/Scenes too (ListProjectScenes)
@@ -65,8 +65,7 @@ namespace Cooker
     // Makes OutDir a playable game: compiles stale engine shaders, builds the cook plan with
     // GAME_RUNTIME_FILES from BinariesDir and LICENCE_FILES from EngineRoot added (a missing one is
     // an error naming it), cooks it incrementally (the manifest covers every file, so a second
-    // package copies only what changed and removes what is gone, a disabled plugin's DLL
-    // included), then refuses a package holding anything FindForbiddenPackageFiles finds. Any
+    // package copies only what changed and removes what is gone), then refuses a package holding anything FindForbiddenPackageFiles finds. Any
     // error before the cook leaves OutDir as it was.
     [[nodiscard]] PackageResult PackageGame(const PackageDesc& desc);
 

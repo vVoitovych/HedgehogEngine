@@ -57,7 +57,6 @@ TEST_CASE("Project template - the shipped Empty template is a valid project")
     REQUIRE(std::filesystem::is_regular_file(TEMPLATE / "Project.yaml"));
     const ProjectSettings project = LoadProject(TEMPLATE);
     CHECK(project.GetStartupScene() == "assets://Scenes/Main.yaml");
-    CHECK(project.GetPlugins().empty());
     for (const char* file : { "engine_settings.yaml", "Assets/Scenes/Main.yaml", "Assets/Materials/Default.material",
                               "Assets/Input/actions.yaml" })
         CHECK(std::filesystem::is_regular_file(TEMPLATE / file));
