@@ -32,9 +32,6 @@ project "HedgehogEngineTest"
         "Profiler"
     }
 
-    -- The plugin DLLs the tests open at runtime; nothing links them, so they are build dependencies.
-    dependson { "HedgehogTestPlugin" }
-
     targetdir (BinariesDir)
     objdir    (IntermediatesDir)
 
