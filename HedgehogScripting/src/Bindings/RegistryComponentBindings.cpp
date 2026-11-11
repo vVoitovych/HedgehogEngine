@@ -59,7 +59,7 @@ namespace HedgehogScripting::Bindings
         {
             const ComponentInfo* info = context.GetComponentTypes().Find(key);
             if (info == nullptr)
-                throw std::runtime_error("component type '" + key + "' is not registered (is its plugin loaded?)");
+                throw std::runtime_error("component type '" + key + "' is not registered");
             return *info;
         }
 

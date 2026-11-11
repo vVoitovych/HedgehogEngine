@@ -18,7 +18,7 @@ namespace
 {
     constexpr float STEP = 1.0f / 60.0f;
 
-    // A component no hand-written binding knows, as a plugin's would be: one property of each kind.
+    // A component no hand-written binding knows: one property of each kind.
 HH_BEGIN_COMPONENT(TestGadget)
     HH_PROP(float, Speed, 1.0f, None)
     HH_PROP(double, Precise, 0.5, None)
@@ -127,30 +127,6 @@ TEST_CASE("Registry component bindings - wrong values, unknown properties and re
         REQUIRE(world.Stop());
         world.Context.GetSceneManager().DeleteGameObject(bad);
     }
-}
-
-TEST_CASE("Registry component bindings - once the type is unregistered, a held proxy is one error and others run on")
-{
-    EngineWorld world;
-    RegisterGadget(world);
-    world.WriteScript("Holder.lua", Script("Holder", "    self.g = self.entity:addComponent(\"TestGadget\")",
-                                           "    print(\"speed \" .. self.g.Speed)"));
-    world.WriteScript("Bystander.lua", Script("Bystander", "", "    print(\"still here\")"));
-    (void)world.AddScripted("Scripts/Holder.lua");
-    (void)world.AddScripted("Scripts/Bystander.lua");
-
-    LogCapture log;
-    REQUIRE(world.Context.Play());
-    world.Frame(STEP);
-    CHECK(log.Lines("speed 1.0").size() == 1);
-
-    // As when its plugin unloads (the proxy kept nothing of it).
-    REQUIRE(world.Context.GetComponentTypes().Unregister("TestGadget"));
-    world.Frame(STEP);
-    world.Frame(STEP);
-    CHECK(log.Lines("[ERROR]").size() == 1);
-    CHECK(log.Lines("component type 'TestGadget' is not registered").size() == 1);
-    CHECK(log.Lines("still here").size() == 3);
 }
 
 TEST_CASE("Registry component bindings - engine components with their own bindings are handed out as those")

@@ -1,7 +1,6 @@
 #include "api/EcsSerializer.hpp"
 #include "api/ComponentSerializerRegistry.hpp"
 #include "api/Prefab/OverrideSet.hpp"
-#include "api/UnknownComponents.hpp"
 
 #include "ECS/api/components/Hierarchy.hpp"
 
@@ -40,47 +39,20 @@ namespace
         std::set<std::string> Warned;
     };
 
-    // Keeps the components of an entity node that no handler reads in its UnknownComponentsComponent,
-    // in document order, when the ECS has that type; drops them otherwise. Warns once per key.
-    void KeepUnknownComponents(ECS::ECS& ecs, ECS::Entity entity, const YAML::Node& node,
-                               const ComponentSerializerRegistry& registry, UnknownKeys& unknown)
+    // Warns, once per key per document, about the components of an entity node that no handler
+    // reads; their data is dropped.
+    void WarnUnknownComponents(const YAML::Node& node, const ComponentSerializerRegistry& registry, UnknownKeys& unknown)
     {
         if (!node.IsMap())
             return;
-        const bool                 keep = ecs.IsComponentRegistered<UnknownComponentsComponent>();
-        UnknownComponentsComponent kept;
         for (const auto& item : node)
         {
             const std::string key = item.first.as<std::string>();
             if (IsReservedEntityKey(key) || registry.FindHandler(key) != nullptr)
                 continue;
             if (unknown.Warned.insert(key).second)
-            {
-                LOGWARNING("[Scene] " + unknown.SourceName + ": component '" + key +
-                           "' has no registered type (is its plugin loaded?); its data is " + (keep ? "kept." : "dropped."));
-            }
-            if (keep)
-            {
-                YAML::Emitter value;
-                value << item.second;
-                kept.Entries.push_back(UnknownComponent{ key, value.c_str() });
-            }
+                LOGWARNING("[Scene] " + unknown.SourceName + ": component '" + key + "' has no registered type; its data is dropped.");
         }
-        if (kept.Entries.empty())
-            return;
-        if (ecs.HasComponent<UnknownComponentsComponent>(entity))
-            ecs.GetComponent<UnknownComponentsComponent>(entity) = std::move(kept);
-        else
-            ecs.AddComponent(entity, std::move(kept));
-    }
-
-    // Writes an entity's kept unknown components back, after the known ones.
-    void WriteUnknownComponents(YAML::Emitter& out, const ECS::ECS& ecs, ECS::Entity entity)
-    {
-        if (!ecs.IsComponentRegistered<UnknownComponentsComponent>() || !ecs.HasComponent<UnknownComponentsComponent>(entity))
-            return;
-        for (const UnknownComponent& component : ecs.GetComponent<UnknownComponentsComponent>(entity).Entries)
-            out << YAML::Key << component.Key << YAML::Value << YAML::Load(component.Yaml);
     }
 
     // The id written for an entity of the hierarchy: itself in a scene, its local id in a subtree.
@@ -176,7 +148,6 @@ namespace
             if (handler.HasComponent(ecs, entity))
                 handler.Serialize(out, ecs, entity);
         }
-        WriteUnknownComponents(out, ecs, entity);
 
         out << YAML::Key << "Children" << YAML::Value << YAML::BeginSeq;
         for (ECS::Entity child : hierarchy.Children)
@@ -315,7 +286,7 @@ namespace
             if (componentNode)
                 handler.Deserialize(ecs, entity, componentNode);
         }
-        KeepUnknownComponents(ecs, entity, node, registry, load.Unknown);
+        WarnUnknownComponents(node, registry, load.Unknown);
 
         auto& hierarchy    = ecs.GetComponent<ECS::HierarchyComponent>(entity);
         hierarchy.Name   = node["Name"].as<std::string>();
@@ -396,7 +367,7 @@ namespace
             if (componentNode)
                 handler.Deserialize(ecs, entity, componentNode);
         }
-        KeepUnknownComponents(ecs, entity, node, registry, unknown);
+        WarnUnknownComponents(node, registry, unknown);
 
         auto& hierarchy  = ecs.GetComponent<ECS::HierarchyComponent>(entity);
         hierarchy.Name   = node["Name"].as<std::string>();
