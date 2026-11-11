@@ -124,15 +124,4 @@ extern "C" __declspec(dllexport) int HedgehogTestPluginGetEventCount()
     return g_Service.PluginEvents;
 }
 
-#if defined(HH_TEST_PLUGIN_OLD_API)
-// What an older engine's HH_PLUGIN wrote: plugin API version 0.
-extern "C" __declspec(dllexport) const HedgehogEngine::HedgehogPluginInfo* HedgehogPluginEntry()
-{
-    static const HedgehogEngine::HedgehogPluginInfo info{
-        0, HedgehogEngine::GetCompilerVersion(), HedgehogEngine::GetDebugBuild(), "HedgehogTestPluginOldApi", "0.9.0", &Register, nullptr
-    };
-    return &info;
-}
-#else
 HH_PLUGIN("HedgehogTestPlugin", "1.0.0", &Register, nullptr)
-#endif
