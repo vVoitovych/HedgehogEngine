@@ -22,10 +22,8 @@ namespace HedgehogEngine
     // added during a publish first runs on the next one, and one removed during a publish is not
     // called again, not even later in the same publish.
     //
-    // Channels are one concrete, non-virtual type that stores handlers type-erased, so no code of
-    // the module that first used an event (a plugin DLL) stays in the bus: once a subscriber has
-    // unsubscribed, its module may be unloaded. They are keyed by a copy of the event type's name,
-    // not a std::type_index, which would point into the type_info of that module.
+    // Channels are one concrete, non-virtual type that stores handlers type-erased, keyed by a
+    // copy of the event type's name.
     class EventBus
     {
     public:
@@ -83,19 +81,6 @@ namespace HedgehogEngine
             return count;
         }
 
-        // The live handlers whose callable's type matches. A handler's wrapper is instantiated by
-        // the module that subscribed it, so the address of its type_info tells which module that
-        // was: the plugin manager counts what an unloaded plugin left behind with it.
-        [[nodiscard]] size_t CountSubscribersWhere(const std::function<bool(const std::type_info&)>& matches) const
-        {
-            size_t count = 0;
-            for (const auto& channel : m_Channels)
-            {
-                count += channel.second.CountSubscribersWhere(matches);
-            }
-            return count;
-        }
-
     private:
         class Channel
         {
@@ -144,19 +129,6 @@ namespace HedgehogEngine
                     for (const Entry& entry : *list)
                     {
                         count += entry.Active ? 1 : 0;
-                    }
-                }
-                return count;
-            }
-
-            size_t CountSubscribersWhere(const std::function<bool(const std::type_info&)>& matches) const
-            {
-                size_t count = 0;
-                for (const std::vector<Entry>* list : { &m_Handlers, &m_Pending })
-                {
-                    for (const Entry& entry : *list)
-                    {
-                        count += entry.Active && matches(entry.Callback.target_type()) ? 1 : 0;
                     }
                 }
                 return count;
