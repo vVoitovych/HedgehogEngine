@@ -11,7 +11,6 @@
 #include "HedgehogEngine/HedgehogSettings/api/HedgehogSettings.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/LayerSettings.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/ProjectSettings.hpp"
-#include "HedgehogEngine/api/Plugins/PluginManager.hpp"
 #include "HedgehogCommon/api/Camera.hpp"
 #include "HedgehogExtract/api/SceneExtractor.hpp"
 #include "HedgehogEngine/api/Containers/FontContainer.hpp"
@@ -396,8 +395,6 @@ namespace Editor
             m_ScriptDebugger->Pump();
         // A script saved on disk takes effect without leaving Play (polled at most once a second).
         m_ScriptSystem->ReloadChangedScripts(m_Context->GetEngineContext().GetECS());
-        // A rebuilt plugin DLL is reloaded in place, in Edit mode (polled at most once a second).
-        (void)m_Context->GetEngineContext().GetPlugins().ReloadChangedPlugins(std::chrono::steady_clock::now());
         m_Context->UpdateContext(dt, GetSceneAspectRatio());
 
         {

@@ -55,7 +55,6 @@ Columns:
 |------|------|-----------|------------|--------|--------|
 | Project | `project://Project.yaml` | HedgehogSettings' `ProjectSettings` | No | edit (File > Project Settings...) | Always |
 | Engine settings | `project://engine_settings.yaml` | HedgehogSettings' `Settings` (shadows, layers, physics, Lua debugger) | No | edit (Edit > Settings...) | Always |
-| Plugin | `<name>.dll` beside the engine | HedgehogEngine's `PluginManager` | Yes: once a second in Edit mode, from a shadow copy | edit (the plugin list in Project Settings) | Each enabled plugin's DLL, from the binaries folder |
 | Engine content | `engine://Content/...` (default cube and sphere, cells texture, base script, editor font) | The loaders above | As their types | — | The defaults always (`GetEngineRuntimeAssets`), the rest when referenced |
 | Template | `engine://Templates/Empty/` | HedgehogSettings' `CreateProject` | — | create (File > New Project...) | Never |
 | Save game | `<slot>.save` under LocalAppData | EcsSerialization's `SaveSlotStore`, through `SaveGameManager` | — (player data) | — | Never: made by the game |
@@ -67,7 +66,7 @@ Columns:
   editor (textures, meshes, audio, fonts, HDRs, scripts) or from its own tool (controllers,
   graphs, prefabs).
 - **Hot reload covers the text assets people edit while the game runs** (scripts, controllers,
-  input actions, graphs, prefabs, plugins). Binary content (textures, meshes, audio, fonts,
+  input actions, graphs, prefabs). Binary content (textures, meshes, audio, fonts,
   environments) is read once per session, so replacing an exported file needs a restart.
 - **There are no import settings.** How a texture is used (sRGB or linear, mipmaps, filtering,
   compression) is decided by where it is used: a material slot's colour space, the UI's clamp to
