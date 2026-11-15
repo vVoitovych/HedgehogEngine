@@ -34,6 +34,8 @@
 #include "HedgehogEngine/api/ECS/systems/EnvironmentSystem.hpp"
 #include "HedgehogEngine/api/ECS/components/TerrainComponent.hpp"
 #include "HedgehogEngine/api/ECS/systems/TerrainSystem.hpp"
+#include "HedgehogEngine/api/ECS/systems/ParticleSystem.hpp"
+#include "HedgehogEngine/api/ECS/components/ParticleSystemComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RigidBodyComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/AudioListenerComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/AudioSourceComponent.hpp"
@@ -177,6 +179,7 @@ namespace HedgehogEngine
         m_RigidBodyListSystem = m_ECS.RegisterSystem<RigidBodyListSystem>();
         m_EnvironmentSystem   = m_ECS.RegisterSystem<EnvironmentSystem>();
         m_TerrainSystem       = m_ECS.RegisterSystem<TerrainSystem>();
+        m_ParticleSystem      = m_ECS.RegisterSystem<ParticleSystem>();
 
         ECS::Signature signature;
 
@@ -240,6 +243,11 @@ namespace HedgehogEngine
         signature.set(m_ECS.GetComponentType<TerrainComponent>());
         signature.set(m_ECS.GetComponentType<TransformComponent>());
         m_ECS.SetSystemSignature<TerrainSystem>(signature);
+        signature.reset();
+
+        signature.set(m_ECS.GetComponentType<ParticleSystemComponent>());
+        signature.set(m_ECS.GetComponentType<TransformComponent>());
+        m_ECS.SetSystemSignature<ParticleSystem>(signature);
     }
 
     void EngineContext::LoadInputActions()
@@ -434,6 +442,7 @@ namespace HedgehogEngine
     CameraSystem*     EngineContext::GetCameraSystem()     const { return m_CameraSystem.get(); }
     EnvironmentSystem* EngineContext::GetEnvironmentSystem() const { return m_EnvironmentSystem.get(); }
     TerrainSystem*    EngineContext::GetTerrainSystem()    const { return m_TerrainSystem.get(); }
+    ParticleSystem*   EngineContext::GetParticleSystem()   const { return m_ParticleSystem.get(); }
     AnimationSystem*  EngineContext::GetAnimationSystem()  const { return m_AnimationSystem.get(); }
     UiSystem*         EngineContext::GetUiSystem()         const { return m_UiSystem.get(); }
     AudioSystem*      EngineContext::GetAudioSystem()      const { return m_AudioSystem.get(); }
