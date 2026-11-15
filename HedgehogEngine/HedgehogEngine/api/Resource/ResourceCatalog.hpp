@@ -74,6 +74,9 @@ namespace HedgehogEngine
         size_t                       GetTerrainCount() const override;
         TerrainView                  GetTerrain(size_t index) const override;
         void                         ClearTerrainDirty(size_t index, bool splat, bool layers) override;
+        size_t                       GetParticleEffectCount() const override;
+        ParticleEffectView           GetParticleEffect(size_t index) const override;
+        uint32_t                     GetParticleEffectVersion(size_t index) const override;
 
     private:
         const FS::FileSystemManager& m_FileSystem;
@@ -84,5 +87,14 @@ namespace HedgehogEngine
         std::unique_ptr<FontContainer>     m_FontContainer;
         std::unique_ptr<TerrainContainer>  m_TerrainContainer;
         std::unique_ptr<ParticleEffectContainer> m_ParticleEffectContainer;
+
+        // Each effect baked for GetParticleEffect, rebuilt when its version moves on.
+        struct BakedParticleEffect
+        {
+            uint32_t                                         Version = 0;
+            std::vector<ParticleEmitterView>                 Emitters;
+            std::vector<std::vector<ParticleSubEmitterView>> SubEmitters;
+        };
+        mutable std::vector<BakedParticleEffect> m_BakedParticleEffects;
     };
 }

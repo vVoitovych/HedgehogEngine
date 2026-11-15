@@ -8,6 +8,7 @@
 #include "HedgehogEngine/api/Containers/FontContainer.hpp"
 #include "HedgehogEngine/api/Containers/TerrainContainer.hpp"
 #include "HedgehogEngine/api/Containers/ParticleEffectContainer.hpp"
+#include "HedgehogEngine/api/Particles/ParticleEffect.hpp"
 #include "HedgehogEngine/api/Terrain/TerrainGeometry.hpp"
 
 #include "Logger/api/Logger.hpp"
@@ -138,6 +139,79 @@ namespace HedgehogEngine
     size_t ResourceCatalog::GetFontCount() const
     {
         return m_FontContainer->GetFontCount();
+    }
+
+    size_t ResourceCatalog::GetParticleEffectCount() const
+    {
+        return m_ParticleEffectContainer->GetCount();
+    }
+
+    uint32_t ResourceCatalog::GetParticleEffectVersion(size_t index) const
+    {
+        return m_ParticleEffectContainer->GetVersion(index);
+    }
+
+    ParticleEffectView ResourceCatalog::GetParticleEffect(size_t index) const
+    {
+        static_assert(static_cast<uint8_t>(ParticleShape::Box) == 3 && static_cast<uint8_t>(ParticleBlend::Additive) == 1 &&
+                          static_cast<uint8_t>(ParticleSpace::World) == 1 &&
+                          static_cast<uint8_t>(ParticleCollisionMode::DepthBuffer) == 2,
+                      "ParticleEmitterView carries these enums by value.");
+        if (m_BakedParticleEffects.size() <= index)
+            m_BakedParticleEffects.resize(index + 1);
+        BakedParticleEffect& baked   = m_BakedParticleEffects[index];
+        const uint32_t       version = m_ParticleEffectContainer->GetVersion(index);
+        if (baked.Version != version || version == 0)
+        {
+            baked.Version = version;
+            baked.Emitters.clear();
+            baked.SubEmitters.clear();
+            if (const ParticleEffect* effect = m_ParticleEffectContainer->GetEffect(index))
+            {
+                baked.SubEmitters.resize(effect->Emitters.size());
+                for (size_t e = 0; e < effect->Emitters.size(); ++e)
+                {
+                    const ParticleEmitter& emitter = effect->Emitters[e];
+                    ParticleEmitterView    view;
+                    view.maxParticles    = emitter.MaxParticles;
+                    view.shape           = static_cast<uint8_t>(emitter.Shape);
+                    view.blend           = static_cast<uint8_t>(emitter.Blend);
+                    view.space           = static_cast<uint8_t>(emitter.SimulationSpace);
+                    view.collisionMode   = static_cast<uint8_t>(emitter.Collision.Mode);
+                    view.emitFromSurface = emitter.EmitFromSurface;
+                    view.radius          = emitter.Radius;
+                    view.angle           = emitter.Angle;
+                    view.boxSize         = emitter.BoxSize;
+                    view.lifetimeMin     = emitter.Lifetime.Min;
+                    view.lifetimeMax     = emitter.Lifetime.Max;
+                    view.speedMin        = emitter.StartSpeed.Min;
+                    view.speedMax        = emitter.StartSpeed.Max;
+                    view.sizeMin         = emitter.StartSize.Min;
+                    view.sizeMax         = emitter.StartSize.Max;
+                    view.rotationMin     = emitter.StartRotation.Min;
+                    view.rotationMax     = emitter.StartRotation.Max;
+                    view.startColor      = emitter.StartColor;
+                    view.gravity         = emitter.Gravity;
+                    view.drag            = emitter.Drag;
+                    view.texture         = emitter.Texture;
+                    view.sheetTilesX     = emitter.SheetTilesX;
+                    view.sheetTilesY     = emitter.SheetTilesY;
+                    view.sheetFps        = emitter.SheetFps;
+                    view.softDistance    = emitter.SoftDistance;
+                    view.planeHeight     = emitter.Collision.PlaneHeight;
+                    view.bounce          = emitter.Collision.Bounce;
+                    view.lifetimeLoss    = emitter.Collision.LifetimeLoss;
+                    BakeCurve(emitter.SizeOverLife, view.sizeOverLife);
+                    BakeCurve(emitter.SpeedOverLife, view.speedOverLife);
+                    BakeGradient(emitter.ColorOverLife, view.colorOverLife);
+                    for (const ParticleSubEmitter& sub : emitter.SubEmitters)
+                        baked.SubEmitters[e].push_back({ sub.Emitter, sub.Count });
+                    view.subEmitters = baked.SubEmitters[e];
+                    baked.Emitters.push_back(view);
+                }
+            }
+        }
+        return ParticleEffectView{ baked.Emitters };
     }
 
     size_t ResourceCatalog::GetTerrainCount() const

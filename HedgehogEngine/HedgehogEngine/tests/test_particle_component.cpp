@@ -241,3 +241,62 @@ TEST_CASE("Particle effects - a scene's particle system brings its effect and ev
     CHECK(missing.Warnings[0].find("assets://Textures/Particles/Smoke.png (referenced by assets://Particles/Fire.particle)")
           != std::string::npos);
 }
+
+TEST_CASE("Particle effects - the catalog's view bakes each emitter for the GPU and follows reloads")
+{
+    ParticleFiles   files;
+    ParticleEffect  effect = ParticleFiles::MakeFire(40.0f);
+    ParticleEmitter& flames = effect.Emitters[0];
+    flames.Shape            = ParticleShape::Cone;
+    flames.Blend            = ParticleBlend::Additive;
+    flames.Collision.Mode   = ParticleCollisionMode::DepthBuffer;
+    flames.Lifetime         = { 0.5f, 1.5f };
+    flames.SheetTilesX      = 4;
+    flames.SizeOverLife     = ParticleCurve{ { { 0.0f, 0.0f }, { 1.0f, 2.0f } } };
+    flames.ColorOverLife.Keys = { { 0.0f, { 1.0f, 1.0f, 0.0f, 1.0f } }, { 1.0f, { 1.0f, 0.0f, 0.0f, 0.0f } } };
+    flames.SubEmitters      = { { 1, 3 } };
+    files.Write("Particles/Fire.particle", effect);
+
+    ResourceCatalog   resources(files.Files);
+    IResourceCatalog& catalog = resources; // the renderer's view; the overrides are not exported
+    CHECK(catalog.GetParticleEffectCount() == 0);
+    const size_t index = *resources.GetParticleEffectContainer().FindOrLoad("Particles/Fire.particle");
+    CHECK(catalog.GetParticleEffectCount() == 1);
+    CHECK(catalog.GetParticleEffectVersion(index) == 1u);
+
+    ParticleEffectView view = catalog.GetParticleEffect(index);
+    REQUIRE(view.emitters.size() == 2);
+    const ParticleEmitterView& baked = view.emitters[0];
+    CHECK(baked.shape == static_cast<uint8_t>(ParticleShape::Cone));
+    CHECK(baked.blend == static_cast<uint8_t>(ParticleBlend::Additive));
+    CHECK(baked.collisionMode == static_cast<uint8_t>(ParticleCollisionMode::DepthBuffer));
+    CHECK(baked.lifetimeMin == 0.5f);
+    CHECK(baked.lifetimeMax == 1.5f);
+    CHECK(baked.sheetTilesX == 4);
+    CHECK(baked.texture == "Textures/Particles/Flame.png");
+    // Rows from age 0 to 1: exact at the ends, linear between.
+    CHECK(baked.sizeOverLife.front() == 0.0f);
+    CHECK(baked.sizeOverLife.back() == 2.0f);
+    CHECK(baked.sizeOverLife[PARTICLE_CURVE_SAMPLES / 2] == doctest::Approx(2.0f * 16.0f / 31.0f));
+    CHECK(baked.speedOverLife.front() == 1.0f); // no keys: 1
+    CHECK(baked.colorOverLife.front() == HM::Vector4{ 1.0f, 1.0f, 0.0f, 1.0f });
+    CHECK(baked.colorOverLife.back() == HM::Vector4{ 1.0f, 0.0f, 0.0f, 0.0f });
+    REQUIRE(baked.subEmitters.size() == 1);
+    CHECK(baked.subEmitters[0].emitter == 1u);
+    CHECK(baked.subEmitters[0].count == 3u);
+    CHECK(view.emitters[1].subEmitters.empty());
+
+    // Unchanged: the same bake. Reloaded: a new version and its values.
+    CHECK(catalog.GetParticleEffect(index).emitters.data() == view.emitters.data());
+    const auto start = std::chrono::steady_clock::now();
+    resources.GetParticleEffectContainer().ReloadChanged(start);
+    flames.Lifetime = { 2.0f, 3.0f };
+    files.Write("Particles/Fire.particle", effect);
+    resources.GetParticleEffectContainer().ReloadChanged(start + ParticleEffectContainer::POLL_INTERVAL);
+    CHECK(catalog.GetParticleEffectVersion(index) == 2u);
+    CHECK(catalog.GetParticleEffect(index).emitters[0].lifetimeMin == 2.0f);
+
+    // A file that never loaded has no emitters.
+    CHECK_FALSE(resources.GetParticleEffectContainer().FindOrLoad("Particles/Missing.particle"));
+    CHECK(catalog.GetParticleEffect(1).emitters.empty());
+}

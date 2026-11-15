@@ -172,6 +172,7 @@ namespace Runtime
         m_Extractor.ExtractEnvironment(engineContext.GetECS(), *engineContext.GetEnvironmentSystem(), m_RenderScene);
         m_Extractor.ExtractTerrains(engineContext.GetECS(), *engineContext.GetTerrainSystem(), m_RenderScene,
                                     m_MeshBounds.GetBounds());
+        m_Extractor.ExtractParticles(engineContext.GetECS(), *engineContext.GetParticleSystem(), m_RenderScene);
 
         m_Renderer->SyncResources(engineContext.GetResourceCatalog());
         m_Renderer->RenderFrame(m_RenderScene, engineContext.GetSettings());

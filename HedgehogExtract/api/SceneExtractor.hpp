@@ -21,6 +21,7 @@ namespace HedgehogEngine
     class PhysicsSystem;
     class EnvironmentSystem;
     class TerrainSystem;
+    class ParticleSystem;
     class FontContainer;
 }
 
@@ -99,6 +100,13 @@ namespace HX
         // material.
         void ExtractTerrains(const ECS::ECS& ecs, const HedgehogEngine::TerrainSystem& terrainSystem,
                              RenderScene& outScene, std::span<const HM::AABB> meshLocalBounds = {}) const;
+
+        // Appends particleSystem's frame list (ParticleSystem::GetFrameEmitters) to
+        // outScene.ParticleEmitters, each entry at its entity's ObjMatrix with its entity and
+        // generation as InstanceId; an entity that has died since is left out. Allocates nothing once
+        // the list's storage has grown.
+        void ExtractParticles(const ECS::ECS& ecs, const HedgehogEngine::ParticleSystem& particleSystem,
+                              RenderScene& outScene) const;
 
     private:
         void ExtractInstances(const ECS::ECS& ecs, const HedgehogEngine::RenderSystem& renderSystem,
