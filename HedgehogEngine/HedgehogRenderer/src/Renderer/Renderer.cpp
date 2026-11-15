@@ -188,6 +188,7 @@ namespace Renderer
         m_Resources->SyncMaterials(catalog, device);
         m_Resources->SyncTerrains(catalog, device);
         m_Resources->SyncFonts(catalog, device);
+        m_FrameRenderer->SyncParticleEffects(catalog);
     }
 
     ViewId Renderer::CreateView(ViewDesc desc)
@@ -224,6 +225,7 @@ namespace Renderer
 
         m_FrameRenderer->SyncUiTextures(scene, *m_Resources);
         m_FrameRenderer->SyncEnvironment(scene);
+        m_FrameRenderer->SyncParticles(scene);
         m_FrameRenderer->Render(scene, *m_Resources, settings, ui);
     }
 }

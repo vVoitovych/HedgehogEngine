@@ -30,7 +30,9 @@ project "RenderGraphTest"
         "../src/ResourceRegistry/TerrainUniform.hpp",
         "../src/ResourceRegistry/TerrainUniform.cpp",
         "../src/Pipeline/ComputeShaderFile.hpp",
-        "../src/Pipeline/ComputeShaderFile.cpp"
+        "../src/Pipeline/ComputeShaderFile.cpp",
+        "../src/Particles/**.hpp",
+        "../src/Particles/**.cpp"
     }
 
     includedirs
