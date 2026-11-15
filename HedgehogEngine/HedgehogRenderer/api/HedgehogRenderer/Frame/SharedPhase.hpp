@@ -46,6 +46,9 @@ namespace Renderer
         GraphImports                  Imports;               // pass to GraphInstantiator::Instantiate
         const RHI::IRHIDescriptorSet* SceneLights = nullptr; // set as every view's GraphFrameData::SceneLights
         const ShadowUniform*          Shadow      = nullptr; // set as every view's GraphFrameData::Shadow; null without an atlas
+        // Set as every view's GraphFrameData::Particles and ParticleBuffers; null without particles.
+        const ParticleFrameData* Particles = nullptr;
+        ParticleGraphBuffers     ParticleBuffers;
     };
 
     class SharedPhase

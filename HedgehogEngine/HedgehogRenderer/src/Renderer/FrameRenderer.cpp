@@ -170,7 +170,8 @@ namespace Renderer
 
         RenderGraphRuntime&      graph  = *m_Runtimes[m_SlotIndex];
         const SharedPhaseOutputs shared =
-            m_Shared.Declare(graph, m_Services, shadowFrame, scene.Lights, sharedSettings, m_Particles.BuildFrame(scene));
+            m_Shared.Declare(graph, m_Services, shadowFrame, scene.Lights, sharedSettings,
+                             m_Particles.BuildFrame(scene, [&](const std::string& path) { return resources.FindUiTextureSet(path); }));
 
         // Only one view presents: the highest priority, the earliest on a tie.
         const View* presenter = nullptr;
@@ -202,6 +203,15 @@ namespace Renderer
                                    COMMAND_TIMESTAMPS_PER_SLOT * m_SlotIndex, COMMAND_TIMESTAMPS_PER_SLOT);
         if (!graph.Execute(*slot.Cmd))
             presented = PresentSource::None;
+        // The particle buffers start the next frame from where this one left them.
+        if (shared.Particles)
+        {
+            const RGResourceId first = shared.ParticleBuffers.State.Id; // imported in ParticleBuffer order
+            std::array<std::optional<RHI::ResourceState>, PARTICLE_BUFFER_COUNT> states{};
+            for (size_t i = 0; i < PARTICLE_BUFFER_COUNT; ++i)
+                states[i] = graph.GetLastFinalState(first + static_cast<RGResourceId>(i));
+            m_Particles.SetFinalStates(states);
+        }
         if (graph.IsLastCommandTimingTruncated())
             ReportOnce("FrameRenderer: the frame has more than " + std::to_string(MAX_TIMED_COMMANDS)
                        + " GPU commands; those past them are not timed.");
@@ -377,6 +387,8 @@ namespace Renderer
     void FrameRenderer::SyncUiTextures(const HX::RenderScene& scene, HR::ResourceRegistry& registry)
     {
         registry.SyncUiTextures(scene.UiTextures, m_Device, m_FileSystem);
+        // Particle textures load through the same cache and sets.
+        registry.SyncUiTextures(m_Particles.GetTexturePaths(), m_Device, m_FileSystem);
     }
 
     void FrameRenderer::FillUiFrame(const HX::RenderScene& scene, const HR::ResourceRegistry& resources,
@@ -466,6 +478,8 @@ namespace Renderer
         frame.UiSampledTargets = sampled;
         frame.SceneLights      = shared.SceneLights;
         frame.Shadow           = shared.Shadow;
+        frame.Particles        = shared.Particles;
+        frame.ParticleBuffers  = shared.ParticleBuffers;
         context           = { &m_Services, &frame };
         graph.SetFrameContext(&context);
 

@@ -27,7 +27,10 @@ namespace Renderer
     {
         SharedPhaseOutputs outputs;
         if (particles)
-            DeclareParticleSimulation(graph, services, *particles);
+        {
+            outputs.ParticleBuffers = DeclareParticleSimulation(graph, services, *particles);
+            outputs.Particles       = particles;
+        }
         outputs.SceneLights = &services.AllocateSceneLightsUniform(MakeSceneLightsUniform(lights));
         if (!shadowView)
             return outputs;

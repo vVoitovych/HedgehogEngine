@@ -290,6 +290,20 @@ namespace Renderer
             desc.DescriptorSetLayouts     = { m_ParticleLayout.get() };
             m_ComputePipelines[i]         = device.CreateComputePipeline(desc);
         }
+
+        // The billboards read the simulation's set (one layout, so the same set binds) and a UI
+        // texture set, over the HDR target against the view's depth.
+        const auto particlesPipeline = [&](std::string_view path)
+        {
+            const ShaderPipelineDesc shader = ShaderLoader::Load(device, std::string(path), fileSystem);
+            RHI::GraphicsPipelineDesc desc  = shader.Pipeline;
+            desc.DescriptorSetLayouts       = { m_ParticleLayout.get(), m_UiTextureLayout.get() };
+            desc.ColorAttachmentFormats     = { HDR_FORMAT };
+            desc.DepthAttachmentFormat      = DEPTH_FORMAT;
+            return device.CreateGraphicsPipeline(desc);
+        };
+        m_ParticlesAlphaPipeline    = particlesPipeline(HedgehogEngine::PARTICLES_ALPHA_SHADER);
+        m_ParticlesAdditivePipeline = particlesPipeline(HedgehogEngine::PARTICLES_ADDITIVE_SHADER);
     }
 
     // The owner waits for the device to go idle first, as for every other GPU resource.
@@ -328,6 +342,7 @@ namespace Renderer
         m_SceneLightsRing.Next = 0;
         m_LightingRing.Next    = 0;
         m_NextSampledTexture   = 0;
+        m_ParticleSetThisFrame = nullptr;
     }
 
     void GraphPassServices::ProvideMaterialLayout(RHI::IRHIDevice& device, HR::ResourceRegistry& registry) const
@@ -362,13 +377,11 @@ namespace Renderer
         }
         slot.Emitters->CopyData(particles.Emitters.data(), particles.Emitters.size_bytes());
         // The pool's buffers change when it grows, and the alive lists swap every frame.
-        slot.Set->WriteStorageBuffer(0, *particles.State);
-        slot.Set->WriteStorageBuffer(1, *particles.DeadList);
-        slot.Set->WriteStorageBuffer(2, *particles.AliveIn);
-        slot.Set->WriteStorageBuffer(3, *particles.AliveOut);
-        slot.Set->WriteStorageBuffer(4, *particles.Slots);
-        slot.Set->WriteStorageBuffer(5, *slot.Emitters);
+        for (uint32_t i = 0; i < PARTICLE_BUFFER_COUNT; ++i)
+            slot.Set->WriteStorageBuffer(i, *particles.Buffers[i]);
+        slot.Set->WriteStorageBuffer(static_cast<uint32_t>(PARTICLE_BUFFER_COUNT), *slot.Emitters);
         slot.Set->Flush();
+        m_ParticleSetThisFrame = slot.Set.get();
         return *slot.Set;
     }
 
@@ -381,6 +394,8 @@ namespace Renderer
             case EnginePipeline::Forward:            return *m_ForwardPipeline;
             case EnginePipeline::ForwardDoubleSided: return *m_ForwardDoubleSidedPipeline;
             case EnginePipeline::ForwardTerrain:     return *m_ForwardTerrainPipeline;
+            case EnginePipeline::ParticlesAlpha:     return *m_ParticlesAlphaPipeline;
+            case EnginePipeline::ParticlesAdditive:  return *m_ParticlesAdditivePipeline;
             case EnginePipeline::DepthPrepassSkinned:       return *m_DepthPrepassSkinnedPipeline;
             case EnginePipeline::ForwardSkinned:            return *m_ForwardSkinnedPipeline;
             case EnginePipeline::ForwardSkinnedDoubleSided: return *m_ForwardSkinnedDoubleSidedPipeline;

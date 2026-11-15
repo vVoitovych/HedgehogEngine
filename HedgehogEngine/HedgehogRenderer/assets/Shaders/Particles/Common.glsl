@@ -43,19 +43,29 @@ struct EmitterData
     vec4  ColorOverLife[32];
 };
 
-layout(std430, set = 0, binding = 0) buffer ParticleBuffer { Particle particles[]; };
-layout(std430, set = 0, binding = 1) buffer DeadListBuffer { uint deadList[]; };
-layout(std430, set = 0, binding = 2) buffer AliveInBuffer { uint aliveIn[]; };
-layout(std430, set = 0, binding = 3) buffer AliveOutBuffer { uint aliveOut[]; };
-layout(std430, set = 0, binding = 4) buffer SlotBuffer { SlotRow slots[]; };
+// The billboards only read: a vertex shader may not write a storage buffer unless the device enables
+// vertexPipelineStoresAndAtomics.
+#ifdef PARTICLE_DRAW
+#define PARTICLE_ACCESS readonly
+#else
+#define PARTICLE_ACCESS
+#endif
+layout(std430, set = 0, binding = 0) PARTICLE_ACCESS buffer ParticleBuffer { Particle particles[]; };
+layout(std430, set = 0, binding = 1) PARTICLE_ACCESS buffer DeadListBuffer { uint deadList[]; };
+layout(std430, set = 0, binding = 2) PARTICLE_ACCESS buffer AliveInBuffer { uint aliveIn[]; };
+layout(std430, set = 0, binding = 3) PARTICLE_ACCESS buffer AliveOutBuffer { uint aliveOut[]; };
+layout(std430, set = 0, binding = 4) PARTICLE_ACCESS buffer SlotBuffer { SlotRow slots[]; };
 layout(std430, set = 0, binding = 5) readonly buffer EmitterBuffer { EmitterData emitters[]; };
 
-// Which emitter (an index into emitters) this dispatch works on; for Finish, how many emitters.
+// Which emitter (an index into emitters) this dispatch works on; for Finish, how many emitters. The
+// billboards (PARTICLE_DRAW) have push constants of their own.
+#ifndef PARTICLE_DRAW
 layout(push_constant) uniform Push
 {
     uint EmitterIndex;
     uint EmitterCount;
 } push;
+#endif
 
 const uint GROUP_SIZE = 64;
 

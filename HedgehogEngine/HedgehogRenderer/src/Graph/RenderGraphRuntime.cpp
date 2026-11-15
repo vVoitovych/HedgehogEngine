@@ -98,6 +98,7 @@ namespace Renderer
         m_LastPassTimings.clear();
         m_TimedPassCount = 0;
         m_TimedCommands.Clear();
+        m_FinalBufferStates.clear();
         const CompileResult     result      = m_Compiler.Compile(description);
 
         if (!result.Success)
@@ -111,6 +112,18 @@ namespace Renderer
 
         m_LastExecutedPassCount = result.Graph.Passes.size();
         m_Executing = &description;
+        for (const CompiledPass& pass : result.Graph.Passes)
+        {
+            for (const RGBufferBarrier& barrier : pass.BufferBarriers)
+            {
+                auto found = std::find_if(m_FinalBufferStates.begin(), m_FinalBufferStates.end(),
+                                          [&](const auto& entry) { return entry.first == barrier.Id; });
+                if (found != m_FinalBufferStates.end())
+                    found->second = barrier.After;
+                else
+                    m_FinalBufferStates.emplace_back(barrier.Id, barrier.After);
+            }
+        }
 
         // One timestamp before the first pass, then one after each timed pass.
         const size_t timedPasses = m_TimestampPool != nullptr && m_TimestampCount >= 2
@@ -186,6 +199,14 @@ namespace Renderer
         m_TimedCommands.Finish();
         ResetForNextFrame();
         return true;
+    }
+
+    std::optional<RHI::ResourceState> RenderGraphRuntime::GetLastFinalState(RGResourceId id) const
+    {
+        for (const auto& [buffer, state] : m_FinalBufferStates)
+            if (buffer == id)
+                return state;
+        return std::nullopt;
     }
 
     RHI::IRHITexture* RenderGraphRuntime::GetTexture(RGTexture texture)

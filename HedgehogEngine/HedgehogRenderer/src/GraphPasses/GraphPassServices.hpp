@@ -95,6 +95,7 @@ namespace Renderer
                                                               const ForwardEnvironment& environment) override;
         const RHI::IRHIPipeline&      GetComputePipeline(EngineComputePipeline pipeline) const override;
         const RHI::IRHIDescriptorSet& AllocateParticleSet(const ParticleFrameData& particles) override;
+        const RHI::IRHIDescriptorSet* GetParticleSet() const override { return m_ParticleSetThisFrame; }
 
         // Uploads the frame's RenderScene::JointMatrices into this frame slot's storage buffer, growing
         // it when too small, and returns the palette set the skinned pipelines bind (set 1 for the
@@ -238,6 +239,10 @@ namespace Renderer
         std::unique_ptr<RHI::IRHIDescriptorSetLayout>                                m_ParticleLayout;
         std::unique_ptr<RHI::IRHIDescriptorPool>                                     m_ParticlePool;
         std::array<ParticleSetSlot, HedgehogEngine::MAX_FRAMES_IN_FLIGHT>            m_ParticleSets;
+        const RHI::IRHIDescriptorSet*                                                m_ParticleSetThisFrame = nullptr;
+        // The billboards: the particle set at 0, a UI texture set at 1.
+        std::unique_ptr<RHI::IRHIPipeline> m_ParticlesAlphaPipeline;
+        std::unique_ptr<RHI::IRHIPipeline> m_ParticlesAdditivePipeline;
 
         uint32_t m_FrameIndex = 0;
     };

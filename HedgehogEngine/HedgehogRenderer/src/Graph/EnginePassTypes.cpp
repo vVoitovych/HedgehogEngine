@@ -4,6 +4,7 @@
 #include "Passes/ForwardPass.hpp"
 #include "Passes/GameUiPass.hpp"
 #include "Passes/GizmoPass.hpp"
+#include "Passes/ParticlesPass.hpp"
 #include "Passes/SelectionMaskPass.hpp"
 #include "Passes/SelectionOutlinePass.hpp"
 #include "Passes/ShadowPass.hpp"
@@ -25,6 +26,7 @@ namespace Renderer
             && registry.Register("Forward", GetForwardPassType())
             && registry.Register("ForwardTransparent", GetForwardTransparentPassType())
             && registry.Register("Skybox", GetSkyboxPassType())
+            && registry.Register("Particles", GetParticlesPassType())
             && registry.Register("ToneMap", GetToneMapPassType())
             && registry.Register("SelectionMask", GetSelectionMaskPassType())
             && registry.Register("SelectionOutline", GetSelectionOutlinePassType())

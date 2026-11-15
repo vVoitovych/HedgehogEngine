@@ -41,13 +41,9 @@ namespace Renderer
             // Every stage reads what the one before wrote, in any of the buffers.
             const auto stageBarrier = [&]
             {
-                const std::array<RHI::BufferBarrier, 5> barriers = { {
-                    { particles.State, RHI::ResourceState::UnorderedAccess, RHI::ResourceState::UnorderedAccess },
-                    { particles.DeadList, RHI::ResourceState::UnorderedAccess, RHI::ResourceState::UnorderedAccess },
-                    { particles.AliveIn, RHI::ResourceState::UnorderedAccess, RHI::ResourceState::UnorderedAccess },
-                    { particles.AliveOut, RHI::ResourceState::UnorderedAccess, RHI::ResourceState::UnorderedAccess },
-                    { particles.Slots, RHI::ResourceState::UnorderedAccess, RHI::ResourceState::UnorderedAccess },
-                } };
+                std::array<RHI::BufferBarrier, PARTICLE_BUFFER_COUNT> barriers{};
+                for (size_t i = 0; i < PARTICLE_BUFFER_COUNT; ++i)
+                    barriers[i] = { particles.Buffers[i], RHI::ResourceState::UnorderedAccess, RHI::ResourceState::UnorderedAccess };
                 cmd.Barrier({}, barriers);
             };
 
@@ -86,31 +82,22 @@ namespace Renderer
         }
     }
 
-    void DeclareParticleSimulation(RenderGraphRuntime& graph, IGraphPassServices& services, const ParticleFrameData& particles)
+    ParticleGraphBuffers DeclareParticleSimulation(RenderGraphRuntime& graph, IGraphPassServices& services,
+                                                   const ParticleFrameData& particles)
     {
-        struct Imported
+        std::array<RGBuffer, PARTICLE_BUFFER_COUNT> handles{};
+        for (size_t i = 0; i < PARTICLE_BUFFER_COUNT; ++i)
         {
-            const char*      Name;
-            RHI::IRHIBuffer* Buffer;
-        };
-        const std::array<Imported, 5> buffers = { { { "ParticleState", particles.State },
-                                                    { "ParticleDeadList", particles.DeadList },
-                                                    { "ParticleAliveIn", particles.AliveIn },
-                                                    { "ParticleAliveOut", particles.AliveOut },
-                                                    { "ParticleSlots", particles.Slots } } };
-        std::array<RGBuffer, 5> handles{};
-        for (size_t i = 0; i < buffers.size(); ++i)
-        {
-            handles[i] = graph.ImportBuffer(buffers[i].Name, buffers[i].Buffer->GetSize(), false, particles.InitialState);
-            graph.BindImportedBuffer(handles[i], buffers[i].Buffer);
+            handles[i] = graph.ImportBuffer(PARTICLE_BUFFER_NAMES[i], particles.Buffers[i]->GetSize(), false, particles.States[i]);
+            graph.BindImportedBuffer(handles[i], particles.Buffers[i]);
         }
 
         graph.AddPass<ParticleSimulateData>(
             "ParticleSimulate",
             [&](RGPassBuilder& pass, ParticleSimulateData& data)
             {
-                for (const RGBuffer buffer : handles)
-                    pass.WriteBuffer(buffer);
+                for (RGBuffer& buffer : handles)
+                    buffer = pass.WriteBuffer(buffer);
                 pass.SetSideEffect();
                 data.Particles = &particles;
                 data.Services  = &services;
@@ -120,5 +107,7 @@ namespace Renderer
                 const GpuScope scope(cmd, "Particles");
                 RecordParticleSimulation(data, cmd);
             });
+        return { handles[static_cast<size_t>(ParticleBuffer::State)], handles[static_cast<size_t>(ParticleBuffer::AliveOut)],
+                 handles[static_cast<size_t>(ParticleBuffer::Slots)] };
     }
 }
