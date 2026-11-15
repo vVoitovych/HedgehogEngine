@@ -68,12 +68,16 @@ namespace Renderer
         //    imported. The cascades are computed here, once, and both the Shadow pass and the
         //    shadow uniform every forward pass reads (outputs' Shadow) are made from them.
         //
-        // The shadow pass captures this object's frame context, so it must outlive graph's Execute().
-        // The caller's own frame context is restored before returning.
+        //  - Particles: with particles (ParticleResources::BuildFrame), the ParticleSimulate pass
+        //    (DeclareParticleSimulation), first, so every view's draw comes after it.
+        //
+        // The shadow pass captures this object's frame context, so it must outlive graph's Execute(),
+        // as particles must. The caller's own frame context is restored before returning.
         [[nodiscard]] SharedPhaseOutputs Declare(RenderGraphRuntime& graph, IGraphPassServices& services,
                                                  const GraphFrameData* shadowView,
                                                  std::span<const HX::RenderLight> lights,
-                                                 const SharedPhaseSettings& settings);
+                                                 const SharedPhaseSettings& settings,
+                                                 const ParticleFrameData* particles = nullptr);
 
     private:
         const PassBuilderRegistry&      m_Registry;

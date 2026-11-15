@@ -1,6 +1,7 @@
 #pragma once
 
 #include "EnvironmentUniform.hpp"
+#include "ParticleUniform.hpp"
 #include "RGTypes.hpp"
 #include "UiCallback.hpp"
 
@@ -233,6 +234,31 @@ namespace Renderer
         ForwardTerrain,       // Forward for TerrainInstances: the terrain's layers at set 1
     };
 
+    // The particle compute shaders (ParticleCompute.pl), all on one layout.
+    enum class EngineComputePipeline
+    {
+        ParticleReset,    // one emitter instance's slot afresh: every particle dead
+        ParticleEmit,     // its SpawnCount newborns into this frame's alive list
+        ParticleSimulate, // its alive particles moved on, the living into the next frame's list
+        ParticleFinish,   // every emitter's counters and draw arguments for the next frame
+    };
+    inline constexpr size_t ENGINE_COMPUTE_PIPELINE_COUNT = 4;
+
+    // One frame of the particle pool for the shared phase's ParticleSimulate pass: the pool's buffers
+    // (this frame's alive list in AliveIn, the next frame's in AliveOut), the state the frame before
+    // left them in, and per emitter instance its uniform and whether its slot starts afresh.
+    struct ParticleFrameData
+    {
+        RHI::IRHIBuffer*                        State    = nullptr;
+        RHI::IRHIBuffer*                        DeadList = nullptr;
+        RHI::IRHIBuffer*                        AliveIn  = nullptr;
+        RHI::IRHIBuffer*                        AliveOut = nullptr;
+        RHI::IRHIBuffer*                        Slots    = nullptr;
+        RHI::ResourceState                      InitialState = RHI::ResourceState::Undefined;
+        std::span<const ParticleEmitterUniform> Emitters;
+        std::span<const uint8_t>                Reset; // one per emitter: 1 to start its slot afresh
+    };
+
     // The long-lived GPU objects the engine passes use but do not own: pipelines, and per-frame
     // rings of uniform buffers. Implemented by GraphPassServices (outside src/Graph, so the headless
     // tests never need a device); tests substitute a fake.
@@ -266,6 +292,12 @@ namespace Renderer
         // until this frame slot comes round again: for a texture only known at execute time, as a
         // graph's transients are. One allocation per pass that samples one, per frame.
         virtual const RHI::IRHIDescriptorSet& AllocateSampledTexture(const RHI::IRHITexture& texture) = 0;
+
+        virtual const RHI::IRHIPipeline& GetComputePipeline(EngineComputePipeline pipeline) const = 0;
+
+        // The particle compute shaders' set 0: particles' buffers and its emitters, uploaded into this
+        // frame slot's emitter buffer. Once per frame, by the shared phase.
+        virtual const RHI::IRHIDescriptorSet& AllocateParticleSet(const ParticleFrameData& particles) = 0;
     };
 
     // Attached to a RenderGraphRuntime for one frame (SetFrameContext). Pass builders capture a

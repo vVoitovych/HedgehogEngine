@@ -2,6 +2,8 @@
 
 #include "HedgehogRenderer/Graph/RenderGraphRuntime.hpp"
 
+#include "../Graph/Passes/ParticleSimulatePass.hpp"
+
 #include <cassert>
 
 namespace Renderer
@@ -20,9 +22,12 @@ namespace Renderer
     SharedPhaseOutputs SharedPhase::Declare(RenderGraphRuntime& graph, IGraphPassServices& services,
                                             const GraphFrameData* shadowView,
                                             std::span<const HX::RenderLight> lights,
-                                            const SharedPhaseSettings& settings)
+                                            const SharedPhaseSettings& settings,
+                                            const ParticleFrameData* particles)
     {
         SharedPhaseOutputs outputs;
+        if (particles)
+            DeclareParticleSimulation(graph, services, *particles);
         outputs.SceneLights = &services.AllocateSceneLightsUniform(MakeSceneLightsUniform(lights));
         if (!shadowView)
             return outputs;

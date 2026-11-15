@@ -49,6 +49,15 @@ namespace HedgehogEngine
     constexpr std::string_view TONE_MAP_SHADER = "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/ToneMap.shader";
     constexpr std::string_view SKYBOX_SHADER   = "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/Skybox.shader";
 
+    // The shared phase's particle simulation (compute; ParticleCompute.pl). The renderer loads them
+    // whatever the graphs draw, so the engine ships them as runtime assets.
+    constexpr std::array<std::string_view, 4> PARTICLE_COMPUTE_SHADERS = {
+        "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/ParticleReset.shader",
+        "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/ParticleEmit.shader",
+        "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/ParticleSimulate.shader",
+        "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/ParticleFinish.shader",
+    };
+
     // The shaders an engine pass type (as a .graph file names it) draws with. "Shadow" is the
     // shared phase's pass: a graph that imports the shadow atlas needs it. "Ui" draws the
     // application's callback and has no shader of its own.

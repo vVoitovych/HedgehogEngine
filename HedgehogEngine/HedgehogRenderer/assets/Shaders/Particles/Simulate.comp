@@ -1,0 +1,39 @@
+#version 450
+
+// Moves one emitter instance's alive particles on by the frame's time: gravity, drag and speed over
+// life. A particle past its lifetime goes back to the dead list; the rest join the next frame's
+// alive list.
+
+#include "Particles/Common.glsl"
+
+layout(local_size_x = 64) in;
+
+void main()
+{
+    EmitterData emitter = emitters[push.EmitterIndex];
+    uint        i       = gl_GlobalInvocationID.x;
+    if (i >= uint(slots[emitter.SlotRow].Alive))
+        return;
+
+    uint     index    = aliveIn[emitter.SlotFirst + i];
+    Particle particle = particles[index];
+    float    dt       = emitter.DeltaTime;
+
+    float age = particle.PositionAge.w + dt;
+    if (age >= particle.VelocityLifetime.w)
+    {
+        int dead = atomicAdd(slots[emitter.SlotRow].Dead, 1);
+        deadList[emitter.SlotFirst + uint(dead)] = index;
+        return;
+    }
+
+    vec3  velocity = particle.VelocityLifetime.xyz + emitter.Gravity * dt;
+    velocity      *= max(0.0, 1.0 - emitter.Drag * dt);
+    float speed    = SampleCurve(emitter.SpeedOverLife, age / particle.VelocityLifetime.w);
+    particle.PositionAge      = vec4(particle.PositionAge.xyz + velocity * speed * dt, age);
+    particle.VelocityLifetime = vec4(velocity, particle.VelocityLifetime.w);
+    particles[index]          = particle;
+
+    int alive = atomicAdd(slots[emitter.SlotRow].NewAlive, 1);
+    aliveOut[emitter.SlotFirst + uint(alive)] = index;
+}

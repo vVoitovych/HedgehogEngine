@@ -73,6 +73,20 @@ namespace RGTest
 
         const RHI::IRHIDescriptorSet& GetLightingSet() const { return m_Lighting; }
 
+        // A compute pipeline of its own per EngineComputePipeline.
+        const RHI::IRHIPipeline& GetComputePipeline(Renderer::EngineComputePipeline pipeline) const override
+        {
+            return m_ComputePipelines.at(static_cast<size_t>(pipeline));
+        }
+        const RHI::IRHIDescriptorSet& AllocateParticleSet(const Renderer::ParticleFrameData& particles) override
+        {
+            ParticleSetUploads.push_back(particles.Emitters.size());
+            return m_ParticleSet;
+        }
+        const RHI::IRHIDescriptorSet& GetParticleSet() const { return m_ParticleSet; }
+        // How many emitters each particle set was made for, in order.
+        std::vector<size_t> ParticleSetUploads;
+
         // Every forward pass's shadow uniform and the atlas bound beside it, in order.
         std::vector<Renderer::ShadowUniform> LightingUploads;
         std::vector<const RHI::IRHITexture*> LightingAtlases;
@@ -86,6 +100,8 @@ namespace RGTest
 
     private:
         std::array<FakePipeline, 32> m_Pipelines;
+        std::array<FakePipeline, Renderer::ENGINE_COMPUTE_PIPELINE_COUNT> m_ComputePipelines;
+        FakeDescriptorSet m_ParticleSet;
         FakeDescriptorSet m_Set;
         FakeDescriptorSet m_SceneLights;
         FakeDescriptorSet m_SampledTexture;

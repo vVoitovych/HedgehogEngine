@@ -1,0 +1,23 @@
+#version 450
+
+// Ends the frame for every emitter instance: the next frame's alive list is the one Simulate
+// filled, and the draw draws that many particles, six vertices each.
+
+#include "Particles/Common.glsl"
+
+layout(local_size_x = 64) in;
+
+void main()
+{
+    uint i = gl_GlobalInvocationID.x;
+    if (i >= push.EmitterCount)
+        return;
+    uint row = emitters[i].SlotRow;
+    int  alive = slots[row].NewAlive;
+    slots[row].Alive       = alive;
+    slots[row].NewAlive    = 0;
+    slots[row].DrawArgs[0] = 6u;
+    slots[row].DrawArgs[1] = uint(alive);
+    slots[row].DrawArgs[2] = 0u;
+    slots[row].DrawArgs[3] = 0u;
+}
