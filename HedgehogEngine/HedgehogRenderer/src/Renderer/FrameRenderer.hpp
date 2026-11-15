@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Environment/EnvironmentResources.hpp"
+#include "Particles/ParticleResources.hpp"
 #include "GraphPasses/GraphPassServices.hpp"
 #include "Profiling/FrameStats.hpp"
 
@@ -103,6 +104,11 @@ namespace Renderer
         // Makes scene's environment the one the forward passes light with, baking its map the first
         // time its path is seen.
         void SyncEnvironment(const HX::RenderScene& scene);
+
+        // Takes the catalog's changed particle effects, then gives each of scene's emitter instances
+        // its place in the particle pool.
+        void SyncParticleEffects(const HedgehogEngine::IResourceCatalog& catalog) { m_Particles.SyncEffects(catalog); }
+        void SyncParticles(const HX::RenderScene& scene) { m_Particles.Sync(scene, m_Device); }
 
         // The swapchain was recreated; "main" and swapchain-relative targets follow at this
         // frame's end.
@@ -210,6 +216,7 @@ namespace Renderer
 
         GraphPassServices    m_Services;
         EnvironmentResources m_Environment;
+        ParticleResources    m_Particles;
         PassBuilderRegistry  m_Registry;
         GraphAssetLibrary    m_Library;
         GraphInstantiator    m_Instantiator;
