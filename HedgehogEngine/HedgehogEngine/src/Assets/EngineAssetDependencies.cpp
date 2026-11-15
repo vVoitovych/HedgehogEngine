@@ -12,7 +12,9 @@
 #include "HedgehogEngine/api/ECS/components/CameraComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RenderComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/ParticleSystemComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/TerrainComponent.hpp"
+#include "HedgehogEngine/api/Particles/ParticleEffectFile.hpp"
 #include "HedgehogEngine/api/Terrain/TerrainData.hpp"
 #include "HedgehogEngine/api/ECS/components/UiImageComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/UiTextComponent.hpp"
@@ -65,6 +67,18 @@ namespace HedgehogEngine
                 for (const std::string* map : { &layer.BaseColor, &layer.NormalMap })
                     if (!map->empty())
                         out.push_back(NormalizeAssetPath(*map));
+            return {};
+        }
+
+        // Every emitter's texture.
+        std::string FollowParticleEffect(const std::string&, const std::string& text, std::vector<std::string>& out)
+        {
+            const HedgehogEngine::ParticleEffectReadResult effect = HedgehogEngine::ParseParticleEffect(text);
+            if (!effect.Effect)
+                return "not a particle effect: " + effect.Error;
+            for (const HedgehogEngine::ParticleEmitter& emitter : effect.Effect->Emitters)
+                if (!emitter.Texture.empty())
+                    out.push_back(NormalizeAssetPath(emitter.Texture));
             return {};
         }
 
@@ -163,6 +177,7 @@ namespace HedgehogEngine
         collector.AddReflectedComponent<AudioSourceComponent>("AudioSourceComponent");
         collector.AddReflectedComponent<EnvironmentComponent>("EnvironmentComponent");
         collector.AddReflectedComponent<TerrainComponent>("TerrainComponent");
+        collector.AddReflectedComponent<ParticleSystemComponent>("ParticleSystemComponent");
         collector.AddReflectedComponent<UiImageComponent>("UiImageComponent");
         collector.AddReflectedComponent<UiTextComponent>("UiTextComponent");
         collector.AddReflectedComponent<CameraComponent>("CameraComponent", NormalizeGraphReference);
@@ -170,6 +185,7 @@ namespace HedgehogEngine
 
         collector.AddFollower(".material", FollowMaterial);
         collector.AddFollower(std::string(TERRAIN_EXTENSION), FollowTerrain);
+        collector.AddFollower(std::string(PARTICLE_EFFECT_EXTENSION), FollowParticleEffect);
         collector.AddFollower(std::string(GRAPH_EXTENSION), FollowGraph);
         collector.AddFollower(".shader", FollowShader);
         collector.AddFollower(".gltf", FollowGltf);

@@ -8,6 +8,7 @@
 #include "HedgehogEngine/api/ECS/components/EnvironmentComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/LightComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/ParticleSystemComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/PrefabInstanceComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RenderComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RigidBodyComponent.hpp"
@@ -132,6 +133,13 @@ namespace HedgehogEngine
                                                                                .SortOrder       = 401,
                                                                                .Icon            = "mesh",
                                                                                .EnabledProperty = "Enabled" });
+        // ponytail: the mesh icon until particles have one of their own (the editor's particle ticket).
+        registered &= types.RegisterReflected<ParticleSystemComponent>(ComponentDesc{ .Key             = "ParticleSystemComponent",
+                                                                                      .DisplayName     = "Particle system",
+                                                                                      .Category        = RENDERING_CATEGORY,
+                                                                                      .SortOrder       = 402,
+                                                                                      .Icon            = "mesh",
+                                                                                      .EnabledProperty = "Enabled" });
         registered &= types.RegisterReflected<PrefabInstanceComponent>(ComponentDesc{ .Key         = "PrefabInstanceComponent",
                                                                                       .DisplayName = "Prefab instance",
                                                                                       .Addable     = false,

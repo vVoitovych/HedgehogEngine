@@ -23,6 +23,7 @@ namespace HedgehogEngine
     class MaterialContainer;
     class FontContainer;
     class TerrainContainer;
+    class ParticleEffectContainer;
 
     // Owns the three CPU-side resource containers (mesh/texture/material) and implements
     // IResourceCatalog, the narrow read-mostly contract consumed by the renderer. The Editor
@@ -56,6 +57,8 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API FontContainer&           GetFontContainer();
         HEDGEHOG_ENGINE_API const TerrainContainer&  GetTerrainContainer()  const;
         HEDGEHOG_ENGINE_API TerrainContainer&        GetTerrainContainer();
+        HEDGEHOG_ENGINE_API const ParticleEffectContainer& GetParticleEffectContainer() const;
+        HEDGEHOG_ENGINE_API ParticleEffectContainer&       GetParticleEffectContainer();
 
         // IResourceCatalog — virtual dispatch, no export macro needed across the DLL boundary.
         size_t                       GetMeshCount() const override;
@@ -80,5 +83,6 @@ namespace HedgehogEngine
         std::unique_ptr<MaterialContainer> m_MaterialContainer;
         std::unique_ptr<FontContainer>     m_FontContainer;
         std::unique_ptr<TerrainContainer>  m_TerrainContainer;
+        std::unique_ptr<ParticleEffectContainer> m_ParticleEffectContainer;
     };
 }

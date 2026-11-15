@@ -7,6 +7,7 @@
 #include "HedgehogEngine/api/Containers/MaterialData.hpp"
 #include "HedgehogEngine/api/Containers/FontContainer.hpp"
 #include "HedgehogEngine/api/Containers/TerrainContainer.hpp"
+#include "HedgehogEngine/api/Containers/ParticleEffectContainer.hpp"
 #include "HedgehogEngine/api/Terrain/TerrainGeometry.hpp"
 
 #include "Logger/api/Logger.hpp"
@@ -20,7 +21,18 @@ namespace HedgehogEngine
         , m_MaterialContainer(std::make_unique<MaterialContainer>())
         , m_FontContainer(std::make_unique<FontContainer>(fileSystem))
         , m_TerrainContainer(std::make_unique<TerrainContainer>(fileSystem))
+        , m_ParticleEffectContainer(std::make_unique<ParticleEffectContainer>(fileSystem))
     {
+    }
+
+    const ParticleEffectContainer& ResourceCatalog::GetParticleEffectContainer() const
+    {
+        return *m_ParticleEffectContainer;
+    }
+
+    ParticleEffectContainer& ResourceCatalog::GetParticleEffectContainer()
+    {
+        return *m_ParticleEffectContainer;
     }
 
     ResourceCatalog::~ResourceCatalog()
