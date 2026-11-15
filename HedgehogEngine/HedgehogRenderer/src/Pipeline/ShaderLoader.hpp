@@ -34,6 +34,16 @@ struct ShaderPipelineDesc
     std::unique_ptr<RHI::IRHIShader> FragmentShader;  // null for depth-only passes
 };
 
+// All data derived from a compute .shader file (ComputeShaderFile.hpp). Pipeline holds the push
+// constants and the shader; the caller sets DescriptorSetLayouts from Layout before passing it to
+// device.CreateComputePipeline(). ComputeShader is null when the file was refused (logged).
+struct ComputeShaderDesc
+{
+    PipelineFileDesc                 Layout;
+    RHI::ComputePipelineDesc         Pipeline;
+    std::unique_ptr<RHI::IRHIShader> ComputeShader;
+};
+
 class ShaderLoader
 {
 public:
@@ -42,6 +52,12 @@ public:
     static ShaderPipelineDesc Load(RHI::IRHIDevice& device,
                                    const std::string& shaderVirtualPath,
                                    const FS::FileSystemManager& fileSystem);
+
+    // Load a compute .shader file, its layout and its SPIR-V; one error naming the file, and no
+    // shader, when it cannot be read or is not a compute shader.
+    static ComputeShaderDesc LoadCompute(RHI::IRHIDevice& device,
+                                         const std::string& shaderVirtualPath,
+                                         const FS::FileSystemManager& fileSystem);
 
 private:
     static RHI::ShaderStage        ParseStage(const std::string& s);

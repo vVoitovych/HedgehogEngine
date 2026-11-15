@@ -33,9 +33,11 @@ namespace Renderer
 
         // Registers an externally-owned resource under graph tracking, also at version 0.
         // isReadOnly marks it as never writable — Compile (a later ticket) rejects a write to
-        // one, per RENDERING.md section 5.3's validation list.
+        // one, per RENDERING.md section 5.3's validation list. initialState is the state the buffer
+        // is in when the graph begins (RGResourceRecord::InitialState).
         RGTexture ImportTexture(const std::string& name, RHI::Format format, bool isReadOnly = false);
-        RGBuffer  ImportBuffer(const std::string& name, size_t size, bool isReadOnly = false);
+        RGBuffer  ImportBuffer(const std::string& name, size_t size, bool isReadOnly = false,
+                               RHI::ResourceState initialState = RHI::ResourceState::Undefined);
 
         // Appends an output slot; returns its index, which is what a view will later bind to,
         // never Name (RENDERING.md section 5.2).

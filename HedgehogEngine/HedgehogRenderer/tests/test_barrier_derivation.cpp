@@ -124,3 +124,123 @@ TEST_CASE("Consecutive transitions on one pass, across different resources, batc
     CHECK(opaque.BufferBarriers[0].Before == RHI::ResourceState::ShaderResource);
     CHECK(opaque.BufferBarriers[0].After == RHI::ResourceState::UnorderedAccess);
 }
+
+TEST_CASE("A buffer written as UnorderedAccess by one pass and again by the next gets a UAV to UAV barrier")
+{
+    GraphBuilder builder;
+    const RGBuffer particles = builder.ImportBuffer("Particles", 1024);
+
+    RGBuffer emitted{};
+    builder.AddPass("Emit", [&](RGPassBuilder& pass)
+    {
+        emitted = pass.WriteBuffer(particles);
+        pass.SetSideEffect();
+    });
+    builder.AddPass("Simulate", [&](RGPassBuilder& pass)
+    {
+        pass.WriteBuffer(emitted);
+        pass.SetSideEffect();
+    });
+
+    const GraphCompiler compiler;
+    const CompileResult result = compiler.Compile(builder.GetDescription());
+    REQUIRE(result.Success);
+
+    const CompiledPass& emit = FindPass(result.Graph, "Emit");
+    REQUIRE(emit.BufferBarriers.size() == 1);
+    CHECK(emit.BufferBarriers[0].Before == RHI::ResourceState::Undefined);
+    CHECK(emit.BufferBarriers[0].After == RHI::ResourceState::UnorderedAccess);
+
+    // Without it Simulate could read particles Emit has not finished writing.
+    const CompiledPass& simulate = FindPass(result.Graph, "Simulate");
+    REQUIRE(simulate.BufferBarriers.size() == 1);
+    CHECK(simulate.BufferBarriers[0].Id == particles.Id);
+    CHECK(simulate.BufferBarriers[0].Before == RHI::ResourceState::UnorderedAccess);
+    CHECK(simulate.BufferBarriers[0].After == RHI::ResourceState::UnorderedAccess);
+}
+
+TEST_CASE("A buffer written then read as indirect arguments moves from UnorderedAccess to IndirectArgument")
+{
+    GraphBuilder builder;
+    const RGBuffer args = builder.ImportBuffer("Args", 64);
+
+    RGBuffer built{};
+    builder.AddPass("BuildArgs", [&](RGPassBuilder& pass)
+    {
+        built = pass.WriteBuffer(args);
+        pass.SetSideEffect();
+    });
+    builder.AddPass("Draw", [&](RGPassBuilder& pass)
+    {
+        pass.ReadIndirectArgs(built);
+        pass.SetSideEffect();
+    });
+
+    const GraphCompiler compiler;
+    const CompileResult result = compiler.Compile(builder.GetDescription());
+    REQUIRE(result.Success);
+
+    const CompiledPass& draw = FindPass(result.Graph, "Draw");
+    REQUIRE(draw.BufferBarriers.size() == 1);
+    CHECK(draw.BufferBarriers[0].Before == RHI::ResourceState::UnorderedAccess);
+    CHECK(draw.BufferBarriers[0].After == RHI::ResourceState::IndirectArgument);
+    CHECK(ToResourceState(RGResourceUsage::IndirectArgs) == RHI::ResourceState::IndirectArgument);
+}
+
+TEST_CASE("An imported buffer's first barrier starts from the state it was imported in")
+{
+    GraphBuilder builder;
+    // The previous frame's draws left it as indirect arguments.
+    const RGBuffer args = builder.ImportBuffer("Args", 64, false, RHI::ResourceState::IndirectArgument);
+    const RGBuffer fresh = builder.ImportBuffer("Fresh", 64);
+
+    builder.AddPass("Reset", [&](RGPassBuilder& pass)
+    {
+        pass.WriteBuffer(args);
+        pass.WriteBuffer(fresh);
+        pass.SetSideEffect();
+    });
+
+    const GraphCompiler compiler;
+    const CompileResult result = compiler.Compile(builder.GetDescription());
+    REQUIRE(result.Success);
+
+    const CompiledPass& reset = FindPass(result.Graph, "Reset");
+    REQUIRE(reset.BufferBarriers.size() == 2);
+    CHECK(reset.BufferBarriers[0].Id == args.Id);
+    CHECK(reset.BufferBarriers[0].Before == RHI::ResourceState::IndirectArgument);
+    CHECK(reset.BufferBarriers[1].Id == fresh.Id);
+    CHECK(reset.BufferBarriers[1].Before == RHI::ResourceState::Undefined);
+
+    // Imported already in the state its first use needs: no barrier.
+    GraphBuilder same;
+    const RGBuffer readOnly = same.ImportBuffer("State", 64, false, RHI::ResourceState::ShaderResource);
+    same.AddPass("Read", [&](RGPassBuilder& pass)
+    {
+        pass.ReadBuffer(readOnly);
+        pass.SetSideEffect();
+    });
+    const CompileResult sameResult = compiler.Compile(same.GetDescription());
+    REQUIRE(sameResult.Success);
+    CHECK(FindPass(sameResult.Graph, "Read").BufferBarriers.empty());
+}
+
+TEST_CASE("A side-effect compute pass writing only an imported buffer is kept, and transitions it once")
+{
+    GraphBuilder builder;
+    const RGBuffer state = builder.ImportBuffer("State", 256);
+    builder.AddPass("Compute", [&](RGPassBuilder& pass)
+    {
+        const RGBuffer written = pass.WriteBuffer(state);
+        pass.WriteBuffer(written); // a second write in the same pass: still one transition
+        pass.SetSideEffect();
+    });
+    builder.AddPass("Unread", [&](RGPassBuilder& pass) { pass.WriteBuffer(builder.ImportBuffer("Other", 4)); });
+
+    const GraphCompiler compiler;
+    const CompileResult result = compiler.Compile(builder.GetDescription());
+    REQUIRE(result.Success);
+    REQUIRE(result.Graph.Passes.size() == 1);
+    CHECK(result.Graph.Passes[0].Name == "Compute");
+    CHECK(result.Graph.Passes[0].BufferBarriers.size() == 1);
+}

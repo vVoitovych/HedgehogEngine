@@ -51,6 +51,11 @@ namespace Renderer
         return RGBuffer{ buffer.Id, newVersion };
     }
 
+    void RGPassBuilder::ReadIndirectArgs(RGBuffer buffer)
+    {
+        RecordRead(buffer.Id, buffer.Version, RGResourceUsage::IndirectArgs);
+    }
+
     void RGPassBuilder::SetSideEffect()
     {
         m_Builder.GetPassRecordMutable(m_PassIndex).HasSideEffect = true;

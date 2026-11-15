@@ -1,4 +1,5 @@
 #include "ShaderLoader.hpp"
+#include "ComputeShaderFile.hpp"
 #include "VertexDescLoader.hpp"
 
 #include "Logger/api/Logger.hpp"
@@ -238,6 +239,40 @@ ShaderPipelineDesc ShaderLoader::Load(RHI::IRHIDevice& device,
     }
 
     assert(desc.VertexShader && "A .shader file must contain at least a vertex stage");
+    return desc;
+}
+
+ComputeShaderDesc ShaderLoader::LoadCompute(RHI::IRHIDevice& device,
+                                            const std::string& shaderVirtualPath,
+                                            const FS::FileSystemManager& fileSystem)
+{
+    ComputeShaderDesc desc;
+    const auto text = fileSystem.ReadTextFile(shaderVirtualPath);
+    if (!text)
+    {
+        LOGERROR("ShaderLoader: failed to read '", shaderVirtualPath, "'");
+        return desc;
+    }
+    const ComputeShaderFile file = ParseComputeShaderFile(*text, shaderVirtualPath);
+    if (!file.Error.empty())
+    {
+        LOGERROR("ShaderLoader: ", file.Error);
+        return desc;
+    }
+
+    const std::string shaderVirtualDir = shaderVirtualPath.substr(0, shaderVirtualPath.rfind('/') + 1);
+    const std::string spvPath          = ResolveVirtualRelative(shaderVirtualDir, file.ShaderPath);
+    const auto        spirv            = fileSystem.ReadFile(spvPath);
+    if (!spirv)
+    {
+        LOGERROR("ShaderLoader: failed to read SPIR-V '", spvPath, "' of '", shaderVirtualPath, "'");
+        return desc;
+    }
+
+    desc.Layout                      = PipelineLoader::Load(ResolveVirtualRelative(shaderVirtualDir, file.LayoutPath), fileSystem);
+    desc.Pipeline.PushConstantRanges = desc.Layout.PushConstants;
+    desc.ComputeShader               = device.CreateShader(*spirv, RHI::ShaderStage::Compute);
+    desc.Pipeline.ComputeShader      = desc.ComputeShader.get();
     return desc;
 }
 

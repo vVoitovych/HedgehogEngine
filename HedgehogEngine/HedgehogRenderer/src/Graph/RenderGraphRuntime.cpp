@@ -194,6 +194,12 @@ namespace Renderer
         return ResolveTexture(*m_Executing, texture.Id);
     }
 
+    RHI::IRHIBuffer* RenderGraphRuntime::GetBuffer(RGBuffer buffer)
+    {
+        assert(m_Executing && "RenderGraphRuntime::GetBuffer: only valid from a pass's execute closure.");
+        return ResolveBuffer(buffer.Id);
+    }
+
     void RenderGraphRuntime::ResetForNextFrame()
     {
         m_Executing    = nullptr;
