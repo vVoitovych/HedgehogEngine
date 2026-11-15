@@ -39,7 +39,10 @@ namespace
             Emitters[1].SlotCount  = 200;
             Emitters[1].SpawnCount = 70;
             Reset                  = { 1, 0 };
-            Frame                  = { &State, &DeadList, &AliveIn, &AliveOut, &Slots, initialState, Emitters, Reset };
+            Frame.Buffers          = { &State, &DeadList, &AliveIn, &AliveOut, &Slots };
+            Frame.States.fill(initialState);
+            Frame.Emitters         = Emitters;
+            Frame.Reset            = Reset;
         }
     };
 
@@ -82,7 +85,7 @@ TEST_CASE("Particle simulation - reset, emit, simulate and finish, a barrier bet
         &services.GetComputePipeline(EngineComputePipeline::ParticleFinish) });
     CHECK(PushedEmitters(cmd) == std::vector<uint32_t>{ 0, 1, 0, 1, 0 });
     for (const RHI::IRHIDescriptorSet* set : cmd.BoundSets)
-        CHECK(set == &services.GetParticleSet());
+        CHECK(set == services.GetParticleSet());
     CHECK(services.ParticleSetUploads == std::vector<size_t>{ 2 });
     CHECK(cmd.Scopes == std::vector<std::string>{ "begin Particles", "end" });
 
@@ -111,6 +114,7 @@ TEST_CASE("Particle simulation - without resets or spawns only simulate and fini
     ParticleFrameFixture particles(RHI::ResourceState::UnorderedAccess);
     particles.Reset                  = { 0, 0 };
     particles.Emitters[1].SpawnCount = 0;
+    particles.Frame.Reset            = particles.Reset;
 
     DeclareParticleSimulation(graph, services, particles.Frame);
     RecordingCommandList cmd;
@@ -158,7 +162,7 @@ TEST_CASE("Particle resources - a frame's uniforms, resets and alive lists, the 
     particles.SetEffect(0, 1, { storage });
 
     HX::RenderScene scene;
-    CHECK(particles.BuildFrame(scene) == nullptr); // nothing extracted
+    CHECK(particles.BuildFrame(scene, {}) == nullptr); // nothing extracted
 
     HX::ParticleEmitterInstance instance;
     instance.InstanceId    = 3;
@@ -166,23 +170,37 @@ TEST_CASE("Particle resources - a frame's uniforms, resets and alive lists, the 
     scene.ParticleEmitters = { instance };
     particles.Sync(scene, device);
 
-    const ParticleFrameData* first = particles.BuildFrame(scene);
+    const ParticleFrameData* first = particles.BuildFrame(scene, {});
     REQUIRE(first != nullptr);
     REQUIRE(first->Emitters.size() == 1);
     CHECK(first->Emitters[0].SpawnCount == 12);
     CHECK(first->Emitters[0].SlotCount == 100);
     CHECK(first->Reset[0] == 1);
-    CHECK(first->InitialState == RHI::ResourceState::Undefined);
-    CHECK(first->State == particles.GetStateBuffer());
-    RHI::IRHIBuffer* const firstIn  = first->AliveIn;
-    RHI::IRHIBuffer* const firstOut = first->AliveOut;
+    CHECK(first->States[0] == RHI::ResourceState::Undefined);
+    CHECK(first->Get(ParticleBuffer::State) == particles.GetStateBuffer());
+    CHECK(first->Textures[0] == nullptr);
+    RHI::IRHIBuffer* const firstIn  = first->Get(ParticleBuffer::AliveIn);
+    RHI::IRHIBuffer* const firstOut = first->Get(ParticleBuffer::AliveOut);
     CHECK(firstIn != firstOut);
 
+    // The frame left the state buffer read by the draws, its alive lists as the simulation wrote them.
+    std::array<std::optional<RHI::ResourceState>, PARTICLE_BUFFER_COUNT> finalStates{};
+    finalStates[static_cast<size_t>(ParticleBuffer::State)]    = RHI::ResourceState::ShaderResource;
+    finalStates[static_cast<size_t>(ParticleBuffer::AliveIn)]  = RHI::ResourceState::UnorderedAccess;
+    finalStates[static_cast<size_t>(ParticleBuffer::AliveOut)] = RHI::ResourceState::ShaderResource;
+    finalStates[static_cast<size_t>(ParticleBuffer::Slots)]    = RHI::ResourceState::IndirectArgument;
+    particles.SetFinalStates(finalStates);
+
     particles.Sync(scene, device);
-    const ParticleFrameData* second = particles.BuildFrame(scene);
+    const ParticleFrameData* second = particles.BuildFrame(scene, {});
     REQUIRE(second != nullptr);
     CHECK(second->Reset[0] == 0);
-    CHECK(second->InitialState == RHI::ResourceState::UnorderedAccess);
-    CHECK(second->AliveIn == firstOut); // last frame's survivors
-    CHECK(second->AliveOut == firstIn);
+    CHECK(second->Get(ParticleBuffer::AliveIn) == firstOut); // last frame's survivors
+    CHECK(second->Get(ParticleBuffer::AliveOut) == firstIn);
+    // Each buffer from its own state: the lists follow their buffers as they swap.
+    CHECK(second->States[static_cast<size_t>(ParticleBuffer::State)] == RHI::ResourceState::ShaderResource);
+    CHECK(second->States[static_cast<size_t>(ParticleBuffer::DeadList)] == RHI::ResourceState::Undefined);
+    CHECK(second->States[static_cast<size_t>(ParticleBuffer::AliveIn)] == RHI::ResourceState::ShaderResource);
+    CHECK(second->States[static_cast<size_t>(ParticleBuffer::AliveOut)] == RHI::ResourceState::UnorderedAccess);
+    CHECK(second->States[static_cast<size_t>(ParticleBuffer::Slots)] == RHI::ResourceState::IndirectArgument);
 }

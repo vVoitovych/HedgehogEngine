@@ -222,7 +222,10 @@ TEST_CASE("Asset dependencies - a fixture scene's closure is exactly its meshes,
              "Pipelines/DepthPrepassCutoff.pl", "Pipelines/DepthPrepassCutoffSkinned.pl",
              "VertexDescriptions/PositionUv.vdes", "VertexDescriptions/SkinnedPositionUv.vdes",
              "Shaders/DepthPrepass/Cutoff.vert.spv", "Shaders/DepthPrepass/Cutoff.frag.spv",
-             "Shaders/DepthPrepass/CutoffSkinned.vert.spv", "Shaders/DepthPrepass/CutoffSkinned.frag.spv" })
+             "Shaders/DepthPrepass/CutoffSkinned.vert.spv", "Shaders/DepthPrepass/CutoffSkinned.frag.spv",
+             // The particle billboards.
+             "Shaders/ParticlesAlpha.shader", "Shaders/ParticlesAdditive.shader", "Pipelines/Particles.pl",
+             "Shaders/Particles/Billboard.vert.spv", "Shaders/Particles/Billboard.frag.spv" })
         expected.push_back(renderer + file);
     std::sort(expected.begin(), expected.end());
 

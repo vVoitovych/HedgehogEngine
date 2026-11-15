@@ -22,9 +22,14 @@ namespace Renderer
         EffectSettings& settings = m_Effects[index];
         settings.Version         = version;
         settings.Emitters.assign(effect.emitters.begin(), effect.emitters.end());
+        settings.Textures.clear();
         // The views' texture and sub-emitters point into the catalog, which may change after this.
         for (HedgehogEngine::ParticleEmitterView& emitter : settings.Emitters)
         {
+            settings.Textures.emplace_back(emitter.texture);
+            if (!emitter.texture.empty() &&
+                std::find(m_TexturePaths.begin(), m_TexturePaths.end(), emitter.texture) == m_TexturePaths.end())
+                m_TexturePaths.emplace_back(emitter.texture);
             emitter.texture     = {};
             emitter.subEmitters = {};
         }
@@ -139,10 +144,32 @@ namespace Renderer
         EnsureBuffers(device);
     }
 
-    const ParticleFrameData* ParticleResources::BuildFrame(const HX::RenderScene& scene)
+    size_t ParticleResources::PhysicalIndex(ParticleBuffer buffer) const
+    {
+        // The state buffer, the dead list, alive list 0, alive list 1, the slot rows.
+        switch (buffer)
+        {
+        case ParticleBuffer::State:    return 0;
+        case ParticleBuffer::DeadList: return 1;
+        case ParticleBuffer::AliveIn:  return 2 + m_Parity;
+        case ParticleBuffer::AliveOut: return 2 + (m_Parity ^ 1u);
+        case ParticleBuffer::Slots:    return 4;
+        }
+        return 0;
+    }
+
+    void ParticleResources::SetFinalStates(const std::array<std::optional<RHI::ResourceState>, PARTICLE_BUFFER_COUNT>& states)
+    {
+        for (size_t i = 0; i < PARTICLE_BUFFER_COUNT; ++i)
+            if (states[i])
+                m_States[PhysicalIndex(static_cast<ParticleBuffer>(i))] = *states[i];
+    }
+
+    const ParticleFrameData* ParticleResources::BuildFrame(const HX::RenderScene& scene, const TextureLookup& findTexture)
     {
         m_Uniforms.clear();
         m_Reset.clear();
+        m_Textures.clear();
         for (size_t i = 0; i < m_FrameSlots.size() && i < scene.ParticleEmitters.size(); ++i)
         {
             const std::optional<ParticleFrameSlot>& slot = m_FrameSlots[i];
@@ -154,21 +181,26 @@ namespace Renderer
             uniform.SlotRow                = slot->Row;
             m_Uniforms.push_back(uniform);
             m_Reset.push_back(slot->NeedsReset ? 1 : 0);
+            const std::string& texture = m_Effects[instance.EffectIndex].Textures[instance.EmitterIndex];
+            m_Textures.push_back(texture.empty() || !findTexture ? nullptr : findTexture(texture));
         }
         if (m_Uniforms.empty() || !m_State)
             return nullptr;
 
         // Last frame's survivors are this frame's alive list.
         m_Parity ^= 1u;
-        m_Frame.State        = m_State.get();
-        m_Frame.DeadList     = m_DeadList.get();
-        m_Frame.AliveIn      = m_AliveLists[m_Parity].get();
-        m_Frame.AliveOut     = m_AliveLists[m_Parity ^ 1u].get();
-        m_Frame.Slots        = m_SlotData.get();
-        m_Frame.InitialState = m_LastState;
-        m_Frame.Emitters     = m_Uniforms;
-        m_Frame.Reset        = m_Reset;
-        m_LastState          = RHI::ResourceState::UnorderedAccess;
+        const std::array<RHI::IRHIBuffer*, PARTICLE_BUFFER_COUNT> physical = {
+            m_State.get(), m_DeadList.get(), m_AliveLists[0].get(), m_AliveLists[1].get(), m_SlotData.get()
+        };
+        for (size_t i = 0; i < PARTICLE_BUFFER_COUNT; ++i)
+        {
+            const size_t index = PhysicalIndex(static_cast<ParticleBuffer>(i));
+            m_Frame.Buffers[i] = physical[index];
+            m_Frame.States[i]  = m_States[index];
+        }
+        m_Frame.Emitters = m_Uniforms;
+        m_Frame.Reset    = m_Reset;
+        m_Frame.Textures = m_Textures;
         return &m_Frame;
     }
 
@@ -197,7 +229,9 @@ namespace Renderer
         for (std::unique_ptr<RHI::IRHIBuffer>& alive : m_AliveLists)
             alive = device.CreateBuffer(particles * sizeof(uint32_t), RHI::BufferUsage::StorageBuffer, RHI::MemoryUsage::GpuOnly);
 
-        m_LastState = RHI::ResourceState::Undefined;
+        // New buffers have no state yet; the slot rows keep theirs.
+        for (size_t i = 0; i < 4; ++i)
+            m_States[i] = RHI::ResourceState::Undefined;
         for (InstanceSlot& instance : m_Slots)
             instance.Slot.NeedsReset = true;
         for (std::optional<ParticleFrameSlot>& slot : m_FrameSlots)

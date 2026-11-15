@@ -81,9 +81,12 @@ namespace RGTest
         const RHI::IRHIDescriptorSet& AllocateParticleSet(const Renderer::ParticleFrameData& particles) override
         {
             ParticleSetUploads.push_back(particles.Emitters.size());
+            m_ParticleSetMade = true;
             return m_ParticleSet;
         }
-        const RHI::IRHIDescriptorSet& GetParticleSet() const { return m_ParticleSet; }
+        const RHI::IRHIDescriptorSet* GetParticleSet() const override { return m_ParticleSetMade ? &m_ParticleSet : nullptr; }
+        // As if the shared phase's simulation had already made this frame's set.
+        void MakeParticleSet() { m_ParticleSetMade = true; }
         // How many emitters each particle set was made for, in order.
         std::vector<size_t> ParticleSetUploads;
 
@@ -99,7 +102,8 @@ namespace RGTest
         std::vector<const RHI::IRHITexture*> SampledTextures;
 
     private:
-        std::array<FakePipeline, 32> m_Pipelines;
+        std::array<FakePipeline, 40> m_Pipelines;
+        bool                         m_ParticleSetMade = false;
         std::array<FakePipeline, Renderer::ENGINE_COMPUTE_PIPELINE_COUNT> m_ComputePipelines;
         FakeDescriptorSet m_ParticleSet;
         FakeDescriptorSet m_Set;

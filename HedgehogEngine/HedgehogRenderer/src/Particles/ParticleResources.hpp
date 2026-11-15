@@ -5,7 +5,9 @@
 #include "HedgehogRenderer/Graph/GraphFrameContext.hpp"
 #include "HedgehogRenderer/Graph/ParticleUniform.hpp"
 
+#include <array>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <span>
@@ -66,11 +68,22 @@ namespace Renderer
         // the buffers fit; outside a frame's recording, as it may wait for the GPU.
         void Sync(const HX::RenderScene& scene, RHI::IRHIDevice& device);
 
-        // This frame's work for the ParticleSimulate pass, after Sync with the same scene: a uniform
-        // per emitter instance with a slot, its reset flag, and the alive lists the other way round
-        // from last frame. nullptr when no instance has a slot. Valid until the next BuildFrame; the
-        // pass leaves the buffers in UnorderedAccess, which the next frame starts from.
-        [[nodiscard]] const ParticleFrameData* BuildFrame(const HX::RenderScene& scene);
+        // Finds a texture's set by its path (the resource registry's UI texture sets), or null.
+        using TextureLookup = std::function<const RHI::IRHIDescriptorSet*(const std::string& path)>;
+
+        // This frame's particles, after Sync with the same scene: per emitter instance with a slot its
+        // uniform, its reset flag and its texture's set (findTexture of its emitter's texture, null
+        // for none), the alive lists the other way round from last frame, and each buffer's state as
+        // the frame before left it (SetFinalStates). nullptr when no instance has a slot. Valid until
+        // the next BuildFrame.
+        [[nodiscard]] const ParticleFrameData* BuildFrame(const HX::RenderScene& scene, const TextureLookup& findTexture);
+        // The states this frame left the buffers in (the graph's last barrier on each, as
+        // RenderGraphRuntime::GetLastFinalState gives them, in ParticleBuffer order), so the next
+        // frame imports them from there; a buffer the frame did not touch keeps its state.
+        void SetFinalStates(const std::array<std::optional<RHI::ResourceState>, PARTICLE_BUFFER_COUNT>& states);
+
+        // Every emitter texture of the effects taken so far, for the resource registry to load.
+        [[nodiscard]] const std::vector<std::string>& GetTexturePaths() const { return m_TexturePaths; }
 
         // The settings of an effect's emitter (its texture and sub-emitters left out), or nullptr.
         [[nodiscard]] const HedgehogEngine::ParticleEmitterView* FindEmitter(uint32_t effect, uint32_t emitter) const;
@@ -90,6 +103,7 @@ namespace Renderer
         {
             uint32_t                                         Version = 0;
             std::vector<HedgehogEngine::ParticleEmitterView> Emitters;
+            std::vector<std::string>                         Textures; // one per emitter
         };
 
         struct InstanceSlot
@@ -114,11 +128,18 @@ namespace Renderer
         std::vector<std::optional<ParticleFrameSlot>> m_FrameSlots;
         bool                                          m_WarnedFull = false;
 
-        std::vector<ParticleEmitterUniform> m_Uniforms;
-        std::vector<uint8_t>                m_Reset;
-        ParticleFrameData                   m_Frame;
-        uint32_t                            m_Parity    = 0; // which alive list this frame reads
-        RHI::ResourceState                  m_LastState = RHI::ResourceState::Undefined;
+        std::vector<ParticleEmitterUniform>        m_Uniforms;
+        std::vector<uint8_t>                       m_Reset;
+        std::vector<const RHI::IRHIDescriptorSet*> m_Textures;
+        std::vector<std::string>                   m_TexturePaths;
+        ParticleFrameData                          m_Frame;
+        uint32_t                                   m_Parity = 0; // which alive list this frame reads
+
+        // Each physical buffer's state as the frames before left it: the state buffer, the dead list,
+        // the two alive lists, the slot rows.
+        std::array<RHI::ResourceState, PARTICLE_BUFFER_COUNT> m_States{};
+        // The physical buffer behind a ParticleBuffer in the last frame built.
+        [[nodiscard]] size_t PhysicalIndex(ParticleBuffer buffer) const;
 
         uint32_t                         m_Capacity = 0;
         std::unique_ptr<RHI::IRHIBuffer> m_State;

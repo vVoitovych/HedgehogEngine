@@ -49,6 +49,11 @@ namespace HedgehogEngine
     constexpr std::string_view TONE_MAP_SHADER = "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/ToneMap.shader";
     constexpr std::string_view SKYBOX_SHADER   = "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/Skybox.shader";
 
+    constexpr std::string_view PARTICLES_ALPHA_SHADER =
+        "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/ParticlesAlpha.shader";
+    constexpr std::string_view PARTICLES_ADDITIVE_SHADER =
+        "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/ParticlesAdditive.shader";
+
     // The shared phase's particle simulation (compute; ParticleCompute.pl). The renderer loads them
     // whatever the graphs draw, so the engine ships them as runtime assets.
     constexpr std::array<std::string_view, 4> PARTICLE_COMPUTE_SHADERS = {
@@ -67,7 +72,7 @@ namespace HedgehogEngine
         std::string_view Shader;
     };
 
-    constexpr std::array<PassTypeShader, 21> PASS_TYPE_SHADERS = { {
+    constexpr std::array<PassTypeShader, 23> PASS_TYPE_SHADERS = { {
         { "DepthPrepass", DEPTH_PREPASS_SHADER },
         { "DepthPrepass", DEPTH_PREPASS_SKINNED_SHADER },
         { "DepthPrepass", DEPTH_PREPASS_CUTOFF_SHADER },
@@ -82,6 +87,8 @@ namespace HedgehogEngine
         { "ForwardTransparent", FORWARD_TRANSPARENT_SHADER },
         { "ForwardTransparent", FORWARD_TRANSPARENT_SKINNED_SHADER },
         { "Skybox", SKYBOX_SHADER },
+        { "Particles", PARTICLES_ALPHA_SHADER },
+        { "Particles", PARTICLES_ADDITIVE_SHADER },
         { "ToneMap", TONE_MAP_SHADER },
         { "SelectionMask", SELECTION_MASK_SHADER },
         { "SelectionMask", SELECTION_MASK_SKINNED_SHADER },

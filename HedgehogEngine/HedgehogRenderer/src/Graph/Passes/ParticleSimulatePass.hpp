@@ -10,10 +10,16 @@ namespace Renderer
     // instance of particles, its slot started afresh when it asks (Reset), its newborns spawned (Emit),
     // its alive particles moved on (Simulate), then every emitter's counters and draw arguments made
     // ready for the next frame (Finish), with a buffer barrier between the stages. It imports the
-    // pool's buffers from the state the frame before left them in and writes them all, and it is never
-    // culled: particles age whether or not a view draws them.
-    void DeclareParticleSimulation(RenderGraphRuntime& graph, IGraphPassServices& services,
-                                   const ParticleFrameData& particles);
+    // pool's buffers from the states the frames before left them in and writes them all, and it is
+    // never culled: particles age whether or not a view draws them. Returns the buffers as it left
+    // them, for the views to draw from.
+    ParticleGraphBuffers DeclareParticleSimulation(RenderGraphRuntime& graph, IGraphPassServices& services,
+                                                   const ParticleFrameData& particles);
+
+    // The names the pool's buffers are imported under, in ParticleBuffer order.
+    inline constexpr std::array<const char*, PARTICLE_BUFFER_COUNT> PARTICLE_BUFFER_NAMES = {
+        "ParticleState", "ParticleDeadList", "ParticleAliveIn", "ParticleAliveOut", "ParticleSlots"
+    };
 
     // Push constants of every particle compute shader (Particles/Common.glsl's Push).
     struct ParticlePushConstants

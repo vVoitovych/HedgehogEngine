@@ -12,6 +12,7 @@
 #include "RHI/api/IRHIDevice.hpp"
 #include "RHI/api/IRHIQueryPool.hpp"
 
+#include <optional>
 #include <span>
 #include <string>
 #include <type_traits>
@@ -133,6 +134,12 @@ namespace Renderer
         // view or an unread pass shows up here as fewer passes.
         size_t GetLastExecutedPassCount() const { return m_LastExecutedPassCount; }
 
+        // The state the last Execute() left a buffer in (its last barrier's After), by the id its
+        // handle had then; nullopt for one no executed pass touched, or when it failed to compile.
+        // An imported buffer kept across frames is imported again from it (ImportBuffer's
+        // initialState).
+        [[nodiscard]] std::optional<RHI::ResourceState> GetLastFinalState(RGResourceId id) const;
+
         // CPU time each executed pass took to record (its barriers and its closure), by pass name
         // in execution order, for the Editor's --benchmark. Measured only while enabled; the last
         // Execute() with timing off leaves the list empty.
@@ -212,6 +219,7 @@ namespace Renderer
         uint32_t m_SwapchainHeight = 0;
 
         size_t m_LastExecutedPassCount = 0;
+        std::vector<std::pair<RGResourceId, RHI::ResourceState>> m_FinalBufferStates; // reused
 
         bool                    m_PassTimingEnabled = false;
         std::vector<PassTiming> m_LastPassTimings; // reused: names fit the small-string buffer

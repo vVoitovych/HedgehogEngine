@@ -12,6 +12,7 @@
 #include "HedgehogMath/api/Matrix.hpp"
 #include "HedgehogMath/api/Vector.hpp"
 
+#include <array>
 #include <cstdint>
 #include <optional>
 #include <span>
@@ -28,6 +29,17 @@ namespace Renderer
 {
     struct ShadowCascades;
     struct ShadowUniform;
+    struct ParticleFrameData;
+
+    // The particle pool's buffers as the shared phase's simulation left them in this frame's graph
+    // (SharedPhaseOutputs), for the views' Particles passes to read: the states, the alive list the
+    // simulation filled, and the slot rows with their draw arguments.
+    struct ParticleGraphBuffers
+    {
+        RGBuffer State;
+        RGBuffer AliveOut;
+        RGBuffer Slots;
+    };
 
     // Where one mesh's indices sit in the shared geometry buffers.
     struct MeshDrawRange
@@ -155,6 +167,11 @@ namespace Renderer
         // The scene's image-based lighting, which the Forward pass binds in set 3 beside the shadow:
         // the baked RenderScene::Environment, or the black fallback without one (no ambient light).
         ForwardEnvironment Environment;
+
+        // The frame's particles (the shared phase's ParticleFrameData) and its buffers in the graph;
+        // null without particles, and the Particles pass then draws nothing.
+        const ParticleFrameData* Particles = nullptr;
+        ParticleGraphBuffers     ParticleBuffers;
     };
 
     // The graph-path forward shader's uniforms (GraphForward/Base.vert and .frag), laid out for
@@ -232,6 +249,8 @@ namespace Renderer
         SelectionMaskSkinned, // SelectionMask for skinned overlay instances: palette at set 1
         SelectionOutline,     // a fullscreen triangle blending the outline over the colour: the mask at set 0
         ForwardTerrain,       // Forward for TerrainInstances: the terrain's layers at set 1
+        ParticlesAlpha,       // particle billboards over the HDR target, alpha-blended, depth tested, not written
+        ParticlesAdditive,    // ParticlesAlpha added to what is behind
     };
 
     // The particle compute shaders (ParticleCompute.pl), all on one layout.
@@ -244,19 +263,31 @@ namespace Renderer
     };
     inline constexpr size_t ENGINE_COMPUTE_PIPELINE_COUNT = 4;
 
-    // One frame of the particle pool for the shared phase's ParticleSimulate pass: the pool's buffers
-    // (this frame's alive list in AliveIn, the next frame's in AliveOut), the state the frame before
-    // left them in, and per emitter instance its uniform and whether its slot starts afresh.
+    // The pool's buffers in the order ParticleFrameData::Buffers and ::States list them.
+    enum class ParticleBuffer : uint8_t
+    {
+        State,
+        DeadList,
+        AliveIn,
+        AliveOut,
+        Slots,
+    };
+    inline constexpr size_t PARTICLE_BUFFER_COUNT = 5;
+
+    // One frame of the particle pool: the pool's buffers (this frame's alive list in AliveIn, the next
+    // frame's in AliveOut) and the state the frames before left each in, which the shared phase's
+    // ParticleSimulate pass imports them with; and per emitter instance its uniform, whether its slot
+    // starts afresh, and its texture's set (null for none: a soft round dot), which the views'
+    // Particles passes draw with.
     struct ParticleFrameData
     {
-        RHI::IRHIBuffer*                        State    = nullptr;
-        RHI::IRHIBuffer*                        DeadList = nullptr;
-        RHI::IRHIBuffer*                        AliveIn  = nullptr;
-        RHI::IRHIBuffer*                        AliveOut = nullptr;
-        RHI::IRHIBuffer*                        Slots    = nullptr;
-        RHI::ResourceState                      InitialState = RHI::ResourceState::Undefined;
-        std::span<const ParticleEmitterUniform> Emitters;
-        std::span<const uint8_t>                Reset; // one per emitter: 1 to start its slot afresh
+        std::array<RHI::IRHIBuffer*, PARTICLE_BUFFER_COUNT>    Buffers{};
+        std::array<RHI::ResourceState, PARTICLE_BUFFER_COUNT> States{};
+        std::span<const ParticleEmitterUniform>               Emitters;
+        std::span<const uint8_t>                              Reset; // one per emitter: 1 to start its slot afresh
+        std::span<const RHI::IRHIDescriptorSet* const>        Textures;
+
+        [[nodiscard]] RHI::IRHIBuffer* Get(ParticleBuffer buffer) const { return Buffers[static_cast<size_t>(buffer)]; }
     };
 
     // The long-lived GPU objects the engine passes use but do not own: pipelines, and per-frame
@@ -298,6 +329,8 @@ namespace Renderer
         // The particle compute shaders' set 0: particles' buffers and its emitters, uploaded into this
         // frame slot's emitter buffer. Once per frame, by the shared phase.
         virtual const RHI::IRHIDescriptorSet& AllocateParticleSet(const ParticleFrameData& particles) = 0;
+        // The set AllocateParticleSet made this frame, which the Particles passes draw with; null before.
+        virtual const RHI::IRHIDescriptorSet* GetParticleSet() const = 0;
     };
 
     // Attached to a RenderGraphRuntime for one frame (SetFrameContext). Pass builders capture a
