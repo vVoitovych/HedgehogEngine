@@ -80,6 +80,9 @@ public:
     virtual std::unique_ptr<IRHIPipeline>    CreateGraphicsPipeline(
         const GraphicsPipelineDesc& desc) const = 0;
 
+    virtual std::unique_ptr<IRHIPipeline>    CreateComputePipeline(
+        const ComputePipelineDesc& desc) const = 0;
+
     // ── Queries ───────────────────────────────────────────────────────────────
 
     // A pool of count GPU timestamps, or nullptr when the graphics queue cannot write timestamps

@@ -103,6 +103,12 @@ namespace Editor
         case Renderer::GpuCommandKind::DrawIndexed: text += counted(command.Count, "index", "indices"); break;
         case Renderer::GpuCommandKind::Barrier:     text += counted(command.Count, "transition", "transitions"); break;
         case Renderer::GpuCommandKind::CopyBuffer:  text += counted(command.Count, "byte", "bytes"); break;
+        case Renderer::GpuCommandKind::Fill:        text += counted(command.Count, "byte", "bytes"); break;
+        case Renderer::GpuCommandKind::DrawIndirect: text += counted(command.Count, "draw", "draws"); break;
+        case Renderer::GpuCommandKind::Dispatch:
+            if (command.Count != 0) // an indirect dispatch's groups are only known to the GPU
+                text += counted(command.Count, "group", "groups");
+            break;
         default: break;
         }
         if (command.Instances > 1)
@@ -241,9 +247,13 @@ namespace Editor
                 add(RenderingCounter::Vertices, static_cast<uint64_t>(command.Count) * instances);
                 break;
             }
+            case Renderer::GpuCommandKind::DrawIndirect: // its triangles are only known to the GPU
+                add(RenderingCounter::DrawCalls, command.Count);
+                break;
             case Renderer::GpuCommandKind::Barrier:
                 add(RenderingCounter::Barriers, 1);
                 break;
+            case Renderer::GpuCommandKind::Fill:
             case Renderer::GpuCommandKind::CopyBuffer:
             case Renderer::GpuCommandKind::CopyToTexture:
             case Renderer::GpuCommandKind::Mipmaps:

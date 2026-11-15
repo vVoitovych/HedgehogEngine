@@ -151,6 +151,10 @@ TEST_CASE("GPU timeline - events named by DescribeGpuEvent and made the GPU thre
     CHECK(DescribeGpuEvent(Command(GpuCommandKind::Draw, 3, 1)) == "Draw 3 vertices");
     CHECK(DescribeGpuEvent(Command(GpuCommandKind::Mipmaps, 1, 1)) == "Mipmaps");
     CHECK(DescribeGpuEvent(Command(GpuCommandKind::CopyBuffer, 48, 1)) == "CopyBuffer 48 bytes");
+    CHECK(DescribeGpuEvent(Command(GpuCommandKind::Fill, 16, 1)) == "Fill 16 bytes");
+    CHECK(DescribeGpuEvent(Command(GpuCommandKind::DrawIndirect, 1, 1)) == "DrawIndirect 1 draw");
+    CHECK(DescribeGpuEvent(Command(GpuCommandKind::Dispatch, 24, 1)) == "Dispatch 24 groups");
+    CHECK(DescribeGpuEvent(Command(GpuCommandKind::Dispatch, 0, 1)) == "Dispatch"); // indirect
 
     // In GPU order, each from the frame's start, a command named by its description (interned).
     Profiling::ThreadRecord thread;
@@ -253,15 +257,18 @@ TEST_CASE("Rendering counters - draws, triangles, vertices, barriers and copies 
         Command(GpuCommandKind::CopyBuffer, 64, 1),
         Command(GpuCommandKind::Mipmaps, 1, 1),
         Command(GpuCommandKind::Blit, 1, 1),
+        Command(GpuCommandKind::DrawIndirect, 2, 1), // two draws, their triangles unknown
+        Command(GpuCommandKind::Dispatch, 8, 1),     // a dispatch is a command only
+        Command(GpuCommandKind::Fill, 16, 1),
     };
     const RenderingCounters counts = CountRendering(commands);
     const auto at = [&](RenderingCounter counter) { return counts[static_cast<size_t>(counter)]; };
-    CHECK(at(RenderingCounter::DrawCalls) == 3);
-    CHECK(at(RenderingCounter::Commands) == 7);
+    CHECK(at(RenderingCounter::DrawCalls) == 3 + 2);
+    CHECK(at(RenderingCounter::Commands) == 10);
     CHECK(at(RenderingCounter::Triangles) == 12 + 48 + 1);
     CHECK(at(RenderingCounter::Vertices) == 36 + 144 + 3);
     CHECK(at(RenderingCounter::Barriers) == 1);
-    CHECK(at(RenderingCounter::Copies) == 3);
+    CHECK(at(RenderingCounter::Copies) == 4);
 
     const RenderingCounters none = CountRendering({});
     for (const uint64_t count : none)

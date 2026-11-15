@@ -97,6 +97,7 @@ inline VkBufferUsageFlags ToVkBufferUsage(BufferUsage usage)
     if (usage & BufferUsage::StorageBuffer) flags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     if (usage & BufferUsage::TransferSrc)   flags |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     if (usage & BufferUsage::TransferDst)   flags |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    if (usage & BufferUsage::IndirectBuffer) flags |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
     return flags;
 }
 
@@ -416,6 +417,10 @@ inline ResourceStateInfo ToVkResourceStateInfo(ResourceState state)
 
         case ResourceState::Present:
             return { VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT, 0 };
+
+        case ResourceState::IndirectArgument:
+            return { VK_IMAGE_LAYOUT_UNDEFINED,
+                     VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT };
 
         default:
             assert(false && "Unknown ResourceState");

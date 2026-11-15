@@ -11,7 +11,7 @@
 namespace Renderer
 {
     // A command list that records into another one unchanged and, while started, writes a GPU
-    // timestamp after every draw, barrier, copy, blit and mipmap generation, remembering what each
+    // timestamp after every draw, dispatch, fill, barrier, copy, blit and mipmap generation, remembering what each
     // was, and at the start and end of every scope (as ScopeBegin and ScopeEnd entries). Timestamp
     // first is written at Start, so command i runs from first + i to first + i + 1.
     // Once capacity - 1 commands are timed, later ones are still recorded, only not timed.
@@ -65,6 +65,10 @@ namespace Renderer
         void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) override;
         void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset,
                          uint32_t firstInstance) override;
+        void DrawIndirect(const RHI::IRHIBuffer& buffer, size_t offset, uint32_t drawCount, uint32_t stride) override;
+        void Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) override;
+        void DispatchIndirect(const RHI::IRHIBuffer& buffer, size_t offset) override;
+        void FillBuffer(RHI::IRHIBuffer& buffer, size_t offset, size_t size, uint32_t value) override;
         void Barrier(std::span<const RHI::TextureBarrier> textureBarriers,
                      std::span<const RHI::BufferBarrier>  bufferBarriers) override;
         void CopyBufferToBuffer(const RHI::IRHIBuffer& src, RHI::IRHIBuffer& dst, size_t srcOffset, size_t dstOffset,

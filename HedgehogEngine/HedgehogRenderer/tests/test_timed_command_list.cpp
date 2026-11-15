@@ -106,6 +106,72 @@ TEST_CASE("Timed command list - every call reaches the target, each timed comman
     CHECK_FALSE(timed.IsTruncated());
 }
 
+TEST_CASE("Timed command list - indirect draws, dispatches and fills reach the target and are timed")
+{
+    TestQueryPool        pool(16);
+    RecordingCommandList target;
+    TimedCommandList     timed;
+    timed.Start(target, pool, 0, 16);
+    timed.SetPass("Particles");
+
+    TestBuffer args(64);
+    TestBuffer counters(64);
+    timed.FillBuffer(counters, 0, 16, 0);
+    timed.Dispatch(4, 2, 3);
+    timed.DispatchIndirect(args, 12);
+    timed.DrawIndirect(args, 32, 2, 16);
+    timed.FillBuffer(counters, 16, RHI::WHOLE_BUFFER_SIZE, 7);
+    timed.Finish();
+
+    CHECK(target.Commands == std::vector<std::string>{
+        "reset queries 0 16", "timestamp 0",
+        "fill 0 16 0", "timestamp 1",
+        "dispatch 4 2 3", "timestamp 2",
+        "dispatch indirect 12", "timestamp 3",
+        "draw indirect 32 2 16", "timestamp 4",
+        "fill 16 " + std::to_string(RHI::WHOLE_BUFFER_SIZE) + " 7", "timestamp 5" });
+
+    const std::span<const GpuCommandTiming> commands = timed.GetCommands();
+    REQUIRE(commands.size() == 5);
+    CHECK(commands[0].Kind == GpuCommandKind::Fill);
+    CHECK(commands[0].Count == 16);
+    CHECK(commands[1].Kind == GpuCommandKind::Dispatch);
+    CHECK(commands[1].Count == 24); // 4 x 2 x 3 groups
+    CHECK(commands[2].Kind == GpuCommandKind::Dispatch);
+    CHECK(commands[2].Count == 0);  // the GPU reads the groups
+    CHECK(commands[3].Kind == GpuCommandKind::DrawIndirect);
+    CHECK(commands[3].Count == 2);
+    CHECK(commands[4].Kind == GpuCommandKind::Fill);
+    CHECK(commands[4].Count == 0);  // to the end of the buffer
+    CHECK(std::string(GetGpuCommandKindName(GpuCommandKind::DrawIndirect)) == "DrawIndirect");
+    CHECK(std::string(GetGpuCommandKindName(GpuCommandKind::Dispatch)) == "Dispatch");
+    CHECK(std::string(GetGpuCommandKindName(GpuCommandKind::Fill)) == "Fill");
+    CHECK_FALSE(IsGpuScopeMarker(GpuCommandKind::Dispatch));
+}
+
+TEST_CASE("Timed command list - a compute pipeline binds through it, its set and push constants with it")
+{
+    TestDevice device;
+    const std::unique_ptr<RHI::IRHIPipeline> pipeline = device.CreateComputePipeline(RHI::ComputePipelineDesc{});
+    REQUIRE(pipeline);
+    CHECK(static_cast<const TestPipeline&>(*pipeline).IsCompute);
+
+    TestQueryPool        pool(8);
+    RecordingCommandList target;
+    TimedCommandList     timed;
+    timed.Start(target, pool, 0, 8);
+    const uint32_t groups = 3;
+    timed.BindPipeline(*pipeline);
+    timed.PushConstants(*pipeline, RHI::ShaderStage::Compute, 0, sizeof(groups), &groups);
+    timed.Dispatch(groups, 1, 1);
+    timed.Finish();
+
+    CHECK(target.Commands == std::vector<std::string>{ "reset queries 0 8", "timestamp 0", "pipeline", "push 4",
+                                                       "dispatch 3 1 1", "timestamp 1" });
+    REQUIRE(target.BoundPipelines.size() == 1);
+    CHECK(target.BoundPipelines[0] == pipeline.get());
+}
+
 TEST_CASE("Timed command list - past its capacity commands are still recorded, only not timed")
 {
     TestQueryPool        pool(4);

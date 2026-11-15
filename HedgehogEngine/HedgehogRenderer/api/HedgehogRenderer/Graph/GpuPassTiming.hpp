@@ -25,6 +25,9 @@ namespace Renderer
         Blit,
         ScopeBegin,   // a named scope opens (IRHICommandList::BeginScope); Scope names it
         ScopeEnd,     // the innermost open scope closes
+        DrawIndirect, // Count draws, their vertices unknown to the CPU
+        Dispatch,     // Count work groups (0 for an indirect dispatch: the GPU reads them)
+        Fill,         // Count bytes (a buffer filled with one value)
     };
 
     // A scope marker rather than work the GPU does.
@@ -46,6 +49,9 @@ namespace Renderer
         case GpuCommandKind::Blit:          return "Blit";
         case GpuCommandKind::ScopeBegin:    return "ScopeBegin";
         case GpuCommandKind::ScopeEnd:      return "ScopeEnd";
+        case GpuCommandKind::DrawIndirect:  return "DrawIndirect";
+        case GpuCommandKind::Dispatch:      return "Dispatch";
+        case GpuCommandKind::Fill:          return "Fill";
         }
         return "?";
     }

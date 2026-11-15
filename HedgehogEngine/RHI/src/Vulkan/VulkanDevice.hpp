@@ -63,6 +63,7 @@ public:
         const IRHIDescriptorPool& pool, const IRHIDescriptorSetLayout& layout) const override;
 
     std::unique_ptr<IRHIPipeline>    CreateGraphicsPipeline(const GraphicsPipelineDesc& desc) const override;
+    std::unique_ptr<IRHIPipeline>    CreateComputePipeline(const ComputePipelineDesc& desc) const override;
 
     std::unique_ptr<IRHIQueryPool>   CreateTimestampQueryPool(uint32_t count) const override;
 

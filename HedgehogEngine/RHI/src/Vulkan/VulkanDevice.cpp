@@ -563,6 +563,12 @@ std::unique_ptr<IRHIPipeline> VulkanDevice::CreateGraphicsPipeline(
     return std::make_unique<VulkanPipeline>(const_cast<VulkanDevice&>(*this), desc);
 }
 
+std::unique_ptr<IRHIPipeline> VulkanDevice::CreateComputePipeline(
+    const ComputePipelineDesc& desc) const
+{
+    return std::make_unique<VulkanPipeline>(const_cast<VulkanDevice&>(*this), desc);
+}
+
 std::unique_ptr<IRHICommandList> VulkanDevice::CreateCommandList() const
 {
     return std::make_unique<VulkanCommandList>(const_cast<VulkanDevice&>(*this));

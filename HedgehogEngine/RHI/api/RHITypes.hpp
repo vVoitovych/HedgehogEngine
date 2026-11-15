@@ -42,6 +42,7 @@ enum class BufferUsage : uint32_t
     StorageBuffer = 1 << 3,
     TransferSrc   = 1 << 4,
     TransferDst   = 1 << 5,
+    IndirectBuffer = 1 << 6, // DrawIndirect / DispatchIndirect arguments
 };
 
 inline BufferUsage operator|(BufferUsage lhs, BufferUsage rhs)
@@ -217,6 +218,7 @@ enum class ResourceState
     CopySrc,
     CopyDst,
     Present,
+    IndirectArgument, // buffers only: read as DrawIndirect / DispatchIndirect arguments
 };
 
 enum class TextureType
