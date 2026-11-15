@@ -62,6 +62,7 @@ namespace HedgehogEngine
     class RigidBodyListSystem;
     class EnvironmentSystem;
     class TerrainSystem;
+    class ParticleSystem;
     class SaveGameManager;
     class PrefabManager;
 
@@ -186,6 +187,7 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API EnvironmentSystem*  GetEnvironmentSystem() const;
         // The terrains, which resolve their files in the Sync phase.
         HEDGEHOG_ENGINE_API TerrainSystem*      GetTerrainSystem() const;
+        HEDGEHOG_ENGINE_API ParticleSystem*     GetParticleSystem() const;
 
         // The audio engine AudioSystem plays through. The context never starts it, so tests and
         // tools stay silent: the application calls Init (the Editor and --game-mode with a device,
@@ -240,6 +242,7 @@ namespace HedgehogEngine
         std::shared_ptr<RigidBodyListSystem> m_RigidBodyListSystem;
         std::shared_ptr<EnvironmentSystem>   m_EnvironmentSystem;
         std::shared_ptr<TerrainSystem>       m_TerrainSystem;
+        std::shared_ptr<ParticleSystem>      m_ParticleSystem;
 
         ResourceCatalog m_ResourceCatalog;
 
