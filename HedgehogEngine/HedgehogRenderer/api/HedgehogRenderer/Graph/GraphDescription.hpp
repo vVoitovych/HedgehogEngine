@@ -23,6 +23,10 @@ namespace Renderer
         RGTextureDesc  TextureDesc;
         RGBufferDesc   BufferDesc;
         RGVersion      LatestVersion = 0;
+        // An imported buffer's state when the graph begins: the first barrier's Before. A
+        // persistent buffer an earlier frame left in some state names it, so this frame's first use
+        // waits for that frame's work still in flight; Undefined (the default) waits for nothing.
+        RHI::ResourceState InitialState = RHI::ResourceState::Undefined;
     };
 
     // One read or write a pass recorded against a resource. For a write, Version is the NEW

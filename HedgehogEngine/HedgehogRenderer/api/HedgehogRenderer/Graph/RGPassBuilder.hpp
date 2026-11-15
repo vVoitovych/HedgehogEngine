@@ -13,6 +13,9 @@ namespace Renderer
     // returns the new handle; every read verb (SampleTexture, DepthReadOnly, ReadBuffer) just
     // records which version the pass depends on. SetSideEffect flags the pass as one a later
     // compiler must not cull even if nothing reads its outputs.
+    //
+    // A pass records its own BeginRendering, so a compute pass is one that never begins rendering:
+    // it declares its buffers (and storage textures) here and dispatches in its execute closure.
     class RGPassBuilder
     {
     public:
@@ -34,6 +37,8 @@ namespace Renderer
         RGBuffer  StorageWrite(RGBuffer buffer);
         void      ReadBuffer(RGBuffer buffer);
         RGBuffer  WriteBuffer(RGBuffer buffer);
+        // Reads the buffer as DrawIndirect / DispatchIndirect arguments.
+        void      ReadIndirectArgs(RGBuffer buffer);
 
         void SetSideEffect();
 

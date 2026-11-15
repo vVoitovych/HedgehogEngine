@@ -311,9 +311,16 @@ namespace Renderer
         // All transitions a single pass needs — across every resource it touches — land in that
         // pass's own TextureBarriers/BufferBarriers, i.e. one batched Barrier() call, not one
         // call per resource.
+        //
+        // A buffer starts in its record's InitialState (Undefined unless an import names one). A
+        // buffer used as UnorderedAccess by one pass and again by a later one gets an
+        // UnorderedAccess -> UnorderedAccess barrier, so the later pass sees the earlier one's
+        // writes (a compute write-after-write or read-after-write); within one pass a buffer is
+        // transitioned once.
         void DeriveBarriers(const GraphDescription& description, CompiledGraph& graph)
         {
             std::unordered_map<RGResourceId, RHI::ResourceState> currentState;
+            std::vector<RGResourceId> touchedThisPass;
 
             for (CompiledPass& compiled : graph.Passes)
             {
@@ -323,19 +330,28 @@ namespace Renderer
                 touches.reserve(pass.Reads.size() + pass.Writes.size());
                 touches.insert(touches.end(), pass.Reads.begin(), pass.Reads.end());
                 touches.insert(touches.end(), pass.Writes.begin(), pass.Writes.end());
+                touchedThisPass.clear();
 
                 for (const RGResourceRef& touch : touches)
                 {
-                    const RHI::ResourceState newState = ToResourceState(touch.Usage);
-                    auto it = currentState.find(touch.Id);
-                    const RHI::ResourceState oldState = (it != currentState.end())
-                        ? it->second : RHI::ResourceState::Undefined;
-
-                    if (oldState == newState)
-                        continue;
-
                     const RGResourceRecord* resource = description.FindResource(touch.Id);
                     const bool isBuffer = resource && resource->IsBuffer;
+
+                    const RHI::ResourceState newState = ToResourceState(touch.Usage);
+                    auto it = currentState.find(touch.Id);
+                    const bool seenBefore = it != currentState.end();
+                    const RHI::ResourceState oldState = seenBefore ? it->second
+                        : (isBuffer ? resource->InitialState : RHI::ResourceState::Undefined);
+
+                    const bool alreadyInPass = std::find(touchedThisPass.begin(), touchedThisPass.end(), touch.Id)
+                                             != touchedThisPass.end();
+                    touchedThisPass.push_back(touch.Id);
+
+                    const bool unorderedAgain = isBuffer && seenBefore && !alreadyInPass
+                                             && oldState == RHI::ResourceState::UnorderedAccess
+                                             && newState == RHI::ResourceState::UnorderedAccess;
+                    if (oldState == newState && !unorderedAgain)
+                        continue;
 
                     if (isBuffer)
                     {

@@ -324,3 +324,70 @@ TEST_CASE("With GPU timestamps set, Execute stamps before the first pass and aft
     CHECK(untimed.Commands == std::vector<std::string>{ "draw 3", "draw 3", "draw 3" });
     CHECK(runtime.GetLastTimedPassNames().empty());
 }
+
+namespace
+{
+    struct ComputePassData
+    {
+        RGBuffer State{};
+        RGBuffer Args{};
+    };
+}
+
+TEST_CASE("A compute pass over imported buffers dispatches between the barriers the graph derives")
+{
+    TestDevice         device;
+    RenderGraphRuntime runtime(device, 64 * 1024);
+    TestBuffer         state(1024);
+    TestBuffer         args(64);
+
+    // The previous frame left the arguments read by its draws.
+    const RGBuffer stateHandle = runtime.ImportBuffer("State", state.GetSize());
+    const RGBuffer argsHandle  = runtime.ImportBuffer("Args", args.GetSize(), false, RHI::ResourceState::IndirectArgument);
+    runtime.BindImportedBuffer(stateHandle, &state);
+    runtime.BindImportedBuffer(argsHandle, &args);
+
+    RHI::IRHIBuffer* resolvedState = nullptr;
+    runtime.AddPass<ComputePassData>(
+        "Simulate",
+        [&](RGPassBuilder& pass, ComputePassData& data)
+        {
+            data.State = pass.WriteBuffer(stateHandle);
+            data.Args  = pass.WriteBuffer(argsHandle);
+            pass.SetSideEffect();
+        },
+        [&](ComputePassData& data, RHI::IRHICommandList& cmd)
+        {
+            resolvedState = runtime.GetBuffer(data.State);
+            cmd.Dispatch(4, 1, 1);
+        });
+    runtime.AddPass<ComputePassData>(
+        "Draw",
+        [&](RGPassBuilder& pass, ComputePassData& data)
+        {
+            data.Args = argsHandle;
+            pass.ReadIndirectArgs(RGBuffer{ argsHandle.Id, 1 });
+            pass.SetSideEffect();
+        },
+        [&](ComputePassData& data, RHI::IRHICommandList& cmd)
+        {
+            cmd.DrawIndirect(*runtime.GetBuffer(data.Args), 0, 1, 16);
+        });
+
+    RecordingCommandList cmd;
+    REQUIRE(runtime.Execute(cmd));
+
+    CHECK(resolvedState == &state);
+    CHECK(cmd.Commands == std::vector<std::string>{ "dispatch 4 1 1", "draw indirect 0 1 16" });
+    REQUIRE(cmd.Calls.size() == 2);
+    REQUIRE(cmd.Calls[0].BufferBarriers.size() == 2);
+    CHECK(cmd.Calls[0].BufferBarriers[0].Buffer == &state);
+    CHECK(cmd.Calls[0].BufferBarriers[0].Before == RHI::ResourceState::Undefined);
+    CHECK(cmd.Calls[0].BufferBarriers[1].Buffer == &args);
+    CHECK(cmd.Calls[0].BufferBarriers[1].Before == RHI::ResourceState::IndirectArgument);
+    CHECK(cmd.Calls[0].BufferBarriers[1].After == RHI::ResourceState::UnorderedAccess);
+    REQUIRE(cmd.Calls[1].BufferBarriers.size() == 1);
+    CHECK(cmd.Calls[1].BufferBarriers[0].Buffer == &args);
+    CHECK(cmd.Calls[1].BufferBarriers[0].Before == RHI::ResourceState::UnorderedAccess);
+    CHECK(cmd.Calls[1].BufferBarriers[0].After == RHI::ResourceState::IndirectArgument);
+}

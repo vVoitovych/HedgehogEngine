@@ -42,14 +42,16 @@ namespace Renderer
         return RGTexture{ record.Id, 0 };
     }
 
-    RGBuffer GraphBuilder::ImportBuffer(const std::string& name, size_t size, bool isReadOnly)
+    RGBuffer GraphBuilder::ImportBuffer(const std::string& name, size_t size, bool isReadOnly,
+                                        RHI::ResourceState initialState)
     {
         RGResourceRecord record;
-        record.Id         = AllocateResourceId();
-        record.Name       = name;
-        record.IsImported = true;
-        record.IsReadOnly = isReadOnly;
-        record.IsBuffer   = true;
+        record.Id           = AllocateResourceId();
+        record.Name         = name;
+        record.IsImported   = true;
+        record.IsReadOnly   = isReadOnly;
+        record.IsBuffer     = true;
+        record.InitialState = initialState;
         record.BufferDesc.Name = name;
         record.BufferDesc.Size = size;
         m_Description.Resources.push_back(record);

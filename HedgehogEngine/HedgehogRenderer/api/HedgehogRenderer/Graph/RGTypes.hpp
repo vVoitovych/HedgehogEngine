@@ -153,11 +153,12 @@ namespace Renderer
         StorageReadWrite,
         ReadBuffer,
         WriteBuffer,
+        IndirectArgs, // a buffer read as DrawIndirect / DispatchIndirect arguments
     };
 
     // usage -> the RHI::ResourceState it implies once the compiler derives barriers. Textures
     // and buffers share RGResourceUsage but not every value applies to both — ReadBuffer/
-    // WriteBuffer are buffer-only, ColorTarget/DepthTarget/DepthReadOnly texture-only; callers
+    // WriteBuffer/IndirectArgs are buffer-only, ColorTarget/DepthTarget/DepthReadOnly texture-only; callers
     // never mix them (RGPassBuilder's overloads make that a compile error already).
     inline RHI::ResourceState ToResourceState(RGResourceUsage usage)
     {
@@ -170,6 +171,7 @@ namespace Renderer
             case RGResourceUsage::StorageReadWrite: return RHI::ResourceState::UnorderedAccess;
             case RGResourceUsage::ReadBuffer:       return RHI::ResourceState::ShaderResource;
             case RGResourceUsage::WriteBuffer:      return RHI::ResourceState::UnorderedAccess;
+            case RGResourceUsage::IndirectArgs:     return RHI::ResourceState::IndirectArgument;
         }
         return RHI::ResourceState::Undefined;
     }

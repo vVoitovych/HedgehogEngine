@@ -50,9 +50,10 @@ namespace Renderer
         {
             return m_Builder.ImportTexture(name, format, isReadOnly);
         }
-        RGBuffer ImportBuffer(const std::string& name, size_t size, bool isReadOnly = false)
+        RGBuffer ImportBuffer(const std::string& name, size_t size, bool isReadOnly = false,
+                              RHI::ResourceState initialState = RHI::ResourceState::Undefined)
         {
-            return m_Builder.ImportBuffer(name, size, isReadOnly);
+            return m_Builder.ImportBuffer(name, size, isReadOnly, initialState);
         }
         uint32_t AddOutputSlot(const std::string& name, RHI::Format format, const RGSizePolicy& size)
         {
@@ -82,6 +83,9 @@ namespace Renderer
         // The real texture behind a handle, for an execute closure to render into. Valid only
         // while Execute() is running passes: transients are only resolved then.
         [[nodiscard]] RHI::IRHITexture* GetTexture(RGTexture texture);
+        // The real buffer behind a handle (every graph buffer is imported and bound), likewise
+        // only from an execute closure.
+        [[nodiscard]] RHI::IRHIBuffer* GetBuffer(RGBuffer buffer);
 
         // Declares a pass: PassData is default-constructed in the frame arena, setup(passBuilder,
         // passData) runs synchronously against it (declare dependencies AND fill in whatever the
