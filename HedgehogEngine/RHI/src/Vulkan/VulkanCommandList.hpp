@@ -58,6 +58,14 @@ public:
                      uint32_t firstIndex,   int32_t  vertexOffset,
                      uint32_t firstInstance) override;
 
+    void DrawIndirect(const IRHIBuffer& buffer, size_t offset,
+                      uint32_t drawCount, uint32_t stride) override;
+
+    void Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) override;
+    void DispatchIndirect(const IRHIBuffer& buffer, size_t offset) override;
+
+    void FillBuffer(IRHIBuffer& buffer, size_t offset, size_t size, uint32_t value) override;
+
     void Barrier(std::span<const TextureBarrier> textureBarriers,
                 std::span<const BufferBarrier>  bufferBarriers) override;
 

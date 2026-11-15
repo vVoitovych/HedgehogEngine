@@ -127,6 +127,22 @@ public:
                               int32_t  vertexOffset  = 0,
                               uint32_t firstInstance = 0) = 0;
 
+    // drawCount non-indexed draws whose arguments (VkDrawIndirectCommand: vertex count, instance
+    // count, first vertex, first instance; four uint32) start at offset in buffer, stride bytes apart.
+    // The buffer has IndirectBuffer usage and is in IndirectArgument state.
+    virtual void DrawIndirect(const IRHIBuffer& buffer,
+                              size_t            offset,
+                              uint32_t          drawCount,
+                              uint32_t          stride) = 0;
+
+    // ── Compute (outside rendering, with a compute pipeline bound) ────────────
+
+    virtual void Dispatch(uint32_t groupCountX, uint32_t groupCountY = 1, uint32_t groupCountZ = 1) = 0;
+
+    // A dispatch whose three uint32 group counts are read from buffer at offset (IndirectBuffer
+    // usage, IndirectArgument state).
+    virtual void DispatchIndirect(const IRHIBuffer& buffer, size_t offset) = 0;
+
     // ── Transfer / barrier ────────────────────────────────────────────────────
 
     // Batches any number of texture and buffer transitions into a single synchronization2
@@ -140,6 +156,10 @@ public:
                                     size_t            srcOffset,
                                     size_t            dstOffset,
                                     size_t            size) = 0;
+
+    // Writes value into every 4-byte word of size bytes of buffer from offset (both multiples of 4;
+    // size WHOLE_BUFFER_SIZE runs to the end), outside rendering; the buffer is in CopyDst state.
+    virtual void FillBuffer(IRHIBuffer& buffer, size_t offset, size_t size, uint32_t value) = 0;
 
     // Copies the entire buffer content into the texture (assumes staging → GPU).
     virtual void CopyBufferToTexture(const IRHIBuffer& src,

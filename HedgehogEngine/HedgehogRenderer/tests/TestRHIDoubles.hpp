@@ -91,6 +91,14 @@ namespace RGTest
         size_t m_Size;
     };
 
+    // A pipeline that only remembers what it was made from.
+    class TestPipeline final : public RHI::IRHIPipeline
+    {
+    public:
+        explicit TestPipeline(bool compute) : IsCompute(compute) {}
+        bool IsCompute = false;
+    };
+
     // Timestamps a test writes itself (SetTimestamp); a reset one reads as not yet written.
     class TestQueryPool final : public RHI::IRHIQueryPool
     {
@@ -191,6 +199,11 @@ namespace RGTest
         {
             assert(false && "not exercised by these tests");
             return nullptr;
+        }
+
+        std::unique_ptr<RHI::IRHIPipeline> CreateComputePipeline(const RHI::ComputePipelineDesc&) const override
+        {
+            return std::make_unique<TestPipeline>(true);
         }
 
         std::unique_ptr<RHI::IRHICommandList> CreateCommandList() const override
@@ -309,6 +322,24 @@ namespace RGTest
             DrawnIndexCounts.push_back(indexCount);
             Commands.push_back("draw " + std::to_string(indexCount));
         }
+        void DrawIndirect(const RHI::IRHIBuffer&, size_t offset, uint32_t drawCount, uint32_t stride) override
+        {
+            Commands.push_back("draw indirect " + std::to_string(offset) + " " + std::to_string(drawCount) + " "
+                               + std::to_string(stride));
+        }
+
+        void Dispatch(uint32_t x, uint32_t y, uint32_t z) override
+        {
+            Commands.push_back("dispatch " + std::to_string(x) + " " + std::to_string(y) + " " + std::to_string(z));
+        }
+        void DispatchIndirect(const RHI::IRHIBuffer&, size_t offset) override
+        {
+            Commands.push_back("dispatch indirect " + std::to_string(offset));
+        }
+        void FillBuffer(RHI::IRHIBuffer&, size_t offset, size_t size, uint32_t value) override
+        {
+            Commands.push_back("fill " + std::to_string(offset) + " " + std::to_string(size) + " " + std::to_string(value));
+        }
 
         void CopyBufferToBuffer(const RHI::IRHIBuffer&, RHI::IRHIBuffer&, size_t, size_t, size_t) override {}
         void CopyBufferToTexture(const RHI::IRHIBuffer&, RHI::IRHITexture&) override {}
@@ -361,7 +392,8 @@ namespace RGTest
         // Every rendering begun, pipeline, vertex/index buffer, descriptor set, push constant,
         // indexed draw, region copy and mipmap generation, in order, as "begin", "pipeline",
         // "vertex <count>", "index", "set <index>", "push <bytes>", "draw <index count>",
-        // "copy <mip> <layer>" and "mipmaps".
+        // "copy <mip> <layer>" and "mipmaps"; and "draw indirect <offset> <count> <stride>",
+        // "dispatch <x> <y> <z>", "dispatch indirect <offset>" and "fill <offset> <size> <value>".
         std::vector<std::string>                   Commands;
         std::vector<const RHI::IRHIPipeline*>      BoundPipelines;
         std::vector<const RHI::IRHIDescriptorSet*> BoundSets;

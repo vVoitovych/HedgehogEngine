@@ -43,6 +43,30 @@ namespace Renderer
         Stamp(GpuCommandKind::DrawIndexed, indexCount, instanceCount);
     }
 
+    void TimedCommandList::DrawIndirect(const RHI::IRHIBuffer& buffer, size_t offset, uint32_t drawCount, uint32_t stride)
+    {
+        m_Target->DrawIndirect(buffer, offset, drawCount, stride);
+        Stamp(GpuCommandKind::DrawIndirect, drawCount, 1);
+    }
+
+    void TimedCommandList::Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
+    {
+        m_Target->Dispatch(groupCountX, groupCountY, groupCountZ);
+        Stamp(GpuCommandKind::Dispatch, groupCountX * groupCountY * groupCountZ, 1);
+    }
+
+    void TimedCommandList::DispatchIndirect(const RHI::IRHIBuffer& buffer, size_t offset)
+    {
+        m_Target->DispatchIndirect(buffer, offset);
+        Stamp(GpuCommandKind::Dispatch, 0, 1);
+    }
+
+    void TimedCommandList::FillBuffer(RHI::IRHIBuffer& buffer, size_t offset, size_t size, uint32_t value)
+    {
+        m_Target->FillBuffer(buffer, offset, size, value);
+        Stamp(GpuCommandKind::Fill, size == RHI::WHOLE_BUFFER_SIZE ? 0 : static_cast<uint32_t>(size), 1);
+    }
+
     void TimedCommandList::Barrier(std::span<const RHI::TextureBarrier> textureBarriers,
                                    std::span<const RHI::BufferBarrier>  bufferBarriers)
     {

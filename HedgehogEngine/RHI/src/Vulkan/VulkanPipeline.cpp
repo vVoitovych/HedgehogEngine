@@ -132,30 +132,7 @@ VulkanPipeline::VulkanPipeline(VulkanDevice& device, const GraphicsPipelineDesc&
     colorBlend.attachmentCount   = static_cast<uint32_t>(blendAttachments.size());
     colorBlend.pAttachments      = blendAttachments.data();
 
-    // ── Pipeline layout ───────────────────────────────────────────────────────
-
-    std::vector<VkDescriptorSetLayout> setLayouts;
-    setLayouts.reserve(desc.DescriptorSetLayouts.size());
-    for (const auto* layout : desc.DescriptorSetLayouts)
-    {
-        assert(layout && "Null descriptor set layout in GraphicsPipelineDesc.");
-        setLayouts.push_back(static_cast<const VulkanDescriptorSetLayout&>(*layout).GetHandle());
-    }
-
-    std::vector<VkPushConstantRange> pushRanges;
-    pushRanges.reserve(desc.PushConstantRanges.size());
-    for (const auto& range : desc.PushConstantRanges)
-        pushRanges.push_back({ VulkanTypes::ToVkShaderStage(range.Stages),
-                                range.Offset, range.Size });
-
-    VkPipelineLayoutCreateInfo layoutInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
-    layoutInfo.setLayoutCount         = static_cast<uint32_t>(setLayouts.size());
-    layoutInfo.pSetLayouts            = setLayouts.data();
-    layoutInfo.pushConstantRangeCount = static_cast<uint32_t>(pushRanges.size());
-    layoutInfo.pPushConstantRanges    = pushRanges.data();
-
-    VkResult result = vkCreatePipelineLayout(m_Device.GetHandle(), &layoutInfo, nullptr, &m_Layout);
-    assert(result == VK_SUCCESS && "Failed to create VkPipelineLayout.");
+    CreateLayout(desc.DescriptorSetLayouts, desc.PushConstantRanges);
 
     // ── Graphics pipeline ─────────────────────────────────────────────────────
 
@@ -191,9 +168,56 @@ VulkanPipeline::VulkanPipeline(VulkanDevice& device, const GraphicsPipelineDesc&
     pipelineInfo.renderPass = VK_NULL_HANDLE;
     pipelineInfo.subpass    = 0;
 
-    result = vkCreateGraphicsPipelines(
+    const VkResult result = vkCreateGraphicsPipelines(
         m_Device.GetHandle(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_Pipeline);
     assert(result == VK_SUCCESS && "Failed to create VkPipeline.");
+}
+
+VulkanPipeline::VulkanPipeline(VulkanDevice& device, const ComputePipelineDesc& desc)
+    : m_Device(device)
+    , m_BindPoint(VK_PIPELINE_BIND_POINT_COMPUTE)
+{
+    assert(desc.ComputeShader && "ComputePipelineDesc::ComputeShader must not be null.");
+
+    CreateLayout(desc.DescriptorSetLayouts, desc.PushConstantRanges);
+
+    VkComputePipelineCreateInfo pipelineInfo{ VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO };
+    pipelineInfo.stage        = { VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO };
+    pipelineInfo.stage.stage  = VK_SHADER_STAGE_COMPUTE_BIT;
+    pipelineInfo.stage.module = static_cast<const VulkanShader&>(*desc.ComputeShader).GetHandle();
+    pipelineInfo.stage.pName  = "main";
+    pipelineInfo.layout       = m_Layout;
+
+    const VkResult result = vkCreateComputePipelines(
+        m_Device.GetHandle(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_Pipeline);
+    assert(result == VK_SUCCESS && "Failed to create the compute VkPipeline.");
+}
+
+void VulkanPipeline::CreateLayout(const std::vector<const IRHIDescriptorSetLayout*>& setLayouts,
+                                  const std::vector<PushConstantRange>&              pushConstantRanges)
+{
+    std::vector<VkDescriptorSetLayout> vkSetLayouts;
+    vkSetLayouts.reserve(setLayouts.size());
+    for (const auto* layout : setLayouts)
+    {
+        assert(layout && "Null descriptor set layout in a pipeline desc.");
+        vkSetLayouts.push_back(static_cast<const VulkanDescriptorSetLayout&>(*layout).GetHandle());
+    }
+
+    std::vector<VkPushConstantRange> pushRanges;
+    pushRanges.reserve(pushConstantRanges.size());
+    for (const auto& range : pushConstantRanges)
+        pushRanges.push_back({ VulkanTypes::ToVkShaderStage(range.Stages),
+                                range.Offset, range.Size });
+
+    VkPipelineLayoutCreateInfo layoutInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
+    layoutInfo.setLayoutCount         = static_cast<uint32_t>(vkSetLayouts.size());
+    layoutInfo.pSetLayouts            = vkSetLayouts.data();
+    layoutInfo.pushConstantRangeCount = static_cast<uint32_t>(pushRanges.size());
+    layoutInfo.pPushConstantRanges    = pushRanges.data();
+
+    const VkResult result = vkCreatePipelineLayout(m_Device.GetHandle(), &layoutInfo, nullptr, &m_Layout);
+    assert(result == VK_SUCCESS && "Failed to create VkPipelineLayout.");
 }
 
 VulkanPipeline::~VulkanPipeline()

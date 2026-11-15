@@ -47,6 +47,15 @@ struct GraphicsPipelineDesc
     RHI::Format                           DepthAttachmentFormat = RHI::Format::Undefined;
 };
 
+// A compute pipeline: one compute shader and its resource binding layout. Bound with
+// IRHICommandList::BindPipeline outside rendering, then run with Dispatch or DispatchIndirect.
+struct ComputePipelineDesc
+{
+    IRHIShader*                                 ComputeShader = nullptr;
+    std::vector<const IRHIDescriptorSetLayout*> DescriptorSetLayouts;
+    std::vector<PushConstantRange>              PushConstantRanges;
+};
+
 class IRHIPipeline
 {
 public:

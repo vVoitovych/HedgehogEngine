@@ -129,7 +129,7 @@ void VulkanCommandList::EndRendering()
 void VulkanCommandList::BindPipeline(const IRHIPipeline& pipeline)
 {
     const auto& vkPipeline = static_cast<const VulkanPipeline&>(pipeline);
-    vkCmdBindPipeline(m_CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline.GetHandle());
+    vkCmdBindPipeline(m_CommandBuffer, vkPipeline.GetBindPoint(), vkPipeline.GetHandle());
 }
 
 void VulkanCommandList::SetViewport(const Viewport& viewport)
@@ -194,7 +194,7 @@ void VulkanCommandList::BindDescriptorSet(
 
     VkDescriptorSet descriptorSet = vkSet.GetHandle();
     vkCmdBindDescriptorSets(
-        m_CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        m_CommandBuffer, vkPipeline.GetBindPoint(),
         vkPipeline.GetLayout(),
         setIndex, 1, &descriptorSet,
         0, nullptr);
@@ -230,6 +230,35 @@ void VulkanCommandList::DrawIndexed(
 {
     vkCmdDrawIndexed(m_CommandBuffer, indexCount, instanceCount,
                      firstIndex, vertexOffset, firstInstance);
+}
+
+void VulkanCommandList::DrawIndirect(
+    const IRHIBuffer& buffer, size_t offset, uint32_t drawCount, uint32_t stride)
+{
+    vkCmdDrawIndirect(m_CommandBuffer, static_cast<const VulkanBuffer&>(buffer).GetHandle(),
+                      static_cast<VkDeviceSize>(offset), drawCount, stride);
+}
+
+// ── Compute ───────────────────────────────────────────────────────────────────
+
+void VulkanCommandList::Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
+{
+    vkCmdDispatch(m_CommandBuffer, groupCountX, groupCountY, groupCountZ);
+}
+
+void VulkanCommandList::DispatchIndirect(const IRHIBuffer& buffer, size_t offset)
+{
+    vkCmdDispatchIndirect(m_CommandBuffer, static_cast<const VulkanBuffer&>(buffer).GetHandle(),
+                          static_cast<VkDeviceSize>(offset));
+}
+
+void VulkanCommandList::FillBuffer(IRHIBuffer& buffer, size_t offset, size_t size, uint32_t value)
+{
+    assert(offset % 4 == 0 && "FillBuffer: the offset must be a multiple of 4.");
+    assert((size == RHI::WHOLE_BUFFER_SIZE || size % 4 == 0) && "FillBuffer: the size must be a multiple of 4.");
+    vkCmdFillBuffer(m_CommandBuffer, static_cast<VulkanBuffer&>(buffer).GetHandle(),
+                    static_cast<VkDeviceSize>(offset),
+                    size == RHI::WHOLE_BUFFER_SIZE ? VK_WHOLE_SIZE : static_cast<VkDeviceSize>(size), value);
 }
 
 // ── Barriers / copies ─────────────────────────────────────────────────────────
