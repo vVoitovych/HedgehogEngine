@@ -20,7 +20,7 @@
 using namespace HedgehogEngine;
 using EcsSerialization::ComponentInfo;
 
-TEST_CASE("Engine components - all 20 are registered once, in serializer order, under their YAML keys")
+TEST_CASE("Engine components - all 21 are registered once, in serializer order, under their YAML keys")
 {
     EngineContext                                  context;
     const EcsSerialization::ComponentTypeRegistry& types = context.GetComponentTypes();
@@ -33,7 +33,7 @@ TEST_CASE("Engine components - all 20 are registered once, in serializer order, 
         "TransformComponent", "HierarchyComponent", "MeshComponent",     "RenderComponent",       "LightComponent",
         "CameraComponent",    "AnimatorComponent",  "UiCanvasComponent", "UiRectComponent",       "UiImageComponent",
         "UiTextComponent",    "UiButtonComponent",  "AudioSourceComponent", "AudioListenerComponent",
-        "RigidBodyComponent", "ColliderComponent", "EnvironmentComponent", "TerrainComponent", "PrefabInstanceComponent",
+        "RigidBodyComponent", "ColliderComponent", "EnvironmentComponent", "TerrainComponent", "ParticleSystemComponent", "PrefabInstanceComponent",
         "ScriptComponent",
     };
     CHECK(keys == expected);
@@ -53,7 +53,7 @@ TEST_CASE("Engine components - all 20 are registered once, in serializer order, 
         if (info.Addable)
             addable.insert(info.Key);
     }
-    CHECK(addable.size() == 17);
+    CHECK(addable.size() == 18);
     CHECK_FALSE(types.Find("TransformComponent")->Addable);
     CHECK_FALSE(types.Find("TransformComponent")->Removable);
     CHECK_FALSE(types.Find("PrefabInstanceComponent")->Addable);
@@ -70,6 +70,8 @@ TEST_CASE("Engine components - all 20 are registered once, in serializer order, 
     CHECK(types.Find("EnvironmentComponent")->EnabledProperty == "Enabled");
     CHECK(types.Find("TerrainComponent")->Category == "Rendering");
     CHECK(types.Find("TerrainComponent")->EnabledProperty == "Enabled");
+    CHECK(types.Find("ParticleSystemComponent")->Category == "Rendering");
+    CHECK(types.Find("ParticleSystemComponent")->EnabledProperty == "Enabled");
 }
 
 TEST_CASE("Engine components - AddDefault gives what the editor menu adds")
@@ -127,7 +129,7 @@ TEST_CASE("Engine components - the inspector order, and what the inspector draws
     const std::vector<std::string> expected = {
         "Transform", "Light",   "Camera",    "Mesh",    "Render",       "Script",         "Animator", "UI canvas",
         "UI rect",   "UI image", "UI text",  "UI button", "Audio source", "Audio listener", "Rigid body", "Collider",
-        "Environment", "Terrain",
+        "Environment", "Terrain", "Particle system",
     };
     CHECK(shown == expected);
     CHECK_FALSE(context.GetComponentTypes().Find("HierarchyComponent")->Inspectable);

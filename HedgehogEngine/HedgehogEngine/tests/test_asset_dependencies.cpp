@@ -8,6 +8,7 @@
 #include "HedgehogEngine/api/ECS/components/CameraComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/EnvironmentComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/ParticleSystemComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RenderComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/UiImageComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/UiTextComponent.hpp"
@@ -131,6 +132,7 @@ TEST_CASE("Asset dependencies - every asset-naming component property is an Asse
     CHECK(AssetRefNames<CameraComponent>() == std::vector<std::string>{ "GraphName" });
     // An animator's controller is a file; its clip names a clip inside its mesh, not a file.
     CHECK(AssetRefNames<AnimatorComponent>() == std::vector<std::string>{ "Controller" });
+    CHECK(AssetRefNames<ParticleSystemComponent>() == std::vector<std::string>{ "Effect" });
 }
 
 TEST_CASE("Asset dependencies - a camera's graph reference names an engine graph or a file")
