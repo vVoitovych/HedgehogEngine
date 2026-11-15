@@ -2,6 +2,7 @@
 
 #include "ParticleSlotAllocator.hpp"
 
+#include "HedgehogRenderer/Graph/GraphFrameContext.hpp"
 #include "HedgehogRenderer/Graph/ParticleUniform.hpp"
 
 #include <cstdint>
@@ -65,6 +66,12 @@ namespace Renderer
         // the buffers fit; outside a frame's recording, as it may wait for the GPU.
         void Sync(const HX::RenderScene& scene, RHI::IRHIDevice& device);
 
+        // This frame's work for the ParticleSimulate pass, after Sync with the same scene: a uniform
+        // per emitter instance with a slot, its reset flag, and the alive lists the other way round
+        // from last frame. nullptr when no instance has a slot. Valid until the next BuildFrame; the
+        // pass leaves the buffers in UnorderedAccess, which the next frame starts from.
+        [[nodiscard]] const ParticleFrameData* BuildFrame(const HX::RenderScene& scene);
+
         // The settings of an effect's emitter (its texture and sub-emitters left out), or nullptr.
         [[nodiscard]] const HedgehogEngine::ParticleEmitterView* FindEmitter(uint32_t effect, uint32_t emitter) const;
         // Per scene.ParticleEmitters entry as of the last Sync: its slot, or nullopt when it has none
@@ -106,6 +113,12 @@ namespace Renderer
         ParticleSlotAllocator                         m_Allocator{ MAX_PARTICLES_TOTAL };
         std::vector<std::optional<ParticleFrameSlot>> m_FrameSlots;
         bool                                          m_WarnedFull = false;
+
+        std::vector<ParticleEmitterUniform> m_Uniforms;
+        std::vector<uint8_t>                m_Reset;
+        ParticleFrameData                   m_Frame;
+        uint32_t                            m_Parity    = 0; // which alive list this frame reads
+        RHI::ResourceState                  m_LastState = RHI::ResourceState::Undefined;
 
         uint32_t                         m_Capacity = 0;
         std::unique_ptr<RHI::IRHIBuffer> m_State;

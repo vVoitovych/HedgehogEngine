@@ -170,7 +170,7 @@ namespace Renderer
 
         RenderGraphRuntime&      graph  = *m_Runtimes[m_SlotIndex];
         const SharedPhaseOutputs shared =
-            m_Shared.Declare(graph, m_Services, shadowFrame, scene.Lights, sharedSettings);
+            m_Shared.Declare(graph, m_Services, shadowFrame, scene.Lights, sharedSettings, m_Particles.BuildFrame(scene));
 
         // Only one view presents: the highest priority, the earliest on a tie.
         const View* presenter = nullptr;

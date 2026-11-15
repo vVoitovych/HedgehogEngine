@@ -55,7 +55,7 @@ namespace Renderer
         float PlaneHeight    = 0.0f;               // 224
         float Bounce         = 0.0f;
         float LifetimeLoss   = 0.0f;
-        float Padding0       = 0.0f;
+        uint32_t SlotRow     = 0;                  // its row of the slot buffer
         uint32_t SlotFirst   = 0;                  // 240
         uint32_t SlotCount   = 0;
         uint32_t SpawnCount  = 0;

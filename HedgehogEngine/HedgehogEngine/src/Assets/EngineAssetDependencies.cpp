@@ -157,6 +157,10 @@ namespace HedgehogEngine
         };
         for (const std::string_view graph : SHIPPED_GRAPHS)
             assets.push_back({ NormalizeGraphReference(std::string(graph)), true });
+        // The renderer builds the particle compute pipelines at start, whatever the graphs draw. Not
+        // required, so a project packaged against an engine without them still cooks.
+        for (const std::string_view shader : PARTICLE_COMPUTE_SHADERS)
+            assets.push_back({ std::string(shader), false });
         return assets;
     }
 

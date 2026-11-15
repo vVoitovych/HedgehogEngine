@@ -139,6 +139,39 @@ namespace Renderer
         EnsureBuffers(device);
     }
 
+    const ParticleFrameData* ParticleResources::BuildFrame(const HX::RenderScene& scene)
+    {
+        m_Uniforms.clear();
+        m_Reset.clear();
+        for (size_t i = 0; i < m_FrameSlots.size() && i < scene.ParticleEmitters.size(); ++i)
+        {
+            const std::optional<ParticleFrameSlot>& slot = m_FrameSlots[i];
+            if (!slot)
+                continue;
+            const HX::ParticleEmitterInstance&         instance = scene.ParticleEmitters[i];
+            const HedgehogEngine::ParticleEmitterView* settings = FindEmitter(instance.EffectIndex, instance.EmitterIndex);
+            ParticleEmitterUniform uniform = MakeParticleEmitterUniform(*settings, instance, slot->Range);
+            uniform.SlotRow                = slot->Row;
+            m_Uniforms.push_back(uniform);
+            m_Reset.push_back(slot->NeedsReset ? 1 : 0);
+        }
+        if (m_Uniforms.empty() || !m_State)
+            return nullptr;
+
+        // Last frame's survivors are this frame's alive list.
+        m_Parity ^= 1u;
+        m_Frame.State        = m_State.get();
+        m_Frame.DeadList     = m_DeadList.get();
+        m_Frame.AliveIn      = m_AliveLists[m_Parity].get();
+        m_Frame.AliveOut     = m_AliveLists[m_Parity ^ 1u].get();
+        m_Frame.Slots        = m_SlotData.get();
+        m_Frame.InitialState = m_LastState;
+        m_Frame.Emitters     = m_Uniforms;
+        m_Frame.Reset        = m_Reset;
+        m_LastState          = RHI::ResourceState::UnorderedAccess;
+        return &m_Frame;
+    }
+
     void ParticleResources::EnsureBuffers(RHI::IRHIDevice& device)
     {
         if (m_Slots.empty() && !m_State)
@@ -164,6 +197,7 @@ namespace Renderer
         for (std::unique_ptr<RHI::IRHIBuffer>& alive : m_AliveLists)
             alive = device.CreateBuffer(particles * sizeof(uint32_t), RHI::BufferUsage::StorageBuffer, RHI::MemoryUsage::GpuOnly);
 
+        m_LastState = RHI::ResourceState::Undefined;
         for (InstanceSlot& instance : m_Slots)
             instance.Slot.NeedsReset = true;
         for (std::optional<ParticleFrameSlot>& slot : m_FrameSlots)

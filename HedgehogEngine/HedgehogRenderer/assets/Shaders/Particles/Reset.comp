@@ -1,0 +1,26 @@
+#version 450
+
+// Starts one emitter instance's slot afresh: every particle of its range dead and none alive.
+
+#include "Particles/Common.glsl"
+
+layout(local_size_x = 64) in;
+
+void main()
+{
+    EmitterData emitter = emitters[push.EmitterIndex];
+    uint        i       = gl_GlobalInvocationID.x;
+    if (i < emitter.SlotCount)
+        deadList[emitter.SlotFirst + i] = emitter.SlotFirst + i;
+    if (i == 0)
+    {
+        SlotRow row;
+        row.Dead     = int(emitter.SlotCount);
+        row.Alive    = 0;
+        row.NewAlive = 0;
+        row.Dropped  = 0;
+        row.DrawArgs = uint[4](6u, 0u, 0u, 0u);
+        row.Spare    = uint[8](0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u);
+        slots[emitter.SlotRow] = row;
+    }
+}

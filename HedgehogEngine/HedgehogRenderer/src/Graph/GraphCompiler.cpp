@@ -347,7 +347,11 @@ namespace Renderer
                                              != touchedThisPass.end();
                     touchedThisPass.push_back(touch.Id);
 
-                    const bool unorderedAgain = isBuffer && seenBefore && !alreadyInPass
+                    // An imported buffer an earlier frame left in UnorderedAccess counts as seen: this
+                    // frame's first write must wait for that frame's.
+                    const bool carriedOver    = isBuffer && resource->IsImported
+                                             && resource->InitialState != RHI::ResourceState::Undefined;
+                    const bool unorderedAgain = isBuffer && (seenBefore || carriedOver) && !alreadyInPass
                                              && oldState == RHI::ResourceState::UnorderedAccess
                                              && newState == RHI::ResourceState::UnorderedAccess;
                     if (oldState == newState && !unorderedAgain)

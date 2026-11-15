@@ -93,6 +93,8 @@ namespace Renderer
         const RHI::IRHIDescriptorSet& AllocateForwardLighting(const ShadowUniform& shadow,
                                                               const RHI::IRHITexture& shadowAtlas,
                                                               const ForwardEnvironment& environment) override;
+        const RHI::IRHIPipeline&      GetComputePipeline(EngineComputePipeline pipeline) const override;
+        const RHI::IRHIDescriptorSet& AllocateParticleSet(const ParticleFrameData& particles) override;
 
         // Uploads the frame's RenderScene::JointMatrices into this frame slot's storage buffer, growing
         // it when too small, and returns the palette set the skinned pipelines bind (set 1 for the
@@ -223,6 +225,19 @@ namespace Renderer
         std::unique_ptr<RHI::IRHIPipeline> m_SelectionMaskPipeline;
         std::unique_ptr<RHI::IRHIPipeline> m_SelectionMaskSkinnedPipeline;
         std::unique_ptr<RHI::IRHIPipeline> m_SelectionOutlinePipeline;
+
+        // The particle compute pipelines (EngineComputePipeline order) on one layout, and per frame in
+        // flight the set they bind and the buffer of that frame's emitters, grown on demand.
+        struct ParticleSetSlot
+        {
+            std::unique_ptr<RHI::IRHIDescriptorSet> Set;
+            std::unique_ptr<RHI::IRHIBuffer>        Emitters;
+            size_t                                  Capacity = 0;
+        };
+        std::array<std::unique_ptr<RHI::IRHIPipeline>, ENGINE_COMPUTE_PIPELINE_COUNT> m_ComputePipelines;
+        std::unique_ptr<RHI::IRHIDescriptorSetLayout>                                m_ParticleLayout;
+        std::unique_ptr<RHI::IRHIDescriptorPool>                                     m_ParticlePool;
+        std::array<ParticleSetSlot, HedgehogEngine::MAX_FRAMES_IN_FLIGHT>            m_ParticleSets;
 
         uint32_t m_FrameIndex = 0;
     };

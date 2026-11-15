@@ -270,6 +270,26 @@ namespace Renderer
         outlineDesc.ColorAttachmentFormats = { COLOR_FORMAT };
         outlineDesc.DepthAttachmentFormat  = RHI::Format::Undefined;
         m_SelectionOutlinePipeline = device.CreateGraphicsPipeline(outlineDesc);
+
+        // The particle simulation: four compute shaders on one layout, so one set binds to each.
+        for (size_t i = 0; i < ENGINE_COMPUTE_PIPELINE_COUNT; ++i)
+        {
+            const ComputeShaderDesc compute =
+                ShaderLoader::LoadCompute(device, std::string(HedgehogEngine::PARTICLE_COMPUTE_SHADERS[i]), fileSystem);
+            assert(compute.ComputeShader && !compute.Layout.DescriptorSets.empty() && "A particle compute shader did not load.");
+            if (!m_ParticleLayout)
+            {
+                const std::vector<RHI::DescriptorBinding>& bindings = compute.Layout.DescriptorSets[0];
+                const uint32_t                             sets     = HedgehogEngine::MAX_FRAMES_IN_FLIGHT;
+                m_ParticleLayout = device.CreateDescriptorSetLayout(bindings);
+                m_ParticlePool   = device.CreateDescriptorPool(sets, PipelineLoader::MakePoolSizes(bindings, sets));
+                for (ParticleSetSlot& slot : m_ParticleSets)
+                    slot.Set = device.AllocateDescriptorSet(*m_ParticlePool, *m_ParticleLayout);
+            }
+            RHI::ComputePipelineDesc desc = compute.Pipeline;
+            desc.DescriptorSetLayouts     = { m_ParticleLayout.get() };
+            m_ComputePipelines[i]         = device.CreateComputePipeline(desc);
+        }
     }
 
     // The owner waits for the device to go idle first, as for every other GPU resource.
@@ -323,6 +343,33 @@ namespace Renderer
     void GraphPassServices::ProvideUiTextureLayout(HR::ResourceRegistry& registry) const
     {
         registry.SetUiTextureLayout(m_Device, *m_UiTextureLayout);
+    }
+
+    const RHI::IRHIPipeline& GraphPassServices::GetComputePipeline(EngineComputePipeline pipeline) const
+    {
+        return *m_ComputePipelines[static_cast<size_t>(pipeline)];
+    }
+
+    const RHI::IRHIDescriptorSet& GraphPassServices::AllocateParticleSet(const ParticleFrameData& particles)
+    {
+        // This slot's fence has signalled, so its emitter buffer is no longer read and may be replaced.
+        ParticleSetSlot& slot  = m_ParticleSets[m_FrameIndex];
+        const size_t     bytes = std::max<size_t>(particles.Emitters.size_bytes(), sizeof(ParticleEmitterUniform));
+        if (bytes > slot.Capacity)
+        {
+            slot.Capacity = std::max(bytes, slot.Capacity * 2);
+            slot.Emitters = m_Device.CreateBuffer(slot.Capacity, RHI::BufferUsage::StorageBuffer, RHI::MemoryUsage::CpuToGpu);
+        }
+        slot.Emitters->CopyData(particles.Emitters.data(), particles.Emitters.size_bytes());
+        // The pool's buffers change when it grows, and the alive lists swap every frame.
+        slot.Set->WriteStorageBuffer(0, *particles.State);
+        slot.Set->WriteStorageBuffer(1, *particles.DeadList);
+        slot.Set->WriteStorageBuffer(2, *particles.AliveIn);
+        slot.Set->WriteStorageBuffer(3, *particles.AliveOut);
+        slot.Set->WriteStorageBuffer(4, *particles.Slots);
+        slot.Set->WriteStorageBuffer(5, *slot.Emitters);
+        slot.Set->Flush();
+        return *slot.Set;
     }
 
     const RHI::IRHIPipeline& GraphPassServices::GetPipeline(EnginePipeline pipeline) const
