@@ -99,6 +99,57 @@ namespace HedgehogEngine
         bool                                                   layersDirty = false;
     };
 
+    // How many samples a particle curve or gradient is baked into, from age 0 to 1 (both included).
+    inline constexpr uint32_t PARTICLE_CURVE_SAMPLES = 32;
+
+    struct ParticleSubEmitterView
+    {
+        uint32_t emitter = 0; // an index into the effect's emitters
+        uint32_t count   = 1;
+    };
+
+    // One emitter of a loaded particle effect (HedgehogEngine's ParticleEmitter) as the GPU needs it:
+    // the enums as their values in HedgehogEngine's ParticleShape, ParticleBlend, ParticleSpace and
+    // ParticleCollisionMode, and the curves and gradient baked into PARTICLE_CURVE_SAMPLES rows.
+    struct ParticleEmitterView
+    {
+        uint32_t         maxParticles    = 0;
+        uint8_t          shape           = 0;
+        uint8_t          blend           = 0;
+        uint8_t          space           = 0;
+        uint8_t          collisionMode   = 0;
+        bool             emitFromSurface = false;
+        float            radius          = 0.0f;
+        float            angle           = 0.0f; // degrees
+        HM::Vector3      boxSize         = { 1.0f, 1.0f, 1.0f };
+        float            lifetimeMin = 0.0f, lifetimeMax = 0.0f;
+        float            speedMin    = 0.0f, speedMax    = 0.0f;
+        float            sizeMin     = 0.0f, sizeMax     = 0.0f;
+        float            rotationMin = 0.0f, rotationMax = 0.0f; // degrees
+        HM::Vector4      startColor      = { 1.0f, 1.0f, 1.0f, 1.0f };
+        HM::Vector3      gravity         = { 0.0f, 0.0f, 0.0f };
+        float            drag            = 0.0f;
+        std::string_view texture; // under assets://, empty for a soft round dot
+        uint32_t         sheetTilesX     = 1;
+        uint32_t         sheetTilesY     = 1;
+        float            sheetFps        = 0.0f;
+        float            softDistance    = 0.0f;
+        float            planeHeight     = 0.0f;
+        float            bounce          = 0.0f;
+        float            lifetimeLoss    = 0.0f;
+        std::array<float, PARTICLE_CURVE_SAMPLES>       sizeOverLife{};
+        std::array<float, PARTICLE_CURVE_SAMPLES>       speedOverLife{};
+        std::array<HM::Vector4, PARTICLE_CURVE_SAMPLES> colorOverLife{};
+        std::span<const ParticleSubEmitterView>         subEmitters;
+    };
+
+    // One loaded particle effect, valid until the next GetParticleEffect call; no emitters for a
+    // file that has never loaded.
+    struct ParticleEffectView
+    {
+        std::span<const ParticleEmitterView> emitters;
+    };
+
     // Read-mostly contract the renderer consumes to sync its GPU-side mesh/material/texture
     // resources, without depending on the concrete HedgehogEngine containers.
     class IResourceCatalog
@@ -131,5 +182,11 @@ namespace HedgehogEngine
         virtual size_t      GetTerrainCount() const { return 0; }
         virtual TerrainView GetTerrain(size_t /*index*/) const { return {}; }
         virtual void        ClearTerrainDirty(size_t /*index*/, bool /*splat*/, bool /*layers*/) {}
+
+        // The particle effects, by ParticleEffectContainer index (only ever appended); the version
+        // is bumped each time an effect is read again, so the renderer re-uploads only what changed.
+        virtual size_t             GetParticleEffectCount() const { return 0; }
+        virtual ParticleEffectView GetParticleEffect(size_t /*index*/) const { return {}; }
+        virtual uint32_t           GetParticleEffectVersion(size_t /*index*/) const { return 0; }
     };
 }

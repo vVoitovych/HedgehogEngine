@@ -139,6 +139,23 @@ namespace HX
         float       Exposure        = 0.0f;
     };
 
+    // One emitter of one particle system this frame (HedgehogEngine's ParticleSystem frame list):
+    // the effect and emitter it plays (by the resource catalog's ParticleEffectView), where, and what
+    // it spawns. InstanceId is the entity with its generation in the high 32 bits, so a recycled
+    // entity is another instance; a new Epoch means the instance starts afresh.
+    struct ParticleEmitterInstance
+    {
+        uint64_t      InstanceId   = 0;
+        uint32_t      Epoch        = 0;
+        uint32_t      EffectIndex  = 0;
+        uint32_t      EmitterIndex = 0;
+        HM::Matrix4x4 WorldMatrix;
+        uint32_t      SpawnCount   = 0;
+        uint32_t      Seed         = 0;
+        float         DeltaTime    = 0.0f; // the frame's scaled time while playing, else 0
+        bool          Playing      = false;
+    };
+
     struct RenderScene
     {
         std::vector<RenderInstance> Instances;
@@ -164,6 +181,9 @@ namespace HX
         // path's storage.
         RenderEnvironment Environment;
 
+        // SceneExtractor::ExtractParticles, by entity then emitter.
+        std::vector<ParticleEmitterInstance> ParticleEmitters;
+
         void Clear()
         {
             Instances.clear();
@@ -176,6 +196,7 @@ namespace HX
             DebugLines.clear();
             Environment.Present = false;
             Environment.MapPath.clear();
+            ParticleEmitters.clear();
         }
     };
 }

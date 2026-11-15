@@ -435,6 +435,7 @@ namespace Editor
         HX::SceneExtractor{}.ExtractEnvironment(engineContext.GetECS(), *engineContext.GetEnvironmentSystem(), m_RenderScene);
         HX::SceneExtractor{}.ExtractTerrains(engineContext.GetECS(), *engineContext.GetTerrainSystem(), m_RenderScene,
                                              m_MeshBounds.GetBounds());
+        HX::SceneExtractor{}.ExtractParticles(engineContext.GetECS(), *engineContext.GetParticleSystem(), m_RenderScene);
         // The collider wireframes, drawn by the Gizmo pass, so only in the Scene view.
         if (m_EditorGui->IsPhysicsDebugEnabled())
             HX::SceneExtractor{}.ExtractPhysicsDebug(engineContext.GetECS(), *engineContext.GetPhysicsSystem(),
