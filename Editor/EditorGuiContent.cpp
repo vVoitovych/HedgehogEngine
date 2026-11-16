@@ -9,6 +9,7 @@
 #include "Tools/RenderGraphEditor/GraphFileReference.hpp"
 #include "Tools/RenderGraphEditor/RenderGraphEditorWindow.hpp"
 #include "Tools/AnimatorControllerEditor/AnimatorControllerEditorWindow.hpp"
+#include "Tools/ParticleEditor/ParticleEditorWindow.hpp"
 #include "Tools/ShaderWindow.hpp"
 #include "Tools/InputActionsWindow.hpp"
 #include "Tools/VertexDescriptionWindow.hpp"
@@ -19,7 +20,6 @@
 #include "HedgehogEngine/api/ECS/components/AudioSourceComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/CameraComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/EnvironmentComponent.hpp"
-#include "HedgehogEngine/api/ECS/components/ParticleSystemComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/TerrainComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RenderComponent.hpp"
@@ -66,7 +66,6 @@ namespace Editor
             case ContentType::Audio:    return "Audio source";
             case ContentType::Environment: return "Environment";
             case ContentType::Terrain:     return "Terrain";
-            case ContentType::ParticleEffect: return "Particle system";
             default:                    return nullptr;
             }
         }
@@ -124,6 +123,10 @@ namespace Editor
             // It goes onto an animator by dragging it to the Controller field.
             m_AnimatorControllerWindow->OpenController(request.VirtualPath);
             return;
+        case ContentType::ParticleEffect:
+            // It goes onto a particle system by dragging it to the Effect field.
+            m_ParticleEditorWindow->OpenEffect(request.VirtualPath);
+            return;
         case ContentType::RenderGraph:
             if (m_Renderer)
             {
@@ -139,7 +142,6 @@ namespace Editor
         case ContentType::Font:
         case ContentType::Environment:
         case ContentType::Terrain:
-        case ContentType::ParticleEffect:
             if (AssignToSelection(context, request, physicalPath))
                 return;
             LOGINFO("Content: select an entity with a ", RequiredComponent(request.Type), " component to assign '",
@@ -217,11 +219,7 @@ namespace Editor
                 return false;
             ecs.GetComponent<HedgehogEngine::TerrainComponent>(entity).Terrain = relativePath;
             break;
-        case ContentType::ParticleEffect:
-            if (!ecs.HasComponent<HedgehogEngine::ParticleSystemComponent>(entity))
-                return false;
-            ecs.GetComponent<HedgehogEngine::ParticleSystemComponent>(entity).Effect = relativePath;
-            break;
+
         case ContentType::AnimatorController:
             if (!ecs.HasComponent<HedgehogEngine::AnimatorComponent>(entity))
                 return false;

@@ -76,6 +76,7 @@ namespace Editor
     class ProjectSettingsWindow;
     class RenderGraphEditorWindow;
     class AnimatorControllerEditorWindow;
+    class ParticleEditorWindow;
 
     // The graphs the editor's own views use (RENDERING.md section 7). The inspector lists them
     // apart from the graphs a scene camera would normally pick.
@@ -368,6 +369,7 @@ namespace Editor
         std::unique_ptr<BuildGameWindow>         m_BuildGameWindow;
         std::unique_ptr<RenderGraphEditorWindow> m_RenderGraphEditorWindow;
         std::unique_ptr<AnimatorControllerEditorWindow> m_AnimatorControllerWindow;
+        std::unique_ptr<ParticleEditorWindow>           m_ParticleEditorWindow;
         std::unique_ptr<ProfilerWindow>          m_ProfilerWindow;
 
         // Valid only during Draw(); read by the viewport panel.
