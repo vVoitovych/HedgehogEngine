@@ -38,6 +38,7 @@ namespace Editor
             case ContentType::Environment:       return IM_COL32(230, 160, 90, 255);
             case ContentType::AnimatorController: return IM_COL32(150, 200, 110, 255);
             case ContentType::Terrain:           return IM_COL32(120, 170, 90, 255);
+            case ContentType::ParticleEffect:    return IM_COL32(240, 140, 60, 255);
             case ContentType::Other:             return IM_COL32(120, 120, 120, 255);
             }
             return IM_COL32(120, 120, 120, 255);

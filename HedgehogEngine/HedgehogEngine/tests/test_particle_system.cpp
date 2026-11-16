@@ -252,3 +252,45 @@ TEST_CASE("Particle system - an effect that does not load is not listed")
     CHECK(world.System().GetFrameEmitters().empty());
     CHECK(world.Context.GetECS().GetComponent<ParticleSystemComponent>(world.Entity).EffectIndex == -1);
 }
+
+TEST_CASE("Particle system - the editor's preview runs one instance in Edit, and Play ends it")
+{
+    ParticleWorld     world;
+    ECS::ECS&         ecs    = world.Context.GetECS();
+    const ECS::Entity other  = world.Context.GetSceneManager().CreateGameObject();
+    ParticleSystemComponent second;
+    second.Effect = "particles://Fire.particle";
+    ecs.AddComponent(other, second);
+    const std::string before = world.Context.GetSceneManager().CaptureSnapshot().Yaml;
+
+    // Played in Edit without a preview: nothing runs.
+    world.System().Play(ecs, world.Entity);
+    CHECK(world.Spawned(60) == std::vector<uint32_t>{ 0, 0, 0, 0 });
+
+    // The previewed instance runs by the frame's time; the other, though played, does not.
+    world.System().SetPreview(ecs, world.Entity);
+    world.System().Play(ecs, world.Entity);
+    world.System().Play(ecs, other);
+    CHECK(world.System().GetPreview() == world.Entity);
+    CHECK(world.Spawned(60) == std::vector<uint32_t>{ 10, 30, 0, 0 });
+    CHECK(world.System().GetFrameEmitters()[0].Playing);
+    CHECK(world.System().GetFrameEmitters()[0].DeltaTime == doctest::Approx(FRAME));
+    CHECK_FALSE(world.System().GetFrameEmitters()[2].Playing);
+    CHECK(world.Context.GetSceneManager().CaptureSnapshot().Yaml == before);
+
+    // Ending the preview stops it and clears its particles.
+    const uint32_t epoch = ecs.GetComponent<ParticleSystemComponent>(world.Entity).Epoch;
+    world.System().SetPreview(ecs, ECS::INVALID_ENTITY);
+    CHECK(ecs.GetComponent<ParticleSystemComponent>(world.Entity).Epoch == epoch + 1);
+    CHECK_FALSE(world.System().IsPlaying(ecs, world.Entity));
+    CHECK(world.Spawned(60) == std::vector<uint32_t>{ 0, 0, 0, 0 });
+
+    // Play mode ends a preview, and none runs after Stop.
+    world.System().SetPreview(ecs, world.Entity);
+    world.System().Play(ecs, world.Entity);
+    REQUIRE(world.Context.Play());
+    CHECK(world.System().GetPreview() == ECS::INVALID_ENTITY);
+    REQUIRE(world.Context.Stop());
+    CHECK(world.Spawned(60) == std::vector<uint32_t>{ 0, 0, 0, 0 });
+    CHECK(world.Context.GetSceneManager().CaptureSnapshot().Yaml == before);
+}

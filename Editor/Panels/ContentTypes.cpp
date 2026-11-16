@@ -43,6 +43,7 @@ namespace Editor
             ExtensionType{ ".hdr",      ContentType::Environment },
             ExtensionType{ ".animctrl", ContentType::AnimatorController },
             ExtensionType{ ".terrain",  ContentType::Terrain },
+            ExtensionType{ ".particle", ContentType::ParticleEffect },
         };
 
         constexpr std::string_view SCENE_EXTENSION = ".yaml";
@@ -105,6 +106,7 @@ namespace Editor
         case ContentType::Environment:       return "HDR";
         case ContentType::AnimatorController: return "CTL";
         case ContentType::Terrain:           return "TER";
+        case ContentType::ParticleEffect:    return "PTC";
         case ContentType::Other:             return "?";
         }
         return "?";
@@ -130,6 +132,7 @@ namespace Editor
         case ContentType::Environment:       return "Environment";
         case ContentType::AnimatorController: return "Animator controller";
         case ContentType::Terrain:           return "Terrain";
+        case ContentType::ParticleEffect:    return "Particle effect";
         case ContentType::Other:             return "File";
         }
         return "File";

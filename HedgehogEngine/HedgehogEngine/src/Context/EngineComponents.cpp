@@ -138,7 +138,7 @@ namespace HedgehogEngine
                                                                                       .DisplayName     = "Particle system",
                                                                                       .Category        = RENDERING_CATEGORY,
                                                                                       .SortOrder       = 402,
-                                                                                      .Icon            = "mesh",
+                                                                                      .Icon            = "particles",
                                                                                       .EnabledProperty = "Enabled" });
         registered &= types.RegisterReflected<PrefabInstanceComponent>(ComponentDesc{ .Key         = "PrefabInstanceComponent",
                                                                                       .DisplayName = "Prefab instance",

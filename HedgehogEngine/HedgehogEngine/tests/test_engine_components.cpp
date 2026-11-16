@@ -71,6 +71,7 @@ TEST_CASE("Engine components - all 21 are registered once, in serializer order, 
     CHECK(types.Find("TerrainComponent")->Category == "Rendering");
     CHECK(types.Find("TerrainComponent")->EnabledProperty == "Enabled");
     CHECK(types.Find("ParticleSystemComponent")->Category == "Rendering");
+    CHECK(types.Find("ParticleSystemComponent")->Icon == "particles");
     CHECK(types.Find("ParticleSystemComponent")->EnabledProperty == "Enabled");
 }
 

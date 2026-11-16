@@ -14,6 +14,8 @@
 #include "HedgehogCommon/api/Camera.hpp"
 #include "HedgehogExtract/api/SceneExtractor.hpp"
 #include "HedgehogEngine/api/Containers/FontContainer.hpp"
+#include "HedgehogEngine/api/Containers/ParticleEffectContainer.hpp"
+#include "HedgehogEngine/api/ECS/systems/ParticleSystem.hpp"
 #include "HedgehogEngine/api/Resource/ResourceCatalog.hpp"
 #include "HedgehogEngine/api/Save/SaveGameManager.hpp"
 #include "HedgehogExtract/api/ScenePicker.hpp"
@@ -436,6 +438,17 @@ namespace Editor
         HX::SceneExtractor{}.ExtractTerrains(engineContext.GetECS(), *engineContext.GetTerrainSystem(), m_RenderScene,
                                              m_MeshBounds.GetBounds());
         HX::SceneExtractor{}.ExtractParticles(engineContext.GetECS(), *engineContext.GetParticleSystem(), m_RenderScene);
+        // The selection's emitter shapes; its particle preview ends once it is no longer selected.
+        {
+            HedgehogEngine::ParticleSystem&  particles = *engineContext.GetParticleSystem();
+            const std::optional<ECS::Entity> selected  = m_EditorGui->GetSelectedEntity();
+            if (particles.GetPreview() != ECS::INVALID_ENTITY && selected != particles.GetPreview())
+                particles.SetPreview(engineContext.GetECS(), ECS::INVALID_ENTITY);
+            if (selected)
+                HX::SceneExtractor{}.ExtractParticleShapes(engineContext.GetECS(),
+                                                           engineContext.GetResourceCatalog().GetParticleEffectContainer(),
+                                                           *selected, m_RenderScene);
+        }
         // The collider wireframes, drawn by the Gizmo pass, so only in the Scene view.
         if (m_EditorGui->IsPhysicsDebugEnabled())
             HX::SceneExtractor{}.ExtractPhysicsDebug(engineContext.GetECS(), *engineContext.GetPhysicsSystem(),

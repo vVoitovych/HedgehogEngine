@@ -5,6 +5,7 @@
 
 #include "ECS/api/ECS.hpp"
 #include "ECS/api/FrameContext.hpp"
+#include "HedgehogEngine/api/Containers/ParticleEffectContainer.hpp"
 #include "HedgehogEngine/api/ECS/components/ParticleSystemComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
 #include "HedgehogEngine/api/ECS/systems/ParticleSystem.hpp"
@@ -15,7 +16,9 @@
 #include "FileSystem/api/FileSystemManager.hpp"
 #include "FileSystem/tests/test_helpers.hpp"
 
+#include <cmath>
 #include <memory>
+#include <string>
 
 using HedgehogEngine::ParticleSystemComponent;
 using HedgehogEngine::TransformComponent;
@@ -145,4 +148,63 @@ TEST_CASE("Particle extraction - a second extraction into a cleared scene keeps 
     scene.Clear();
     HX::SceneExtractor{}.ExtractParticles(fixture.Ecs, *fixture.Particles, scene);
     CHECK(scene.ParticleEmitters.size() == 2);
+}
+
+TEST_CASE("Particle extraction - the emitter shapes of an entity, as lines through its matrix")
+{
+    ParticleFixture fixture;
+    HedgehogEngine::ParticleEffect effect = HedgehogEngine::MakeDefaultParticleEffect();
+    effect.Emitters.resize(4);
+    effect.Emitters[0].Shape  = HedgehogEngine::ParticleShape::Cone;
+    effect.Emitters[0].Radius = 0.5f;
+    effect.Emitters[0].Angle  = 45.0f;
+    effect.Emitters[1].Shape  = HedgehogEngine::ParticleShape::Sphere;
+    effect.Emitters[1].Radius = 2.0f;
+    effect.Emitters[2].Shape   = HedgehogEngine::ParticleShape::Box;
+    effect.Emitters[2].BoxSize = HM::Vector3(2.0f, 4.0f, 6.0f);
+    effect.Emitters[3].Shape   = HedgehogEngine::ParticleShape::Point;
+    for (size_t i = 0; i < effect.Emitters.size(); ++i)
+        effect.Emitters[i].Name = "Emitter " + std::to_string(i);
+    fixture.Dir.WriteFile("Shapes.particle", HedgehogEngine::WriteParticleEffect(effect));
+    const ECS::Entity entity = fixture.Add("Shapes.particle", true, 10.0f);
+    const ECS::Entity bare   = fixture.Ecs.CreateEntity();
+    fixture.Frame(ECS::PlayMode::Edit); // resolves the effect
+
+    const HedgehogEngine::ParticleEffectContainer& effects = fixture.Catalog->GetParticleEffectContainer();
+    HX::RenderScene scene;
+    HX::SceneExtractor{}.ExtractParticleShapes(fixture.Ecs, effects, bare, scene);
+    CHECK(scene.DebugLines.empty());
+    HX::SceneExtractor{}.ExtractParticleShapes(fixture.Ecs, effects, entity, scene);
+
+    // A cone of two circles and four sides, a sphere of three circles, a box of 12 edges, a cross.
+    constexpr size_t CIRCLE = 24 * 2;
+    REQUIRE(scene.DebugLines.size() == 2 * CIRCLE + 8 + 3 * CIRCLE + 24 + 6);
+    for (const HX::DebugLineVertex& vertex : scene.DebugLines)
+        CHECK(vertex.Color == HX::SceneExtractor::PARTICLE_SHAPE_COLOR);
+    const auto near = [](const HM::Vector3& a, const HM::Vector3& b)
+    {
+        return std::abs(a.x() - b.x()) < 1e-4f && std::abs(a.y() - b.y()) < 1e-4f && std::abs(a.z() - b.z()) < 1e-4f;
+    };
+
+    // The cone's first side: from its base's edge to where its 45 degrees open by 1 at z = 1.
+    const size_t side = 2 * CIRCLE;
+    CHECK(near(scene.DebugLines[side].Position, HM::Vector3(10.5f, 0.0f, 0.0f)));
+    CHECK(near(scene.DebugLines[side + 1].Position, HM::Vector3(11.5f, 0.0f, 1.0f)));
+    // Every point of the sphere at its radius from the entity.
+    const size_t sphere = 2 * CIRCLE + 8;
+    for (size_t i = sphere; i < sphere + 3 * CIRCLE; ++i)
+    {
+        const HM::Vector3 offset = scene.DebugLines[i].Position - HM::Vector3(10.0f, 0.0f, 0.0f);
+        CHECK(std::sqrt(offset.LengthSqr()) == doctest::Approx(2.0f));
+    }
+    // Every point of the box on its corners, half its size from the entity on each axis.
+    for (size_t i = sphere + 3 * CIRCLE; i < sphere + 3 * CIRCLE + 24; ++i)
+    {
+        const HM::Vector3& p = scene.DebugLines[i].Position;
+        CHECK(std::abs(p.x() - 10.0f) == doctest::Approx(1.0f));
+        CHECK(std::abs(p.y()) == doctest::Approx(2.0f));
+        CHECK(std::abs(p.z()) == doctest::Approx(3.0f));
+    }
+    // The point's cross, along x first.
+    CHECK(near(scene.DebugLines[scene.DebugLines.size() - 6].Position, HM::Vector3(9.9f, 0.0f, 0.0f)));
 }

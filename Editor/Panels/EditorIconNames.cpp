@@ -45,6 +45,7 @@ namespace Editor
         case EditorIcon::ToolScale:     return "tool_scale.png";
         case EditorIcon::SpaceLocal:    return "space_local.png";
         case EditorIcon::SpaceWorld:    return "space_world.png";
+        case EditorIcon::Particles:     return "particles.png";
         case EditorIcon::Count:         break;
         }
         return "";
