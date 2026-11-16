@@ -24,6 +24,7 @@
 #include "Tools/RenderGraphEditor/GraphFileReference.hpp"
 #include "Tools/RenderGraphEditor/RenderGraphEditorWindow.hpp"
 #include "Tools/AnimatorControllerEditor/AnimatorControllerEditorWindow.hpp"
+#include "Tools/ParticleEditor/ParticleEditorWindow.hpp"
 
 #include "HedgehogCommon/api/Camera.hpp"
 #include "HedgehogEngine/api/Engine.hpp"
@@ -204,6 +205,7 @@ namespace Editor
         , m_BuildGameWindow(std::make_unique<BuildGameWindow>())
         , m_RenderGraphEditorWindow(std::make_unique<RenderGraphEditorWindow>())
         , m_AnimatorControllerWindow(std::make_unique<AnimatorControllerEditorWindow>())
+        , m_ParticleEditorWindow(std::make_unique<ParticleEditorWindow>())
         , m_ProfilerWindow(std::make_unique<ProfilerWindow>())
     {
         m_FileSystem   = &context.GetEngineContext().GetFileSystem();
@@ -309,6 +311,7 @@ namespace Editor
             RequestProject(*created, false);
         m_RenderGraphEditorWindow->Draw(m_Renderer, *m_FileSystem);
         m_AnimatorControllerWindow->Draw(fs, MakeAnimatorPreview(context.GetEngineContext(), m_SelectedEntity));
+        m_ParticleEditorWindow->Draw(fs);
         m_ProfilerWindow->Draw(m_Renderer);
 
         DrawOpenSceneDropPopup(context);
@@ -800,6 +803,8 @@ namespace Editor
                 m_RenderGraphEditorWindow->Open = !m_RenderGraphEditorWindow->Open;
             if (ImGui::MenuItem("Animator Controller", nullptr, m_AnimatorControllerWindow->Open))
                 m_AnimatorControllerWindow->Open = !m_AnimatorControllerWindow->Open;
+            if (ImGui::MenuItem("Particle Effect", nullptr, m_ParticleEditorWindow->Open))
+                m_ParticleEditorWindow->Open = !m_ParticleEditorWindow->Open;
             if (ImGui::MenuItem("Profiler", nullptr, m_ProfilerWindow->Open))
                 m_ProfilerWindow->Open = !m_ProfilerWindow->Open;
             ImGui::EndMenu();

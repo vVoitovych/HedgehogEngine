@@ -1,5 +1,6 @@
 #include "EditorGui.hpp"
 
+#include "Tools/ParticleEditor/ParticleEditorWindow.hpp"
 #include "Widgets/PropertyFields.hpp"
 
 #include "HedgehogEngine/api/ECS/components/ParticleSystemComponent.hpp"
@@ -23,6 +24,9 @@ namespace Editor
         // The header, its Enabled checkbox and the reflected rows, Effect taking a dropped .particle.
         if (!info || !DrawRegisteredComponent(context, *info) || !ecs.HasComponent<HedgehogEngine::ParticleSystemComponent>(entity))
             return;
+        const std::string& effect = ecs.GetComponent<HedgehogEngine::ParticleSystemComponent>(entity).Effect;
+        if (!effect.empty() && ImGui::Button("Edit effect"))
+            m_ParticleEditorWindow->OpenEffect(effect);
         if (engineContext.GetPlayState() != HedgehogEngine::PlayState::Edit || !BeginPropertyTable("##ParticlePreview"))
             return;
 

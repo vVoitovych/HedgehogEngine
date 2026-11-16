@@ -52,7 +52,9 @@ project "EditorTest"
         "../Tools/Terrain/TerrainEditing.hpp",
         "../Tools/Terrain/TerrainEditing.cpp",
         "../Tools/Terrain/TerrainBrush.hpp",
-        "../Tools/Terrain/TerrainBrush.cpp"
+        "../Tools/Terrain/TerrainBrush.cpp",
+        "../Tools/ParticleEditor/ParticleEditing.hpp",
+        "../Tools/ParticleEditor/ParticleEditing.cpp"
     }
 
     includedirs
