@@ -44,17 +44,26 @@ namespace HedgehogEngine
         // effect kept.
         HEDGEHOG_ENGINE_API void ReloadChanged(std::chrono::steady_clock::time_point now);
 
+        // An edit not saved yet, shown in place of path's file (the editor's live preview): GetEffect
+        // gives it until ClearOverride, and each call bumps the version. SetOverride reads the file
+        // first when it is new to the container, and works whether or not it loads.
+        HEDGEHOG_ENGINE_API void SetOverride(const std::string& path, ParticleEffect effect);
+        HEDGEHOG_ENGINE_API void ClearOverride(const std::string& path);
+
     private:
         struct Entry
         {
             std::string                     Key;
             std::optional<ParticleEffect>   Effect;
+            std::optional<ParticleEffect>   Override;
             std::filesystem::file_time_type WriteTime{};
             uint32_t                        Version = 0;
         };
 
         // Reads the entry's file; false (logged) when it does not read or parse.
         bool Load(Entry& entry);
+        // The entry of path, read on first use; nullptr for an empty path.
+        Entry* FindOrAdd(const std::string& path);
 
         const FS::FileSystemManager&          m_FileSystem;
         std::vector<Entry>                    m_Entries;

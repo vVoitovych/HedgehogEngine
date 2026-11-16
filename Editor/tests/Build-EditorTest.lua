@@ -54,7 +54,9 @@ project "EditorTest"
         "../Tools/Terrain/TerrainBrush.hpp",
         "../Tools/Terrain/TerrainBrush.cpp",
         "../Tools/ParticleEditor/ParticleEditing.hpp",
-        "../Tools/ParticleEditor/ParticleEditing.cpp"
+        "../Tools/ParticleEditor/ParticleEditing.cpp",
+        "../Tools/ParticleEditor/CurveEditing.hpp",
+        "../Tools/ParticleEditor/CurveEditing.cpp"
     }
 
     includedirs

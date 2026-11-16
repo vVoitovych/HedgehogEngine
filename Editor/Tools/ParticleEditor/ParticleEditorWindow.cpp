@@ -4,11 +4,13 @@
 
 #include "Panels/AssetDragDrop.hpp"
 #include "Panels/MaterialSlots.hpp"
+#include "Widgets/ParticleCurveWidgets.hpp"
 #include "Widgets/PropertyFields.hpp"
 
 #include "DialogueWindows/api/ParticleEffectDialogue.hpp"
 #include "FileSystem/api/FileSystemManager.hpp"
 #include "FileSystem/api/PathUtils.hpp"
+#include "HedgehogEngine/api/Containers/ParticleEffectContainer.hpp"
 #include "HedgehogEngine/api/Particles/ParticleEffectFile.hpp"
 
 #include "imgui.h"
@@ -24,8 +26,6 @@ namespace Editor
 
         constexpr float  LIST_WIDTH        = 220.0f;
         constexpr size_t MAX_LISTED_ROWS   = 4;
-        constexpr int    CURVE_SAMPLES     = 32;
-        constexpr float  CURVE_HEIGHT      = 40.0f;
         constexpr ImVec4 PROBLEM_COLOR     = { 1.0f, 0.45f, 0.4f, 1.0f };
         constexpr const char* UNSAVED_POPUP   = "Unsaved particle effect changes";
         constexpr const char* UNTITLED        = "untitled";
@@ -68,39 +68,11 @@ namespace Editor
             return ImGui::InputScalar((std::string("##") + label).c_str(), ImGuiDataType_U32, &value);
         }
 
-        // Read-only here: the curve over a particle's life, or the gradient as a strip.
-        void CurveRow(const char* label, const HedgehogEngine::ParticleCurve& curve)
-        {
-            PropertyLabel(label);
-            std::array<float, CURVE_SAMPLES> samples{};
-            for (int i = 0; i < CURVE_SAMPLES; ++i)
-                samples[i] = HedgehogEngine::EvaluateCurve(curve, static_cast<float>(i) / (CURVE_SAMPLES - 1));
-            ImGui::PlotLines((std::string("##") + label).c_str(), samples.data(), CURVE_SAMPLES, 0, nullptr, 0.0f,
-                             std::max(1.0f, *std::max_element(samples.begin(), samples.end())),
-                             ImVec2(-1.0f, CURVE_HEIGHT));
-        }
-
-        void GradientRow(const char* label, const HedgehogEngine::ParticleGradient& gradient)
-        {
-            PropertyLabel(label);
-            const ImVec2 start = ImGui::GetCursorScreenPos();
-            const float  width = ImGui::GetContentRegionAvail().x;
-            const float  step  = width / CURVE_SAMPLES;
-            ImDrawList*  draw  = ImGui::GetWindowDrawList();
-            for (int i = 0; i < CURVE_SAMPLES; ++i)
-            {
-                const HM::Vector4 c = HedgehogEngine::EvaluateGradient(gradient, (i + 0.5f) / CURVE_SAMPLES);
-                const ImVec4      color(std::clamp(c.x(), 0.0f, 1.0f), std::clamp(c.y(), 0.0f, 1.0f),
-                                        std::clamp(c.z(), 0.0f, 1.0f), std::clamp(c.w(), 0.0f, 1.0f));
-                draw->AddRectFilled(ImVec2(start.x + step * i, start.y), ImVec2(start.x + step * (i + 1), start.y + CURVE_HEIGHT * 0.5f),
-                                    ImGui::ColorConvertFloat4ToU32(color));
-            }
-            ImGui::Dummy(ImVec2(width, CURVE_HEIGHT * 0.5f));
-        }
     }
 
-    void ParticleEditorWindow::Draw(const FS::FileSystemManager& fileSystem)
+    void ParticleEditorWindow::Draw(const FS::FileSystemManager& fileSystem, HedgehogEngine::ParticleEffectContainer& effects)
     {
+        m_Effects = &effects;
         if (!Open)
             return;
         if (!m_LoadPath.empty())
@@ -154,6 +126,15 @@ namespace Editor
             DrawUnsavedChangesPopup(fileSystem);
         }
         ImGui::End();
+
+        // A valid edit shows in a preview or Play at once, through the container, once nothing is
+        // being dragged or typed (each one starts the effect again).
+        if (m_HasEffect && !m_Path.empty() && m_EditedText != m_PreviewText && m_Problems.empty() && !ImGui::IsAnyItemActive())
+        {
+            effects.SetOverride(m_Path, m_Edited);
+            m_PreviewText = m_EditedText;
+            m_PreviewPath = m_Path;
+        }
 
         if (!keepOpen)
         {
@@ -215,6 +196,7 @@ namespace Editor
             // Read the file again, so reopening the window shows what it holds; an untitled effect is dropped.
             m_EditedText = m_SavedText;
             m_LoadPath   = m_Path;
+            ClearPreview();
             m_HasEffect  = !m_Path.empty();
             proceed      = true;
         }
@@ -275,6 +257,7 @@ namespace Editor
             m_Status = path + " cannot be opened: " + parsed.Error;
             return;
         }
+        ClearPreview();
         m_Edited    = std::move(*parsed.Effect);
         m_Path      = path;
         m_File      = fileSystem.ResolvePhysical(path).value_or(std::filesystem::path{});
@@ -282,11 +265,13 @@ namespace Editor
         m_Selected  = 0;
         m_Status.clear();
         ApplyEdit();
-        m_SavedText = m_EditedText;
+        m_SavedText   = m_EditedText;
+        m_PreviewText = m_EditedText;
     }
 
     void ParticleEditorWindow::NewEffect()
     {
+        ClearPreview();
         m_Edited = HedgehogEngine::MakeDefaultParticleEffect();
         m_Path.clear();
         m_File.clear();
@@ -319,6 +304,14 @@ namespace Editor
             SaveAs(fileSystem);
         else if (Write(m_Path, fileSystem))
             m_SavedText = m_EditedText;
+    }
+
+    void ParticleEditorWindow::ClearPreview()
+    {
+        if (m_Effects && !m_PreviewPath.empty())
+            m_Effects->ClearOverride(m_PreviewPath);
+        m_PreviewPath.clear();
+        m_PreviewText = m_EditedText;
     }
 
     void ParticleEditorWindow::SaveAs(const FS::FileSystemManager& fileSystem)
@@ -356,6 +349,8 @@ namespace Editor
             return false;
         }
         m_Status = "Saved " + virtualPath + ".";
+        // The file now holds the edit; the container reads it again.
+        ClearPreview();
         if (!m_Problems.empty())
             m_Status += " It has " + std::to_string(m_Problems.size()) + " problem(s), so it does not load until they are fixed.";
         return true;
@@ -488,9 +483,12 @@ namespace Editor
         changed |= ImGui::DragFloat3("##Gravity", &emitter.Gravity[0], 0.05f);
         changed |= FloatField("Drag", emitter.Drag, 0.01f, 0.0f, 100.0f);
 
-        CurveRow("Size over life", emitter.SizeOverLife);
-        CurveRow("Speed over life", emitter.SpeedOverLife);
-        GradientRow("Colour over life", emitter.ColorOverLife);
+        PropertyLabel("Size over life");
+        changed |= ParticleCurveEditor("##SizeOverLife", emitter.SizeOverLife);
+        PropertyLabel("Speed over life");
+        changed |= ParticleCurveEditor("##SpeedOverLife", emitter.SpeedOverLife);
+        PropertyLabel("Colour over life");
+        changed |= ParticleGradientEditor("##ColorOverLife", emitter.ColorOverLife);
 
         // The texture under assets://, taking a Project panel texture dropped on it.
         PropertyLabel("Texture");
