@@ -30,7 +30,8 @@ namespace
                                            RHI::TextureUsage::ColorAttachment | RHI::TextureUsage::Sampled } };
         TestTexture Depth{ RHI::TextureDesc{ TARGET_SIZE, TARGET_SIZE, RHI::Format::D32Float, RHI::TextureUsage::DepthStencil } };
         std::array<TestBuffer, PARTICLE_BUFFER_COUNT> Buffers{ TestBuffer(256), TestBuffer(256), TestBuffer(256),
-                                                               TestBuffer(256), TestBuffer(1024), TestBuffer(512) };
+                                                               TestBuffer(256), TestBuffer(1024), TestBuffer(512),
+                                                               TestBuffer(1024) };
         FakeDescriptorSet SmokeTexture;
         FakeDescriptorSet White;
 
@@ -84,6 +85,8 @@ namespace
         graph.BindImportedBuffer(view.Frame.ParticleBuffers.AliveOut, &view.Buffers[3]);
         graph.BindImportedBuffer(view.Frame.ParticleBuffers.Slots, &view.Buffers[4]);
         graph.BindImportedBuffer(view.Frame.ParticleBuffers.Sort, &view.Buffers[5]);
+        view.Frame.ParticleBuffers.CollisionDepth = graph.ImportBuffer("ParticleCollisionDepth", 1024, false, written);
+        graph.BindImportedBuffer(view.Frame.ParticleBuffers.CollisionDepth, &view.Buffers[6]);
 
         PassInvocation particles("Particles");
         particles.SetSlot("color", hdr);
@@ -178,6 +181,68 @@ TEST_CASE("Particles - each emitter one indirect draw from its slot row, with it
     CHECK(sawState);
     CHECK(sawSorted);
     CHECK(sortSteps >= 4); // after the keys and each of the 3 steps
+}
+
+TEST_CASE("Particles - the shadow view copies its depth when an emitter collides with it")
+{
+    ParticleView view;
+    view.Emitters[1].Collision = PARTICLE_COLLISION_DEPTH_BUFFER;
+    view.Frame.Particles       = &view.Particles;
+    ParticleCollisionDepth collision;
+    view.Frame.ParticleCollision = &collision;
+    FakeServices services;
+    services.MakeParticleSet();
+    GraphFrameContext context{ &services, &view.Frame };
+
+    RecordingCommandList cmd;
+    RecordParticles(&context, view, cmd);
+
+    // First the copy: its pipeline, the simulation's set and the depth's, one thread per texel.
+    REQUIRE(cmd.Commands.size() > 4);
+    CHECK(std::vector<std::string>(cmd.Commands.begin(), cmd.Commands.begin() + 4)
+          == std::vector<std::string>{ "pipeline", "set 0", "set 1", "dispatch 64 64 1" });
+    CHECK(cmd.BoundPipelines.front() == &services.GetComputePipeline(EngineComputePipeline::ParticleCopyDepth));
+    CHECK(cmd.BoundSets[0] == services.GetParticleSet());
+    CHECK(cmd.BoundSets[1] == &services.GetSampledTextureSet());
+    REQUIRE(services.SampledTextures.size() == 1);
+    CHECK(services.SampledTextures[0] == &view.Depth);
+    // The depth is sampled, then the collision depth written, before the draw reads the depth.
+    bool sampled = false, written = false;
+    for (const RecordingCommandList::BarrierCall& call : cmd.Calls)
+    {
+        for (const RHI::TextureBarrier& barrier : call.TextureBarriers)
+            sampled = sampled || (barrier.Texture == &view.Depth && barrier.After == RHI::ResourceState::ShaderResource);
+        for (const RHI::BufferBarrier& barrier : call.BufferBarriers)
+            written = written || barrier.Buffer == &view.Buffers[6];
+    }
+    CHECK(sampled);
+    CHECK(written);
+    // And the camera it saw the depth with is kept for the next frame.
+    CHECK(collision.Written);
+    const HM::Matrix4x4 viewProj = view.Frame.Proj * view.Frame.View;
+    for (int i = 0; i < 16; ++i)
+        CHECK(collision.ViewProj.GetBuffer()[i] == doctest::Approx(viewProj.GetBuffer()[i]));
+}
+
+TEST_CASE("Particles - no depth copy on another view or without a depth-colliding emitter")
+{
+    for (const bool shadowView : { false, true })
+    {
+        ParticleView view;
+        view.Emitters[1].Collision = shadowView ? PARTICLE_COLLISION_HEIGHT_PLANE : PARTICLE_COLLISION_DEPTH_BUFFER;
+        view.Frame.Particles       = &view.Particles;
+        ParticleCollisionDepth collision;
+        view.Frame.ParticleCollision = shadowView ? &collision : nullptr;
+        FakeServices services;
+        services.MakeParticleSet();
+        GraphFrameContext context{ &services, &view.Frame };
+
+        RecordingCommandList cmd;
+        RecordParticles(&context, view, cmd);
+        CHECK(std::count(cmd.Commands.begin(), cmd.Commands.end(), std::string("dispatch 64 64 1")) == 0);
+        CHECK(services.SampledTextures.empty());
+        CHECK_FALSE(collision.Written);
+    }
 }
 
 TEST_CASE("Particles - additive emitters alone draw unsorted")

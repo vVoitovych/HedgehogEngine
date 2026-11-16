@@ -18,3 +18,4 @@ Emitters:
     ColorOverLife: [[0, 1, 1, 1, 1], [0.7, 1, 0.6, 0.3, 1], [1, 1, 0.3, 0.1, 0]]
     Texture: Textures/Particles/Spark.png
     Blend: Additive
+    Collision: {Mode: DepthBuffer, Bounce: 0.4, LifetimeLoss: 0.1}

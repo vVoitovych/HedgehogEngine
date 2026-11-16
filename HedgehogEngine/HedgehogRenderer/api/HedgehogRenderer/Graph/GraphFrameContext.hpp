@@ -34,13 +34,25 @@ namespace Renderer
     // The particle pool's buffers as the shared phase's simulation left them in this frame's graph
     // (SharedPhaseOutputs), for the views' Particles passes to read: the states, the alive list the
     // simulation filled, the slot rows with their draw arguments, and the sort list each view's
-    // Particles pass sorts its alpha-blended particles into (its latest version is the one to write).
+    // Particles pass sorts its alpha-blended particles into (its latest version is the one to write),
+    // and the collision depth the shadow view's Particles pass copies its depth into.
     struct ParticleGraphBuffers
     {
         RGBuffer State;
         RGBuffer AliveOut;
         RGBuffer Slots;
         RGBuffer Sort;
+        RGBuffer CollisionDepth;
+    };
+
+    // The particles' DepthBuffer collision reads the depth of the shadow view's camera as the frame
+    // before saw it: a PARTICLE_COLLISION_DEPTH_SIZE square of depths over that view, copied by its
+    // Particles pass, which also records the view-projection it was seen with here.
+    inline constexpr uint32_t PARTICLE_COLLISION_DEPTH_SIZE = 512;
+    struct ParticleCollisionDepth
+    {
+        HM::Matrix4x4 ViewProj;
+        bool          Written = false; // copied this frame, so the next frame may collide with it
     };
 
     // Where one mesh's indices sit in the shared geometry buffers.
@@ -174,6 +186,9 @@ namespace Renderer
         // null without particles, and the Particles pass then draws nothing.
         const ParticleFrameData* Particles = nullptr;
         ParticleGraphBuffers     ParticleBuffers;
+        // Set on the shadow view's frame alone: where its Particles pass copies its depth to, when an
+        // emitter collides with the depth buffer.
+        ParticleCollisionDepth* ParticleCollision = nullptr;
     };
 
     // The graph-path forward shader's uniforms (GraphForward/Base.vert and .frag), laid out for
@@ -264,8 +279,9 @@ namespace Renderer
         ParticleFinish,   // every emitter's counters and draw arguments for the next frame
         ParticleSortKeys, // a view's sort list for one alpha emitter: its alive particles by distance
         ParticleSortStep, // one step of the bitonic network over that list
+        ParticleCopyDepth, // the shadow view's depth (set 1, a sampled texture) into the collision depth
     };
-    inline constexpr size_t ENGINE_COMPUTE_PIPELINE_COUNT = 6;
+    inline constexpr size_t ENGINE_COMPUTE_PIPELINE_COUNT = 7;
 
     // The pool's buffers in the order ParticleFrameData::Buffers and ::States list them.
     enum class ParticleBuffer : uint8_t
@@ -276,8 +292,9 @@ namespace Renderer
         AliveOut,
         Slots,
         Sort, // per alpha emitter, (key, particle) pairs at twice its slot's first particle
+        CollisionDepth, // PARTICLE_COLLISION_DEPTH_SIZE squared floats, row 0 the top
     };
-    inline constexpr size_t PARTICLE_BUFFER_COUNT = 6;
+    inline constexpr size_t PARTICLE_BUFFER_COUNT = 7;
 
     // One frame of the particle pool: the pool's buffers (this frame's alive list in AliveIn, the next
     // frame's in AliveOut) and the state the frames before left each in, which the shared phase's

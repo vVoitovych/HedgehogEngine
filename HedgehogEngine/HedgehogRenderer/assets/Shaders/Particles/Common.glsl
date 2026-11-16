@@ -37,10 +37,12 @@ struct EmitterData
     uint  SlotRow;
     uint  SlotFirst, SlotCount, SpawnCount, Seed;
     uint  Shape, Blend, Space, Collision;
-    uint  SheetTilesX, SheetTilesY, EmitFromSurface, Padding1;
+    uint  SheetTilesX, SheetTilesY, EmitFromSurface, DepthValid;
     vec4  SizeOverLife[8];
     vec4  SpeedOverLife[8];
     vec4  ColorOverLife[32];
+    mat4  DepthViewProj;        // the collision depth's camera, the frame before
+    mat4  DepthInverseViewProj;
 };
 
 // The billboards only read: a vertex shader may not write a storage buffer unless the device enables
@@ -58,7 +60,15 @@ layout(std430, set = 0, binding = 4) PARTICLE_ACCESS buffer SlotBuffer { SlotRow
 // Per alpha emitter and view: (key, particle) pairs, the farthest first once sorted, at twice the
 // slot's first particle, as many as SlotCount rounded up to a power of two.
 layout(std430, set = 0, binding = 5) PARTICLE_ACCESS buffer SortBuffer { uvec2 sortList[]; };
-layout(std430, set = 0, binding = 6) readonly buffer EmitterBuffer { EmitterData emitters[]; };
+// The shadow view's depth as the frame before saw it, COLLISION_DEPTH_SIZE squared, row 0 the top.
+layout(std430, set = 0, binding = 6) PARTICLE_ACCESS buffer CollisionDepthBuffer { float collisionDepth[]; };
+layout(std430, set = 0, binding = 7) readonly buffer EmitterBuffer { EmitterData emitters[]; };
+
+const uint COLLISION_DEPTH_SIZE = 512; // PARTICLE_COLLISION_DEPTH_SIZE
+
+// ParticleCollisionMode
+const uint COLLISION_HEIGHT_PLANE = 1u;
+const uint COLLISION_DEPTH_BUFFER = 2u;
 
 // Which emitter (an index into emitters) this dispatch works on; for Finish, how many emitters. The
 // billboards (PARTICLE_DRAW) and the sort (PARTICLE_SORT) have push constants of their own.

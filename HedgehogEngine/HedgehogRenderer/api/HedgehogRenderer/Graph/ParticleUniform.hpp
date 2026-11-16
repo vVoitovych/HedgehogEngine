@@ -23,6 +23,11 @@ namespace Renderer
         bool operator==(const ParticleSlot&) const = default;
     };
 
+    // HedgehogEngine's ParticleCollisionMode values, as the uniform's Collision holds them.
+    inline constexpr uint32_t PARTICLE_COLLISION_NONE         = 0;
+    inline constexpr uint32_t PARTICLE_COLLISION_HEIGHT_PLANE = 1;
+    inline constexpr uint32_t PARTICLE_COLLISION_DEPTH_BUFFER = 2;
+
     // The baked rows, four samples to a vec4 (std140 gives a float array a 16-byte stride).
     inline constexpr uint32_t PARTICLE_CURVE_VEC4S = HedgehogEngine::PARTICLE_CURVE_SAMPLES / 4;
 
@@ -67,12 +72,16 @@ namespace Renderer
         uint32_t SheetTilesX = 1;                  // 272
         uint32_t SheetTilesY = 1;
         uint32_t EmitFromSurface = 0;
-        uint32_t Padding1    = 0;
+        uint32_t DepthValid  = 0;                  // DepthBuffer collision has a depth to read this frame
         float SizeOverLife[PARTICLE_CURVE_VEC4S][4]  = {};                              // 288
         float SpeedOverLife[PARTICLE_CURVE_VEC4S][4] = {};                              // 416
         float ColorOverLife[HedgehogEngine::PARTICLE_CURVE_SAMPLES][4] = {};             // 544
+        // For DepthBuffer collision (ParticleResources::BuildFrame): the camera the collision depth
+        // was copied with, and its inverse.
+        HM::Matrix4x4 DepthViewProj;                                                    // 1056
+        HM::Matrix4x4 DepthInverseViewProj;                                             // 1120
     };
-    static_assert(sizeof(ParticleEmitterUniform) == 1056, "ParticleEmitterUniform must match Common.glsl's std140 block.");
+    static_assert(sizeof(ParticleEmitterUniform) == 1184, "ParticleEmitterUniform must match Common.glsl's std140 block.");
 
     // The uniform for one emitter of an effect as one instance plays it this frame in slot: the
     // emitter's settings (its degrees made radians), the instance's matrix, spawn count, seed and

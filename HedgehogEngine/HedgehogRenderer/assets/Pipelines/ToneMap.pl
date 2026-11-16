@@ -1,11 +1,12 @@
 # The ToneMap pass (ToneMapPass.cpp): the view's HDR radiance onto its LDR colour output.
-# Set 0: the HDR texture, sampled linear and clamped (GraphPassServices::AllocateSampledTexture).
+# Set 0: the HDR texture, sampled linear and clamped (GraphPassServices::AllocateSampledTexture; the
+#        particles' depth copy binds the same sets in compute).
 # Push constants: the exposure scale, 2^EV (ToneMapPushConstants).
 descriptor_sets:
   - bindings:
       - binding: 0
         type: combined_image_sampler
-        stage: fragment
+        stage: fragment|compute
         count: 1
 
 push_constants:

@@ -82,6 +82,9 @@ TEST_CASE("Particle uniform - std140 offsets")
     CHECK(offsetof(ParticleEmitterUniform, SizeOverLife) == 288);
     CHECK(offsetof(ParticleEmitterUniform, SpeedOverLife) == 416);
     CHECK(offsetof(ParticleEmitterUniform, ColorOverLife) == 544);
+    CHECK(offsetof(ParticleEmitterUniform, DepthValid) == 284);
+    CHECK(offsetof(ParticleEmitterUniform, DepthViewProj) == 1056);
+    CHECK(offsetof(ParticleEmitterUniform, DepthInverseViewProj) == 1120);
 }
 
 TEST_CASE("Particle uniform - packs the emitter's settings, the instance and its slot")

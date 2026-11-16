@@ -191,6 +191,8 @@ namespace Renderer
                            "presents (RENDERING.md section 8).");
                 continue;
             }
+            // The shadow view's camera is the one particles collide with the depth of.
+            m_ViewFrames[i].ParticleCollision = &views[i] == shadowView ? m_Particles.GetCollisionDepth() : nullptr;
             const std::optional<PresentSource> source =
                 DeclareView(graph, views[i], m_ViewFrames[i], m_ViewContexts[i], shared);
             if (source && &views[i] == presenter)

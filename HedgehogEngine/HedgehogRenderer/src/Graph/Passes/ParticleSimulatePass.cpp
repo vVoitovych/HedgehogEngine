@@ -108,6 +108,7 @@ namespace Renderer
                 RecordParticleSimulation(data, cmd);
             });
         return { handles[static_cast<size_t>(ParticleBuffer::State)], handles[static_cast<size_t>(ParticleBuffer::AliveOut)],
-                 handles[static_cast<size_t>(ParticleBuffer::Slots)], handles[static_cast<size_t>(ParticleBuffer::Sort)] };
+                 handles[static_cast<size_t>(ParticleBuffer::Slots)], handles[static_cast<size_t>(ParticleBuffer::Sort)],
+                 handles[static_cast<size_t>(ParticleBuffer::CollisionDepth)] };
     }
 }

@@ -98,6 +98,9 @@ namespace Renderer
         [[nodiscard]] RHI::IRHIBuffer* GetDeadListBuffer() const { return m_DeadList.get(); }
         [[nodiscard]] RHI::IRHIBuffer* GetAliveListBuffer(uint32_t which) const { return m_AliveLists[which & 1].get(); }
         [[nodiscard]] RHI::IRHIBuffer* GetSlotBuffer() const { return m_SlotData.get(); }
+        // Where the shadow view copies its depth this frame for the next to collide with
+        // (GraphFrameData::ParticleCollision); BuildFrame takes it, so it lasts one frame.
+        [[nodiscard]] ParticleCollisionDepth* GetCollisionDepth() { return &m_CollisionDepth; }
 
     private:
         struct EffectSettings
@@ -148,5 +151,7 @@ namespace Renderer
         std::unique_ptr<RHI::IRHIBuffer> m_AliveLists[2];
         std::unique_ptr<RHI::IRHIBuffer> m_SlotData;
         std::unique_ptr<RHI::IRHIBuffer> m_SortList;
+        std::unique_ptr<RHI::IRHIBuffer> m_CollisionDepthBuffer;
+        ParticleCollisionDepth           m_CollisionDepth;
     };
 }
