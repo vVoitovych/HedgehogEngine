@@ -1,0 +1,20 @@
+Version: 1
+Emitters:
+  - Name: Sparks
+    MaxParticles: 200
+    Rate: 0
+    Bursts:
+      - {Time: 0, Count: 40}
+    Duration: 1.5
+    Shape: Cone
+    Radius: 0.05
+    Angle: 35
+    Lifetime: [0.6, 1.2]
+    StartSpeed: [3, 6]
+    StartSize: [0.05, 0.1]
+    StartColor: [6, 3.5, 1.2, 1]
+    Gravity: [0, 0, -9.81]
+    Drag: 0.2
+    ColorOverLife: [[0, 1, 1, 1, 1], [0.7, 1, 0.6, 0.3, 1], [1, 1, 0.3, 0.1, 0]]
+    Texture: Textures/Particles/Spark.png
+    Blend: Additive

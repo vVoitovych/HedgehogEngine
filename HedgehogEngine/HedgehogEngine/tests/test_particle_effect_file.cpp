@@ -2,6 +2,10 @@
 
 #include "HedgehogEngine/api/Particles/ParticleEffectFile.hpp"
 
+#include <algorithm>
+#include <filesystem>
+#include <fstream>
+#include <sstream>
 #include <string>
 
 using namespace HedgehogEngine;
@@ -156,4 +160,25 @@ TEST_CASE("A .particle file with a mistake is refused with one message naming it
     // Read but invalid: ValidateParticleEffect's message.
     CHECK(Refused(Replace("{Emitter: 1, Count: 4}", "{Emitter: 0}"), "a sub-emitter names its own emitter"));
     CHECK(Refused(Replace("SheetTiles: [4, 2]", "SheetTiles: [0, 2]"), "the sheet has 0 tiles"));
+}
+
+TEST_CASE("FeatureTest's shipped .particle effects read clean and write back to exactly their text")
+{
+    // tests/ -> HedgehogEngine/ -> HedgehogEngine/ -> repository root.
+    const std::filesystem::path folder = std::filesystem::path(__FILE__).parent_path().parent_path().parent_path().parent_path()
+                                       / "Projects/FeatureTest/Assets/Particles";
+    for (const char* name : { "Fire.particle", "Smoke.particle", "Sparks.particle" })
+    {
+        CAPTURE(name);
+        std::ifstream      file(folder / name, std::ios::binary);
+        std::ostringstream stream;
+        stream << file.rdbuf();
+        std::string text = stream.str();
+        std::erase(text, ''); // as checked out, line endings aside
+        REQUIRE_FALSE(text.empty());
+
+        const ParticleEffectReadResult read = ParseParticleEffect(text);
+        REQUIRE_MESSAGE(read.Effect.has_value(), read.Error);
+        CHECK(WriteParticleEffect(*read.Effect) == text);
+    }
 }

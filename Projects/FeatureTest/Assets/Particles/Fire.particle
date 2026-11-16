@@ -1,0 +1,18 @@
+Version: 1
+Emitters:
+  - Name: Flames
+    MaxParticles: 200
+    Rate: 60
+    Shape: Cone
+    Radius: 0.25
+    Angle: 10
+    Lifetime: [0.6, 1]
+    StartSpeed: [0.8, 1.4]
+    StartSize: [0.35, 0.5]
+    StartColor: [4, 2.4, 1, 1]
+    Gravity: [0, 0, 1.5]
+    Drag: 0.5
+    SizeOverLife: [[0, 1], [1, 0.3]]
+    ColorOverLife: [[0, 1, 0.9, 0.5, 0], [0.1, 1, 0.7, 0.3, 1], [0.6, 1, 0.3, 0.1, 0.6], [1, 0.5, 0.1, 0, 0]]
+    Texture: Textures/Particles/Fire.png
+    Blend: Additive

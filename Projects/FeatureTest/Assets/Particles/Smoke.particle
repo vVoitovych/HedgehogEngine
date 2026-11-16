@@ -1,0 +1,17 @@
+Version: 1
+Emitters:
+  - Name: Smoke
+    MaxParticles: 100
+    Rate: 12
+    Shape: Sphere
+    Radius: 0.3
+    Lifetime: [3, 4]
+    StartSpeed: [0.2, 0.4]
+    StartSize: [0.5, 0.8]
+    StartColor: [0.3, 0.3, 0.3, 1]
+    Gravity: [0, 0, 0.4]
+    Drag: 0.3
+    SizeOverLife: [[0, 0.6], [1, 2.2]]
+    ColorOverLife: [[0, 1, 1, 1, 0], [0.2, 1, 1, 1, 0.6], [1, 1.5, 1.5, 1.5, 0]]
+    Texture: Textures/Particles/Smoke.png
+    SheetTiles: [4, 4]
