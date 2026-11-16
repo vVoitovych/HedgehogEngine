@@ -1,0 +1,136 @@
+Scene name: Particles
+Scene:
+  - Entity: 0
+    Name: Root
+    Parent: 0
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    Children:
+      - Entity: 1
+        Name: Ground
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, -0.5]
+          Rotation: [0, 0, 0]
+          Scale: [12, 8, 0.5]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/cube.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/Transparency/Ground.material
+          Layer: 0
+        Children:
+          []
+      - Entity: 2
+        Name: Fire
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 0.05]
+          Rotation: [0, 0, 0]
+          Scale: [1, 1, 1]
+        ParticleSystemComponent:
+          Enabled: true
+          Effect: Particles/Fire.particle
+          PlayOnStart: true
+          Seed: 1
+        Children:
+          []
+      - Entity: 3
+        Name: Smoke
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 1.3]
+          Rotation: [0, 0, 0]
+          Scale: [1, 1, 1]
+        ParticleSystemComponent:
+          Enabled: true
+          Effect: Particles/Smoke.particle
+          PlayOnStart: true
+          Seed: 2
+        Children:
+          []
+      - Entity: 4
+        Name: Anvil
+        Parent: 0
+        TransformComponent:
+          Position: [2.5, 0, 0.15]
+          Rotation: [0, 0, 0]
+          Scale: [0.4, 0.25, 0.15]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/cube.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/Transparency/Backdrop.material
+          Layer: 0
+        Children:
+          []
+      - Entity: 5
+        Name: Sparks
+        Parent: 0
+        TransformComponent:
+          Position: [2.5, 0, 0.32]
+          Rotation: [0, 0, 0]
+          Scale: [1, 1, 1]
+        ParticleSystemComponent:
+          Enabled: true
+          Effect: Particles/Sparks.particle
+          PlayOnStart: true
+          Seed: 3
+        Children:
+          []
+      - Entity: 6
+        Name: Firelight
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 0.8]
+          Rotation: [0, 0, 0]
+          Scale: [1, 1, 1]
+        LightComponent:
+          LightEnabled: true
+          LightType: 1
+          LightColor: [1, 0.55, 0.25]
+          LightIntensity: 3
+          LightRadius: 8
+          LightConeAngle: 2
+          CastShadows: false
+        Children:
+          []
+      - Entity: 7
+        Name: Sky
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 0]
+          Rotation: [0, 0, 0]
+          Scale: [1, 1, 1]
+        EnvironmentComponent:
+          Enabled: true
+          Map: Environments/moonless_golf_1k.hdr
+          Intensity: 1
+          Rotation: 0
+          ShowSkybox: true
+          Exposure: 0
+        Children:
+          []
+      - Entity: 8
+        Name: MainCamera
+        Parent: 0
+        TransformComponent:
+          Position: [0.8, -6, 2]
+          Rotation: [80, 0, 0]
+          Scale: [1, 1, 1]
+        CameraComponent:
+          Enabled: true
+          ProjectionType: 0
+          Fov: 60
+          OrthoSize: 10
+          NearPlane: 0.1
+          FarPlane: 1000
+          LayerMask: 4294967295
+          TargetMode: 0
+          TargetName: ""
+          GraphName: game
+          Priority: 0
+        Children:
+          []
