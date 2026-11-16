@@ -33,12 +33,14 @@ namespace Renderer
 
     // The particle pool's buffers as the shared phase's simulation left them in this frame's graph
     // (SharedPhaseOutputs), for the views' Particles passes to read: the states, the alive list the
-    // simulation filled, and the slot rows with their draw arguments.
+    // simulation filled, the slot rows with their draw arguments, and the sort list each view's
+    // Particles pass sorts its alpha-blended particles into (its latest version is the one to write).
     struct ParticleGraphBuffers
     {
         RGBuffer State;
         RGBuffer AliveOut;
         RGBuffer Slots;
+        RGBuffer Sort;
     };
 
     // Where one mesh's indices sit in the shared geometry buffers.
@@ -260,8 +262,10 @@ namespace Renderer
         ParticleEmit,     // its SpawnCount newborns into this frame's alive list
         ParticleSimulate, // its alive particles moved on, the living into the next frame's list
         ParticleFinish,   // every emitter's counters and draw arguments for the next frame
+        ParticleSortKeys, // a view's sort list for one alpha emitter: its alive particles by distance
+        ParticleSortStep, // one step of the bitonic network over that list
     };
-    inline constexpr size_t ENGINE_COMPUTE_PIPELINE_COUNT = 4;
+    inline constexpr size_t ENGINE_COMPUTE_PIPELINE_COUNT = 6;
 
     // The pool's buffers in the order ParticleFrameData::Buffers and ::States list them.
     enum class ParticleBuffer : uint8_t
@@ -271,8 +275,9 @@ namespace Renderer
         AliveIn,
         AliveOut,
         Slots,
+        Sort, // per alpha emitter, (key, particle) pairs at twice its slot's first particle
     };
-    inline constexpr size_t PARTICLE_BUFFER_COUNT = 5;
+    inline constexpr size_t PARTICLE_BUFFER_COUNT = 6;
 
     // One frame of the particle pool: the pool's buffers (this frame's alive list in AliveIn, the next
     // frame's in AliveOut) and the state the frames before left each in, which the shared phase's

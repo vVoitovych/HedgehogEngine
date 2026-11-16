@@ -1,8 +1,9 @@
 # The particle compute shaders (Particles/Common.glsl), all on one layout so one set binds to each.
 # Set 0 (GraphPassServices::AllocateParticleSet): the particle states, the dead list, this frame's and
-# the next frame's alive lists, the slot rows (counters and indirect arguments) and the frame's
-# emitters (ParticleEmitterUniform), all storage buffers.
-# Push constants: the emitter a dispatch works on, and how many emitters there are.
+# the next frame's alive lists, the slot rows (counters and indirect arguments), the sort list and
+# the frame's emitters (ParticleEmitterUniform), all storage buffers.
+# Push constants: the emitter a dispatch works on and how many emitters there are, or for the sort
+# the list's length, the bitonic step and the view's eye (ParticleSortPushConstants).
 descriptor_sets:
   - bindings:
       - binding: 0
@@ -29,8 +30,12 @@ descriptor_sets:
         type: storage_buffer
         stage: compute|vertex
         count: 1
+      - binding: 6
+        type: storage_buffer
+        stage: compute|vertex
+        count: 1
 
 push_constants:
   - stage: compute
     offset: 0
-    size: 16
+    size: 32

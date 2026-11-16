@@ -1,0 +1,30 @@
+#version 450
+
+// One alpha emitter's sort list for a view: each alive particle (this frame's drawn ones, in the alive
+// list the simulation filled) keyed by its distance from the eye so the farthest sorts first, and the
+// rest of the power-of-two list padded with keys that sort last.
+
+#define PARTICLE_SORT
+#include "Particles/Common.glsl"
+#include "Particles/Sort.glsl"
+
+layout(local_size_x = 64) in;
+
+void main()
+{
+    uint i = gl_GlobalInvocationID.x;
+    if (i >= sort.Count)
+        return;
+    EmitterData emitter = emitters[sort.EmitterIndex];
+    uint        base    = 2u * emitter.SlotFirst;
+    if (i >= slots[emitter.SlotRow].DrawArgs[1])
+    {
+        sortList[base + i] = uvec2(0xFFFFFFFFu, 0u);
+        return;
+    }
+    uint  particle = aliveOut[emitter.SlotFirst + i];
+    vec3  world    = (emitter.DrawMatrix * vec4(particles[particle].PositionAge.xyz, 1.0)).xyz;
+    float distance = length(world - sort.Eye.xyz);
+    // A non-negative float's bits order as it does; inverted, the farthest is the smallest key.
+    sortList[base + i] = uvec2(0xFFFFFFFEu - min(floatBitsToUint(distance), 0xFFFFFFFEu), particle);
+}
