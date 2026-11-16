@@ -65,6 +65,7 @@ void main()
     {
         int dead = atomicAdd(slots[emitter.SlotRow].Dead, 1);
         deadList[emitter.SlotFirst + uint(dead)] = index;
+        atomicAdd(slots[emitter.SlotRow].Died, 1);
         return;
     }
 

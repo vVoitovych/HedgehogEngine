@@ -1,0 +1,46 @@
+#version 450
+
+// A sub-emitter's particles where its parent's particles died this frame: ChildCount per death, each
+// taking a dead particle of the child's range, placed on the child's shape around where the parent's
+// particle died, with the child's start values. They join the child's next-frame alive list, so they
+// draw this frame and move from the next. Past the child's dead list a spawn is dropped (counted).
+
+#include "Particles/Common.glsl"
+
+layout(local_size_x = 64) in;
+
+void main()
+{
+    EmitterData parent = emitters[push.EmitterIndex];
+    EmitterData child  = emitters[push.ChildIndex];
+    uint        i      = gl_GlobalInvocationID.x;
+    int         died   = slots[parent.SlotRow].Died;
+    if (i >= uint(died) * push.ChildCount)
+        return;
+
+    // Simulate pushed this frame's deaths on top of the parent's dead list; their states are intact
+    // until the parent's next Emit takes them.
+    int  top   = slots[parent.SlotRow].Dead;
+    uint dying = deadList[parent.SlotFirst + uint(top - died) + i / push.ChildCount];
+    vec3 death = (parent.DrawMatrix * vec4(particles[dying].PositionAge.xyz, 1.0)).xyz;
+
+    int dead = atomicAdd(slots[child.SlotRow].Dead, -1);
+    if (dead <= 0)
+    {
+        atomicAdd(slots[child.SlotRow].Dead, 1);
+        atomicAdd(slots[child.SlotRow].Dropped, 1);
+        return;
+    }
+    uint index = deadList[child.SlotFirst + uint(dead - 1)];
+
+    uint     state    = Hash(child.Seed ^ Hash(i) ^ Hash(dying + 0x9E3779B9u));
+    Particle particle = SpawnParticle(child, state);
+    // The shape around the death instead of the child's own origin, in the child's simulation space.
+    vec3 origin           = (child.EmitMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+    vec3 deathInChild     = (inverse(child.DrawMatrix) * vec4(death, 1.0)).xyz;
+    particle.PositionAge  = vec4(particle.PositionAge.xyz - origin + deathInChild, 0.0);
+    particles[index]      = particle;
+
+    int alive = atomicAdd(slots[child.SlotRow].NewAlive, 1);
+    aliveOut[child.SlotFirst + uint(alive)] = index;
+}

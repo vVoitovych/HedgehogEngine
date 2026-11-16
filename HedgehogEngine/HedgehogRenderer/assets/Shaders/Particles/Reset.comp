@@ -20,7 +20,8 @@ void main()
         row.NewAlive = 0;
         row.Dropped  = 0;
         row.DrawArgs = uint[4](6u, 0u, 0u, 0u);
-        row.Spare    = uint[8](0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u);
+        row.Died     = 0;
+        row.Spare    = uint[7](0u, 0u, 0u, 0u, 0u, 0u, 0u);
         slots[emitter.SlotRow] = row;
     }
 }

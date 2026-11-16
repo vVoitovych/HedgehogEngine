@@ -23,16 +23,28 @@ namespace Renderer
         settings.Version         = version;
         settings.Emitters.assign(effect.emitters.begin(), effect.emitters.end());
         settings.Textures.clear();
+        settings.SubEmitters.clear();
         // The views' texture and sub-emitters point into the catalog, which may change after this.
         for (HedgehogEngine::ParticleEmitterView& emitter : settings.Emitters)
         {
             settings.Textures.emplace_back(emitter.texture);
+            settings.SubEmitters.emplace_back(emitter.subEmitters.begin(), emitter.subEmitters.end());
             if (!emitter.texture.empty() &&
                 std::find(m_TexturePaths.begin(), m_TexturePaths.end(), emitter.texture) == m_TexturePaths.end())
                 m_TexturePaths.emplace_back(emitter.texture);
             emitter.texture     = {};
             emitter.subEmitters = {};
         }
+
+        // Each emitter one deeper than the deepest emitter spawning it; the effect has no cycle, so
+        // as many passes as emitters settle it.
+        const size_t count = settings.Emitters.size();
+        settings.Depths.assign(count, 0);
+        for (size_t pass = 0; pass < count; ++pass)
+            for (size_t parent = 0; parent < count; ++parent)
+                for (const HedgehogEngine::ParticleSubEmitterView& sub : settings.SubEmitters[parent])
+                    if (sub.emitter < count)
+                        settings.Depths[sub.emitter] = std::max(settings.Depths[sub.emitter], settings.Depths[parent] + 1);
     }
 
     void ParticleResources::SyncEffects(const HedgehogEngine::IResourceCatalog& catalog)
@@ -173,6 +185,8 @@ namespace Renderer
         m_Uniforms.clear();
         m_Reset.clear();
         m_Textures.clear();
+        m_UniformSources.clear();
+        m_SubEmitters.clear();
         // The depth the shadow view copied last frame; without one nothing collides with it.
         const bool          hasDepth       = m_CollisionDepth.Written;
         const HM::Matrix4x4 depthViewProj  = m_CollisionDepth.ViewProj;
@@ -197,7 +211,28 @@ namespace Renderer
             m_Reset.push_back(slot->NeedsReset ? 1 : 0);
             const std::string& texture = m_Effects[instance.EffectIndex].Textures[instance.EmitterIndex];
             m_Textures.push_back(texture.empty() || !findTexture ? nullptr : findTexture(texture));
+            m_UniformSources.push_back(i);
         }
+
+        // Each sub-emitter's instance is the same entity's emitter, when it has a slot.
+        // ponytail: a scan of the frame's uniforms per sub-emitter; index them if effects grow many.
+        for (uint32_t parent = 0; parent < m_UniformSources.size(); ++parent)
+        {
+            const HX::ParticleEmitterInstance& instance = scene.ParticleEmitters[m_UniformSources[parent]];
+            const EffectSettings&              effect   = m_Effects[instance.EffectIndex];
+            for (const HedgehogEngine::ParticleSubEmitterView& sub : effect.SubEmitters[instance.EmitterIndex])
+                for (uint32_t child = 0; child < m_UniformSources.size(); ++child)
+                {
+                    const HX::ParticleEmitterInstance& other = scene.ParticleEmitters[m_UniformSources[child]];
+                    if (other.InstanceId == instance.InstanceId && other.EmitterIndex == sub.emitter && sub.count > 0)
+                    {
+                        m_SubEmitters.push_back({ parent, child, sub.count, effect.Depths[instance.EmitterIndex] });
+                        break;
+                    }
+                }
+        }
+        std::stable_sort(m_SubEmitters.begin(), m_SubEmitters.end(),
+                         [](const ParticleSubEmitterDispatch& a, const ParticleSubEmitterDispatch& b) { return a.Depth > b.Depth; });
         if (m_Uniforms.empty() || !m_State)
             return nullptr;
 
@@ -216,6 +251,7 @@ namespace Renderer
         m_Frame.Emitters = m_Uniforms;
         m_Frame.Reset    = m_Reset;
         m_Frame.Textures = m_Textures;
+        m_Frame.SubEmitters = m_SubEmitters;
         return &m_Frame;
     }
 

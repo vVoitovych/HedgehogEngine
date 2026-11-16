@@ -74,7 +74,7 @@ namespace Renderer
 
         // This frame's particles, after Sync with the same scene: per emitter instance with a slot its
         // uniform, its reset flag and its texture's set (findTexture of its emitter's texture, null
-        // for none), the alive lists the other way round from last frame, and each buffer's state as
+        // for none), its sub-emitters whose instance has a slot (deepest parent first), the alive lists the other way round from last frame, and each buffer's state as
         // the frame before left it (SetFinalStates). nullptr when no instance has a slot. Valid until
         // the next BuildFrame.
         [[nodiscard]] const ParticleFrameData* BuildFrame(const HX::RenderScene& scene, const TextureLookup& findTexture);
@@ -108,6 +108,8 @@ namespace Renderer
             uint32_t                                         Version = 0;
             std::vector<HedgehogEngine::ParticleEmitterView> Emitters;
             std::vector<std::string>                         Textures; // one per emitter
+            std::vector<std::vector<HedgehogEngine::ParticleSubEmitterView>> SubEmitters; // one list per emitter
+            std::vector<uint32_t> Depths; // per emitter, its depth in the sub-emitter tree
         };
 
         struct InstanceSlot
@@ -135,6 +137,8 @@ namespace Renderer
         std::vector<ParticleEmitterUniform>        m_Uniforms;
         std::vector<uint8_t>                       m_Reset;
         std::vector<const RHI::IRHIDescriptorSet*> m_Textures;
+        std::vector<size_t>                        m_UniformSources; // per uniform, its scene entry
+        std::vector<ParticleSubEmitterDispatch>    m_SubEmitters;
         std::vector<std::string>                   m_TexturePaths;
         ParticleFrameData                          m_Frame;
         uint32_t                                   m_Parity = 0; // which alive list this frame reads

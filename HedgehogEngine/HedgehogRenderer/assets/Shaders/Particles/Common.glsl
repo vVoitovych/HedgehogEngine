@@ -18,7 +18,8 @@ struct SlotRow
     int  NewAlive;   // entries written to the next frame's alive list
     int  Dropped;    // spawns refused for want of dead particles
     uint DrawArgs[4]; // vertex count, instance count (the alive particles), first vertex, first instance
-    uint Spare[8];
+    int  Died;       // particles that died this frame: the top entries of the dead list after Simulate
+    uint Spare[7];
 };
 
 struct EmitterData
@@ -77,6 +78,8 @@ layout(push_constant) uniform Push
 {
     uint EmitterIndex;
     uint EmitterCount;
+    uint ChildIndex; // SpawnFromDeaths: the sub-emitter, and its particles per death
+    uint ChildCount;
 } push;
 #endif
 
@@ -104,4 +107,65 @@ float SampleCurve(vec4 row[8], float t)
     uint  a = uint(floor(x));
     uint  b = min(a + 1u, 31u);
     return mix(row[a >> 2][a & 3u], row[b >> 2][b & 3u], x - float(a));
+}
+
+const float PI = 3.14159265358979;
+
+// A unit direction, uniformly on the sphere.
+vec3 RandomDirection(inout uint state)
+{
+    float z   = Random(state) * 2.0 - 1.0;
+    float phi = Random(state) * 2.0 * PI;
+    float r   = sqrt(max(0.0, 1.0 - z * z));
+    return vec3(r * cos(phi), r * sin(phi), z);
+}
+
+// A newborn of emitter: placed on its shape by EmitMatrix, with its start values, from state.
+Particle SpawnParticle(EmitterData emitter, inout uint state)
+{
+    vec3 position;
+    vec3 direction;
+    if (emitter.Shape == 1u) // Sphere: inside it, or on it, moving outwards
+    {
+        direction    = RandomDirection(state);
+        float radius = emitter.EmitFromSurface != 0u ? emitter.Radius : emitter.Radius * pow(Random(state), 1.0 / 3.0);
+        position     = direction * radius;
+    }
+    else if (emitter.Shape == 2u) // Cone: from a disc, within ConeAngle of +Z
+    {
+        float r      = emitter.Radius * sqrt(Random(state));
+        float phi    = Random(state) * 2.0 * PI;
+        position     = vec3(r * cos(phi), r * sin(phi), 0.0);
+        float cosMax = cos(emitter.ConeAngle);
+        float z      = mix(cosMax, 1.0, Random(state));
+        float theta  = Random(state) * 2.0 * PI;
+        float s      = sqrt(max(0.0, 1.0 - z * z));
+        direction    = vec3(s * cos(theta), s * sin(theta), z);
+    }
+    else if (emitter.Shape == 3u) // Box: inside it, or on a face, moving along +Z
+    {
+        vec3 u   = vec3(Random(state), Random(state), Random(state)) - 0.5;
+        if (emitter.EmitFromSurface != 0u)
+        {
+            uint axis = uint(Random(state) * 3.0) % 3u;
+            u[axis]   = u[axis] < 0.0 ? -0.5 : 0.5;
+        }
+        position  = u * emitter.BoxSize;
+        direction = vec3(0.0, 0.0, 1.0);
+    }
+    else // Point
+    {
+        position  = vec3(0.0);
+        direction = RandomDirection(state);
+    }
+
+    float speed = mix(emitter.SpeedMin, emitter.SpeedMax, Random(state));
+    Particle particle;
+    particle.PositionAge      = vec4((emitter.EmitMatrix * vec4(position, 1.0)).xyz, 0.0);
+    particle.VelocityLifetime = vec4(normalize((emitter.EmitMatrix * vec4(direction, 0.0)).xyz) * speed,
+                                     max(mix(emitter.LifetimeMin, emitter.LifetimeMax, Random(state)), 1e-4));
+    particle.SizeRotation     = vec4(mix(emitter.SizeMin, emitter.SizeMax, Random(state)),
+                                     mix(emitter.RotationMin, emitter.RotationMax, Random(state)), Random(state), 0.0);
+    particle.Spare            = vec4(0.0);
+    return particle;
 }

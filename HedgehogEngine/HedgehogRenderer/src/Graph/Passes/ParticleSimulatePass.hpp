@@ -8,8 +8,10 @@ namespace Renderer
 
     // The shared phase's particle simulation, once per frame before any view: for every emitter
     // instance of particles, its slot started afresh when it asks (Reset), its newborns spawned (Emit),
-    // its alive particles moved on (Simulate), then every emitter's counters and draw arguments made
-    // ready for the next frame (Finish), with a buffer barrier between the stages. It imports the
+    // its alive particles moved on (Simulate), each sub-emitter's particles spawned where its parent's
+    // died (SpawnFromDeaths, deepest parents first, a barrier between depths), then every emitter's
+    // counters and draw arguments made ready for the next frame (Finish), with a buffer barrier
+    // between the stages. It imports the
     // pool's buffers from the states the frames before left them in and writes them all, and it is
     // never culled: particles age whether or not a view draws them. Returns the buffers as it left
     // them, for the views to draw from.
@@ -22,12 +24,16 @@ namespace Renderer
         "ParticleCollisionDepth"
     };
 
-    // Push constants of every particle compute shader (Particles/Common.glsl's Push).
+    // Push constants of every particle compute shader (Particles/Common.glsl's Push); the child and
+    // its count per death for SpawnFromDeaths.
     struct ParticlePushConstants
     {
         uint32_t EmitterIndex = 0;
         uint32_t EmitterCount = 0;
-        uint32_t Padding[2]   = {};
+        uint32_t ChildIndex   = 0;
+        uint32_t ChildCount   = 0;
+
+        bool operator==(const ParticlePushConstants&) const = default;
     };
     static_assert(sizeof(ParticlePushConstants) <= 32, "ParticleCompute.pl's push constant range is 32 bytes.");
 
