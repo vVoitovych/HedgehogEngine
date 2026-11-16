@@ -277,6 +277,9 @@ namespace Editor
         Init();
         m_EditorGui->SetBenchmarkMode(true);
         LoadBenchmarkScene(sceneFile);
+        // The scene runs as a game would (particles spawn, animators and scripts run), so what is
+        // measured is what plays.
+        m_Context->GetEngineContext().Play();
 
         LOGINFO("Benchmark: warming up for ", warmupFrames, " frame(s)...");
         auto& windowContext = m_Context->GetWindowContext();
@@ -313,6 +316,7 @@ namespace Editor
             LOGINFO(line);
         }
 
+        m_Context->GetEngineContext().Stop();
         Cleanup();
     }
 
