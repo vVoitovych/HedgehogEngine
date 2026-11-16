@@ -16,6 +16,7 @@ void main()
     int  alive = slots[row].NewAlive;
     slots[row].Alive       = alive;
     slots[row].NewAlive    = 0;
+    slots[row].Died        = 0;
     slots[row].DrawArgs[0] = 6u;
     slots[row].DrawArgs[1] = uint(alive);
     slots[row].DrawArgs[2] = 0u;

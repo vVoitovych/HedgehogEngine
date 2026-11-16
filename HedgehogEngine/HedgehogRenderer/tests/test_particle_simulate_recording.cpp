@@ -132,6 +132,72 @@ TEST_CASE("Particle simulation - without resets or spawns only simulate and fini
     CHECK(cmd.Calls[0].BufferBarriers[0].After == RHI::ResourceState::UnorderedAccess);
 }
 
+TEST_CASE("Particle simulation - sub-emitters spawn after simulate, deepest parent first, a barrier between depths")
+{
+    TestDevice           device;
+    RenderGraphRuntime   graph(device, 64 * 1024);
+    FakeServices         services;
+    ParticleFrameFixture particles(RHI::ResourceState::UnorderedAccess);
+    particles.Reset                  = { 0, 0 };
+    particles.Emitters[1].SpawnCount = 0;
+    particles.Emitters.resize(3);
+    particles.Emitters[2].SlotCount = 50;
+    particles.Reset                 = { 0, 0, 0 };
+    // Emitter 0 spawns 3 of emitter 1 per death, which spawns one of emitter 2 per death.
+    const std::vector<ParticleSubEmitterDispatch> subEmitters = { { 1, 2, 1, 1 }, { 0, 1, 3, 0 } };
+    particles.Frame.Emitters    = particles.Emitters;
+    particles.Frame.Reset       = particles.Reset;
+    particles.Frame.SubEmitters = subEmitters;
+
+    DeclareParticleSimulation(graph, services, particles.Frame);
+    RecordingCommandList cmd;
+    REQUIRE(graph.Execute(cmd));
+    CHECK(cmd.Commands == std::vector<std::string>{
+        "pipeline", "set 0", "push 16", "dispatch 2 1 1", "push 16", "dispatch 4 1 1", "push 16", "dispatch 1 1 1", // simulate
+        "pipeline", "set 0", "push 16", "dispatch 4 1 1",  // 1 into 2: 200 deaths at most, one each
+        "push 16", "dispatch 5 1 1",                       // 0 into 1: 100 deaths, three each
+        "pipeline", "set 0", "push 16", "dispatch 1 1 1" });
+    CHECK(cmd.BoundPipelines[1] == &services.GetComputePipeline(EngineComputePipeline::ParticleSpawnFromDeaths));
+
+    ParticlePushConstants push;
+    std::memcpy(&push, cmd.PushedData[3].data(), sizeof(push));
+    CHECK(push == ParticlePushConstants{ 1, 3, 2, 1 });
+    std::memcpy(&push, cmd.PushedData[4].data(), sizeof(push));
+    CHECK(push == ParticlePushConstants{ 0, 3, 1, 3 });
+    // The graph's, after simulate, between the two depths and after the last.
+    CHECK(cmd.Calls.size() == 4);
+}
+
+TEST_CASE("Particle resources - each sub-emitter is the same entity's emitter instance, deepest parent first")
+{
+    TestDevice                                       device;
+    ParticleResources                                particles;
+    std::vector<HedgehogEngine::ParticleEmitterView> storage(3);
+    for (HedgehogEngine::ParticleEmitterView& emitter : storage)
+        emitter.maxParticles = 10;
+    const HedgehogEngine::ParticleSubEmitterView twoOfOne[]  = { { 1, 2 } };
+    const HedgehogEngine::ParticleSubEmitterView oneOfTwo[]  = { { 2, 1 } };
+    storage[0].subEmitters = twoOfOne;
+    storage[1].subEmitters = oneOfTwo;
+    particles.SetEffect(0, 1, { storage });
+
+    const auto instance = [](uint64_t id, uint32_t emitter)
+    {
+        HX::ParticleEmitterInstance result;
+        result.InstanceId   = id;
+        result.EmitterIndex = emitter;
+        return result;
+    };
+    // Entity 5 plays all three emitters; entity 6 only the first, so its sub-emitter has no instance.
+    HX::RenderScene scene;
+    scene.ParticleEmitters = { instance(5, 0), instance(5, 1), instance(5, 2), instance(6, 0) };
+    particles.Sync(scene, device);
+    const ParticleFrameData* frame = particles.BuildFrame(scene, {});
+    REQUIRE(frame != nullptr);
+    CHECK(std::vector<ParticleSubEmitterDispatch>(frame->SubEmitters.begin(), frame->SubEmitters.end())
+          == std::vector<ParticleSubEmitterDispatch>{ { 1, 2, 1, 1 }, { 0, 1, 2, 0 } });
+}
+
 TEST_CASE("Particle simulation - the shared phase declares it only with particles")
 {
     TestDevice          device;

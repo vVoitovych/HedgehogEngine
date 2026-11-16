@@ -32,9 +32,10 @@ namespace Renderer
                 cmd.BindDescriptorSet(pipeline, 0, set);
                 return pipeline;
             };
-            const auto dispatch = [&](const RHI::IRHIPipeline& pipeline, uint32_t emitter, uint32_t threads)
+            const auto dispatch = [&](const RHI::IRHIPipeline& pipeline, uint32_t emitter, uint32_t threads,
+                                      uint32_t child = 0, uint32_t childCount = 0)
             {
-                const ParticlePushConstants push{ emitter, count };
+                const ParticlePushConstants push{ emitter, count, child, childCount };
                 cmd.PushConstants(pipeline, RHI::ShaderStage::Compute, 0, sizeof(push), &push);
                 cmd.Dispatch(ParticleGroups(threads), 1, 1);
             };
@@ -77,6 +78,21 @@ namespace Renderer
             for (uint32_t i = 0; i < count; ++i)
                 dispatch(simulate, i, particles.Emitters[i].SlotCount);
             stageBarrier();
+
+            // Every death of a parent may spawn its children; a parent's own parent spawns into it
+            // only after its deaths are read, at the next depth.
+            if (!particles.SubEmitters.empty())
+            {
+                const RHI::IRHIPipeline& spawn = bind(EngineComputePipeline::ParticleSpawnFromDeaths);
+                for (size_t i = 0; i < particles.SubEmitters.size(); ++i)
+                {
+                    const ParticleSubEmitterDispatch& sub = particles.SubEmitters[i];
+                    if (i > 0 && particles.SubEmitters[i - 1].Depth != sub.Depth)
+                        stageBarrier();
+                    dispatch(spawn, sub.Parent, particles.Emitters[sub.Parent].SlotCount * sub.Count, sub.Child, sub.Count);
+                }
+                stageBarrier();
+            }
 
             dispatch(bind(EngineComputePipeline::ParticleFinish), 0, count);
         }

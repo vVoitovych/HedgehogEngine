@@ -280,8 +280,9 @@ namespace Renderer
         ParticleSortKeys, // a view's sort list for one alpha emitter: its alive particles by distance
         ParticleSortStep, // one step of the bitonic network over that list
         ParticleCopyDepth, // the shadow view's depth (set 1, a sampled texture) into the collision depth
+        ParticleSpawnFromDeaths, // a sub-emitter's particles where its parent's particles died
     };
-    inline constexpr size_t ENGINE_COMPUTE_PIPELINE_COUNT = 7;
+    inline constexpr size_t ENGINE_COMPUTE_PIPELINE_COUNT = 8;
 
     // The pool's buffers in the order ParticleFrameData::Buffers and ::States list them.
     enum class ParticleBuffer : uint8_t
@@ -301,6 +302,19 @@ namespace Renderer
     // ParticleSimulate pass imports them with; and per emitter instance its uniform, whether its slot
     // starts afresh, and its texture's set (null for none: a soft round dot), which the views'
     // Particles passes draw with.
+    // One sub-emitter of an emitter instance this frame: Count particles of the uniform Child where
+    // each particle of the uniform Parent died. Depth is the parent's emitter's depth in its effect's
+    // sub-emitter tree (0 for one no emitter spawns).
+    struct ParticleSubEmitterDispatch
+    {
+        uint32_t Parent = 0;
+        uint32_t Child  = 0;
+        uint32_t Count  = 1;
+        uint32_t Depth  = 0;
+
+        bool operator==(const ParticleSubEmitterDispatch&) const = default;
+    };
+
     struct ParticleFrameData
     {
         std::array<RHI::IRHIBuffer*, PARTICLE_BUFFER_COUNT>    Buffers{};
@@ -308,6 +322,8 @@ namespace Renderer
         std::span<const ParticleEmitterUniform>               Emitters;
         std::span<const uint8_t>                              Reset; // one per emitter: 1 to start its slot afresh
         std::span<const RHI::IRHIDescriptorSet* const>        Textures;
+        // Deepest parent first, so a parent's deaths are read before its own parent spawns into it.
+        std::span<const ParticleSubEmitterDispatch>           SubEmitters;
 
         [[nodiscard]] RHI::IRHIBuffer* Get(ParticleBuffer buffer) const { return Buffers[static_cast<size_t>(buffer)]; }
     };
