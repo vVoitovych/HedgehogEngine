@@ -35,6 +35,10 @@ descriptor_sets:
         type: storage_buffer
         stage: compute|vertex
         count: 1
+      - binding: 7
+        type: storage_buffer
+        stage: compute|vertex
+        count: 1
   - bindings:
       - binding: 0
         type: combined_image_sampler

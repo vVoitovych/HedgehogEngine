@@ -271,7 +271,8 @@ namespace Renderer
         outlineDesc.DepthAttachmentFormat  = RHI::Format::Undefined;
         m_SelectionOutlinePipeline = device.CreateGraphicsPipeline(outlineDesc);
 
-        // The particle simulation: four compute shaders on one layout, so one set binds to each.
+        // The particle compute shaders on one layout, so one set binds to each; set 1 is a sampled
+        // texture, the depth the collision copy reads.
         for (size_t i = 0; i < ENGINE_COMPUTE_PIPELINE_COUNT; ++i)
         {
             const ComputeShaderDesc compute =
@@ -287,7 +288,7 @@ namespace Renderer
                     slot.Set = device.AllocateDescriptorSet(*m_ParticlePool, *m_ParticleLayout);
             }
             RHI::ComputePipelineDesc desc = compute.Pipeline;
-            desc.DescriptorSetLayouts     = { m_ParticleLayout.get() };
+            desc.DescriptorSetLayouts     = { m_ParticleLayout.get(), m_SampledTextureLayout.get() };
             m_ComputePipelines[i]         = device.CreateComputePipeline(desc);
         }
 

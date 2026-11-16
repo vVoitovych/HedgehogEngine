@@ -56,13 +56,14 @@ namespace HedgehogEngine
 
     // The shared phase's particle simulation (compute; ParticleCompute.pl). The renderer loads them
     // whatever the graphs draw, so the engine ships them as runtime assets.
-    constexpr std::array<std::string_view, 6> PARTICLE_COMPUTE_SHADERS = {
+    constexpr std::array<std::string_view, 7> PARTICLE_COMPUTE_SHADERS = {
         "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/ParticleReset.shader",
         "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/ParticleEmit.shader",
         "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/ParticleSimulate.shader",
         "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/ParticleFinish.shader",
         "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/ParticleSortKeys.shader",
         "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/ParticleSortStep.shader",
+        "engine://HedgehogEngine/HedgehogRenderer/assets/Shaders/ParticleCopyDepth.shader",
     };
 
     // The shaders an engine pass type (as a .graph file names it) draws with. "Shadow" is the

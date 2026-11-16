@@ -18,7 +18,8 @@ namespace Renderer
 
     // The names the pool's buffers are imported under, in ParticleBuffer order.
     inline constexpr std::array<const char*, PARTICLE_BUFFER_COUNT> PARTICLE_BUFFER_NAMES = {
-        "ParticleState", "ParticleDeadList", "ParticleAliveIn", "ParticleAliveOut", "ParticleSlots", "ParticleSort"
+        "ParticleState", "ParticleDeadList", "ParticleAliveIn", "ParticleAliveOut", "ParticleSlots", "ParticleSort",
+        "ParticleCollisionDepth"
     };
 
     // Push constants of every particle compute shader (Particles/Common.glsl's Push).

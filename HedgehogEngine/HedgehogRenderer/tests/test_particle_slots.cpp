@@ -76,6 +76,47 @@ namespace
     }
 }
 
+TEST_CASE("Particle resources - depth collision reads the depth copied the frame before, for one frame")
+{
+    RGTest::TestDevice                               device;
+    ParticleResources                                particles;
+    std::vector<HedgehogEngine::ParticleEmitterView> storage;
+    HedgehogEngine::ParticleEffectView               effect = MakeEffect(storage, 100, 100);
+    storage[0].collisionMode = static_cast<uint8_t>(PARTICLE_COLLISION_DEPTH_BUFFER);
+    particles.SetEffect(0, 1, effect);
+
+    HX::RenderScene scene;
+    scene.ParticleEmitters = { Instance(1, 0), Instance(1, 1) };
+    particles.Sync(scene, device);
+
+    // No depth yet: the emitter keeps its mode, but has nothing to read.
+    const ParticleFrameData* frame = particles.BuildFrame(scene, {});
+    REQUIRE(frame);
+    CHECK(frame->Get(ParticleBuffer::CollisionDepth)->GetSize()
+          == size_t{ PARTICLE_COLLISION_DEPTH_SIZE } * PARTICLE_COLLISION_DEPTH_SIZE * sizeof(float));
+    CHECK(frame->Emitters[0].Collision == PARTICLE_COLLISION_DEPTH_BUFFER);
+    CHECK(frame->Emitters[0].DepthValid == 0);
+
+    // The shadow view copied its depth: the next frame reads it with that camera and its inverse.
+    const HM::Matrix4x4 viewProj = HM::Matrix4x4::Perspective(1.0f, 1.0f, 0.1f, 100.0f)
+                                 * HM::Matrix4x4::LookAt(HM::Vector4(0.0f, -5.0f, 2.0f, 1.0f), HM::Vector4(0.0f, 0.0f, 0.0f, 1.0f),
+                                                         HM::Vector4(0.0f, 0.0f, 1.0f, 0.0f));
+    particles.GetCollisionDepth()->ViewProj = viewProj;
+    particles.GetCollisionDepth()->Written  = true;
+    particles.Sync(scene, device);
+    frame = particles.BuildFrame(scene, {});
+    CHECK(frame->Emitters[0].DepthValid == 1);
+    const HM::Matrix4x4 identity = frame->Emitters[0].DepthViewProj * frame->Emitters[0].DepthInverseViewProj;
+    for (int i = 0; i < 16; ++i)
+        CHECK(identity.GetBuffer()[i] == doctest::Approx(i % 5 == 0 ? 1.0f : 0.0f).epsilon(1e-4));
+    CHECK(frame->Emitters[0].DepthViewProj.GetBuffer()[5] == doctest::Approx(viewProj.GetBuffer()[5]));
+    CHECK(frame->Emitters[1].DepthValid == 0); // it does not collide with the depth
+
+    // Not copied again: nothing to read.
+    particles.Sync(scene, device);
+    CHECK(particles.BuildFrame(scene, {})->Emitters[0].DepthValid == 0);
+}
+
 TEST_CASE("Particle resources - a scene without emitters creates no buffer")
 {
     RGTest::TestDevice device;

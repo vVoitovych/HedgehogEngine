@@ -146,7 +146,8 @@ namespace Renderer
 
     size_t ParticleResources::PhysicalIndex(ParticleBuffer buffer) const
     {
-        // The state buffer, the dead list, alive list 0, alive list 1, the slot rows, the sort list.
+        // The state buffer, the dead list, alive list 0, alive list 1, the slot rows, the sort list,
+        // the collision depth.
         switch (buffer)
         {
         case ParticleBuffer::State:    return 0;
@@ -155,6 +156,7 @@ namespace Renderer
         case ParticleBuffer::AliveOut: return 2 + (m_Parity ^ 1u);
         case ParticleBuffer::Slots:    return 4;
         case ParticleBuffer::Sort:     return 5;
+        case ParticleBuffer::CollisionDepth: return 6;
         }
         return 0;
     }
@@ -171,6 +173,11 @@ namespace Renderer
         m_Uniforms.clear();
         m_Reset.clear();
         m_Textures.clear();
+        // The depth the shadow view copied last frame; without one nothing collides with it.
+        const bool          hasDepth       = m_CollisionDepth.Written;
+        const HM::Matrix4x4 depthViewProj  = m_CollisionDepth.ViewProj;
+        const HM::Matrix4x4 depthInverse   = hasDepth ? depthViewProj.Inverse() : HM::Matrix4x4();
+        m_CollisionDepth.Written           = false;
         for (size_t i = 0; i < m_FrameSlots.size() && i < scene.ParticleEmitters.size(); ++i)
         {
             const std::optional<ParticleFrameSlot>& slot = m_FrameSlots[i];
@@ -180,6 +187,12 @@ namespace Renderer
             const HedgehogEngine::ParticleEmitterView* settings = FindEmitter(instance.EffectIndex, instance.EmitterIndex);
             ParticleEmitterUniform uniform = MakeParticleEmitterUniform(*settings, instance, slot->Range);
             uniform.SlotRow                = slot->Row;
+            if (uniform.Collision == PARTICLE_COLLISION_DEPTH_BUFFER)
+            {
+                uniform.DepthValid           = hasDepth ? 1u : 0u;
+                uniform.DepthViewProj        = depthViewProj;
+                uniform.DepthInverseViewProj = depthInverse;
+            }
             m_Uniforms.push_back(uniform);
             m_Reset.push_back(slot->NeedsReset ? 1 : 0);
             const std::string& texture = m_Effects[instance.EffectIndex].Textures[instance.EmitterIndex];
@@ -191,7 +204,8 @@ namespace Renderer
         // Last frame's survivors are this frame's alive list.
         m_Parity ^= 1u;
         const std::array<RHI::IRHIBuffer*, PARTICLE_BUFFER_COUNT> physical = {
-            m_State.get(), m_DeadList.get(), m_AliveLists[0].get(), m_AliveLists[1].get(), m_SlotData.get(), m_SortList.get()
+            m_State.get(), m_DeadList.get(), m_AliveLists[0].get(), m_AliveLists[1].get(), m_SlotData.get(), m_SortList.get(),
+            m_CollisionDepthBuffer.get()
         };
         for (size_t i = 0; i < PARTICLE_BUFFER_COUNT; ++i)
         {
@@ -215,6 +229,10 @@ namespace Renderer
                                              RHI::BufferUsage::StorageBuffer | RHI::BufferUsage::IndirectBuffer |
                                                  RHI::BufferUsage::TransferDst,
                                              RHI::MemoryUsage::GpuOnly);
+        if (!m_CollisionDepthBuffer)
+            m_CollisionDepthBuffer = device.CreateBuffer(size_t{ PARTICLE_COLLISION_DEPTH_SIZE } * PARTICLE_COLLISION_DEPTH_SIZE
+                                                             * sizeof(float),
+                                                         RHI::BufferUsage::StorageBuffer, RHI::MemoryUsage::GpuOnly);
 
         const uint32_t needed = m_Allocator.GetEnd();
         if (needed <= m_Capacity)
@@ -232,9 +250,9 @@ namespace Renderer
         // A slot's sort region, its particles rounded up to a power of two, fits in twice its range.
         m_SortList = device.CreateBuffer(particles * 2 * PARTICLE_SORT_STRIDE, RHI::BufferUsage::StorageBuffer, RHI::MemoryUsage::GpuOnly);
 
-        // New buffers have no state yet; the slot rows keep theirs.
+        // New buffers have no state yet; the slot rows and the collision depth keep theirs.
         for (size_t i = 0; i < PARTICLE_BUFFER_COUNT; ++i)
-            if (i != PhysicalIndex(ParticleBuffer::Slots))
+            if (i != PhysicalIndex(ParticleBuffer::Slots) && i != PhysicalIndex(ParticleBuffer::CollisionDepth))
                 m_States[i] = RHI::ResourceState::Undefined;
         for (InstanceSlot& instance : m_Slots)
             instance.Slot.NeedsReset = true;

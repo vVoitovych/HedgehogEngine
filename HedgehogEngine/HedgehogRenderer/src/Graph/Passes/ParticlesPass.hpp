@@ -70,7 +70,10 @@ namespace Renderer
     // an emitter is alpha-blended it first adds a compute pass, "<name> sort", sorting each such
     // emitter's alive particles back to front from the view's eye into the sort list (keys, then the
     // bitonic network's steps, a barrier after each), which the draw reads; additive emitters draw
-    // unsorted. It declares the reads of the particle buffers, so it runs after the simulation;
+    // unsorted. On the shadow view's frame (GraphFrameData::ParticleCollision), when an emitter
+    // collides with the depth buffer, it first adds "<name> collision depth", copying the view's depth
+    // into the collision depth for the next frame's simulation and recording the view-projection it
+    // saw it with. It declares the reads of the particle buffers, so it runs after the simulation;
     // without particles it records nothing.
     [[nodiscard]] PassTypeInfo GetParticlesPassType();
 }

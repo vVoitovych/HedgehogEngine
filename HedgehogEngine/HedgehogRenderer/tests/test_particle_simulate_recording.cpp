@@ -28,6 +28,7 @@ namespace
         TestBuffer AliveOut{ 1024 };
         TestBuffer Slots{ 1024 };
         TestBuffer Sort{ 1024 };
+        TestBuffer CollisionDepth{ 1024 };
 
         std::vector<ParticleEmitterUniform> Emitters;
         std::vector<uint8_t>                Reset;
@@ -40,7 +41,7 @@ namespace
             Emitters[1].SlotCount  = 200;
             Emitters[1].SpawnCount = 70;
             Reset                  = { 1, 0 };
-            Frame.Buffers          = { &State, &DeadList, &AliveIn, &AliveOut, &Slots, &Sort };
+            Frame.Buffers          = { &State, &DeadList, &AliveIn, &AliveOut, &Slots, &Sort, &CollisionDepth };
             Frame.States.fill(initialState);
             Frame.Emitters         = Emitters;
             Frame.Reset            = Reset;

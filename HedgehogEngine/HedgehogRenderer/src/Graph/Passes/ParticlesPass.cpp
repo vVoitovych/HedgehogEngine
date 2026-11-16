@@ -23,6 +23,36 @@ namespace Renderer
             const GraphFrameContext* Context = nullptr;
         };
 
+        struct ParticleDepthCopyData
+        {
+            const GraphFrameContext* Context = nullptr;
+            RenderGraphRuntime*      Graph   = nullptr;
+            RGTexture                Depth;
+        };
+
+        bool HasDepthCollision(const ParticleFrameData& particles)
+        {
+            for (const ParticleEmitterUniform& emitter : particles.Emitters)
+                if (emitter.Collision == PARTICLE_COLLISION_DEPTH_BUFFER)
+                    return true;
+            return false;
+        }
+
+        // The view's depth into the collision depth, one thread per texel.
+        void RecordParticleDepthCopy(const ParticleDepthCopyData& data, RHI::IRHICommandList& cmd)
+        {
+            IGraphPassServices&           services = *data.Context->Services;
+            const RHI::IRHIDescriptorSet* set      = services.GetParticleSet();
+            if (!set)
+                return;
+            const GpuScope           scope(cmd, "Collision depth");
+            const RHI::IRHIPipeline& copy = services.GetComputePipeline(EngineComputePipeline::ParticleCopyDepth);
+            cmd.BindPipeline(copy);
+            cmd.BindDescriptorSet(copy, 0, *set);
+            cmd.BindDescriptorSet(copy, 1, services.AllocateSampledTexture(*data.Graph->GetTexture(data.Depth)));
+            cmd.Dispatch(PARTICLE_COLLISION_DEPTH_SIZE / 8, PARTICLE_COLLISION_DEPTH_SIZE / 8, 1);
+        }
+
         bool HasAlphaEmitters(const ParticleFrameData& particles)
         {
             for (const ParticleEmitterUniform& emitter : particles.Emitters)
@@ -132,6 +162,28 @@ namespace Renderer
             // draw read it (the latest version), so the views take turns with one list.
             const GraphFrameContext* context = graph.GetFrameContext();
             RGBuffer                 sorted;
+
+            // The shadow view's depth, for the next frame's DepthBuffer collision.
+            if (context && context->Frame->Particles && context->Frame->ParticleCollision
+                && HasDepthCollision(*context->Frame->Particles))
+            {
+                const ParticleGraphBuffers& buffers = context->Frame->ParticleBuffers;
+                graph.AddPass<ParticleDepthCopyData>(invocation.GetName() + " collision depth",
+                    [&](RGPassBuilder& pass, ParticleDepthCopyData& data)
+                    {
+                        data.Depth = invocation.GetSlot("depth");
+                        pass.SampleTexture(data.Depth);
+                        const RGResourceRecord* record = graph.GetDescription().FindResource(buffers.CollisionDepth.Id);
+                        pass.WriteBuffer(RGBuffer{ buffers.CollisionDepth.Id, record->LatestVersion });
+                        pass.SetSideEffect();
+                        data.Context = context;
+                        data.Graph   = &graph;
+                        ParticleCollisionDepth& collision = *context->Frame->ParticleCollision;
+                        collision.ViewProj = context->Frame->Proj * context->Frame->View;
+                        collision.Written  = true;
+                    },
+                    [](ParticleDepthCopyData& data, RHI::IRHICommandList& cmd) { RecordParticleDepthCopy(data, cmd); });
+            }
             if (context && context->Frame->Particles && HasAlphaEmitters(*context->Frame->Particles))
             {
                 const ParticleGraphBuffers& buffers = context->Frame->ParticleBuffers;

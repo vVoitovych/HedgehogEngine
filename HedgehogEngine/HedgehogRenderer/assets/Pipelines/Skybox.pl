@@ -7,7 +7,7 @@ descriptor_sets:
   - bindings:
       - binding: 0
         type: combined_image_sampler
-        stage: fragment
+        stage: fragment|compute
         count: 1
 
 push_constants:
