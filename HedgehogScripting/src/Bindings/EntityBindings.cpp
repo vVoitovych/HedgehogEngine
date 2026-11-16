@@ -4,6 +4,7 @@
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogEngine/api/ECS/components/AnimatorComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/AudioSourceComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/ParticleSystemComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/ColliderComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RigidBodyComponent.hpp"
 #include "HedgehogEngine/api/ECS/systems/PhysicsSystem.hpp"
@@ -222,6 +223,11 @@ namespace HedgehogScripting::Bindings
         AddComponentAccess<HedgehogEngine::AudioSourceComponent>(entity, ecs, "AudioSource", [&ecs](ECS::Entity id)
         {
             ecs.AddComponent(id, HedgehogEngine::AudioSourceComponent{});
+        });
+        // A particle system added during Play does not start on its own: its script calls play().
+        AddComponentAccess<HedgehogEngine::ParticleSystemComponent>(entity, ecs, "ParticleSystem", [&ecs](ECS::Entity id)
+        {
+            ecs.AddComponent(id, HedgehogEngine::ParticleSystemComponent{});
         });
         // Physics parts (their usertypes come from RegisterPhysics). A collider gets its body at the
         // next fixed step; a rigid body added to an entity that has one already makes it move as
