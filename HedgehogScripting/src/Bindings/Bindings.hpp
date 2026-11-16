@@ -56,6 +56,13 @@ namespace HedgehogScripting::Bindings
     // values and enum values or layers out of range are script errors. context must outlive lua.
     void RegisterPhysics(sol::state& lua, HedgehogEngine::EngineContext& context);
 
+    // The ParticleSystem usertype (ScriptComponentRef<ParticleSystemComponent>: play, stop(clear?),
+    // emit(count), isPlaying, effect, enabled, playOnStart, seed) over the engine's ParticleSystem.
+    // Effects name only files under assets://; a count or seed that is not a whole number of at
+    // least 0 is a script error. Outside Play mode play, stop and emit do nothing, and the first
+    // such call logs a warning. context must outlive lua.
+    void RegisterParticles(sol::state& lua, HedgehogEngine::EngineContext& context);
+
     // The Scene table (find, findAll, spawn, destroy) and entity:destroy(), over context's
     // SceneManager. Destroying only queues the entity in pendingDestroys; FlushDestroys deletes
     // them. Call after RegisterEntity. context and pendingDestroys must outlive lua.
