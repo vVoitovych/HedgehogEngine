@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ECS/api/Entity.hpp"
 #include "HedgehogMath/api/AABB.hpp"
 #include "HedgehogMath/api/Vector.hpp"
 
@@ -22,6 +23,7 @@ namespace HedgehogEngine
     class EnvironmentSystem;
     class TerrainSystem;
     class ParticleSystem;
+    class ParticleEffectContainer;
     class FontContainer;
 }
 
@@ -43,6 +45,7 @@ namespace HX
         static constexpr uint32_t PHYSICS_DEBUG_TRIGGER_COLOR   = 0xff3ce6ff; // yellow, whatever the body
         // Segments of a sphere's circle or a capsule's end circle; a capsule's half arc takes half.
         static constexpr size_t PHYSICS_DEBUG_CIRCLE_SEGMENTS = 24;
+        static constexpr uint32_t PARTICLE_SHAPE_COLOR = 0xffffc880; // light blue: a particle emitter's shape
 
         // Does not call outScene.Clear() itself: callers reuse one RenderScene across frames
         // and decide when to clear it (see RenderScene::Clear).
@@ -107,6 +110,14 @@ namespace HX
         // the list's storage has grown.
         void ExtractParticles(const ECS::ECS& ecs, const HedgehogEngine::ParticleSystem& particleSystem,
                               RenderScene& outScene) const;
+
+        // Appends the emitter shapes of entity's particle system (its loaded effect in effects) to
+        // outScene.DebugLines in PARTICLE_SHAPE_COLOR, through the entity's ObjMatrix: a Point a small
+        // cross, a Sphere three great circles of its radius, a Cone its base circle of its radius at
+        // z = 0 and the circle its angle opens to at z = 1 with four lines joining them, a Box its 12
+        // edges about the origin. Nothing for an entity without one, or without a loaded effect.
+        void ExtractParticleShapes(const ECS::ECS& ecs, const HedgehogEngine::ParticleEffectContainer& effects,
+                                   ECS::Entity entity, RenderScene& outScene) const;
 
     private:
         void ExtractInstances(const ECS::ECS& ecs, const HedgehogEngine::RenderSystem& renderSystem,

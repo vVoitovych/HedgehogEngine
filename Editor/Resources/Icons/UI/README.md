@@ -47,6 +47,7 @@ Every icon except the logo is from [Lucide](https://lucide.dev) `lucide-static` 
 | `tool_scale.png` | `scale-3d` |
 | `space_local.png` | `axis-3d` |
 | `space_world.png` | `earth` |
+| `particles.png` | `sparkles` |
 
 `hedgehog_logo.png` is the project's own `Editor/editor.ico`, rendered at 32x32.
 

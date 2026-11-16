@@ -280,6 +280,8 @@ namespace Editor
         void DrawAnimatorComponent(HedgehogEngine::Engine& context);
         // The generic section, then the loaded terrain's own values (EditorGuiTerrain.cpp).
         void DrawTerrainComponent(HedgehogEngine::Engine& context);
+        // The generic section, then in Edit mode the preview's Play, Restart and Stop (EditorGuiParticles.cpp).
+        void DrawParticleSystemComponent(HedgehogEngine::Engine& context);
         void DrawTerrainData(HedgehogEngine::EngineContext& engineContext, size_t terrain);
         // New terrain...: a default terrain written where the user picks under assets://, named by
         // the entity's terrain component.

@@ -26,6 +26,7 @@ namespace Editor
         Environment, // an equirectangular .hdr environment map
         AnimatorController, // an .animctrl animator controller
         Terrain,            // a .terrain tile
+        ParticleEffect,     // a .particle effect
         Other,
     };
 

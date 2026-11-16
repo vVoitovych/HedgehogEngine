@@ -153,7 +153,8 @@ namespace HedgehogEngine
 
         const bool  playing = ctx.Mode == ECS::PlayMode::Playing;
         const float dt      = playing ? ctx.ScaledDeltaTime : 0.0f;
-        if (playing)
+        const bool  preview = ctx.Mode == ECS::PlayMode::Edit && m_Preview != ECS::INVALID_ENTITY;
+        if (playing || preview)
             ++m_Frame;
 
         for (const ECS::Entity entity : m_Entities)
@@ -167,15 +168,19 @@ namespace HedgehogEngine
                 continue;
             particles.Clocks.resize(effect->Emitters.size());
 
-            const bool running  = playing && particles.Playing;
-            bool       finished = true;
+            // The previewed instance runs in Edit as it would in Play, by the frame's real time.
+            const bool  previewed = preview && entity == m_Preview;
+            const bool  active    = playing || previewed;
+            const float entityDt  = previewed ? std::max(0.0f, ctx.DeltaTime) : dt;
+            const bool  running   = active && particles.Playing;
+            bool        finished  = true;
             for (size_t index = 0; index < effect->Emitters.size(); ++index)
             {
                 const ParticleEmitter& emitter = effect->Emitters[index];
                 ParticleEmitterClock&  clock   = particles.Clocks[index];
 
-                uint64_t spawn = running ? Advance(emitter, clock, dt) : 0;
-                if (playing)
+                uint64_t spawn = running ? Advance(emitter, clock, entityDt) : 0;
+                if (active)
                     spawn += particles.PendingEmit;
                 finished = finished && clock.Finished;
 
@@ -185,12 +190,12 @@ namespace HedgehogEngine
                 entry.EmitterIndex = static_cast<uint32_t>(index);
                 entry.SpawnCount   = static_cast<uint32_t>(std::min<uint64_t>(spawn, std::numeric_limits<uint32_t>::max()));
                 entry.Seed         = MixSeed(particles.Seed, static_cast<uint32_t>(entity), static_cast<uint32_t>(index), m_Frame);
-                entry.DeltaTime    = dt;
-                entry.Playing      = playing;
+                entry.DeltaTime    = entityDt;
+                entry.Playing      = active;
                 entry.Epoch        = particles.Epoch;
                 m_FrameEmitters.push_back(entry);
             }
-            if (playing)
+            if (active)
                 particles.PendingEmit = 0;
             if (running && finished)
                 particles.Playing = false; // every emitter has run its course
@@ -204,7 +209,8 @@ namespace HedgehogEngine
 
     void ParticleSystem::OnPlayStart(ECS::ECS& ecs)
     {
-        m_Frame = 0;
+        m_Frame   = 0;
+        m_Preview = ECS::INVALID_ENTITY;
         for (const ECS::Entity entity : m_Entities)
         {
             ParticleSystemComponent& particles = ecs.GetComponent<ParticleSystemComponent>(entity);
@@ -248,6 +254,15 @@ namespace HedgehogEngine
             return;
         uint32_t& pending = ecs.GetComponent<ParticleSystemComponent>(entity).PendingEmit;
         pending           = static_cast<uint32_t>(std::min<uint64_t>(uint64_t{ pending } + count, std::numeric_limits<uint32_t>::max()));
+    }
+
+    void ParticleSystem::SetPreview(ECS::ECS& ecs, ECS::Entity entity)
+    {
+        if (entity == m_Preview)
+            return;
+        if (m_Preview != ECS::INVALID_ENTITY && ecs.IsAlive(m_Preview))
+            Stop(ecs, m_Preview, true);
+        m_Preview = entity;
     }
 
     bool ParticleSystem::IsPlaying(const ECS::ECS& ecs, ECS::Entity entity) const

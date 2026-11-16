@@ -32,6 +32,7 @@ namespace Editor
             case ContentType::Prefab:            return "prefab_icon.png";
             case ContentType::AnimatorController: return "animation_icon.png";
             case ContentType::Terrain:           return "terrain_icon.png";
+            case ContentType::ParticleEffect:    return "particle_icon.png";
             case ContentType::Pipeline:
             case ContentType::VertexDescription:
             case ContentType::RenderGraph:

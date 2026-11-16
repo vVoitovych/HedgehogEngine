@@ -235,6 +235,7 @@ namespace Editor
             { "ScriptComponent", &EditorGui::DrawScriptComponent },
             { "AnimatorComponent", &EditorGui::DrawAnimatorComponent },
             { "TerrainComponent", &EditorGui::DrawTerrainComponent },
+            { "ParticleSystemComponent", &EditorGui::DrawParticleSystemComponent },
         };
         m_InspectorAssetDrops = {
             { "UiTextComponent", { "Font", ContentType::Font, "a .ttf or .otf font" } },
@@ -242,6 +243,7 @@ namespace Editor
             { "EnvironmentComponent", { "Map", ContentType::Environment, "an .hdr environment map" } },
             { "AnimatorComponent", { "Controller", ContentType::AnimatorController, "an .animctrl animator controller" } },
             { "TerrainComponent", { "Terrain", ContentType::Terrain, "a .terrain file" } },
+            { "ParticleSystemComponent", { "Effect", ContentType::ParticleEffect, "a .particle effect" } },
         };
 
         LoadLastScene(context);

@@ -32,8 +32,10 @@ namespace HedgehogEngine
     // (reloading changed files) and, while Playing, advances every emitter by the frame's scaled time,
     // counting the particles to spawn: its rate's whole particles (the fraction carried to the next
     // frame) and every burst whose time falls in the frame, until its duration unless it loops (a
-    // loop starts the run again, its bursts with it). Edit and Paused spawn nothing. An effect
-    // reloaded while playing starts its instances again. Nothing without the catalog service.
+    // loop starts the run again, its bursts with it). Edit and Paused spawn nothing, but for the one
+    // instance the editor previews (SetPreview), which runs in Edit by the frame's real time once
+    // Play starts it. An effect reloaded while playing starts its instances again. Nothing without
+    // the catalog service.
     class ParticleSystem : public ECS::System
     {
     public:
@@ -57,6 +59,12 @@ namespace HedgehogEngine
         // Whether it plays: started and not past the duration of every emitter that does not loop.
         [[nodiscard]] HEDGEHOG_ENGINE_API bool IsPlaying(const ECS::ECS& ecs, ECS::Entity entity) const;
 
+        // The entity whose particles run in Edit mode (Play, Stop and Emit drive it as in Play), or
+        // INVALID_ENTITY for none. The one previewed before stops, its particles cleared; Play mode
+        // ends the preview. Only runtime fields change, so a scene saves the same.
+        HEDGEHOG_ENGINE_API void SetPreview(ECS::ECS& ecs, ECS::Entity entity);
+        [[nodiscard]] ECS::Entity GetPreview() const { return m_Preview; }
+
         // How many particles the emitter spawns from time t0 over dt seconds into its run, moving
         // clock on; public so tests can drive one emitter alone.
         [[nodiscard]] HEDGEHOG_ENGINE_API static uint32_t Advance(const ParticleEmitter& emitter,
@@ -66,7 +74,8 @@ namespace HedgehogEngine
         void Resolve(ECS::ECS& ecs, ECS::Entity entity);
 
         ResourceCatalog*                  m_Catalog = nullptr;
-        uint32_t                          m_Frame   = 0; // frames played since Play began
+        uint32_t                          m_Frame   = 0; // frames played since Play began, or previewed
+        ECS::Entity                       m_Preview = ECS::INVALID_ENTITY;
         std::vector<ParticleFrameEmitter> m_FrameEmitters;
     };
 }

@@ -59,6 +59,7 @@ namespace Editor
         ToolScale,
         SpaceLocal,
         SpaceWorld,
+        Particles,
         Count
     };
 

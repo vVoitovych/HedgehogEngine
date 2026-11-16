@@ -21,6 +21,7 @@ TEST_CASE("FindEditorIcon knows the icon names the engine's component types use"
 {
     CHECK(FindEditorIcon("transform") == EditorIcon::Transform);
     CHECK(FindEditorIcon("mesh") == EditorIcon::Mesh);
+    CHECK(FindEditorIcon("particles") == EditorIcon::Particles);
     CHECK(FindEditorIcon("material") == EditorIcon::Material);
     CHECK(FindEditorIcon("light") == EditorIcon::Light);
     CHECK(FindEditorIcon("camera") == EditorIcon::Camera);
