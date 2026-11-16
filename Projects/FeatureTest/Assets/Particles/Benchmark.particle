@@ -1,0 +1,11 @@
+Version: 1
+Emitters:
+  - Name: Cloud
+    MaxParticles: 100000
+    Rate: 100000
+    Shape: Sphere
+    Radius: 3
+    Lifetime: [1, 1]
+    StartSpeed: [0.1, 0.3]
+    StartSize: [0.04, 0.08]
+    StartColor: [0.6, 0.8, 1, 0.5]

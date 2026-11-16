@@ -332,5 +332,41 @@ as here and by default, a frame records exactly the commands it did and only cle
 `benchmark.yaml`, 600 frames, `Frame(wall)` avg 2.064, 1.852 and 1.835 ms (`RenderFrame(total)`
 1.476, 1.368 and 1.368 ms), at or below the HE-379 runs above.
 
+### 2026-11-16 (HE-441) — after the particle epic
+
+Since this entry `--benchmark` enters Play after loading its scene and stops before teardown, so
+particles spawn and animators and scripts run, as in a game; `benchmark.yaml` (25 static helmets
+and a sun) renders exactly as before. Release, 600 frames on the RTX 2070, runs interleaved with a
+build of the commit before the epic (HE-421) on the same machine and day:
+
+| `benchmark.yaml` | Frame(wall) avg ms | RenderFrame(total) avg ms | GPU avg ms |
+|------------------|--------------------|---------------------------|------------|
+| Before the epic | 2.526, 2.616, 2.568 | 2.109, 2.216, 2.174 | 0.753, 0.774, 0.813 |
+| After | 2.672, 2.630, 2.646 | 2.262, 2.253, 2.226 | 0.824, 0.822, 0.800 |
+
+About 0.08 ms more per frame on average, the size of the spread between runs; the scene has no
+particle system, so no particle pass records anything. (The GPU ran warmer than in the HE-389 runs
+above: both rows are up alike.)
+
+`ParticlesBenchmark.yaml`: one alpha-blended cloud of 100,000 particles (a sphere of radius 3,
+100,000 a second living 1 s, `Particles/Benchmark.particle`) seen by the game camera. Two runs:
+
+| Pass | CPU avg ms | GPU avg ms |
+|------|------------|------------|
+| RenderFrame(total) | 4.462, 4.443 | 2.964, 2.953 |
+| ParticleSimulate | 0.024, 0.025 | 0.145, 0.140 |
+| Particles sort | 0.132, 0.131 | 0.713, 0.718 |
+| Particles | 0.007, 0.007 | 2.005, 1.994 |
+| Frame(wall) | 4.800, 4.784 | |
+
+Within the 16.6 ms budget. Drawing is most of it: 100,000 overlapping alpha billboards are
+fill-bound. The bitonic sort of their 131,072-entry list (153 dispatches) comes next; a dispatch
+sized by the alive count and a shared-memory local sort would cut it.
+
+`Particles.yaml` (fire, smoke and sparks) measured while it plays (the HE-432 and HE-434 numbers in
+CLAUDE.md were taken in Edit mode, with no particle alive): `RenderFrame(total)` 2.007 ms,
+`Frame(wall)` 2.381 ms; ParticleSimulate 0.026 / 0.021 ms (CPU / GPU), the sort 0.031 / 0.059,
+Particles 0.010 / 0.014, the collision depth copy 0.004 / 0.009.
+
 When a change intentionally alters performance, re-run the benchmark and update
 this table (keep the old row set; add a dated entry below it so history accumulates).

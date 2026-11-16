@@ -33,6 +33,7 @@ Columns:
 | glTF materials | inside `.gltf`/`.glb` | ContentLoader's `LoadGltfMaterials`, written out by `ImportGltfMaterials` | No (an import never overwrites) | create (Import materials in the Content panel's menu, or dropping a glTF on the hierarchy) | As `.material` files, once imported |
 | Animation clips | inside a skinned `.gltf`/`.glb` | ContentLoader's `LoadAnimations`, kept by the `Mesh` | No | preview (the animator's `PreviewTime` in Edit mode), pick (the Clip combo) | With their mesh file |
 | Terrain | `.terrain` (YAML, heights and splat as base64) | `TerrainContainer::FindOrLoad` through `ParseTerrain` (HedgehogEngine), one per file by `FS::MakeAssetKey` | No: an edited tile shows at once, but a file changed on disk is not read again | create (the Terrain section's New terrain...), edit (size, resolution, height scale and layers in the inspector; sculpt and paint in the Scene view; Save terrain), assign (drop on a terrain's `Terrain` field, or open onto the selected one) | Followed from `TerrainComponent::Terrain`; its layers' maps followed in turn |
+| Particle effect | `.particle` (YAML) | `ParticleEffectContainer::FindOrLoad` through `ParseParticleEffect` (HedgehogEngine), one per file by `FS::MakeAssetKey`; simulated and drawn on the GPU | Yes: once a second (`POLL_INTERVAL`), and an unsaved edit at once through the container's override | create (New in the editor), edit (Window > Particle Effect: emitters, every field, curve and gradient editors), preview (the inspector's Play in Edit mode), assign (drag onto a particle system's Effect) | Followed from `ParticleSystemComponent::Effect`; every emitter's texture followed |
 | Animator controller | `.animctrl` (YAML) | HedgehogAnimation's `ParseAnimatorController`, cached by `AnimationSystem` | Yes: once a second (`CONTROLLER_POLL_INTERVAL`) | create (New in the editor), edit (Window > Animator Controller, with a `.animctrl.layout` beside it), preview (the active state during Play), assign (drag onto an Animator) | Followed from `AnimatorComponent::Controller` |
 | Script | `.lua` | HedgehogScripting's `ScriptSystem`, through the sandbox's `LoadScriptFile` | Yes: once a second (`RELOAD_POLL_INTERVAL`), also during Play | assign (onto a script component); edited in an outside editor | Followed from `ScriptComponent::ScriptFile` and its AssetRef properties' values (the code itself is not read) |
 | Font | `.ttf`, `.otf` | ContentLoader's `LoadFont` (stb_truetype), baked per size by `FontContainer` | No | assign (onto a UI text) | Followed from `UiTextComponent::Font` |
@@ -85,7 +86,6 @@ it removes a real limit, but there is a workaround. Low: needed only by some gam
 |----------|------|-----|--------------------|
 | High | **Texture import settings** (a `.meta` or `.texture` beside the image) | Every texture is used as the slot it sits in decides; there is no way to say a texture is linear data, to turn off mipmaps or filtering for pixel art, to compress, or to cap its size. HE-385's compressed formats need somewhere to record how to compress. | Colour space, mipmaps, filter and wrap, compression format, max size; the Cooker would apply it |
 | High | **Data asset** (a typed YAML record a script reads) | Gameplay tuning (weapons, enemies, levels, loot tables) now lives in script properties or in code. A data file the inspector edits and scripts read (`Data.load("assets://Weapons/Sword.data")`) keeps it out of scenes and code. | A schema (a script's declared fields, reusing the `Properties` syntax) and values |
-| High | **Particle system** | There is no particle effect at all: no sparks, smoke, dust or magic. Most games need some. | Emitter shape, rate, lifetime, start values, curves over life, a material or texture sheet; a component that plays one |
 | Medium | **Physics material** | Friction and restitution are set per collider, so a surface type (ice, rubber, metal) is repeated on every collider and cannot be changed in one place. | Friction, restitution, how they combine; a collider's `Material` AssetRef |
 | Medium | **Audio mixer / bus** | Only a master volume exists: music, effects and voice cannot be balanced or muted apart, and there are no effects (reverb, low-pass). | Buses in a tree, their volumes and effects; an audio source's `Bus` |
 | Medium | **Sprite atlas** | UI images and any 2D game draw whole textures: many small images mean many textures and draw calls, and there is no sprite sheet animation. | One texture with named rectangles; a UI image or sprite names a rectangle |
@@ -207,7 +207,17 @@ Every clip is decoded whole into memory: a three-minute stereo track at 48 kHz t
 |--------|---------|---------|----------|------|-----|
 | Heightmap import (16-bit PNG or RAW) | stb_image (16-bit PNG) | — | Low | S | Heights made in World Machine, Gaea or a DEM tool |
 
-### 2.8 Scripts and shaders
+### 2.8 Particle effects
+
+| Supported | Read by | Notes |
+|-----------|---------|-------|
+| `.particle` version 1 (`HedgehogEngine/api/Particles/ParticleEffectFile.hpp`) | `ParseParticleEffect`, strict: only `Name` required, every other key at its default left out | Emitters, each with its rate, bursts, shape, start ranges, gravity and drag, curves and a gradient over life, a texture flipbook, alpha or additive blending, local or world space, height-plane or depth-buffer collision and sub-emitters; written byte for byte by `WriteParticleEffect` |
+
+| Wanted | Library | Licence | Priority | Cost | Why |
+|--------|---------|---------|----------|------|-----|
+| Particles colliding with physics bodies | Jolt (already linked) | MIT | Low | M | Collision now reads a height plane or the depth buffer on the GPU; colliding with Jolt's bodies would need the particles read back or the bodies' shapes on the GPU |
+
+### 2.9 Scripts and shaders
 
 | Supported | Read by | Notes |
 |-----------|---------|-------|
