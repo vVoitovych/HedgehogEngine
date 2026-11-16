@@ -146,7 +146,7 @@ namespace Renderer
 
     size_t ParticleResources::PhysicalIndex(ParticleBuffer buffer) const
     {
-        // The state buffer, the dead list, alive list 0, alive list 1, the slot rows.
+        // The state buffer, the dead list, alive list 0, alive list 1, the slot rows, the sort list.
         switch (buffer)
         {
         case ParticleBuffer::State:    return 0;
@@ -154,6 +154,7 @@ namespace Renderer
         case ParticleBuffer::AliveIn:  return 2 + m_Parity;
         case ParticleBuffer::AliveOut: return 2 + (m_Parity ^ 1u);
         case ParticleBuffer::Slots:    return 4;
+        case ParticleBuffer::Sort:     return 5;
         }
         return 0;
     }
@@ -190,7 +191,7 @@ namespace Renderer
         // Last frame's survivors are this frame's alive list.
         m_Parity ^= 1u;
         const std::array<RHI::IRHIBuffer*, PARTICLE_BUFFER_COUNT> physical = {
-            m_State.get(), m_DeadList.get(), m_AliveLists[0].get(), m_AliveLists[1].get(), m_SlotData.get()
+            m_State.get(), m_DeadList.get(), m_AliveLists[0].get(), m_AliveLists[1].get(), m_SlotData.get(), m_SortList.get()
         };
         for (size_t i = 0; i < PARTICLE_BUFFER_COUNT; ++i)
         {
@@ -228,10 +229,13 @@ namespace Renderer
         m_DeadList = device.CreateBuffer(particles * sizeof(uint32_t), RHI::BufferUsage::StorageBuffer, RHI::MemoryUsage::GpuOnly);
         for (std::unique_ptr<RHI::IRHIBuffer>& alive : m_AliveLists)
             alive = device.CreateBuffer(particles * sizeof(uint32_t), RHI::BufferUsage::StorageBuffer, RHI::MemoryUsage::GpuOnly);
+        // A slot's sort region, its particles rounded up to a power of two, fits in twice its range.
+        m_SortList = device.CreateBuffer(particles * 2 * PARTICLE_SORT_STRIDE, RHI::BufferUsage::StorageBuffer, RHI::MemoryUsage::GpuOnly);
 
         // New buffers have no state yet; the slot rows keep theirs.
-        for (size_t i = 0; i < 4; ++i)
-            m_States[i] = RHI::ResourceState::Undefined;
+        for (size_t i = 0; i < PARTICLE_BUFFER_COUNT; ++i)
+            if (i != PhysicalIndex(ParticleBuffer::Slots))
+                m_States[i] = RHI::ResourceState::Undefined;
         for (InstanceSlot& instance : m_Slots)
             instance.Slot.NeedsReset = true;
         for (std::optional<ParticleFrameSlot>& slot : m_FrameSlots)

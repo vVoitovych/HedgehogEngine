@@ -18,7 +18,7 @@ namespace Renderer
 
     // The names the pool's buffers are imported under, in ParticleBuffer order.
     inline constexpr std::array<const char*, PARTICLE_BUFFER_COUNT> PARTICLE_BUFFER_NAMES = {
-        "ParticleState", "ParticleDeadList", "ParticleAliveIn", "ParticleAliveOut", "ParticleSlots"
+        "ParticleState", "ParticleDeadList", "ParticleAliveIn", "ParticleAliveOut", "ParticleSlots", "ParticleSort"
     };
 
     // Push constants of every particle compute shader (Particles/Common.glsl's Push).
@@ -28,7 +28,7 @@ namespace Renderer
         uint32_t EmitterCount = 0;
         uint32_t Padding[2]   = {};
     };
-    static_assert(sizeof(ParticlePushConstants) == 16, "ParticleCompute.pl's push constant range is 16 bytes.");
+    static_assert(sizeof(ParticlePushConstants) <= 32, "ParticleCompute.pl's push constant range is 32 bytes.");
 
     // Threads per work group of the particle compute shaders, and the groups count threads need.
     inline constexpr uint32_t PARTICLE_GROUP_SIZE = 64;

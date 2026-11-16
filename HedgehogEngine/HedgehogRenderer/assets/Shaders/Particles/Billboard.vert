@@ -1,7 +1,7 @@
 #version 450
 
 // One emitter instance's alive particles (gl_InstanceIndex into the alive list the simulation just
-// filled) as camera-facing quads of six vertices: sized and coloured over their life, turned by their
+// filled, or for an alpha emitter into the view's sort list) as camera-facing quads of six vertices: sized and coloured over their life, turned by their
 // rotation, their flipbook frame chosen by age.
 
 #define PARTICLE_DRAW
@@ -26,7 +26,11 @@ vec4 SampleGradient(EmitterData emitter, float t)
 void main()
 {
     EmitterData emitter  = emitters[draw.EmitterIndex];
-    Particle    particle = particles[aliveOut[emitter.SlotFirst + uint(gl_InstanceIndex)]];
+    // An alpha emitter draws through the view's sort list, farthest first; an additive one in any order.
+    uint        instance = uint(gl_InstanceIndex);
+    uint        index    = emitter.Blend == 0u ? sortList[2u * emitter.SlotFirst + instance].y
+                                               : aliveOut[emitter.SlotFirst + instance];
+    Particle    particle = particles[index];
     float       age      = particle.PositionAge.w;
     float       t        = age / particle.VelocityLifetime.w;
 

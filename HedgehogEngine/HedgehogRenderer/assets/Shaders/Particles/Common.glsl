@@ -55,11 +55,14 @@ layout(std430, set = 0, binding = 1) PARTICLE_ACCESS buffer DeadListBuffer { uin
 layout(std430, set = 0, binding = 2) PARTICLE_ACCESS buffer AliveInBuffer { uint aliveIn[]; };
 layout(std430, set = 0, binding = 3) PARTICLE_ACCESS buffer AliveOutBuffer { uint aliveOut[]; };
 layout(std430, set = 0, binding = 4) PARTICLE_ACCESS buffer SlotBuffer { SlotRow slots[]; };
-layout(std430, set = 0, binding = 5) readonly buffer EmitterBuffer { EmitterData emitters[]; };
+// Per alpha emitter and view: (key, particle) pairs, the farthest first once sorted, at twice the
+// slot's first particle, as many as SlotCount rounded up to a power of two.
+layout(std430, set = 0, binding = 5) PARTICLE_ACCESS buffer SortBuffer { uvec2 sortList[]; };
+layout(std430, set = 0, binding = 6) readonly buffer EmitterBuffer { EmitterData emitters[]; };
 
 // Which emitter (an index into emitters) this dispatch works on; for Finish, how many emitters. The
-// billboards (PARTICLE_DRAW) have push constants of their own.
-#ifndef PARTICLE_DRAW
+// billboards (PARTICLE_DRAW) and the sort (PARTICLE_SORT) have push constants of their own.
+#if !defined(PARTICLE_DRAW) && !defined(PARTICLE_SORT)
 layout(push_constant) uniform Push
 {
     uint EmitterIndex;

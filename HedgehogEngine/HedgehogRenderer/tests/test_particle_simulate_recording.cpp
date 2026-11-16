@@ -27,6 +27,7 @@ namespace
         TestBuffer AliveIn{ 1024 };
         TestBuffer AliveOut{ 1024 };
         TestBuffer Slots{ 1024 };
+        TestBuffer Sort{ 1024 };
 
         std::vector<ParticleEmitterUniform> Emitters;
         std::vector<uint8_t>                Reset;
@@ -39,7 +40,7 @@ namespace
             Emitters[1].SlotCount  = 200;
             Emitters[1].SpawnCount = 70;
             Reset                  = { 1, 0 };
-            Frame.Buffers          = { &State, &DeadList, &AliveIn, &AliveOut, &Slots };
+            Frame.Buffers          = { &State, &DeadList, &AliveIn, &AliveOut, &Slots, &Sort };
             Frame.States.fill(initialState);
             Frame.Emitters         = Emitters;
             Frame.Reset            = Reset;
@@ -89,15 +90,15 @@ TEST_CASE("Particle simulation - reset, emit, simulate and finish, a barrier bet
     CHECK(services.ParticleSetUploads == std::vector<size_t>{ 2 });
     CHECK(cmd.Scopes == std::vector<std::string>{ "begin Particles", "end" });
 
-    // The graph's barrier into UnorderedAccess, then one between each stage, on all five buffers.
+    // The graph's barrier into UnorderedAccess, then one between each stage, on all six buffers.
     REQUIRE(cmd.Calls.size() == 4);
-    REQUIRE(cmd.Calls[0].BufferBarriers.size() == 5);
+    REQUIRE(cmd.Calls[0].BufferBarriers.size() == PARTICLE_BUFFER_COUNT);
     CHECK(cmd.Calls[0].BufferBarriers[0].Buffer == &particles.State);
     CHECK(cmd.Calls[0].BufferBarriers[0].Before == RHI::ResourceState::Undefined);
     CHECK(cmd.Calls[0].BufferBarriers[0].After == RHI::ResourceState::UnorderedAccess);
     for (size_t call = 1; call < cmd.Calls.size(); ++call)
     {
-        REQUIRE(cmd.Calls[call].BufferBarriers.size() == 5);
+        REQUIRE(cmd.Calls[call].BufferBarriers.size() == PARTICLE_BUFFER_COUNT);
         for (const RHI::BufferBarrier& barrier : cmd.Calls[call].BufferBarriers)
         {
             CHECK(barrier.Before == RHI::ResourceState::UnorderedAccess);
@@ -125,7 +126,7 @@ TEST_CASE("Particle simulation - without resets or spawns only simulate and fini
     // The buffers come from the frame before in UnorderedAccess: still a barrier, so this frame's
     // writes wait for that frame's.
     REQUIRE(cmd.Calls.size() == 2);
-    REQUIRE(cmd.Calls[0].BufferBarriers.size() == 5);
+    REQUIRE(cmd.Calls[0].BufferBarriers.size() == PARTICLE_BUFFER_COUNT);
     CHECK(cmd.Calls[0].BufferBarriers[0].Before == RHI::ResourceState::UnorderedAccess);
     CHECK(cmd.Calls[0].BufferBarriers[0].After == RHI::ResourceState::UnorderedAccess);
 }

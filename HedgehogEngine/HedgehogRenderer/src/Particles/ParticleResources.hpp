@@ -34,6 +34,7 @@ namespace Renderer
     // indirect arguments); the compute shaders' layouts.
     inline constexpr uint32_t PARTICLE_STATE_STRIDE = 64;
     inline constexpr uint32_t PARTICLE_SLOT_STRIDE  = 64;
+    inline constexpr uint32_t PARTICLE_SORT_STRIDE  = 8; // a (key, particle) pair
     // The particle buffers are made for at least this many particles, and grow by doubling.
     inline constexpr uint32_t MIN_PARTICLE_CAPACITY = 4096;
 
@@ -146,5 +147,6 @@ namespace Renderer
         std::unique_ptr<RHI::IRHIBuffer> m_DeadList;
         std::unique_ptr<RHI::IRHIBuffer> m_AliveLists[2];
         std::unique_ptr<RHI::IRHIBuffer> m_SlotData;
+        std::unique_ptr<RHI::IRHIBuffer> m_SortList;
     };
 }

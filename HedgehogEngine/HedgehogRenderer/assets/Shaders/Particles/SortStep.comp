@@ -1,0 +1,28 @@
+#version 450
+
+// One step (StepK, StepJ) of a bitonic sort over an alpha emitter's sort list, ascending by key: each
+// pair i and i ^ StepJ is put in order, ascending where bit StepK of i is clear and descending where
+// it is set.
+
+#define PARTICLE_SORT
+#include "Particles/Common.glsl"
+#include "Particles/Sort.glsl"
+
+layout(local_size_x = 64) in;
+
+void main()
+{
+    uint i     = gl_GlobalInvocationID.x;
+    uint other = i ^ sort.StepJ;
+    if (i >= sort.Count || other <= i)
+        return;
+    uint  base      = 2u * emitters[sort.EmitterIndex].SlotFirst;
+    uvec2 a         = sortList[base + i];
+    uvec2 b         = sortList[base + other];
+    bool  ascending = (i & sort.StepK) == 0u;
+    if ((a.x > b.x) == ascending)
+    {
+        sortList[base + i]     = b;
+        sortList[base + other] = a;
+    }
+}
