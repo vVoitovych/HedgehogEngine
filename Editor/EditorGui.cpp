@@ -34,7 +34,9 @@
 #include "HedgehogEngine/api/Containers/MaterialContainer.hpp"
 #include "HedgehogEngine/api/Containers/MaterialData.hpp"
 #include "HedgehogEngine/api/Containers/MeshContainer.hpp"
+#include "HedgehogEngine/api/Containers/ParticleEffectContainer.hpp"
 #include "HedgehogEngine/api/Containers/TextureContainer.hpp"
+#include "HedgehogEngine/api/Resource/ResourceCatalog.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/HedgehogSettings.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/LayerSettings.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/ProjectSettings.hpp"
@@ -311,7 +313,7 @@ namespace Editor
             RequestProject(*created, false);
         m_RenderGraphEditorWindow->Draw(m_Renderer, *m_FileSystem);
         m_AnimatorControllerWindow->Draw(fs, MakeAnimatorPreview(context.GetEngineContext(), m_SelectedEntity));
-        m_ParticleEditorWindow->Draw(fs);
+        m_ParticleEditorWindow->Draw(fs, context.GetEngineContext().GetResourceCatalog().GetParticleEffectContainer());
         m_ProfilerWindow->Draw(m_Renderer);
 
         DrawOpenSceneDropPopup(context);

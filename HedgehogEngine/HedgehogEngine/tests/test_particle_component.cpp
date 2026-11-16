@@ -176,6 +176,33 @@ TEST_CASE("Particle effect container - an edited file is read again once the pol
     CHECK(log.Count("Reloaded") == 1);
 }
 
+TEST_CASE("Particle effect container - an override shows in place of the file until it is cleared")
+{
+    ParticleFiles           files;
+    ParticleEffectContainer effects(files.Files);
+    const size_t            index = *effects.FindOrLoad("Particles/Fire.particle");
+
+    effects.SetOverride("assets://Particles/Fire.particle", ParticleFiles::MakeFire(90.0f));
+    CHECK(effects.GetEffect(index)->Emitters[0].Rate == 90.0f);
+    CHECK(effects.GetVersion(index) == 2u);
+    effects.SetOverride("Particles/Fire.particle", ParticleFiles::MakeFire(95.0f));
+    CHECK(effects.GetEffect(index)->Emitters[0].Rate == 95.0f);
+    CHECK(effects.GetVersion(index) == 3u);
+
+    effects.ClearOverride("Particles/Fire.particle");
+    CHECK(effects.GetEffect(index)->Emitters[0].Rate == 40.0f);
+    CHECK(effects.GetVersion(index) == 4u);
+    effects.ClearOverride("Particles/Fire.particle"); // none left: nothing changes
+    CHECK(effects.GetVersion(index) == 4u);
+
+    // A file that does not exist yet is shown by its override.
+    LogCapture log;
+    effects.SetOverride("Particles/New.particle", ParticleFiles::MakeFire(5.0f));
+    const std::optional<size_t> added = effects.FindOrLoad("Particles/New.particle");
+    REQUIRE(added);
+    CHECK(effects.GetEffect(*added)->Emitters[0].Rate == 5.0f);
+}
+
 TEST_CASE("Particle effect container - a broken file is logged once and the last good effect kept")
 {
     ParticleFiles files;

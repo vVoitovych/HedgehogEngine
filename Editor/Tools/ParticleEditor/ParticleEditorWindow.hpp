@@ -12,12 +12,17 @@ namespace FS
     class FileSystemManager;
 }
 
+namespace HedgehogEngine
+{
+    class ParticleEffectContainer;
+}
+
 namespace Editor
 {
     // The Particle Effect window (Window > Particle Effect, or opening a .particle in the Project
     // panel): a form over a copy of one effect. The emitter list on the left adds, duplicates,
     // deletes and moves emitters (through ParticleEditing, so sub-emitters keep pointing at theirs);
-    // the selected emitter's every field is on the right, its curves and gradient shown read-only.
+    // the selected emitter's every field is on the right, its curves and gradient in their editors.
     // Every edit is checked with ValidateParticleEffect: an emitter at fault is listed red and every
     // problem is listed under the form.
     //
@@ -31,7 +36,9 @@ namespace Editor
     public:
         bool Open = false;
 
-        void Draw(const FS::FileSystemManager& fileSystem);
+        // effects shows a valid edit before it is saved (ParticleEffectContainer::SetOverride), so a
+        // preview or Play follows the form; saving, discarding or opening another effect clears it.
+        void Draw(const FS::FileSystemManager& fileSystem, HedgehogEngine::ParticleEffectContainer& effects);
 
         // Shows the window on the effect at virtualPath, asking first when there are unsaved edits.
         void OpenEffect(const std::string& virtualPath);
@@ -63,6 +70,8 @@ namespace Editor
         bool Write(const std::string& virtualPath, const FS::FileSystemManager& fileSystem);
         // After an edit: the text the dirty check compares, and the problems.
         void ApplyEdit();
+        // Drops the edit shown in place of a file, if any.
+        void ClearPreview();
         [[nodiscard]] bool HasProblems(const HedgehogEngine::ParticleEmitter& emitter) const;
         [[nodiscard]] bool IsUntitled() const { return m_HasEffect && m_Path.empty(); }
         [[nodiscard]] bool IsDirty() const { return m_HasEffect && m_EditedText != m_SavedText; }
@@ -77,6 +86,10 @@ namespace Editor
         std::vector<std::string>       m_Problems;
         uint32_t                       m_Selected = 0;
         std::string                    m_NameBuffer; // the selected emitter's name as typed
+
+        HedgehogEngine::ParticleEffectContainer* m_Effects = nullptr;
+        std::string                              m_PreviewText; // the text the container shows, or the file's
+        std::string                              m_PreviewPath; // the file shown overridden, empty for none
 
         PendingAction m_Pending = PendingAction::None;
         std::string   m_PendingPath;
