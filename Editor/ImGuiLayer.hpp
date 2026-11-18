@@ -1,5 +1,6 @@
 #pragma once
 
+#include "HedgehogEngine/HedgehogWindow/api/CursorMode.hpp"
 #include "HedgehogRenderer/Graph/UiCallback.hpp"
 
 #include <cstdint>
@@ -71,6 +72,11 @@ namespace Editor
         void LoadFonts(const FS::FileSystemManager& fileSystem);
         // The Console's font, drawn at Theme::MONO_FONT_SIZE; nullptr before LoadFonts.
         [[nodiscard]] ImFont* GetMonoFont() const { return m_MonoFont; }
+
+        // A script's cursor: ImGui's backend would set every window's cursor back to normal each frame, so it
+        // leaves the cursor alone for any other mode, and hears no mouse while Locked. Applies from the next
+        // BeginFrame.
+        void SetScriptCursor(HW::CursorMode mode);
 
         // Starts an ImGui frame.
         void BeginFrame();

@@ -35,6 +35,8 @@ project "EditorTest"
         "../Tools/NewProjectCheck.cpp",
         "../Tools/GameBinaries.hpp",
         "../Tools/GameBinaries.cpp",
+        "../Tools/CursorGate.hpp",
+        "../Tools/CursorGate.cpp",
         "../Tools/AnimatorControllerEditor/ControllerEditing.hpp",
         "../Tools/AnimatorControllerEditor/ControllerEditing.cpp",
         "../Tools/AnimatorControllerEditor/ControllerLayout.hpp",

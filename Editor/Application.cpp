@@ -1,6 +1,7 @@
 #include "Application.hpp"
 #include "EditorGui.hpp"
 #include "ImGuiLayer.hpp"
+#include "Tools/CursorGate.hpp"
 
 #include "HedgehogEngine/api/Engine.hpp"
 #include "HedgehogEngine/api/WindowContext.hpp"
@@ -372,6 +373,56 @@ namespace Editor
         return outside.Raw;
     }
 
+    namespace
+    {
+        // An outside window goes when its view docks back, so its handle is used only while ImGui still has it.
+        bool IsLiveOutsideWindow(void* window)
+        {
+            const ImGuiPlatformIO& platform = ImGui::GetPlatformIO();
+            for (const ImGuiViewport* viewport : platform.Viewports)
+            {
+                if (viewport->PlatformHandle == window)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    void EditorApplication::SetWindowCursor(void* window, HW::CursorMode mode)
+    {
+        if (!window)
+        {
+            m_Context->GetWindowContext().GetWindow().SetCursorMode(mode);
+        }
+        else if (IsLiveOutsideWindow(window))
+        {
+            HW::SetCursorMode(window, mode);
+        }
+    }
+
+    void EditorApplication::ApplyEditorCursor(HW::CursorMode mode, void* window)
+    {
+        bool force = false;
+        if (window != m_CursorWindow)
+        {
+            if (m_AppliedCursor != HW::CursorMode::Normal)
+            {
+                SetWindowCursor(m_CursorWindow, HW::CursorMode::Normal);
+            }
+            m_CursorWindow  = window;
+            m_AppliedCursor = HW::CursorMode::Normal;
+            force           = mode != HW::CursorMode::Normal;
+        }
+        if (mode == m_AppliedCursor && !force)
+        {
+            return;
+        }
+        SetWindowCursor(window, mode);
+        m_AppliedCursor = mode;
+    }
+
     float EditorApplication::StepFrame()
     {
         const float dt = StepFrameZones();
@@ -392,10 +443,30 @@ namespace Editor
             // A view floating outside the main window reads that window's input instead.
             const HW::RawInput& raw = m_Context->GetWindowContext().GetWindow().GetRawInput();
             auto&               engineContext = m_Context->GetEngineContext();
-            const HInput::GameInputRegion gameRegion = m_EditorGui->GetGameInputRegion();
+            HInput::GameInputRegion gameRegion = m_EditorGui->GetGameInputRegion();
             const HW::RawInput& gameRaw  = ViewInput(m_EditorGui->GetGameInputWindow(), m_GameOutsideInput, m_GameInputGate, raw);
             const HW::RawInput& sceneRaw = ViewInput(m_EditorGui->GetSceneInputWindow(), m_SceneOutsideInput, m_SceneInputGate, raw);
-            engineContext.UpdateGameInput(HInput::MakeGameInput(gameRaw, gameRegion, m_GameInputGate), gameRegion.PixelSize);
+            const bool           playing   = engineContext.GetPlayState() == HedgehogEngine::PlayState::Playing;
+            const HW::CursorMode requested = engineContext.GetApplicationRequests().Cursor;
+            const bool           escape    = HW::IsKeyDown(gameRaw, HW::Key::Escape);
+            m_CursorSuspended = UpdateCursorSuspension(m_CursorSuspended, playing, escape, gameRaw.Focused,
+                                                       m_EditorGui->WasGameViewPressed());
+            // KeyboardEnabled is "the Game view has focus and no text field is edited".
+            const HW::CursorMode cursor = ResolveEditorCursor(requested, playing, gameRegion.KeyboardEnabled,
+                                                              m_CursorSuspended);
+            ApplyEditorCursor(cursor, m_EditorGui->GetGameInputWindow());
+            const bool locked = cursor == HW::CursorMode::Locked;
+            m_ImGui->SetScriptCursor(cursor);
+            m_EditorGui->SetCursorLockHint(locked);
+            gameRegion.PointerLocked  = locked;
+            gameRegion.PointerEnabled = gameRegion.PointerEnabled || locked;
+            // While a script asks for the cursor, Escape is the editor's key to take it back, not the game's.
+            HW::RawInput gameInput = gameRaw;
+            if (requested != HW::CursorMode::Normal)
+            {
+                gameInput.Keys[static_cast<size_t>(HW::Key::Escape)] = false;
+            }
+            engineContext.UpdateGameInput(HInput::MakeGameInput(gameInput, gameRegion, m_GameInputGate), gameRegion.PixelSize);
             engineContext.UpdateEditorInput(HInput::MakeGameInput(sceneRaw, m_EditorGui->GetSceneInputRegion(), m_SceneInputGate));
         }
         if (m_ScriptDebugger)
@@ -543,6 +614,14 @@ namespace Editor
 
     void EditorApplication::Cleanup()
     {
+        if (m_ImGui)
+        {
+            m_ImGui->SetScriptCursor(HW::CursorMode::Normal);
+        }
+        if (m_Context)
+        {
+            ApplyEditorCursor(HW::CursorMode::Normal, m_CursorWindow);
+        }
         m_ScriptDebugger.reset(); // unhooks the script system's Lua state while it still exists
         auto& engineContext = m_Context->GetEngineContext();
         if (!engineContext.GetSettings().Save(ENGINE_SETTINGS_PATH, engineContext.GetFileSystem()))

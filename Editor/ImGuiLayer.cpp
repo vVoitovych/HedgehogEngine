@@ -79,6 +79,20 @@ namespace Editor
         m_MonoFont = atlas.AddFontDefaultBitmap();
     }
 
+    void ImGuiLayer::SetScriptCursor(HW::CursorMode mode)
+    {
+        ImGuiConfigFlags& flags = ImGui::GetIO().ConfigFlags;
+        flags &= ~(ImGuiConfigFlags_NoMouse | ImGuiConfigFlags_NoMouseCursorChange);
+        if (mode != HW::CursorMode::Normal)
+        {
+            flags |= ImGuiConfigFlags_NoMouseCursorChange;
+        }
+        if (mode == HW::CursorMode::Locked)
+        {
+            flags |= ImGuiConfigFlags_NoMouse;
+        }
+    }
+
     void ImGuiLayer::BeginFrame()
     {
         assert(m_Backend && "ImGuiLayer: pass CreateBackend to the Renderer as its DeviceReadyCallback.");
