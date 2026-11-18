@@ -135,6 +135,10 @@ namespace Editor
         // Draw: nullptr for the main window. Their input regions are in that window's coordinates,
         // so its input is the one to read.
         [[nodiscard]] void* GetGameInputWindow() const { return m_GameWindow.PlatformHandle; }
+        // A press landed on the Game image this frame (ImGui hears none while the cursor is locked).
+        [[nodiscard]] bool WasGameViewPressed() const { return m_GameViewPressed; }
+        // Shows "Esc to release the cursor" over the Game image while a script holds the cursor.
+        void SetCursorLockHint(bool shown) { m_CursorLockHint = shown; }
         [[nodiscard]] void* GetSceneInputWindow() const { return m_SceneWindow.PlatformHandle; }
 
         // The Scene tab's image as the editor camera's input region, by the same rules: the pointer
@@ -337,6 +341,8 @@ namespace Editor
         HM::Vector2 m_GameImageSize = HM::Vector2(0.0f, 0.0f);
         bool     m_GameViewHovered  = false;
         bool     m_GameViewFocused  = false;
+        bool     m_GameViewPressed  = false;
+        bool     m_CursorLockHint   = false;
         ViewWindow m_SceneWindow;
         ViewWindow m_GameWindow;
         // Floating views are windows of their own instead of tabs of the centre area.

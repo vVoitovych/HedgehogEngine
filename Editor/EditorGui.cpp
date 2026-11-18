@@ -550,6 +550,12 @@ namespace Editor
         m_GameImageSize   = HM::Vector2(ImGui::GetItemRectSize().x, ImGui::GetItemRectSize().y);
         m_GameViewHovered = ImGui::IsItemHovered();
         m_GameWindow      = CurrentViewWindow();
+        if (m_CursorLockHint)
+        {
+            ImGui::GetWindowDrawList()->AddText(ImVec2(m_GameImageMin.x() + 8.0f, m_GameImageMin.y() + 8.0f),
+                                                ImGui::ColorConvertFloat4ToU32(Theme::Resolve(Theme::TEXT_MUTED)),
+                                                "Esc to release the cursor");
+        }
     }
 
     // A press focuses a view when it lands on its image, and unfocuses it anywhere else, in any
@@ -558,6 +564,7 @@ namespace Editor
     {
         const bool anyPress = ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right) ||
                               ImGui::IsMouseClicked(ImGuiMouseButton_Middle);
+        m_GameViewPressed = anyPress && m_GameViewHovered;
         if (anyPress)
         {
             m_GameViewFocused  = m_GameViewHovered;

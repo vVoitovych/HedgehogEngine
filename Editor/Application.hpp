@@ -3,10 +3,11 @@
 #include "Panels/ContentIcons.hpp"
 #include "Panels/EditorIcons.hpp"
 
+#include "HedgehogEngine/HedgehogWindow/api/CursorMode.hpp"
+#include "HedgehogEngine/HedgehogWindow/api/RawInput.hpp"
 #include "HedgehogEngine/api/WindowContext.hpp"
 #include "HedgehogExtract/api/MeshBounds.hpp"
 #include "HedgehogExtract/api/RenderScene.hpp"
-#include "HedgehogEngine/HedgehogWindow/api/RawInput.hpp"
 #include "HedgehogInput/api/GameInputRegion.hpp"
 #include "HedgehogRenderer/Views/View.hpp"
 
@@ -120,6 +121,13 @@ namespace Editor
         };
         OutsideInput m_GameOutsideInput;
         OutsideInput m_SceneOutsideInput;
+        // The script's cursor request is suspended by Escape or the Game view's window losing focus,
+        // until a press on the Game image (CursorGate).
+        bool           m_CursorSuspended = false;
+        HW::CursorMode m_AppliedCursor   = HW::CursorMode::Normal;
+        void*          m_CursorWindow    = nullptr; // the GLFW window it was applied to; nullptr is the main one
+        void           ApplyEditorCursor(HW::CursorMode mode, void* window);
+        void           SetWindowCursor(void* window, HW::CursorMode mode);
         // The input a view's region reads: the main window's, or its outside window's, polled now.
         const HW::RawInput& ViewInput(void* window, OutsideInput& outside, HInput::GameInputGate& gate,
                                       const HW::RawInput& mainInput);
