@@ -115,6 +115,7 @@ namespace HedgehogScripting
         Bindings::RegisterScene(m_Lua, context, m_PendingDestroys);
         Bindings::RegisterPrefab(m_Lua, context);
         Bindings::RegisterApplication(m_Lua, context);
+        Bindings::RegisterCursor(m_Lua, context);
         RegisterEvents();
         // Systems live in the ECS, which the context destroys before its EventBus, as the
         // engine's own subscribers do.
