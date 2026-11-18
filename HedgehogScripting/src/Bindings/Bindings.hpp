@@ -92,6 +92,15 @@ namespace HedgehogScripting::Bindings
     // any field is a script error, and any other key reads nil.
     void RegisterApplication(sol::state& lua, HedgehogEngine::EngineContext& context);
 
+    // The Cursor table: mode (Normal, Hidden, Locked or Confined, by name; read and written), lock()
+    // (Locked), unlock() (Normal) and isLocked(), through the engine's ApplicationRequests, which the
+    // game runtime applies to its window (the editor does not yet). An unknown mode name or a
+    // non-string is a script error naming the modes; outside Play a change does nothing and the first
+    // one warns; other fields are read-only. The request holds until Stop (Pause and scene or save
+    // loads keep it), and a locked pointer sits at the view's centre, so a menu the mouse should
+    // reach unlocks first. context must outlive lua.
+    void RegisterCursor(sol::state& lua, HedgehogEngine::EngineContext& context);
+
     // The Time table: deltaTime (the hook's dt: OnUpdate's scaled dt, or the fixed dt inside
     // OnFixedUpdate), fixedDeltaTime, time (the clock's scaled simulated time), frame (OnUpdate
     // calls since Play) and timeScale, the only writable field, clamped to [0, 100] and stored in

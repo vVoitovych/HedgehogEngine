@@ -333,6 +333,7 @@ namespace HedgehogEngine
 
         m_PlaySnapshot = m_SceneManager->CaptureSnapshot();
         m_ApplicationRequests.QuitRequested = false;
+        m_ApplicationRequests.Cursor        = HW::CursorMode::Normal;
         ResetFixedStepClock(m_Clock);
         HInput::ResetActionState(m_GameActions, m_InputActions.Game); // a key held into Play presses on its first frame
         m_PlayState = PlayState::Playing;
@@ -407,6 +408,7 @@ namespace HedgehogEngine
 
         m_PlayState = PlayState::Edit;
         m_ApplicationRequests.QuitRequested = false;
+        m_ApplicationRequests.Cursor        = HW::CursorMode::Normal;
         HInput::ResetActionState(m_GameActions, m_InputActions.Game);
         m_SaveGames->ClearRequests();
         m_SceneRequests->Clear();

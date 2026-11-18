@@ -58,6 +58,8 @@ namespace HedgehogScripting::Bindings
             const std::string name = key.is<std::string>() ? key.as<std::string>() : "<key>";
             throw std::runtime_error("Application." + name + " is read-only");
         };
-        app[sol::metatable_key] = meta;
+        // getmetatable gives this, and setmetatable refuses, so no script takes the table from the others.
+        meta[sol::meta_function::metatable] = "Application";
+        app[sol::metatable_key]             = meta;
     }
 }

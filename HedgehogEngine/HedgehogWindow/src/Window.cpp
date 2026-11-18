@@ -401,7 +401,10 @@ namespace HW
     {
         auto* self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(handle));
         ApplyFocus(self->m_Impl->Raw, focused != 0);
+        // The cursor jumps as GLFW takes or releases a lock, so neither this frame's motion so far nor
+        // the next event's counts.
         self->m_Impl->Raw.CursorKnown = false;
+        self->m_Impl->Raw.CursorDelta = HM::Vector2(0.0f, 0.0f);
         // GLFW itself releases a locked or confined cursor on focus loss and takes it again on focus
         // (setting it here too would make it record the centred cursor as where to put it back).
         if (self->m_Impl->RequestedCursor == CursorMode::Hidden)

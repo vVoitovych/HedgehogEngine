@@ -148,6 +148,12 @@ namespace Runtime
         windowContext.HandleInput();
         if (m_ScriptDebugger)
             m_ScriptDebugger->Pump();
+        // The cursor the scripts asked for; a change takes effect from this frame's input on.
+        const HW::CursorMode cursor = engineContext.GetApplicationRequests().Cursor;
+        if (window.GetCursorMode() != cursor)
+        {
+            window.SetCursorMode(cursor);
+        }
         int width = 0, height = 0;
         window.GetFramebufferSize(width, height);
 
@@ -160,6 +166,7 @@ namespace Runtime
         region.PixelSize       = HM::Vector2(static_cast<float>(width), static_cast<float>(height));
         region.PointerEnabled  = true;
         region.KeyboardEnabled = true;
+        region.PointerLocked   = cursor == HW::CursorMode::Locked;
         engineContext.UpdateGameInput(HInput::MakeGameInput(window.GetRawInput(), region, m_InputGate), region.PixelSize);
 
         m_Engine->UpdateContext(NextFrameTime(),
@@ -192,6 +199,8 @@ namespace Runtime
         if (!m_Engine)
             return;
         (void)m_Engine->GetEngineContext().Stop();
+        // The player gets the cursor back before the window goes.
+        m_Engine->GetWindowContext().GetWindow().SetCursorMode(HW::CursorMode::Normal);
         if (m_ScriptDebugger)
             m_ScriptDebugger->Pump(); // the client hears the thread exit
         m_ScriptDebugger.reset();
