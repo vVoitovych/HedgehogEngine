@@ -63,9 +63,12 @@ namespace HedgehogScripting::Bindings
     // such call logs a warning. context must outlive lua.
     void RegisterParticles(sol::state& lua, HedgehogEngine::EngineContext& context);
 
-    // The Scene table (find, findAll, spawn, destroy) and entity:destroy(), over context's
-    // SceneManager. Destroying only queues the entity in pendingDestroys; FlushDestroys deletes
-    // them. Call after RegisterEntity. context and pendingDestroys must outlive lua.
+    // The Scene table (find, findAll, spawn, destroy, load, current) and entity:destroy(), over
+    // context's SceneManager. load(path) queues a switch to a .yaml under assets:// (paths as
+    // Prefab's) for the end of the frame and returns whether it was queued; outside Play it does
+    // nothing and the first call warns. current() is the scene's virtual path. Destroying only
+    // queues the entity in pendingDestroys; FlushDestroys deletes them. Call after RegisterEntity.
+    // context and pendingDestroys must outlive lua.
     void RegisterScene(sol::state& lua, HedgehogEngine::EngineContext& context, std::vector<ScriptEntity>& pendingDestroys);
 
     // The Prefab table: Prefab.instantiate(path, position?, rotation?, parent?) instantiates a
