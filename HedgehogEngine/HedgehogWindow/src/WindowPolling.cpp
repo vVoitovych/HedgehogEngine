@@ -26,6 +26,22 @@ namespace HW
             { GLFW_KEY_KP_0, GLFW_KEY_KP_EQUAL },
             { GLFW_KEY_LEFT_SHIFT, GLFW_KEY_MENU },
         };
+
+        int ToGlfwCursorMode(CursorMode mode)
+        {
+            switch (mode)
+            {
+            case CursorMode::Hidden:
+                return GLFW_CURSOR_HIDDEN;
+            case CursorMode::Locked:
+                return GLFW_CURSOR_DISABLED;
+            case CursorMode::Confined:
+                return GLFW_CURSOR_CAPTURED;
+            case CursorMode::Normal:
+                break;
+            }
+            return GLFW_CURSOR_NORMAL;
+        }
     }
 
     void ApplyPolledWindowState(RawInput& input, const PolledWindowState& state)
@@ -74,5 +90,19 @@ namespace HW
         state.CursorInside = glfwGetWindowAttrib(window, GLFW_HOVERED) == GLFW_TRUE;
         state.Focused      = glfwGetWindowAttrib(window, GLFW_FOCUSED) == GLFW_TRUE;
         return state;
+    }
+
+    void SetCursorMode(void* glfwWindow, CursorMode mode)
+    {
+        GLFWwindow* const window = static_cast<GLFWwindow*>(glfwWindow);
+        if (!window)
+        {
+            return;
+        }
+        glfwSetInputMode(window, GLFW_CURSOR, ToGlfwCursorMode(mode));
+        if (glfwRawMouseMotionSupported())
+        {
+            glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, mode == CursorMode::Locked ? GLFW_TRUE : GLFW_FALSE);
+        }
     }
 }

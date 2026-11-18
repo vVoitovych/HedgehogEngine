@@ -13,13 +13,22 @@ namespace HInput
         }
 
         const HM::Vector2 scale(region.PixelSize.x() / region.Size.x(), region.PixelSize.y() / region.Size.y());
-        const HM::Vector2 position = source.CursorPosition - region.Origin;
-        game.CursorPosition = HM::Vector2(position.x() * scale.x(), position.y() * scale.y());
         game.CursorDelta    = HM::Vector2(source.CursorDelta.x() * scale.x(), source.CursorDelta.y() * scale.y());
         game.CursorKnown    = source.CursorKnown;
-        game.CursorInside   = region.PointerEnabled && source.CursorInside && game.CursorPosition.x() >= 0.0f &&
-                            game.CursorPosition.y() >= 0.0f && game.CursorPosition.x() < region.PixelSize.x() &&
-                            game.CursorPosition.y() < region.PixelSize.y();
+        if (region.PointerLocked)
+        {
+            game.CursorPosition = HM::Vector2(region.PixelSize.x() * 0.5f, region.PixelSize.y() * 0.5f);
+            game.CursorInside   = region.PointerEnabled && source.Focused;
+        }
+        else
+        {
+            const HM::Vector2 position = source.CursorPosition - region.Origin;
+            game.CursorPosition        = HM::Vector2(position.x() * scale.x(), position.y() * scale.y());
+            game.CursorInside          = region.PointerEnabled && source.CursorInside &&
+                                game.CursorPosition.x() >= 0.0f && game.CursorPosition.y() >= 0.0f &&
+                                game.CursorPosition.x() < region.PixelSize.x() &&
+                                game.CursorPosition.y() < region.PixelSize.y();
+        }
 
         for (size_t button = 0; button < HW::MOUSE_BUTTON_COUNT; ++button)
         {

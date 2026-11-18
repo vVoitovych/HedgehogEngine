@@ -1,5 +1,6 @@
 #pragma once
 
+#include "HedgehogEngine/HedgehogWindow/api/CursorMode.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/HedgehogWindowApi.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/RawInput.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/TitleBar.hpp"
@@ -58,6 +59,11 @@ namespace HW
         // Reads the first connected gamepad (GLFW's standard mapping) into the raw input; call once
         // a frame, after polling events. With none connected the gamepad reads all zero.
         HEDGEHOG_WINDOW_API void            PollGamepad();
+
+        // GetCursorMode is the requested mode; the window shows ResolveCursorMode(requested, focused), so
+        // losing focus shows Normal and regaining it puts the request back.
+        HEDGEHOG_WINDOW_API void                     SetCursorMode(CursorMode mode);
+        [[nodiscard]] HEDGEHOG_WINDOW_API CursorMode GetCursorMode() const;
 
         HEDGEHOG_WINDOW_API void SetIcon(int width, int height, unsigned char* data);
 
