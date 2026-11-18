@@ -10,6 +10,7 @@
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
 #include "HedgehogEngine/api/Events/AnimationEvents.hpp"
 #include "HedgehogEngine/api/Events/SaveEvents.hpp"
+#include "HedgehogEngine/api/Events/SceneEvents.hpp"
 #include "HedgehogEngine/api/Events/UiEvents.hpp"
 #include "HedgehogEngine/api/Save/SaveGameManager.hpp"
 
@@ -132,6 +133,13 @@ namespace HedgehogScripting
         m_BusSubscriptions.push_back(bus.Subscribe<HedgehogEngine::GameLoadedEvent>(
             [this](const HedgehogEngine::GameLoadedEvent& event)
             { m_QueuedEvents.push_back(QueuedEvent{ "GameLoaded", m_Lua.create_table_with("slot", event.Slot) }); }));
+        // A scene's entities may reuse the id of one a loaded save state still waits for.
+        m_BusSubscriptions.push_back(bus.Subscribe<HedgehogEngine::SceneLoadedEvent>(
+            [this](const HedgehogEngine::SceneLoadedEvent& event)
+            {
+                m_PendingLoads.clear();
+                m_QueuedEvents.push_back(QueuedEvent{ "SceneLoaded", m_Lua.create_table_with("path", event.Path) });
+            }));
         Bindings::RegisterSave(m_Lua, context);
         RegisterCoroutines();
         RegisterPropertyHelpers();

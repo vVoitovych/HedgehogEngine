@@ -9,6 +9,7 @@
 #include "Logger/api/Logger.hpp"
 
 #include <algorithm>
+#include <memory>
 #include <optional>
 #include <string>
 #include <utility>
@@ -97,6 +98,24 @@ namespace HedgehogScripting::Bindings
                 ecs.GetComponent<ECS::HierarchyComponent>(entity).Name = *name;
             return MakeScriptEntity(ecs, entity);
         });
+
+        // The switch happens at the end of the frame; outside Play (a script's top level also runs
+        // when the editor describes it) nothing loads, and the first call says why.
+        auto warned = std::make_shared<bool>(false);
+        scene.set_function("load", [&context, warned](const std::string& path)
+        {
+            // Checked first, so a wrong argument is an error in Edit mode too.
+            const std::string virtualPath = "assets://" + ToAssetPath(path, "A scene", "Scenes");
+            if (context.GetPlayState() == HedgehogEngine::PlayState::Edit)
+            {
+                if (!*warned)
+                    LOGWARNING("[Script] Scenes load only in Play mode; Scene.load did nothing.");
+                *warned = true;
+                return false;
+            }
+            return context.RequestSceneLoad(virtualPath);
+        });
+        scene.set_function("current", [&scenes]() { return scenes.GetScenePath(); });
 
         auto destroy = [&ecs, &pendingDestroys](const ScriptEntity& handle) { QueueDestroy(ecs, pendingDestroys, handle); };
         scene.set_function("destroy", destroy);

@@ -150,7 +150,7 @@ namespace HedgehogScripting
         // properties set on self (those still declared), then self:OnLoad(state); one whose script
         // is not running yet is kept until its instance is made (OnPlayStart, or a script added
         // during Play), which then gets them in place of OnStart. An entry for another script, or
-        // one that does not read, is skipped with a warning. Kept entries are dropped at Stop.
+        // one that does not read, is skipped with a warning. Kept entries are dropped at Stop and when a scene loads.
         // When savedGameDataVersion is older than the save manager's GetGameDataVersion(), each
         // script is first migrated: state = self:OnMigrate(savedGameDataVersion, state), with the
         // returned table replacing the state (nil keeps it, changed in place); a script without
@@ -373,7 +373,7 @@ namespace HedgehogScripting
         // Copies the plain state of one self into another (see ReloadChangedScripts), and when
         // the script files were last compared with the disk.
         sol::protected_function                              m_CopyState;
-        // Loaded script states waiting for their entity's instance, by entity.
+        // Loaded script states waiting for their entity's instance, by entity; dropped at Stop and when a scene loads.
         std::unordered_map<ECS::Entity, PendingLoad>         m_PendingLoads;
         std::optional<std::chrono::steady_clock::time_point> m_LastReloadPoll;
 
