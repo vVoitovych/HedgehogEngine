@@ -115,6 +115,7 @@ namespace HedgehogEngine
         m_ECS.GetServices().Unregister<SaveGameManager>();
         m_ECS.GetServices().Unregister<EcsSerialization::ComponentTypeRegistry>();
         m_ECS.GetServices().Unregister<GameInputFrame>();
+        m_ECS.GetServices().Unregister<ApplicationRequests>();
         m_ECS.GetServices().Unregister<HedgehogSettings::Settings>();
         m_ECS.GetServices().Unregister<ResourceCatalog>();
     }
@@ -132,6 +133,7 @@ namespace HedgehogEngine
         m_GameInput.Map     = &m_InputActions.Game;
         m_GameInput.Actions = &m_GameActions;
         services.Register(m_GameInput);
+        services.Register(m_ApplicationRequests);
     }
 
     void EngineContext::InitFileSystem()
@@ -306,6 +308,8 @@ namespace HedgehogEngine
     const HInput::InputActionSet& EngineContext::GetInputActions() const { return m_InputActions; }
     HInput::ActionState&          EngineContext::GetGameActionState() { return m_GameActions; }
     const HInput::ActionState&    EngineContext::GetGameActionState() const { return m_GameActions; }
+    ApplicationRequests&          EngineContext::GetApplicationRequests() { return m_ApplicationRequests; }
+    const ApplicationRequests&    EngineContext::GetApplicationRequests() const { return m_ApplicationRequests; }
 
     void EngineContext::UpdateContext(float aspectRatio, float dt)
     {
@@ -328,6 +332,7 @@ namespace HedgehogEngine
             return false;
 
         m_PlaySnapshot = m_SceneManager->CaptureSnapshot();
+        m_ApplicationRequests.QuitRequested = false;
         ResetFixedStepClock(m_Clock);
         HInput::ResetActionState(m_GameActions, m_InputActions.Game); // a key held into Play presses on its first frame
         m_PlayState = PlayState::Playing;
@@ -401,6 +406,7 @@ namespace HedgehogEngine
             return false;
 
         m_PlayState = PlayState::Edit;
+        m_ApplicationRequests.QuitRequested = false;
         HInput::ResetActionState(m_GameActions, m_InputActions.Game);
         m_SaveGames->ClearRequests();
         m_SceneRequests->Clear();

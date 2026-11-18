@@ -1,6 +1,7 @@
 #pragma once
 
 #include "HedgehogEngine/api/HedgehogEngineApi.hpp"
+#include "HedgehogEngine/api/App/ApplicationRequests.hpp"
 #include "HedgehogEngine/api/Events/EventBus.hpp"
 #include "HedgehogEngine/api/Input/GameInputFrame.hpp"
 #include "HedgehogEngine/api/Resource/ResourceCatalog.hpp"
@@ -154,6 +155,9 @@ namespace HedgehogEngine
         [[nodiscard]] HEDGEHOG_ENGINE_API HInput::ActionState&          GetGameActionState();
         [[nodiscard]] HEDGEHOG_ENGINE_API const HInput::ActionState&    GetGameActionState() const;
 
+        [[nodiscard]] HEDGEHOG_ENGINE_API ApplicationRequests&       GetApplicationRequests();
+        [[nodiscard]] HEDGEHOG_ENGINE_API const ApplicationRequests& GetApplicationRequests() const;
+
         HEDGEHOG_ENGINE_API ResourceCatalog&       GetResourceCatalog();
         HEDGEHOG_ENGINE_API const ResourceCatalog& GetResourceCatalog() const;
 
@@ -272,6 +276,7 @@ namespace HedgehogEngine
         HInput::ActionState       m_GameActions;
         HInput::ActionState       m_EditorActions;
         GameInputFrame            m_GameInput; // a service: the Input phase's view of the above
+        ApplicationRequests       m_ApplicationRequests; // a service: what scripts ask of the host
 
         PlayState                    m_PlayState = PlayState::Edit;
         FixedStepClock               m_Clock;
