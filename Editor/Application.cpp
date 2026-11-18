@@ -451,6 +451,7 @@ namespace Editor
             const bool           escape    = HW::IsKeyDown(gameRaw, HW::Key::Escape);
             m_CursorSuspended = UpdateCursorSuspension(m_CursorSuspended, playing, escape, gameRaw.Focused,
                                                        m_EditorGui->WasGameViewPressed());
+            m_EscapeCaptured = UpdateEscapeCapture(m_EscapeCaptured, escape, m_AppliedCursor);
             // KeyboardEnabled is "the Game view has focus and no text field is edited".
             const HW::CursorMode cursor = ResolveEditorCursor(requested, playing, gameRegion.KeyboardEnabled,
                                                               m_CursorSuspended);
@@ -460,9 +461,9 @@ namespace Editor
             m_EditorGui->SetCursorLockHint(locked);
             gameRegion.PointerLocked  = locked;
             gameRegion.PointerEnabled = gameRegion.PointerEnabled || locked;
-            // While a script asks for the cursor, Escape is the editor's key to take it back, not the game's.
+            // The Escape press that releases the script's cursor is the editor's; the next one is the game's.
             HW::RawInput gameInput = gameRaw;
-            if (requested != HW::CursorMode::Normal)
+            if (m_EscapeCaptured)
             {
                 gameInput.Keys[static_cast<size_t>(HW::Key::Escape)] = false;
             }

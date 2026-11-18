@@ -1,12 +1,16 @@
 #include "doctest/doctest/doctest.h"
 
+#include "FileSystem/api/PathUtils.hpp"
 #include "HedgehogEngine/api/EngineContext.hpp"
 
 #include "HedgehogInput/api/ActionState.hpp"
 #include "HedgehogInput/api/DefaultInputActions.hpp"
 #include "HedgehogInput/api/InputActionFile.hpp"
 
+#include <fstream>
+#include <iterator>
 #include <optional>
+#include <string>
 
 using HedgehogEngine::EngineContext;
 
@@ -37,6 +41,28 @@ TEST_CASE("Input actions - the engine loads the shipped actions file, which hold
     const HInput::InputActionParseResult parsed = HInput::ParseInputActions(*text);
     REQUIRE_MESSAGE(parsed.Actions.has_value(), parsed.Error);
     CHECK(*parsed.Actions == HInput::MakeDefaultInputActions());
+}
+
+namespace
+{
+    std::string WithoutCarriageReturns(std::string text)
+    {
+        std::erase(text, '\r');
+        return text;
+    }
+}
+
+TEST_CASE("Input actions - the shipped actions files are exactly what the defaults write")
+{
+    const std::string expected = HInput::WriteInputActions(HInput::MakeDefaultInputActions());
+    for (const char* file :
+         { "Projects/FeatureTest/Assets/Input/actions.yaml", "Templates/Empty/Assets/Input/actions.yaml" })
+    {
+        std::ifstream stream(FS::GetEngineRootDirectory() / file, std::ios::binary);
+        REQUIRE(stream.is_open());
+        const std::string text((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
+        CHECK_MESSAGE(WithoutCarriageReturns(text) == expected, file);
+    }
 }
 
 TEST_CASE("Input actions - game actions are evaluated only while Playing")

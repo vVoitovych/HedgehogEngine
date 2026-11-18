@@ -1,0 +1,149 @@
+Scene name: GameFlowLevel
+Scene:
+  - Entity: 0
+    Name: Root
+    Parent: 0
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    Children:
+      - Entity: 1
+        Name: Sun
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 0]
+          Rotation: [448.5, 297, 122.5]
+          Scale: [1, 1, 1]
+        LightComponent:
+          LightEnabled: true
+          LightType: 0
+          LightColor: [1, 1, 1]
+          LightIntensity: 1
+          LightRadius: 1
+          LightConeAngle: 2
+          CastShadows: true
+        Children:
+          []
+      - Entity: 2
+        Name: Floor
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, -0.5]
+          Rotation: [0, 0, 0]
+          Scale: [10, 10, 0.5]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/cube.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/test3.material
+          Layer: 0
+        Children:
+          []
+      - Entity: 3
+        Name: CrateA
+        Parent: 0
+        TransformComponent:
+          Position: [3, 6, 0.5]
+          Rotation: [0, 0, 0]
+          Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/cube.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/test1.material
+          Layer: 0
+        Children:
+          []
+      - Entity: 4
+        Name: CrateB
+        Parent: 0
+        TransformComponent:
+          Position: [-3, 8, 0.5]
+          Rotation: [0, 0, 30]
+          Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/cube.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/test2.material
+          Layer: 0
+        Children:
+          []
+      - Entity: 5
+        Name: CrateC
+        Parent: 0
+        TransformComponent:
+          Position: [0, 12, 1]
+          Rotation: [0, 0, 0]
+          Scale: [1.5, 1.5, 1.5]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/cube.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/test1.material
+          Layer: 0
+        Children:
+          []
+      - Entity: 6
+        Name: MainCamera
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 1.7]
+          Rotation: [90, 0, 0]
+          Scale: [1, 1, 1]
+        CameraComponent:
+          Enabled: true
+          ProjectionType: 0
+          Fov: 60
+          OrthoSize: 10
+          NearPlane: 0.1
+          FarPlane: 1000
+          LayerMask: 4294967295
+          TargetMode: 0
+          TargetName: ""
+          GraphName: game
+          Priority: 0
+        ScriptComponent:
+          ScriptEnable: true
+          ScriptFile: Scripts/GameFlowLevel.lua
+        Children:
+          []
+      - Entity: 7
+        Name: Hud
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 0]
+          Rotation: [0, 0, 0]
+          Scale: [1, 1, 1]
+        UiCanvasComponent:
+          Enabled: true
+          ScaleMode: 1
+          ReferenceResolution: [1920, 1080]
+          MatchWidthOrHeight: 0.5
+          SortOrder: 0
+        Children:
+          - Entity: 8
+            Name: VisitsLabel
+            Parent: 7
+            TransformComponent:
+              Position: [0, 0, 0]
+              Rotation: [0, 0, 0]
+              Scale: [1, 1, 1]
+            UiRectComponent:
+              Visible: true
+              AnchorMin: [0, 0]
+              AnchorMax: [0, 0]
+              Pivot: [0, 0]
+              Offset: [40, 40]
+              Size: [900, 60]
+            UiTextComponent:
+              Text: Visit
+              Font: engine://Content/Fonts/Karla-Regular.ttf
+              FontSize: 40
+              Color: [1, 1, 1, 1]
+              Align: 0
+              VerticalAlign: 1
+              Wrap: false
+            Children:
+              []

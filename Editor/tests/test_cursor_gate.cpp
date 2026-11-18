@@ -28,3 +28,15 @@ TEST_CASE("UpdateCursorSuspension")
     CHECK(Editor::UpdateCursorSuspension(true, true, false, true, false));
     CHECK_FALSE(Editor::UpdateCursorSuspension(false, true, false, true, false));
 }
+
+TEST_CASE("UpdateEscapeCapture")
+{
+    for (const CursorMode applied : { CursorMode::Locked, CursorMode::Hidden, CursorMode::Confined })
+    {
+        CHECK(Editor::UpdateEscapeCapture(false, true, applied));
+    }
+    CHECK(Editor::UpdateEscapeCapture(true, true, CursorMode::Normal));
+    CHECK_FALSE(Editor::UpdateEscapeCapture(true, false, CursorMode::Normal));
+    CHECK_FALSE(Editor::UpdateEscapeCapture(false, true, CursorMode::Normal));
+    CHECK_FALSE(Editor::UpdateEscapeCapture(false, false, CursorMode::Locked));
+}

@@ -27,6 +27,9 @@ Game:
     - Key: KeypadEnter
     - Key: Space
     - GamepadButton: A
+  UiCancel:
+    - Key: Escape
+    - GamepadButton: B
   UiPointerPress:
     - MouseButton: Left
 Editor:

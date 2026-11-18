@@ -272,7 +272,7 @@ TEST_CASE("Actions - the defaults have the game's UI actions and the editor came
     };
     const auto key = [](Key k) { return InputBinding{ BindingSource::Key, static_cast<uint16_t>(k) }; };
 
-    CHECK(defaults.Game.Actions.size() == 6);
+    CHECK(defaults.Game.Actions.size() == 7);
     const auto pad   = [](HW::GamepadButton b) { return InputBinding{ BindingSource::GamepadButton, static_cast<uint16_t>(b) }; };
     const auto stick = [](HW::GamepadAxis a, float scale)
     { return InputBinding{ BindingSource::GamepadAxis, static_cast<uint16_t>(a), 0, scale, 0.2f }; };
@@ -286,6 +286,8 @@ TEST_CASE("Actions - the defaults have the game's UI actions and the editor came
           std::vector<InputBinding>{ key(Key::Right), pad(HW::GamepadButton::DpadRight), stick(HW::GamepadAxis::LeftX, 1.0f) });
     CHECK(bindingsOf(defaults.Game, "UiSubmit") ==
           std::vector<InputBinding>{ key(Key::Enter), key(Key::KeypadEnter), key(Key::Space), pad(HW::GamepadButton::A) });
+    CHECK(bindingsOf(defaults.Game, "UiCancel") ==
+          std::vector<InputBinding>{ key(Key::Escape), pad(HW::GamepadButton::B) });
     CHECK(bindingsOf(defaults.Game, "UiPointerPress") ==
           std::vector<InputBinding>{ { BindingSource::MouseButton, static_cast<uint16_t>(MouseButton::Left) } });
 

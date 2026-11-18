@@ -20,4 +20,11 @@ namespace Editor
         }
         return gameImagePressed ? false : suspended;
     }
+
+    // A held Escape keeps the cursor suspended, so the applied cursor is Normal for the rest of the hold:
+    // a hold that began under Normal never sees a non-Normal applied cursor, and needs no state of its own.
+    bool UpdateEscapeCapture(bool captured, bool escapeDown, HW::CursorMode appliedLastFrame)
+    {
+        return escapeDown && (captured || appliedLastFrame != HW::CursorMode::Normal);
+    }
 }

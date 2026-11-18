@@ -124,6 +124,7 @@ namespace Editor
         // The script's cursor request is suspended by Escape or the Game view's window losing focus,
         // until a press on the Game image (CursorGate).
         bool           m_CursorSuspended = false;
+        bool           m_EscapeCaptured  = false;
         HW::CursorMode m_AppliedCursor   = HW::CursorMode::Normal;
         void*          m_CursorWindow    = nullptr; // the GLFW window it was applied to; nullptr is the main one
         void           ApplyEditorCursor(HW::CursorMode mode, void* window);
