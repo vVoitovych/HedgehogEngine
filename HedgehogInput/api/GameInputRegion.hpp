@@ -16,6 +16,7 @@ namespace HInput
         HM::Vector2 PixelSize = HM::Vector2(0.0f, 0.0f); // its size in the game view's own pixels
         bool        PointerEnabled  = false;             // the pointer may press, release and scroll in it
         bool        KeyboardEnabled = false;             // keys and the gamepad reach the game
+        bool        PointerLocked   = false;             // the cursor is locked: the pointer is inside, at the centre
     };
 
     // What MakeGameInput remembers between frames, per mouse button: whether the source had it down
@@ -29,6 +30,8 @@ namespace HInput
     // The game's view of source:
     // - the cursor's position and move in the region's pixels ((position - Origin) * PixelSize / Size),
     //   CursorInside while the pointer is enabled and inside the region;
+    // - with PointerLocked the pointer sits at the region's centre, inside while the pointer is enabled, whatever
+    //   the source's cursor does; moves, presses and scroll pass as usual;
     // - a mouse button the game holds from a press that began inside until its release, wherever the
     //   cursor goes meanwhile, so presses and releases stay paired; a press that began outside, or
     //   while the pointer was disabled, never reaches the game;

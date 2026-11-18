@@ -2,6 +2,7 @@
 
 #include "HedgehogEngine/HedgehogWindow/api/RawInputEvents.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/WindowDesc.hpp"
+#include "HedgehogEngine/HedgehogWindow/api/WindowPolling.hpp"
 
 #include "Logger/api/Logger.hpp"
 
@@ -68,6 +69,7 @@ namespace HW
         int                   SavedWidth   = 1366;
         int                   SavedHeight  = 768;
         CustomTitleBar        TitleBar;
+        CursorMode            RequestedCursor = CursorMode::Normal;
     };
 
 #ifdef _WIN32
@@ -295,6 +297,19 @@ namespace HW
         return glfwGetWindowAttrib(m_Impl->Handle, GLFW_MAXIMIZED) != 0;
     }
 
+    void Window::SetCursorMode(CursorMode mode)
+    {
+        m_Impl->RequestedCursor = mode;
+        // Locking and unlocking move the cursor, so its next event sets the position without a delta.
+        m_Impl->Raw.CursorKnown = false;
+        HW::SetCursorMode(m_Impl->Handle, ResolveCursorMode(mode, m_Impl->Raw.Focused));
+    }
+
+    CursorMode Window::GetCursorMode() const
+    {
+        return m_Impl->RequestedCursor;
+    }
+
     void Window::RequestClose()
     {
         glfwSetWindowShouldClose(m_Impl->Handle, GLFW_TRUE);
@@ -386,6 +401,13 @@ namespace HW
     {
         auto* self = reinterpret_cast<Window*>(glfwGetWindowUserPointer(handle));
         ApplyFocus(self->m_Impl->Raw, focused != 0);
+        self->m_Impl->Raw.CursorKnown = false;
+        // GLFW itself releases a locked or confined cursor on focus loss and takes it again on focus
+        // (setting it here too would make it record the centred cursor as where to put it back).
+        if (self->m_Impl->RequestedCursor == CursorMode::Hidden)
+        {
+            HW::SetCursorMode(handle, ResolveCursorMode(CursorMode::Hidden, focused != 0));
+        }
     }
 
     void Window::OnCursorEnter(GLFWwindow* handle, int entered)

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "HedgehogEngine/HedgehogWindow/api/CursorMode.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/HedgehogWindowApi.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/RawInput.hpp"
 
@@ -30,4 +31,8 @@ namespace HW
 
     // Polls a GLFW window (a GLFWwindow*) into a PolledWindowState; an empty state for nullptr.
     [[nodiscard]] HEDGEHOG_WINDOW_API PolledWindowState PollWindowState(void* glfwWindow);
+
+    // Sets a GLFW window's (a GLFWwindow*) cursor mode, with raw mouse motion while it is Locked when
+    // the platform has it; does nothing for nullptr. The one place CursorMode meets GLFW.
+    HEDGEHOG_WINDOW_API void SetCursorMode(void* glfwWindow, CursorMode mode);
 }

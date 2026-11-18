@@ -115,3 +115,93 @@ TEST_CASE("Game input - a region with no area gives no input and forgets held bu
     CHECK_FALSE(game.CursorInside);
     CHECK_FALSE(gate.Held[LEFT]);
 }
+
+TEST_CASE("Game input - a locked pointer sits at the centre, inside, and its moves count")
+{
+    GameInputGate   gate;
+    GameInputRegion region = Region();
+    region.PointerLocked   = true;
+
+    HW::RawInput source = CursorAt(5000.0f, -3000.0f);
+    source.CursorInside = false;
+    source.CursorDelta  = HM::Vector2(3.0f, -2.0f);
+    source.ScrollDelta  = HM::Vector2(0.0f, 1.0f);
+
+    const HW::RawInput game = MakeGameInput(source, region, gate);
+    CHECK(game.CursorInside);
+    CHECK(game.CursorPosition == HM::Vector2(400.0f, 300.0f));
+    CHECK(game.CursorDelta == HM::Vector2(6.0f, -4.0f));
+    CHECK(game.ScrollDelta == source.ScrollDelta);
+}
+
+TEST_CASE("Game input - a locked pointer's press is held until its release")
+{
+    GameInputGate   gate;
+    GameInputRegion region = Region();
+    region.PointerLocked   = true;
+
+    HW::RawInput source       = CursorAt(5000.0f, -3000.0f);
+    source.CursorInside       = false;
+    source.MouseButtons[LEFT] = true;
+    CHECK(MakeGameInput(source, region, gate).MouseButtons[LEFT]);
+    CHECK(MakeGameInput(source, region, gate).MouseButtons[LEFT]);
+    source.MouseButtons[LEFT] = false;
+    CHECK_FALSE(MakeGameInput(source, region, gate).MouseButtons[LEFT]);
+}
+
+TEST_CASE("Game input - a locked region with the pointer disabled or no area gives nothing")
+{
+    GameInputGate   gate;
+    GameInputRegion region = Region();
+    region.PointerLocked   = true;
+
+    HW::RawInput source       = CursorAt(0.0f, 0.0f);
+    source.MouseButtons[LEFT] = true;
+    source.ScrollDelta        = HM::Vector2(0.0f, 1.0f);
+
+    region.PointerEnabled = false;
+    HW::RawInput game     = MakeGameInput(source, region, gate);
+    CHECK_FALSE(game.CursorInside);
+    CHECK_FALSE(game.MouseButtons[LEFT]);
+    CHECK(game.ScrollDelta == HM::Vector2(0.0f, 0.0f));
+
+    region.PointerEnabled = true;
+    (void)MakeGameInput(source, region, gate);
+    region.Size = HM::Vector2(0.0f, 0.0f);
+    game        = MakeGameInput(source, region, gate);
+    CHECK_FALSE(game.CursorInside);
+    CHECK_FALSE(gate.Held[LEFT]);
+}
+
+TEST_CASE("Game input - unlocking with the cursor outside is no longer inside, a held press stays")
+{
+    GameInputGate   gate;
+    GameInputRegion region = Region();
+    region.PointerLocked   = true;
+
+    HW::RawInput source       = CursorAt(5000.0f, 5000.0f);
+    source.MouseButtons[LEFT] = true;
+    CHECK(MakeGameInput(source, region, gate).MouseButtons[LEFT]);
+
+    region.PointerLocked    = false;
+    const HW::RawInput game = MakeGameInput(source, region, gate);
+    CHECK_FALSE(game.CursorInside);
+    CHECK(game.MouseButtons[LEFT]);
+}
+
+TEST_CASE("Game input - a locked pointer of another scale sits at its centre, and not while unfocused")
+{
+    GameInputGate   gate;
+    GameInputRegion region = Region();
+    region.PointerLocked   = true;
+    region.PixelSize       = HM::Vector2(1920.0f, 540.0f);
+
+    HW::RawInput source = CursorAt(5000.0f, -3000.0f);
+    HW::RawInput game   = MakeGameInput(source, region, gate);
+    CHECK(game.CursorInside);
+    CHECK(game.CursorPosition == HM::Vector2(960.0f, 270.0f));
+
+    source.Focused = false;
+    game           = MakeGameInput(source, region, gate);
+    CHECK_FALSE(game.CursorInside);
+}
