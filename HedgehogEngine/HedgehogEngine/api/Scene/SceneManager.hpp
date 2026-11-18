@@ -40,6 +40,7 @@ namespace HedgehogEngine
     {
         std::string Yaml;            // the scene serialized exactly as SaveScene would write it
         std::string SceneName;
+        std::string ScenePath;       // GetScenePath() at capture; empty for a new scene
         size_t      GameObjectIndex = 0;
     };
 

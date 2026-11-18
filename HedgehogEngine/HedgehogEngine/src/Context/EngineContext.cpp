@@ -24,6 +24,8 @@
 #include "HedgehogEngine/api/ECS/systems/UiSystem.hpp"
 #include "HedgehogEngine/api/Save/SaveGameManager.hpp"
 #include "../Save/SaveRequestSystem.hpp"
+#include "../Scene/SceneRequestSystem.hpp"
+#include "HedgehogEngine/api/Events/SceneEvents.hpp"
 #include "EngineComponents.hpp"
 #include "HedgehogEngine/api/Prefab/PrefabManager.hpp"
 #include "HedgehogEngine/api/ECS/components/PrefabInstanceComponent.hpp"
@@ -65,6 +67,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cctype>
 #include <filesystem>
 
 namespace HedgehogEngine
@@ -91,9 +94,11 @@ namespace HedgehogEngine
         m_ECS.GetServices().Register(*m_Settings);
         m_SaveGames = std::make_unique<SaveGameManager>(*m_SceneManager, m_EventBus, m_Clock, *m_Settings);
         m_ECS.GetServices().Register(*m_SaveGames);
-        // Registered last, as it needs the manager; the Simulation phase runs every system's
-        // gameplay before any OnFrame, so its place in the order does not matter.
+        // Registered last, as they need the managers; the Simulation phase runs every system's
+        // gameplay before any OnFrame. Scenes go after saves, so a save of the frame sees the old world.
         m_ECS.RegisterSystem<SaveRequestSystem>();
+        m_SceneRequests = m_ECS.RegisterSystem<SceneRequestSystem>(*m_SceneManager, m_EventBus, *m_SaveGames,
+                                                                   m_FileSystem);
         m_Prefabs   = std::make_unique<PrefabManager>(m_ECS, m_FileSystem, *m_ComponentRegistry, *m_SceneManager);
 
         m_ResourceCatalog.Update(*m_RenderSystem, *m_MeshSystem);
@@ -330,6 +335,45 @@ namespace HedgehogEngine
         return true;
     }
 
+    bool EngineContext::RequestSceneLoad(const std::string& path)
+    {
+        if (m_PlayState == PlayState::Edit)
+        {
+            LOGERROR("[Scene] Scenes switch only in Play mode; " + path + " is not loaded.");
+            return false;
+        }
+
+        const std::string virtualPath = FS::ToAssetVirtualPath(FS::MakeAssetKey(path));
+        const size_t      mount       = virtualPath.find("://");
+        const std::string relative    = mount == std::string::npos ? virtualPath : virtualPath.substr(mount + 3);
+        const std::string segments    = "/" + relative + "/";
+        if (segments.find("/../") != std::string::npos)
+        {
+            LOGERROR("[Scene] '" + path + "' leaves its mount; it is not loaded.");
+            return false;
+        }
+
+        std::string extension = std::filesystem::path(relative).extension().string();
+        std::transform(extension.begin(), extension.end(), extension.begin(),
+                       [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+        if (extension != ".yaml")
+        {
+            LOGERROR("[Scene] '" + path + "' is not a .yaml scene.");
+            return false;
+        }
+        if (!m_FileSystem.Exists(virtualPath))
+        {
+            LOGERROR("[Scene] " + virtualPath + " does not exist.");
+            return false;
+        }
+
+        if (const std::optional<std::string> slot = m_SaveGames->CancelPendingLoad())
+            LOGWARNING("[Scene] The load of slot '" + *slot + "' is dropped: " + virtualPath
+                       + " was requested after it.");
+        m_SceneRequests->Request(virtualPath, m_SaveGames->GetLoadRequestCount());
+        return true;
+    }
+
     bool EngineContext::Pause()
     {
         if (m_PlayState != PlayState::Playing)
@@ -359,6 +403,7 @@ namespace HedgehogEngine
         m_PlayState = PlayState::Edit;
         HInput::ResetActionState(m_GameActions, m_InputActions.Game);
         m_SaveGames->ClearRequests();
+        m_SceneRequests->Clear();
         m_ECS.NotifyPlayStop();
         if (m_PlaySnapshot && !m_SceneManager->RestoreSnapshot(*m_PlaySnapshot))
             LOGERROR("EngineContext::Stop: the scene could not be restored to its state before Play.");
