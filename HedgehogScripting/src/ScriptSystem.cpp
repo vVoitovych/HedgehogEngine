@@ -103,6 +103,8 @@ namespace HedgehogScripting
         , m_Context(context)
     {
         m_Traceback       = OpenSandbox(m_Lua);
+        m_GameState       = m_Lua.create_table();
+        m_Lua["GameState"] = m_GameState;
         Bindings::RegisterMath(m_Lua);
         Bindings::RegisterLog(m_Lua);
         Bindings::RegisterEntity(m_Lua, context);
@@ -129,7 +131,15 @@ namespace HedgehogScripting
         context.GetSaveGames().RegisterSection(
             EcsSerialization::SAVE_SECTION_SCRIPTS, [this]() { return SaveScriptState(m_Context.GetECS()); },
             [this](const YAML::Node& section, int savedGameDataVersion)
-            { LoadScriptState(m_Context.GetECS(), section, savedGameDataVersion); });
+            {
+                // A load replaces GameState; the GameState section, registered after this one (the
+                // manager loads in registration order), fills it when the save has one.
+                ResetGameState();
+                LoadScriptState(m_Context.GetECS(), section, savedGameDataVersion);
+            });
+        context.GetSaveGames().RegisterSection(
+            EcsSerialization::SAVE_SECTION_GAME_STATE, [this]() { return SaveGameState(m_Context.GetECS()); },
+            [this](const YAML::Node& section, int) { LoadGameState(m_Context.GetECS(), section); });
         m_BusSubscriptions.push_back(bus.Subscribe<HedgehogEngine::GameLoadedEvent>(
             [this](const HedgehogEngine::GameLoadedEvent& event)
             { m_QueuedEvents.push_back(QueuedEvent{ "GameLoaded", m_Lua.create_table_with("slot", event.Slot) }); }));
@@ -174,7 +184,10 @@ namespace HedgehogScripting
         }
         m_BusSubscriptions.clear();
         if (HedgehogEngine::SaveGameManager* saves = ecs.GetServices().Find<HedgehogEngine::SaveGameManager>())
+        {
             saves->UnregisterSection(EcsSerialization::SAVE_SECTION_SCRIPTS);
+            saves->UnregisterSection(EcsSerialization::SAVE_SECTION_GAME_STATE);
+        }
     }
 
     void ScriptSystem::StartClassSupport()
@@ -505,6 +518,7 @@ namespace HedgehogScripting
     void ScriptSystem::OnPlayStart(ECS::ECS& ecs)
     {
         // Every Play reads the script files afresh, so an edit made in Edit mode takes effect.
+        ResetGameState();
         m_Classes.clear();
         m_Scripts.clear();
         m_PendingRemovals.clear();
