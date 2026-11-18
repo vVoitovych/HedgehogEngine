@@ -86,6 +86,12 @@ namespace HedgehogScripting::Bindings
     // through the ScriptComponent removal callback.
     void FlushDestroys(HedgehogEngine::EngineContext& context, std::vector<ScriptEntity>& pendingDestroys);
 
+    // The Application table: quit() asks the host to end the game after the frame (the game loop
+    // ends; the editor stops Play); outside Play it does nothing and the first call warns.
+    // isEditor is true in the editor. Both go through the engine's ApplicationRequests; writing
+    // any field is a script error, and any other key reads nil.
+    void RegisterApplication(sol::state& lua, HedgehogEngine::EngineContext& context);
+
     // The Time table: deltaTime (the hook's dt: OnUpdate's scaled dt, or the fixed dt inside
     // OnFixedUpdate), fixedDeltaTime, time (the clock's scaled simulated time), frame (OnUpdate
     // calls since Play) and timeScale, the only writable field, clamped to [0, 100] and stored in

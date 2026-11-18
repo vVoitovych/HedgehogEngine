@@ -127,7 +127,9 @@ namespace Runtime
         if (!m_Engine || !m_Renderer)
             return false;
         auto& windowContext = m_Engine->GetWindowContext();
-        if ((m_Desc.MaxFrames > 0 && m_FrameCount >= m_Desc.MaxFrames) || windowContext.ShouldClose())
+        // A script that asked to quit finished its frame; Shutdown stops Play as on window close.
+        if ((m_Desc.MaxFrames > 0 && m_FrameCount >= m_Desc.MaxFrames) || windowContext.ShouldClose() ||
+            m_Engine->GetEngineContext().GetApplicationRequests().QuitRequested)
             return false;
 
         RunFrameZones();

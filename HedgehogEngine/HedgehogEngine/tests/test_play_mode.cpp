@@ -308,3 +308,20 @@ TEST_CASE("Play mode - save and load requests run after every system's update an
     context.UpdateContext(1.0f, STEP);
     CHECK(log == std::vector<std::string>{ "requester.update", "later.update(saved)", "loaded slot", "animation" });
 }
+
+TEST_CASE("Play mode - ApplicationRequests is a service that Play and Stop clear, except IsEditor")
+{
+    EngineContext context;
+    auto&         requests = context.GetApplicationRequests();
+    CHECK(context.GetECS().GetServices().Find<HedgehogEngine::ApplicationRequests>() == &requests);
+
+    requests.IsEditor      = true;
+    requests.QuitRequested = true;
+    REQUIRE(context.Play());
+    CHECK_FALSE(requests.QuitRequested);
+
+    requests.QuitRequested = true;
+    REQUIRE(context.Stop());
+    CHECK_FALSE(requests.QuitRequested);
+    CHECK(requests.IsEditor);
+}

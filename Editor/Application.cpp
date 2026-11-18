@@ -170,6 +170,7 @@ namespace Editor
         // After the engine's own systems, so its play-mode events come after theirs, and before
         // EditorGui loads the last scene. The engine's ECS owns it; the editor only points at it.
         m_ScriptSystem = HedgehogScripting::RegisterScriptSystem(engineContext, engineContext.GetFileSystem()).get();
+        engineContext.GetApplicationRequests().IsEditor = true;
 
         // A click on a game UI button (Play mode only) shows in the Console.
         engineContext.GetEventBus().Subscribe<HedgehogEngine::UiButtonClickedEvent>(
@@ -402,6 +403,16 @@ namespace Editor
         // A script saved on disk takes effect without leaving Play (polled at most once a second).
         m_ScriptSystem->ReloadChangedScripts(m_Context->GetEngineContext().GetECS());
         m_Context->UpdateContext(dt, GetSceneAspectRatio());
+        if (auto& engineContext = m_Context->GetEngineContext(); engineContext.GetApplicationRequests().QuitRequested)
+        {
+            (void)engineContext.Stop();
+            const std::optional<ECS::Entity> selected = m_EditorGui->GetSelectedEntity();
+            if (selected && !engineContext.GetECS().IsAlive(*selected))
+            {
+                m_EditorGui->SetSelectedEntity(std::nullopt);
+            }
+            LOGINFO("[Editor] Application.quit() stopped Play.");
+        }
 
         {
             HH_PROFILE_ZONE("Editor UI");
