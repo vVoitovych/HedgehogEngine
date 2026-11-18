@@ -17,6 +17,7 @@
 #include <charconv>
 #include <cstdint>
 #include <exception>
+#include <set>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -92,7 +93,11 @@ namespace HedgehogScripting
         class LuaToYaml
         {
         public:
-            explicit LuaToYaml(const ECS::ECS& ecs) : m_Ecs(ecs) {}
+            explicit LuaToYaml(const ECS::ECS& ecs, bool allowEntities = true)
+                : m_Ecs(ecs)
+                , m_AllowEntities(allowEntities)
+            {
+            }
 
             YAML::Node Convert(const sol::object& value, const std::string& where, int depth)
             {
@@ -144,6 +149,8 @@ namespace HedgehogScripting
                 }
                 else if (value.is<Bindings::ScriptEntity>())
                 {
+                    if (!m_AllowEntities)
+                        throw SaveError("cannot save " + where + ": it is an Entity, which does not outlive its scene");
                     const Bindings::ScriptEntity entity = value.as<Bindings::ScriptEntity>();
                     node = Bindings::IsValid(m_Ecs, entity) ? entity.Id : ECS::INVALID_ENTITY;
                     node.SetTag(ENTITY_TAG);
@@ -209,10 +216,12 @@ namespace HedgehogScripting
             }
 
             const ECS::ECS&          m_Ecs;
+            bool                     m_AllowEntities;
             std::vector<const void*> m_Open; // the tables on the path being converted
         };
 
-        sol::object ToLua(sol::state_view lua, const ECS::ECS& ecs, const YAML::Node& node, int depth)
+        sol::object ToLua(sol::state_view lua, const ECS::ECS& ecs, const YAML::Node& node, int depth,
+                          bool allowEntities = true)
         {
             if (depth > ScriptSystem::MAX_SAVE_DEPTH)
                 throw std::runtime_error("the saved value nests deeper than " + std::to_string(ScriptSystem::MAX_SAVE_DEPTH));
@@ -232,6 +241,8 @@ namespace HedgehogScripting
             }
             if (node.Tag() == ENTITY_TAG)
             {
+                if (!allowEntities)
+                    throw std::runtime_error("it is an Entity, which does not outlive its scene");
                 const ECS::Entity id = node.as<ECS::Entity>();
                 const bool alive = id != ECS::INVALID_ENTITY && ecs.IsAlive(id);
                 return sol::make_object(lua, alive ? Bindings::MakeScriptEntity(ecs, id) : Bindings::ScriptEntity{});
@@ -247,7 +258,7 @@ namespace HedgehogScripting
             {
                 sol::table table = lua.create_table(static_cast<int>(node.size()), 0);
                 for (size_t i = 0; i < node.size(); ++i)
-                    table[i + 1] = ToLua(lua, ecs, node[i], depth + 1);
+                    table[i + 1] = ToLua(lua, ecs, node[i], depth + 1, allowEntities);
                 return table;
             }
             case YAML::NodeType::Map:
@@ -257,7 +268,7 @@ namespace HedgehogScripting
                 {
                     if (!entry.first.IsScalar())
                         throw std::runtime_error("a saved table key is not a string or an integer");
-                    table[FromScalar(lua, entry.first)] = ToLua(lua, ecs, entry.second, depth + 1);
+                    table[FromScalar(lua, entry.first)] = ToLua(lua, ecs, entry.second, depth + 1, allowEntities);
                 }
                 return table;
             }
@@ -378,6 +389,82 @@ namespace HedgehogScripting
             {
                 if (const auto failed = m_Scripts.find(entity); failed != m_Scripts.end())
                     failed->second.Faulted = true;
+            }
+        }
+    }
+
+    void ScriptSystem::ResetGameState()
+    {
+        if (!m_GameState.valid())
+            return;
+        // A script may have replaced the global through _G; every script reads this one table again.
+        m_Lua["GameState"] = m_GameState;
+        std::vector<sol::object> keys;
+        for (const auto& [key, value] : m_GameState)
+            keys.push_back(key);
+        for (const sol::object& key : keys)
+            m_GameState[key] = sol::lua_nil;
+    }
+
+    YAML::Node ScriptSystem::SaveGameState(const ECS::ECS& ecs)
+    {
+        YAML::Node section(YAML::NodeType::Map);
+        // YAML map keys compare by text, so GameState["1"] and GameState[1] would overwrite each other.
+        std::set<std::string> written;
+        for (const auto& [key, value] : m_GameState)
+        {
+            try
+            {
+                LuaToYaml convert(ecs, false);
+                if (key.get_type() == sol::type::string)
+                {
+                    const std::string name = key.as<std::string>();
+                    if (!written.insert(name).second)
+                        throw SaveError("cannot save GameState." + name + ": another key is written the same way");
+                    section[StringNode(name)] = convert.Convert(value, "GameState." + name, 1);
+                }
+                else if (IsLuaInteger(key))
+                {
+                    const int64_t     index = key.as<int64_t>();
+                    const std::string text  = std::to_string(index);
+                    if (!written.insert(text).second)
+                        throw SaveError("cannot save GameState[" + text + "]: another key is written the same way");
+                    section[YAML::Node(index)] = convert.Convert(value, "GameState[" + text + "]", 1);
+                }
+                else
+                {
+                    throw SaveError("cannot save GameState: it has a key that is not a string or an integer");
+                }
+            }
+            catch (const std::exception& e)
+            {
+                LOGERROR(std::string("[Script] GameState: not saved: ") + e.what());
+            }
+        }
+        return section;
+    }
+
+    void ScriptSystem::LoadGameState(ECS::ECS& ecs, const YAML::Node& section)
+    {
+        ResetGameState();
+        if (section.IsNull() || !section.IsDefined())
+            return;
+        if (!section.IsMap())
+        {
+            LOGWARNING("[Script] The saved GameState is not a map; it loads empty.");
+            return;
+        }
+        for (const auto& entry : section)
+        {
+            try
+            {
+                if (!entry.first.IsScalar())
+                    throw std::runtime_error("a saved table key is not a string or an integer");
+                m_GameState[FromScalar(m_Lua, entry.first)] = ToLua(m_Lua, ecs, entry.second, 1, false);
+            }
+            catch (const std::exception& e)
+            {
+                LOGWARNING("[Script] GameState." + YAML::Dump(entry.first) + " is skipped: " + e.what() + ".");
             }
         }
     }

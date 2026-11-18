@@ -84,6 +84,10 @@ namespace HedgehogScripting
     // ReloadChangedScripts swaps a running script whose file changed on disk for the new code,
     // keeping its state (ScriptSystemReload.cpp).
     //
+    // GameState is one global table every script shares: emptied at each Play start, kept across
+    // Scene.load, saved as the GameState section. Set its fields; assigning GameState only hides it
+    // from that script.
+    //
     // A script error is logged once as "[Script] <entity> (<assets://path>): <message>" with a
     // traceback. An error in OnStart, OnEnable, OnFixedUpdate or OnUpdate faults the script: it is
     // skipped until the next Play (OnDestroy is still attempted), and the others carry on.
@@ -156,6 +160,15 @@ namespace HedgehogScripting
         // returned table replacing the state (nil keeps it, changed in place); a script without
         // OnMigrate keeps its state. An OnMigrate that fails faults its script, and OnLoad does not run.
         void LoadScriptState(ECS::ECS& ecs, const YAML::Node& section, int savedGameDataVersion);
+
+        // The GameState section: one entry per top-level key, through the same plain-data rules as
+        // the Scripts section, except that an Entity handle is refused (an id does not outlive its
+        // scene). A value that cannot be saved is dropped with one error naming GameState.<path>.
+        [[nodiscard]] YAML::Node SaveGameState(const ECS::ECS& ecs);
+
+        // Replaces GameState with the section (null: empty). An entry that does not convert is
+        // skipped with a warning.
+        void LoadGameState(ECS::ECS& ecs, const YAML::Node& section);
 
         // Entities with a live script instance.
         [[nodiscard]] size_t GetScriptCount() const;
@@ -324,11 +337,13 @@ namespace HedgehogScripting
         template<typename... Args>
         bool Invoke(ECS::Entity entity, EntityScript& script, std::string_view method, Args&&... args);
         void LogError(const std::string& entityName, const std::string& scriptPath, const std::string& message) const;
+        void ResetGameState();
 
         const FS::FileSystemManager&   m_ScriptFiles;
         HedgehogEngine::EngineContext& m_Context; // its SceneManager deletes the queued entities
 
         sol::state              m_Lua;
+        sol::table              m_GameState; // the GameState global; one table for the system's life, cleared in place
         sol::protected_function m_Traceback;
         sol::environment        m_BaseEnvironment;
         bool                    m_BaseLoaded = false;

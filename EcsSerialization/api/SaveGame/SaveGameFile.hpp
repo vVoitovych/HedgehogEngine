@@ -16,8 +16,9 @@ namespace EcsSerialization
     inline constexpr int SAVE_FORMAT_VERSION = 1;
 
     // The section names the engine writes; a game may add its own.
-    inline constexpr const char* SAVE_SECTION_WORLD   = "World";
-    inline constexpr const char* SAVE_SECTION_SCRIPTS = "Scripts";
+    inline constexpr const char* SAVE_SECTION_WORLD      = "World";
+    inline constexpr const char* SAVE_SECTION_SCRIPTS    = "Scripts";
+    inline constexpr const char* SAVE_SECTION_GAME_STATE = "GameState";
 
     struct SaveGameMetadata
     {

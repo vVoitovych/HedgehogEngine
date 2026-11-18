@@ -102,6 +102,7 @@ TEST_CASE("ScriptSystem unregister - mid-Play the scripts end, and no engine eve
     const EcsSerialization::SaveGameFile after = world.SaveSlot("after");
     CHECK(after.Sections.count(EcsSerialization::SAVE_SECTION_WORLD) == 1);
     CHECK(after.Sections.count(EcsSerialization::SAVE_SECTION_SCRIPTS) == 0);
+    CHECK(after.Sections.count(EcsSerialization::SAVE_SECTION_GAME_STATE) == 0);
 
     CHECK(log.Lines("heard").empty());
     CHECK(log.Lines("updated").size() == 2); // the two frames before the unregister
