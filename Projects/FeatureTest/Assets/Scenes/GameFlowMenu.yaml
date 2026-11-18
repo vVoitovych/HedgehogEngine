@@ -1,0 +1,170 @@
+Scene name: GameFlowMenu
+Scene:
+  - Entity: 0
+    Name: Root
+    Parent: 0
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    Children:
+      - Entity: 1
+        Name: Cube
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 0]
+          Rotation: [20, 35, 0]
+          Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/cube.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/test1.material
+          Layer: 0
+        Children:
+          []
+      - Entity: 2
+        Name: Sun
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 0]
+          Rotation: [448.5, 297, 122.5]
+          Scale: [1, 1, 1]
+        LightComponent:
+          LightEnabled: true
+          LightType: 0
+          LightColor: [1, 1, 1]
+          LightIntensity: 1
+          LightRadius: 1
+          LightConeAngle: 2
+          CastShadows: true
+        Children:
+          []
+      - Entity: 3
+        Name: MainCamera
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 4]
+          Rotation: [0, 0, 0]
+          Scale: [1, 1, 1]
+        CameraComponent:
+          Enabled: true
+          ProjectionType: 0
+          Fov: 60
+          OrthoSize: 10
+          NearPlane: 0.1
+          FarPlane: 1000
+          LayerMask: 4294967295
+          TargetMode: 0
+          TargetName: ""
+          GraphName: game
+          Priority: 0
+        Children:
+          []
+      - Entity: 4
+        Name: Menu
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 0]
+          Rotation: [0, 0, 0]
+          Scale: [1, 1, 1]
+        UiCanvasComponent:
+          Enabled: true
+          ScaleMode: 1
+          ReferenceResolution: [1920, 1080]
+          MatchWidthOrHeight: 0.5
+          SortOrder: 0
+        ScriptComponent:
+          ScriptEnable: true
+          ScriptFile: Scripts/GameFlowMenu.lua
+        Children:
+          - Entity: 5
+            Name: Title
+            Parent: 4
+            TransformComponent:
+              Position: [0, 0, 0]
+              Rotation: [0, 0, 0]
+              Scale: [1, 1, 1]
+            UiRectComponent:
+              Visible: true
+              AnchorMin: [0.5, 0.5]
+              AnchorMax: [0.5, 0.5]
+              Pivot: [0.5, 0.5]
+              Offset: [0, -220]
+              Size: [1200, 120]
+            UiTextComponent:
+              Text: Game Flow
+              Font: engine://Content/Fonts/Karla-Regular.ttf
+              FontSize: 72
+              Color: [0.95, 0.85, 0.6, 1]
+              Align: 1
+              VerticalAlign: 1
+              Wrap: false
+            Children:
+              []
+          - Entity: 6
+            Name: PlayButton
+            Parent: 4
+            TransformComponent:
+              Position: [0, 0, 0]
+              Rotation: [0, 0, 0]
+              Scale: [1, 1, 1]
+            UiRectComponent:
+              Visible: true
+              AnchorMin: [0.5, 0.5]
+              AnchorMax: [0.5, 0.5]
+              Pivot: [0.5, 0.5]
+              Offset: [0, 0]
+              Size: [400, 100]
+            UiImageComponent:
+              Texture: engine://Content/Textures/Default/cells.png
+              Color: [1, 1, 1, 1]
+            UiButtonComponent:
+              Interactable: true
+              NormalTint: [0.4, 0.8, 1, 1]
+              HoverTint: [0.9, 0.9, 0.9, 1]
+              PressedTint: [0.7, 0.7, 0.7, 1]
+              DisabledTint: [0.5, 0.5, 0.5, 0.5]
+            UiTextComponent:
+              Text: PLAY
+              Font: engine://Content/Fonts/Karla-Regular.ttf
+              FontSize: 48
+              Color: [0.05, 0.1, 0.2, 1]
+              Align: 1
+              VerticalAlign: 1
+              Wrap: false
+            Children:
+              []
+          - Entity: 7
+            Name: QuitButton
+            Parent: 4
+            TransformComponent:
+              Position: [0, 0, 0]
+              Rotation: [0, 0, 0]
+              Scale: [1, 1, 1]
+            UiRectComponent:
+              Visible: true
+              AnchorMin: [0.5, 0.5]
+              AnchorMax: [0.5, 0.5]
+              Pivot: [0.5, 0.5]
+              Offset: [0, 140]
+              Size: [400, 100]
+            UiImageComponent:
+              Texture: engine://Content/Textures/Default/cells.png
+              Color: [1, 1, 1, 1]
+            UiButtonComponent:
+              Interactable: true
+              NormalTint: [0.4, 0.8, 1, 1]
+              HoverTint: [0.9, 0.9, 0.9, 1]
+              PressedTint: [0.7, 0.7, 0.7, 1]
+              DisabledTint: [0.5, 0.5, 0.5, 0.5]
+            UiTextComponent:
+              Text: QUIT
+              Font: engine://Content/Fonts/Karla-Regular.ttf
+              FontSize: 48
+              Color: [0.05, 0.1, 0.2, 1]
+              Align: 1
+              VerticalAlign: 1
+              Wrap: false
+            Children:
+              []

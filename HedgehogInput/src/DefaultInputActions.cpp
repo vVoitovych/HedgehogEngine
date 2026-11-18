@@ -59,6 +59,7 @@ namespace HInput
             { "UiNavigateLeft", { Key(HW::Key::Left), Pad(HW::GamepadButton::DpadLeft), Stick(HW::GamepadAxis::LeftX, -1.0f) } },
             { "UiNavigateRight", { Key(HW::Key::Right), Pad(HW::GamepadButton::DpadRight), Stick(HW::GamepadAxis::LeftX, 1.0f) } },
             { "UiSubmit", { Key(HW::Key::Enter), Key(HW::Key::KeypadEnter), Key(HW::Key::Space), Pad(HW::GamepadButton::A) } },
+            { "UiCancel", { Key(HW::Key::Escape), Pad(HW::GamepadButton::B) } },
             { "UiPointerPress", { Button(HW::MouseButton::Left) } },
         };
         set.Editor.Actions = {

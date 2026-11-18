@@ -4,6 +4,7 @@
 
 #include "HedgehogScripting/api/ScriptSystem.hpp"
 
+#include "HedgehogEngine/api/App/ApplicationRequests.hpp"
 #include "HedgehogEngine/api/Assets/EngineAssetDependencies.hpp"
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogEngine/api/Save/SaveGameManager.hpp"
@@ -19,6 +20,7 @@
 
 #include <filesystem>
 #include <string>
+#include <string_view>
 #include <vector>
 
 using HedgehogEngine::EngineContext;
@@ -127,4 +129,91 @@ TEST_CASE("FeatureTest - every scene loads with its project, references only exi
             CHECK(log.Lines("Paddle: pushed Crate").size() == 1);
         }
     }
+}
+
+namespace
+{
+    constexpr float PLAY_X = 960.0f;
+    constexpr float PLAY_Y = 540.0f;
+    constexpr float QUIT_Y = 680.0f;
+
+    void Step(ProjectWorld& world, const HW::RawInput& input)
+    {
+        world.Context.UpdateGameInput(input, HM::Vector2(1920.0f, 1080.0f));
+        world.Context.UpdateContext(1.0f, STEP);
+    }
+
+    HW::RawInput Pointer(float x, float y, bool down = false)
+    {
+        HW::RawInput input;
+        input.CursorPosition = HM::Vector2(x, y);
+        input.CursorInside   = true;
+        input.CursorKnown    = true;
+
+        input.MouseButtons[static_cast<size_t>(HW::MouseButton::Left)] = down;
+        return input;
+    }
+
+    // A click loads the scene at the end of its frame and the new scripts start at the next sync, so two more
+    // frames pass before their OnStart has run.
+    void Click(ProjectWorld& world, float x, float y)
+    {
+        Step(world, Pointer(x, y));
+        Step(world, Pointer(x, y, true));
+        Step(world, Pointer(x, y));
+        Step(world, HW::RawInput{});
+        Step(world, HW::RawInput{});
+    }
+
+    bool InScene(ProjectWorld& world, std::string_view name)
+    {
+        return world.Context.GetSceneManager().GetScenePath().ends_with(name);
+    }
+}
+
+TEST_CASE("FeatureTest - the game flow menu loads the level, Escape returns, and quit asks to end the game")
+{
+    TempDir    saves;
+    LogCapture log;
+    {
+        ProjectWorld world(saves.Path());
+        auto&        files = world.Context.GetFileSystem();
+        const auto   path  = files.ResolvePhysical("assets://Scenes/GameFlowMenu.yaml");
+        REQUIRE(path.has_value());
+        REQUIRE(world.Context.GetSceneManager().LoadScene(path->string()));
+        const HedgehogEngine::SceneSnapshot before = world.Context.GetSceneManager().CaptureSnapshot();
+        REQUIRE(world.Context.Play());
+        Step(world, HW::RawInput{});
+
+        Click(world, PLAY_X, PLAY_Y);
+        CHECK(InScene(world, "Scenes/GameFlowLevel.yaml"));
+        CHECK(log.Lines("GameFlowLevel: visit 1").size() == 1);
+        CHECK(world.Context.GetApplicationRequests().Cursor == HW::CursorMode::Locked);
+
+        HW::RawInput escape;
+        escape.Keys[static_cast<size_t>(HW::Key::Escape)] = true;
+        Step(world, escape);
+        Step(world, HW::RawInput{});
+        Step(world, HW::RawInput{});
+        CHECK(InScene(world, "Scenes/GameFlowMenu.yaml"));
+        CHECK(world.Context.GetApplicationRequests().Cursor == HW::CursorMode::Normal);
+
+        // GameState survived both loads.
+        Click(world, PLAY_X, PLAY_Y);
+        CHECK(log.Lines("GameFlowLevel: visit 2").size() == 1);
+
+        Step(world, escape);
+        Step(world, HW::RawInput{});
+        Step(world, HW::RawInput{});
+        REQUIRE(InScene(world, "Scenes/GameFlowMenu.yaml"));
+        CHECK_FALSE(world.Context.GetApplicationRequests().QuitRequested);
+        Click(world, PLAY_X, QUIT_Y);
+        CHECK(world.Context.GetApplicationRequests().QuitRequested);
+
+        REQUIRE(world.Context.Stop());
+        CHECK(world.Context.GetSceneManager().CaptureSnapshot().Yaml == before.Yaml);
+    }
+
+    CHECK(log.Lines("[ERROR]").empty());
+    CHECK(log.Lines("[WARNING]").empty());
 }

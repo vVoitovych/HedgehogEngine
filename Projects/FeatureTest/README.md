@@ -19,6 +19,8 @@ project the dev tree opens when none is named (`Editor.exe`, `--game-mode`, `--b
 | `Terrain.yaml` | Terrain: a 128 m tile of hills rising to a snowy ridge (`Terrain/Hills.terrain`, generated), its four layers (`Textures/Terrain`, generated: grass, a dirt path, rock on the slopes and snow) blended by its splat map, under the Poly Haven sky; two boxes and a ball drop onto its height-field collider. Select `Hills` to sculpt or paint it in the Scene view. |
 | `ParticlesBenchmark.yaml` | A cloud of 100,000 alpha-blended particles (`Particles/Benchmark.particle`) over the ground, for `Editor.exe --benchmark 600 ParticlesBenchmark.yaml`. |
 | `Particles.yaml` | Particles: a campfire of additive flames (`Particles/Fire.particle`) under rising alpha smoke (`Particles/Smoke.particle`, a 4 x 4 flipbook), and sparks bursting off an anvil every 1.5 s and falling (`Particles/Sparks.particle`), their textures generated (`Textures/Particles`), lit by a warm point light under the Poly Haven night sky. They play only in Play mode. |
+| `GameFlowMenu.yaml` | Game flow: a menu (`Scripts/GameFlowMenu.lua`) whose PLAY button loads `GameFlowLevel.yaml` with `Scene.load` and whose QUIT button calls `Application.quit()`. |
+| `GameFlowLevel.yaml` | Game flow: a level whose script (`Scripts/GameFlowLevel.lua`) locks the cursor and turns the camera with the mouse, counts visits in `GameState` and returns to the menu on `UiCancel` (Escape). |
 | `benchmark.yaml` | The renderer benchmark: a 5×5 grid of DamagedHelmets with their imported material (`Editor.exe --benchmark`, see `PERFORMANCE.md`). |
 | `test.yaml` | A small mesh-and-material test scene. |
 
@@ -26,6 +28,7 @@ Every scene here is played by ScriptingTest's `test_feature_test_scenes.cpp`: it
 exist, plays 120 frames without an error or warning,
 and Stop restores it. A scene added to `Assets/Scenes` is covered with no change to the test.
 
+Try the game flow with `Editor.exe --game-mode 600 GameFlowMenu.yaml` (PLAY with the mouse, or an arrow key and then Enter; Esc back, QUIT ends the run).
 Try one with `Binaries\windows-x86_64\Debug\Editor.exe --game-mode 600 Audio.yaml`, or open it in
 the editor from the Project panel. Third-party content here is listed in `THIRD_PARTY_NOTICES.md`
 at the repository root.
