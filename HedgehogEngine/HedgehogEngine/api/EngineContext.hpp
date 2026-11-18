@@ -64,6 +64,7 @@ namespace HedgehogEngine
     class TerrainSystem;
     class ParticleSystem;
     class SaveGameManager;
+    class SceneRequestSystem;
     class PrefabManager;
 
     // Edit: gameplay does not run. Playing: every frame runs the fixed steps and the update.
@@ -99,13 +100,22 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API bool Resume();
         HEDGEHOG_ENGINE_API bool Stop();
 
+        // Switches to another scene at the end of the frame (SceneRequestSystem, after the frame's
+        // saves), publishing SceneLoadedEvent. Playing or Paused only, path a .yaml that exists
+        // under assets:// (or another mount) without `..`; false, logged, otherwise. The last
+        // request of a frame wins, and so does the later of this and a save load (the other is
+        // dropped with a warning). Stop drops a pending request and restores the scene and path
+        // from before Play. The fixed-step clock is not reset.
+        [[nodiscard]] HEDGEHOG_ENGINE_API bool RequestSceneLoad(const std::string& path);
+
         [[nodiscard]] HEDGEHOG_ENGINE_API PlayState GetPlayState() const;
         [[nodiscard]] HEDGEHOG_ENGINE_API FixedStepClock&       GetFixedStepClock();
         [[nodiscard]] HEDGEHOG_ENGINE_API const FixedStepClock& GetFixedStepClock() const;
 
         // Runs the Simulation phase alone. While Playing it advances the clock and runs its fixed
         // steps of OnFixedUpdate, then one OnUpdate with the scaled frame time, then the save and
-        // load requests the frame made (SaveRequestSystem, SaveGameManager::ProcessRequests);
+        // load requests the frame made (SaveRequestSystem, SaveGameManager::ProcessRequests) and
+        // the scene request (SceneRequestSystem);
         // outside Play it does nothing. UpdateContext runs the same phase itself (calling both
         // would advance the clock twice); this is public so tests can drive gameplay without a
         // window.
@@ -254,6 +264,7 @@ namespace HedgehogEngine
         // and needs live system references) — see EngineContext.cpp for the ordering.
         std::unique_ptr<SceneManager> m_SceneManager;
         std::unique_ptr<SaveGameManager> m_SaveGames; // after the SceneManager it saves and the Settings it reads
+        std::shared_ptr<SceneRequestSystem> m_SceneRequests;
         std::unique_ptr<PrefabManager>   m_Prefabs;   // after the SceneManager it refreshes
 
         HInput::InputActionSet    m_InputActions;

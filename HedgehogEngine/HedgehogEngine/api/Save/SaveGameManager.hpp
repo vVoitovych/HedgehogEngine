@@ -5,6 +5,7 @@
 #include "EcsSerialization/api/SaveGame/SaveMigration.hpp"
 #include "EcsSerialization/api/SaveGame/SaveSlotStore.hpp"
 
+#include <cstdint>
 #include <filesystem>
 #include <functional>
 #include <optional>
@@ -87,6 +88,12 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API void ProcessRequests();
         HEDGEHOG_ENGINE_API void ClearRequests();
 
+        // Drops only the pending load (saves stay queued) and returns its slot. A scene request
+        // made after a load replaces it this way.
+        HEDGEHOG_ENGINE_API std::optional<std::string> CancelPendingLoad();
+        // Loads accepted so far; a scene request compares it to tell whether a load came after it.
+        [[nodiscard]] HEDGEHOG_ENGINE_API uint64_t GetLoadRequestCount() const;
+
     private:
         void Save(const std::string& slot);
         void Load(const std::string& slot);
@@ -109,5 +116,6 @@ namespace HedgehogEngine
         std::vector<Section>                           m_Sections;
         std::vector<std::string>                       m_PendingSaves;
         std::optional<std::string>                     m_PendingLoad;
+        uint64_t                                       m_LoadRequestCount = 0;
     };
 }

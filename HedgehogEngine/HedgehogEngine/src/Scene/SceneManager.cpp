@@ -65,6 +65,11 @@ namespace HedgehogEngine
         DeleteGameObjectAndChildren(m_ECS.GetRoot());
         const bool loaded = EcsSerialization::EcsSerializer::Deserialize(m_ComponentRegistry, m_ECS, m_SceneName,
                                                                           *virtualPath, m_FileSystem);
+        // A document refused before its entities are read leaves no root, which every later
+        // delete or restore of the scene needs.
+        const ECS::Entity root = m_ECS.GetRoot();
+        if (!m_ECS.IsAlive(root) || !m_ECS.HasComponent<ECS::HierarchyComponent>(root))
+            CreateSceneRoot();
         m_ScenePath = *virtualPath;
         RefreshAfterLoad();
         return loaded;
@@ -76,6 +81,7 @@ namespace HedgehogEngine
         snapshot.Yaml            = EcsSerialization::EcsSerializer::SerializeToString(m_ComponentRegistry, m_ECS,
                                                                                       m_SceneName);
         snapshot.SceneName       = m_SceneName;
+        snapshot.ScenePath       = m_ScenePath;
         snapshot.GameObjectIndex = m_GameObjectIndex;
         return snapshot;
     }
@@ -90,6 +96,7 @@ namespace HedgehogEngine
             m_ComponentRegistry, m_ECS, sceneName, snapshot.Yaml, "the snapshot of '" + snapshot.SceneName + "'");
 
         m_SceneName       = snapshot.SceneName;
+        m_ScenePath       = snapshot.ScenePath;
         m_GameObjectIndex = snapshot.GameObjectIndex;
         RefreshAfterLoad();
         return restored;

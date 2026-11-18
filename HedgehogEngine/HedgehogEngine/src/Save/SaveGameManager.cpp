@@ -110,6 +110,7 @@ namespace HedgehogEngine
             return false;
         }
         m_PendingLoad = slot;
+        ++m_LoadRequestCount;
         return true;
     }
 
@@ -140,6 +141,13 @@ namespace HedgehogEngine
         m_PendingSaves.clear();
         m_PendingLoad.reset();
     }
+
+    std::optional<std::string> SaveGameManager::CancelPendingLoad()
+    {
+        return std::exchange(m_PendingLoad, std::nullopt);
+    }
+
+    uint64_t SaveGameManager::GetLoadRequestCount() const { return m_LoadRequestCount; }
 
     void SaveGameManager::Save(const std::string& slot)
     {
