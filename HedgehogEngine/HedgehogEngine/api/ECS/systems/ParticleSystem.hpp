@@ -1,5 +1,6 @@
 #pragma once
 
+#include "HedgehogEngine/api/Events/EventBus.hpp"
 #include "HedgehogEngine/api/HedgehogEngineApi.hpp"
 
 #include "ECS/api/ECS.hpp"
@@ -34,8 +35,9 @@ namespace HedgehogEngine
     // frame) and every burst whose time falls in the frame, until its duration unless it loops (a
     // loop starts the run again, its bursts with it). Edit and Paused spawn nothing, but for the one
     // instance the editor previews (SetPreview), which runs in Edit by the frame's real time once
-    // Play starts it. An effect reloaded while playing starts its instances again. Nothing without
-    // the catalog service.
+    // Play starts it. The frame of a scene switch or save load during Play (SceneLoadedEvent,
+    // GameLoadedEvent) starts the loaded instances that are not playing, as Play start does. An
+    // effect reloaded while playing starts its instances again. Nothing without the catalog service.
     class ParticleSystem : public ECS::System
     {
     public:
@@ -72,10 +74,15 @@ namespace HedgehogEngine
 
     private:
         void Resolve(ECS::ECS& ecs, ECS::Entity entity);
+        void StartPlayOnStart(ECS::ECS& ecs);
 
-        ResourceCatalog*                  m_Catalog = nullptr;
-        uint32_t                          m_Frame   = 0; // frames played since Play began, or previewed
-        ECS::Entity                       m_Preview = ECS::INVALID_ENTITY;
+        ResourceCatalog*                  m_Catalog           = nullptr;
+        EventBus*                         m_Bus               = nullptr;
+        SubscriptionId                    m_SceneSubscription = SubscriptionId::Invalid;
+        SubscriptionId                    m_GameSubscription  = SubscriptionId::Invalid;
+        bool                              m_StartPending      = false; // a world was loaded during Play
+        uint32_t                          m_Frame             = 0; // frames played since Play began, or previewed
+        ECS::Entity                       m_Preview           = ECS::INVALID_ENTITY;
         std::vector<ParticleFrameEmitter> m_FrameEmitters;
     };
 }

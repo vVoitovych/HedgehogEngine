@@ -26,9 +26,12 @@
 #include "FileSystem/tests/test_helpers.hpp"
 #include "Logger/api/Logger.hpp"
 
+#include <algorithm>
+#include <cmath>
 #include <functional>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 using namespace HedgehogEngine;
@@ -142,6 +145,7 @@ namespace
             WriteScene("A", { 5.0f }, true);
             WriteScene("B", { 8.0f, 8.0f }, true);
             WriteScene("C", {}, false);
+            WriteAudioScene("D");
             Dir.WriteFile("B.txt", "not a scene");
             REQUIRE(Scenes.LoadScene((Dir.Path() / "A.yaml").string()));
             YamlA = Scenes.CaptureSnapshot().Yaml;
@@ -169,6 +173,66 @@ namespace
                 Ecs().AddComponent(cube, RigidBodyComponent{});
             }
             REQUIRE(Scenes.SaveScene((Dir.Path() / (name + ".yaml")).string()));
+        }
+
+        // A looping PlayOnStart source, one that does not play on start, an enabled PlayOnStart particle
+        // system and a disabled one; written to name.yaml with the effect it names.
+        void WriteAudioScene(const std::string& name)
+        {
+            ParticleEffect effect   = MakeDefaultParticleEffect();
+            effect.Emitters[0].Rate = 10.0f;
+            Dir.WriteFile("Fire.particle", WriteParticleEffect(effect));
+
+            Scenes.ResetScene();
+            Scenes.SetSceneName(name);
+            AudioSourceComponent sound;
+            sound.Clip = "Audio/Tone440.wav";
+            sound.Loop = true;
+            Ecs().AddComponent(Object({ 0.0f, 0.0f, 0.0f }), sound);
+            sound.PlayOnStart = false;
+            Ecs().AddComponent(Object({ 1.0f, 0.0f, 0.0f }), sound);
+
+            ParticleSystemComponent particles;
+            particles.Effect = "scenes://Fire.particle";
+            Ecs().AddComponent(Object({ 2.0f, 0.0f, 0.0f }), particles);
+            particles.Enabled = false;
+            Ecs().AddComponent(Object({ 3.0f, 0.0f, 0.0f }), particles);
+            REQUIRE(Scenes.SaveScene((Dir.Path() / (name + ".yaml")).string()));
+        }
+
+        void StartAudio()
+        {
+            HA::AudioEngineDesc desc;
+            desc.NoDevice = true;
+            REQUIRE(Context.GetAudioEngine().Init(desc));
+        }
+
+        // The entities of D's two particle systems: the enabled one, then the disabled one.
+        std::pair<ECS::Entity, ECS::Entity> FindParticleEntities()
+        {
+            ECS::Entity enabled  = ECS::INVALID_ENTITY;
+            ECS::Entity disabled = ECS::INVALID_ENTITY;
+            for (ECS::Entity entity = 0; entity < ECS::MAX_ENTITIES; ++entity)
+            {
+                if (!Ecs().IsAlive(entity) || !Ecs().HasComponent<ParticleSystemComponent>(entity))
+                {
+                    continue;
+                }
+                (Ecs().GetComponent<ParticleSystemComponent>(entity).Enabled ? enabled : disabled) = entity;
+            }
+            return { enabled, disabled };
+        }
+
+        bool Emits(ECS::Entity entity)
+        {
+            for (const ParticleFrameEmitter& emitter : Context.GetParticleSystem()->GetFrameEmitters())
+            {
+                if (emitter.Entity == entity)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         ECS::ECS& Ecs() { return Context.GetECS(); }
@@ -267,12 +331,10 @@ TEST_CASE("Scene requests - the new scene's cubes get bodies and fall, the old b
     REQUIRE(world.Context.Stop());
 }
 
-TEST_CASE("Scene requests - an old scene's sound stops and its particles leave the frame list")
+TEST_CASE("Scene requests - an old scene's sound stops and the new scene's PlayOnStart sources start")
 {
-    SceneWorld          world;
-    HA::AudioEngineDesc desc;
-    desc.NoDevice = true;
-    REQUIRE(world.Context.GetAudioEngine().Init(desc));
+    SceneWorld world;
+    world.StartAudio();
 
     ParticleEffect effect   = MakeDefaultParticleEffect();
     effect.Emitters[0].Rate = 10.0f;
@@ -296,6 +358,79 @@ TEST_CASE("Scene requests - an old scene's sound stops and its particles leave t
     world.Frames(2);
     CHECK(world.Context.GetAudioEngine().GetActiveSoundCount() == 0);
     CHECK(world.Context.GetParticleSystem()->GetFrameEmitters().empty());
+
+    REQUIRE(world.Context.RequestSceneLoad("scenes://D.yaml"));
+    world.Frames(1);
+    CHECK(world.Context.GetAudioEngine().GetActiveSoundCount() == 1); // not the PlayOnStart-less source
+    std::vector<float> mix(960);
+    world.Context.GetAudioEngine().ReadFrames(mix.data(), 480);
+    float peak = 0.0f;
+    for (const float value : mix)
+    {
+        peak = std::max(peak, std::abs(value));
+    }
+    CHECK(peak > 0.0f);
+
+    const auto [enabled, disabled] = world.FindParticleEntities();
+    REQUIRE(enabled != ECS::INVALID_ENTITY);
+    REQUIRE(disabled != ECS::INVALID_ENTITY);
+    CHECK(world.Context.GetParticleSystem()->IsPlaying(world.Ecs(), enabled));
+    CHECK_FALSE(world.Context.GetParticleSystem()->IsPlaying(world.Ecs(), disabled));
+    uint32_t spawned = 0;
+    for (int frame = 0; frame < 60; ++frame)
+    {
+        world.Frames(1);
+        for (const ParticleFrameEmitter& emitter : world.Context.GetParticleSystem()->GetFrameEmitters())
+        {
+            if (emitter.Entity == enabled)
+            {
+                spawned += emitter.SpawnCount;
+            }
+        }
+    }
+    CHECK(world.Emits(enabled));
+    CHECK_FALSE(world.Emits(disabled));
+    CHECK(spawned > 0);
+    REQUIRE(world.Context.Stop());
+}
+
+TEST_CASE("Scene requests - a save loaded in Play starts its PlayOnStart sources")
+{
+    SceneWorld world;
+    world.StartAudio();
+    REQUIRE(world.Scenes.LoadScene((world.Dir.Path() / "D.yaml").string()));
+    REQUIRE(world.Context.Play());
+    world.Frames(2);
+    CHECK(world.Context.GetAudioEngine().GetActiveSoundCount() == 1);
+
+    REQUIRE(world.Context.GetSaveGames().RequestSave("s"));
+    world.Frames(1);
+    REQUIRE(world.Context.GetSaveGames().RequestLoad("s"));
+    world.Frames(1);
+
+    CHECK(world.GameLoaded == 1);
+    CHECK(world.Context.GetAudioEngine().GetActiveSoundCount() == 1); // restarted, not silent and not doubled
+    const auto [enabled, disabled] = world.FindParticleEntities();
+    CHECK(world.Context.GetParticleSystem()->IsPlaying(world.Ecs(), enabled));
+    CHECK_FALSE(world.Context.GetParticleSystem()->IsPlaying(world.Ecs(), disabled));
+    REQUIRE(world.Context.Stop());
+}
+
+TEST_CASE("Scene requests - a scene that does not load never doubles the running scene's sounds")
+{
+    SceneWorld world;
+    world.StartAudio();
+    world.Dir.WriteFile("Broken.yaml", "Version: 99\n");
+    REQUIRE(world.Scenes.LoadScene((world.Dir.Path() / "D.yaml").string()));
+    REQUIRE(world.Context.Play());
+    world.Frames(2);
+    REQUIRE(world.Context.GetAudioEngine().GetActiveSoundCount() == 1);
+
+    REQUIRE(world.Context.RequestSceneLoad("scenes://Broken.yaml"));
+    world.Frames(2);
+    // The failed load already deleted the world, which stopped its sound, and restoring the kept scene
+    // publishes no event, so today it comes back silent; whatever restarts it, it must never be doubled.
+    CHECK(world.Context.GetAudioEngine().GetActiveSoundCount() <= 1);
     REQUIRE(world.Context.Stop());
 }
 
