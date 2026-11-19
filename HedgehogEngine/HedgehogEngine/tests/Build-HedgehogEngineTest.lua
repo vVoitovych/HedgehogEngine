@@ -3,7 +3,7 @@ project "HedgehogEngineTest"
     language "C++"
     cppdialect "C++20"
 
-    files { "**.hpp", "**.cpp" }
+    files { "**.hpp", "**.cpp", "../../../HedgehogRuntime/src/FrameLimiter.cpp" }
 
     includedirs
     {

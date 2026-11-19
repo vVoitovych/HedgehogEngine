@@ -118,6 +118,16 @@ namespace Editor
         bool vsync = project.IsVSync();
         if (ImGui::Checkbox("VSync", &vsync))
             project.SetVSync(vsync);
+        int maxFps = project.GetMaxFps();
+        // Applied on Enter or a step, so typing 60 never stores the 15 that "6" would clamp to.
+        if (ImGui::InputInt("Max FPS", &maxFps, 1, 10, ImGuiInputTextFlags_EnterReturnsTrue))
+        {
+            project.SetMaxFps(HedgehogSettings::ProjectSettings::ClampMaxFps(maxFps));
+        }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip("0 for no cap; else 15 to 1000. Game.exe only.");
+        }
 
         ImGui::Separator();
         if (ImGui::Button("Save"))

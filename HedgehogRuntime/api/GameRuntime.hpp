@@ -3,6 +3,8 @@
 #include "HedgehogEngine/HedgehogSettings/api/HedgehogSettings.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/ProjectSettings.hpp"
 
+#include "HedgehogRuntime/api/FrameLimiter.hpp"
+
 #include "HedgehogExtract/api/MeshBounds.hpp"
 #include "HedgehogExtract/api/RenderScene.hpp"
 #include "HedgehogExtract/api/SceneExtractor.hpp"
@@ -119,5 +121,8 @@ namespace Runtime
         std::string                               m_ScenePath;
         uint32_t                                  m_FrameCount = 0;
         std::chrono::steady_clock::time_point     m_LastFrame;
+        std::chrono::steady_clock::time_point     m_RunStart;
+        FrameLimiter                              m_FrameLimiter;
+        int                                       m_MaxFps = 0; // 0: no cap
     };
 }
