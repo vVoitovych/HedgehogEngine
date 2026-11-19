@@ -97,8 +97,9 @@ public:
 
     // Creates a swapchain for the window that was passed to Create().
     virtual std::unique_ptr<IRHISwapchain> CreateSwapchain(
-        uint32_t width,
-        uint32_t height) const = 0;
+        uint32_t    width,
+        uint32_t    height,
+        PresentMode mode) const = 0;
 
     // ── Synchronisation ───────────────────────────────────────────────────────
 

@@ -37,10 +37,11 @@ namespace Renderer
     }
 
     Renderer::Renderer(HW::Window& window, const FS::FileSystemManager& fileSystem,
-                       const DeviceReadyCallback& onDeviceReady)
+                       const DeviceReadyCallback& onDeviceReady,
+                       const RendererOptions& options)
         : m_Window(window)
     {
-        m_RHIContext    = std::make_unique<RHIContext>(window);
+        m_RHIContext    = std::make_unique<RHIContext>(window, options.PresentMode);
         m_Resources     = std::make_unique<HR::ResourceRegistry>(m_RHIContext->GetRHIDevice());
         m_FrameRenderer = std::make_unique<FrameRenderer>(
             m_RHIContext->GetRHIDevice(),
@@ -55,6 +56,21 @@ namespace Renderer
 
         if (onDeviceReady)
             onDeviceReady({ m_RHIContext->GetRHIDevice(), m_RHIContext->GetRHISwapchain().GetFormat() });
+    }
+
+    void Renderer::SetPresentMode(RHI::PresentMode mode)
+    {
+        if (mode == GetPresentMode())
+        {
+            return;
+        }
+        m_RHIContext->GetRHISwapchain().SetPresentMode(mode);
+        m_PresentModePending = true;
+    }
+
+    RHI::PresentMode Renderer::GetPresentMode() const
+    {
+        return m_RHIContext->GetRHISwapchain().GetPresentMode();
     }
 
     Renderer::~Renderer()
@@ -215,9 +231,11 @@ namespace Renderer
         m_FrameRenderer->WaitForFrameSlot();
 
         // Resize before acquiring, so a resize never costs a frame.
-        if (m_Window.IsResized())
+        // A present mode change recreates the swapchain as a resize does, waiting out a minimized window.
+        if (m_Window.IsResized() || m_PresentModePending)
         {
             m_Window.ResetResizedFlag();
+            m_PresentModePending = false;
             m_RHIContext->GetRHIDevice().WaitIdle();
             m_RHIContext->RecreateSwapchain(m_Window);
             m_FrameRenderer->NotifySwapchainResized();

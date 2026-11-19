@@ -16,7 +16,7 @@ class VulkanDevice;
 class VulkanSwapchain final : public IRHISwapchain
 {
 public:
-    VulkanSwapchain(VulkanDevice& device, uint32_t width, uint32_t height);
+    VulkanSwapchain(VulkanDevice& device, uint32_t width, uint32_t height, PresentMode mode);
     ~VulkanSwapchain() override;
 
     VulkanSwapchain(const VulkanSwapchain&)            = delete;
@@ -35,6 +35,8 @@ public:
     uint32_t AcquireNextImage(IRHISemaphore& signalSemaphore) override;
     void     Present(uint32_t imageIndex, IRHISemaphore& waitSemaphore) override;
     void     Resize(uint32_t width, uint32_t height) override;
+    void     SetPresentMode(PresentMode mode) override;
+    PresentMode GetPresentMode() const override { return m_PresentMode; }
 
     VkSwapchainKHR GetHandle() const { return m_Swapchain; }
 
@@ -48,6 +50,7 @@ private:
     Format                     m_Format = Format::Undefined;
     uint32_t                   m_Width  = 0;
     uint32_t                   m_Height = 0;
+    PresentMode                m_PresentMode;
 
     std::vector<VkImageView>                    m_ImageViews;
     std::vector<std::unique_ptr<VulkanTexture>> m_Textures;

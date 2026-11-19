@@ -241,7 +241,8 @@ namespace Editor
                 m_ImGui->CreateBackend(device);
                 m_ContentIcons.Load(device.Device, fileSystem);
                 m_EditorIcons.Load(device.Device, fileSystem);
-            });
+            },
+            Renderer::RendererOptions{ RHI::PresentMode::NoVSync });
         // The icons never change, so neither do their ids.
         for (size_t index = 0; index < CONTENT_TYPE_COUNT; ++index)
         {
@@ -331,13 +332,21 @@ namespace Editor
             ++frameIndex;
             // A run of fixed length (--smoke-test) times every GPU command over its middle third,
             // so the timed recording, turning it on and off and reading it back run under validation.
-            if (maxFrames > 0 && (frameIndex == maxFrames / 3 || frameIndex == 2 * maxFrames / 3))
+            if (maxFrames >= 4 && (frameIndex == maxFrames / 3 || frameIndex == 2 * maxFrames / 3))
             {
                 const bool timing = !m_Renderer->IsCommandGpuTiming();
                 if (!timing)
                     LOGINFO("Smoke test: ", m_Renderer->GetLastCommandGpuTimings().size(), " GPU commands timed in the last frame, ",
                             m_Renderer->GetLastGpuTimeline().size(), " events on its GPU timeline.");
                 m_Renderer->SetCommandGpuTiming(timing);
+            }
+            // Switching to VSync and back recreates the swapchain under validation.
+            if (maxFrames >= 4 && (frameIndex == maxFrames / 4 || frameIndex == 3 * maxFrames / 4))
+            {
+                const RHI::PresentMode mode = frameIndex == maxFrames / 4 ? RHI::PresentMode::VSync
+                                                                          : RHI::PresentMode::NoVSync;
+                LOGINFO("Smoke test: present mode ", mode == RHI::PresentMode::VSync ? "VSync" : "NoVSync");
+                m_Renderer->SetPresentMode(mode);
             }
             StepFrame();
             // Another project: this editor is torn down as on exit and the caller builds one on it.

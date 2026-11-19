@@ -1,5 +1,7 @@
 #pragma once
 
+#include "RHI/api/PresentMode.hpp"
+
 #include <memory>
 
 namespace RHI
@@ -18,7 +20,7 @@ namespace Renderer
     class RHIContext
     {
     public:
-        explicit RHIContext(HW::Window& window);
+        RHIContext(HW::Window& window, RHI::PresentMode mode);
         ~RHIContext();
 
         RHIContext(const RHIContext&)            = delete;

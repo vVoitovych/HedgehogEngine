@@ -68,7 +68,7 @@ public:
     std::unique_ptr<IRHIQueryPool>   CreateTimestampQueryPool(uint32_t count) const override;
 
     std::unique_ptr<IRHICommandList> CreateCommandList() const override;
-    std::unique_ptr<IRHISwapchain>   CreateSwapchain(uint32_t width, uint32_t height) const override;
+    std::unique_ptr<IRHISwapchain>   CreateSwapchain(uint32_t width, uint32_t height, PresentMode mode) const override;
 
     std::unique_ptr<IRHIFence>       CreateFence(bool signaled = false) const override;
     std::unique_ptr<IRHISemaphore>   CreateSemaphore() const override;

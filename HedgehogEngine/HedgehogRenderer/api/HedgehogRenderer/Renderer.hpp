@@ -8,6 +8,7 @@
 #include "HedgehogRenderer/Graph/UiCallback.hpp"
 #include "HedgehogRenderer/Views/View.hpp"
 
+#include "RHI/api/PresentMode.hpp"
 #include "RHI/api/RHITypes.hpp"
 
 #include <cstdint>
@@ -77,14 +78,20 @@ namespace Renderer
     };
     using DeviceReadyCallback = std::function<void(const RendererDevice&)>;
 
+    struct RendererOptions
+    {
+        RHI::PresentMode PresentMode = RHI::PresentMode::NoVSync;
+    };
+
     // The frame path (RENDERING.md section 9): extract a RenderScene, SyncResources, RenderFrame. It
     // renders the application's views and one per enabled camera in the scene, and presents the
     // highest-priority view that targets main (RENDERING.md section 8).
+
     class Renderer
     {
     public:
         Renderer(HW::Window& window, const FS::FileSystemManager& fileSystem,
-                 const DeviceReadyCallback& onDeviceReady = {});
+                 const DeviceReadyCallback& onDeviceReady = {}, const RendererOptions& options = {});
         ~Renderer();
 
         Renderer(const Renderer&)            = delete;
@@ -141,6 +148,11 @@ namespace Renderer
         // RenderFrame.
         std::span<const GpuTimelineEvent> GetLastGpuTimeline() const;
 
+        // The present mode the swapchain is recreated with at the next RenderFrame (as a resize is);
+        // GetPresentMode is the requested mode, which NoVSync may fall back from to FIFO.
+        void SetPresentMode(RHI::PresentMode mode);
+        [[nodiscard]] RHI::PresentMode GetPresentMode() const;
+
         // Times each GPU command of the render graph (a draw, barrier, copy, blit or mipmap
         // generation) with timestamps of its own, from the next frame on; off by default, when a
         // frame records nothing extra. Turning it on first makes a second timestamp pool; it does
@@ -178,6 +190,7 @@ namespace Renderer
 
     private:
         HW::Window& m_Window;
+        bool        m_PresentModePending = false; // the swapchain is recreated at the next RenderFrame
 
         std::unique_ptr<RHIContext>           m_RHIContext;
         std::unique_ptr<HR::ResourceRegistry> m_Resources; // mesh and material GPU data
