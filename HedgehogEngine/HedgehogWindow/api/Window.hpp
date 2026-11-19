@@ -1,6 +1,7 @@
 #pragma once
 
 #include "HedgehogEngine/HedgehogWindow/api/CursorMode.hpp"
+#include "HedgehogEngine/HedgehogWindow/api/DisplayMode.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/HedgehogWindowApi.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/RawInput.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/TitleBar.hpp"
@@ -9,6 +10,7 @@
 #include <memory>
 #include <span>
 #include <string>
+#include <vector>
 
 struct GLFWwindow;
 
@@ -41,8 +43,17 @@ namespace HW
         HEDGEHOG_WINDOW_API const std::string& GetTitle() const;
         HEDGEHOG_WINDOW_API void               SetTitle(const std::string& title);
 
+        // Windowed <-> Borderless (F11).
         HEDGEHOG_WINDOW_API void ToggleFullscreen();
+        // Any mode but Windowed.
         HEDGEHOG_WINDOW_API bool IsFullscreen() const;
+
+        // The video modes of the window's monitor (the one it overlaps most), normalized.
+        [[nodiscard]] HEDGEHOG_WINDOW_API std::vector<VideoMode> GetVideoModes() const;
+        // Windowed with a size is centred on the monitor's work area, without one it is the saved place;
+        // Fullscreen takes the nearest video mode (ChooseVideoMode); Borderless ignores the size.
+        HEDGEHOG_WINDOW_API void SetWindowMode(WindowMode mode, int width = 0, int height = 0);
+        [[nodiscard]] HEDGEHOG_WINDOW_API WindowMode GetWindowMode() const;
 
         HEDGEHOG_WINDOW_API void GetFramebufferSize(int& outWidth, int& outHeight) const;
 

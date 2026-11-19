@@ -1,5 +1,6 @@
 #include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
 
+#include "HedgehogEngine/HedgehogWindow/api/DisplayMode.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/RawInputEvents.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/WindowDesc.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/WindowPolling.hpp"
@@ -13,8 +14,10 @@
     #include "GLFW/glfw3native.h"
 #endif
 
+#include <algorithm>
 #include <array>
 #include <cassert>
+#include <cstdint>
 #include <vector>
 
 namespace HW
@@ -51,7 +54,8 @@ namespace HW
     // What a window drawing its own title bar keeps for its window procedure.
     struct CustomTitleBar
     {
-        std::vector<ClientRect> CaptionAreas; // what drags the window
+        std::vector<ClientRect> CaptionAreas;      // what drags the window
+        bool                    OnMonitor = false; // borderless or fullscreen: the window's own frame rules
 #ifdef _WIN32
         LONG_PTR                GlfwProc = 0; // GLFW's window procedure, which ours forwards to
 #endif
@@ -59,15 +63,16 @@ namespace HW
 
     struct Window::Impl
     {
-        GLFWwindow*           Handle       = nullptr;
+        GLFWwindow*           Handle         = nullptr;
         std::string           Title;
         RawInput              Raw;
-        bool                  Resized      = false;
-        bool                  IsFullscreen = false;
-        int                   SavedX       = 0;
-        int                   SavedY       = 0;
-        int                   SavedWidth   = 1366;
-        int                   SavedHeight  = 768;
+        bool                  Resized        = false;
+        WindowMode            Mode           = WindowMode::Windowed;
+        bool                  SavedMaximized = false;
+        int                   SavedX         = 0;
+        int                   SavedY         = 0;
+        int                   SavedWidth     = 1366;
+        int                   SavedHeight    = 768;
         CustomTitleBar        TitleBar;
         CursorMode            RequestedCursor = CursorMode::Normal;
     };
@@ -89,6 +94,10 @@ namespace HW
         {
             auto* bar      = static_cast<CustomTitleBar*>(GetPropW(hwnd, WINDOW_PROPERTY));
             auto  glfwProc = reinterpret_cast<WNDPROC>(bar->GlfwProc);
+            if (bar->OnMonitor)
+            {
+                return CallWindowProcW(glfwProc, hwnd, message, wParam, lParam);
+            }
             switch (message)
             {
             case WM_NCCALCSIZE:
@@ -139,14 +148,14 @@ namespace HW
         glfwWindowHint(GLFW_POSITION_Y, desc.Y);
         glfwWindowHint(GLFW_MAXIMIZED, desc.Maximized ? GLFW_TRUE : GLFW_FALSE);
 
-        m_Impl->IsFullscreen = desc.Fullscreen;
-        m_Impl->SavedX       = desc.X;
-        m_Impl->SavedY       = desc.Y;
-        m_Impl->SavedWidth   = desc.Width;
-        m_Impl->SavedHeight  = desc.Height;
+        m_Impl->SavedX      = desc.X;
+        m_Impl->SavedY      = desc.Y;
+        m_Impl->SavedWidth  = desc.Width;
+        m_Impl->SavedHeight = desc.Height;
 
-        GLFWmonitor* monitor = desc.Fullscreen ? glfwGetPrimaryMonitor() : nullptr;
-        m_Impl->Handle = glfwCreateWindow(desc.Width, desc.Height, desc.Title.c_str(), monitor, nullptr);
+        // A fullscreen window is created windowed and then made borderless, so it starts in the mode
+        // GetWindowMode reports and the desktop's display mode is never changed.
+        m_Impl->Handle = glfwCreateWindow(desc.Width, desc.Height, desc.Title.c_str(), nullptr, nullptr);
         m_Impl->Title  = desc.Title;
         assert(m_Impl->Handle != nullptr && "glfwCreateWindow() failed");
 
@@ -160,6 +169,10 @@ namespace HW
         glfwSetWindowFocusCallback(m_Impl->Handle, OnFocus);
         glfwSetCursorEnterCallback(m_Impl->Handle, OnCursorEnter);
         m_Impl->Raw.Focused = glfwGetWindowAttrib(m_Impl->Handle, GLFW_FOCUSED) != 0;
+        if (desc.Fullscreen)
+        {
+            SetWindowMode(WindowMode::Borderless);
+        }
 
         LOGINFO("Window created: ", desc.Title);
     }
@@ -215,31 +228,200 @@ namespace HW
         glfwSetWindowTitle(m_Impl->Handle, title.c_str());
     }
 
+    namespace
+    {
+        VideoMode ToVideoMode(const GLFWvidmode& mode)
+        {
+            return { mode.width, mode.height, mode.refreshRate };
+        }
+
+        // On a monitor: that one. Windowed: the monitor the window overlaps most, else the primary.
+        GLFWmonitor* FindWindowMonitor(GLFWwindow* window)
+        {
+            if (GLFWmonitor* current = glfwGetWindowMonitor(window))
+            {
+                return current;
+            }
+
+            int x      = 0;
+            int y      = 0;
+            int width  = 0;
+            int height = 0;
+            glfwGetWindowPos(window, &x, &y);
+            glfwGetWindowSize(window, &width, &height);
+
+            int                 count    = 0;
+            GLFWmonitor** const monitors = glfwGetMonitors(&count);
+            GLFWmonitor*        best     = glfwGetPrimaryMonitor();
+            int64_t             bestArea = 0;
+            for (int i = 0; i < count; ++i)
+            {
+                const GLFWvidmode* const mode = glfwGetVideoMode(monitors[i]);
+                if (mode == nullptr)
+                {
+                    continue;
+                }
+                int monitorX = 0;
+                int monitorY = 0;
+                glfwGetMonitorPos(monitors[i], &monitorX, &monitorY);
+                const int64_t overlapWidth  = std::min(x + width, monitorX + mode->width) - std::max(x, monitorX);
+                const int64_t overlapHeight = std::min(y + height, monitorY + mode->height) - std::max(y, monitorY);
+                if (overlapWidth > 0 && overlapHeight > 0 && overlapWidth * overlapHeight > bestArea)
+                {
+                    bestArea = overlapWidth * overlapHeight;
+                    best     = monitors[i];
+                }
+            }
+            return best;
+        }
+    }
+
+    namespace
+    {
+        // GLFW sizes the window's frame for a normal caption, which a custom title bar takes back
+        // into the client, so the client is corrected to the size asked for.
+        void PlaceWindowed(GLFWwindow* window, int x, int y, int width, int height)
+        {
+            glfwSetWindowMonitor(window, nullptr, x, y, width, height, 0);
+            int clientWidth  = 0;
+            int clientHeight = 0;
+            glfwGetWindowSize(window, &clientWidth, &clientHeight);
+            if (clientWidth != width || clientHeight != height)
+            {
+                glfwSetWindowSize(window, 2 * width - clientWidth, 2 * height - clientHeight);
+            }
+        }
+    }
+
+    std::vector<VideoMode> Window::GetVideoModes() const
+    {
+        int                      count = 0;
+        const GLFWvidmode* const modes = glfwGetVideoModes(FindWindowMonitor(m_Impl->Handle), &count);
+        std::vector<VideoMode>   result;
+        for (int i = 0; modes != nullptr && i < count; ++i)
+        {
+            result.push_back(ToVideoMode(modes[i]));
+        }
+        return NormalizeVideoModes(std::move(result));
+    }
+
+    void Window::SetWindowMode(WindowMode mode, int width, int height)
+    {
+        Impl&      impl    = *m_Impl;
+        const bool hasSize = width > 0 && height > 0;
+        if (mode == impl.Mode && (mode == WindowMode::Borderless || !hasSize))
+        {
+            return;
+        }
+
+        if (impl.Mode == WindowMode::Windowed)
+        {
+            // A minimized or maximized window is restored first, so the saved geometry is its
+            // restored one (a minimized window sits far off-screen at no size).
+            if (glfwGetWindowAttrib(impl.Handle, GLFW_ICONIFIED))
+            {
+                glfwRestoreWindow(impl.Handle);
+            }
+            impl.SavedMaximized = IsMaximized();
+            if (impl.SavedMaximized)
+            {
+                glfwRestoreWindow(impl.Handle);
+            }
+            int x      = 0;
+            int y      = 0;
+            int width  = 0;
+            int height = 0;
+            glfwGetWindowPos(impl.Handle, &x, &y);
+            glfwGetWindowSize(impl.Handle, &width, &height);
+            if (width > 0 && height > 0)
+            {
+                impl.SavedX      = x;
+                impl.SavedY      = y;
+                impl.SavedWidth  = width;
+                impl.SavedHeight = height;
+            }
+        }
+        else if (mode == WindowMode::Borderless && impl.Mode == WindowMode::Fullscreen)
+        {
+            // Leave the display mode we set, so the monitor's current mode below is the desktop's.
+            impl.TitleBar.OnMonitor = false;
+            PlaceWindowed(impl.Handle, impl.SavedX, impl.SavedY, impl.SavedWidth, impl.SavedHeight);
+        }
+
+        impl.TitleBar.OnMonitor = mode != WindowMode::Windowed;
+        const int autoIconify = mode == WindowMode::Fullscreen ? GLFW_TRUE : GLFW_FALSE;
+        glfwSetWindowAttrib(impl.Handle, GLFW_AUTO_ICONIFY, autoIconify);
+
+        switch (mode)
+        {
+        case WindowMode::Windowed:
+            if (hasSize)
+            {
+                int workX      = 0;
+                int workY      = 0;
+                int workWidth  = 0;
+                int workHeight = 0;
+                glfwGetMonitorWorkarea(FindWindowMonitor(impl.Handle), &workX, &workY, &workWidth, &workHeight);
+                // A window larger than the work area keeps its corner on it, so its title bar stays reachable.
+                PlaceWindowed(impl.Handle, workX + std::max(0, (workWidth - width) / 2),
+                              workY + std::max(0, (workHeight - height) / 2), width, height);
+                impl.SavedMaximized = false;
+            }
+            else
+            {
+                PlaceWindowed(impl.Handle, impl.SavedX, impl.SavedY, impl.SavedWidth, impl.SavedHeight);
+                if (impl.SavedMaximized)
+                {
+                    glfwMaximizeWindow(impl.Handle);
+                }
+            }
+            break;
+        case WindowMode::Borderless:
+        {
+            GLFWmonitor* const       monitor = FindWindowMonitor(impl.Handle);
+            const GLFWvidmode* const current = glfwGetVideoMode(monitor);
+            if (current != nullptr)
+            {
+                glfwSetWindowMonitor(impl.Handle, monitor, 0, 0, current->width, current->height,
+                                     current->refreshRate);
+            }
+            break;
+        }
+        case WindowMode::Fullscreen:
+        {
+            GLFWmonitor* const       monitor = FindWindowMonitor(impl.Handle);
+            const GLFWvidmode* const current = glfwGetVideoMode(monitor);
+            VideoMode                chosen  = current != nullptr ? ToVideoMode(*current) : VideoMode{};
+            // Without a size the monitor keeps its current resolution.
+            const int wantWidth  = hasSize ? width : chosen.Width;
+            const int wantHeight = hasSize ? height : chosen.Height;
+            if (const auto found = ChooseVideoMode(GetVideoModes(), wantWidth, wantHeight))
+            {
+                chosen = *found;
+            }
+            glfwSetWindowMonitor(impl.Handle, monitor, 0, 0, chosen.Width, chosen.Height, chosen.RefreshRate);
+            break;
+        }
+        }
+
+        impl.Mode            = mode;
+        impl.Raw.CursorKnown = false; // the cursor jumps
+        impl.Resized         = true;  // a switch keeping the pixel size fires no size callback
+    }
+
+    WindowMode Window::GetWindowMode() const
+    {
+        return m_Impl->Mode;
+    }
+
     void Window::ToggleFullscreen()
     {
-        if (!m_Impl->IsFullscreen)
-        {
-            glfwGetWindowPos(m_Impl->Handle, &m_Impl->SavedX, &m_Impl->SavedY);
-            glfwGetWindowSize(m_Impl->Handle, &m_Impl->SavedWidth, &m_Impl->SavedHeight);
-
-            GLFWmonitor*       monitor = glfwGetPrimaryMonitor();
-            const GLFWvidmode* mode    = glfwGetVideoMode(monitor);
-            glfwSetWindowMonitor(m_Impl->Handle, monitor,
-                                 0, 0, mode->width, mode->height, mode->refreshRate);
-            m_Impl->IsFullscreen = true;
-        }
-        else
-        {
-            glfwSetWindowMonitor(m_Impl->Handle, nullptr,
-                                 m_Impl->SavedX, m_Impl->SavedY,
-                                 m_Impl->SavedWidth, m_Impl->SavedHeight, 0);
-            m_Impl->IsFullscreen = false;
-        }
+        SetWindowMode(m_Impl->Mode == WindowMode::Windowed ? WindowMode::Borderless : WindowMode::Windowed);
     }
 
     bool Window::IsFullscreen() const
     {
-        return m_Impl->IsFullscreen;
+        return m_Impl->Mode != WindowMode::Windowed;
     }
 
     void Window::GetFramebufferSize(int& outWidth, int& outHeight) const
@@ -286,6 +468,11 @@ namespace HW
 
     void Window::ToggleMaximize()
     {
+        // A borderless or fullscreen window already covers its monitor.
+        if (m_Impl->Mode != WindowMode::Windowed)
+        {
+            return;
+        }
         if (IsMaximized())
             glfwRestoreWindow(m_Impl->Handle);
         else
