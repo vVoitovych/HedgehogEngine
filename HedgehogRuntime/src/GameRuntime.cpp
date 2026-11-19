@@ -116,7 +116,20 @@ namespace Runtime
         // A game runs its gameplay: the scene's scripts play from the first frame.
         (void)engineContext.Play();
 
-        m_Renderer  = std::make_unique<Renderer::Renderer>(m_Engine->GetWindowContext().GetWindow(), fileSystem);
+        // Only a player's run follows the project's vsync and frame cap; --game-mode stays uncapped.
+        Renderer::RendererOptions options;
+        if (m_Desc.UseProjectWindow)
+        {
+            options.PresentMode = project.IsVSync() ? RHI::PresentMode::VSync : RHI::PresentMode::NoVSync;
+        }
+        m_MaxFps = (m_Desc.UseProjectWindow && !m_Desc.FixedFrameTime) ? project.GetMaxFps() : 0;
+        if (m_MaxFps > 0)
+        {
+            LOGINFO("[Runtime] Frame rate capped at ", m_MaxFps, " FPS.");
+        }
+
+        m_Renderer  = std::make_unique<Renderer::Renderer>(m_Engine->GetWindowContext().GetWindow(), fileSystem,
+                                                           Renderer::DeviceReadyCallback{}, options);
         m_InputGate = HInput::GameInputGate{};
         m_LastFrame = std::chrono::steady_clock::now();
         return true;
@@ -136,12 +149,19 @@ namespace Runtime
         // After the frame's zones have ended, so they land in the frame they measure.
         HH_PROFILE_FRAME();
         ++m_FrameCount;
+        // The average leaves out the first frame, which loads and compiles what the scene needs.
+        if (m_FrameCount == 1)
+        {
+            m_RunStart = std::chrono::steady_clock::now();
+        }
         return true;
     }
 
     void GameRuntime::RunFrameZones()
     {
         HH_PROFILE_ZONE("Frame");
+        // The cap counts from here, before input, so the period is the whole frame's.
+        const std::chrono::steady_clock::time_point frameStart = std::chrono::steady_clock::now();
         auto& windowContext = m_Engine->GetWindowContext();
         auto& engineContext = m_Engine->GetEngineContext();
         auto& window        = windowContext.GetWindow();
@@ -185,6 +205,12 @@ namespace Runtime
 
         m_Renderer->SyncResources(engineContext.GetResourceCatalog());
         m_Renderer->RenderFrame(m_RenderScene, engineContext.GetSettings());
+
+        if (m_MaxFps > 0)
+        {
+            HH_PROFILE_ZONE("Frame cap");
+            m_FrameLimiter.WaitFor(ComputeFrameWait(frameStart, std::chrono::steady_clock::now(), m_MaxFps));
+        }
     }
 
     void GameRuntime::Run()
@@ -198,6 +224,13 @@ namespace Runtime
     {
         if (!m_Engine)
             return;
+        if (m_FrameCount > 1)
+        {
+            const uint32_t frames  = m_FrameCount - 1;
+            const double   seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - m_RunStart).count();
+            LOGINFO("[Runtime] ", frames, " frames after the first in ", seconds, " s: ",
+                    frames / std::max(seconds, 1e-9), " FPS on average.");
+        }
         (void)m_Engine->GetEngineContext().Stop();
         // The player gets the cursor back before the window goes.
         m_Engine->GetWindowContext().GetWindow().SetCursorMode(HW::CursorMode::Normal);

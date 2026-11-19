@@ -116,6 +116,24 @@ namespace HedgehogSettings
 
     void ProjectSettings::SetVSync(bool vsync) { Assign(m_VSync, vsync, m_IsDirty); }
 
+    int ProjectSettings::ClampMaxFps(int fps)
+    {
+        return fps == NO_FRAME_RATE_CAP ? NO_FRAME_RATE_CAP : std::clamp(fps, MIN_FRAME_RATE_CAP, MAX_FRAME_RATE_CAP);
+    }
+
+    int ProjectSettings::GetMaxFps() const { return m_MaxFps; }
+
+    void ProjectSettings::SetMaxFps(int fps)
+    {
+        const int clamped = ClampMaxFps(fps);
+        if (clamped != fps)
+        {
+            LOGWARNING("[Project] window.max_fps " + std::to_string(fps) +
+                       " is outside 15..1000 (0 for no cap); using " + std::to_string(clamped) + ".");
+        }
+        Assign(m_MaxFps, clamped, m_IsDirty);
+    }
+
     int ProjectSettings::GetGameDataVersion() const { return m_GameDataVersion; }
 
     void ProjectSettings::SetGameDataVersion(int version) { Assign(m_GameDataVersion, std::max(version, 1), m_IsDirty); }
@@ -148,6 +166,18 @@ namespace HedgehogSettings
                     loaded.SetFullscreen(n.as<bool>());
                 if (const YAML::Node n = window["vsync"])
                     loaded.SetVSync(n.as<bool>());
+                if (const YAML::Node n = window["max_fps"])
+                {
+                    int fps = 0;
+                    if (YAML::convert<int>::decode(n, fps))
+                    {
+                        loaded.SetMaxFps(fps);
+                    }
+                    else
+                    {
+                        LOGWARNING("[Project] window.max_fps is not a whole number; the frame rate is not capped.");
+                    }
+                }
             }
             if (const YAML::Node n = root["game_data_version"])
                 loaded.SetGameDataVersion(n.as<int>());
@@ -175,6 +205,7 @@ namespace HedgehogSettings
         out << YAML::Key << "height" << YAML::Value << m_WindowHeight;
         out << YAML::Key << "fullscreen" << YAML::Value << m_Fullscreen;
         out << YAML::Key << "vsync" << YAML::Value << m_VSync;
+        out << YAML::Key << "max_fps" << YAML::Value << m_MaxFps;
         out << YAML::EndMap;
         out << YAML::Key << "game_data_version" << YAML::Value << m_GameDataVersion;
         out << YAML::EndMap;

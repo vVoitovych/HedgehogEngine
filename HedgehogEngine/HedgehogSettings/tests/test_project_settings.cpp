@@ -8,6 +8,7 @@
 
 #include "HedgehogScripting/tests/test_log_capture.hpp"
 
+#include <algorithm>
 #include <filesystem>
 #include <memory>
 #include <string>
@@ -41,6 +42,7 @@ namespace
         CHECK_FALSE(project.IsFullscreen());
         CHECK(project.IsVSync());
         CHECK(project.GetGameDataVersion() == 1);
+        CHECK(project.GetMaxFps() == 0);
     }
 }
 
@@ -54,6 +56,7 @@ TEST_CASE("Project settings - every field round-trips through the file")
     project.SetWindowSize(1920, 1080);
     project.SetFullscreen(true);
     project.SetVSync(false);
+    project.SetMaxFps(144);
     project.SetGameDataVersion(3);
     CHECK(project.IsDirty());
     REQUIRE(project.Save(ProjectSettings::PATH, files.Files));
@@ -69,6 +72,7 @@ TEST_CASE("Project settings - every field round-trips through the file")
     CHECK(loaded.GetWindowHeight() == 1080);
     CHECK(loaded.IsFullscreen());
     CHECK_FALSE(loaded.IsVSync());
+    CHECK(loaded.GetMaxFps() == 144);
     CHECK(loaded.GetGameDataVersion() == 3);
 
     // Saving what was loaded writes the same text.
@@ -199,4 +203,78 @@ TEST_CASE("Project settings - a plugins list from an older project is ignored an
 
     REQUIRE(project.Save(ProjectSettings::PATH, files.Files));
     CHECK(files.Files.ReadTextFile(ProjectSettings::PATH)->find("plugins") == std::string::npos);
+}
+
+TEST_CASE("Project settings - the frame rate cap is 0 or 15 to 1000, else clamped with one warning")
+{
+    CHECK(ProjectSettings::ClampMaxFps(0) == 0);
+    CHECK(ProjectSettings::ClampMaxFps(15) == 15);
+    CHECK(ProjectSettings::ClampMaxFps(60) == 60);
+    CHECK(ProjectSettings::ClampMaxFps(1000) == 1000);
+    CHECK(ProjectSettings::ClampMaxFps(5) == 15);
+    CHECK(ProjectSettings::ClampMaxFps(-1) == 15);
+    CHECK(ProjectSettings::ClampMaxFps(5000) == 1000);
+
+    ProjectSettings project;
+    LogCapture      log;
+    for (const int fine : { 0, 15, 60, 1000 })
+    {
+        project.SetMaxFps(fine);
+        CHECK(project.GetMaxFps() == fine);
+    }
+    CHECK(log.Lines("[Project] window.max_fps").empty());
+
+    project.SetMaxFps(5);
+    CHECK(project.GetMaxFps() == 15);
+    project.SetMaxFps(5000);
+    CHECK(project.GetMaxFps() == 1000);
+    project.SetMaxFps(-1);
+    CHECK(project.GetMaxFps() == 15);
+    CHECK(log.Lines("[Project] window.max_fps").size() == 3);
+
+    ProjectFiles files;
+    files.Dir.WriteFile("Project.yaml", "window:\n  max_fps: 5000\n");
+    REQUIRE(project.Load(ProjectSettings::PATH, files.Files));
+    CHECK(project.GetMaxFps() == 1000);
+    CHECK(log.Lines("[Project] window.max_fps").size() == 4);
+
+    // A window without the key loads as no cap, silently.
+    files.Dir.WriteFile("Project.yaml", "window:\n  width: 800\n");
+    REQUIRE(project.Load(ProjectSettings::PATH, files.Files));
+    CHECK(project.GetMaxFps() == 0);
+    CHECK(log.Lines("[Project] window.max_fps").size() == 4);
+
+    // A value that is not a whole number is one warning; the rest of the file still reads.
+    for (const char* bad : { "60.5", "fast" })
+    {
+        files.Dir.WriteFile("Project.yaml", std::string("window:\n  width: 800\n  max_fps: ") + bad + "\n");
+        REQUIRE(project.Load(ProjectSettings::PATH, files.Files));
+        CHECK(project.GetMaxFps() == 0);
+        CHECK(project.GetWindowWidth() == 800);
+    }
+    CHECK(log.Lines("[Project] window.max_fps").size() == 6);
+}
+
+TEST_CASE("Project settings - the shipped FeatureTest and template files hold max_fps 0 and save to their text")
+{
+    const std::filesystem::path repo =
+        std::filesystem::path(__FILE__).parent_path().parent_path().parent_path().parent_path();
+    for (const std::filesystem::path& root : { repo / "Projects" / "FeatureTest", repo / "Templates" / "Empty" })
+    {
+        CAPTURE(root.string());
+        FS::FileSystemManager files;
+        auto                  fs = std::make_unique<FS::FileSystem>();
+        fs->RegisterPath("project://", root);
+        files.Register(std::move(fs));
+
+        ProjectSettings project;
+        REQUIRE(project.Load(ProjectSettings::PATH, files));
+        CHECK(project.GetMaxFps() == 0);
+
+        ProjectFiles out;
+        REQUIRE(project.Save(ProjectSettings::PATH, out.Files));
+        std::string shipped = *files.ReadTextFile(ProjectSettings::PATH);
+        shipped.erase(std::remove(shipped.begin(), shipped.end(), '\r'), shipped.end());
+        CHECK(*out.Files.ReadTextFile(ProjectSettings::PATH) == shipped);
+    }
 }

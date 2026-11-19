@@ -30,6 +30,9 @@ namespace HedgehogSettings
         static constexpr uint32_t    MIN_WINDOW_SIZE       = 64;
         static constexpr uint32_t    MAX_WINDOW_SIZE       = 16384;
         static constexpr int         DEFAULT_GAME_DATA_VERSION = 1;
+        static constexpr int         NO_FRAME_RATE_CAP     = 0;
+        static constexpr int         MIN_FRAME_RATE_CAP    = 15;
+        static constexpr int         MAX_FRAME_RATE_CAP    = 1000;
 
         HEDGEHOG_SETTINGS_API ProjectSettings();
 
@@ -48,7 +51,9 @@ namespace HedgehogSettings
         HEDGEHOG_SETTINGS_API bool SetStartupScene(const std::string& virtualPath);
 
         // The game window: its title (empty uses the project's name), client size in pixels
-        // (clamped to MIN_WINDOW_SIZE..MAX_WINDOW_SIZE), fullscreen and vsync.
+        // (clamped to MIN_WINDOW_SIZE..MAX_WINDOW_SIZE), fullscreen, vsync and the frame rate cap
+        // (NO_FRAME_RATE_CAP, or MIN_FRAME_RATE_CAP..MAX_FRAME_RATE_CAP FPS; any other value is
+        // clamped with a warning).
         [[nodiscard]] HEDGEHOG_SETTINGS_API const std::string& GetWindowTitle() const;
         HEDGEHOG_SETTINGS_API void SetWindowTitle(const std::string& title);
         [[nodiscard]] HEDGEHOG_SETTINGS_API uint32_t GetWindowWidth() const;
@@ -58,6 +63,9 @@ namespace HedgehogSettings
         HEDGEHOG_SETTINGS_API void SetFullscreen(bool fullscreen);
         [[nodiscard]] HEDGEHOG_SETTINGS_API bool IsVSync() const;
         HEDGEHOG_SETTINGS_API void SetVSync(bool vsync);
+        [[nodiscard]] HEDGEHOG_SETTINGS_API static int ClampMaxFps(int fps);
+        [[nodiscard]] HEDGEHOG_SETTINGS_API int GetMaxFps() const;
+        HEDGEHOG_SETTINGS_API void SetMaxFps(int fps);
 
         // Written into every save game. A game bumps it when the data its saves hold changes
         // shape; older saves are then migrated on load and newer ones refused. At least 1; a
@@ -84,6 +92,7 @@ namespace HedgehogSettings
         uint32_t    m_WindowHeight = DEFAULT_WINDOW_HEIGHT;
         bool        m_Fullscreen   = false;
         bool        m_VSync        = true;
+        int         m_MaxFps       = NO_FRAME_RATE_CAP;
         int         m_GameDataVersion = DEFAULT_GAME_DATA_VERSION;
         bool        m_IsDirty      = false;
     };
