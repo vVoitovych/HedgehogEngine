@@ -13,6 +13,9 @@ namespace FS
     // Where save games live: a per-user folder outside the project, mounted as saves://.
     inline constexpr const char* SAVES_ALIAS = "saves://";
 
+    // The player's own preferences (display, audio), a per-user folder mounted as player://.
+    inline constexpr const char* PLAYER_ALIAS = "player://";
+
     // The project's own files (Project.yaml, its settings), mounted at the project root.
     inline constexpr const char* PROJECT_ALIAS = "project://";
 
@@ -107,4 +110,17 @@ namespace FS
     // Creates directory if needed and mounts it as saves:// in manager. False, logged, when it
     // cannot be created or saves:// is already mounted.
     FILE_SYSTEM_API bool MountSaves(FileSystemManager& manager, const std::filesystem::path& directory);
+
+    // <localAppData>/HedgehogEngine/<projectName>/Player, and its Editor subfolder so Play in the
+    // editor never rewrites a shipped game's preferences. nullopt for a projectName as for saves.
+    [[nodiscard]] FILE_SYSTEM_API std::optional<std::filesystem::path>
+        MakePlayerDirectory(const std::filesystem::path& localAppData, const std::string& projectName, bool editor);
+
+    // MakePlayerDirectory under %LOCALAPPDATA%; nullopt, logged, when it is not set.
+    [[nodiscard]] FILE_SYSTEM_API std::optional<std::filesystem::path>
+        GetPlayerDirectory(const std::string& projectName, bool editor);
+
+    // Creates directory if needed and mounts it as player:// in manager. False, logged, when it
+    // cannot be created or player:// is already mounted.
+    [[nodiscard]] FILE_SYSTEM_API bool MountPlayer(FileSystemManager& manager, const std::filesystem::path& directory);
 }

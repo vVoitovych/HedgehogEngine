@@ -20,7 +20,7 @@ TEST_CASE("Saves directory - per project under LocalAppData, with an Editor subf
     REQUIRE(editor.has_value());
     CHECK(*editor == base / "HedgehogEngine" / "MyGame" / "Saves" / "Editor");
 
-    for (const char* bad : { "", ".", "..", "a/b", "a\b", "C:", "what?", "pipe|d" })
+    for (const char* bad : { "", ".", "..", "a/b", "a\\b", "C:", "what?", "pipe|d" })
     {
         CAPTURE(bad);
         CHECK_FALSE(FS::MakeSavesDirectory(base, bad, false).has_value());
@@ -52,4 +52,41 @@ TEST_CASE("Editor user directory - HedgehogEngine/Editor under LocalAppData")
     const std::optional<std::filesystem::path> real = FS::GetEditorUserDirectory();
     REQUIRE(real.has_value()); // LOCALAPPDATA is set on Windows
     CHECK(*real == FS::MakeEditorUserDirectory(*FS::GetLocalAppDataDirectory()));
+}
+
+TEST_CASE("Player directory - per project under LocalAppData, with an Editor subfolder")
+{
+    const std::filesystem::path base = "C:/Users/someone/AppData/Local";
+
+    const std::optional<std::filesystem::path> game = FS::MakePlayerDirectory(base, "MyGame", false);
+    REQUIRE(game.has_value());
+    CHECK(*game == base / "HedgehogEngine" / "MyGame" / "Player");
+
+    const std::optional<std::filesystem::path> editor = FS::MakePlayerDirectory(base, "MyGame", true);
+    REQUIRE(editor.has_value());
+    CHECK(*editor == base / "HedgehogEngine" / "MyGame" / "Player" / "Editor");
+
+    for (const char* bad : { "", ".", "..", "a/b", "a\\b", "C:", "what?", "pipe|d" })
+    {
+        CAPTURE(bad);
+        CHECK_FALSE(FS::MakePlayerDirectory(base, bad, false).has_value());
+    }
+
+    const std::optional<std::filesystem::path> real = FS::GetPlayerDirectory("HedgehogEngine", true);
+    REQUIRE(real.has_value());
+    CHECK(real->filename() == "Editor");
+}
+
+TEST_CASE("Player directory - MountPlayer creates the folder and mounts it as player://")
+{
+    TempDir                     tmp;
+    const std::filesystem::path player = tmp.Path() / "HedgehogEngine" / "Test" / "Player";
+    FS::FileSystemManager       manager;
+
+    REQUIRE(FS::MountPlayer(manager, player));
+    CHECK(std::filesystem::is_directory(player));
+    REQUIRE(manager.WriteTextFile("player://probe.txt", "hello"));
+    CHECK(std::filesystem::is_regular_file(player / "probe.txt"));
+
+    CHECK_FALSE(FS::MountPlayer(manager, player));
 }

@@ -160,40 +160,88 @@ namespace FS
         return std::nullopt;
     }
 
+    namespace
+    {
+        std::optional<std::filesystem::path> MakeProjectUserDirectory(const std::filesystem::path& localAppData,
+                                                                      const std::string&           projectName,
+                                                                      const char*                  folder,
+                                                                      bool                         editor)
+        {
+            constexpr std::string_view FORBIDDEN = "<>:\"/\\|?*";
+            if (projectName.empty() || projectName == "." || projectName == ".." ||
+                projectName.find_first_of(FORBIDDEN) != std::string::npos ||
+                std::any_of(projectName.begin(), projectName.end(),
+                            [](char c) { return static_cast<unsigned char>(c) < 0x20; }))
+            {
+                return std::nullopt;
+            }
+
+            std::filesystem::path directory = localAppData / "HedgehogEngine" / projectName / folder;
+            if (editor)
+            {
+                directory /= "Editor";
+            }
+            return directory;
+        }
+
+        bool MountDirectory(FileSystemManager&           manager,
+                            const char*                  alias,
+                            const std::filesystem::path& directory,
+                            const char*                  caller)
+        {
+            std::error_code error;
+            std::filesystem::create_directories(directory, error);
+            if (error)
+            {
+                LOGERROR(caller, ": cannot create", directory.string(), ":", error.message());
+                return false;
+            }
+            auto fileSystem = std::make_unique<FileSystem>();
+            if (!fileSystem->RegisterPath(alias, directory))
+            {
+                return false;
+            }
+            return manager.Register(std::move(fileSystem));
+        }
+    }
+
     std::optional<std::filesystem::path>
         MakeSavesDirectory(const std::filesystem::path& localAppData, const std::string& projectName, bool editor)
     {
-        constexpr std::string_view FORBIDDEN = "<>:\"/\\|?*";
-        if (projectName.empty() || projectName == "." || projectName == ".." ||
-            projectName.find_first_of(FORBIDDEN) != std::string::npos ||
-            std::any_of(projectName.begin(), projectName.end(), [](char c) { return static_cast<unsigned char>(c) < 0x20; }))
-            return std::nullopt;
-
-        std::filesystem::path directory = localAppData / "HedgehogEngine" / projectName / "Saves";
-        if (editor)
-            directory /= "Editor";
-        return directory;
+        return MakeProjectUserDirectory(localAppData, projectName, "Saves", editor);
     }
 
     std::optional<std::filesystem::path> GetSavesDirectory(const std::string& projectName, bool editor)
     {
         if (const auto localAppData = GetLocalAppDataDirectory())
+        {
             return MakeSavesDirectory(*localAppData, projectName, editor);
+        }
         return std::nullopt;
     }
 
     bool MountSaves(FileSystemManager& manager, const std::filesystem::path& directory)
     {
-        std::error_code error;
-        std::filesystem::create_directories(directory, error);
-        if (error)
+        return MountDirectory(manager, SAVES_ALIAS, directory, "MountSaves");
+    }
+
+    std::optional<std::filesystem::path>
+        MakePlayerDirectory(const std::filesystem::path& localAppData, const std::string& projectName, bool editor)
+    {
+        return MakeProjectUserDirectory(localAppData, projectName, "Player", editor);
+    }
+
+    std::optional<std::filesystem::path> GetPlayerDirectory(const std::string& projectName, bool editor)
+    {
+        if (const auto localAppData = GetLocalAppDataDirectory())
         {
-            LOGERROR("MountSaves: cannot create", directory.string(), ":", error.message());
-            return false;
+            return MakePlayerDirectory(*localAppData, projectName, editor);
         }
-        auto fileSystem = std::make_unique<FileSystem>();
-        if (!fileSystem->RegisterPath(SAVES_ALIAS, directory))
-            return false;
-        return manager.Register(std::move(fileSystem));
+        return std::nullopt;
+    }
+
+    bool MountPlayer(FileSystemManager& manager, const std::filesystem::path& directory)
+    {
+        return MountDirectory(manager, PLAYER_ALIAS, directory, "MountPlayer");
     }
 }
