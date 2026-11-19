@@ -3,6 +3,7 @@
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogInput/api/DefaultInputActions.hpp"
 #include "HedgehogInput/api/InputActionFile.hpp"
+#include "HedgehogInput/api/InputListening.hpp"
 #include "HedgehogInput/api/InputNames.hpp"
 
 #include "imgui.h"
@@ -368,39 +369,22 @@ namespace Editor
         HInput::InputBinding& binding = map.Actions[m_Listening->Action].Bindings[m_Listening->Binding];
         uint16_t&             code    = m_Listening->Negative ? binding.NegativeCode : binding.Code;
 
-        // The first key or button that went down since the last frame, of the binding's kind.
-        std::optional<uint16_t> pressed;
         switch (binding.Source)
         {
         case HInput::BindingSource::Key:
         case HInput::BindingSource::KeyAxis:
-            for (size_t key = 0; key < HW::KEY_COUNT && !pressed; ++key)
-            {
-                if (input.Keys[key] && !m_PreviousInput.Keys[key] && !HInput::GetKeyName(static_cast<uint16_t>(key)).empty())
-                    pressed = static_cast<uint16_t>(key);
-            }
-            break;
         case HInput::BindingSource::MouseButton:
-            for (size_t button = 0; button < HW::MOUSE_BUTTON_COUNT && !pressed; ++button)
-            {
-                if (input.MouseButtons[button] && !m_PreviousInput.MouseButtons[button])
-                    pressed = static_cast<uint16_t>(button);
-            }
-            break;
         case HInput::BindingSource::GamepadButton:
-            for (size_t button = 0; button < HW::GAMEPAD_BUTTON_COUNT && !pressed; ++button)
-            {
-                if (input.Gamepad.Buttons[button] && !m_PreviousInput.Gamepad.Buttons[button])
-                    pressed = static_cast<uint16_t>(button);
-            }
             break;
         default:
             m_Listening = std::nullopt;
             return;
         }
-        if (pressed)
+
+        if (const std::optional<HInput::InputPress> press =
+                HInput::FindNewPress(m_PreviousInput, input, binding.Source))
         {
-            code        = *pressed;
+            code        = press->Code;
             m_Dirty     = true;
             m_Listening = std::nullopt;
         }
