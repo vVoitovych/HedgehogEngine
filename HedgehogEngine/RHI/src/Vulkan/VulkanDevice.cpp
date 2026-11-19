@@ -574,9 +574,10 @@ std::unique_ptr<IRHICommandList> VulkanDevice::CreateCommandList() const
     return std::make_unique<VulkanCommandList>(const_cast<VulkanDevice&>(*this));
 }
 
-std::unique_ptr<IRHISwapchain> VulkanDevice::CreateSwapchain(uint32_t width, uint32_t height) const
+std::unique_ptr<IRHISwapchain> VulkanDevice::CreateSwapchain(uint32_t width, uint32_t height,
+                                                              PresentMode mode) const
 {
-    return std::make_unique<VulkanSwapchain>(const_cast<VulkanDevice&>(*this), width, height);
+    return std::make_unique<VulkanSwapchain>(const_cast<VulkanDevice&>(*this), width, height, mode);
 }
 
 std::unique_ptr<IRHIFence> VulkanDevice::CreateFence(bool signaled) const

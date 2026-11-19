@@ -1,5 +1,6 @@
 #pragma once
 
+#include "PresentMode.hpp"
 #include "RHITypes.hpp"
 
 #include <cstdint>
@@ -38,6 +39,11 @@ public:
 
     // Recreate internal swapchain resources after a window resize.
     virtual void Resize(uint32_t width, uint32_t height) = 0;
+
+    // The mode the next Resize (or creation) chooses from; the requested mode, which a surface may
+    // not offer (NoVSync falls back to FIFO).
+    virtual void SetPresentMode(PresentMode mode) = 0;
+    [[nodiscard]] virtual PresentMode GetPresentMode() const = 0;
 
 protected:
     IRHISwapchain() = default;

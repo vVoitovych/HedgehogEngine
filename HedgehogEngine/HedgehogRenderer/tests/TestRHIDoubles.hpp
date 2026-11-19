@@ -56,6 +56,9 @@ namespace RGTest
         uint32_t     AcquireNextImage(RHI::IRHISemaphore&) override { return 0; }
         void         Present(uint32_t, RHI::IRHISemaphore&) override {}
 
+        void SetPresentMode(RHI::PresentMode mode) override { m_PresentMode = mode; }
+        RHI::PresentMode GetPresentMode() const override { return m_PresentMode; }
+
         void Resize(uint32_t width, uint32_t height) override
         {
             m_Width  = width;
@@ -72,8 +75,9 @@ namespace RGTest
         }
 
     private:
-        uint32_t                                      m_Width  = 0;
-        uint32_t                                      m_Height = 0;
+        RHI::PresentMode                              m_PresentMode = RHI::PresentMode::VSync;
+        uint32_t                                      m_Width       = 0;
+        uint32_t                                      m_Height      = 0;
         std::vector<std::unique_ptr<RHI::IRHITexture>> m_Images;
     };
 
@@ -212,7 +216,7 @@ namespace RGTest
             return nullptr;
         }
 
-        std::unique_ptr<RHI::IRHISwapchain> CreateSwapchain(uint32_t, uint32_t) const override
+        std::unique_ptr<RHI::IRHISwapchain> CreateSwapchain(uint32_t, uint32_t, RHI::PresentMode) const override
         {
             assert(false && "not exercised by these tests");
             return nullptr;

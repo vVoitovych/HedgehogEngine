@@ -7,7 +7,7 @@
 
 namespace Renderer
 {
-    RHIContext::RHIContext(HW::Window& window)
+    RHIContext::RHIContext(HW::Window& window, RHI::PresentMode mode)
     {
         RHI::NativeWindowDesc nativeDesc{};
         nativeDesc.NativeHandle = window.GetNativeOsHandle();
@@ -17,7 +17,8 @@ namespace Renderer
         window.GetFramebufferSize(fbWidth, fbHeight);
         m_RHISwapchain = m_RHIDevice->CreateSwapchain(
             static_cast<uint32_t>(fbWidth),
-            static_cast<uint32_t>(fbHeight));
+            static_cast<uint32_t>(fbHeight),
+            mode);
     }
 
     RHIContext::~RHIContext()

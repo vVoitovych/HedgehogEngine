@@ -1,17 +1,36 @@
 #include "VulkanSwapchain.hpp"
 
+#include "Logger/api/Logger.hpp"
+
 #include "VulkanDevice.hpp"
 #include "VulkanSyncPrimitive.hpp"
 #include "VulkanTypes.hpp"
 
 #include <algorithm>
 #include <cassert>
+#include <vector>
 
 namespace RHI
 {
 
-VulkanSwapchain::VulkanSwapchain(VulkanDevice& device, uint32_t width, uint32_t height)
+namespace
+{
+
+VkPresentModeKHR ToVkPresentMode(SurfacePresentMode mode)
+{
+    switch (mode)
+    {
+    case SurfacePresentMode::Mailbox:   return VK_PRESENT_MODE_MAILBOX_KHR;
+    case SurfacePresentMode::Immediate: return VK_PRESENT_MODE_IMMEDIATE_KHR;
+    default:                            return VK_PRESENT_MODE_FIFO_KHR;
+    }
+}
+
+} // namespace
+
+VulkanSwapchain::VulkanSwapchain(VulkanDevice& device, uint32_t width, uint32_t height, PresentMode mode)
     : m_Device(device)
+    , m_PresentMode(mode)
 {
     Create(width, height);
 }
@@ -50,18 +69,34 @@ void VulkanSwapchain::Create(uint32_t width, uint32_t height)
         }
     }
 
-    // ── Choose present mode (prefer Mailbox) ──────────────────────────────────
+    // ── Choose present mode ───────────────────────────────────────────────────
 
     uint32_t modeCount = 0;
     vkGetPhysicalDeviceSurfacePresentModesKHR(gpu, surface, &modeCount, nullptr);
     std::vector<VkPresentModeKHR> presentModes(modeCount);
     vkGetPhysicalDeviceSurfacePresentModesKHR(gpu, surface, &modeCount, presentModes.data());
 
-    VkPresentModeKHR presentMode = VK_PRESENT_MODE_FIFO_KHR;
+    std::vector<SurfacePresentMode> available;
     for (const auto& m : presentModes)
     {
-        if (m == VK_PRESENT_MODE_MAILBOX_KHR) { presentMode = m; break; }
+        if (m == VK_PRESENT_MODE_FIFO_KHR)
+        {
+            available.push_back(SurfacePresentMode::Fifo);
+        }
+        else if (m == VK_PRESENT_MODE_MAILBOX_KHR)
+        {
+            available.push_back(SurfacePresentMode::Mailbox);
+        }
+        else if (m == VK_PRESENT_MODE_IMMEDIATE_KHR)
+        {
+            available.push_back(SurfacePresentMode::Immediate);
+        }
     }
+
+    const SurfacePresentMode chosenMode  = ChoosePresentMode(available, m_PresentMode);
+    const VkPresentModeKHR   presentMode = ToVkPresentMode(chosenMode);
+    static constexpr const char* MODE_NAMES[] = { "Fifo", "Mailbox", "Immediate" };
+    LOGINFO("RHI: present mode ", MODE_NAMES[static_cast<size_t>(chosenMode)]);
 
     // ── Choose extent ─────────────────────────────────────────────────────────
 
@@ -193,6 +228,15 @@ void VulkanSwapchain::Resize(uint32_t width, uint32_t height)
     m_Device.WaitIdle();
     Destroy();
     Create(width, height);
+}
+
+void VulkanSwapchain::SetPresentMode(PresentMode mode)
+{
+    if (mode == m_PresentMode)
+    {
+        return;
+    }
+    m_PresentMode = mode;
 }
 
 } // namespace RHI
