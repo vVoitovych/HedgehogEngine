@@ -99,6 +99,7 @@ namespace HA
         }
 
         m_HasDevice = true;
+        InitBuses();
         SetMasterVolume(m_MasterVolume);
         return true;
     }
@@ -119,13 +120,42 @@ namespace HA
             return false;
         }
         m_HasDevice = false;
+        InitBuses();
         SetMasterVolume(m_MasterVolume);
         return true;
+    }
+
+    void AudioEngine::InitBuses()
+    {
+        for (size_t i = 0; i < AUDIO_BUS_COUNT; ++i)
+        {
+            m_Buses[i]          = std::make_unique<ma_sound>();
+            // A pitched group resamples every block even at 1:1, carrying frames into the next one, so a
+            // stopped sound would still be heard for a block.
+            const ma_result res =
+                ma_sound_group_init(m_Engine.get(), MA_SOUND_FLAG_NO_PITCH, nullptr, m_Buses[i].get());
+            if (res != MA_SUCCESS)
+            {
+                LOGERROR("[Audio] The " + std::string(AUDIO_BUS_NAMES[i]) + " bus could not start (" +
+                         std::string(ma_result_description(res)) + "); its sounds play unmixed.");
+                m_Buses[i].reset();
+                continue;
+            }
+            ma_sound_group_set_volume(m_Buses[i].get(), m_BusVolumes[i]);
+        }
     }
 
     void AudioEngine::Shutdown()
     {
         StopAll();
+        for (std::unique_ptr<ma_sound>& bus : m_Buses)
+        {
+            if (bus)
+            {
+                ma_sound_group_uninit(bus.get());
+                bus.reset();
+            }
+        }
         if (m_Engine)
         {
             ma_engine_uninit(m_Engine.get());
@@ -173,6 +203,26 @@ namespace HA
         return m_Engine ? ma_engine_get_volume(m_Engine.get()) : m_MasterVolume;
     }
 
+    void AudioEngine::SetBusVolume(AudioBus bus, float volume)
+    {
+        const size_t index = static_cast<size_t>(bus);
+        if (index >= AUDIO_BUS_COUNT || !std::isfinite(volume))
+        {
+            return;
+        }
+        m_BusVolumes[index] = std::clamp(volume, 0.0f, 1.0f);
+        if (m_Buses[index])
+        {
+            ma_sound_group_set_volume(m_Buses[index].get(), m_BusVolumes[index]);
+        }
+    }
+
+    float AudioEngine::GetBusVolume(AudioBus bus) const
+    {
+        const size_t index = static_cast<size_t>(bus);
+        return index < AUDIO_BUS_COUNT ? m_BusVolumes[index] : 0.0f;
+    }
+
     AudioClipId AudioEngine::LoadClip(const std::string& virtualPath, const FS::FileSystemManager& files)
     {
         return m_Clips->Load(virtualPath, files);
@@ -209,7 +259,13 @@ namespace HA
         {
             slot.Buffer.sampleRate = decoded->SampleRate; // resampled to the engine's rate as it plays
             const ma_uint32 flags  = params.Spatial ? 0u : static_cast<ma_uint32>(MA_SOUND_FLAG_NO_SPATIALIZATION);
-            result = ma_sound_init_from_data_source(m_Engine.get(), &slot.Buffer, flags, nullptr, &slot.Sound);
+            size_t          bus    = static_cast<size_t>(params.Bus);
+            if (bus >= AUDIO_BUS_COUNT)
+            {
+                bus = static_cast<size_t>(AudioBus::Sfx);
+            }
+            result = ma_sound_init_from_data_source(m_Engine.get(), &slot.Buffer, flags, m_Buses[bus].get(),
+                                                    &slot.Sound);
             if (result != MA_SUCCESS)
                 ma_audio_buffer_ref_uninit(&slot.Buffer);
         }

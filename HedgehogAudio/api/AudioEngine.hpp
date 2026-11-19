@@ -5,15 +5,19 @@
 
 #include "HedgehogMath/api/Vector.hpp"
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 // miniaudio's types, kept opaque: only HedgehogAudio's sources include miniaudio.h.
 struct ma_engine;
 struct ma_context;
+struct ma_sound;
 
 namespace FS
 {
@@ -47,6 +51,41 @@ namespace HA
         uint32_t SampleRate = 48000;
     };
 
+    // The mixer buses every sound plays through, each with a volume of its own (SetBusVolume). The
+    // order and names are those of HedgehogSettings' PLAYER_AUDIO_BUSES; Master is the engine's
+    // SetMasterVolume.
+    enum class AudioBus
+    {
+        Music,
+        Sfx,
+        Voice,
+        Ui,
+    };
+
+    inline constexpr size_t AUDIO_BUS_COUNT = 4;
+
+    inline constexpr std::array<std::string_view, AUDIO_BUS_COUNT> AUDIO_BUS_NAMES = { "Music", "Sfx", "Voice", "Ui" };
+
+    // Empty for a value out of range.
+    [[nodiscard]] inline std::string_view GetBusName(AudioBus bus)
+    {
+        const size_t index = static_cast<size_t>(bus);
+        return index < AUDIO_BUS_COUNT ? AUDIO_BUS_NAMES[index] : std::string_view();
+    }
+
+    // Case-sensitive; nullopt for a name that is no bus.
+    [[nodiscard]] inline std::optional<AudioBus> FindBus(std::string_view name)
+    {
+        for (size_t i = 0; i < AUDIO_BUS_COUNT; ++i)
+        {
+            if (AUDIO_BUS_NAMES[i] == name)
+            {
+                return static_cast<AudioBus>(i);
+            }
+        }
+        return std::nullopt;
+    }
+
     // How a sound plays. A spatial sound is placed in the world and heard from the listener (see
     // SetListenerPose): panned by direction and attenuated by distance, inversely from MinDistance,
     // by Rolloff, up to MaxDistance. A sound that is not spatial plays as is.
@@ -61,6 +100,7 @@ namespace HA
         float       MinDistance = 1.0f;
         float       MaxDistance = 1000.0f;
         float       Rolloff     = 1.0f;
+        AudioBus    Bus         = AudioBus::Sfx; // the mixer bus it plays through
     };
 
     class AudioClipCache;
@@ -93,6 +133,12 @@ namespace HA
         // Shutdown, and GetMasterVolume reads the engine's own while it runs.
         HEDGEHOG_AUDIO_API void SetMasterVolume(float volume);
         [[nodiscard]] HEDGEHOG_AUDIO_API float GetMasterVolume() const;
+
+        // A bus's linear gain, applied to every sound on it: what is heard is the sound's volume times
+        // its bus's times the master volume. Clamped to [0, 1]; a non-finite value or a bus out of range
+        // is ignored. Kept across Init and Shutdown as the master volume is.
+        HEDGEHOG_AUDIO_API void SetBusVolume(AudioBus bus, float volume);
+        [[nodiscard]] HEDGEHOG_AUDIO_API float GetBusVolume(AudioBus bus) const; // 0 for a bus out of range
 
         // Reads and decodes a clip (WAV, FLAC or MP3) under a virtual path through files, once: a
         // path loaded before returns the same id without touching the file. A file that cannot be
@@ -136,15 +182,18 @@ namespace HA
 
     private:
         bool                     InitWithoutDevice(const AudioEngineDesc& desc);
+        void                     InitBuses();
         [[nodiscard]] SoundSlot* FindSlot(SoundHandle sound) const;
         void                     FreeSlot(uint32_t index);
 
-        std::unique_ptr<ma_context>             m_Context; // only when Backends picks them
-        std::unique_ptr<ma_engine>              m_Engine;
-        bool                                    m_HasDevice    = false;
-        float                                   m_MasterVolume = 1.0f;
-        std::unique_ptr<AudioClipCache>         m_Clips;
-        std::vector<std::unique_ptr<SoundSlot>> m_Slots;     // stable addresses: miniaudio holds them
-        std::vector<uint32_t>                   m_FreeSlots;
+        std::unique_ptr<ma_context>                            m_Context; // only when Backends picks them
+        std::unique_ptr<ma_engine>                             m_Engine;
+        bool                                                   m_HasDevice    = false;
+        float                                                  m_MasterVolume = 1.0f;
+        std::array<std::unique_ptr<ma_sound>, AUDIO_BUS_COUNT> m_Buses; // one ma_sound_group each
+        std::array<float, AUDIO_BUS_COUNT>                     m_BusVolumes   = { 1.0f, 1.0f, 1.0f, 1.0f };
+        std::unique_ptr<AudioClipCache>                        m_Clips;
+        std::vector<std::unique_ptr<SoundSlot>>                m_Slots; // stable addresses: miniaudio holds them
+        std::vector<uint32_t>                                  m_FreeSlots;
     };
 }
