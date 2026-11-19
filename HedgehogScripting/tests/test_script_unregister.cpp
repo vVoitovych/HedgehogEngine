@@ -84,14 +84,16 @@ TEST_CASE("ScriptSystem unregister - mid-Play the scripts end, and no engine eve
     CHECK(world.SaveSlot("before").Sections.count(EcsSerialization::SAVE_SECTION_SCRIPTS) == 1);
     CHECK(log.Lines("saved state").size() == 1);
 
+    // The engine's own systems (audio, particles) keep their GameLoadedEvent subscriptions.
+    const HedgehogEngine::EventBus& bus = world.World.Context.GetEventBus();
+    const size_t gameLoaded = bus.GetSubscriberCount<HedgehogEngine::GameLoadedEvent>();
     REQUIRE(world.World.Ecs().UnregisterSystem<HedgehogScripting::ScriptSystem>());
     CHECK(log.Lines("destroyed").size() == 1);
 
-    const HedgehogEngine::EventBus& bus = world.World.Context.GetEventBus();
     CHECK(bus.GetSubscriberCount<HedgehogEngine::AnimationFinishedEvent>() == 0);
     CHECK(bus.GetSubscriberCount<HedgehogEngine::AnimatorStateChangedEvent>() == 0);
     CHECK(bus.GetSubscriberCount<HedgehogEngine::UiButtonClickedEvent>() == 0);
-    CHECK(bus.GetSubscriberCount<HedgehogEngine::GameLoadedEvent>() == 0);
+    CHECK(bus.GetSubscriberCount<HedgehogEngine::GameLoadedEvent>() == gameLoaded - 1);
     CHECK(bus.GetSubscriberCount<HedgehogEngine::CollisionEnterEvent>() == 0);
     CHECK(bus.GetSubscriberCount<HedgehogEngine::CollisionExitEvent>() == 0);
     CHECK(bus.GetSubscriberCount<HedgehogEngine::TriggerEnterEvent>() == 0);
@@ -120,8 +122,10 @@ TEST_CASE("ScriptSystem unregister - in Edit mode it lets go of the events, the 
 {
     UnregisterWorld world;
     LogCapture      log;
+    const HedgehogEngine::EventBus& bus        = world.World.Context.GetEventBus();
+    const size_t                    gameLoaded = bus.GetSubscriberCount<HedgehogEngine::GameLoadedEvent>();
     REQUIRE(world.World.Ecs().UnregisterSystem<HedgehogScripting::ScriptSystem>());
-    CHECK(world.World.Context.GetEventBus().GetSubscriberCount<HedgehogEngine::GameLoadedEvent>() == 0);
+    CHECK(bus.GetSubscriberCount<HedgehogEngine::GameLoadedEvent>() == gameLoaded - 1);
 
     // Play runs no script now, and a save has no Scripts section.
     REQUIRE(world.World.Context.Play());

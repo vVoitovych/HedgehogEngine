@@ -1,5 +1,6 @@
 #pragma once
 
+#include "HedgehogEngine/api/Events/EventBus.hpp"
 #include "HedgehogEngine/api/HedgehogEngineApi.hpp"
 
 #include "HedgehogAudio/api/SoundHandle.hpp"
@@ -29,10 +30,11 @@ namespace HedgehogEngine
     // Plays AudioSourceComponents (with a TransformComponent) through the engine's AudioEngine, in
     // Play mode only: Edit mode plays nothing.
     //
-    // OnPlayStart starts every PlayOnStart source with a clip; Pause and Resume hold and carry on
-    // its sounds; OnPlayStop stops every sound. Removing a source (RemoveComponent, DestroyEntity)
-    // stops its sound. It runs in the Late phase, after Light, so it reads the world matrices the
-    // frame ended with.
+    // OnPlayStart starts every PlayOnStart source with a clip, and so does the frame of a scene
+    // switch or a save load during Play (SceneLoadedEvent, GameLoadedEvent) for the sources that
+    // have no sound; Pause and Resume hold and carry on its sounds; OnPlayStop stops every sound.
+    // Removing a source (RemoveComponent, DestroyEntity) stops its sound. It runs in the Late phase,
+    // after Light, so it reads the world matrices the frame ended with.
     class AudioSystem : public ECS::System
     {
     public:
@@ -63,7 +65,13 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API void Update(ECS::ECS& ecs, const AudioListenerSystem& listeners, const CameraSystem& cameras);
 
     private:
-        HA::AudioEngine*             m_Audio = nullptr;
-        const FS::FileSystemManager* m_Files = nullptr;
+        void StartPlayOnStartSources(ECS::ECS& ecs);
+
+        HA::AudioEngine*             m_Audio             = nullptr;
+        const FS::FileSystemManager* m_Files             = nullptr;
+        EventBus*                    m_Bus               = nullptr;
+        SubscriptionId               m_SceneSubscription = SubscriptionId::Invalid;
+        SubscriptionId               m_GameSubscription  = SubscriptionId::Invalid;
+        bool                         m_StartPending      = false; // a world was loaded during Play
     };
 }

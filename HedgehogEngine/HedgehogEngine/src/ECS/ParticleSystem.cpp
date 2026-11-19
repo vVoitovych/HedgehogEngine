@@ -2,6 +2,8 @@
 
 #include "HedgehogEngine/api/Containers/ParticleEffectContainer.hpp"
 #include "HedgehogEngine/api/ECS/components/ParticleSystemComponent.hpp"
+#include "HedgehogEngine/api/Events/SaveEvents.hpp"
+#include "HedgehogEngine/api/Events/SceneEvents.hpp"
 #include "HedgehogEngine/api/Particles/ParticleEffect.hpp"
 #include "HedgehogEngine/api/Resource/ResourceCatalog.hpp"
 
@@ -66,11 +68,32 @@ namespace HedgehogEngine
     void ParticleSystem::OnRegister(ECS::ECS& ecs)
     {
         m_Catalog = ecs.GetServices().Find<ResourceCatalog>();
+        m_Bus     = ecs.GetServices().Find<EventBus>();
+        if (m_Bus)
+        {
+            // A loaded world's instances are not playing yet; they start in this frame's OnFrame, once its transforms are applied.
+            m_SceneSubscription = m_Bus->Subscribe<SceneLoadedEvent>([this](const SceneLoadedEvent&)
+            {
+                m_StartPending = true;
+            });
+            m_GameSubscription = m_Bus->Subscribe<GameLoadedEvent>([this](const GameLoadedEvent&)
+            {
+                m_StartPending = true;
+            });
+        }
     }
 
     void ParticleSystem::OnUnregister(ECS::ECS& /*ecs*/)
     {
-        m_Catalog = nullptr;
+        if (m_Bus)
+        {
+            m_Bus->Unsubscribe(m_SceneSubscription);
+            m_Bus->Unsubscribe(m_GameSubscription);
+        }
+        m_Bus               = nullptr;
+        m_SceneSubscription = SubscriptionId::Invalid;
+        m_GameSubscription  = SubscriptionId::Invalid;
+        m_Catalog           = nullptr;
     }
 
     ECS::SystemPhase ParticleSystem::GetPhase() const
@@ -145,6 +168,14 @@ namespace HedgehogEngine
 
     void ParticleSystem::OnFrame(ECS::ECS& ecs, const ECS::FrameContext& ctx)
     {
+        if (m_StartPending)
+        {
+            m_StartPending = false;
+            if (ctx.Mode == ECS::PlayMode::Playing)
+            {
+                StartPlayOnStart(ecs);
+            }
+        }
         m_FrameEmitters.clear();
         if (!m_Catalog)
             return;
@@ -215,12 +246,28 @@ namespace HedgehogEngine
         {
             ParticleSystemComponent& particles = ecs.GetComponent<ParticleSystemComponent>(entity);
             Restart(particles);
-            particles.Playing = particles.Enabled && particles.PlayOnStart;
+            particles.Playing = false;
+        }
+        m_StartPending = false;
+        StartPlayOnStart(ecs);
+    }
+
+    void ParticleSystem::StartPlayOnStart(ECS::ECS& ecs)
+    {
+        for (const ECS::Entity entity : m_Entities)
+        {
+            ParticleSystemComponent& particles = ecs.GetComponent<ParticleSystemComponent>(entity);
+            if (!particles.Playing && particles.Enabled && particles.PlayOnStart)
+            {
+                Restart(particles);
+                particles.Playing = true;
+            }
         }
     }
 
     void ParticleSystem::OnPlayStop(ECS::ECS& ecs)
     {
+        m_StartPending = false;
         for (const ECS::Entity entity : m_Entities)
         {
             ParticleSystemComponent& particles = ecs.GetComponent<ParticleSystemComponent>(entity);

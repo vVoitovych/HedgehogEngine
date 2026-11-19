@@ -5,6 +5,8 @@
 #include "HedgehogEngine/api/ECS/components/CameraComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
 #include "HedgehogEngine/api/ECS/systems/CameraSystem.hpp"
+#include "HedgehogEngine/api/Events/SaveEvents.hpp"
+#include "HedgehogEngine/api/Events/SceneEvents.hpp"
 
 #include "HedgehogAudio/api/AudioEngine.hpp"
 #include "HedgehogAudio/api/AudioPose.hpp"
@@ -74,6 +76,19 @@ namespace HedgehogEngine
     {
         m_Audio = ecs.GetServices().Find<HA::AudioEngine>();
         m_Files = ecs.GetServices().Find<FS::FileSystemManager>();
+        m_Bus   = ecs.GetServices().Find<EventBus>();
+        if (m_Bus)
+        {
+            // A loaded world's sources have no sound yet; they start in this frame's OnFrame, once its transforms are applied.
+            m_SceneSubscription = m_Bus->Subscribe<SceneLoadedEvent>([this](const SceneLoadedEvent&)
+            {
+                m_StartPending = true;
+            });
+            m_GameSubscription = m_Bus->Subscribe<GameLoadedEvent>([this](const GameLoadedEvent&)
+            {
+                m_StartPending = true;
+            });
+        }
         if (!m_Audio || !ecs.IsComponentRegistered<AudioSourceComponent>())
         {
             return;
@@ -88,6 +103,14 @@ namespace HedgehogEngine
 
     void AudioSystem::OnUnregister(ECS::ECS& ecs)
     {
+        if (m_Bus)
+        {
+            m_Bus->Unsubscribe(m_SceneSubscription);
+            m_Bus->Unsubscribe(m_GameSubscription);
+        }
+        m_Bus               = nullptr;
+        m_SceneSubscription = SubscriptionId::Invalid;
+        m_GameSubscription  = SubscriptionId::Invalid;
         if (m_Audio && ecs.IsComponentRegistered<AudioSourceComponent>())
         {
             ecs.SetComponentRemovedCallback<AudioSourceComponent>({});
@@ -96,8 +119,16 @@ namespace HedgehogEngine
         m_Files = nullptr;
     }
 
-    void AudioSystem::OnFrame(ECS::ECS& ecs, const ECS::FrameContext& /*ctx*/)
+    void AudioSystem::OnFrame(ECS::ECS& ecs, const ECS::FrameContext& ctx)
     {
+        if (m_StartPending)
+        {
+            m_StartPending = false;
+            if (ctx.Mode == ECS::PlayMode::Playing)
+            {
+                StartPlayOnStartSources(ecs);
+            }
+        }
         if (!m_Audio || !ecs.HasSystem<AudioListenerSystem>() || !ecs.HasSystem<CameraSystem>())
         {
             return;
@@ -107,6 +138,12 @@ namespace HedgehogEngine
 
     void AudioSystem::OnPlayStart(ECS::ECS& ecs)
     {
+        m_StartPending = false;
+        StartPlayOnStartSources(ecs);
+    }
+
+    void AudioSystem::StartPlayOnStartSources(ECS::ECS& ecs)
+    {
         if (!m_Audio)
         {
             return;
@@ -114,8 +151,10 @@ namespace HedgehogEngine
         for (const ECS::Entity entity : GetEntities())
         {
             const AudioSourceComponent& source = ecs.GetComponent<AudioSourceComponent>(entity);
-            if (source.PlayOnStart && !source.Clip.empty())
+            if (source.PlayOnStart && !source.Clip.empty() && !m_Audio->Exists(source.Sound))
+            {
                 (void)Play(ecs, entity);
+            }
         }
     }
 
@@ -141,6 +180,7 @@ namespace HedgehogEngine
 
     void AudioSystem::OnPlayStop(ECS::ECS& ecs)
     {
+        m_StartPending = false;
         if (!m_Audio)
         {
             return;
