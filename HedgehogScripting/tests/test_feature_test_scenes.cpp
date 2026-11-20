@@ -10,12 +10,14 @@
 #include "HedgehogEngine/api/Save/SaveGameManager.hpp"
 #include "HedgehogEngine/api/Scene/SceneManager.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/HedgehogSettings.hpp"
+#include "HedgehogEngine/HedgehogSettings/api/PlayerSettings.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/ProjectSettings.hpp"
 #include "HedgehogAudio/api/AudioEngine.hpp"
 
 #include "EcsSerialization/api/Assets/AssetDependencyCollector.hpp"
 
 #include "FileSystem/api/FileSystemManager.hpp"
+#include "FileSystem/api/PathUtils.hpp"
 #include "FileSystem/tests/test_helpers.hpp"
 
 #include <filesystem>
@@ -135,7 +137,8 @@ namespace
 {
     constexpr float PLAY_X = 960.0f;
     constexpr float PLAY_Y = 540.0f;
-    constexpr float QUIT_Y = 680.0f;
+    constexpr float OPTIONS_Y = 680.0f;
+    constexpr float QUIT_Y    = 820.0f;
 
     void Step(ProjectWorld& world, const HW::RawInput& input)
     {
@@ -212,6 +215,68 @@ TEST_CASE("FeatureTest - the game flow menu loads the level, Escape returns, and
 
         REQUIRE(world.Context.Stop());
         CHECK(world.Context.GetSceneManager().CaptureSnapshot().Yaml == before.Yaml);
+    }
+
+    CHECK(log.Lines("[ERROR]").empty());
+    CHECK(log.Lines("[WARNING]").empty());
+}
+
+namespace
+{
+    // Options.yaml's value buttons are a column 250 px right of centre, a row every 80 px from 330 px up.
+    constexpr float VALUE_X = 1210.0f;
+
+    float RowY(int row) { return 540.0f - 330.0f + 80.0f * static_cast<float>(row); }
+
+    HW::RawInput Key(HW::Key key)
+    {
+        HW::RawInput input;
+        input.Keys[static_cast<size_t>(key)] = true;
+        return input;
+    }
+}
+
+TEST_CASE("FeatureTest - the options menu applies and saves its choices and a rebound key, and Escape returns")
+{
+    TempDir    saves;
+    TempDir    player;
+    LogCapture log;
+    {
+        ProjectWorld world(saves.Path());
+        auto&        files = world.Context.GetFileSystem();
+        REQUIRE(FS::MountPlayer(files, player.Path()));
+        const auto path = files.ResolvePhysical("assets://Scenes/GameFlowMenu.yaml");
+        REQUIRE(path.has_value());
+        REQUIRE(world.Context.GetSceneManager().LoadScene(path->string()));
+        REQUIRE(world.Context.Play());
+        Step(world, HW::RawInput{});
+        Click(world, PLAY_X, OPTIONS_Y);
+        REQUIRE(InScene(world, "Scenes/Options.yaml"));
+
+        Click(world, VALUE_X, RowY(6)); // quality: High to Low
+        Click(world, VALUE_X, RowY(4)); // master volume: 100% to 0%
+        Click(world, VALUE_X, RowY(7)); // the Submit key: listen
+        Step(world, Key(HW::Key::F));
+        Step(world, HW::RawInput{});
+        Click(world, 560.0f, 880.0f);
+        Click(world, PLAY_X, 880.0f);
+        CHECK(log.Lines("OptionsMenu: Applied").size() == 1);
+        CHECK(log.Lines("OptionsMenu: Saved").size() == 1);
+
+        HedgehogSettings::PlayerSettings saved;
+        REQUIRE(HedgehogSettings::LoadPlayerSettings(files, saved));
+        CHECK(saved.Quality == HedgehogSettings::PlayerQuality::Low);
+        CHECK(saved.MasterVolume == doctest::Approx(0.0f));
+        CHECK(world.Context.GetPlayerSettings().Quality == HedgehogSettings::PlayerQuality::Low);
+        REQUIRE(world.Context.LoadInputOverrides());
+        REQUIRE(world.Context.GetInputOverrides().Actions.size() == 1);
+        CHECK(world.Context.GetInputOverrides().Actions[0].Bindings[0].Code == static_cast<uint16_t>(HW::Key::F));
+
+        Step(world, Key(HW::Key::Escape));
+        Step(world, HW::RawInput{});
+        Step(world, HW::RawInput{});
+        CHECK(InScene(world, "Scenes/GameFlowMenu.yaml"));
+        REQUIRE(world.Context.Stop());
     }
 
     CHECK(log.Lines("[ERROR]").empty());

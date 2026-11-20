@@ -1,0 +1,651 @@
+Scene name: Options
+Scene:
+  - Entity: 0
+    Name: Root
+    Parent: 0
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    Children:
+      - Entity: 1
+        Name: MainCamera
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 4]
+          Rotation: [0, 0, 0]
+          Scale: [1, 1, 1]
+        CameraComponent:
+          Enabled: true
+          ProjectionType: 0
+          Fov: 60
+          OrthoSize: 10
+          NearPlane: 0.1
+          FarPlane: 1000
+          LayerMask: 4294967295
+          TargetMode: 0
+          TargetName: ""
+          GraphName: game
+          Priority: 0
+        Children:
+          []
+      - Entity: 2
+        Name: Options
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 0]
+          Rotation: [0, 0, 0]
+          Scale: [1, 1, 1]
+        UiCanvasComponent:
+          Enabled: true
+          ScaleMode: 1
+          ReferenceResolution: [1920, 1080]
+          MatchWidthOrHeight: 0.5
+          SortOrder: 0
+        ScriptComponent:
+          ScriptEnable: true
+          ScriptFile: Scripts/OptionsMenu.lua
+        Children:
+          - Entity: 3
+            Name: Title
+            Parent: 2
+            TransformComponent:
+              Position: [0, 0, 0]
+              Rotation: [0, 0, 0]
+              Scale: [1, 1, 1]
+            UiRectComponent:
+              Visible: true
+              AnchorMin: [0.5, 0.5]
+              AnchorMax: [0.5, 0.5]
+              Pivot: [0.5, 0.5]
+              Offset: [0, -440]
+              Size: [1200, 100]
+            UiTextComponent:
+              Text: Options
+              Font: engine://Content/Fonts/Karla-Regular.ttf
+              FontSize: 64
+              Color: [0.95, 0.85, 0.6, 1]
+              Align: 1
+              VerticalAlign: 1
+              Wrap: false
+            Children:
+              []
+          - Entity: 4
+            Name: ResolutionLabel
+            Parent: 2
+            TransformComponent:
+              Position: [0, 0, 0]
+              Rotation: [0, 0, 0]
+              Scale: [1, 1, 1]
+            UiRectComponent:
+              Visible: true
+              AnchorMin: [0.5, 0.5]
+              AnchorMax: [0.5, 0.5]
+              Pivot: [0.5, 0.5]
+              Offset: [-250, -330]
+              Size: [460, 64]
+            UiTextComponent:
+              Text: Resolution
+              Font: engine://Content/Fonts/Karla-Regular.ttf
+              FontSize: 36
+              Color: [0.85, 0.9, 1, 1]
+              Align: 2
+              VerticalAlign: 1
+              Wrap: false
+            Children:
+              []
+          - Entity: 5
+            Name: ResolutionValue
+            Parent: 2
+            TransformComponent:
+              Position: [0, 0, 0]
+              Rotation: [0, 0, 0]
+              Scale: [1, 1, 1]
+            UiRectComponent:
+              Visible: true
+              AnchorMin: [0.5, 0.5]
+              AnchorMax: [0.5, 0.5]
+              Pivot: [0.5, 0.5]
+              Offset: [250, -330]
+              Size: [460, 64]
+            UiImageComponent:
+              Texture: engine://Content/Textures/Default/cells.png
+              Color: [1, 1, 1, 1]
+            UiButtonComponent:
+              Interactable: true
+              NormalTint: [0.4, 0.8, 1, 1]
+              HoverTint: [0.9, 0.9, 0.9, 1]
+              PressedTint: [0.7, 0.7, 0.7, 1]
+              DisabledTint: [0.5, 0.5, 0.5, 0.5]
+            UiTextComponent:
+              Text: ""
+              Font: engine://Content/Fonts/Karla-Regular.ttf
+              FontSize: 36
+              Color: [0.05, 0.1, 0.2, 1]
+              Align: 1
+              VerticalAlign: 1
+              Wrap: false
+            Children:
+              []
+          - Entity: 6
+            Name: WindowModeLabel
+            Parent: 2
+            TransformComponent:
+              Position: [0, 0, 0]
+              Rotation: [0, 0, 0]
+              Scale: [1, 1, 1]
+            UiRectComponent:
+              Visible: true
+              AnchorMin: [0.5, 0.5]
+              AnchorMax: [0.5, 0.5]
+              Pivot: [0.5, 0.5]
+              Offset: [-250, -250]
+              Size: [460, 64]
+            UiTextComponent:
+              Text: Window mode
+              Font: engine://Content/Fonts/Karla-Regular.ttf
+              FontSize: 36
+              Color: [0.85, 0.9, 1, 1]
+              Align: 2
+              VerticalAlign: 1
+              Wrap: false
+            Children:
+              []
+          - Entity: 7
+            Name: WindowModeValue
+            Parent: 2
+            TransformComponent:
+              Position: [0, 0, 0]
+              Rotation: [0, 0, 0]
+              Scale: [1, 1, 1]
+            UiRectComponent:
+              Visible: true
+              AnchorMin: [0.5, 0.5]
+              AnchorMax: [0.5, 0.5]
+              Pivot: [0.5, 0.5]
+              Offset: [250, -250]
+              Size: [460, 64]
+            UiImageComponent:
+              Texture: engine://Content/Textures/Default/cells.png
+              Color: [1, 1, 1, 1]
+            UiButtonComponent:
+              Interactable: true
+              NormalTint: [0.4, 0.8, 1, 1]
+              HoverTint: [0.9, 0.9, 0.9, 1]
+              PressedTint: [0.7, 0.7, 0.7, 1]
+              DisabledTint: [0.5, 0.5, 0.5, 0.5]
+            UiTextComponent:
+              Text: ""
+              Font: engine://Content/Fonts/Karla-Regular.ttf
+              FontSize: 36
+              Color: [0.05, 0.1, 0.2, 1]
+              Align: 1
+              VerticalAlign: 1
+              Wrap: false
+            Children:
+              []
+          - Entity: 8
+            Name: VSyncLabel
+            Parent: 2
+            TransformComponent:
+              Position: [0, 0, 0]
+              Rotation: [0, 0, 0]
+              Scale: [1, 1, 1]
+            UiRectComponent:
+              Visible: true
+              AnchorMin: [0.5, 0.5]
+              AnchorMax: [0.5, 0.5]
+              Pivot: [0.5, 0.5]
+              Offset: [-250, -170]
+              Size: [460, 64]
+            UiTextComponent:
+              Text: VSync
+              Font: engine://Content/Fonts/Karla-Regular.ttf
+              FontSize: 36
+              Color: [0.85, 0.9, 1, 1]
+              Align: 2
+              VerticalAlign: 1
+              Wrap: false
+            Children:
+              []
+          - Entity: 9
+            Name: VSyncValue
+            Parent: 2
+            TransformComponent:
+              Position: [0, 0, 0]
+              Rotation: [0, 0, 0]
+              Scale: [1, 1, 1]
+            UiRectComponent:
+              Visible: true
+              AnchorMin: [0.5, 0.5]
+              AnchorMax: [0.5, 0.5]
+              Pivot: [0.5, 0.5]
+              Offset: [250, -170]
+              Size: [460, 64]
+            UiImageComponent:
+              Texture: engine://Content/Textures/Default/cells.png
+              Color: [1, 1, 1, 1]
+            UiButtonComponent:
+              Interactable: true
+              NormalTint: [0.4, 0.8, 1, 1]
+              HoverTint: [0.9, 0.9, 0.9, 1]
+              PressedTint: [0.7, 0.7, 0.7, 1]
+              DisabledTint: [0.5, 0.5, 0.5, 0.5]
+            UiTextComponent:
+              Text: ""
+              Font: engine://Content/Fonts/Karla-Regular.ttf
+              FontSize: 36
+              Color: [0.05, 0.1, 0.2, 1]
+              Align: 1
+              VerticalAlign: 1
+              Wrap: false
+            Children:
+              []
+          - Entity: 10
+            Name: FrameCapLabel
+            Parent: 2
+            TransformComponent:
+              Position: [0, 0, 0]
+              Rotation: [0, 0, 0]
+              Scale: [1, 1, 1]
+            UiRectComponent:
+              Visible: true
+              AnchorMin: [0.5, 0.5]
+              AnchorMax: [0.5, 0.5]
+              Pivot: [0.5, 0.5]
+              Offset: [-250, -90]
+              Size: [460, 64]
+            UiTextComponent:
+              Text: Frame cap
+              Font: engine://Content/Fonts/Karla-Regular.ttf
+              FontSize: 36
+              Color: [0.85, 0.9, 1, 1]
+              Align: 2
+              VerticalAlign: 1
+              Wrap: false
+            Children:
+              []
+          - Entity: 11
+            Name: FrameCapValue
+            Parent: 2
+            TransformComponent:
+              Position: [0, 0, 0]
+              Rotation: [0, 0, 0]
+              Scale: [1, 1, 1]
+            UiRectComponent:
+              Visible: true
+              AnchorMin: [0.5, 0.5]
+              AnchorMax: [0.5, 0.5]
+              Pivot: [0.5, 0.5]
+              Offset: [250, -90]
+              Size: [460, 64]
+            UiImageComponent:
+              Texture: engine://Content/Textures/Default/cells.png
+              Color: [1, 1, 1, 1]
+            UiButtonComponent:
+              Interactable: true
+              NormalTint: [0.4, 0.8, 1, 1]
+              HoverTint: [0.9, 0.9, 0.9, 1]
+              PressedTint: [0.7, 0.7, 0.7, 1]
+              DisabledTint: [0.5, 0.5, 0.5, 0.5]
+            UiTextComponent:
+              Text: ""
+              Font: engine://Content/Fonts/Karla-Regular.ttf
+              FontSize: 36
+              Color: [0.05, 0.1, 0.2, 1]
+              Align: 1
+              VerticalAlign: 1
+              Wrap: false
+            Children:
+              []
+          - Entity: 12
+            Name: MasterVolumeLabel
+            Parent: 2
+            TransformComponent:
+              Position: [0, 0, 0]
+              Rotation: [0, 0, 0]
+              Scale: [1, 1, 1]
+            UiRectComponent:
+              Visible: true
+              AnchorMin: [0.5, 0.5]
+              AnchorMax: [0.5, 0.5]
+              Pivot: [0.5, 0.5]
+              Offset: [-250, -10]
+              Size: [460, 64]
+            UiTextComponent:
+              Text: Master volume
+              Font: engine://Content/Fonts/Karla-Regular.ttf
+              FontSize: 36
+              Color: [0.85, 0.9, 1, 1]
+              Align: 2
+              VerticalAlign: 1
+              Wrap: false
+            Children:
+              []
+          - Entity: 13
+            Name: MasterVolumeValue
+            Parent: 2
+            TransformComponent:
+              Position: [0, 0, 0]
+              Rotation: [0, 0, 0]
+              Scale: [1, 1, 1]
+            UiRectComponent:
+              Visible: true
+              AnchorMin: [0.5, 0.5]
+              AnchorMax: [0.5, 0.5]
+              Pivot: [0.5, 0.5]
+              Offset: [250, -10]
+              Size: [460, 64]
+            UiImageComponent:
+              Texture: engine://Content/Textures/Default/cells.png
+              Color: [1, 1, 1, 1]
+            UiButtonComponent:
+              Interactable: true
+              NormalTint: [0.4, 0.8, 1, 1]
+              HoverTint: [0.9, 0.9, 0.9, 1]
+              PressedTint: [0.7, 0.7, 0.7, 1]
+              DisabledTint: [0.5, 0.5, 0.5, 0.5]
+            UiTextComponent:
+              Text: ""
+              Font: engine://Content/Fonts/Karla-Regular.ttf
+              FontSize: 36
+              Color: [0.05, 0.1, 0.2, 1]
+              Align: 1
+              VerticalAlign: 1
+              Wrap: false
+            Children:
+              []
+          - Entity: 14
+            Name: MusicVolumeLabel
+            Parent: 2
+            TransformComponent:
+              Position: [0, 0, 0]
+              Rotation: [0, 0, 0]
+              Scale: [1, 1, 1]
+            UiRectComponent:
+              Visible: true
+              AnchorMin: [0.5, 0.5]
+              AnchorMax: [0.5, 0.5]
+              Pivot: [0.5, 0.5]
+              Offset: [-250, 70]
+              Size: [460, 64]
+            UiTextComponent:
+              Text: Music volume
+              Font: engine://Content/Fonts/Karla-Regular.ttf
+              FontSize: 36
+              Color: [0.85, 0.9, 1, 1]
+              Align: 2
+              VerticalAlign: 1
+              Wrap: false
+            Children:
+              []
+          - Entity: 15
+            Name: MusicVolumeValue
+            Parent: 2
+            TransformComponent:
+              Position: [0, 0, 0]
+              Rotation: [0, 0, 0]
+              Scale: [1, 1, 1]
+            UiRectComponent:
+              Visible: true
+              AnchorMin: [0.5, 0.5]
+              AnchorMax: [0.5, 0.5]
+              Pivot: [0.5, 0.5]
+              Offset: [250, 70]
+              Size: [460, 64]
+            UiImageComponent:
+              Texture: engine://Content/Textures/Default/cells.png
+              Color: [1, 1, 1, 1]
+            UiButtonComponent:
+              Interactable: true
+              NormalTint: [0.4, 0.8, 1, 1]
+              HoverTint: [0.9, 0.9, 0.9, 1]
+              PressedTint: [0.7, 0.7, 0.7, 1]
+              DisabledTint: [0.5, 0.5, 0.5, 0.5]
+            UiTextComponent:
+              Text: ""
+              Font: engine://Content/Fonts/Karla-Regular.ttf
+              FontSize: 36
+              Color: [0.05, 0.1, 0.2, 1]
+              Align: 1
+              VerticalAlign: 1
+              Wrap: false
+            Children:
+              []
+          - Entity: 16
+            Name: QualityLabel
+            Parent: 2
+            TransformComponent:
+              Position: [0, 0, 0]
+              Rotation: [0, 0, 0]
+              Scale: [1, 1, 1]
+            UiRectComponent:
+              Visible: true
+              AnchorMin: [0.5, 0.5]
+              AnchorMax: [0.5, 0.5]
+              Pivot: [0.5, 0.5]
+              Offset: [-250, 150]
+              Size: [460, 64]
+            UiTextComponent:
+              Text: Quality
+              Font: engine://Content/Fonts/Karla-Regular.ttf
+              FontSize: 36
+              Color: [0.85, 0.9, 1, 1]
+              Align: 2
+              VerticalAlign: 1
+              Wrap: false
+            Children:
+              []
+          - Entity: 17
+            Name: QualityValue
+            Parent: 2
+            TransformComponent:
+              Position: [0, 0, 0]
+              Rotation: [0, 0, 0]
+              Scale: [1, 1, 1]
+            UiRectComponent:
+              Visible: true
+              AnchorMin: [0.5, 0.5]
+              AnchorMax: [0.5, 0.5]
+              Pivot: [0.5, 0.5]
+              Offset: [250, 150]
+              Size: [460, 64]
+            UiImageComponent:
+              Texture: engine://Content/Textures/Default/cells.png
+              Color: [1, 1, 1, 1]
+            UiButtonComponent:
+              Interactable: true
+              NormalTint: [0.4, 0.8, 1, 1]
+              HoverTint: [0.9, 0.9, 0.9, 1]
+              PressedTint: [0.7, 0.7, 0.7, 1]
+              DisabledTint: [0.5, 0.5, 0.5, 0.5]
+            UiTextComponent:
+              Text: ""
+              Font: engine://Content/Fonts/Karla-Regular.ttf
+              FontSize: 36
+              Color: [0.05, 0.1, 0.2, 1]
+              Align: 1
+              VerticalAlign: 1
+              Wrap: false
+            Children:
+              []
+          - Entity: 18
+            Name: SubmitKeyLabel
+            Parent: 2
+            TransformComponent:
+              Position: [0, 0, 0]
+              Rotation: [0, 0, 0]
+              Scale: [1, 1, 1]
+            UiRectComponent:
+              Visible: true
+              AnchorMin: [0.5, 0.5]
+              AnchorMax: [0.5, 0.5]
+              Pivot: [0.5, 0.5]
+              Offset: [-250, 230]
+              Size: [460, 64]
+            UiTextComponent:
+              Text: Submit key
+              Font: engine://Content/Fonts/Karla-Regular.ttf
+              FontSize: 36
+              Color: [0.85, 0.9, 1, 1]
+              Align: 2
+              VerticalAlign: 1
+              Wrap: false
+            Children:
+              []
+          - Entity: 19
+            Name: SubmitKeyValue
+            Parent: 2
+            TransformComponent:
+              Position: [0, 0, 0]
+              Rotation: [0, 0, 0]
+              Scale: [1, 1, 1]
+            UiRectComponent:
+              Visible: true
+              AnchorMin: [0.5, 0.5]
+              AnchorMax: [0.5, 0.5]
+              Pivot: [0.5, 0.5]
+              Offset: [250, 230]
+              Size: [460, 64]
+            UiImageComponent:
+              Texture: engine://Content/Textures/Default/cells.png
+              Color: [1, 1, 1, 1]
+            UiButtonComponent:
+              Interactable: true
+              NormalTint: [0.4, 0.8, 1, 1]
+              HoverTint: [0.9, 0.9, 0.9, 1]
+              PressedTint: [0.7, 0.7, 0.7, 1]
+              DisabledTint: [0.5, 0.5, 0.5, 0.5]
+            UiTextComponent:
+              Text: ""
+              Font: engine://Content/Fonts/Karla-Regular.ttf
+              FontSize: 36
+              Color: [0.05, 0.1, 0.2, 1]
+              Align: 1
+              VerticalAlign: 1
+              Wrap: false
+            Children:
+              []
+          - Entity: 20
+            Name: ApplyButton
+            Parent: 2
+            TransformComponent:
+              Position: [0, 0, 0]
+              Rotation: [0, 0, 0]
+              Scale: [1, 1, 1]
+            UiRectComponent:
+              Visible: true
+              AnchorMin: [0.5, 0.5]
+              AnchorMax: [0.5, 0.5]
+              Pivot: [0.5, 0.5]
+              Offset: [-400, 340]
+              Size: [300, 80]
+            UiImageComponent:
+              Texture: engine://Content/Textures/Default/cells.png
+              Color: [1, 1, 1, 1]
+            UiButtonComponent:
+              Interactable: true
+              NormalTint: [0.4, 0.8, 1, 1]
+              HoverTint: [0.9, 0.9, 0.9, 1]
+              PressedTint: [0.7, 0.7, 0.7, 1]
+              DisabledTint: [0.5, 0.5, 0.5, 0.5]
+            UiTextComponent:
+              Text: APPLY
+              Font: engine://Content/Fonts/Karla-Regular.ttf
+              FontSize: 40
+              Color: [0.05, 0.1, 0.2, 1]
+              Align: 1
+              VerticalAlign: 1
+              Wrap: false
+            Children:
+              []
+          - Entity: 21
+            Name: SaveButton
+            Parent: 2
+            TransformComponent:
+              Position: [0, 0, 0]
+              Rotation: [0, 0, 0]
+              Scale: [1, 1, 1]
+            UiRectComponent:
+              Visible: true
+              AnchorMin: [0.5, 0.5]
+              AnchorMax: [0.5, 0.5]
+              Pivot: [0.5, 0.5]
+              Offset: [0, 340]
+              Size: [300, 80]
+            UiImageComponent:
+              Texture: engine://Content/Textures/Default/cells.png
+              Color: [1, 1, 1, 1]
+            UiButtonComponent:
+              Interactable: true
+              NormalTint: [0.4, 0.8, 1, 1]
+              HoverTint: [0.9, 0.9, 0.9, 1]
+              PressedTint: [0.7, 0.7, 0.7, 1]
+              DisabledTint: [0.5, 0.5, 0.5, 0.5]
+            UiTextComponent:
+              Text: SAVE
+              Font: engine://Content/Fonts/Karla-Regular.ttf
+              FontSize: 40
+              Color: [0.05, 0.1, 0.2, 1]
+              Align: 1
+              VerticalAlign: 1
+              Wrap: false
+            Children:
+              []
+          - Entity: 22
+            Name: RevertButton
+            Parent: 2
+            TransformComponent:
+              Position: [0, 0, 0]
+              Rotation: [0, 0, 0]
+              Scale: [1, 1, 1]
+            UiRectComponent:
+              Visible: true
+              AnchorMin: [0.5, 0.5]
+              AnchorMax: [0.5, 0.5]
+              Pivot: [0.5, 0.5]
+              Offset: [400, 340]
+              Size: [300, 80]
+            UiImageComponent:
+              Texture: engine://Content/Textures/Default/cells.png
+              Color: [1, 1, 1, 1]
+            UiButtonComponent:
+              Interactable: true
+              NormalTint: [0.4, 0.8, 1, 1]
+              HoverTint: [0.9, 0.9, 0.9, 1]
+              PressedTint: [0.7, 0.7, 0.7, 1]
+              DisabledTint: [0.5, 0.5, 0.5, 0.5]
+            UiTextComponent:
+              Text: REVERT
+              Font: engine://Content/Fonts/Karla-Regular.ttf
+              FontSize: 40
+              Color: [0.05, 0.1, 0.2, 1]
+              Align: 1
+              VerticalAlign: 1
+              Wrap: false
+            Children:
+              []
+          - Entity: 23
+            Name: Status
+            Parent: 2
+            TransformComponent:
+              Position: [0, 0, 0]
+              Rotation: [0, 0, 0]
+              Scale: [1, 1, 1]
+            UiRectComponent:
+              Visible: true
+              AnchorMin: [0.5, 0.5]
+              AnchorMax: [0.5, 0.5]
+              Pivot: [0.5, 0.5]
+              Offset: [0, 440]
+              Size: [1200, 64]
+            UiTextComponent:
+              Text: ""
+              Font: engine://Content/Fonts/Karla-Regular.ttf
+              FontSize: 32
+              Color: [0.85, 0.9, 1, 1]
+              Align: 1
+              VerticalAlign: 1
+              Wrap: false
+            Children:
+              []

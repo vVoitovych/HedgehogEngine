@@ -136,7 +136,7 @@ Scene:
             Children:
               []
           - Entity: 7
-            Name: QuitButton
+            Name: OptionsButton
             Parent: 4
             TransformComponent:
               Position: [0, 0, 0]
@@ -148,6 +148,39 @@ Scene:
               AnchorMax: [0.5, 0.5]
               Pivot: [0.5, 0.5]
               Offset: [0, 140]
+              Size: [400, 100]
+            UiImageComponent:
+              Texture: engine://Content/Textures/Default/cells.png
+              Color: [1, 1, 1, 1]
+            UiButtonComponent:
+              Interactable: true
+              NormalTint: [0.4, 0.8, 1, 1]
+              HoverTint: [0.9, 0.9, 0.9, 1]
+              PressedTint: [0.7, 0.7, 0.7, 1]
+              DisabledTint: [0.5, 0.5, 0.5, 0.5]
+            UiTextComponent:
+              Text: OPTIONS
+              Font: engine://Content/Fonts/Karla-Regular.ttf
+              FontSize: 48
+              Color: [0.05, 0.1, 0.2, 1]
+              Align: 1
+              VerticalAlign: 1
+              Wrap: false
+            Children:
+              []
+          - Entity: 8
+            Name: QuitButton
+            Parent: 4
+            TransformComponent:
+              Position: [0, 0, 0]
+              Rotation: [0, 0, 0]
+              Scale: [1, 1, 1]
+            UiRectComponent:
+              Visible: true
+              AnchorMin: [0.5, 0.5]
+              AnchorMax: [0.5, 0.5]
+              Pivot: [0.5, 0.5]
+              Offset: [0, 280]
               Size: [400, 100]
             UiImageComponent:
               Texture: engine://Content/Textures/Default/cells.png
