@@ -29,6 +29,12 @@ namespace HedgehogEngine
             return FS::ToAssetVirtualPath(path);
         }
 
+        static_assert(HA::AUDIO_BUS_COUNT == 4);
+        static_assert(static_cast<int>(AudioSourceBus::Music) == static_cast<int>(HA::AudioBus::Music));
+        static_assert(static_cast<int>(AudioSourceBus::Sfx) == static_cast<int>(HA::AudioBus::Sfx));
+        static_assert(static_cast<int>(AudioSourceBus::Voice) == static_cast<int>(HA::AudioBus::Voice));
+        static_assert(static_cast<int>(AudioSourceBus::Ui) == static_cast<int>(HA::AudioBus::Ui));
+
         HA::PlayParams MakePlayParams(const AudioSourceComponent& source, const HA::AudioPose& pose)
         {
             HA::PlayParams params;
@@ -39,6 +45,7 @@ namespace HedgehogEngine
             params.Position    = pose.Position;
             params.MinDistance = source.MinDistance;
             params.MaxDistance = source.MaxDistance;
+            params.Bus         = static_cast<HA::AudioBus>(source.Bus);
             return params;
         }
 

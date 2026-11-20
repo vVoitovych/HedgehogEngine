@@ -166,7 +166,9 @@ TEST_CASE("Audio bindings - outside Play mode audio calls do nothing and the fir
 {
     AudioWorld world;
     // A script's top level runs when the editor describes it, in Edit mode.
-    world.WriteScript("Loud.lua", "Audio.playOneShot('Audio/Tone440.wav')\nAudio.setMasterVolume(0.1)\n" +
+    world.WriteScript("Loud.lua", "Audio.playOneShot('Audio/Tone440.wav')\n"
+                                  "Audio.setMasterVolume(0.1)\n"
+                                  "Audio.setBusVolume('Music', 0.1)\n" +
                                       Script("Loud", ""));
 
     LogCapture log;
@@ -174,6 +176,86 @@ TEST_CASE("Audio bindings - outside Play mode audio calls do nothing and the fir
     (void)world.Scripts->DescribeScript("assets://Scripts/Loud.lua");
     CHECK(world.Audio().GetActiveSoundCount() == 0);
     CHECK(world.Audio().GetMasterVolume() == doctest::Approx(1.0f));
+    CHECK(world.Audio().GetBusVolume(HA::AudioBus::Music) == 1.0f);
     CHECK(log.Lines("[Script] Audio plays only in Play mode; Audio.playOneShot() did nothing.").size() == 1);
     CHECK(log.Lines("Audio plays only in Play mode").size() == 1);
+}
+
+TEST_CASE("Audio bindings - a bus volume of 0 silences its sources")
+{
+    // A looping non-spatial source on the Music bus, then `after`; returns what the engine mixes.
+    const auto loudness = [](const std::string& after)
+    {
+        AudioWorld world;
+        world.WriteScript("Buses.lua", Script("Buses",
+            "local s = self.entity:addAudioSource()\n"
+            "s.clip = 'Audio/Tone440.wav'; s.loop = true; s.spatial = false; s.bus = AudioBus.Music\n"
+            "assert(s.bus == AudioBus.Music)\n"
+            "s:play()\n" + after));
+        (void)world.AddScripted("Scripts/Buses.lua");
+        LogCapture log;
+        REQUIRE(world.Context.Play());
+        world.Step();
+        CHECK(log.Lines("stack traceback").empty());
+        double left = 0.0, right = 0.0;
+        world.Mix(4800, left, right);
+        REQUIRE(world.Stop());
+        return left + right;
+    };
+    CHECK(loudness("") > 0.0);
+    CHECK(loudness("Audio.setBusVolume('Music', 0)") == 0.0);
+    CHECK(loudness("Audio.setBusVolume(AudioBus.Sfx, 0)") > 0.0);
+    CHECK(loudness("Audio.setBusVolume('Master', 0)") == 0.0);
+}
+
+TEST_CASE("Audio bindings - bus volumes read back, one-shots take a bus, and bad buses are script errors")
+{
+    AudioWorld world;
+    world.WriteScript("Volumes.lua", Script("Volumes",
+        "local function try(label, f) local ok, message = pcall(f); Log.info(label, ok, message) end\n"
+        "Audio.setBusVolume('Master', 0.5)\n"
+        "Log.info('master', Audio.getBusVolume('Master') == Audio.getMasterVolume(), Audio.getMasterVolume())\n"
+        "Audio.setBusVolume(AudioBus.Voice, 0.25)\n"
+        "Log.info('voice', Audio.getBusVolume(AudioBus.Voice), Audio.getBusVolume('Voice'))\n"
+        "local source = self.entity:addAudioSource()\n"
+        "Log.info('bus', source.bus, math.type(source.bus))\n"
+        "try('name', function() Audio.setBusVolume('Nope', 1) end)\n"
+        "try('nan', function() Audio.setBusVolume('Music', 0/0) end)\n"
+        "try('range', function() source.bus = 7 end)\n"
+        "try('fraction', function() source.bus = 1.5 end)\n"
+        "source.bus = 'Music'\n"
+        "Log.info('named', source.bus == AudioBus.Music)\n"
+        "try('table', function() Audio.setBusVolume({}, 1) end)\n"
+        "try('number', function() Audio.getBusVolume(9) end)\n"
+        "try('master shot', function() Audio.playOneShot('Audio/Tone440.wav', nil, nil, 'Master') end)\n"
+        "Audio.setBusVolume('Music', 0)\n"
+        "Log.info('muted shot', Audio.playOneShot('Audio/Tone440.wav', nil, nil, 'Music'))"));
+    (void)world.AddScripted("Scripts/Volumes.lua");
+
+    LogCapture log;
+    REQUIRE(world.Context.Play());
+    world.Step();
+    CHECK(log.Lines("master true 0.5").size() == 1);
+    CHECK(log.Lines("voice 0.25 0.25").size() == 1);
+    CHECK(log.Lines("bus 1 integer").size() == 1);
+    CHECK(log.Lines("name false").size() == 1);
+    CHECK(log.Lines("\"Nope\" is not an audio bus").size() == 1);
+    CHECK(log.Lines("nan false").size() == 1);
+    CHECK(log.Lines("range false").size() == 1);
+    CHECK(log.Lines("7 is not an audio bus").size() == 1);
+    CHECK(log.Lines("fraction false").size() == 1);
+    CHECK(log.Lines("1.5 is not an audio bus").size() == 1);
+    CHECK(log.Lines("named true").size() == 1);
+    CHECK(log.Lines("table false").size() == 1);
+    CHECK(log.Lines("number false").size() == 1);
+    CHECK(log.Lines("master shot false").size() == 1);
+    CHECK(log.Lines("a one-shot plays on a bus, not Master").size() == 1);
+    CHECK(log.Lines("muted shot true").size() == 1);
+
+    double left = 0.0, right = 0.0;
+    world.Mix(4800, left, right);
+    CHECK(left + right == 0.0); // the one-shot is on Music, which is at 0
+    CHECK(world.Audio().GetBusVolume(HA::AudioBus::Music) == 0.0f);
+    CHECK(world.Audio().GetBusVolume(HA::AudioBus::Voice) == doctest::Approx(0.25f));
+    REQUIRE(world.Stop());
 }
