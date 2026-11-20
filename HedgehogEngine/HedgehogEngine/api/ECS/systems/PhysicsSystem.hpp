@@ -138,6 +138,9 @@ namespace HedgehogEngine
         // The entity's character, or an invalid handle; the characters the system made.
         [[nodiscard]] HEDGEHOG_ENGINE_API HP::CharacterHandle GetCharacter(ECS::Entity entity) const;
         [[nodiscard]] HEDGEHOG_ENGINE_API uint32_t            GetCharacterCount() const;
+        // Makes the entity's character again from its component (one edited during Play) where its
+        // transform puts it. Nothing for an entity without a character.
+        HEDGEHOG_ENGINE_API void RebuildCharacter(ECS::ECS& ecs, ECS::Entity entity);
 
     private:
         struct TrackedBody
