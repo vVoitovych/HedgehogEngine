@@ -7,6 +7,7 @@
 
 #include <Jolt/Core/JobSystem.h>
 #include <Jolt/Core/TempAllocator.h>
+#include <Jolt/Physics/Character/CharacterVirtual.h>
 #include <Jolt/Physics/PhysicsSystem.h>
 
 #include <cstdint>
@@ -25,6 +26,15 @@ namespace HP
         bool     IsSensor = false;
     };
 
+    // A character and what its moves need beyond Jolt's own state. A free slot has no Character.
+    struct CharacterSlot
+    {
+        JPH::Ref<JPH::CharacterVirtual> Character;
+        uint32_t                        Generation           = 0;
+        float                           StepHeight           = 0.0f;
+        float                           StickToFloorDistance = 0.0f;
+    };
+
     // What a running PhysicsWorld owns. Declared in the order things are built, so they are
     // destroyed in reverse: the physics system before the job system, allocator, filters and contact
     // queue it uses.
@@ -38,6 +48,9 @@ namespace HP
         std::unique_ptr<JPH::JobSystem>     JobSystem;
         std::unique_ptr<JPH::PhysicsSystem> System;
         int32_t                             WorkerThreads = 0;
+        // After the physics system, so the characters (which remove their inner bodies) go first.
+        std::vector<CharacterSlot>          Characters;
+        std::vector<uint32_t>               FreeCharacters;
 
         // Every body made, by its handle's value. A destroyed body's record waits in Destroyed until
         // the next step has reported its Exits.

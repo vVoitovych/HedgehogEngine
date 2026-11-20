@@ -2,6 +2,7 @@
 
 #include "JoltConversions.hpp"
 #include "JoltLayers.hpp"
+#include "JoltShapes.hpp"
 #include "JoltState.hpp"
 
 #include <Jolt/Jolt.h>
@@ -95,71 +96,72 @@ namespace HP
                 return "a dynamic body's mass must be positive";
             return {};
         }
+    }
 
-        // The shape with the body's scale baked into its size, offset by its scaled centre; a capsule
-        // turned from Jolt's +Y axis to +Z.
-        JPH::Ref<JPH::Shape> MakeShape(const ShapeDesc& shape)
+    JPH::Ref<JPH::Shape> MakeShape(const ShapeDesc& shape)
+    {
+        const HM::Vector3 scale   = Abs(shape.Scale);
+        const float       largest = std::max({ scale.x(), scale.y(), scale.z() });
+        const float       least   = std::min({ scale.x(), scale.y(), scale.z() });
+        if ((shape.Type == ShapeType::Sphere || shape.Type == ShapeType::Capsule) && largest - least > UNIFORM_SCALE_TOLERANCE * largest)
+            LOGWARNING("[Physics] A sphere or capsule cannot be scaled unevenly; it takes its largest scale,", largest, ".");
+
+        JPH::Ref<JPH::Shape> base;
+        JPH::Quat            rotation = JPH::Quat::sIdentity();
+        switch (shape.Type)
         {
-            const HM::Vector3 scale   = Abs(shape.Scale);
-            const float       largest = std::max({ scale.x(), scale.y(), scale.z() });
-            const float       least   = std::min({ scale.x(), scale.y(), scale.z() });
-            if ((shape.Type == ShapeType::Sphere || shape.Type == ShapeType::Capsule) && largest - least > UNIFORM_SCALE_TOLERANCE * largest)
-                LOGWARNING("[Physics] A sphere or capsule cannot be scaled unevenly; it takes its largest scale,", largest, ".");
-
-            JPH::Ref<JPH::Shape> base;
-            JPH::Quat            rotation = JPH::Quat::sIdentity();
-            switch (shape.Type)
-            {
-            case ShapeType::Box:
-            {
-                const JPH::Vec3 halfExtents(shape.HalfExtents.x() * scale.x(), shape.HalfExtents.y() * scale.y(),
-                                            shape.HalfExtents.z() * scale.z());
-                base = new JPH::BoxShape(halfExtents, std::min(JPH::cDefaultConvexRadius, halfExtents.ReduceMin()));
-                break;
-            }
-            case ShapeType::Sphere:
+        case ShapeType::Box:
+        {
+            const JPH::Vec3 halfExtents(shape.HalfExtents.x() * scale.x(), shape.HalfExtents.y() * scale.y(),
+                                        shape.HalfExtents.z() * scale.z());
+            base = new JPH::BoxShape(halfExtents, std::min(JPH::cDefaultConvexRadius, halfExtents.ReduceMin()));
+            break;
+        }
+        case ShapeType::Sphere:
+            base = new JPH::SphereShape(shape.Radius * largest);
+            break;
+        case ShapeType::Capsule:
+            if (shape.HalfHeight * largest <= 0.0f)
                 base = new JPH::SphereShape(shape.Radius * largest);
-                break;
-            case ShapeType::Capsule:
-                if (shape.HalfHeight * largest <= 0.0f)
-                    base = new JPH::SphereShape(shape.Radius * largest);
-                else
-                    base = new JPH::CapsuleShape(shape.HalfHeight * largest, shape.Radius * largest);
-                rotation = JPH::Quat::sRotation(JPH::Vec3::sAxisX(), 0.5f * JPH::JPH_PI);
-                break;
-            case ShapeType::HeightField:
+            else
+                base = new JPH::CapsuleShape(shape.HalfHeight * largest, shape.Radius * largest);
+            rotation = JPH::Quat::sRotation(JPH::Vec3::sAxisX(), 0.5f * JPH::JPH_PI);
+            break;
+        case ShapeType::HeightField:
+        {
+            // Jolt's height field is Y-up: its sample (x, y) sits at (x, height, y). Turning its
+            // X to our y, its Y to our z and its Z to our x (a rotation) puts our sample (c, r)
+            // at Jolt's (x = r, y = c), so the samples go in transposed, and Jolt's cell diagonal
+            // from (x, y) to (x + 1, y + 1) is ours from (c, r) to (c + 1, r + 1).
+            const uint32_t     count = shape.SampleCount;
+            std::vector<float> samples(shape.Heights.size());
+            for (uint32_t row = 0; row < count; ++row)
+                for (uint32_t column = 0; column < count; ++column)
+                    samples[static_cast<size_t>(column) * count + row] = shape.Heights[static_cast<size_t>(row) * count + column];
+            const JPH::Vec3 joltScale(shape.CellSize * scale.y(), scale.z(), shape.CellSize * scale.x());
+            JPH::HeightFieldShapeSettings settings(samples.data(), JPH::Vec3::sZero(), joltScale, count);
+            settings.mBitsPerSample = settings.CalculateBitsPerSampleForError(HEIGHT_FIELD_MAX_ERROR);
+            const JPH::ShapeSettings::ShapeResult result = settings.Create();
+            if (result.HasError())
             {
-                // Jolt's height field is Y-up: its sample (x, y) sits at (x, height, y). Turning its
-                // X to our y, its Y to our z and its Z to our x (a rotation) puts our sample (c, r)
-                // at Jolt's (x = r, y = c), so the samples go in transposed, and Jolt's cell diagonal
-                // from (x, y) to (x + 1, y + 1) is ours from (c, r) to (c + 1, r + 1).
-                const uint32_t     count = shape.SampleCount;
-                std::vector<float> samples(shape.Heights.size());
-                for (uint32_t row = 0; row < count; ++row)
-                    for (uint32_t column = 0; column < count; ++column)
-                        samples[static_cast<size_t>(column) * count + row] = shape.Heights[static_cast<size_t>(row) * count + column];
-                const JPH::Vec3 joltScale(shape.CellSize * scale.y(), scale.z(), shape.CellSize * scale.x());
-                JPH::HeightFieldShapeSettings settings(samples.data(), JPH::Vec3::sZero(), joltScale, count);
-                settings.mBitsPerSample = settings.CalculateBitsPerSampleForError(HEIGHT_FIELD_MAX_ERROR);
-                const JPH::ShapeSettings::ShapeResult result = settings.Create();
-                if (result.HasError())
-                {
-                    LOGERROR("[Physics] A height field cannot be made:", result.GetError().c_str());
-                    return nullptr;
-                }
-                base     = result.Get();
-                rotation = JPH::Mat44(JPH::Vec4(0, 1, 0, 0), JPH::Vec4(0, 0, 1, 0), JPH::Vec4(1, 0, 0, 0),
-                                      JPH::Vec4(0, 0, 0, 1)).GetQuaternion();
-                break;
+                LOGERROR("[Physics] A height field cannot be made:", result.GetError().c_str());
+                return nullptr;
             }
-            }
-
-            const JPH::Vec3 center(shape.Center.x() * scale.x(), shape.Center.y() * scale.y(), shape.Center.z() * scale.z());
-            if (center.IsNearZero() && rotation.IsClose(JPH::Quat::sIdentity()))
-                return base;
-            return new JPH::RotatedTranslatedShape(center, rotation, base);
+            base     = result.Get();
+            rotation = JPH::Mat44(JPH::Vec4(0, 1, 0, 0), JPH::Vec4(0, 0, 1, 0), JPH::Vec4(1, 0, 0, 0),
+                                  JPH::Vec4(0, 0, 0, 1)).GetQuaternion();
+            break;
+        }
         }
 
+        const JPH::Vec3 center(shape.Center.x() * scale.x(), shape.Center.y() * scale.y(), shape.Center.z() * scale.z());
+        if (center.IsNearZero() && rotation.IsClose(JPH::Quat::sIdentity()))
+            return base;
+        return new JPH::RotatedTranslatedShape(center, rotation, base);
+    }
+
+    namespace
+    {
         JPH::EMotionType ToJolt(MotionType motion)
         {
             switch (motion)
@@ -229,6 +231,7 @@ namespace HP
     {
         if (!m_State)
             return;
+        DestroyAllCharacters();
         JPH::BodyIDVector ids;
         m_State->System->GetBodies(ids);
         if (ids.empty())
