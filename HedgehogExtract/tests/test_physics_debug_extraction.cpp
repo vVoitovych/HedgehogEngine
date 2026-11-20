@@ -6,6 +6,7 @@
 #include "ECS/api/ECS.hpp"
 #include "HedgehogEngine/api/ECS/components/CharacterControllerComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/ColliderComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/JointComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RigidBodyComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
 #include "HedgehogEngine/api/ECS/systems/PhysicsSystem.hpp"
@@ -273,4 +274,72 @@ TEST_CASE("Physics debug - a character's capsule stands upright at its entity, i
     }
     CHECK(std::abs(lowZ - (center.z() - 0.9f)) < EPSILON);
     CHECK(std::abs(highZ - (center.z() + 0.9f)) < EPSILON);
+}
+
+TEST_CASE("Physics debug - a joint draws a cross at its world anchor, a line to what it joins and its axis")
+{
+    PhysicsDebugFixture fixture;
+    fixture.ecs.RegisterComponent<HedgehogEngine::JointComponent>();
+    fixture.ecs.RegisterSystem<HedgehogEngine::JointListSystem>();
+    ECS::Signature signature;
+    signature.set(fixture.ecs.GetComponentType<HedgehogEngine::JointComponent>());
+    signature.set(fixture.ecs.GetComponentType<TransformComponent>());
+    fixture.ecs.SetSystemSignature<HedgehogEngine::JointListSystem>(signature);
+
+    // A door moved and turned a quarter about Z, hinged about its local +X at its local (1, 0, 0) to a
+    // post at (10, 0, 0) (whose collider draws too).
+    const ECS::Entity   post   = fixture.Add(HM::Matrix4x4::GetTranslation(10.0f, 0.0f, 0.0f), ColliderComponent{});
+    const HM::Matrix4x4 world  = HM::Matrix4x4::GetTranslation(2.0f, 3.0f, 4.0f) *
+                                 HM::Matrix4x4::GetRotationZ(std::numbers::pi_v<float> * 0.5f);
+    const ECS::Entity   door   = fixture.ecs.CreateEntity();
+    TransformComponent  transform;
+    transform.ObjMatrix = world;
+    fixture.ecs.AddComponent(door, transform);
+    HedgehogEngine::JointComponent joint;
+    joint.Type            = HedgehogEngine::JointType::Hinge;
+    joint.ConnectedEntity = post;
+    joint.Anchor          = HM::Vector3(1.0f, 0.0f, 0.0f);
+    joint.Axis            = HM::Vector3(2.0f, 0.0f, 0.0f);
+    fixture.ecs.AddComponent(door, joint);
+
+    const HM::Vector3 localX(world[0].x(), world[0].y(), world[0].z());
+    const HM::Vector3 anchor = HM::Vector3(2.0f, 3.0f, 4.0f) + localX;
+    // The turn takes local +X onto a world axis other than +X.
+    CHECK(std::abs(localX.x()) < EPSILON);
+
+    const HX::RenderScene scene = fixture.Extract();
+    std::vector<HX::DebugLineVertex> lines;
+    for (const HX::DebugLineVertex& vertex : scene.DebugLines)
+        if (vertex.Color == SceneExtractor::PHYSICS_DEBUG_JOINT_COLOR)
+            lines.push_back(vertex);
+    // Three cross arms, the line to the post and the axis.
+    REQUIRE(lines.size() == 10);
+    for (size_t arm = 0; arm < 3; ++arm)
+    {
+        CAPTURE(arm);
+        CHECK(Near((lines[2 * arm].Position + lines[2 * arm + 1].Position) * 0.5f, anchor));
+        CHECK(Distance(lines[2 * arm].Position, lines[2 * arm + 1].Position) ==
+              doctest::Approx(2.0f * SceneExtractor::PHYSICS_DEBUG_JOINT_CROSS));
+    }
+    CHECK(Near(lines[6].Position, anchor));
+    CHECK(Near(lines[7].Position, HM::Vector3(10.0f, 0.0f, 0.0f)));
+    CHECK(Near(lines[8].Position, anchor));
+    CHECK(Near(lines[9].Position, anchor + localX * SceneExtractor::PHYSICS_DEBUG_JOINT_AXIS));
+
+    // A distance joint to the world reaches its world point and has no axis; a disabled one draws nothing.
+    auto& edited           = fixture.ecs.GetComponent<HedgehogEngine::JointComponent>(door);
+    edited.Type            = HedgehogEngine::JointType::Distance;
+    edited.ConnectedEntity = ECS::INVALID_ENTITY;
+    edited.ConnectedAnchor = HM::Vector3(0.0f, 0.0f, 20.0f);
+    const HX::RenderScene distance = fixture.Extract();
+    lines.clear();
+    for (const HX::DebugLineVertex& vertex : distance.DebugLines)
+        if (vertex.Color == SceneExtractor::PHYSICS_DEBUG_JOINT_COLOR)
+            lines.push_back(vertex);
+    REQUIRE(lines.size() == 8);
+    CHECK(Near(lines[7].Position, HM::Vector3(0.0f, 0.0f, 20.0f)));
+    edited.Enabled                = false;
+    const HX::RenderScene disabled = fixture.Extract();
+    CHECK(std::none_of(disabled.DebugLines.begin(), disabled.DebugLines.end(), [](const HX::DebugLineVertex& vertex)
+                       { return vertex.Color == SceneExtractor::PHYSICS_DEBUG_JOINT_COLOR; }));
 }

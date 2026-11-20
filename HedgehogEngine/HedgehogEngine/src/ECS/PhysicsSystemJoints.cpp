@@ -156,6 +156,16 @@ namespace HedgehogEngine
         return found != m_Joints.end() ? found->second.Constraint : HP::ConstraintHandle{};
     }
 
+    float PhysicsSystem::GetJointAngle(ECS::Entity entity) const
+    {
+        return m_World ? m_World->GetConstraintAngle(GetJoint(entity)) : 0.0f;
+    }
+
+    float PhysicsSystem::GetJointPosition(ECS::Entity entity) const
+    {
+        return m_World ? m_World->GetConstraintPosition(GetJoint(entity)) : 0.0f;
+    }
+
     uint32_t PhysicsSystem::GetJointCount() const
     {
         return static_cast<uint32_t>(std::count_if(m_Joints.begin(), m_Joints.end(), [this](const auto& entry) {

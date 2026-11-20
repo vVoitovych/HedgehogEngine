@@ -187,6 +187,10 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API void                               RebuildJoint(ECS::ECS& ecs, ECS::Entity entity);
         [[nodiscard]] HEDGEHOG_ENGINE_API HP::ConstraintHandle GetJoint(ECS::Entity entity) const;
         [[nodiscard]] HEDGEHOG_ENGINE_API uint32_t             GetJointCount() const;
+        // A hinge joint's turn from where it was made, in degrees; a slider's travel or a distance's
+        // length, in metres; 0 for an entity without a joint of that kind.
+        [[nodiscard]] HEDGEHOG_ENGINE_API float GetJointAngle(ECS::Entity entity) const;
+        [[nodiscard]] HEDGEHOG_ENGINE_API float GetJointPosition(ECS::Entity entity) const;
 
     private:
         struct TrackedBody

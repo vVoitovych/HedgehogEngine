@@ -4,6 +4,7 @@
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogEngine/api/ECS/components/CharacterControllerComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/ColliderComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/JointComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RigidBodyComponent.hpp"
 #include "HedgehogEngine/api/ECS/systems/PhysicsSystem.hpp"
 
@@ -31,6 +32,9 @@ namespace HedgehogScripting::Bindings
         using RigidBodyRef = ScriptComponentRef<RigidBodyComponent>;
         using ColliderRef  = ScriptComponentRef<ColliderComponent>;
         using CharacterRef = ScriptComponentRef<CharacterControllerComponent>;
+        using HedgehogEngine::JointComponent;
+        using HedgehogEngine::JointType;
+        using JointRef     = ScriptComponentRef<JointComponent>;
 
         constexpr int32_t LAYER_COUNT = 16;
 
@@ -313,6 +317,94 @@ namespace HedgehogScripting::Bindings
                 sol::meta_function::to_string, ToText<CharacterControllerComponent>("CharacterController"));
         }
 
+        // A joint field: written to the component and, during Play, the joint made again from it
+        // (PhysicsSystem::RebuildJoint), so it applies at once.
+        template<typename V, typename Check>
+        auto JointField(HedgehogEngine::EngineContext& context, V JointComponent::*member, Check check)
+        {
+            ECS::ECS&                      ecs     = context.GetECS();
+            HedgehogEngine::PhysicsSystem& physics = *context.GetPhysicsSystem();
+            return sol::property(
+                [&ecs, member](const JointRef& ref) { return Resolve(ecs, ref).*member; },
+                [&ecs, &physics, member, check](const JointRef& ref, const V& value)
+                {
+                    Resolve(ecs, ref).*member = check(value);
+                    physics.RebuildJoint(ecs, ref.Entity.Id);
+                });
+        }
+
+        void RegisterJoint(sol::state& lua, HedgehogEngine::EngineContext& context)
+        {
+            ECS::ECS&                      ecs     = context.GetECS();
+            HedgehogEngine::PhysicsSystem& physics = *context.GetPhysicsSystem();
+            lua.new_enum("JointType",
+                         "Fixed",    static_cast<int>(JointType::Fixed),
+                         "Hinge",    static_cast<int>(JointType::Hinge),
+                         "Slider",   static_cast<int>(JointType::Slider),
+                         "Distance", static_cast<int>(JointType::Distance));
+            const auto unchecked = [](auto value) { return value; };
+
+            lua.new_usertype<JointRef>(
+                "Joint", sol::no_constructor,
+                "type", sol::property(
+                    [&ecs](const JointRef& ref) { return static_cast<int>(Resolve(ecs, ref).Type); },
+                    [&ecs, &physics](const JointRef& ref, int value)
+                    {
+                        if (value < 0 || value > static_cast<int>(JointType::Distance))
+                            throw std::runtime_error(std::to_string(value) + " is not a JointType");
+                        Resolve(ecs, ref).Type = static_cast<JointType>(value);
+                        physics.RebuildJoint(ecs, ref.Entity.Id);
+                    }),
+                // An Entity, or nil for the world.
+                "connectedEntity", sol::property(
+                    [&ecs](const JointRef& ref) -> std::optional<ScriptEntity>
+                    {
+                        const ECS::Entity connected = Resolve(ecs, ref).ConnectedEntity;
+                        if (connected == ECS::INVALID_ENTITY || !ecs.IsAlive(connected))
+                            return std::nullopt;
+                        return ScriptEntity{ connected, ecs.GetGeneration(connected) };
+                    },
+                    [&ecs, &physics](const JointRef& ref, sol::object value)
+                    {
+                        JointComponent& joint = Resolve(ecs, ref);
+                        if (!value.valid() || value.get_type() == sol::type::lua_nil)
+                            joint.ConnectedEntity = ECS::INVALID_ENTITY;
+                        else if (value.is<ScriptEntity>())
+                        {
+                            const ScriptEntity other = value.as<ScriptEntity>();
+                            if (!IsValid(ecs, other))
+                                throw std::runtime_error("a joint cannot connect to Entity " + std::to_string(other.Id) +
+                                                         " (generation " + std::to_string(other.Generation) +
+                                                         "), which no longer exists");
+                            joint.ConnectedEntity = other.Id;
+                        }
+                        else
+                            throw std::runtime_error("a joint's connectedEntity must be an Entity or nil");
+                        physics.RebuildJoint(ecs, ref.Entity.Id);
+                    }),
+                "anchor",          JointField(context, &JointComponent::Anchor, FiniteVector("a joint's anchor")),
+                "axis",            JointField(context, &JointComponent::Axis, FiniteVector("a joint's axis")),
+                "connectedAnchor", JointField(context, &JointComponent::ConnectedAnchor, FiniteVector("a joint's anchor")),
+                "enabled",         JointField(context, &JointComponent::Enabled, unchecked),
+                "limitsEnabled",   JointField(context, &JointComponent::LimitsEnabled, unchecked),
+                "minLimit",        JointField(context, &JointComponent::MinLimit, Finite("a joint's limit")),
+                "maxLimit",        JointField(context, &JointComponent::MaxLimit, Finite("a joint's limit")),
+                "springFrequency", JointField(context, &JointComponent::SpringFrequency, NotNegative("a spring's frequency")),
+                "springDamping",   JointField(context, &JointComponent::SpringDamping, NotNegative("a spring's damping")),
+                // A hinge's turn in degrees, a slider's travel or a distance's length in metres; 0 outside Play.
+                "angle", sol::readonly_property([&ecs, &physics](const JointRef& ref)
+                {
+                    (void)Resolve(ecs, ref);
+                    return physics.GetJointAngle(ref.Entity.Id);
+                }),
+                "position", sol::readonly_property([&ecs, &physics](const JointRef& ref)
+                {
+                    (void)Resolve(ecs, ref);
+                    return physics.GetJointPosition(ref.Entity.Id);
+                }),
+                sol::meta_function::to_string, ToText<JointComponent>("Joint"));
+        }
+
         // ---- The Physics table's queries.
 
         uint16_t ReadLayerMask(const sol::optional<int64_t>& layerMask)
@@ -542,6 +634,7 @@ namespace HedgehogScripting::Bindings
         RegisterRigidBody(lua, context, guard);
         RegisterCollider(lua, context);
         RegisterCharacterController(lua, context, guard);
+        RegisterJoint(lua, context);
         RegisterPhysicsTable(lua, context, guard);
     }
 }
