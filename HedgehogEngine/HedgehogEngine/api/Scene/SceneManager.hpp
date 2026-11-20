@@ -66,6 +66,9 @@ namespace HedgehogEngine
         SceneManager& operator=(SceneManager&&)      = delete;
 
         HEDGEHOG_ENGINE_API bool LoadScene(const std::string& filePath);
+        // LoadScene of a document already read and parsed (a background load's): the world replaced
+        // by it, the scene path set to virtualPath. False, logged, when it does not read.
+        HEDGEHOG_ENGINE_API bool LoadSceneFromDocument(const YAML::Node& document, const std::string& virtualPath);
         HEDGEHOG_ENGINE_API bool SaveScene(const std::string& filePath);
         HEDGEHOG_ENGINE_API void ResetScene();
         HEDGEHOG_ENGINE_API void SetSceneName(const std::string& name);
