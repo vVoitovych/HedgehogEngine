@@ -116,6 +116,7 @@ namespace HedgehogScripting
         Bindings::RegisterPrefab(m_Lua, context);
         Bindings::RegisterApplication(m_Lua, context);
         Bindings::RegisterCursor(m_Lua, context);
+        Bindings::RegisterPlayerSettings(m_Lua, context, m_PendingPlayerSettings);
         RegisterEvents();
         // Systems live in the ECS, which the context destroys before its EventBus, as the
         // engine's own subscribers do.
@@ -525,6 +526,7 @@ namespace HedgehogScripting
         m_Scripts.clear();
         m_PendingRemovals.clear();
         m_PendingDestroys.clear();
+        m_PendingPlayerSettings.reset();
         m_Subscriptions.clear();
         m_QueuedEvents.clear();
         m_DeltaTime     = 0.0f;

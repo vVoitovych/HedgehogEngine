@@ -132,6 +132,8 @@ namespace Runtime
 
         auto& engineContext = m_Engine->GetEngineContext();
         auto& fileSystem    = engineContext.GetFileSystem();
+        // Scripts see no window: they choose a resolution from these (PlayerSettings.getResolutions()).
+        engineContext.GetApplicationRequests().VideoModes = m_Engine->GetWindowContext().GetWindow().GetVideoModes();
         for (const RuntimeMount& mount : m_Desc.Mounts)
         {
             auto mounted = std::make_unique<FS::FileSystem>();
@@ -343,8 +345,9 @@ namespace Runtime
         const HedgehogSettings::PlayerSettings& was           = m_AppliedPlayer;
         if (player.WindowMode != was.WindowMode || player.Width != was.Width || player.Height != was.Height)
         {
-            ApplyWindow(m_Engine->GetWindowContext().GetWindow(), player,
-                        engineContext.GetSettings().GetProjectSettings());
+            HW::Window& window = m_Engine->GetWindowContext().GetWindow();
+            ApplyWindow(window, player, engineContext.GetSettings().GetProjectSettings());
+            engineContext.GetApplicationRequests().VideoModes = window.GetVideoModes(); // it may be on another monitor
         }
         if (player.VSync != was.VSync)
         {

@@ -14,8 +14,8 @@ namespace HedgehogSettings
 {
     namespace
     {
-        constexpr std::array<std::string_view, 3> WINDOW_MODE_NAMES = { "Windowed", "Borderless", "Fullscreen" };
-        constexpr std::array<std::string_view, 3> QUALITY_NAMES     = { "Low", "Medium", "High" };
+        constexpr const auto& WINDOW_MODE_NAMES = PLAYER_WINDOW_MODE_NAMES;
+        constexpr const auto& QUALITY_NAMES     = PLAYER_QUALITY_NAMES;
 
         // A value outside the enum (a corrupt struct) is written as its first name rather than read out of bounds.
         template <typename Enum, size_t Count>

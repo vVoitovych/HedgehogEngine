@@ -32,6 +32,11 @@ namespace HedgehogSettings
         High
     };
 
+    // The file's names, in enum order.
+    inline constexpr std::array<std::string_view, 3> PLAYER_WINDOW_MODE_NAMES = { "Windowed", "Borderless",
+                                                                                  "Fullscreen" };
+    inline constexpr std::array<std::string_view, 3> PLAYER_QUALITY_NAMES     = { "Low", "Medium", "High" };
+
     // The audio epic's fixed buses; Master is MasterVolume. Declared here so HedgehogSettings need not
     // link HedgehogAudio.
     inline constexpr size_t PLAYER_AUDIO_BUS_COUNT = 4;
