@@ -66,6 +66,7 @@ namespace HedgehogEngine
     class AudioListenerSystem;
     class PhysicsSystem;
     class RigidBodyListSystem;
+    class CharacterControllerListSystem;
     class EnvironmentSystem;
     class TerrainSystem;
     class ParticleSystem;
@@ -295,6 +296,7 @@ namespace HedgehogEngine
         std::shared_ptr<AudioListenerSystem> m_AudioListenerSystem;
         std::shared_ptr<PhysicsSystem>       m_PhysicsSystem;
         std::shared_ptr<RigidBodyListSystem> m_RigidBodyListSystem;
+        std::shared_ptr<CharacterControllerListSystem> m_CharacterListSystem;
         std::shared_ptr<EnvironmentSystem>   m_EnvironmentSystem;
         std::shared_ptr<TerrainSystem>       m_TerrainSystem;
         std::shared_ptr<ParticleSystem>      m_ParticleSystem;

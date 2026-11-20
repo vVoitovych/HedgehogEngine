@@ -4,6 +4,7 @@
 #include "HedgehogEngine/api/ECS/components/AudioListenerComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/AudioSourceComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/CameraComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/CharacterControllerComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/ColliderComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/EnvironmentComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/LightComponent.hpp"
@@ -119,6 +120,12 @@ namespace HedgehogEngine
                                                                                 .Category    = PHYSICS_CATEGORY,
                                                                                 .SortOrder   = 301,
                                                                                 .Icon        = "collider" });
+        registered &= types.RegisterReflected<CharacterControllerComponent>(
+            ComponentDesc{ .Key         = "CharacterControllerComponent",
+                           .DisplayName = "Character controller",
+                           .Category    = PHYSICS_CATEGORY,
+                           .SortOrder   = 302,
+                           .Icon        = "character" });
         // The scene's environment map and exposure; its icon is the scene's globe.
         registered &= types.RegisterReflected<EnvironmentComponent>(ComponentDesc{ .Key             = "EnvironmentComponent",
                                                                                    .DisplayName     = "Environment",

@@ -60,6 +60,7 @@ namespace Editor
         SpaceLocal,
         SpaceWorld,
         Particles,
+        Character,
         Count
     };
 

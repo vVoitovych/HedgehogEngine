@@ -3,6 +3,7 @@
 #include "HedgehogEngine/api/HedgehogEngineApi.hpp"
 
 #include "HedgehogPhysics/api/BodyHandle.hpp"
+#include "HedgehogPhysics/api/CharacterTypes.hpp"
 #include "HedgehogPhysics/api/PhysicsEvents.hpp"
 
 #include "ECS/api/ECS.hpp"
@@ -25,6 +26,7 @@ namespace HedgehogEngine
 {
     class EventBus;
     class ResourceCatalog;
+    struct CharacterControllerComponent;
 
     // What PhysicsSystem::Raycast reached.
     struct PhysicsRayHit
@@ -38,6 +40,11 @@ namespace HedgehogEngine
     // An entity view of the rigid bodies (RigidBodyComponent + TransformComponent), so the physics
     // system can warn about one without a collider.
     class RigidBodyListSystem : public ECS::System
+    {
+    };
+
+    // An entity view of the characters (CharacterControllerComponent + TransformComponent).
+    class CharacterControllerListSystem : public ECS::System
     {
     };
 
@@ -61,6 +68,15 @@ namespace HedgehogEngine
     // it pushes dynamic bodies on the way), and a static or dynamic body whose entity's local
     // Position or Rotation gameplay changed since the body last wrote it is teleported there. After
     // it the contacts are published as Collision and Trigger events (Events/PhysicsEvents.hpp).
+    //
+    // Every CharacterControllerComponent entity is a character of the world (an upright capsule at
+    // its world position; a character alone starts the world too; a ColliderComponent beside it makes
+    // no body, with one warning per Play). After each step every character moves: walking at its
+    // SetCharacterMove velocity (horizontal), keeping its vertical speed under gravity times its
+    // GravityScale when off the ground, carried by what it stands on, jumping at a CharacterJump speed
+    // when on the ground (the request used by that step either way); then its world position is
+    // written to its local Position (through its parent) with a TransformChangedEvent. Its rotation is
+    // gameplay's. A Position gameplay changed since the last write teleports it.
     class PhysicsSystem : public ECS::System
     {
     public:
@@ -109,6 +125,20 @@ namespace HedgehogEngine
         // Play), keeping its velocities. Nothing for an entity without a body.
         HEDGEHOG_ENGINE_API void RebuildBody(ECS::ECS& ecs, ECS::Entity entity);
 
+        // ---- Characters, by entity: nothing done and zeros back for an entity without one.
+        // The walk velocity (world space; its +Z part ignored) kept until changed, and a jump speed
+        // for the next step.
+        HEDGEHOG_ENGINE_API void SetCharacterMove(ECS::Entity entity, const HM::Vector3& velocity);
+        HEDGEHOG_ENGINE_API void CharacterJump(ECS::Entity entity, float speed);
+        // On ground it can walk on, after its last move.
+        [[nodiscard]] HEDGEHOG_ENGINE_API bool        IsCharacterGrounded(ECS::Entity entity) const;
+        [[nodiscard]] HEDGEHOG_ENGINE_API HM::Vector3 GetCharacterVelocity(ECS::Entity entity) const;
+        [[nodiscard]] HEDGEHOG_ENGINE_API HM::Vector3 GetCharacterGroundNormal(ECS::Entity entity) const;
+        [[nodiscard]] HEDGEHOG_ENGINE_API HM::Vector3 GetCharacterGroundVelocity(ECS::Entity entity) const;
+        // The entity's character, or an invalid handle; the characters the system made.
+        [[nodiscard]] HEDGEHOG_ENGINE_API HP::CharacterHandle GetCharacter(ECS::Entity entity) const;
+        [[nodiscard]] HEDGEHOG_ENGINE_API uint32_t            GetCharacterCount() const;
+
     private:
         struct TrackedBody
         {
@@ -140,9 +170,31 @@ namespace HedgehogEngine
         void WarnRigidBodiesWithoutCollider(ECS::ECS& ecs);
         void WriteBack(ECS::ECS& ecs);
 
+        // Characters (PhysicsSystemCharacters.cpp).
+        struct TrackedCharacter
+        {
+            uint32_t            Generation = 0;
+            HP::CharacterHandle Character; // invalid when the world refused it (logged once)
+            HM::Vector3         Position = HM::Vector3(0.0f, 0.0f, 0.0f); // the local Position last written
+        };
+        [[nodiscard]] bool HasCharacters() const;
+        // Whether the entity is a character's, so its collider makes no body (warned once per Play).
+        bool IsCharacterEntity(ECS::ECS& ecs, ECS::Entity entity);
+        void SyncCharacters(ECS::ECS& ecs);
+        void CreateCharacter(ECS::ECS& ecs, ECS::Entity entity);
+        void FollowCharacterTransforms(ECS::ECS& ecs);
+        void MoveCharacters(ECS::ECS& ecs, float fixedDeltaTime);
+        void DestroyCharacters(ECS::ECS& ecs);
+        [[nodiscard]] const CharacterControllerComponent* FindCharacterComponent(ECS::Entity entity) const;
+
         HP::PhysicsWorld* m_World = nullptr;
         EventBus*         m_Bus   = nullptr;
         ResourceCatalog*  m_Catalog = nullptr; // the terrains' heights
+        ECS::ECS*         m_Ecs     = nullptr; // for the character calls by entity
+
+        std::unordered_map<ECS::Entity, TrackedCharacter> m_Characters;
+        std::vector<ECS::Entity>                          m_GoneCharacters;      // scratch
+        std::unordered_set<ECS::Entity>                   m_WarnedColliderCharacter; // one warning per entity per Play
 
         std::unordered_map<ECS::Entity, TrackedBody> m_Bodies;
         std::unordered_set<ECS::Entity>              m_Present;  // scratch: this step's entities
