@@ -46,6 +46,7 @@ TEST_CASE("AudioSourceComponent round-trips every reflected field and never writ
     source.MinDistance = 2.0f;
     source.MaxDistance = 40.0f;
     source.Bus         = AudioSourceBus::Music;
+    source.Stream      = true;
     source.Sound       = HA::SoundHandle{ 3, 7 };
 
     const std::string yaml = Serialize(source);
@@ -63,6 +64,7 @@ TEST_CASE("AudioSourceComponent round-trips every reflected field and never writ
     CHECK(restored.MinDistance == 2.0f);
     CHECK(restored.MaxDistance == 40.0f);
     CHECK(restored.Bus == AudioSourceBus::Music);
+    CHECK(restored.Stream);
     CHECK_FALSE(restored.Sound.IsValid());
 }
 
@@ -81,5 +83,6 @@ TEST_CASE("AudioSourceComponent without a Bus key loads on Sfx and saves it as B
     Reflection::YamlDeserializeComponent(&loaded, YAML::Load("Clip: Audio/Tone440.wav\nMaxDistance: 20\n"),
                                          AudioSourceComponent::GetProperties());
     CHECK(loaded.Bus == AudioSourceBus::Sfx);
+    CHECK_FALSE(loaded.Stream);
     CHECK(Serialize(loaded).find("Bus: 1") != std::string::npos);
 }

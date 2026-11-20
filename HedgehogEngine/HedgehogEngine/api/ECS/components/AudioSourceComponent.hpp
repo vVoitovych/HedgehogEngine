@@ -18,7 +18,8 @@ namespace HedgehogEngine
     };
 
     // Plays a clip (a WAV, FLAC or MP3 under assets://) from its entity in Play mode: started on Play
-    // when PlayOnStart, placed at the entity's transform when Spatial, and stopped by Stop.
+    // when PlayOnStart, placed at the entity's transform when Spatial, and stopped by Stop. With Stream
+    // the clip is read from disk as it plays rather than decoded and cached first (long music).
 HH_BEGIN_COMPONENT(AudioSourceComponent)
     HH_PROP_NAMED(std::string, Clip,        "Clip",        std::string{}, AssetRef)
     HH_PROP_NAMED_SLIDER(float, Volume,     "Volume",      1.0f, 0.0f, 1.0f)
@@ -31,6 +32,7 @@ HH_BEGIN_COMPONENT(AudioSourceComponent)
 
     static constexpr const char* kBusNames[] = { "Music", "Sfx", "Voice", "Ui" };
     HH_PROP_NAMED_ENUM(HedgehogEngine::AudioSourceBus, Bus, "Bus", HedgehogEngine::AudioSourceBus::Sfx, kBusNames, 4)
+    HH_PROP_NAMED(bool,        Stream,      "Stream",      false,         None)
 
     HA::SoundHandle Sound; // runtime: the sound playing, invalid when none
 HH_END_COMPONENT(AudioSourceComponent)

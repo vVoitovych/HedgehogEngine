@@ -311,3 +311,35 @@ TEST_CASE("AudioSystem - a source plays through its bus, and bus volumes outlive
     CHECK(world.Loudness() == 0.0);
     REQUIRE(world.Context.Stop());
 }
+
+TEST_CASE("AudioSystem - a Stream source streams: it plays, pauses and stops, and caches no clip")
+{
+    AudioWorld        world;
+    const ECS::Entity music = world.SpawnSource(RIGHT);
+    world.Ecs().GetComponent<AudioSourceComponent>(music).Stream  = true;
+    world.Ecs().GetComponent<AudioSourceComponent>(music).Spatial = false;
+    world.Ecs().GetComponent<AudioSourceComponent>(music).Bus     = AudioSourceBus::Music;
+
+    REQUIRE(world.Context.Play());
+    world.Frame();
+    REQUIRE(world.Source(music).Sound.IsValid());
+    CHECK(world.Audio().IsPlaying(world.Source(music).Sound));
+    CHECK(world.Loudness() > 0.0);
+    CHECK(world.Audio().GetCachedClipCount() == 0);
+
+    REQUIRE(world.Context.Pause());
+    CHECK_FALSE(world.Audio().IsPlaying(world.Source(music).Sound));
+    CHECK(world.Loudness() == 0.0);
+    REQUIRE(world.Context.Resume());
+    CHECK(world.Loudness() > 0.0);
+
+    // Loops past the 0.5 s tone's end, as the decoded one does.
+    for (int i = 0; i < 8; ++i)
+        CHECK(world.Loudness() > 0.0);
+
+    const HA::SoundHandle sound = world.Source(music).Sound;
+    REQUIRE(world.Context.Stop());
+    CHECK_FALSE(world.Audio().Exists(sound));
+    CHECK(world.Loudness() == 0.0);
+    CHECK(world.Audio().GetCachedClipCount() == 0);
+}
