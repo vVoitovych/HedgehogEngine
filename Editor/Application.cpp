@@ -213,6 +213,8 @@ namespace Editor
             playerSettings       = HedgehogSettings::MakeDefaultPlayerSettings(project);
             (void)HedgehogSettings::LoadPlayerSettings(engineContext.GetFileSystem(), playerSettings);
             engineContext.MarkPlayerSettingsChanged();
+            // Rebinding plays in the editor's Play as in the game: it is input, not the display.
+            (void)engineContext.LoadInputOverrides();
         }
 
         // Engine settings must load before the renderer is constructed: they decide the size of

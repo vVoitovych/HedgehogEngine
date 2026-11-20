@@ -14,6 +14,7 @@
 #include "FileSystem/api/FileSystemManager.hpp"
 
 #include "HedgehogEngine/HedgehogSettings/api/PlayerSettings.hpp"
+#include "HedgehogEngine/HedgehogWindow/api/RawInput.hpp"
 
 #include "HedgehogInput/api/ActionState.hpp"
 #include "HedgehogInput/api/InputActionAsset.hpp"
@@ -25,6 +26,7 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <string>
 
 namespace HedgehogSettings
 {
@@ -154,7 +156,27 @@ namespace HedgehogEngine
         // parameter so tests need not wait), resetting the game action state. UpdateContext calls it.
         HEDGEHOG_ENGINE_API void ReloadInputActions(std::chrono::steady_clock::time_point now);
 
+        // The effective actions: the project's file with the player's overrides applied to its Game map
+        // (HInput::ApplyInputOverrides; the Editor map is never overridden). Changing the overrides, or
+        // the project's file reloading, merges them again and resets both action states.
         [[nodiscard]] HEDGEHOG_ENGINE_API const HInput::InputActionSet& GetInputActions() const;
+        [[nodiscard]] HEDGEHOG_ENGINE_API const HInput::InputActionSet& GetProjectInputActions() const;
+
+        // The player's rebinding of Game actions, kept in INPUT_OVERRIDES_PATH in the actions file
+        // format (its Game section). LoadInputOverrides: false for a missing file (nothing changes) and,
+        // with one [Input] error, for one that does not parse (the overrides cleared, so the project's
+        // bindings play). SaveInputOverrides: false, logged, when it cannot be written.
+        static constexpr const char* INPUT_OVERRIDES_PATH = "player://input_overrides.yaml";
+        HEDGEHOG_ENGINE_API void SetInputOverrides(HInput::InputActionMap overrides);
+        [[nodiscard]] HEDGEHOG_ENGINE_API const HInput::InputActionMap& GetInputOverrides() const;
+        HEDGEHOG_ENGINE_API bool LoadInputOverrides(const std::string& virtualPath = INPUT_OVERRIDES_PATH);
+        [[nodiscard]] HEDGEHOG_ENGINE_API bool SaveInputOverrides(
+            const std::string& virtualPath = INPUT_OVERRIDES_PATH) const;
+
+        // The game's input as UpdateGameInput last had it, in every play state (for listening for a
+        // press to bind).
+        [[nodiscard]] HEDGEHOG_ENGINE_API const HW::RawInput& GetLastGameInput() const;
+
         [[nodiscard]] HEDGEHOG_ENGINE_API HInput::ActionState&          GetGameActionState();
         [[nodiscard]] HEDGEHOG_ENGINE_API const HInput::ActionState&    GetGameActionState() const;
 
@@ -238,6 +260,7 @@ namespace HedgehogEngine
         void InitECS();
         void InitFileSystem();
         void LoadInputActions();
+        void MergeInputActions(); // m_InputActions from the project's and the overrides
         void UpdateCamera(float aspectRatio, float dt);
 
     private:
@@ -283,7 +306,10 @@ namespace HedgehogEngine
         std::shared_ptr<SceneRequestSystem> m_SceneRequests;
         std::unique_ptr<PrefabManager>   m_Prefabs;   // after the SceneManager it refreshes
 
-        HInput::InputActionSet    m_InputActions;
+        HInput::InputActionSet    m_ProjectInputActions; // assets://Input/actions.yaml
+        HInput::InputActionMap    m_InputOverrides;
+        HInput::InputActionSet    m_InputActions; // the two merged; GameInputFrame points into it
+        HW::RawInput              m_LastGameInput;
         HInput::InputActionsWatch m_InputWatch;
         HInput::ActionState       m_GameActions;
         HInput::ActionState       m_EditorActions;

@@ -158,6 +158,7 @@ namespace Runtime
             {
                 LOGWARNING("[Runtime] The player folder could not be mounted as player://.");
             }
+            (void)engineContext.LoadInputOverrides(); // the player's rebinding, when there is one
             HedgehogSettings::ApplyQualityLevel(*settings.GetShadowmapSettings(), m_ShadowBase, player.Quality);
         }
         engineContext.GetPlayerSettings() = player;

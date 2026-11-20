@@ -59,6 +59,8 @@
 #include "EcsSerialization/api/ComponentTypeRegistry.hpp"
 
 #include "HedgehogInput/api/DefaultInputActions.hpp"
+#include "HedgehogInput/api/InputActionFile.hpp"
+#include "HedgehogInput/api/InputOverrides.hpp"
 
 #include "HedgehogAudio/api/AudioEngine.hpp"
 #include "HedgehogPhysics/api/PhysicsWorld.hpp"
@@ -264,20 +266,72 @@ namespace HedgehogEngine
         if (!m_FileSystem.Exists(INPUT_ACTIONS_PATH))
         {
             LOGINFO("[Input]", INPUT_ACTIONS_PATH, "not found; using the default actions.");
-            m_InputActions = HInput::MakeDefaultInputActions();
+            m_ProjectInputActions = HInput::MakeDefaultInputActions();
         }
         else if (std::optional<HInput::InputActionSet> actions = HInput::LoadInputActions(INPUT_ACTIONS_PATH, m_FileSystem))
         {
-            m_InputActions = std::move(*actions);
+            m_ProjectInputActions = std::move(*actions);
         }
         else
         {
-            m_InputActions = HInput::MakeDefaultInputActions(); // the error is logged
+            m_ProjectInputActions = HInput::MakeDefaultInputActions(); // the error is logged
         }
         m_InputWatch = HInput::WatchInputActions(INPUT_ACTIONS_PATH, m_FileSystem);
+        MergeInputActions();
+    }
+
+    void EngineContext::MergeInputActions()
+    {
+        // Assigned in place, so GameInputFrame's pointer to the Game map stays valid.
+        m_InputActions = HInput::ApplyInputOverrides(m_ProjectInputActions, m_InputOverrides);
         HInput::ResetActionState(m_GameActions, m_InputActions.Game);
         HInput::ResetActionState(m_EditorActions, m_InputActions.Editor);
     }
+
+    void EngineContext::SetInputOverrides(HInput::InputActionMap overrides)
+    {
+        m_InputOverrides = std::move(overrides);
+        MergeInputActions();
+    }
+
+    const HInput::InputActionMap& EngineContext::GetInputOverrides() const { return m_InputOverrides; }
+
+    bool EngineContext::LoadInputOverrides(const std::string& virtualPath)
+    {
+        if (!m_FileSystem.Exists(virtualPath))
+        {
+            return false;
+        }
+        const std::optional<std::string> text = m_FileSystem.ReadTextFile(virtualPath);
+        HInput::InputActionParseResult   parsed;
+        parsed.Error = "the file cannot be read";
+        if (text)
+        {
+            parsed = HInput::ParseInputActions(*text);
+        }
+        if (!parsed.Actions)
+        {
+            LOGERROR("[Input] " + virtualPath + ": " + parsed.Error + "; playing with the project's bindings.");
+            SetInputOverrides({});
+            return false;
+        }
+        SetInputOverrides(std::move(parsed.Actions->Game));
+        return true;
+    }
+
+    bool EngineContext::SaveInputOverrides(const std::string& virtualPath) const
+    {
+        HInput::InputActionSet set;
+        set.Game = m_InputOverrides;
+        if (!m_FileSystem.WriteTextFile(virtualPath, HInput::WriteInputActions(set)))
+        {
+            LOGERROR("[Input] Cannot write " + virtualPath + ".");
+            return false;
+        }
+        return true;
+    }
+
+    const HW::RawInput& EngineContext::GetLastGameInput() const { return m_LastGameInput; }
 
     void EngineContext::UpdateEditorInput(const HW::RawInput& editorInput)
     {
@@ -287,6 +341,7 @@ namespace HedgehogEngine
     void EngineContext::UpdateGameInput(const HW::RawInput& gameInput, const HM::Vector2& gameViewSize)
     {
         HH_PROFILE_ZONE("UpdateGameInput");
+        m_LastGameInput = gameInput;
         if (m_PlayState == PlayState::Playing)
             HInput::UpdateActionState(m_InputActions.Game, gameInput, m_GameActions);
         else
@@ -300,14 +355,14 @@ namespace HedgehogEngine
 
     void EngineContext::ReloadInputActions(std::chrono::steady_clock::time_point now)
     {
-        if (HInput::PollInputActions(m_InputWatch, m_FileSystem, now, m_InputActions))
+        if (HInput::PollInputActions(m_InputWatch, m_FileSystem, now, m_ProjectInputActions))
         {
-            HInput::ResetActionState(m_GameActions, m_InputActions.Game);
-            HInput::ResetActionState(m_EditorActions, m_InputActions.Editor);
+            MergeInputActions();
         }
     }
 
     const HInput::InputActionSet& EngineContext::GetInputActions() const { return m_InputActions; }
+    const HInput::InputActionSet& EngineContext::GetProjectInputActions() const { return m_ProjectInputActions; }
     HInput::ActionState&          EngineContext::GetGameActionState() { return m_GameActions; }
     const HInput::ActionState&    EngineContext::GetGameActionState() const { return m_GameActions; }
     ApplicationRequests&          EngineContext::GetApplicationRequests() { return m_ApplicationRequests; }
