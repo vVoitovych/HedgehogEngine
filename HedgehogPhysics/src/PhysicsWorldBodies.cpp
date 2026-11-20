@@ -221,6 +221,7 @@ namespace HP
     {
         if (!IsValid(body))
             return;
+        DestroyConstraintsOf(body);
         JPH::BodyInterface& bodies = m_State->System->GetBodyInterface();
         bodies.RemoveBody(ToBodyID(body));
         bodies.DestroyBody(ToBodyID(body));
@@ -231,6 +232,7 @@ namespace HP
     {
         if (!m_State)
             return;
+        DestroyConstraintsOf({});
         DestroyAllCharacters();
         JPH::BodyIDVector ids;
         m_State->System->GetBodies(ids);

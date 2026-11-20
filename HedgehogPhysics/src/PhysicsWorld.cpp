@@ -84,6 +84,8 @@ namespace HP
     {
         if (!m_State)
             return;
+        // Out of the system before its bodies go.
+        DestroyConstraintsOf({});
         m_State.reset();
         ReleaseJoltRuntime();
     }

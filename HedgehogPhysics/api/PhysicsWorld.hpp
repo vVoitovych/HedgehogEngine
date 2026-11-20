@@ -2,6 +2,7 @@
 
 #include "HedgehogPhysics/api/BodyHandle.hpp"
 #include "HedgehogPhysics/api/CharacterTypes.hpp"
+#include "HedgehogPhysics/api/ConstraintTypes.hpp"
 #include "HedgehogPhysics/api/HedgehogPhysicsApi.hpp"
 #include "HedgehogPhysics/api/PhysicsEvents.hpp"
 #include "HedgehogPhysics/api/PhysicsTypes.hpp"
@@ -59,7 +60,7 @@ namespace HP
         // positive, a stopped world, or a world holding its maximum of bodies.
         [[nodiscard]] HEDGEHOG_PHYSICS_API BodyHandle CreateBody(const BodyDesc& desc);
         HEDGEHOG_PHYSICS_API void                     DestroyBody(BodyHandle body);
-        // Destroys every body and every character.
+        // Destroys every body, every character and every constraint.
         HEDGEHOG_PHYSICS_API void                     DestroyAllBodies();
         // Whether body is a live body of this world.
         [[nodiscard]] HEDGEHOG_PHYSICS_API bool       IsValid(BodyHandle body) const;
@@ -146,6 +147,22 @@ namespace HP
         [[nodiscard]] HEDGEHOG_PHYSICS_API CharacterState GetCharacterState(CharacterHandle character) const;
         [[nodiscard]] HEDGEHOG_PHYSICS_API size_t         GetCharacterCount() const;
 
+        // ---- Constraints (ConstraintTypes.hpp). Destroying a body destroys its constraints first.
+
+        // Joins the desc's bodies (or a body and the world) as they are now. An invalid handle, with
+        // one [Physics] error naming why, for no body or the same body twice, a body that is not a
+        // live body of this world, a zero or non-finite axis, a non-finite anchor, limits out of order
+        // or out of the type's range, a negative or non-finite spring, or a stopped world.
+        [[nodiscard]] HEDGEHOG_PHYSICS_API ConstraintHandle CreateConstraint(const ConstraintDesc& desc);
+        HEDGEHOG_PHYSICS_API void                           DestroyConstraint(ConstraintHandle constraint);
+        [[nodiscard]] HEDGEHOG_PHYSICS_API bool             IsValid(ConstraintHandle constraint) const;
+        [[nodiscard]] HEDGEHOG_PHYSICS_API size_t           GetConstraintCount() const;
+        // A hinge's turn from where it was made, in degrees; 0 for any other constraint or a stale one.
+        [[nodiscard]] HEDGEHOG_PHYSICS_API float GetConstraintAngle(ConstraintHandle constraint) const;
+        // A slider's travel from where it was made along its axis, or a distance constraint's present
+        // length, in metres; 0 for any other constraint or a stale one.
+        [[nodiscard]] HEDGEHOG_PHYSICS_API float GetConstraintPosition(ConstraintHandle constraint) const;
+
         // ---- Contacts. Every step queues an Enter when two bodies begin touching and an Exit when
         // they part or one is destroyed (in the next step); bodies kept apart by the collision matrix
         // give none.
@@ -167,6 +184,8 @@ namespace HP
         void               CollectContacts();
         // Destroys every character (DestroyAllBodies, before the bodies, as each removes its inner body).
         void               DestroyAllCharacters();
+        // Destroys every constraint joining body (before it goes), or with an unset body every one.
+        void               DestroyConstraintsOf(BodyHandle body);
 
         std::unique_ptr<JoltState> m_State;
     };
