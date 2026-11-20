@@ -309,8 +309,11 @@ namespace HA
 
         const uint32_t  index = AcquireSlot();
         SoundSlot&      slot  = *m_Slots[index];
+        // Looping from the start, so the stream's pages wrap to the file's start as they load; set
+        // after its first page, a short file's end is reached first and the read there comes back empty.
         const ma_uint32 flags = MA_SOUND_FLAG_STREAM |
-                                (params.Spatial ? 0u : static_cast<ma_uint32>(MA_SOUND_FLAG_NO_SPATIALIZATION));
+                                (params.Spatial ? 0u : static_cast<ma_uint32>(MA_SOUND_FLAG_NO_SPATIALIZATION)) |
+                                (params.Loop ? static_cast<ma_uint32>(MA_SOUND_FLAG_LOOPING) : 0u);
         const ma_result result = ma_sound_init_from_file_w(m_Engine.get(), path->wstring().c_str(), flags,
                                                            GetBusGroup(params.Bus), nullptr, &slot.Sound);
         if (result != MA_SUCCESS)

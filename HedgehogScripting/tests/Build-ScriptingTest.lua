@@ -29,6 +29,7 @@ project "ScriptingTest"
         "ECS",
         "EcsSerialization",
         "HedgehogMath",
+        "ContentLoader",
         "FileSystem",
         "Logger",
         "Lua",
