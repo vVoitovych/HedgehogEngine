@@ -5,6 +5,7 @@
 #include "FileSystem/api/FileSystemManager.hpp"
 
 #include <string>
+#include <vector>
 
 namespace ContentLoader
 {
@@ -19,7 +20,8 @@ namespace ContentLoader
         TextureLoader(TextureLoader&&)                 = delete;
         TextureLoader& operator=(TextureLoader&&)      = delete;
 
-        // file is under assets:// unless it names a mount (FS::ToAssetVirtualPath).
+        // file is under assets:// unless it names a mount (FS::ToAssetVirtualPath). A texture prefetched
+        // for the path (AssetPrefetch.hpp) is taken instead of reading the file.
         // Returns false (after logging) when the file cannot be read or decoded;
         // GetData() stays null in that case.
         CONTENT_LOADER_API bool LoadTexture(const std::string& file,
@@ -39,6 +41,7 @@ namespace ContentLoader
         int   m_Width;
         int   m_Height;
         int   m_Channels;
-        void* m_Data;
+        void* m_Data;                       // stb's, when decoded here
+        std::vector<unsigned char> m_Pixels; // a prefetched texture's, taken from the store
     };
 }

@@ -1,5 +1,7 @@
 #include "api/MeshLoader.hpp"
 
+#include "api/AssetPrefetch.hpp"
+
 #include "ObjLoader.hpp"
 #include "GltfMeshLoader.hpp"
 
@@ -13,6 +15,8 @@ namespace ContentLoader
     std::optional<LoadedMesh> LoadMesh(const std::string& fileName,
                                         const FS::FileSystemManager& fileSystem)
     {
+        if (std::optional<LoadedMesh> prefetched = TakeMesh(fileName))
+            return prefetched;
         const std::string virtualPath = FS::ToAssetVirtualPath(fileName);
         const auto physPath = fileSystem.ResolvePhysical(virtualPath);
         if (!physPath)

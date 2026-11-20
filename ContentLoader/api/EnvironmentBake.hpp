@@ -84,7 +84,8 @@ namespace ContentLoader
     // Loads file (LoadHdrImage), makes its cube (EquirectToCube, BuildCubeMips), its irradiance
     // (ProjectShIrradiance) and its prefiltered radiance (PrefilterCube) in half floats, values past
     // HALF_MAX clamped to it, and logs how long it took. A file that does not load, a face size or
-    // sample count of 0 gives nullopt with one error.
+    // sample count of 0 gives nullopt with one error. An environment prefetched for the path with the
+    // same desc (AssetPrefetch.hpp) is taken instead of baking.
     CONTENT_LOADER_API std::optional<BakedEnvironment> BakeEnvironment(const std::string& file,
                                                                        const FS::FileSystemManager& fileSystem,
                                                                        const EnvironmentBakeDesc& desc = {});
