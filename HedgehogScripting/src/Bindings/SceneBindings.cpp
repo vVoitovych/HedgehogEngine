@@ -102,19 +102,28 @@ namespace HedgehogScripting::Bindings
         // The switch happens at the end of the frame; outside Play (a script's top level also runs
         // when the editor describes it) nothing loads, and the first call says why.
         auto warned = std::make_shared<bool>(false);
-        scene.set_function("load", [&context, warned](const std::string& path)
+        auto request = [&context, warned](const std::string& path, bool async, const char* call)
         {
             // Checked first, so a wrong argument is an error in Edit mode too.
             const std::string virtualPath = "assets://" + ToAssetPath(path, "A scene", "Scenes");
             if (context.GetPlayState() == HedgehogEngine::PlayState::Edit)
             {
                 if (!*warned)
-                    LOGWARNING("[Script] Scenes load only in Play mode; Scene.load did nothing.");
+                    LOGWARNING(std::string("[Script] Scenes load only in Play mode; ") + call + " did nothing.");
                 *warned = true;
                 return false;
             }
-            return context.RequestSceneLoad(virtualPath);
-        });
+            return context.RequestSceneLoad(virtualPath, async);
+        };
+        scene.set_function("load", [request](const std::string& path) { return request(path, false, "Scene.load"); });
+        // Read on a background thread while the current scene plays on, swapped in at the end of the
+        // first frame after (SceneLoaded the next frame, as for Scene.load).
+        scene.set_function("loadAsync",
+                           [request](const std::string& path) { return request(path, true, "Scene.loadAsync"); });
+        scene.set_function("isLoading", [&context]() { return context.GetSceneLoadProgress().has_value(); });
+        // 0 to 1 while a background load runs; 1 once it is done or with none.
+        scene.set_function("loadProgress",
+                           [&context]() { return context.GetSceneLoadProgress().value_or(1.0f); });
         scene.set_function("current", [&scenes]() { return scenes.GetScenePath(); });
 
         auto destroy = [&ecs, &pendingDestroys](const ScriptEntity& handle) { QueueDestroy(ecs, pendingDestroys, handle); };

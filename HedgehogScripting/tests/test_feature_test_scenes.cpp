@@ -5,6 +5,7 @@
 #include "HedgehogScripting/api/ScriptSystem.hpp"
 
 #include "HedgehogEngine/api/App/ApplicationRequests.hpp"
+#include "HedgehogEngine/api/ECS/components/UiRectComponent.hpp"
 #include "HedgehogEngine/api/Assets/EngineAssetDependencies.hpp"
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogEngine/api/Save/SaveGameManager.hpp"
@@ -20,9 +21,13 @@
 #include "FileSystem/api/PathUtils.hpp"
 #include "FileSystem/tests/test_helpers.hpp"
 
+#include "ECS/api/components/Hierarchy.hpp"
+
+#include <chrono>
 #include <filesystem>
 #include <string>
 #include <string_view>
+#include <thread>
 #include <vector>
 
 using HedgehogEngine::EngineContext;
@@ -286,6 +291,51 @@ TEST_CASE("FeatureTest - the options menu applies and saves its choices and a re
         REQUIRE(world.Context.Stop());
     }
 
+    CHECK(log.Lines("[ERROR]").empty());
+    CHECK(log.Lines("[WARNING]").empty());
+}
+
+TEST_CASE("FeatureTest - the loading screen fills its bar while Pbr.yaml loads, then Pbr.yaml takes over")
+{
+    TempDir    saves;
+    LogCapture log;
+    {
+        ProjectWorld world(saves.Path());
+        auto&        files = world.Context.GetFileSystem();
+        const auto   path  = files.ResolvePhysical("assets://Scenes/Loading.yaml");
+        REQUIRE(path.has_value());
+        REQUIRE(world.Context.GetSceneManager().LoadScene(path->string()));
+        const HedgehogEngine::SceneSnapshot before = world.Context.GetSceneManager().CaptureSnapshot();
+
+        ECS::ECS&   ecs  = world.Context.GetECS();
+        ECS::Entity fill = ECS::INVALID_ENTITY;
+        for (ECS::Entity entity = 0; entity < ECS::MAX_ENTITIES; ++entity)
+            if (ecs.IsAlive(entity) && ecs.HasComponent<ECS::HierarchyComponent>(entity) &&
+                ecs.GetComponent<ECS::HierarchyComponent>(entity).Name == "BarFill")
+                fill = entity;
+        REQUIRE(fill != ECS::INVALID_ENTITY);
+
+        REQUIRE(world.Context.Play());
+        std::vector<float> widths;
+        for (int frame = 0; frame < 3000; ++frame)
+        {
+            world.Context.UpdateContext(1.0f, STEP);
+            if (InScene(world, "Scenes/Pbr.yaml"))
+                break;
+            widths.push_back(ecs.GetComponent<HedgehogEngine::UiRectComponent>(fill).Size.x());
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        }
+        REQUIRE(InScene(world, "Scenes/Pbr.yaml"));
+        CHECK(widths.size() >= 2);
+        for (size_t i = 1; i < widths.size(); ++i)
+            CHECK(widths[i] >= widths[i - 1]);
+        CHECK(widths.back() <= 800.0f);
+        CHECK(log.Lines("LoadingScreen: Scenes/Pbr.yaml is loaded").size() == 1);
+        CHECK(log.Lines("[Scene] Loaded assets://Scenes/Pbr.yaml in the background").size() == 1);
+
+        REQUIRE(world.Context.Stop());
+        CHECK(world.Context.GetSceneManager().CaptureSnapshot().Yaml == before.Yaml);
+    }
     CHECK(log.Lines("[ERROR]").empty());
     CHECK(log.Lines("[WARNING]").empty());
 }

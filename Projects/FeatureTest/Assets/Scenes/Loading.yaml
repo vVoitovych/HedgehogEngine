@@ -1,0 +1,152 @@
+Scene name: Loading
+Scene:
+  - Entity: 0
+    Name: Root
+    Parent: 0
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    Children:
+      - Entity: 1
+        Name: MainCamera
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 4]
+          Rotation: [0, 0, 0]
+          Scale: [1, 1, 1]
+        CameraComponent:
+          Enabled: true
+          ProjectionType: 0
+          Fov: 60
+          OrthoSize: 10
+          NearPlane: 0.1
+          FarPlane: 1000
+          LayerMask: 4294967295
+          TargetMode: 0
+          TargetName: ""
+          GraphName: game
+          Priority: 0
+        Children:
+          []
+      - Entity: 2
+        Name: LoadingCanvas
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 0]
+          Rotation: [0, 0, 0]
+          Scale: [1, 1, 1]
+        UiCanvasComponent:
+          Enabled: true
+          ScaleMode: 1
+          ReferenceResolution: [1920, 1080]
+          MatchWidthOrHeight: 0.5
+          SortOrder: 0
+        ScriptComponent:
+          ScriptEnable: true
+          ScriptFile: Scripts/LoadingScreen.lua
+        Children:
+          - Entity: 3
+            Name: Backdrop
+            Parent: 2
+            TransformComponent:
+              Position: [0, 0, 0]
+              Rotation: [0, 0, 0]
+              Scale: [1, 1, 1]
+            UiRectComponent:
+              Visible: true
+              AnchorMin: [0, 0]
+              AnchorMax: [1, 1]
+              Pivot: [0.5, 0.5]
+              Offset: [0, 0]
+              Size: [0, 0]
+            UiImageComponent:
+              Texture: ""
+              Color: [0.05, 0.06, 0.09, 1]
+            Children:
+              []
+          - Entity: 4
+            Name: Title
+            Parent: 2
+            TransformComponent:
+              Position: [0, 0, 0]
+              Rotation: [0, 0, 0]
+              Scale: [1, 1, 1]
+            UiRectComponent:
+              Visible: true
+              AnchorMin: [0.5, 0.5]
+              AnchorMax: [0.5, 0.5]
+              Pivot: [0.5, 0.5]
+              Offset: [0, -120]
+              Size: [1200, 100]
+            UiTextComponent:
+              Text: Loading...
+              Font: engine://Content/Fonts/Karla-Regular.ttf
+              FontSize: 64
+              Color: [0.95, 0.85, 0.6, 1]
+              Align: 1
+              VerticalAlign: 1
+              Wrap: false
+            Children:
+              []
+          - Entity: 5
+            Name: BarBack
+            Parent: 2
+            TransformComponent:
+              Position: [0, 0, 0]
+              Rotation: [0, 0, 0]
+              Scale: [1, 1, 1]
+            UiRectComponent:
+              Visible: true
+              AnchorMin: [0.5, 0.5]
+              AnchorMax: [0.5, 0.5]
+              Pivot: [0.5, 0.5]
+              Offset: [0, 0]
+              Size: [800, 40]
+            UiImageComponent:
+              Texture: ""
+              Color: [0.2, 0.22, 0.28, 1]
+            Children:
+              - Entity: 6
+                Name: BarFill
+                Parent: 5
+                TransformComponent:
+                  Position: [0, 0, 0]
+                  Rotation: [0, 0, 0]
+                  Scale: [1, 1, 1]
+                UiRectComponent:
+                  Visible: true
+                  AnchorMin: [0, 0]
+                  AnchorMax: [0, 1]
+                  Pivot: [0, 0.5]
+                  Offset: [0, 0]
+                  Size: [0, 0]
+                UiImageComponent:
+                  Texture: ""
+                  Color: [0.4, 0.8, 1, 1]
+                Children:
+                  []
+          - Entity: 7
+            Name: Percent
+            Parent: 2
+            TransformComponent:
+              Position: [0, 0, 0]
+              Rotation: [0, 0, 0]
+              Scale: [1, 1, 1]
+            UiRectComponent:
+              Visible: true
+              AnchorMin: [0.5, 0.5]
+              AnchorMax: [0.5, 0.5]
+              Pivot: [0.5, 0.5]
+              Offset: [0, 80]
+              Size: [400, 60]
+            UiTextComponent:
+              Text: 0%
+              Font: engine://Content/Fonts/Karla-Regular.ttf
+              FontSize: 40
+              Color: [0.85, 0.9, 1, 1]
+              Align: 1
+              VerticalAlign: 1
+              Wrap: false
+            Children:
+              []
