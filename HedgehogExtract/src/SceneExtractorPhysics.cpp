@@ -4,6 +4,7 @@
 #include "api/RenderScene.hpp"
 
 #include "ECS/api/ECS.hpp"
+#include "HedgehogEngine/api/ECS/components/CharacterControllerComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/ColliderComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RigidBodyComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
@@ -155,8 +156,13 @@ namespace HX
     {
         HH_PROFILE_ZONE("Extract: collider lines");
         LineList& lines = outScene.DebugLines;
+        // The view exists only where the controller component is registered.
+        const bool characters = ecs.HasSystem<HedgehogEngine::CharacterControllerListSystem>();
         for (const ECS::Entity entity : physicsSystem.GetEntities())
         {
+            // A character's collider makes no body (its capsule is drawn below).
+            if (characters && ecs.HasComponent<HedgehogEngine::CharacterControllerComponent>(entity))
+                continue;
             const auto& collider  = ecs.GetComponent<HedgehogEngine::ColliderComponent>(entity);
             const auto& transform = ecs.GetComponent<HedgehogEngine::TransformComponent>(entity);
             const ColliderFrame frame = MakeFrame(transform.ObjMatrix, collider.Center);
@@ -177,6 +183,22 @@ namespace HX
                            std::max(0.0f, collider.Height * 0.5f - collider.Radius) * largest, color);
                 break;
             }
+        }
+
+        // Characters stand upright, unscaled, at their entity's world position, as the physics
+        // system makes them.
+        if (!characters)
+            return;
+        for (const ECS::Entity entity : ecs.GetSystem<HedgehogEngine::CharacterControllerListSystem>()->GetEntities())
+        {
+            const auto&   controller = ecs.GetComponent<HedgehogEngine::CharacterControllerComponent>(entity);
+            const auto&   world      = ecs.GetComponent<HedgehogEngine::TransformComponent>(entity).ObjMatrix;
+            ColliderFrame frame;
+            frame.Center = HM::Vector3(world[3].x(), world[3].y(), world[3].z()) + controller.Center;
+            frame.Axes   = { HM::Vector3(1.0f, 0.0f, 0.0f), HM::Vector3(0.0f, 1.0f, 0.0f), HM::Vector3(0.0f, 0.0f, 1.0f) };
+            frame.Scale  = HM::Vector3(1.0f, 1.0f, 1.0f);
+            AddCapsule(lines, frame, controller.Radius, std::max(0.0f, controller.Height * 0.5f - controller.Radius),
+                       PHYSICS_DEBUG_CHARACTER_COLOR);
         }
     }
 }

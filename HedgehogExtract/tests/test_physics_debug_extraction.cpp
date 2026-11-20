@@ -4,6 +4,7 @@
 #include "HedgehogExtract/api/SceneExtractor.hpp"
 
 #include "ECS/api/ECS.hpp"
+#include "HedgehogEngine/api/ECS/components/CharacterControllerComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/ColliderComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RigidBodyComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
@@ -232,4 +233,44 @@ TEST_CASE("Physics debug - nothing without colliders")
     const ECS::Entity   entity = fixture.ecs.CreateEntity();
     fixture.ecs.AddComponent(entity, TransformComponent{});
     CHECK(fixture.Extract().DebugLines.empty());
+}
+
+TEST_CASE("Physics debug - a character's capsule stands upright at its entity, in the character colour")
+{
+    PhysicsDebugFixture fixture;
+    fixture.ecs.RegisterComponent<HedgehogEngine::CharacterControllerComponent>();
+    fixture.ecs.RegisterSystem<HedgehogEngine::CharacterControllerListSystem>();
+    ECS::Signature signature;
+    signature.set(fixture.ecs.GetComponentType<HedgehogEngine::CharacterControllerComponent>());
+    signature.set(fixture.ecs.GetComponentType<TransformComponent>());
+    fixture.ecs.SetSystemSignature<HedgehogEngine::CharacterControllerListSystem>(signature);
+
+    // Turned and scaled, which a character ignores; a collider beside it is not drawn.
+    const HM::Matrix4x4 world = HM::Matrix4x4::GetTranslation(HM::Vector3(2.0f, 3.0f, 4.0f)) *
+                                HM::Matrix4x4::GetRotationX(std::numbers::pi_v<float> * 0.5f) *
+                                HM::Matrix4x4::GetScale(2.0f, 2.0f, 2.0f);
+    const ECS::Entity entity = fixture.Add(world, ColliderComponent{});
+    HedgehogEngine::CharacterControllerComponent controller;
+    controller.Radius = 0.4f;
+    controller.Height = 1.8f; // a cylinder of half height 0.5
+    controller.Center = HM::Vector3(0.0f, 0.0f, 0.1f);
+    fixture.ecs.AddComponent(entity, controller);
+
+    const HX::RenderScene scene = fixture.Extract();
+    const size_t segments = 2 * SceneExtractor::PHYSICS_DEBUG_CIRCLE_SEGMENTS + 4 + 2 * SceneExtractor::PHYSICS_DEBUG_CIRCLE_SEGMENTS;
+    REQUIRE(scene.DebugLines.size() == 2 * segments);
+    const HM::Vector3 center(2.0f, 3.0f, 4.1f);
+    float lowZ = 100.0f, highZ = -100.0f;
+    for (const HX::DebugLineVertex& vertex : scene.DebugLines)
+    {
+        const HM::Vector3& p = vertex.Position;
+        lowZ  = std::min(lowZ, p.z());
+        highZ = std::max(highZ, p.z());
+        // Every point is the radius from the upright axis segment.
+        const float along = std::clamp(p.z() - center.z(), -0.5f, 0.5f);
+        CHECK(std::abs(Distance(p, center + HM::Vector3(0.0f, 0.0f, along)) - 0.4f) < EPSILON);
+        CHECK(vertex.Color == SceneExtractor::PHYSICS_DEBUG_CHARACTER_COLOR);
+    }
+    CHECK(std::abs(lowZ - (center.z() - 0.9f)) < EPSILON);
+    CHECK(std::abs(highZ - (center.z() + 0.9f)) < EPSILON);
 }

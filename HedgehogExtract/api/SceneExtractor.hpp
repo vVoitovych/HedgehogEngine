@@ -43,6 +43,7 @@ namespace HX
         static constexpr uint32_t PHYSICS_DEBUG_DYNAMIC_COLOR   = 0xff2896ff; // orange
         static constexpr uint32_t PHYSICS_DEBUG_KINEMATIC_COLOR = 0xffff9650; // blue
         static constexpr uint32_t PHYSICS_DEBUG_TRIGGER_COLOR   = 0xff3ce6ff; // yellow, whatever the body
+        static constexpr uint32_t PHYSICS_DEBUG_CHARACTER_COLOR = 0xffff40ff; // magenta: a character's capsule
         // Segments of a sphere's circle or a capsule's end circle; a capsule's half arc takes half.
         static constexpr size_t PHYSICS_DEBUG_CIRCLE_SEGMENTS = 24;
         static constexpr uint32_t PARTICLE_SHAPE_COLOR = 0xffffc880; // light blue: a particle emitter's shape
@@ -85,8 +86,11 @@ namespace HX
         // Center. A box gives its 12 edges; a sphere (Radius times the largest scale) three great
         // circles; a capsule along local +Z (Radius and Height / 2 - Radius times the largest scale)
         // its two end circles, four side lines and four half arcs. Coloured by trigger, then body
-        // kind (the PHYSICS_DEBUG_*_COLOR constants). It reads components only, so it works in Edit
-        // mode too, and allocates nothing once the lines' storage has grown.
+        // kind (the PHYSICS_DEBUG_*_COLOR constants). Then every character (the
+        // CharacterControllerListSystem's entities, when the ECS has it) as its upright capsule at its
+        // entity's world position plus its Center, in PHYSICS_DEBUG_CHARACTER_COLOR; a collider on a
+        // character's entity, which makes no body, is not drawn. It reads components only, so it works
+        // in Edit mode too, and allocates nothing once the lines' storage has grown.
         void ExtractPhysicsDebug(const ECS::ECS& ecs, const HedgehogEngine::PhysicsSystem& physicsSystem,
                                  RenderScene& outScene) const;
 
