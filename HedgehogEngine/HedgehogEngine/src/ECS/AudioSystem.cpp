@@ -209,11 +209,17 @@ namespace HedgehogEngine
         m_Audio->Stop(source.Sound);
         source.Sound = {};
 
+        const HA::AudioPose  pose   = HA::MakeAudioPose(ecs.GetComponent<TransformComponent>(entity).ObjMatrix);
+        const HA::PlayParams params = MakePlayParams(source, pose);
+        if (source.Stream)
+        {
+            source.Sound = m_Audio->PlayStream(ToVirtualPath(source.Clip), *m_Files, params);
+            return source.Sound;
+        }
         const HA::AudioClipId clip = m_Audio->LoadClip(ToVirtualPath(source.Clip), *m_Files);
         if (!clip.IsValid())
             return {};
-        const HA::AudioPose pose = HA::MakeAudioPose(ecs.GetComponent<TransformComponent>(entity).ObjMatrix);
-        source.Sound             = m_Audio->Play(clip, MakePlayParams(source, pose));
+        source.Sound = m_Audio->Play(clip, params);
         return source.Sound;
     }
 

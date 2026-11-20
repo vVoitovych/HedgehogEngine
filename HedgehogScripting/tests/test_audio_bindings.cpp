@@ -259,3 +259,30 @@ TEST_CASE("Audio bindings - bus volumes read back, one-shots take a bus, and bad
     CHECK(world.Audio().GetBusVolume(HA::AudioBus::Voice) == doctest::Approx(0.25f));
     REQUIRE(world.Stop());
 }
+
+TEST_CASE("Audio bindings - a script streams a source, which plays without caching its clip")
+{
+    AudioWorld world;
+    world.WriteScript("Music.lua", Script("Music",
+        "self.source = self.entity:addAudioSource()\n"
+        "self.source.clip = 'Audio/Tone440.wav'\n"
+        "self.source.stream = true\n"
+        "self.source.loop = true\n"
+        "self.source.spatial = false\n"
+        "Log.info('streamed', tostring(self.source.stream), self.source:play(), self.source:isPlaying())",
+        ""));
+    const ECS::Entity entity = world.AddScripted("Scripts/Music.lua");
+
+    LogCapture log;
+    REQUIRE(world.Context.Play());
+    world.Step();
+    CHECK(log.Lines("streamed true true true").size() == 1);
+    CHECK(world.Ecs().GetComponent<AudioSourceComponent>(entity).Stream);
+    CHECK(world.Audio().GetCachedClipCount() == 0);
+    double left = 0.0;
+    double right = 0.0;
+    world.Mix(4800, left, right);
+    CHECK(left > 0.0);
+    CHECK(log.Lines("stack traceback").empty());
+    REQUIRE(world.Stop());
+}

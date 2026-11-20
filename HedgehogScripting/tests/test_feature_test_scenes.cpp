@@ -121,6 +121,13 @@ TEST_CASE("FeatureTest - every scene loads with its project, references only exi
             CHECK(log.Lines("SaveDemo: loaded; the entity is back at").size() == 1);
         }
 
+        // The audio sample streams its music and the mix demo halves the Music bus, then puts it back.
+        if (scene.ends_with("/Audio.yaml"))
+        {
+            CHECK(log.Lines("AudioMixDemo: Music bus at 0.5").size() == 1);
+            CHECK(log.Lines("AudioMixDemo: Music bus back at 1").size() == 1);
+        }
+
         // The physics sample: the ray found the stack, the ball fell through the trigger zone, the
         // first thing it landed on was the floor, and the kinematic paddle pushed the crate.
         if (scene.ends_with("/Physics.yaml"))

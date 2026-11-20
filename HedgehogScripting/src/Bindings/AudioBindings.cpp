@@ -146,6 +146,9 @@ namespace HedgehogScripting::Bindings
                 "loop", sol::property(
                     [&ecs](const AudioSourceRef& ref) { return Resolve(ecs, ref).Loop; },
                     [&ecs](const AudioSourceRef& ref, bool loop) { Resolve(ecs, ref).Loop = loop; }),
+                "stream", sol::property(
+                    [&ecs](const AudioSourceRef& ref) { return Resolve(ecs, ref).Stream; },
+                    [&ecs](const AudioSourceRef& ref, bool stream) { Resolve(ecs, ref).Stream = stream; }),
                 "spatial", sol::property(
                     [&ecs](const AudioSourceRef& ref) { return Resolve(ecs, ref).Spatial; },
                     [&ecs](const AudioSourceRef& ref, bool spatial) { Resolve(ecs, ref).Spatial = spatial; }),
