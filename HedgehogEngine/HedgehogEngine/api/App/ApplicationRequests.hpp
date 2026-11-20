@@ -1,6 +1,9 @@
 #pragma once
 
 #include "HedgehogEngine/HedgehogWindow/api/CursorMode.hpp"
+#include "HedgehogEngine/HedgehogWindow/api/DisplayMode.hpp"
+
+#include <vector>
 
 namespace HedgehogEngine
 {
@@ -9,11 +12,13 @@ namespace HedgehogEngine
     // game loop ends, the editor stops Play. Scripts also set Cursor (the Cursor table); the game
     // runtime applies it to its window and locks the game's pointer while it is Locked; the editor
     // does not apply it yet. Play and Stop clear both. IsEditor is set once by the Editor and never
-    // cleared.
+    // cleared. VideoModes is the other way: the host lists its monitor's resolutions (normalized, empty
+    // with no window), since scripts see no window (PlayerSettings.getResolutions()).
     struct ApplicationRequests
     {
-        bool           QuitRequested = false;
-        HW::CursorMode Cursor        = HW::CursorMode::Normal;
-        bool           IsEditor      = false;
+        bool                       QuitRequested = false;
+        HW::CursorMode             Cursor        = HW::CursorMode::Normal;
+        bool                       IsEditor      = false;
+        std::vector<HW::VideoMode> VideoModes;
     };
 }

@@ -5,6 +5,7 @@
 
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
 #include "HedgehogEngine/api/Events/EventBus.hpp"
+#include "HedgehogEngine/HedgehogSettings/api/PlayerSettings.hpp"
 
 #include "ECS/api/Entity.hpp"
 #include "ECS/api/System.hpp"
@@ -371,6 +372,8 @@ namespace HedgehogScripting
         // Entities scripts asked to destroy, deleted once every script in the hook has run, so
         // nothing is destroyed while the scripts are being walked.
         std::vector<Bindings::ScriptEntity>           m_PendingDestroys;
+        // PlayerSettings writes not yet applied (the bindings' preview).
+        std::optional<HedgehogSettings::PlayerSettings> m_PendingPlayerSettings;
 
         // What Time.deltaTime and Time.frame read: the current hook's dt and the OnUpdate calls
         // since Play.

@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -11,6 +12,11 @@ namespace HedgehogEngine
 {
     class EngineContext;
     struct FixedStepClock;
+}
+
+namespace HedgehogSettings
+{
+    struct PlayerSettings;
 }
 
 // The engine types and functions the ScriptSystem gives its scripts, as globals.
@@ -100,6 +106,19 @@ namespace HedgehogScripting::Bindings
     // loads keep it), and a locked pointer sits at the view's centre, so a menu the mouse should
     // reach unlocks first. context must outlive lua.
     void RegisterCursor(sol::state& lua, HedgehogEngine::EngineContext& context);
+
+    // The PlayerSettings table over the engine's player settings: windowMode and quality (by name),
+    // width and height (64 to 16384, 0 the project's), vsync, maxFps (0, or 15 to 1000), masterVolume
+    // (0 to 1), getBusVolume(bus) and setBusVolume(bus, v) (Music, Sfx, Voice, Ui or Master),
+    // getResolutions() (the host's VideoModes as { width, height, refreshRate }), getQualityLevels(),
+    // hasPendingChanges(), apply(), save() (player://player_settings.yaml) and revert() (reads it again).
+    // Writes wait in pending, which reads see, until apply() hands them to the engine, so a menu can
+    // preview and cancel; a bad value is a script error naming the field and its range. Outside Play
+    // writes, apply, save and revert do nothing and the first warns. The ScriptSystem clears pending at
+    // Play start; context and pending must outlive lua.
+    void RegisterPlayerSettings(sol::state&                                      lua,
+                                HedgehogEngine::EngineContext&                    context,
+                                std::optional<HedgehogSettings::PlayerSettings>& pending);
 
     // The Time table: deltaTime (the hook's dt: OnUpdate's scaled dt, or the fixed dt inside
     // OnFixedUpdate), fixedDeltaTime, time (the clock's scaled simulated time), frame (OnUpdate

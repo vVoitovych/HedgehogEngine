@@ -202,6 +202,7 @@ namespace Editor
         // Sounds play only in Play mode; a missing output device leaves the engine silent.
         (void)engineContext.GetAudioEngine().Init(HA::AudioEngineDesc{});
 
+        engineContext.GetApplicationRequests().VideoModes = m_Context->GetWindowContext().GetWindow().GetVideoModes();
         // The player's choices for Play in the editor, from the editor's own player folder so a shipped
         // game's file is never touched. Only the volumes apply here (each Play); the display, frame cap and
         // quality are the game's, so the Settings window never saves a player's quality.
