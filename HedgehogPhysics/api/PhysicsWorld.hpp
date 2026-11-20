@@ -107,6 +107,20 @@ namespace HP
         [[nodiscard]] HEDGEHOG_PHYSICS_API std::optional<RayHit> CastRay(const HM::Vector3& origin, const HM::Vector3& direction,
                                                                          float maxDistance, uint16_t layerMask = ALL_LAYERS_MASK,
                                                                          bool includeSensors = false) const;
+        // The nearest body shape (a box, sphere or capsule; its Scale baked in), posed at pose and swept
+        // along direction (any length but zero) for maxDistance metres, touches, with the same layer
+        // and sensor rules as CastRay. A shape touching a body where it starts hits it at distance 0.
+        // Nothing for a stopped world, a height field, a size or scale that is not positive and
+        // finite, a non-finite pose, centre or direction, or a maxDistance that is not positive and
+        // finite.
+        [[nodiscard]] HEDGEHOG_PHYSICS_API std::optional<ShapeHit> CastShape(const ShapeDesc& shape, const BodyPose& pose,
+                                                                             const HM::Vector3& direction, float maxDistance,
+                                                                             uint16_t layerMask = ALL_LAYERS_MASK,
+                                                                             bool includeSensors = false) const;
+        // Replaces out's contents with every body touching shape at pose, once each, sorted by user
+        // data then handle, so the order never depends on Jolt's. Empty for what CastShape refuses.
+        HEDGEHOG_PHYSICS_API void Overlap(const ShapeDesc& shape, const BodyPose& pose, std::vector<OverlapHit>& out,
+                                          uint16_t layerMask = ALL_LAYERS_MASK, bool includeSensors = false) const;
 
         // ---- Characters (CharacterTypes.hpp). Each has a kinematic inner body of its capsule, with its
         // user data and layer, so rays hit it, sensors report it in the contact events and dynamic
