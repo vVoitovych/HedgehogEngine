@@ -101,6 +101,7 @@ namespace HedgehogScripting
     ScriptSystem::ScriptSystem(HedgehogEngine::EngineContext& context, const FS::FileSystemManager& scriptFiles)
         : m_ScriptFiles(scriptFiles)
         , m_Context(context)
+        , m_InputListen(std::make_unique<Bindings::InputListen>())
     {
         m_Traceback       = OpenSandbox(m_Lua);
         m_GameState       = m_Lua.create_table();
@@ -158,7 +159,7 @@ namespace HedgehogScripting
         RegisterPropertyHelpers();
         RegisterReload();
         Bindings::RegisterTime(m_Lua, context.GetFixedStepClock(), m_DeltaTime, m_Frame);
-        Bindings::RegisterInput(m_Lua, context);
+        Bindings::RegisterInput(m_Lua, context, *m_InputListen);
         Bindings::RegisterRegistryComponents(m_Lua, context);
         m_BaseEnvironment = sol::environment(m_Lua, sol::create, m_Lua.globals());
         StartClassSupport();
@@ -527,6 +528,7 @@ namespace HedgehogScripting
         m_PendingRemovals.clear();
         m_PendingDestroys.clear();
         m_PendingPlayerSettings.reset();
+        *m_InputListen = {};
         m_Subscriptions.clear();
         m_QueuedEvents.clear();
         m_DeltaTime     = 0.0f;
@@ -558,6 +560,8 @@ namespace HedgehogScripting
     {
         HH_PROFILE_ZONE("Scripts: OnFixedUpdate");
         m_DeltaTime = fixedDeltaTime;
+        if (m_InputListen->Active)
+            Bindings::ConsumeAllInput(m_Context);
         SyncScripts(ecs);
         InvokeAll("OnFixedUpdate", fixedDeltaTime);
         for (const ECS::Entity entity : std::exchange(m_PendingRemovals, {}))
@@ -571,6 +575,13 @@ namespace HedgehogScripting
         ++m_Frame;
         m_CoroutineTime += deltaTime;
         HH_PROFILE_ZONE("Scripts: OnUpdate");
+        if (m_InputListen->Active)
+        {
+            if (std::optional<sol::table> rebound = Bindings::UpdateInputListen(m_Lua, m_Context, *m_InputListen))
+                m_QueuedEvents.push_back(QueuedEvent{ "InputRebound", std::move(*rebound) });
+            // The press that ended listening is not the game's either.
+            Bindings::ConsumeAllInput(m_Context);
+        }
         SyncScripts(ecs);
         InvokeAll("OnUpdate", deltaTime);
         {
@@ -600,6 +611,7 @@ namespace HedgehogScripting
         m_Subscriptions.clear();
         m_QueuedEvents.clear();
         m_PendingLoads.clear();
+        *m_InputListen = {};
 
         if (m_CallbackEcs == &ecs)
         {
