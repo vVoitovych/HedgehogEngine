@@ -41,6 +41,23 @@ namespace HP
         float       Distance = 0.0f;                          // from the ray's origin, in metres
     };
 
+    // The nearest body a shape cast reached.
+    struct ShapeHit
+    {
+        BodyHandle  Body;
+        uint64_t    UserData = 0;
+        HM::Vector3 Point    = HM::Vector3(0.0f, 0.0f, 0.0f); // where they first touch, on the body
+        HM::Vector3 Normal   = HM::Vector3(0.0f, 0.0f, 0.0f); // the body's surface there, facing the shape
+        float       Distance = 0.0f; // how far the shape travelled before touching, in metres
+    };
+
+    // A body an overlap query found touching its shape.
+    struct OverlapHit
+    {
+        BodyHandle Body;
+        uint64_t   UserData = 0;
+    };
+
     // Every physics layer, for a query's layer mask.
     inline constexpr uint16_t ALL_LAYERS_MASK = 0xffffu;
 }
