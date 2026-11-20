@@ -195,7 +195,8 @@ namespace HX
             const auto&   world      = ecs.GetComponent<HedgehogEngine::TransformComponent>(entity).ObjMatrix;
             ColliderFrame frame;
             frame.Center = HM::Vector3(world[3].x(), world[3].y(), world[3].z()) + controller.Center;
-            frame.Axes   = { HM::Vector3(1.0f, 0.0f, 0.0f), HM::Vector3(0.0f, 1.0f, 0.0f), HM::Vector3(0.0f, 0.0f, 1.0f) };
+            frame.Axes   = { HM::Vector3(1.0f, 0.0f, 0.0f), HM::Vector3(0.0f, 1.0f, 0.0f),
+                             HM::Vector3(0.0f, 0.0f, 1.0f) };
             frame.Scale  = HM::Vector3(1.0f, 1.0f, 1.0f);
             AddCapsule(lines, frame, controller.Radius, std::max(0.0f, controller.Height * 0.5f - controller.Radius),
                        PHYSICS_DEBUG_CHARACTER_COLOR);
