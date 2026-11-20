@@ -148,6 +148,7 @@ namespace HedgehogEngine
 
     void PhysicsSystem::OnUnregister(ECS::ECS& ecs)
     {
+        DestroyJoints(ecs);
         DestroyCharacters(ecs);
         DestroyBodies(ecs);
         m_Ecs     = nullptr;
@@ -167,6 +168,7 @@ namespace HedgehogEngine
             return;
         SyncBodies(ecs);
         SyncCharacters(ecs);
+        SyncJoints(ecs);
     }
 
     void PhysicsSystem::OnPostFixedUpdate(ECS::ECS& ecs, float fixedDeltaTime)
@@ -181,6 +183,7 @@ namespace HedgehogEngine
             HH_PROFILE_ZONE("Physics: sync bodies");
             SyncBodies(ecs);
             SyncCharacters(ecs);
+            SyncJoints(ecs);
             FollowTransforms(ecs, fixedDeltaTime);
             FollowCharacterTransforms(ecs);
         }
@@ -200,6 +203,7 @@ namespace HedgehogEngine
 
     void PhysicsSystem::OnPlayStop(ECS::ECS& ecs)
     {
+        DestroyJoints(ecs);
         DestroyCharacters(ecs);
         DestroyBodies(ecs);
         m_WarnedNoCollider.clear();
@@ -610,6 +614,8 @@ namespace HedgehogEngine
             m_World->SetLinearVelocity(rebuilt, linear);
             m_World->SetAngularVelocity(rebuilt, angular);
         }
+        // Its joints went with its old body.
+        SyncJoints(ecs);
     }
 
     HM::Vector3 PhysicsSystem::GetGravity() const

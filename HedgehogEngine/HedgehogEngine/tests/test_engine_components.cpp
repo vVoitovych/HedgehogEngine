@@ -20,7 +20,7 @@
 using namespace HedgehogEngine;
 using EcsSerialization::ComponentInfo;
 
-TEST_CASE("Engine components - all 22 are registered once, in serializer order, under their YAML keys")
+TEST_CASE("Engine components - all 23 are registered once, in serializer order, under their YAML keys")
 {
     EngineContext                                  context;
     const EcsSerialization::ComponentTypeRegistry& types = context.GetComponentTypes();
@@ -33,7 +33,7 @@ TEST_CASE("Engine components - all 22 are registered once, in serializer order, 
         "TransformComponent", "HierarchyComponent", "MeshComponent",     "RenderComponent",       "LightComponent",
         "CameraComponent",    "AnimatorComponent",  "UiCanvasComponent", "UiRectComponent",       "UiImageComponent",
         "UiTextComponent",    "UiButtonComponent",  "AudioSourceComponent", "AudioListenerComponent",
-        "RigidBodyComponent", "ColliderComponent", "CharacterControllerComponent", "EnvironmentComponent", "TerrainComponent", "ParticleSystemComponent", "PrefabInstanceComponent",
+        "RigidBodyComponent", "ColliderComponent", "CharacterControllerComponent", "JointComponent", "EnvironmentComponent", "TerrainComponent", "ParticleSystemComponent", "PrefabInstanceComponent",
         "ScriptComponent",
     };
     CHECK(keys == expected);
@@ -53,7 +53,7 @@ TEST_CASE("Engine components - all 22 are registered once, in serializer order, 
         if (info.Addable)
             addable.insert(info.Key);
     }
-    CHECK(addable.size() == 19);
+    CHECK(addable.size() == 20);
     CHECK_FALSE(types.Find("TransformComponent")->Addable);
     CHECK_FALSE(types.Find("TransformComponent")->Removable);
     CHECK_FALSE(types.Find("PrefabInstanceComponent")->Addable);
@@ -67,6 +67,9 @@ TEST_CASE("Engine components - all 22 are registered once, in serializer order, 
     CHECK(types.Find("RigidBodyComponent")->Icon == "rigid_body");
     CHECK(types.Find("CharacterControllerComponent")->Category == "Physics");
     CHECK(types.Find("CharacterControllerComponent")->Icon == "character");
+    CHECK(types.Find("JointComponent")->Category == "Physics");
+    CHECK(types.Find("JointComponent")->Icon == "joint");
+    CHECK(types.Find("JointComponent")->EnabledProperty == "Enabled");
     CHECK(types.Find("EnvironmentComponent")->Category == "Rendering");
     CHECK(types.Find("EnvironmentComponent")->Icon == "scene");
     CHECK(types.Find("EnvironmentComponent")->EnabledProperty == "Enabled");
@@ -132,7 +135,7 @@ TEST_CASE("Engine components - the inspector order, and what the inspector draws
     const std::vector<std::string> expected = {
         "Transform", "Light",   "Camera",    "Mesh",    "Render",       "Script",         "Animator", "UI canvas",
         "UI rect",   "UI image", "UI text",  "UI button", "Audio source", "Audio listener", "Rigid body", "Collider",
-        "Character controller", "Environment", "Terrain", "Particle system",
+        "Character controller", "Joint", "Environment", "Terrain", "Particle system",
     };
     CHECK(shown == expected);
     CHECK_FALSE(context.GetComponentTypes().Find("HierarchyComponent")->Inspectable);

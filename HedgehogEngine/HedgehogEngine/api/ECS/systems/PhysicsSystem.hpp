@@ -4,6 +4,7 @@
 
 #include "HedgehogPhysics/api/BodyHandle.hpp"
 #include "HedgehogPhysics/api/CharacterTypes.hpp"
+#include "HedgehogPhysics/api/ConstraintTypes.hpp"
 #include "HedgehogPhysics/api/PhysicsEvents.hpp"
 
 #include "ECS/api/ECS.hpp"
@@ -14,6 +15,7 @@
 
 #include <cstdint>
 #include <optional>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -46,6 +48,11 @@ namespace HedgehogEngine
 
     // An entity view of the characters (CharacterControllerComponent + TransformComponent).
     class CharacterControllerListSystem : public ECS::System
+    {
+    };
+
+    // An entity view of the joints (JointComponent + TransformComponent).
+    class JointListSystem : public ECS::System
     {
     };
 
@@ -170,6 +177,17 @@ namespace HedgehogEngine
         // transform puts it. Nothing for an entity without a character.
         HEDGEHOG_ENGINE_API void RebuildCharacter(ECS::ECS& ecs, ECS::Entity entity);
 
+        // ---- Joints (JointComponent): each enabled joint whose entity has a body, joined to its
+        // connected entity's body (none: the world), is a constraint, made after the bodies each step
+        // and again whenever either body is made again; it goes with either body. A joint whose two
+        // sides are both static, or whose entity (or a live connected entity) has no body, makes
+        // nothing, with one warning per Play. Stop destroys them before the bodies.
+
+        // Makes the entity's joint again from its component (one edited during Play).
+        HEDGEHOG_ENGINE_API void                               RebuildJoint(ECS::ECS& ecs, ECS::Entity entity);
+        [[nodiscard]] HEDGEHOG_ENGINE_API HP::ConstraintHandle GetJoint(ECS::Entity entity) const;
+        [[nodiscard]] HEDGEHOG_ENGINE_API uint32_t             GetJointCount() const;
+
     private:
         struct TrackedBody
         {
@@ -217,6 +235,26 @@ namespace HedgehogEngine
         void MoveCharacters(ECS::ECS& ecs, float fixedDeltaTime);
         void DestroyCharacters(ECS::ECS& ecs);
         [[nodiscard]] const CharacterControllerComponent* FindCharacterComponent(ECS::Entity entity) const;
+
+        // Joints (PhysicsSystemJoints.cpp).
+        struct TrackedJoint
+        {
+            uint32_t             Generation = 0;
+            HP::ConstraintHandle Constraint;
+            ECS::Entity          Connected = ECS::INVALID_ENTITY;
+            HP::BodyHandle       BodyA; // the bodies it joins, so a body made again remakes it
+            HP::BodyHandle       BodyB;
+        };
+        void SyncJoints(ECS::ECS& ecs);
+        void CreateJoint(ECS::ECS& ecs, ECS::Entity entity);
+        void DestroyJoint(ECS::ECS& ecs, ECS::Entity entity);
+        void DestroyJoints(ECS::ECS& ecs);
+        // A joint that cannot be made, once per entity per Play.
+        void WarnJoint(ECS::Entity entity, const std::string& why);
+
+        std::unordered_map<ECS::Entity, TrackedJoint> m_Joints;
+        std::vector<ECS::Entity>                      m_GoneJoints;  // scratch
+        std::unordered_set<ECS::Entity>               m_WarnedJoints;
 
         HP::PhysicsWorld* m_World = nullptr;
         EventBus*         m_Bus   = nullptr;

@@ -61,6 +61,7 @@ namespace Editor
         SpaceWorld,
         Particles,
         Character,
+        Joint,
         Count
     };
 
