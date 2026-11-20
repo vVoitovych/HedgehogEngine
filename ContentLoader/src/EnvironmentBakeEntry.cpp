@@ -1,4 +1,5 @@
 #include "api/EnvironmentBake.hpp"
+#include "api/AssetPrefetch.hpp"
 #include "api/HalfFloat.hpp"
 
 #include "FileSystem/api/PathUtils.hpp"
@@ -36,6 +37,9 @@ namespace ContentLoader
                      desc.SampleCount, " samples.");
             return std::nullopt;
         }
+
+        if (std::optional<BakedEnvironment> prefetched = TakeEnvironment(virtualPath, desc))
+            return prefetched;
 
         const auto start = std::chrono::steady_clock::now();
         const auto image = LoadHdrImage(virtualPath, fileSystem);

@@ -1,10 +1,14 @@
 #include "api/TextureLoader.hpp"
+#include "api/AssetPrefetch.hpp"
 
 #include "FileSystem/api/PathUtils.hpp"
 #include "Logger/api/Logger.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.hpp"
+
+#include <optional>
+#include <utility>
 
 namespace ContentLoader
 {
@@ -33,6 +37,14 @@ namespace ContentLoader
     bool TextureLoader::LoadFromVirtualPath(const std::string& virtualPath,
                                              const FS::FileSystemManager& fileSystem)
     {
+        if (std::optional<PrefetchedTexture> prefetched = TakeTexture(virtualPath))
+        {
+            m_Width    = prefetched->Width;
+            m_Height   = prefetched->Height;
+            m_Channels = prefetched->Channels;
+            m_Pixels   = std::move(prefetched->Pixels);
+            return true;
+        }
         const auto bytes = fileSystem.ReadFile(virtualPath);
         if (!bytes)
         {
@@ -70,6 +82,8 @@ namespace ContentLoader
 
     const void* TextureLoader::GetData() const
     {
-        return m_Data;
+        if (m_Data)
+            return m_Data;
+        return m_Pixels.empty() ? nullptr : m_Pixels.data();
     }
 }
