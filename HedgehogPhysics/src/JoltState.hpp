@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ContactQueue.hpp"
+#include "HedgehogPhysics/api/ConstraintTypes.hpp"
 #include "JoltLayers.hpp"
 
 #include <Jolt/Jolt.h>
@@ -8,6 +9,7 @@
 #include <Jolt/Core/JobSystem.h>
 #include <Jolt/Core/TempAllocator.h>
 #include <Jolt/Physics/Character/CharacterVirtual.h>
+#include <Jolt/Physics/Constraints/TwoBodyConstraint.h>
 #include <Jolt/Physics/PhysicsSystem.h>
 
 #include <cstdint>
@@ -35,6 +37,17 @@ namespace HP
         float                           StickToFloorDistance = 0.0f;
     };
 
+    // A constraint and the bodies it joins (BodyHandle::INVALID for the world). A free slot has no
+    // Constraint.
+    struct ConstraintSlot
+    {
+        JPH::Ref<JPH::TwoBodyConstraint> Constraint;
+        uint32_t                         Generation = 0;
+        ConstraintType                   Type       = ConstraintType::Fixed;
+        uint32_t                         BodyA      = BodyHandle::INVALID;
+        uint32_t                         BodyB      = BodyHandle::INVALID;
+    };
+
     // What a running PhysicsWorld owns. Declared in the order things are built, so they are
     // destroyed in reverse: the physics system before the job system, allocator, filters and contact
     // queue it uses.
@@ -51,6 +64,8 @@ namespace HP
         // After the physics system, so the characters (which remove their inner bodies) go first.
         std::vector<CharacterSlot>          Characters;
         std::vector<uint32_t>               FreeCharacters;
+        std::vector<ConstraintSlot>         Constraints;
+        std::vector<uint32_t>               FreeConstraints;
 
         // Every body made, by its handle's value. A destroyed body's record waits in Destroyed until
         // the next step has reported its Exits.
