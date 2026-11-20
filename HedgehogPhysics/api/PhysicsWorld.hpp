@@ -1,6 +1,7 @@
 #pragma once
 
 #include "HedgehogPhysics/api/BodyHandle.hpp"
+#include "HedgehogPhysics/api/CharacterTypes.hpp"
 #include "HedgehogPhysics/api/HedgehogPhysicsApi.hpp"
 #include "HedgehogPhysics/api/PhysicsEvents.hpp"
 #include "HedgehogPhysics/api/PhysicsTypes.hpp"
@@ -58,6 +59,7 @@ namespace HP
         // positive, a stopped world, or a world holding its maximum of bodies.
         [[nodiscard]] HEDGEHOG_PHYSICS_API BodyHandle CreateBody(const BodyDesc& desc);
         HEDGEHOG_PHYSICS_API void                     DestroyBody(BodyHandle body);
+        // Destroys every body and every character.
         HEDGEHOG_PHYSICS_API void                     DestroyAllBodies();
         // Whether body is a live body of this world.
         [[nodiscard]] HEDGEHOG_PHYSICS_API bool       IsValid(BodyHandle body) const;
@@ -106,6 +108,30 @@ namespace HP
                                                                          float maxDistance, uint16_t layerMask = ALL_LAYERS_MASK,
                                                                          bool includeSensors = false) const;
 
+        // ---- Characters (CharacterTypes.hpp). Each has a kinematic inner body of its capsule, with its
+        // user data and layer, so rays hit it, sensors report it in the contact events and dynamic
+        // bodies collide with it. A character moves only through MoveCharacter, never in Step.
+
+        // An invalid handle, with one [Physics] error naming why, for a size that is not positive and
+        // finite, a non-finite pose or centre, a layer out of range, a mass that is not positive, a
+        // slope outside (0, 90) degrees, a negative strength, step, stick-to-floor or contact
+        // distance, or a stopped world.
+        [[nodiscard]] HEDGEHOG_PHYSICS_API CharacterHandle CreateCharacter(const CharacterDesc& desc);
+        HEDGEHOG_PHYSICS_API void                          DestroyCharacter(CharacterHandle character);
+        [[nodiscard]] HEDGEHOG_PHYSICS_API bool            IsValid(CharacterHandle character) const;
+        // Teleports the character (its rotation is about +Z only in effect) and finds its contacts there.
+        HEDGEHOG_PHYSICS_API void SetCharacterPose(CharacterHandle character, const BodyPose& pose);
+        // Moves the character over dt seconds: walking at velocity's horizontal part (along its ground
+        // when on it, never further up a slope too steep), jumping at velocity's +Z part when on the
+        // ground, carried by what it stands on, falling under gravity otherwise, climbing steps up to
+        // StepHeight and kept to the floor within StickToFloorDistance. Nothing for a stale handle, a
+        // dt that is not positive and finite, or a non-finite velocity or gravity.
+        HEDGEHOG_PHYSICS_API void MoveCharacter(CharacterHandle character, const HM::Vector3& velocity,
+                                                const HM::Vector3& gravity, float dt);
+        // Its state after its last move or teleport; the default state for a stale handle.
+        [[nodiscard]] HEDGEHOG_PHYSICS_API CharacterState GetCharacterState(CharacterHandle character) const;
+        [[nodiscard]] HEDGEHOG_PHYSICS_API size_t         GetCharacterCount() const;
+
         // ---- Contacts. Every step queues an Enter when two bodies begin touching and an Exit when
         // they part or one is destroyed (in the next step); bodies kept apart by the collision matrix
         // give none.
@@ -125,6 +151,8 @@ namespace HP
         [[nodiscard]] bool IsMotion(BodyHandle body, bool kinematicToo) const;
         // Turns the contacts Jolt queued during a step into the world's events (after every step).
         void               CollectContacts();
+        // Destroys every character (DestroyAllBodies, before the bodies, as each removes its inner body).
+        void               DestroyAllCharacters();
 
         std::unique_ptr<JoltState> m_State;
     };
