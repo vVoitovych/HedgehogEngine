@@ -121,6 +121,11 @@ namespace Editor
         };
         OutsideInput m_GameOutsideInput;
         OutsideInput m_SceneOutsideInput;
+        // Play applies the player's volumes as it starts and when they change (ApplyPlayerVolumes).
+        bool     m_WasInPlay            = false;
+        bool     m_PlayerSettingsNoted  = false;
+        uint64_t m_AppliedPlayerVersion = 0;
+        void     ApplyPlayerVolumes();
         // The script's cursor request is suspended by Escape or the Game view's window losing focus,
         // until a press on the Game image (CursorGate).
         bool           m_CursorSuspended = false;

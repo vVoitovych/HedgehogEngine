@@ -11,6 +11,7 @@
 #include "HedgehogEngine/api/Events/UiEvents.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/HedgehogSettings.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/LayerSettings.hpp"
+#include "HedgehogEngine/HedgehogSettings/api/PlayerSettings.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/ProjectSettings.hpp"
 #include "HedgehogCommon/api/Camera.hpp"
 #include "HedgehogExtract/api/SceneExtractor.hpp"
@@ -200,6 +201,18 @@ namespace Editor
 
         // Sounds play only in Play mode; a missing output device leaves the engine silent.
         (void)engineContext.GetAudioEngine().Init(HA::AudioEngineDesc{});
+
+        // The player's choices for Play in the editor, from the editor's own player folder so a shipped
+        // game's file is never touched. Only the volumes apply here (each Play); the display, frame cap and
+        // quality are the game's, so the Settings window never saves a player's quality.
+        if (const auto player = FS::GetPlayerDirectory(project.GetName(), true);
+            player && FS::MountPlayer(engineContext.GetFileSystem(), *player))
+        {
+            auto& playerSettings = engineContext.GetPlayerSettings();
+            playerSettings       = HedgehogSettings::MakeDefaultPlayerSettings(project);
+            (void)HedgehogSettings::LoadPlayerSettings(engineContext.GetFileSystem(), playerSettings);
+            engineContext.MarkPlayerSettingsChanged();
+        }
 
         // Engine settings must load before the renderer is constructed: they decide the size of
         // GPU resources it creates there. Loading afterwards leaves the settings dirty for the
@@ -440,6 +453,25 @@ namespace Editor
         return dt;
     }
 
+    void EditorApplication::ApplyPlayerVolumes()
+    {
+        auto&      engineContext = m_Context->GetEngineContext();
+        // Entering Play, not resuming it, so a volume a script set while playing holds through a pause.
+        const bool inPlay        = engineContext.GetPlayState() != HedgehogEngine::PlayState::Edit;
+        if (inPlay && (!m_WasInPlay || engineContext.GetPlayerSettingsVersion() != m_AppliedPlayerVersion))
+        {
+            engineContext.ApplyPlayerVolumes();
+            m_AppliedPlayerVersion = engineContext.GetPlayerSettingsVersion();
+            if (!m_PlayerSettingsNoted)
+            {
+                LOGINFO("[Editor] Play applies the player's volumes; the window, vsync, frame cap and quality "
+                        "apply only in the game.");
+                m_PlayerSettingsNoted = true;
+            }
+        }
+        m_WasInPlay = inPlay;
+    }
+
     float EditorApplication::StepFrameZones()
     {
         HH_PROFILE_ZONE("Frame");
@@ -494,6 +526,7 @@ namespace Editor
             }
             LOGINFO("[Editor] Application.quit() stopped Play.");
         }
+        ApplyPlayerVolumes();
 
         {
             HH_PROFILE_ZONE("Editor UI");

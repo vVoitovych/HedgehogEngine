@@ -9,6 +9,8 @@
 #include "HedgehogEngine/HedgehogSettings/api/ProjectSettings.hpp"
 #include "HedgehogEngine/api/Save/SaveGameManager.hpp"
 #include "HedgehogEngine/api/Scene/SceneManager.hpp"
+#include "HedgehogEngine/HedgehogSettings/api/ShadowmapingSettings.hpp"
+#include "HedgehogEngine/HedgehogWindow/api/DisplayMode.hpp"
 #include "HedgehogEngine/HedgehogWindow/api/Window.hpp"
 #include "HedgehogRenderer/Renderer.hpp"
 #include "HedgehogAudio/api/AudioEngine.hpp"
@@ -27,6 +29,44 @@
 
 namespace Runtime
 {
+    namespace
+    {
+        HW::WindowMode ToWindowMode(HedgehogSettings::PlayerWindowMode mode)
+        {
+            using HedgehogSettings::PlayerWindowMode;
+            static_assert(static_cast<int>(PlayerWindowMode::Windowed) == static_cast<int>(HW::WindowMode::Windowed));
+            static_assert(static_cast<int>(PlayerWindowMode::Borderless) ==
+                          static_cast<int>(HW::WindowMode::Borderless));
+            static_assert(static_cast<int>(PlayerWindowMode::Fullscreen) ==
+                          static_cast<int>(HW::WindowMode::Fullscreen));
+            return static_cast<HW::WindowMode>(mode);
+        }
+
+        // Windowed takes the player's size, else the project's; Fullscreen the player's resolution, 0 the
+        // monitor's own; Borderless none.
+        void ApplyWindow(HW::Window&                              window,
+                         const HedgehogSettings::PlayerSettings&  player,
+                         const HedgehogSettings::ProjectSettings& project)
+        {
+            int width  = static_cast<int>(player.Width);
+            int height = static_cast<int>(player.Height);
+            if (player.WindowMode == HedgehogSettings::PlayerWindowMode::Windowed && (width == 0 || height == 0))
+            {
+                width  = static_cast<int>(project.GetWindowWidth());
+                height = static_cast<int>(project.GetWindowHeight());
+            }
+            window.SetWindowMode(ToWindowMode(player.WindowMode), width, height);
+            static constexpr const char* MODE_NAMES[] = { "windowed", "borderless", "fullscreen" };
+            LOGINFO("[Runtime] Window: ", MODE_NAMES[static_cast<int>(player.WindowMode)], ", ", width, " x ", height,
+                    ".");
+        }
+
+        RHI::PresentMode ToPresentMode(bool vsync)
+        {
+            return vsync ? RHI::PresentMode::VSync : RHI::PresentMode::NoVSync;
+        }
+    }
+
     GameRuntime::GameRuntime() = default;
 
     GameRuntime::~GameRuntime() { Shutdown(); }
@@ -56,15 +96,39 @@ namespace Runtime
                 LOGWARNING("[Runtime] Project settings could not be read, using the defaults.");
         }
 
+        // A player's choices, read before the window they describe.
+        HedgehogSettings::PlayerSettings     player = HedgehogSettings::MakeDefaultPlayerSettings(project);
+        std::optional<std::filesystem::path> playerDirectory;
+        if (m_Desc.UseProjectWindow)
+        {
+            playerDirectory = FS::GetPlayerDirectory(project.GetName(), m_Desc.EditorSaves);
+            FS::FileSystemManager playerFiles;
+            if (playerDirectory && FS::MountPlayer(playerFiles, *playerDirectory))
+            {
+                if (!playerFiles.Exists(HedgehogSettings::PLAYER_SETTINGS_PATH))
+                {
+                    // The defaults, written so the player has a file to edit.
+                    (void)HedgehogSettings::SavePlayerSettings(playerFiles, player);
+                }
+                else if (HedgehogSettings::LoadPlayerSettings(playerFiles, player))
+                {
+                    LOGINFO("[Runtime] Player settings read from ", playerDirectory->string(), ".");
+                }
+            }
+        }
+
         HedgehogEngine::WindowOptions window;
         if (m_Desc.UseProjectWindow)
         {
-            window.Title      = project.GetWindowTitle().empty() ? project.GetName() : project.GetWindowTitle();
-            window.Width      = static_cast<int>(project.GetWindowWidth());
-            window.Height     = static_cast<int>(project.GetWindowHeight());
-            window.Fullscreen = project.IsFullscreen();
+            window.Title  = project.GetWindowTitle().empty() ? project.GetName() : project.GetWindowTitle();
+            window.Width  = static_cast<int>(project.GetWindowWidth());
+            window.Height = static_cast<int>(project.GetWindowHeight());
         }
         m_Engine = std::make_unique<HedgehogEngine::Engine>(window);
+        if (m_Desc.UseProjectWindow)
+        {
+            ApplyWindow(m_Engine->GetWindowContext().GetWindow(), player, project);
+        }
 
         auto& engineContext = m_Engine->GetEngineContext();
         auto& fileSystem    = engineContext.GetFileSystem();
@@ -85,6 +149,18 @@ namespace Runtime
             LOGWARNING("[Runtime] Engine settings could not be read, using defaults.");
         settings.CleanDirtyState();
         settings.GetProjectSettings() = project;
+        m_ShadowBase = HedgehogSettings::CaptureShadowQualityBase(*settings.GetShadowmapSettings());
+        if (m_Desc.UseProjectWindow)
+        {
+            if (playerDirectory && !FS::MountPlayer(fileSystem, *playerDirectory))
+            {
+                LOGWARNING("[Runtime] The player folder could not be mounted as player://.");
+            }
+            HedgehogSettings::ApplyQualityLevel(*settings.GetShadowmapSettings(), m_ShadowBase, player.Quality);
+        }
+        engineContext.GetPlayerSettings() = player;
+        m_AppliedPlayer                   = player;
+        m_AppliedPlayerVersion            = engineContext.GetPlayerSettingsVersion();
 
         // Before the scene loads, as the Editor does; the engine's ECS owns it.
         const auto scripts = HedgehogScripting::RegisterScriptSystem(engineContext, fileSystem);
@@ -101,6 +177,10 @@ namespace Runtime
                 [&gameWindow]() { gameWindow.PollEvents(); });
         }
         (void)engineContext.GetAudioEngine().Init(HA::AudioEngineDesc{});
+        if (m_Desc.UseProjectWindow)
+        {
+            engineContext.ApplyPlayerVolumes();
+        }
         if (const auto saves = FS::GetSavesDirectory(project.GetName(), m_Desc.EditorSaves))
             engineContext.GetSaveGames().SetSaveDirectory(*saves);
 
@@ -120,9 +200,9 @@ namespace Runtime
         Renderer::RendererOptions options;
         if (m_Desc.UseProjectWindow)
         {
-            options.PresentMode = project.IsVSync() ? RHI::PresentMode::VSync : RHI::PresentMode::NoVSync;
+            options.PresentMode = ToPresentMode(player.VSync);
         }
-        m_MaxFps = (m_Desc.UseProjectWindow && !m_Desc.FixedFrameTime) ? project.GetMaxFps() : 0;
+        m_MaxFps = (m_Desc.UseProjectWindow && !m_Desc.FixedFrameTime) ? player.MaxFps : 0;
         if (m_MaxFps > 0)
         {
             LOGINFO("[Runtime] Frame rate capped at ", m_MaxFps, " FPS.");
@@ -165,6 +245,10 @@ namespace Runtime
         auto& windowContext = m_Engine->GetWindowContext();
         auto& engineContext = m_Engine->GetEngineContext();
         auto& window        = windowContext.GetWindow();
+        if (m_Desc.UseProjectWindow && engineContext.GetPlayerSettingsVersion() != m_AppliedPlayerVersion)
+        {
+            ApplyChangedPlayerSettings();
+        }
         windowContext.HandleInput();
         if (m_ScriptDebugger)
             m_ScriptDebugger->Pump();
@@ -251,6 +335,38 @@ namespace Runtime
     const std::string& GameRuntime::GetScenePath() const { return m_ScenePath; }
 
     HedgehogEngine::EngineContext& GameRuntime::GetEngineContext() { return m_Engine->GetEngineContext(); }
+
+    void GameRuntime::ApplyChangedPlayerSettings()
+    {
+        auto&                                   engineContext = m_Engine->GetEngineContext();
+        const HedgehogSettings::PlayerSettings& player        = engineContext.GetPlayerSettings();
+        const HedgehogSettings::PlayerSettings& was           = m_AppliedPlayer;
+        if (player.WindowMode != was.WindowMode || player.Width != was.Width || player.Height != was.Height)
+        {
+            ApplyWindow(m_Engine->GetWindowContext().GetWindow(), player,
+                        engineContext.GetSettings().GetProjectSettings());
+        }
+        if (player.VSync != was.VSync)
+        {
+            m_Renderer->SetPresentMode(ToPresentMode(player.VSync));
+        }
+        if (!m_Desc.FixedFrameTime)
+        {
+            m_MaxFps = player.MaxFps;
+        }
+        if (player.MasterVolume != was.MasterVolume || player.BusVolumes != was.BusVolumes)
+        {
+            engineContext.ApplyPlayerVolumes();
+        }
+        if (player.Quality != was.Quality)
+        {
+            HedgehogSettings::ApplyQualityLevel(*engineContext.GetSettings().GetShadowmapSettings(), m_ShadowBase,
+                                                player.Quality);
+        }
+        m_AppliedPlayer        = player;
+        m_AppliedPlayerVersion = engineContext.GetPlayerSettingsVersion();
+        LOGINFO("[Runtime] Player settings applied.");
+    }
 
     float GameRuntime::NextFrameTime()
     {

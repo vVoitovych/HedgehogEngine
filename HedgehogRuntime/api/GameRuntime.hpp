@@ -1,6 +1,8 @@
 #pragma once
 
 #include "HedgehogEngine/HedgehogSettings/api/HedgehogSettings.hpp"
+#include "HedgehogEngine/HedgehogSettings/api/PlayerSettings.hpp"
+#include "HedgehogEngine/HedgehogSettings/api/QualityLevels.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/ProjectSettings.hpp"
 
 #include "HedgehogRuntime/api/FrameLimiter.hpp"
@@ -54,7 +56,9 @@ namespace Runtime
         std::optional<float>        FixedFrameTime;                 // every frame's dt; nullopt measures real time
         std::string                 SettingsPath = HedgehogSettings::Settings::PATH; // read, never written
         std::string                 ProjectPath  = HedgehogSettings::ProjectSettings::PATH; // under project://; read, never written
-        bool                        UseProjectWindow = false;       // the project's title, size and fullscreen; else 1366x768
+        // A player's run: the project's window title, and the window, vsync, frame cap, volumes and quality
+        // of player://player_settings.yaml (made from the project when missing). Else 1366x768, uncapped.
+        bool                        UseProjectWindow = false;
         bool                        EditorSaves  = false;           // the project's editor saves folder, not the game's
         std::vector<RuntimeMount>   Mounts;
     };
@@ -104,6 +108,7 @@ namespace Runtime
 
     private:
         float NextFrameTime();
+        void  ApplyChangedPlayerSettings(); // what changed since the last version applied
         void  RunFrameZones(); // RunFrame's work, inside its zone
 
     private:
@@ -124,5 +129,8 @@ namespace Runtime
         std::chrono::steady_clock::time_point     m_RunStart;
         FrameLimiter                              m_FrameLimiter;
         int                                       m_MaxFps = 0; // 0: no cap
+        HedgehogSettings::PlayerSettings          m_AppliedPlayer;
+        uint64_t                                  m_AppliedPlayerVersion = 0;
+        HedgehogSettings::ShadowQualityBase       m_ShadowBase; // engine_settings.yaml's, before quality
     };
 }

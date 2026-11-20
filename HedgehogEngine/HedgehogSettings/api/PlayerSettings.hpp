@@ -56,7 +56,7 @@ namespace HedgehogSettings
         bool operator==(const PlayerSettings&) const = default;
     };
 
-    // Windowed or Fullscreen from the project, its vsync and frame cap; size 0; volumes 1; High.
+    // Windowed or Borderless from the project, its vsync and frame cap; size 0; volumes 1; High.
     [[nodiscard]] HEDGEHOG_SETTINGS_API PlayerSettings MakeDefaultPlayerSettings(const ProjectSettings& project);
 
     // settings holds the defaults on entry; each key read replaces its field, a bad one keeps it with
