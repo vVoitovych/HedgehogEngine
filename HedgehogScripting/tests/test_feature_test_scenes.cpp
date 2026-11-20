@@ -9,6 +9,7 @@
 #include "HedgehogEngine/api/Assets/EngineAssetDependencies.hpp"
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogEngine/api/Save/SaveGameManager.hpp"
+#include "HedgehogEngine/api/ECS/systems/PhysicsSystem.hpp"
 #include "HedgehogEngine/api/Scene/SceneManager.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/HedgehogSettings.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/PlayerSettings.hpp"
@@ -361,6 +362,31 @@ TEST_CASE("FeatureTest - the character sample walks its route and logs each of i
     CHECK(log.Lines("CharacterDemo: entered the zone Zone").size() == 1);
     CHECK(log.Lines("CharacterDemo: jumped").size() == 1);
     CHECK(log.Lines("CharacterDemo: pushed Crate").size() == 1);
+    CHECK(log.Lines("[ERROR]").empty());
+    CHECK(log.Lines("[WARNING]").empty());
+}
+
+TEST_CASE("FeatureTest - the joints sample finds its chain and door, and swings the door open")
+{
+    TempDir    saves;
+    LogCapture log;
+    {
+        ProjectWorld world(saves.Path());
+        const auto   path = world.Context.GetFileSystem().ResolvePhysical("assets://Scenes/Joints.yaml");
+        REQUIRE(path.has_value());
+        REQUIRE(world.Context.GetSceneManager().LoadScene(path->string()));
+        const HedgehogEngine::SceneSnapshot before = world.Context.GetSceneManager().CaptureSnapshot();
+
+        REQUIRE(world.Context.Play());
+        for (int frame = 0; frame < 120; ++frame) // two seconds: past the push at 0.5 s
+            world.Context.UpdateContext(1.0f, STEP);
+        CHECK(world.Context.GetPhysicsSystem()->GetJointCount() == 6);
+        REQUIRE(world.Context.Stop());
+        CHECK(world.Context.GetSceneManager().CaptureSnapshot().Yaml == before.Yaml);
+    }
+    CHECK(log.Lines("JointsDemo: overlap found 3 links").size() == 1);
+    CHECK(log.Lines("JointsDemo: sphere cast hit Door").size() == 1);
+    CHECK(log.Lines("JointsDemo: door opened past 45 degrees").size() == 1);
     CHECK(log.Lines("[ERROR]").empty());
     CHECK(log.Lines("[WARNING]").empty());
 }
