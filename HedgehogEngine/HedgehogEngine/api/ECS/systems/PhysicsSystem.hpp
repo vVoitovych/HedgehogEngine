@@ -9,6 +9,7 @@
 #include "ECS/api/ECS.hpp"
 #include "ECS/api/System.hpp"
 
+#include "HedgehogMath/api/Quaternion.hpp"
 #include "HedgehogMath/api/Vector.hpp"
 
 #include <cstdint>
@@ -115,6 +116,33 @@ namespace HedgehogEngine
         // layerMask, or nothing; nothing too when the world has not started.
         [[nodiscard]] HEDGEHOG_ENGINE_API std::optional<PhysicsRayHit>
         Raycast(const HM::Vector3& origin, const HM::Vector3& direction, float maxDistance, uint16_t layerMask = 0xffffu) const;
+
+        // The nearest collider (triggers skipped) a sphere, a box (half extents, turned by rotation)
+        // or a capsule (radius and height end to end, along its local +Z, turned by rotation) swept
+        // from center along direction reaches within maxDistance on a layer of layerMask, as
+        // Raycast's hit (distance the shape travelled; one it starts touching at 0); nothing for a
+        // bad size, pose, direction or distance, or before the world starts.
+        [[nodiscard]] HEDGEHOG_ENGINE_API std::optional<PhysicsRayHit>
+        SphereCast(const HM::Vector3& center, float radius, const HM::Vector3& direction, float maxDistance,
+                   uint16_t layerMask = 0xffffu) const;
+        [[nodiscard]] HEDGEHOG_ENGINE_API std::optional<PhysicsRayHit>
+        BoxCast(const HM::Vector3& center, const HM::Vector3& halfExtents, const HM::Quaternion& rotation,
+                const HM::Vector3& direction, float maxDistance, uint16_t layerMask = 0xffffu) const;
+        [[nodiscard]] HEDGEHOG_ENGINE_API std::optional<PhysicsRayHit>
+        CapsuleCast(const HM::Vector3& center, float radius, float height, const HM::Quaternion& rotation,
+                    const HM::Vector3& direction, float maxDistance, uint16_t layerMask = 0xffffu) const;
+
+        // Replaces out with every entity whose collider (triggers only with includeTriggers) touches
+        // the shape on a layer of layerMask, once each, by entity id; empty for a bad size or pose, or
+        // before the world starts.
+        HEDGEHOG_ENGINE_API void OverlapSphere(const HM::Vector3& center, float radius, uint16_t layerMask,
+                                               bool includeTriggers, std::vector<ECS::Entity>& out) const;
+        HEDGEHOG_ENGINE_API void OverlapBox(const HM::Vector3& center, const HM::Vector3& halfExtents,
+                                            const HM::Quaternion& rotation, uint16_t layerMask, bool includeTriggers,
+                                            std::vector<ECS::Entity>& out) const;
+        HEDGEHOG_ENGINE_API void OverlapCapsule(const HM::Vector3& center, float radius, float height,
+                                                const HM::Quaternion& rotation, uint16_t layerMask, bool includeTriggers,
+                                                std::vector<ECS::Entity>& out) const;
 
         // The running world's gravity; zero before it starts. Setting it lasts until the next Play,
         // which reads the physics settings again. Nothing before the world starts.

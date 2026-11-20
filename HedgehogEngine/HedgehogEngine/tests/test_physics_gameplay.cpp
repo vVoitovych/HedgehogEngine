@@ -279,3 +279,72 @@ TEST_CASE("Physics gameplay - RebuildBody applies an edited collider and keeps t
     CHECK(scene.Position(cube).z() == doctest::Approx(2.5f).epsilon(0.02));
     REQUIRE(scene.Context.Stop());
 }
+
+TEST_CASE("Physics gameplay - shape casts hit the nearest collider, overlaps list the entities inside")
+{
+    GameplayScene scene;
+    // Static 2 m boxes: two along +x for the casts, three crates in a region and one outside it.
+    const ECS::Entity near = scene.Object(HM::Vector3(5.0f, 0.0f, 3.0f));
+    const ECS::Entity far  = scene.Object(HM::Vector3(10.0f, 0.0f, 3.0f));
+    std::vector<ECS::Entity> crates;
+    for (const float x : { 20.0f, 22.0f, 24.0f })
+        crates.push_back(scene.Object(HM::Vector3(x, 0.0f, 3.0f)));
+    const ECS::Entity outside = scene.Object(HM::Vector3(40.0f, 0.0f, 3.0f));
+    const ECS::Entity trigger = scene.Object(HM::Vector3(22.0f, 3.0f, 3.0f));
+    for (const ECS::Entity entity : { near, far, crates[0], crates[1], crates[2], outside, trigger })
+        scene.Ecs.AddComponent(entity, ColliderComponent{});
+    scene.Ecs.GetComponent<ColliderComponent>(trigger).IsTrigger = true;
+
+    const HM::Vector3    origin(0.0f, 0.0f, 3.0f);
+    const HM::Vector3    along(1.0f, 0.0f, 0.0f);
+    const HM::Quaternion none;
+    const HM::Vector3    region(22.0f, 0.0f, 3.0f);
+    std::vector<ECS::Entity> found{ near };
+
+    // Nothing before the world starts.
+    CHECK_FALSE(scene.Physics().SphereCast(origin, 0.5f, along, 100.0f).has_value());
+    scene.Physics().OverlapBox(region, HM::Vector3(4.0f, 4.0f, 1.0f), none, 0xffffu, true, found);
+    CHECK(found.empty());
+
+    REQUIRE(scene.Context.Play());
+    // The near box's face is at x = 4: a sphere of 0.5 stops 3.5 along, a 1 m box 3.5, a capsule of 0.25 3.75.
+    std::optional<PhysicsRayHit> hit = scene.Physics().SphereCast(origin, 0.5f, along, 100.0f);
+    REQUIRE(hit.has_value());
+    CHECK(hit->Entity == near);
+    CHECK(hit->Distance == doctest::Approx(3.5f).epsilon(1e-3));
+    CHECK(hit->Normal.x() == doctest::Approx(-1.0f).epsilon(1e-3));
+    hit = scene.Physics().BoxCast(origin, HM::Vector3(0.5f, 0.5f, 0.5f), HM::Quaternion::FromEuler(HM::Vector3(0.0f, 0.0f, 90.0f)),
+                                  along, 100.0f);
+    REQUIRE(hit.has_value());
+    CHECK(hit->Entity == near);
+    CHECK(hit->Distance == doctest::Approx(3.5f).epsilon(1e-3));
+    hit = scene.Physics().CapsuleCast(origin, 0.25f, 1.5f, none, along, 100.0f);
+    REQUIRE(hit.has_value());
+    CHECK(hit->Entity == near);
+    CHECK(hit->Distance == doctest::Approx(3.75f).epsilon(1e-3));
+    // Turned onto its side, the capsule's 0.75 m half length reaches first.
+    hit = scene.Physics().CapsuleCast(origin, 0.25f, 1.5f, HM::Quaternion::FromEuler(HM::Vector3(0.0f, 90.0f, 0.0f)), along,
+                                      100.0f);
+    REQUIRE(hit.has_value());
+    CHECK(hit->Distance == doctest::Approx(3.25f).epsilon(1e-3));
+    // Starting past the near box, the far one; a masked layer, none.
+    hit = scene.Physics().SphereCast(HM::Vector3(7.0f, 0.0f, 3.0f), 0.5f, along, 100.0f);
+    REQUIRE(hit.has_value());
+    CHECK(hit->Entity == far);
+    CHECK_FALSE(scene.Physics().SphereCast(origin, 0.5f, along, 100.0f, 0xfffeu).has_value());
+    CHECK_FALSE(scene.Physics().SphereCast(origin, 0.0f, along, 100.0f).has_value());
+
+    // The region holds the three crates, the trigger only when asked, never the one outside.
+    scene.Physics().OverlapBox(region, HM::Vector3(4.0f, 4.0f, 1.0f), none, 0xffffu, false, found);
+    CHECK(found == crates);
+    scene.Physics().OverlapBox(region, HM::Vector3(4.0f, 4.0f, 1.0f), none, 0xffffu, true, found);
+    CHECK(found == std::vector<ECS::Entity>{ crates[0], crates[1], crates[2], trigger });
+    scene.Physics().OverlapSphere(HM::Vector3(40.0f, 0.0f, 3.0f), 0.5f, 0xffffu, false, found);
+    CHECK(found == std::vector<ECS::Entity>{ outside });
+    scene.Physics().OverlapCapsule(HM::Vector3(22.0f, 0.0f, 3.0f), 0.5f, 6.0f,
+                                   HM::Quaternion::FromEuler(HM::Vector3(0.0f, 90.0f, 0.0f)), 0xffffu, false, found);
+    CHECK(found == crates);
+    scene.Physics().OverlapSphere(HM::Vector3(30.0f, 0.0f, 3.0f), 0.5f, 0xffffu, true, found);
+    CHECK(found.empty());
+    REQUIRE(scene.Context.Stop());
+}

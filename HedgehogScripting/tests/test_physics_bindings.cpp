@@ -242,3 +242,95 @@ TEST_CASE("Physics bindings - calls in Edit do nothing and warn once; bad argume
     CHECK(log.Lines("must be a finite Vector3").size() == 1);
     REQUIRE(world.Stop());
 }
+
+TEST_CASE("Physics bindings - shape casts and overlaps return the entities they find")
+{
+    PhysicsWorld world;
+    // Static 2 m boxes: one along +x for the casts, three crates in a region and a trigger beside them.
+    const auto Static = [&](const HM::Vector3& position, bool trigger = false)
+    {
+        const ECS::Entity entity = world.Context.GetSceneManager().CreateGameObject();
+        world.Place(entity, position);
+        ColliderComponent collider;
+        collider.IsTrigger = trigger;
+        world.Ecs().AddComponent(entity, collider);
+        return entity;
+    };
+    const ECS::Entity box = Static(HM::Vector3(5.0f, 0.0f, 3.0f));
+    std::string       crates;
+    for (const float x : { 20.0f, 22.0f, 24.0f })
+        crates += " " + std::to_string(Static(HM::Vector3(x, 0.0f, 3.0f)));
+    const ECS::Entity trigger = Static(HM::Vector3(22.0f, 3.0f, 3.0f), true);
+    (void)Static(HM::Vector3(40.0f, 0.0f, 3.0f));
+
+    world.WriteScript("Probe.lua", Script("Probe",
+        "local function ids(entities) local s = '' for _, e in ipairs(entities) do s = s .. ' ' .. e.id end return s end\n"
+        "local origin, along = Vector3(0, 0, 3), Vector3(1, 0, 0)\n"
+        "local hit = Physics.sphereCast(origin, 0.5, along, 100)\n"
+        "Log.info('sphere', hit.entity.id, string.format('%.2f %.2f', hit.distance, hit.normal.x))\n"
+        "hit = Physics.boxCast(origin, Vector3(0.5, 0.5, 0.5), Quat.fromEuler(0, 0, 90), along)\n"
+        "Log.info('box', hit.entity.id, string.format('%.2f', hit.distance))\n"
+        "hit = Physics.capsuleCast(origin, 0.25, 1.5, Vector3(0, 90, 0), along, 100)\n"
+        "Log.info('capsule', hit.entity.id, string.format('%.2f', hit.distance))\n"
+        "Log.info('missed', Physics.sphereCast(origin, 0.5, Vector3(0, 0, 1), 100))\n"
+        "Log.info('masked', Physics.boxCast(origin, Vector3(1, 1, 1), nil, along, 100, 0xFFFE))\n"
+        "Log.info('boxed' .. ids(Physics.overlapBox(Vector3(22, 0, 3), Vector3(4, 4, 1), nil)))\n"
+        "Log.info('with triggers' .. ids(Physics.overlapBox(Vector3(22, 0, 3), Vector3(4, 4, 1), nil, 0xFFFF, true)))\n"
+        "Log.info('capsule region' .. ids(Physics.overlapCapsule(Vector3(22, 0, 3), 0.5, 6, Vector3(0, 90, 0))))\n"
+        "Log.info('empty', #Physics.overlapSphere(Vector3(30, 0, 3), 0.5))"));
+    (void)world.AddScripted("Scripts/Probe.lua");
+
+    LogCapture log;
+    REQUIRE(world.Context.Play());
+    world.Step();
+    const std::string id = std::to_string(box);
+    CHECK(log.Lines("sphere " + id + " 3.50 -1.00").size() == 1);
+    CHECK(log.Lines("box " + id + " 3.50").size() == 1);
+    CHECK(log.Lines("capsule " + id + " 3.25").size() == 1);    CHECK(log.Lines("missed nil").size() == 1);
+    CHECK(log.Lines("masked nil").size() == 1);
+    CHECK(log.Lines("boxed" + crates).size() == 1);
+    CHECK(log.Lines("with triggers" + crates + " " + std::to_string(trigger)).size() == 1);
+    CHECK(log.Lines("capsule region" + crates).size() == 1);
+    CHECK(log.Lines("empty 0").size() == 1);
+    CHECK(log.Lines("stack traceback").empty());
+    REQUIRE(world.Stop());
+}
+
+TEST_CASE("Physics bindings - shape queries in Edit warn once; bad arguments are script errors")
+{
+    PhysicsWorld world;
+    world.WriteScript("Early.lua", "Physics.sphereCast(Vector3(0, 0, 0), 1, Vector3(0, 0, -1))\n"
+                                   "Physics.overlapBox(Vector3(0, 0, 0), Vector3(1, 1, 1), nil)\n" +
+                                       Script("Early", ""));
+    LogCapture log;
+    (void)world.Scripts->DescribeScript("assets://Scripts/Early.lua");
+    CHECK(log.Lines("[Script] Physics runs only in Play mode; Physics.sphereCast() did nothing.").size() == 1);
+    CHECK(log.Lines("Physics runs only in Play mode").size() == 1);
+
+    world.WriteScript("Bad.lua", Script("Bad",
+        "local o, d = Vector3(0, 0, 0), Vector3(1, 0, 0)\n"
+        "local function try(label, f) local ok, message = pcall(f); Log.info(label, ok, message) end\n"
+        "try('nan', function() Physics.sphereCast(Vector3(0 / 0, 0, 0), 1, d) end)\n"
+        "try('radius', function() Physics.sphereCast(o, 0, d) end)\n"
+        "try('extent', function() Physics.boxCast(o, Vector3(1, -1, 1), nil, d) end)\n"
+        "try('mask', function() Physics.overlapSphere(o, 1, 0x10000) end)\n"
+        "try('rotation', function() Physics.boxCast(o, Vector3(1, 1, 1), 'up', d) end)\n"
+        "try('height', function() Physics.overlapCapsule(o, 0.5, -1, nil) end)\n"
+        "try('direction', function() Physics.capsuleCast(o, 0.5, 2, nil, 'x') end)\n"
+        "try('distance', function() Physics.boxCast(o, Vector3(1, 1, 1), nil, d, 0 / 0) end)"));
+    (void)world.AddScripted("Scripts/Bad.lua");
+    REQUIRE(world.Context.Play());
+    world.Step();
+    for (const char* label : { "nan false", "radius false", "extent false", "mask false", "rotation false", "height false",
+                               "direction false", "distance false" })
+    {
+        CAPTURE(label);
+        CHECK(log.Lines(label).size() == 1);
+    }
+    CHECK(log.Lines("a sphere's radius must be above 0").size() == 1);
+    CHECK(log.Lines("a box's half extents must be above 0").size() == 1);
+    CHECK(log.Lines("a layer mask must be 0 to 65535").size() == 1);
+    CHECK(log.Lines("a rotation must be a Quat or a Vector3 of Euler degrees").size() == 1);
+    CHECK(log.Lines("a capsule's height must be 0 or more").size() == 1);
+    REQUIRE(world.Stop());
+}

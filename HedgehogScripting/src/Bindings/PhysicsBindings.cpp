@@ -7,6 +7,8 @@
 #include "HedgehogEngine/api/ECS/components/RigidBodyComponent.hpp"
 #include "HedgehogEngine/api/ECS/systems/PhysicsSystem.hpp"
 
+#include "HedgehogMath/api/Quaternion.hpp"
+
 #include "Logger/api/Logger.hpp"
 
 #include <cmath>
@@ -15,6 +17,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace HedgehogScripting::Bindings
 {
@@ -310,6 +313,99 @@ namespace HedgehogScripting::Bindings
                 sol::meta_function::to_string, ToText<CharacterControllerComponent>("CharacterController"));
         }
 
+        // ---- The Physics table's queries.
+
+        uint16_t ReadLayerMask(const sol::optional<int64_t>& layerMask)
+        {
+            const int64_t mask = layerMask.value_or(0xffff);
+            if (mask < 0 || mask > 0xffff)
+                throw std::runtime_error("a layer mask must be 0 to 65535");
+            return static_cast<uint16_t>(mask);
+        }
+
+        void RequirePositive(float value, const char* what)
+        {
+            if (!(RequireFinite(value, what) > 0.0f))
+                throw std::runtime_error(std::string(what) + " must be above 0");
+        }
+
+        void RequireHalfExtents(const HM::Vector3& halfExtents)
+        {
+            RequireFinite(halfExtents, "a box's half extents");
+            if (!(halfExtents.x() > 0.0f && halfExtents.y() > 0.0f && halfExtents.z() > 0.0f))
+                throw std::runtime_error("a box's half extents must be above 0");
+        }
+
+        void RequireCapsule(float radius, float height)
+        {
+            RequirePositive(radius, "a capsule's radius");
+            if (RequireFinite(height, "a capsule's height") < 0.0f)
+                throw std::runtime_error("a capsule's height must be 0 or more");
+        }
+
+        // A Quat, Euler degrees as a Vector3, or nil for no rotation.
+        HM::Quaternion ReadRotation(const sol::object& rotation)
+        {
+            if (!rotation.valid() || rotation.get_type() == sol::type::lua_nil)
+                return HM::Quaternion();
+            if (rotation.is<HM::Quaternion>())
+            {
+                const HM::Quaternion turn = rotation.as<HM::Quaternion>();
+                if (std::isfinite(turn.x()) && std::isfinite(turn.y()) && std::isfinite(turn.z()) && std::isfinite(turn.w()))
+                    return turn;
+                throw std::runtime_error("a rotation must be finite");
+            }
+            if (rotation.is<HM::Vector3>())
+                return HM::Quaternion::FromEuler(RequireFinite(rotation.as<HM::Vector3>(), "a rotation"));
+            throw std::runtime_error("a rotation must be a Quat or a Vector3 of Euler degrees");
+        }
+
+        struct QueryCast
+        {
+            float    Distance = 1000.0f;
+            uint16_t Mask     = 0xffff;
+        };
+
+        QueryCast ReadCast(const HM::Vector3& center, const HM::Vector3& direction, const sol::optional<float>& maxDistance,
+                           const sol::optional<int64_t>& layerMask)
+        {
+            RequireFinite(center, "a shape's centre");
+            RequireFinite(direction, "a cast's direction");
+            QueryCast cast;
+            if (maxDistance)
+                cast.Distance = RequireFinite(*maxDistance, "a cast's distance");
+            cast.Mask = ReadLayerMask(layerMask);
+            return cast;
+        }
+
+        ScriptEntity MakeHandle(ECS::ECS& ecs, ECS::Entity entity)
+        {
+            return ScriptEntity{ entity, ecs.IsAlive(entity) ? ecs.GetGeneration(entity) : 0u };
+        }
+
+        // { entity, point, normal, distance }, or nil.
+        sol::object MakeHit(sol::this_state state, ECS::ECS& ecs, const std::optional<HedgehogEngine::PhysicsRayHit>& hit)
+        {
+            if (!hit)
+                return sol::lua_nil;
+            sol::state_view view(state);
+            sol::table      result = view.create_table();
+            result["entity"]       = MakeHandle(ecs, hit->Entity);
+            result["point"]        = hit->Point;
+            result["normal"]       = hit->Normal;
+            result["distance"]     = hit->Distance;
+            return result;
+        }
+
+        sol::table MakeEntityArray(sol::this_state state, ECS::ECS& ecs, const std::vector<ECS::Entity>& entities)
+        {
+            sol::state_view view(state);
+            sol::table      result = view.create_table(static_cast<int>(entities.size()), 0);
+            for (size_t i = 0; i < entities.size(); ++i)
+                result[i + 1] = MakeHandle(ecs, entities[i]);
+            return result;
+        }
+
         void RegisterPhysicsTable(sol::state& lua, HedgehogEngine::EngineContext& context, const std::shared_ptr<PlayGuard>& guard)
         {
             HedgehogEngine::PhysicsSystem& physics = *context.GetPhysicsSystem();
@@ -323,24 +419,97 @@ namespace HedgehogScripting::Bindings
             {
                 RequireFinite(origin, "a ray's origin");
                 RequireFinite(direction, "a ray's direction");
-                const float distance = maxDistance ? RequireFinite(*maxDistance, "a ray's distance") : 1000.0f;
-                const int64_t mask   = layerMask.value_or(0xffff);
-                if (mask < 0 || mask > 0xffff)
-                    throw std::runtime_error("a layer mask must be 0 to 65535");
+                const float    distance = maxDistance ? RequireFinite(*maxDistance, "a ray's distance") : 1000.0f;
+                const uint16_t mask     = ReadLayerMask(layerMask);
                 if (!guard->Allows("Physics.raycast()"))
                     return sol::lua_nil;
-                const std::optional<HedgehogEngine::PhysicsRayHit> hit =
-                    physics.Raycast(origin, direction, distance, static_cast<uint16_t>(mask));
-                if (!hit)
+                return MakeHit(state, context.GetECS(), physics.Raycast(origin, direction, distance, mask));
+            };
+
+            // sphereCast, boxCast and capsuleCast(shape..., direction, maxDistance?, layerMask?): the
+            // nearest collider the shape swept from its centre reaches (triggers skipped), as raycast's
+            // table, or nil. A box's rotation and a capsule's (along its local +Z, its height end to
+            // end) are a Quat or Euler degrees, nil for none.
+            table["sphereCast"] = [&context, &physics, guard](const HM::Vector3& center, float radius,
+                                                             const HM::Vector3& direction, sol::optional<float> maxDistance,
+                                                             sol::optional<int64_t> layerMask,
+                                                             sol::this_state state) -> sol::object
+            {
+                const QueryCast cast = ReadCast(center, direction, maxDistance, layerMask);
+                RequirePositive(radius, "a sphere's radius");
+                if (!guard->Allows("Physics.sphereCast()"))
                     return sol::lua_nil;
-                sol::state_view view(state);
-                sol::table      result = view.create_table();
-                ECS::ECS&       ecs    = context.GetECS();
-                result["entity"]   = ScriptEntity{ hit->Entity, ecs.IsAlive(hit->Entity) ? ecs.GetGeneration(hit->Entity) : 0u };
-                result["point"]    = hit->Point;
-                result["normal"]   = hit->Normal;
-                result["distance"] = hit->Distance;
-                return result;
+                return MakeHit(state, context.GetECS(),
+                               physics.SphereCast(center, radius, direction, cast.Distance, cast.Mask));
+            };
+            table["boxCast"] = [&context, &physics, guard](const HM::Vector3& center, const HM::Vector3& halfExtents,
+                                                          sol::object rotation, const HM::Vector3& direction,
+                                                          sol::optional<float> maxDistance, sol::optional<int64_t> layerMask,
+                                                          sol::this_state state) -> sol::object
+            {
+                const QueryCast cast = ReadCast(center, direction, maxDistance, layerMask);
+                RequireHalfExtents(halfExtents);
+                const HM::Quaternion turn = ReadRotation(rotation);
+                if (!guard->Allows("Physics.boxCast()"))
+                    return sol::lua_nil;
+                return MakeHit(state, context.GetECS(),
+                               physics.BoxCast(center, halfExtents, turn, direction, cast.Distance, cast.Mask));
+            };
+            table["capsuleCast"] = [&context, &physics, guard](const HM::Vector3& center, float radius, float height,
+                                                              sol::object rotation, const HM::Vector3& direction,
+                                                              sol::optional<float> maxDistance,
+                                                              sol::optional<int64_t> layerMask,
+                                                              sol::this_state state) -> sol::object
+            {
+                const QueryCast cast = ReadCast(center, direction, maxDistance, layerMask);
+                RequireCapsule(radius, height);
+                const HM::Quaternion turn = ReadRotation(rotation);
+                if (!guard->Allows("Physics.capsuleCast()"))
+                    return sol::lua_nil;
+                return MakeHit(state, context.GetECS(),
+                               physics.CapsuleCast(center, radius, height, turn, direction, cast.Distance, cast.Mask));
+            };
+
+            // overlapSphere, overlapBox and overlapCapsule(shape..., layerMask?, includeTriggers?): an
+            // array of every entity whose collider touches the shape, by entity id (triggers only when
+            // asked); empty outside Play.
+            table["overlapSphere"] = [&context, &physics, guard](const HM::Vector3& center, float radius,
+                                                                sol::optional<int64_t> layerMask,
+                                                                sol::optional<bool> includeTriggers, sol::this_state state)
+            {
+                RequireFinite(center, "a shape's centre");
+                RequirePositive(radius, "a sphere's radius");
+                const uint16_t           mask = ReadLayerMask(layerMask);
+                std::vector<ECS::Entity> entities;
+                if (guard->Allows("Physics.overlapSphere()"))
+                    physics.OverlapSphere(center, radius, mask, includeTriggers.value_or(false), entities);
+                return MakeEntityArray(state, context.GetECS(), entities);
+            };
+            table["overlapBox"] = [&context, &physics, guard](const HM::Vector3& center, const HM::Vector3& halfExtents,
+                                                             sol::object rotation, sol::optional<int64_t> layerMask,
+                                                             sol::optional<bool> includeTriggers, sol::this_state state)
+            {
+                RequireFinite(center, "a shape's centre");
+                RequireHalfExtents(halfExtents);
+                const HM::Quaternion     turn = ReadRotation(rotation);
+                const uint16_t           mask = ReadLayerMask(layerMask);
+                std::vector<ECS::Entity> entities;
+                if (guard->Allows("Physics.overlapBox()"))
+                    physics.OverlapBox(center, halfExtents, turn, mask, includeTriggers.value_or(false), entities);
+                return MakeEntityArray(state, context.GetECS(), entities);
+            };
+            table["overlapCapsule"] = [&context, &physics, guard](const HM::Vector3& center, float radius, float height,
+                                                                 sol::object rotation, sol::optional<int64_t> layerMask,
+                                                                 sol::optional<bool> includeTriggers, sol::this_state state)
+            {
+                RequireFinite(center, "a shape's centre");
+                RequireCapsule(radius, height);
+                const HM::Quaternion     turn = ReadRotation(rotation);
+                const uint16_t           mask = ReadLayerMask(layerMask);
+                std::vector<ECS::Entity> entities;
+                if (guard->Allows("Physics.overlapCapsule()"))
+                    physics.OverlapCapsule(center, radius, height, turn, mask, includeTriggers.value_or(false), entities);
+                return MakeEntityArray(state, context.GetECS(), entities);
             };
 
             // Physics.gravity: the running world's gravity, read through __index so every read is
