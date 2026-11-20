@@ -339,3 +339,28 @@ TEST_CASE("FeatureTest - the loading screen fills its bar while Pbr.yaml loads, 
     CHECK(log.Lines("[ERROR]").empty());
     CHECK(log.Lines("[WARNING]").empty());
 }
+
+TEST_CASE("FeatureTest - the character sample walks its route and logs each of its four lines once")
+{
+    TempDir    saves;
+    LogCapture log;
+    {
+        ProjectWorld world(saves.Path());
+        const auto   path = world.Context.GetFileSystem().ResolvePhysical("assets://Scenes/Character.yaml");
+        REQUIRE(path.has_value());
+        REQUIRE(world.Context.GetSceneManager().LoadScene(path->string()));
+        const HedgehogEngine::SceneSnapshot before = world.Context.GetSceneManager().CaptureSnapshot();
+
+        REQUIRE(world.Context.Play());
+        for (int frame = 0; frame < 360; ++frame) // six seconds: past the jump at 3 s and into the crate
+            world.Context.UpdateContext(1.0f, STEP);
+        REQUIRE(world.Context.Stop());
+        CHECK(world.Context.GetSceneManager().CaptureSnapshot().Yaml == before.Yaml);
+    }
+    CHECK(log.Lines("CharacterDemo: grounded on Floor").size() == 1);
+    CHECK(log.Lines("CharacterDemo: entered the zone Zone").size() == 1);
+    CHECK(log.Lines("CharacterDemo: jumped").size() == 1);
+    CHECK(log.Lines("CharacterDemo: pushed Crate").size() == 1);
+    CHECK(log.Lines("[ERROR]").empty());
+    CHECK(log.Lines("[WARNING]").empty());
+}
