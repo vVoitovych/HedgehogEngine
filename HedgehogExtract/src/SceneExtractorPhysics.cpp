@@ -6,6 +6,7 @@
 #include "ECS/api/ECS.hpp"
 #include "HedgehogEngine/api/ECS/components/CharacterControllerComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/ColliderComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/JointComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RigidBodyComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
 #include "HedgehogEngine/api/ECS/systems/PhysicsSystem.hpp"
@@ -151,6 +152,12 @@ namespace
 
 namespace HX
 {
+    namespace
+    {
+        void ExtractCharacters(const ECS::ECS& ecs, LineList& lines);
+        void ExtractJoints(const ECS::ECS& ecs, LineList& lines);
+    }
+
     void SceneExtractor::ExtractPhysicsDebug(const ECS::ECS& ecs, const HedgehogEngine::PhysicsSystem& physicsSystem,
                                              RenderScene& outScene) const
     {
@@ -187,19 +194,75 @@ namespace HX
 
         // Characters stand upright, unscaled, at their entity's world position, as the physics
         // system makes them.
-        if (!characters)
-            return;
-        for (const ECS::Entity entity : ecs.GetSystem<HedgehogEngine::CharacterControllerListSystem>()->GetEntities())
+        if (characters)
+            ExtractCharacters(ecs, lines);
+        if (ecs.HasSystem<HedgehogEngine::JointListSystem>())
+            ExtractJoints(ecs, lines);
+    }
+
+    namespace
+    {
+        void ExtractCharacters(const ECS::ECS& ecs, LineList& lines)
         {
-            const auto&   controller = ecs.GetComponent<HedgehogEngine::CharacterControllerComponent>(entity);
-            const auto&   world      = ecs.GetComponent<HedgehogEngine::TransformComponent>(entity).ObjMatrix;
-            ColliderFrame frame;
-            frame.Center = HM::Vector3(world[3].x(), world[3].y(), world[3].z()) + controller.Center;
-            frame.Axes   = { HM::Vector3(1.0f, 0.0f, 0.0f), HM::Vector3(0.0f, 1.0f, 0.0f),
-                             HM::Vector3(0.0f, 0.0f, 1.0f) };
-            frame.Scale  = HM::Vector3(1.0f, 1.0f, 1.0f);
-            AddCapsule(lines, frame, controller.Radius, std::max(0.0f, controller.Height * 0.5f - controller.Radius),
-                       PHYSICS_DEBUG_CHARACTER_COLOR);
+            for (const ECS::Entity entity : ecs.GetSystem<HedgehogEngine::CharacterControllerListSystem>()->GetEntities())
+            {
+                const auto&   controller = ecs.GetComponent<HedgehogEngine::CharacterControllerComponent>(entity);
+                const auto&   world      = ecs.GetComponent<HedgehogEngine::TransformComponent>(entity).ObjMatrix;
+                ColliderFrame frame;
+                frame.Center = HM::Vector3(world[3].x(), world[3].y(), world[3].z()) + controller.Center;
+                frame.Axes   = { HM::Vector3(1.0f, 0.0f, 0.0f), HM::Vector3(0.0f, 1.0f, 0.0f),
+                                 HM::Vector3(0.0f, 0.0f, 1.0f) };
+                frame.Scale  = HM::Vector3(1.0f, 1.0f, 1.0f);
+                AddCapsule(lines, frame, controller.Radius, std::max(0.0f, controller.Height * 0.5f - controller.Radius),
+                           SceneExtractor::PHYSICS_DEBUG_CHARACTER_COLOR);
+            }
+        }
+
+        void ExtractJoints(const ECS::ECS& ecs, LineList& lines)
+        {
+            const auto origin = [](const HM::Matrix4x4& world)
+            {
+                return HM::Vector3(world[3].x(), world[3].y(), world[3].z());
+            };
+            for (const ECS::Entity entity : ecs.GetSystem<HedgehogEngine::JointListSystem>()->GetEntities())
+            {
+                const auto& joint = ecs.GetComponent<HedgehogEngine::JointComponent>(entity);
+                if (!joint.Enabled)
+                    continue;
+                const HM::Matrix4x4& world = ecs.GetComponent<HedgehogEngine::TransformComponent>(entity).ObjMatrix;
+                const auto column = [&world](int index)
+                {
+                    return HM::Vector3(world[index].x(), world[index].y(), world[index].z());
+                };
+                const HM::Vector3 anchor = origin(world) + column(0) * joint.Anchor.x() + column(1) * joint.Anchor.y() +
+                                           column(2) * joint.Anchor.z();
+
+                // A cross at the anchor.
+                for (int axis = 0; axis < 3; ++axis)
+                {
+                    const float       size = SceneExtractor::PHYSICS_DEBUG_JOINT_CROSS;
+                    const HM::Vector3 arm(axis == 0 ? size : 0.0f, axis == 1 ? size : 0.0f, axis == 2 ? size : 0.0f);
+                    AddLine(lines, anchor - arm, anchor + arm, SceneExtractor::PHYSICS_DEBUG_JOINT_COLOR);
+                }
+
+                // A line to what it joins: the connected entity's origin, or a distance joint's world point.
+                const ECS::Entity connected = joint.ConnectedEntity;
+                if (connected != ECS::INVALID_ENTITY && connected != entity && ecs.IsAlive(connected) &&
+                    ecs.HasComponent<HedgehogEngine::TransformComponent>(connected))
+                    AddLine(lines, anchor, origin(ecs.GetComponent<HedgehogEngine::TransformComponent>(connected).ObjMatrix),
+                            SceneExtractor::PHYSICS_DEBUG_JOINT_COLOR);
+                else if (connected == ECS::INVALID_ENTITY && joint.Type == HedgehogEngine::JointType::Distance)
+                    AddLine(lines, anchor, joint.ConnectedAnchor, SceneExtractor::PHYSICS_DEBUG_JOINT_COLOR);
+
+                // A hinge's axis or a slider's direction.
+                if (joint.Type == HedgehogEngine::JointType::Hinge || joint.Type == HedgehogEngine::JointType::Slider)
+                {
+                    const HM::Vector3 axis = column(0) * joint.Axis.x() + column(1) * joint.Axis.y() + column(2) * joint.Axis.z();
+                    const float       length = axis.LengthSlow();
+                    if (length > 0.0f)
+                        AddLine(lines, anchor, anchor + axis * (SceneExtractor::PHYSICS_DEBUG_JOINT_AXIS / length), SceneExtractor::PHYSICS_DEBUG_JOINT_COLOR);
+                }
+            }
         }
     }
 }

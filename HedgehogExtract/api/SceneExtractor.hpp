@@ -44,6 +44,10 @@ namespace HX
         static constexpr uint32_t PHYSICS_DEBUG_KINEMATIC_COLOR = 0xffff9650; // blue
         static constexpr uint32_t PHYSICS_DEBUG_TRIGGER_COLOR   = 0xff3ce6ff; // yellow, whatever the body
         static constexpr uint32_t PHYSICS_DEBUG_CHARACTER_COLOR = 0xffff40ff; // magenta: a character's capsule
+        static constexpr uint32_t PHYSICS_DEBUG_JOINT_COLOR     = 0xff40ff40; // green: a joint
+        // A joint's anchor cross, half of it, and its axis line, in metres.
+        static constexpr float PHYSICS_DEBUG_JOINT_CROSS = 0.1f;
+        static constexpr float PHYSICS_DEBUG_JOINT_AXIS  = 0.5f;
         // Segments of a sphere's circle or a capsule's end circle; a capsule's half arc takes half.
         static constexpr size_t PHYSICS_DEBUG_CIRCLE_SEGMENTS = 24;
         static constexpr uint32_t PARTICLE_SHAPE_COLOR = 0xffffc880; // light blue: a particle emitter's shape
@@ -89,8 +93,12 @@ namespace HX
         // kind (the PHYSICS_DEBUG_*_COLOR constants). Then every character (the
         // CharacterControllerListSystem's entities, when the ECS has it) as its upright capsule at its
         // entity's world position plus its Center, in PHYSICS_DEBUG_CHARACTER_COLOR; a collider on a
-        // character's entity, which makes no body, is not drawn. It reads components only, so it works
-        // in Edit mode too, and allocates nothing once the lines' storage has grown.
+        // character's entity, which makes no body, is not drawn. Then every enabled joint (the
+        // JointListSystem's entities, when the ECS has it) in PHYSICS_DEBUG_JOINT_COLOR: a cross at its
+        // world anchor, a line from it to the connected entity's origin (a distance joint to the world:
+        // to its ConnectedAnchor), and a hinge's or slider's PHYSICS_DEBUG_JOINT_AXIS line along its
+        // world axis. It reads components only, so it works in Edit mode too, and allocates nothing
+        // once the lines' storage has grown.
         void ExtractPhysicsDebug(const ECS::ECS& ecs, const HedgehogEngine::PhysicsSystem& physicsSystem,
                                  RenderScene& outScene) const;
 
