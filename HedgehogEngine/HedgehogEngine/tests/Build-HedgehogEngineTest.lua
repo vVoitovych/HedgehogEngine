@@ -28,6 +28,7 @@ project "HedgehogEngineTest"
         "ECS",
         "EcsSerialization",
         "HedgehogMath",
+        "ContentLoader",
         "FileSystem",
         "Profiler"
     }

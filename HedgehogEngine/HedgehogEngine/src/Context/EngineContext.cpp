@@ -413,7 +413,7 @@ namespace HedgehogEngine
         return true;
     }
 
-    bool EngineContext::RequestSceneLoad(const std::string& path)
+    bool EngineContext::RequestSceneLoad(const std::string& path, bool async)
     {
         if (m_PlayState == PlayState::Edit)
         {
@@ -448,8 +448,16 @@ namespace HedgehogEngine
         if (const std::optional<std::string> slot = m_SaveGames->CancelPendingLoad())
             LOGWARNING("[Scene] The load of slot '" + *slot + "' is dropped: " + virtualPath
                        + " was requested after it.");
-        m_SceneRequests->Request(virtualPath, m_SaveGames->GetLoadRequestCount());
+        if (async)
+            m_SceneRequests->RequestAsync(virtualPath, m_SaveGames->GetLoadRequestCount());
+        else
+            m_SceneRequests->Request(virtualPath, m_SaveGames->GetLoadRequestCount());
         return true;
+    }
+
+    std::optional<float> EngineContext::GetSceneLoadProgress() const
+    {
+        return m_SceneRequests->GetAsyncProgress();
     }
 
     bool EngineContext::Pause()

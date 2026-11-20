@@ -17,6 +17,8 @@
 
 #include "Logger/api/Logger.hpp"
 
+#include "yaml-cpp/yaml.h"
+
 #include <algorithm>
 #include <cassert>
 #include <filesystem>
@@ -62,15 +64,47 @@ namespace HedgehogEngine
             return false;
         }
 
+        LOGINFO("EcsSerializer::Deserialize: ", *virtualPath);
+        const auto text = m_FileSystem.ReadTextFile(*virtualPath);
+        YAML::Node document;
+        bool       parsed = text.has_value();
+        if (!text)
+            LOGERROR("Failed to read scene file: ", *virtualPath);
+        else
+        {
+            try
+            {
+                document = YAML::Load(*text);
+            }
+            catch (const YAML::Exception& e)
+            {
+                LOGERROR("Failed to parse scene: ", *virtualPath, " with error: ", e.what());
+                parsed = false;
+            }
+        }
+        if (!parsed)
+        {
+            // As before: the world is cleared and an empty root left, which the caller may restore over.
+            DeleteGameObjectAndChildren(m_ECS.GetRoot());
+            CreateSceneRoot();
+            m_ScenePath = *virtualPath;
+            RefreshAfterLoad();
+            return false;
+        }
+        return LoadSceneFromDocument(document, *virtualPath);
+    }
+
+    bool SceneManager::LoadSceneFromDocument(const YAML::Node& document, const std::string& virtualPath)
+    {
         DeleteGameObjectAndChildren(m_ECS.GetRoot());
-        const bool loaded = EcsSerialization::EcsSerializer::Deserialize(m_ComponentRegistry, m_ECS, m_SceneName,
-                                                                          *virtualPath, m_FileSystem);
+        const bool loaded = EcsSerialization::EcsSerializer::DeserializeFromNode(m_ComponentRegistry, m_ECS,
+                                                                                  m_SceneName, document, virtualPath);
         // A document refused before its entities are read leaves no root, which every later
         // delete or restore of the scene needs.
         const ECS::Entity root = m_ECS.GetRoot();
         if (!m_ECS.IsAlive(root) || !m_ECS.HasComponent<ECS::HierarchyComponent>(root))
             CreateSceneRoot();
-        m_ScenePath = *virtualPath;
+        m_ScenePath = virtualPath;
         RefreshAfterLoad();
         return loaded;
     }

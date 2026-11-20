@@ -112,7 +112,13 @@ namespace HedgehogEngine
         // request of a frame wins, and so does the later of this and a save load (the other is
         // dropped with a warning). Stop drops a pending request and restores the scene and path
         // from before Play. The fixed-step clock is not reset.
-        [[nodiscard]] HEDGEHOG_ENGINE_API bool RequestSceneLoad(const std::string& path);
+        // With async the scene is read on a background thread first, the current scene playing on
+        // meanwhile: its YAML parsed and every mesh, texture and environment it reaches decoded
+        // ahead (ContentLoader's prefetch store), then swapped in at the end of the first frame after
+        // (SceneLoadedEvent as above). A later request, a sync one included, cancels it; so does Stop.
+        [[nodiscard]] HEDGEHOG_ENGINE_API bool RequestSceneLoad(const std::string& path, bool async = false);
+        // An asynchronous scene load's progress, 0 to 1 (its assets decoded so far); nullopt with none.
+        [[nodiscard]] HEDGEHOG_ENGINE_API std::optional<float> GetSceneLoadProgress() const;
 
         [[nodiscard]] HEDGEHOG_ENGINE_API PlayState GetPlayState() const;
         [[nodiscard]] HEDGEHOG_ENGINE_API FixedStepClock&       GetFixedStepClock();

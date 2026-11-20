@@ -368,5 +368,20 @@ CLAUDE.md were taken in Edit mode, with no particle alive): `RenderFrame(total)`
 `Frame(wall)` 2.381 ms; ParticleSimulate 0.026 / 0.021 ms (CPU / GPU), the sort 0.031 / 0.059,
 Particles 0.010 / 0.014, the collision depth copy 0.004 / 0.009.
 
+### 2026-11-20 (HE-473) — loading a scene in the background
+
+The frame that swaps `Pbr.yaml` in during Play, through `EngineContext::RequestSceneLoad` and one
+`UpdateContext` (the engine alone, no renderer: so neither path counts the textures' decode or the
+sky's bake, which the renderer does at the next `RenderFrame` from the file, or, after an async load,
+from the prefetch store). Release, three runs each, a fresh engine per run:
+
+| Request | Swap frame ms |
+|---------|---------------|
+| Synchronous | 172.3, 174.6, 175.3 |
+| Asynchronous | 4.3, 4.8, 6.3 |
+
+The background job took 182 to 501 ms (the first run cold) to parse the scene and decode its meshes,
+textures and environment; the swap itself, deserializing the parsed document, 1 ms.
+
 When a change intentionally alters performance, re-run the benchmark and update
 this table (keep the old row set; add a dated entry below it so history accumulates).
