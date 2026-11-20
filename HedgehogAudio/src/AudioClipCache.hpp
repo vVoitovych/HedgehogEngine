@@ -2,6 +2,7 @@
 
 #include "HedgehogAudio/api/SoundHandle.hpp"
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <unordered_map>
@@ -32,6 +33,7 @@ namespace HA
 
         // nullptr for an invalid id.
         [[nodiscard]] const DecodedClip* Find(AudioClipId id) const;
+        [[nodiscard]] size_t             GetCount() const { return m_Clips.size(); }
 
     private:
         std::vector<DecodedClip>                       m_Clips;

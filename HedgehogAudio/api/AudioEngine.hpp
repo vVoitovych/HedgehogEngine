@@ -6,12 +6,14 @@
 #include "HedgehogMath/api/Vector.hpp"
 
 #include <array>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
+#include <unordered_set>
 #include <vector>
 
 // miniaudio's types, kept opaque: only HedgehogAudio's sources include miniaudio.h.
@@ -147,10 +149,19 @@ namespace HA
         HEDGEHOG_AUDIO_API AudioClipId LoadClip(const std::string& virtualPath, const FS::FileSystemManager& files);
         // In seconds; 0 for an invalid id.
         [[nodiscard]] HEDGEHOG_AUDIO_API float GetClipLength(AudioClipId clip) const;
+        // Clips decoded and kept by LoadClip (failed paths not counted).
+        [[nodiscard]] HEDGEHOG_AUDIO_API size_t GetCachedClipCount() const;
 
         // Starts a sound of clip. An invalid handle when the clip is invalid or the engine is not
         // running.
         HEDGEHOG_AUDIO_API SoundHandle Play(AudioClipId clip, const PlayParams& params);
+        // Starts a sound that streams the file at virtualPath (resolved to its physical file through
+        // files) from disk: miniaudio's resource manager pages through it on its own thread, so nothing
+        // is decoded ahead and no clip is cached; two streams of one file read it twice. For long music.
+        // A path that does not resolve to a file, or a file that cannot be opened, logs one [Audio]
+        // error per path and gives an invalid handle. Every other call takes its handle as Play's.
+        HEDGEHOG_AUDIO_API SoundHandle PlayStream(const std::string& virtualPath, const FS::FileSystemManager& files,
+                                                  const PlayParams& params);
         // Stops a sound and frees its slot, so its handle goes stale. A stale handle does nothing.
         HEDGEHOG_AUDIO_API void Stop(SoundHandle sound);
         HEDGEHOG_AUDIO_API void StopAll();
@@ -177,13 +188,21 @@ namespace HA
 
         // Mixes frameCount frames of every sound into out (interleaved floats, GetChannels() per
         // frame, silence when nothing plays) and returns frameCount. Only an engine without a device is read this way,
-        // so tests and offline rendering advance its sounds; 0 otherwise.
+        // so tests and offline rendering advance its sounds; 0 otherwise. Rendering offline, it first waits
+        // (at most STREAM_WAIT) for each stream to have the frames paged in, so a stream reads as its file.
         HEDGEHOG_AUDIO_API uint64_t ReadFrames(float* out, uint64_t frameCount);
+        static constexpr std::chrono::milliseconds STREAM_WAIT{ 2000 };
 
     private:
         bool                     InitWithoutDevice(const AudioEngineDesc& desc);
         void                     InitBuses();
         [[nodiscard]] SoundSlot* FindSlot(SoundHandle sound) const;
+        // A free slot's index, reused or new.
+        uint32_t                 AcquireSlot();
+        // Applies params to the slot's initialized sound and starts it.
+        SoundHandle              StartSlot(uint32_t index, const PlayParams& params);
+        [[nodiscard]] ma_sound*  GetBusGroup(AudioBus bus) const;
+        void                     WaitForStreams(uint64_t frameCount) const;
         void                     FreeSlot(uint32_t index);
 
         std::unique_ptr<ma_context>                            m_Context; // only when Backends picks them
@@ -195,5 +214,6 @@ namespace HA
         std::unique_ptr<AudioClipCache>                        m_Clips;
         std::vector<std::unique_ptr<SoundSlot>>                m_Slots; // stable addresses: miniaudio holds them
         std::vector<uint32_t>                                  m_FreeSlots;
+        std::unordered_set<std::string>                        m_StreamFailures; // logged once each
     };
 }
