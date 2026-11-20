@@ -8,6 +8,15 @@
 
 namespace HedgehogEngine
 {
+    // Mirrors HA::AudioBus (checked in AudioSystem.cpp), kept apart so the component never includes the engine.
+    enum class AudioSourceBus
+    {
+        Music = 0,
+        Sfx   = 1,
+        Voice = 2,
+        Ui    = 3
+    };
+
     // Plays a clip (a WAV, FLAC or MP3 under assets://) from its entity in Play mode: started on Play
     // when PlayOnStart, placed at the entity's transform when Spatial, and stopped by Stop.
 HH_BEGIN_COMPONENT(AudioSourceComponent)
@@ -19,6 +28,9 @@ HH_BEGIN_COMPONENT(AudioSourceComponent)
     HH_PROP_NAMED(bool,        Spatial,     "Spatial",     true,          None)
     HH_PROP_NAMED(float,       MinDistance, "MinDistance", 1.0f,          None)
     HH_PROP_NAMED(float,       MaxDistance, "MaxDistance", 100.0f,        None)
+
+    static constexpr const char* kBusNames[] = { "Music", "Sfx", "Voice", "Ui" };
+    HH_PROP_NAMED_ENUM(HedgehogEngine::AudioSourceBus, Bus, "Bus", HedgehogEngine::AudioSourceBus::Sfx, kBusNames, 4)
 
     HA::SoundHandle Sound; // runtime: the sound playing, invalid when none
 HH_END_COMPONENT(AudioSourceComponent)

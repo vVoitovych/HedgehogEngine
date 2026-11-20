@@ -30,6 +30,7 @@ Scene:
           Spatial: true
           MinDistance: 1
           MaxDistance: 20
+          Bus: 1
         Children:
           []
       - Entity: 2

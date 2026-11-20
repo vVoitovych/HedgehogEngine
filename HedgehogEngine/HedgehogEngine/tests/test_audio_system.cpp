@@ -280,3 +280,34 @@ TEST_CASE("AudioSystem - a clip named through a mount plays as one under assets:
     CHECK(world.Loudness() > 0.0);
     REQUIRE(world.Context.Stop());
 }
+
+TEST_CASE("AudioSystem - a source plays through its bus, and bus volumes outlive Stop")
+{
+    AudioWorld        world;
+    const ECS::Entity music = world.SpawnSource(RIGHT);
+    world.Ecs().GetComponent<AudioSourceComponent>(music).Spatial = false;
+    world.Ecs().GetComponent<AudioSourceComponent>(music).Bus     = AudioSourceBus::Music;
+    const ECS::Entity sfx = world.SpawnSource(RIGHT);
+    world.Ecs().GetComponent<AudioSourceComponent>(sfx).Spatial = false;
+    REQUIRE(world.Source(sfx).Bus == AudioSourceBus::Sfx); // the default
+
+    world.Audio().SetBusVolume(HA::AudioBus::Sfx, 0.0f);
+    REQUIRE(world.Context.Play());
+    world.Frame();
+    CHECK(world.Loudness() > 0.0); // the Music source alone
+
+    world.Audio().SetBusVolume(HA::AudioBus::Music, 0.0f);
+    CHECK(world.Loudness() == 0.0);
+
+    world.Audio().SetBusVolume(HA::AudioBus::Sfx, 1.0f);
+    CHECK(world.Loudness() > 0.0); // the Sfx source alone
+
+    world.Audio().SetBusVolume(HA::AudioBus::Sfx, 0.0f);
+    REQUIRE(world.Context.Stop());
+    REQUIRE(world.Context.Play());
+    world.Frame();
+    CHECK(world.Audio().GetBusVolume(HA::AudioBus::Music) == 0.0f);
+    CHECK(world.Audio().GetBusVolume(HA::AudioBus::Sfx) == 0.0f);
+    CHECK(world.Loudness() == 0.0);
+    REQUIRE(world.Context.Stop());
+}

@@ -12,6 +12,8 @@
 #include <algorithm>
 #include <cmath>
 #include <memory>
+#include <optional>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -30,6 +32,53 @@ namespace HedgehogScripting::Bindings
             if (!std::isfinite(value))
                 throw std::runtime_error(std::string(what) + " must be a finite number");
             return value;
+        }
+
+        // A bus as a name ("Music", ..., or "Master" when allowed) or an AudioBus value; nullopt is Master.
+        std::optional<HA::AudioBus> ReadBus(const sol::object& value, bool allowMaster)
+        {
+            std::optional<HA::AudioBus> bus;
+            bool                        found = false;
+            if (value.is<std::string>())
+            {
+                const std::string name = value.as<std::string>();
+                if (allowMaster && name == "Master")
+                {
+                    return std::nullopt;
+                }
+                bus   = HA::FindBus(name);
+                found = bus.has_value();
+                if (!found && name == "Master")
+                {
+                    throw std::runtime_error("a one-shot plays on a bus, not Master");
+                }
+            }
+            else if (value.is<double>())
+            {
+                const double number = value.as<double>();
+                if (number >= 0.0 && number < static_cast<double>(HA::AUDIO_BUS_COUNT) && number == std::floor(number))
+                {
+                    bus   = static_cast<HA::AudioBus>(static_cast<int>(number));
+                    found = true;
+                }
+            }
+            if (!found)
+            {
+                std::string what = "a " + std::string(sol::type_name(value.lua_state(), value.get_type()));
+                if (value.is<std::string>())
+                {
+                    what = "\"" + value.as<std::string>() + "\"";
+                }
+                else if (value.is<double>())
+                {
+                    std::ostringstream number;
+                    number << value.as<double>();
+                    what = number.str();
+                }
+                throw std::runtime_error(what + " is not an audio bus (" +
+                                         std::string(allowMaster ? "Master, " : "") + "Music, Sfx, Voice, Ui)");
+            }
+            return bus;
         }
 
         // Audio plays only in Play mode (a script's top level also runs when the editor describes
@@ -107,6 +156,14 @@ namespace HedgehogScripting::Bindings
                     [&ecs](const AudioSourceRef& ref) { return Resolve(ecs, ref).MinDistance; },
                     [&ecs](const AudioSourceRef& ref, float distance)
                     { Resolve(ecs, ref).MinDistance = std::max(RequireFinite(distance, "a distance"), 0.0f); }),
+                "bus", sol::property(
+                    [&ecs](const AudioSourceRef& ref) { return static_cast<int>(Resolve(ecs, ref).Bus); },
+                    [&ecs](const AudioSourceRef& ref, const sol::object& value)
+                    {
+                        // As the bus arguments of the Audio table take it, so every place reads a bus alike.
+                        const HA::AudioBus bus = *ReadBus(value, false);
+                        Resolve(ecs, ref).Bus  = static_cast<HedgehogEngine::AudioSourceBus>(bus);
+                    }),
                 "maxDistance", sol::property(
                     [&ecs](const AudioSourceRef& ref) { return Resolve(ecs, ref).MaxDistance; },
                     [&ecs](const AudioSourceRef& ref, float distance)
@@ -121,10 +178,16 @@ namespace HedgehogScripting::Bindings
             const FS::FileSystemManager& files = context.GetFileSystem();
             sol::table                   table = lua.create_named_table("Audio");
 
-            // playOneShot(clip, position?, volume?): plays a clip once, in 2D, or in 3D at position
+            lua.new_enum("AudioBus",
+                         "Music", static_cast<int>(HA::AudioBus::Music),
+                         "Sfx",   static_cast<int>(HA::AudioBus::Sfx),
+                         "Voice", static_cast<int>(HA::AudioBus::Voice),
+                         "Ui",    static_cast<int>(HA::AudioBus::Ui));
+
+            // playOneShot(clip, position?, volume?, bus?): plays a clip once, in 2D, or in 3D at position
             // (a Vector3); the engine frees it when it ends. Returns whether it started.
             table["playOneShot"] = [&audio, &files, guard](const std::string& clip, sol::object position,
-                                                           sol::optional<float> volume)
+                                                           sol::optional<float> volume, sol::object bus)
             {
                 const std::string path = std::string(ASSETS_PREFIX) + ToAssetPath(clip, "an audio clip", "audio clips");
                 HA::PlayParams    params;
@@ -137,6 +200,10 @@ namespace HedgehogScripting::Bindings
                 }
                 if (volume)
                     params.Volume = std::max(RequireFinite(*volume, "a volume"), 0.0f);
+                if (bus.valid() && bus != sol::lua_nil)
+                {
+                    params.Bus = *ReadBus(bus, false);
+                }
                 if (!guard->Allows("Audio.playOneShot()"))
                     return false;
                 return audio.Play(audio.LoadClip(path, files), params).IsValid();
@@ -148,6 +215,29 @@ namespace HedgehogScripting::Bindings
                     audio.SetMasterVolume(volume);
             };
             table["getMasterVolume"] = [&audio]() { return audio.GetMasterVolume(); };
+            // setBusVolume(bus, volume) / getBusVolume(bus): a bus by name or AudioBus value, or "Master".
+            table["setBusVolume"] = [&audio, guard](sol::object bus, float volume)
+            {
+                const std::optional<HA::AudioBus> target = ReadBus(bus, true);
+                RequireFinite(volume, "a volume");
+                if (!guard->Allows("Audio.setBusVolume()"))
+                {
+                    return;
+                }
+                if (target)
+                {
+                    audio.SetBusVolume(*target, volume);
+                }
+                else
+                {
+                    audio.SetMasterVolume(volume);
+                }
+            };
+            table["getBusVolume"] = [&audio](sol::object bus)
+            {
+                const std::optional<HA::AudioBus> target = ReadBus(bus, true);
+                return target ? audio.GetBusVolume(*target) : audio.GetMasterVolume();
+            };
         }
     }
 
