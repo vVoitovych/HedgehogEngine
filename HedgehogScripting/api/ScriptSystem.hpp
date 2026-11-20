@@ -56,6 +56,7 @@ namespace HedgehogScripting
     namespace Bindings
     {
         struct ScriptEntity;
+        struct InputListen;
     }
 
     // The script system (ADR-022): runs the Lua script of every entity with a ScriptComponent and
@@ -374,6 +375,8 @@ namespace HedgehogScripting
         std::vector<Bindings::ScriptEntity>           m_PendingDestroys;
         // PlayerSettings writes not yet applied (the bindings' preview).
         std::optional<HedgehogSettings::PlayerSettings> m_PendingPlayerSettings;
+        // Input.listen's request, ended by UpdateInputListen at the start of an OnUpdate.
+        std::unique_ptr<Bindings::InputListen>          m_InputListen; // never null
 
         // What Time.deltaTime and Time.frame read: the current hook's dt and the OnUpdate calls
         // since Play.

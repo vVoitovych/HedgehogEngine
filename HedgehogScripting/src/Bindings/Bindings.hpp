@@ -2,6 +2,8 @@
 
 #include "HedgehogScripting/api/Sol.hpp"
 
+#include "HedgehogEngine/HedgehogWindow/api/RawInput.hpp"
+
 #include <cstdint>
 #include <functional>
 #include <optional>
@@ -154,8 +156,31 @@ namespace HedgehogScripting::Bindings
     // isDown, wasPressed, wasReleased, value and consume take an action's name (an unknown one, or
     // a non-string, is a script error); pointerPosition and pointerDelta return x and y in game-view
     // pixels, y down; isPointerInside. Consumed actions read as up; nothing is down outside Play.
-    // Every call reads the current state. context must outlive lua.
-    void RegisterInput(sol::state& lua, HedgehogEngine::EngineContext& context);
+    // Every call reads the current state.
+    // Rebinding (the engine's input overrides): getBindings(action) returns its bindings as { source,
+    // name (a key, button or axis's), negative (KeyAxis), scale, deadzone }; setBinding(action, index,
+    // binding) (index from 1) and resetBindings(action?) (every action without one) change them;
+    // listen(action, index) waits for the next new press of that binding's kind (UpdateInputListen);
+    // isListening(); saveBindings() writes player://input_overrides.yaml. An unknown action, an index
+    // out of range and a malformed binding are script errors; outside Play the changes do nothing and
+    // the first warns. context and listen must outlive lua.
+    struct InputListen
+    {
+        bool         Active = false;
+        std::string  Action;
+        size_t       Index = 0;  // the binding, from 0
+        HW::RawInput Previous;   // the game input last looked at, for new presses
+    };
+    void RegisterInput(sol::state& lua, HedgehogEngine::EngineContext& context, InputListen& listen);
+
+    // Once a frame while listen is active: a new Escape press cancels, a new press of the binding's
+    // kind rebinds it (kept as an override). Either ends listening and gives the payload of the script
+    // event InputRebound, { action, index, binding } or { action, index, cancelled = true }.
+    std::optional<sol::table> UpdateInputListen(sol::state& lua, HedgehogEngine::EngineContext& context,
+                                                InputListen& listen);
+
+    // Every game action consumed for the rest of the frame (while listening, the game hears none).
+    void ConsumeAllInput(HedgehogEngine::EngineContext& context);
 
     // Any registered component by its key (call after
     // RegisterEntity): entity:getComponent(key) (nil when absent), hasComponent(key) and
