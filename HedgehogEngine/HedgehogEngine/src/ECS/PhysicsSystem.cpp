@@ -1,4 +1,5 @@
 #include "HedgehogEngine/api/ECS/systems/PhysicsSystem.hpp"
+#include "PhysicsWorldTransform.hpp"
 #include "Profiler/api/Profiler.hpp"
 #include "HedgehogEngine/api/Containers/TerrainContainer.hpp"
 #include "HedgehogEngine/api/ECS/components/ColliderComponent.hpp"
@@ -35,17 +36,6 @@ namespace HedgehogEngine
         // A non-uniform scale counts as uniform within this.
         constexpr float UNIFORM_SCALE_TOLERANCE = 1e-4f;
 
-        // An entity's transform in the world, composed from the components themselves (the
-        // ObjMatrix may be a frame old): its matrix, its rotation, the product of the scales, and
-        // whether an ancestor is scaled unevenly (the rotation and scale are then approximate).
-        struct WorldTransform
-        {
-            HM::Matrix4x4  Matrix   = HM::Matrix4x4::GetIdentity();
-            HM::Quaternion Rotation = HM::Quaternion::Identity();
-            HM::Vector3    Scale    = HM::Vector3(1.0f, 1.0f, 1.0f);
-            bool           UnevenAncestor = false;
-        };
-
         // As TransformSystem builds it: T * Rx * Ry * Rz * S.
         HM::Matrix4x4 MakeLocalMatrix(const TransformComponent& transform)
         {
@@ -62,38 +52,41 @@ namespace HedgehogEngine
             const float least   = std::min({ std::abs(scale.x()), std::abs(scale.y()), std::abs(scale.z()) });
             return largest - least <= UNIFORM_SCALE_TOLERANCE * largest;
         }
+    }
 
-        WorldTransform ComputeWorldTransform(ECS::ECS& ecs, ECS::Entity entity)
+    WorldTransform ComputeWorldTransform(ECS::ECS& ecs, ECS::Entity entity)
+    {
+        // The entity and its ancestors, the entity first; the root is its own parent.
+        ECS::Entity chain[64];
+        size_t      count = 0;
+        for (ECS::Entity current = entity; count < std::size(chain);)
         {
-            // The entity and its ancestors, the entity first; the root is its own parent.
-            ECS::Entity chain[64];
-            size_t      count = 0;
-            for (ECS::Entity current = entity; count < std::size(chain);)
-            {
-                chain[count++] = current;
-                if (!ecs.HasComponent<ECS::HierarchyComponent>(current))
-                    break;
-                const ECS::Entity parent = ecs.GetComponent<ECS::HierarchyComponent>(current).Parent;
-                if (parent == current || parent == ECS::INVALID_ENTITY || !ecs.IsAlive(parent) ||
-                    !ecs.HasComponent<TransformComponent>(parent))
-                    break;
-                current = parent;
-            }
-
-            WorldTransform world;
-            for (size_t index = count; index-- > 0;)
-            {
-                const TransformComponent& transform = ecs.GetComponent<TransformComponent>(chain[index]);
-                world.Matrix   = world.Matrix * MakeLocalMatrix(transform);
-                world.Rotation = world.Rotation * HM::Quaternion::FromEuler(transform.Rotation);
-                world.Scale    = HM::Vector3(world.Scale.x() * transform.Scale.x(), world.Scale.y() * transform.Scale.y(),
-                                             world.Scale.z() * transform.Scale.z());
-                if (index > 0 && !IsUniform(transform.Scale))
-                    world.UnevenAncestor = true;
-            }
-            return world;
+            chain[count++] = current;
+            if (!ecs.HasComponent<ECS::HierarchyComponent>(current))
+                break;
+            const ECS::Entity parent = ecs.GetComponent<ECS::HierarchyComponent>(current).Parent;
+            if (parent == current || parent == ECS::INVALID_ENTITY || !ecs.IsAlive(parent) ||
+                !ecs.HasComponent<TransformComponent>(parent))
+                break;
+            current = parent;
         }
 
+        WorldTransform world;
+        for (size_t index = count; index-- > 0;)
+        {
+            const TransformComponent& transform = ecs.GetComponent<TransformComponent>(chain[index]);
+            world.Matrix   = world.Matrix * MakeLocalMatrix(transform);
+            world.Rotation = world.Rotation * HM::Quaternion::FromEuler(transform.Rotation);
+            world.Scale    = HM::Vector3(world.Scale.x() * transform.Scale.x(), world.Scale.y() * transform.Scale.y(),
+                                         world.Scale.z() * transform.Scale.z());
+            if (index > 0 && !IsUniform(transform.Scale))
+                world.UnevenAncestor = true;
+        }
+        return world;
+    }
+
+    namespace
+    {
         HP::ShapeDesc MakeShape(const ColliderComponent& collider, const HM::Vector3& scale)
         {
             HP::ShapeDesc shape;
@@ -150,11 +143,14 @@ namespace HedgehogEngine
         m_World   = ecs.GetServices().Find<HP::PhysicsWorld>();
         m_Bus     = ecs.GetServices().Find<EventBus>();
         m_Catalog = ecs.GetServices().Find<ResourceCatalog>();
+        m_Ecs     = &ecs;
     }
 
     void PhysicsSystem::OnUnregister(ECS::ECS& ecs)
     {
+        DestroyCharacters(ecs);
         DestroyBodies(ecs);
+        m_Ecs     = nullptr;
         m_World   = nullptr;
         m_Bus     = nullptr;
         m_Catalog = nullptr;
@@ -164,25 +160,29 @@ namespace HedgehogEngine
     {
         m_WarnedNoCollider.clear();
         m_WarnedScale.clear();
+        m_WarnedColliderCharacter.clear();
         WarnRigidBodiesWithoutCollider(ecs);
         ApplySettings(ecs);
         if (!HasBodiesToMake(ecs) || !StartWorld(ecs))
             return;
         SyncBodies(ecs);
+        SyncCharacters(ecs);
     }
 
     void PhysicsSystem::OnPostFixedUpdate(ECS::ECS& ecs, float fixedDeltaTime)
     {
         WarnRigidBodiesWithoutCollider(ecs);
         // A collider or terrain added during Play starts the world then.
-        if (m_Bodies.empty() && !HasBodiesToMake(ecs))
+        if (m_Bodies.empty() && m_Characters.empty() && !HasBodiesToMake(ecs))
             return;
         if (!StartWorld(ecs))
             return;
         {
             HH_PROFILE_ZONE("Physics: sync bodies");
             SyncBodies(ecs);
+            SyncCharacters(ecs);
             FollowTransforms(ecs, fixedDeltaTime);
+            FollowCharacterTransforms(ecs);
         }
         bool stepped = false;
         {
@@ -191,12 +191,16 @@ namespace HedgehogEngine
         }
         HH_PROFILE_ZONE("Physics: write back and contacts");
         if (stepped)
+        {
+            MoveCharacters(ecs, fixedDeltaTime);
             WriteBack(ecs);
+        }
         PublishContacts(ecs);
     }
 
     void PhysicsSystem::OnPlayStop(ECS::ECS& ecs)
     {
+        DestroyCharacters(ecs);
         DestroyBodies(ecs);
         m_WarnedNoCollider.clear();
         m_WarnedScale.clear();
@@ -251,7 +255,9 @@ namespace HedgehogEngine
     void PhysicsSystem::SyncBodies(ECS::ECS& ecs)
     {
         m_Present.clear();
-        m_Present.insert(GetEntities().begin(), GetEntities().end());
+        for (const ECS::Entity entity : GetEntities())
+            if (!IsCharacterEntity(ecs, entity))
+                m_Present.insert(entity);
         m_Terrains.clear();
         CollectTerrains(ecs, m_Terrains);
         m_Present.insert(m_Terrains.begin(), m_Terrains.end());
@@ -276,7 +282,7 @@ namespace HedgehogEngine
 
         for (const ECS::Entity entity : GetEntities())
         {
-            if (!m_Bodies.contains(entity))
+            if (!m_Bodies.contains(entity) && m_Present.contains(entity))
                 CreateBody(ecs, entity);
         }
         for (const ECS::Entity entity : m_Terrains)
@@ -303,7 +309,7 @@ namespace HedgehogEngine
 
     bool PhysicsSystem::HasBodiesToMake(ECS::ECS& ecs)
     {
-        if (!GetEntities().empty())
+        if (!GetEntities().empty() || HasCharacters())
             return true;
         m_Terrains.clear();
         CollectTerrains(ecs, m_Terrains);

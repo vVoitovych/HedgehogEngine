@@ -31,6 +31,7 @@
 #include "HedgehogEngine/api/ECS/components/PrefabInstanceComponent.hpp"
 #include "HedgehogEngine/api/ECS/systems/AudioSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/PhysicsSystem.hpp"
+#include "HedgehogEngine/api/ECS/components/CharacterControllerComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/ColliderComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/EnvironmentComponent.hpp"
 #include "HedgehogEngine/api/ECS/systems/EnvironmentSystem.hpp"
@@ -188,6 +189,7 @@ namespace HedgehogEngine
         m_AudioListenerSystem = m_ECS.RegisterSystem<AudioListenerSystem>();
         m_PhysicsSystem       = m_ECS.RegisterSystem<PhysicsSystem>();
         m_RigidBodyListSystem = m_ECS.RegisterSystem<RigidBodyListSystem>();
+        m_CharacterListSystem = m_ECS.RegisterSystem<CharacterControllerListSystem>();
         m_EnvironmentSystem   = m_ECS.RegisterSystem<EnvironmentSystem>();
         m_TerrainSystem       = m_ECS.RegisterSystem<TerrainSystem>();
         m_ParticleSystem      = m_ECS.RegisterSystem<ParticleSystem>();
@@ -245,6 +247,11 @@ namespace HedgehogEngine
         signature.set(m_ECS.GetComponentType<RigidBodyComponent>());
         signature.set(m_ECS.GetComponentType<TransformComponent>());
         m_ECS.SetSystemSignature<RigidBodyListSystem>(signature);
+        signature.reset();
+
+        signature.set(m_ECS.GetComponentType<CharacterControllerComponent>());
+        signature.set(m_ECS.GetComponentType<TransformComponent>());
+        m_ECS.SetSystemSignature<CharacterControllerListSystem>(signature);
         signature.reset();
 
         signature.set(m_ECS.GetComponentType<EnvironmentComponent>());
