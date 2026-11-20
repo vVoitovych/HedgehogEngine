@@ -218,6 +218,15 @@ namespace HedgehogEngine
         return controller ? controller->State.GroundVelocity : HM::Vector3(0.0f, 0.0f, 0.0f);
     }
 
+    void PhysicsSystem::RebuildCharacter(ECS::ECS& ecs, ECS::Entity entity)
+    {
+        if (!FindCharacterComponent(entity))
+            return;
+        m_World->DestroyCharacter(m_Characters[entity].Character);
+        m_Characters.erase(entity);
+        CreateCharacter(ecs, entity);
+    }
+
     HP::CharacterHandle PhysicsSystem::GetCharacter(ECS::Entity entity) const
     {
         const auto found = m_Characters.find(entity);

@@ -2,6 +2,7 @@
 #include "ScriptHandles.hpp"
 
 #include "HedgehogEngine/api/EngineContext.hpp"
+#include "HedgehogEngine/api/ECS/components/CharacterControllerComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/ColliderComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RigidBodyComponent.hpp"
 #include "HedgehogEngine/api/ECS/systems/PhysicsSystem.hpp"
@@ -23,8 +24,10 @@ namespace HedgehogScripting::Bindings
         using HedgehogEngine::ColliderShape;
         using HedgehogEngine::RigidBodyComponent;
         using HedgehogEngine::RigidBodyType;
+        using HedgehogEngine::CharacterControllerComponent;
         using RigidBodyRef = ScriptComponentRef<RigidBodyComponent>;
         using ColliderRef  = ScriptComponentRef<ColliderComponent>;
+        using CharacterRef = ScriptComponentRef<CharacterControllerComponent>;
 
         constexpr int32_t LAYER_COUNT = 16;
 
@@ -214,6 +217,99 @@ namespace HedgehogScripting::Bindings
                 sol::meta_function::to_string, ToText<ColliderComponent>("Collider"));
         }
 
+        // A character field: written to the component and, during Play, the character made again
+        // from it (PhysicsSystem::RebuildCharacter), so it applies at once.
+        template<typename V, typename Check>
+        auto CharacterField(HedgehogEngine::EngineContext& context, V CharacterControllerComponent::*member,
+                            Check check)
+        {
+            ECS::ECS&                      ecs     = context.GetECS();
+            HedgehogEngine::PhysicsSystem& physics = *context.GetPhysicsSystem();
+            return sol::property(
+                [&ecs, member](const CharacterRef& ref) { return Resolve(ecs, ref).*member; },
+                [&ecs, &physics, member, check](const CharacterRef& ref, const V& value)
+                {
+                    Resolve(ecs, ref).*member = check(value);
+                    physics.RebuildCharacter(ecs, ref.Entity.Id);
+                });
+        }
+
+        void RegisterCharacterController(sol::state& lua, HedgehogEngine::EngineContext& context,
+                                         const std::shared_ptr<PlayGuard>& guard)
+        {
+            ECS::ECS&                      ecs     = context.GetECS();
+            HedgehogEngine::PhysicsSystem& physics = *context.GetPhysicsSystem();
+            // A read of the character's state; zero outside Play or before its character is made.
+            const auto state = [&ecs, &physics](HM::Vector3 (HedgehogEngine::PhysicsSystem::*read)(ECS::Entity) const)
+            {
+                return sol::readonly_property([&ecs, &physics, read](const CharacterRef& ref)
+                {
+                    (void)Resolve(ecs, ref);
+                    return (physics.*read)(ref.Entity.Id);
+                });
+            };
+
+            lua.new_usertype<CharacterRef>(
+                "CharacterController", sol::no_constructor,
+                // The walk velocity (world space; its +Z part ignored), kept until changed.
+                "move", [&ecs, guard](const CharacterRef& ref, const HM::Vector3& velocity)
+                {
+                    CharacterControllerComponent& controller = Resolve(ecs, ref);
+                    RequireFinite(velocity, "a character's velocity");
+                    if (guard->Allows("CharacterController:move()"))
+                        controller.DesiredVelocity = velocity;
+                },
+                // A jump at this speed, taken by the next step when it is on the ground.
+                "jump", [&ecs, guard](const CharacterRef& ref, float speed)
+                {
+                    CharacterControllerComponent& controller = Resolve(ecs, ref);
+                    if (RequireFinite(speed, "a jump speed") < 0.0f)
+                        throw std::runtime_error("a jump speed must be 0 or more");
+                    if (guard->Allows("CharacterController:jump()"))
+                        controller.PendingJump = speed;
+                },
+                "isGrounded", [&ecs, &physics](const CharacterRef& ref)
+                {
+                    (void)Resolve(ecs, ref);
+                    return physics.IsCharacterGrounded(ref.Entity.Id);
+                },
+                "velocity",       state(&HedgehogEngine::PhysicsSystem::GetCharacterVelocity),
+                "groundNormal",   state(&HedgehogEngine::PhysicsSystem::GetCharacterGroundNormal),
+                "groundVelocity", state(&HedgehogEngine::PhysicsSystem::GetCharacterGroundVelocity),
+                // What it stands on, or nil in the air.
+                "groundEntity", sol::readonly_property([&ecs](const CharacterRef& ref) -> std::optional<ScriptEntity>
+                {
+                    const CharacterControllerComponent& controller = Resolve(ecs, ref);
+                    if (!controller.Character.IsSet() || controller.State.Ground == HP::CharacterGroundState::InAir)
+                        return std::nullopt;
+                    const auto ground = static_cast<ECS::Entity>(controller.State.GroundUserData);
+                    if (!ecs.IsAlive(ground))
+                        return std::nullopt;
+                    return MakeScriptEntity(ecs, ground);
+                }),
+                "radius",        CharacterField(context, &CharacterControllerComponent::Radius, Positive("a radius")),
+                "height",        CharacterField(context, &CharacterControllerComponent::Height, Positive("a height")),
+                "stepHeight",    CharacterField(context, &CharacterControllerComponent::StepHeight,
+                                                NotNegative("a step height")),
+                "maxSlopeAngle", CharacterField(context, &CharacterControllerComponent::MaxSlopeAngle, [](float value)
+                {
+                    if (!(RequireFinite(value, "a slope angle") > 0.0f && value < 90.0f))
+                        throw std::runtime_error("a slope angle must be between 0 and 90 degrees");
+                    return value;
+                }),
+                "layer",         CharacterField(context, &CharacterControllerComponent::Layer, [](int32_t value)
+                {
+                    if (value < 0 || value >= LAYER_COUNT)
+                        throw std::runtime_error(std::to_string(value) + " is not a physics layer (0 to 15)");
+                    return value;
+                }),
+                "gravityScale",  CharacterField(context, &CharacterControllerComponent::GravityScale,
+                                                Finite("a gravity scale")),
+                "pushStrength",  CharacterField(context, &CharacterControllerComponent::PushStrength,
+                                                NotNegative("a push strength")),
+                sol::meta_function::to_string, ToText<CharacterControllerComponent>("CharacterController"));
+        }
+
         void RegisterPhysicsTable(sol::state& lua, HedgehogEngine::EngineContext& context, const std::shared_ptr<PlayGuard>& guard)
         {
             HedgehogEngine::PhysicsSystem& physics = *context.GetPhysicsSystem();
@@ -276,6 +372,7 @@ namespace HedgehogScripting::Bindings
         RegisterEnums(lua);
         RegisterRigidBody(lua, context, guard);
         RegisterCollider(lua, context);
+        RegisterCharacterController(lua, context, guard);
         RegisterPhysicsTable(lua, context, guard);
     }
 }

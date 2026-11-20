@@ -5,6 +5,7 @@
 #include "HedgehogEngine/api/ECS/components/AnimatorComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/AudioSourceComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/ParticleSystemComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/CharacterControllerComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/ColliderComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RigidBodyComponent.hpp"
 #include "HedgehogEngine/api/ECS/systems/PhysicsSystem.hpp"
@@ -240,6 +241,12 @@ namespace HedgehogScripting::Bindings
         AddComponentAccess<HedgehogEngine::ColliderComponent>(entity, ecs, "Collider", [&ecs](ECS::Entity id)
         {
             ecs.AddComponent(id, HedgehogEngine::ColliderComponent{});
+        });
+        // Its character is made at the next fixed step.
+        AddComponentAccess<HedgehogEngine::CharacterControllerComponent>(entity, ecs, "CharacterController",
+                                                                         [&ecs](ECS::Entity id)
+        {
+            ecs.AddComponent(id, HedgehogEngine::CharacterControllerComponent{});
         });
         // UI parts (their usertypes come from RegisterUi). A rect makes a child of a canvas or of
         // another element a UI element.
