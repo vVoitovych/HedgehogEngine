@@ -116,6 +116,7 @@ namespace HedgehogEngine
         m_ECS.GetServices().Unregister<EcsSerialization::ComponentTypeRegistry>();
         m_ECS.GetServices().Unregister<GameInputFrame>();
         m_ECS.GetServices().Unregister<ApplicationRequests>();
+        m_ECS.GetServices().Unregister<HedgehogSettings::PlayerSettings>();
         m_ECS.GetServices().Unregister<HedgehogSettings::Settings>();
         m_ECS.GetServices().Unregister<ResourceCatalog>();
     }
@@ -134,6 +135,7 @@ namespace HedgehogEngine
         m_GameInput.Actions = &m_GameActions;
         services.Register(m_GameInput);
         services.Register(m_ApplicationRequests);
+        services.Register(m_PlayerSettings);
     }
 
     void EngineContext::InitFileSystem()
@@ -310,6 +312,21 @@ namespace HedgehogEngine
     const HInput::ActionState&    EngineContext::GetGameActionState() const { return m_GameActions; }
     ApplicationRequests&          EngineContext::GetApplicationRequests() { return m_ApplicationRequests; }
     const ApplicationRequests&    EngineContext::GetApplicationRequests() const { return m_ApplicationRequests; }
+
+    HedgehogSettings::PlayerSettings&       EngineContext::GetPlayerSettings() { return m_PlayerSettings; }
+    const HedgehogSettings::PlayerSettings& EngineContext::GetPlayerSettings() const { return m_PlayerSettings; }
+    void     EngineContext::MarkPlayerSettingsChanged() { ++m_PlayerSettingsVersion; }
+    uint64_t EngineContext::GetPlayerSettingsVersion() const { return m_PlayerSettingsVersion; }
+
+    void EngineContext::ApplyPlayerVolumes()
+    {
+        static_assert(HedgehogSettings::PLAYER_AUDIO_BUSES == HA::AUDIO_BUS_NAMES, "one bus order in both lists");
+        m_AudioEngine->SetMasterVolume(m_PlayerSettings.MasterVolume);
+        for (size_t i = 0; i < HA::AUDIO_BUS_COUNT; ++i)
+        {
+            m_AudioEngine->SetBusVolume(static_cast<HA::AudioBus>(i), m_PlayerSettings.BusVolumes[i]);
+        }
+    }
 
     void EngineContext::UpdateContext(float aspectRatio, float dt)
     {

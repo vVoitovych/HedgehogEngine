@@ -178,7 +178,8 @@ namespace HedgehogSettings
     PlayerSettings MakeDefaultPlayerSettings(const ProjectSettings& project)
     {
         PlayerSettings settings;
-        settings.WindowMode = project.IsFullscreen() ? PlayerWindowMode::Fullscreen : PlayerWindowMode::Windowed;
+        // A fullscreen project has always opened borderless on the desktop's mode, as F11 does.
+        settings.WindowMode = project.IsFullscreen() ? PlayerWindowMode::Borderless : PlayerWindowMode::Windowed;
         settings.VSync      = project.IsVSync();
         settings.MaxFps     = project.GetMaxFps();
         return settings;

@@ -69,7 +69,7 @@ TEST_CASE("Player settings - defaults follow the project")
     project.SetVSync(false);
     project.SetMaxFps(60);
     const PlayerSettings fullscreen = MakeDefaultPlayerSettings(project);
-    CHECK(fullscreen.WindowMode == PlayerWindowMode::Fullscreen);
+    CHECK(fullscreen.WindowMode == PlayerWindowMode::Borderless);
     CHECK_FALSE(fullscreen.VSync);
     CHECK(fullscreen.MaxFps == 60);
     CHECK(fullscreen.Width == 0);

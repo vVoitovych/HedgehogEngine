@@ -13,6 +13,8 @@
 
 #include "FileSystem/api/FileSystemManager.hpp"
 
+#include "HedgehogEngine/HedgehogSettings/api/PlayerSettings.hpp"
+
 #include "HedgehogInput/api/ActionState.hpp"
 #include "HedgehogInput/api/InputActionAsset.hpp"
 #include "HedgehogInput/api/InputActionMap.hpp"
@@ -20,6 +22,7 @@
 #include "HedgehogMath/api/Vector.hpp"
 
 #include <chrono>
+#include <cstdint>
 #include <memory>
 #include <optional>
 
@@ -158,6 +161,15 @@ namespace HedgehogEngine
         [[nodiscard]] HEDGEHOG_ENGINE_API ApplicationRequests&       GetApplicationRequests();
         [[nodiscard]] HEDGEHOG_ENGINE_API const ApplicationRequests& GetApplicationRequests() const;
 
+        // What the player chose, an ECS service. The engine only keeps and flags it: each application
+        // decides what it applies, and compares the version with the one it last applied.
+        [[nodiscard]] HEDGEHOG_ENGINE_API HedgehogSettings::PlayerSettings&       GetPlayerSettings();
+        [[nodiscard]] HEDGEHOG_ENGINE_API const HedgehogSettings::PlayerSettings& GetPlayerSettings() const;
+        HEDGEHOG_ENGINE_API void                                                  MarkPlayerSettingsChanged();
+        [[nodiscard]] HEDGEHOG_ENGINE_API uint64_t                                GetPlayerSettingsVersion() const;
+        // The player's master and bus volumes onto the audio engine.
+        HEDGEHOG_ENGINE_API void ApplyPlayerVolumes();
+
         HEDGEHOG_ENGINE_API ResourceCatalog&       GetResourceCatalog();
         HEDGEHOG_ENGINE_API const ResourceCatalog& GetResourceCatalog() const;
 
@@ -277,6 +289,8 @@ namespace HedgehogEngine
         HInput::ActionState       m_EditorActions;
         GameInputFrame            m_GameInput; // a service: the Input phase's view of the above
         ApplicationRequests       m_ApplicationRequests; // a service: what scripts ask of the host
+        HedgehogSettings::PlayerSettings m_PlayerSettings; // a service
+        uint64_t                         m_PlayerSettingsVersion = 0;
 
         PlayState                    m_PlayState = PlayState::Edit;
         FixedStepClock               m_Clock;
