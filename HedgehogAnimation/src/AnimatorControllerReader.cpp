@@ -130,12 +130,75 @@ namespace HedgehogAnimation
             return parameter;
         }
 
+        BlendChild ReadChild(const YAML::Node& node, bool twoD, const std::string& where)
+        {
+            if (twoD)
+                CheckKeys(node, { "Clip", "Position", "Speed" }, { "Clip", "Position" }, where);
+            else
+                CheckKeys(node, { "Clip", "Threshold", "Speed" }, { "Clip", "Threshold" }, where);
+            BlendChild child;
+            child.Clip = Scalar(node["Clip"], where);
+            if (twoD)
+            {
+                const YAML::Node position = node["Position"];
+                if (!position.IsSequence() || position.size() != 2)
+                    throw ParseError{ where + ": Position must be a list of two numbers" };
+                child.Position = { Number(position[0], where), Number(position[1], where) };
+            }
+            else
+                child.Threshold = Number(node["Threshold"], where);
+            if (const YAML::Node speed = node["Speed"])
+                child.Speed = Number(speed, where);
+            return child;
+        }
+
+        // A blend tree state's Motion, Parameter, ParameterY and Children.
+        void ReadBlendTree(const YAML::Node& node, AnimatorState& state, const std::string& where)
+        {
+            const std::string motion = Scalar(node["Motion"], where);
+            if (motion == GetStateMotionName(StateMotion::BlendTree1D))
+                state.Motion = StateMotion::BlendTree1D;
+            else if (motion == GetStateMotionName(StateMotion::BlendTree2D))
+                state.Motion = StateMotion::BlendTree2D;
+            else
+                throw ParseError{ where + ": unknown motion '" + motion + "' (BlendTree1D or BlendTree2D)" };
+            const bool twoD = state.Motion == StateMotion::BlendTree2D;
+            if (node["Clip"])
+                throw ParseError{ where + ": a blend tree takes no Clip; its children name theirs" };
+            if (!node["Parameter"])
+                throw ParseError{ where + ": Parameter is missing" };
+            state.BlendParameterX = Scalar(node["Parameter"], where);
+            if (twoD != static_cast<bool>(node["ParameterY"]))
+                throw ParseError{ where + (twoD ? ": ParameterY is missing" : ": a 1D blend tree takes no ParameterY") };
+            if (twoD)
+                state.BlendParameterY = Scalar(node["ParameterY"], where);
+            if (!node["Children"])
+                throw ParseError{ where + ": Children is missing" };
+            const YAML::Node children = node["Children"];
+            if (!children.IsSequence())
+                throw ParseError{ where + ": Children: expected a list" };
+            for (size_t c = 0; c < children.size(); ++c)
+                state.Children.push_back(ReadChild(children[c], twoD, where + ", child " + std::to_string(c)));
+        }
+
         AnimatorState ReadState(const YAML::Node& node, const std::string& where)
         {
-            CheckKeys(node, { "Name", "Clip", "Speed", "Loop", "SpeedParameter" }, { "Name", "Clip" }, where);
+            CheckKeys(node, { "Name", "Clip", "Motion", "Parameter", "ParameterY", "Children", "Speed", "Loop",
+                              "SpeedParameter" },
+                      { "Name" }, where);
             AnimatorState state;
             state.Name = Scalar(node["Name"], where);
-            state.Clip = Scalar(node["Clip"], where);
+            if (node["Motion"])
+                ReadBlendTree(node, state, where);
+            else
+            {
+                for (const char* key : { "Parameter", "ParameterY", "Children" })
+                    if (node[key])
+                        throw ParseError{ where + ": " + key + " belongs to a blend tree, which needs a Motion" };
+                if (!node["Clip"])
+                    throw ParseError{ where + ": Clip is missing" };
+                state.Clip = Scalar(node["Clip"], where);
+            }
             if (const YAML::Node speed = node["Speed"])
                 state.Speed = Number(speed, where);
             if (const YAML::Node loop = node["Loop"])

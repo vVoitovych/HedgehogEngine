@@ -28,7 +28,31 @@ namespace HedgehogAnimation
         {
             out << YAML::BeginMap;
             out << YAML::Key << "Name" << YAML::Value << state.Name;
-            out << YAML::Key << "Clip" << YAML::Value << state.Clip;
+            if (state.Motion == StateMotion::Clip)
+                out << YAML::Key << "Clip" << YAML::Value << state.Clip;
+            else
+            {
+                const bool twoD = state.Motion == StateMotion::BlendTree2D;
+                out << YAML::Key << "Motion" << YAML::Value << GetStateMotionName(state.Motion);
+                out << YAML::Key << "Parameter" << YAML::Value << state.BlendParameterX;
+                if (twoD)
+                    out << YAML::Key << "ParameterY" << YAML::Value << state.BlendParameterY;
+                out << YAML::Key << "Children" << YAML::Value << YAML::BeginSeq;
+                for (const BlendChild& child : state.Children)
+                {
+                    out << YAML::Flow << YAML::BeginMap;
+                    out << YAML::Key << "Clip" << YAML::Value << child.Clip;
+                    if (twoD)
+                        out << YAML::Key << "Position" << YAML::Value << YAML::Flow << YAML::BeginSeq << child.Position[0]
+                            << child.Position[1] << YAML::EndSeq;
+                    else
+                        out << YAML::Key << "Threshold" << YAML::Value << child.Threshold;
+                    if (child.Speed != 1.0f)
+                        out << YAML::Key << "Speed" << YAML::Value << child.Speed;
+                    out << YAML::EndMap;
+                }
+                out << YAML::EndSeq;
+            }
             if (state.Speed != 1.0f)
                 out << YAML::Key << "Speed" << YAML::Value << state.Speed;
             if (!state.Loop)
