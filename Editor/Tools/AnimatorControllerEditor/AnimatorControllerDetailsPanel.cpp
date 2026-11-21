@@ -2,6 +2,7 @@
 
 #include "ControllerEditing.hpp"
 #include "Tools/RenderGraphEditor/RenderGraphEditorStyle.hpp"
+#include "Widgets/BlendSpacePreview.hpp"
 #include "Widgets/PropertyFields.hpp"
 
 #include "imgui.h"
@@ -70,6 +71,55 @@ namespace Editor
                 return false;
             }
             return false;
+        }
+
+        constexpr std::array<HedgehogAnimation::StateMotion, 3> STATE_MOTIONS = {
+            HedgehogAnimation::StateMotion::Clip, HedgehogAnimation::StateMotion::BlendTree1D,
+            HedgehogAnimation::StateMotion::BlendTree2D
+        };
+
+        const char* MotionLabel(HedgehogAnimation::StateMotion motion)
+        {
+            switch (motion)
+            {
+            case HedgehogAnimation::StateMotion::Clip:        return "Clip";
+            case HedgehogAnimation::StateMotion::BlendTree1D: return "1D blend tree";
+            case HedgehogAnimation::StateMotion::BlendTree2D: return "2D blend tree";
+            }
+            return "";
+        }
+
+        // A clip's name, typed or picked from the selected mesh's clips; true when changed.
+        bool ClipField(const char* id, std::string& clip, const std::vector<std::string>& clips)
+        {
+            ImGui::PushID(id);
+            bool        changed = false;
+            std::string edited;
+            ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - ImGui::GetFrameHeight() - ImGui::GetStyle().ItemSpacing.x);
+            if (InputTextOnEnter("##clip", clip, edited))
+            {
+                clip    = edited;
+                changed = true;
+            }
+            ImGui::SameLine();
+            ImGui::BeginDisabled(clips.empty());
+            if (ImGui::BeginCombo("##clips", nullptr, ImGuiComboFlags_NoPreview))
+            {
+                for (const std::string& name : clips)
+                {
+                    if (ImGui::Selectable(name.c_str(), name == clip))
+                    {
+                        clip    = name;
+                        changed = true;
+                    }
+                }
+                ImGui::EndCombo();
+            }
+            ImGui::EndDisabled();
+            ImGui::SetItemTooltip(clips.empty() ? "Select an entity with a skinned mesh to pick from its clips"
+                                                : "The selected entity's mesh's clips");
+            ImGui::PopID();
+            return changed;
         }
 
         void DrawProblemText(const std::unordered_map<uint32_t, std::string>& problems, uint32_t index)
@@ -179,31 +229,24 @@ namespace Editor
                 }
             }
 
-            // The clip by name, or picked from the selected mesh's clips.
-            PropertyLabel("Clip");
-            ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - ImGui::GetFrameHeight() - ImGui::GetStyle().ItemSpacing.x);
-            if (InputTextOnEnter("##clip", data.Clip, edited))
+            PropertyLabel("Motion");
+            if (ImGui::BeginCombo("##motion", MotionLabel(data.Motion)))
             {
-                data.Clip = edited;
-                ApplyEdit(false);
-            }
-            ImGui::SameLine();
-            ImGui::BeginDisabled(preview.Clips.empty());
-            if (ImGui::BeginCombo("##clips", nullptr, ImGuiComboFlags_NoPreview))
-            {
-                for (const std::string& clip : preview.Clips)
-                {
-                    if (ImGui::Selectable(clip.c_str(), clip == data.Clip))
-                    {
-                        data.Clip = clip;
+                for (const HedgehogAnimation::StateMotion motion : STATE_MOTIONS)
+                    if (ImGui::Selectable(MotionLabel(motion), motion == data.Motion) && SetStateMotion(m_Edited, state, motion))
                         ApplyEdit(false);
-                    }
-                }
                 ImGui::EndCombo();
             }
-            ImGui::EndDisabled();
-            ImGui::SetItemTooltip(preview.Clips.empty() ? "Select an entity with a skinned mesh to pick from its clips"
-                                                        : "The selected entity's mesh's clips");
+
+            if (data.Motion == HedgehogAnimation::StateMotion::Clip)
+            {
+                // The clip by name, or picked from the selected mesh's clips.
+                PropertyLabel("Clip");
+                if (ClipField("clip", data.Clip, preview.Clips))
+                    ApplyEdit(false);
+            }
+            else
+                DrawBlendParameters(state);
 
             PropertyLabel("Speed");
             if (ImGui::DragFloat("##speed", &data.Speed, 0.01f))
@@ -234,6 +277,9 @@ namespace Editor
             ImGui::SetItemTooltip("A Float parameter the speed is multiplied by");
             EndPropertyTable();
         }
+
+        if (data.Motion != HedgehogAnimation::StateMotion::Clip)
+            DrawBlendChildren(state, preview);
 
         if (state == m_Edited.DefaultState)
             ImGui::TextDisabled("The default state: the controller starts here.");
@@ -368,6 +414,112 @@ namespace Editor
         {
             DeleteTransition(m_Edited, transition);
             ApplyEdit(true);
+        }
+    }
+
+    void AnimatorControllerEditorWindow::DrawBlendParameters(uint32_t state)
+    {
+        const HedgehogAnimation::AnimatorState& data = m_Edited.States[state];
+        const bool twoD = data.Motion == HedgehogAnimation::StateMotion::BlendTree2D;
+        for (uint32_t axis = 0; axis < (twoD ? 2u : 1u); ++axis)
+        {
+            const std::string& current = axis == 0 ? data.BlendParameterX : data.BlendParameterY;
+            PropertyLabel(twoD ? (axis == 0 ? "Parameter X" : "Parameter Y") : "Parameter");
+            ImGui::PushID(static_cast<int>(axis));
+            if (ImGui::BeginCombo("##blendParameter", current.empty() ? "(none)" : current.c_str()))
+            {
+                for (const HedgehogAnimation::AnimatorParameter& parameter : m_Edited.Parameters)
+                    if (parameter.Type == AnimatorParameterType::Float &&
+                        ImGui::Selectable(parameter.Name.c_str(), parameter.Name == current) &&
+                        SetBlendParameter(m_Edited, state, axis, parameter.Name))
+                        ApplyEdit(false);
+                ImGui::EndCombo();
+            }
+            ImGui::SetItemTooltip("A Float parameter the tree blends by");
+            ImGui::PopID();
+        }
+    }
+
+    void AnimatorControllerEditorWindow::DrawBlendChildren(uint32_t state, const AnimatorPreview& preview)
+    {
+        HedgehogAnimation::AnimatorState& data = m_Edited.States[state];
+        const bool twoD = data.Motion == HedgehogAnimation::StateMotion::BlendTree2D;
+        ImGui::Text("Children");
+        std::optional<uint32_t> removed;
+        std::optional<std::pair<uint32_t, uint32_t>> moved;
+        const uint32_t count = static_cast<uint32_t>(data.Children.size());
+        if (ImGui::BeginTable("##blendChildren", 4, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersInnerH))
+        {
+            ImGui::TableSetupColumn("Clip", ImGuiTableColumnFlags_WidthStretch, 2.0f);
+            ImGui::TableSetupColumn(twoD ? "Position" : "Threshold", ImGuiTableColumnFlags_WidthStretch, 1.6f);
+            ImGui::TableSetupColumn("Speed", ImGuiTableColumnFlags_WidthStretch, 0.8f);
+            ImGui::TableSetupColumn("##actions", ImGuiTableColumnFlags_WidthFixed, ImGui::GetFrameHeight() * 3.3f);
+            ImGui::TableHeadersRow();
+            for (uint32_t c = 0; c < count; ++c)
+            {
+                HedgehogAnimation::BlendChild& child = data.Children[c];
+                ImGui::PushID(static_cast<int>(c));
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                if (ClipField("childClip", child.Clip, preview.Clips))
+                    ApplyEdit(false);
+                ImGui::TableNextColumn();
+                ImGui::SetNextItemWidth(-1.0f);
+                if (twoD ? ImGui::DragFloat2("##position", child.Position.data(), 0.01f)
+                         : ImGui::DragFloat("##threshold", &child.Threshold, 0.01f))
+                    ApplyEdit(false);
+                ImGui::TableNextColumn();
+                ImGui::SetNextItemWidth(-1.0f);
+                if (ImGui::DragFloat("##speed", &child.Speed, 0.01f))
+                    ApplyEdit(false);
+                ImGui::TableNextColumn();
+                ImGui::BeginDisabled(c == 0);
+                if (ImGui::ArrowButton("##up", ImGuiDir_Up))
+                    moved = std::pair(c, c - 1);
+                ImGui::EndDisabled();
+                ImGui::SameLine(0.0f, 2.0f);
+                ImGui::BeginDisabled(c + 1 >= count);
+                if (ImGui::ArrowButton("##down", ImGuiDir_Down))
+                    moved = std::pair(c, c + 1);
+                ImGui::EndDisabled();
+                ImGui::SameLine(0.0f, 2.0f);
+                if (ImGui::Button("X", ImVec2(ImGui::GetFrameHeight(), 0.0f)))
+                    removed = c;
+                ImGui::PopID();
+            }
+            ImGui::EndTable();
+        }
+        if (moved && MoveBlendChild(m_Edited, state, moved->first, moved->second))
+            ApplyEdit(false);
+        if (removed)
+        {
+            if (DeleteBlendChild(m_Edited, state, *removed))
+                ApplyEdit(false);
+            else
+                m_Status = "A tree keeps one child, and a 2D tree's children may not all lie on one line.";
+        }
+        ImGui::BeginDisabled(count >= HedgehogAnimation::MAX_BLEND_TREE_CHILDREN);
+        if (ImGui::Button("Add child") &&
+            AddBlendChild(m_Edited, state, preview.Clips.empty() ? std::string_view{} : std::string_view(preview.Clips.front())))
+            ApplyEdit(false);
+        ImGui::EndDisabled();
+
+        if (twoD)
+        {
+            // During Play, the running animator's point, when it runs this controller.
+            std::optional<std::array<float, 2>> point;
+            const auto valueOf = [&](const std::string& name) -> std::optional<float>
+            {
+                for (const auto& [parameter, value] : preview.Parameters)
+                    if (parameter == name)
+                        return value;
+                return std::nullopt;
+            };
+            const std::optional<float> x = valueOf(data.BlendParameterX);
+            const std::optional<float> y = valueOf(data.BlendParameterY);
+            if (x && y && UsesThisController(preview))
+                point = std::array<float, 2>{ *x, *y };
+            DrawBlendSpacePreview(data.Children, point, std::min(ImGui::GetContentRegionAvail().x, 180.0f));
         }
     }
 }
