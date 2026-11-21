@@ -160,11 +160,12 @@ namespace HR
         {
             const HedgehogEngine::MeshView mesh = catalog.GetMesh(i);
 
+            // The registry's own offsets: a mesh's levels of detail follow its indices, so the
+            // catalog's (which knows only the meshes) no longer match after the first mesh with some.
             MeshGeometryInfo geom;
-            geom.FirstIndex   = mesh.firstIndex;
-            geom.IndexCount   = mesh.indexCount;
+            geom.FirstIndex   = static_cast<uint32_t>(m_CpuIndices.size());
+            geom.IndexCount   = static_cast<uint32_t>(mesh.indices.size());
             geom.VertexOffset = mesh.vertexOffset;
-            m_MeshGeometryInfos.push_back(geom);
             m_MeshVersions.push_back(catalog.GetMeshVersion(i));
 
             for (const auto& p : mesh.positions)
@@ -184,8 +185,19 @@ namespace HR
                 m_CpuNormals.push_back(n.y());
                 m_CpuNormals.push_back(n.z());
             }
-            for (uint32_t idx : mesh.indices)
-                m_CpuIndices.push_back(idx);
+            m_CpuIndices.insert(m_CpuIndices.end(), mesh.indices.begin(), mesh.indices.end());
+            geom.Draw = { geom.FirstIndex, geom.IndexCount, geom.VertexOffset };
+            geom.Draw.LodRanges[0] = { geom.FirstIndex, geom.IndexCount };
+            if (mesh.lodIndices)
+                for (const std::vector<uint32_t>& level : *mesh.lodIndices)
+                {
+                    if (geom.Draw.LodCount >= Renderer::MAX_MESH_LODS)
+                        break;
+                    geom.Draw.LodRanges[geom.Draw.LodCount++] = { static_cast<uint32_t>(m_CpuIndices.size()),
+                                                                  static_cast<uint32_t>(level.size()) };
+                    m_CpuIndices.insert(m_CpuIndices.end(), level.begin(), level.end());
+                }
+            m_MeshGeometryInfos.push_back(geom);
             AppendTangentStream(mesh, m_CpuTangents);
             AppendSkinningStreams(mesh, m_CpuJoints, m_CpuWeights);
         }

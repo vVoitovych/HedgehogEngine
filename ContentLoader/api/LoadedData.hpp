@@ -64,6 +64,10 @@ namespace ContentLoader
         // materials (LoadGltfMaterials), or -1 for none (and for an OBJ file). One mesh is one draw,
         // so a file whose primitives use several materials keeps the first, with one warning.
         int32_t MaterialIndex = -1;
+
+        // Levels of detail after the mesh itself, coarsest last: triangle lists over these vertices
+        // (GenerateMeshLods), empty for a small mesh.
+        std::vector<std::vector<uint32_t>> LodIndices;
     };
 }
 

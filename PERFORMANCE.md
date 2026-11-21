@@ -450,6 +450,20 @@ final pass).
 | RenderFrame(total) GPU ms | 0.470, 0.470 | 0.472, 0.471 |
 | Frame(wall) | 2.327, 2.314 | 2.263, 2.333 |
 
+### 2026-11-21 (HE-515) - mesh levels of detail generated at load
+
+Release, `benchmark.yaml`, before is master at HE-514 built in a worktree. Every pass still draws LOD 0;
+the cost is generation at load (DamagedHelmet 10 ms) and the levels in the index buffer (the helmet's
+11586 triangles, 139 KB).
+
+| | Before | After |
+|--|--------|-------|
+| Start, load and one frame (`--game-mode 1`, 3 runs) | 3071, 2280, 2400 ms | 2409, 2310, 2450 ms |
+| `RenderFrame(total)` GPU ms (`--benchmark`, 2 runs) | 0.467, 0.469 | 0.470, 0.469 |
+| `Frame(wall)` ms | 2.476, 2.524 | 2.425, 2.474 |
+
+Both within the run-to-run spread.
+
 ### 2026-11-21 (HE-519) - compressed texture siblings
 
 Release, `benchmark.yaml`, `--benchmark 600`, two runs, no DDS siblings in the tree (each texture costs one

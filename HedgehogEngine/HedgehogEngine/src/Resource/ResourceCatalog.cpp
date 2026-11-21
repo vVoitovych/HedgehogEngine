@@ -105,7 +105,8 @@ namespace HedgehogEngine
             mesh.GetWeights(),
             mesh.GetFirstIndex(),
             mesh.GetIndexCount(),
-            mesh.GetVertexOffset()
+            mesh.GetVertexOffset(),
+            &mesh.GetLodIndices()
         };
     }
 

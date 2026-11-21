@@ -1,6 +1,7 @@
 #include "api/MeshLoader.hpp"
 
 #include "api/AssetPrefetch.hpp"
+#include "api/MeshLods.hpp"
 
 #include "ObjLoader.hpp"
 #include "GltfMeshLoader.hpp"
@@ -28,12 +29,24 @@ namespace ContentLoader
         const std::string path      = physPath->string();
         const std::string extension = std::filesystem::path(path).extension().string();
 
+        std::optional<LoadedMesh> mesh;
         if (extension == ".obj")
-            return LoadObj(path);
-        if (extension == ".gltf" || extension == ".glb")
-            return LoadGltfMesh(path);
-
-        LOGERROR("Unsupported mesh file format: ", extension);
-        return std::nullopt;
+            mesh = LoadObj(path);
+        else if (extension == ".gltf" || extension == ".glb")
+            mesh = LoadGltfMesh(path);
+        else
+        {
+            LOGERROR("Unsupported mesh file format: ", extension);
+            return std::nullopt;
+        }
+        if (mesh)
+        {
+            std::vector<HM::Vector3> positions;
+            positions.reserve(mesh->vertices.size());
+            for (const LoadedVertexData& vertex : mesh->vertices)
+                positions.push_back(vertex.position);
+            mesh->LodIndices = GenerateMeshLods(positions, mesh->indices);
+        }
+        return mesh;
     }
 }

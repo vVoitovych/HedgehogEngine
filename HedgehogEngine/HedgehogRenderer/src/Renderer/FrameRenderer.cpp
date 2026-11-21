@@ -330,7 +330,7 @@ namespace Renderer
         for (size_t i = 0; i < resources.GetMeshCount(); ++i)
         {
             const HR::MeshGeometryInfo& mesh = resources.GetMeshGeometryInfo(i);
-            m_Meshes.push_back({ mesh.FirstIndex, mesh.IndexCount, mesh.VertexOffset });
+            m_Meshes.push_back(mesh.Draw);
         }
         m_MaterialSets.clear();
         for (size_t i = 0; i < resources.GetMaterialCount(); ++i)

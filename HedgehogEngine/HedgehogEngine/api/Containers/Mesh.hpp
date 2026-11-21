@@ -33,6 +33,9 @@ namespace HedgehogEngine
         // One per vertex: xyz along increasing u, orthogonal to the normal; w the handedness.
         HEDGEHOG_ENGINE_API const std::vector<HM::Vector4>& GetTangents()  const;
         HEDGEHOG_ENGINE_API const std::vector<uint32_t>&    GetIndices()   const;
+        // Levels of detail after the mesh itself, coarsest last, indexing the same vertices; empty
+        // for a small or procedural mesh.
+        HEDGEHOG_ENGINE_API const std::vector<std::vector<uint32_t>>& GetLodIndices() const;
 
         // A skinned mesh's four joint indices (into its skeleton) and weights per vertex; empty
         // for a static mesh.
@@ -58,6 +61,7 @@ namespace HedgehogEngine
         std::vector<HM::Vector4> m_Tangents;
 
         std::vector<uint32_t> m_IndicesData;
+        std::vector<std::vector<uint32_t>> m_LodIndices;
 
         std::vector<HM::Vector4u> m_Joints;
         std::vector<HM::Vector4>  m_Weights;
