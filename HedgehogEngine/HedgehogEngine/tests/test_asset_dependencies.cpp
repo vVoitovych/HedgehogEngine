@@ -267,6 +267,27 @@ TEST_CASE("Asset dependencies - every shipped scene's references exist")
     }
 }
 
+TEST_CASE("Asset dependencies - the advanced animation sample reaches its glTF, controller and script")
+{
+    FS::FileSystemManager files;
+    const std::filesystem::path root = std::filesystem::path(__FILE__).parent_path().parent_path().parent_path().parent_path();
+    auto fs = std::make_unique<FS::FileSystem>();
+    fs->RegisterPath("engine://", root);
+    fs->RegisterPath("assets://", root / FS::DEFAULT_PROJECT_DIRECTORY / "Assets");
+    files.Register(std::move(fs));
+
+    AssetDependencyCollector collector;
+    HedgehogEngine::RegisterEngineAssetDependencies(collector);
+    const AssetDependencies result = collector.CollectScene("assets://Scenes/AnimationAdvanced.yaml", files);
+    CHECK(result.Warnings.empty());
+    for (const char* asset : { "assets://Models/Animated/ThreeBoneArm.gltf", "assets://Models/Animated/TwoBoneStrip.gltf",
+                               "assets://Animations/Locomotion.animctrl", "assets://Scripts/AnimationDemo.lua" })
+    {
+        CAPTURE(asset);
+        CHECK(std::find(result.Assets.begin(), result.Assets.end(), asset) != result.Assets.end());
+    }
+}
+
 TEST_CASE("Asset dependencies - the engine's required runtime assets are in its Content folder and exist")
 {
     FS::FileSystemManager files;

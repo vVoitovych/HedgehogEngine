@@ -366,6 +366,30 @@ TEST_CASE("FeatureTest - the character sample walks its route and logs each of i
     CHECK(log.Lines("[WARNING]").empty());
 }
 
+TEST_CASE("FeatureTest - the advanced animation sample blends, walks by root motion and reaches its target")
+{
+    TempDir    saves;
+    LogCapture log;
+    {
+        ProjectWorld world(saves.Path());
+        const auto   path = world.Context.GetFileSystem().ResolvePhysical("assets://Scenes/AnimationAdvanced.yaml");
+        REQUIRE(path.has_value());
+        REQUIRE(world.Context.GetSceneManager().LoadScene(path->string()));
+        const HedgehogEngine::SceneSnapshot before = world.Context.GetSceneManager().CaptureSnapshot();
+
+        REQUIRE(world.Context.Play());
+        for (int frame = 0; frame < 120; ++frame) // two seconds: a sweep, a Reach loop and the arm settled
+            world.Context.UpdateContext(1.0f, STEP);
+        REQUIRE(world.Context.Stop());
+        CHECK(world.Context.GetSceneManager().CaptureSnapshot().Yaml == before.Yaml);
+    }
+    CHECK(log.Lines("AnimationDemo: blend at 1").size() == 1);
+    CHECK(log.Lines("AnimationDemo: root moved 1 m").size() == 1);
+    CHECK(log.Lines("AnimationDemo: hand on target").size() == 1);
+    CHECK(log.Lines("[ERROR]").empty());
+    CHECK(log.Lines("[WARNING]").empty());
+}
+
 TEST_CASE("FeatureTest - the joints sample finds its chain and door, and swings the door open")
 {
     TempDir    saves;

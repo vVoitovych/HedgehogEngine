@@ -102,6 +102,10 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API bool ClearIkGoal(ECS::ECS& ecs, ECS::Entity entity, const std::string& joint);
 
         // The names of the clips of entity's mesh, in file order; empty without a skinned mesh.
+        // Where the joint named joint is in world space as the entity was last drawn (its palette,
+        // through its last world matrix); none without a skinned mesh, a palette or such a joint.
+        HEDGEHOG_ENGINE_API std::optional<HM::Vector3> GetJointPosition(const ECS::ECS& ecs, const MeshContainer& meshes,
+                                                                        ECS::Entity entity, const std::string& joint) const;
         HEDGEHOG_ENGINE_API std::vector<std::string> GetClipNames(const ECS::ECS& ecs, const MeshContainer& meshes,
                                                                   ECS::Entity entity) const;
 
