@@ -40,8 +40,11 @@ namespace ContentLoader
 
         size_t BytesOf(const LoadedMesh& mesh)
         {
-            return mesh.vertices.size() * sizeof(LoadedVertexData) + mesh.indices.size() * sizeof(uint32_t) +
-                   mesh.Joints.size() * sizeof(HM::Vector4u) + mesh.Weights.size() * sizeof(HM::Vector4);
+            size_t bytes = mesh.vertices.size() * sizeof(LoadedVertexData) + mesh.indices.size() * sizeof(uint32_t) +
+                           mesh.Joints.size() * sizeof(HM::Vector4u) + mesh.Weights.size() * sizeof(HM::Vector4);
+            for (const auto& level : mesh.LodIndices)
+                bytes += level.size() * sizeof(uint32_t);
+            return bytes;
         }
 
         size_t BytesOf(const BakedEnvironment& baked)

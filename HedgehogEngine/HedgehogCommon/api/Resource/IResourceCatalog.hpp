@@ -35,6 +35,10 @@ namespace HedgehogEngine
         uint32_t firstIndex;
         uint32_t indexCount;
         uint32_t vertexOffset;
+
+        // Levels of detail after the mesh itself, coarsest last, indexing the same vertices; null or
+        // empty for none.
+        const std::vector<std::vector<uint32_t>>* lodIndices = nullptr;
     };
 
     // How a material uses its alpha, as HedgehogEngine's MaterialType (glTF's OPAQUE, MASK and BLEND).
