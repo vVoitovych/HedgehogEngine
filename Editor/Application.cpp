@@ -567,6 +567,7 @@ namespace Editor
                                                    static_cast<float>(m_EditorGui->GetGameViewHeight())),
                                        m_RenderScene, &engineContext.GetResourceCatalog().GetFontContainer());
         HX::SceneExtractor{}.ExtractEnvironment(engineContext.GetECS(), *engineContext.GetEnvironmentSystem(), m_RenderScene);
+        HX::SceneExtractor{}.ExtractPostProcess(engineContext.GetECS(), *engineContext.GetPostProcessSystem(), m_RenderScene);
         HX::SceneExtractor{}.ExtractTerrains(engineContext.GetECS(), *engineContext.GetTerrainSystem(), m_RenderScene,
                                              m_MeshBounds.GetBounds());
         HX::SceneExtractor{}.ExtractParticles(engineContext.GetECS(), *engineContext.GetParticleSystem(), m_RenderScene);

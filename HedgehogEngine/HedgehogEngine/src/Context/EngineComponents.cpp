@@ -8,6 +8,7 @@
 #include "HedgehogEngine/api/ECS/components/JointComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/ColliderComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/EnvironmentComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/PostProcessComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/LightComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/ParticleSystemComponent.hpp"
@@ -139,6 +140,13 @@ namespace HedgehogEngine
                                                                                    .Category        = RENDERING_CATEGORY,
                                                                                    .SortOrder       = 400,
                                                                                    .Icon            = "scene",
+                                                                                   .EnabledProperty = "Enabled" });
+        // ponytail: the material icon until post-processing has one of its own.
+        registered &= types.RegisterReflected<PostProcessComponent>(ComponentDesc{ .Key             = "PostProcessComponent",
+                                                                                   .DisplayName     = "Post-processing",
+                                                                                   .Category        = RENDERING_CATEGORY,
+                                                                                   .SortOrder       = 403,
+                                                                                   .Icon            = "material",
                                                                                    .EnabledProperty = "Enabled" });
         // ponytail: the mesh icon until terrain has one of its own.
         registered &= types.RegisterReflected<TerrainComponent>(ComponentDesc{ .Key             = "TerrainComponent",

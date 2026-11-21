@@ -36,6 +36,8 @@
 #include "HedgehogEngine/api/ECS/components/ColliderComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/EnvironmentComponent.hpp"
 #include "HedgehogEngine/api/ECS/systems/EnvironmentSystem.hpp"
+#include "HedgehogEngine/api/ECS/components/PostProcessComponent.hpp"
+#include "HedgehogEngine/api/ECS/systems/PostProcessSystem.hpp"
 #include "HedgehogEngine/api/ECS/components/TerrainComponent.hpp"
 #include "HedgehogEngine/api/ECS/systems/TerrainSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/ParticleSystem.hpp"
@@ -193,6 +195,7 @@ namespace HedgehogEngine
         m_CharacterListSystem = m_ECS.RegisterSystem<CharacterControllerListSystem>();
         (void)m_ECS.RegisterSystem<JointListSystem>();
         m_EnvironmentSystem   = m_ECS.RegisterSystem<EnvironmentSystem>();
+        m_PostProcessSystem   = m_ECS.RegisterSystem<PostProcessSystem>();
         m_TerrainSystem       = m_ECS.RegisterSystem<TerrainSystem>();
         m_ParticleSystem      = m_ECS.RegisterSystem<ParticleSystem>();
 
@@ -263,6 +266,10 @@ namespace HedgehogEngine
 
         signature.set(m_ECS.GetComponentType<EnvironmentComponent>());
         m_ECS.SetSystemSignature<EnvironmentSystem>(signature);
+        signature.reset();
+
+        signature.set(m_ECS.GetComponentType<PostProcessComponent>());
+        m_ECS.SetSystemSignature<PostProcessSystem>(signature);
         signature.reset();
 
         signature.set(m_ECS.GetComponentType<TerrainComponent>());
@@ -588,6 +595,7 @@ namespace HedgehogEngine
     RenderSystem*     EngineContext::GetRenderSystem()     const { return m_RenderSystem.get(); }
     CameraSystem*     EngineContext::GetCameraSystem()     const { return m_CameraSystem.get(); }
     EnvironmentSystem* EngineContext::GetEnvironmentSystem() const { return m_EnvironmentSystem.get(); }
+    PostProcessSystem* EngineContext::GetPostProcessSystem() const { return m_PostProcessSystem.get(); }
     TerrainSystem*    EngineContext::GetTerrainSystem()    const { return m_TerrainSystem.get(); }
     ParticleSystem*   EngineContext::GetParticleSystem()   const { return m_ParticleSystem.get(); }
     AnimationSystem*  EngineContext::GetAnimationSystem()  const { return m_AnimationSystem.get(); }

@@ -7,6 +7,7 @@
 #include "HedgehogEngine/api/ECS/components/AudioSourceComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/CameraComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/EnvironmentComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/PostProcessComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/ParticleSystemComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RenderComponent.hpp"
@@ -117,6 +118,8 @@ Scene:
         Parent: 0
         EnvironmentComponent:
           Map: Environments/sky.hdr
+        PostProcessComponent:
+          ColorLut: Textures/grade.png
         Children: []
 )";
 }
@@ -129,6 +132,7 @@ TEST_CASE("Asset dependencies - every asset-naming component property is an Asse
     CHECK(AssetRefNames<UiImageComponent>() == std::vector<std::string>{ "Texture" });
     CHECK(AssetRefNames<UiTextComponent>() == std::vector<std::string>{ "Font" });
     CHECK(AssetRefNames<EnvironmentComponent>() == std::vector<std::string>{ "Map" });
+    CHECK(AssetRefNames<HedgehogEngine::PostProcessComponent>() == std::vector<std::string>{ "ColorLut" });
     CHECK(AssetRefNames<CameraComponent>() == std::vector<std::string>{ "GraphName" });
     // An animator's controller is a file; its clip names a clip inside its mesh, not a file.
     CHECK(AssetRefNames<AnimatorComponent>() == std::vector<std::string>{ "Controller" });
@@ -161,6 +165,7 @@ TEST_CASE("Asset dependencies - a fixture scene's closure is exactly its meshes,
     for (const char* map : { "Textures/crate_mr.png", "Textures/crate_n.png", "Textures/crate_ao.png", "Textures/crate_e.png" })
         project.Dir.WriteFile(map, "");
     project.Dir.WriteFile("Textures/logo.png", "");
+    project.Dir.WriteFile("Textures/grade.png", "");
     project.Dir.WriteFile("Scripts/Player.lua", "");
     project.Dir.WriteFile("Audio/hit.wav", "");
     project.Dir.WriteFile("Audio/music.wav", "");
@@ -193,6 +198,7 @@ TEST_CASE("Asset dependencies - a fixture scene's closure is exactly its meshes,
         "assets://Textures/crate_e.png",
         "assets://Textures/crate_mr.png",
         "assets://Textures/crate_n.png",
+        "assets://Textures/grade.png",
         "assets://Textures/logo.png",
     };
     // The default camera's engine graph "game": depth prepass, forward, skybox, tone map and game UI, plus the
