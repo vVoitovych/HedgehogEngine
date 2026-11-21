@@ -35,3 +35,6 @@
 [submodule "ThirdParty/ImGuizmo/ImGuizmo"]
 	path = ThirdParty/ImGuizmo/ImGuizmo
 	url = https://github.com/vVoitovych/ImGuizmo.git
+[submodule "ThirdParty/meshoptimizer/meshoptimizer"]
+	path = ThirdParty/meshoptimizer/meshoptimizer
+	url = https://github.com/vVoitovych/meshoptimizer.git

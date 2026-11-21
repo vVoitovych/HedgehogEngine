@@ -9,13 +9,15 @@ project "ContentLoader"
     {
         ".",
         "../ThirdParty",
-        ".."
+        "..",
+        "%{IncludeDir.meshoptimizer}"
     }
 
     links {
         "HedgehogMath",
         "Logger",
-        "FileSystem"
+        "FileSystem",
+        "meshoptimizer"
     }
 
     targetdir (BinariesDir)

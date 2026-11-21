@@ -29,6 +29,7 @@ group "ThirdParty"
    include "ThirdParty/Tracy/Build-Tracy.lua"
    include "ThirdParty/miniaudio/Build-miniaudio.lua"
    include "ThirdParty/Jolt/Build-Jolt.lua"
+   include "ThirdParty/meshoptimizer/Build-meshoptimizer.lua"
 
 group ""
 
