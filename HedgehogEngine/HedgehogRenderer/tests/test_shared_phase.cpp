@@ -338,3 +338,46 @@ TEST_CASE("Cutoff casters are alpha-tested into every cascade, and Transparent o
     CHECK(bound(EnginePipeline::ShadowSkinned) == 0); // the only skinned opaque-mode caster is Transparent
     CHECK(std::count(cmd.BoundSets.begin(), cmd.BoundSets.end(), &transparentSet) == 0);
 }
+
+TEST_CASE("Shadow casters draw the level of detail the shadow view's camera sees them at")
+{
+    const PassBuilderRegistry registry = MakeEngineRegistry();
+
+    TestBuffer    positions(1024);
+    TestBuffer    indices(1024);
+    MeshDrawRange mesh{ 0, 900, 0 };
+    mesh.LodRanges = { MeshLodRange{ 0, 900 }, MeshLodRange{ 900, 450 }, MeshLodRange{ 1350, 222 } };
+    mesh.LodCount  = 3;
+    const MeshDrawRange meshes[] = { mesh };
+
+    // Radius-1 casters, one a metre from the camera and one 200 m away.
+    const auto at = [](const HM::Vector3& centre)
+    {
+        HX::RenderInstance instance = Instance(0);
+        instance.WorldBounds = HM::AABB(centre - HM::Vector3(1.0f, 0.0f, 0.0f), centre + HM::Vector3(1.0f, 0.0f, 0.0f));
+        return instance;
+    };
+    const HX::RenderInstance instances[] = { at(HM::Vector3(0.0f, -9.0f, 2.0f)), at(HM::Vector3(0.0f, 190.0f, 2.0f)) };
+    GraphFrameData shadowView  = MakeFrame(1);
+    shadowView.OpaqueInstances = instances;
+    shadowView.Meshes          = meshes;
+    shadowView.Positions       = &positions;
+    shadowView.Indices         = &indices;
+    shadowView.EyePosition     = HM::Vector3(0.0f, -10.0f, 2.0f); // MakeFrame's camera
+
+    SharedPhaseSettings settings;
+    settings.ShadowAtlasSize = 512;
+
+    TestDevice         device;
+    RenderGraphRuntime graph(device, ARENA_BYTES);
+    FakeServices       services;
+    SharedPhase        shared(registry);
+    const SharedPhaseOutputs outputs = shared.Declare(graph, services, &shadowView, {}, settings);
+    graph.BindOutput(graph.AddOutputSlot("atlas", RHI::Format::D32Float, RGSizePolicy::MakeAbsolute(512, 512)),
+                     outputs.Imports.at(SHADOW_ATLAS_IMPORT));
+
+    RecordingCommandList cmd;
+    REQUIRE(graph.Execute(cmd));
+    CHECK(cmd.DrawnIndexCounts == std::vector<uint32_t>{ 900, 222 });
+    CHECK(instances[1].Lod == 0); // the view's own list is untouched
+}

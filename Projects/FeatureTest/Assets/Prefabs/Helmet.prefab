@@ -1,0 +1,19 @@
+Version: 1
+Root:
+  Version: 1
+  SourceIds: [0]
+  Subtree:
+    - Entity: 0
+      Name: Helmet
+      Parent: 18446744073709551615
+      TransformComponent:
+        Position: [0, 0, 0]
+        Rotation: [90, 0, 0]
+        Scale: [1, 1, 1]
+      MeshComponent:
+        MeshPath: Models/DamagedHelmet/DamagedHelmet.gltf
+      RenderComponent:
+        Visible: true
+        Material: Models/DamagedHelmet/DamagedHelmet_Material_MR.material
+      Children:
+        []

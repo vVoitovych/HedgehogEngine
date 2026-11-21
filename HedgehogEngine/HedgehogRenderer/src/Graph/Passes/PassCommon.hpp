@@ -59,6 +59,9 @@ namespace Renderer
     // material without draw info.
     bool IsDoubleSided(const GraphFrameData& frame, const HX::RenderInstance& instance);
 
+    // One indexed draw of the mesh's level of detail lod (GetLodRange).
+    void DrawMeshLod(RHI::IRHICommandList& cmd, const MeshDrawRange& mesh, uint32_t lod);
+
     // A pipeline and its twin without back-face culling: the one an instance draws with follows its
     // material (IsDoubleSided), bound only when it differs from the one bound last. The twins share
     // a layout, so the sets bound before stay bound. Make it with the twin twice to draw every

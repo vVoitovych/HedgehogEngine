@@ -45,8 +45,14 @@ namespace Renderer
             const MeshDrawRange&     mesh  = frame.Meshes[instance.MeshIndex];
             const RHI::IRHIPipeline& bound = pipeline.Use(cmd, frame, instance);
             cmd.PushConstants(bound, RHI::ShaderStage::Vertex, 0, 16 * sizeof(float), instance.WorldMatrix.GetBuffer());
-            cmd.DrawIndexed(mesh.IndexCount, 1, mesh.FirstIndex, static_cast<int32_t>(mesh.VertexOffset), 0);
+            DrawMeshLod(cmd, mesh, instance.Lod);
         }
+    }
+
+    void DrawMeshLod(RHI::IRHICommandList& cmd, const MeshDrawRange& mesh, uint32_t lod)
+    {
+        const MeshLodRange range = GetLodRange(mesh, lod);
+        cmd.DrawIndexed(range.IndexCount, 1, range.FirstIndex, static_cast<int32_t>(mesh.VertexOffset), 0);
     }
 
     void DrawOpaqueInstances(RHI::IRHICommandList& cmd, const RHI::IRHIPipeline& pipeline,
@@ -63,7 +69,7 @@ namespace Renderer
             const MeshDrawRange& mesh = frame.Meshes[instance.MeshIndex];
             cmd.PushConstants(pipeline, RHI::ShaderStage::Vertex, 0, 16 * sizeof(float),
                               instance.WorldMatrix.GetBuffer());
-            cmd.DrawIndexed(mesh.IndexCount, 1, mesh.FirstIndex, static_cast<int32_t>(mesh.VertexOffset), 0);
+            DrawMeshLod(cmd, mesh, instance.Lod);
         }
     }
 
@@ -98,7 +104,7 @@ namespace Renderer
             const RHI::IRHIPipeline&   bound     = pipeline.Use(cmd, frame, instance);
             const SkinnedPushConstants constants = MakeSkinnedPushConstants(instance);
             cmd.PushConstants(bound, RHI::ShaderStage::Vertex, 0, sizeof(constants), &constants);
-            cmd.DrawIndexed(mesh.IndexCount, 1, mesh.FirstIndex, static_cast<int32_t>(mesh.VertexOffset), 0);
+            DrawMeshLod(cmd, mesh, instance.Lod);
         }
     }
 
@@ -114,7 +120,7 @@ namespace Renderer
             const MeshDrawRange&       mesh      = frame.Meshes[instance.MeshIndex];
             const SkinnedPushConstants constants = MakeSkinnedPushConstants(instance);
             cmd.PushConstants(pipeline, RHI::ShaderStage::Vertex, 0, sizeof(constants), &constants);
-            cmd.DrawIndexed(mesh.IndexCount, 1, mesh.FirstIndex, static_cast<int32_t>(mesh.VertexOffset), 0);
+            DrawMeshLod(cmd, mesh, instance.Lod);
         }
     }
 
@@ -156,7 +162,7 @@ namespace Renderer
             {
                 cmd.PushConstants(bound, RHI::ShaderStage::Vertex, 0, 16 * sizeof(float), instance.WorldMatrix.GetBuffer());
             }
-            cmd.DrawIndexed(mesh.IndexCount, 1, mesh.FirstIndex, static_cast<int32_t>(mesh.VertexOffset), 0);
+            DrawMeshLod(cmd, mesh, instance.Lod);
         }
     }
 

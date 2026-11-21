@@ -122,6 +122,41 @@ TEST_CASE("The depth prepass and shadow builders record into their graph targets
     CHECK(graph.GetFrameContext() == nullptr); // cleared by Execute: never reused next frame
 }
 
+TEST_CASE("The depth prepass and shadow passes draw each instance's level of detail")
+{
+    PassBuilderRegistry registry;
+    RegisterEnginePassTypes(registry);
+
+    TestBuffer    positions(1024);
+    TestBuffer    indices(1024);
+    MeshDrawRange mesh{ 0, 900, 0 };
+    mesh.LodRanges = { MeshLodRange{ 0, 900 }, MeshLodRange{ 900, 450 }, MeshLodRange{ 1350, 222 } };
+    mesh.LodCount  = 3;
+    const MeshDrawRange meshes[] = { mesh };
+    HX::RenderInstance  distant  = Instance(0);
+    distant.Lod                  = 2;
+    HX::RenderInstance pastLast  = Instance(0);
+    pastLast.Lod                 = 3; // clamped to the coarsest
+    const HX::RenderInstance instances[] = { Instance(0), distant, pastLast };
+
+    GraphFrameData frame  = MakeFrame(1);
+    frame.OpaqueInstances = instances;
+    frame.Meshes          = meshes;
+    frame.Positions       = &positions;
+    frame.Indices         = &indices;
+
+    FakeServices       services;
+    GraphFrameContext  context{ &services, &frame };
+    TestDevice         device;
+    RenderGraphRuntime graph(device, 64 * 1024);
+    graph.SetFrameContext(&context);
+    DeclareDepthAndShadow(graph, registry);
+
+    RecordingCommandList cmd;
+    REQUIRE(graph.Execute(cmd));
+    CHECK(cmd.DrawnIndexCounts == std::vector<uint32_t>{ 900, 222, 222, 900, 222, 222 });
+}
+
 TEST_CASE("Without a frame context the passes declare the same graph and record nothing")
 {
     PassBuilderRegistry registry;

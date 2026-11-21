@@ -74,6 +74,10 @@ namespace HX
         int32_t TerrainIndex = -1;
         // Whether it casts the sun's shadow (a terrain's CastShadows; every mesh does).
         bool CastsShadows = true;
+
+        // The mesh's level of detail to draw (Renderer::GetLodRange): 0 as extracted, chosen per view
+        // as the renderer copies the instance into that view's lists (Renderer::SelectMeshLod).
+        uint32_t Lod = 0;
     };
 
     struct RenderLight
