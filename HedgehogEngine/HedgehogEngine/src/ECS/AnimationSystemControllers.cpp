@@ -5,12 +5,14 @@
 
 #include "HedgehogAnimation/api/AnimatorControllerFile.hpp"
 #include "HedgehogAnimation/api/BlendStack.hpp"
+#include "HedgehogAnimation/api/BlendTree.hpp"
 
 #include "FileSystem/api/FileSystemManager.hpp"
 #include "FileSystem/api/PathUtils.hpp"
 
 #include "Logger/api/Logger.hpp"
 
+#include <array>
 #include <system_error>
 
 // The animator controllers AnimationSystem runs: their files, cached and re-read when they change,
@@ -37,6 +39,56 @@ namespace HedgehogEngine
                     speed *= *value;
             }
             return speed;
+        }
+
+        std::optional<uint32_t> FindClipIndex(const std::vector<HedgehogAnimation::AnimationClip>& clips,
+                                              const std::string& name)
+        {
+            for (size_t i = 0; i < clips.size(); ++i)
+                if (clips[i].Name == name)
+                    return static_cast<uint32_t>(i);
+            return std::nullopt;
+        }
+
+        // A blend tree state's child weights at the machine's present parameters, into weights.
+        void TreeWeights(const HedgehogAnimation::AnimatorController& controller,
+                         const HedgehogAnimation::StateMachineInstance& machine, const HedgehogAnimation::AnimatorState& state,
+                         std::array<float, HedgehogAnimation::MAX_BLEND_TREE_CHILDREN>& weights)
+        {
+            const float x = HedgehogAnimation::GetParameter(controller, machine, state.BlendParameterX).value_or(0.0f);
+            const float y = HedgehogAnimation::GetParameter(controller, machine, state.BlendParameterY).value_or(0.0f);
+            HedgehogAnimation::ComputeBlendTreeWeights(state, x, y, weights);
+        }
+
+        // Every blend tree entry's weights (the current one's and those fading out) at the present
+        // parameters, and the current tree state's cycle in Durations, so exit times work on it.
+        void RefreshTrees(AnimatorControllerRuntime& runtime, const HedgehogAnimation::AnimatorController& controller,
+                          HedgehogAnimation::BlendStack& stack)
+        {
+            std::array<float, HedgehogAnimation::MAX_BLEND_TREE_CHILDREN> weights{};
+            for (uint32_t i = 0; i < stack.Count; ++i)
+            {
+                HedgehogAnimation::BlendEntry& entry = stack.Entries[i];
+                if (entry.ChildCount == 0 || entry.Tag >= controller.States.size())
+                    continue;
+                TreeWeights(controller, runtime.Machine, controller.States[entry.Tag], weights);
+                HedgehogAnimation::SetEntryWeights(entry, weights);
+            }
+            const uint32_t current = runtime.Machine.State;
+            if (current >= controller.States.size() || runtime.Children[current].empty())
+                return;
+            const std::vector<HedgehogAnimation::BlendEntryChild>& children = runtime.Children[current];
+            TreeWeights(controller, runtime.Machine, controller.States[current], weights);
+            std::array<float, HedgehogAnimation::MAX_BLEND_TREE_CHILDREN> durations{};
+            std::array<float, HedgehogAnimation::MAX_BLEND_TREE_CHILDREN> speeds{};
+            for (size_t c = 0; c < children.size(); ++c)
+            {
+                durations[c] = children[c].Duration;
+                speeds[c]    = children[c].Speed;
+            }
+            runtime.Durations[current] = HedgehogAnimation::GetBlendTreeDuration(
+                std::span<const float>(weights.data(), children.size()), std::span<const float>(durations.data(), children.size()),
+                std::span<const float>(speeds.data(), children.size()));
         }
 
         // The machine starts from the defaults the first time a controller's parameters are used.
@@ -146,26 +198,34 @@ namespace HedgehogEngine
 
         runtime.Mesh = meshIndex;
         runtime.Durations.assign(controller.States.size(), 0.0f);
+        runtime.Children.assign(controller.States.size(), {});
         runtime.Usable = true;
+        const auto missing = [&](const std::string& what, const std::string& clip)
+        {
+            LOGERROR("[Animation] Entity " + std::to_string(entity) + ": " + what + " of " +
+                     FS::ToAssetVirtualPath(FS::MakeAssetKey(animator.Controller)) + " plays clip '" + clip +
+                     "', which its mesh does not have; it plays its Clip.");
+            runtime.Usable = false;
+        };
         for (size_t state = 0; state < controller.States.size(); ++state)
         {
-            const std::string& clip  = controller.States[state].Clip;
-            bool               found = false;
-            for (const HedgehogAnimation::AnimationClip& candidate : clips)
+            const HedgehogAnimation::AnimatorState& entry = controller.States[state];
+            const std::string                       name  = "state '" + entry.Name + "'";
+            if (entry.Motion == HedgehogAnimation::StateMotion::Clip)
             {
-                if (candidate.Name == clip)
-                {
-                    runtime.Durations[state] = candidate.Duration;
-                    found                    = true;
-                    break;
-                }
+                if (const std::optional<uint32_t> index = FindClipIndex(clips, entry.Clip))
+                    runtime.Durations[state] = clips[*index].Duration;
+                else
+                    missing(name, entry.Clip);
+                continue;
             }
-            if (!found)
+            for (size_t c = 0; c < entry.Children.size(); ++c)
             {
-                LOGERROR("[Animation] Entity " + std::to_string(entity) + ": state '" + controller.States[state].Name +
-                         "' of " + FS::ToAssetVirtualPath(FS::MakeAssetKey(animator.Controller)) + " plays clip '" + clip +
-                         "', which its mesh does not have; it plays its Clip.");
-                runtime.Usable = false;
+                const HedgehogAnimation::BlendChild& child = entry.Children[c];
+                if (const std::optional<uint32_t> index = FindClipIndex(clips, child.Clip))
+                    runtime.Children[state].push_back({ *index, 0.0f, clips[*index].Duration, child.Speed });
+                else
+                    missing(name + " child " + std::to_string(c), child.Clip);
             }
         }
         return runtime.Usable;
@@ -185,17 +245,22 @@ namespace HedgehogEngine
         animator.Finished    = false;
         animator.CurrentClip = entered.Clip;
         animator.CurrentLoop = entered.Loop;
-        std::optional<uint32_t> index;
-        if (clips)
+        const float speed = StateSpeed(controller, runtime.Machine);
+        if (entered.Motion != HedgehogAnimation::StateMotion::Clip && state < runtime.Children.size() &&
+            !runtime.Children[state].empty())
         {
-            for (size_t i = 0; i < clips->size(); ++i)
-                if ((*clips)[i].Name == entered.Clip)
-                    index = static_cast<uint32_t>(i);
+            // A blend tree, its weights at the parameters as they are now.
+            HedgehogAnimation::PushBlendTree(animator.Blend, runtime.Children[state], speed, entered.Loop, fade);
+            std::array<float, HedgehogAnimation::MAX_BLEND_TREE_CHILDREN> weights{};
+            TreeWeights(controller, runtime.Machine, entered, weights);
+            HedgehogAnimation::SetEntryWeights(*HedgehogAnimation::GetCurrentEntry(animator.Blend), weights);
         }
-        if (index)
-            HedgehogAnimation::PushClip(animator.Blend, *index, StateSpeed(controller, runtime.Machine), entered.Loop, fade);
+        else if (const std::optional<uint32_t> index = clips ? FindClipIndex(*clips, entered.Clip) : std::nullopt)
+            HedgehogAnimation::PushClip(animator.Blend, *index, speed, entered.Loop, fade);
         else
             HedgehogAnimation::ClearBlendStack(animator.Blend);
+        if (HedgehogAnimation::BlendEntry* current = HedgehogAnimation::GetCurrentEntry(animator.Blend))
+            current->Tag = state;
 
         if (bus)
             bus->Publish(AnimatorStateChangedEvent{ entity, from, entered.Name });
@@ -246,6 +311,8 @@ namespace HedgehogEngine
             current->Speed = StateSpeed(controller, runtime.Machine);
             current->Loop  = controller.States[runtime.Machine.State].Loop;
         }
+        // Trees follow their parameters (as SetFloat left them) before anything advances.
+        RefreshTrees(runtime, controller, animator.Blend);
         const float clipDt = dt * animator.Speed;
         HedgehogAnimation::AdvanceBlendStack(animator.Blend, clipDt, dt);
 

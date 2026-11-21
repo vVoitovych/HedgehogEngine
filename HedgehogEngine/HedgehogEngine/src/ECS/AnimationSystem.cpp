@@ -8,6 +8,7 @@
 #include "HedgehogEngine/api/Resource/ResourceCatalog.hpp"
 
 #include "HedgehogAnimation/api/BlendStack.hpp"
+#include "HedgehogAnimation/api/BlendTree.hpp"
 #include "HedgehogAnimation/api/Pose.hpp"
 
 #include "FileSystem/api/FileSystemManager.hpp"
@@ -332,6 +333,41 @@ namespace HedgehogEngine
         HedgehogAnimation::AdvanceBlendStack(animator.Blend, dt * animator.Speed, dt);
     }
 
+    void AnimationSystem::PreviewBlendTree(const HedgehogAnimation::AnimatorController& controller,
+                                           const HedgehogAnimation::AnimatorState& state,
+                                           const HedgehogAnimation::Skeleton& skeleton,
+                                           const std::vector<HedgehogAnimation::AnimationClip>& clips, float time,
+                                           std::vector<HedgehogAnimation::JointTransform>& outPose)
+    {
+        // The tree at its parameters' defaults, its children found on the mesh (one it lacks left out).
+        const auto parameter = [&](const std::string& name)
+        {
+            const int index = HedgehogAnimation::FindParameter(controller, name);
+            return index >= 0 ? controller.Parameters[static_cast<size_t>(index)].Default : 0.0f;
+        };
+        std::array<float, HedgehogAnimation::MAX_BLEND_TREE_CHILDREN> weights{};
+        HedgehogAnimation::ComputeBlendTreeWeights(state, parameter(state.BlendParameterX), parameter(state.BlendParameterY),
+                                                   weights);
+        std::array<HedgehogAnimation::BlendEntryChild, HedgehogAnimation::MAX_BLEND_TREE_CHILDREN> children{};
+        uint32_t count = 0;
+        for (size_t c = 0; c < state.Children.size() && c < children.size(); ++c)
+        {
+            for (size_t i = 0; i < clips.size(); ++i)
+            {
+                if (clips[i].Name == state.Children[c].Clip)
+                {
+                    children[count++] = { static_cast<uint32_t>(i), weights[c], clips[i].Duration, state.Children[c].Speed };
+                    break;
+                }
+            }
+        }
+        HedgehogAnimation::BlendStack stack;
+        HedgehogAnimation::PushBlendTree(stack, std::span(children.data(), count), state.Speed, state.Loop, 0.0f);
+        // From the start of its cycle, PreviewTime seconds on.
+        HedgehogAnimation::AdvanceBlendStack(stack, std::max(0.0f, time) / std::max(state.Speed, 1e-6f), 0.0f);
+        HedgehogAnimation::EvaluateBlendStack(stack, skeleton, clips, m_Scratch, outPose);
+    }
+
     void AnimationSystem::Evaluate(AnimatorComponent& animator, const HedgehogAnimation::Skeleton& skeleton,
                                    const std::vector<HedgehogAnimation::AnimationClip>& clips, ECS::Entity entity)
     {
@@ -349,7 +385,17 @@ namespace HedgehogEngine
             {
                 std::string name = animator.Clip;
                 if (const HedgehogAnimation::AnimatorController* controller = FindController(animator))
-                    name = controller->States[controller->DefaultState].Clip;
+                {
+                    const HedgehogAnimation::AnimatorState& state = controller->States[controller->DefaultState];
+                    if (state.Motion != HedgehogAnimation::StateMotion::Clip)
+                    {
+                        PreviewBlendTree(*controller, state, skeleton, clips, *animator.PreviewTime, m_Pose);
+                        HedgehogAnimation::ComputeModelPose(skeleton, m_Pose, m_ModelPose);
+                        HedgehogAnimation::ComputeSkinningPalette(m_ModelPose, skeleton.InverseBind, animator.Palette);
+                        return;
+                    }
+                    name = state.Clip;
+                }
                 if (!name.empty())
                 {
                     clip = FindClip(clips, name);

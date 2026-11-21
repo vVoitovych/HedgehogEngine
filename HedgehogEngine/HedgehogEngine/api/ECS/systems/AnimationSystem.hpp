@@ -145,6 +145,11 @@ namespace HedgehogEngine
         void AdvanceController(AnimatorComponent& animator, const HedgehogAnimation::AnimatorController& controller,
                                const std::vector<HedgehogAnimation::AnimationClip>& clips, std::optional<uint64_t> meshIndex,
                                float dt, ECS::Entity entity, EventBus* bus);
+        // In Edit, a default blend tree state at its parameters' defaults, time seconds into its cycle.
+        void PreviewBlendTree(const HedgehogAnimation::AnimatorController& controller,
+                              const HedgehogAnimation::AnimatorState& state, const HedgehogAnimation::Skeleton& skeleton,
+                              const std::vector<HedgehogAnimation::AnimationClip>& clips, float time,
+                              std::vector<HedgehogAnimation::JointTransform>& outPose);
         void EnterState(AnimatorComponent& animator, const HedgehogAnimation::AnimatorController& controller,
                         const std::vector<HedgehogAnimation::AnimationClip>* clips, uint32_t state, float fade,
                         ECS::Entity entity, EventBus* bus, const std::string& from);

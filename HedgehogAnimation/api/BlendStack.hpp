@@ -38,6 +38,8 @@ namespace HedgehogAnimation
         // their Duration / Speed.
         uint32_t                                                ChildCount = 0;
         std::array<BlendEntryChild, MAX_BLEND_TREE_CHILDREN>    Children{};
+        // The caller's, kept with the entry as the stack moves it (an animator's state index).
+        uint32_t Tag = 0;
     };
 
     struct BlendStack
