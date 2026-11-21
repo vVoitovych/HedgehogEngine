@@ -1,6 +1,7 @@
 -- The packaging logic (namespace Cooker): the cook plan, the incremental cook and PackageGame.
 -- A static library so Cooker.exe, its tests and the Editor share one implementation. It logs
--- nothing: every problem comes back as text for its caller to show.
+-- nothing: every problem comes back as text for its caller to show. It holds the texture encoder
+-- (bc7enc), which only the tools link, never the game.
 project "CookerCore"
    kind "StaticLib"
    language "C++"
@@ -13,7 +14,8 @@ project "CookerCore"
       ".",
       "../..",
       "../../HedgehogEngine",
-      "%{IncludeDir.yaml_cpp}"
+      "%{IncludeDir.yaml_cpp}",
+      "%{IncludeDir.bc7enc}"
    }
 
    defines { "YAML_CPP_STATIC_DEFINE" }
@@ -23,7 +25,9 @@ project "CookerCore"
       "HedgehogSettings",
       "EcsSerialization",
       "FileSystem",
-      "yaml-cpp"
+      "ContentLoader",
+      "yaml-cpp",
+      "bc7enc"
    }
 
    targetdir (IntermediatesDir)
