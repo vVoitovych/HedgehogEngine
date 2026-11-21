@@ -113,6 +113,17 @@ namespace HR
 
         void Cleanup(RHI::IRHIDevice& device);
 
+        // A texture of a path through the cache materials use (magenta 1 x 1 for a file that does
+        // not load), kept as long as the registry.
+        RHI::IRHITexture& LoadTexture(const std::string& path, RHI::IRHIDevice& device,
+                                      const FS::FileSystemManager& fileSystem, bool srgb)
+        {
+            return GetOrCreateTexture(path, device, fileSystem, srgb);
+        }
+        // An RGBA8 texture of pixels, one level, uploaded and ready to sample.
+        static std::unique_ptr<RHI::IRHITexture> CreateRgba8Texture(RHI::IRHIDevice& device, const void* pixels,
+                                                                    uint32_t width, uint32_t height, bool srgb);
+
     private:
         // The texture of a path, loaded once per colour space: srgb for colour (a base colour or
         // emissive map, a UI texture), else linear for data (normal, metallic-roughness, occlusion).

@@ -101,6 +101,10 @@ namespace Renderer
         // Loads the textures scene's UI draws with that the registry does not have yet.
         void SyncUiTextures(const HX::RenderScene& scene, HR::ResourceRegistry& registry);
 
+        // Makes scene's colour grading LUT the one ToneMap reads: its file through the registry's
+        // cache, or the neutral LUT without one, or (one warning) for one of another size.
+        void SyncColorLut(const HX::RenderScene& scene, HR::ResourceRegistry& registry);
+
         // Makes scene's environment the one the forward passes light with, baking its map the first
         // time its path is seen.
         void SyncEnvironment(const HX::RenderScene& scene);
@@ -216,6 +220,11 @@ namespace Renderer
 
         GraphPassServices    m_Services;
         EnvironmentResources m_Environment;
+
+        std::unique_ptr<RHI::IRHITexture> m_NeutralLut;
+        const RHI::IRHITexture*           m_ColorLut = nullptr;
+        std::string                       m_ColorLutPath;
+        std::unordered_set<std::string>   m_WarnedLuts;
         ParticleResources    m_Particles;
         PassBuilderRegistry  m_Registry;
         GraphAssetLibrary    m_Library;

@@ -439,5 +439,16 @@ final pass).
 | RenderFrame(total) GPU ms | 0.469, 0.469 | 0.511, 0.513 |
 | Frame(wall) | 2.204, 2.415 | 2.300, 2.364 |
 
+### 2026-11-21 (HE-508) - colour grading LUT
+
+`benchmark.yaml`, Release, `--benchmark 600`, two runs each: no LUT (the default), and a copy with a
+`PostProcessComponent` naming `Textures/Luts/Warm.png`.
+
+| Row | No LUT | Warm.png |
+|-----|--------|----------|
+| ToneMap CPU / GPU ms | 0.007 / 0.014, 0.007 / 0.014 | 0.009 / 0.016, 0.007 / 0.016 |
+| RenderFrame(total) GPU ms | 0.470, 0.470 | 0.472, 0.471 |
+| Frame(wall) | 2.327, 2.314 | 2.263, 2.333 |
+
 When a change intentionally alters performance, re-run the benchmark and update
 this table (keep the old row set; add a dated entry below it so history accumulates).

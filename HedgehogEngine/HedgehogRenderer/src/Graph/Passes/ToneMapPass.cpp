@@ -5,6 +5,7 @@
 #include "RHI/api/IRHICommandList.hpp"
 #include "RHI/api/IRHITexture.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <optional>
 
@@ -52,9 +53,14 @@ namespace Renderer
             cmd.SetScissor({ 0, 0, color.GetWidth(), color.GetHeight() });
             cmd.BindDescriptorSet(pipeline, 0, hdr);
             cmd.BindDescriptorSet(pipeline, 1, bloom);
+            // The frame's LUT at set 2; without one (headless) the HDR set stands in and nothing is graded.
+            const RHI::IRHITexture*       lutTexture = data.Context->Frame->ColorLut;
+            const RHI::IRHIDescriptorSet& lut        = lutTexture ? services.AllocateSampledTexture(*lutTexture) : hdr;
+            cmd.BindDescriptorSet(pipeline, 2, lut);
             const PostProcessSettings& post      = data.Context->Frame->PostProcess;
             const ToneMapPushConstants constants = MakeToneMapPushConstants(
-                data.Context->Frame->Exposure, data.Bloom && post.Bloom ? post.BloomIntensity : 0.0f);
+                data.Context->Frame->Exposure, data.Bloom && post.Bloom ? post.BloomIntensity : 0.0f,
+                lutTexture && !post.ColorLutPath.empty() ? post.ColorLutContribution : 0.0f);
             cmd.PushConstants(pipeline, RHI::ShaderStage::Fragment, 0, sizeof(constants), &constants);
             cmd.Draw(FULLSCREEN_TRIANGLE_VERTICES, 1, 0, 0);
             cmd.EndRendering();
@@ -79,13 +85,15 @@ namespace Renderer
         }
     }
 
-    ToneMapPushConstants MakeToneMapPushConstants(float exposureEv, float bloomIntensity)
+    ToneMapPushConstants MakeToneMapPushConstants(float exposureEv, float bloomIntensity, float lutContribution)
     {
         ToneMapPushConstants constants;
         if (std::isfinite(exposureEv))
             constants.ExposureScale = std::exp2(exposureEv);
         if (std::isfinite(bloomIntensity) && bloomIntensity > 0.0f)
             constants.BloomIntensity = bloomIntensity;
+        if (std::isfinite(lutContribution))
+            constants.LutContribution = std::clamp(lutContribution, 0.0f, 1.0f);
         return constants;
     }
 

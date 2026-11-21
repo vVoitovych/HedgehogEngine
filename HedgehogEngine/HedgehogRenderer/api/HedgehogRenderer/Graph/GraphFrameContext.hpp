@@ -198,6 +198,9 @@ namespace Renderer
 
         // The scene's post-processing settings.
         PostProcessSettings PostProcess;
+        // The colour grading LUT ToneMap reads (ColorLut.hpp's layout): the scene's, or the neutral one
+        // without a usable one; null outside the renderer (headless tests), which grades nothing.
+        const RHI::IRHITexture* ColorLut = nullptr;
 
         // The scene's image-based lighting, which the Forward pass binds in set 3 beside the shadow:
         // the baked RenderScene::Environment, or the black fallback without one (no ambient light).

@@ -243,6 +243,7 @@ namespace Renderer
 
         m_FrameRenderer->SyncUiTextures(scene, *m_Resources);
         m_FrameRenderer->SyncEnvironment(scene);
+        m_FrameRenderer->SyncColorLut(scene, *m_Resources);
         m_FrameRenderer->SyncParticles(scene);
         m_FrameRenderer->Render(scene, *m_Resources, settings, ui);
     }
