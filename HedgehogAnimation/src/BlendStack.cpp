@@ -140,6 +140,42 @@ namespace HedgehogAnimation
             CollapseToCurrent(stack);
     }
 
+    void AdvanceBlendStack(BlendStack& stack, float clipDt, float fadeDt, const Skeleton& skeleton,
+                           const std::vector<AnimationClip>& clips, uint32_t rootJoint, RootMotionDelta& outRootMotion)
+    {
+        outRootMotion = RootMotionDelta{};
+        float weightSoFar = 0.0f;
+        for (uint32_t i = 0; i < stack.Count; ++i)
+        {
+            const BlendEntry& entry  = stack.Entries[i];
+            const float       weight = GetEffectiveWeight(stack, i);
+            if (entry.ChildCount == 0)
+            {
+                if (entry.Clip < clips.size())
+                    AccumulateRootMotion(outRootMotion, weightSoFar,
+                                         ExtractRootMotion(skeleton, clips[entry.Clip], rootJoint, entry.Time,
+                                                           entry.Time + clipDt * entry.Speed, entry.Loop),
+                                         weight);
+                continue;
+            }
+            // The tree's time before AdvanceBlendStack wraps it, so its children see every wrap.
+            const float cycle = GetTreeCycle(entry);
+            float       to    = cycle > 0.0f ? entry.Time + clipDt * entry.Speed / cycle : entry.Time;
+            if (!entry.Loop)
+                to = std::clamp(to, 0.0f, 1.0f);
+            for (uint32_t c = 0; c < entry.ChildCount; ++c)
+            {
+                const BlendEntryChild& child = entry.Children[c];
+                if (child.Clip < clips.size())
+                    AccumulateRootMotion(outRootMotion, weightSoFar,
+                                         ExtractRootMotion(skeleton, clips[child.Clip], rootJoint, entry.Time * child.Duration,
+                                                           to * child.Duration, entry.Loop),
+                                         weight * child.Weight);
+            }
+        }
+        AdvanceBlendStack(stack, clipDt, fadeDt);
+    }
+
     BlendEntry* GetCurrentEntry(BlendStack& stack)
     {
         return stack.Count > 0 ? &stack.Entries[stack.Count - 1] : nullptr;
