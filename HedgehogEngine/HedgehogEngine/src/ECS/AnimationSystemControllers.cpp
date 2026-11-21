@@ -314,7 +314,7 @@ namespace HedgehogEngine
         // Trees follow their parameters (as SetFloat left them) before anything advances.
         RefreshTrees(runtime, controller, animator.Blend);
         const float clipDt = dt * animator.Speed;
-        HedgehogAnimation::AdvanceBlendStack(animator.Blend, clipDt, dt);
+        AdvanceBlend(animator, &clips, clipDt, dt);
 
         const uint32_t from = runtime.Machine.State;
         if (const std::optional<HedgehogAnimation::TransitionFired> fired =

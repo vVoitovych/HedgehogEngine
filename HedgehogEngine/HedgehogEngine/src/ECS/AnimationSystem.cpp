@@ -2,10 +2,12 @@
 
 #include "HedgehogEngine/api/Containers/Mesh.hpp"
 #include "HedgehogEngine/api/Containers/MeshContainer.hpp"
+#include "HedgehogEngine/api/ECS/components/CharacterControllerComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
 #include "HedgehogEngine/api/Events/AnimationEvents.hpp"
 #include "HedgehogEngine/api/Events/EventBus.hpp"
+#include "HedgehogEngine/api/Events/TransformEvents.hpp"
 #include "HedgehogEngine/api/Resource/ResourceCatalog.hpp"
 
 #include "HedgehogAnimation/api/BlendStack.hpp"
@@ -112,6 +114,26 @@ namespace HedgehogEngine
             bus.Publish(AnimationFinishedEvent{ entity, animator.CurrentClip });
         }
 
+        // RootJoint's index on the skeleton: joint 0 when empty, none when the skeleton lacks it.
+        std::optional<uint32_t> FindRootJoint(const AnimatorComponent& animator, const HedgehogAnimation::Skeleton& skeleton)
+        {
+            if (skeleton.JointNames.empty())
+                return std::nullopt;
+            if (animator.RootJoint.empty())
+                return 0u;
+            for (size_t joint = 0; joint < skeleton.JointNames.size(); ++joint)
+                if (skeleton.JointNames[joint] == animator.RootJoint)
+                    return static_cast<uint32_t>(joint);
+            return std::nullopt;
+        }
+
+        // The rotation's twist about Y, the mesh's up.
+        HM::Quaternion TwistAboutY(const HM::Quaternion& rotation)
+        {
+            const HM::Quaternion twist(0.0f, rotation.y(), 0.0f, rotation.w());
+            return twist.Length() > 1e-6f ? twist.Normalize() : HM::Quaternion::Identity();
+        }
+
         std::optional<uint64_t> MeshIndexOf(const ECS::ECS& ecs, ECS::Entity entity)
         {
             return ecs.HasComponent<MeshComponent>(entity) ? ecs.GetComponent<MeshComponent>(entity).MeshIndex
@@ -155,6 +177,22 @@ namespace HedgehogEngine
                 loaded ? &loaded->GetAnimationClips() : nullptr;
             const std::optional<uint64_t> meshIndex = loaded ? MeshIndexOf(ecs, entity) : std::nullopt;
 
+            m_RootSkeleton = nullptr;
+            if (playing && animator.ApplyRootMotion && loaded)
+            {
+                if (const std::optional<uint32_t> root = FindRootJoint(animator, *loaded->GetSkeleton()))
+                {
+                    m_RootSkeleton = loaded->GetSkeleton();
+                    m_RootJoint    = *root;
+                }
+                else if (!animator.WarnedRootJoint)
+                {
+                    animator.WarnedRootJoint = true;
+                    LOGWARNING("[Animation] Entity " + std::to_string(entity) + " has no root joint '" +
+                               animator.RootJoint + "' on its mesh; it applies no root motion.");
+                }
+            }
+            m_RootMotion = HedgehogAnimation::RootMotionDelta{};
             if (playing)
             {
                 // The stack's clip indices name another mesh's clips (it loaded late, or changed):
@@ -172,6 +210,13 @@ namespace HedgehogEngine
             else if (animator.Started)
             {
                 ResetPlayState(animator);
+            }
+            if (m_RootSkeleton)
+                ApplyRootMotion(ecs, entity, animator, dt);
+            else
+            {
+                animator.RootMotion        = HM::Vector3(0.0f, 0.0f, 0.0f);
+                animator.PendingRootMotion = HM::Vector3(0.0f, 0.0f, 0.0f);
             }
 
             if (!loaded)
@@ -335,7 +380,48 @@ namespace HedgehogEngine
         // keeps the loop it played with.
         if (HedgehogAnimation::BlendEntry* current = HedgehogAnimation::GetCurrentEntry(animator.Blend))
             current->Loop = CurrentLoopOf(animator);
-        HedgehogAnimation::AdvanceBlendStack(animator.Blend, dt * animator.Speed, dt);
+        AdvanceBlend(animator, clips, dt * animator.Speed, dt);
+    }
+
+    void AnimationSystem::AdvanceBlend(AnimatorComponent& animator, const std::vector<HedgehogAnimation::AnimationClip>* clips,
+                                       float clipDt, float dt)
+    {
+        if (m_RootSkeleton && clips)
+            HedgehogAnimation::AdvanceBlendStack(animator.Blend, clipDt, dt, *m_RootSkeleton, *clips, m_RootJoint, m_RootMotion);
+        else
+            HedgehogAnimation::AdvanceBlendStack(animator.Blend, clipDt, dt);
+    }
+
+    void AnimationSystem::ApplyRootMotion(ECS::ECS& ecs, ECS::Entity entity, AnimatorComponent& animator, float dt)
+    {
+        if (!ecs.HasComponent<TransformComponent>(entity))
+            return;
+        // The default mask: the root's movement along the mesh's X and Z, and its turn about Y.
+        const HM::Vector3    moved(m_RootMotion.Translation.x(), 0.0f, m_RootMotion.Translation.z());
+        const HM::Quaternion turn      = TwistAboutY(m_RootMotion.Rotation);
+        TransformComponent&  transform = ecs.GetComponent<TransformComponent>(entity);
+        const HM::Vector4    world     = transform.ObjMatrix * HM::Vector4(moved.x(), moved.y(), moved.z(), 0.0f);
+        animator.RootMotion            = HM::Vector3(world.x(), world.y(), world.z());
+
+        const HM::Quaternion rotation = HM::Quaternion::FromEuler(transform.Rotation);
+        bool                 changed  = false;
+        if (ecs.HasComponent<CharacterControllerComponent>(entity))
+            animator.PendingRootMotion = dt > 0.0f ? animator.RootMotion * (1.0f / dt) : HM::Vector3(0.0f, 0.0f, 0.0f);
+        else if (moved.LengthSlow() > 0.0f)
+        {
+            // The mesh's space is the entity's local space: scaled and turned into its parent's.
+            const HM::Vector3 scaled(moved.x() * transform.Scale.x(), moved.y() * transform.Scale.y(),
+                                     moved.z() * transform.Scale.z());
+            transform.Position = transform.Position + rotation * scaled;
+            changed            = true;
+        }
+        if (std::abs(turn.y()) > 1e-7f)
+        {
+            transform.Rotation = (rotation * turn).Normalize().ToEuler();
+            changed            = true;
+        }
+        if (changed && m_Bus)
+            m_Bus->Publish(TransformChangedEvent{ entity });
     }
 
     void AnimationSystem::PreviewBlendTree(const HedgehogAnimation::AnimatorController& controller,
@@ -441,6 +527,9 @@ namespace HedgehogEngine
         {
             // In Play the blend stack: empty when nothing plays, so the bind pose.
             HedgehogAnimation::EvaluateBlendStack(animator.Blend, skeleton, clips, m_Scratch, m_Pose);
+            if (animator.ApplyRootMotion)
+                if (const std::optional<uint32_t> root = FindRootJoint(animator, skeleton))
+                    HedgehogAnimation::RemoveRootMotion(m_Pose, *root, skeleton.BindPose);
         }
         else
         {

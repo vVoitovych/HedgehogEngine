@@ -54,6 +54,10 @@ HH_BEGIN_COMPONENT(AnimatorComponent)
     HH_PROP_NAMED(bool,        PlayOnStart,   "PlayOnStart",   true,          None)
     HH_PROP_NAMED(float,       CrossfadeTime, "CrossfadeTime", 0.2f,          None)
     HH_PROP_NAMED(std::string, Controller,    "Controller",    std::string{}, AssetRef)
+    // While Playing, the root joint's horizontal movement and yaw (HedgehogAnimation's default
+    // RootMotionMask) move the entity instead of the skin; RootJoint names it, empty for joint 0.
+    HH_PROP_NAMED(bool,        ApplyRootMotion, "ApplyRootMotion", false,       None)
+    HH_PROP_NAMED(std::string, RootJoint,     "RootJoint",     std::string{}, None)
 
     bool        Started      = false;        // runtime: Play has initialized this animator
     bool        Playing      = false;        // runtime: the current clip advances
@@ -69,5 +73,11 @@ HH_BEGIN_COMPONENT(AnimatorComponent)
     std::vector<HM::Matrix4x4> Palette;      // runtime: one skinning matrix per joint
     AnimatorControllerRuntime ControllerState; // runtime: Controller's machine
     std::vector<AnimatorIkGoal> IkGoals;      // runtime: at most MAX_IK_GOALS, applied after each evaluation
+    HM::Vector3 RootMotion = HM::Vector3(0.0f, 0.0f, 0.0f); // runtime: the last frame's root motion, world space
+    // runtime: with a character controller, the last frame's root motion per second, which the
+    // physics system walks the character with on the next fixed steps (a frame late, since
+    // Animation runs after Simulation)
+    HM::Vector3 PendingRootMotion = HM::Vector3(0.0f, 0.0f, 0.0f);
+    bool        WarnedRootJoint   = false;   // runtime: RootJoint is not on the mesh, said once
 HH_END_COMPONENT(AnimatorComponent)
 }

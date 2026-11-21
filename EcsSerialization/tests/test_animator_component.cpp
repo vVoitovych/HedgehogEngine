@@ -22,7 +22,7 @@ namespace
     }
 }
 
-TEST_CASE("A default AnimatorComponent serialises to exactly its six reflected fields")
+TEST_CASE("A default AnimatorComponent serialises to exactly its eight reflected fields")
 {
     AnimatorComponent defaults;
     const std::string expected =
@@ -31,7 +31,9 @@ TEST_CASE("A default AnimatorComponent serialises to exactly its six reflected f
         "Loop: true\n"
         "PlayOnStart: true\n"
         "CrossfadeTime: 0.2\n"
-        "Controller: \"\"";
+        "Controller: \"\"\n"
+        "ApplyRootMotion: false\n"
+        "RootJoint: \"\"";
     CHECK(Serialize(defaults) == expected);
 }
 
@@ -44,6 +46,9 @@ TEST_CASE("AnimatorComponent round-trips its reflected fields and never writes i
     source.PlayOnStart   = false;
     source.CrossfadeTime = 0.35f;
     source.Controller    = "Animations/Strip.animctrl";
+    source.ApplyRootMotion = true;
+    source.RootJoint       = "Hips";
+    source.RootMotion      = HM::Vector3(9.0f, 9.0f, 9.0f);
     // Runtime state, set to values a save must not carry.
     source.Started      = true;
     source.Playing      = true;
@@ -68,6 +73,9 @@ TEST_CASE("AnimatorComponent round-trips its reflected fields and never writes i
     CHECK(restored.PlayOnStart == false);
     CHECK(restored.CrossfadeTime == doctest::Approx(0.35f));
     CHECK(restored.Controller == "Animations/Strip.animctrl");
+    CHECK(restored.ApplyRootMotion);
+    CHECK(restored.RootJoint == "Hips");
+    CHECK(restored.RootMotion == HM::Vector3(0.0f, 0.0f, 0.0f));
     CHECK_FALSE(restored.Started);
     CHECK_FALSE(restored.Playing);
     CHECK(restored.CurrentClip.empty());
