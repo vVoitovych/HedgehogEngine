@@ -377,6 +377,10 @@ void VulkanCommandList::CopyBufferToTexture(const IRHIBuffer& src, IRHITexture& 
 
     const uint32_t levelWidth  = std::max(desc.Width >> region.MipLevel, 1u);
     const uint32_t levelHeight = std::max(desc.Height >> region.MipLevel, 1u);
+    // A block compressed level is copied whole: its extent is in texels, the last blocks partial.
+    assert((!IsBlockCompressed(desc.Format) ||
+            ((region.Width == 0 || region.Width == levelWidth) && (region.Height == 0 || region.Height == levelHeight))) &&
+           "CopyBufferToTexture: a block compressed level must be copied whole.");
 
     VkBufferImageCopy copy{};
     copy.bufferOffset                    = static_cast<VkDeviceSize>(region.BufferOffset);
@@ -402,6 +406,7 @@ void VulkanCommandList::GenerateMipmaps(IRHITexture& texture)
 {
     auto&              vkTexture = static_cast<VulkanTexture&>(texture);
     const TextureDesc& desc      = vkTexture.GetDesc();
+    assert(!IsBlockCompressed(desc.Format) && "GenerateMipmaps: a block compressed texture brings its own mips.");
     assert(m_Device.SupportsLinearBlit(desc.Format) && "GenerateMipmaps: the format cannot be blitted linearly.");
 
     for (uint32_t level = 1; level < desc.MipLevels; ++level)

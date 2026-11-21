@@ -322,8 +322,9 @@ void VulkanDevice::CreateLogicalDevice()
     features13.dynamicRendering = VK_TRUE;
 
     VkPhysicalDeviceFeatures2 features2{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2 };
-    features2.features.samplerAnisotropy = VK_TRUE;
-    features2.features.fillModeNonSolid  = VK_TRUE;
+    features2.features.samplerAnisotropy    = VK_TRUE;
+    features2.features.fillModeNonSolid     = VK_TRUE;
+    features2.features.textureCompressionBC = VK_TRUE; // IsDeviceSuitable requires it
     features2.pNext                      = &features13;
 
     VkDeviceCreateInfo createInfo{ VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
@@ -384,6 +385,17 @@ bool VulkanDevice::IsDeviceSuitable(VkPhysicalDevice device) const
 
     if (!CheckDeviceExtensionSupport(device))
         return false;
+
+    // Block compressed textures (BC1 to BC7), which every desktop GPU of the baseline class has.
+    VkPhysicalDeviceFeatures features{};
+    vkGetPhysicalDeviceFeatures(device, &features);
+    if (!features.textureCompressionBC)
+    {
+        VkPhysicalDeviceProperties properties{};
+        vkGetPhysicalDeviceProperties(device, &properties);
+        LOGERROR("VulkanDevice: ", properties.deviceName, " has no BC texture compression (textureCompressionBC); it is not used.");
+        return false;
+    }
 
     // Check swapchain support.
     uint32_t formatCount = 0;
