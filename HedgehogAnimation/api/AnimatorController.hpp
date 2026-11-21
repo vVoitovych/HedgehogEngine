@@ -1,5 +1,7 @@
 #pragma once
 
+#include <array>
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -27,14 +29,42 @@ namespace HedgehogAnimation
         float                 Default = 0.0f; // an Int's whole number, a Bool's 0 or 1; a Trigger starts unset
     };
 
+    // What a state plays: one clip, or a blend tree of clips weighted by one Float parameter (1D)
+    // or two (2D).
+    enum class StateMotion
+    {
+        Clip,
+        BlendTree1D,
+        BlendTree2D,
+    };
+
+    // The most clips a blend tree blends.
+    inline constexpr size_t MAX_BLEND_TREE_CHILDREN = 8;
+
+    // A clip of a blend tree, placed at Threshold on a 1D tree's parameter or at Position on a 2D
+    // tree's two.
+    struct BlendChild
+    {
+        std::string          Clip; // a clip of the mesh, by name
+        float                Threshold = 0.0f;
+        std::array<float, 2> Position  = { 0.0f, 0.0f };
+        float                Speed     = 1.0f; // times the state's
+    };
+
     struct AnimatorState
     {
         std::string Name;
-        std::string Clip;  // a clip of the mesh, by name
+        std::string Clip;  // a clip of the mesh, by name; a Clip state's only
         float       Speed = 1.0f;
         bool        Loop  = true;
         // A Float parameter the speed is multiplied by; none when empty.
         std::string SpeedParameter;
+        // Last, so states written field by field in braces keep their meaning.
+        StateMotion Motion = StateMotion::Clip;
+        // A blend tree's: the Float parameters it blends by (Y a 2D tree's only) and its clips.
+        std::string             BlendParameterX;
+        std::string             BlendParameterY;
+        std::vector<BlendChild> Children;
     };
 
     enum class ConditionOp
@@ -77,6 +107,7 @@ namespace HedgehogAnimation
 
     [[nodiscard]] const char* GetParameterTypeName(AnimatorParameterType type);
     [[nodiscard]] const char* GetConditionOpName(ConditionOp op);
+    [[nodiscard]] const char* GetStateMotionName(StateMotion motion);
     // Whether a condition with op can test a parameter of type.
     [[nodiscard]] bool IsConditionOpValid(AnimatorParameterType type, ConditionOp op);
 
@@ -89,7 +120,11 @@ namespace HedgehogAnimation
     // state or parameter index out of range, a condition that does not fit its parameter's type,
     // a speed parameter that is not a Float parameter, a transition with neither a condition nor
     // an exit time (it would fire at once), a negative duration or exit time, and, given the
-    // mesh's clip names, a state whose clip the mesh lacks. Empty when it can run.
+    // mesh's clip names, a state whose clip the mesh lacks. A blend tree instead: no children or
+    // more than MAX_BLEND_TREE_CHILDREN, a blend parameter missing or not a Float, a child's speed
+    // that is not a number, 1D thresholds not strictly increasing, two 2D children at one position,
+    // three or more 2D children all on one line, and, given the clip names, a child's clip the mesh
+    // lacks (its Clip is ignored). Empty when it can run.
     [[nodiscard]] std::vector<std::string> ValidateAnimatorController(const AnimatorController& controller,
                                                                       const std::vector<std::string>* clipNames = nullptr);
 }
