@@ -24,7 +24,9 @@ namespace HedgehogEngine
         bool Running = false;        // a state is playing
 
         std::optional<uint64_t> Mesh;     // the mesh Durations were resolved for
-        std::vector<float>      Durations; // per state, its clip's length
+        std::vector<float>      Durations; // per state, its clip's length (a blend tree's weighted cycle)
+        // Per state, a blend tree's children with their clips found on the mesh (empty for a clip).
+        std::vector<std::vector<HedgehogAnimation::BlendEntryChild>> Children;
         bool                    Usable = false; // the mesh has every state's clip
 
         std::string RequestedState;  // AnimationSystem::Play's state, for the next frame

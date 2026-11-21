@@ -325,3 +325,146 @@ TEST_CASE("Animator controller - Edit mode previews the default state's clip")
     CHECK(Near(std::atan2(tip[0][1], tip[0][0]) * 180.0f / 3.14159265f, 67.5f));
     CHECK(Near(world.Lift(), 0.0f));
 }
+
+namespace
+{
+    // A 1D blend tree of Bend (at 0) and Lift (at 1) on Speed, and an exit-time transition out of
+    // it to a Bend clip state after one loop.
+    std::string TreeController(float speed = 0.0f, const char* lift = "Lift")
+    {
+        return std::string(R"(Version: 1
+Parameters:
+  - Name: Speed
+    Type: Float
+    Default: )") + std::to_string(speed) + R"(
+States:
+  - Name: Locomotion
+    Motion: BlendTree1D
+    Parameter: Speed
+    Children:
+      - {Clip: Bend, Threshold: 0}
+      - {Clip: )" + lift + R"(, Threshold: 1}
+  - Name: Done
+    Clip: Bend
+Default: Locomotion
+Transitions:
+  - From: Locomotion
+    To: Done
+    ExitTime: 1
+    Duration: 0
+)";
+    }
+
+    // The tip's turn about z, in degrees: Bend's 45 + 45 t at its time t (Lift leaves it at its bind
+    // pose, 0).
+    float TipDegrees(const AnimatorComponent& animator)
+    {
+        const HM::Matrix4x4& tip = animator.Palette[1];
+        return std::atan2(tip[0][1], tip[0][0]) * 180.0f / 3.14159265f;
+    }
+
+    float TreeTime(const AnimatorComponent& animator)
+    {
+        const HedgehogAnimation::BlendEntry* entry = HedgehogAnimation::GetCurrentEntry(animator.Blend);
+        REQUIRE(entry);
+        REQUIRE(entry->ChildCount == 2u);
+        return entry->Time;
+    }
+}
+
+TEST_CASE("Animator controller - a 1D blend tree plays Bend at 0, Lift at 1 and both at 0.5")
+{
+    SUBCASE("Speed 0: Bend alone, over its 1 s loop")
+    {
+        ControllerWorld world(TreeController(0.0f));
+        REQUIRE(world.Context.Play());
+        world.Frame(31);
+        const float time = TreeTime(world.Animator());
+        CHECK(Near(TipDegrees(world.Animator()), 45.0f + 45.0f * time));
+        CHECK(Near(world.Lift(), 0.0f));
+        REQUIRE(world.Context.Stop());
+    }
+    SUBCASE("Speed 1: Lift alone, over its 2 s loop")
+    {
+        ControllerWorld world(TreeController(1.0f));
+        REQUIRE(world.Context.Play());
+        world.Frame(31);
+        const float time = TreeTime(world.Animator());
+        CHECK(Near(time, 30.0f * STEP / 2.0f));
+        CHECK(Near(world.Lift(), time * 2.0f / 2.0f)); // Lift's root at its time: up 1 over 2 s
+        CHECK(Near(TipDegrees(world.Animator()), 0.0f));
+        REQUIRE(world.Context.Stop());
+    }
+    SUBCASE("Speed 0.5: half each, over a 1.5 s loop")
+    {
+        ControllerWorld world(TreeController(0.5f));
+        REQUIRE(world.Context.Play());
+        world.Frame(31);
+        const float time = TreeTime(world.Animator());
+        CHECK(Near(time, 30.0f * STEP / 1.5f));
+        CHECK(Near(world.Lift(), 0.5f * (time * 2.0f / 2.0f)));
+        // Bend at its time (time of its 1 s) halfway towards Lift's bind pose.
+        CHECK(Near(TipDegrees(world.Animator()), 0.5f * (45.0f + 45.0f * time)));
+        REQUIRE(world.Context.Stop());
+    }
+}
+
+TEST_CASE("Animator controller - changing a tree's parameter changes the pose that frame without restarting it")
+{
+    ControllerWorld world(TreeController(0.0f));
+    REQUIRE(world.Context.Play());
+    world.Frame(31);
+    const float before = TreeTime(world.Animator());
+    CHECK(Near(world.Lift(), 0.0f));
+
+    REQUIRE(world.Animations().SetFloat(world.Ecs, world.Strip, "Speed", 1.0f));
+    world.Frame();
+    const float after = TreeTime(world.Animator());
+    CHECK(after > before); // still the same play-through
+    CHECK(Near(world.Lift(), after)); // Lift alone now, at after * 2 s of its 2 s
+    CHECK(world.Changes.size() == 1u);
+    CHECK(world.State() == "Locomotion");
+    REQUIRE(world.Context.Stop());
+}
+
+TEST_CASE("Animator controller - an exit time out of a tree fires after one weighted loop")
+{
+    ControllerWorld world(TreeController(0.5f)); // half 1 s, half 2 s: a 1.5 s loop
+    REQUIRE(world.Context.Play());
+    int frames = 1;
+    world.Frame();
+    while (world.State() == "Locomotion" && frames < 200)
+    {
+        world.Frame();
+        ++frames;
+    }
+    CHECK(world.State() == "Done");
+    CHECK(std::abs(frames - 91) <= 2);
+    REQUIRE(world.Changes.size() == 2u);
+    CHECK(world.Changes[1].From == "Locomotion");
+    CHECK(world.Changes[1].To == "Done");
+    REQUIRE(world.Context.Stop());
+}
+
+TEST_CASE("Animator controller - a tree child's clip the mesh lacks is logged once, and Clip plays")
+{
+    LogCapture      log;
+    ControllerWorld world(TreeController(0.0f, "Jog"), "Lift");
+    REQUIRE(world.Context.Play());
+    world.Frame(3);
+    CHECK(log.Count("state 'Locomotion' child 1 of anim://Strip.animctrl plays clip 'Jog', which its mesh does not have") ==
+          1u);
+    CHECK(world.State().empty());
+    CHECK(world.Animator().CurrentClip == "Lift");
+    REQUIRE(world.Context.Stop());
+}
+
+TEST_CASE("Animator controller - Edit mode previews a default tree at its parameters' defaults")
+{
+    ControllerWorld world(TreeController(1.0f));
+    world.Ecs.GetComponent<AnimatorComponent>(world.Strip).PreviewTime = 0.5f;
+    world.Context.UpdateAnimation(STEP);
+    // Lift alone, 0.5 s into its 2 s: the root up a quarter.
+    CHECK(Near(world.Lift(), 0.25f));
+    CHECK(Near(TipDegrees(world.Animator()), 0.0f));
+}
