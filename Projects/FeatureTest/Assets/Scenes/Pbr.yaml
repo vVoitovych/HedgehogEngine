@@ -219,6 +219,19 @@ Scene:
           Rotation: 0
           ShowSkybox: true
           Exposure: 0
+        PostProcessComponent:
+          Enabled: true
+          AntiAliasing: 1
+          SsaoEnabled: true
+          SsaoRadius: 0.5
+          SsaoIntensity: 1
+          SsaoBias: 0.025
+          BloomEnabled: false
+          BloomIntensity: 0.05
+          BloomThreshold: 1
+          BloomKnee: 0.5
+          ColorLut: ""
+          ColorLutContribution: 1
         Children:
           []
       - Entity: 15

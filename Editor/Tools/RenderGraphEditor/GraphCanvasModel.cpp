@@ -114,6 +114,8 @@ namespace Editor
 
             // The type's slots first, in its order, then whatever else the asset binds.
             std::vector<std::string> slots = type ? type->Slots : std::vector<std::string>{};
+            if (type)
+                slots.insert(slots.end(), type->OptionalSlots.begin(), type->OptionalSlots.end());
             for (const Renderer::GraphAssetBinding& binding : pass.Bindings)
             {
                 if (std::ranges::find(slots, binding.Slot) == slots.end())
@@ -127,7 +129,8 @@ namespace Editor
                 pin.Slot  = slot;
                 pin.Label = slot;
 
-                const bool declared = !type || std::ranges::find(type->Slots, slot) != type->Slots.end();
+                const bool optional = type && std::ranges::find(type->OptionalSlots, slot) != type->OptionalSlots.end();
+                const bool declared = !type || optional || std::ranges::find(type->Slots, slot) != type->Slots.end();
                 const Renderer::GraphAssetBinding* binding = FindBinding(pass, slot);
                 const auto resource = binding ? resources.find(binding->Resource) : resources.end();
 

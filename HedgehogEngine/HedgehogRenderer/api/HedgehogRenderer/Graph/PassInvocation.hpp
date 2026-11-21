@@ -26,6 +26,8 @@ namespace Renderer
         // The handle currently bound to slot. A builder that writes the slot stores the new
         // version back with SetSlot, so later passes and output binding see the write.
         [[nodiscard]] RGTexture GetSlot(std::string_view slot) const;
+        // The handle bound to an optional slot, or none when the graph left it out.
+        [[nodiscard]] std::optional<RGTexture> FindSlot(std::string_view slot) const;
         void                    SetSlot(std::string_view slot, RGTexture texture);
 
         // The raw parameter string, or std::nullopt if the pass instance did not set it. The

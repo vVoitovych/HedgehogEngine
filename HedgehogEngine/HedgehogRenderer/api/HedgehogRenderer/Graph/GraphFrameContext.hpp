@@ -297,6 +297,8 @@ namespace Renderer
         ParticlesAlpha,       // particle billboards over the HDR target, alpha-blended, depth tested, not written
         ParticlesAdditive,    // ParticlesAlpha added to what is behind
         Fxaa,                 // a fullscreen triangle, no depth (PostProcess.pl): the tone-mapped image at set 0
+        Ssao,                 // a fullscreen triangle into R8 (Ssao.pl): the view's depth at set 0
+        SsaoBlur,             // a fullscreen triangle into R8 (PostProcess.pl): the raw occlusion at set 0, depth at 1
     };
 
     // The particle compute shaders (ParticleCompute.pl), all on one layout.

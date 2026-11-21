@@ -300,6 +300,19 @@ namespace Renderer
         fxaaDesc.DepthAttachmentFormat  = RHI::Format::Undefined;
         m_FxaaPipeline = device.CreateGraphicsPipeline(fxaaDesc);
 
+        // Ambient occlusion into R8: the depth, then the raw occlusion and the depth, each a sampled set.
+        const auto createR8 = [&](std::string_view path, size_t sets)
+        {
+            const ShaderPipelineDesc  shader = ShaderLoader::Load(device, std::string(path), fileSystem);
+            RHI::GraphicsPipelineDesc desc   = shader.Pipeline;
+            desc.DescriptorSetLayouts.assign(sets, m_SampledTextureLayout.get());
+            desc.ColorAttachmentFormats = { RHI::Format::R8Unorm };
+            desc.DepthAttachmentFormat  = RHI::Format::Undefined;
+            return device.CreateGraphicsPipeline(desc);
+        };
+        m_SsaoPipeline     = createR8(HedgehogEngine::SSAO_SHADER, 1);
+        m_SsaoBlurPipeline = createR8(HedgehogEngine::SSAO_BLUR_SHADER, 3);
+
         // The particle compute shaders on one layout, so one set binds to each; set 1 is a sampled
         // texture, the depth the collision copy reads.
         for (size_t i = 0; i < ENGINE_COMPUTE_PIPELINE_COUNT; ++i)
@@ -454,6 +467,8 @@ namespace Renderer
             case EnginePipeline::SelectionMaskSkinned:                 return *m_SelectionMaskSkinnedPipeline;
             case EnginePipeline::SelectionOutline:                     return *m_SelectionOutlinePipeline;
             case EnginePipeline::Fxaa:                                 return *m_FxaaPipeline;
+            case EnginePipeline::Ssao:                                 return *m_SsaoPipeline;
+            case EnginePipeline::SsaoBlur:                             return *m_SsaoBlurPipeline;
         }
         assert(false && "GraphPassServices::GetPipeline: unknown pipeline.");
         return *m_DepthPrepassPipeline;

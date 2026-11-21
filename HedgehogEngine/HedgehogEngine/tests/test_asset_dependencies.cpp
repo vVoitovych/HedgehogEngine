@@ -221,6 +221,9 @@ TEST_CASE("Asset dependencies - a fixture scene's closure is exactly its meshes,
              "Shaders/Skybox/Sky.vert.spv", "Shaders/Skybox/Sky.frag.spv",
              // The anti-aliasing pass.
              "Shaders/Fxaa.shader", "Pipelines/PostProcess.pl", "Shaders/Fxaa/Fxaa.frag.spv",
+             // The ambient occlusion pass.
+             "Shaders/Ssao.shader", "Shaders/SsaoBlur.shader", "Pipelines/Ssao.pl", "Shaders/Ssao/Ssao.frag.spv",
+             "Shaders/Ssao/Blur.frag.spv",
              // The depth prepass's alpha-tested shaders, for Cutoff materials.
              // The forward pass's terrain shader.
              "Shaders/GraphForwardTerrain.shader", "Pipelines/GraphForwardTerrain.pl", "Shaders/GraphForward/Terrain.frag.spv",

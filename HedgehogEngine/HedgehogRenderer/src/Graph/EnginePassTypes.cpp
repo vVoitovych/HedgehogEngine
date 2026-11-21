@@ -8,6 +8,7 @@
 #include "Passes/SelectionMaskPass.hpp"
 #include "Passes/FxaaPass.hpp"
 #include "Passes/SelectionOutlinePass.hpp"
+#include "Passes/SsaoPass.hpp"
 #include "Passes/ShadowPass.hpp"
 #include "Passes/SkyboxPass.hpp"
 #include "Passes/ToneMapPass.hpp"
@@ -24,6 +25,7 @@ namespace Renderer
         [[maybe_unused]] const bool registered =
             registry.Register("DepthPrepass", GetDepthPrepassPassType())
             && registry.Register("Shadow", GetShadowPassType())
+            && registry.Register("Ssao", GetSsaoPassType())
             && registry.Register("Forward", GetForwardPassType())
             && registry.Register("ForwardTransparent", GetForwardTransparentPassType())
             && registry.Register("Skybox", GetSkyboxPassType())
