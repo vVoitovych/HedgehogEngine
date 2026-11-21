@@ -38,6 +38,12 @@ inline VkFormat ToVkFormat(Format format)
         case Format::D32Float:          return VK_FORMAT_D32_SFLOAT;
         case Format::D24UnormS8Uint:    return VK_FORMAT_D24_UNORM_S8_UINT;
         case Format::D32FloatS8Uint:    return VK_FORMAT_D32_SFLOAT_S8_UINT;
+        case Format::BC1RgbaUnorm:      return VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
+        case Format::BC1RgbaSrgb:       return VK_FORMAT_BC1_RGBA_SRGB_BLOCK;
+        case Format::BC4Unorm:          return VK_FORMAT_BC4_UNORM_BLOCK;
+        case Format::BC5Unorm:          return VK_FORMAT_BC5_UNORM_BLOCK;
+        case Format::BC7Unorm:          return VK_FORMAT_BC7_UNORM_BLOCK;
+        case Format::BC7Srgb:           return VK_FORMAT_BC7_SRGB_BLOCK;
         default:                        assert(false && "Unknown RHI format"); return VK_FORMAT_UNDEFINED;
     }
 }
@@ -65,6 +71,12 @@ inline Format FromVkFormat(VkFormat vkFormat)
         case VK_FORMAT_D32_SFLOAT:           return Format::D32Float;
         case VK_FORMAT_D24_UNORM_S8_UINT:    return Format::D24UnormS8Uint;
         case VK_FORMAT_D32_SFLOAT_S8_UINT:   return Format::D32FloatS8Uint;
+        case VK_FORMAT_BC1_RGBA_UNORM_BLOCK: return Format::BC1RgbaUnorm;
+        case VK_FORMAT_BC1_RGBA_SRGB_BLOCK:  return Format::BC1RgbaSrgb;
+        case VK_FORMAT_BC4_UNORM_BLOCK:      return Format::BC4Unorm;
+        case VK_FORMAT_BC5_UNORM_BLOCK:      return Format::BC5Unorm;
+        case VK_FORMAT_BC7_UNORM_BLOCK:      return Format::BC7Unorm;
+        case VK_FORMAT_BC7_SRGB_BLOCK:       return Format::BC7Srgb;
         default:                             return Format::Undefined;
     }
 }

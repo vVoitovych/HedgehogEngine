@@ -96,3 +96,34 @@ TEST_CASE("The recording command list records query resets and timestamps, and a
     cmd.ResetQueries(*pool, 0, 2);
     CHECK_FALSE(pool->ReadTimestamps(0, ticks));
 }
+
+TEST_CASE("Block compressed formats are known with their block sizes")
+{
+    using RHI::Format;
+    for (Format format : { Format::BC1RgbaUnorm, Format::BC1RgbaSrgb, Format::BC4Unorm, Format::BC5Unorm, Format::BC7Unorm, Format::BC7Srgb })
+        CHECK(RHI::IsBlockCompressed(format));
+    for (Format format : { Format::Undefined, Format::R8G8B8A8Unorm, Format::R8G8B8A8Srgb, Format::R16G16B16A16Float, Format::D32Float })
+    {
+        CHECK_FALSE(RHI::IsBlockCompressed(format));
+        CHECK(RHI::GetBlockBytes(format) == 0);
+    }
+    CHECK(RHI::GetBlockBytes(Format::BC1RgbaSrgb) == 8);
+    CHECK(RHI::GetBlockBytes(Format::BC4Unorm) == 8);
+    CHECK(RHI::GetBlockBytes(Format::BC5Unorm) == 16);
+    CHECK(RHI::GetBlockBytes(Format::BC7Srgb) == 16);
+}
+
+TEST_CASE("A mip's byte size rounds a block compressed level up to whole blocks")
+{
+    using RHI::Format;
+    CHECK(RHI::GetMipByteSize(Format::BC1RgbaUnorm, 1, 1) == 8);
+    CHECK(RHI::GetMipByteSize(Format::BC7Unorm, 1, 1) == 16);
+    CHECK(RHI::GetMipByteSize(Format::BC1RgbaUnorm, 5, 3) == 2 * 1 * 8);
+    CHECK(RHI::GetMipByteSize(Format::BC5Unorm, 5, 3) == 2 * 1 * 16);
+    CHECK(RHI::GetMipByteSize(Format::BC4Unorm, 2048, 2048) == 512ull * 512 * 8);
+    CHECK(RHI::GetMipByteSize(Format::BC7Srgb, 2048, 2048) == 512ull * 512 * 16);
+    CHECK(RHI::GetMipByteSize(Format::R8G8B8A8Unorm, 5, 3) == 5 * 3 * 4);
+    CHECK(RHI::GetMipByteSize(Format::R16G16B16A16Float, 2048, 2048) == 2048ull * 2048 * 8);
+    CHECK(RHI::GetMipByteSize(Format::R8Unorm, 1, 1) == 1);
+    static_assert(RHI::GetMipByteSize(Format::BC7Unorm, 4, 4) == 16);
+}

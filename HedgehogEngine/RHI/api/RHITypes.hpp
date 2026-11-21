@@ -31,7 +31,84 @@ enum class Format : uint32_t
     D32Float,
     D24UnormS8Uint,
     D32FloatS8Uint,
+    // Block compressed, 4 x 4 texels a block; sampled only, never render targets.
+    BC1RgbaUnorm,
+    BC1RgbaSrgb,
+    BC4Unorm,
+    BC5Unorm,
+    BC7Unorm,
+    BC7Srgb,
 };
+
+constexpr bool IsBlockCompressed(Format format)
+{
+    switch (format)
+    {
+        case Format::BC1RgbaUnorm:
+        case Format::BC1RgbaSrgb:
+        case Format::BC4Unorm:
+        case Format::BC5Unorm:
+        case Format::BC7Unorm:
+        case Format::BC7Srgb:
+            return true;
+        default:
+            return false;
+    }
+}
+
+// The bytes of one 4 x 4 block of a block compressed format, 0 for any other.
+constexpr uint32_t GetBlockBytes(Format format)
+{
+    switch (format)
+    {
+        case Format::BC1RgbaUnorm:
+        case Format::BC1RgbaSrgb:
+        case Format::BC4Unorm:
+            return 8;
+        case Format::BC5Unorm:
+        case Format::BC7Unorm:
+        case Format::BC7Srgb:
+            return 16;
+        default:
+            return 0;
+    }
+}
+
+// The bytes of one texel of an uncompressed format, 0 for a block compressed one or Undefined.
+constexpr uint32_t GetTexelBytes(Format format)
+{
+    switch (format)
+    {
+        case Format::R8Unorm:           return 1;
+        case Format::R16Float:
+        case Format::D16Unorm:          return 2;
+        case Format::R8G8B8A8Unorm:
+        case Format::R8G8B8A8Srgb:
+        case Format::B8G8R8A8Unorm:
+        case Format::B8G8R8A8Srgb:
+        case Format::R16G16Float:
+        case Format::R32Float:
+        case Format::D32Float:
+        case Format::D24UnormS8Uint:    return 4;
+        case Format::R16G16B16A16Unorm:
+        case Format::R16G16B16A16Float:
+        case Format::R32G32Float:
+        case Format::D32FloatS8Uint:    return 8;
+        case Format::R32G32B32Float:    return 12;
+        case Format::R32G32B32A32Float:
+        case Format::R32G32B32A32Uint:  return 16;
+        default:                        return 0;
+    }
+}
+
+// The tightly packed bytes of a width x height image (one mip of one layer): whole 4 x 4 blocks
+// for a block compressed format, so a 5 x 3 level is 2 x 1 blocks.
+constexpr uint64_t GetMipByteSize(Format format, uint32_t width, uint32_t height)
+{
+    if (IsBlockCompressed(format))
+        return static_cast<uint64_t>((width + 3) / 4) * ((height + 3) / 4) * GetBlockBytes(format);
+    return static_cast<uint64_t>(width) * height * GetTexelBytes(format);
+}
 
 enum class BufferUsage : uint32_t
 {
