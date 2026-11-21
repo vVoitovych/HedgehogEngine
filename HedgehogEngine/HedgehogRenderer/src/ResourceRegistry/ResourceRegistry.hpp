@@ -116,19 +116,29 @@ namespace HR
         // A texture of a path through the cache materials use (magenta 1 x 1 for a file that does
         // not load), kept as long as the registry.
         RHI::IRHITexture& LoadTexture(const std::string& path, RHI::IRHIDevice& device,
-                                      const FS::FileSystemManager& fileSystem, bool srgb)
+                                      const FS::FileSystemManager& fileSystem, ContentLoader::TextureEncoding encoding)
         {
-            return GetOrCreateTexture(path, device, fileSystem, srgb);
+            return GetOrCreateTexture(path, device, fileSystem, encoding);
         }
+
+        // Textures loaded from a compressed DDS sibling, and from their source image.
+        uint32_t GetCompressedTextureCount()   const { return m_CompressedTextureCount; }
+        uint32_t GetUncompressedTextureCount() const { return m_UncompressedTextureCount; }
         // An RGBA8 texture of pixels, one level, uploaded and ready to sample.
         static std::unique_ptr<RHI::IRHITexture> CreateRgba8Texture(RHI::IRHIDevice& device, const void* pixels,
                                                                     uint32_t width, uint32_t height, bool srgb);
 
     private:
-        // The texture of a path, loaded once per colour space: srgb for colour (a base colour or
-        // emissive map, a UI texture), else linear for data (normal, metallic-roughness, occlusion).
+        // The texture of a path, loaded once per encoding: sRGB for Color (a base colour or emissive
+        // map, a UI texture), else linear. Its compressed sibling (ContentLoader's
+        // MakeCompressedTexturePath) is uploaded when it exists, is of the encoding's format and
+        // parses; otherwise the image itself, mipmapped on the GPU.
         RHI::IRHITexture& GetOrCreateTexture(const std::string& path, RHI::IRHIDevice& device,
-                                              const FS::FileSystemManager& fileSystem, bool srgb = true);
+                                              const FS::FileSystemManager& fileSystem,
+                                              ContentLoader::TextureEncoding encoding = ContentLoader::TextureEncoding::Color);
+        std::unique_ptr<RHI::IRHITexture> LoadCompressedSibling(const std::string& file, RHI::IRHIDevice& device,
+                                                                const FS::FileSystemManager&   fileSystem,
+                                                                ContentLoader::TextureEncoding encoding);
 
         void CreateMaterialGpu(const HedgehogEngine::MaterialView& material, RHI::IRHIDevice& device,
                                const FS::FileSystemManager& fileSystem);
@@ -191,8 +201,10 @@ namespace HR
         std::vector<Renderer::MaterialDrawInfo>  m_MaterialDrawInfos; // aligned with m_Materials
         size_t                                   m_RegisteredMaterialCount = 0;
 
-        // Shared texture cache (keyed by path, with a suffix for a linear copy) and sampler
+        // Shared texture cache (keyed by path, with a suffix per encoding but Color) and sampler
         std::unordered_map<std::string, std::unique_ptr<RHI::IRHITexture>> m_TextureCache;
+        uint32_t                                                           m_CompressedTextureCount   = 0;
+        uint32_t                                                           m_UncompressedTextureCount = 0;
         std::unique_ptr<RHI::IRHISampler>                                  m_LinearSampler;
 
         // A material slot without a map samples these 1x1 textures, which leave its factors as they

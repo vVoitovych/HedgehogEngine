@@ -3,6 +3,7 @@
 #include "TangentStream.hpp"
 #include "TerrainUniform.hpp"
 
+#include "ContentLoader/api/CompressedTexture.hpp"
 #include "ContentLoader/api/TextureLoader.hpp"
 #include "FileSystem/api/PathUtils.hpp"
 
@@ -51,6 +52,50 @@ namespace HR
                 {
                     cmd.GenerateMipmaps(*texture);
                     return;
+                }
+                const RHI::TextureBarrier toRead{ texture.get(), RHI::ResourceState::CopyDst, RHI::ResourceState::ShaderResource };
+                cmd.Barrier({ &toRead, 1 }, {});
+            });
+            return texture;
+        }
+
+        RHI::Format ToRhiFormat(ContentLoader::CompressedFormat format)
+        {
+            switch (format)
+            {
+                case ContentLoader::CompressedFormat::BC1Unorm: return RHI::Format::BC1RgbaUnorm;
+                case ContentLoader::CompressedFormat::BC1Srgb:  return RHI::Format::BC1RgbaSrgb;
+                case ContentLoader::CompressedFormat::BC4Unorm: return RHI::Format::BC4Unorm;
+                case ContentLoader::CompressedFormat::BC5Unorm: return RHI::Format::BC5Unorm;
+                case ContentLoader::CompressedFormat::BC7Unorm: return RHI::Format::BC7Unorm;
+                default:                                        return RHI::Format::BC7Srgb;
+            }
+        }
+
+        // Every mip of a compressed texture from one staging buffer, then ready to sample.
+        std::unique_ptr<RHI::IRHITexture> UploadCompressed(RHI::IRHIDevice& device, const ContentLoader::CompressedTexture& source)
+        {
+            auto staging = device.CreateBuffer(source.Data.size(), RHI::BufferUsage::TransferSrc, RHI::MemoryUsage::CpuToGpu);
+            staging->CopyData(source.Data.data(), source.Data.size());
+
+            RHI::TextureDesc desc;
+            desc.Width     = source.Width;
+            desc.Height    = source.Height;
+            desc.Format    = ToRhiFormat(source.Format);
+            desc.Usage     = RHI::TextureUsage::Sampled | RHI::TextureUsage::TransferDst;
+            desc.MipLevels = static_cast<uint32_t>(source.Mips.size());
+            auto texture   = device.CreateTexture(desc);
+
+            device.ExecuteImmediately([&](RHI::IRHICommandList& cmd)
+            {
+                const RHI::TextureBarrier toCopy{ texture.get(), RHI::ResourceState::Undefined, RHI::ResourceState::CopyDst };
+                cmd.Barrier({ &toCopy, 1 }, {});
+                for (uint32_t mip = 0; mip < desc.MipLevels; ++mip)
+                {
+                    RHI::TextureRegion region;
+                    region.MipLevel     = mip;
+                    region.BufferOffset = source.Mips[mip].Offset;
+                    cmd.CopyBufferToTexture(*staging, *texture, region);
                 }
                 const RHI::TextureBarrier toRead{ texture.get(), RHI::ResourceState::CopyDst, RHI::ResourceState::ShaderResource };
                 cmd.Barrier({ &toRead, 1 }, {});
@@ -269,15 +314,25 @@ namespace HR
     RHI::IRHITexture& ResourceRegistry::GetOrCreateTexture(const std::string& path,
                                                              RHI::IRHIDevice& device,
                                                              const FS::FileSystemManager& fileSystem,
-                                                             bool srgb)
+                                                             ContentLoader::TextureEncoding encoding)
     {
-        // One copy per file and colour space, however the path is spelt (FS::MakeAssetKey); '|' never
-        // appears in a path, so a linear copy never collides with one.
+        // One copy per file and encoding, however the path is spelt (FS::MakeAssetKey); '|' never
+        // appears in a path, so an encoding's copy never collides with one.
         const std::string file = FS::MakeAssetKey(path);
-        const std::string key  = srgb ? file : file + "|linear";
+        const bool        srgb = encoding == ContentLoader::TextureEncoding::Color;
+        const std::string key  = srgb ? file
+                               : file + (encoding == ContentLoader::TextureEncoding::Normal ? "|normal" : "|linear");
         auto it = m_TextureCache.find(key);
         if (it != m_TextureCache.end())
             return *it->second;
+
+        if (auto compressed = LoadCompressedSibling(file, device, fileSystem, encoding))
+        {
+            ++m_CompressedTextureCount;
+            auto [result, _] = m_TextureCache.emplace(key, std::move(compressed));
+            return *result->second;
+        }
+        ++m_UncompressedTextureCount;
 
         ContentLoader::TextureLoader loader;
         const bool loaded = loader.LoadTexture(file, fileSystem);
@@ -291,6 +346,28 @@ namespace HR
 
         auto [result, _] = m_TextureCache.emplace(key, std::move(texture));
         return *result->second;
+    }
+
+    std::unique_ptr<RHI::IRHITexture> ResourceRegistry::LoadCompressedSibling(const std::string&             file,
+                                                                              RHI::IRHIDevice&               device,
+                                                                              const FS::FileSystemManager&   fileSystem,
+                                                                              ContentLoader::TextureEncoding encoding)
+    {
+        const std::string sibling = FS::ToAssetVirtualPath(ContentLoader::MakeCompressedTexturePath(file, encoding));
+        if (!fileSystem.Exists(sibling))
+            return nullptr;
+        const auto texture = ContentLoader::LoadDdsTexture(sibling, fileSystem); // logs why it does not parse
+        if (!texture)
+        {
+            LOGWARNING("[Texture] ", sibling, " cannot be used; ", file, " is loaded instead.");
+            return nullptr;
+        }
+        if (texture->Format != ContentLoader::GetEncodingFormat(encoding))
+        {
+            LOGWARNING("[Texture] ", sibling, " is not in the format its name says; ", file, " is loaded instead.");
+            return nullptr;
+        }
+        return UploadCompressed(device, *texture);
     }
 
     void ResourceRegistry::SetUiTextureLayout(RHI::IRHIDevice& device, const RHI::IRHIDescriptorSetLayout& layout)
@@ -342,7 +419,7 @@ namespace HR
                 m_WarnedUiTextureLimit = true;
                 continue;
             }
-            RHI::IRHITexture& texture = GetOrCreateTexture(path, device, fileSystem);
+            RHI::IRHITexture& texture = GetOrCreateTexture(path, device, fileSystem, ContentLoader::TextureEncoding::Color);
             auto              set     = device.AllocateDescriptorSet(*m_UiTexturePool, *m_UiTextureLayout);
             set->WriteTexture(0, texture, *m_UiSampler);
             set->Flush();
@@ -421,11 +498,12 @@ namespace HR
         for (uint32_t slot = 0; slot < MATERIAL_TEXTURE_BINDING_COUNT; ++slot)
         {
             const auto         binding = static_cast<MaterialTextureBinding>(slot);
-            const bool         srgb    = IsColorTexture(binding);
-            const std::string& path    = GetMaterialTexturePath(material, binding);
-            RHI::IRHITexture*  texture = nullptr;
+            const auto         encoding = GetTextureEncoding(binding);
+            const bool         srgb     = encoding == ContentLoader::TextureEncoding::Color;
+            const std::string& path     = GetMaterialTexturePath(material, binding);
+            RHI::IRHITexture*  texture  = nullptr;
             if (!path.empty())
-                texture = &GetOrCreateTexture(path, device, fileSystem, srgb);
+                texture = &GetOrCreateTexture(path, device, fileSystem, encoding);
             else if (binding == MaterialTextureBinding::Normal)
                 texture = m_FlatNormalTexture.get();
             else
@@ -537,10 +615,12 @@ namespace HR
             const HedgehogEngine::TerrainLayerView& view      = terrain.layers[layer];
             RHI::IRHITexture&                       baseColor = view.baseColor.empty()
                                                                     ? *m_WhiteSrgbTexture
-                                                                    : GetOrCreateTexture(std::string(view.baseColor), device, fileSystem, true);
+                                                                    : GetOrCreateTexture(std::string(view.baseColor), device, fileSystem,
+                                                                                         ContentLoader::TextureEncoding::Color);
             RHI::IRHITexture&                       normal    = view.normalMap.empty()
                                                                     ? *m_FlatNormalTexture
-                                                                    : GetOrCreateTexture(std::string(view.normalMap), device, fileSystem, false);
+                                                                    : GetOrCreateTexture(std::string(view.normalMap), device, fileSystem,
+                                                                                         ContentLoader::TextureEncoding::Normal);
             gpu.DescriptorSet->WriteTexture(TERRAIN_BASE_COLOR_BINDING + layer, baseColor, *m_LinearSampler);
             gpu.DescriptorSet->WriteTexture(TERRAIN_NORMAL_BINDING + layer, normal, *m_LinearSampler);
         }

@@ -83,6 +83,8 @@ namespace Renderer
         device.WaitIdle();
         if (const std::optional<double> gpuMs = m_FrameRenderer->GetLastGpuFrameMs())
             LOGINFO("Renderer: the last frame the GPU finished took ", *gpuMs, " ms on the GPU.");
+        LOGINFO("Renderer: ", m_Resources->GetCompressedTextureCount(), " textures loaded compressed, ",
+                m_Resources->GetUncompressedTextureCount(), " from their images.");
         m_FrameRenderer.reset();
         m_Resources->Cleanup(device);
         m_Resources.reset();

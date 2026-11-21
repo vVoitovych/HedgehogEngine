@@ -121,10 +121,12 @@ TEST_CASE("Material uniform - each slot names its map, and only colour maps are 
     CHECK(HR::GetMaterialTexturePath(view, MaterialTextureBinding::Occlusion) == "ao.png");
     CHECK(HR::GetMaterialTexturePath(view, MaterialTextureBinding::Emissive) == "e.png");
 
-    CHECK(HR::IsColorTexture(MaterialTextureBinding::BaseColor));
-    CHECK(HR::IsColorTexture(MaterialTextureBinding::Emissive));
-    CHECK_FALSE(HR::IsColorTexture(MaterialTextureBinding::Normal));
-    CHECK_FALSE(HR::IsColorTexture(MaterialTextureBinding::MetallicRoughness));
-    CHECK_FALSE(HR::IsColorTexture(MaterialTextureBinding::Occlusion));
+    using ContentLoader::TextureEncoding;
+    CHECK(HR::GetTextureEncoding(MaterialTextureBinding::BaseColor) == TextureEncoding::Color);
+    CHECK(HR::GetTextureEncoding(MaterialTextureBinding::Emissive) == TextureEncoding::Color);
+    CHECK(HR::GetTextureEncoding(MaterialTextureBinding::Normal) == TextureEncoding::Normal);
+    CHECK(HR::GetTextureEncoding(MaterialTextureBinding::MetallicRoughness) == TextureEncoding::Data);
+    CHECK(HR::GetTextureEncoding(MaterialTextureBinding::Occlusion) == TextureEncoding::Data);
+    static_assert(HR::GetTextureEncoding(MaterialTextureBinding::Normal) == TextureEncoding::Normal);
     CHECK(HR::MATERIAL_TEXTURE_BINDING_COUNT == HedgehogEngine::MAX_TEXTURES_PER_MATERIAL);
 }

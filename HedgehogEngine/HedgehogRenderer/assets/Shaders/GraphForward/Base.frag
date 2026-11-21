@@ -14,6 +14,7 @@ layout(location = 3) in vec4 inTangent; // xyz world tangent, w handedness
 
 #include "Common/Pbr.glsl"
 #include "Common/Shadows.glsl"
+#include "Common/NormalMap.glsl"
 
 layout(set = 0, binding = 0) uniform ViewData
 {
@@ -52,7 +53,7 @@ vec3 SurfaceNormal()
 
     const vec3 tangent   = normalize(inTangent.xyz - normal * dot(normal, inTangent.xyz));
     const vec3 bitangent = cross(normal, tangent) * (inTangent.w < 0.0f ? -1.0f : 1.0f);
-    vec3 sampled = texture(normalMap, fragTexCoord).xyz * 2.0f - 1.0f;
+    vec3 sampled = DecodeNormal(texture(normalMap, fragTexCoord).rg);
     sampled.xy  *= materialData.normalScale;
     return normalize(mat3(tangent, bitangent, normal) * sampled);
 }
