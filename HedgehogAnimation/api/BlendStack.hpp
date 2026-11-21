@@ -1,10 +1,12 @@
 #pragma once
 
 #include "AnimationClip.hpp"
+#include "AnimatorController.hpp"
 #include "Skeleton.hpp"
 
 #include <array>
 #include <cstdint>
+#include <span>
 #include <vector>
 
 // The clips an animator is blending: the clip it plays now and those it is fading out of, as plain
@@ -15,13 +17,27 @@ namespace HedgehogAnimation
     // How many clips blend at once; a push past it drops the oldest.
     inline constexpr uint32_t MAX_BLEND_ENTRIES = 4;
 
+    // A clip of a blend tree entry.
+    struct BlendEntryChild
+    {
+        uint32_t Clip     = 0;    // an index into the mesh's clips
+        float    Weight   = 0.0f; // its share of the tree (SetEntryWeights)
+        float    Duration = 0.0f; // the clip's length in seconds
+        float    Speed    = 1.0f; // its own speed within the tree; its cycle is Duration / Speed
+    };
+
     struct BlendEntry
     {
-        uint32_t Clip   = 0;    // an index into the mesh's clips
-        float    Time   = 0.0f; // seconds into the clip
+        uint32_t Clip   = 0;    // an index into the mesh's clips (a single-clip entry's)
+        float    Time   = 0.0f; // seconds into the clip; a tree's normalized time, 0 to 1
         float    Speed  = 1.0f; // times the time the stack advances by
         bool     Loop   = true;
         float    Weight = 1.0f; // the entry's share of the fading-out entries (they sum to 1)
+        // A blend tree entry's clips (none for a single clip). Its children play in step: each is
+        // sampled at Time times its Duration, and Time advances by one cycle of the weighted mean of
+        // their Duration / Speed.
+        uint32_t                                                ChildCount = 0;
+        std::array<BlendEntryChild, MAX_BLEND_TREE_CHILDREN>    Children{};
     };
 
     struct BlendStack
@@ -39,7 +55,16 @@ namespace HedgehogAnimation
     // seconds while everything else fades out from its present weight; otherwise it plays alone.
     void PushClip(BlendStack& stack, uint32_t clip, float speed, bool loop, float fade);
 
-    // Advances every entry by clipDt times its speed and the fade by fadeDt; once the fade is
+    // Starts a blend tree entry of children (at most MAX_BLEND_TREE_CHILDREN; the rest are dropped)
+    // from the start of its cycle, fading in as PushClip's clip does.
+    void PushBlendTree(BlendStack& stack, std::span<const BlendEntryChild> children, float speed, bool loop, float fade);
+
+    // Sets a tree entry's child weights (as ComputeBlendTreeWeights gives them) for this frame; the
+    // weights past its children are ignored, its children past the weights get 0.
+    void SetEntryWeights(BlendEntry& entry, std::span<const float> weights);
+
+    // Advances every entry by clipDt times its speed (a tree entry's normalized time by that over its
+    // weighted cycle, wrapped by its Loop or held at 1) and the fade by fadeDt; once the fade is
     // complete only the current clip is left.
     void AdvanceBlendStack(BlendStack& stack, float clipDt, float fadeDt);
 
@@ -53,8 +78,8 @@ namespace HedgehogAnimation
     // An entry's weight in the blend now; the weights of a stack's entries sum to 1.
     [[nodiscard]] float GetEffectiveWeight(const BlendStack& stack, uint32_t entry);
 
-    // The blended local pose: each entry sampled with its own loop and folded in by weight. An
-    // entry whose clip index is out of range is skipped; an empty stack gives the bind pose.
+    // The blended local pose: each entry sampled with its own loop and folded in by weight, a tree
+    // entry's children each by its weight times their own. A clip index out of range is skipped; an empty stack gives the bind pose.
     // scratch and outLocalPose are caller-owned, so once sized evaluation allocates nothing.
     void EvaluateBlendStack(const BlendStack& stack, const Skeleton& skeleton, const std::vector<AnimationClip>& clips,
                             std::vector<JointTransform>& scratch, std::vector<JointTransform>& outLocalPose);
