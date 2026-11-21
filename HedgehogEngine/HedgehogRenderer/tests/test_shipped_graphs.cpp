@@ -66,17 +66,39 @@ namespace
         const RGTexture depth       = Declare(graph, "depth", RHI::Format::D32Float, full);
         const RGTexture hdr         = Declare(graph, "hdr", RHI::Format::R16G16B16A16Float, full);
         const RGTexture ldr         = Declare(graph, "ldr", RHI::Format::R16G16B16A16Unorm, full);
+        const RGTexture ao          = Declare(graph, "ao", RHI::Format::R8Unorm, RGSizePolicy::MakeRelativeToResult(0.5f));
         const RGTexture color       = Declare(graph, "color", RHI::Format::R16G16B16A16Unorm, full);
 
         RGTexture hdrWritten;
         graph.AddPass<TargetData>("DepthPrepass",
             [&](RGPassBuilder& pass, TargetData& data) { depthWritten = data.Target = pass.DepthTarget(depth); },
             NO_EXECUTE);
+        // Ssao: the raw occlusion from the depth into a transient of its own, then the blur into ao.
+        const RGTexture raw = graph.CreateTexture({ "Ssao raw", RHI::Format::R8Unorm, RGSizePolicy::MakeRelativeToResult(0.5f),
+                                                    RHI::TextureUsage::ColorAttachment | RHI::TextureUsage::Sampled });
+        RGTexture rawWritten;
+        graph.AddPass<TargetData>("Ssao",
+            [&](RGPassBuilder& pass, TargetData& data)
+            {
+                pass.SampleTexture(depthWritten);
+                rawWritten = data.Target = pass.ColorTarget(raw);
+            },
+            NO_EXECUTE);
+        RGTexture aoWritten;
+        graph.AddPass<TargetData>("Ssao blur",
+            [&](RGPassBuilder& pass, TargetData& data)
+            {
+                pass.SampleTexture(depthWritten);
+                pass.SampleTexture(rawWritten);
+                aoWritten = data.Target = pass.ColorTarget(ao);
+            },
+            NO_EXECUTE);
         graph.AddPass<TargetData>("Forward",
             [&](RGPassBuilder& pass, TargetData& data)
             {
                 pass.DepthReadOnly(depthWritten);
                 pass.SampleTexture(shadowAtlas);
+                pass.SampleTexture(aoWritten);
                 hdrWritten = data.Target = pass.ColorTarget(hdr);
             },
             NO_EXECUTE);
@@ -275,6 +297,7 @@ TEST_CASE("Oracle: each shipped graph compiles to the same plan as its hand-writ
     {
         const size_t prepass = twin->find("pass DepthPrepass");
         const size_t forward = twin->find("pass Forward");
+        const size_t ssao    = twin->find("pass Ssao blur");
         const size_t skybox  = twin->find("pass Skybox");
         const size_t blended = twin->find("pass ForwardTransparent");
         const size_t particles = twin->find("pass Particles");
@@ -282,7 +305,9 @@ TEST_CASE("Oracle: each shipped graph compiles to the same plan as its hand-writ
         const size_t fxaa    = twin->find("pass Fxaa");
         REQUIRE(skybox != std::string::npos);
         REQUIRE(toneMap != std::string::npos);
-        CHECK(prepass < forward);
+        REQUIRE(ssao != std::string::npos);
+        CHECK(prepass < ssao);
+        CHECK(ssao < forward);
         CHECK(forward < skybox);
         CHECK(skybox < blended);
         CHECK(blended < particles);

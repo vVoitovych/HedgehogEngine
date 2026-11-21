@@ -144,7 +144,9 @@ namespace Renderer
 
             for (const GraphAssetBinding& binding : pass.Bindings)
             {
-                if (std::find(info->Slots.begin(), info->Slots.end(), binding.Slot) == info->Slots.end())
+                if (std::find(info->Slots.begin(), info->Slots.end(), binding.Slot) == info->Slots.end() &&
+                    std::find(info->OptionalSlots.begin(), info->OptionalSlots.end(), binding.Slot) ==
+                        info->OptionalSlots.end())
                 {
                     errors.push_back({ prefix + "pass type '" + pass.Type + "' has no slot '" + binding.Slot + "'",
                                        pass.Name, binding.Slot });

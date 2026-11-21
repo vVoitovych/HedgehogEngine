@@ -410,5 +410,19 @@ The pass adds about 0.045 ms of GPU time on, 0.013 off; the wall times are withi
 
 Within noise.
 
+### 2026-11-20 (HE-506) - SSAO
+
+`benchmark.yaml`, Release, `--benchmark 600`, two runs each: off is the default (no component, so
+the blur only clears `ao`), on a copy with a `PostProcessComponent` whose `SsaoEnabled` is true.
+
+| Row | SSAO off | SSAO on |
+|-----|----------|---------|
+| Ssao CPU / GPU ms | 0.002 / 0.001, 0.002 / 0.001 | 0.010 / 0.025, 0.011 / 0.026 |
+| Ssao blur CPU / GPU ms | 0.009 / 0.004, 0.009 / 0.004 | 0.005 / 0.016, 0.006 / 0.016 |
+| RenderFrame(total) GPU ms | 0.454, 0.456 | 0.492, 0.493 |
+| Frame(wall) | 2.274, 2.363 | 2.451, 2.440 |
+
+Under the 1 ms GPU target: 0.04 ms on, at half the view's size.
+
 When a change intentionally alters performance, re-run the benchmark and update
 this table (keep the old row set; add a dated entry below it so history accumulates).

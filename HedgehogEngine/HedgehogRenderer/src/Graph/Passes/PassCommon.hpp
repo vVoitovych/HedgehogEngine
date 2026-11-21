@@ -26,6 +26,7 @@ namespace Renderer
         RGTexture                Color{};
         RGTexture                Depth{};
         RGTexture                ShadowMap{};
+        std::optional<RGTexture> Ao;           // Forward's optional ao slot: the view's ambient occlusion
         RenderGraphRuntime*      Graph         = nullptr;
         const GraphFrameContext* Context       = nullptr;
         bool                     CullBackFaces = true;

@@ -39,6 +39,8 @@ namespace Renderer
         std::vector<std::string>       Slots;
         std::vector<PassParameterInfo> Parameters;
         PassBuildFn                    Build = nullptr;
+        // Slots a graph may bind or leave out (PassInvocation::FindSlot); the rest are required.
+        std::vector<std::string>       OptionalSlots;
     };
 
     class PassBuilderRegistry

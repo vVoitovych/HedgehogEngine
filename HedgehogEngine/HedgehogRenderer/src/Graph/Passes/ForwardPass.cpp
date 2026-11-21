@@ -164,7 +164,8 @@ namespace Renderer
                 cmd.BindDescriptorSet(pipeline, 2, *frame.SceneLights);
             // The sun's shadow: the frame's shadow uniform (unshadowed without a shadow view) and the
             // atlas; then the environment's image-based lighting and the view's ambient occlusion.
-            const RHI::IRHIDescriptorSet& lighting = AllocateLighting(data, services, frame, frame.AmbientOcclusion);
+            const RHI::IRHIDescriptorSet& lighting =
+                AllocateLighting(data, services, frame, data.Ao ? data.Graph->GetTexture(*data.Ao) : frame.AmbientOcclusion);
             cmd.BindDescriptorSet(pipeline, 3, lighting);
             DrawLitInstances(cmd, lit, frame, frame.OpaqueInstances, false, "Opaque");
             DrawLitInstances(cmd, lit, frame, frame.CutoffInstances, false, "Cutoff");
@@ -328,6 +329,9 @@ namespace Renderer
                     pass.DepthReadOnly(data.Depth);
                     data.ShadowMap = invocation.GetSlot("shadowMap");
                     pass.SampleTexture(data.ShadowMap);
+                    data.Ao = invocation.FindSlot("ao");
+                    if (data.Ao)
+                        pass.SampleTexture(*data.Ao);
                     data.Color         = pass.ColorTarget(invocation.GetSlot("color"));
                     data.CullBackFaces = cull.value_or(true);
                     data.Graph         = &graph;
@@ -340,7 +344,7 @@ namespace Renderer
 
     PassTypeInfo GetForwardPassType()
     {
-        return { { "color", "depth", "shadowMap" }, { { "cullBackFaces", PassParameterKind::Flag } }, &BuildForward };
+        return { { "color", "depth", "shadowMap" }, { { "cullBackFaces", PassParameterKind::Flag } }, &BuildForward, { "ao" } };
     }
 
     PassTypeInfo GetForwardTransparentPassType()

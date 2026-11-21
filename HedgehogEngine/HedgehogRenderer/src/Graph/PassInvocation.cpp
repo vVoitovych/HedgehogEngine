@@ -15,6 +15,16 @@ namespace Renderer
         return RGTexture{};
     }
 
+    std::optional<RGTexture> PassInvocation::FindSlot(std::string_view slot) const
+    {
+        for (const auto& [name, texture] : m_Slots)
+        {
+            if (name == slot)
+                return texture;
+        }
+        return std::nullopt;
+    }
+
     void PassInvocation::SetSlot(std::string_view slot, RGTexture texture)
     {
         for (auto& [name, bound] : m_Slots)
