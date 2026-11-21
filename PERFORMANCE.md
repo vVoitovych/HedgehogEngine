@@ -450,5 +450,26 @@ final pass).
 | RenderFrame(total) GPU ms | 0.470, 0.470 | 0.472, 0.471 |
 | Frame(wall) | 2.327, 2.314 | 2.263, 2.333 |
 
+### 2026-11-21 (HE-509) - the post-processing epic (HE-449)
+
+Release, `--benchmark 600`, two runs each. Before is the commit before the epic (1ee7c239, HE-502's
+merge, built in a worktree); default is `benchmark.yaml` as it ships (no component: FXAA on, the
+rest recording only their clears); everything on is a copy of it with a `PostProcessComponent` turning
+SSAO, bloom and the `Warm.png` grade on; and `PostProcess.yaml` is the epic's sample. Bloom's GPU time
+is its eleven passes summed.
+
+| Row (CPU / GPU ms) | Before | Default | Everything on | PostProcess.yaml |
+|--------------------|--------|---------|---------------|------------------|
+| Ssao | | 0.002 / 0.001 | 0.011 / 0.025 | 0.010 / 0.014 |
+| Ssao blur | | 0.010 / 0.004 | 0.006 / 0.016 | 0.006 / 0.015 |
+| Bloom (11 passes, GPU) | | 0.012 | 0.056 | 0.053 |
+| ToneMap | 0.009 / 0.013 | 0.008 / 0.014 | 0.007 / 0.015 | 0.006 / 0.015 |
+| Fxaa | | 0.005 / 0.046 | 0.005 / 0.045 | 0.004 / 0.027 |
+| RenderFrame(total) GPU ms | 0.402, 0.403 | 0.469, 0.471 | 0.547, 0.547 | 0.254, 0.251 |
+| Frame(wall) | 2.386, 2.414 | 2.409, 2.452 | 2.595, 2.585 | 2.332, 2.313 |
+
+The epic adds 0.07 ms of GPU time to the default frame (FXAA most of it) and 0.15 ms with
+everything on; the wall frame stays near 2.5 ms, far inside the 16.6 ms budget.
+
 When a change intentionally alters performance, re-run the benchmark and update
 this table (keep the old row set; add a dated entry below it so history accumulates).
