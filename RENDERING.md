@@ -405,6 +405,26 @@ Out of scope, with no interface in the way: shadows for spot and point lights, s
 per mesh, glTF extensions, texture compression, GPU or Cooker-side
 baking, reflection probes, bloom and auto-exposure.
 
+### Post-processing (epic HE-449)
+
+A `PostProcessComponent` (the first enabled one by entity id) carries the scene's settings through
+extraction into `GraphFrameData::PostProcess`; without one only FXAA is on. The view graphs run:
+
+- **Ssao**, after DepthPrepass: the occlusion of 16 hemisphere samples per pixel rebuilt from the
+  depth into a half-size target, blurred depth-aware into `ao`, which Forward's optional `ao` slot
+  multiplies into the ambient light only (white when off; transparent surfaces get white always).
+- **Bloom**, after Particles: the HDR radiance thresholded with a soft knee, halved five times and
+  added back up into a half-size `bloom` (black when off).
+- **ToneMap**, now onto a transient `ldr`: the bloom added times its intensity before the exposure,
+  the ACES fit, then a 32-cubed colour grading LUT (a 1024 x 32 strip, display-encoded) mixed in by
+  its contribution, the neutral strip without one.
+- **Fxaa**, onto the colour output: a luma edge-directed filter, a copy when off. The game UI, the
+  selection outline and the gizmos draw after it, so they are never filtered.
+
+The passes stay in the static graphs whether their effect is on or not; off, each records a clear or
+a copy. `Projects/FeatureTest/Assets/Scenes/PostProcess.yaml` turns all four on. Temporal
+anti-aliasing, motion blur, depth of field, auto-exposure and per-camera settings are out of scope.
+
 ---
 
 ## Implementation plan
