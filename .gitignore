@@ -652,6 +652,7 @@ Logs/
 /HedgehogAudio/tests/AudioTest.vcxproj*
 /ThirdParty/miniaudio/miniaudio.vcxproj*
 /ThirdParty/meshoptimizer/meshoptimizer.vcxproj*
+/ThirdParty/bc7enc/bc7enc.vcxproj*
 /ThirdParty/Jolt/Jolt.vcxproj*
 /HedgehogPhysics/*.vcxproj*
 /HedgehogPhysics/tests/*.vcxproj*

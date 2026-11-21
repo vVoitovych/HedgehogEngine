@@ -482,6 +482,13 @@ shadow view's camera, so the four cascades draw the far rows simplified too.
 The levels halve `Lods.yaml`'s GPU frame, most of it in the shadow cascades; `benchmark.yaml`'s 5 x 5
 grid, close to the camera, stays within the run-to-run spread.
 
+### 2026-11-21 (HE-520) - encoding textures for the cook
+
+Release, CookerTest's timing case, three runs: DamagedHelmet's 2048 x 2048 albedo with its 12 mips to BC7
+sRGB at `BC7_MAX_PARTITIONS` 64 and `BC7_UBER_LEVEL` 0, block rows in parallel, in 578, 580 and 571 ms
+(2633 ms in Debug). The ticket's limit was 3 s, with 2 s the point to lower the quality, so the encoder
+keeps bc7enc's default partitions.
+
 ### 2026-11-21 (HE-519) - compressed texture siblings
 
 Release, `benchmark.yaml`, `--benchmark 600`, two runs, no DDS siblings in the tree (each texture costs one

@@ -12,7 +12,8 @@ project "CookerTest"
         "../../..",           -- so "FileSystem/..." and "HedgehogScripting/tests/..." resolve
         "../../../HedgehogEngine",
         "../../CookerCore",
-        "%{IncludeDir.yaml_cpp}"
+        "%{IncludeDir.yaml_cpp}",
+        "%{IncludeDir.bc7enc}"     -- the decoders the round trips check against
     }
 
     defines { "YAML_CPP_STATIC_DEFINE" }
@@ -24,8 +25,10 @@ project "CookerTest"
         "HedgehogSettings",
         "EcsSerialization",
         "FileSystem",
+        "ContentLoader",
         "Logger",
-        "yaml-cpp"
+        "yaml-cpp",
+        "bc7enc"
     }
 
     targetdir (BinariesDir)

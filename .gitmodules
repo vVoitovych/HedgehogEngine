@@ -38,3 +38,6 @@
 [submodule "ThirdParty/meshoptimizer/meshoptimizer"]
 	path = ThirdParty/meshoptimizer/meshoptimizer
 	url = https://github.com/vVoitovych/meshoptimizer.git
+[submodule "ThirdParty/bc7enc/bc7enc"]
+	path = ThirdParty/bc7enc/bc7enc
+	url = https://github.com/vVoitovych/bc7enc.git

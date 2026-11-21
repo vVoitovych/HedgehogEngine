@@ -30,6 +30,7 @@ group "ThirdParty"
    include "ThirdParty/miniaudio/Build-miniaudio.lua"
    include "ThirdParty/Jolt/Build-Jolt.lua"
    include "ThirdParty/meshoptimizer/Build-meshoptimizer.lua"
+   include "ThirdParty/bc7enc/Build-bc7enc.lua"
 
 group ""
 
