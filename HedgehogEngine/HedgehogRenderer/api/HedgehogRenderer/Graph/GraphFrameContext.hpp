@@ -16,6 +16,7 @@
 #include <cstdint>
 #include <optional>
 #include <span>
+#include <string>
 
 namespace RHI
 {
@@ -65,6 +66,23 @@ namespace Renderer
 
     // Everything the engine passes read about one view's frame, filled by the frame loop. Plain
     // data: no pass owns it, and nothing here outlives the frame.
+    // How the frame is finished after lighting, from RenderScene::PostProcess (these defaults without
+    // one: FXAA alone). Nothing reads it yet.
+    struct PostProcessSettings
+    {
+        bool        Fxaa                 = true;
+        bool        Ssao                 = false;
+        float       SsaoRadius           = 0.5f;
+        float       SsaoIntensity        = 1.0f;
+        float       SsaoBias             = 0.025f;
+        bool        Bloom                = false;
+        float       BloomIntensity       = 0.05f;
+        float       BloomThreshold       = 1.0f;
+        float       BloomKnee            = 0.5f;
+        std::string ColorLutPath;        // empty: no grading
+        float       ColorLutContribution = 1.0f;
+    };
+
     struct GraphFrameData
     {
         HM::Matrix4x4 View;
@@ -177,6 +195,9 @@ namespace Renderer
         // The exposure the ToneMap pass scales the view's HDR radiance by, in EV (2^Exposure):
         // RenderScene::Environment's, or 0 without an environment.
         float Exposure = 0.0f;
+
+        // The scene's post-processing settings.
+        PostProcessSettings PostProcess;
 
         // The scene's image-based lighting, which the Forward pass binds in set 3 beside the shadow:
         // the baked RenderScene::Environment, or the black fallback without one (no ambient light).

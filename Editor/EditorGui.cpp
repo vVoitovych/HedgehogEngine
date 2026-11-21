@@ -252,6 +252,7 @@ namespace Editor
             { "UiTextComponent", { "Font", ContentType::Font, "a .ttf or .otf font" } },
             { "AudioSourceComponent", { "Clip", ContentType::Audio, "a .wav, .mp3 or .flac clip" } },
             { "EnvironmentComponent", { "Map", ContentType::Environment, "an .hdr environment map" } },
+            { "PostProcessComponent", { "ColorLut", ContentType::Texture, "a colour grading LUT texture" } },
             { "AnimatorComponent", { "Controller", ContentType::AnimatorController, "an .animctrl animator controller" } },
             { "TerrainComponent", { "Terrain", ContentType::Terrain, "a .terrain file" } },
             { "ParticleSystemComponent", { "Effect", ContentType::ParticleEffect, "a .particle effect" } },

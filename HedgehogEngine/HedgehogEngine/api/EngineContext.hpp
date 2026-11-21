@@ -68,6 +68,7 @@ namespace HedgehogEngine
     class RigidBodyListSystem;
     class CharacterControllerListSystem;
     class EnvironmentSystem;
+    class PostProcessSystem;
     class TerrainSystem;
     class ParticleSystem;
     class SaveGameManager;
@@ -240,6 +241,7 @@ namespace HedgehogEngine
         HEDGEHOG_ENGINE_API PhysicsSystem*      GetPhysicsSystem()   const;
         // The entity view of the environments, which extraction reads.
         HEDGEHOG_ENGINE_API EnvironmentSystem*  GetEnvironmentSystem() const;
+        HEDGEHOG_ENGINE_API PostProcessSystem*  GetPostProcessSystem() const;
         // The terrains, which resolve their files in the Sync phase.
         HEDGEHOG_ENGINE_API TerrainSystem*      GetTerrainSystem() const;
         HEDGEHOG_ENGINE_API ParticleSystem*     GetParticleSystem() const;
@@ -298,6 +300,7 @@ namespace HedgehogEngine
         std::shared_ptr<RigidBodyListSystem> m_RigidBodyListSystem;
         std::shared_ptr<CharacterControllerListSystem> m_CharacterListSystem;
         std::shared_ptr<EnvironmentSystem>   m_EnvironmentSystem;
+        std::shared_ptr<PostProcessSystem>   m_PostProcessSystem;
         std::shared_ptr<TerrainSystem>       m_TerrainSystem;
         std::shared_ptr<ParticleSystem>      m_ParticleSystem;
 

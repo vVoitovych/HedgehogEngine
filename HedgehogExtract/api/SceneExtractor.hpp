@@ -21,6 +21,7 @@ namespace HedgehogEngine
     class UiSystem;
     class PhysicsSystem;
     class EnvironmentSystem;
+    class PostProcessSystem;
     class TerrainSystem;
     class ParticleSystem;
     class ParticleEffectContainer;
@@ -107,6 +108,11 @@ namespace HX
         // slashes, "assets://" added to a path without a mount); leaves it not Present when there is
         // none. Allocates nothing once the path's storage has grown.
         void ExtractEnvironment(const ECS::ECS& ecs, const HedgehogEngine::EnvironmentSystem& environmentSystem,
+                                RenderScene& outScene) const;
+
+        // Fills outScene.PostProcess from the first enabled PostProcessComponent of postProcessSystem
+        // by entity id, its LUT normalized as ExtractEnvironment's map; not Present without one.
+        void ExtractPostProcess(const ECS::ECS& ecs, const HedgehogEngine::PostProcessSystem& postProcessSystem,
                                 RenderScene& outScene) const;
 
         // Appends an instance for every enabled terrain of terrainSystem whose mesh is listed

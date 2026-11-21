@@ -139,6 +139,24 @@ namespace HX
         float       Exposure        = 0.0f;
     };
 
+    // The scene's post-processing (HedgehogEngine's PostProcessComponent), when Present, its colour
+    // grading LUT's virtual path under assets:// (empty for none).
+    struct RenderPostProcess
+    {
+        bool        Present              = false;
+        bool        Fxaa                 = true;
+        bool        SsaoEnabled          = false;
+        float       SsaoRadius           = 0.5f;
+        float       SsaoIntensity        = 1.0f;
+        float       SsaoBias             = 0.025f;
+        bool        BloomEnabled         = false;
+        float       BloomIntensity       = 0.05f;
+        float       BloomThreshold       = 1.0f;
+        float       BloomKnee            = 0.5f;
+        std::string ColorLutPath;
+        float       ColorLutContribution = 1.0f;
+    };
+
     // One emitter of one particle system this frame (HedgehogEngine's ParticleSystem frame list):
     // the effect and emitter it plays (by the resource catalog's ParticleEffectView), where, and what
     // it spawns. InstanceId is the entity with its generation in the high 32 bits, so a recycled
@@ -181,6 +199,10 @@ namespace HX
         // path's storage.
         RenderEnvironment Environment;
 
+        // SceneExtractor::ExtractPostProcess; not Present when the scene has none. Clear keeps the
+        // LUT path's storage.
+        RenderPostProcess PostProcess;
+
         // SceneExtractor::ExtractParticles, by entity then emitter.
         std::vector<ParticleEmitterInstance> ParticleEmitters;
 
@@ -196,6 +218,8 @@ namespace HX
             DebugLines.clear();
             Environment.Present = false;
             Environment.MapPath.clear();
+            PostProcess.Present = false;
+            PostProcess.ColorLutPath.clear();
             ParticleEmitters.clear();
         }
     };

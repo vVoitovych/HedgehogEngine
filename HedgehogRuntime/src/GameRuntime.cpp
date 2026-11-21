@@ -286,6 +286,7 @@ namespace Runtime
         m_Extractor.ExtractUi(engineContext.GetECS(), *engineContext.GetUiSystem(), region.PixelSize, m_RenderScene,
                               &engineContext.GetResourceCatalog().GetFontContainer());
         m_Extractor.ExtractEnvironment(engineContext.GetECS(), *engineContext.GetEnvironmentSystem(), m_RenderScene);
+        m_Extractor.ExtractPostProcess(engineContext.GetECS(), *engineContext.GetPostProcessSystem(), m_RenderScene);
         m_Extractor.ExtractTerrains(engineContext.GetECS(), *engineContext.GetTerrainSystem(), m_RenderScene,
                                     m_MeshBounds.GetBounds());
         m_Extractor.ExtractParticles(engineContext.GetECS(), *engineContext.GetParticleSystem(), m_RenderScene);

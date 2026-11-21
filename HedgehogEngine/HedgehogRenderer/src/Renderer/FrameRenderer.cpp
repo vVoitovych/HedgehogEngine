@@ -378,6 +378,24 @@ namespace Renderer
         frame.ShadowCascadeSplitLambda = shadowmap.GetCascadeSplitLambda();
         frame.Exposure                 = scene.Environment.Present ? scene.Environment.Exposure : 0.0f;
         frame.Environment              = m_Environment.GetForwardEnvironment();
+        const HX::RenderPostProcess& post = scene.PostProcess;
+        PostProcessSettings&         out  = frame.PostProcess;
+        if (post.Present)
+        {
+            out.Fxaa                 = post.Fxaa;
+            out.Ssao                 = post.SsaoEnabled;
+            out.SsaoRadius           = post.SsaoRadius;
+            out.SsaoIntensity        = post.SsaoIntensity;
+            out.SsaoBias             = post.SsaoBias;
+            out.Bloom                = post.BloomEnabled;
+            out.BloomIntensity       = post.BloomIntensity;
+            out.BloomThreshold       = post.BloomThreshold;
+            out.BloomKnee            = post.BloomKnee;
+            out.ColorLutPath         = post.ColorLutPath;
+            out.ColorLutContribution = post.ColorLutContribution;
+        }
+        else
+            out = PostProcessSettings{};
         m_SceneFrame = frame;
     }
 
