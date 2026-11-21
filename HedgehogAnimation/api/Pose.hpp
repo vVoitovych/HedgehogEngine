@@ -18,6 +18,11 @@ namespace HedgehogAnimation
     void SamplePose(const Skeleton& skeleton, const AnimationClip& clip, float time, bool loop,
                     std::vector<JointTransform>& outLocalPose);
 
+    // One joint of SamplePose's pose: its bind values with its tracks sampled at time. The bind
+    // pose's for a joint out of range.
+    [[nodiscard]] JointTransform SampleJoint(const Skeleton& skeleton, const AnimationClip& clip, uint32_t joint,
+                                             float time, bool loop);
+
     // Blends two local poses of one skeleton: weight 0 gives a, 1 gives b, exactly. Translation and
     // scale are lerped; rotations are nlerped the short way round (b negated when the two lie in
     // opposite hemispheres).

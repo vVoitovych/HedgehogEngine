@@ -2,6 +2,7 @@
 
 #include "AnimationClip.hpp"
 #include "AnimatorController.hpp"
+#include "RootMotion.hpp"
 #include "Skeleton.hpp"
 
 #include <array>
@@ -69,6 +70,12 @@ namespace HedgehogAnimation
     // weighted cycle, wrapped by its Loop or held at 1) and the fade by fadeDt; once the fade is
     // complete only the current clip is left.
     void AdvanceBlendStack(BlendStack& stack, float clipDt, float fadeDt);
+
+    // The same, and outRootMotion set to what rootJoint moved over the step: every entry's
+    // ExtractRootMotion (a tree's children each over their own times) folded in by its weight in the
+    // blend before the step.
+    void AdvanceBlendStack(BlendStack& stack, float clipDt, float fadeDt, const Skeleton& skeleton,
+                           const std::vector<AnimationClip>& clips, uint32_t rootJoint, RootMotionDelta& outRootMotion);
 
     // The clip playing now, or nullptr for an empty stack.
     [[nodiscard]] BlendEntry*       GetCurrentEntry(BlendStack& stack);

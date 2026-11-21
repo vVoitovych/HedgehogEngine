@@ -232,8 +232,10 @@ TEST_CASE("Pose evaluation allocates nothing once the buffers are sized")
                        0.75f, blended, model);
         ComputeSkinningPalette(model, skeleton.InverseBind, palette);
         SetEntryWeights(*GetCurrentEntry(stack), treeWeights);
-        AdvanceBlendStack(stack, 0.001f, 0.001f);
+        RootMotionDelta motion;
+        AdvanceBlendStack(stack, 0.001f, 0.001f, skeleton, clips, 1, motion);
         EvaluateBlendStack(stack, skeleton, clips, a, blended);
+        RemoveRootMotion(blended, 1, skeleton.BindPose);
     };
     evaluate(0.0f); // sizes the buffers
 

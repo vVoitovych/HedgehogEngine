@@ -81,6 +81,26 @@ namespace HedgehogAnimation
         }
     }
 
+    JointTransform SampleJoint(const Skeleton& skeleton, const AnimationClip& clip, uint32_t joint, float time, bool loop)
+    {
+        if (joint >= skeleton.BindPose.size())
+            return JointTransform{};
+        JointTransform result   = skeleton.BindPose[joint];
+        const float    clipTime = ClipTime(time, clip.Duration, loop);
+        for (const JointTrack& track : clip.Tracks)
+        {
+            if (track.Joint != joint)
+                continue;
+            if (IsUsable(track.Translation))
+                result.Translation = Sample(track.Translation, clipTime);
+            if (IsUsable(track.Rotation))
+                result.Rotation = Sample(track.Rotation, clipTime);
+            if (IsUsable(track.Scale))
+                result.Scale = Sample(track.Scale, clipTime);
+        }
+        return result;
+    }
+
     void BlendPoses(const std::vector<JointTransform>& a, const std::vector<JointTransform>& b, float weight,
                     std::vector<JointTransform>& outLocalPose)
     {
