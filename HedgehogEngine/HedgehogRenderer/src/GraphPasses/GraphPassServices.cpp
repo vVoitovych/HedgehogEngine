@@ -267,7 +267,8 @@ namespace Renderer
         });
 
         RHI::GraphicsPipelineDesc toneMapDesc = toneMapShader.Pipeline;
-        toneMapDesc.DescriptorSetLayouts   = { m_SampledTextureLayout.get() };
+        toneMapDesc.DescriptorSetLayouts   = { m_SampledTextureLayout.get(), m_SampledTextureLayout.get(),
+                                               m_SampledTextureLayout.get() };
         toneMapDesc.ColorAttachmentFormats = { COLOR_FORMAT };
         toneMapDesc.DepthAttachmentFormat  = RHI::Format::Undefined;
         m_ToneMapPipeline = device.CreateGraphicsPipeline(toneMapDesc);
@@ -312,6 +313,19 @@ namespace Renderer
         };
         m_SsaoPipeline     = createR8(HedgehogEngine::SSAO_SHADER, 1);
         m_SsaoBlurPipeline = createR8(HedgehogEngine::SSAO_BLUR_SHADER, 3);
+
+        // Bloom's chain in HDR, each step one sampled set.
+        const auto createHdrPost = [&](std::string_view path)
+        {
+            const ShaderPipelineDesc  shader = ShaderLoader::Load(device, std::string(path), fileSystem);
+            RHI::GraphicsPipelineDesc desc   = shader.Pipeline;
+            desc.DescriptorSetLayouts.assign(3, m_SampledTextureLayout.get());
+            desc.ColorAttachmentFormats = { HDR_FORMAT };
+            desc.DepthAttachmentFormat  = RHI::Format::Undefined;
+            return device.CreateGraphicsPipeline(desc);
+        };
+        m_BloomDownsamplePipeline = createHdrPost(HedgehogEngine::BLOOM_DOWNSAMPLE_SHADER);
+        m_BloomUpsamplePipeline   = createHdrPost(HedgehogEngine::BLOOM_UPSAMPLE_SHADER);
 
         // The particle compute shaders on one layout, so one set binds to each; set 1 is a sampled
         // texture, the depth the collision copy reads.
@@ -469,6 +483,8 @@ namespace Renderer
             case EnginePipeline::Fxaa:                                 return *m_FxaaPipeline;
             case EnginePipeline::Ssao:                                 return *m_SsaoPipeline;
             case EnginePipeline::SsaoBlur:                             return *m_SsaoBlurPipeline;
+            case EnginePipeline::BloomDownsample:                      return *m_BloomDownsamplePipeline;
+            case EnginePipeline::BloomUpsample:                        return *m_BloomUpsamplePipeline;
         }
         assert(false && "GraphPassServices::GetPipeline: unknown pipeline.");
         return *m_DepthPrepassPipeline;

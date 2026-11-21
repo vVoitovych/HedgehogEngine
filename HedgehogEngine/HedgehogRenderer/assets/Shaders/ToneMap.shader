@@ -1,4 +1,4 @@
-pipeline_layout: ../Pipelines/ToneMap.pl
+pipeline_layout: ../Pipelines/PostProcess.pl
 
 topology: triangle_list
 

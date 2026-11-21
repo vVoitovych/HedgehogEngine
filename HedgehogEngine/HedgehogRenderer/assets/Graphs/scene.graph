@@ -24,6 +24,9 @@ resources:
   - name: ldr
     format: R16G16B16A16Unorm
     size: RelativeToResult(1.0)
+  - name: bloom
+    format: R16G16B16A16Float
+    size: RelativeToResult(0.5)
   - name: selectionMask
     format: R8Unorm
     size: RelativeToResult(1.0)
@@ -69,10 +72,16 @@ passes:
     name: SelectionMask
     bindings:
       mask: selectionMask
+  - type: Bloom
+    name: Bloom
+    bindings:
+      hdr: hdr
+      bloom: bloom
   - type: ToneMap
     name: ToneMap
     bindings:
       hdr: hdr
+      bloom: bloom
       color: ldr
   - type: Fxaa
     name: Fxaa

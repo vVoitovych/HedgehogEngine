@@ -226,7 +226,7 @@ Scene:
           SsaoRadius: 0.5
           SsaoIntensity: 1
           SsaoBias: 0.025
-          BloomEnabled: false
+          BloomEnabled: true
           BloomIntensity: 0.05
           BloomThreshold: 1
           BloomKnee: 0.5

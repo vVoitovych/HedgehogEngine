@@ -424,5 +424,20 @@ the blur only clears `ao`), on a copy with a `PostProcessComponent` whose `SsaoE
 
 Under the 1 ms GPU target: 0.04 ms on, at half the view's size.
 
+### 2026-11-21 (HE-507) - bloom
+
+`benchmark.yaml`, Release, `--benchmark 600`, two runs each: off is the default (no component, so
+only the final pass clears `bloom`), on a copy with a `PostProcessComponent` whose `BloomEnabled` is
+true. GPU ms of the chain is the sum of its eleven rows (five downsamples, four upsamples and the
+final pass).
+
+| Row | Bloom off | Bloom on |
+|-----|-----------|----------|
+| Bloom chain GPU ms | 0.012, 0.012 | 0.055, 0.057 |
+| Bloom down 0 CPU / GPU ms | 0.001 / 0.001 | 0.006 / 0.011, 0.006 / 0.012 |
+| ToneMap GPU ms | 0.014, 0.014 | 0.013, 0.013 |
+| RenderFrame(total) GPU ms | 0.469, 0.469 | 0.511, 0.513 |
+| Frame(wall) | 2.204, 2.415 | 2.300, 2.364 |
+
 When a change intentionally alters performance, re-run the benchmark and update
 this table (keep the old row set; add a dated entry below it so history accumulates).

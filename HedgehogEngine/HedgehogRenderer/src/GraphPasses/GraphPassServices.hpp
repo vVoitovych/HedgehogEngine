@@ -56,7 +56,7 @@ namespace Renderer
         // Scene-light uploads one frame makes: one, by the shared phase, for every view.
         static constexpr uint32_t SCENE_LIGHTS_PER_FRAME = 1;
         // Sampled-texture sets one frame may make: a tone map and a skybox per view, for several views.
-        static constexpr uint32_t SAMPLED_TEXTURES_PER_FRAME = 16;
+        static constexpr uint32_t SAMPLED_TEXTURES_PER_FRAME = 64;
         // The joint palette's first capacity, in matrices; it grows on demand.
         static constexpr size_t MIN_PALETTE_CAPACITY = 256;
         // The game UI buffers' first capacities, in vertices and indices; they grow on demand.
@@ -229,6 +229,8 @@ namespace Renderer
         std::unique_ptr<RHI::IRHIPipeline> m_SelectionMaskSkinnedPipeline;
         std::unique_ptr<RHI::IRHIPipeline> m_SelectionOutlinePipeline;
         std::unique_ptr<RHI::IRHIPipeline> m_FxaaPipeline;
+        std::unique_ptr<RHI::IRHIPipeline> m_BloomDownsamplePipeline;
+        std::unique_ptr<RHI::IRHIPipeline> m_BloomUpsamplePipeline;
         std::unique_ptr<RHI::IRHIPipeline> m_SsaoPipeline;
         std::unique_ptr<RHI::IRHIPipeline> m_SsaoBlurPipeline;
 

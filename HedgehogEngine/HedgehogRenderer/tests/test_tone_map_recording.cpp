@@ -75,10 +75,12 @@ TEST_CASE("ToneMap - one pipeline, the sampled HDR set, the exposure and one ful
     RecordingCommandList cmd;
     RecordToneMap(&context, hdr, cmd);
 
-    CHECK(cmd.Commands == std::vector<std::string>{ "begin", "pipeline", "set 0", "push 16" });
+    // Without a bloom slot the HDR set stands in at set 1, and nothing is added.
+    CHECK(cmd.Commands == std::vector<std::string>{ "begin", "pipeline", "set 0", "set 1", "push 16" });
     CHECK(cmd.BoundPipelines == std::vector<const RHI::IRHIPipeline*>{ &services.GetPipeline(EnginePipeline::ToneMap) });
     CHECK(services.SampledTextures == std::vector<const RHI::IRHITexture*>{ &hdr.Texture });
-    CHECK(cmd.BoundSets == std::vector<const RHI::IRHIDescriptorSet*>{ &services.GetSampledTextureSet() });
+    CHECK(cmd.BoundSets == std::vector<const RHI::IRHIDescriptorSet*>{ &services.GetSampledTextureSet(),
+                                                                       &services.GetSampledTextureSet() });
     CHECK(cmd.DrawnVertexCounts == std::vector<uint32_t>{ 3 });
     CHECK(cmd.DrawnIndexCounts.empty());
     CHECK(PushedExposureScale(cmd) == 2.0f);
@@ -126,4 +128,51 @@ TEST_CASE("ToneMap - its slots, and nothing recorded without a frame context")
     RecordToneMap(nullptr, hdr, cmd);
     CHECK(cmd.Commands.empty());
     CHECK(cmd.DrawnVertexCounts.empty());
+}
+
+TEST_CASE("ToneMap - a bloom slot is sampled at set 1 and added times the frame's intensity when bloom is on")
+{
+    PassBuilderRegistry registry;
+    RegisterEnginePassTypes(registry);
+    CHECK(registry.Find("ToneMap")->OptionalSlots == std::vector<std::string>{ "bloom" });
+
+    for (const bool on : { true, false })
+    {
+        CAPTURE(on);
+        GraphFrameData frame;
+        frame.PostProcess.Bloom          = on;
+        frame.PostProcess.BloomIntensity = 0.25f;
+        FakeServices      services;
+        GraphFrameContext context{ &services, &frame };
+
+        TestDevice         device;
+        RenderGraphRuntime graph(device, 64 * 1024);
+        graph.SetFrameContext(&context);
+        HdrTexture      hdr;
+        HdrTexture      bloom;
+        PassInvocation  toneMap("ToneMap");
+        const RGTexture hdrHandle   = graph.ImportTexture("hdr", RHI::Format::R16G16B16A16Float, true);
+        const RGTexture bloomHandle = graph.ImportTexture("bloom", RHI::Format::R16G16B16A16Float, true);
+        graph.BindImportedTexture(hdrHandle, &hdr.Texture);
+        graph.BindImportedTexture(bloomHandle, &bloom.Texture);
+        toneMap.SetSlot("hdr", hdrHandle);
+        toneMap.SetSlot("bloom", bloomHandle);
+        toneMap.SetSlot("color", graph.CreateTexture({ "color", RHI::Format::R16G16B16A16Unorm,
+                                                       RGSizePolicy::MakeAbsolute(TARGET_SIZE, TARGET_SIZE),
+                                                       RHI::TextureUsage::ColorAttachment | RHI::TextureUsage::Sampled }));
+        registry.Find("ToneMap")->Build(graph, toneMap);
+        graph.BindOutput(graph.AddOutputSlot("color", RHI::Format::R16G16B16A16Unorm,
+                                             RGSizePolicy::MakeAbsolute(TARGET_SIZE, TARGET_SIZE)),
+                         toneMap.GetSlot("color"));
+        RecordingCommandList cmd;
+        REQUIRE(graph.Execute(cmd));
+
+        CHECK(services.SampledTextures == std::vector<const RHI::IRHITexture*>{ &hdr.Texture, &bloom.Texture });
+        REQUIRE(cmd.PushedData.size() == 1);
+        ToneMapPushConstants constants;
+        std::memcpy(&constants, cmd.PushedData[0].data(), sizeof(constants));
+        CHECK(constants.BloomIntensity == (on ? 0.25f : 0.0f));
+    }
+    CHECK(MakeToneMapPushConstants(0.0f, -1.0f).BloomIntensity == 0.0f);
+    CHECK(MakeToneMapPushConstants(0.0f, std::numeric_limits<float>::infinity()).BloomIntensity == 0.0f);
 }

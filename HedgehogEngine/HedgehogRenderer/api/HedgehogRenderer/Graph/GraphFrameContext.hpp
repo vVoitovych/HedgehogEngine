@@ -299,6 +299,8 @@ namespace Renderer
         Fxaa,                 // a fullscreen triangle, no depth (PostProcess.pl): the tone-mapped image at set 0
         Ssao,                 // a fullscreen triangle into R8 (Ssao.pl): the view's depth at set 0
         SsaoBlur,             // a fullscreen triangle into R8 (PostProcess.pl): the raw occlusion at set 0, depth at 1
+        BloomDownsample,      // a fullscreen triangle into HDR (PostProcess.pl): the level below at set 0
+        BloomUpsample,        // BloomDownsample's, added one to one onto the level above
     };
 
     // The particle compute shaders (ParticleCompute.pl), all on one layout.

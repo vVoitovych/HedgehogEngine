@@ -12,6 +12,7 @@
 
 #include "doctest/doctest/doctest.h"
 
+#include <array>
 #include <chrono>
 #include <string>
 #include <utility>
@@ -66,6 +67,7 @@ namespace
         const RGTexture depth       = Declare(graph, "depth", RHI::Format::D32Float, full);
         const RGTexture hdr         = Declare(graph, "hdr", RHI::Format::R16G16B16A16Float, full);
         const RGTexture ldr         = Declare(graph, "ldr", RHI::Format::R16G16B16A16Unorm, full);
+        RGTexture       bloom = Declare(graph, "bloom", RHI::Format::R16G16B16A16Float, RGSizePolicy::MakeRelativeToResult(0.5f));
         const RGTexture ao          = Declare(graph, "ao", RHI::Format::R8Unorm, RGSizePolicy::MakeRelativeToResult(0.5f));
         const RGTexture color       = Declare(graph, "color", RHI::Format::R16G16B16A16Unorm, full);
 
@@ -128,11 +130,39 @@ namespace
             },
             NO_EXECUTE);
 
+        // Bloom: five levels down from the radiance, back up, then into bloom.
+        std::array<RGTexture, 5> levels{};
+        float                    scale = 0.5f;
+        for (size_t i = 0; i < levels.size(); ++i, scale *= 0.5f)
+            levels[i] = graph.CreateTexture({ "Bloom level " + std::to_string(i), RHI::Format::R16G16B16A16Float,
+                                              RGSizePolicy::MakeRelativeToResult(scale),
+                                              RHI::TextureUsage::ColorAttachment | RHI::TextureUsage::Sampled });
+        const auto step = [&](const std::string& name, RGTexture source, RGTexture& target)
+        {
+            graph.AddPass<TargetData>(name,
+                [&](RGPassBuilder& pass, TargetData& data)
+                {
+                    pass.SampleTexture(source);
+                    target = data.Target = pass.ColorTarget(target);
+                },
+                NO_EXECUTE);
+        };
+        RGTexture source = particlesWritten;
+        for (size_t i = 0; i < levels.size(); ++i)
+        {
+            step("Bloom down " + std::to_string(i), source, levels[i]);
+            source = levels[i];
+        }
+        for (size_t i = levels.size() - 1; i > 0; --i)
+            step("Bloom up " + std::to_string(i - 1), levels[i], levels[i - 1]);
+        step("Bloom", levels[0], bloom);
+
         RGTexture ldrWritten;
         graph.AddPass<TargetData>("ToneMap",
             [&](RGPassBuilder& pass, TargetData& data)
             {
                 pass.SampleTexture(particlesWritten);
+                pass.SampleTexture(bloom);
                 ldrWritten = data.Target = pass.ColorTarget(ldr);
             },
             NO_EXECUTE);
@@ -302,6 +332,7 @@ TEST_CASE("Oracle: each shipped graph compiles to the same plan as its hand-writ
         const size_t blended = twin->find("pass ForwardTransparent");
         const size_t particles = twin->find("pass Particles");
         const size_t toneMap = twin->find("pass ToneMap");
+        const size_t bloom   = twin->find("pass Bloom\n");
         const size_t fxaa    = twin->find("pass Fxaa");
         REQUIRE(skybox != std::string::npos);
         REQUIRE(toneMap != std::string::npos);
@@ -312,6 +343,9 @@ TEST_CASE("Oracle: each shipped graph compiles to the same plan as its hand-writ
         CHECK(skybox < blended);
         CHECK(blended < particles);
         CHECK(particles < toneMap);
+        REQUIRE(bloom != std::string::npos);
+        CHECK(particles < bloom);
+        CHECK(bloom < toneMap);
         CHECK(toneMap < fxaa);
         CHECK(fxaa < twin->find(overlay));
     }
