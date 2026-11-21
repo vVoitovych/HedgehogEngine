@@ -2,6 +2,7 @@
 
 #include "HedgehogAnimation/api/BlendStack.hpp"
 #include "HedgehogAnimation/api/Pose.hpp"
+#include "HedgehogAnimation/api/TwoBoneIk.hpp"
 
 #include "ContentLoader/api/LoadedAnimation.hpp"
 #include "ContentLoader/api/LoadedData.hpp"
@@ -226,6 +227,9 @@ TEST_CASE("Pose evaluation allocates nothing once the buffers are sized")
         SamplePose(skeleton, clip, time + 0.7f, true, b);
         BlendPoses(a, b, 0.25f, blended);
         ComputeModelPose(skeleton, blended, model);
+        // A two-bone IK pass on the hand (with a pole) before skinning, as an animator's would be.
+        SolveTwoBoneIk(skeleton, TwoBoneChain{ 0, 1, 2 }, HM::Vector3(0.5f, 1.5f, time), HM::Vector3(1.0f, 0.0f, 1.0f),
+                       0.75f, blended, model);
         ComputeSkinningPalette(model, skeleton.InverseBind, palette);
         SetEntryWeights(*GetCurrentEntry(stack), treeWeights);
         AdvanceBlendStack(stack, 0.001f, 0.001f);
