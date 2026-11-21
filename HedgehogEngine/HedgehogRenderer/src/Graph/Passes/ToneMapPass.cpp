@@ -6,6 +6,7 @@
 #include "RHI/api/IRHITexture.hpp"
 
 #include <cmath>
+#include <optional>
 
 namespace Renderer
 {
@@ -18,6 +19,7 @@ namespace Renderer
         {
             RGTexture                Hdr{};
             RGTexture                Color{};
+            std::optional<RGTexture> Bloom;
             RenderGraphRuntime*      Graph   = nullptr;
             const GraphFrameContext* Context = nullptr;
         };
@@ -29,6 +31,8 @@ namespace Renderer
             IGraphPassServices&           services = *data.Context->Services;
             const RHI::IRHIPipeline&      pipeline = services.GetPipeline(EnginePipeline::ToneMap);
             const RHI::IRHIDescriptorSet& hdr      = services.AllocateSampledTexture(*data.Graph->GetTexture(data.Hdr));
+            const RHI::IRHIDescriptorSet& bloom =
+                data.Bloom ? services.AllocateSampledTexture(*data.Graph->GetTexture(*data.Bloom)) : hdr;
             RHI::IRHITexture&             color    = *data.Graph->GetTexture(data.Color);
 
             RHI::RenderingAttachment colorAttachment;
@@ -47,7 +51,10 @@ namespace Renderer
                               0.0f, 1.0f });
             cmd.SetScissor({ 0, 0, color.GetWidth(), color.GetHeight() });
             cmd.BindDescriptorSet(pipeline, 0, hdr);
-            const ToneMapPushConstants constants = MakeToneMapPushConstants(data.Context->Frame->Exposure);
+            cmd.BindDescriptorSet(pipeline, 1, bloom);
+            const PostProcessSettings& post      = data.Context->Frame->PostProcess;
+            const ToneMapPushConstants constants = MakeToneMapPushConstants(
+                data.Context->Frame->Exposure, data.Bloom && post.Bloom ? post.BloomIntensity : 0.0f);
             cmd.PushConstants(pipeline, RHI::ShaderStage::Fragment, 0, sizeof(constants), &constants);
             cmd.Draw(FULLSCREEN_TRIANGLE_VERTICES, 1, 0, 0);
             cmd.EndRendering();
@@ -60,6 +67,9 @@ namespace Renderer
                 {
                     data.Hdr = invocation.GetSlot("hdr");
                     pass.SampleTexture(data.Hdr);
+                    data.Bloom = invocation.FindSlot("bloom");
+                    if (data.Bloom)
+                        pass.SampleTexture(*data.Bloom);
                     data.Color   = pass.ColorTarget(invocation.GetSlot("color"));
                     data.Graph   = &graph;
                     data.Context = graph.GetFrameContext();
@@ -69,16 +79,18 @@ namespace Renderer
         }
     }
 
-    ToneMapPushConstants MakeToneMapPushConstants(float exposureEv)
+    ToneMapPushConstants MakeToneMapPushConstants(float exposureEv, float bloomIntensity)
     {
         ToneMapPushConstants constants;
         if (std::isfinite(exposureEv))
             constants.ExposureScale = std::exp2(exposureEv);
+        if (std::isfinite(bloomIntensity) && bloomIntensity > 0.0f)
+            constants.BloomIntensity = bloomIntensity;
         return constants;
     }
 
     PassTypeInfo GetToneMapPassType()
     {
-        return { { "hdr", "color" }, {}, &BuildToneMap };
+        return { { "hdr", "color" }, {}, &BuildToneMap, { "bloom" } };
     }
 }

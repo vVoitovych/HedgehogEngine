@@ -24,6 +24,9 @@ resources:
   - name: ldr
     format: R16G16B16A16Unorm
     size: RelativeToResult(1.0)
+  - name: bloom
+    format: R16G16B16A16Float
+    size: RelativeToResult(0.5)
 imports:
   - name: shadowAtlas
     format: D32Float
@@ -62,10 +65,16 @@ passes:
     bindings:
       color: hdr
       depth: depth
+  - type: Bloom
+    name: Bloom
+    bindings:
+      hdr: hdr
+      bloom: bloom
   - type: ToneMap
     name: ToneMap
     bindings:
       hdr: hdr
+      bloom: bloom
       color: ldr
   - type: Fxaa
     name: Fxaa

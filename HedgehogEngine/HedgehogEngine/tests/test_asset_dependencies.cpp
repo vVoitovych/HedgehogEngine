@@ -211,7 +211,7 @@ TEST_CASE("Asset dependencies - a fixture scene's closure is exactly its meshes,
              "Shaders/GameUi.shader", "Shaders/ToneMap.shader", "Shaders/Skybox.shader",
              "Pipelines/DepthPrepass.pl", "Pipelines/DepthPrepassSkinned.pl", "Pipelines/ShadowmapPass.pl",
              "Pipelines/GraphForward.pl", "Pipelines/GraphForwardSkinned.pl", "Pipelines/GameUi.pl",
-             "Pipelines/ToneMap.pl", "Pipelines/Skybox.pl",
+             "Pipelines/Skybox.pl",
              "VertexDescriptions/PositionOnly.vdes", "VertexDescriptions/SkinnedPositionOnly.vdes",
              "VertexDescriptions/FullMesh.vdes", "VertexDescriptions/SkinnedFullMesh.vdes", "VertexDescriptions/Ui.vdes",
              "Shaders/DepthPrepass/Base.vert.spv", "Shaders/DepthPrepass/Skinned.vert.spv",
@@ -221,6 +221,9 @@ TEST_CASE("Asset dependencies - a fixture scene's closure is exactly its meshes,
              "Shaders/Skybox/Sky.vert.spv", "Shaders/Skybox/Sky.frag.spv",
              // The anti-aliasing pass.
              "Shaders/Fxaa.shader", "Pipelines/PostProcess.pl", "Shaders/Fxaa/Fxaa.frag.spv",
+             // The bloom chain.
+             "Shaders/BloomDownsample.shader", "Shaders/BloomUpsample.shader", "Shaders/Bloom/Downsample.frag.spv",
+             "Shaders/Bloom/Upsample.frag.spv",
              // The ambient occlusion pass.
              "Shaders/Ssao.shader", "Shaders/SsaoBlur.shader", "Pipelines/Ssao.pl", "Shaders/Ssao/Ssao.frag.spv",
              "Shaders/Ssao/Blur.frag.spv",

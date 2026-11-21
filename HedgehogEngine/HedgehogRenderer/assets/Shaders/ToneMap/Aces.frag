@@ -1,12 +1,15 @@
 #version 450
 
-// Tone maps the view's HDR radiance: scaled by the exposure (2^EV), then Krzysztof Narkowicz's fit
-// of the ACES filmic curve. The result stays linear: the swapchain encodes sRGB.
+// Tone maps the view's HDR radiance: the bloom added (times its intensity, 0 without one), scaled
+// by the exposure (2^EV), then Krzysztof Narkowicz's fit of the ACES filmic curve. The result stays
+// linear: the swapchain encodes sRGB.
 layout(set = 0, binding = 0) uniform sampler2D hdrTexture;
+layout(set = 1, binding = 0) uniform sampler2D bloomTexture;
 
 layout(push_constant) uniform ToneMapConstants
 {
     float exposureScale;
+    float bloomIntensity;
 } constants;
 
 layout(location = 0) in vec2 inUv;
@@ -25,6 +28,9 @@ vec3 AcesFilmic(vec3 x)
 
 void main()
 {
-    const vec3 radiance = max(texture(hdrTexture, inUv).rgb, vec3(0.0f)) * constants.exposureScale;
+    vec3 radiance = max(texture(hdrTexture, inUv).rgb, vec3(0.0f));
+    if (constants.bloomIntensity > 0.0f)
+        radiance += max(texture(bloomTexture, inUv).rgb, vec3(0.0f)) * constants.bloomIntensity;
+    radiance *= constants.exposureScale;
     outColor = vec4(AcesFilmic(radiance), 1.0f);
 }
