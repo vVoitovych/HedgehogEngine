@@ -6,7 +6,8 @@
 # Set 3: per forward pass, the sun's shadow: the shadow uniform (Renderer::ShadowUniform) and the
 #        shadow atlas, read through a comparison sampler (Common/Shadows.glsl); then the scene's
 #        image-based lighting: the environment uniform (Renderer::EnvironmentUniform), the
-#        prefiltered radiance cube and the split-sum BRDF table (Common/Pbr.glsl).
+#        prefiltered radiance cube and the split-sum BRDF table (Common/Pbr.glsl), and the
+#        screen-space ambient occlusion (white without SSAO).
 descriptor_sets:
   - bindings:
       - binding: 0
@@ -77,6 +78,10 @@ descriptor_sets:
         stage: fragment
         count: 1
       - binding: 4
+        type: combined_image_sampler
+        stage: fragment
+        count: 1
+      - binding: 5
         type: combined_image_sampler
         stage: fragment
         count: 1

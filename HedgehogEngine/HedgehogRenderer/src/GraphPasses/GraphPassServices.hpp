@@ -92,7 +92,8 @@ namespace Renderer
         const RHI::IRHIDescriptorSet& AllocateSampledTexture(const RHI::IRHITexture& texture) override;
         const RHI::IRHIDescriptorSet& AllocateForwardLighting(const ShadowUniform& shadow,
                                                               const RHI::IRHITexture& shadowAtlas,
-                                                              const ForwardEnvironment& environment) override;
+                                                              const ForwardEnvironment& environment,
+                                                      const RHI::IRHITexture* occlusion) override;
         const RHI::IRHIPipeline&      GetComputePipeline(EngineComputePipeline pipeline) const override;
         const RHI::IRHIDescriptorSet& AllocateParticleSet(const ParticleFrameData& particles) override;
         const RHI::IRHIDescriptorSet* GetParticleSet() const override { return m_ParticleSetThisFrame; }
@@ -153,6 +154,7 @@ namespace Renderer
         // radiance cube and the BRDF table (the textures written as handed out).
         UniformRing                       m_LightingRing;
         std::unique_ptr<RHI::IRHISampler> m_ShadowSampler; // comparison, linear, clamped
+        std::unique_ptr<RHI::IRHITexture> m_WhiteOcclusion; // 1x1 R8, the forward lighting's ambient occlusion without SSAO
 
         // Per frame in flight, SAMPLED_TEXTURES_PER_FRAME sets of one combined image sampler (the
         // ToneMap shader's set 0), rewritten as they are handed out, and the sampler they use.

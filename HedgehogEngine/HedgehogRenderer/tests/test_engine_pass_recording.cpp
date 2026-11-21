@@ -190,9 +190,11 @@ TEST_CASE("The forward pass records lit draws into its colour target against the
                                              instance(9, 0) };
     FakeDescriptorSet sceneLights;
 
+    TestTexture    occlusion{ RHI::TextureDesc{ 4, 4, RHI::Format::R8Unorm, RHI::TextureUsage::Sampled } };
     GraphFrameData frame = MakeFrame(1);
-    frame.OpaqueInstances = instances;
-    frame.SceneLights     = &sceneLights;
+    frame.OpaqueInstances  = instances;
+    frame.SceneLights      = &sceneLights;
+    frame.AmbientOcclusion = &occlusion;
     frame.Meshes          = meshes;
     frame.MaterialSets    = materials;
     frame.Positions       = &positions;
@@ -252,6 +254,10 @@ TEST_CASE("The forward pass records lit draws into its colour target against the
     CHECK(services.LightingAtlases[0] == cmd.Renderings[1].DepthAttachment->Texture);
     CHECK(services.LightingUploads[0].CascadeCount == 0);
     CHECK(services.LightingUploads[0].LightIndex == -1);
+    // The frame's ambient occlusion beside them, and the view's size for its screen UV.
+    CHECK(services.LightingOcclusion == std::vector<const RHI::IRHITexture*>{ &occlusion });
+    CHECK(MakeForwardViewUniform(frame, 640, 320).InverseViewport == HM::Vector4(1.0f / 640, 1.0f / 320, 0.0f, 0.0f));
+    CHECK(MakeForwardViewUniform(frame).InverseViewport == HM::Vector4(0.0f, 0.0f, 0.0f, 0.0f));
     // Without an environment in the frame, one that adds no ambient light, and no textures.
     REQUIRE(services.EnvironmentUploads.size() == 1);
     CHECK(services.EnvironmentUploads[0].Uniform.Intensity == 0.0f);

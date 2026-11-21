@@ -122,6 +122,7 @@ TEST_CASE("ForwardTransparent - blends its instances over the HDR target in orde
     GraphFrameData frame              = scene.MakeFrame();
     frame.TransparentInstances        = rigid;
     frame.SkinnedTransparentInstances = skinned;
+    frame.AmbientOcclusion            = &scene.Hdr; // a stand-in: ForwardTransparent never uses it
     // Opaque and Cutoff instances are Forward's, never this pass's.
     frame.OpaqueInstances = rigid;
     frame.CutoffInstances = rigid;
@@ -158,6 +159,8 @@ TEST_CASE("ForwardTransparent - blends its instances over the HDR target in orde
     // Lit as Forward lights: the shadow atlas beside the frame's environment at set 3.
     REQUIRE(services.LightingAtlases.size() == 1);
     CHECK(services.LightingAtlases[0] == &scene.Atlas);
+    // Transparent surfaces have no prepass depth: white ambient occlusion, whatever the frame has.
+    CHECK(services.LightingOcclusion == std::vector<const RHI::IRHITexture*>{ nullptr });
     CHECK(std::count(cmd.BoundSets.begin(), cmd.BoundSets.end(), &scene.Palette) == 1);
 }
 

@@ -115,9 +115,10 @@ namespace Renderer
         }
 
         // Set 3: the sun's shadow (the frame's uniform, unshadowed without a shadow view) and the
-        // atlas, then the environment's image-based lighting.
+        // atlas, then the environment's image-based lighting and the view's ambient occlusion (white
+        // when occlusion is null).
         const RHI::IRHIDescriptorSet& AllocateLighting(const ForwardPassData& data, IGraphPassServices& services,
-                                                       const GraphFrameData& frame)
+                                                       const GraphFrameData& frame, const RHI::IRHITexture* occlusion)
         {
             ShadowUniform        unshadowed;
             const ShadowUniform* shadow = frame.Shadow;
@@ -126,7 +127,8 @@ namespace Renderer
                 unshadowed = MakeUnshadowedUniform();
                 shadow     = &unshadowed;
             }
-            return services.AllocateForwardLighting(*shadow, *data.Graph->GetTexture(data.ShadowMap), frame.Environment);
+            return services.AllocateForwardLighting(*shadow, *data.Graph->GetTexture(data.ShadowMap), frame.Environment,
+                                                    occlusion);
         }
 
         void RecordForward(ForwardPassData& data, RHI::IRHICommandList& cmd)
@@ -154,14 +156,15 @@ namespace Renderer
             }
             cmd.BindVertexBuffers(0, { frame.Positions, frame.TexCoords, frame.Normals, frame.Tangents }, { 0, 0, 0, 0 });
             cmd.BindIndexBuffer(*frame.Indices, RHI::IndexType::Uint32);
-            const RHI::IRHIDescriptorSet& view = services.AllocateForwardViewUniform(MakeForwardViewUniform(frame));
+            const RHI::IRHIDescriptorSet& view =
+                services.AllocateForwardViewUniform(MakeForwardViewUniform(frame, color.GetWidth(), color.GetHeight()));
             cmd.BindDescriptorSet(pipeline, 0, view);
             assert(frame.SceneLights && "Forward: the shared phase has not uploaded the scene lights.");
             if (frame.SceneLights)
                 cmd.BindDescriptorSet(pipeline, 2, *frame.SceneLights);
             // The sun's shadow: the frame's shadow uniform (unshadowed without a shadow view) and the
-            // atlas; then the environment's image-based lighting.
-            const RHI::IRHIDescriptorSet& lighting = AllocateLighting(data, services, frame);
+            // atlas; then the environment's image-based lighting and the view's ambient occlusion.
+            const RHI::IRHIDescriptorSet& lighting = AllocateLighting(data, services, frame, frame.AmbientOcclusion);
             cmd.BindDescriptorSet(pipeline, 3, lighting);
             DrawLitInstances(cmd, lit, frame, frame.OpaqueInstances, false, "Opaque");
             DrawLitInstances(cmd, lit, frame, frame.CutoffInstances, false, "Cutoff");
@@ -259,8 +262,10 @@ namespace Renderer
             cmd.SetViewport({ 0.0f, 0.0f, static_cast<float>(color.GetWidth()),
                               static_cast<float>(color.GetHeight()), 0.0f, 1.0f });
             cmd.SetScissor({ 0, 0, color.GetWidth(), color.GetHeight() });
-            const RHI::IRHIDescriptorSet& view     = services.AllocateForwardViewUniform(MakeForwardViewUniform(frame));
-            const RHI::IRHIDescriptorSet& lighting = AllocateLighting(data, services, frame);
+            const RHI::IRHIDescriptorSet& view =
+                services.AllocateForwardViewUniform(MakeForwardViewUniform(frame, color.GetWidth(), color.GetHeight()));
+            // Transparent surfaces have no prepass depth, so no screen-space occlusion: white.
+            const RHI::IRHIDescriptorSet& lighting = AllocateLighting(data, services, frame, nullptr);
             if (rigid)
             {
                 cmd.BindVertexBuffers(0, { frame.Positions, frame.TexCoords, frame.Normals, frame.Tangents }, { 0, 0, 0, 0 });

@@ -59,6 +59,10 @@ descriptor_sets:
         type: combined_image_sampler
         stage: fragment
         count: 1
+      - binding: 5
+        type: combined_image_sampler
+        stage: fragment
+        count: 1
   - bindings:
       - binding: 0
         type: storage_buffer

@@ -203,6 +203,10 @@ namespace Renderer
         // the baked RenderScene::Environment, or the black fallback without one (no ambient light).
         ForwardEnvironment Environment;
 
+        // The view's screen-space ambient occlusion (R, 1 unoccluded), which the Forward pass multiplies
+        // into the ambient light; null for none, which binds white.
+        const RHI::IRHITexture* AmbientOcclusion = nullptr;
+
         // The frame's particles (the shared phase's ParticleFrameData) and its buffers in the graph;
         // null without particles, and the Particles pass then draws nothing.
         const ParticleFrameData* Particles = nullptr;
@@ -227,6 +231,8 @@ namespace Renderer
         alignas(16) HM::Matrix4x4 View;
         alignas(16) HM::Matrix4x4 ViewProj;
         alignas(16) HM::Vector3   EyePosition;
+        // 1 / the view's width and height in x and y, turning gl_FragCoord into a screen UV.
+        alignas(16) HM::Vector4   InverseViewport = HM::Vector4(0.0f, 0.0f, 0.0f, 0.0f);
     };
 
     struct SceneLightsUniform
@@ -236,7 +242,8 @@ namespace Renderer
     };
 
     // Packs one view's camera into the forward shader's set 0.
-    [[nodiscard]] ForwardViewUniform MakeForwardViewUniform(const GraphFrameData& frame);
+    [[nodiscard]] ForwardViewUniform MakeForwardViewUniform(const GraphFrameData& frame, uint32_t viewportWidth = 0,
+                                                            uint32_t viewportHeight = 0);
 
     // Packs the frame's lights into the forward shader's set 2. Lights past MAX_LIGHTS_COUNT are
     // dropped, as the legacy forward pass did.
@@ -373,11 +380,13 @@ namespace Renderer
         virtual const RHI::IRHIDescriptorSet& AllocateSceneLightsUniform(const SceneLightsUniform& uniform) = 0;
 
         // The forward pass's set 3: the shadow uniform and the shadow atlas, read through a comparison
-        // sampler, then the environment's uniform, prefiltered radiance cube and BRDF table. One
-        // allocation per forward pass per frame, from its own per-frame ring.
+        // sampler, then the environment's uniform, prefiltered radiance cube and BRDF table, then the
+        // screen-space ambient occlusion (a 1x1 white texture when null). One allocation per forward
+        // pass per frame, from its own per-frame ring.
         virtual const RHI::IRHIDescriptorSet& AllocateForwardLighting(const ShadowUniform& shadow,
                                                                       const RHI::IRHITexture& shadowAtlas,
-                                                                      const ForwardEnvironment& environment) = 0;
+                                                                      const ForwardEnvironment& environment,
+                                                                      const RHI::IRHITexture* occlusion) = 0;
 
         // A descriptor set (set 0, binding 0) sampling texture linearly, clamped to its edge, valid
         // until this frame slot comes round again: for a texture only known at execute time, as a

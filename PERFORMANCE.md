@@ -398,5 +398,17 @@ is the default (no `PostProcessComponent`, so FXAA on); off is the same scene wi
 
 The pass adds about 0.045 ms of GPU time on, 0.013 off; the wall times are within the run-to-run spread.
 
+### 2026-11-20 (HE-505) - an ambient occlusion binding in the forward lighting set
+
+`benchmark.yaml`, Release, `--benchmark 600`, two runs. Every view binds the 1x1 white texture.
+
+| Row | Before (HE-504's FXAA on) | After |
+|-----|---------------------------|-------|
+| RenderFrame(total) GPU ms | 0.449, 0.447 | 0.451, 0.447 |
+| Forward CPU / GPU ms | | 0.015 / 0.066, 0.017 / 0.066 |
+| Frame(wall) | 2.411, 2.416 | 2.442, 2.418 |
+
+Within noise.
+
 When a change intentionally alters performance, re-run the benchmark and update
 this table (keep the old row set; add a dated entry below it so history accumulates).
