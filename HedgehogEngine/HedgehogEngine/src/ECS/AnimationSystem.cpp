@@ -3,6 +3,7 @@
 #include "HedgehogEngine/api/Containers/Mesh.hpp"
 #include "HedgehogEngine/api/Containers/MeshContainer.hpp"
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
 #include "HedgehogEngine/api/Events/AnimationEvents.hpp"
 #include "HedgehogEngine/api/Events/EventBus.hpp"
 #include "HedgehogEngine/api/Resource/ResourceCatalog.hpp"
@@ -10,6 +11,7 @@
 #include "HedgehogAnimation/api/BlendStack.hpp"
 #include "HedgehogAnimation/api/BlendTree.hpp"
 #include "HedgehogAnimation/api/Pose.hpp"
+#include "HedgehogAnimation/api/TwoBoneIk.hpp"
 
 #include "FileSystem/api/FileSystemManager.hpp"
 #include "Logger/api/Logger.hpp"
@@ -179,7 +181,10 @@ namespace HedgehogEngine
             }
             if (playing)
                 PublishFinished(animator, *clips, entity, bus);
-            Evaluate(animator, *loaded->GetSkeleton(), *clips, entity);
+            const HM::Matrix4x4 world = ecs.HasComponent<TransformComponent>(entity)
+                                            ? ecs.GetComponent<TransformComponent>(entity).ObjMatrix
+                                            : HM::Matrix4x4::GetIdentity();
+            Evaluate(animator, *loaded->GetSkeleton(), *clips, entity, world);
         }
     }
 
@@ -368,8 +373,69 @@ namespace HedgehogEngine
         HedgehogAnimation::EvaluateBlendStack(stack, skeleton, clips, m_Scratch, outPose);
     }
 
+    bool AnimationSystem::SetIkGoal(ECS::ECS& ecs, ECS::Entity entity, const std::string& joint, const HM::Vector3& target,
+                                    float weight, const std::optional<HM::Vector3>& pole)
+    {
+        const auto finite = [](const HM::Vector3& v) { return std::isfinite(v.x()) && std::isfinite(v.y()) && std::isfinite(v.z()); };
+        if (!ecs.HasComponent<AnimatorComponent>(entity) || joint.empty() || !(weight >= 0.0f && weight <= 1.0f) ||
+            !finite(target) || (pole && !finite(*pole)))
+            return false;
+        std::vector<AnimatorIkGoal>& goals = ecs.GetComponent<AnimatorComponent>(entity).IkGoals;
+        const auto found = std::find_if(goals.begin(), goals.end(), [&](const AnimatorIkGoal& goal) { return goal.Joint == joint; });
+        if (found != goals.end())
+        {
+            found->Target = target;
+            found->Weight = weight;
+            found->Pole   = pole;
+            return true;
+        }
+        if (goals.size() >= MAX_IK_GOALS)
+            return false;
+        goals.push_back(AnimatorIkGoal{ joint, target, weight, pole });
+        return true;
+    }
+
+    bool AnimationSystem::ClearIkGoal(ECS::ECS& ecs, ECS::Entity entity, const std::string& joint)
+    {
+        if (!ecs.HasComponent<AnimatorComponent>(entity))
+            return false;
+        return std::erase_if(ecs.GetComponent<AnimatorComponent>(entity).IkGoals,
+                             [&](const AnimatorIkGoal& goal) { return goal.Joint == joint; }) > 0;
+    }
+
+    void AnimationSystem::ApplyIkGoals(AnimatorComponent& animator, const HedgehogAnimation::Skeleton& skeleton,
+                                       ECS::Entity entity, const HM::Matrix4x4& world)
+    {
+        const HM::Matrix4x4 toMesh  = world.Inverse();
+        const auto          inMesh  = [&](const HM::Vector3& point)
+        {
+            const HM::Vector4 local = toMesh * HM::Vector4(point.x(), point.y(), point.z(), 1.0f);
+            return HM::Vector3(local.x(), local.y(), local.z());
+        };
+        for (AnimatorIkGoal& goal : animator.IkGoals)
+        {
+            const auto joint = std::find(skeleton.JointNames.begin(), skeleton.JointNames.end(), goal.Joint);
+            const std::optional<HedgehogAnimation::TwoBoneChain> chain =
+                joint == skeleton.JointNames.end()
+                    ? std::nullopt
+                    : HedgehogAnimation::FindTwoBoneChain(skeleton,
+                                                          static_cast<uint32_t>(joint - skeleton.JointNames.begin()));
+            if (!chain)
+            {
+                if (!goal.Warned)
+                    LOGWARNING("[Animation] Entity " + std::to_string(entity) + "'s IK goal names joint '" + goal.Joint +
+                               "', which its skeleton lacks or which has fewer than two ancestors; it is skipped.");
+                goal.Warned = true;
+                continue;
+            }
+            const std::optional<HM::Vector3> pole = goal.Pole ? std::optional(inMesh(*goal.Pole)) : std::nullopt;
+            HedgehogAnimation::SolveTwoBoneIk(skeleton, *chain, inMesh(goal.Target), pole, goal.Weight, m_Pose, m_ModelPose);
+        }
+    }
+
     void AnimationSystem::Evaluate(AnimatorComponent& animator, const HedgehogAnimation::Skeleton& skeleton,
-                                   const std::vector<HedgehogAnimation::AnimationClip>& clips, ECS::Entity entity)
+                                   const std::vector<HedgehogAnimation::AnimationClip>& clips, ECS::Entity entity,
+                                   const HM::Matrix4x4& world)
     {
         if (animator.Started)
         {
@@ -380,7 +446,8 @@ namespace HedgehogEngine
         {
             // In Edit the Clip field (with a controller, its default state's clip) at the preview
             // time, if one is set, else the bind pose.
-            const HedgehogAnimation::AnimationClip* clip = nullptr;
+            const HedgehogAnimation::AnimationClip* clip          = nullptr;
+            bool                                    previewedTree = false;
             if (animator.PreviewTime)
             {
                 std::string name = animator.Clip;
@@ -390,11 +457,11 @@ namespace HedgehogEngine
                     if (state.Motion != HedgehogAnimation::StateMotion::Clip)
                     {
                         PreviewBlendTree(*controller, state, skeleton, clips, *animator.PreviewTime, m_Pose);
-                        HedgehogAnimation::ComputeModelPose(skeleton, m_Pose, m_ModelPose);
-                        HedgehogAnimation::ComputeSkinningPalette(m_ModelPose, skeleton.InverseBind, animator.Palette);
-                        return;
+                        previewedTree = true;
+                        name.clear();
                     }
-                    name = state.Clip;
+                    else
+                        name = state.Clip;
                 }
                 if (!name.empty())
                 {
@@ -405,11 +472,13 @@ namespace HedgehogEngine
             }
             if (clip)
                 HedgehogAnimation::SamplePose(skeleton, *clip, *animator.PreviewTime, animator.Loop, m_Pose);
-            else
+            else if (!previewedTree)
                 m_Pose.assign(skeleton.BindPose.begin(), skeleton.BindPose.end());
         }
 
         HedgehogAnimation::ComputeModelPose(skeleton, m_Pose, m_ModelPose);
+        if (!animator.IkGoals.empty())
+            ApplyIkGoals(animator, skeleton, entity, world);
         HedgehogAnimation::ComputeSkinningPalette(m_ModelPose, skeleton.InverseBind, animator.Palette);
     }
 }

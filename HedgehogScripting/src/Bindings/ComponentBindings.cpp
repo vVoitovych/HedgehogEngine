@@ -193,6 +193,40 @@ namespace HedgehogScripting::Bindings
                     (void)Resolve(ecs, ref);
                     animations.Stop(ecs, ref.Entity.Id);
                 },
+                // setIkGoal(joint, target, weight?, pole?): the named joint (with two ancestors)
+                // reaches target (a world-space Vector3) after each evaluation, blended by weight (1
+                // when left out, 0 to 1), bending towards pole when given; again replaces it, and at
+                // most four joints have one. clearIkGoal(joint) removes it.
+                "setIkGoal", [&ecs, &animations](const AnimatorRef& ref, const std::string& joint, sol::object target,
+                                                 std::optional<float> weight, sol::object pole)
+                {
+                    (void)Resolve(ecs, ref);
+                    const auto vector = [](const sol::object& value, const char* what) -> HM::Vector3
+                    {
+                        if (!value.is<HM::Vector3>())
+                            throw std::runtime_error(std::string("an IK goal's ") + what + " must be a Vector3");
+                        const HM::Vector3 v = value.as<HM::Vector3>();
+                        if (!std::isfinite(v.x()) || !std::isfinite(v.y()) || !std::isfinite(v.z()))
+                            throw std::runtime_error(std::string("an IK goal's ") + what + " must be finite");
+                        return v;
+                    };
+                    const HM::Vector3 goal = vector(target, "target");
+                    const float       blend = weight.value_or(1.0f);
+                    if (!(blend >= 0.0f && blend <= 1.0f))
+                        throw std::runtime_error("an IK goal's weight must be 0 to 1");
+                    std::optional<HM::Vector3> towards;
+                    if (pole.valid() && pole.get_type() != sol::type::lua_nil)
+                        towards = vector(pole, "pole");
+                    if (!animations.SetIkGoal(ecs, ref.Entity.Id, joint, goal, blend, towards))
+                        throw std::runtime_error("the animator has IK goals on " +
+                                                 std::to_string(HedgehogEngine::AnimationSystem::MAX_IK_GOALS) +
+                                                 " joints already, or no joint was named");
+                },
+                "clearIkGoal", [&ecs, &animations](const AnimatorRef& ref, const std::string& joint)
+                {
+                    (void)Resolve(ecs, ref);
+                    return animations.ClearIkGoal(ecs, ref.Entity.Id, joint);
+                },
                 // False once a non-looping clip has reached its end.
                 "isPlaying", [&ecs](const AnimatorRef& ref)
                 {
