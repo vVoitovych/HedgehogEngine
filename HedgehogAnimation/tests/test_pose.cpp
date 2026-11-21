@@ -6,6 +6,7 @@
 #include "ContentLoader/api/LoadedAnimation.hpp"
 #include "ContentLoader/api/LoadedData.hpp"
 
+#include <array>
 #include <atomic>
 #include <cmath>
 #include <cstdlib>
@@ -214,6 +215,10 @@ TEST_CASE("Pose evaluation allocates nothing once the buffers are sized")
     PushClip(stack, 1, 1.5f, false, 1.0f);
     AdvanceBlendStack(stack, 0.3f, 0.3f);
     PushClip(stack, 2, 0.5f, true, 1.0f);
+    // And a blend tree of two of them fading in over those.
+    const std::array<BlendEntryChild, 2> children = { BlendEntryChild{ 0, 0.5f, 1.0f }, BlendEntryChild{ 1, 0.5f, 1.0f } };
+    PushBlendTree(stack, children, 1.0f, true, 1.0f);
+    const std::array<float, 2> treeWeights = { 0.25f, 0.75f };
 
     const auto evaluate = [&](float time)
     {
@@ -222,6 +227,7 @@ TEST_CASE("Pose evaluation allocates nothing once the buffers are sized")
         BlendPoses(a, b, 0.25f, blended);
         ComputeModelPose(skeleton, blended, model);
         ComputeSkinningPalette(model, skeleton.InverseBind, palette);
+        SetEntryWeights(*GetCurrentEntry(stack), treeWeights);
         AdvanceBlendStack(stack, 0.001f, 0.001f);
         EvaluateBlendStack(stack, skeleton, clips, a, blended);
     };
