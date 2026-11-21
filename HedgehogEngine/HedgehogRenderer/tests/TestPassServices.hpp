@@ -102,7 +102,7 @@ namespace RGTest
         std::vector<const RHI::IRHITexture*> SampledTextures;
 
     private:
-        std::array<FakePipeline, 40> m_Pipelines;
+        std::array<FakePipeline, 48> m_Pipelines;
         bool                         m_ParticleSetMade = false;
         std::array<FakePipeline, Renderer::ENGINE_COMPUTE_PIPELINE_COUNT> m_ComputePipelines;
         FakeDescriptorSet m_ParticleSet;

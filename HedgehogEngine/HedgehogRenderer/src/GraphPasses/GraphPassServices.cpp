@@ -271,6 +271,15 @@ namespace Renderer
         outlineDesc.DepthAttachmentFormat  = RHI::Format::Undefined;
         m_SelectionOutlinePipeline = device.CreateGraphicsPipeline(outlineDesc);
 
+        // The post-process passes: up to three sampled textures, each a set of the same layout.
+        const ShaderPipelineDesc  fxaaShader = ShaderLoader::Load(device, std::string(HedgehogEngine::FXAA_SHADER), fileSystem);
+        RHI::GraphicsPipelineDesc fxaaDesc   = fxaaShader.Pipeline;
+        fxaaDesc.DescriptorSetLayouts   = { m_SampledTextureLayout.get(), m_SampledTextureLayout.get(),
+                                            m_SampledTextureLayout.get() };
+        fxaaDesc.ColorAttachmentFormats = { COLOR_FORMAT };
+        fxaaDesc.DepthAttachmentFormat  = RHI::Format::Undefined;
+        m_FxaaPipeline = device.CreateGraphicsPipeline(fxaaDesc);
+
         // The particle compute shaders on one layout, so one set binds to each; set 1 is a sampled
         // texture, the depth the collision copy reads.
         for (size_t i = 0; i < ENGINE_COMPUTE_PIPELINE_COUNT; ++i)
@@ -424,6 +433,7 @@ namespace Renderer
             case EnginePipeline::SelectionMask:                        return *m_SelectionMaskPipeline;
             case EnginePipeline::SelectionMaskSkinned:                 return *m_SelectionMaskSkinnedPipeline;
             case EnginePipeline::SelectionOutline:                     return *m_SelectionOutlinePipeline;
+            case EnginePipeline::Fxaa:                                 return *m_FxaaPipeline;
         }
         assert(false && "GraphPassServices::GetPipeline: unknown pipeline.");
         return *m_DepthPrepassPipeline;

@@ -383,5 +383,20 @@ from the prefetch store). Release, three runs each, a fresh engine per run:
 The background job took 182 to 501 ms (the first run cold) to parse the scene and decode its meshes,
 textures and environment; the swap itself, deserializing the parsed document, 1 ms.
 
+### 2026-11-20 (HE-504) - FXAA
+
+`benchmark.yaml`, Release, `--benchmark 600`, two runs each. Before is master without the pass; on
+is the default (no `PostProcessComponent`, so FXAA on); off is the same scene with a component whose
+`AntiAliasing` is `None`, the pass passing the image through.
+
+| Row | Before | FXAA on | FXAA off |
+|-----|--------|---------|----------|
+| Fxaa CPU ms | | 0.005, 0.006 | 0.005, 0.005 |
+| Fxaa GPU ms | | 0.046, 0.045 | 0.013, 0.013 |
+| RenderFrame(total) GPU ms | 0.403, 0.403 | 0.449, 0.447 | 0.415, 0.418 |
+| Frame(wall) | 2.360, 2.421 | 2.411, 2.416 | 2.245, 2.242 |
+
+The pass adds about 0.045 ms of GPU time on, 0.013 off; the wall times are within the run-to-run spread.
+
 When a change intentionally alters performance, re-run the benchmark and update
 this table (keep the old row set; add a dated entry below it so history accumulates).
