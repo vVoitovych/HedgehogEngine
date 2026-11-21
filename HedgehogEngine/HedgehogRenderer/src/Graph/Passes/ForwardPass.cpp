@@ -77,7 +77,7 @@ namespace Renderer
                     cmd.PushConstants(bound, RHI::ShaderStage::Vertex, 0, 16 * sizeof(float),
                                       instance.WorldMatrix.GetBuffer());
                 }
-                cmd.DrawIndexed(mesh.IndexCount, 1, mesh.FirstIndex, static_cast<int32_t>(mesh.VertexOffset), 0);
+                DrawMeshLod(cmd, mesh, instance.Lod);
             }
         }
 
@@ -110,7 +110,7 @@ namespace Renderer
                 }
                 const MeshDrawRange& mesh = frame.Meshes[instance.MeshIndex];
                 cmd.PushConstants(pipeline, RHI::ShaderStage::Vertex, 0, 16 * sizeof(float), instance.WorldMatrix.GetBuffer());
-                cmd.DrawIndexed(mesh.IndexCount, 1, mesh.FirstIndex, static_cast<int32_t>(mesh.VertexOffset), 0);
+                DrawMeshLod(cmd, mesh, instance.Lod);
             }
         }
 
@@ -221,7 +221,7 @@ namespace Renderer
                     cmd.PushConstants(pipeline, RHI::ShaderStage::Vertex, 0, 16 * sizeof(float),
                                       instance.WorldMatrix.GetBuffer());
                 }
-                cmd.DrawIndexed(mesh.IndexCount, 1, mesh.FirstIndex, static_cast<int32_t>(mesh.VertexOffset), 0);
+                DrawMeshLod(cmd, mesh, instance.Lod);
             };
             for (const HX::RenderInstance& instance : instances)
             {

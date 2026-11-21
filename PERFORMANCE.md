@@ -464,6 +464,24 @@ the cost is generation at load (DamagedHelmet 10 ms) and the levels in the index
 
 Both within the run-to-run spread.
 
+### 2026-11-21 (HE-516) - each view picks its instances' levels of detail
+
+Release, `--benchmark 600`. Before is this commit with `FORCE_LOD0` (`ViewCulling.hpp`) set, so every
+pass draws LOD 0; after picks a level per instance and view by screen size. `Lods.yaml` is 400
+DamagedHelmets in 20 rows receding from the camera; the shadow casters pick their level from the
+shadow view's camera, so the four cascades draw the far rows simplified too.
+
+| Row (CPU / GPU ms) | Lods.yaml, LOD 0 | Lods.yaml, LODs | benchmark.yaml, LOD 0 | benchmark.yaml, LODs |
+|--------------------|------------------|-----------------|-----------------------|----------------------|
+| Shadow | 0.126 / 3.018 | 0.129 / 1.300 | 0.037 / 0.242 | 0.037 / 0.235 |
+| DepthPrepass | 0.013 / 0.092 | 0.013 / 0.050 | 0.008 / 0.032 | 0.008 / 0.031 |
+| Forward | 0.019 / 0.161 | 0.017 / 0.122 | 0.015 / 0.067 | 0.014 / 0.066 |
+| RenderFrame(total) | 3.804 / 3.408 | 1.988 / 1.608 | 2.111 / 0.471 | 2.075 / 0.462 |
+| Frame(wall) | 5.387 (185.6 FPS) | 3.523 (283.9 FPS) | 2.540 | 2.489 |
+
+The levels halve `Lods.yaml`'s GPU frame, most of it in the shadow cascades; `benchmark.yaml`'s 5 x 5
+grid, close to the camera, stays within the run-to-run spread.
+
 ### 2026-11-21 (HE-519) - compressed texture siblings
 
 Release, `benchmark.yaml`, `--benchmark 600`, two runs, no DDS siblings in the tree (each texture costs one

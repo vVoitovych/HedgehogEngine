@@ -475,10 +475,15 @@ namespace Renderer
 
         frame.View        = HX::MakeViewMatrix(camera);
         frame.Proj        = HX::MakeProjection(camera, aspect);
+        const HM::Vector4& position = camera.WorldMatrix[3]; // the translation column
+        frame.EyePosition = HM::Vector3(position.x(), position.y(), position.z());
         if (!m_Meshes.empty())
         {
-            // Every instance, the editor layer included: the view's mask decides what it sees.
-            CullViewInstances(m_FrameInstances, view.Desc.LayerMask, frame.Proj * frame.View, instances, frame.Materials);
+            // Every instance, the editor layer included: the view's mask decides what it sees, and its
+            // camera each one's level of detail.
+            const LodView lod{ frame.EyePosition, frame.Proj, m_Meshes };
+            CullViewInstances(m_FrameInstances, view.Desc.LayerMask, frame.Proj * frame.View, instances, frame.Materials,
+                              &lod);
             frame.OpaqueInstances             = instances.Opaque;
             frame.SkinnedInstances            = instances.Skinned;
             frame.CutoffInstances             = instances.Cutoff;
@@ -488,8 +493,6 @@ namespace Renderer
             frame.OverlayInstances            = instances.Overlay;
             frame.TerrainInstances            = instances.Terrain;
         }
-        const HM::Vector4& position = camera.WorldMatrix[3]; // the translation column
-        frame.EyePosition = HM::Vector3(position.x(), position.y(), position.z());
         // Transparent instances blend back to front.
         SortBackToFront(instances.Transparent, frame.EyePosition);
         SortBackToFront(instances.SkinnedTransparent, frame.EyePosition);

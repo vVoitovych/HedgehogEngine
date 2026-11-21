@@ -3,6 +3,7 @@
 #include "HedgehogMath/api/Frustum.hpp"
 
 #include <algorithm>
+#include <cmath>
 
 namespace Renderer
 {
@@ -16,9 +17,42 @@ namespace Renderer
         }
     }
 
+    uint32_t SelectMeshLod(const HM::AABB& worldBounds, const HM::Vector3& eye, const HM::Matrix4x4& proj,
+                           uint32_t lodCount)
+    {
+        if (FORCE_LOD0 || lodCount <= 1)
+            return 0;
+        const float radius = worldBounds.GetHalfExtents().LengthSlow();
+        // proj[1][1] maps view-space height onto the view's [-1, 1]; an orthographic projection has
+        // w = 1 (proj[3][3]), a perspective one divides by the distance.
+        float fraction = radius * std::abs(proj[1][1]);
+        if (proj[3][3] == 0.0f)
+        {
+            const float distance = (worldBounds.GetCenter() - eye).LengthSlow();
+            if (distance <= radius)
+                return 0;
+            fraction /= distance;
+        }
+        uint32_t lod       = 0;
+        float    threshold = LOD1_SCREEN_FRACTION;
+        while (lod + 1 < lodCount && fraction < threshold)
+        {
+            ++lod;
+            threshold *= 0.5f;
+        }
+        return lod;
+    }
+
+    uint32_t SelectInstanceLod(const HX::RenderInstance& instance, const LodView& lod)
+    {
+        if (instance.MeshIndex >= lod.Meshes.size())
+            return 0;
+        return SelectMeshLod(instance.WorldBounds, lod.Eye, lod.Proj, lod.Meshes[instance.MeshIndex].LodCount);
+    }
+
     void CullViewInstances(std::span<const HX::RenderInstance> instances, uint32_t layerMask,
                            const HM::Matrix4x4& viewProj, ViewInstances& out,
-                           std::span<const MaterialDrawInfo> materials)
+                           std::span<const MaterialDrawInfo> materials, const LodView* lod)
     {
         out.Opaque.clear();
         out.Skinned.clear();
@@ -31,15 +65,18 @@ namespace Renderer
 
         HM::Frustum frustum;
         frustum.ExtractPlanes(viewProj);
-        for (const HX::RenderInstance& instance : instances)
+        for (const HX::RenderInstance& visible : instances)
         {
-            if (!IsOnLayer(instance, layerMask) || !frustum.IsAABBVisible(instance.WorldBounds))
+            if (!IsOnLayer(visible, layerMask) || !frustum.IsAABBVisible(visible.WorldBounds))
                 continue;
-            if (instance.Layer == HX::EDITOR_LAYER)
+            if (visible.Layer == HX::EDITOR_LAYER)
             {
-                out.Overlay.push_back(instance);
+                out.Overlay.push_back(visible);
                 continue;
             }
+            HX::RenderInstance instance = visible;
+            if (lod)
+                instance.Lod = SelectInstanceLod(instance, *lod);
             if (instance.TerrainIndex >= 0)
             {
                 out.Terrain.push_back(instance);

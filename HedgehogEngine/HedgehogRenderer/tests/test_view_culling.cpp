@@ -162,3 +162,115 @@ TEST_CASE("Instances are split by their material's alpha mode, rigid and skinned
     CHECK(view.Cutoff.empty());
     CHECK(view.Transparent.empty());
 }
+
+namespace
+{
+    // Bounds whose bounding sphere has radius 1, centred at centre.
+    HM::AABB UnitRadius(const HM::Vector3& centre)
+    {
+        return HM::AABB(centre - HM::Vector3(1.0f, 0.0f, 0.0f), centre + HM::Vector3(1.0f, 0.0f, 0.0f));
+    }
+
+    // A 90 degree perspective: proj[1][1] is 1 in magnitude, so a radius-1 sphere at distance d
+    // covers 1 / d of the view's height.
+    HX::RenderCamera Camera90()
+    {
+        HX::RenderCamera camera;
+        camera.WorldMatrix = HM::Matrix4x4::GetIdentity();
+        camera.Fov         = 90.0f;
+        camera.NearPlane   = 0.1f;
+        camera.FarPlane    = 1000.0f;
+        return camera;
+    }
+
+    MeshDrawRange MeshWithLods(uint32_t lodCount)
+    {
+        MeshDrawRange mesh{ 0, 300, 0 };
+        mesh.LodCount = lodCount;
+        for (uint32_t i = 0; i < lodCount; ++i)
+            mesh.LodRanges[i] = { 300 * i, 300u >> i };
+        return mesh;
+    }
+}
+
+TEST_CASE("A perspective view picks a level by the fraction of its height a mesh covers")
+{
+    const HM::Vector3   eye(0.0f, 0.0f, 0.0f);
+    const HM::Matrix4x4 proj  = HX::MakeProjection(Camera90(), 1.0f);
+    const auto          lodAt = [&](float distance, uint32_t count)
+    { return SelectMeshLod(UnitRadius(HM::Vector3(0.0f, 0.0f, -distance)), eye, proj, count); };
+
+    // Thresholds at a quarter, an eighth and a sixteenth of the height: distances 4, 8 and 16.
+    CHECK(lodAt(3.9f, 4) == 0);
+    CHECK(lodAt(4.1f, 4) == 1);
+    CHECK(lodAt(7.9f, 4) == 1);
+    CHECK(lodAt(8.1f, 4) == 2);
+    CHECK(lodAt(15.9f, 4) == 2);
+    CHECK(lodAt(16.1f, 4) == 3);
+    CHECK(lodAt(500.0f, 4) == 3);
+
+    // Clamped to the levels the mesh has; one level, or the eye inside the sphere, is always LOD 0.
+    CHECK(lodAt(500.0f, 2) == 1);
+    CHECK(lodAt(500.0f, 1) == 0);
+    CHECK(lodAt(0.5f, 4) == 0);
+    CHECK(SelectMeshLod(UnitRadius(eye), eye, proj, 4) == 0);
+}
+
+TEST_CASE("An orthographic view picks a level by its view height, whatever the distance")
+{
+    const HM::Vector3 eye(0.0f, 0.0f, 0.0f);
+    const auto        lodFor = [&](float height, float distance)
+    {
+        const HM::Matrix4x4 proj =
+            HM::Matrix4x4::Ortho(-height / 2.0f, height / 2.0f, height / 2.0f, -height / 2.0f, 0.1f, 1000.0f);
+        return SelectMeshLod(UnitRadius(HM::Vector3(0.0f, 0.0f, -distance)), eye, proj, 4);
+    };
+    // A radius-1 sphere covers 2 / height of the view.
+    CHECK(lodFor(4.0f, 5.0f) == 0); // a half
+    CHECK(lodFor(4.0f, 500.0f) == 0);
+    CHECK(lodFor(10.0f, 5.0f) == 1); // a fifth
+    CHECK(lodFor(20.0f, 5.0f) == 2); // a tenth
+    CHECK(lodFor(40.0f, 5.0f) == 3); // a twentieth
+}
+
+TEST_CASE("Culling gives each view's instances that view's levels, the overlay LOD 0")
+{
+    const MeshDrawRange meshes[] = { MeshWithLods(4), MeshDrawRange{ 0, 36, 0 } };
+    HX::RenderInstance  distant;
+    distant.WorldBounds            = UnitRadius(HM::Vector3(0.0f, 0.0f, -50.0f));
+    distant.SourceId               = 1;
+    HX::RenderInstance withoutLods = distant;
+    withoutLods.MeshIndex          = 1;
+    withoutLods.SourceId           = 2;
+    HX::RenderInstance overlay     = distant;
+    overlay.Layer                  = HX::EDITOR_LAYER;
+    overlay.SourceId               = 3;
+    const HX::RenderInstance instances[] = { distant, withoutLods, overlay };
+
+    const HX::RenderCamera camera   = Camera90();
+    const HM::Matrix4x4    proj     = HX::MakeProjection(camera, 1.0f);
+    const HM::Matrix4x4    viewProj = proj * HX::MakeViewMatrix(camera);
+
+    const LodView fromOrigin{ HM::Vector3(0.0f, 0.0f, 0.0f), proj, meshes };
+    ViewInstances far;
+    CullViewInstances(instances, 0xFFFFFFFFu, viewProj, far, {}, &fromOrigin);
+    REQUIRE(far.Opaque.size() == 2);
+    CHECK(far.Opaque[0].Lod == 3);
+    CHECK(far.Opaque[1].Lod == 0); // its mesh has one level
+    REQUIRE(far.Overlay.size() == 1);
+    CHECK(far.Overlay[0].Lod == 0);
+
+    // Another view, close to the same instance, draws it at LOD 0; the source list is untouched.
+    const LodView closeBy{ HM::Vector3(0.0f, 0.0f, -47.0f), proj, meshes };
+    ViewInstances close;
+    CullViewInstances(instances, 0xFFFFFFFFu, viewProj, close, {}, &closeBy);
+    REQUIRE(close.Opaque.size() == 2);
+    CHECK(close.Opaque[0].Lod == 0);
+    CHECK(instances[0].Lod == 0);
+
+    // Without a LodView every instance keeps LOD 0.
+    ViewInstances plain;
+    CullViewInstances(instances, 0xFFFFFFFFu, viewProj, plain);
+    REQUIRE_FALSE(plain.Opaque.empty());
+    CHECK(plain.Opaque[0].Lod == 0);
+}

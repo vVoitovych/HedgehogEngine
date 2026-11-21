@@ -38,7 +38,8 @@ namespace Renderer
         // Casters come from the caster mask alone, never from the view's layer mask, and are split
         // rigid and skinned as a view's instances are, from either of shadowView's lists, and by
         // their material's alpha mode: a Cutoff one casts through its cutoff, a Transparent one
-        // casts nothing.
+        // casts nothing. Each caster's level of detail is the shadow view's camera's.
+        const LodView lod{ shadowView->EyePosition, shadowView->Proj, shadowView->Meshes };
         m_Casters.clear();
         m_SkinnedCasters.clear();
         m_CutoffCasters.clear();
@@ -46,10 +47,12 @@ namespace Renderer
         for (const std::span<const HX::RenderInstance> instances :
              { shadowView->OpaqueInstances, shadowView->SkinnedInstances })
         {
-            for (const HX::RenderInstance& instance : instances)
+            for (const HX::RenderInstance& caster : instances)
             {
-                if (!CastsShadow(instance, settings.ShadowCasterMask))
+                if (!CastsShadow(caster, settings.ShadowCasterMask))
                     continue;
+                HX::RenderInstance instance = caster;
+                instance.Lod                = SelectInstanceLod(instance, lod);
                 const bool skinned = instance.JointCount > 0;
                 const auto mode    = instance.MaterialIndex < shadowView->Materials.size()
                                          ? shadowView->Materials[instance.MaterialIndex].AlphaMode
