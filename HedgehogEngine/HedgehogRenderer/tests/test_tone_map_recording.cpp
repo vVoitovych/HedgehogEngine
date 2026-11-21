@@ -75,11 +75,12 @@ TEST_CASE("ToneMap - one pipeline, the sampled HDR set, the exposure and one ful
     RecordingCommandList cmd;
     RecordToneMap(&context, hdr, cmd);
 
-    // Without a bloom slot the HDR set stands in at set 1, and nothing is added.
-    CHECK(cmd.Commands == std::vector<std::string>{ "begin", "pipeline", "set 0", "set 1", "push 16" });
+    // Without a bloom slot or a LUT the HDR set stands in at sets 1 and 2, and nothing is added or graded.
+    CHECK(cmd.Commands == std::vector<std::string>{ "begin", "pipeline", "set 0", "set 1", "set 2", "push 16" });
     CHECK(cmd.BoundPipelines == std::vector<const RHI::IRHIPipeline*>{ &services.GetPipeline(EnginePipeline::ToneMap) });
     CHECK(services.SampledTextures == std::vector<const RHI::IRHITexture*>{ &hdr.Texture });
     CHECK(cmd.BoundSets == std::vector<const RHI::IRHIDescriptorSet*>{ &services.GetSampledTextureSet(),
+                                                                       &services.GetSampledTextureSet(),
                                                                        &services.GetSampledTextureSet() });
     CHECK(cmd.DrawnVertexCounts == std::vector<uint32_t>{ 3 });
     CHECK(cmd.DrawnIndexCounts.empty());
@@ -175,4 +176,45 @@ TEST_CASE("ToneMap - a bloom slot is sampled at set 1 and added times the frame'
     }
     CHECK(MakeToneMapPushConstants(0.0f, -1.0f).BloomIntensity == 0.0f);
     CHECK(MakeToneMapPushConstants(0.0f, std::numeric_limits<float>::infinity()).BloomIntensity == 0.0f);
+}
+
+TEST_CASE("ToneMap - the frame's colour grading LUT is sampled at set 2, its contribution clamped to 0 to 1")
+{
+    TestTexture lut{ RHI::TextureDesc{ 1024, 32, RHI::Format::R8G8B8A8Unorm, RHI::TextureUsage::Sampled } };
+    for (const float contribution : { 0.5f, 3.0f })
+    {
+        CAPTURE(contribution);
+        GraphFrameData frame;
+        frame.ColorLut                         = &lut;
+        frame.PostProcess.ColorLutContribution = contribution;
+        frame.PostProcess.ColorLutPath         = "assets://Textures/Luts/Warm.png";
+        FakeServices         services;
+        GraphFrameContext    context{ &services, &frame };
+        HdrTexture           hdr;
+        RecordingCommandList cmd;
+        RecordToneMap(&context, hdr, cmd);
+        CHECK(services.SampledTextures == std::vector<const RHI::IRHITexture*>{ &hdr.Texture, &lut });
+        REQUIRE(cmd.PushedData.size() == 1);
+        ToneMapPushConstants constants;
+        std::memcpy(&constants, cmd.PushedData[0].data(), sizeof(constants));
+        CHECK(constants.LutContribution == (contribution > 1.0f ? 1.0f : contribution));
+    }
+    CHECK(MakeToneMapPushConstants(0.0f, 0.0f, -1.0f).LutContribution == 0.0f);
+    CHECK(MakeToneMapPushConstants(0.0f, 0.0f, std::numeric_limits<float>::quiet_NaN()).LutContribution == 0.0f);
+}
+
+TEST_CASE("ToneMap - the neutral LUT with no LUT named grades nothing")
+{
+    TestTexture    neutral{ RHI::TextureDesc{ 1024, 32, RHI::Format::R8G8B8A8Unorm, RHI::TextureUsage::Sampled } };
+    GraphFrameData frame;
+    frame.ColorLut = &neutral; // what FrameRenderer binds without a LUT; the contribution stays 1
+    FakeServices         services;
+    GraphFrameContext    context{ &services, &frame };
+    HdrTexture           hdr;
+    RecordingCommandList cmd;
+    RecordToneMap(&context, hdr, cmd);
+    REQUIRE(cmd.PushedData.size() == 1);
+    ToneMapPushConstants constants;
+    std::memcpy(&constants, cmd.PushedData[0].data(), sizeof(constants));
+    CHECK(constants.LutContribution == 0.0f);
 }

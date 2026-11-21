@@ -2,6 +2,7 @@
 #include "Profiler/api/Profiler.hpp"
 
 #include "ResourceRegistry/ResourceRegistry.hpp"
+#include "Graph/ColorLut.hpp"
 
 #include "HedgehogRenderer/Graph/EnginePassTypes.hpp"
 #include "HedgehogRenderer/Views/ViewCulling.hpp"
@@ -378,6 +379,7 @@ namespace Renderer
         frame.ShadowCascadeSplitLambda = shadowmap.GetCascadeSplitLambda();
         frame.Exposure                 = scene.Environment.Present ? scene.Environment.Exposure : 0.0f;
         frame.Environment              = m_Environment.GetForwardEnvironment();
+        frame.ColorLut                 = m_ColorLut;
         const HX::RenderPostProcess& post = scene.PostProcess;
         PostProcessSettings&         out  = frame.PostProcess;
         if (post.Present)
@@ -397,6 +399,31 @@ namespace Renderer
         else
             out = PostProcessSettings{};
         m_SceneFrame = frame;
+    }
+
+    void FrameRenderer::SyncColorLut(const HX::RenderScene& scene, HR::ResourceRegistry& registry)
+    {
+        if (!m_NeutralLut)
+        {
+            const std::vector<uint8_t> neutral = MakeNeutralColorLut();
+            m_NeutralLut = HR::ResourceRegistry::CreateRgba8Texture(m_Device, neutral.data(), COLOR_LUT_WIDTH,
+                                                                    COLOR_LUT_HEIGHT, false);
+            m_ColorLut   = m_NeutralLut.get();
+        }
+        const std::string& path = scene.PostProcess.Present ? scene.PostProcess.ColorLutPath : std::string{};
+        if (path == m_ColorLutPath)
+            return;
+        m_ColorLutPath = path;
+        m_ColorLut     = m_NeutralLut.get();
+        if (path.empty())
+            return;
+        // Data, not colour: the shader encodes and decodes around the lookup itself.
+        const RHI::IRHITexture& lut = registry.LoadTexture(path, m_Device, m_FileSystem, false);
+        if (IsColorLutSize(lut.GetWidth(), lut.GetHeight()))
+            m_ColorLut = &lut;
+        else if (m_WarnedLuts.insert(path).second)
+            LOGWARNING("[PostProcess] ", path, " is ", lut.GetWidth(), " x ", lut.GetHeight(), ", not a ", COLOR_LUT_WIDTH,
+                       " x ", COLOR_LUT_HEIGHT, " colour grading LUT; grading with the neutral LUT.");
     }
 
     void FrameRenderer::SyncEnvironment(const HX::RenderScene& scene)

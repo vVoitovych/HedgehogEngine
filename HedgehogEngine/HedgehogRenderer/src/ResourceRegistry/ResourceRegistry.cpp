@@ -59,6 +59,12 @@ namespace HR
         }
     }
 
+    std::unique_ptr<RHI::IRHITexture> ResourceRegistry::CreateRgba8Texture(RHI::IRHIDevice& device, const void* pixels,
+                                                                           uint32_t width, uint32_t height, bool srgb)
+    {
+        return UploadRgba8(device, pixels, width, height, false, srgb);
+    }
+
     ResourceRegistry::ResourceRegistry(RHI::IRHIDevice& device)
     {
         RHI::SamplerDesc samplerDesc;
