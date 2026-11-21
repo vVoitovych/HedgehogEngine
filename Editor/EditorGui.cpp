@@ -191,6 +191,13 @@ namespace Editor
             if (!animator.Controller.empty())
                 preview.ControllerKey = FS::MakeAssetKey(animator.Controller);
             preview.ActiveState = animation.GetStateName(ecs, *selected);
+            if (engineContext.GetPlayState() != HedgehogEngine::PlayState::Edit)
+            {
+                if (const HedgehogAnimation::AnimatorController* controller = animation.GetController(ecs, *selected))
+                    for (const HedgehogAnimation::AnimatorParameter& parameter : controller->Parameters)
+                        preview.Parameters.emplace_back(
+                            parameter.Name, animation.GetParameter(ecs, *selected, parameter.Name).value_or(0.0f));
+            }
             return preview;
         }
     }

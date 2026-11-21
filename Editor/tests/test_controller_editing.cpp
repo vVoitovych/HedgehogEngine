@@ -5,6 +5,7 @@
 
 #include "doctest/doctest/doctest.h"
 
+#include <array>
 #include <string>
 #include <vector>
 
@@ -187,6 +188,116 @@ TEST_CASE("ControllerEditing - transitions and conditions")
     CHECK_FALSE(DeleteTransition(controller, 99));
     CHECK_FALSE(AddCondition(controller, 99, 0).has_value());
     CHECK_FALSE(AddCondition(controller, 0, 99).has_value());
+    CheckValid(controller);
+}
+
+TEST_CASE("ControllerEditing - 1D and 2D blend trees built through the edits stay valid at every step")
+{
+    using HedgehogAnimation::StateMotion;
+    AnimatorController controller = MakeController();
+    AddParameter(controller, "Strafe", AnimatorParameterType::Float);
+
+    // Run becomes a 1D tree seeded from its clip, blending by the first Float parameter.
+    REQUIRE(SetStateMotion(controller, 1, StateMotion::BlendTree1D));
+    const HedgehogAnimation::AnimatorState& run = controller.States[1];
+    CHECK(run.Clip.empty());
+    CHECK(run.BlendParameterX == "Speed");
+    REQUIRE(run.Children.size() == 2u);
+    CHECK(run.Children[0].Clip == "Run");
+    CHECK(run.Children[1].Threshold == 1.0f);
+    CheckValid(controller);
+    CHECK(AddBlendChild(controller, 1, "Sprint") == 2u);
+    CHECK(run.Children[2].Threshold == 2.0f);
+    CheckValid(controller);
+
+    // Idle becomes a 2D tree; children added find free places off the line.
+    REQUIRE(SetStateMotion(controller, 0, StateMotion::BlendTree2D));
+    REQUIRE(SetBlendParameter(controller, 0, 1, "Strafe"));
+    CheckValid(controller);
+    for (const char* clip : { "Left", "Right", "Back", "Forward", "Diagonal", "Spin" })
+    {
+        CAPTURE(clip);
+        CHECK(AddBlendChild(controller, 0, clip).has_value());
+        CheckValid(controller);
+    }
+    CHECK(controller.States[0].Children.size() == HedgehogAnimation::MAX_BLEND_TREE_CHILDREN);
+    CHECK_FALSE(AddBlendChild(controller, 0, "Ninth").has_value());
+
+    // The parameter pickers take only Float parameters, and a 1D tree has no y.
+    CHECK_FALSE(SetBlendParameter(controller, 0, 0, "Grounded"));
+    CHECK_FALSE(SetBlendParameter(controller, 0, 0, "Mass"));
+    CHECK_FALSE(SetBlendParameter(controller, 1, 1, "Strafe"));
+    CHECK_FALSE(AddBlendChild(controller, 2, "Jump")); // a clip state
+
+    // Back to a clip, the tree plays its first child's clip; between 1D and 2D the children stay.
+    REQUIRE(SetStateMotion(controller, 1, StateMotion::BlendTree2D));
+    CHECK(controller.States[1].Children[1].Position == std::array<float, 2>{ 1.0f, 0.0f });
+    CheckValid(controller);
+    REQUIRE(SetStateMotion(controller, 1, StateMotion::BlendTree1D));
+    CheckValid(controller);
+    REQUIRE(SetStateMotion(controller, 1, StateMotion::Clip));
+    CHECK(controller.States[1].Clip == "Run");
+    CHECK(controller.States[1].Children.empty());
+    CheckValid(controller);
+}
+
+TEST_CASE("ControllerEditing - a blend parameter follows a rename; deleting or retyping it leaves one message")
+{
+    using HedgehogAnimation::StateMotion;
+    AnimatorController controller = MakeController();
+    REQUIRE(SetStateMotion(controller, 1, StateMotion::BlendTree1D));
+    REQUIRE(RenameParameter(controller, 0, "Pace"));
+    CHECK(controller.States[1].BlendParameterX == "Pace");
+    CHECK(controller.States[1].SpeedParameter == "Pace");
+    CheckValid(controller);
+
+    AnimatorController retyped = controller;
+    REQUIRE(SetParameterType(retyped, 0, AnimatorParameterType::Int));
+    CHECK(retyped.States[1].BlendParameterX.empty());
+
+    REQUIRE(DeleteParameter(controller, 0));
+    CHECK(controller.States[1].BlendParameterX.empty());
+    const std::vector<std::string> problems = HedgehogAnimation::ValidateAnimatorController(controller);
+    REQUIRE(problems.size() == 1u);
+    CHECK(problems[0].find("state 'Run' blends by its parameter ''") != std::string::npos);
+}
+
+TEST_CASE("ControllerEditing - blend children reorder, a 1D tree's thresholds staying in increasing order")
+{
+    using HedgehogAnimation::StateMotion;
+    AnimatorController controller = MakeController();
+    REQUIRE(SetStateMotion(controller, 1, StateMotion::BlendTree1D));
+    controller.States[1].Children[0].Clip = "Walk";
+    AddBlendChild(controller, 1, "Sprint");
+    controller.States[1].Children[2].Threshold = 5.0f;
+
+    // Sprint to the front: it takes the lowest threshold, the others shift up.
+    REQUIRE(MoveBlendChild(controller, 1, 2, 0));
+    const std::vector<HedgehogAnimation::BlendChild>& children = controller.States[1].Children;
+    CHECK(children[0].Clip == "Sprint");
+    CHECK(children[1].Clip == "Walk");
+    CHECK(children[2].Clip == "Run");
+    CHECK(children[0].Threshold == 0.0f);
+    CHECK(children[1].Threshold == 1.0f);
+    CHECK(children[2].Threshold == 5.0f);
+    CheckValid(controller);
+    REQUIRE(MoveBlendChild(controller, 1, 0, 2));
+    CHECK(children[2].Clip == "Sprint");
+    CheckValid(controller);
+    CHECK_FALSE(MoveBlendChild(controller, 1, 3, 0));
+
+    // Deleting: never the last child, never leaving a 2D tree's children on one line.
+    REQUIRE(DeleteBlendChild(controller, 1, 0));
+    REQUIRE(DeleteBlendChild(controller, 1, 0));
+    CHECK_FALSE(DeleteBlendChild(controller, 1, 0));
+    CheckValid(controller);
+
+    REQUIRE(SetStateMotion(controller, 0, StateMotion::BlendTree2D));
+    controller.States[0].Children = { { "A", 0.0f, { 0, 0 } }, { "B", 0.0f, { 1, 0 } }, { "C", 0.0f, { 2, 0 } },
+                                      { "D", 0.0f, { 0, 1 } } };
+    CheckValid(controller);
+    CHECK_FALSE(DeleteBlendChild(controller, 0, 3)); // A, B and C would be left on one line
+    CHECK(DeleteBlendChild(controller, 0, 2));
     CheckValid(controller);
 }
 

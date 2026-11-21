@@ -1,6 +1,7 @@
 #include "ControllerEditing.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdint>
 #include <string>
@@ -48,6 +49,56 @@ namespace Editor
             case AnimatorParameterType::Trigger: return 0.0f;
             }
             return 0.0f;
+        }
+
+        // Every state's speed and blend parameters naming from now name to (empty to clear them).
+        void RenameStateParameters(AnimatorController& controller, const std::string& from, const std::string& to,
+                                   bool speeds)
+        {
+            for (HedgehogAnimation::AnimatorState& state : controller.States)
+            {
+                if (speeds && state.SpeedParameter == from)
+                    state.SpeedParameter = to;
+                if (state.BlendParameterX == from)
+                    state.BlendParameterX = to;
+                if (state.BlendParameterY == from)
+                    state.BlendParameterY = to;
+            }
+        }
+
+        bool IsTree(const AnimatorController& controller, uint32_t state)
+        {
+            return state < controller.States.size() &&
+                   controller.States[state].Motion != HedgehogAnimation::StateMotion::Clip;
+        }
+
+        bool AllOnOneLine(const std::vector<HedgehogAnimation::BlendChild>& children)
+        {
+            for (size_t i = 1; i < children.size(); ++i)
+            {
+                const float dx = children[i].Position[0] - children[0].Position[0];
+                const float dy = children[i].Position[1] - children[0].Position[1];
+                if (dx == 0.0f && dy == 0.0f)
+                    continue;
+                for (const HedgehogAnimation::BlendChild& child : children)
+                {
+                    const float cross = dx * (child.Position[1] - children[0].Position[1]) -
+                                        dy * (child.Position[0] - children[0].Position[0]);
+                    if (std::abs(cross) > 1e-5f * (std::abs(dx) + std::abs(dy)))
+                        return false;
+                }
+                return true;
+            }
+            return true;
+        }
+
+        // The first Float parameter, or none.
+        std::string FirstFloat(const AnimatorController& controller)
+        {
+            for (const HedgehogAnimation::AnimatorParameter& parameter : controller.Parameters)
+                if (parameter.Type == AnimatorParameterType::Float)
+                    return parameter.Name;
+            return {};
         }
 
         // A transition with nothing left to wait for waits for a whole play of its clip.
@@ -136,9 +187,7 @@ namespace Editor
         if (parameter >= controller.Parameters.size() || name.empty() || HasName(controller.Parameters, name, parameter))
             return false;
         std::string& current = controller.Parameters[parameter].Name;
-        for (HedgehogAnimation::AnimatorState& state : controller.States)
-            if (state.SpeedParameter == current)
-                state.SpeedParameter = std::string(name);
+        RenameStateParameters(controller, current, std::string(name), true);
         current = std::string(name);
         return true;
     }
@@ -149,9 +198,7 @@ namespace Editor
             return false;
         const std::string name = controller.Parameters[parameter].Name;
         controller.Parameters.erase(controller.Parameters.begin() + parameter);
-        for (HedgehogAnimation::AnimatorState& state : controller.States)
-            if (state.SpeedParameter == name)
-                state.SpeedParameter.clear();
+        RenameStateParameters(controller, name, {}, true);
         for (HedgehogAnimation::AnimatorTransition& transition : controller.Transitions)
         {
             std::erase_if(transition.Conditions, [parameter](const HedgehogAnimation::TransitionCondition& condition)
@@ -179,9 +226,7 @@ namespace Editor
                     condition.Value = 0.0f;
                 }
         if (type != AnimatorParameterType::Float)
-            for (HedgehogAnimation::AnimatorState& state : controller.States)
-                if (state.SpeedParameter == changed.Name)
-                    state.SpeedParameter.clear();
+            RenameStateParameters(controller, changed.Name, {}, true);
         return true;
     }
 
@@ -269,6 +314,141 @@ namespace Editor
             changed.Op    = GetDefaultConditionOp(type);
             changed.Value = 0.0f;
         }
+        return true;
+    }
+
+    bool SetStateMotion(AnimatorController& controller, uint32_t state, HedgehogAnimation::StateMotion motion)
+    {
+        if (state >= controller.States.size())
+            return false;
+        HedgehogAnimation::AnimatorState& changed = controller.States[state];
+        const HedgehogAnimation::StateMotion was = changed.Motion;
+        if (was == motion)
+            return true;
+        changed.Motion = motion;
+        if (motion == HedgehogAnimation::StateMotion::Clip)
+        {
+            if (!changed.Children.empty())
+                changed.Clip = changed.Children.front().Clip;
+            changed.Children.clear();
+            changed.BlendParameterX.clear();
+            changed.BlendParameterY.clear();
+            return true;
+        }
+        const bool twoD = motion == HedgehogAnimation::StateMotion::BlendTree2D;
+        if (was == HedgehogAnimation::StateMotion::Clip)
+        {
+            changed.Children        = { { changed.Clip }, { changed.Clip } };
+            changed.BlendParameterX = FirstFloat(controller);
+            changed.Clip.clear();
+        }
+        for (size_t c = 0; c < changed.Children.size(); ++c)
+        {
+            HedgehogAnimation::BlendChild& child = changed.Children[c];
+            if (twoD)
+                child.Position = { was == HedgehogAnimation::StateMotion::Clip ? static_cast<float>(c) : child.Threshold, 0.0f };
+            else
+                child.Threshold = static_cast<float>(c);
+        }
+        if (twoD && changed.Children.size() >= 3)
+        {
+            // Laid along x they would be on one line: the third and later go up and down from it.
+            for (size_t c = 2; c < changed.Children.size(); ++c)
+                changed.Children[c].Position = { static_cast<float>(c) - 2.0f, c % 2 == 0 ? 1.0f : -1.0f };
+        }
+        changed.BlendParameterY = twoD ? (changed.BlendParameterY.empty() ? changed.BlendParameterX : changed.BlendParameterY)
+                                       : std::string{};
+        return true;
+    }
+
+    std::optional<uint32_t> AddBlendChild(AnimatorController& controller, uint32_t state, std::string_view clip)
+    {
+        if (!IsTree(controller, state))
+            return std::nullopt;
+        HedgehogAnimation::AnimatorState& tree = controller.States[state];
+        if (tree.Children.size() >= HedgehogAnimation::MAX_BLEND_TREE_CHILDREN)
+            return std::nullopt;
+        HedgehogAnimation::BlendChild child{ std::string(clip) };
+        if (tree.Motion == HedgehogAnimation::StateMotion::BlendTree1D)
+            child.Threshold = tree.Children.empty() ? 0.0f : tree.Children.back().Threshold + 1.0f;
+        else
+        {
+            // The first place around the origin no child has that leaves them not all on one line.
+            constexpr std::array<std::array<float, 2>, 17> CANDIDATES = {
+                { { 0, 0 }, { 1, 0 }, { 0, 1 }, { -1, 0 }, { 0, -1 }, { 1, 1 }, { -1, 1 }, { -1, -1 }, { 1, -1 },
+                  { 2, 0 }, { 0, 2 }, { -2, 0 }, { 0, -2 }, { 2, 2 }, { -2, 2 }, { -2, -2 }, { 2, -2 } }
+            };
+            for (const std::array<float, 2>& candidate : CANDIDATES)
+            {
+                const bool taken = std::any_of(tree.Children.begin(), tree.Children.end(),
+                                               [&](const HedgehogAnimation::BlendChild& other) { return other.Position == candidate; });
+                if (taken)
+                    continue;
+                std::vector<HedgehogAnimation::BlendChild> trial = tree.Children;
+                trial.push_back({ child.Clip, 0.0f, candidate });
+                if (trial.size() < 3 || !AllOnOneLine(trial))
+                {
+                    child.Position = candidate;
+                    break;
+                }
+            }
+        }
+        tree.Children.push_back(child);
+        return static_cast<uint32_t>(tree.Children.size() - 1);
+    }
+
+    bool DeleteBlendChild(AnimatorController& controller, uint32_t state, uint32_t child)
+    {
+        if (!IsTree(controller, state))
+            return false;
+        std::vector<HedgehogAnimation::BlendChild>& children = controller.States[state].Children;
+        if (child >= children.size() || children.size() == 1)
+            return false;
+        std::vector<HedgehogAnimation::BlendChild> left = children;
+        left.erase(left.begin() + child);
+        if (controller.States[state].Motion == HedgehogAnimation::StateMotion::BlendTree2D && left.size() >= 3 &&
+            AllOnOneLine(left))
+            return false;
+        children = std::move(left);
+        return true;
+    }
+
+    bool MoveBlendChild(AnimatorController& controller, uint32_t state, uint32_t child, uint32_t place)
+    {
+        if (!IsTree(controller, state))
+            return false;
+        std::vector<HedgehogAnimation::BlendChild>& children = controller.States[state].Children;
+        if (child >= children.size() || place >= children.size())
+            return false;
+        std::vector<float> thresholds;
+        for (const HedgehogAnimation::BlendChild& each : children)
+            thresholds.push_back(each.Threshold);
+        if (place < child)
+            std::rotate(children.begin() + place, children.begin() + child, children.begin() + child + 1);
+        else
+            std::rotate(children.begin() + child, children.begin() + child + 1, children.begin() + place + 1);
+        if (controller.States[state].Motion == HedgehogAnimation::StateMotion::BlendTree1D)
+        {
+            std::sort(thresholds.begin(), thresholds.end());
+            for (size_t c = 0; c < children.size(); ++c)
+                children[c].Threshold = thresholds[c];
+        }
+        return true;
+    }
+
+    bool SetBlendParameter(AnimatorController& controller, uint32_t state, uint32_t axis, std::string_view parameter)
+    {
+        if (!IsTree(controller, state) ||
+            (axis == 1 && controller.States[state].Motion != HedgehogAnimation::StateMotion::BlendTree2D) || axis > 1)
+            return false;
+        if (!parameter.empty())
+        {
+            const int index = HedgehogAnimation::FindParameter(controller, std::string(parameter));
+            if (index < 0 || controller.Parameters[static_cast<size_t>(index)].Type != AnimatorParameterType::Float)
+                return false;
+        }
+        (axis == 0 ? controller.States[state].BlendParameterX : controller.States[state].BlendParameterY) =
+            std::string(parameter);
         return true;
     }
 }

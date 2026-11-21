@@ -31,6 +31,8 @@ namespace Editor
         std::vector<std::string> Clips;
         std::string              ControllerKey; // FS::MakeAssetKey of the animator's controller
         std::string              ActiveState;   // empty when no controller runs
+        // The running animator's parameters by name, during Play only (a 2D tree's present point).
+        std::vector<std::pair<std::string, float>> Parameters;
     };
 
     // The animator controller editor (Window > Animator Controller): a .animctrl file drawn as nodes
@@ -109,6 +111,10 @@ namespace Editor
         void DrawDetails(const AnimatorPreview& preview);
         void DrawParameters();
         void DrawStateDetails(uint32_t state, const AnimatorPreview& preview);
+        // A blend tree state's parameter pickers (inside the state's property table).
+        void DrawBlendParameters(uint32_t state);
+        // A blend tree state's children table and, for a 2D tree, its preview.
+        void DrawBlendChildren(uint32_t state, const AnimatorPreview& preview);
         void DrawTransitionDetails(uint32_t transition);
 
         // After an edit: writes the text the dirty check compares, validates, and keeps the layout

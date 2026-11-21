@@ -33,16 +33,42 @@ namespace Editor
     // A parameter named after name (made unique) of type, at its default. Returns its index.
     uint32_t AddParameter(HedgehogAnimation::AnimatorController& controller, std::string_view name,
                           HedgehogAnimation::AnimatorParameterType type);
-    // Renames it, and every state's speed parameter naming it. False as RenameState is.
+    // Renames it, and every state's speed and blend parameters naming it. False as RenameState is.
     bool RenameParameter(HedgehogAnimation::AnimatorController& controller, uint32_t parameter, std::string_view name);
-    // Removes it, every condition testing it and every speed parameter naming it; later
-    // parameters move down one.
+    // Removes it, every condition testing it and every speed parameter naming it; a blend tree's
+    // parameter naming it is cleared (which the validator then names); later parameters move down one.
     bool DeleteParameter(HedgehogAnimation::AnimatorController& controller, uint32_t parameter);
     // Changes its type: its default made one of the type (a whole number, 0 or 1, 0 for a
     // trigger), every condition testing it with an operator the type does not take given the
-    // type's default operator, and a speed parameter naming it dropped unless it stays a Float.
+    // type's default operator, and a speed or blend parameter naming it cleared unless it stays a Float.
     bool SetParameterType(HedgehogAnimation::AnimatorController& controller, uint32_t parameter,
                           HedgehogAnimation::AnimatorParameterType type);
+
+    // ---- Blend trees.
+
+    // Makes a state a clip or a 1D or 2D blend tree. A clip state turned into a tree is seeded with
+    // two children of its clip (thresholds 0 and 1, or positions (0, 0) and (1, 0)) blending by the
+    // first Float parameter (none when there is none, which the validator names); a tree turned
+    // into a clip plays its first child's clip; between 1D and 2D the children keep their order,
+    // laid along x or numbered 0, 1, 2 .... False for a state out of range.
+    bool SetStateMotion(HedgehogAnimation::AnimatorController& controller, uint32_t state,
+                        HedgehogAnimation::StateMotion motion);
+    // A child playing clip, last: a 1D threshold one above the last, a 2D position not yet taken
+    // that leaves the children not all on one line. Nullopt for a clip state, a state out of range
+    // or a tree with MAX_BLEND_TREE_CHILDREN already.
+    std::optional<uint32_t> AddBlendChild(HedgehogAnimation::AnimatorController& controller, uint32_t state,
+                                          std::string_view clip);
+    // False, changing nothing, for the last child, an index out of range, or a 2D tree it would leave
+    // with three or more children on one line.
+    bool DeleteBlendChild(HedgehogAnimation::AnimatorController& controller, uint32_t state, uint32_t child);
+    // Moves a child to another place in the list; a 1D tree's thresholds stay in place, in
+    // increasing order, so the moved child takes the threshold of its new place.
+    bool MoveBlendChild(HedgehogAnimation::AnimatorController& controller, uint32_t state, uint32_t child,
+                        uint32_t place);
+    // Sets a tree's x (axis 0) or y (axis 1, a 2D tree's) parameter: a Float parameter's name, or
+    // empty for none. False for another name, a clip state or an axis the tree has not.
+    bool SetBlendParameter(HedgehogAnimation::AnimatorController& controller, uint32_t state, uint32_t axis,
+                           std::string_view parameter);
 
     // The operator a new condition on a parameter of type starts with: Greater, True or Triggered.
     [[nodiscard]] HedgehogAnimation::ConditionOp GetDefaultConditionOp(HedgehogAnimation::AnimatorParameterType type);

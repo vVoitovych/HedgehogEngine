@@ -553,7 +553,18 @@ namespace Editor
             ImGui::SameLine();
             ImGui::TextDisabled("(default)");
         }
-        ImGui::TextDisabled("%s", data.Clip.c_str());
+        switch (data.Motion)
+        {
+        case HedgehogAnimation::StateMotion::Clip:
+            ImGui::TextDisabled("%s", data.Clip.c_str());
+            break;
+        case HedgehogAnimation::StateMotion::BlendTree1D:
+            ImGui::TextDisabled("1D: %s", data.BlendParameterX.c_str());
+            break;
+        case HedgehogAnimation::StateMotion::BlendTree2D:
+            ImGui::TextDisabled("2D: %s, %s", data.BlendParameterX.c_str(), data.BlendParameterY.c_str());
+            break;
+        }
         DrawPinArrow(StateInPin(state), false);
         ImGui::SameLine(0.0f, 60.0f);
         DrawPinArrow(StateOutPin(state), true);
