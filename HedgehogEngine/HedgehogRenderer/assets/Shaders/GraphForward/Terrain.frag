@@ -15,6 +15,7 @@ layout(location = 3) in vec4 inTangent; // xyz world tangent, w handedness
 
 #include "Common/Pbr.glsl"
 #include "Common/Shadows.glsl"
+#include "Common/NormalMap.glsl"
 
 layout(set = 0, binding = 0) uniform ViewData
 {
@@ -77,7 +78,7 @@ vec3 SampleNormal(int layer, vec2 uv)
     else if (layer == 1) texel = texture(normalMap1, uv);
     else if (layer == 2) texel = texture(normalMap2, uv);
     else texel = texture(normalMap3, uv);
-    return texel.xyz * 2.0f - 1.0f;
+    return DecodeNormal(texel.rg);
 }
 
 void main()

@@ -418,7 +418,7 @@ namespace Renderer
         if (path.empty())
             return;
         // Data, not colour: the shader encodes and decodes around the lookup itself.
-        const RHI::IRHITexture& lut = registry.LoadTexture(path, m_Device, m_FileSystem, false);
+        const RHI::IRHITexture& lut = registry.LoadTexture(path, m_Device, m_FileSystem, ContentLoader::TextureEncoding::Data);
         if (IsColorLutSize(lut.GetWidth(), lut.GetHeight()))
             m_ColorLut = &lut;
         else if (m_WarnedLuts.insert(path).second)

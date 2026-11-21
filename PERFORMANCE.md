@@ -450,6 +450,12 @@ final pass).
 | RenderFrame(total) GPU ms | 0.470, 0.470 | 0.472, 0.471 |
 | Frame(wall) | 2.327, 2.314 | 2.263, 2.333 |
 
+### 2026-11-21 (HE-519) - compressed texture siblings
+
+Release, `benchmark.yaml`, `--benchmark 600`, two runs, no DDS siblings in the tree (each texture costs one
+existence check at its first load): `RenderFrame(total)` GPU 0.467 and 0.466 ms, `Frame(wall)` 2.350 and
+2.355 ms, against HE-509's 0.469 / 0.471 and 2.409 / 2.452: no change.
+
 ### 2026-11-21 (HE-509) - the post-processing epic (HE-449)
 
 Release, `--benchmark 600`, two runs each. Before is the commit before the epic (1ee7c239, HE-502's

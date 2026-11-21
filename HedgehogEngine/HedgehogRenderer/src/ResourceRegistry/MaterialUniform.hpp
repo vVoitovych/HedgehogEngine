@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ContentLoader/api/CompressedTexture.hpp"
 #include "HedgehogCommon/api/Resource/IResourceCatalog.hpp"
 
 #include <cstdint>
@@ -44,9 +45,19 @@ namespace HR
     [[nodiscard]] const std::string& GetMaterialTexturePath(const HedgehogEngine::MaterialView& material,
                                                             MaterialTextureBinding           slot);
 
-    // Whether a slot's map holds colour (sRGB) rather than data (linear).
-    [[nodiscard]] constexpr bool IsColorTexture(MaterialTextureBinding slot)
+    // What a slot's map holds: colour (sRGB) for the base colour and emissive, a normal for the
+    // normal map, linear data for the rest. It picks the map's colour space and compressed sibling.
+    [[nodiscard]] constexpr ContentLoader::TextureEncoding GetTextureEncoding(MaterialTextureBinding slot)
     {
-        return slot == MaterialTextureBinding::BaseColor || slot == MaterialTextureBinding::Emissive;
+        switch (slot)
+        {
+            case MaterialTextureBinding::BaseColor:
+            case MaterialTextureBinding::Emissive:
+                return ContentLoader::TextureEncoding::Color;
+            case MaterialTextureBinding::Normal:
+                return ContentLoader::TextureEncoding::Normal;
+            default:
+                return ContentLoader::TextureEncoding::Data;
+        }
     }
 }
