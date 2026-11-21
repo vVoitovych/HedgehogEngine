@@ -5,6 +5,7 @@
 #include "HedgehogAnimation/api/BlendStack.hpp"
 #include "HedgehogAnimation/api/StateMachine.hpp"
 #include "HedgehogMath/api/Matrix.hpp"
+#include "HedgehogMath/api/Vector.hpp"
 
 #include <optional>
 #include <string>
@@ -32,6 +33,17 @@ namespace HedgehogEngine
         std::string RequestedState;  // AnimationSystem::Play's state, for the next frame
     };
 
+    // An IK goal: the joint named Joint (with two ancestors) reaches Target in world space, its
+    // chain bending towards Pole when one is given, blended by Weight (AnimationSystem::SetIkGoal).
+    struct AnimatorIkGoal
+    {
+        std::string                Joint;
+        HM::Vector3                Target = HM::Vector3(0.0f, 0.0f, 0.0f);
+        float                      Weight = 1.0f;
+        std::optional<HM::Vector3> Pole;
+        bool                       Warned = false; // the joint was not found, said once
+    };
+
     // Plays the clips of the entity's skinned mesh: Clip, or the states of Controller, an
     // animator controller file (.animctrl) whose transitions pick them. The reflected fields are
     // saved with the scene; the rest is AnimationSystem's runtime state, rebuilt every Play.
@@ -56,5 +68,6 @@ HH_BEGIN_COMPONENT(AnimatorComponent)
     std::optional<float> PreviewTime;        // runtime: in Edit mode, the time to show (else the bind pose)
     std::vector<HM::Matrix4x4> Palette;      // runtime: one skinning matrix per joint
     AnimatorControllerRuntime ControllerState; // runtime: Controller's machine
+    std::vector<AnimatorIkGoal> IkGoals;      // runtime: at most MAX_IK_GOALS, applied after each evaluation
 HH_END_COMPONENT(AnimatorComponent)
 }

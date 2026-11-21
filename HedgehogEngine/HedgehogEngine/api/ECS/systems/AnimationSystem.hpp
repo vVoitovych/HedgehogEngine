@@ -88,6 +88,19 @@ namespace HedgehogEngine
         // machine keeps its state and parameters, and waits for Play to name a state.
         HEDGEHOG_ENGINE_API void Stop(ECS::ECS& ecs, ECS::Entity entity);
 
+        // IK goals (AnimatorIkGoal), applied in Edit and Play after the pose is evaluated: the joint
+        // named joint (with two ancestors on the skeleton) reaches the world-space target, blended by
+        // weight (0 to 1), bending towards pole when given. Setting a joint's goal again replaces it;
+        // false, changing nothing, for an entity without an animator, an empty joint name, a weight
+        // outside 0 to 1, a non-finite target or pole, or a fifth goal. A joint the mesh lacks (or with
+        // fewer than two ancestors) warns once per goal and is skipped. Stop's restore drops them.
+        static constexpr size_t MAX_IK_GOALS = 4;
+        HEDGEHOG_ENGINE_API bool SetIkGoal(ECS::ECS& ecs, ECS::Entity entity, const std::string& joint,
+                                           const HM::Vector3& target, float weight,
+                                           const std::optional<HM::Vector3>& pole = std::nullopt);
+        // False when it had no goal on joint.
+        HEDGEHOG_ENGINE_API bool ClearIkGoal(ECS::ECS& ecs, ECS::Entity entity, const std::string& joint);
+
         // The names of the clips of entity's mesh, in file order; empty without a skinned mesh.
         HEDGEHOG_ENGINE_API std::vector<std::string> GetClipNames(const ECS::ECS& ecs, const MeshContainer& meshes,
                                                                   ECS::Entity entity) const;
@@ -119,7 +132,11 @@ namespace HedgehogEngine
 
     private:
         void Evaluate(AnimatorComponent& animator, const HedgehogAnimation::Skeleton& skeleton,
-                      const std::vector<HedgehogAnimation::AnimationClip>& clips, ECS::Entity entity);
+                      const std::vector<HedgehogAnimation::AnimationClip>& clips, ECS::Entity entity,
+                      const HM::Matrix4x4& world);
+        // Each IK goal on m_Pose and m_ModelPose, its target and pole taken into the mesh's space.
+        void ApplyIkGoals(AnimatorComponent& animator, const HedgehogAnimation::Skeleton& skeleton, ECS::Entity entity,
+                          const HM::Matrix4x4& world);
         // The clips are the mesh's (none when it is not loaded yet); meshIndex names it.
         void Advance(AnimatorComponent& animator, const std::vector<HedgehogAnimation::AnimationClip>* clips,
                      std::optional<uint64_t> meshIndex, float dt, ECS::Entity entity, EventBus* bus);
