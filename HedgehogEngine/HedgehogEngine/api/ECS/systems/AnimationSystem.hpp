@@ -171,6 +171,11 @@ namespace HedgehogEngine
                         const std::vector<HedgehogAnimation::AnimationClip>* clips, uint32_t state, float fade,
                         ECS::Entity entity, EventBus* bus, const std::string& from);
         bool SetParameter(ECS::ECS& ecs, ECS::Entity entity, const ParameterSetter& set);
+        // AdvanceBlendStack, extracting root motion into m_RootMotion while m_RootSkeleton is set.
+        void AdvanceBlend(AnimatorComponent& animator, const std::vector<HedgehogAnimation::AnimationClip>* clips,
+                          float clipDt, float dt);
+        // m_RootMotion moves the entity (or, for a character, becomes its PendingRootMotion).
+        void ApplyRootMotion(ECS::ECS& ecs, ECS::Entity entity, AnimatorComponent& animator, float dt);
 
     private:
         EventBus*              m_Bus     = nullptr;
@@ -184,5 +189,10 @@ namespace HedgehogEngine
         std::vector<HedgehogAnimation::JointTransform> m_Pose;
         std::vector<HedgehogAnimation::JointTransform> m_Scratch;
         std::vector<HM::Matrix4x4>                     m_ModelPose;
+
+        // The animator being advanced: its skeleton and root joint when it applies root motion.
+        const HedgehogAnimation::Skeleton* m_RootSkeleton = nullptr;
+        uint32_t                           m_RootJoint    = 0;
+        HedgehogAnimation::RootMotionDelta m_RootMotion;
     };
 }

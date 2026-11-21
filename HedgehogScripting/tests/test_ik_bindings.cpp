@@ -127,3 +127,30 @@ TEST_CASE("IK bindings - clearIkGoal lets go, and bad arguments are script error
     CHECK(scene.Context.GetECS().GetComponent<AnimatorComponent>(scene.Arm).IkGoals.empty());
     REQUIRE(scene.Stop());
 }
+
+TEST_CASE("Root motion bindings - a script turns root motion on and reads the last frame's motion")
+{
+    ArmScene scene(R"(Scripts/Walker.lua)");
+    scene.WriteScript("Walker.lua", Script("Walker",
+        "local animator = self.entity:getAnimator()\n"
+        "Log.info('before', animator.applyRootMotion)\n"
+        "animator.applyRootMotion = true\n"
+        "animator:play('Walk')\n"
+        "self.frames = 0",
+        "self.frames = self.frames + 1\n"
+        "if self.frames == 10 then\n"
+        "  Log.info(string.format('moved %.4f', self.entity:getAnimator().rootMotion.x * 60))\n"
+        "end"));
+
+    LogCapture log;
+    REQUIRE(scene.Context.Play());
+    for (int frame = 0; frame < 30; ++frame)
+        scene.Step();
+    CHECK(log.Lines("before false").size() == 1);
+    CHECK(log.Lines("moved 2.0000").size() == 1);
+    CHECK(scene.Context.GetECS().GetComponent<AnimatorComponent>(scene.Arm).ApplyRootMotion);
+    CHECK(scene.Context.GetECS().GetComponent<TransformComponent>(scene.Arm).Position.x() ==
+          doctest::Approx(1.0f).epsilon(1e-3));
+    REQUIRE(scene.Stop());
+    CHECK(scene.Context.GetECS().GetComponent<TransformComponent>(scene.Arm).Position.x() == 0.0f);
+}

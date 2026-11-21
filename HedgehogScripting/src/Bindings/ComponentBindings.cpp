@@ -249,6 +249,12 @@ namespace HedgehogScripting::Bindings
                 }),
                 "speed", Field(ecs, &AnimatorComponent::Speed),
                 "loop",  Field(ecs, &AnimatorComponent::Loop),
+                "applyRootMotion", Field(ecs, &AnimatorComponent::ApplyRootMotion),
+                // The last frame's root motion in world space (zero while it applies none).
+                "rootMotion", sol::readonly_property([&ecs](const AnimatorRef& ref)
+                {
+                    return Resolve(ecs, ref).RootMotion;
+                }),
                 // The controller's parameters: a script error without a controller that runs, or
                 // for a name that is not a parameter of that type.
                 "setFloat", [&ecs, &animations, findParameter](const AnimatorRef& ref, const std::string& name, float value)

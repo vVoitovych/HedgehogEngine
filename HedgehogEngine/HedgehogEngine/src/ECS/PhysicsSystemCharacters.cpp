@@ -1,6 +1,7 @@
 #include "HedgehogEngine/api/ECS/systems/PhysicsSystem.hpp"
 #include "PhysicsWorldTransform.hpp"
 
+#include "HedgehogEngine/api/ECS/components/AnimatorComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/CharacterControllerComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/ColliderComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
@@ -133,9 +134,12 @@ namespace HedgehogEngine
             if (!tracked.Character.IsSet())
                 continue;
             CharacterControllerComponent& controller = ecs.GetComponent<CharacterControllerComponent>(entity);
-            // The walk is horizontal; a jump is the +Z part, which the world takes only on the ground.
-            const HM::Vector3 velocity(controller.DesiredVelocity.x(), controller.DesiredVelocity.y(),
-                                       std::max(0.0f, controller.PendingJump));
+            // The walk is horizontal (an animator's root motion in place of DesiredVelocity when it
+            // applies it); a jump is the +Z part, which the world takes only on the ground.
+            HM::Vector3 walk = controller.DesiredVelocity;
+            if (ecs.HasComponent<AnimatorComponent>(entity) && ecs.GetComponent<AnimatorComponent>(entity).ApplyRootMotion)
+                walk = ecs.GetComponent<AnimatorComponent>(entity).PendingRootMotion;
+            const HM::Vector3 velocity(walk.x(), walk.y(), std::max(0.0f, controller.PendingJump));
             controller.PendingJump = 0.0f;
             m_World->MoveCharacter(tracked.Character, velocity, gravity * controller.GravityScale, fixedDeltaTime);
             controller.State = m_World->GetCharacterState(tracked.Character);
