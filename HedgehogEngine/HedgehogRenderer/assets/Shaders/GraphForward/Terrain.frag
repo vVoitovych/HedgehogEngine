@@ -21,6 +21,7 @@ layout(set = 0, binding = 0) uniform ViewData
     mat4 view;
     mat4 viewProj;
     vec4 eyePos;
+    vec4 inverseViewport; // 1 / the view's size in x and y
 } viewData;
 
 // HR::TerrainUniform.
@@ -122,6 +123,6 @@ void main()
             light *= SunShadow(surface.position, geometricNormal, normalize(sceneLights.lights[i].direction));
         radiance += light;
     }
-    radiance += AmbientLight(surface, 1.0f);
+    radiance += AmbientLight(surface, ScreenOcclusion(gl_FragCoord.xy, viewData.inverseViewport.xy));
     outColor = vec4(radiance, 1.0f);
 }

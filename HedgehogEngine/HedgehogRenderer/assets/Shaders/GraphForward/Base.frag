@@ -20,6 +20,7 @@ layout(set = 0, binding = 0) uniform ViewData
     mat4 view;
     mat4 viewProj;
     vec4 eyePos;
+    vec4 inverseViewport; // 1 / the view's size in x and y
 } viewData;
 
 #define MATERIAL_SET 1
@@ -84,7 +85,7 @@ void main()
 
     // The occlusion map darkens ambient light only, as glTF defines it.
     const float occlusion = 1.0f + materialData.occlusionStrength * (texture(occlusionMap, fragTexCoord).r - 1.0f);
-    radiance += AmbientLight(surface, occlusion);
+    radiance += AmbientLight(surface, occlusion * ScreenOcclusion(gl_FragCoord.xy, viewData.inverseViewport.xy));
 
     radiance += materialData.emissiveFactor.rgb * texture(emissiveMap, fragTexCoord).rgb;
     // A Transparent material's alpha blends it over what is behind (ForwardTransparent); others are opaque.

@@ -63,8 +63,10 @@ namespace RGTest
 
         const RHI::IRHIDescriptorSet& AllocateForwardLighting(const Renderer::ShadowUniform& shadow,
                                                               const RHI::IRHITexture& shadowAtlas,
-                                                              const Renderer::ForwardEnvironment& environment) override
+                                                              const Renderer::ForwardEnvironment& environment,
+                                                              const RHI::IRHITexture*             occlusion) override
         {
+            LightingOcclusion.push_back(occlusion);
             LightingUploads.push_back(shadow);
             LightingAtlases.push_back(&shadowAtlas);
             EnvironmentUploads.push_back(environment);
@@ -93,6 +95,7 @@ namespace RGTest
         // Every forward pass's shadow uniform and the atlas bound beside it, in order.
         std::vector<Renderer::ShadowUniform> LightingUploads;
         std::vector<const RHI::IRHITexture*> LightingAtlases;
+        std::vector<const RHI::IRHITexture*> LightingOcclusion; // AllocateForwardLighting's occlusion, null for white
         // And the environment bound beside them, in the same order.
         std::vector<Renderer::ForwardEnvironment> EnvironmentUploads;
 

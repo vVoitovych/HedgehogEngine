@@ -143,6 +143,15 @@ layout(set = 3, binding = 3) uniform samplerCube radianceCube;
 // The split-sum table: N.V along x, roughness along y; the scale and bias applied to F0.
 layout(set = 3, binding = 4) uniform sampler2D brdfLut;
 
+// The view's screen-space ambient occlusion, sampled at the fragment's screen UV: 1 unoccluded (a
+// white texel without SSAO). It darkens ambient light only, as the occlusion map does.
+layout(set = 3, binding = 5) uniform sampler2D ambientOcclusion;
+
+float ScreenOcclusion(vec2 fragCoord, vec2 inverseViewport)
+{
+    return texture(ambientOcclusion, fragCoord * inverseViewport).r;
+}
+
 // A world direction in the environment's own frame: turned back by its rotation about +Z.
 vec3 EnvironmentDirection(vec3 direction)
 {

@@ -246,6 +246,26 @@ namespace Renderer
         clamp.MaxAnisotropy  = 1.0f;
         m_LinearClampSampler = device.CreateSampler(clamp);
 
+        // No ambient occlusion: one white texel.
+        RHI::TextureDesc whiteDesc;
+        whiteDesc.Width  = 1;
+        whiteDesc.Height = 1;
+        whiteDesc.Format = RHI::Format::R8Unorm;
+        whiteDesc.Usage  = RHI::TextureUsage::Sampled | RHI::TextureUsage::TransferDst;
+        m_WhiteOcclusion = device.CreateTexture(whiteDesc);
+        const uint32_t white   = 0xffffffffu;
+        auto           staging = device.CreateBuffer(sizeof(white), RHI::BufferUsage::TransferSrc, RHI::MemoryUsage::CpuToGpu);
+        staging->CopyData(&white, sizeof(white));
+        device.ExecuteImmediately([&](RHI::IRHICommandList& cmd)
+        {
+            const RHI::TextureBarrier toCopy{ m_WhiteOcclusion.get(), RHI::ResourceState::Undefined, RHI::ResourceState::CopyDst };
+            cmd.Barrier({ &toCopy, 1 }, {});
+            cmd.CopyBufferToTexture(*staging, *m_WhiteOcclusion);
+            const RHI::TextureBarrier toRead{ m_WhiteOcclusion.get(), RHI::ResourceState::CopyDst,
+                                              RHI::ResourceState::ShaderResource };
+            cmd.Barrier({ &toRead, 1 }, {});
+        });
+
         RHI::GraphicsPipelineDesc toneMapDesc = toneMapShader.Pipeline;
         toneMapDesc.DescriptorSetLayouts   = { m_SampledTextureLayout.get() };
         toneMapDesc.ColorAttachmentFormats = { COLOR_FORMAT };
@@ -464,7 +484,8 @@ namespace Renderer
 
     const RHI::IRHIDescriptorSet& GraphPassServices::AllocateForwardLighting(const ShadowUniform& shadow,
                                                                              const RHI::IRHITexture& shadowAtlas,
-                                                                             const ForwardEnvironment& environment)
+                                                                             const ForwardEnvironment& environment,
+                                                                             const RHI::IRHITexture* occlusion)
     {
         assert(environment.Radiance && environment.BrdfLut && "Forward: the frame has no environment textures.");
         // The uniforms are copied; the atlas is this frame's graph transient and the environment may
@@ -478,6 +499,7 @@ namespace Renderer
         set.WriteTexture(1, shadowAtlas, *m_ShadowSampler);
         set.WriteTexture(3, *environment.Radiance, *m_LinearClampSampler);
         set.WriteTexture(4, *environment.BrdfLut, *m_LinearClampSampler);
+        set.WriteTexture(5, occlusion ? *occlusion : *m_WhiteOcclusion, *m_LinearClampSampler);
         set.Flush();
         return set;
     }

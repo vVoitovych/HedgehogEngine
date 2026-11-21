@@ -7,12 +7,15 @@
 
 namespace Renderer
 {
-    ForwardViewUniform MakeForwardViewUniform(const GraphFrameData& frame)
+    ForwardViewUniform MakeForwardViewUniform(const GraphFrameData& frame, uint32_t viewportWidth, uint32_t viewportHeight)
     {
         ForwardViewUniform uniform;
-        uniform.View        = frame.View;
-        uniform.ViewProj    = frame.Proj * frame.View;
-        uniform.EyePosition = frame.EyePosition;
+        uniform.View            = frame.View;
+        uniform.ViewProj        = frame.Proj * frame.View;
+        uniform.EyePosition     = frame.EyePosition;
+        uniform.InverseViewport = HM::Vector4(viewportWidth > 0 ? 1.0f / static_cast<float>(viewportWidth) : 0.0f,
+                                              viewportHeight > 0 ? 1.0f / static_cast<float>(viewportHeight) : 0.0f,
+                                              0.0f, 0.0f);
         return uniform;
     }
 
