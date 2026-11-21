@@ -226,6 +226,7 @@ namespace Renderer
         std::unique_ptr<RHI::IRHIPipeline> m_SelectionMaskPipeline;
         std::unique_ptr<RHI::IRHIPipeline> m_SelectionMaskSkinnedPipeline;
         std::unique_ptr<RHI::IRHIPipeline> m_SelectionOutlinePipeline;
+        std::unique_ptr<RHI::IRHIPipeline> m_FxaaPipeline;
 
         // The particle compute pipelines (EngineComputePipeline order) on one layout, and per frame in
         // flight the set they bind and the buffer of that frame's emitters, grown on demand.

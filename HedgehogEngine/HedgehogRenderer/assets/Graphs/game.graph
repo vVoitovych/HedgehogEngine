@@ -2,7 +2,7 @@
 # and in a game build. The shadow atlas is not the view's own: the shared frame phase renders it
 # once for every view (SharedPhase.hpp), and the graph imports it. Forward renders HDR radiance into
 # hdr, the Skybox fills what it left empty with the environment, ForwardTransparent blends the
-# transparent materials over both, and ToneMap maps it onto the LDR
+# transparent materials over both, ToneMap maps it onto ldr, and Fxaa smooths that onto the LDR
 # colour output the game UI then draws over.
 # Held to a hand-written C++ twin by RenderGraphTest (test_shipped_graphs.cpp).
 version: 2
@@ -17,6 +17,9 @@ resources:
     size: RelativeToResult(1.0)
   - name: hdr
     format: R16G16B16A16Float
+    size: RelativeToResult(1.0)
+  - name: ldr
+    format: R16G16B16A16Unorm
     size: RelativeToResult(1.0)
 imports:
   - name: shadowAtlas
@@ -54,6 +57,11 @@ passes:
     name: ToneMap
     bindings:
       hdr: hdr
+      color: ldr
+  - type: Fxaa
+    name: Fxaa
+    bindings:
+      ldr: ldr
       color: color
   - type: GameUi
     name: GameUi

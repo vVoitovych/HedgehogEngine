@@ -65,6 +65,7 @@ namespace
         const RGTexture shadowAtlas = graph.ImportTexture("shadowAtlas", RHI::Format::D32Float, true);
         const RGTexture depth       = Declare(graph, "depth", RHI::Format::D32Float, full);
         const RGTexture hdr         = Declare(graph, "hdr", RHI::Format::R16G16B16A16Float, full);
+        const RGTexture ldr         = Declare(graph, "ldr", RHI::Format::R16G16B16A16Unorm, full);
         const RGTexture color       = Declare(graph, "color", RHI::Format::R16G16B16A16Unorm, full);
 
         RGTexture hdrWritten;
@@ -105,11 +106,19 @@ namespace
             },
             NO_EXECUTE);
 
-        RGTexture colorWritten;
+        RGTexture ldrWritten;
         graph.AddPass<TargetData>("ToneMap",
             [&](RGPassBuilder& pass, TargetData& data)
             {
                 pass.SampleTexture(particlesWritten);
+                ldrWritten = data.Target = pass.ColorTarget(ldr);
+            },
+            NO_EXECUTE);
+        RGTexture colorWritten;
+        graph.AddPass<TargetData>("Fxaa",
+            [&](RGPassBuilder& pass, TargetData& data)
+            {
+                pass.SampleTexture(ldrWritten);
                 colorWritten = data.Target = pass.ColorTarget(color);
             },
             NO_EXECUTE);
@@ -270,6 +279,7 @@ TEST_CASE("Oracle: each shipped graph compiles to the same plan as its hand-writ
         const size_t blended = twin->find("pass ForwardTransparent");
         const size_t particles = twin->find("pass Particles");
         const size_t toneMap = twin->find("pass ToneMap");
+        const size_t fxaa    = twin->find("pass Fxaa");
         REQUIRE(skybox != std::string::npos);
         REQUIRE(toneMap != std::string::npos);
         CHECK(prepass < forward);
@@ -277,7 +287,8 @@ TEST_CASE("Oracle: each shipped graph compiles to the same plan as its hand-writ
         CHECK(skybox < blended);
         CHECK(blended < particles);
         CHECK(particles < toneMap);
-        CHECK(toneMap < twin->find(overlay));
+        CHECK(toneMap < fxaa);
+        CHECK(fxaa < twin->find(overlay));
     }
 
     const std::string resultTwin = PlanOf(&BuildResultGraphByHand);

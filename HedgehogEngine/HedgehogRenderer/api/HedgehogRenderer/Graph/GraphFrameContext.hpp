@@ -289,6 +289,7 @@ namespace Renderer
         ForwardTerrain,       // Forward for TerrainInstances: the terrain's layers at set 1
         ParticlesAlpha,       // particle billboards over the HDR target, alpha-blended, depth tested, not written
         ParticlesAdditive,    // ParticlesAlpha added to what is behind
+        Fxaa,                 // a fullscreen triangle, no depth (PostProcess.pl): the tone-mapped image at set 0
     };
 
     // The particle compute shaders (ParticleCompute.pl), all on one layout.
