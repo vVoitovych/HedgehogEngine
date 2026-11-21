@@ -1,0 +1,147 @@
+Scene name: AnimationAdvanced
+Scene:
+  - Entity: 0
+    Name: Root
+    Parent: 0
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    Children:
+      - Entity: 1
+        Name: Strip
+        Parent: 0
+        TransformComponent:
+          Position: [-3, -1, 0]
+          Rotation: [0, 0, 0]
+          Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: Models/Animated/TwoBoneStrip.gltf
+        RenderComponent:
+          Visible: true
+          Material: Materials/test1.material
+        AnimatorComponent:
+          Clip: ""
+          Speed: 1
+          Loop: true
+          PlayOnStart: true
+          CrossfadeTime: 0.2
+          Controller: Animations/Locomotion.animctrl
+          ApplyRootMotion: false
+          RootJoint: ""
+        ScriptComponent:
+          ScriptEnable: true
+          ScriptFile: Scripts/AnimationDemo.lua
+        Children:
+          []
+      - Entity: 2
+        Name: Walker
+        Parent: 0
+        TransformComponent:
+          Position: [-1, -2, 0]
+          Rotation: [0, 0, 0]
+          Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: Models/Animated/ThreeBoneArm.gltf
+        RenderComponent:
+          Visible: true
+          Material: Materials/test1.material
+        AnimatorComponent:
+          Clip: Reach
+          Speed: 1
+          Loop: true
+          PlayOnStart: true
+          CrossfadeTime: 0.2
+          Controller: ""
+          ApplyRootMotion: true
+          RootJoint: Shoulder
+        Children:
+          []
+      - Entity: 3
+        Name: Arm
+        Parent: 0
+        TransformComponent:
+          Position: [1, 0.5, 0]
+          Rotation: [0, 0, 0]
+          Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: Models/Animated/ThreeBoneArm.gltf
+        RenderComponent:
+          Visible: true
+          Material: Materials/test1.material
+        AnimatorComponent:
+          Clip: Wave
+          Speed: 1
+          Loop: true
+          PlayOnStart: true
+          CrossfadeTime: 0.2
+          Controller: ""
+          ApplyRootMotion: false
+          RootJoint: ""
+        Children:
+          []
+      - Entity: 4
+        Name: Target
+        Parent: 0
+        TransformComponent:
+          Position: [2.4, 0.9, 0]
+          Rotation: [0, 0, 0]
+          Scale: [0.08, 0.08, 0.08]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/sphere.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/test3.material
+        Children:
+          []
+      - Entity: 5
+        Name: Sun
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 0]
+          Rotation: [448.5, 297, 122.5]
+          Scale: [1, 1, 1]
+        LightComponent:
+          LightEnabled: true
+          LightType: 0
+          LightColor: [1, 1, 1]
+          LightIntensity: 1
+          LightRadius: 1
+          LightConeAngle: 2
+        Children:
+          []
+      - Entity: 6
+        Name: Backdrop
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, -3]
+          Rotation: [0, 0, 0]
+          Scale: [10, 10, 1]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/cube.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/test3.material
+        Children:
+          []
+      - Entity: 7
+        Name: MainCamera
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 7]
+          Rotation: [0, 0, 0]
+          Scale: [1, 1, 1]
+        CameraComponent:
+          Enabled: true
+          ProjectionType: 0
+          Fov: 60
+          OrthoSize: 10
+          NearPlane: 0.1
+          FarPlane: 1000
+          LayerMask: 4294967295
+          TargetMode: 0
+          TargetName: ""
+          GraphName: game
+          Priority: 0
+        Children:
+          []

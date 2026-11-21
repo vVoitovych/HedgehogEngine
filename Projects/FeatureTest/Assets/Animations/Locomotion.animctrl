@@ -1,0 +1,14 @@
+Version: 1
+Parameters:
+  - Name: Blend
+    Type: Float
+States:
+  - Name: Locomotion
+    Motion: BlendTree1D
+    Parameter: Blend
+    Children:
+      - {Clip: Bend, Threshold: 0}
+      - {Clip: Lift, Threshold: 1}
+Default: Locomotion
+Transitions:
+  []

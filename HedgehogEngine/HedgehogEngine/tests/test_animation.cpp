@@ -165,6 +165,21 @@ TEST_CASE("Animation - a skinned mesh exposes its skeleton and clips through the
     CHECK(cubeView.weights.empty());
 }
 
+TEST_CASE("Animation - the shipped ThreeBoneArm loads with three joints, Wave and Reach")
+{
+    EngineContext     context;
+    const ECS::Entity arm = AddSkinned(context, "Models/Animated/ThreeBoneArm.gltf", std::nullopt);
+    const HedgehogEngine::Mesh& mesh = context.GetResourceCatalog().GetMeshContainer().GetMesh(
+        *context.GetECS().GetComponent<MeshComponent>(arm).MeshIndex);
+    REQUIRE(mesh.GetSkeleton() != nullptr);
+    CHECK(mesh.GetSkeleton()->JointNames == std::vector<std::string>{ "Shoulder", "Elbow", "Hand" });
+    REQUIRE(mesh.GetAnimationClips().size() == 2u);
+    CHECK(mesh.GetAnimationClips()[0].Name == "Wave");
+    CHECK(mesh.GetAnimationClips()[0].Duration == doctest::Approx(2.0f));
+    CHECK(mesh.GetAnimationClips()[1].Name == "Reach");
+    CHECK(mesh.GetAnimationClips()[1].Duration == doctest::Approx(1.0f));
+}
+
 TEST_CASE("Animation - Edit mode shows the bind pose, or the clip at a preview time; a static mesh gets no palette")
 {
     EngineContext     context;

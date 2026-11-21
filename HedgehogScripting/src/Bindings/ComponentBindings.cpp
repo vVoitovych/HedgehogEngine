@@ -250,6 +250,15 @@ namespace HedgehogScripting::Bindings
                 "speed", Field(ecs, &AnimatorComponent::Speed),
                 "loop",  Field(ecs, &AnimatorComponent::Loop),
                 "applyRootMotion", Field(ecs, &AnimatorComponent::ApplyRootMotion),
+                // A joint's world position as last drawn, or nil without that joint.
+                "getJointPosition", [&ecs, &animations, &context](const AnimatorRef& ref, const std::string& joint,
+                                                                  sol::this_state state) -> sol::object
+                {
+                    (void)Resolve(ecs, ref);
+                    const std::optional<HM::Vector3> position = animations.GetJointPosition(
+                        ecs, context.GetResourceCatalog().GetMeshContainer(), ref.Entity.Id, joint);
+                    return position ? sol::make_object(state, *position) : sol::object(sol::lua_nil);
+                },
                 // The last frame's root motion in world space (zero while it applies none).
                 "rootMotion", sol::readonly_property([&ecs](const AnimatorRef& ref)
                 {

@@ -314,6 +314,29 @@ namespace HedgehogEngine
         animator.Finished = false;
     }
 
+    std::optional<HM::Vector3> AnimationSystem::GetJointPosition(const ECS::ECS& ecs, const MeshContainer& meshes,
+                                                                  ECS::Entity entity, const std::string& joint) const
+    {
+        const Mesh* loaded = FindSkinnedMesh(ecs, meshes, entity);
+        if (!loaded || !ecs.HasComponent<AnimatorComponent>(entity))
+            return std::nullopt;
+        const HedgehogAnimation::Skeleton& skeleton = *loaded->GetSkeleton();
+        const std::vector<HM::Matrix4x4>&  palette  = ecs.GetComponent<AnimatorComponent>(entity).Palette;
+        for (size_t index = 0; index < skeleton.JointNames.size(); ++index)
+        {
+            if (skeleton.JointNames[index] != joint || index >= palette.size() || index >= skeleton.InverseBind.size())
+                continue;
+            // The palette is the model matrix times the inverse bind: undo the latter.
+            const HM::Matrix4x4 model = palette[index] * skeleton.InverseBind[index].Inverse();
+            const HM::Matrix4x4 world = ecs.HasComponent<TransformComponent>(entity)
+                                            ? ecs.GetComponent<TransformComponent>(entity).ObjMatrix
+                                            : HM::Matrix4x4::GetIdentity();
+            const HM::Vector4 point = world * HM::Vector4(model[3].x(), model[3].y(), model[3].z(), 1.0f);
+            return HM::Vector3(point.x(), point.y(), point.z());
+        }
+        return std::nullopt;
+    }
+
     std::vector<std::string> AnimationSystem::GetClipNames(const ECS::ECS& ecs, const MeshContainer& meshes,
                                                            ECS::Entity entity) const
     {
