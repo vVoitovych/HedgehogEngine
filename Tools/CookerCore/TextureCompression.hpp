@@ -16,6 +16,9 @@ namespace Cooker
     inline constexpr uint32_t BC7_MAX_PARTITIONS = 64;
     inline constexpr uint32_t BC7_UBER_LEVEL     = 0;
 
+    // Bumped whenever CompressTexture's output changes, so a package encodes its siblings again.
+    inline constexpr uint32_t TEXTURE_ENCODER_VERSION = 1;
+
     // Encodes width x height RGBA8 texels (rgba.size() == width * height * 4, rows top first) with a
     // full mip chain down to 1 x 1, each level a 2 x 2 box filter of the one before (an odd edge's
     // last texel taken twice): in linear light for Color (alpha linear), on the bytes for Data, and

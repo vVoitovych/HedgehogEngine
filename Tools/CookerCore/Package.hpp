@@ -49,6 +49,7 @@ namespace Cooker
         std::vector<std::string> ExtraScenes; // virtual paths cooked beside the startup scene
         std::filesystem::path    Glslc;       // empty: the engine's own
         bool                     AllScenes = false; // every scene of Assets/Scenes too (ListProjectScenes)
+        bool                     CompressTextures = true; // a DDS sibling for every material and terrain map
     };
 
     struct PackageResult
@@ -58,6 +59,7 @@ namespace Cooker
         size_t                   Unchanged       = 0;
         size_t                   Removed         = 0;
         size_t                   ShadersCompiled = 0;
+        size_t                   TexturesCompressed = 0;
         std::vector<std::string> Errors; // empty when the package is complete
         std::vector<std::string> Warnings;
     };

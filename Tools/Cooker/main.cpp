@@ -2,7 +2,10 @@
 // makes that folder a playable game.
 //
 //   Cooker.exe --project <folder> --out <folder> [--scene <assets://...yaml>]... [--glslc <glslc.exe>]
-//              [--binaries <folder>] [--engine <folder>] [--package] [--all-scenes]
+//              [--binaries <folder>] [--engine <folder>] [--package] [--all-scenes] [--no-compress-textures]
+//
+// Every material and terrain map is encoded beside its image as a compressed DDS (BC7, BC5) unless
+// --no-compress-textures is given.
 //
 // --all-scenes cooks every scene of the project's Assets/Scenes beside the startup scene.
 //
@@ -42,6 +45,7 @@ namespace
         std::vector<std::string>             Scenes;
         bool                                 Package   = false;
         bool                                 AllScenes = false;
+        bool                                 CompressTextures = true;
         bool                                 Valid   = true;
     };
 
@@ -67,6 +71,8 @@ namespace
                 arguments.Package = true;
             else if (std::strcmp(argv[i], "--all-scenes") == 0)
                 arguments.AllScenes = true;
+            else if (std::strcmp(argv[i], "--no-compress-textures") == 0)
+                arguments.CompressTextures = false;
             else
             {
                 LOGERROR("Cooker: unknown argument '", argv[i], "'.");
@@ -75,7 +81,7 @@ namespace
         }
         if (arguments.Valid && (!arguments.Project || !arguments.Out))
         {
-            LOGERROR("Cooker: usage: Cooker.exe --project <folder> --out <folder> [--scene <assets://...>]... [--glslc <exe>] [--binaries <folder>] [--engine <folder>] [--package] [--all-scenes]");
+            LOGERROR("Cooker: usage: Cooker.exe --project <folder> --out <folder> [--scene <assets://...>]... [--glslc <exe>] [--binaries <folder>] [--engine <folder>] [--package] [--all-scenes] [--no-compress-textures]");
             arguments.Valid = false;
         }
         return arguments;
@@ -101,7 +107,8 @@ namespace
         if (!Report(result.Warnings, result.Errors))
             return EXIT_FAILURE;
         LOGINFO("Cooker: packaged ", result.Files, " file(s) in ", desc.OutDir.string(), ": ", result.Copied, " copied, ",
-                result.Unchanged, " unchanged, ", result.Removed, " removed.");
+                result.TexturesCompressed, " texture(s) compressed, ", result.Unchanged, " unchanged, ", result.Removed,
+                " removed.");
         return EXIT_SUCCESS;
     }
 }
@@ -123,7 +130,7 @@ int main(int argc, char* argv[])
         arguments.Binaries ? std::filesystem::absolute(*arguments.Binaries) : std::filesystem::absolute(argv[0]).parent_path();
     if (arguments.Package)
         return Package({ project, engine, out, binaries, arguments.Scenes, arguments.Glslc.value_or(std::filesystem::path()),
-                         arguments.AllScenes });
+                         arguments.AllScenes, arguments.CompressTextures });
 
     std::vector<std::string> scenes = arguments.Scenes;
     if (arguments.AllScenes)
@@ -136,12 +143,12 @@ int main(int argc, char* argv[])
     if (!Report(shaders.Warnings, shaders.Errors))
         return EXIT_FAILURE;
 
-    const Cooker::CookPlan   plan   = Cooker::BuildCookPlan(project, scenes, engine);
+    const Cooker::CookPlan   plan   = Cooker::BuildCookPlan(project, scenes, engine, arguments.CompressTextures);
     const Cooker::CookResult result = Cooker::CookPackage(plan, out);
     if (!Report({}, result.Errors))
         return EXIT_FAILURE;
 
-    LOGINFO("Cooker: ", plan.Files.size(), " file(s) in ", out.string(), ": ", result.Copied, " copied, ", result.Unchanged,
-            " unchanged, ", result.Removed, " removed.");
+    LOGINFO("Cooker: ", plan.Files.size(), " file(s) in ", out.string(), ": ", result.Copied, " copied, ",
+            result.TexturesCompressed, " texture(s) compressed, ", result.Unchanged, " unchanged, ", result.Removed, " removed.");
     return EXIT_SUCCESS;
 }
