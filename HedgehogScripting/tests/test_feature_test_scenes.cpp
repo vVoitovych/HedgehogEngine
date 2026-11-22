@@ -366,6 +366,29 @@ TEST_CASE("FeatureTest - the character sample walks its route and logs each of i
     CHECK(log.Lines("[WARNING]").empty());
 }
 
+TEST_CASE("FeatureTest - both navigation agents walk the maze to the platform")
+{
+    TempDir    saves;
+    LogCapture log;
+    {
+        ProjectWorld world(saves.Path());
+        const auto   path = world.Context.GetFileSystem().ResolvePhysical("assets://Scenes/Navigation.yaml");
+        REQUIRE(path.has_value());
+        REQUIRE(world.Context.GetSceneManager().LoadScene(path->string()));
+        const HedgehogEngine::SceneSnapshot before = world.Context.GetSceneManager().CaptureSnapshot();
+
+        REQUIRE(world.Context.Play());
+        for (int frame = 0; frame < 600; ++frame) // ten seconds
+            world.Context.UpdateContext(1.0f, STEP);
+        REQUIRE(world.Context.Stop());
+        CHECK(world.Context.GetSceneManager().CaptureSnapshot().Yaml == before.Yaml);
+    }
+    CHECK(log.Lines("NavigationDemo: Walker arrived at Platform").size() == 1);
+    CHECK(log.Lines("NavigationDemo: Runner arrived at Platform").size() == 1);
+    CHECK(log.Lines("[ERROR]").empty());
+    CHECK(log.Lines("[WARNING]").empty());
+}
+
 TEST_CASE("FeatureTest - the advanced animation sample blends, walks by root motion and reaches its target")
 {
     TempDir    saves;

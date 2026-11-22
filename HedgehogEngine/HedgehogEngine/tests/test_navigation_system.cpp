@@ -18,7 +18,10 @@
 #include "FileSystem/tests/test_helpers.hpp"
 #include "Logger/api/Logger.hpp"
 
+#include <algorithm>
 #include <chrono>
+#include <cstddef>
+#include <cstdlib>
 #include <cmath>
 #include <filesystem>
 #include <memory>
@@ -217,4 +220,59 @@ TEST_CASE("Navigation system - the component round-trips through a snapshot with
     CHECK(restored.IncludeRenderMeshes);
     CHECK_FALSE(restored.Loaded);
     CHECK(scenes.CaptureSnapshot().Yaml == snapshot.Yaml);
+}
+
+TEST_CASE("Navigation system - FeatureTest's committed Navigation.navmesh is a bake of Navigation.yaml")
+{
+    // Set HH_REBAKE_NAVMESH to write the file again after changing the scene's geometry.
+    EngineContext context;
+    const auto    scene = context.GetFileSystem().ResolvePhysical("assets://Scenes/Navigation.yaml");
+    REQUIRE(scene.has_value());
+    REQUIRE(context.GetSceneManager().LoadScene(scene->string()));
+    context.UpdateContext(1.0f, FRAME);
+
+    ECS::ECS&               ecs        = context.GetECS();
+    const NavMeshComponent* component  = nullptr;
+    for (ECS::Entity entity = 0; entity < ECS::MAX_ENTITIES && !component; ++entity)
+        if (ecs.IsAlive(entity) && ecs.HasComponent<NavMeshComponent>(entity))
+            component = &ecs.GetComponent<NavMeshComponent>(entity);
+    REQUIRE(component);
+    const HN::NavMeshBuildSettings settings = MakeNavMeshBuildSettings(*component);
+    const HN::NavMeshBakeResult    baked    = HN::BakeNavMesh(
+        GatherNavigationGeometry(ecs, context.GetResourceCatalog(), { component->IncludeRenderMeshes }), settings);
+    REQUIRE(baked.Error.empty());
+
+    const std::string path = "assets://" + component->NavMesh;
+    char*  rebake = nullptr;
+    size_t length = 0;
+    (void)_dupenv_s(&rebake, &length, "HH_REBAKE_NAVMESH");
+    const bool write = rebake != nullptr;
+    std::free(rebake);
+    if (write)
+    {
+        const std::vector<uint8_t> bytes = WriteNavMeshFile(settings, baked.Data);
+        std::vector<std::byte>     data(bytes.size());
+        std::transform(bytes.begin(), bytes.end(), data.begin(), [](uint8_t b) { return static_cast<std::byte>(b); });
+        REQUIRE(context.GetFileSystem().WriteFile(path, data));
+    }
+
+    const auto file = context.GetFileSystem().ReadFile(path);
+    REQUIRE(file.has_value());
+    std::vector<uint8_t> raw(file->size());
+    std::transform(file->begin(), file->end(), raw.begin(), [](std::byte b) { return static_cast<uint8_t>(b); });
+    const NavMeshFileReadResult committed = ReadNavMeshFile(raw);
+    REQUIRE(committed.Error.empty());
+    const auto committedMesh = HN::DescribeNavMesh(committed.Data);
+    const auto freshMesh     = HN::DescribeNavMesh(baked.Data);
+    REQUIRE(committedMesh.has_value());
+    REQUIRE(freshMesh.has_value());
+    CHECK(committedMesh->PolygonCentres.size() == freshMesh->PolygonCentres.size());
+    CHECK(committed.Settings.AgentRadius == settings.AgentRadius);
+
+    // Both agents' starts reach the platform's top.
+    HN::NavMesh navMesh;
+    REQUIRE(navMesh.Load(committed.Data));
+    std::vector<HM::Vector3> corners;
+    for (const HM::Vector3& start : { HM::Vector3(-9.0f, -8.0f, 0.0f), HM::Vector3(-9.0f, -3.0f, 0.0f) })
+        CHECK(navMesh.FindPath(start, HM::Vector3(9.5f, 0.0f, 1.0f), corners) == HN::NavPathStatus::Complete);
 }

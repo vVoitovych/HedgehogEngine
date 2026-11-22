@@ -1,9 +1,15 @@
 #include "Bindings.hpp"
+#include "ScriptHandles.hpp"
 
 #include "HedgehogEngine/api/EngineContext.hpp"
+#include "HedgehogEngine/api/ECS/components/NavAgentComponent.hpp"
+#include "HedgehogEngine/api/ECS/systems/NavAgentSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/NavigationSystem.hpp"
 
+#include "Logger/api/Logger.hpp"
+
 #include <cmath>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -12,7 +18,49 @@ namespace HedgehogScripting::Bindings
 {
     namespace
     {
+        using HedgehogEngine::NavAgentComponent;
+        using HedgehogEngine::NavAgentStatus;
+        using NavAgentRef = ScriptComponentRef<NavAgentComponent>;
+
         constexpr float DEFAULT_SAMPLE_DISTANCE = 1.0f;
+
+        const char* GetStatusName(NavAgentStatus status)
+        {
+            switch (status)
+            {
+            case NavAgentStatus::Moving: return "moving";
+            case NavAgentStatus::Arrived: return "arrived";
+            case NavAgentStatus::NoPath: return "nopath";
+            case NavAgentStatus::Idle: break;
+            }
+            return "idle";
+        }
+
+        float RequireAtLeast(float value, float minimum, const char* what)
+        {
+            if (!std::isfinite(value) || value < minimum)
+                throw std::runtime_error(std::string("NavAgent: ") + what + " must be a finite number of at least " +
+                                         std::to_string(static_cast<int>(minimum)));
+            return value;
+        }
+
+        // Agents walk only in Play mode (a script's top level also runs when the editor describes
+        // it): outside it setDestination does nothing and the first call logs why.
+        struct PlayGuard
+        {
+            HedgehogEngine::EngineContext& Context;
+            bool                           Warned = false;
+
+            bool Allows(const char* call)
+            {
+                if (Context.GetPlayState() != HedgehogEngine::PlayState::Edit)
+                    return true;
+                if (!Warned)
+                    LOGWARNING("[Script] Nav agents walk only in Play mode; " + std::string(call) + " did nothing.");
+                Warned = true;
+                return false;
+            }
+        };
 
         const HM::Vector3& RequireFinite(const HM::Vector3& value, const char* what)
         {
@@ -24,6 +72,47 @@ namespace HedgehogScripting::Bindings
 
     void RegisterNavigation(sol::state& lua, HedgehogEngine::EngineContext& context)
     {
+        ECS::ECS&                       ecs    = context.GetECS();
+        HedgehogEngine::NavAgentSystem& agents = *context.GetNavAgentSystem();
+        auto                            guard  = std::make_shared<PlayGuard>(PlayGuard{ context });
+        lua.new_usertype<NavAgentRef>(
+            "NavAgent", sol::no_constructor,
+            // setDestination(point): plans a path there and walks it; false when there is none.
+            "setDestination", [&ecs, &agents, guard](const NavAgentRef& ref, const HM::Vector3& point)
+            {
+                (void)Resolve(ecs, ref);
+                RequireFinite(point, "a destination");
+                return guard->Allows("NavAgent:setDestination()") && agents.SetDestination(ecs, ref.Entity.Id, point);
+            },
+            "stop", [&ecs, &agents](const NavAgentRef& ref)
+            {
+                (void)Resolve(ecs, ref);
+                agents.Stop(ecs, ref.Entity.Id);
+            },
+            "hasPath", [&ecs](const NavAgentRef& ref) { return !Resolve(ecs, ref).Path.empty(); },
+            "remainingDistance", sol::readonly_property([&ecs, &agents](const NavAgentRef& ref)
+            {
+                (void)Resolve(ecs, ref);
+                return agents.GetRemainingDistance(ecs, ref.Entity.Id);
+            }),
+            "velocity", sol::readonly_property([&ecs](const NavAgentRef& ref) { return Resolve(ecs, ref).Velocity; }),
+            "status", sol::readonly_property([&ecs](const NavAgentRef& ref) { return GetStatusName(Resolve(ecs, ref).Status); }),
+            "speed", sol::property(
+                [&ecs](const NavAgentRef& ref) { return Resolve(ecs, ref).Speed; },
+                [&ecs](const NavAgentRef& ref, float value) { Resolve(ecs, ref).Speed = RequireAtLeast(value, 0.0f, "a speed"); }),
+            "acceleration", sol::property(
+                [&ecs](const NavAgentRef& ref) { return Resolve(ecs, ref).Acceleration; },
+                [&ecs](const NavAgentRef& ref, float value)
+                { Resolve(ecs, ref).Acceleration = RequireAtLeast(value, 0.0f, "an acceleration"); }),
+            "stoppingDistance", sol::property(
+                [&ecs](const NavAgentRef& ref) { return Resolve(ecs, ref).StoppingDistance; },
+                [&ecs](const NavAgentRef& ref, float value)
+                { Resolve(ecs, ref).StoppingDistance = RequireAtLeast(value, 0.0f, "a stopping distance"); }),
+            "faceMovement", sol::property(
+                [&ecs](const NavAgentRef& ref) { return Resolve(ecs, ref).FaceMovement; },
+                [&ecs](const NavAgentRef& ref, bool value) { Resolve(ecs, ref).FaceMovement = value; }),
+            sol::meta_function::to_string, ToText<NavAgentComponent>("NavAgent"));
+
         HedgehogEngine::NavigationSystem& navigation = *context.GetNavigationSystem();
         sol::table                        table      = lua.create_named_table("Navigation");
 
