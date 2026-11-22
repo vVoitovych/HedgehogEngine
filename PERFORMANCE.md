@@ -482,6 +482,27 @@ shadow view's camera, so the four cascades draw the far rows simplified too.
 The levels halve `Lods.yaml`'s GPU frame, most of it in the shadow cascades; `benchmark.yaml`'s 5 x 5
 grid, close to the camera, stays within the run-to-run spread.
 
+### 2026-11-21 (HE-522) - compressed textures in a package
+
+Release. `Textures.yaml` (the DamagedHelmet close up, five spheres over the terrain layers' and the
+Viking room's colour maps, the Hills terrain, no post-processing) in the dev tree, where every texture
+is an image, and in `Build\FeatureTest` (`PackageGame.bat`), where every one has its DDS sibling.
+Texture memory is `Renderer::Cleanup`'s log; load is `--game-mode 1 Textures.yaml` start to exit,
+three runs; the frame is `--benchmark 600 Textures.yaml`, two runs.
+
+| | Dev tree (images) | Package (BC7, BC5) |
+|--|-------------------|--------------------|
+| Textures (compressed) | 10 (0) | 10 (10) |
+| Texture memory | 113.3 MB | 28.3 MB (25 %) |
+| Start, load and one frame | 3363, 2587, 2538 ms | 2371, 2409, 2385 ms |
+| `RenderFrame(total)` GPU ms | 0.186, 0.186 | 0.181, 0.184 |
+| `Frame(wall)` ms | 2.269, 2.321 | 2.315, 2.142 |
+
+A quarter of the memory and no GPU mip generation at load, about 0.2 s off the warm runs; the frame
+is within the run-to-run spread (the scene is light). Window captures of both at the sample's camera
+differ by 0.29 per channel on average, 0.13 % of pixels by more than 8, with no visible block or
+normal-map artefact on the helmet.
+
 ### 2026-11-21 (HE-520) - encoding textures for the cook
 
 Release, CookerTest's timing case, three runs: DamagedHelmet's 2048 x 2048 albedo with its 12 mips to BC7

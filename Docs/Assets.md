@@ -113,13 +113,20 @@ its own YAML and are not repeated here.
 | TGA | stb_image | Uncompressed and RLE |
 | BMP, PSD, GIF, PNM, PIC | stb_image | Decoded by the same call, but the Content panel calls them Other (`Editor/Panels/ContentTypes.cpp` lists only `.png`, `.jpg`, `.jpeg`, `.tga`), so they cannot be dropped on a material slot; PSD gives only the composited image, GIF only its first frame |
 
-Every texture is uploaded as RGBA8 with a mip chain the GPU generates (`ResourceRegistry`'s texture
-cache), so a 4K texture takes 85 MB of video memory and its mips are box-filtered.
+In the dev tree every texture is uploaded as RGBA8 with a mip chain the GPU generates
+(`ResourceRegistry`'s texture cache), so a 4K texture takes 85 MB of video memory and its mips are
+box-filtered. Since HE-521 a packaged game ships a block-compressed sibling beside every material
+and terrain map: the Cooker encodes it with bc7enc (BC7 sRGB for colour, BC7 linear for data, BC5 for
+normal maps, with CPU mips filtered in linear light and normals made unit again) into a DX10 DDS named
+`<image>.bc7.dds`, `.bc7lin.dds` or `.bc5.dds`, and the renderer uploads a sibling it finds in place of
+the image, so FeatureTest's `Textures.yaml` takes 28 MB instead of 113 MB (`PERFORMANCE.md`). The DDS
+reader takes only the engine's own files (DX10 header, BC1, BC4, BC5, BC7); UI, particle and font
+textures stay images.
 
 | Wanted | Library | Licence | Priority | Cost | Why |
 |--------|---------|---------|----------|------|-----|
 | KTX2 with Basis Universal (UASTC, ETC1S) | libktx, or basis_universal's transcoder | Apache-2.0 | High | M | GPU-compressed textures transcoded to BC7/BC5/BC4 at load: a quarter of the video memory and much faster loads. Sketchfab and Khronos samples ship it (`KHR_texture_basisu`). Needs texture import settings (section 1.3) to say how to encode |
-| DDS (BC1 to BC7) | A small reader (dds-ktx, single header) | BSD-2-Clause | Medium | S | Ready-made compressed textures, mip chains included, from most DCC tools and asset stores |
+| DDS from other tools (legacy FourCC headers, BC2, BC3, BC6H) | Extend `ContentLoader/src/DdsFile.cpp` | — | Medium | S | Ready-made compressed textures, mip chains included, from most DCC tools and asset stores; the engine reads only the DX10 files its Cooker writes |
 | EXR (half and float) | tinyexr | BSD-3-Clause | Medium | S | Linear data textures and HDR images; Poly Haven publishes its HDRIs and many PBR maps as EXR |
 | BMP, PSD, GIF in the Content panel | (already decoded) | — | Low | S | Add the extensions to `ContentTypes` so the files the loader already reads can be assigned |
 | WebP | libwebp | BSD-3-Clause | Low | S | Smaller lossless and lossy images; some online libraries offer it |
