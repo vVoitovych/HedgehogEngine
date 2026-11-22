@@ -12,6 +12,8 @@ IncludeDir["Tracy"]     = "%{wks.location}/ThirdParty/Tracy/tracy/public"
 IncludeDir["miniaudio"] = "%{wks.location}/ThirdParty/miniaudio/miniaudio"
 IncludeDir["meshoptimizer"] = "%{wks.location}/ThirdParty/meshoptimizer/meshoptimizer/src"
 IncludeDir["bc7enc"] = "%{wks.location}/ThirdParty/bc7enc/bc7enc"
+IncludeDir["Recast"] = "%{wks.location}/ThirdParty/RecastNavigation/recastnavigation/Recast/Include"
+IncludeDir["Detour"] = "%{wks.location}/ThirdParty/RecastNavigation/recastnavigation/Detour/Include"
 IncludeDir["Jolt"]      = "%{wks.location}/ThirdParty/Jolt/JoltPhysics"
 
 LibraryDir = {}

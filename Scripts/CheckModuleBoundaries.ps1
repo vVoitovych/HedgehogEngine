@@ -15,6 +15,9 @@
 #   5. Jolt Physics stays inside HedgehogPhysics: only files under HedgehogPhysics/src/ may include
 #      "Jolt/..." (ThirdParty/, where Jolt itself lives, is never checked), so no public header and
 #      no other module ever names a Jolt type.
+#   6. Recast and Detour stay inside HedgehogNavigation: only files under HedgehogNavigation/src/
+#      may include "Recast*.h" or "Detour*.h", so no public header and no other module ever names a
+#      Recast or Detour type.
 #
 # All rules match #include strings, never file-system paths: the path
 # HedgehogEngine/HedgehogCommon/... contains "HedgehogEngine/" and must not match rule 2.
@@ -49,6 +52,9 @@ $RuntimeForbidden   = @(
 )
 $JoltForbidden      = @(
     @{ Pattern = '(^|[/\\])Jolt[/\\]';                 Reason = 'only HedgehogPhysics/src/ may include Jolt' }
+)
+$NavigationForbidden = @(
+    @{ Pattern = '(^|[/\\])(Recast|Detour)[A-Za-z]*\.h$'; Reason = 'only HedgehogNavigation/src/ may include Recast or Detour' }
 )
 $EngineForbidden    = @(
     @{ Pattern = '(^|[/\\])Lua[/\\]';                  Reason = 'the engine module must not include Lua' },
@@ -100,6 +106,7 @@ function Get-Violations([string]$root)
     $runtimeRoot  = Join-Path $root 'HedgehogRuntime'
     $gameRoot     = Join-Path $root 'Game'
     $physicsSrc   = Join-Path (Join-Path $root 'HedgehogPhysics') 'src'
+    $navigationSrc = Join-Path (Join-Path $root 'HedgehogNavigation') 'src'
     $violations   = New-Object System.Collections.Generic.List[string]
 
     $files = @(Get-ChildItem -LiteralPath $root -Recurse -File -ErrorAction SilentlyContinue |
@@ -117,6 +124,7 @@ function Get-Violations([string]$root)
         if (Test-Under $file.FullName $engineRoot)   { $rules += $EngineForbidden }
         if ((Test-Under $file.FullName $runtimeRoot) -or (Test-Under $file.FullName $gameRoot)) { $rules += $RuntimeForbidden }
         if (-not (Test-Under $file.FullName $physicsSrc)) { $rules += $JoltForbidden }
+        if (-not (Test-Under $file.FullName $navigationSrc)) { $rules += $NavigationForbidden }
 
         $lineNumber = 0
         foreach ($line in [IO.File]::ReadAllLines($file.FullName))
@@ -152,7 +160,7 @@ function Get-Violations([string]$root)
 function Invoke-SelfTest
 {
     $temp    = Join-Path ([IO.Path]::GetTempPath()) ('boundary_selftest_' + [Guid]::NewGuid().ToString('N'))
-    $modules = @('HedgehogEngine\HedgehogEngine', 'HedgehogEngine\HedgehogRenderer', 'Editor', 'HedgehogScripting', 'HedgehogRuntime', 'Game', 'HedgehogPhysics')
+    $modules = @('HedgehogEngine\HedgehogEngine', 'HedgehogEngine\HedgehogRenderer', 'Editor', 'HedgehogScripting', 'HedgehogRuntime', 'Game', 'HedgehogPhysics', 'HedgehogNavigation')
     $cases   = @(
         @{ Module = 'HedgehogEngine\HedgehogEngine';   Include = 'ThirdParty/Lua/lua/lua.h' },
         @{ Module = 'HedgehogEngine\HedgehogEngine';   Include = 'lauxlib.h' },
@@ -165,7 +173,9 @@ function Invoke-SelfTest
         @{ Module = 'Game';                            Include = 'imgui.h' },
         @{ Module = 'Editor';                          Include = 'HedgehogEngine/RHI/src/Vulkan/VulkanDevice.hpp' },
         @{ Module = 'HedgehogPhysics\api';             Include = 'Jolt/Jolt.h' },
-        @{ Module = 'HedgehogEngine\HedgehogEngine';   Include = 'Jolt/Physics/Body/Body.h' }
+        @{ Module = 'HedgehogEngine\HedgehogEngine';   Include = 'Jolt/Physics/Body/Body.h' },
+        @{ Module = 'HedgehogNavigation\api';          Include = 'Recast.h' },
+        @{ Module = 'HedgehogEngine\HedgehogEngine';   Include = 'DetourNavMeshQuery.h' }
     )
     $failures = 0
     try
@@ -189,6 +199,12 @@ function Invoke-SelfTest
             New-Item -ItemType Directory -Force -Path (Join-Path (Join-Path $temp 'HedgehogPhysics') $folder) | Out-Null
         }
         Set-Content -LiteralPath (Join-Path (Join-Path (Join-Path $temp 'HedgehogPhysics') 'src') 'World.cpp') -Value '#include "Jolt/Jolt.h"' -Encoding Ascii
+        # HedgehogNavigation's src/ may include Recast and Detour; its api/ may not.
+        foreach ($folder in @('src', 'api'))
+        {
+            New-Item -ItemType Directory -Force -Path (Join-Path (Join-Path $temp 'HedgehogNavigation') $folder) | Out-Null
+        }
+        Set-Content -LiteralPath (Join-Path (Join-Path (Join-Path $temp 'HedgehogNavigation') 'src') 'Build.cpp') -Value "#include `"Recast.h`"`r`n#include `"DetourNavMesh.h`"" -Encoding Ascii
 
         $clean = Get-Violations $temp
         if ($clean.Violations.Count -ne 0)

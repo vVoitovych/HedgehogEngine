@@ -41,3 +41,6 @@
 [submodule "ThirdParty/bc7enc/bc7enc"]
 	path = ThirdParty/bc7enc/bc7enc
 	url = https://github.com/vVoitovych/bc7enc.git
+[submodule "ThirdParty/RecastNavigation/recastnavigation"]
+	path = ThirdParty/RecastNavigation/recastnavigation
+	url = https://github.com/vVoitovych/recastnavigation.git
