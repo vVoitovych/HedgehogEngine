@@ -30,6 +30,7 @@ project "HedgehogEngine"
         "HedgehogUI",
         "HedgehogAudio",
         "HedgehogPhysics",
+        "HedgehogNavigation",
         "HedgehogMath",
         "Logger",
         "Profiler",

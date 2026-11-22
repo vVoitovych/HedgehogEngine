@@ -85,6 +85,21 @@ TEST_CASE("Package - a missing runtime file or licence fails naming it, copying 
     CHECK(fixture.PackagedFiles().empty());
 }
 
+TEST_CASE("Package - the navigation DLL ships, and a package without it fails naming it")
+{
+    PackageFixture fixture;
+    REQUIRE(Cooker::PackageGame(fixture.Desc()).Errors.empty());
+    const std::vector<std::string> files = fixture.PackagedFiles();
+    CHECK(std::find(files.begin(), files.end(), "HedgehogNavigation.dll") != files.end());
+
+    PackageFixture missing;
+    std::filesystem::remove(missing.Binaries.Path() / "HedgehogNavigation.dll");
+    const Cooker::PackageResult result = Cooker::PackageGame(missing.Desc());
+    REQUIRE(result.Errors.size() == 1);
+    CHECK(result.Errors[0] ==
+          "The runtime file " + (missing.Binaries.Path() / "HedgehogNavigation.dll").string() + " does not exist.");
+}
+
 TEST_CASE("Package - a forbidden file in the package fails it, naming the file")
 {
     PackageFixture fixture;
