@@ -28,6 +28,11 @@ namespace HedgehogEngine
     class FontContainer;
 }
 
+namespace HN
+{
+    class NavMesh;
+}
+
 namespace HX
 {
     struct RenderScene;
@@ -47,6 +52,9 @@ namespace HX
         static constexpr uint32_t PHYSICS_DEBUG_CHARACTER_COLOR = 0xffff40ff; // magenta: a character's capsule
         static constexpr uint32_t PHYSICS_DEBUG_JOINT_COLOR     = 0xff40ff40; // green: a joint
         // A joint's anchor cross, half of it, and its axis line, in metres.
+        static constexpr uint32_t NAVMESH_DEBUG_COLOR = 0xffc0d040; // teal: a navmesh's edges
+        static constexpr float    NAVMESH_DEBUG_LIFT  = 0.02f;      // metres above the surface, so the edges show
+
         static constexpr float PHYSICS_DEBUG_JOINT_CROSS = 0.1f;
         static constexpr float PHYSICS_DEBUG_JOINT_AXIS  = 0.5f;
         // Segments of a sphere's circle or a capsule's end circle; a capsule's half arc takes half.
@@ -102,6 +110,10 @@ namespace HX
         // once the lines' storage has grown.
         void ExtractPhysicsDebug(const ECS::ECS& ecs, const HedgehogEngine::PhysicsSystem& physicsSystem,
                                  RenderScene& outScene) const;
+
+        // Appends every edge of navMesh (HN::NavMesh::GetDebugEdges, none when nothing is loaded) to
+        // outScene.DebugLines, lifted NAVMESH_DEBUG_LIFT along +Z, in NAVMESH_DEBUG_COLOR.
+        void ExtractNavigationDebug(const HN::NavMesh& navMesh, RenderScene& outScene) const;
 
         // Fills outScene.Environment from the first enabled EnvironmentComponent of
         // environmentSystem by entity id, its map normalized under assets:// (backslashes to

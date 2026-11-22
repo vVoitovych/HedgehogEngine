@@ -247,6 +247,7 @@ namespace Editor
             { "AnimatorComponent", &EditorGui::DrawAnimatorComponent },
             { "TerrainComponent", &EditorGui::DrawTerrainComponent },
             { "ParticleSystemComponent", &EditorGui::DrawParticleSystemComponent },
+            { "NavMeshComponent", &EditorGui::DrawNavMeshComponent },
         };
         m_InspectorAssetDrops = {
             { "UiTextComponent", { "Font", ContentType::Font, "a .ttf or .otf font" } },
@@ -940,9 +941,14 @@ namespace Editor
                 m_SelectedEntity.reset();
         }
 
-        // The collider wireframes' toggle and the settings gear sit at the right edge.
+        // The navmesh's and the collider wireframes' toggles and the settings gear sit at the right edge.
         ImGui::SameLine();
-        ImGui::SetCursorPosX(ImGui::GetWindowWidth() - style.WindowPadding.x - 2.0f * buttonSize - style.ItemSpacing.x);
+        ImGui::SetCursorPosX(ImGui::GetWindowWidth() - style.WindowPadding.x - 3.0f * buttonSize - 2.0f * style.ItemSpacing.x);
+        if (playButton("##Navmesh", EditorIcon::Navigation, m_Settings.NavigationDebug, true,
+                       m_Settings.NavigationDebug ? "Hide the navmesh" : "Show the navmesh"))
+            m_Settings.NavigationDebug = !m_Settings.NavigationDebug;
+
+        ImGui::SameLine();
         if (playButton("##Colliders", EditorIcon::Collider, m_Settings.PhysicsDebug, true,
                        m_Settings.PhysicsDebug ? "Hide colliders" : "Show colliders"))
             m_Settings.PhysicsDebug = !m_Settings.PhysicsDebug;

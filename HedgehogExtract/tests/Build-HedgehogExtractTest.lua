@@ -18,6 +18,7 @@ project "HedgehogExtractTest"
         "HedgehogExtract",
         "HedgehogUI",
         "HedgehogEngine",
+        "HedgehogNavigation",
         "ECS",
         "FileSystem",
         "HedgehogMath"

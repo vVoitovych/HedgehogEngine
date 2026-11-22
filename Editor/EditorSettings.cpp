@@ -87,6 +87,7 @@ namespace Editor
             << YAML::Key << "game" << YAML::Value << GameViewFloating << YAML::EndMap;
         out << YAML::Key << "content_icon_size" << YAML::Value << ContentIconSize;
         out << YAML::Key << "physics_debug" << YAML::Value << PhysicsDebug;
+        out << YAML::Key << "navigation_debug" << YAML::Value << NavigationDebug;
         out << YAML::Key << "transform_tool" << YAML::Value << GetTransformToolName(GizmoTool);
         out << YAML::Key << "transform_space" << YAML::Value << GetTransformSpaceName(GizmoSpace);
 
@@ -138,6 +139,9 @@ namespace Editor
             PhysicsDebug = false;
             if (const YAML::Node debug = root["physics_debug"])
                 PhysicsDebug = debug.as<bool>(false);
+            NavigationDebug = false;
+            if (const YAML::Node debug = root["navigation_debug"])
+                NavigationDebug = debug.as<bool>(false);
             // Missing: docked, as tabs.
             SceneViewFloating = false;
             GameViewFloating  = false;

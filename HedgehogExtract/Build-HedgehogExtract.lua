@@ -15,6 +15,7 @@ project "HedgehogExtract"
    links {
       "ECS",
       "HedgehogEngine",
+      "HedgehogNavigation",
       "HedgehogMath",
       "HedgehogUI",
       "Profiler",

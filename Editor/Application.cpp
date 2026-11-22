@@ -17,6 +17,7 @@
 #include "HedgehogExtract/api/SceneExtractor.hpp"
 #include "HedgehogEngine/api/Containers/FontContainer.hpp"
 #include "HedgehogEngine/api/Containers/ParticleEffectContainer.hpp"
+#include "HedgehogEngine/api/ECS/systems/NavigationSystem.hpp"
 #include "HedgehogEngine/api/ECS/systems/ParticleSystem.hpp"
 #include "HedgehogEngine/api/Resource/ResourceCatalog.hpp"
 #include "HedgehogEngine/api/Save/SaveGameManager.hpp"
@@ -586,6 +587,9 @@ namespace Editor
         if (m_EditorGui->IsPhysicsDebugEnabled())
             HX::SceneExtractor{}.ExtractPhysicsDebug(engineContext.GetECS(), *engineContext.GetPhysicsSystem(),
                                                      m_RenderScene);
+        // The loaded navmesh's edges, likewise.
+        if (m_EditorGui->IsNavigationDebugEnabled())
+            HX::SceneExtractor{}.ExtractNavigationDebug(engineContext.GetNavigationSystem()->GetNavMesh(), m_RenderScene);
 
         const Renderer::ViewDesc sceneView = MakeSceneView(engineContext.GetCamera());
         // The sculpting brush's ring (the Gizmo pass draws debug lines in the Scene view only) and stroke.

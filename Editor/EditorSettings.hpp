@@ -25,6 +25,7 @@ namespace Editor
         DockLayoutState            dockLayout;
         float                      ContentIconSize = CONTENT_ICON_SIZE_DEFAULT; // the Project grid's icon size
         bool                       PhysicsDebug    = false; // the Scene view's collider wireframes
+        bool                       NavigationDebug = false; // the Scene view's navmesh edges
         TransformTool              GizmoTool       = TransformTool::Move;   // the Scene view's transform tool
         TransformSpace             GizmoSpace      = TransformSpace::Local; // the axes it moves and turns along
         std::vector<RecentProject> RecentProjects; // most recent first, each with its last scene

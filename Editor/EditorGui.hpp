@@ -123,6 +123,7 @@ namespace Editor
         uint32_t GetGameViewWidth()     const { return m_GameViewWidth; }
         // Whether the Scene view shows the collider wireframes (the toolbar's toggle, kept per user).
         bool IsPhysicsDebugEnabled()    const { return m_Settings.PhysicsDebug; }
+        bool IsNavigationDebugEnabled() const { return m_Settings.NavigationDebug; }
         uint32_t GetGameViewHeight()    const { return m_GameViewHeight; }
         bool     IsSceneViewHovered()   const { return m_SceneViewHovered; }
 
@@ -287,6 +288,8 @@ namespace Editor
         void DrawTerrainComponent(HedgehogEngine::Engine& context);
         // The generic section, then in Edit mode the preview's Play, Restart and Stop (EditorGuiParticles.cpp).
         void DrawParticleSystemComponent(HedgehogEngine::Engine& context);
+        void DrawNavMeshComponent(HedgehogEngine::Engine& context);
+        void BakeNavMesh(HedgehogEngine::EngineContext& engineContext, ECS::Entity entity);
         void DrawTerrainData(HedgehogEngine::EngineContext& engineContext, size_t terrain);
         // New terrain...: a default terrain written where the user picks under assets://, named by
         // the entity's terrain component.
