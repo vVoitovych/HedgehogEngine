@@ -14,6 +14,7 @@
 #include "HedgehogEngine/api/ECS/components/ParticleSystemComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/PrefabInstanceComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RenderComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/NavMeshComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RigidBodyComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/TerrainComponent.hpp"
@@ -45,6 +46,7 @@ namespace HedgehogEngine
         constexpr const char* UI_CATEGORY    = "UI";
         constexpr const char* AUDIO_CATEGORY   = "Audio";
         constexpr const char* PHYSICS_CATEGORY = "Physics";
+        constexpr const char* NAVIGATION_CATEGORY = "Navigation";
         constexpr const char* RENDERING_CATEGORY = "Rendering";
 
         // The default cube, resolved at once so the mesh shows without waiting for a scene refresh.
@@ -162,6 +164,12 @@ namespace HedgehogEngine
                                                                                       .SortOrder       = 402,
                                                                                       .Icon            = "particles",
                                                                                       .EnabledProperty = "Enabled" });
+        registered &= types.RegisterReflected<NavMeshComponent>(ComponentDesc{ .Key             = "NavMeshComponent",
+                                                                               .DisplayName     = "Navmesh",
+                                                                               .Category        = NAVIGATION_CATEGORY,
+                                                                               .SortOrder       = 500,
+                                                                               .Icon            = "navigation",
+                                                                               .EnabledProperty = "Enabled" });
         registered &= types.RegisterReflected<PrefabInstanceComponent>(ComponentDesc{ .Key         = "PrefabInstanceComponent",
                                                                                       .DisplayName = "Prefab instance",
                                                                                       .Addable     = false,

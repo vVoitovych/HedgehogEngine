@@ -9,6 +9,7 @@
 #include "HedgehogEngine/api/ECS/components/EnvironmentComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/PostProcessComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/NavMeshComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/ParticleSystemComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RenderComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/UiImageComponent.hpp"
@@ -137,6 +138,7 @@ TEST_CASE("Asset dependencies - every asset-naming component property is an Asse
     // An animator's controller is a file; its clip names a clip inside its mesh, not a file.
     CHECK(AssetRefNames<AnimatorComponent>() == std::vector<std::string>{ "Controller" });
     CHECK(AssetRefNames<ParticleSystemComponent>() == std::vector<std::string>{ "Effect" });
+    CHECK(AssetRefNames<NavMeshComponent>() == std::vector<std::string>{ "NavMesh" });
 }
 
 TEST_CASE("Asset dependencies - a camera's graph reference names an engine graph or a file")
@@ -279,6 +281,31 @@ TEST_CASE("Asset dependencies - every shipped scene's references exist")
         CAPTURE(asset);
         CHECK(std::find(prefabs.Assets.begin(), prefabs.Assets.end(), asset) != prefabs.Assets.end());
     }
+}
+
+TEST_CASE("Asset dependencies - a scene's navmesh is in its closure")
+{
+    ProjectFiles project;
+    project.Dir.WriteFile("Navigation/Level.navmesh", "baked");
+    project.Dir.WriteFile("Scenes/Level.yaml", R"(Version: 1
+Scene name: Level
+Scene:
+  - Entity: 0
+    Name: Root
+    Parent: 0
+    Children:
+      - Entity: 1
+        Name: Navigation
+        Parent: 0
+        NavMeshComponent:
+          NavMesh: Navigation\Level.navmesh
+        Children: []
+)");
+    AssetDependencyCollector collector;
+    RegisterEngineAssetDependencies(collector);
+    const AssetDependencies result = collector.CollectScene("assets://Scenes/Level.yaml", project.Files);
+    CHECK(result.Warnings.empty());
+    CHECK(std::find(result.Assets.begin(), result.Assets.end(), "assets://Navigation/Level.navmesh") != result.Assets.end());
 }
 
 TEST_CASE("Asset dependencies - the advanced animation sample reaches its glTF, controller and script")
