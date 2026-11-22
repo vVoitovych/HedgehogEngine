@@ -656,6 +656,9 @@ Logs/
 /ThirdParty/Jolt/Jolt.vcxproj*
 /HedgehogPhysics/*.vcxproj*
 /HedgehogPhysics/tests/*.vcxproj*
+/HedgehogNavigation/*.vcxproj*
+/HedgehogNavigation/tests/*.vcxproj*
+/ThirdParty/RecastNavigation/RecastNavigation.vcxproj*
 /Logger/tests/*.vcxproj*
 /Profiler/*.vcxproj*
 /Profiler/tests/*.vcxproj*

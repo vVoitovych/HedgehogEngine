@@ -31,6 +31,7 @@ group "ThirdParty"
    include "ThirdParty/Jolt/Build-Jolt.lua"
    include "ThirdParty/meshoptimizer/Build-meshoptimizer.lua"
    include "ThirdParty/bc7enc/Build-bc7enc.lua"
+   include "ThirdParty/RecastNavigation/Build-RecastNavigation.lua"
 
 group ""
 
@@ -54,6 +55,7 @@ group "Test"
    include "HedgehogInput/tests/Build-InputTest.lua"
    include "HedgehogAudio/tests/Build-AudioTest.lua"
    include "HedgehogPhysics/tests/Build-PhysicsTest.lua"
+   include "HedgehogNavigation/tests/Build-NavigationTest.lua"
    include "Logger/tests/Build-LoggerTest.lua"
    include "Profiler/tests/Build-ProfilerTest.lua"
 
@@ -99,3 +101,4 @@ include "HedgehogInput/Build-HedgehogInput.lua"
 
 include "HedgehogAudio/Build-HedgehogAudio.lua"
 include "HedgehogPhysics/Build-HedgehogPhysics.lua"
+include "HedgehogNavigation/Build-HedgehogNavigation.lua"
