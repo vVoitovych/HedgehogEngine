@@ -4,6 +4,7 @@
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogEngine/api/ECS/components/AnimatorComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/AudioSourceComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/NavAgentComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/ParticleSystemComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/CharacterControllerComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/JointComponent.hpp"
@@ -230,6 +231,11 @@ namespace HedgehogScripting::Bindings
         AddComponentAccess<HedgehogEngine::ParticleSystemComponent>(entity, ecs, "ParticleSystem", [&ecs](ECS::Entity id)
         {
             ecs.AddComponent(id, HedgehogEngine::ParticleSystemComponent{});
+        });
+        // An agent added during Play stands still until its script sets a destination.
+        AddComponentAccess<HedgehogEngine::NavAgentComponent>(entity, ecs, "NavAgent", [&ecs](ECS::Entity id)
+        {
+            ecs.AddComponent(id, HedgehogEngine::NavAgentComponent{});
         });
         // Physics parts (their usertypes come from RegisterPhysics). A collider gets its body at the
         // next fixed step; a rigid body added to an entity that has one already makes it move as

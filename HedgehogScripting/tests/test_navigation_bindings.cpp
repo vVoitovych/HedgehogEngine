@@ -3,13 +3,17 @@
 #include "test_engine_world.hpp"
 #include "test_log_capture.hpp"
 
+#include "HedgehogEngine/api/ECS/components/NavAgentComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/NavMeshComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/TransformComponent.hpp"
 #include "HedgehogEngine/api/ECS/systems/NavigationSystem.hpp"
 #include "HedgehogEngine/api/Navigation/NavMeshFile.hpp"
 #include "HedgehogEngine/api/Scene/SceneManager.hpp"
 
 #include "HedgehogNavigation/api/NavMeshBake.hpp"
 #include "HedgehogNavigation/tests/test_geometry.hpp"
+
+#include "ECS/api/components/Hierarchy.hpp"
 
 #include <chrono>
 #include <cstdio>
@@ -166,5 +170,80 @@ TEST_CASE("Navigation bindings - bad arguments are script errors")
     }
     CHECK(log.Lines("Navigation: a path's start must be a finite Vector3").size() == 1);
     CHECK(log.Lines("Navigation: a sample distance must be a finite number of at least 0").size() == 1);
+    REQUIRE(world.Stop());
+}
+
+TEST_CASE("Navigation bindings - a script's agent walks to its destination and hears it arrive once")
+{
+    NavigationWorld world;
+    world.BakeLevel();
+    world.WriteScript("Agent.lua", Script("Agent",
+        "local agent = self.entity:addNavAgent()\n"
+        "Log.info('typed', tostring(self.entity:getComponent('NavAgentComponent')) == tostring(agent))\n"
+        "agent.speed = 8\n"
+        "agent.acceleration = 20\n"
+        "agent.stoppingDistance = 0.2\n"
+        "agent.faceMovement = false\n"
+        "Log.info('fields', agent.speed, agent.acceleration, agent.faceMovement)\n"
+        "Log.info('going', agent:setDestination(Vector3(10, -5, 0)), agent.status, agent:hasPath())\n"
+        "self.arrivals = 0\n"
+        "Events.subscribe('NavAgentArrived', function(e) Log.info('event', e.entity == self.entity) end)\n"
+        "end\n"
+        "function Agent:OnNavAgentArrived()\n"
+        "  self.arrivals = self.arrivals + 1\n"
+        "  local agent = self.entity:getNavAgent()\n"
+        "  Log.info('arrived', self.arrivals, agent.status, agent.remainingDistance, agent.velocity:length())\n"
+        "  Log.info('nowhere', agent:setDestination(Vector3(0, 0, 50)), agent.status)"));
+    const ECS::Entity entity = world.AddScripted("Scripts/Agent.lua");
+    world.Ecs().GetComponent<HedgehogEngine::TransformComponent>(entity).Position = HM::Vector3(-10.0f, -5.0f, 0.0f);
+
+    LogCapture log;
+    REQUIRE(world.Context.Play());
+    for (int i = 0; i < 600; ++i)
+        world.Context.UpdateContext(1.0f, 1.0f / 60.0f);
+    CHECK(log.Lines("typed true").size() == 1);
+    CHECK(log.Lines("fields 8.0 20.0 false").size() == 1);
+    CHECK(log.Lines("going true moving true").size() == 1);
+    CHECK(log.Lines("arrived 1 arrived 0.0 0.0").size() == 1);
+    CHECK(log.Lines("arrived 2").empty());
+    CHECK(log.Lines("event true").size() == 1);
+    CHECK(log.Lines("nowhere false nopath").size() == 1);
+    CHECK(log.Lines("stack traceback").empty());
+    REQUIRE(world.Stop());
+}
+
+TEST_CASE("Navigation bindings - setDestination does nothing in Edit, and bad agent values are script errors")
+{
+    NavigationWorld world;
+    world.BakeLevel();
+    const ECS::Entity agent = world.Context.GetSceneManager().CreateGameObject();
+    world.Ecs().AddComponent(agent, HedgehogEngine::NavAgentComponent{});
+    world.Ecs().GetComponent<ECS::HierarchyComponent>(agent).Name = "Agent";
+    world.WriteScript("Early.lua", "local agent = Scene.find('Agent'):getNavAgent()\n"
+                                   "Log.info('edit', agent:setDestination(Vector3(10, -5, 0)), agent:setDestination(Vector3(9, -5, 0)))\n" +
+                                       Script("Early", ""));
+    LogCapture log;
+    (void)world.Scripts->DescribeScript("assets://Scripts/Early.lua");
+    CHECK(log.Lines("edit false false").size() == 1);
+    CHECK(log.Lines("[Script] Nav agents walk only in Play mode; NavAgent:setDestination() did nothing.").size() == 1);
+    CHECK(world.Ecs().GetComponent<HedgehogEngine::NavAgentComponent>(agent).Status == HedgehogEngine::NavAgentStatus::Idle);
+
+    world.WriteScript("Bad.lua", Script("Bad",
+        "local agent = Scene.find('Agent'):getNavAgent()\n"
+        "local function try(label, f) local ok, message = pcall(f); Log.info(label, ok, message) end\n"
+        "try('speed', function() agent.speed = -1 end)\n"
+        "try('acceleration', function() agent.acceleration = 0 / 0 end)\n"
+        "try('stopping', function() agent.stoppingDistance = -0.5 end)\n"
+        "try('destination', function() agent:setDestination(Vector3(1 / 0, 0, 0)) end)\n"
+        "try('status', function() agent.status = 'moving' end)"));
+    (void)world.AddScripted("Scripts/Bad.lua");
+    REQUIRE(world.Context.Play());
+    world.Frame(1.0f / 60.0f);
+    for (const char* label : { "speed false", "acceleration false", "stopping false", "destination false", "status false" })
+    {
+        CAPTURE(label);
+        CHECK(log.Lines(label).size() == 1);
+    }
+    CHECK(log.Lines("NavAgent: a speed must be a finite number of at least 0").size() == 1);
     REQUIRE(world.Stop());
 }

@@ -4,6 +4,7 @@
 
 #include "HedgehogEngine/api/EngineContext.hpp"
 #include "HedgehogEngine/api/Events/AnimationEvents.hpp"
+#include "HedgehogEngine/api/Events/NavigationEvents.hpp"
 #include "HedgehogEngine/api/Events/PhysicsEvents.hpp"
 #include "HedgehogEngine/api/Events/UiEvents.hpp"
 
@@ -189,6 +190,17 @@ namespace HedgehogScripting
         {
             QueuePhysicsEvent("TriggerExit", event.Trigger, event.Other, false, zero, zero);
             QueuePhysicsEvent("TriggerExit", event.Other, event.Trigger, false, zero, zero);
+        }));
+        // An agent's arrival, as NavAgentArrived { entity } and its own self:OnNavAgentArrived().
+        m_BusSubscriptions.push_back(bus.Subscribe<NavAgentArrivedEvent>([this](const NavAgentArrivedEvent& event)
+        {
+            ECS::ECS& ecs = m_Context.GetECS();
+            if (!ecs.IsAlive(event.Entity))
+                return;
+            const Bindings::ScriptEntity handle = Bindings::MakeScriptEntity(ecs, event.Entity);
+            QueuedEvent queued{ "NavAgentArrived", m_Lua.create_table_with("entity", handle), handle.Id, handle.Generation };
+            queued.Hook = "OnNavAgentArrived";
+            m_QueuedEvents.push_back(std::move(queued));
         }));
     }
 

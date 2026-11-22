@@ -5,6 +5,7 @@
 
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
 #include "HedgehogEngine/api/Events/AnimationEvents.hpp"
+#include "HedgehogEngine/api/Events/NavigationEvents.hpp"
 #include "HedgehogEngine/api/Events/PhysicsEvents.hpp"
 #include "HedgehogEngine/api/Events/SaveEvents.hpp"
 #include "HedgehogEngine/api/Events/UiEvents.hpp"
@@ -98,6 +99,7 @@ TEST_CASE("ScriptSystem unregister - mid-Play the scripts end, and no engine eve
     CHECK(bus.GetSubscriberCount<HedgehogEngine::CollisionExitEvent>() == 0);
     CHECK(bus.GetSubscriberCount<HedgehogEngine::TriggerEnterEvent>() == 0);
     CHECK(bus.GetSubscriberCount<HedgehogEngine::TriggerExitEvent>() == 0);
+    CHECK(bus.GetSubscriberCount<HedgehogEngine::NavAgentArrivedEvent>() == 0);
 
     world.PublishAll();
     world.World.Frame(STEP);
