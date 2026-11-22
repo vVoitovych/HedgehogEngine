@@ -125,3 +125,22 @@ TEST_CASE("EditorSettings - a file from before floating sizes and views gives th
     CHECK_FALSE(loaded.SceneViewFloating);
     CHECK_FALSE(loaded.GameViewFloating);
 }
+
+TEST_CASE("EditorSettings - navigation_debug round-trips and is off when missing")
+{
+    UserFolder     folder;
+    EditorSettings settings;
+    settings.dockLayout.InitDefaults();
+    settings.NavigationDebug = true;
+    settings.Save(EditorSettings::PATH, folder.Files);
+    EditorSettings loaded;
+    REQUIRE(loaded.Load(EditorSettings::PATH, folder.Files));
+    CHECK(loaded.NavigationDebug);
+    CHECK_FALSE(loaded.PhysicsDebug);
+
+    folder.Dir.WriteFile("editor_settings.yaml", "content_icon_size: 64\n");
+    EditorSettings old;
+    old.NavigationDebug = true;
+    REQUIRE(old.Load(EditorSettings::PATH, folder.Files));
+    CHECK_FALSE(old.NavigationDebug);
+}
