@@ -1,17 +1,25 @@
 #include "CookPlan.hpp"
+#include "TextureCompression.hpp"
 
 #include "HedgehogEngine/api/Assets/EngineAssetDependencies.hpp"
+#include "HedgehogEngine/api/Containers/MaterialData.hpp"
+#include "HedgehogEngine/api/Containers/MaterialSerializer.hpp"
+#include "HedgehogEngine/api/Terrain/TerrainData.hpp"
 #include "HedgehogEngine/HedgehogSettings/api/ProjectSettings.hpp"
 
 #include "EcsSerialization/api/Assets/AssetDependencyCollector.hpp"
 
 #include "FileSystem/api/FileSystem.hpp"
 #include "FileSystem/api/FileSystemManager.hpp"
+#include "FileSystem/api/PathUtils.hpp"
+
+#include "ContentLoader/api/TextureLoader.hpp"
 
 #include "yaml-cpp/yaml.h"
 
 #include <algorithm>
 #include <array>
+#include <cctype>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -32,6 +40,90 @@ namespace Cooker
         constexpr int              MANIFEST_VERSION = 1;
 
         constexpr std::array<std::string_view, 3> SHADER_EXTENSIONS = { ".vert", ".frag", ".comp" };
+        constexpr std::array<std::string_view, 5> IMAGE_EXTENSIONS  = { ".png", ".jpg", ".jpeg", ".tga", ".bmp" };
+
+        bool IsCompressibleImage(const std::string& path)
+        {
+            std::string extension = std::filesystem::path(path).extension().string();
+            std::transform(extension.begin(), extension.end(), extension.begin(),
+                           [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+            return std::find(IMAGE_EXTENSIONS.begin(), IMAGE_EXTENSIONS.end(), extension) != IMAGE_EXTENSIONS.end();
+        }
+
+        // One sibling per image and encoding, however often it is named.
+        void AddCompressedTexture(CookPlan& plan, const FS::FileSystemManager& files, std::set<std::string>& seen,
+                                  const std::string& map, ContentLoader::TextureEncoding encoding)
+        {
+            if (map.empty())
+                return;
+            const std::string source = FS::ToAssetVirtualPath(FS::MakeAssetKey(map));
+            if (!IsCompressibleImage(source))
+                return;
+            const std::optional<std::filesystem::path> physical = files.ResolvePhysical(source);
+            const std::optional<std::filesystem::path> target =
+                ToPackagePath(FS::ToAssetVirtualPath(ContentLoader::MakeCompressedTexturePath(map, encoding)));
+            std::error_code error;
+            // A missing map is already the closure's error.
+            if (!physical || !target || !std::filesystem::is_regular_file(*physical, error))
+                return;
+            if (seen.insert(target->generic_string()).second)
+                plan.Textures.push_back({ source, *physical, encoding, *target });
+        }
+
+        // The maps the closure's materials and terrains name, each as its slot uses it.
+        void AddCompressedTextures(CookPlan& plan, const std::vector<std::string>& assets, const FS::FileSystemManager& files)
+        {
+            using ContentLoader::TextureEncoding;
+            std::set<std::string> seen;
+            for (const std::string& asset : assets)
+            {
+                const std::filesystem::path extension = std::filesystem::path(asset).extension();
+                if (extension != ".material" && extension != HedgehogEngine::TERRAIN_EXTENSION)
+                    continue;
+                const std::optional<std::string> text = files.ReadTextFile(asset);
+                if (!text)
+                    continue;
+                if (extension == ".material")
+                {
+                    HedgehogEngine::MaterialData material;
+                    if (!HedgehogEngine::MaterialSerializer::ReadText(material, *text, asset))
+                        continue;
+                    AddCompressedTexture(plan, files, seen, material.baseColor, TextureEncoding::Color);
+                    AddCompressedTexture(plan, files, seen, material.emissiveMap, TextureEncoding::Color);
+                    AddCompressedTexture(plan, files, seen, material.normalMap, TextureEncoding::Normal);
+                    AddCompressedTexture(plan, files, seen, material.metallicRoughnessMap, TextureEncoding::Data);
+                    AddCompressedTexture(plan, files, seen, material.occlusionMap, TextureEncoding::Data);
+                }
+                else if (const HedgehogEngine::TerrainReadResult terrain = HedgehogEngine::ParseTerrain(*text); terrain.Data)
+                {
+                    for (const HedgehogEngine::TerrainLayer& layer : terrain.Data->Layers)
+                    {
+                        AddCompressedTexture(plan, files, seen, layer.BaseColor, TextureEncoding::Color);
+                        AddCompressedTexture(plan, files, seen, layer.NormalMap, TextureEncoding::Normal);
+                    }
+                }
+            }
+        }
+
+        // The DDS bytes of an image encoded as encoding, or nullopt when it does not decode.
+        std::optional<std::vector<std::byte>> EncodeTexture(const CompressedTextureFile& texture)
+        {
+            FS::FileSystemManager files;
+            auto                  fs = std::make_unique<FS::FileSystem>();
+            fs->RegisterPath("source://", texture.Source.parent_path());
+            files.Register(std::move(fs));
+            ContentLoader::TextureLoader loader;
+            if (!loader.LoadFromVirtualPath("source://" + texture.Source.filename().string(), files) || !loader.GetData())
+                return std::nullopt;
+
+            const auto   width  = static_cast<uint32_t>(loader.GetWidth());
+            const auto   height = static_cast<uint32_t>(loader.GetHeight());
+            const auto*  rgba   = static_cast<const uint8_t*>(loader.GetData());
+            const auto compressed = CompressTexture(std::span(rgba, size_t(width) * height * 4), width, height, texture.Encoding);
+            if (!compressed)
+                return std::nullopt;
+            return ContentLoader::WriteDds(*compressed);
+        }
 
         struct ManifestEntry
         {
@@ -105,7 +197,7 @@ namespace Cooker
     }
 
     CookPlan BuildCookPlan(const std::filesystem::path& projectRoot, const std::vector<std::string>& extraScenes,
-                           const std::filesystem::path& engineRoot)
+                           const std::filesystem::path& engineRoot, bool compressTextures)
     {
         CookPlan plan;
 
@@ -174,6 +266,8 @@ namespace Cooker
                 unique.push_back(file);
         plan.Files = std::move(unique);
 
+        if (compressTextures)
+            AddCompressedTextures(plan, closure.Assets, files);
         return plan;
     }
 
@@ -209,6 +303,41 @@ namespace Cooker
 
         const std::map<std::string, ManifestEntry> previous = ReadManifest(outDir);
         std::map<std::string, ManifestEntry>       written;
+
+        // Encoded first, in memory, so an image that does not decode leaves the package untouched.
+        std::vector<std::pair<std::filesystem::path, std::vector<std::byte>>> encoded;
+        for (const CompressedTextureFile& texture : plan.Textures)
+        {
+            const std::string           key    = texture.Target.generic_string();
+            const std::filesystem::path target = outDir / texture.Target;
+            std::error_code             error;
+            const uintmax_t             size = std::filesystem::file_size(texture.Source, error);
+            const std::optional<std::string> sourceHash = HashFile(texture.Source);
+            if (error || !sourceHash)
+            {
+                result.Errors.push_back(texture.VirtualPath + " cannot be read.");
+                continue;
+            }
+            const std::string hash = *sourceHash + "-" + std::to_string(TEXTURE_ENCODER_VERSION);
+            const auto        old  = previous.find(key);
+            if (old != previous.end() && old->second.Size == size && old->second.Hash == hash &&
+                std::filesystem::is_regular_file(target, error))
+            {
+                ++result.Unchanged;
+            }
+            else if (std::optional<std::vector<std::byte>> bytes = EncodeTexture(texture))
+            {
+                encoded.emplace_back(target, std::move(*bytes));
+            }
+            else
+            {
+                result.Errors.push_back(texture.VirtualPath + " cannot be decoded as an image to compress.");
+                continue;
+            }
+            written[key] = { size, hash };
+        }
+        if (!result.Errors.empty())
+            return result;
         for (const CookFile& file : plan.Files)
         {
             const std::string           key    = file.Target.generic_string();
@@ -239,6 +368,18 @@ namespace Cooker
                 ++result.Copied;
             }
             written[key] = { size, *hash };
+        }
+
+        for (const auto& [target, bytes] : encoded)
+        {
+            std::error_code error;
+            std::filesystem::create_directories(target.parent_path(), error);
+            std::ofstream file(target, std::ios::binary);
+            file.write(reinterpret_cast<const char*>(bytes.data()), static_cast<std::streamsize>(bytes.size()));
+            if (!file)
+                result.Errors.push_back(target.string() + " cannot be written.");
+            else
+                ++result.TexturesCompressed;
         }
 
         // Files an earlier cook packaged that the project no longer references.

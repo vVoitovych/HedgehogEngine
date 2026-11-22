@@ -68,6 +68,10 @@ namespace Editor
         if (!m_BinariesWarning.empty())
             ImGui::TextColored(NOTE_COLOR, "%s", m_BinariesWarning.c_str());
 
+        ImGui::Checkbox("Compress textures", &m_CompressTextures);
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("Writes a BC7 or BC5 DDS beside every material and terrain map, which the game uploads in place of the image.");
+
         ImGui::BeginDisabled(m_Output.empty());
         if (ImGui::Button("Build"))
             Build();
@@ -77,8 +81,9 @@ namespace Editor
         {
             ImGui::Separator();
             if (m_Result->Errors.empty())
-                ImGui::Text("Built %zu file(s) into %s: %zu copied, %zu unchanged, %zu removed.", m_Result->Files,
-                            m_BuiltFolder.string().c_str(), m_Result->Copied, m_Result->Unchanged, m_Result->Removed);
+                ImGui::Text("Built %zu file(s) into %s: %zu copied, %zu texture(s) compressed, %zu unchanged, %zu removed.",
+                            m_Result->Files, m_BuiltFolder.string().c_str(), m_Result->Copied, m_Result->TexturesCompressed,
+                            m_Result->Unchanged, m_Result->Removed);
             else
                 ImGui::TextColored(ERROR_COLOR, "The build failed; nothing was packaged:");
             for (const std::string& error : m_Result->Errors)
@@ -109,6 +114,7 @@ namespace Editor
         desc.OutDir      = m_BuiltFolder;
         desc.BinariesDir = m_Binaries;
         desc.AllScenes   = true; // every scene ships, as PackageGame.bat packages it
+        desc.CompressTextures = m_CompressTextures;
         m_Result         = Cooker::PackageGame(desc);
 
         for (const std::string& warning : m_Result->Warnings)
@@ -116,8 +122,9 @@ namespace Editor
         for (const std::string& error : m_Result->Errors)
             LOGERROR("[Build] ", error);
         if (m_Result->Errors.empty())
-            LOGINFO("[Build] Built ", m_Result->Files, " file(s): ", m_Result->Copied, " copied, ", m_Result->Unchanged,
-                    " unchanged, ", m_Result->Removed, " removed.");
+            LOGINFO("[Build] Built ", m_Result->Files, " file(s): ", m_Result->Copied, " copied, ",
+                    m_Result->TexturesCompressed, " texture(s) compressed, ", m_Result->Unchanged, " unchanged, ",
+                    m_Result->Removed, " removed.");
         else
             LOGERROR("[Build] The build failed; ", m_Result->Errors.size(), " error(s).");
     }

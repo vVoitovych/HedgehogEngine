@@ -31,9 +31,12 @@ namespace
                 Binaries.WriteFile(other, "not shipped");
         }
 
+        // Its images are placeholder text, so nothing is compressed (test_package_textures.cpp is).
         Cooker::PackageDesc Desc() const
         {
-            return { Project.Path(), Project.Path(), Out.Path(), Binaries.Path(), {}, {} };
+            Cooker::PackageDesc desc{ Project.Path(), Project.Path(), Out.Path(), Binaries.Path(), {}, {} };
+            desc.CompressTextures = false;
+            return desc;
         }
     };
 

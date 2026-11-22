@@ -92,7 +92,7 @@ namespace Cooker
             for (const std::string& scene : ListProjectScenes(desc.ProjectRoot))
                 if (std::find(scenes.begin(), scenes.end(), scene) == scenes.end())
                     scenes.push_back(scene);
-        CookPlan plan = BuildCookPlan(desc.ProjectRoot, scenes, desc.EngineRoot);
+        CookPlan plan = BuildCookPlan(desc.ProjectRoot, scenes, desc.EngineRoot, desc.CompressTextures);
         for (const char* file : GAME_RUNTIME_FILES)
             AddRootFile(plan, desc.BinariesDir, file, RUNTIME_PATH_PREFIX, "runtime file");
         for (const char* file : LICENCE_FILES)
@@ -103,6 +103,7 @@ namespace Cooker
         result.Copied           = cooked.Copied;
         result.Unchanged        = cooked.Unchanged;
         result.Removed          = cooked.Removed;
+        result.TexturesCompressed = cooked.TexturesCompressed;
         result.Errors           = cooked.Errors;
         if (!result.Errors.empty())
             return result;

@@ -31,6 +31,7 @@ namespace Editor
         std::string                          m_Output;
         std::filesystem::path                m_Binaries;
         std::string                          m_BinariesWarning;
+        bool                                 m_CompressTextures = true;
         std::optional<Cooker::PackageResult> m_Result;     // the last build's
         std::filesystem::path                m_BuiltFolder; // where it went
     };
