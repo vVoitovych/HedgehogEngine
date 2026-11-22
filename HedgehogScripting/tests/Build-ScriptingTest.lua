@@ -26,6 +26,7 @@ project "ScriptingTest"
         "HedgehogSettings",
         "HedgehogInput",
         "HedgehogAudio",
+        "HedgehogNavigation",
         "ECS",
         "EcsSerialization",
         "HedgehogMath",

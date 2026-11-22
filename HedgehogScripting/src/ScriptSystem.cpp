@@ -113,6 +113,7 @@ namespace HedgehogScripting
         Bindings::RegisterAudio(m_Lua, context);
         Bindings::RegisterPhysics(m_Lua, context);
         Bindings::RegisterParticles(m_Lua, context);
+        Bindings::RegisterNavigation(m_Lua, context);
         Bindings::RegisterScene(m_Lua, context, m_PendingDestroys);
         Bindings::RegisterPrefab(m_Lua, context);
         Bindings::RegisterApplication(m_Lua, context);
