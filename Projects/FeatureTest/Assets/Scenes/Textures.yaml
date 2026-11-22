@@ -1,0 +1,183 @@
+Scene name: Textures
+Scene:
+  - Entity: 0
+    Name: Root
+    Parent: 0
+    TransformComponent:
+      Position: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    Children:
+      - Entity: 1
+        Name: Hills
+        Parent: 0
+        TransformComponent:
+          Position: [-64, 24, -8]
+          Rotation: [0, 0, 0]
+          Scale: [1, 1, 1]
+        TerrainComponent:
+          Enabled: true
+          Terrain: Terrain/Hills.terrain
+          RenderLayer: 0
+          CastShadows: true
+          PhysicsLayer: 0
+          Friction: 0.6
+        Children:
+          []
+      - Entity: 2
+        Name: Helmet
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 1.4]
+          Rotation: [90, 180, 0]
+          Scale: [1, 1, 1]
+        MeshComponent:
+          MeshPath: Models/DamagedHelmet/DamagedHelmet.gltf
+        RenderComponent:
+          Visible: true
+          Material: Models/DamagedHelmet/DamagedHelmet_Material_MR.material
+          Layer: 0
+        Children:
+          []
+      - Entity: 3
+        Name: Rock sphere
+        Parent: 0
+        TransformComponent:
+          Position: [-3.0, 1.5, 0]
+          Rotation: [0, 0, 0]
+          Scale: [0.1, 0.1, 0.1]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/sphere.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/Textures/Rock.material
+          Layer: 0
+        Children:
+          []
+      - Entity: 4
+        Name: Grass sphere
+        Parent: 0
+        TransformComponent:
+          Position: [-1.5, 1.5, 0]
+          Rotation: [0, 0, 0]
+          Scale: [0.1, 0.1, 0.1]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/sphere.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/Textures/Grass.material
+          Layer: 0
+        Children:
+          []
+      - Entity: 5
+        Name: Viking sphere
+        Parent: 0
+        TransformComponent:
+          Position: [0.0, 1.5, 0]
+          Rotation: [0, 0, 0]
+          Scale: [0.1, 0.1, 0.1]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/sphere.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/Textures/Viking.material
+          Layer: 0
+        Children:
+          []
+      - Entity: 6
+        Name: Dirt sphere
+        Parent: 0
+        TransformComponent:
+          Position: [1.5, 1.5, 0]
+          Rotation: [0, 0, 0]
+          Scale: [0.1, 0.1, 0.1]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/sphere.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/Textures/Dirt.material
+          Layer: 0
+        Children:
+          []
+      - Entity: 7
+        Name: Snow sphere
+        Parent: 0
+        TransformComponent:
+          Position: [3.0, 1.5, 0]
+          Rotation: [0, 0, 0]
+          Scale: [0.1, 0.1, 0.1]
+        MeshComponent:
+          MeshPath: engine://Content/Models/Default/sphere.obj
+        RenderComponent:
+          Visible: true
+          Material: Materials/Textures/Snow.material
+          Layer: 0
+        Children:
+          []
+      - Entity: 8
+        Name: Sun
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 0]
+          Rotation: [30, -50, 0]
+          Scale: [1, 1, 1]
+        LightComponent:
+          LightEnabled: true
+          LightType: 0
+          LightColor: [1, 0.96, 0.9]
+          LightIntensity: 1.2
+          LightRadius: 1
+          LightConeAngle: 2
+          CastShadows: true
+        Children:
+          []
+      - Entity: 9
+        Name: Sky
+        Parent: 0
+        TransformComponent:
+          Position: [0, 0, 0]
+          Rotation: [0, 0, 0]
+          Scale: [1, 1, 1]
+        EnvironmentComponent:
+          Enabled: true
+          Map: Environments/kloofendal_48d_partly_cloudy_puresky_1k.hdr
+          Intensity: 1
+          Rotation: 0
+          ShowSkybox: true
+          Exposure: 0
+        PostProcessComponent:
+          Enabled: true
+          AntiAliasing: 0
+          SsaoEnabled: false
+          SsaoRadius: 0.5
+          SsaoIntensity: 1
+          SsaoBias: 0.025
+          BloomEnabled: false
+          BloomIntensity: 0.05
+          BloomThreshold: 1
+          BloomKnee: 0.5
+          ColorLut: ""
+          ColorLutContribution: 1
+        Children:
+          []
+      - Entity: 10
+        Name: MainCamera
+        Parent: 0
+        TransformComponent:
+          Position: [0, -2.6, 1.6]
+          Rotation: [85, 0, 0]
+          Scale: [1, 1, 1]
+        CameraComponent:
+          Enabled: true
+          ProjectionType: 0
+          Fov: 60
+          OrthoSize: 10
+          NearPlane: 0.1
+          FarPlane: 1000
+          LayerMask: 4294967295
+          TargetMode: 0
+          TargetName: ""
+          GraphName: game
+          Priority: 0
+        Children:
+          []

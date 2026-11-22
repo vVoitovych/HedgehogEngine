@@ -124,6 +124,9 @@ namespace HR
         // Textures loaded from a compressed DDS sibling, and from their source image.
         uint32_t GetCompressedTextureCount()   const { return m_CompressedTextureCount; }
         uint32_t GetUncompressedTextureCount() const { return m_UncompressedTextureCount; }
+        // The bytes those textures hold on the GPU, every mip included.
+        uint64_t GetCompressedTextureBytes()   const { return m_CompressedTextureBytes; }
+        uint64_t GetUncompressedTextureBytes() const { return m_UncompressedTextureBytes; }
         // An RGBA8 texture of pixels, one level, uploaded and ready to sample.
         static std::unique_ptr<RHI::IRHITexture> CreateRgba8Texture(RHI::IRHIDevice& device, const void* pixels,
                                                                     uint32_t width, uint32_t height, bool srgb);
@@ -205,6 +208,8 @@ namespace HR
         std::unordered_map<std::string, std::unique_ptr<RHI::IRHITexture>> m_TextureCache;
         uint32_t                                                           m_CompressedTextureCount   = 0;
         uint32_t                                                           m_UncompressedTextureCount = 0;
+        uint64_t                                                           m_CompressedTextureBytes   = 0;
+        uint64_t                                                           m_UncompressedTextureBytes = 0;
         std::unique_ptr<RHI::IRHISampler>                                  m_LinearSampler;
 
         // A material slot without a map samples these 1x1 textures, which leave its factors as they

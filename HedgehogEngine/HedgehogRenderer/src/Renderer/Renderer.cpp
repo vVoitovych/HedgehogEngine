@@ -83,8 +83,12 @@ namespace Renderer
         device.WaitIdle();
         if (const std::optional<double> gpuMs = m_FrameRenderer->GetLastGpuFrameMs())
             LOGINFO("Renderer: the last frame the GPU finished took ", *gpuMs, " ms on the GPU.");
-        LOGINFO("Renderer: ", m_Resources->GetCompressedTextureCount(), " textures loaded compressed, ",
-                m_Resources->GetUncompressedTextureCount(), " from their images.");
+        constexpr double MEGABYTE   = 1024.0 * 1024.0;
+        const uint32_t   compressed = m_Resources->GetCompressedTextureCount();
+        LOGINFO("Renderer: textures ", compressed + m_Resources->GetUncompressedTextureCount(), " (", compressed,
+                " compressed), ",
+                static_cast<double>(m_Resources->GetCompressedTextureBytes() + m_Resources->GetUncompressedTextureBytes()) / MEGABYTE,
+                " MB (", static_cast<double>(m_Resources->GetCompressedTextureBytes()) / MEGABYTE, " MB compressed).");
         m_FrameRenderer.reset();
         m_Resources->Cleanup(device);
         m_Resources.reset();

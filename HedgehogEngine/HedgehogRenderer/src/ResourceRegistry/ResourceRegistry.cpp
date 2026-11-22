@@ -59,6 +59,18 @@ namespace HR
             return texture;
         }
 
+        // An RGBA8 texture's bytes with its full mip chain.
+        uint64_t GetRgba8ChainBytes(uint32_t width, uint32_t height)
+        {
+            uint64_t bytes = 0;
+            for (uint32_t w = width, h = height;; w = std::max(1u, w / 2), h = std::max(1u, h / 2))
+            {
+                bytes += uint64_t(w) * h * 4;
+                if (w == 1 && h == 1)
+                    return bytes;
+            }
+        }
+
         RHI::Format ToRhiFormat(ContentLoader::CompressedFormat format)
         {
             switch (format)
@@ -355,6 +367,7 @@ namespace HR
         const uint32_t texH    = loaded ? static_cast<uint32_t>(loader.GetHeight()) : 1u;
         // Mipmapped, since materials draw it at any distance.
         auto texture = UploadRgba8(device, loaded ? loader.GetData() : FALLBACK_PIXEL, texW, texH, true, srgb);
+        m_UncompressedTextureBytes += GetRgba8ChainBytes(texW, texH);
 
         auto [result, _] = m_TextureCache.emplace(key, std::move(texture));
         return *result->second;
@@ -379,6 +392,7 @@ namespace HR
             LOGWARNING("[Texture] ", sibling, " is not in the format its name says; ", file, " is loaded instead.");
             return nullptr;
         }
+        m_CompressedTextureBytes += texture->Data.size();
         return UploadCompressed(device, *texture);
     }
 
