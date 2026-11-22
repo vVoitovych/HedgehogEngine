@@ -13,6 +13,7 @@
 #include "HedgehogEngine/api/ECS/components/CameraComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/MeshComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RenderComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/NavMeshComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/ParticleSystemComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/TerrainComponent.hpp"
 #include "HedgehogEngine/api/Particles/ParticleEffectFile.hpp"
@@ -184,6 +185,7 @@ namespace HedgehogEngine
         collector.AddReflectedComponent<PostProcessComponent>("PostProcessComponent");
         collector.AddReflectedComponent<TerrainComponent>("TerrainComponent");
         collector.AddReflectedComponent<ParticleSystemComponent>("ParticleSystemComponent");
+        collector.AddReflectedComponent<NavMeshComponent>("NavMeshComponent");
         collector.AddReflectedComponent<UiImageComponent>("UiImageComponent");
         collector.AddReflectedComponent<UiTextComponent>("UiTextComponent");
         collector.AddReflectedComponent<CameraComponent>("CameraComponent", NormalizeGraphReference);

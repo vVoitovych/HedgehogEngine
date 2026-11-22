@@ -71,6 +71,7 @@ namespace HedgehogEngine
     class PostProcessSystem;
     class TerrainSystem;
     class ParticleSystem;
+    class NavigationSystem;
     class SaveGameManager;
     class SceneRequestSystem;
     class PrefabManager;
@@ -245,6 +246,8 @@ namespace HedgehogEngine
         // The terrains, which resolve their files in the Sync phase.
         HEDGEHOG_ENGINE_API TerrainSystem*      GetTerrainSystem() const;
         HEDGEHOG_ENGINE_API ParticleSystem*     GetParticleSystem() const;
+        // The scene's navmesh and its path queries.
+        HEDGEHOG_ENGINE_API NavigationSystem*   GetNavigationSystem() const;
 
         // The audio engine AudioSystem plays through. The context never starts it, so tests and
         // tools stay silent: the application calls Init (the Editor and --game-mode with a device,
@@ -303,6 +306,7 @@ namespace HedgehogEngine
         std::shared_ptr<PostProcessSystem>   m_PostProcessSystem;
         std::shared_ptr<TerrainSystem>       m_TerrainSystem;
         std::shared_ptr<ParticleSystem>      m_ParticleSystem;
+        std::shared_ptr<NavigationSystem>    m_NavigationSystem;
 
         ResourceCatalog m_ResourceCatalog;
 

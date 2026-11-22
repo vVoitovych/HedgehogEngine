@@ -62,6 +62,7 @@ namespace Editor
         Particles,
         Character,
         Joint,
+        Navigation,
         Count
     };
 

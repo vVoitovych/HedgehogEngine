@@ -48,6 +48,7 @@ namespace Editor
         case EditorIcon::Particles:     return "particles.png";
         case EditorIcon::Character:     return "character.png";
         case EditorIcon::Joint:         return "joint.png";
+        case EditorIcon::Navigation:    return "navigation.png";
         case EditorIcon::Count:         break;
         }
         return "";

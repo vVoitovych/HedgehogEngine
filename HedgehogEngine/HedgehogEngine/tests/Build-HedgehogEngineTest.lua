@@ -24,6 +24,7 @@ project "HedgehogEngineTest"
         "HedgehogInput",
         "HedgehogAudio",
         "HedgehogPhysics",
+        "HedgehogNavigation",
         "HedgehogCommon",
         "HedgehogSettings",
         "ECS",

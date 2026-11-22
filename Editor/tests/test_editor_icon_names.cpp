@@ -38,6 +38,7 @@ TEST_CASE("FindEditorIcon knows the icon names the engine's component types use"
     CHECK(FindEditorIcon("collider") == EditorIcon::Collider);
     CHECK(FindEditorIcon("character") == EditorIcon::Character);
     CHECK(FindEditorIcon("joint") == EditorIcon::Joint);
+    CHECK(FindEditorIcon("navigation") == EditorIcon::Navigation);
 }
 
 TEST_CASE("FindEditorIcon gives no icon for an empty, unknown or misspelt name")
