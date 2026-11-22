@@ -14,6 +14,7 @@
 #include "HedgehogEngine/api/ECS/components/ParticleSystemComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/PrefabInstanceComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RenderComponent.hpp"
+#include "HedgehogEngine/api/ECS/components/NavAgentComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/NavMeshComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/RigidBodyComponent.hpp"
 #include "HedgehogEngine/api/ECS/components/ScriptComponent.hpp"
@@ -170,6 +171,13 @@ namespace HedgehogEngine
                                                                                .SortOrder       = 500,
                                                                                .Icon            = "navigation",
                                                                                .EnabledProperty = "Enabled" });
+        // ponytail: the navmesh's icon until agents have one of their own.
+        registered &= types.RegisterReflected<NavAgentComponent>(ComponentDesc{ .Key             = "NavAgentComponent",
+                                                                                .DisplayName     = "Nav agent",
+                                                                                .Category        = NAVIGATION_CATEGORY,
+                                                                                .SortOrder       = 501,
+                                                                                .Icon            = "navigation",
+                                                                                .EnabledProperty = "Enabled" });
         registered &= types.RegisterReflected<PrefabInstanceComponent>(ComponentDesc{ .Key         = "PrefabInstanceComponent",
                                                                                       .DisplayName = "Prefab instance",
                                                                                       .Addable     = false,
