@@ -71,6 +71,13 @@ namespace HedgehogScripting::Bindings
     // such call logs a warning. context must outlive lua.
     void RegisterParticles(sol::state& lua, HedgehogEngine::EngineContext& context);
 
+    // The Navigation table over the engine's NavigationSystem: hasNavMesh(), findPath(from, to)
+    // ({ status = "complete"|"partial", corners } or nil), samplePosition(point, maxDistance?) (a
+    // Vector3 or nil; 1 m by default) and raycast(from, to) ({ point, normal } or nil). They only
+    // read, so they work in Edit and Play; a non-finite vector or a negative distance is a script
+    // error. context must outlive lua.
+    void RegisterNavigation(sol::state& lua, HedgehogEngine::EngineContext& context);
+
     // The Scene table (find, findAll, spawn, destroy, load, current) and entity:destroy(), over
     // context's SceneManager. load(path) queues a switch to a .yaml under assets:// (paths as
     // Prefab's) for the end of the frame and returns whether it was queued; outside Play it does
